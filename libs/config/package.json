@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sinclair/typebox": "0.24.20",
+    "@sinclair/typebox": "0.24.22",
     "ajv": "8.11.0",
     "ajv-formats": "2.1.1",
     "envalid": "7.3.1",
