@@ -22,8 +22,8 @@
     "@types/jest": "28.1.6",
     "@types/node": "18.0.1",
     "@types/rimraf": "3.0.2",
-    "@typescript-eslint/eslint-plugin": "5.30.7",
-    "@typescript-eslint/parser": "5.30.7",
+    "@typescript-eslint/eslint-plugin": "5.31.0",
+    "@typescript-eslint/parser": "5.31.0",
     "commitizen": "4.2.5",
     "cross-env": "7.0.3",
     "cz-conventional-changelog": "3.3.0",
@@ -49,5 +49,5 @@
   "volta": {
     "node": "16.16.0"
   },
-  "packageManager": "pnpm@7.6.0"
+  "packageManager": "pnpm@7.7.0"
 }
