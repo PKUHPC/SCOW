@@ -158,9 +158,8 @@ export const jobServiceServer = plugin((server) => {
     },
 
     submitJob: async ({ request, logger }) => {
-      const { cluster, command, jobName, coreCount, gpuCount, maxTime, saveAsTemplate, userId,
+      const { cluster, command, jobName, coreCount, gpuCount, maxTime, saveAsTemplate, userId, extraOptions,
         nodeCount, partition, qos, account, comment, workingDirectory, output, errorOutput, memory } = request;
-
 
       const client = getAdapterClient(cluster);
       if (!client) { throw clusterNotFound(cluster); }
@@ -176,7 +175,8 @@ export const jobServiceServer = plugin((server) => {
       const reply = await asyncClientCall(client.job, "submitJob", {
         userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount || 0,
         memoryMb: Number(memory?.split("M")[0]), coreCount, timeLimitMinutes: maxTime,
-        script: command, workingDirectory, stdout: output, stderr: errorOutput, extraOptions: [],
+        script: command, workingDirectory, stdout: output, stderr: errorOutput,
+        extraOptions: Object.values(extraOptions).length ? Object.values(extraOptions) : [],
       }).catch((e) => {
         const ex = e as ServiceError;
         const errors = parseErrorDetails(ex.metadata);
@@ -207,6 +207,7 @@ export const jobServiceServer = plugin((server) => {
           output,
           errorOutput,
           memory,
+          extraOptions,
         };
 
         const clusterOps = getClusterOps(cluster);

@@ -40,6 +40,7 @@ const jobInfo = {
   "output": "job.%j.out",
   "errorOutput": "job.%j.err",
   "memory": "750MB",
+  "extraOptions": {},
 };
 const templateId = "testJob-1111";
 
@@ -101,7 +102,7 @@ it("delete job template", async () => {
     cluster, userId, templateId,
   });
 
-  expect(templateInfo?.template).toBeObject();
+  expect(templateInfo?.template?.jobName).toBe("testJob");
 
   await asyncUnaryCall(client, "deleteJobTemplate", {
     cluster, userId, templateId,

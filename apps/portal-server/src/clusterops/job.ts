@@ -32,6 +32,9 @@ export interface JobMetadata {
   submitTime: string;
   workingDirectory: string;
   memory?: string;
+  extraOptions: {
+    [key: string]: string;
+  }
 }
 
 export const jobOps = (cluster: string): JobOps => {

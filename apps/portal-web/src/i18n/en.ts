@@ -185,6 +185,7 @@ export default {
         + "the job submission or execution will fail.",
         output: "Standard Output File",
         errorOutput: "Error Output File",
+        k8sImageUrl: "Image Url",
         totalNodeCount: "Total Nodes: ",
         totalGpuCount: "Total GPU Cards: ",
         totalCoreCount: "Total CPU Cores: ",

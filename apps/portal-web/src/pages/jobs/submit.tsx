@@ -58,6 +58,7 @@ export const SubmitJobPage: NextPage<Props> = requireAuth(() => true)(
               output: template.output,
               errorOutput: template.errorOutput,
               save: false,
+              k8sImageUrl: template.extraOptions.k8sImageUrl,
             }));
         } else {
           return undefined;

@@ -197,6 +197,7 @@ export const mockApi: MockApi<typeof api> = {
       output: "job.%j.out",
       errorOutput: "job.%j.err",
       workingDirectory: "/nfs/jobs/123",
+      extraOptions: {},
     },
   }),
 

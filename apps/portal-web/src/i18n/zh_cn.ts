@@ -185,6 +185,7 @@ export default {
 
         output: "标准输出文件",
         errorOutput: "错误输出文件",
+        k8sImageUrl: "镜像地址",
         totalNodeCount: "总节点数：",
         totalGpuCount: "总GPU卡数：",
         totalCoreCount: "总CPU核心数：",

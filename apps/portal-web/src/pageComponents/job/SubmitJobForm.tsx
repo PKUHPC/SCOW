@@ -44,6 +44,7 @@ interface JobForm {
   output: string;
   errorOutput: string;
   save: boolean;
+  k8sImageUrl: string | undefined;
 }
 
 // 生成默认工作名称，命名规则为年月日-时分秒，如job-20230510-103010
@@ -85,7 +86,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
 
   const submit = async () => {
     const { cluster, command, jobName, coreCount, gpuCount, workingDirectory, output, errorOutput, save,
-      maxTime, nodeCount, partition, qos, account, comment } = await form.validateFields();
+      maxTime, nodeCount, partition, qos, account, comment, k8sImageUrl } = await form.validateFields();
 
     setLoading(true);
 
@@ -95,6 +96,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
       gpuCount,
       maxTime, nodeCount, partition, qos, comment,
       workingDirectory, save, memory, output, errorOutput,
+      extraOptions: k8sImageUrl ? { k8sImageUrl } : {},
     } })
       .httpError(500, (e) => {
         if (e.code === "SCHEDULER_FAILED") {
@@ -373,6 +375,19 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
             <Input />
           </Form.Item>
         </Col>
+
+        {clusterInfoQuery.data?.clusterInfo.scheduler.name === "k8s" ? (
+          <Col span={24}>
+            <Form.Item
+              label={t(p("k8sImageUrl"))}
+              name="k8sImageUrl"
+              rules={[{ pattern: /^\S+$/, message: "请输入正确的镜像地址" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+        ) : ""}
+
         <Col className="ant-form-item" span={12} sm={6}>
           {t(p("totalNodeCount"))}{nodeCount}
         </Col>

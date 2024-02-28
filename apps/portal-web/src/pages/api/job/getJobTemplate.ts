@@ -36,6 +36,7 @@ export const JobTemplate = Type.Object({
   output: Type.Optional(Type.String()),
   errorOutput: Type.Optional(Type.String()),
   comment: Type.Optional(Type.String()),
+  extraOptions: Type.Record(Type.String(), Type.String()),
 });
 export type JobTemplate = Static<typeof JobTemplate>;
 

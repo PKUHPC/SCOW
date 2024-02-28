@@ -73,6 +73,7 @@ message JobTemplate {
   optional string output = 11;
   optional string error_output = 12;
   optional string comment = 13;
+  map<string, string> extra_options = 14;
 }
 
 message ListAllJobsResponse {
@@ -151,6 +152,7 @@ message SubmitJobRequest {
   optional string memory = 15;
   optional string comment = 16;
   bool save_as_template = 17;
+  map<string, string> extra_options = 18;
 }
 
 // NOT_FOUND: cluster is not found

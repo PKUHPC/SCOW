@@ -29,6 +29,9 @@ export interface JobTemplate {
   errorOutput?: string;
   memory?: string;
   comment?: string | undefined;
+  extraOptions: {
+    [key: string]: string;
+  }
 }
 
 export interface ListJobTemplatesRequest {
