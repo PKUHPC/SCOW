@@ -36,9 +36,23 @@ export async function validateToken(token: string): Promise<UserInfo | undefined
 
   const client = getClient(UserServiceClient);
 
-  const userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
+  let userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
     userId: resp.identityId,
   });
+
+  if (!userInfo) {
+    await asyncClientCall(client, "addUser", {
+      name: resp.identityId,
+      tenantName: "default",
+      email: resp.identityId + "@scow.com",
+      identityId: resp.identityId,
+    });
+
+    userInfo = await asyncClientCall(client, "getUserInfo", {
+      userId: resp.identityId,
+    });
+  }
+
   return {
     accountAffiliations: userInfo.affiliations,
     identityId: resp.identityId,

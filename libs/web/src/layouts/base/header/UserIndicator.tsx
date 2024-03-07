@@ -45,7 +45,7 @@ const HiddenOnSmallScreen = styled.span`
 `;
 
 export const UserIndicator: React.FC<Props> = ({
-  user, logout, userLinks, languageId,
+  user, userLinks, languageId,
 }) => {
 
   return (
@@ -80,9 +80,9 @@ export const UserIndicator: React.FC<Props> = ({
                     >{link.text}</Link>,
                   });
                 }) : [],
-                { key: "logout",
-                  onClick: logout,
-                  label: getCurrentLangLibWebText(languageId, "userIndicatorLogout") },
+                // { key: "logout",
+                //   onClick: logout,
+                //   label: getCurrentLangLibWebText(languageId, "userIndicatorLogout") },
               ],
             }}
           >
