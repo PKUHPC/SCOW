@@ -51,6 +51,7 @@ interface FixedFormFields {
   appJobName: string;
   algorithm: { name: number, version: number };
   image: { name: number };
+  remoteImageUrl: string | undefined;
   startCommand?: string;
   dataset: { name: number, version: number };
   model: { name: number, version: number };
@@ -172,6 +173,8 @@ export const LaunchAppForm = (props: Props) => {
 
   const imageType = Form.useWatch(["image", "type"], form);
   const selectedImage = Form.useWatch(["image", "name"], form);
+  const remoteImageInput = Form.useWatch("remoteImageUrl", form);
+  const customImage = remoteImageInput || selectedImage;
 
   const isImagePublic = imageType !== undefined ? imageType === AccessibilityType.PUBLIC : imageType;
 
@@ -322,7 +325,6 @@ export const LaunchAppForm = (props: Props) => {
     },
   });
 
-
   return (
     <Form
       form={form}
@@ -331,7 +333,7 @@ export const LaunchAppForm = (props: Props) => {
       }}
       onFinish={async () => {
 
-        const { appJobName, algorithm, dataset, image, startCommand, model,
+        const { appJobName, algorithm, dataset, image, remoteImageUrl, startCommand, model,
           mountPoint, account, partition, coreCount,
           gpuCount, maxTime, command, customFields } = await form.validateFields();
         if (isTraining) {
@@ -340,6 +342,7 @@ export const LaunchAppForm = (props: Props) => {
             trainJobName: appJobName,
             algorithm: algorithm?.version,
             imageId: image?.name,
+            remoteImageUrl,
             dataset: dataset?.version,
             model: model?.version,
             mountPoint: mountPoint,
@@ -371,6 +374,7 @@ export const LaunchAppForm = (props: Props) => {
             appJobName,
             algorithm: algorithm?.version,
             image: image?.name,
+            remoteImageUrl,
             startCommand,
             dataset: dataset?.version,
             model: model?.version,
@@ -399,12 +403,13 @@ export const LaunchAppForm = (props: Props) => {
         {!isTraining && (
           <Form.Item
             label="启动镜像"
-            help={ useCustomImage && <Typography.Text type="danger">{`请选择安装了${appName}应用的镜像，并指定启动命令`}</Typography.Text>
+            help={ useCustomImage &&
+            <Typography.Text type="danger">{`请选择镜像或填写远程镜像地址，确保镜像安装了${appName}应用，并指定启动命令`}</Typography.Text>
             }
           >
             <Space>
               <strong>
-                {selectedImage
+                {remoteImageInput ? remoteImageInput : selectedImage
                   ? imageOptions?.find((x) => x.value === selectedImage)?.label
                   : appImage ? `${appImage?.name}:${appImage?.tag}` : "-"}
               </strong>
@@ -415,9 +420,9 @@ export const LaunchAppForm = (props: Props) => {
         {
           (isTraining || useCustomImage) && (
             <>
-              <Form.Item label="镜像" required={true}>
+              <Form.Item label="镜像">
                 <Space>
-                  <Form.Item name={["image", "type"]} rules={[{ required: true }]} noStyle>
+                  <Form.Item name={["image", "type"]} noStyle>
                     <Select
                       allowClear
                       style={{ minWidth: 100 }}
@@ -438,7 +443,19 @@ export const LaunchAppForm = (props: Props) => {
                       }
                     />
                   </Form.Item>
-                  <Form.Item name={["image", "name"]} rules={[{ required: true }]} noStyle>
+                  <Form.Item
+                    name={["image", "name"]}
+                    rules={[({ getFieldValue }) => ({
+                      validator() {
+                        if (getFieldValue(["image", "name"]) || getFieldValue("remoteImageUrl")) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject(new Error("请选择镜像或填写远程镜像地址"));
+                      },
+                    })]}
+                    dependencies={["remoteImageUrl"]}
+                    noStyle
+                  >
                     <Select
                       style={{ minWidth: 100 }}
                       allowClear
@@ -451,11 +468,26 @@ export const LaunchAppForm = (props: Props) => {
                   </Form.Item>
                 </Space>
               </Form.Item>
-              {(selectedImage && !isTraining) ? (
+              <Form.Item
+                label="远程镜像地址"
+                name="remoteImageUrl"
+                rules={[({ getFieldValue }) => ({
+                  validator() {
+                    if (getFieldValue(["image", "name"]) || getFieldValue("remoteImageUrl")) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("请选择镜像或填写远程镜像地址"));
+                  },
+                })]}
+                dependencies={[["image", "name"]]}
+              >
+                <Input placeholder="请输入远程镜像地址" />
+              </Form.Item>
+              {(customImage && !isTraining) ? (
                 <Form.Item
                   label="启动命令"
                   name="startCommand"
-                  rules={[{ required: selectedImage !== undefined }]}
+                  rules={[{ required: customImage !== undefined }]}
                   dependencies={["image", "name"]}
                 >
                   <Input placeholder="运行镜像里程序的启动命令" />

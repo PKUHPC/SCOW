@@ -236,6 +236,7 @@ export const createAppSession = procedure
     appJobName: z.string(),
     algorithm: z.number().optional(),
     image: z.number().optional(),
+    remoteImageUrl: z.string().optional(),
     startCommand: z.string().optional(),
     dataset: z.number().optional(),
     model: z.number().optional(),
@@ -254,7 +255,7 @@ export const createAppSession = procedure
     jobId: z.number(),
   }))
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, appId, appJobName, algorithm, image, startCommand,
+    const { clusterId, appId, appJobName, algorithm, image, startCommand, remoteImageUrl,
       dataset, model, mountPoint, account, partition, coreCount, nodeCount, gpuCount, memory,
       maxTime, workingDirectory, customAttributes } = input;
 
@@ -386,7 +387,8 @@ export const createAppSession = procedure
         const reply = await asyncClientCall(client.job, "submitJob", {
           userId,
           jobName: appJobName,
-          image: existImage ? existImage.path : `${app.image.name}:${app.image.tag || "latest"}`,
+          // 优先用户填写的远程镜像地址
+          image: remoteImageUrl || (existImage ? existImage.path : `${app.image.name}:${app.image.tag || "latest"}`),
           algorithm: algorithmVersion?.path,
           dataset: datasetVersion?.path,
           model: modelVersion?.path,

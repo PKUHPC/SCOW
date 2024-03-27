@@ -62,7 +62,8 @@ procedure
     clusterId: z.string(),
     trainJobName: z.string(),
     algorithm: z.number().optional(),
-    imageId: z.number(),
+    imageId: z.number().optional(),
+    remoteImageUrl: z.string().optional(),
     dataset: z.number().optional(),
     model: z.number().optional(),
     mountPoint: z.string().optional(),
@@ -80,7 +81,8 @@ procedure
   })).mutation(
     async ({ input, ctx: { user } }) => {
 
-      const { clusterId, trainJobName, algorithm, imageId, dataset, model, mountPoint, account, partition,
+      const { clusterId, trainJobName, algorithm, imageId, remoteImageUrl,
+        dataset, model, mountPoint, account, partition,
         coreCount, nodeCount, gpuCount, memory, maxTime, command } = input;
       const userId = user.identityId;
 
@@ -129,7 +131,7 @@ procedure
           userId,
           jobName: trainJobName,
           algorithm: algorithmVersion?.path,
-          image: image!.path,
+          image: remoteImageUrl || image?.path,
           dataset: datasetVersion?.path,
           model: modelVersion?.path,
           mountPoint,
