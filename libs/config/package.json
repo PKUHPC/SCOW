@@ -16,7 +16,7 @@
   "repository": "https://github.com/PKUHPC/SCOW",
   "dependencies": {
     "@scow/lib-config": "workspace:*",
-    "@sinclair/typebox": "0.32.13"
+    "@sinclair/typebox": "0.32.20"
   },
   "devDependencies": {
     "ts-log": "2.2.5"
