@@ -13,10 +13,9 @@
 import { debounce } from "@scow/lib-web/build/utils/debounce";
 import { join } from "path";
 import { useEffect, useRef } from "react";
-import { urlToDownload } from "src/pageComponents/filemanager/api";
-import { ShellInputData, ShellOutputData } from "src/server/setup/shell";
-import { User } from "src/stores/UserStore";
-import { publicConfig } from "src/utils/config";
+import { usePublicConfig } from "src/app/(auth)/context";
+import { ShellInputData, ShellOutputData } from "src/server/setup/jobShell";
+import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { styled } from "styled-components";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
@@ -29,25 +28,27 @@ const TerminalContainer = styled.div`
 `;
 
 interface Props {
-  user: User;
+  user: ClientUserInfo;
   cluster: string;
-  loginNode: string
-  path: string;
+  jobId: string;
 }
 
 const OPEN_FILE = "This command is only valid for SCOW web shells";
-const OPEN_EXPLORER_PREFIX = "SCOW is opening the file system";
-const DOWNLOAD_FILE_PREFIX = "SCOW is downloading file ";
-const DOWNLOAD_FILE_SUFFIX = " in directory ";
-const EDIT_FILE_PREFIX = "SCOW is redirecting to the editor for the file ";
-const EDIT_FILE_SUFFIX = " in directory ";
+// const OPEN_EXPLORER_PREFIX = "SCOW is opening the file system";
+// const DOWNLOAD_FILE_PREFIX = "SCOW is downloading file ";
+// const DOWNLOAD_FILE_SUFFIX = " in directory ";
+// const EDIT_FILE_PREFIX = "SCOW is redirecting to the editor for the file ";
+// const EDIT_FILE_SUFFIX = " in directory ";
 
-export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
+export const JobShell: React.FC<Props> = ({ user, cluster, jobId }) => {
+
+  const { publicConfig: { BASE_PATH } } = usePublicConfig();
 
   const container = useRef<HTMLDivElement>(null);
+  const terminalInitialized = useRef<boolean>(false);
 
   useEffect(() => {
-    if (container.current) {
+    if (container.current && !terminalInitialized.current) {
       const term = new Terminal({
         cursorBlink: true,
       });
@@ -55,23 +56,22 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
       const fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
       term.open(container.current);
+      terminalInitialized.current = true;
 
       const payload = {
         cluster,
-        loginNode,
-        path,
+        jobId,
         cols: term.cols + "",
         rows: term.rows + "",
       };
 
       term.write(
-        `\r\n*** Connecting to cluster ${payload.cluster} as ${user.identityId} to ` +
-        `${path ? "path " + path : "home path"} ***\r\n`,
+        `*** Connecting to cluster ${payload.cluster} as ${user.identityId} \r\n`,
       );
 
       const socket = new WebSocket(
         (location.protocol === "http:" ? "ws" : "wss") + "://" + location.host +
-        join(publicConfig.BASE_PATH, "/api/shell") + "?" + new URLSearchParams(payload).toString(),
+        join(BASE_PATH, "/api/jobShell") + "?" + new URLSearchParams(payload).toString(),
       );
 
       socket.onopen = () => {
@@ -100,29 +100,7 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
         switch (message.$case) {
         case "data":
           const data = Buffer.from(message.data.data);
-
-          const dataString = data.toString();
-          if (dataString.includes(OPEN_FILE) && !dataString.includes("pwd")) {
-            const result = dataString.split("\r\n")[0];
-            const pathStartIndex = result.search("/");
-            const path = result.substring(pathStartIndex);
-
-            if (result.includes(OPEN_EXPLORER_PREFIX)) {
-              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path));
-            } else if (result.includes(DOWNLOAD_FILE_PREFIX)) {
-              const fileStartIndex = result.search(DOWNLOAD_FILE_PREFIX);
-              const fileEndIndex = result.search(DOWNLOAD_FILE_SUFFIX);
-              const file = result.substring(fileStartIndex + DOWNLOAD_FILE_PREFIX.length, fileEndIndex);
-              window.location.href = urlToDownload(cluster, join(path, file), true);
-            } else if (result.includes(EDIT_FILE_PREFIX)) {
-              const fileStartIndex = result.search(EDIT_FILE_PREFIX);
-              const fileEndIndex = result.search(EDIT_FILE_SUFFIX);
-              const file = result.substring(fileStartIndex + EDIT_FILE_PREFIX.length, fileEndIndex);
-              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?edit=" + file));
-            }
-          }
           term.write(data);
-
           break;
         case "exit":
           term.write(`Process exited with code ${message.exit.code} and signal ${message.exit.signal}.`);
@@ -130,8 +108,10 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
         }
       };
 
-      return () => {
-        socket.close();
+      return () => { 
+        if (socket) socket.close();
+        if (term) term.dispose();
+        terminalInitialized.current = false;
       };
     }
   }, [container.current]);

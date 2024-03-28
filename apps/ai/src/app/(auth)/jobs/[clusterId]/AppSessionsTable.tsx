@@ -14,6 +14,7 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -96,7 +97,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     {
       title: "类型",
       dataIndex: "jobType",
-      width: "10%",
+      width: "8%",
       render: (_, record) => {
         if (record.jobType === JobType.APP) {
           return "应用";
@@ -107,19 +108,20 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     {
       title: "应用",
       dataIndex: "appId",
+      width: "8%",
       render: (appId: string, record) => record.appName ?? appId,
       sorter: (a, b) => (!a.submitTime || !b.submitTime) ? -1 : compareDateTime(a.submitTime, b.submitTime),
     },
     {
       title: "提交时间",
       dataIndex: "submitTime",
-      width: "15%",
+      width: "200px",
       render: (_, record) => record.submitTime ? formatDateTime(record.submitTime) : "",
     },
     {
       title: "状态",
       dataIndex: "state",
-      width: "12%",
+      width: "120px",
       render: (_, record) => (
         record.reason ? (
           <Tooltip title={record.reason}>
@@ -140,6 +142,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     },
     ...(unfinished ? [{
       title: "剩余时间",
+      width: "100px",
       dataIndex: "remainingTime",
     },
     ] : []),
@@ -147,7 +150,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       title: "操作",
       key: "action",
       fixed:"right",
-      width: "10%",
+      width: "350px",
       render: (_, record) => (
         <Space>
           {
@@ -197,11 +200,16 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           }
           {
             (record.state === "RUNNING" && record.jobType === JobType.APP) ? (
-              <SaveImageModalButton
-                reload={refetch}
-                appSession={record}
-                clusterId={cluster.id}
-              >保存镜像</SaveImageModalButton>
+              <>
+                <Link href={`/jobShell/${cluster.id}/${record.jobId}`} target="_blank">
+                  {"进入容器"}
+                </Link>
+                <SaveImageModalButton
+                  reload={refetch}
+                  appSession={record}
+                  clusterId={cluster.id}
+                >保存镜像</SaveImageModalButton>
+              </>
             ) : undefined
           }
           <a onClick={() => {

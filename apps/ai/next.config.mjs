@@ -27,7 +27,7 @@ export default async () => {
     // HACK setup ws proxy
     setTimeout(() => {
       const url = `http://localhost:${process.env.PORT || 3000}${join(BASE_PATH, "/api/setup")}`;
-      console.log("Calling setup url to initialize proxy and shell server", url);
+      console.log("Calling setup url to initialize proxy and job shell server", url);
 
       fetch(url).then(async (res) => {
         console.log("Call completed. Response: ", await res.text());

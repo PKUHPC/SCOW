@@ -10,22 +10,22 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { IncomingMessage } from "http";
 import { NextApiRequest } from "next";
-import { setupJobShellServer } from "src/server/setup/jobShell";
-import { setupWssProxy } from "src/server/setup/proxy";
 
-let setup = false;
+export const parseIp = (req: NextApiRequest | IncomingMessage): string | undefined => {
 
-export default async (req: NextApiRequest, res: any) => {
-  if (setup) {
-    res.send("Already setup");
-    return;
+  let forwardedFor = req.headers["x-forwarded-for"];
+
+  if (Array.isArray(forwardedFor)) {
+    forwardedFor = forwardedFor.shift();
   }
 
-  setupWssProxy(res);
-  setupJobShellServer(res);
+  if (typeof forwardedFor === "string") {
+    forwardedFor = forwardedFor.split(",").shift();
+  }
 
 
-  setup = true;
-  res.send("Setup complete");
+  return forwardedFor ?? req.socket?.remoteAddress;
 };
+
