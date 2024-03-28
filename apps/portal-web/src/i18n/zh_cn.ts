@@ -76,6 +76,10 @@ export default {
         selectAccountPlaceholder: "请选择账户",
         refreshAccountList: "刷新账户列表",
       },
+      partitionSelector: {
+        selectPartitionPlaceholder: "请选择分区",
+        refreshPartitionList: "刷新分区列表",
+      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "集群",

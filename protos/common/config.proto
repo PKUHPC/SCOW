@@ -39,6 +39,18 @@ message GetClusterConfigResponse {
   string scheduler_name = 2;
 }
 
+message GetAvailablePartitionsForClusterRequest {
+  string cluster = 1;
+  string account_name = 2;
+  string user_id = 3;
+}
+
+message GetAvailablePartitionsForClusterResponse {
+  repeated Partition partitions = 2;
+}
+
 service ConfigService {
   rpc GetClusterConfig(GetClusterConfigRequest) returns (GetClusterConfigResponse);
+
+  rpc GetAvailablePartitionsForCluster(GetAvailablePartitionsForClusterRequest) returns (GetAvailablePartitionsForClusterResponse);
 }

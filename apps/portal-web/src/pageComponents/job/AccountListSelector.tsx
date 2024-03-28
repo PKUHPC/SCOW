@@ -11,42 +11,26 @@
  */
 
 import { ReloadOutlined } from "@ant-design/icons";
-import { App, Button, Input, Select, Tooltip } from "antd";
-import { useCallback, useEffect } from "react";
-import { useAsync } from "react-async";
-import { useStore } from "simstate";
-import { api } from "src/apis";
+import { Button, Input, Select, Tooltip } from "antd";
+import { useEffect } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { UserStore } from "src/stores/UserStore";
 
 interface Props {
-  cluster?: string;
+  selectableAccounts: string[];
+  isLoading: boolean;
   value?: string;
   onChange?: (value: string) => void;
+  onReload?: () => void;
 }
 
-export const AccountSelector: React.FC<Props> = ({ cluster, onChange, value }) => {
-  const userStore = useStore(UserStore);
-  const { message } = App.useApp();
-
-  const promiseFn = useCallback(async () => {
-    return cluster ? api.getAccounts({ query: { cluster } })
-      .httpError(404, (error) => { message.error(error.message); }) : { accounts: [] as string[] };
-  }, [cluster, userStore.user]);
-
-  const { data, isLoading, reload } = useAsync({
-    promiseFn,
-    watch: userStore.user,
-  });
+export const AccountListSelector: React.FC<Props> = ({ selectableAccounts, isLoading,
+  onChange, value, onReload }) => {
 
   useEffect(() => {
-
-    if (data && data.accounts.length) {
-      if (!value || !data.accounts.includes(value)) {
-        onChange?.(data.accounts[0]);
-      }
+    if (selectableAccounts.length && !value) {
+      onChange?.(selectableAccounts[0]);
     }
-  }, [data, value]);
+  }, [selectableAccounts, value]);
 
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.job.accountSelector.");
@@ -55,15 +39,16 @@ export const AccountSelector: React.FC<Props> = ({ cluster, onChange, value }) =
     <Input.Group compact>
       <Select
         loading={isLoading}
-        options={data ? data.accounts.map((x) => ({ label: x, value: x })) : []}
+        options={selectableAccounts ? selectableAccounts.map((x) => ({ label: x, value: x })) : []}
         placeholder={t(p("selectAccountPlaceholder"))}
         value={value}
         style={{ width: "calc(100% - 32px)" }}
         onChange={(v) => onChange?.(v)}
       />
       <Tooltip title={t(p("refreshAccountList"))}>
-        <Button icon={<ReloadOutlined spin={isLoading} />} onClick={reload} loading={isLoading} />
+        <Button icon={<ReloadOutlined spin={isLoading} />} onClick={() => onReload?.()} loading={isLoading} />
       </Tooltip>
     </Input.Group>
   );
 };
+

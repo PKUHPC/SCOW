@@ -80,4 +80,9 @@ export function formatTime(milliseconds: number) {
   return text;
 }
 
+export enum AccountStatusFilter {
+  ALL = 0,
+  BLOCKED_ONLY = 1,
+  UNBLOCKED_ONLY = 2,
+};
 

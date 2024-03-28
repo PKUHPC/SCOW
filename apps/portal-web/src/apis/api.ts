@@ -53,6 +53,7 @@ import type { CancelJobSchema } from "src/pages/api/job/cancelJob";
 import type { DeleteJobTemplateSchema } from "src/pages/api/job/deleteJobTemplate";
 import type { GetAccountsSchema } from "src/pages/api/job/getAccounts";
 import type { GetAllJobsSchema } from "src/pages/api/job/getAllJobs";
+import type { GetAvailablePartitionsForClusterSchema } from "src/pages/api/job/getAvailablePartitionsForCluster";
 import type { GetJobTemplateSchema } from "src/pages/api/job/getJobTemplate";
 import type { GetRunningJobsSchema } from "src/pages/api/job/getRunningJobs";
 import type { ListJobTemplatesSchema } from "src/pages/api/job/listJobTemplates";
@@ -104,6 +105,7 @@ export const api = {
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/job/getAccounts"),
   getAllJobs: apiClient.fromTypeboxRoute<typeof GetAllJobsSchema>("GET", "/api/job/getAllJobs"),
+  getAvailablePartitionsForCluster: apiClient.fromTypeboxRoute<typeof GetAvailablePartitionsForClusterSchema>("GET", "/api/job/getAvailablePartitionsForCluster"),
   getJobTemplate: apiClient.fromTypeboxRoute<typeof GetJobTemplateSchema>("GET", "/api/job/getJobTemplate"),
   getRunningJobs: apiClient.fromTypeboxRoute<typeof GetRunningJobsSchema>("GET", "/api/job/getRunningJobs"),
   listJobTemplates: apiClient.fromTypeboxRoute<typeof ListJobTemplatesSchema>("GET", "/api/job/listJobTemplates"),

@@ -14,6 +14,9 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ConfigServiceServer, ConfigServiceService } from "@scow/protos/build/server/config";
 
+/**
+ * @deprecated Use the new API function GetAvailablePartitionsForCluster From configServiceServer instead.
+ */
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
 
@@ -41,6 +44,9 @@ export const misConfigServiceServer = plugin((server) => {
     },
 
 
+    /**
+     * @deprecated Use the new API function GetAvailablePartitionsForCluster from ./config/configServiceServer instead.
+     */
     getAvailablePartitionsForCluster: async ({ request, logger }) => {
 
       const { cluster, accountName, userId } = request;

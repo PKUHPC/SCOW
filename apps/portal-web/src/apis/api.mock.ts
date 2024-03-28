@@ -273,5 +273,9 @@ export const mockApi: MockApi<typeof api> = {
   terminateFileTransfer: null,
   checkTransferKey: null,
 
+  getAvailablePartitionsForCluster: async () => ({ partitions: []}),
+
 };
+
+
 

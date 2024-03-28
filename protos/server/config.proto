@@ -21,6 +21,7 @@ message GetAvailablePartitionsRequest {
 }
 
 message Partition {
+  option deprecated = true;
   string name = 1;
   // mem: memory size in M
   uint64 mem_mb = 2;
@@ -48,12 +49,14 @@ message GetAvailablePartitionsResponse {
 }
 
 message GetAvailablePartitionsForClusterRequest {
+  option deprecated = true;
   string cluster = 1;
   string account_name = 2;
   string user_id = 3;
 }
 
 message GetAvailablePartitionsForClusterResponse {
+  option deprecated = true;
   repeated Partition partitions = 1;
 }
 
@@ -68,5 +71,13 @@ service ConfigService {
     option deprecated = true;
   };
 
-  rpc GetAvailablePartitionsForCluster(GetAvailablePartitionsForClusterRequest) returns (GetAvailablePartitionsForClusterResponse);
+  /**
+   * Depracated Notice
+   * This API funcition GetAvailablePartitionsForCluster has been deprecated.
+   * Use the new API function GetAvailablePartitionsForCluster From ../common/config.proto instead.
+   */
+  rpc GetAvailablePartitionsForCluster(GetAvailablePartitionsForClusterRequest)
+    returns (GetAvailablePartitionsForClusterResponse) {
+      option deprecated = true;
+    };
 }

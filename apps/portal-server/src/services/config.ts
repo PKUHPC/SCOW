@@ -13,7 +13,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { checkSchedulerApiVersion } from "@scow/lib-server";
-import { ConfigServiceServer, ConfigServiceService } from "@scow/protos/build/common/config";
+import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
 import { ConfigServiceServer as runTimeConfigServiceServer, ConfigServiceService as runTimeConfigServiceService }
   from "@scow/protos/build/portal/config";
 import { ApiVersion } from "@scow/utils/build/version";
@@ -32,6 +32,26 @@ export const staticConfigServiceServer = plugin((server) => {
 
       return [reply];
     },
+
+    getAvailablePartitionsForCluster: async ({ request, logger }) => {
+
+      const { cluster, accountName, userId } = request;
+      let availablePartitions: Partition[];
+      const client = getAdapterClient(cluster);
+      if (!client) { throw clusterNotFound(cluster); }
+      try {
+        const resp = await asyncClientCall(client.config, "getAvailablePartitions",
+          { accountName, userId });
+        availablePartitions = resp.partitions;
+      } catch (error) {
+        logger.error(`Error occured when query the available partitions of ${userId} in ${accountName}.`);
+        availablePartitions = [];
+      }
+
+      return [ { partitions: availablePartitions } ];
+    },
+
+
   });
 });
 

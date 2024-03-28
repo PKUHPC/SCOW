@@ -76,6 +76,10 @@ export default {
         selectAccountPlaceholder: "Select Account",
         refreshAccountList: "Refresh Account List",
       },
+      partitionSelector: {
+        selectPartitionPlaceholder: "Select Partition",
+        refreshPartitionList: "Refresh Partition List",
+      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "Cluster",

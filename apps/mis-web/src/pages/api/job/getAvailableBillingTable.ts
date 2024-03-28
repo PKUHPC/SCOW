@@ -12,7 +12,7 @@
 
 import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ConfigServiceClient as MisConfigServerClient } from "@scow/protos/build/server/config";
+import { ConfigServiceClient } from "@scow/protos/build/server/config";
 import { JobBillingItem } from "@scow/protos/build/server/job";
 import { UserStatus } from "@scow/protos/build/server/user";
 import { Static, Type } from "@sinclair/typebox";
@@ -89,7 +89,7 @@ export const GetAvailableBillingTableSchema = typeboxRouteSchema({
 export async function getAvailablePartitionForItems(
   cluster: string, userId: string, tenantName: string): Promise<Partition[]> {
 
-  const client = getClient(MisConfigServerClient);
+  const client = getClient(ConfigServiceClient);
 
   const statuses = await getUserStatus(userId, tenantName);
 
