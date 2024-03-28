@@ -66,7 +66,7 @@ message ExportChargeRecordRequest {
   uint32 count = 1;
   google.protobuf.Timestamp start_time = 2;
   google.protobuf.Timestamp end_time = 3;
-  optional string type = 4;
+  repeated string type = 4;
   oneof target {
     // 返回这个租户（tenantName）下这个账户（accountName）的消费记录
     AccountOfTenantTarget account_of_tenant = 5;
@@ -78,8 +78,10 @@ message ExportChargeRecordRequest {
     TenantTarget tenant = 8;
     // 返回所有租户的租户消费记录
     AllTenantsTarget all_tenants = 9;
+    // 返回多个特定账户的消费记录
+    AccountsTarget accounts = 10;
   }
-  repeated string user_ids = 10;
+  repeated string user_ids = 11;
 }
 
 message ExportChargeRecordResponse {
@@ -90,16 +92,16 @@ message ExportPayRecordRequest {
   uint32 count = 1;
   google.protobuf.Timestamp start_time = 2;
   google.protobuf.Timestamp end_time = 3;
-
+  repeated string type = 4;
   oneof target {
-    // 返回这个租户（tenantName）下这个账户（accountName）的充值记录
-    AccountOfTenantTarget account_of_tenant = 4;
+    // 返回这个租户（tenantName）下特定的一个或多个账户（[accountName]）的充值记录
+    SpecificAccountsOfTenantTarget specific_accounts_of_tenant = 5;
     // 返回这个租户（tenantName）下所有账户的充值记录
-    AccountsOfTenantTarget accounts_of_tenant = 5;
+    AccountsOfTenantTarget accounts_of_tenant = 6;
     // 返回这个租户（tenantName）的充值记录
-    TenantTarget tenant = 6;
+    TenantTarget tenant = 7;
     // 返回所有租户充值记录
-    AllTenantsTarget all_tenants = 7;
+    AllTenantsTarget all_tenants = 8;
   }
 }
 

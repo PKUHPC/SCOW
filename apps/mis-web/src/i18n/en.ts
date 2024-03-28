@@ -372,6 +372,7 @@ export default {
         paymentAmount: "Payment Amount",
         ipAddress: "IP Address",
         operatorId: "Operator ID",
+        searchTypePlaceholder:"Multiple, please separate with commas",
       },
     },
     dashboard: {

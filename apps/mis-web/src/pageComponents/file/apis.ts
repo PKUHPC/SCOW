@@ -25,7 +25,7 @@ export const urlToExport = ({
     exportApi: string
     columns: string[],
     count: number,
-    query: {[key: string]: string | number | boolean | undefined}
+    query: {[key: string]: string | number | boolean | string[] | undefined}
   },
 ) => {
   const exportQuery = `${exportApi}?${
@@ -34,6 +34,10 @@ export const urlToExport = ({
     Object.keys(query)
       .filter((key) => query[key] !== undefined)
       .map((key) => {
+        if (Array.isArray(query[key])) {
+          return (query[key] as string[]).map((value) => `${key}=${encodeURIComponent(value)}`).join("&");
+        }
+
         const value = query[key] as string | number | boolean;
         return `${key}=${encodeURIComponent(value)}`;
       }).join("&")

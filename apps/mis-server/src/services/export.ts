@@ -30,6 +30,7 @@ import { getAccountStateInfo } from "src/utils/accountUserState";
 import {
   getChargesSearchType,
   getChargesTargetSearchParam,
+  getPaymentsSearchType,
   getPaymentsTargetSearchParam,
 } from "src/utils/chargesQuery";
 import { mapUsersSortField } from "src/utils/queryOptions";
@@ -345,12 +346,15 @@ export const exportServiceServer = plugin((server) => {
         endTime,
         target,
         count,
+        type,
       } = ensureNotUndefined(request, ["target"]);
 
       const searchParam = getPaymentsTargetSearchParam(target);
+      const searchType = getPaymentsSearchType(type);
       const query = {
         time: { $gte: startTime, $lte: endTime },
         ...searchParam,
+        ...searchType,
       };
 
       const recordFormat = (x: Loaded<PayRecord, never>) => ({

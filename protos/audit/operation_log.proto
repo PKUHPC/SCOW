@@ -347,13 +347,20 @@ message TenantTarget {
 }
 message AllTenantsTarget {
 }
+message AccountsTarget {
+  repeated string accounts = 1;
+}
 message AccountsOfAllTenantsTarget {
+}
+message SpecificAccountsOfTenantTarget {
+  repeated string account_name = 1;
+  string tenant_name = 2;
 }
 
 message ExportPayRecord {
   oneof target {
-    // 返回这个租户（tenantName）下这个账户（accountName）的充值记录
-    AccountOfTenantTarget account_of_tenant = 1;
+    // 返回这个租户（tenantName）下特定的一个或多个账户（[accountName]）的充值记录
+    SpecificAccountsOfTenantTarget specific_accounts_of_tenant = 1;
     // 返回这个租户（tenantName）下所有账户的充值记录
     AccountsOfTenantTarget accounts_of_tenant = 2;
     // 返回这个租户（tenantName）的充值记录
@@ -375,6 +382,8 @@ message ExportChargeRecord {
     TenantTarget tenant = 7;
     // 返回所有租户的租户消费记录
     AllTenantsTarget all_tenants = 8;
+    // 返回多个特定账户的消费记录
+    AccountsTarget accounts = 9;
   }
 }
 

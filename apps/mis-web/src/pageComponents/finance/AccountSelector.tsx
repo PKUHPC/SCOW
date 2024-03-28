@@ -12,7 +12,7 @@
 
 import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Input, Select, Tooltip } from "antd";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -21,8 +21,7 @@ import type { AdminAccountInfo } from "src/pages/api/tenant/getAccounts";
 import { UserStore } from "src/stores/UserStore";
 
 type Props = {
-  value?: string;
-  onChange?: (value: string) => void;
+  onChange?: (value: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
   /**
@@ -45,10 +44,13 @@ type Props = {
 const p = prefix("pageComp.finance.AccountSelector.");
 
 export const AccountSelector: React.FC<Props> = ({
-  onChange, value, placeholder, disabled, autoSelect, onAccountsFetched, fromAllTenants,
+  onChange, placeholder, disabled, autoSelect, onAccountsFetched, fromAllTenants,
 }) => {
 
   const t = useI18nTranslateToString();
+
+  const [inputValue, setInputValue] = useState<string>("");
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
 
   const userStore = useStore(UserStore);
 
@@ -60,23 +62,47 @@ export const AccountSelector: React.FC<Props> = ({
     promiseFn,
     onResolve(data) {
       onAccountsFetched?.(data.results);
-      if (autoSelect && !value && data.results.length > 0) {
-        onChange?.(data.results[0].accountName);
+      if (autoSelect && data.results.length > 0) {
+        onChange?.([data.results[0].accountName]);
       }
     },
   });
+
+  const options = data ? data.results.map((i) => ({ label: i.accountName, value:  i.accountName })) : [];
+
+  const onBlur = () => {
+    // 检查输入值是否与选项匹配
+    const match = options.find((option) => option.value === inputValue);
+
+    if (match && !selectedValues.includes(match.value)) {
+      setSelectedValues((prevSelectedValues) => {
+        const newValue = [...prevSelectedValues, match.value];
+
+        onChange?.(newValue);
+        return newValue;
+      });
+    }
+    // 清空输入值
+    setInputValue("");
+  };
   return (
     <Input.Group compact>
       <Select
         showSearch
         loading={isLoading}
-        options={data ? data.results.map((i) => ({ label: i.accountName, value:  i.accountName })) : []}
+        options={options}
         placeholder={placeholder}
-        value={value}
+        value={selectedValues}
         disabled={disabled}
         style={{ width: "calc(100% - 32px)", minWidth: "200px" }}
-        onChange={(v) => onChange?.(v)}
+        onChange={(v) => {
+          setSelectedValues(v);
+          onChange?.(v);
+        } }
+        onBlur={onBlur}
+        onSearch={setInputValue}
         allowClear
+        mode="multiple"
       />
       <Tooltip title={t(p("freshList"))}>
         <Button icon={<ReloadOutlined spin={isLoading} />} disabled={disabled} onClick={reload} loading={isLoading} />

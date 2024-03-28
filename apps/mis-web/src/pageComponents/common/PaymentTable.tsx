@@ -13,7 +13,7 @@
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, DatePicker, Form, Table } from "antd";
+import { App, Button, DatePicker, Form, Input, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
@@ -36,7 +36,7 @@ export enum SearchType {
 
 interface Props {
   // 账户充值记录专用项
-  accountName?: string;
+  accountName?: string [];
   // 搜索类型, self前缀表示只搜索用户自身的账户或租户
   searchType: SearchType;
 }
@@ -56,8 +56,9 @@ interface TableProps {
 
 interface FilterForm {
   // 账户名或租户名
-  name?: string;
+  name?: string [];
   time: [dayjs.Dayjs, dayjs.Dayjs],
+  type?: string;
 }
 
 const today = dayjs().endOf("day");
@@ -71,12 +72,19 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
 
   const [form] = Form.useForm<FilterForm>();
 
-  const [selectedName, setSelectedName] = useState<string | undefined>(accountName);
+  const [selectedNames, setSelectedNames] = useState<string [] | undefined>(accountName);
 
-  const [query, setQuery] = useState(() => ({
-    name: accountName,
-    time: [today.subtract(1, "year"), today],
-  }));
+  const [query, setQuery] = useState<{
+    name: string[] | undefined,
+    time: [ dayjs.Dayjs, dayjs.Dayjs ]
+    type: string[]
+    }>(() => ({
+      // name作为账户名时可能为 undefined 、长度不定的的数组
+      // name作为租户名时可能为 undefined 、长度为1的的数组
+      name: accountName,
+      time: [today.subtract(1, "year"), today],
+      type: [],
+    }));
 
   const { message } = App.useApp();
 
@@ -85,10 +93,11 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
       const param = {
         startTime: query.time[0].clone().startOf("day").toISOString(),
         endTime: query.time[1].clone().endOf("day").toISOString(),
+        type:query.type,
       };
       // 平台管理下的租户充值记录
       if (searchType === SearchType.tenant) {
-        return api.getTenantPayments({ query: { ...param, tenantName:query.name } });
+        return api.getTenantPayments({ query: { ...param, tenantName:query.name ? query.name[0] : undefined } });
 
       } else {
         return api.getPayments({ query: { ...param, accountName: query.name, searchType } });
@@ -98,7 +107,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
 
   useDidUpdateEffect(() => {
     setQuery((q) => ({ ...q, name: accountName }));
-    setSelectedName(accountName);
+    setSelectedNames(accountName);
   }, [accountName]);
 
   const handleExport = async (columns: string[]) => {
@@ -120,6 +129,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
           endTime: query.time[1].clone().endOf("day").toISOString(),
           targetName: query.name,
           searchType: searchType,
+          type:query.type,
         },
       });
     }
@@ -159,8 +169,8 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { name, time } = await form.validateFields();
-            setQuery({ name: selectedName ?? name, time });
+            const { name, time, type } = await form.validateFields();
+            setQuery({ name: selectedNames ?? name, time, type:type ? type.split(/,|，/) : []});
           }}
         >
           { (searchType === SearchType.account || searchType === SearchType.tenant) ? (
@@ -172,14 +182,14 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
               {searchType === SearchType.account ? (
                 <AccountSelector
                   onChange={(item) => {
-                    setSelectedName(item);
+                    setSelectedNames(item);
                   }}
                   placeholder={t(pCommon("selectAccount"))}
                 />
               ) : (
                 <TenantSelector
                   onChange={(item) => {
-                    setSelectedName(item);
+                    setSelectedNames([item]);
 
                   }}
                   placeholder={t(pCommon("selectTenant"))}
@@ -190,6 +200,9 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             : undefined}
           <Form.Item label={t(pCommon("time"))} name="time">
             <DatePicker.RangePicker allowClear={false} presets={getDefaultPresets(languageId)} />
+          </Form.Item>
+          <Form.Item label={t("common.type")} name="type">
+            <Input style={{ width: 180 }} placeholder={t(p("searchTypePlaceholder"))} />
           </Form.Item>
           <Form.Item label={t(p("total"))}>
             <strong>

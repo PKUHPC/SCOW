@@ -14,7 +14,7 @@ import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
-import { AccountOfTenantTarget, AccountsOfAllTenantsTarget, AccountsOfTenantTarget, AllTenantsTarget,
+import { AccountOfTenantTarget, AccountsOfAllTenantsTarget, AccountsOfTenantTarget, AccountsTarget, AllTenantsTarget,
   ChargingServiceClient, TenantTarget } from "@scow/protos/build/server/charging";
 import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Static, Type } from "@sinclair/typebox";
@@ -63,9 +63,9 @@ export const GetChargesSchema = typeboxRouteSchema({
     endTime: Type.String({ format: "date-time" }),
 
     // 消费类型
-    type: Type.Optional(Type.String()),
+    type: Type.Optional(Type.Array(Type.String())),
 
-    accountName: Type.Optional(Type.String()),
+    accountName: Type.Optional(Type.Array(Type.String())),
 
     // 是否为平台管理下的记录：如果是则需查询所有租户，如果不是只查询当前租户
     isPlatformRecords: Type.Optional(Type.Boolean()),
@@ -95,14 +95,17 @@ export const GetChargesSchema = typeboxRouteSchema({
   },
 });
 
-export async function getUserInfoForCharges(accountName: string | undefined, req, res): Promise<UserInfo | undefined> {
+export async function getUserInfoForCharges(accountName: string [] | undefined, req, res):
+Promise<UserInfo | undefined> {
   if (accountName) {
     return await authenticate((i) =>
       i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
       i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
       i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
       i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      i.accountAffiliations.some((x) => x.accountName === accountName && x.role !== UserRole.USER),
+      // 排除掉前面的平台和租户管理员，只剩下账户管理员
+      accountName.length === 1 &&
+      i.accountAffiliations.some((x) => x.accountName === accountName[0] && x.role !== UserRole.USER),
     )(req, res);
   } else {
     return await authenticate((i) =>
@@ -114,13 +117,13 @@ export async function getUserInfoForCharges(accountName: string | undefined, req
   }
 }
 
-export async function getTenantOfAccount(accountName: string | undefined, info: UserInfo): Promise<string> {
+export async function getTenantOfAccount(accountName: string[] | undefined, info: UserInfo): Promise<string> {
 
-  if (accountName) {
+  if (accountName?.length === 1) {
     const client = getClient(AccountServiceClient);
 
     const { results } = await asyncClientCall(client, "getAccounts", {
-      accountName,
+      accountName:accountName[0],
     });
     if (results.length !== 0) {
       return results[0].tenantName;
@@ -130,9 +133,10 @@ export async function getTenantOfAccount(accountName: string | undefined, info: 
   return info.tenant;
 }
 
-export const buildChargesRequestTarget = (accountName: string | undefined, tenantName: string,
+export const buildChargesRequestTarget = (accountName: string[] | undefined, tenantName: string,
   searchType: SearchType | undefined, isPlatformRecords: boolean | undefined): (
-    { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
+    { $case: "accounts"; accounts: AccountsTarget }
+    | { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
     | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
     | { $case: "accountsOfAllTenants"; accountsOfAllTenants: AccountsOfAllTenantsTarget }
     | { $case: "tenant"; tenant: TenantTarget }
@@ -140,9 +144,17 @@ export const buildChargesRequestTarget = (accountName: string | undefined, tenan
     | undefined
   ) => {
   if (accountName) {
+    // 多个账户名
+    if (accountName.length !== 1) {
+      return {
+        $case: "accounts" as const,
+        accounts: { accounts:accountName },
+      };
+    }
+
     return {
       $case: "accountOfTenant" as const,
-      accountOfTenant: { accountName, tenantName },
+      accountOfTenant: { accountName:accountName[0], tenantName },
     };
   } else {
     if (searchType === SearchType.ACCOUNT) {
@@ -187,7 +199,7 @@ export default typeboxRoute(GetChargesSchema, async (req, res) => {
   const reply = ensureNotUndefined(await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime,
     endTime,
-    type,
+    type:type ?? [],
     userIds: userIds ?? [],
     target: buildChargesRequestTarget(accountName, tenantOfAccount, searchType, isPlatformRecords),
     page,

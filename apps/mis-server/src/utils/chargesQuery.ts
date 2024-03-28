@@ -11,7 +11,8 @@
  */
 
 import { AccountOfTenantTarget, AccountsOfAllTenantsTarget,
-  AccountsOfTenantTarget, AllTenantsTarget, TenantTarget } from "@scow/protos/build/server/charging";
+  AccountsOfTenantTarget, AccountsTarget, AllTenantsTarget, SpecificAccountsOfTenantTarget,
+  TenantTarget } from "@scow/protos/build/server/charging";
 import { misConfig } from "src/config/mis";
 
 import { CHARGE_TYPE_OTHERS } from "./constants";
@@ -26,20 +27,22 @@ import { CHARGE_TYPE_OTHERS } from "./constants";
  * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的消费记录
  * case accountsOfTenant: 返回这个租户（tenantName）下所有账户的消费记录
  * case accountsOfAllTenants: 返回所有租户下所有账户的消费记录
+ * case accounts: 返回多个特定账户的消费记录
  *
- * @returns
- * searchParam:  { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } }
  */
 export const getChargesTargetSearchParam = (
-  target: { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
+  target:
+  | { $case: "accounts"; accounts: AccountsTarget }
+  | { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
   | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
   | { $case: "accountsOfAllTenants"; accountsOfAllTenants: AccountsOfAllTenantsTarget }
   | { $case: "tenant"; tenant: TenantTarget }
   | { $case: "allTenants"; allTenants: AllTenantsTarget }
   | undefined,
-): { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } } => {
+): { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } } => {
 
-  let searchParam: { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } } = {};
+  let searchParam: { tenantName?: string | { $ne: null },
+  accountName?: string | { $ne: null } | { $in: string[] } } = {};
   switch (target?.$case)
   {
   // 当前租户的租户消费记录
@@ -62,6 +65,10 @@ export const getChargesTargetSearchParam = (
   case "accountsOfAllTenants":
     searchParam = { tenantName: { $ne: null }, accountName: { $ne:null } };
     break;
+  // 多个特定账户的消费记录
+  case "accounts":
+    searchParam = { accountName: { $in: target.accounts.accounts } };
+    break;
   default:
     searchParam = {};
   }
@@ -71,25 +78,12 @@ export const getChargesTargetSearchParam = (
 /**
  * generate charge records' search type
  */
-export const getChargesSearchType = (type: string | undefined) => {
-  const typesToSearch = [
-    misConfig.jobChargeType,
-    misConfig.changeJobPriceType,
-    ...(misConfig.customChargeTypes || []),
-  ];
-
-  let searchType = {};
-  if (!type) {
-    searchType = { type: { $ne: null } };
-  } else {
-    if (type === CHARGE_TYPE_OTHERS) {
-      searchType = { type: { $nin: typesToSearch } };
-    } else {
-      searchType = { type: type };
-    }
+export const getChargesSearchType = (type: string[]) => {
+  if (!type.length) {
+    return { type: { $ne: null } };
   }
 
-  return searchType;
+  return { type:{ $in:type } };
 };
 
 
@@ -98,16 +92,19 @@ export const getChargesSearchType = (type: string | undefined) => {
  * @param target
  * case tenant:返回这个租户（tenantName）的充值记录
  * case allTenants: 返回所有租户充值记录
- * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的充值记录
+ * case specificAccountsOfTenant: 返回这个租户（tenantName）下特定账户（[accountName]）的充值记录
  * case accountsOfTenant: 返回这个租户（tenantName）下所有账户的充值记录
- * @returns searchParam:  { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } }
  */
+
 export const getPaymentsTargetSearchParam = (target:
-| { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
+| { $case: "specificAccountsOfTenant"; specificAccountsOfTenant: SpecificAccountsOfTenantTarget }
 | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
 | { $case: "tenant"; tenant: TenantTarget }
-| { $case: "allTenants"; allTenants: AllTenantsTarget }) => {
-  let searchParam: { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } } = {};
+| { $case: "allTenants"; allTenants: AllTenantsTarget }):
+ { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } } => {
+
+  let searchParam: { tenantName?: string | { $ne: null },
+   accountName?: string | { $ne: null } | { $in: string[] }} = {};
   switch (target?.$case)
   {
   case "tenant":
@@ -116,8 +113,8 @@ export const getPaymentsTargetSearchParam = (target:
   case "allTenants":
     searchParam = { accountName:undefined };
     break;
-  case "accountOfTenant":
-    searchParam = { tenantName: target[target.$case].tenantName, accountName:target[target.$case].accountName };
+  case "specificAccountsOfTenant":
+    searchParam = { tenantName: target[target.$case].tenantName, accountName:{ $in:target[target.$case].accountName } };
     break;
   case "accountsOfTenant":
     searchParam = { tenantName: target[target.$case].tenantName, accountName:{ $ne:null } };
@@ -126,4 +123,15 @@ export const getPaymentsTargetSearchParam = (target:
     break;
   }
   return searchParam;
+};
+
+/**
+ * generate payment' search type
+ */
+export const getPaymentsSearchType = (type: string[]) => {
+  if (!type.length) {
+    return { type: { $ne: null } };
+  }
+
+  return { type:{ $in:type } };
 };

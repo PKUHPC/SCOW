@@ -48,6 +48,9 @@ export const GetTenantPaymentsSchema = typeboxRouteSchema({
     endTime: Type.String({ format: "date-time" }),
 
     tenantName: Type.Optional(Type.String()),
+
+    // 充值类型
+    type:Type.Optional(Type.Array(Type.String())),
   }),
 
   responses: {
@@ -59,20 +62,21 @@ export const GetTenantPaymentsSchema = typeboxRouteSchema({
 });
 
 export default typeboxRoute(GetTenantPaymentsSchema, async (req, res) => {
-  const { endTime, startTime, tenantName } = req.query;
+  const { endTime, startTime, tenantName, type } = req.query;
 
   const client = getClient(ChargingServiceClient);
 
-  const user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) || 
+  const user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
       i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
   if (!user) { return; }
 
   const reply = ensureNotUndefined(await asyncClientCall(client, "getPaymentRecords", {
-    target:tenantName ? 
-      { $case:"tenant", tenant:{ tenantName:tenantName } } : 
+    target:tenantName ?
+      { $case:"tenant", tenant:{ tenantName:tenantName } } :
       { $case:"allTenants", allTenants:{ } },
     startTime,
     endTime,
+    type:type ?? [],
   }), ["total"]);
 
   const tenants = reply.results.map((x) => {
