@@ -21,10 +21,10 @@
     "nookies": "2.5.2"
   },
   "peerDependencies": {
-    "antd": "5.13.3",
-    "next": "14.1.0",
+    "antd": "5.15.4",
+    "next": "14.1.4",
     "styled-components": "6.1.8",
-    "@ant-design/icons": "5.2.6",
+    "@ant-design/icons": "5.3.5",
     "dayjs": "1.11.10",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0",
@@ -33,18 +33,18 @@
     "react-async": "10.0.1"
   },
   "devDependencies": {
-    "antd": "5.13.3",
-    "next": "14.1.0",
+    "antd": "5.15.4",
+    "next": "14.1.4",
     "@scow/config": "workspace:*",
     "styled-components": "6.1.8",
-    "@grpc/grpc-js": "1.9.14",
+    "@grpc/grpc-js": "1.10.4",
     "@types/mime-types": "2.1.4",
     "react": "18.2.0",
-    "@types/react": "18.2.48",
+    "@types/react": "18.2.73",
     "react-dom": "18.2.0",
-    "@types/react-dom": "18.2.18",
+    "@types/react-dom": "18.2.23",
     "react-is": "18.2.0",
-    "@ant-design/icons": "5.2.6",
+    "@ant-design/icons": "5.3.5",
     "dayjs": "1.11.10",
     "@types/styled-components": "5.1.34"
   },

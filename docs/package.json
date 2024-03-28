@@ -28,16 +28,16 @@
     "@cmfcmf/docusaurus-search-local": "1.1.0"
   },
   "devDependencies": {
-    "@adobe/jsonschema2md": "7.1.5",
-    "@algolia/client-search": "4.22.1",
+    "@adobe/jsonschema2md": "7.1.6",
+    "@algolia/client-search": "4.23.2",
     "@docusaurus/module-type-aliases": "3.1.1",
     "@scow/config": "workspace:*",
-    "@sinclair/typebox": "0.32.13",
-    "@tsconfig/docusaurus": "2.0.2",
+    "@sinclair/typebox": "0.32.20",
+    "@tsconfig/docusaurus": "2.0.3",
     "@docusaurus/types": "3.1.1",
     "@types/react": "18.2.37",
-    "typescript": "5.3.3",
-    "@node-rs/jieba": "1.9.2",
+    "typescript": "5.4.3",
+    "@node-rs/jieba": "1.10.0",
     "unist-util-visit": "5.0.0"
   },
   "browserslist": {

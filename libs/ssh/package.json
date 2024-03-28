@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/shell-quote": "1.7.5",
-    "@types/ssh2": "1.11.19",
+    "@types/ssh2": "1.15.0",
     "ts-log": "2.2.5"
   },
   "author": "PKUHPC (https://github.com/PKUHPC)",
