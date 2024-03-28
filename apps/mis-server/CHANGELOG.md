@@ -1,5 +1,26 @@
 # @scow/mis-server
 
+## 1.5.0
+
+### Minor Changes
+
+- 63d1873: 账户新增封锁阈值，租户新增默认账户默认阈值以
+
+### Patch Changes
+
+- a097dd1: 新增无账户关系的用户修改所属租户且可以作为新增租户的管理员功能
+- 8dd8c0e: 修改 Account 实体中原 blocked 字段名为 blocked_in_cluster ，表示在集群中是否为封锁状态
+  增加字段 state ,字段值为 "NORMAL" , "FROZEN" , "BLOCKED_BY_ADMIN" 的枚举值，优化页面账户显示状态为正常、封锁、欠费
+- 6139fec: 修复导出账户和导出充值记录接口缺失 limit，offset 过滤的问题
+- Updated dependencies [02d6a18]
+- Updated dependencies [63d1873]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+  - @scow/lib-server@1.2.0
+  - @scow/lib-hook@1.0.9
+  - @scow/protos@1.0.9
+  - @scow/lib-scheduler-adapter@1.1.7
+
 ## 1.4.3
 
 ### Patch Changes

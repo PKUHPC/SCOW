@@ -1,5 +1,20 @@
 # @scow/lib-server
 
+## 1.2.0
+
+### Minor Changes
+
+- 63d1873: 账户新增封锁阈值，租户新增默认账户默认阈值以
+
+### Patch Changes
+
+- Updated dependencies [02d6a18]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+  - @scow/protos@1.0.9
+  - @scow/rich-error-model@2.0.0
+  - @scow/lib-scheduler-adapter@1.1.7
+
 ## 1.1.5
 
 ### Patch Changes

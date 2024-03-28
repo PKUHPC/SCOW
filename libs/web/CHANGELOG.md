@@ -1,5 +1,11 @@
 # @scow/lib-web
 
+## 1.3.1
+
+### Patch Changes
+
+- 146e19f: 去掉导航栏多余的下划线
+
 ## 1.3.0
 
 ### Minor Changes

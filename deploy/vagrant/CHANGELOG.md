@@ -1,5 +1,11 @@
 # @scow/demo-vagrant
 
+## 2.0.2
+
+### Patch Changes
+
+- 7b9e0b6: 去掉 node-cron 表达式前秒的限制
+
 ## 2.0.1
 
 ### Patch Changes

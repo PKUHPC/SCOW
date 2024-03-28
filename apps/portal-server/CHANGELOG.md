@@ -1,5 +1,19 @@
 # @scow/portal-server
 
+## 1.5.0
+
+### Patch Changes
+
+- 02d6a18: 新增集群区分 AI 功能和 HPC 功能配置
+- Updated dependencies [02d6a18]
+- Updated dependencies [63d1873]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+  - @scow/lib-server@1.2.0
+  - @scow/protos@1.0.9
+  - @scow/rich-error-model@2.0.0
+  - @scow/lib-scheduler-adapter@1.1.7
+
 ## 1.4.3
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @scow/grpc-api
 
+## 1.8.0
+
+### Minor Changes
+
+- a097dd1: server 增加 ChangeTenant 接口修改用户的所属租户，增加 CreateTenantWithExistingUserAsAdmin 接口允许创建租户时指定已有用户作为租户管理员
+- 63d1873: 新增 SetBlockThreshold， SetDefaultAccountBlockThreshold 以及 audit 新增以上接口的 operation_event
+
+### Patch Changes
+
+- 785de17: 修改 GetFileMetadataResponse 中文件大小 size 为 uint64
+- d3d891a: 门户系统部分操作类型增加 clusterId 及 loginNode 参数
+- 24db413: 增加 GetCustomEventTypes 接口获取自定义操作类型，增加 CustomEvent 保存自定义操作类型
+- 8dd8c0e: 在 GetAccounts 接口中增加账户状态，账户显示状态，账户白名单状态的返回值，exportAccounts 接口中增加欠费，冻结的查询参数
+
 ## 1.7.0
 
 ### Minor Changes
