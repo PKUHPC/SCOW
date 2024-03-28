@@ -11,6 +11,7 @@
  */
 
 import { FormInstance } from "antd";
+import { RuleObject } from "antd/es/form";
 
 import { getCurrentLangLibWebText } from "./libWebI18n/libI18n";
 
@@ -42,3 +43,25 @@ export const getEmailRule = (languageId: string) => ({
   type: "email",
   message: getCurrentLangLibWebText(languageId, "confirmPasswordEmailError"),
 }) as const;
+
+
+// 正数校验
+export const positiveNumberRule = (_: RuleObject, value: any, languageId: string) => {
+
+  if ((value && parseFloat(value) < 0) || value === 0) {
+    const errorMessage = getCurrentLangLibWebText(languageId, "notPositiveNumberError");
+    return Promise.reject(errorMessage);
+  }
+  return Promise.resolve();
+};
+
+// 用户限额大于等于已用额度校验
+export const compareUsedChargeRule =
+  (_: RuleObject, value: any, usedCharge: number | undefined, languageId: string) => {
+
+    if (usedCharge && value < usedCharge) {
+      const errorMessage = getCurrentLangLibWebText(languageId, "compareUsedChargeError");
+      return Promise.reject(errorMessage);
+    }
+    return Promise.resolve();
+  };

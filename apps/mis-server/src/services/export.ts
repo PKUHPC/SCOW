@@ -15,6 +15,7 @@ import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { Loaded } from "@mikro-orm/core";
 import { decimalToMoney } from "@scow/lib-decimal";
+import { account_AccountStateFromJSON } from "@scow/protos/build/server/account";
 import {
   ExportServiceServer,
   ExportServiceService } from "@scow/protos/build/server/export";
@@ -83,7 +84,7 @@ export const exportServiceServer = plugin((server) => {
         name: x.name,
         email: x.email,
         availableAccounts: x.accounts.getItems()
-          .filter((ua) => ua.status === UserStatus.UNBLOCKED)
+          .filter((ua) => ua.blockedInCluster === UserStatus.UNBLOCKED)
           .map((ua) => {
             return ua.account.getProperty("accountName");
           }),
@@ -179,7 +180,7 @@ export const exportServiceServer = plugin((server) => {
           balance: decimalToMoney(x.balance),
           blockThresholdAmount: decimalToMoney(blockThresholdAmount),
           blocked: Boolean(x.blockedInCluster),
-          state: x.state,
+          state: account_AccountStateFromJSON(x.state),
         };
       };
 

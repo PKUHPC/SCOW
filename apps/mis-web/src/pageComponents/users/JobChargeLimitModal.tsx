@@ -11,12 +11,14 @@
  */
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { moneyToNumber } from "@scow/lib-decimal";
+import { compareUsedChargeRule, positiveNumberRule } from "@scow/lib-web/build/utils/form";
 import type { Money } from "@scow/protos/build/common/money";
-import { App, Checkbox, Form, InputNumber, Modal, Space } from "antd";
+import { App, Form, InputNumber, Modal, Space } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
 import { ModalLink } from "src/components/ModalLink";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { UserStatus } from "src/models/User";
 import { moneyToString } from "src/utils/money";
 
@@ -44,10 +46,11 @@ const p = prefix("pageComp.user.jobChargeLimitModal.");
 const pCommon = prefix("common.");
 
 export const JobChargeLimitModal: React.FC<Props> = ({
-  accountName, onClose, reload, userId, open, username, currentLimit, currentUsed, status,
+  accountName, onClose, reload, userId, open, username, currentLimit, currentUsed,
 }) => {
 
   const t = useI18nTranslateToString();
+  const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
   const [confirmForm] = Form.useForm<FormFieldsConfirm>();
@@ -100,22 +103,10 @@ export const JobChargeLimitModal: React.FC<Props> = ({
                     icon: <ExclamationCircleOutlined />,
                     content: <div>
                       <p>{t(p("confirmCancelLimited"))}</p>
-                      {status === UserStatus.BLOCKED && (
-                        <Form
-                          form={confirmForm}
-                        >
-                          <Form.Item name="unblock" initialValue={true} valuePropName="checked">
-                            <Checkbox>{t(p("cancelAndNotBlock"))}</Checkbox>
-                          </Form.Item>
-                        </Form>
-                      )}
+                      <Form form={confirmForm}></Form>
                     </div>,
                     onOk: async () => {
-                      let unblock: boolean | undefined;
-                      if (status === UserStatus.BLOCKED) {
-                        unblock = confirmForm.getFieldValue("unblock");
-                      }
-                      await api.cancelJobChargeLimit({ query: { accountName, userId, unblock } })
+                      await api.cancelJobChargeLimit({ query: { accountName, userId } })
                         .then(() => {
                           message.success(t(p("cancelSuccess")));
                           onClose();
@@ -131,8 +122,18 @@ export const JobChargeLimitModal: React.FC<Props> = ({
             )
             : t(p("unset")) }
         </Form.Item>
-        <Form.Item name="limit" label={currentLimit ? t(p("changeLimited")) : t(p("setLimited"))} required>
-          <InputNumber precision={2} />
+        <Form.Item
+          name="limit"
+          label={currentLimit ? t(p("changeLimited")) : t(p("setLimited"))}
+          rules={[
+            { required: true },
+            { validator: (_, value) => positiveNumberRule(_, value, languageId) },
+            { validator:
+              (_, value) =>
+                compareUsedChargeRule(_, value, currentUsed ? moneyToNumber(currentUsed) : undefined, languageId) },
+          ]}
+        >
+          <InputNumber precision={2} min={0} />
         </Form.Item>
       </Form>
 

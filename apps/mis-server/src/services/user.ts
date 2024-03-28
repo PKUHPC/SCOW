@@ -22,7 +22,7 @@ import { decimalToMoney } from "@scow/lib-decimal";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import {
   AccountStatus,
-  GetAccountUsersResponse,
+  accountUserInfo_UserStateInAccountFromJSON, GetAccountUsersResponse,
   platformRoleFromJSON,
   platformRoleToJSON,
   QueryIsUserInAccountResponse,
@@ -37,8 +37,9 @@ import { clusters } from "src/config/clusters";
 import { Account } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, TenantRole, User } from "src/entities/User";
-import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
+import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
+import { getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
@@ -55,19 +56,27 @@ export const userServiceServer = plugin((server) => {
       }, { populate: ["user", "user.storageQuotas"]});
 
       return [GetAccountUsersResponse.fromPartial({
-        results: accountUsers.map((x) => ({
-          userId: x.user.$.userId,
-          name: x.user.$.name,
-          email: x.user.$.email,
-          role: PFUserRole[x.role],
-          status: PFUserStatus[x.status],
-          jobChargeLimit: x.jobChargeLimit ? decimalToMoney(x.jobChargeLimit) : undefined,
-          usedJobChargeLimit: x.usedJobCharge ? decimalToMoney(x.usedJobCharge) : undefined,
-          storageQuotas: x.user.$.storageQuotas.getItems().reduce((prev, curr) => {
-            prev[curr.cluster] = curr.storageQuota;
-            return prev;
-          }, {}),
-        })),
+        results: accountUsers.map((x) => {
+
+          const displayedState = x.state ?
+            getUserStateInfo(x.state, x.jobChargeLimit, x.usedJobCharge).displayedState : undefined;
+          return {
+            userId: x.user.$.userId,
+            name: x.user.$.name,
+            email: x.user.$.email,
+            role: PFUserRole[x.role],
+            status: PFUserStatus[x.blockedInCluster],
+            jobChargeLimit: x.jobChargeLimit ? decimalToMoney(x.jobChargeLimit) : undefined,
+            usedJobChargeLimit: x.usedJobCharge ? decimalToMoney(x.usedJobCharge) : undefined,
+            storageQuotas: x.user.$.storageQuotas.getItems().reduce((prev, curr) => {
+              prev[curr.cluster] = curr.storageQuota;
+              return prev;
+            }, {}),
+            userStateInAccount: accountUserInfo_UserStateInAccountFromJSON(x.state),
+            displayedUserState: displayedState,
+          };
+        },
+        ),
       })];
     },
 
@@ -101,8 +110,8 @@ export const userServiceServer = plugin((server) => {
         accountStatuses: user.accounts.getItems().reduce((prev, curr) => {
           const account = curr.account.getEntity();
           prev[account.accountName] = {
-            userStatus: PFUserStatus[curr.status],
             accountBlocked: Boolean(account.blockedInCluster),
+            userStatus: PFUserStatus[curr.blockedInCluster],
             jobChargeLimit: curr.jobChargeLimit ? decimalToMoney(curr.jobChargeLimit) : undefined,
             usedJobCharge: curr.usedJobCharge ? decimalToMoney(curr.usedJobCharge) : undefined,
             balance: decimalToMoney(curr.account.getEntity().balance),
@@ -185,7 +194,7 @@ export const userServiceServer = plugin((server) => {
         account,
         user,
         role: UserRole.USER,
-        status: UserStatus.UNBLOCKED,
+        blockedInCluster: UserStatus.UNBLOCKED,
       });
 
       account.users.add(newUserAccount);
@@ -221,7 +230,8 @@ export const userServiceServer = plugin((server) => {
       }
 
       // 如果要从账户中移出用户，先封锁，先将用户封锁，保证用户无法提交作业
-      if (userAccount.status === UserStatus.UNBLOCKED) {
+      if (userAccount.blockedInCluster === UserStatus.UNBLOCKED) {
+        userAccount.state = UserStateInAccount.BLOCKED_BY_ADMIN;
         await blockUserInAccount(userAccount, server.ext, logger);
         await em.flush();
       }
@@ -281,15 +291,16 @@ export const userServiceServer = plugin((server) => {
         };
       }
 
-      if (user.status === UserStatus.BLOCKED) {
+      // 如果已经在集群下为封锁，且状态值为被账户管理员或拥有者手动封锁
+      if (user.blockedInCluster === UserStatus.BLOCKED && user.state === UserStateInAccount.BLOCKED_BY_ADMIN) {
         throw <ServiceError> {
           code: Status.FAILED_PRECONDITION, message: `User ${userId}  is already blocked.`,
         };
       }
 
       await blockUserInAccount(user, server.ext, logger);
-
-      user.status = UserStatus.BLOCKED;
+      user.state = UserStateInAccount.BLOCKED_BY_ADMIN;
+      user.blockedInCluster = UserStatus.BLOCKED;
 
       await em.flush();
 
@@ -310,15 +321,24 @@ export const userServiceServer = plugin((server) => {
         };
       }
 
-      if (user.status === UserStatus.UNBLOCKED) {
+      if (user.blockedInCluster === UserStatus.UNBLOCKED) {
         throw <ServiceError> {
           code: Status.FAILED_PRECONDITION, message: `User ${userId}  is already unblocked.`,
         };
       }
 
-      await unblockUserInAccount(user, server.ext, logger);
+      // 判断如果限额和已用额度存在的情况是否可以解封
+      const stillBlockUserInCluster = getUserStateInfo(
+        UserStateInAccount.NORMAL,
+        user.jobChargeLimit,
+        user.usedJobCharge,
+      ).shouldBlockInCluster;
 
-      user.status = UserStatus.UNBLOCKED;
+      if (!stillBlockUserInCluster) {
+        await unblockUserInAccount(user, server.ext, logger);
+        user.blockedInCluster = UserStatus.UNBLOCKED;
+      }
+      user.state = UserStateInAccount.NORMAL;
 
       await em.flush();
 
@@ -586,7 +606,7 @@ export const userServiceServer = plugin((server) => {
           name: x.name,
           email: x.email,
           availableAccounts: x.accounts.getItems()
-            .filter((ua) => ua.status === UserStatus.UNBLOCKED)
+            .filter((ua) => ua.blockedInCluster === UserStatus.UNBLOCKED)
             .map((ua) => {
               return ua.account.getProperty("accountName");
             }),

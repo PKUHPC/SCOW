@@ -13,13 +13,14 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
+import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded } from "@mikro-orm/core";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { JobChargeLimitServiceClient } from "@scow/protos/build/server/job_charge_limit";
 import { createServer } from "src/app";
 import { addJobCharge } from "src/bl/charging";
-import { UserAccount, UserStatus } from "src/entities/UserAccount";
+import { UserAccount, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { reloadEntity } from "src/utils/orm";
 import { InitialData, insertInitialData } from "tests/data/data";
 import { dropDatabase } from "tests/data/helpers";
@@ -92,6 +93,25 @@ it("changes job charge limit", async () => {
   expectDecimalEqual(ua.jobChargeLimit, newLimit);
 });
 
+it("cannot change job charge limit when the limit < usedJobCharge", async () => {
+
+  const limit = new Decimal(100);
+
+  ua.jobChargeLimit = limit;
+  ua.usedJobCharge = new Decimal(50);
+  await em.flush();
+
+  expectDecimalEqual(ua.jobChargeLimit, limit);
+  expectDecimalEqual(ua.usedJobCharge, new Decimal(50));
+
+  const newLimit = new Decimal(20);
+
+  const reply = await asyncClientCall(client, "setJobChargeLimit", {
+    ...params(ua), limit: decimalToMoney(newLimit) }).catch((e) => e);
+
+  expect(reply.code).toBe(Status.INVALID_ARGUMENT);
+});
+
 it("cancels job charge limit", async () => {
   const limit = new Decimal(100);
 
@@ -111,16 +131,17 @@ it("cancels job charge limit", async () => {
   expect(ua1.usedJobCharge).toBeUndefined();
 });
 
-it("unlocking user while cancels job charge limit", async () => {
+it("unlocking user while cancels job charge limit and state is NORMAL", async () => {
   const limit = new Decimal(100);
 
   ua.jobChargeLimit = limit;
-  ua.status = UserStatus.BLOCKED;
+  ua.blockedInCluster = UserStatus.BLOCKED;
   await em.flush();
 
   expectDecimalEqual(ua.jobChargeLimit, limit);
+  expect(ua.state).toEqual(UserStateInAccount.NORMAL);
 
-  await asyncClientCall(client, "cancelJobChargeLimit", { ...params(ua), unblock: true });
+  await asyncClientCall(client, "cancelJobChargeLimit", { ...params(ua) });
 
   const ua1 = await em.fork().findOneOrFail(UserAccount, {
     account: ua.account,
@@ -129,7 +150,32 @@ it("unlocking user while cancels job charge limit", async () => {
 
   expect(ua1.jobChargeLimit).toBeUndefined();
   expect(ua1.usedJobCharge).toBeUndefined();
-  expect(ua1.status).toBe(UserStatus.UNBLOCKED);
+  expect(ua1.blockedInCluster).toBe(UserStatus.UNBLOCKED);
+  expect(ua1.state).toBe(UserStateInAccount.NORMAL);
+});
+
+it("still block user while cancels job charge limit and state is BLOCKED_BY_ADMIN", async () => {
+  const limit = new Decimal(100);
+
+  ua.jobChargeLimit = limit;
+  ua.blockedInCluster = UserStatus.BLOCKED;
+  ua.state = UserStateInAccount.BLOCKED_BY_ADMIN;
+  await em.flush();
+
+  expectDecimalEqual(ua.jobChargeLimit, limit);
+  expect(ua.state).toEqual(UserStateInAccount.BLOCKED_BY_ADMIN);
+
+  await asyncClientCall(client, "cancelJobChargeLimit", { ...params(ua) });
+
+  const ua1 = await em.fork().findOneOrFail(UserAccount, {
+    account: ua.account,
+    user: ua.user,
+  }, { populate: ["user", "account"]});
+
+  expect(ua1.jobChargeLimit).toBeUndefined();
+  expect(ua1.usedJobCharge).toBeUndefined();
+  expect(ua1.blockedInCluster).toBe(UserStatus.BLOCKED);
+  expect(ua1.state).toBe(UserStateInAccount.BLOCKED_BY_ADMIN);
 });
 
 it("adds job charge", async () => {
@@ -146,7 +192,7 @@ it("adds job charge", async () => {
 
   expectDecimalEqual(ua.usedJobCharge, charge);
   expectDecimalEqual(ua.jobChargeLimit, limit);
-  expect(ua.status).toBe(UserStatus.UNBLOCKED);
+  expect(ua.blockedInCluster).toBe(UserStatus.UNBLOCKED);
 });
 
 it("blocks user if used > limit", async () => {
@@ -162,14 +208,30 @@ it("blocks user if used > limit", async () => {
 
   expectDecimalEqual(ua.usedJobCharge, charge);
   expectDecimalEqual(ua.jobChargeLimit, limit);
-  expect(ua.status).toBe(UserStatus.BLOCKED);
+  expect(ua.blockedInCluster).toBe(UserStatus.BLOCKED);
 });
 
-it("unblocked user if limit is changed to >= used", async () => {
+it("blocks user if used = limit", async () => {
+  const limit = new Decimal(100);
+  ua.jobChargeLimit = limit;
+  ua.usedJobCharge = new Decimal(0);
+  await em.flush();
+
+  expectDecimalEqual(ua.jobChargeLimit, limit);
+
+  const charge = new Decimal(100);
+  await addJobCharge(ua, charge, server.ext, server.logger);
+
+  expectDecimalEqual(ua.usedJobCharge, charge);
+  expectDecimalEqual(ua.jobChargeLimit, limit);
+  expect(ua.blockedInCluster).toBe(UserStatus.BLOCKED);
+});
+
+it("unblocked user if limit is changed to > used", async () => {
   const limit = new Decimal(100);
   ua.jobChargeLimit = limit;
   ua.usedJobCharge = limit.plus(20);
-  ua.status = UserStatus.BLOCKED;
+  ua.blockedInCluster = UserStatus.BLOCKED;
   await em.flush();
 
   const newLimit = new Decimal(140);
@@ -177,15 +239,35 @@ it("unblocked user if limit is changed to >= used", async () => {
 
   await reloadEntity(em, ua);
   expectDecimalEqual(ua.jobChargeLimit, newLimit);
-  expect(ua.status).toBe(UserStatus.UNBLOCKED);
+  expect(ua.blockedInCluster).toBe(UserStatus.UNBLOCKED);
 
 });
 
-it("unblocks user if limit >= used is positive", async () => {
+it("unblocks user if limit > used is positive and state is normal", async () => {
   const limit = new Decimal(100);
   ua.jobChargeLimit = limit;
   ua.usedJobCharge = limit.plus(20);
-  ua.status = UserStatus.BLOCKED;
+  ua.blockedInCluster = UserStatus.BLOCKED;
+  await em.flush();
+
+  expect(ua.state).toEqual(UserStateInAccount.NORMAL);
+
+  const charge = new Decimal(-20.4);
+
+  await addJobCharge(ua, charge, server.ext, server.logger);
+
+  expectDecimalEqual(ua.jobChargeLimit, limit);
+  expectDecimalEqual(ua.usedJobCharge, new Decimal(99.6));
+  expect(ua.blockedInCluster).toBe(UserStatus.UNBLOCKED);
+  expect(ua.state).toBe(UserStateInAccount.NORMAL);
+});
+
+it("still block user if limit > used is positive and state is BLOCKED_BY_ADMIN", async () => {
+  const limit = new Decimal(100);
+  ua.jobChargeLimit = limit;
+  ua.usedJobCharge = limit.plus(20);
+  ua.blockedInCluster = UserStatus.BLOCKED;
+  ua.state = UserStateInAccount.BLOCKED_BY_ADMIN;
   await em.flush();
 
   const charge = new Decimal(-20.4);
@@ -194,15 +276,17 @@ it("unblocks user if limit >= used is positive", async () => {
 
   expectDecimalEqual(ua.jobChargeLimit, limit);
   expectDecimalEqual(ua.usedJobCharge, new Decimal(99.6));
-  expect(ua.status).toBe(UserStatus.UNBLOCKED);
+  expect(ua.blockedInCluster).toBe(UserStatus.BLOCKED);
+  expect(ua.state).toBe(UserStateInAccount.BLOCKED_BY_ADMIN);
 });
+
 
 it("does nothing if no limit", async () => { const charge = new Decimal(120.4);
   await addJobCharge(ua, charge, server.ext, server.logger);
 
   expect(ua.jobChargeLimit).toBeUndefined();
   expect(ua.usedJobCharge).toBeUndefined();
-  expect(ua.status).toBe(UserStatus.UNBLOCKED);
+  expect(ua.blockedInCluster).toBe(UserStatus.UNBLOCKED);
 });
 
 // it("correctly handles multiple concurrent request", async () => {

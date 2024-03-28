@@ -15,7 +15,7 @@ import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
-import { Account, DisplayedAccountState } from "@scow/protos/build/server/account";
+import { Account, Account_DisplayedAccountState as DisplayedAccountState } from "@scow/protos/build/server/account";
 import { ChargeRecord as ChargeRecordProto, PaymentRecord } from "@scow/protos/build/server/charging";
 import {
   ExportAccountResponse,

@@ -53,7 +53,7 @@ export async function updateBlockStatusInSlurm(
   const blockedUserAccounts: [string, string][] = [];
   const blockedFailedUserAccounts: BlockedFailedUserAccount[] = [];
   const userAccounts = await em.find(UserAccount, {
-    status: UserStatus.BLOCKED,
+    blockedInCluster: UserStatus.BLOCKED,
   }, { populate: ["user", "account"]});
 
   for (const ua of userAccounts) {
@@ -195,7 +195,7 @@ export async function blockUserInAccount(
   ua: Loaded<UserAccount, "user" | "account">,
   clusterPlugin: ClusterPlugin, logger: Logger,
 ) {
-  if (ua.status === UserStatus.BLOCKED) {
+  if (ua.blockedInCluster == UserStatus.BLOCKED) {
     return;
   }
 
@@ -209,7 +209,7 @@ export async function blockUserInAccount(
     }),
   );
 
-  ua.status = UserStatus.BLOCKED;
+  ua.blockedInCluster = UserStatus.BLOCKED;
 
   await callHook("userBlockedInAccount", {
     accountName,
@@ -224,7 +224,7 @@ export async function unblockUserInAccount(
   ua: Loaded<UserAccount, "user" | "account">,
   clusterPlugin: ClusterPlugin, logger: Logger,
 ) {
-  if (ua.status === UserStatus.UNBLOCKED) {
+  if (ua.blockedInCluster === UserStatus.UNBLOCKED) {
     return;
   }
 
@@ -238,7 +238,7 @@ export async function unblockUserInAccount(
     }),
   );
 
-  ua.status = UserStatus.UNBLOCKED;
+  ua.blockedInCluster = UserStatus.UNBLOCKED;
 
   await callHook("userUnblockedInAccount", {
     accountName, userId,

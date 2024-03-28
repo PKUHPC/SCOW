@@ -1244,17 +1244,18 @@
         },
         "state": {
           "name": "state",
-          "type": "enum('FROZEN','BLOCKED_BY_ADMIN','NORMAL')",
+          "type": "enum('NORMAL','FROZEN','BLOCKED_BY_ADMIN')",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "default": "'NORMAL'",
           "enumItems": [
+            "NORMAL",
             "FROZEN",
-            "BLOCKED_BY_ADMIN",
-            "NORMAL"
+            "BLOCKED_BY_ADMIN"
           ],
-          "comment": "FROZEN, BLOCKED_BY_ADMIN, NORMAL",
+          "comment": "NORMAL, FROZEN, BLOCKED_BY_ADMIN",
           "mappedType": "enum"
         },
         "create_time": {
@@ -1587,8 +1588,8 @@
           "nullable": false,
           "mappedType": "integer"
         },
-        "status": {
-          "name": "status",
+        "blocked_in_cluster": {
+          "name": "blocked_in_cluster",
           "type": "varchar(10)",
           "unsigned": false,
           "autoincrement": false,
@@ -1628,6 +1629,21 @@
           "precision": 19,
           "scale": 4,
           "mappedType": "decimal"
+        },
+        "state": {
+          "name": "state",
+          "type": "enum('NORMAL','BLOCKED_BY_ADMIN')",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "'NORMAL'",
+          "enumItems": [
+            "NORMAL",
+            "BLOCKED_BY_ADMIN"
+          ],
+          "comment": "NORMAL, BLOCKED_BY_ADMIN",
+          "mappedType": "enum"
         }
       },
       "name": "user_account",

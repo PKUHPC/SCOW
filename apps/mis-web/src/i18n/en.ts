@@ -697,6 +697,14 @@ export default {
       userTable: {
         block: "Block",
         normal: "Available",
+        quotaExceeded: "Quota Exceeded",
+        statusExplanation: "User Status Explanation",
+        blockedExplanation: "Blocked: The user has been blocked by the account administrator or the account owner, "
+          + "preventing the selection of this account for job submission.",
+        quotaExceededExplanation: "Quota Exceeded: The user is not blocked, but the used quota is greater than or "
+        + "equal to the user's quota limit, preventing the selection of this account for job submission.",
+        normalExplanation: "Normal: The user is not blocked, and the used quota is less than the user's quota limit, "
+        + "allowing the selection of this account to submit jobs.",
         admin: "Admin",
         user: "Regular User",
         role: "Role",

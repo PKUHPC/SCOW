@@ -34,5 +34,7 @@ export default {
   confirmPasswordMessage: "请确认密码",
   confirmPasswordNotEqualError: "两次密码输入不一致，请重新输入",
   confirmPasswordEmailError: "邮箱格式不正确，请重新输入",
+  notPositiveNumberError: "请输入大于0的数字",
+  compareUsedChargeError: "设置的限额不能小于当前已用额度，请重新输入",
   refreshButton: "刷新",
 };

@@ -103,7 +103,7 @@ it("fetches the data", async () => {
 
   // check user account usage
   expect(data.uaBB.usedJobCharge?.toNumber()).toBe(accountBCharges.toNumber());
-  expect(data.uaBB.status).toBe(UserStatus.BLOCKED);
+  expect(data.uaBB.blockedInCluster).toBe(UserStatus.BLOCKED);
   expect(data.uaAA.usedJobCharge).toBeUndefined();
 });
 

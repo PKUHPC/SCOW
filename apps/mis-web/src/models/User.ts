@@ -57,6 +57,19 @@ export enum UserStatus {
   BLOCKED = 1,
 }
 
+export const UserStateInAccount = {
+  NORMAL: 0,
+  BLOCKED_BY_ADMIN: 1,
+} as const;
+export type UserStateInAccount = ValueOf<typeof UserStateInAccount>;
+
+export const DisplayedUserState = {
+  DISPLAYED_NORMAL: 0,
+  DISPLAYED_QUOTA_EXCEEDED: 1,
+  DISPLAYED_BLOCKED: 2,
+} as const;
+export type DisplayedUserState = ValueOf<typeof DisplayedUserState>;
+
 export enum ClusterAccountInfo_ImportStatus {
   EXISTING = 0,
   NOT_EXISTING = 1,

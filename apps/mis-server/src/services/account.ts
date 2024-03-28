@@ -17,8 +17,8 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { LockMode, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { createAccount } from "@scow/lib-auth";
 import { Decimal, decimalToMoney, moneyToNumber } from "@scow/lib-decimal";
-import { AccountServiceServer, AccountServiceService,
-  accountStateFromJSON, BlockAccountResponse_Result } from "@scow/protos/build/server/account";
+import { account_AccountStateFromJSON, AccountServiceServer, AccountServiceService,
+  BlockAccountResponse_Result } from "@scow/protos/build/server/account";
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { authUrl } from "src/config";
 import { Account, AccountState } from "src/entities/Account";
@@ -186,7 +186,7 @@ export const accountServiceServer = plugin((server) => {
             tenantName: x.tenant.$.name,
             userCount: x.users.count(),
             blocked: Boolean(x.blockedInCluster),
-            state: accountStateFromJSON(x.state),
+            state: account_AccountStateFromJSON(x.state),
             displayedState: displayedAccountState,
             isInWhitelist: Boolean(!!x.whitelist?.id),
             ownerId: ownerUser.userId,
@@ -227,7 +227,7 @@ export const accountServiceServer = plugin((server) => {
       const account = new Account({ accountName, comment, tenant, blockedInCluster: shouldBlockInCluster });
 
       const userAccount = new UserAccount({
-        account, user, role: EntityUserRole.OWNER, status: UserStatus.UNBLOCKED,
+        account, user, role: EntityUserRole.OWNER, blockedInCluster: UserStatus.UNBLOCKED,
       });
 
       try {

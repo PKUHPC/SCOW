@@ -15,7 +15,9 @@ import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { decimalToMoney } from "@scow/lib-decimal";
-import { AccountServiceClient, AccountState, DisplayedAccountState } from "@scow/protos/build/server/account";
+import { Account_AccountState as AccountState,
+  Account_DisplayedAccountState as DisplayedAccountState,
+  AccountServiceClient } from "@scow/protos/build/server/account";
 import { createServer } from "src/app";
 import { Account } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
@@ -106,7 +108,12 @@ it("gets all accounts", async () => {
   const anotherTenant = await em.findOne(Tenant, { name: "another" }) as Tenant;
   const userD = new User({ tenant: anotherTenant, email: "123", name: "dName", userId: "d" });
   const accountC = await em.findOne(Account, { accountName: "hpcc" }) as Account;
-  const uaCD = new UserAccount({ user: userD, account: accountC, role: UserRole.OWNER, status: UserStatus.BLOCKED });
+  const uaCD = new UserAccount({
+    user: userD,
+    account: accountC,
+    role: UserRole.OWNER,
+    blockedInCluster: UserStatus.BLOCKED,
+  });
   await em.persistAndFlush([userD, uaCD]);
 
   const resp = await asyncClientCall(client, "getAccounts", {});

@@ -34,5 +34,7 @@ export default {
   confirmPasswordMessage: "Please confirm your password",
   confirmPasswordNotEqualError: "Passwords do not match. Please re-enter.",
   confirmPasswordEmailError: "Invalid email format. Please re-enter.",
+  notPositiveNumberError: "Please enter a number greater than 0.",
+  compareUsedChargeError: "The set limit cannot be less than the current used amount. Please re-enter.",
   refreshButton: "Refresh",
 };
