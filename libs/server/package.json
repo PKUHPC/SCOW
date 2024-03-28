@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-server",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "description": "Server libraries",
   "private": true,
   "main": "build/index.js",
@@ -24,7 +24,6 @@
     "@scow/config": "workspace:*",
     "@scow/protos": "workspace:*",
     "dayjs": "1.11.10",
-    "@scow/protos": "workspace:*",
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/utils": "workspace:*",
     "@scow/rich-error-model": "workspace:*",

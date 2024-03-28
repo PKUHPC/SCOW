@@ -1,5 +1,33 @@
 # @scow/mis-web
 
+## 1.5.0
+
+### Minor Changes
+
+- 63d1873: 账户新增封锁阈值，租户新增默认账户默认阈值以
+
+### Patch Changes
+
+- 10956eb: 修复 token 失效后切换系统不跳转回登录页面的问题
+- 16f4465: 初始化的用户管理新增前端搜索
+- a097dd1: 新增无账户关系的用户修改所属租户且可以作为新增租户的管理员功能
+- a970dc7: 优化管理系统用户可见分区页面 Loading 样式
+- bd21171: 修改变更租户管理下用户列表中可用账户的列名为 关联账户
+- 8dd8c0e: 修改 Account 实体中原 blocked 字段名为 blocked_in_cluster ，表示在集群中是否为封锁状态
+  增加字段 state ,字段值为 "NORMAL" , "FROZEN" , "BLOCKED_BY_ADMIN" 的枚举值，优化页面账户显示状态为正常、封锁、欠费
+- 02d6a18: 新增集群区分 AI 功能和 HPC 功能配置
+- 24db413: 操作日志增加自定义操作类型
+- d3d891a: 操作日志详细内容展示优化
+- Updated dependencies [02d6a18]
+- Updated dependencies [146e19f]
+- Updated dependencies [24db413]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+  - @scow/lib-web@1.3.1
+  - @scow/lib-operation-log@2.1.3
+  - @scow/protos@1.0.9
+  - @scow/rich-error-model@2.0.0
+
 ## 1.4.3
 
 ### Patch Changes

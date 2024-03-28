@@ -1,5 +1,12 @@
 # @scow/config
 
+## 1.4.3
+
+### Patch Changes
+
+- 02d6a18: 集群配置新增 hpc 和 ai enabled 属性 区分 Ai 集群和 HPC 集群或者是融合集群
+- d822db7: 集群配置增加 k8s 选项指明容器运行时
+
 ## 1.4.2
 
 ### Patch Changes

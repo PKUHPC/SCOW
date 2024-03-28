@@ -1,5 +1,31 @@
 # @scow/portal-web
 
+## 1.5.0
+
+### Minor Changes
+
+- 63d1873: 账户新增封锁阈值，租户新增默认账户默认阈值以
+
+### Patch Changes
+
+- 10956eb: 修复 token 失效后切换系统不跳转回登录页面的问题
+- a097dd1: 新增无账户关系的用户修改所属租户且可以作为新增租户的管理员功能
+- 0ad604c: 仪表盘 cpu 和 gpu 利用率百分比显示错误
+- 02d6a18: 新增集群区分 AI 功能和 HPC 功能配置
+- 24db413: 操作日志增加自定义操作类型
+- 79d19be: 改进门户快捷方式的 UI
+- 25f9caf: 修复文件管理下在终端中打开连接失败及终端不显示登录节点名称的问题
+- d3d891a: 操作日志详细内容展示优化
+- Updated dependencies [02d6a18]
+- Updated dependencies [146e19f]
+- Updated dependencies [24db413]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+  - @scow/lib-web@1.3.1
+  - @scow/lib-operation-log@2.1.3
+  - @scow/protos@1.0.9
+  - @scow/rich-error-model@2.0.0
+
 ## 1.4.3
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/docs
 
+## 1.3.2
+
+### Patch Changes
+
+- d822db7: ai 系统新增支持 k8s 集群的 containerd 运行时
+- 7b9e0b6: 去掉 node-cron 表达式前秒的限制
+
 ## 1.3.1
 
 ### Patch Changes

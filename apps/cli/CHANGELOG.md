@@ -1,5 +1,14 @@
 # @scow/cli
 
+## 1.5.0
+
+### Patch Changes
+
+- 7b9e0b6: 去掉 node-cron 表达式前秒的限制
+- Updated dependencies [02d6a18]
+- Updated dependencies [d822db7]
+  - @scow/config@1.4.3
+
 ## 1.4.3
 
 ### Patch Changes
