@@ -48,9 +48,13 @@ export function parseProxyTarget(url: string, urlIncludesBasePath: boolean): str
   const proxyGateway = runtimeConfig.CLUSTERS_CONFIG[clusterId].proxyGateway;
   const loginNodes = runtimeConfig.CLUSTERS_CONFIG[clusterId].loginNodes.map((x) => getLoginNode(x).address);
 
+  console.log("console relativePath", relativePath);
+  console.log("console fullUri", fullUri);
+
   // if node is login node, not proxy to proxy gateway node
   if (proxyGateway && !loginNodes.includes(node)) {
     // proxy to proxy gateway node
+    console.log("console proxyGateway.url", `${proxyGateway.url}${fullUri}`);
     return `${proxyGateway.url}${fullUri}`;
   }
 
