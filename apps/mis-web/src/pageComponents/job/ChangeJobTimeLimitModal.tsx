@@ -111,6 +111,9 @@ export const ChangeJobTimeLimitModal: React.FC<Props> = ({ open, onClose, data, 
               if (e.code === "TIME_LIME_NOT_VALID") {
                 message.error(t(p("timeLimeError")));
               };
+              if (e.code === "SYSTEM_UNALLOWED") {
+                message.error(e.message);
+              }
               throw e;
             })
             .then(() => {

@@ -32,6 +32,7 @@ import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
 import { JobPriceChange } from "src/entities/JobPriceChange";
 import { AmountStrategy, JobPriceItem } from "src/entities/JobPriceItem";
 import { Tenant } from "src/entities/Tenant";
+import { callHook } from "src/plugins/hookClient";
 import { queryWithCache } from "src/utils/cache";
 import { toGrpc } from "src/utils/job";
 import { logger } from "src/utils/logger";
@@ -275,7 +276,9 @@ export const jobServiceServer = plugin((server) => {
     },
 
     changeJobTimeLimit: async ({ request, logger }) => {
-      const { cluster, limitMinutes, jobId } = request;
+      const { cluster, limitMinutes, jobId, operatorUserId } = request;
+
+      await callHook("allowChangeJobTimeLimit", { cluster, limitMinutes, jobId, operatorUserId }, logger);
 
       await server.ext.clusters.callOnOne(
         cluster,

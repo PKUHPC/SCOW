@@ -73,6 +73,13 @@ message JobsSaved {
   repeated common.JobInfo jobs = 1;
 }
 
+message AllowChangeJobTimeLimit {
+  string cluster =1;
+  string job_id = 2;
+  int64 limit_minutes = 3;
+  optional string operator_user_id = 4;
+}
+
 message OnEventRequest {
   message Metadata {
     google.protobuf.Timestamp time = 1;
@@ -91,6 +98,7 @@ message OnEventRequest {
     AccountPaid account_paid = 9;
     TenantPaid tenant_paid = 10;
     JobsSaved jobs_saved = 11;
+    AllowChangeJobTimeLimit allow_change_job_time_limit = 12;
   }
 }
 message OnEventResponse {

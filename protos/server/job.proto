@@ -108,6 +108,7 @@ message ChangeJobTimeLimitRequest {
   string cluster = 1;
   string job_id = 2;
   int64 limit_minutes = 3;
+  optional string operator_user_id = 4;
 }
 
 // NOT_FOUND: cluster or job_id is not found.

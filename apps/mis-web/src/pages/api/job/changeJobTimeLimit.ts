@@ -52,7 +52,10 @@ export const ChangeJobTimeLimitSchema = typeboxRouteSchema({
     /** 作业未找到 */
     404: Type.Null(),
     /** 用户设置的时限错误 */
-    400: Type.Object({ code: Type.Literal("TIME_LIME_NOT_VALID") }),
+    400: Type.Object({
+      code: Type.Union([Type.Literal("TIME_LIME_NOT_VALID"), Type.Literal("SYSTEM_UNALLOWED")]),
+      message: Type.Optional(Type.String()),
+    }),
   },
 });
 
@@ -102,6 +105,7 @@ export default /* #__PURE__*/route(ChangeJobTimeLimitSchema,
       cluster,
       limitMinutes,
       jobId,
+      operatorUserId: info.identityId,
     })
       .then(async () => {
         await callLog(logInfo, OperationResult.SUCCESS);
@@ -109,6 +113,10 @@ export default /* #__PURE__*/route(ChangeJobTimeLimitSchema,
       })
       .catch(handlegRPCError({
         [Status.NOT_FOUND]: () => ({ 404: null }),
+        [Status.ALREADY_EXISTS]: (e) => ({ 400: {
+          code: "SYSTEM_UNALLOWED" as const,
+          message: e.message,
+        } }),
       },
       async () => await callLog(logInfo, OperationResult.FAIL),
       ));
