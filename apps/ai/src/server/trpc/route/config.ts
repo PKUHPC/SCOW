@@ -135,9 +135,11 @@ const PartitionSchema = z.object({
   nodes: z.number(),
   qos: z.array(z.string()),
   comment: z.string().optional(),
+  gpuType: z.string().optional(),
+  vramMb: z.number().optional(),
 });
 
-const ClusterConfigSchema = z.object({
+export const ClusterConfigSchema = z.object({
   schedulerName: z.string(),
   partitions: z.array(PartitionSchema),
 });

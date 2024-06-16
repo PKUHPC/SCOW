@@ -12,6 +12,9 @@ image:
   # 镜像版本
   tag: latest
 
+tags:
+  - jupyter
+
 # 指定应用类型为web
 type: web
 # Web应用的配置

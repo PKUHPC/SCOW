@@ -29,7 +29,7 @@ import { ModelInterface, ModelVersionInterface } from "src/models/Model";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
 import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
 import { AppCustomAttribute, CreateAppInput } from "src/server/trpc/route/jobs/apps";
-import { TrainJobInput } from "src/server/trpc/route/jobs/jobs";
+import { FrameworkType, TrainJobInput } from "src/server/trpc/route/jobs/jobs";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -59,6 +59,7 @@ interface FixedFormFields {
   useCustomImage: boolean;
   image: { type: AccessibilityType, name: number };
   remoteImageUrl: string | undefined;
+  framework: FrameworkType | undefined;
   startCommand?: string;
   showDataset: boolean;
   dataset: { type: AccessibilityType, name: number, version: number };
@@ -67,6 +68,7 @@ interface FixedFormFields {
   mountPoints: string[] | undefined;
   partition: string | undefined;
   coreCount: number;
+  nodeCount: number;
   gpuCount: number | undefined;
   account: string;
   maxTime: number;
@@ -90,6 +92,8 @@ interface Partition {
   gpus: number;
   nodes: number;
   comment?: string;
+  gpuType?: string;
+
 }
 
 export enum AccessibilityType {
@@ -103,6 +107,7 @@ const genAppJobName = (appName: string): string => {
 };
 
 const initialValues = {
+  nodeCount:1,
   coreCount: 1,
   gpuCount: 1,
   maxTime: 60,
@@ -223,8 +228,7 @@ export const LaunchAppForm = (props: Props) => {
       .map((x) => ({ label: `${x.name}:${x.tag}`, value: x.id }));
   }, [images]);
 
-  // 暂时写死为1
-  const nodeCount = 1;
+  const nodeCount = Form.useWatch("nodeCount", form) as number;
 
   const coreCount = Form.useWatch("coreCount", form) as number;
 
@@ -437,16 +441,19 @@ export const LaunchAppForm = (props: Props) => {
         appJobName: genAppJobName(appName ?? "trainJobs"),
       });
     } else {
-      const { account, partition, gpuCount, coreCount, maxTime, mountPoints } = inputParams;
+      const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount } = inputParams;
       const workingDir = "workingDirectory" in inputParams ? inputParams.workingDirectory : undefined;
       const customAttributes = "customAttributes" in inputParams ? inputParams.customAttributes : {};
       const command = "command" in inputParams ? inputParams.command : undefined;
+      const framework = "framework" in inputParams ? inputParams.framework : undefined;
       form.setFieldsValue({
         mountPoints,
         customFields: {
           ...customAttributes,
           workingDir,
         },
+        nodeCount,
+        framework,
         account,
         partition,
         gpuCount,
@@ -487,7 +494,7 @@ export const LaunchAppForm = (props: Props) => {
       }}
       onFinish={async () => {
 
-        const { appJobName, algorithm, dataset, image, remoteImageUrl, startCommand, model,
+        const { appJobName, algorithm, dataset, image, remoteImageUrl, framework, startCommand, model,
           mountPoints, account, partition, coreCount,
           gpuCount, maxTime, command, customFields } = await form.validateFields();
 
@@ -499,6 +506,7 @@ export const LaunchAppForm = (props: Props) => {
             algorithm: algorithm?.version,
             image: image?.name,
             remoteImageUrl,
+            framework,
             isDatasetPrivate,
             dataset: dataset?.version,
             isModelPrivate,
@@ -514,6 +522,7 @@ export const LaunchAppForm = (props: Props) => {
             maxTime: maxTime,
             memory: memorySize,
             command: command || "",
+            gpuType: currentPartitionInfo!.gpuType,
           });
         } else {
           let workingDirectory: string | undefined;
@@ -656,6 +665,32 @@ export const LaunchAppForm = (props: Props) => {
               >
                 <Input placeholder="请输入远程镜像地址" />
               </Form.Item>
+              {/* 分布式训练时，需要指定训练框架 */}
+              {(isTraining && nodeCount > 1) ? (
+                <>
+                  {/* 手动选择算法框架，下拉框只有 tensorflow, pytorch */}
+                  <Form.Item
+                    label="分布式训练框架"
+                    name="framework"
+                    rules={[{ required: true }]}
+                  >
+                    <Select options={
+                      [
+                        {
+                          value: "tensorflow",
+                          label: "Tensorflow",
+                        },
+                        {
+                          value: "pytorch",
+                          label: "Pytorch",
+                        },
+                      ]
+                    }
+                    >
+                    </Select>
+                  </Form.Item>
+                </>
+              ) : null}
               {(customImage && !isTraining) ? (
                 <Form.Item
                   label="启动命令"
@@ -946,58 +981,73 @@ export const LaunchAppForm = (props: Props) => {
             onChange={handlePartitionChange}
           />
         </Form.Item>
-        {/* <Form.Item
+        <Form.Item
           label="节点数"
           name="nodeCount"
           dependencies={["partition"]}
           rules={[
-            { required: true, type: "integer",
-              max: currentPartitionInfo?.nodes,
+            {
+              required: true,
+              type: "integer",
             },
           ]}
         >
           <InputNumber
             min={1}
-            max={currentPartitionInfo?.nodes}
+            max={isTraining ? undefined : 1}
             {...inputNumberFloorConfig}
           />
-        </Form.Item> */}
+        </Form.Item>
         {
           currentPartitionInfo?.gpus ? (
             <Form.Item
-              label="GPU卡数"
+              label="单节点GPU卡数"
               name="gpuCount"
               dependencies={["partition"]}
               rules={[
                 {
                   required: true,
                   type: "integer",
-                  max: currentPartitionInfo?.gpus,
+                  // 单机最多8张卡
+                  max: 8,
+                  validator:  (_, value) => {
+                    const nodeCount = form.getFieldValue("nodeCount") || 0;
+                    if (currentPartitionInfo
+    && currentPartitionInfo.gpus > 0
+    && (nodeCount * value > currentPartitionInfo.gpus)) {
+                      return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
+                    }
+                    return Promise.resolve();
+                  },
                 },
               ]}
             >
               <InputNumber
                 min={1}
-                max={currentPartitionInfo?.gpus}
+                max={8}
                 {...inputNumberFloorConfig}
               />
             </Form.Item>
           ) : (
             <Form.Item
-              label="CPU核心数"
+              label="单节点CPU核心数"
               name="coreCount"
               dependencies={["partition"]}
               rules={[
                 { required: true,
                   type: "integer",
-                  max: currentPartitionInfo ?
-                    currentPartitionInfo.cores : undefined },
+                  validator: (_, value) => {
+                    const nodeCount = form.getFieldValue("nodeCount") || 0;
+                    if (currentPartitionInfo && (nodeCount * value > currentPartitionInfo.cores)) {
+                      return Promise.reject(new Error("Total cores exceed the available cores in the partition"));
+                    }
+                    return Promise.resolve();
+                  },
+                },
               ]}
             >
               <InputNumber
                 min={1}
-                max={currentPartitionInfo ?
-                  currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined }
                 {...inputNumberFloorConfig}
               />
             </Form.Item>

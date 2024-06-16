@@ -14,6 +14,9 @@ image:
   # 镜像版本
   tag: 4.20.0
 
+tags:
+  - vscode
+
 # 指定应用类型为web
 type: web
 

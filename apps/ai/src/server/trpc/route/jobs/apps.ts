@@ -24,6 +24,7 @@ import {
   sftpRealPath,
   sftpWriteFile,
 } from "@scow/lib-ssh";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { JobInfo } from "@scow/scheduler-adapter-protos/build/protos/job";
 import { TRPCError } from "@trpc/server";
 import fs from "fs";
@@ -33,8 +34,8 @@ import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkAppExist, checkCreateAppEntity,
-  fetchJobInputParams, getClusterAppConfigs, validateUniquePaths } from "src/server/utils/app";
+import { allApps, checkAppExist, checkCreateAppEntity,
+  fetchJobInputParams, getAllTags, getClusterAppConfigs, validateUniquePaths } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
@@ -52,6 +53,7 @@ import { isPortReachable } from "src/utils/isPortReachable";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
+import { ClusterConfigSchema, clusters } from "../config";
 import { booleanQueryParam } from "../utils";
 
 const ImageSchema = z.object({
@@ -991,4 +993,119 @@ procedure
 
   });
 
+
+export const listApps = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/apps/search",
+      tags: ["app"],
+      summary: "List all Apps By tags",
+    },
+  })
+  .input(z.object({
+    tags: z.string().optional(),
+  }))
+  .output((z.object({ apps: z.array(appSchema) })))
+  .query(async ({ input }) => {
+
+    const { tags } = input;
+
+    const apps = Object.entries(allApps)?.filter(([_, config]) => {
+      if (tags) {
+        return tags.split(",")
+          .some((tag) =>
+            (config.tags?.includes(tag) || config.clusterSpecificConfigs?.some((x) => x.config.tags?.includes(tag))),
+          );
+      }
+      return true;
+    }).map(([id, config]) => {
+
+      const aggregateTags = config.clusterSpecificConfigs?.reduce((prev, curr) => {
+        curr.config.tags?.forEach((tag) => {
+          if (!prev.has(tag)) {
+            prev.add(tag);
+          }
+        });
+        return prev;
+      }, new Set(config.tags)) || config.tags || [];
+
+      return ({
+        id,
+        name: config.name,
+        logoPath: config.logoPath,
+        tags: Array.from(aggregateTags),
+        appComment: getI18nConfigCurrentText(config.appComment, undefined),
+      });
+    });
+
+    return {
+      apps,
+    };
+  });
+
+export const listTags = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/apps/tags/search",
+      tags: ["app"],
+      summary: "List all App tags",
+    },
+  })
+  .input(z.void())
+  .output(z.object({ tags: z.array(z.string()) }))
+  .query(async () => {
+
+    const tags = getAllTags(allApps);
+
+    return {
+      tags,
+    };
+  });
+
+export const listClusters = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/apps/clusters/search",
+      tags: ["app"],
+      summary: "List All Clusters By AppID",
+    },
+  })
+  .input(z.object({
+    appId: z.string(),
+  }))
+  .output(z.object({ clusterConfigs: z.array(ClusterConfigSchema) }))
+  .query(async ({ input }) => {
+    const { appId } = input;
+    const allClusterIds = Object.keys(clusters);
+    const clusterIds: string[] = [];
+    // 获取集群ids
+    // common app
+    if (!allApps[appId].clusterSpecificConfigs) {
+      clusterIds.concat(allClusterIds);
+    } else {
+      allApps[appId].clusterSpecificConfigs?.map((config) => {
+        clusterIds.push(config.cluster);
+      });
+    }
+    const configs = await Promise.all(clusterIds
+      .map(async (clusterId) => {
+        const client = getAdapterClient(clusterId);
+        if (!client) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message:`cluster ${clusterId} is not found`,
+          });
+        }
+        return await asyncClientCall(client.config, "getClusterConfig", {});
+      }));
+
+    return {
+      clusterConfigs: configs,
+    };
+
+  })
+  ;
 

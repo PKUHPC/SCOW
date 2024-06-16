@@ -34,6 +34,14 @@ import { z } from "zod";
 
 const SESSION_METADATA_NAME = "session.json";
 
+// 分布式训练框架
+const Framework = z.union([
+  z.literal("tensorflow"),
+  z.literal("pytorch"),
+]);
+
+export type FrameworkType = z.infer<typeof Framework>;
+
 const ImageSchema = z.object({
   name: z.string(),
   tag: z.string().optional(),
@@ -57,6 +65,7 @@ const TrainJobInputSchema = z.object({
   algorithm: z.number().optional(),
   image: z.number().optional(),
   remoteImageUrl: z.string().optional(),
+  framework: Framework.optional(),
   isDatasetPrivate: z.boolean().optional(),
   dataset: z.number().optional(),
   isModelPrivate: z.boolean().optional(),
@@ -70,6 +79,7 @@ const TrainJobInputSchema = z.object({
   memory: z.number().optional(),
   maxTime: z.number(),
   command: z.string(),
+  gpuType: z.string().optional(),
 });
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;
@@ -89,9 +99,9 @@ procedure
     jobId: z.number(),
   })).mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName, isAlgorithmPrivate, algorithm, image, remoteImageUrl,
+      const { clusterId, trainJobName, isAlgorithmPrivate, algorithm, image, remoteImageUrl, framework,
         isDatasetPrivate, dataset, isModelPrivate, model, mountPoints = [], account, partition,
-        coreCount, nodeCount, gpuCount, memory, maxTime, command } = input;
+        coreCount, nodeCount, gpuCount, memory, maxTime, command, gpuType } = input;
       const userId = user.identityId;
 
       const host = getClusterLoginNode(clusterId);
@@ -166,6 +176,8 @@ procedure
           // 第五个参数为数据集版本地址
           // 第六个参数为模型版本地址
           // 第七个参数为多挂载点地址，以逗号分隔
+          // 第八个参数为gpuType, 表示训练时硬件卡的类型，由getClusterConfig接口获取
+          // 第九个参数告知适配器 该镜像对应的AI训练框架 如 tensorflow, pytorch 等
           extraOptions: [
             JobType.TRAIN,
             "",
@@ -186,6 +198,10 @@ procedure
                 : modelVersion.path
               : "",
             mountPoints.join(","),
+            gpuType || "",
+            // 如果是单机训练,则训练框架为空，表明为普通训练
+            // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
+            nodeCount === 1 ? "" : framework || "",
           ],
         }).catch((e) => {
           const ex = e as ServiceError;
@@ -201,8 +217,8 @@ procedure
           sessionId: trainJobName,
           submitTime: new Date().toISOString(),
           image: {
-            name: existImage!.name,
-            tag: existImage!.tag,
+            name: remoteImageUrl || existImage!.name,
+            tag: existImage?.tag || "latest",
           },
           jobType: JobType.TRAIN,
         };

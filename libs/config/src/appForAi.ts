@@ -60,6 +60,7 @@ export const AppConfigSchema = Type.Object({
     name: Type.String({ description: "App镜像名" }),
     tag: Type.String({ description: "App镜像标签", default: "latest" }),
   }),
+  tags:Type.Optional(Type.Array(Type.String(), { description: "应用标签, 一个应用可以打多个标签" })),
   type: Type.Enum(AppType, { description: "应用类型" }),
   web: Type.Optional(WebAppConfigSchema),
   vnc: Type.Optional(VncAppConfigSchema),

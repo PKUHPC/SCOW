@@ -12,6 +12,7 @@
 
 import { EntityManager } from "@mikro-orm/mysql";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
+import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { sftpExists, sftpReadFile } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
@@ -24,6 +25,8 @@ import { ModelVersion } from "src/server/entities/ModelVersion";
 import { SFTPWrapper } from "ssh2";
 import { Logger } from "ts-log";
 import { z } from "zod";
+
+import { clusters } from "../trpc/route/config";
 
 
 export const getClusterAppConfigs = (cluster: string) => {
@@ -45,6 +48,62 @@ export const getClusterAppConfigs = (cluster: string) => {
   return apps;
 
 };
+
+type AppConfigWithClusterSpecific = AppConfigSchema & {
+  clusterSpecificConfigs?: {
+    cluster: string,
+    config: AppConfigSchema,
+  }[]
+}
+
+
+export const getAllAppConfigs = (clusters: Record<string, ClusterConfigSchema>) => {
+  const commonApps = getAiAppConfigs();
+
+  const apps: Record<string, AppConfigWithClusterSpecific> = {};
+
+  for (const [key, value] of Object.entries(commonApps)) {
+    apps[key] = value;
+  }
+
+
+  Object.keys(clusters).forEach((cluster) => {
+    const clusterAppsConfigs = getAiAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
+    for (const [key, value] of Object.entries(clusterAppsConfigs)) {
+
+      const specificConfig = {
+        cluster,
+        config: value,
+      };
+      if (apps[key].clusterSpecificConfigs) {
+        apps[key].clusterSpecificConfigs?.push(specificConfig);
+      } else {
+        apps[key].clusterSpecificConfigs = [specificConfig];
+      }
+    }
+  });
+
+  return apps;
+};
+
+export const allApps = getAllAppConfigs(clusters);
+
+
+// 获取所有应用的标签集合
+export const getAllTags = (allApps: Record<string, AppConfigWithClusterSpecific>): string[] => {
+  const allTags = new Set<string>();
+
+  Object.values(allApps).forEach((appConfig) => {
+    appConfig.tags?.forEach((tag) => allTags.add(tag));
+    appConfig.clusterSpecificConfigs?.forEach((clusterConfig) => {
+      clusterConfig.config.tags?.forEach((tag) => allTags.add(tag));
+    });
+  });
+
+  return Array.from(allTags);
+};
+
+
 
 /**
  * @param orm mikro-orm

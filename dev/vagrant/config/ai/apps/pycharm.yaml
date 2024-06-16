@@ -15,6 +15,9 @@ image:
   # 镜像版本
   tag: v1.1
 
+tags:
+  - pycharm
+
 # VNC应用的配置
 vnc:
   # 此X Session的xstartup脚本
