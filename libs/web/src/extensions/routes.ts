@@ -33,6 +33,16 @@ export function defineExtensionRoute<
   return route;
 }
 
+export class ExtensionRouteError extends Error {
+  constructor(public response: Response) {
+    super(`Unexpected response status ${response.status}`);
+  }
+
+  public get status() {
+    return this.response.status;
+  }
+}
+
 
 export const callExtensionRoute = async <
   TQuery extends Record<string, string | undefined>,
@@ -75,5 +85,5 @@ export const callExtensionRoute = async <
     return { [response.status]: schema.parse(data) };
   }
 
-  throw new Error(`Unexpected response status ${response.status}`);
+  throw new ExtensionRouteError(response);
 };

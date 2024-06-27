@@ -13,7 +13,7 @@
 import { DesktopOutlined, RobotOutlined } from "@ant-design/icons";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
-import { JumpToAnotherLink } from "@scow/lib-web/build/layouts/base/header/components";
+import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { PropsWithChildren, useMemo } from "react";
 import { useStore } from "simstate";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
@@ -43,6 +43,28 @@ export const BaseLayout =
 
   const uiExtensionStore = useStore(UiExtensionStore);
 
+  const toCallbackPage = (url: string) => userStore.user
+    ? `${url}/api/auth/callback?token=${userStore.user.token}`
+    : url;
+
+  const navbarLinks: HeaderNavbarLink[] = [];
+
+  if (publicConfig.PORTAL_URL) {
+    navbarLinks.push({
+      icon: <DesktopOutlined style={{ paddingRight: 2 }} />,
+      href: toCallbackPage(publicConfig.PORTAL_URL),
+      text: t("layouts.route.navLinkTextPortal"),
+    });
+  }
+
+  if (publicConfig.AI_URL) {
+    navbarLinks.push({
+      icon: <RobotOutlined style={{ paddingRight: 2 }} />,
+      href: publicConfig.AI_URL,
+      text: t("layouts.route.navLinkTextAI"),
+    });
+  }
+
   return (
     <LibBaseLayout
       logout={userStore.logout}
@@ -55,27 +77,12 @@ export const BaseLayout =
       from="mis"
       extensionStoreData={uiExtensionStore.data}
       languageId={languageId}
-      headerRightContent={(
-        <>
-          <JumpToAnotherLink
-            user={userStore.user}
-            icon={<DesktopOutlined style={{ paddingRight: 2 }} />}
-            link={publicConfig.PORTAL_URL}
-            linkText={t("layouts.route.navLinkTextPortal")}
-          />
-          <JumpToAnotherLink
-            user={userStore.user}
-            icon={<RobotOutlined style={{ paddingRight: 2 }} />}
-            link={publicConfig.AI_URL}
-            linkText={t("layouts.route.navLinkTextAI")}
-          />
-          {
-            systemLanguageConfig.isUsingI18n ? (
-              <LanguageSwitcher initialLanguage={initialLanguage} />
-            ) : undefined
-          }
-        </>
-      )}
+      headerNavbarLinks={navbarLinks}
+      headerRightContent={
+        systemLanguageConfig.isUsingI18n ? (
+          <LanguageSwitcher initialLanguage={initialLanguage} />
+        ) : undefined
+      }
     >
       {children}
     </LibBaseLayout>

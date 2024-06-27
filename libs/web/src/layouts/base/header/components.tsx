@@ -10,17 +10,14 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { Typography } from "antd";
-import { join } from "path";
+import { Tooltip, Typography } from "antd";
+import { useEffect, useRef, useState } from "react";
 import { antdBreakpoints } from "src/layouts/base/constants";
-import { UserInfo } from "src/layouts/base/types";
 import { styled } from "styled-components";
 
 export const HeaderItem = styled.div`
-  padding: 0 16px;
-  /* justify-content: center; */
-  height: 100%;
-
+  padding: 0 8px;
+  justify-content: center;
 
   @media (max-width: ${antdBreakpoints.md}px) {
     padding-right: 4px;
@@ -28,38 +25,73 @@ export const HeaderItem = styled.div`
 
 `;
 
-export const HiddenOnSmallScreenSpan = styled.span`
-  @media (max-width: ${antdBreakpoints.md}px) {
-    display: none;
-  }
+const LinkItem = styled(HeaderItem)`
+`;
+
+const Link = styled(Typography.Link)`
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  align-items: center;
+
+`;
+
+export const TextSpan = styled.span`
+`;
+
+export const IconContainer = styled.span`
+  display: flex;
+  align-items: center;
 `;
 
 interface JumpToAnotherLinkProps {
-  user: UserInfo | undefined;
   icon: React.ReactNode;
-  link: string | undefined;
-  linkText: string;
-  inIcon?: React.ReactNode;
+  href: string;
+  text: string;
+  hideText?: boolean;
 }
 
-export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ user, link, icon, linkText, inIcon }) => {
-  if (!link) { return null; }
+export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon, text, hideText }) => {
+
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  const linkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches);
+    };
+    const media = window.matchMedia(`(max-width: ${antdBreakpoints.md}px)`);
+
+    media.addEventListener("change", handler);
+
+    return () => {
+      media.removeEventListener("change", handler);
+    };
+  }, []);
 
   return (
 
-    <HeaderItem>
-      {/* Cannot use Link because links adds BASE_PATH, but MIS_URL already contains it */}
-      <Typography.Link href={user
-        ? join(link, "/api/auth/callback?token=" + user.token)
-        : link}
-      >
-        {icon}
-        <HiddenOnSmallScreenSpan>
-          {linkText}
-        </HiddenOnSmallScreenSpan>
-        {inIcon}
-      </Typography.Link>
-    </HeaderItem>
+    <LinkItem>
+      <Link href={href} ref={linkRef}>
+        {(hideText || isSmallScreen) ? (
+          <Tooltip title={text}>
+            <IconContainer>
+              {icon}
+            </IconContainer>
+          </Tooltip>
+        ) : (
+          <>
+            <IconContainer>
+              {icon}
+            </IconContainer>
+            <TextSpan>
+              {text}
+            </TextSpan>
+          </>
+        )}
+      </Link>
+    </LinkItem>
 
   );
 };

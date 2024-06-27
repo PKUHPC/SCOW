@@ -13,7 +13,7 @@
 import { RobotOutlined } from "@ant-design/icons";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
-import { JumpToAnotherLink } from "@scow/lib-web/build/layouts/base/header/components";
+import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { PropsWithChildren } from "react";
 import { useStore } from "simstate";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
@@ -60,6 +60,29 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
     userStore.logout();
   };
 
+  const toCallbackPage = (url: string) => userStore.user
+    ? `${url}/api/auth/callback?token=${userStore.user.token}`
+    : url;
+
+  const navbarLinks: HeaderNavbarLink[] = [];
+
+  if (publicConfig.MIS_URL) {
+    navbarLinks.push({
+      icon: <MisIcon style={{ paddingRight: 2 }} />,
+      href: toCallbackPage(publicConfig.MIS_URL),
+      text: t("baseLayout.linkTextMis"),
+    });
+  }
+
+  if (publicConfig.AI_URL) {
+    navbarLinks.push({
+      icon: <RobotOutlined style={{ paddingRight: 2 }} />,
+      href: publicConfig.AI_URL,
+      text: t("baseLayout.linkTextAI"),
+    });
+  }
+
+
   return (
     <LibBaseLayout
       logout={logout}
@@ -72,26 +95,11 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       languageId={languageId}
       extensionStoreData={uiExtensionStore.data}
       from="portal"
+      headerNavbarLinks={navbarLinks}
       headerRightContent={(
-        <>
-          <JumpToAnotherLink
-            user={userStore.user}
-            icon={<MisIcon style={{ paddingRight: 2, stroke:"#9B0000", fill:"#9B0000" }} />}
-            link={publicConfig.MIS_URL}
-            linkText={t("baseLayout.linkTextMis")}
-          />
-          <JumpToAnotherLink
-            user={userStore.user}
-            icon={<RobotOutlined style={{ paddingRight: 2 }} />}
-            link={publicConfig.AI_URL}
-            linkText={t("baseLayout.linkTextAI")}
-          />
-          {
-            systemLanguageConfig.isUsingI18n ? (
-              <LanguageSwitcher initialLanguage={initialLanguage} />
-            ) : undefined
-          }
-        </>
+        systemLanguageConfig.isUsingI18n ? (
+          <LanguageSwitcher initialLanguage={initialLanguage} />
+        ) : undefined
       )}
     >
       {children}

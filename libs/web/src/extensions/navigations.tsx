@@ -12,6 +12,7 @@
 
 import { LinkOutlined } from "@ant-design/icons";
 import { join } from "path";
+import { isUrl, ScowExtensionRouteContext } from "src/extensions/common";
 import { defineExtensionRoute } from "src/extensions/routes";
 import { NavItemProps } from "src/layouts/base/types";
 import { NavIcon } from "src/layouts/icon";
@@ -39,11 +40,7 @@ export const NavItem = BaseNavItem.extend({
 export const rewriteNavigationsRoute = (from: "portal" | "mis") => defineExtensionRoute({
   path: `/${from}/rewriteNavigations`,
   method: "POST" as const,
-  query: z.object({
-    scowUserToken: z.string().optional(),
-    scowDark: z.string(),
-    scowLangId: z.string(),
-  }),
+  query: ScowExtensionRouteContext,
   body: z.object({
     navs: z.array(NavItem) as z.ZodType<NavItem[]>,
   }),
@@ -64,15 +61,6 @@ export const fromNavItemProps = (props: NavItemProps[]): NavItem[] => {
     children: x.children ? fromNavItemProps(x.children) : undefined,
   }));
 };
-
-function isUrl(input: string): boolean {
-  try {
-    new URL(input);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * 将Extension API返回的导航栏转换为用于渲染的导航栏
