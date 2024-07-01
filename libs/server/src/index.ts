@@ -15,5 +15,7 @@ export * from "./app";
 export * from "./date";
 export * from "./misCommon/clustersActivation";
 export * from "./scheduleAdapter";
+export * from "./scowResourceManagement/scowPartitionsPlugin";
+export * from "./scowResourceManagement/util";
 export * from "./systemLanguage";
 export * from "./typeConversion";

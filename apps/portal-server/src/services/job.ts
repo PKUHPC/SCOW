@@ -78,6 +78,8 @@ export const jobServiceServer = plugin((server) => {
             logger,
             async (client) => await asyncClientCall(client.account, "queryAccountBlockStatus", {
               accountName: account,
+              // 当没有特殊指定时，为查询所有分区下的状态
+              queriedPartitions: [],
             }),
           );
           if (resp.blocked) {

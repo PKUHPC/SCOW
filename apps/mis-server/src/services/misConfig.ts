@@ -18,9 +18,6 @@ import { ClusterRuntimeInfo_LastActivationOperation,
 import { getActivatedClusters, getClustersRuntimeInfo } from "src/bl/clustersUtils";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 
-/**
- * @deprecated Use the new API function GetAvailablePartitionsForCluster From configServiceServer instead.
- */
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
 

@@ -30,6 +30,11 @@ export const ScowHookConfigSchema = Type.Object({
   }), { description: "多个Hook的URL。SCOW将会以数组的顺序逐个调用各个hook。" })),
 }, { description: "SCOW Hook配置" });
 
+export const ScowResourceManagementSchema = Type.Object({
+  address: Type.String({ description: "资源", default: "scow-partition:3000" }),
+  scowPartitionsEnabled: Type.Boolean({ description: "是否启用异步操作系统", default: "false" }),
+});
+
 export const CommonConfigSchema = Type.Object({
   passwordPattern: Type.Object({
     regex: Type.String({
@@ -63,6 +68,8 @@ export const CommonConfigSchema = Type.Object({
     Type.Enum(SYSTEM_VALID_LANGUAGE_ENUM, { description: "SCOW使用的文本语言，不再允许手动切换" }),
   ], { description: "", default: { autoDetectWhenUserNotSet: true, default: SYSTEM_VALID_LANGUAGE_ENUM.zh_cn } })),
 
+  scowResourceManagement: Type.Optional(ScowResourceManagementSchema),
+
 });
 
 export const getSystemLanguageConfig = (systemLanguage: SystemLanguage): SystemLanguageConfig => {
@@ -79,6 +86,8 @@ const COMMON_CONFIG_NAME = "common";
 
 export type ScowHookConfigSchema = Static<typeof ScowHookConfigSchema>;
 export type ScowApiConfigSchema = Static<typeof ScowApiConfigSchema>;
+export type ScowResourceManagementSchema = Static<typeof ScowResourceManagementSchema>;
+
 export type CommonConfigSchema = Static<typeof CommonConfigSchema>;
 
 export const getCommonConfig: GetConfigFn<CommonConfigSchema> = (baseConfigPath) =>

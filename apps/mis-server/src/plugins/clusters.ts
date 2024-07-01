@@ -26,13 +26,29 @@ type CallOnAllResult<T> = {
   result: T
 }[]
 
-// Throw ServiceError if failed.
-type CallOnAll = <T>(
+type CallOnAllWithoutClusterId = <T>(
   // clusters for calling to connect to adapter client
   clusters: Record<string, ClusterConfigSchema>,
   logger: Logger,
-  call: (client: SchedulerAdapterClient) => Promise<T>,
+  call: (
+    client: SchedulerAdapterClient,
+  ) => Promise<T>,
 ) => Promise<CallOnAllResult<T>>;
+
+
+type CallOnAllWithClusterId = <T>(
+  // clusters for calling to connect to adapter client
+  clusters: Record<string, ClusterConfigSchema>,
+  logger: Logger,
+  call: (
+    client: SchedulerAdapterClient,
+    cluster: string,
+  ) => Promise<T>,
+) => Promise<CallOnAllResult<T>>;
+
+// CallOnAll重载
+// Throw ServiceError if failed.
+type CallOnAll = CallOnAllWithClusterId & CallOnAllWithoutClusterId;
 
 type CallOnOne = <T>(
   cluster: string,
@@ -142,7 +158,7 @@ export const clustersPlugin = plugin(async (f) => {
 
       const responses = await Promise.all(Object.entries(adapterClientForActivatedClusters)
         .map(async ([cluster, client]) => {
-          return call(client).then((result) => {
+          return call(client, cluster).then((result) => {
             logger.info("Executing on %s success", cluster);
             return { cluster, success: true, result };
           }).catch((e) => {

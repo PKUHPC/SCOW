@@ -18,7 +18,7 @@
 import type { MikroORM } from "@mikro-orm/core";
 import type { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Capabilities } from "@scow/lib-auth";
-import { apiAuthPlugin } from "@scow/lib-server";
+import { apiAuthPlugin, ScowPartitionsPlugin, scowPartitionsPlugin } from "@scow/lib-server";
 import { commonConfig } from "src/config/common";
 import { authServicePlugin } from "src/plugins/authService";
 import { ClearCachePlugin, clearCachePlugin } from "src/plugins/cachePlugin";
@@ -29,7 +29,8 @@ import { PricePlugin, pricePlugin } from "src/plugins/price";
 import { SyncBlockStatusPlugin, syncBlockStatusPlugin } from "src/plugins/syncBlockStatus";
 
 declare module "@ddadaal/tsgrpc-server" {
-  interface Extensions extends ClusterPlugin, PricePlugin, FetchPlugin, SyncBlockStatusPlugin, ClearCachePlugin {
+  interface Extensions extends ClusterPlugin, PricePlugin, FetchPlugin,
+  SyncBlockStatusPlugin, ScowPartitionsPlugin, ClearCachePlugin {
     orm: MikroORM<MySqlDriver>;
     capabilities: Capabilities;
   }
@@ -51,4 +52,8 @@ export const plugins = [
 
 if (commonConfig.scowApi) {
   plugins.push(apiAuthPlugin(commonConfig.scowApi));
+}
+
+if (commonConfig.scowResourceManagement?.scowPartitionsEnabled) {
+  plugins.push(scowPartitionsPlugin(commonConfig.scowResourceManagement));
 }

@@ -42,6 +42,10 @@ export const accountServiceServer = plugin((server) => {
             ],
             owner: "user1",
             blocked: false,
+            accountBlockedDetails: [
+              { partition: "normal1", blocked: false },
+              { partition: "normal2", blocked: true },
+            ],
           },
           {
             accountName: "a_user2",
@@ -51,15 +55,23 @@ export const accountServiceServer = plugin((server) => {
             ],
             owner: "user2",
             blocked: true,
+            accountBlockedDetails: [
+              { partition: "normal1", blocked: true },
+              { partition: "normal2", blocked: true },
+            ],
           },
         ],
       }];
     },
 
     queryAccountBlockStatus: async () => {
-      return [{ blocked: true }];
+      return [{
+        blocked: true,
+        accountBlockedDetails: [
+          { partition: "normal1", blocked: true },
+        ],
+      }];
     },
-
 
 
   });

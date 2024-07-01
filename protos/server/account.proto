@@ -17,9 +17,16 @@ package scow.server;
 import "common/money.proto";
 import "google/protobuf/timestamp.proto";
 
+message ClusterPartition {
+  string cluster_id = 1;
+  string partition = 2;
+}
+
 message BlockAccountRequest {
   string tenant_name = 1;
   string account_name = 2;
+  // Compatibility parameters added for the deauthorization extension functionality
+  optional ClusterPartition unassigned_cluster_partition = 3;
 }
 
 // NOT_FOUND: account is not found.
