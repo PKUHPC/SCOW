@@ -13,6 +13,7 @@
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 
+import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
@@ -207,21 +208,23 @@ function MyApp({ Component, pageProps, extra }: Props) {
         <StoreProvider
           stores={[userStore, clusterInfoStore, loginNodeStore, uiExtensionStore]}
         >
-          <DarkModeProvider initial={extra.darkModeCookieValue}>
-            <AntdConfigProvider color={primaryColor} locale={ extra.initialLanguage}>
-              <FloatButtons languageId={ extra.initialLanguage } />
-              <GlobalStyle />
-              <FailEventHandler />
-              <TopProgressBar />
-              <BaseLayout
-                footerText={footerText}
-                versionTag={publicConfig.VERSION_TAG}
-                initialLanguage={extra.initialLanguage}
-              >
-                <Component {...pageProps} />
-              </BaseLayout>
-            </AntdConfigProvider>
-          </DarkModeProvider>
+          <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
+            <DarkModeProvider initial={extra.darkModeCookieValue}>
+              <AntdConfigProvider color={primaryColor} locale={ extra.initialLanguage}>
+                <FloatButtons languageId={ extra.initialLanguage } />
+                <GlobalStyle />
+                <FailEventHandler />
+                <TopProgressBar />
+                <BaseLayout
+                  footerText={footerText}
+                  versionTag={publicConfig.VERSION_TAG}
+                  initialLanguage={extra.initialLanguage}
+                >
+                  <Component {...pageProps} />
+                </BaseLayout>
+              </AntdConfigProvider>
+            </DarkModeProvider>
+          </StyleProvider>
         </StoreProvider>
       </Provider>
     </>

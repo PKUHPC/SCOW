@@ -12,6 +12,7 @@
 
 "use client";
 
+import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "src/components/ErrorBoundary";
@@ -48,34 +49,36 @@ export function ClientLayout(props: {
     ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
 
   return (
-    <StyledComponentsRegistry>
-      <AntdStyleRegistry>
-        <body>
-          {
-            useConfig.isLoading ?
-              <Loading />
-              : (
-                <DarkModeProvider initial={props.initialDark}>
-                  <AntdConfigProvider color={color}>
-                    <GlobalStyle />
-                    <TopProgressBar />
-                    <ErrorBoundary Component={RootErrorContent} pathname={pathname ?? ""}>
-                      <UiConfigContext.Provider
-                        value={{
-                          hostname,
-                          uiConfig,
-                        }}
-                      >
-                        {props.children}
-                      </UiConfigContext.Provider>
-                    </ErrorBoundary>
-                  </AntdConfigProvider>
-                </DarkModeProvider>
-              )
-          }
+    <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
+      <StyledComponentsRegistry>
+        <AntdStyleRegistry>
+          <body>
+            {
+              useConfig.isLoading ?
+                <Loading />
+                : (
+                  <DarkModeProvider initial={props.initialDark}>
+                    <AntdConfigProvider color={color}>
+                      <GlobalStyle />
+                      <TopProgressBar />
+                      <ErrorBoundary Component={RootErrorContent} pathname={pathname ?? ""}>
+                        <UiConfigContext.Provider
+                          value={{
+                            hostname,
+                            uiConfig,
+                          }}
+                        >
+                          {props.children}
+                        </UiConfigContext.Provider>
+                      </ErrorBoundary>
+                    </AntdConfigProvider>
+                  </DarkModeProvider>
+                )
+            }
 
-        </body>
-      </AntdStyleRegistry>
-    </StyledComponentsRegistry>
+          </body>
+        </AntdStyleRegistry>
+      </StyledComponentsRegistry>
+    </StyleProvider>
   );
 }
