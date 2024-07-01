@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
 
   const host = getClusterLoginNode(clusterId);
 
-  if (!host) { return NextResponse.json({ code: "INVALID_CLUSTER" }, { status: 400 }); }
+  if (!host) {
+    return NextResponse.json({ code: "INVALID_CLUSTER" }, { status: 400 });
+  }
 
 
   return await sshConnect(host, user.identityId, logger, async (ssh) => {

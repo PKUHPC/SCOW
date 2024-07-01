@@ -12,7 +12,7 @@
 
 import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { createOperationLogClient } from "@scow/lib-operation-log/build/index";
+import { createOperationLogClient, OperationType } from "@scow/lib-operation-log";
 import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
 import { ExportOperationLog, OperationLog } from "@scow/protos/build/audit/operation_log";
 import { UserServiceClient } from "@scow/protos/build/server/user";
@@ -21,7 +21,7 @@ import { authenticate } from "src/auth/server";
 import { getI18nCurrentText, getT, getTArgs, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { getOperationDetail, getOperationResultTexts, getOperationTypeTexts, OperationCodeMap, OperationLogQueryType,
-  OperationResult, OperationType } from "src/models/operationLog";
+  OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";

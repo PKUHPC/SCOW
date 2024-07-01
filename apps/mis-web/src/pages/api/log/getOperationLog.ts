@@ -12,14 +12,14 @@
 
 import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { createOperationLogClient } from "@scow/lib-operation-log/build/index";
+import { createOperationLogClient, OperationType } from "@scow/lib-operation-log";
 import { GetOperationLogsRequest_SortBy as SortBy } from "@scow/protos/build/audit/operation_log";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { OperationLog, OperationLogQueryType,
-  OperationResult, OperationSortBy, OperationSortOrder, OperationType } from "src/models/operationLog";
+  OperationResult, OperationSortBy, OperationSortOrder } from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";

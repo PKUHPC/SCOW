@@ -10,12 +10,6 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { ValueOf } from "next/dist/shared/lib/constants";
+import { getAuditConfig } from "@scow/config/build/audit";
 
-export const OperationResult = {
-  UNKNOWN: 0,
-  SUCCESS: 1,
-  FAIL: 2,
-} as const;
-
-export type OperationResult = ValueOf<typeof OperationResult>
+export const auditConfig = getAuditConfig();

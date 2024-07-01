@@ -14,6 +14,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { AppType } from "@scow/config/build/appForAi";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { formatTime } from "@scow/lib-scheduler-adapter";
 import { getAppConnectionInfoFromAdapter, getEnvVariables } from "@scow/lib-server";
 import {
@@ -32,6 +33,7 @@ import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
+import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkAppExist, checkCreateAppEntity,
   fetchJobInputParams, getClusterAppConfigs, validateUniquePaths } from "src/server/utils/app";
@@ -49,6 +51,7 @@ import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
 import { isParentOrSameFolder } from "src/utils/file";
 import { isPortReachable } from "src/utils/isPortReachable";
+import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
@@ -265,6 +268,30 @@ export const createAppSession = procedure
   .output(z.object({
     jobId: z.number(),
   }))
+  .use(async ({ input:{ clusterId, account }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.createApp,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { clusterId, jobId:(res.data as any).jobId, accountName:account } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { clusterId, accountName:account } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const { clusterId, appId, appJobName, isAlgorithmPrivate, algorithm,
       image, startCommand, remoteImageUrl, isDatasetPrivate, dataset, isModelPrivate,

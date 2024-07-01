@@ -13,12 +13,13 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
+import { OperationType } from "@scow/lib-operation-log";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
 import { parseErrorDetails } from "@scow/rich-error-model";
 import { Type } from "@sinclair/typebox";
 import { join } from "path";
 import { authenticate } from "src/auth/server";
-import { OperationResult, OperationType } from "src/models/operationLog";
+import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";

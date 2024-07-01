@@ -10,12 +10,14 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { getUserHomedir, sftpExists } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
 import { SharedStatus } from "src/models/common";
 import { Dataset } from "src/server/entities/Dataset";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
+import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCopyFilePath, checkCreateResourcePath } from "src/server/utils/checkPathPermission";
 import { chmod } from "src/server/utils/chmod";
@@ -28,6 +30,7 @@ import { paginationSchema } from "src/server/utils/pagination";
 import { checkSharePermission, getUpdatedSharedPath, SHARED_TARGET,
   shareFileOrDir, unShareFileOrDir } from "src/server/utils/share";
 import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
+import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { booleanQueryParam } from "../utils";
@@ -104,6 +107,30 @@ export const createDatasetVersion = procedure
     datasetId: z.number(),
   }))
   .output(z.object({ datasetVersionId: z.number() }))
+  .use(async ({ input:{ datasetId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.createDatasetVersion,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:(res.data as any).datasetVersionId } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const { versionName, path, datasetId } = input;
@@ -158,7 +185,31 @@ export const updateDatasetVersion = procedure
     versionDescription: z.string().optional(),
     datasetId: z.number(),
   }))
-  .output(z.void())
+  .output(z.number())
+  .use(async ({ input:{ datasetId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.updateDatasetVersion,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:res.data as number } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:0 } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
 
@@ -217,7 +268,7 @@ export const updateDatasetVersion = procedure
 
     await em.flush();
 
-    return;
+    return datasetVersion.id;
   });
 
 export const deleteDatasetVersion = procedure
@@ -234,6 +285,30 @@ export const deleteDatasetVersion = procedure
     datasetId: z.number(),
   }))
   .output(z.void())
+  .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.deleteDatasetVersion,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:datasetVersionId } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:datasetVersionId } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const { datasetVersionId, datasetId } = input;
@@ -314,6 +389,30 @@ export const shareDatasetVersion = procedure
     datasetId: z.number(),
   }))
   .output(z.void())
+  .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.shareDatasetVersion,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:datasetVersionId } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { datasetId, versionId:datasetVersionId } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const { datasetVersionId, datasetId } = input;
@@ -502,7 +601,33 @@ export const copyPublicDatasetVersion = procedure
     versionDescription: z.string(),
     path: z.string(),
   }))
-  .output(z.object({ success: z.boolean() }))
+  .output(z.object({ newDatasetId: z.number(), newDatasetVersionId: z.number() }))
+  .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.copyDatasetVersion,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { sourceDatasetId:datasetId, sourceDatasetVersionId:datasetVersionId,
+          targetDatasetId:(res.data as any).newDatasetId,
+          targetDatasetVersionId:(res.data as any).newDatasetVersionId } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { sourceDatasetId:datasetId, sourceDatasetVersionId:datasetVersionId } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
 
@@ -565,6 +690,6 @@ export const copyPublicDatasetVersion = procedure
       });
     }
 
-    return { success: true };
+    return { newDatasetId: newDataset.id, newDatasetVersionId: newDatasetVersion.id };
   });
 

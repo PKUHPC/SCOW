@@ -12,7 +12,7 @@
 
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
-import { OperationResult } from "@scow/lib-operation-log";
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
 import { Account } from "@scow/protos/build/server/account";
 import { ExportServiceClient } from "@scow/protos/build/server/export";
@@ -20,7 +20,6 @@ import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { OperationType } from "src/models/operationLog";
 import { getDisplayedStateI18nTexts, PlatformRole, TenantRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";

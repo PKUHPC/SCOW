@@ -12,12 +12,13 @@
 
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncRequestStreamCall } from "@ddadaal/tsgrpc-client";
+import { OperationType } from "@scow/lib-operation-log";
 import { FileServiceClient } from "@scow/protos/build/portal/file";
 import { Type } from "@sinclair/typebox";
 import busboy, { BusboyEvents } from "busboy";
 import { once } from "events";
 import { authenticate } from "src/auth/server";
-import { OperationResult, OperationType } from "src/models/operationLog";
+import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { pipeline } from "src/utils/pipeline";

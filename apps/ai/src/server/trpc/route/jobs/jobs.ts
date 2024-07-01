@@ -12,6 +12,7 @@
 
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import {
   getUserHomedir,
   sftpExists,
@@ -22,6 +23,7 @@ import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCreateAppEntity, fetchJobInputParams, validateUniquePaths } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
@@ -30,6 +32,7 @@ import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
 import { isParentOrSameFolder } from "src/utils/file";
+import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 const SESSION_METADATA_NAME = "session.json";
@@ -87,7 +90,32 @@ procedure
   .input(TrainJobInputSchema)
   .output(z.object({
     jobId: z.number(),
-  })).mutation(
+  }))
+  .use(async ({ input:{ clusterId }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.createAiTrain,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { clusterId, jobId:(res.data as any).newDatasetId } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { clusterId } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
+  .mutation(
     async ({ input, ctx: { user } }) => {
       const { clusterId, trainJobName, isAlgorithmPrivate, algorithm, image, remoteImageUrl,
         isDatasetPrivate, dataset, isModelPrivate, model, mountPoints = [], account, partition,
@@ -287,6 +315,7 @@ procedure
     jobId: z.number(),
   }))
   .output(z.void())
+
   .mutation(async ({ input, ctx: { user } }) => {
 
     const { cluster, jobId } = input;

@@ -11,6 +11,7 @@
  */
 
 import { NextApiRequest } from "next";
+import { NextRequest } from "next/server";
 
 /**
  * Replace key1=value1,key2=value2 to { key1: value1, key1: value2 }.
@@ -52,9 +53,17 @@ export function parseArray(str: string): string[] {
   return str.split(",");
 }
 
-export const parseIp = (req: NextApiRequest): string | undefined => {
+export const parseIp = (req: NextApiRequest | NextRequest): string | undefined => {
 
-  let forwardedFor = req.headers["x-forwarded-for"];
+  let forwardedFor: string | string[] | undefined | null = undefined;
+
+  if ("headers" in req && typeof req.headers.get === "function") {
+    // NextRequest
+    forwardedFor = req.headers.get("X-Forwarded-For");
+  } else if ("headers" in req && "x-forwarded-for" in req.headers) {
+    // NextApiRequest
+    forwardedFor = req.headers["x-forwarded-for"];
+  }
 
   if (Array.isArray(forwardedFor)) {
     forwardedFor = forwardedFor.shift();
@@ -62,6 +71,11 @@ export const parseIp = (req: NextApiRequest): string | undefined => {
 
   if (typeof forwardedFor === "string") {
     forwardedFor = forwardedFor.split(",").shift();
+  }
+
+  // 处理 NextRequest 类型没有 socket 属性的情况
+  if (!("socket" in req)) {
+    return forwardedFor ?? undefined;
   }
 
   return forwardedFor ?? req.socket?.remoteAddress;

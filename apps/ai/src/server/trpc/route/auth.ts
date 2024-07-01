@@ -11,19 +11,25 @@
  */
 
 import { changePassword, checkPassword, deleteToken } from "@scow/lib-auth";
+import { OperationType } from "@scow/lib-operation-log";
 import { joinWithUrl } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
+import { OperationResult } from "src/models/operationLog";
 import { deleteUserToken, getUserToken, setUserTokenCookie } from "src/server/auth/cookie";
 import { getUserInfo } from "src/server/auth/server";
 import { validateToken } from "src/server/auth/token";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
+import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
 import { authProcedure, baseProcedure } from "src/server/trpc/procedure/base";
 import { ErrorCode } from "src/server/utils/errorCode";
+import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
+
+import { booleanQueryParam } from "./utils";
 
 
 const ClientUserInfoSchema = z.object({
@@ -71,13 +77,22 @@ export const auth = router({
     })
     .input(z.object({
       token:z.string(),
-      // fromAuth: booleanQueryParam(),  //后续与audit集成时需使用
+      fromAuth: booleanQueryParam().optional(),
     }))
     .output(z.void())
-    .query(async ({ ctx: { res }, input }) => {
-      const { token } = input;
+    .query(async ({ ctx: { req, res }, input }) => {
+      const { token, fromAuth = false } = input;
+
       const info = await validateToken(token);
       if (info) {
+        if (fromAuth) {
+          const logInfo = {
+            operatorUserId: info.identityId,
+            operatorIp: parseIp(req) ?? "",
+            operationTypeName: OperationType.login,
+          };
+          await callLog(logInfo, OperationResult.SUCCESS);
+        }
         // set token cache
         setUserTokenCookie(token, res);
         res.redirect(BASE_PATH);
@@ -117,7 +132,7 @@ export const auth = router({
         method: "POST",
         path: "/auth/logout",
         tags: ["auth"],
-        summary: "登录",
+        summary: "登出",
       },
     })
     .input(z.void())
@@ -125,6 +140,17 @@ export const auth = router({
     .mutation(async ({ ctx: { req, res } }) => {
 
       const token = getUserToken(req) || "";
+      if (token) {
+        const info = await validateToken(token);
+        if (info) {
+          const logInfo = {
+            operatorUserId: info.identityId,
+            operatorIp: parseIp(req) ?? "",
+            operationTypeName: OperationType.logout,
+          };
+          await callLog(logInfo, OperationResult.SUCCESS);
+        }
+      }
       await deleteToken(token, config.AUTH_INTERNAL_URL);
       deleteUserToken(res);
 

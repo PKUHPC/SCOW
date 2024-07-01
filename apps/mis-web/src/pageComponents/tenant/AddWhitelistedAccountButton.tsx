@@ -41,7 +41,7 @@ interface PickExpDateProps {
 
 // 过期时间选择组件
 const PickExpDate: React.FC<PickExpDateProps> = (props) => {
-  const { id, value = dayjs(), onChange } = props;
+  const { id, onChange } = props;
 
 
   const t = useI18nTranslateToString();

@@ -12,11 +12,13 @@
 
 import { ServiceError } from "@grpc/grpc-js";
 import { getSortedClusterIds } from "@scow/config/build/cluster";
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { sshConnect as libConnect } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { aiConfig } from "src/server/config/ai";
 import { rootKeyPair } from "src/server/config/env";
 import { Image, Source, Status } from "src/server/entities/Image";
+import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
@@ -26,6 +28,7 @@ import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
 import { checkSharePermission } from "src/server/utils/share";
 import { getClusterLoginNode } from "src/server/utils/ssh";
+import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { clusters } from "../config";
@@ -81,7 +84,7 @@ export const list = procedure
     withExternal: booleanQueryParam().optional(),
   }))
   .output(z.object({ items: z.array(ImageListSchema), count: z.number() }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input, ctx:{ user } }) => {
 
     const { clusterId, isPublic, nameOrTagOrDesc, withExternal, pageSize, page } = input;
     const em = await forkEntityManager();
@@ -144,7 +147,29 @@ export const createImage = procedure
     sourcePath: z.string(),
     clusterId: z.string().optional(),
   }))
-  .output(z.void())
+  .output(z.number())
+  .use(async ({ input:{ clusterId, tag }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.createImage,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ clusterId:clusterId ?? "", tag, imageId:res.data as number } },
+        OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ clusterId:clusterId ?? "" } },
+        OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
 
     if (input.clusterId && !clusterExist(input.clusterId)) {
@@ -256,9 +281,8 @@ export const createImage = procedure
     };
 
     createProcess();
-    return;
+    return image.id;
   });
-
 
 export const updateImage = procedure
   .meta({
@@ -274,27 +298,52 @@ export const updateImage = procedure
     description: z.string().optional(),
   }))
   .output(z.number())
-  .mutation(async ({ input, ctx: { user } }) => {
-    const em = await forkEntityManager();
-    const image = await em.findOne(Image, { id: input.id });
-    if (!image) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: `Image ${input.id} not found`,
-      });
+  .use(async ({ input:{ id }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.updateImage,
     };
 
-    if (image.owner !== user.identityId) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: `Image ${input.id} not accessible`,
-      });
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.SUCCESS);
     }
-    image.description = input.description;
 
-    await em.flush();
-    return image.id;
-  });
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.FAIL);
+    }
+
+    return res;
+  })
+  .mutation(
+    async ({ input, ctx: { user } }) => {
+      const em = await forkEntityManager();
+
+      const image = await em.findOne(Image, { id: input.id });
+      if (!image) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Image ${input.id} not found`,
+        });
+      };
+
+      if (image.owner !== user.identityId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Image ${input.id} not accessible`,
+        });
+      }
+      image.description = input.description;
+
+      await em.flush();
+      return image.id;
+    },
+  );
 
 export const deleteImage = procedure
   .meta({
@@ -307,6 +356,28 @@ export const deleteImage = procedure
   })
   .input(z.object({ id: z.number(), force: booleanQueryParam().optional() }))
   .output(z.void())
+  .use(async ({ input:{ id }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.deleteImage,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const image = await em.findOne(Image, { id: input.id });
@@ -458,6 +529,28 @@ export const shareOrUnshareImage = procedure
   })
   .input(z.object({ id: z.number(), share: z.boolean() }))
   .output(z.void())
+  .use(async ({ input:{ id, share }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.shareImage,
+    };
+
+    if (share && res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.SUCCESS);
+    }
+
+    if (share && !res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
+        OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const image = await em.findOne(Image, { id: input.id });
@@ -500,7 +593,31 @@ export const copyImage = procedure
     },
   })
   .input(z.object({ id: z.number(), newName: z.string(), newTag: z.string() }))
-  .output(z.void())
+  .output(z.number())
+  .use(async ({ input:{ id, newTag }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.copyImage,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { sourceImageId:id, targetImageId:res.data as number, targetImageTag:newTag } },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+        { sourceImageId:id } },
+      OperationResult.FAIL);
+    }
+
+    return res;
+  })
   .mutation(async ({ input, ctx: { user } }) => {
 
     const em = await forkEntityManager();
@@ -607,6 +724,6 @@ export const copyImage = procedure
     };
 
     copyProcess();
-    return;
+    return image.id;
 
   });

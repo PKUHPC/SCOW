@@ -11,10 +11,11 @@
  */
 
 import { Type, typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { OperationType } from "@scow/lib-operation-log";
 import { redirectToAuthLogin } from "@scow/lib-web/build/routes/auth/redirectToLogin";
 import { setTokenCookie } from "src/auth/cookie";
 import { validateToken } from "src/auth/token";
-import { OperationResult, OperationType } from "src/models/operationLog";
+import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
 import { publicConfig, runtimeConfig } from "src/utils/config";
 import { parseIp } from "src/utils/server";
