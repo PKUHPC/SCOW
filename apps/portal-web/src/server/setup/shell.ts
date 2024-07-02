@@ -20,8 +20,9 @@ import { join } from "path";
 import { checkCookie } from "src/auth/server";
 import { OperationResult, OperationType } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
+import { createAuditClient, getAuditClient } from "src/server/shellAudit";
 import { getClient } from "src/utils/client";
-import { publicConfig } from "src/utils/config";
+import { publicConfig, runtimeConfig } from "src/utils/config";
 import { parseIp } from "src/utils/server";
 import { parse } from "url";
 import { WebSocket, WebSocketServer } from "ws";
@@ -144,6 +145,24 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     },
   }, OperationResult.SUCCESS);
 
+  const { createShellSession, sessionEnd } = createAuditClient(runtimeConfig.SHELL_AUDIT_CONFIG, console);
+
+  const auditClient = getAuditClient(runtimeConfig.SHELL_AUDIT_CONFIG, console);
+  let auditMsgStream;
+  if (auditClient) {
+    auditMsgStream = asyncDuplexStreamCall(auditClient, "writeTerminalMsg");
+  }
+
+  const { sessionId: sessionAuditId } = await createShellSession({ session: {
+    user: user.identityId,
+    remoteAddr: parseIp(req) ?? "",
+    isFinished: false,
+    node: loginNode.address,
+    dateStart: new Date().toISOString(),
+    isSuccess: true,
+  } });
+
+
   const send = (data: ShellOutputData) => {
     ws.send(JSON.stringify(data));
   };
@@ -154,10 +173,25 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   });
 
 
-  stream.on("data", (chunk: ShellResponse) => {
+  stream.on("data", async (chunk: ShellResponse) => {
     switch (chunk.message?.$case) {
     case "data":
       send({ $case: "data", data: { data: chunk.message.data.data.toString() } });
+      const msgStr: string = chunk.message.data.data.toString();
+
+      if (auditMsgStream) {
+        auditMsgStream.writeAsync({
+          message: msgStr,
+          cluster: cluster,
+          node: loginNode.address,
+          user: user.identityId,
+          session: sessionAuditId,
+          time: new Date().toISOString(),
+          remoteIp: parseIp(req) ?? "",
+        });
+      }
+
+
       break;
     case "exit":
       send({ $case: "exit", exit: { code: chunk.message.exit.code, signal: chunk.message.exit.signal } });
@@ -178,6 +212,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     case "disconnect":
       stream.write({ message: { $case: "disconnect", disconnect: {} } });
       stream.end();
+      if (auditMsgStream) {
+        auditMsgStream.end();
+      }
       break;
     }
 
@@ -195,6 +232,19 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     }, OperationResult.FAIL);
     stream.write({ message: { $case: "disconnect", disconnect: {} } });
     stream.end();
+    if (auditMsgStream) {
+      auditMsgStream.end();
+    }
+  });
+
+  ws.on("close", async () => {
+    await sessionEnd({
+      sessionId: sessionAuditId,
+      dateEnd: new Date().toISOString(),
+    });
+    if (auditMsgStream) {
+      auditMsgStream.end();
+    }
   });
 });
 

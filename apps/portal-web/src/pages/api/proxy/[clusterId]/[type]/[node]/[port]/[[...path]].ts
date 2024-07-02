@@ -14,6 +14,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { checkCookie } from "src/auth/server";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { parseProxyTarget, proxy } from "src/server/setup/proxy";
+import { createAuditClient } from "src/server/shellAudit";
+import { runtimeConfig } from "src/utils/config";
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
 
@@ -36,6 +38,31 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     res.status(400).send(target.message);
     return;
   }
+
+  if (runtimeConfig.SHELL_AUDIT_CONFIG?.auditService.appAudit?.enabled === true) {
+    const { writeAppProxy } = createAuditClient(runtimeConfig.SHELL_AUDIT_CONFIG, console);
+    const headers = Object.entries(req.headers).map(([key, value]) => `${key}: ${value}`);
+    const bodyAsString = req.body !== undefined
+      ? (
+        typeof req.body === "string"
+          ? req.body
+          : JSON.stringify(req.body)
+      )
+      : "";
+    await writeAppProxy({
+      user: user.identityId,
+      target: target,
+      request: {
+        method: req.method ?? "",
+        url: req.url ?? "",
+        headers: headers,
+        clientIp: req.socket.remoteAddress ?? "",
+        body: bodyAsString,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
 
   proxy.web(req, res, {
     target,

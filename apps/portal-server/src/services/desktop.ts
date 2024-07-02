@@ -44,7 +44,7 @@ export const desktopServiceServer = plugin((server) => {
       const reply = await clusterops.desktop.createDesktop({ loginNode: host, wm, userId, desktopName }, logger);
 
       return [{ ...reply }];
-      
+
     },
 
     killDesktop: async ({ request, logger }) => {
