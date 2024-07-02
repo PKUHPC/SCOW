@@ -22,10 +22,10 @@
     "@ddadaal/tsgrpc-client": "0.17.7",
     "@scow/protos": "workspace:*",
     "@scow/config": "workspace:*",
-    "@grpc/grpc-js": "1.10.9"
+    "@grpc/grpc-js": "1.10.10"
   },
   "peerDependencies": {
-    "antd": "5.18.3",
+    "antd": "5.19.0",
     "next": "14.2.4",
     "styled-components": "6.1.11",
     "@ant-design/icons": "5.3.7",
@@ -37,7 +37,7 @@
     "react-async": "10.0.1"
   },
   "devDependencies": {
-    "antd": "5.18.3",
+    "antd": "5.19.0",
     "next": "14.2.4",
     "styled-components": "6.1.11",
     "@types/mime-types": "2.1.4",

@@ -19,7 +19,7 @@
   "dependencies": {
     "@ddadaal/tsgrpc-common": "0.2.5",
     "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@grpc/grpc-js": "1.10.10",
     "nookies": "2.5.2",
     "@scow/config": "workspace:*",
     "@scow/protos": "workspace:*",
