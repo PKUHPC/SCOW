@@ -29,14 +29,14 @@
   },
   "devDependencies": {
     "@adobe/jsonschema2md": "8.0.2",
-    "@algolia/client-search": "4.23.3",
+    "@algolia/client-search": "4.24.0",
     "@docusaurus/module-type-aliases": "3.4.0",
     "@scow/config": "workspace:*",
     "@sinclair/typebox": "0.32.34",
     "@tsconfig/docusaurus": "2.0.3",
     "@docusaurus/types": "3.4.0",
     "@types/react": "18.2.37",
-    "typescript": "5.5.2",
+    "typescript": "5.5.3",
     "@node-rs/jieba": "1.10.3",
     "unist-util-visit": "5.0.0"
   },

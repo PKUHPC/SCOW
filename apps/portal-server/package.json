@@ -24,7 +24,7 @@
     "@ddadaal/tsgrpc-common": "0.2.5",
     "@ddadaal/tsgrpc-server": "0.19.5",
     "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@grpc/grpc-js": "1.10.10",
     "@scow/config": "workspace:*",
     "@scow/lib-config": "workspace:*",
     "@scow/lib-scheduler-adapter": "workspace:*",
