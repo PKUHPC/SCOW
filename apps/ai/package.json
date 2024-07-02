@@ -92,7 +92,7 @@
     "@xterm/addon-fit": "0.10.0",
     "zod": "3.23.8",
     "shell-quote": "1.8.1",
-    "replace-in-file": "7.2.0"
+    "replace-in-file": "8.0.2"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "14.2.4",
