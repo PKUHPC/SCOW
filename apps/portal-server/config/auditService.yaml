@@ -1,0 +1,9 @@
+auditService:
+  shellAudit:
+    enabled: true
+  appAudit:
+    enabled: true
+  remoteDesktopAudit:
+    enabled: false
+auditServiceUrl:
+  172.27.156.9:50051

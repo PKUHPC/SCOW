@@ -13,6 +13,7 @@
 import { AuditConfigSchema } from "@scow/config/build/audit";
 import { I18nStringType, SystemLanguageConfig } from "@scow/config/build/i18n";
 import type { PortalConfigSchema } from "@scow/config/build/portal";
+import { AuditServiceConfigSchema } from "@scow/config/build/shellAudit";
 import type { UiConfigSchema } from "@scow/config/build/ui";
 import { UiExtensionConfigSchema } from "@scow/config/build/uiExtensions";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
@@ -40,6 +41,8 @@ export interface ServerRuntimeConfig {
   SCOW_API_AUTH_TOKEN?: string;
 
   AUDIT_CONFIG: AuditConfigSchema | undefined;
+
+  SHELL_AUDIT_CONFIG: AuditServiceConfigSchema | undefined;
 
   SERVER_I18N_CONFIG_TEXTS: {
     submitJopPromptText?: I18nStringType,

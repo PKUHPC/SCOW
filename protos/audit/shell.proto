@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package scow.audit;
+
+import "google/protobuf/timestamp.proto";
+
+message SshSession {
+  string user = 2;
+  string remote_addr = 3;
+  bool is_finished = 4;
+  string node = 5;
+  google.protobuf.Timestamp date_start = 6;
+  google.protobuf.Timestamp date_end = 7;
+  bool is_success = 8;
+}
+
+message CommandInfo {
+  string user = 1;
+  string node = 2;
+  string input = 3;
+  string output = 4;
+  string session = 5;
+  google.protobuf.Timestamp time = 6;
+  string remote_addr = 8;
+  string asset_ip = 9;
+}
+
+message OperationInfo {
+  string job_id = 1;
+  string time = 2;
+  string operation = 3;
+}
+
+
+message GetSessionsRequest {
+
+}
+
+message GetSessionsResponse {
+  repeated SshSession results = 1;
+}
+
+message CreateSessionRequest {
+  SshSession session = 1;
+}
+
+message CreateSessionResponse {
+  string session_id = 1;
+}
+
+message SessionEndRequest {
+  string session_id = 1;
+  google.protobuf.Timestamp date_end = 2;
+}
+
+message SessionEndResponse {
+
+}
+
+message CreateCommandsRequest {
+  repeated CommandInfo commands = 1;
+}
+
+message CreateCommandsResponse {
+
+}
+
+message GetCommandsRequest {
+
+}
+
+message GetCommandsResponse {
+  repeated CommandInfo results = 1;
+
+}
+
+message WriteTerminalMsgRequest {
+  string message = 1;
+  string cluster = 2;
+  string node = 3;
+  string user = 4;
+  string session = 5;
+  google.protobuf.Timestamp time = 6;
+  string remote_ip = 7;
+}
+
+message WriteTerminalMsgResponse {
+
+}
+
+message GetAppOperationsRequest {
+
+}
+
+message GetAppOperationsResponse {
+  repeated OperationInfo operations = 1;
+}
+
+message GetAppSessionsRequest {
+
+}
+
+message AppSession {
+  string job_id = 1;
+  string session_id = 2;
+  string submit_time = 3;
+  string app_id = 4;
+  string user_id = 5;
+}
+
+message GetAppSessionsResponse {
+  repeated AppSession app_sessions = 1;
+}
+
+message HttpRequest {
+  string method = 1;
+  string url = 2;
+  repeated string headers = 3;
+  string client_ip = 4;
+  string body = 5;
+  string timestamp = 6;
+}
+
+message WriteAppProxyRequest {
+  string user = 1;
+  string target = 2;
+  HttpRequest request = 3;
+}
+
+message WriteAppProxyResponse {
+
+}
+service AuditService {
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+  rpc SessionEnd(SessionEndRequest) returns (SessionEndResponse);
+  rpc GetSessions(GetSessionsRequest) returns (GetSessionsResponse);
+
+  rpc CreateCommands(CreateCommandsRequest) returns (CreateCommandsResponse);
+  rpc GetCommands(GetCommandsRequest) returns (GetCommandsResponse);
+
+  rpc WriteTerminalMsg(stream WriteTerminalMsgRequest) returns (stream WriteTerminalMsgResponse);
+
+  rpc GetAppOperations(GetAppOperationsRequest) returns (GetAppOperationsResponse);
+  rpc GetAppSessions(GetAppSessionsRequest) returns (GetAppSessionsResponse);
+
+  rpc WriteAppProxy(WriteAppProxyRequest) returns (WriteAppProxyResponse);
+
+}
