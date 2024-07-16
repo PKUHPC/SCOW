@@ -43,7 +43,6 @@ export async function createServer() {
     await server.register(plugin);
   }
 
-  await server.register(accountServiceServer);
   await server.register(userServiceServer);
   await server.register(adminServiceServer);
   await server.register(initServiceServer);
@@ -54,6 +53,7 @@ export async function createServer() {
   await server.register(configServiceServer);
   await server.register(misConfigServiceServer);
   await server.register(exportServiceServer);
+  await server.register(accountServiceServer);
 
   await server.ext.syncBlockStatus.sync();
 

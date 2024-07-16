@@ -38,6 +38,7 @@
     "@scow/lib-web": "workspace:*",
     "@scow/protos": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
+    "@scow/asynchub": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.32.34",
     "antd": "5.18.3",

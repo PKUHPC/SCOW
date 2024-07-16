@@ -182,6 +182,13 @@ const buildRuntimeConfig = async (phase, basePath) => {
       },
     },
 
+    ASYNC_OPERATION: {
+      enabled: misConfig.asyncOperation.enabled,
+      asyncHub: {
+        address: misConfig.asyncOperation.asyncHub.address,
+      },
+    },
+
     UI_EXTENSION: misConfig.uiExtension,
 
     CHANGE_JOB_LIMIT: {

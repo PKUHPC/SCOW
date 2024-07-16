@@ -100,6 +100,13 @@ export interface PublicRuntimeConfig {
     alarmLogs: { enabled: boolean | undefined }
   },
 
+  ASYNC_OPERATION: {
+    enabled: boolean | undefined,
+    asyncHub: {
+      address: string | undefined,
+    }
+  },
+
   UI_EXTENSION?: UiExtensionConfigSchema;
 
   CHANGE_JOB_LIMIT: { allowUser: boolean }

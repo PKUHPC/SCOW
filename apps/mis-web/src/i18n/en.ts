@@ -913,6 +913,8 @@ export default {
           accountNameOccupied: "Account name is already occupied",
           userIdAndNameNotMatch: "User ID and name do not match.",
           createSuccess: "Created Successfully!",
+          createOperationSubmitSuccess: "The account creation request has been submitted"
+          + "please wait for the creation to complete.",
           ownerUserId: "Owner User ID",
           ownerName: "Owner Name",
           remark: "Remark",

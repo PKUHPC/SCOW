@@ -1,0 +1,25 @@
+{
+  "name": "@scow/asynchub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
+    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
+  },
+  "files": [
+    "build",
+    "!**/*.map"
+  ],
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "license": "Mulan PSL v2",
+  "repository": "https://github.com/PKUHPC/SCOW",
+  "dependencies": {},
+  "devDependencies": {
+    "ts-log": "2.2.5"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  }
+}

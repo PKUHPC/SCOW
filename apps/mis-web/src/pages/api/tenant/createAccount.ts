@@ -13,6 +13,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
+import { createLongRunningOperation } from "@scow/asynchub";
 import { OperationType } from "@scow/lib-operation-log";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
 import { Static, Type } from "@sinclair/typebox";
@@ -54,6 +55,10 @@ export const CreateAccountSchema = typeboxRouteSchema({
     /** ownerId不存在 */
     404: Type.Null(),
     409: Type.Null(),
+    500: Type.Union([
+      Type.Null(),
+      Type.String(),
+    ]),
   },
 });
 
@@ -98,19 +103,35 @@ export default route(CreateAccountSchema,
       },
     };
 
-    const client = getClient(AccountServiceClient);
+    if (publicConfig.ASYNC_OPERATION.enabled && publicConfig.ASYNC_OPERATION.asyncHub.address) {
+      const address = publicConfig.ASYNC_OPERATION.asyncHub.address;
 
-    return await asyncClientCall(client, "createAccount", {
-      accountName, ownerId, comment, tenantName: info.tenant,
-    })
-      .then(async (x) => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return { 200: x };
+      if (!address) return { 500: null };
+      try {
+        await createLongRunningOperation(address, "CreateAccount", "creating_clusters_account", {
+          accountName, ownerId, comment, tenantName: info.tenant,
+        }, {});
+
+        return { 200: {} };
+      } catch (err) {
+        console.log("Fetch error:", err);
+        return { 500: err };
+      }
+    } else {
+      const client = getClient(AccountServiceClient);
+
+      return await asyncClientCall(client, "createAccount", {
+        accountName, ownerId, comment, tenantName: info.tenant,
       })
-      .catch(handlegRPCError({
-        [Status.ALREADY_EXISTS]: () => ({ 409: null }),
-        [Status.NOT_FOUND]: () => ({ 404: null }),
-      },
-      async () => await callLog(logInfo, OperationResult.FAIL),
-      ));
+        .then(async (x) => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+          return { 200: x };
+        })
+        .catch(handlegRPCError({
+          [Status.ALREADY_EXISTS]: () => ({ 409: null }),
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+        ));
+    }
   });

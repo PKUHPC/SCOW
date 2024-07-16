@@ -64,7 +64,12 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       .httpError(409, () => { message.error(t(p("accountNameOccupied"))); })
       .httpError(400, () => { message.error(t(p("userIdAndNameNotMatch"))); })
       .then(() => {
-        message.success(t(p("createSuccess")));
+        if (publicConfig.ASYNC_OPERATION.enabled) {
+          message.success(t(p("createOperationSubmitSuccess")));
+        } else {
+          message.success(t(p("createSuccess")));
+        }
+
       })
       .finally(() => {
         message.destroy("createAccount");

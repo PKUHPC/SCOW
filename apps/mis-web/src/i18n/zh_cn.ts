@@ -913,6 +913,8 @@ export default {
           accountNameOccupied: "账户名已经被占用",
           userIdAndNameNotMatch: "用户ID和名字不匹配。",
           createSuccess: "创建成功！",
+          createOperationSubmitSuccess: "创建账户请求已提交，请等待创建完成。",
+
           ownerUserId: "拥有者用户ID",
           ownerName: "拥有者姓名",
           remark: "备注",

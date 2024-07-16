@@ -96,6 +96,18 @@ message CreateAccountRequest {
 message CreateAccountResponse {
 }
 
+message CreateAccountInScowRequest {
+  string tenant_name = 1;
+  string account_name = 2;
+  string owner_id = 3;
+  optional string comment = 4;
+}
+
+// ALREADY_EXISTS: Account already exists.
+// NOT_FOUND: owner user doesn't exist
+message CreateAccountInScowResponse {
+}
+
 message GetAccountsRequest {
   optional string tenant_name = 1;
   // returns all accounts if not set
@@ -159,6 +171,7 @@ message SetBlockThresholdResponse {
 service AccountService {
 
   rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+  rpc CreateAccountInScow(CreateAccountInScowRequest) returns (CreateAccountInScowResponse);
   rpc GetAccounts(GetAccountsRequest) returns (GetAccountsResponse);
 
   rpc BlockAccount(BlockAccountRequest) returns (BlockAccountResponse);

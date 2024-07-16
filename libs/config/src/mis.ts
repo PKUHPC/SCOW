@@ -21,6 +21,22 @@ export enum JobTableType {
   mysql = "mysql",
 }
 
+export const AsyncOperationSchema = Type.Object({
+  enabled: Type.Boolean({ description: "是否启用异步操作系统", default: "false" }),
+  asyncHub: Type.Object({
+    address: Type.String({ description: "异步操作系统地址", default: "scow-asynchub:3000" }),
+  }),
+
+  batchSize: Type.Integer({
+    description: "为了防止一次性获取太多数据占用过多内存，将会限制一次获取的异步操作数量",
+    default: 10000,
+  }),
+
+  periodicExec: Type.Object({
+    cron: Type.String({ description: "获取信息的周期的cron表达式", default: "* * 1 * * *" }),
+  }, { default: {} }),
+});
+
 export const MisConfigSchema = Type.Object({
   db: Type.Object({
     host: Type.String({ description: "数据库地址" }),
@@ -100,6 +116,8 @@ export const MisConfigSchema = Type.Object({
     }, { default: {} }),
   }, { default: {}, description: "获取作业功能的相关配置" }),
 
+  asyncOperation: Type.Optional(AsyncOperationSchema),
+
   periodicSyncUserAccountBlockStatus: Type.Optional(Type.Object({
     enabled: Type.Boolean({ description:"是否默认打开", default: true }),
     cron: Type.String({ description: "获取信息的周期的cron表达式", default: "0 4 * * *" }),
@@ -175,6 +193,7 @@ export const MisConfigSchema = Type.Object({
 const MIS_CONFIG_NAME = "mis";
 
 export type MisConfigSchema = Static<typeof MisConfigSchema>;
+export type AsyncOperationSchema = Static<typeof AsyncOperationSchema>;
 
 export const getMisConfig: GetConfigFn<MisConfigSchema> = (baseConfigPath, logger) => {
   const config = getConfigFromFile(MisConfigSchema, MIS_CONFIG_NAME, baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH);

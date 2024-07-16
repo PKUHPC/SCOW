@@ -495,6 +495,57 @@ export const accountServiceServer = plugin((server) => {
 
       return [{}];
     },
+
+    createAccountInScow: async ({ request, em, logger }) => {
+      const { accountName, tenantName, ownerId, comment } = request;
+      const user = await em.findOne(User, { userId: ownerId, tenant: { name: tenantName } });
+
+      if (!user) {
+        throw {
+          code: Status.NOT_FOUND, message: `User ${user} under tenant ${tenantName} does not exist`,
+        } as ServiceError;
+      }
+
+      const tenant = await em.findOne(Tenant, { name: tenantName });
+      if (!tenant) {
+        throw {
+          code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found`,
+        } as ServiceError;
+      }
+
+      // 新建账户时比较租户默认封锁阈值，如果租户默认封锁阈值小于0则保持账户为在集群中可用状态
+      // 如果租户默认封锁阈值大于等于0，则封锁账户
+      const shouldBlockInCluster: boolean = tenant.defaultAccountBlockThreshold.gte(0);
+
+      // insert the account now to avoid future conflict
+      const account = new Account({ accountName, comment, tenant, blockedInCluster: shouldBlockInCluster });
+
+      const userAccount = new UserAccount({
+        account, user, role: EntityUserRole.OWNER, blockedInCluster: UserStatus.UNBLOCKED,
+      });
+
+      try {
+        await em.persistAndFlush([account, userAccount]);
+      } catch (e) {
+        if (e instanceof UniqueConstraintViolationException) {
+          throw {
+            code: Status.ALREADY_EXISTS, message: `Account ${accountName} already exists.`,
+          } as ServiceError;
+        }
+      }
+
+      await callHook("accountCreated", { accountName, comment, ownerId, tenantName }, logger);
+
+      if (server.ext.capabilities.accountUserRelation) {
+        try {
+          await createAccount(authUrl, { accountName, ownerUserId: ownerId }, logger);
+        } catch (err) {
+          logger.error(`create account ${accountName} in auth error: ${err as any}`);
+        }
+      }
+
+      return [{}];
+    },
   });
 
 });

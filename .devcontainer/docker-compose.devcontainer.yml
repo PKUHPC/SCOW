@@ -24,6 +24,8 @@ services:
       # in a sub-folder, so you will mount '..'. You would then reference this path as the
       # 'workspaceFolder' in '.devcontainer/devcontainer.json' so VS Code starts here.
       - ..:/workspace/SCOW:cached
+    networks:
+      - scow-dev-network
 
   db:
     image: mysql:8
@@ -99,3 +101,7 @@ services:
 volumes:
   db:
   ldap:
+
+networks:
+  scow-dev-network:
+    external: true
