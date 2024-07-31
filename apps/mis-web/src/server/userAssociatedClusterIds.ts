@@ -10,11 +10,24 @@
  * See the Mulan PSL v2 for more details.
  */
 
-export * from "./apiAuthPlugin";
-export * from "./app";
-export * from "./date";
-export * from "./misCommon/clustersActivation";
-export * from "./misCommon/userAccount";
-export * from "./scheduleAdapter";
-export * from "./systemLanguage";
-export * from "./typeConversion";
+import { getUserAccountsClusterIds } from "@scow/lib-scow-resources";
+
+import { runtimeConfig } from "../utils/config";
+
+export async function getUserAssociatedClusterIds(
+  userAccounts: string[],
+  tenantName: string,
+): Promise<string[] | undefined> {
+
+  const associatedClusterIds = await getUserAccountsClusterIds(
+    true,
+    runtimeConfig.SCOW_RESOURCES_CONFIG,
+    userAccounts,
+    tenantName,
+  );
+
+  return associatedClusterIds;
+}
+
+
+

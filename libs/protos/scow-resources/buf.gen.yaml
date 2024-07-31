@@ -1,0 +1,21 @@
+version: v1
+plugins:
+  - plugin: es
+    opt: target=ts
+    out: generated
+  - plugin: connect-es
+    opt: target=ts
+    out: generated
+  - plugin: ts-proto
+    path: node_modules/ts-proto/protoc-gen-ts_proto
+    strategy: all
+    out: generated
+    opt:
+      - unrecognizedEnum=false
+      - useDate=string
+      - useExactTypes=false
+      - oneof=unions
+      - esModuleInterop=true
+      - useOptionals=messages
+      - outputServices=grpc-js
+

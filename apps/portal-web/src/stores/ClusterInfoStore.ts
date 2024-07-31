@@ -24,6 +24,8 @@ export function ClusterInfoStore(
   initialCurrentClusters: Cluster[],
   // 用于获取桌面功能是否可用，如集群配置文件中没有配置则判断门户的配置文件
   portalRuntimeDesktopEnabled: boolean,
+  // 用户关联账户的已授权集群信息
+  userAssociatedClusterIds: string[] | undefined,
 ) {
 
   // 配置文件集群信息
@@ -35,6 +37,15 @@ export function ClusterInfoStore(
   // 当前可用集群
   const [currentClusters, setCurrentClusters] = useState<Cluster[]>(!publicConfig.MIS_DEPLOYED
     ? publicConfigClusters : initialCurrentClusters);
+
+  useEffect(() => {
+    if (userAssociatedClusterIds) {
+      const filteredClusters = initialCurrentClusters
+        .filter((x) => userAssociatedClusterIds.includes(x.id));
+  
+      setCurrentClusters(filteredClusters);
+    }
+  }, [userAssociatedClusterIds, initialCurrentClusters]);
 
   const initialDefaultClusterId = clusterSortedIdList.find((x) => {
     return currentClusters.find((c) => c.id === x);
@@ -68,7 +79,6 @@ export function ClusterInfoStore(
   const initialEnableFileTransfer = getFileTransferEnabled(clusterConfigs);
   const [crossClusterFileTransferEnabled, setCrossClusterFileTransferEnabled]
    = useState<boolean>(initialEnableFileTransfer);
-
 
   useEffect(() => {
 

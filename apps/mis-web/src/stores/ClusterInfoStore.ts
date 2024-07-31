@@ -20,6 +20,7 @@ export function ClusterInfoStore(
   clusterConfigs: Record<string, ClusterConfigSchema>,
   initialActivatedClusters: Record<string, Cluster>,
   initialSimpleClusters: Record<string, SimpleClusterSchema>,
+  userAssociatedClusterIds: string[] | undefined,
 ) {
 
   let publicConfigClusters: Record<string, Cluster> = {};
@@ -44,6 +45,19 @@ export function ClusterInfoStore(
    = initialDefaultClusterId ? activatedClusters[initialDefaultClusterId] : undefined;
 
   const [ defaultCluster, setDefaultCluster ] = useState<Cluster | undefined>(initialDefaultCluster);
+
+  useEffect(() => {
+    if (userAssociatedClusterIds) {
+      const filteredClusters = Object.entries(initialActivatedClusters)
+        .filter(([key]) => userAssociatedClusterIds.includes(key))
+        .reduce<Record<string, Cluster>>((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {});
+
+      setActivatedClusters(filteredClusters);
+    }
+  }, [userAssociatedClusterIds, initialActivatedClusters]);
 
   useEffect(() => {
 

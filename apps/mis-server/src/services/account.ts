@@ -81,6 +81,7 @@ export const accountServiceServer = plugin((server) => {
         if (result === "AlreadyBlocked") {
 
           // 如果账户已被手动冻结，提示账户已被冻结
+          // 当前scow暂未使用AccountState.FROZEN
           if (account.state === AccountState.FROZEN) {
             throw {
               code: Status.FAILED_PRECONDITION,
@@ -113,7 +114,7 @@ export const accountServiceServer = plugin((server) => {
 
     unblockAccount: async ({ request, em, logger }) => {
       const { accountName } = request;
-
+      
       return await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
           accountName,
@@ -256,15 +257,21 @@ export const accountServiceServer = plugin((server) => {
       await server.ext.clusters.callOnAll(
         currentActivatedClusters,
         logger,
-        async (client) => {
+        async (client, cluster) => {
           await asyncClientCall(client.account, "createAccount", {
             accountName, ownerUserId: ownerId,
           });
 
+          const assignedPartitions = await server.ext.resources?.getAccountDefaultPartitions({
+            accountName, tenantName, clusterId: cluster,
+          });
+
           // 判断为需在集群中封锁时
           if (shouldBlockInCluster) {
+
             await asyncClientCall(client.account, "blockAccount", {
               accountName,
+              blockedPartitions: [],
             }).catch((e) => {
               if (e.code === Status.NOT_FOUND) {
                 throw {
@@ -276,17 +283,39 @@ export const accountServiceServer = plugin((server) => {
             });
           // 判断为需在集群中解封时
           } else {
-            await asyncClientCall(client.account, "unblockAccount", {
-              accountName,
-            }).catch((e) => {
-              if (e.code === Status.NOT_FOUND) {
-                throw {
-                  code: Status.INTERNAL, message: `Account ${accountName} hasn't been created. Unblock failed`,
-                } as ServiceError;
-              } else {
-                throw e;
-              }
-            });
+
+            if (assignedPartitions && assignedPartitions.length === 0) {
+              // 已部署资源分区管理但是实际创建账户时没有授权分区时
+              // 实行一次封锁确保未来不产生冲突，代表账户没有授权分区
+              await asyncClientCall(client.account, "blockAccount", {
+                accountName,
+                blockedPartitions: [],
+              }).catch((e) => {
+                if (e.code === Status.NOT_FOUND) {
+                  throw {
+                    code: Status.INTERNAL, message: `Account ${accountName} hasn't been created.`,
+                  } as ServiceError;
+                } else {
+                  throw e;
+                }
+              });
+
+            } else {
+              await asyncClientCall(client.account, "unblockAccount", {
+                accountName,
+                unblockedPartitions: assignedPartitions ?? [],
+              }).catch((e) => {
+                if (e.code === Status.NOT_FOUND) {
+                  throw {
+                    code: Status.INTERNAL, message: `Account ${accountName} hasn't been created. Unblock failed`,
+                  } as ServiceError;
+                } else {
+                  throw e;
+                }
+              });
+            }
+
+
           }
 
         },

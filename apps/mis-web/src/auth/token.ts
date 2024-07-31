@@ -39,6 +39,7 @@ export async function validateToken(token: string): Promise<UserInfo | undefined
   const userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
     userId: resp.identityId,
   });
+
   return {
     accountAffiliations: userInfo.affiliations,
     identityId: resp.identityId,

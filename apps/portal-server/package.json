@@ -36,6 +36,7 @@
     "@scow/rich-error-model": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/scowd-protos": "workspace:*",
+    "@scow/lib-scow-resources": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.32.34",
     "dayjs": "1.11.11",

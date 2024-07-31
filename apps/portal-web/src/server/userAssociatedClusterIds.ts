@@ -10,23 +10,23 @@
  * See the Mulan PSL v2 for more details.
  */
 
-export declare const antdBreakpoints: {
-  xxs: number;
-  xs: number;
-  sm: number;
-  md: number;
-  lg: number;
-  xl: number;
-  xxl: number;
-};
-export type Breakpoint = keyof typeof antdBreakpoints;
-export declare const layoutConstants: {
-  paddingBreakpoint: "md" | "xxs" | "xs" | "sm" | "lg" | "xl" | "xxl";
-  menuBreakpoint: "md" | "xxs" | "xs" | "sm" | "lg" | "xl" | "xxl";
-  headerHeight: number;
-  sidebarBreakpoint: "md" | "xxs" | "xs" | "sm" | "lg" | "xl" | "xxl";
-  headerIconColor: string;
-  headerIconBackgroundColor: string;
-  headerBackgrounColor: string;
-  maxWidth: number;
-};
+import { getUserAccountsClusterIds } from "@scow/lib-scow-resources";
+import { publicConfig, runtimeConfig } from "src/utils/config";
+
+export async function getUserAssociatedClusterIds(
+  userAccounts: string[],
+  tenantName: string,
+): Promise<string[] | undefined> {
+
+  const associatedClusterIds = await getUserAccountsClusterIds(
+    publicConfig.MIS_DEPLOYED,
+    runtimeConfig.SCOW_RESOURCES_CONFIG,
+    userAccounts,
+    tenantName,
+  );
+
+  return associatedClusterIds;
+}
+
+
+

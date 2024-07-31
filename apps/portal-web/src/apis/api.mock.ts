@@ -301,6 +301,10 @@ export const mockApi: MockApi<typeof api> = {
     comment: "",
   }]}),
 
+  getUserAssociatedClusterIds: async () => ({
+    clusterIds: ["hpc00", "hpc01", "hpc02"],
+  }),
+
 };
 
 

@@ -35,6 +35,7 @@
     "@scow/lib-config": "workspace:*",
     "@scow/lib-decimal": "workspace:*",
     "@scow/lib-operation-log": "workspace:*",
+    "@scow/lib-scow-resources": "workspace:*",
     "@scow/lib-web": "workspace:*",
     "@scow/protos": "workspace:*",
     "@scow/rich-error-model": "workspace:*",

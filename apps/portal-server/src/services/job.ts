@@ -15,7 +15,7 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { jobInfoToPortalJobInfo, jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
-import { checkSchedulerApiVersion } from "@scow/lib-server";
+import { checkSchedulerApiVersion, libGetAccounts } from "@scow/lib-server";
 import { createDirectoriesRecursively, sftpReadFile, sftpStat, sftpWriteFile } from "@scow/lib-ssh";
 import { AccountStatusFilter, JobServiceServer, JobServiceService, TimeUnit } from "@scow/protos/build/portal/job";
 import { parseErrorDetails } from "@scow/rich-error-model";
@@ -23,6 +23,8 @@ import { ApiVersion } from "@scow/utils/build/version";
 import path, { join } from "path";
 import { getClusterOps } from "src/clusterops";
 import { JobTemplate } from "src/clusterops/api/job";
+import { commonConfig } from "src/config/common";
+import { config } from "src/config/env";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode, sshConnect } from "src/utils/ssh";
@@ -52,6 +54,16 @@ export const jobServiceServer = plugin((server) => {
       const { cluster, userId, statusFilter } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
+      // 如果已部署了管理系统，从管理系统数据库中获取账户数据
+      if (config.MIS_DEPLOYED) {
+        const result = await libGetAccounts(logger, 
+          userId, 
+          statusFilter, 
+          config.MIS_SERVER_URL, 
+          commonConfig.scowApi?.auth?.token); 
+        return [result];
+      }
+    
       const reply = await callOnOne(
         cluster,
         logger,
@@ -78,6 +90,8 @@ export const jobServiceServer = plugin((server) => {
             logger,
             async (client) => await asyncClientCall(client.account, "queryAccountBlockStatus", {
               accountName: account,
+              // 当没有特殊指定时，为查询所有分区下的状态
+              queriedPartitions: [],
             }),
           );
           if (resp.blocked) {

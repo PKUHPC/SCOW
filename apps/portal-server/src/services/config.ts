@@ -15,12 +15,15 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { getClusterConfigs } from "@scow/config/build/cluster";
-import { checkSchedulerApiVersion, convertClusterConfigsToServerProtoType, NO_CLUSTERS } from "@scow/lib-server";
+import { checkSchedulerApiVersion, convertClusterConfigsToServerProtoType, 
+  libGetUserInfo, NO_CLUSTERS } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
 import { ConfigServiceServer as runTimeConfigServiceServer, ConfigServiceService as runTimeConfigServiceService }
   from "@scow/protos/build/portal/config";
 import { ApiVersion } from "@scow/utils/build/version";
+import { commonConfig } from "src/config/common";
+import { config } from "src/config/env";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 
 export const staticConfigServiceServer = plugin((server) => {
@@ -42,10 +45,42 @@ export const staticConfigServiceServer = plugin((server) => {
     getAvailablePartitionsForCluster: async ({ request, logger }) => {
 
       const { cluster, accountName, userId } = request;
-      let availablePartitions: Partition[];
-
       await checkActivatedClusters({ clusterIds: cluster });
 
+      if (config.MIS_DEPLOYED && commonConfig.scowResources?.scowResourcesEnabled) {
+        // 获取用户在scow中的信息
+        const userInfo = await libGetUserInfo(logger, 
+          userId, 
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+        // 检查用户与账户的关系在scow中是否存在
+        if (!userInfo.affiliations.find((a) => a.accountName === accountName)) {
+          return [ { partitions: []} ];
+        }
+
+        // 查询集群下的账户已授权分区
+        const assignedPartitions = await server.ext.resources?.getAccountAssignedPartitions(
+          { accountName, tenantName: userInfo.tenantName, clusterId: cluster },
+        );
+        // 获取分区的详细信息
+        const clusterPartitionsInfo = await callOnOne(
+          cluster,
+          logger,
+          async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
+        );
+      
+        const partitionsResult: Partition[] = [];
+        clusterPartitionsInfo.partitions.forEach((p) => {
+          if (assignedPartitions.includes(p.name)) {
+            partitionsResult.push(p);
+          }
+        });
+
+        return [ { partitions: partitionsResult } ];
+      }
+
+      let availablePartitions: Partition[];
       try {
         const resp = await callOnOne(
           cluster,

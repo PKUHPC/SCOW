@@ -116,6 +116,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SCOW_API_AUTH_TOKEN: commonConfig.scowApi?.auth?.token,
     AUDIT_CONFIG: config.AUDIT_DEPLOYED ? auditConfig : undefined,
     PROTOCOL: config.PROTOCOL,
+    SCOW_RESOURCES_CONFIG: commonConfig.scowResources,
   };
 
   /**

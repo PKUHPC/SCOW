@@ -15,6 +15,7 @@ import { Logger } from "@ddadaal/tsgrpc-server";
 import { Loaded } from "@mikro-orm/core";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
+import { ScowResourcesPlugin } from "@scow/lib-scow-resources";
 import { BlockedFailedUserAccount } from "@scow/protos/build/server/admin";
 import { Account } from "src/entities/Account";
 import { UserAccount, UserStatus } from "src/entities/UserAccount";
@@ -59,11 +60,13 @@ export async function updateBlockStatusInSlurm(
     if (account.whitelist) {
       continue;
     }
-
     try {
       await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) =>
+
+        // 封锁账户时，无论是否部署已授权分区，需要在所有分区下进行封锁
         await asyncClientCall(client.account, "blockAccount", {
           accountName: account.accountName,
+          blockedPartitions: [],
         }),
       );
       blockedAccounts.push(account.accountName);
@@ -121,6 +124,7 @@ export async function updateBlockStatusInSlurm(
  **/
 export async function updateUnblockStatusInSlurm(
   em: SqlEntityManager<MySqlDriver>, clusterPlugin: ClusterPlugin["clusters"], logger: Logger,
+  scowResourcesPlugin?: ScowResourcesPlugin,
 ) {
   const accounts = await em.find(Account, {
     $or: [
@@ -147,10 +151,28 @@ export async function updateUnblockStatusInSlurm(
 
   for (const account of accounts) {
     try {
-      await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) =>
-        await asyncClientCall(client.account, "unblockAccount", {
+      await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client, cluster) => {
+
+        const unblockedPartitions = await scowResourcesPlugin?.resources?.getAccountAssignedPartitions({
           accountName: account.accountName,
-        }),
+          tenantName: account.tenant.getProperty("name"),
+          clusterId: cluster,
+        });
+
+        if (unblockedPartitions && unblockedPartitions.length === 0) {
+          logger.info("No partitions assigned to account: %s, the default unblocking operation" +
+            " was successfully performed; no additional execution is necessary.",
+          account.accountName,
+          );
+        } else {
+          await asyncClientCall(client.account, "unblockAccount", {
+            accountName: account.accountName,
+            unblockedPartitions: unblockedPartitions ?? [],
+          });
+        }
+
+      },
+
       );
       unblockedAccounts.push(account.accountName);
     } catch (error) {
@@ -191,8 +213,11 @@ export async function blockAccount(
   }
 
   await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) => {
+
+    // 封锁账户时，无论是否部署已授权分区，需要在所有分区下进行封锁
     await asyncClientCall(client.account, "blockAccount", {
       accountName: account.accountName,
+      blockedPartitions: [],
     });
   });
 
@@ -215,14 +240,29 @@ export async function unblockAccount(
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   clusterPlugin: ClusterPlugin["clusters"],
   logger: Logger,
+  scowResourcesPlugin?: ScowResourcesPlugin,
 ): Promise<"OK" | "ALREADY_UNBLOCKED"> {
 
   if (!account.blockedInCluster) { return "ALREADY_UNBLOCKED"; }
 
-  await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client) => {
-    await asyncClientCall(client.account, "unblockAccount", {
-      accountName: account.accountName,
-    });
+  await clusterPlugin.callOnAll(currentActivatedClusters, logger, async (client, cluster) => {
+
+    const unblockedPartitions = await scowResourcesPlugin?.resources?.getAccountAssignedPartitions(
+      { accountName: account.accountName, tenantName: account.tenant.getProperty("name"), clusterId: cluster },
+    );
+
+    if (unblockedPartitions && unblockedPartitions.length === 0) {
+      logger.info("No partitions assigned to account: %s, the default unblocking operation" +
+        " was successfully performed; no additional execution is necessary.",
+      account.accountName,
+      );
+    } else {
+      await asyncClientCall(client.account, "unblockAccount", {
+        accountName: account.accountName,
+        unblockedPartitions: unblockedPartitions ?? [],
+      });
+    }
+
   });
 
   account.blockedInCluster = false;

@@ -5,6 +5,7 @@
     "baseUrl": ".",
   },
   "include": [
-    "tools/envDoc.ts"
+    "**/*.ts",
+    "**/*.tsx"
   ]
 }
