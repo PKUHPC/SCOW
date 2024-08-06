@@ -30,6 +30,7 @@ import {
   tenantRoleToJSON,
   UserRole as PFUserRole, UserServiceServer,
   UserServiceService,
+  userStateFromJSON,
   UserStatus as PFUserStatus } from "@scow/protos/build/server/user";
 import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
@@ -37,7 +38,7 @@ import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
 import { Account } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
-import { PlatformRole, TenantRole, User } from "src/entities/User";
+import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
 import { getUserStateInfo } from "src/utils/accountUserState";
@@ -111,26 +112,29 @@ export const userServiceServer = plugin((server) => {
       if (!tenant) {
         throw { code:Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
       }
+      const accountStatuses = user.accounts.getItems().reduce((prev, curr) => {
+        const account = curr.account.getEntity();
+        prev[account.accountName] = {
+          accountBlocked: Boolean(account.blockedInCluster),
+          userStatus: PFUserStatus[curr.blockedInCluster],
+          jobChargeLimit: curr.jobChargeLimit ? decimalToMoney(curr.jobChargeLimit) : undefined,
+          usedJobCharge: curr.usedJobCharge ? decimalToMoney(curr.usedJobCharge) : undefined,
+          balance: decimalToMoney(curr.account.getEntity().balance),
+          isInWhitelist: Boolean(account.whitelist),
+          blockThresholdAmount:account.blockThresholdAmount ?
+            decimalToMoney(account.blockThresholdAmount) : decimalToMoney(tenant.defaultAccountBlockThreshold),
+        } as AccountStatus;
+        return prev;
+      }, {});
+
+      const storageQuotas = user.storageQuotas.getItems().reduce((prev, curr) => {
+        prev[curr.cluster] = curr.storageQuota;
+        return prev;
+      }, {});
 
       return [{
-        accountStatuses: user.accounts.getItems().reduce((prev, curr) => {
-          const account = curr.account.getEntity();
-          prev[account.accountName] = {
-            accountBlocked: Boolean(account.blockedInCluster),
-            userStatus: PFUserStatus[curr.blockedInCluster],
-            jobChargeLimit: curr.jobChargeLimit ? decimalToMoney(curr.jobChargeLimit) : undefined,
-            usedJobCharge: curr.usedJobCharge ? decimalToMoney(curr.usedJobCharge) : undefined,
-            balance: decimalToMoney(curr.account.getEntity().balance),
-            isInWhitelist: Boolean(account.whitelist),
-            blockThresholdAmount:account.blockThresholdAmount ?
-              decimalToMoney(account.blockThresholdAmount) : decimalToMoney(tenant.defaultAccountBlockThreshold),
-          } as AccountStatus;
-          return prev;
-        }, {}),
-        storageQuotas: user.storageQuotas.getItems().reduce((prev, curr) => {
-          prev[curr.cluster] = curr.storageQuota;
-          return prev;
-        }, {}),
+        accountStatuses,
+        storageQuotas,
       }];
     },
 
@@ -498,30 +502,116 @@ export const userServiceServer = plugin((server) => {
       }];
     },
 
-    deleteUser: async ({ request, em }) => {
-      const { userId, tenantName } = request;
+    deleteUser: async ({ request, em, logger }) => {
+      return await em.transactional(async (em) => {
+        const { userId, tenantName, deleteRemark } = ensureNotUndefined(request, ["userId", "tenantName"]);
+        console.log("deleteUser后端 userId, tenantName, deleteRemark ", userId, tenantName, deleteRemark);
 
-      const user = await em.findOne(User, { userId, tenant: { name: tenantName } });
-      if (!user) {
-        throw { code: Status.NOT_FOUND, message:`User ${userId} is not found.` } as ServiceError;
-      }
+        const tenant = await em.findOne(Tenant, { name: tenantName });
 
-      // find if the user is an owner of any account
-      const accountUser = await em.findOne(UserAccount, {
-        user,
-        role: UserRole.OWNER,
+        if (!tenant) {
+          throw { code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
+        }
+
+        const user = await em.findOne(User, { userId, tenant: { name: tenantName } }, {
+          populate: ["accounts", "accounts.account"],
+        });
+
+        if (!user) {
+          throw { code: Status.NOT_FOUND, message: `User ${userId} is not found.` } as ServiceError;
+        }
+
+        const accountItems = user.accounts.getItems();
+        // 这里商量是不要管有没有封锁直接删，但要不要先封锁了再删？
+
+        // 如果用户为账户拥有者，提示管理员需要先删除拥有的账户再删除用户
+        const countAccountOwner = async () => {
+          const ownedAccounts: string[] = [];
+
+          for (const userAccount of accountItems) {
+            if (PFUserRole[userAccount.role] === PFUserRole.OWNER) {
+              const account = userAccount.account.getEntity();
+              const { accountName } = account;
+              ownedAccounts.push(accountName);
+            }
+          }
+          return ownedAccounts;
+        };
+
+        const needDeleteAccounts = await countAccountOwner().catch((error) => {
+          console.error("Error processing countAccountOwner:", error);
+          return [];
+        });
+
+        if (needDeleteAccounts.length > 0) {
+          const needDeleteAccountsObj = {
+            userId,
+            accounts: needDeleteAccounts,
+            type: "ACCOUNTS_OWNER",
+          };
+          throw {
+            code: Status.FAILED_PRECONDITION,
+            message: JSON.stringify(needDeleteAccountsObj),
+          } as ServiceError;
+        }
+
+        const currentActivatedClusters = await getActivatedClusters(em, logger);
+        // 查询用户是否有RUNNING、PENDING的作业与交互式应用，有则抛出异常
+        const runningJobs = await server.ext.clusters.callOnAll(
+          currentActivatedClusters,
+          logger,
+          async (client) => {
+            const fields = ["job_id", "user", "state", "account"];
+
+            return await asyncClientCall(client.job, "getJobs", {
+              fields,
+              filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"]},
+            });
+          },
+        );
+
+        if (runningJobs.filter((i) => i.result.jobs.length > 0).length > 0) {
+          const runningJobsObj = {
+            userId,
+            type: "RUNNING_JOBS",
+          };
+          throw {
+            code: Status.FAILED_PRECONDITION,
+            message: JSON.stringify(runningJobsObj),
+          } as ServiceError;
+        }
+
+        // 处理用户账户关系表，删除用户与所有账户的关系
+        const hasCapabilities = server.ext.capabilities.accountUserRelation;
+
+        for (const userAccount of accountItems) {
+          console.log("单个userAccount", PFUserRole[userAccount.role] === PFUserRole.OWNER);
+          const accountName = userAccount.account.getEntity().accountName;
+          await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+            return await asyncClientCall(client.user, "removeUserFromAccount",
+              { userId, accountName });
+          }).catch(async (e) => {
+            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 除此以外，都抛出异常
+            if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
+              !== Object.keys(currentActivatedClusters).length) {
+              throw e;
+            }
+          });
+          await em.removeAndFlush(userAccount);
+          if (hasCapabilities) {
+            await removeUserFromAccount(authUrl, { accountName, userId }, logger);
+          }
+        }
+
+        user.state = UserState.DELETED;
+
+        await em.flush();
+        return [{}];
       });
-
-      if (accountUser) {
-        throw {
-          code: Status.FAILED_PRECONDITION,
-          details: `User ${userId} is an owner of an account.`,
-        } as ServiceError;
-      }
-
-      await em.removeAndFlush(user);
-      return [{}];
     },
+
+
 
     checkUserNameMatch: async ({ request, em }) => {
       const { userId, name } = request;
@@ -569,6 +659,7 @@ export const userServiceServer = plugin((server) => {
           role: PFUserRole[x.role],
         })),
         platformRoles: x.platformRoles.map(platformRoleFromJSON),
+        state:userStateFromJSON(x.state),
       })) } ];
     },
 

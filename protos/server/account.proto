@@ -96,6 +96,15 @@ message CreateAccountRequest {
 message CreateAccountResponse {
 }
 
+message DeleteAccountRequest {
+  string tenant_name = 1;
+  string account_name = 2;
+  optional string comment = 3;
+}
+
+message DeleteAccountResponse {
+}
+
 message GetAccountsRequest {
   optional string tenant_name = 1;
   // returns all accounts if not set
@@ -110,6 +119,8 @@ message Account {
     FROZEN = 1;
     // 账户被上级手动封锁
     BLOCKED_BY_ADMIN = 2;
+    // 账户被删除
+    DELETED = 3;
   }
   // 页面展示的账户状态
   enum DisplayedAccountState {
@@ -125,6 +136,8 @@ message Account {
     // and not in whitelist
     // and balance <= blcok_threshold
     DISPLAYED_BELOW_BLOCK_THRESHOLD = 3;
+    // when state = deleted
+    DISPLAYED_DELETED = 4;
   }
   string tenant_name = 1;
   string account_name = 2;
@@ -171,4 +184,6 @@ service AccountService {
       returns (DewhitelistAccountResponse);
 
   rpc SetBlockThreshold(SetBlockThresholdRequest) returns (SetBlockThresholdResponse);
+
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
 }

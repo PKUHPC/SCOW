@@ -20,10 +20,14 @@ import { SortOrder } from "antd/es/table/interface";
 import Link from "next/link";
 import React, { useMemo, useState } from "react";
 import { api } from "src/apis";
+import { DeleteEntityFailedModal } from "src/components/DeleteEntityFailedModal";
+import { DeleteEntityModalLink } from "src/components/DeleteEntityModal";
+import { DisabledA } from "src/components/DisabledA";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { AccountState, DisplayedAccountState, getDisplayedStateI18nTexts } from "src/models/User";
+import { DeleteFailedReason,EntityType } from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import type { AdminAccountInfo, GetAccountsSchema } from "src/pages/api/tenant/getAccounts";
@@ -50,6 +54,7 @@ const FilteredTypes = {
   DISPLAYED_FROZEN: DisplayedAccountState.DISPLAYED_FROZEN,
   DISPLAYED_BLOCKED: DisplayedAccountState.DISPLAYED_BLOCKED,
   DISPLAYED_BELOW_BLOCK_THRESHOLD: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+  DISPLAYED_DELETED: DisplayedAccountState.DISPLAYED_DELETED,
 };
 
 const filteredStatuses = {
@@ -58,11 +63,13 @@ const filteredStatuses = {
   "DISPLAYED_FROZEN": "pageComp.accounts.accountTable.frozenAccount",
   "DISPLAYED_BLOCKED": "pageComp.accounts.accountTable.blockedAccount",
   "DISPLAYED_BELOW_BLOCK_THRESHOLD": "pageComp.accounts.accountTable.debtAccount",
+  "DISPLAYED_DELETED": "pageComp.accounts.accountTable.deletedAccount",
 };
 type FilteredStatus = keyof typeof filteredStatuses;
 
 const p = prefix("pageComp.accounts.accountTable.");
 const pCommon = prefix("common.");
+const pDelete = prefix("component.deleteModals.");
 
 export const AccountTable: React.FC<Props> = ({
   data, isLoading, showedTab, reload,
@@ -119,6 +126,7 @@ export const AccountTable: React.FC<Props> = ({
       DISPLAYED_FROZEN: 0,
       DISPLAYED_BELOW_BLOCK_THRESHOLD: 0,
       DISPLAYED_NORMAL: 0,
+      DISPLAYED_DELETED: 0,
       ALL: 0,
     };
     const counts = {
@@ -130,6 +138,8 @@ export const AccountTable: React.FC<Props> = ({
         account.displayedState === DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD).length,
       DISPLAYED_NORMAL: searchData.filter((account) =>
         account.displayedState === DisplayedAccountState.DISPLAYED_NORMAL).length,
+      DISPLAYED_DELETED: searchData.filter((account) =>
+        account.displayedState === DisplayedAccountState.DISPLAYED_DELETED).length,
       ALL: searchData.length,
     };
     return counts;
@@ -166,7 +176,9 @@ export const AccountTable: React.FC<Props> = ({
           debt: rangeSearchStatus === "DISPLAYED_BELOW_BLOCK_THRESHOLD",
           frozen: rangeSearchStatus === "DISPLAYED_FROZEN",
           normal: rangeSearchStatus === "DISPLAYED_NORMAL",
+          deleted: rangeSearchStatus === "DISPLAYED_DELETED",
           isFromAdmin: showedTab === "PLATFORM",
+          ownerIdOrName: query.ownerIdOrName,
         },
       });
     }
@@ -190,6 +202,11 @@ export const AccountTable: React.FC<Props> = ({
     ];
     return [...common, ...tenant, ...remaining];
   }, [showedTab, t]);
+
+  const [failedModalVisible, setFailedModalVisible] = useState(false);
+  const [failedDeletedMessage, setFailedDeletedMessage] = useState({
+    type: DeleteFailedReason.RUNNING_JOBS,
+  });
 
   return (
     <div>
@@ -345,7 +362,7 @@ export const AccountTable: React.FC<Props> = ({
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
               {/* 只在租户管理下的账户列表中显示管理成员和封锁阈值 */}
-              {showedTab === "TENANT" && (
+              {showedTab === "TENANT" && (r.state !== AccountState.DELETED ? (
                 <>
                   <Link href={{ pathname: `/tenant/accounts/${r.accountName}/users` }}>
                     {t(p("mangerMember"))}
@@ -360,6 +377,16 @@ export const AccountTable: React.FC<Props> = ({
                     {t(p("blockThresholdAmount"))}
                   </SetBlockThresholdAmountLink>
                 </>
+              ) : (
+                <>
+                  <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
+                    {t(p("mangerMember"))}
+                  </DisabledA>
+                  <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
+                    {t(p("blockThresholdAmount"))}
+                  </DisabledA>
+                </>
+              )
               )}
               {
                 r.state === AccountState.BLOCKED_BY_ADMIN && (
@@ -420,10 +447,67 @@ export const AccountTable: React.FC<Props> = ({
                     {t(p("block"))}
                   </a>
                 )}
+              {showedTab === "TENANT" && (
+                r.state === AccountState.DELETED ? (
+                  <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
+                    {t(p("delete"))}
+                  </DisabledA>
+                ) : (
+                  <DeleteEntityModalLink
+                    id={r.ownerId}
+                    name={r.accountName}
+                    type="ACCOUNT"
+                    onComplete={async (inputUserId, inputAccountName, comment) => {
+
+                      message.open({
+                        type: "loading",
+                        content: t("common.waitingMessage"),
+                        duration: 0,
+                        key: "deleteAccount" });
+
+                      await api.deleteAccount({ query: {
+                        ownerId:inputUserId,
+                        accountName:inputAccountName,
+                        comment: comment,
+                      } })// 待完善
+                        .httpError(404, (e) => {
+                          message.destroy("deleteAccount");
+                          message.error({
+                            content: e.message,
+                            duration: 4,
+                          });
+                        })
+                        .httpError(409, (e) => {
+                          message.destroy("deleteAccount");
+                          const { type } = JSON.parse(e.message);
+                          setFailedModalVisible(true);
+                          setFailedDeletedMessage({ type });
+                          reload();
+                        })
+                        .then(() => {
+                          message.destroy("deleteAccount");
+                          reload();
+                        })
+                        .catch(() => { message.error(t(p("changeFail"))); });
+                    }}
+                  >
+                    {t(p("delete"))}
+                  </DeleteEntityModalLink>
+                )
+              )}
             </Space>
           )}
         />
       </Table>
+      <DeleteEntityFailedModal
+        message={failedDeletedMessage}
+        open={failedModalVisible}
+        entityType={EntityType.ACCOUNT}
+        onClose={() => {
+          setFailedModalVisible(false);
+        }}
+      >
+      </DeleteEntityFailedModal>
     </div>
   );
 };

@@ -85,7 +85,7 @@ export default route(ExportUserSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.exportAccount,
+    operationTypeName: OperationType.exportUser,
     operationTypePayload:{
       tenantName: selfTenant ? info.tenant : undefined,
     },

@@ -185,6 +185,10 @@ message CreateUser {
   string user_id = 1;
 }
 
+message DeleteUser {
+  string user_id = 1;
+}
+
 message AddUserToAccount {
   string account_name = 1;
   string user_id = 2;
@@ -264,6 +268,10 @@ message CreateAccount {
   string tenant_name = 1;
   string account_name = 2;
   string account_owner = 3;
+}
+
+message DeleteAccount {
+  string account_name = 1;
 }
 
 message AddAccountToWhitelist {
@@ -700,6 +708,8 @@ message CreateOperationLogRequest {
     ShareModelVersion share_model_version = 94;
     DeleteModelVersion delete_model_version = 95;
     CopyModelVersion copy_model_version = 96;
+    DeleteUser delete_user = 97;
+    DeleteAccount delete_account = 98;
   }
 }
 
@@ -804,6 +814,8 @@ message OperationLog {
     ShareModelVersion share_model_version = 96;
     DeleteModelVersion delete_model_version = 97;
     CopyModelVersion copy_model_version = 98;
+    DeleteUser delete_user=99;
+    DeleteAccount delete_account = 100;
   }
 }
 

@@ -92,3 +92,19 @@ export async function unsetUserDefaultAccount(
   }
 }
 
+// export async function deleteAccount(
+//   authUrl: string,
+//   params: { accountName: string; comment: string },
+//   logger?: Logger,
+// ) {
+//   const resp = await fetch(authUrl + `/account/${params.accountName}/comment/${params.comment}`, {
+//     method: "DELETE",
+//     headers: applicationJsonHeaders,
+//   });
+
+//   if (resp.status !== 204) {
+//     logHttpErrorAndThrow(resp, logger);
+//   }
+// }
+
+

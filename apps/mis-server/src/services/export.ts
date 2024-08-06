@@ -152,7 +152,9 @@ export const exportServiceServer = plugin((server) => {
         debt,
         frozen,
         normal,
+        deleted,
         count,
+        ownerIdOrName,
       } = request;
 
       const recordFormat = (x: Loaded<Account, "tenant" | "users" | "users.user">) => {
@@ -192,40 +194,53 @@ export const exportServiceServer = plugin((server) => {
 
       const { writeAsync } = createWriterExtensions(call);
 
-      const qb = em.createQueryBuilder(Account, "a")
+      const baseQb = em.createQueryBuilder(Account, "a")
         .select("*")
         .leftJoinAndSelect("a.users", "ua")
         .leftJoinAndSelect("ua.user", "u")
         .leftJoinAndSelect("a.tenant", "t");
 
       if (tenantName !== undefined) {
-        void qb.andWhere({ "t.name": tenantName });
+        void baseQb.andWhere({ "t.name": tenantName });
       }
 
       if (accountName !== undefined) {
-        void qb.andWhere({ "a.accountName": { $like: `%${accountName}%` } });
+        void baseQb.andWhere({ "a.accountName": { $like: `%${accountName}%` } });
       }
 
       if (blocked) {
-        void qb.andWhere({ "a.state": AccountState.BLOCKED_BY_ADMIN, "a.blockedInCluster": true });
+        void baseQb.andWhere({ "a.state": AccountState.BLOCKED_BY_ADMIN, "a.blockedInCluster": true });
       }
 
       if (debt) {
-        void qb.andWhere({ "a.state": AccountState.NORMAL })
+        void baseQb.andWhere({ "a.state": AccountState.NORMAL })
           .andWhere("a.whitelist_id IS NULL")
           .andWhere("CASE WHEN a.block_threshold_amount IS NOT NULL"
             + " THEN a.balance <= a.block_threshold_amount ELSE a.balance <= t.default_account_block_threshold END");
       }
 
       if (frozen) {
-        void qb.andWhere({ "a.state": AccountState.FROZEN });
+        void baseQb.andWhere({ "a.state": AccountState.FROZEN });
       }
 
       if (normal) {
-        void qb.andWhere({ "a.blockedInCluster": false });
+        void baseQb.andWhere({ "a.blockedInCluster": false });
+      }
+
+      if (deleted) {
+        void baseQb.andWhere({ "a.state": AccountState.DELETED });
+      }
+
+      if (ownerIdOrName) {
+        const knexQuery = baseQb.getKnexQuery();
+        knexQuery.andWhere(function() {
+          this.where("u.user_id", "like", `%${ownerIdOrName}%`)
+            .orWhere("u.name", "like", `%${ownerIdOrName}%`);
+        });
       }
 
       while (offset < count) {
+        const qb = baseQb.clone();
         const limit = Math.min(batchSize, count - offset);
 
         const queryResult = await qb
@@ -233,8 +248,7 @@ export const exportServiceServer = plugin((server) => {
           .offset(offset)
           .getResultList() as Loaded<Account, "tenant" | "users" | "users.user">[];
 
-        const records = queryResult
-          .map(recordFormat ?? ((x) => x));
+        const records = queryResult.map(recordFormat ?? ((x) => x));
 
         if (records.length === 0) {
           break;

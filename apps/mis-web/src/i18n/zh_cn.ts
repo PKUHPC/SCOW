@@ -228,6 +228,7 @@ export default {
         blockedAccount: "封锁账户",
         frozenAccount: "冻结账户",
         normalAccount: "正常账户",
+        deletedAccount:"删除账户",
         account:"账户",
         accountName:"账户名",
         owner:"拥有者",
@@ -253,6 +254,7 @@ export default {
         frozen:"冻结",
         debt: "欠费",
         normal:"正常",
+        deleted:"已删除",
         unit:" 元",
         unblockConfirmTitle: "确认解除用户封锁？",
         unblockConfirmContent: "确认要在租户{}中解除账户{}的封锁？",
@@ -266,6 +268,9 @@ export default {
         blockConfirmContent: "确认要在租户{}中封锁账户{}",
         blockSuccess: "封锁帐户成功！",
         blockFail: "封锁帐户失败！",
+
+        delete:"删除",
+        changeFail:"修改失败",
       },
       setBlockThresholdAmountModal: {
         setSuccess:"设置成功",
@@ -653,6 +658,7 @@ export default {
         changeSuccess:"修改成功",
         changeFail:"修改失败",
         changePassword:"修改密码",
+        delete:"删除",
       },
       jobPriceChangeModal:{
         tenantPrice:"租户计费",
@@ -771,6 +777,41 @@ export default {
       sorry:"对不起，服务器出错。请刷新重试。",
       clusterNotAvailable: "当前正在访问的集群不可用或没有可用集群。"
       + "请稍后再试或联系管理员。",
+    },
+    deleteModals:{
+      deleteUser:"删除用户",
+      userId:"用户ID",
+      userName:"用户姓名",
+      comments:"备注",
+      confirmPermanentDeleteUser:"请确认是否删除ID是<b>{}</b>，姓名是<b>{}</b>的用户？",
+      confirmDeleteUserPrompt1: "如果删除用户，请确认该用户在所有账户中已处于封锁状态，并在下方输入用户ID和姓名。",
+
+      confirmDeleteUserPrompt2: "<span style='color:red'>注意：删除后不可恢复，用户将不可用！</span>",
+
+      cannotDeleteSelf:"不允许删除当前用户本身",
+      userIdRequired:"请输入用户ID",
+      userNameRequired:"请输入用户姓名",
+      incorrectUserIdOrName:"您输入的用户ID或姓名不匹配",
+      userDeleted: "该用户已删除,无法操作",
+      deleteFailed:"删除失败",
+      accountsOwnerPrompt:"用户<b>{}</b>是账户<b>{}</b>的拥有者，您需要先删除以上账户后才能删除该用户",
+
+      userRunningJobsPrompt:"该用户还有未完成的作业，无法删除",
+      delete:"删除",
+
+      deleteAccount:"删除账户",
+      accountName:"账户名",
+      accountOwnerId:"账户拥有者ID",
+      accountNameRequired:"请输入账户名",
+      ownerIdRequired:"请输入账户拥有者ID",
+      confirmPermanentDeleteAccount:"请确认是否删除账户名是<b>{}</b>，账户拥有者ID为<b>{}</b>的账户？",
+
+      confirmDeleteAccountPrompt1:"如果删除账户，请确认该账户已不在使用中，并在下方输入账户名和拥有者ID。",
+
+      confirmDeleteAccountPrompt2:"<span style='color:red'>注意：删除后不可恢复，账户将不可用！</span>",
+
+      accountRunningJobsPrompt:"该账户还有未完成的作业，无法删除",
+      accountDeleted:"该账户已删除，无法操作",
     },
     others:{
       seeDetails:"细节请查阅文档",
@@ -1242,6 +1283,8 @@ export default {
       customEvent: "自定义操作行为",
       activateCluster: "启用集群",
       deactivateCluster: "停用集群",
+      deleteUser:"删除用户",
+      deleteAccount:"删除账户",
     },
     operationDetails: {
       login: "用户登录",
@@ -1299,6 +1342,7 @@ export default {
       copyModelVersion:"复制算法版本(源数算法Id: {}, 源版本Id: {}; 目标算法Id: {}, 版本Id: {})",
 
       createUser: "创建用户{}",
+      deleteUser:"删除用户{}",
       addUserToAccount: "将用户{}添加到账户{}中",
       removeUserFromAccount: "将用户{}从账户{}中移除",
       setAccountAdmin: "设置用户{}为账户{}的管理员",
@@ -1314,6 +1358,7 @@ export default {
       unsetTenantFinance: "取消用户{}为租户{}的财务人员",
       tenantChangePassword: "重置用户{}的登录密码",
       createAccount: "创建账户{}, 拥有者为{}",
+      deleteAccount:"删除账户{}",
       addAccountToWhitelist: "将账户{}添加到租户{}的白名单中",
       removeAccountFromWhitelist: "将账户{}从租户{}的白名单中移出",
       accountPay: "为账户{}充值{}元",

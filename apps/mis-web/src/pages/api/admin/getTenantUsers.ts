@@ -15,7 +15,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { FullUserInfo, TenantRole } from "src/models/User";
+import { FullUserInfo, TenantRole,UserState } from "src/models/User";
 import { getClient } from "src/utils/client";
 
 export const GetTenantUsersSchema = typeboxRouteSchema({
@@ -51,6 +51,7 @@ export default typeboxRoute(GetTenantUsersSchema,
       id: x.userId,
       name: x.name,
       tenantRoles: x.tenantRoles,
+      state:x.state || UserState.NORMAL,
     }));
 
 

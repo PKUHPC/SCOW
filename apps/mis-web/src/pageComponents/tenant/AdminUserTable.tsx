@@ -18,11 +18,14 @@ import { SortOrder } from "antd/es/table/interface";
 import React, { useCallback, useMemo, useState } from "react";
 import { api } from "src/apis";
 import { ChangePasswordModalLink } from "src/components/ChangePasswordModal";
+import { DeleteEntityFailedModal } from "src/components/DeleteEntityFailedModal";
+import { DeleteEntityModalLink } from "src/components/DeleteEntityModal";
+import { DisabledA } from "src/components/DisabledA";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TenantRoleSelector } from "src/components/TenantRoleSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { FullUserInfo, TenantRole } from "src/models/User";
+import { DeleteFailedReason, FullUserInfo, TenantRole, UserState } from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { type GetTenantUsersSchema } from "src/pages/api/admin/getTenantUsers";
@@ -42,6 +45,7 @@ interface FilterForm {
 
 const p = prefix("pageComp.tenant.adminUserTable.");
 const pCommon = prefix("common.");
+const pDelete = prefix("component.deleteModals.");
 
 const filteredRoles = {
   "ALL_USERS": "allUsers",
@@ -49,8 +53,6 @@ const filteredRoles = {
   "TENANT_FINANCE": "tenantFinance",
 } as const;
 type FilteredRole = keyof typeof filteredRoles;
-
-
 
 export const AdminUserTable: React.FC<Props> = ({
   data, isLoading, reload, user,
@@ -146,6 +148,13 @@ export const AdminUserTable: React.FC<Props> = ({
       { label: t(p("affiliatedAccountName")), value: "availableAccounts" },
     ];
   }, [t]);
+
+  const [failedModalVisible, setFailedModalVisible] = useState(false);
+  const [failedDeletedMessage, setFailedDeletedMessage] = useState({
+    type: DeleteFailedReason.ACCOUNTS_OWNER,
+    userId: "",
+    accounts: [],
+  });
 
   return (
     <div>
@@ -243,39 +252,104 @@ export const AdminUserTable: React.FC<Props> = ({
           render={(_, r) => r.accountAffiliations.map((x) => x.accountName).join(", ")}
         />
         <Table.Column<FullUserInfo>
-          dataIndex="changePassword"
+          dataIndex="operation"
           title={t(pCommon("operation"))}
-          width="8%"
+          width="13%"
           fixed="right"
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
-              <ChangePasswordModalLink
-                userId={r.id}
-                name={r.name}
-                onComplete={async (newPassword) => {
-                  await api.changePasswordAsTenantAdmin({
-                    body: {
-                      identityId: r.id,
-                      newPassword: newPassword,
-                    },
-                  })
-                    .httpError(404, () => { message.error(t(p("notExist"))); })
-                    .httpError(501, () => { message.error(t(p("notAvailable"))); })
-                    .httpError(400, (e) => {
-                      if (e.code === "PASSWORD_NOT_VALID") {
-                        message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
-                      };
+              {r.state === UserState.DELETED ? (
+                <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
+                  {t(p("changePassword"))}
+                </DisabledA>
+              ) : (
+                <ChangePasswordModalLink
+                  userId={r.id}
+                  name={r.name}
+                  onComplete={async (newPassword) => {
+                    await api.changePasswordAsTenantAdmin({
+                      body: {
+                        identityId: r.id,
+                        newPassword: newPassword,
+                      },
                     })
-                    .then(() => { message.success(t(p("changeSuccess"))); })
-                    .catch(() => { message.error(t(p("changeFail"))); });
-                }}
-              >
-                {t(p("changePassword"))}
-              </ChangePasswordModalLink>
+                      .httpError(404, () => { message.error(t(p("notExist"))); })
+                      .httpError(501, () => { message.error(t(p("notAvailable"))); })
+                      .httpError(400, (e) => {
+                        if (e.code === "PASSWORD_NOT_VALID") {
+                          message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
+                        };
+                      })
+                      .then(() => { message.success(t(p("changeSuccess"))); })
+                      .catch(() => { message.error(t(p("changeFail"))); });
+                  }}
+                >
+                  {t(p("changePassword"))}
+                </ChangePasswordModalLink>
+              )
+              }
+              { user.identityId === r.id ? (
+                <DisabledA message={t(pDelete("cannotDeleteSelf"))} disabled={true}>
+                  {t(p("delete"))}
+                </DisabledA>
+              ) : r.state === UserState.DELETED ? (
+                <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
+                  {t(p("delete"))}
+                </DisabledA>
+              ) : (
+                <DeleteEntityModalLink
+                  id={r.id}
+                  name={r.name}
+                  type="USER"
+                  onComplete={async (inputUserId, inputUserName, comments) => {
+
+                    message.open({
+                      type: "loading",
+                      content: t("common.waitingMessage"),
+                      duration: 0,
+                      key: "deleteUser" });
+
+                    await api.deleteUser({ query: {
+                      userId:inputUserId,
+                      userName:inputUserName,
+                      comments: comments,
+                    } })// 待完善
+                      .httpError(404, (e) => {
+                        message.destroy("deleteUser");
+                        message.error({
+                          content: e.message,
+                          duration: 4,
+                        });
+                      })
+                      .httpError(409, (e) => {
+                        message.destroy("deleteUser");
+                        const { type,userId,accounts } = JSON.parse(e.message);
+                        setFailedModalVisible(true);
+                        setFailedDeletedMessage({ type,userId,accounts });
+                        reload();
+                      })
+                      .then(() => {
+                        message.destroy("deleteUser");
+                        reload();
+                      })
+                      .catch(() => { message.error(t(p("changeFail"))); });
+                  }}
+                >
+                  {t(p("delete"))}
+                </DeleteEntityModalLink>
+              )}
             </Space>
           )}
         />
       </Table>
+      <DeleteEntityFailedModal
+        message={failedDeletedMessage}
+        open={failedModalVisible}
+        onClose={() => {
+          setFailedModalVisible(false);
+        }}
+      >
+      </DeleteEntityFailedModal>
     </div>
   );
 };

@@ -21,7 +21,7 @@ import { type api } from "src/apis/api";
 import { ClusterConnectionStatus } from "src/models/cluster";
 import { OperationResult } from "src/models/operationLog";
 import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, PlatformRole,
-  TenantRole, UserInfo, UserRole, UserStatus } from "src/models/User";
+  TenantRole, UserInfo, UserRole, UserState,UserStatus } from "src/models/User";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 
 export type MockApi<TApi extends Record<
@@ -109,6 +109,7 @@ const mockUsers = [
       { accountName: "hpc2001213077", role: UserRole.ADMIN },
       { accountName: "hpc2001213075", role: UserRole.USER },
     ],
+    state:UserState.NORMAL,
   },
 ];
 
@@ -432,6 +433,7 @@ export const mockApi: MockApi<typeof api> = {
   queryJobTimeLimit: async () => ({ result: 10 }),
   cancelJob: async () => null,
   createAccount: async () => { return {}; },
+  deleteAccount: async () => null,
   dewhitelistAccount: async () => null,
   whitelistAccount: async () => null,
   getWhitelistedAccounts: async () => ({ results: [{
@@ -456,7 +458,7 @@ export const mockApi: MockApi<typeof api> = {
   createTenant: async () => ({ createdInAuth: true }),
   createTenantWithExistingUserAsAdmin: async () => null,
   validateToken: async () => MOCK_USER_INFO,
-
+  deleteUser: async () => null,
   getOperationLogs: async () => ({ results: [{
     operationLogId: 99,
     operatorUserId: "testUser",

@@ -94,6 +94,7 @@ export const statisticServiceServer = plugin((server) => {
       const misOperationType: OperationType[] = [
         "setJobTimeLimit",
         "createUser",
+        "deleteUser",
         "addUserToAccount",
         "removeUserFromAccount",
         "setAccountAdmin",
@@ -109,6 +110,7 @@ export const statisticServiceServer = plugin((server) => {
         "unsetTenantFinance",
         "tenantChangePassword",
         "createAccount",
+        "deleteAccount",
         "addAccountToWhitelist",
         "removeAccountFromWhitelist",
         "accountPay",

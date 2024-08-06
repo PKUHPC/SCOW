@@ -60,7 +60,8 @@ export const accountServiceServer = plugin((server) => {
       return [{ blocked: true }];
     },
 
-
-
+    // deleteAccount:async () => {
+    //   return [{}];
+    // },
   });
 });

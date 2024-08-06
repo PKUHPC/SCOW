@@ -44,9 +44,11 @@ export const ExportAccountSchema = typeboxRouteSchema({
     debt: Type.Optional(Type.Boolean()),
     frozen: Type.Optional(Type.Boolean()),
     normal: Type.Optional(Type.Boolean()),
+    deleted:Type.Optional(Type.Boolean()),
     // 是否来自平台管理页面
     isFromAdmin: Type.Boolean(),
     encoding: Type.Enum(Encoding),
+    ownerIdOrName: Type.Optional(Type.String()),
   }),
 
   responses:{
@@ -67,7 +69,8 @@ const adminAuth = authenticate((info) =>
 export default route(ExportAccountSchema, async (req, res) => {
   const { query } = req;
 
-  const { columns, accountName, tenantName, blocked, debt, frozen, normal, count, isFromAdmin, encoding } = query;
+  const { columns, accountName, tenantName, blocked, debt, frozen, normal, count, isFromAdmin,
+    encoding, deleted, ownerIdOrName } = query;
 
   const info = isFromAdmin ? await adminAuth(req, res) : await tenantAuth(req, res);
 
@@ -109,6 +112,8 @@ export default route(ExportAccountSchema, async (req, res) => {
       debt,
       frozen,
       normal,
+      deleted,
+      ownerIdOrName,
     });
 
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);

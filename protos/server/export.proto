@@ -31,6 +31,9 @@ message ExportAccountRequest {
   optional bool frozen = 6;
   // 为true时表明账户在白名单中(状态不为冻结)或账户为未欠费账户即可以正常使用集群的账户，false则为所有账户
   optional bool normal = 7;
+   // 为true时表明账户为已删除的账户，false则为所有账户
+  optional bool deleted = 8;
+  optional string owner_id_or_name = 9;
 }
 
 message ExportAccountResponse {

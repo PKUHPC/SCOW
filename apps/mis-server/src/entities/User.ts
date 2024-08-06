@@ -26,6 +26,11 @@ export enum TenantRole {
   TENANT_ADMIN = "TENANT_ADMIN",
 }
 
+export enum UserState {
+  NORMAL = "NORMAL",
+  DELETED = "DELETED",
+}
+
 @Entity()
 export class User {
   @PrimaryKey()
@@ -58,6 +63,12 @@ export class User {
   @Enum({ items: () => PlatformRole, array: true, comment: Object.values(PlatformRole).join(", ") })
   platformRoles: PlatformRole[];
 
+  @Enum({ items: () => UserState, default: UserState.NORMAL, comment: Object.values(UserState).join(", ") })
+  state: UserState = UserState.NORMAL;
+
+  @Property({ nullable: true })
+  deleteRemark?: string;
+
   constructor(init: {
     userId: string;
     tenant: EntityOrRef<Tenant>;
@@ -66,6 +77,8 @@ export class User {
     createTime?: Date;
     tenantRoles?: TenantRole[];
     platformRoles?: PlatformRole[];
+    state?: UserState;
+    deleteRemark?: string;
   }) {
     this.userId = init.userId;
     this.tenant = toRef(init.tenant);
@@ -74,6 +87,8 @@ export class User {
     this.createTime = init.createTime ?? new Date();
     this.tenantRoles = init.tenantRoles ?? [];
     this.platformRoles = init.platformRoles ?? [];
+    this.state = init.state ?? UserState.NORMAL;
+    this.deleteRemark = init.deleteRemark ?? "";
   }
 
 }

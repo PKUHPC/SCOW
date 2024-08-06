@@ -203,6 +203,7 @@ message AddUserResponse {
 message DeleteUserRequest {
   string tenant_name = 1;
   string user_id = 2;
+  optional string delete_remark = 3;
 }
 
 // FAILED_PRECONDITION: the user is an owner of an account.
@@ -233,6 +234,7 @@ message User {
   repeated AccountAffiliation account_affiliations = 6;
   repeated PlatformRole platform_roles = 7;
   repeated TenantRole tenant_roles = 8;
+  optional UserState state = 9;
 }
 
 message GetUserInfoRequest {
@@ -258,6 +260,11 @@ enum PlatformRole {
 enum TenantRole {
   TENANT_ADMIN = 0;
   TENANT_FINANCE = 1;
+}
+
+enum UserState {
+  NORMAL = 0;
+  DELETED = 1;
 }
 
 message GetUserInfoResponse {

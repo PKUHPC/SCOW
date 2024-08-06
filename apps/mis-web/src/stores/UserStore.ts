@@ -13,7 +13,7 @@
 import { useCallback, useState } from "react";
 import { api } from "src/apis";
 import { destroyUserInfoCookie } from "src/auth/cookie";
-import { AccountAffiliation, PlatformRole, TenantRole } from "src/models/User";
+import { AccountAffiliation, PlatformRole, TenantRole, UserState } from "src/models/User";
 
 export interface User {
   tenant: string;
@@ -24,7 +24,8 @@ export interface User {
   platformRoles: PlatformRole[];
   accountAffiliations: AccountAffiliation[];
   email?: string;
-  createTime?: string
+  createTime?: string;
+  state: UserState;
 }
 
 export function UserStore(initialUser: User | undefined = undefined) {

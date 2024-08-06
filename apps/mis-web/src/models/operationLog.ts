@@ -148,7 +148,9 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     setTenantFinance: t(pTypes("setTenantFinance")),
     unsetTenantFinance: t(pTypes("unsetTenantFinance")),
     tenantChangePassword: t(pTypes("tenantChangePassword")),
+    deleteUser: t(pTypes("deleteUser")),
     createAccount: t(pTypes("createAccount")),
+    deleteAccount: t(pTypes("deleteAccount")),
     addAccountToWhitelist: t(pTypes("addAccountToWhitelist")),
     removeAccountFromWhitelist: t(pTypes("removeAccountFromWhitelist")),
     accountPay: t(pTypes("accountPay")),
@@ -247,6 +249,7 @@ export const OperationCodeMap: {[key in LibOperationType]: string } = {
   setTenantFinance: "030204",
   unsetTenantFinance: "030205",
   tenantChangePassword: "030206",
+  deleteUser:"030207",
   createAccount: "030301",
   addAccountToWhitelist: "030302",
   removeAccountFromWhitelist: "030303",
@@ -255,6 +258,7 @@ export const OperationCodeMap: {[key in LibOperationType]: string } = {
   unblockAccount: "030306",
   setAccountBlockThreshold: "030307",
   setAccountDefaultBlockThreshold: "030308",
+  deleteAccount:"030309",
   importUsers: "040101",
   setPlatformAdmin: "040201",
   unsetPlatformAdmin: "040202",
@@ -501,9 +505,14 @@ export const getOperationDetail = (
           [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
       case "tenantChangePassword":
         return t(pDetails("tenantChangePassword"), [operationEvent[logEvent].userId]);
+      case "deleteUser":
+        return t(pDetails("deleteUser"), [operationEvent[logEvent].userId]);
       case "createAccount":
         return t(pDetails("createAccount"),
           [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner]);
+      case "deleteAccount":
+        return t(pDetails("deleteAccount"),
+          [operationEvent[logEvent].accountName]);
       case "addAccountToWhitelist":
         return t(pDetails("addAccountToWhitelist"),
           [operationEvent[logEvent].accountName, operationEvent[logEvent].tenantName]);

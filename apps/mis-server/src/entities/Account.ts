@@ -25,6 +25,7 @@ export enum AccountState {
   NORMAL = "NORMAL",
   FROZEN = "FROZEN",
   BLOCKED_BY_ADMIN = "BLOCKED_BY_ADMIN",
+  DELETED = "DELETED",
 }
 
 @Entity()

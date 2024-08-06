@@ -44,6 +44,13 @@ export const getAccountStateInfo = (
   balance: Decimal,
   thresholdAmount: Decimal): AccountStateInfo => {
 
+  if (state === AccountState.DELETED) {
+    return {
+      displayedState: DisplayedAccountState.DISPLAYED_DELETED,
+      shouldBlockInCluster: true,
+    };
+  }
+
   if (state === AccountState.FROZEN) {
     return {
       displayedState: DisplayedAccountState.DISPLAYED_FROZEN,

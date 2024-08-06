@@ -1346,7 +1346,7 @@
         },
         "state": {
           "name": "state",
-          "type": "enum('NORMAL','FROZEN','BLOCKED_BY_ADMIN')",
+          "type": "enum('NORMAL','FROZEN','BLOCKED_BY_ADMIN','DELETED')",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1355,9 +1355,10 @@
           "enumItems": [
             "NORMAL",
             "FROZEN",
-            "BLOCKED_BY_ADMIN"
+            "BLOCKED_BY_ADMIN",
+            "DELETED"
           ],
-          "comment": "NORMAL, FROZEN, BLOCKED_BY_ADMIN",
+          "comment": "NORMAL, FROZEN, BLOCKED_BY_ADMIN, DELETED",
           "mappedType": "enum"
         },
         "create_time": {
@@ -1529,6 +1530,30 @@
           ],
           "comment": "PLATFORM_FINANCE, PLATFORM_ADMIN",
           "mappedType": "text"
+        },
+        "state": {
+          "name": "state",
+          "type": "enum('NORMAL','DELETED')",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "'NORMAL'",
+          "enumItems": [
+            "NORMAL",
+            "DELETED"
+          ],
+          "comment": "NORMAL, DELETED",
+          "mappedType": "enum"
+        },
+        "delete_remark": {
+          "name": "delete_remark",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "string"
         }
       },
       "name": "user",
