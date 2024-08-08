@@ -55,12 +55,17 @@ export const CreateAppSessionSchema = typeboxRouteSchema({
       message: Type.String(),
     }),
 
+    409: Type.Object({
+      code: Type.Literal("ALREADY_EXISTS"),
+      message: Type.String(),
+    }),
+
     404: Type.Object({
       code: Type.Literal("APP_NOT_FOUND"),
       message: Type.String(),
     }),
 
-    409: Type.Object({
+    500: Type.Object({
       code: Type.Literal("SBATCH_FAILED"),
       message: Type.String(),
     }),
@@ -126,11 +131,13 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
     if (errors[0] && errors[0].$type === "google.rpc.ErrorInfo") {
       switch (errors[0].reason) {
         case "SBATCH_FAILED":
-          return { 409: { code: "SBATCH_FAILED" as const, message: ex.details } };
+          return { 500: { code: "SBATCH_FAILED" as const, message: ex.details } };
         case "NOT FOUND":
           return { 404: { code: "APP_NOT_FOUND" as const, message: ex.details } };
         case "INVALID ARGUMENT":
           return { 400: { code: "INVALID_INPUT" as const, message: ex.details } };
+        case "ALREADY EXISTS":
+          return { 409: { code: "ALREADY_EXISTS" as const, message: ex.details } };
         default:
           return e;
       }

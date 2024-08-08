@@ -65,6 +65,11 @@ export const SubmitJobSchema = typeboxRouteSchema({
       message: Type.String(),
     }),
 
+    409: Type.Object({
+      code: Type.Literal("ALREADY_EXISTS"),
+      message: Type.String(),
+    }),
+
     500: Type.Object({
       code: Type.Literal("SCHEDULER_FAILED"),
       message: Type.String(),
@@ -137,6 +142,7 @@ export default route(SubmitJobSchema, async (req, res) => {
     .catch(handlegRPCError({
       [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED", message: err.details } } as const),
       [status.NOT_FOUND]: (err) => ({ 404: { code: "NOT_FOUND", message: err.details } } as const),
+      [status.ALREADY_EXISTS]: (err) => ({ 409: { code: "ALREADY_EXISTS", message: err.details } } as const),
     },
     async () => await callLog(
       { ...logInfo,

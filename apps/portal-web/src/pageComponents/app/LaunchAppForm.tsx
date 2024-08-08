@@ -116,7 +116,7 @@ export const LaunchAppForm: React.FC<Props> = ({ clusterId, appId, attributes, a
       maxTime,
       customAttributes: customFormKeyValue,
     } })
-      .httpError(409, (e) => {
+      .httpError(500, (e) => {
         if (e.code === "SBATCH_FAILED") {
           createErrorModal(e.message);
         } else {
@@ -132,6 +132,13 @@ export const LaunchAppForm: React.FC<Props> = ({ clusterId, appId, attributes, a
       })
       .httpError(400, (e) => {
         if (e.code === "INVALID_INPUT") {
+          createErrorModal(e.message);
+        } else {
+          throw e;
+        }
+      })
+      .httpError(409, (e) => {
+        if (e.code === "ALREADY_EXISTS") {
           createErrorModal(e.message);
         } else {
           throw e;

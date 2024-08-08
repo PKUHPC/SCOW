@@ -16,11 +16,13 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType } from "@scow/config/build/app";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { formatTime } from "@scow/lib-scheduler-adapter";
-import { getAppConnectionInfoFromAdapter, getEnvVariables } from "@scow/lib-server";
+import { compareSchedulerApiVersion, getAppConnectionInfoFromAdapter,
+  getEnvVariables, getSchedulerApiVersion } from "@scow/lib-server";
 import { getUserHomedir,
   sftpChmod, sftpExists, sftpReaddir, sftpReadFile, sftpRealPath, sftpWriteFile } from "@scow/lib-ssh";
 import { DetailedError, ErrorInfo, parseErrorDetails } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { ApiVersion } from "@scow/utils/build/version";
 import fs from "fs";
 import { join } from "path";
 import { quote } from "shell-quote";
@@ -78,8 +80,44 @@ export const appOps = (cluster: string): AppOps => {
       const { appId, userId, account, coreCount, nodeCount, gpuCount, memory, maxTime, proxyBasePath,
         partition, qos, customAttributes, appJobName } = request;
 
-      const memoryMb = memory ? Number(memory.slice(0, -2)) : undefined;
+      const jobName = appJobName;
 
+      // 检查作业重名的最低调度器接口版本
+      const minRequiredApiVersion: ApiVersion = { major: 1, minor: 6, patch: 0 };
+
+      const scheduleApiVersion = await callOnOne(
+        cluster,
+        logger,
+        async (client) => await getSchedulerApiVersion(client),
+      );
+
+      // 适配器支持的话就检查是否存在同名的作业
+      if (compareSchedulerApiVersion(scheduleApiVersion,minRequiredApiVersion)) {
+
+        const existingJobName = await callOnOne(
+          cluster,
+          logger,
+          async (client) => await asyncClientCall(client.job, "getJobs", {
+            fields: ["job_id"],
+            filter: {
+              users: [userId], accounts: [], states: [], jobName,
+            },
+          }),
+        ).then((resp) => resp.jobs);
+
+        if (existingJobName.length) {
+          throw new DetailedError({
+            code: Status.ALREADY_EXISTS,
+            message: `appJobName ${appJobName} is already existed`,
+            details: [errorInfo("ALREADY EXISTS")],
+          });
+        }
+
+      } else {
+        logger.info("Adapter version lower than 1.6.0, do not perform check for duplicate job names");
+      }
+
+      const memoryMb = memory ? Number(memory.slice(0, -2)) : undefined;
 
       const userSbatchOptions = customAttributes.sbatchOptions
         ? splitSbatchArgs(customAttributes.sbatchOptions)
@@ -95,8 +133,6 @@ export const appOps = (cluster: string): AppOps => {
           details: [errorInfo("NOT FOUND")],
         });
       }
-
-      const jobName = appJobName;
 
       const workingDirectory = join(portalConfig.appJobsDir, jobName);
 
