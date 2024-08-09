@@ -13,7 +13,7 @@ message FileInfo {
   FileType file_type = 1;
   string name = 2;
   string mod_time = 3;
-  uint64 size = 4;
+  uint64 size_byte = 4;
   uint32 mode = 5;
 }
 
@@ -64,7 +64,7 @@ message GetFileMetadataRequest {
 }
 
 message GetFileMetadataResponse {
-  uint64 size = 1;
+  uint64 size_byte = 1;
   FileType type = 2;
 }
 
@@ -103,6 +103,18 @@ message CopyRequest {
 message CopyResponse {
 }
 
+message InitMultipartUploadRequest {
+  string user_id = 1;
+  string path = 2;
+  string name = 3;
+}
+
+message InitMultipartUploadResponse {
+  string temp_file_dir = 1;
+  uint64 chunk_size_byte = 2;
+  repeated FileInfo files_info = 3;
+}
+
 message UploadRequest {
 
   message Info {
@@ -120,10 +132,20 @@ message UploadResponse {
   uint64 written_bytes = 1;
 }
 
+message MergeFileChunksRequest {
+  string user_id = 1;
+  string path = 2;
+  string name = 3;
+  uint64 size_byte = 4;
+}
+
+message MergeFileChunksResponse {
+}
+
 message DownloadRequest {
   string user_id = 1;
   string path = 2;
-  uint32 chunk_size = 3;
+  uint32 chunk_size_byte = 3;
 }
 
 message DownloadResponse {
@@ -192,7 +214,9 @@ service FileService {
   rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse) {}
 
   rpc Download(DownloadRequest) returns (stream DownloadResponse);
+  rpc InitMultipartUpload(InitMultipartUploadRequest) returns (InitMultipartUploadResponse);
   rpc Upload(stream UploadRequest) returns (UploadResponse);
+  rpc MergeFileChunks(MergeFileChunksRequest) returns (MergeFileChunksResponse);
 
   rpc GetFileMetadata(GetFileMetadataRequest) returns (GetFileMetadataResponse);
   rpc GetHomeDirectory(GetHomeDirectoryRequest) returns (GetHomeDirectoryResponse);

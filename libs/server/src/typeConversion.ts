@@ -76,6 +76,9 @@ export const convertClusterConfigsToServerProtoType = (
       displayName: getI18nSeverTypeFormat(item.displayName)!,
       adapterUrl: item.adapterUrl,
       priority: item.priority,
+      scowd: item.scowd ? {
+        enabled: item.scowd?.enabled ?? false,
+      } : undefined,
       proxyGateway: item.proxyGateway ?
         {
           url: item.proxyGateway.url || "",

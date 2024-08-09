@@ -55,7 +55,7 @@ export const ListFileSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-const mapType = {
+export const mapType = {
   [FileInfo_FileType.DIR]: "DIR",
   [FileInfo_FileType.FILE]: "FILE",
 } as const;
@@ -81,5 +81,4 @@ export default route(ListFileSchema, async (req, res) => {
     [status.PERMISSION_DENIED]: () => ({ 403: { code: "NOT_ACCESSIBLE" as const } }),
     [status.INVALID_ARGUMENT]: () => ({ 412: { code: "DIRECTORY_NOT_FOUND" as const } }),
   }));
-
 });

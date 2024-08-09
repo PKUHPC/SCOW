@@ -1244,6 +1244,8 @@ export default {
       customEvent: "Custom Operation Event",
       activateCluster: "Activate Cluster",
       deactivateCluster: "Deactivate Cluster",
+      mergeFileChunks: "Merge and upload temporary file blocks",
+      initMultipartUpload: "Initial multipart upload file",
     },
     operationDetails: {
       login: "User Login",

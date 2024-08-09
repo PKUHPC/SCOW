@@ -110,7 +110,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
           type: fileInfo_FileTypeFromJSON(info.fileType),
           mtime: info.modTime,
           mode: info.mode,
-          size: Number(info.size),
+          size: Number(info.sizeByte),
         };
       });
       return { results };
@@ -124,7 +124,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
     try {
       const readStream = client.file.download({
-        userId, path, chunkSize: config.DOWNLOAD_CHUNK_SIZE,
+        userId, path, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
       });
 
       for await (const response of readStream) {
@@ -183,7 +183,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     try {
       const res = await client.file.getFileMetadata({ userId, filePath: path });
 
-      return { size: Number(res.size), type: res.type === FileType.DIR ? "dir" : "file" };
+      return { size: Number(res.sizeByte), type: res.type === FileType.DIR ? "dir" : "file" };
 
     } catch (err) {
       throw mapTRPCExceptionToGRPC(err);

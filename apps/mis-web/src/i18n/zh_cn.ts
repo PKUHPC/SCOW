@@ -1242,6 +1242,8 @@ export default {
       customEvent: "自定义操作行为",
       activateCluster: "启用集群",
       deactivateCluster: "停用集群",
+      mergeFileChunks: "合并临时文件块",
+      initMultipartUpload: "初始化分片上传",
     },
     operationDetails: {
       login: "用户登录",

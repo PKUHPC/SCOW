@@ -29,6 +29,7 @@ export function getLoginNodeScowdUrl(cluster: string, host: string): string | un
   if (!loginNode) return undefined;
 
   const { address, scowdPort } = loginNode;
+
   return config.SCOWD_SSL_ENABLED
     ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
 }

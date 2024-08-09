@@ -11,11 +11,11 @@
  */
 
 import { CloseOutlined, FileOutlined, FolderOutlined } from "@ant-design/icons";
+import * as crypto from "crypto";
 import { join } from "path";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { FileInfo, FileType } from "src/pages/api/file/list";
 import { styled } from "styled-components";
-
 
 export type FileInfoKey = React.Key;
 
@@ -50,3 +50,21 @@ export const nodeModeToString = (mode: number) => {
 export const openPreviewLink = (href: string) => {
   window.open(href, "ViewFile", "location=yes,resizable=yes,scrollbars=yes,status=yes");
 };
+
+export async function calculateBlobSHA256(blob: Blob): Promise<string> {
+
+  try {
+
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const hash = crypto.createHash("sha256");
+    hash.update(buffer);
+    const hashHex = hash.digest("hex");
+
+    return hashHex;
+  } catch (error) {
+
+    throw new Error(`Failed to calculate hash: ${error.message}`);
+  }
+}
+

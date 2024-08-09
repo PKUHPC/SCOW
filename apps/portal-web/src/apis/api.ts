@@ -44,8 +44,10 @@ import type { DownloadFileSchema } from "src/pages/api/file/download";
 import type { FileExistSchema } from "src/pages/api/file/fileExist";
 import type { GetFileTypeSchema } from "src/pages/api/file/getFileType";
 import type { GetHomeDirectorySchema } from "src/pages/api/file/getHome";
+import type { InitMultipartUploadSchema } from "src/pages/api/file/initMultipartUpload";
 import type { ListFileSchema } from "src/pages/api/file/list";
 import type { ListAvailableTransferClustersSchema } from "src/pages/api/file/listAvailableTransferClusters";
+import type { MergeFileChunksSchema } from "src/pages/api/file/mergeFileChunks";
 import type { MkdirSchema } from "src/pages/api/file/mkdir";
 import type { MoveFileItemSchema } from "src/pages/api/file/move";
 import type { QueryFileTransferProgressSchema } from "src/pages/api/file/queryFileTransferProgress";
@@ -97,8 +99,10 @@ export const api = {
   fileExist: apiClient.fromTypeboxRoute<typeof FileExistSchema>("GET", "/api/file/fileExist"),
   getFileType: apiClient.fromTypeboxRoute<typeof GetFileTypeSchema>("GET", "/api/file/getFileType"),
   getHomeDirectory: apiClient.fromTypeboxRoute<typeof GetHomeDirectorySchema>("GET", "/api/file/getHome"),
+  initMultipartUpload: apiClient.fromTypeboxRoute<typeof InitMultipartUploadSchema>("POST", "/api/file/initMultipartUpload"),
   listFile: apiClient.fromTypeboxRoute<typeof ListFileSchema>("GET", "/api/file/list"),
   listAvailableTransferClusters: apiClient.fromTypeboxRoute<typeof ListAvailableTransferClustersSchema>("GET", "/api/file/listAvailableTransferClusters"),
+  mergeFileChunks: apiClient.fromTypeboxRoute<typeof MergeFileChunksSchema>("POST", "/api/file/mergeFileChunks"),
   mkdir: apiClient.fromTypeboxRoute<typeof MkdirSchema>("POST", "/api/file/mkdir"),
   moveFileItem: apiClient.fromTypeboxRoute<typeof MoveFileItemSchema>("PATCH", "/api/file/move"),
   queryFileTransferProgress: apiClient.fromTypeboxRoute<typeof QueryFileTransferProgressSchema>("GET", "/api/file/queryFileTransferProgress"),

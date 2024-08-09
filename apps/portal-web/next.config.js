@@ -61,9 +61,6 @@ module.exports = async (phase) => {
 
       return config;
     },
-    compiler: {
-      styledComponents: true,
-    },
     skipTrailingSlashRedirect: true,
     transpilePackages: ["antd", "@ant-design/icons"],
   };

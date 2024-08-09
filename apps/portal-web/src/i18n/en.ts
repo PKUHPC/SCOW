@@ -343,6 +343,10 @@ export default {
         existedModalOk: "Confirm",
         dragText: "Click or drag files here",
         hintText: "Supports uploading single or multiple files",
+        multipartUploadError: "Upload file failed: {}",
+        calculateHashError: "Error calculating hash: {}",
+        uploadFileListNotExist: "The uploaded file list does not exist: {}",
+        mergeFileChunksErrorText: "Failed to merge file {}, please try again",
       },
     },
     // desktop

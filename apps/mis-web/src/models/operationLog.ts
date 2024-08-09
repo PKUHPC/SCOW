@@ -175,6 +175,8 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     activateCluster: t(pTypes("activateCluster")),
     deactivateCluster: t(pTypes("deactivateCluster")),
     customEvent: t(pTypes("customEvent")),
+    mergeFileChunks: t(pTypes("mergeFileChunks")),
+    initMultipartUpload: t(pTypes("initMultipartUpload")),
   };
 
 };
@@ -202,6 +204,8 @@ export const OperationCodeMap: {[key in LibOperationType]: string } = {
   moveFileItem: "010506",
   copyFileItem: "010507",
   submitFileItemAsJob: "010508",
+  mergeFileChunks: "010509",
+  initMultipartUpload: "010510",
   setJobTimeLimit: "010601",
   createImage:"010701",
   updateImage:"010702",

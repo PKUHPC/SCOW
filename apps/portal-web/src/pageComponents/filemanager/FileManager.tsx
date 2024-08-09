@@ -54,6 +54,7 @@ interface Props {
   cluster: Cluster;
   path: string;
   urlPrefix: string;
+  scowdEnabled: boolean;
 }
 
 interface PromiseSettledResult {
@@ -93,7 +94,7 @@ interface Operation {
 
 const p = prefix("pageComp.fileManagerComp.fileManager.");
 
-export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
+export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, scowdEnabled }) => {
 
   const router = useRouter();
 
@@ -411,6 +412,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
             cluster={cluster.id}
             path={path}
             reload={reload}
+            scowdEnabled={scowdEnabled}
           >
             {t(p("tableInfo.uploadButton"))}
           </UploadButton>

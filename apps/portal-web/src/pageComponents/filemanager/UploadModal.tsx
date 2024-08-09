@@ -12,35 +12,147 @@
 
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
+import pLimit from "p-limit";
 import { join } from "path";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { urlToUpload } from "src/pageComponents/filemanager/api";
 import { publicConfig } from "src/utils/config";
+import { calculateBlobSHA256 } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
-
 interface Props {
   open: boolean;
   onClose: () => void;
   reload: () => void;
   cluster: string;
   path: string;
+  scowdEnabled: boolean;
+}
+
+interface UploadProgressEvent {
+  percent: number;
 }
 
 const p = prefix("pageComp.fileManagerComp.uploadModal.");
 
-export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
+type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
+export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
   const { message, modal } = App.useApp();
   const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
+  const uploadControllers = useRef(new Map<string, AbortController>());
 
   const t = useI18nTranslateToString();
 
   const onModalClose = () => {
     setUploadFileList([]);
+    for (const controller of Array.from(uploadControllers.current.values())) {
+      controller.abort();
+    }
+
     onClose();
   };
+
+  const handleRemove = (file: UploadFile) => {
+    const controller = uploadControllers.current.get(file.uid);
+    if (controller) {
+      controller.abort();
+      uploadControllers.current.delete(file.uid);
+    }
+
+    return true;
+  };
+
+  const startMultipartUpload = async (file: File, onProgress: OnProgressCallback) => {
+    const { tempFileDir, chunkSizeByte, filesInfo } = await api.initMultipartUpload({
+      body: { cluster, path, name: file.name },
+    });
+
+    const uploadedChunks = filesInfo.sort((a, b) => {
+      const reg = /_(\d+)/;
+      const matchA = reg.exec(a.name);
+      const matchB = reg.exec(b.name);
+
+      if (matchA && matchB) {
+        return parseInt(matchA[1]) - parseInt(matchB[1]);
+      } else {
+        return 0;
+      }
+    }).map((item) => item.name);
+
+    const totalCount = Math.ceil(file.size / chunkSizeByte);
+    const concurrentChunks = 3;
+    let uploadedCount = uploadedChunks.length;
+
+    const uploadFile = uploadFileList.find((uploadFile) => uploadFile.name === file.name);
+    if (!uploadFile) {
+      message.error(t(p("uploadFileListNotExist"), [file.name]));
+      return;
+    }
+
+    const updateProgress = () => {
+      uploadedCount++;
+      onProgress?.({ percent: Number(((uploadedCount / totalCount) * 100).toFixed(2)) });
+    };
+
+    const controller = new AbortController();
+    uploadControllers.current.set(uploadFile.uid, controller);
+
+    const limit = pLimit(concurrentChunks);
+    const uploadChunk = async (start: number): Promise<void> => {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      const chunk = file.slice(start * chunkSizeByte, (start + 1) * chunkSizeByte);
+      const hash = await calculateBlobSHA256(chunk);
+      const fileName = `${hash}_${start + 1}.scowuploadtemp`;
+
+      if (uploadedChunks.includes(fileName)) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", chunk);
+
+      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName)), {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+
+      updateProgress();
+    };
+
+    try {
+      const uploadPromises: Promise<void>[] = [];
+      for (let i = 0; i < totalCount; i++) {
+        if (controller.signal.aborted) {
+          break;
+        }
+        uploadPromises.push(limit(() => uploadChunk(i)));
+      }
+
+      await Promise.all(uploadPromises);
+
+      await api.mergeFileChunks({ body: { cluster, path, name: file.name, sizeByte: file.size } })
+        .httpError(520, (err) => {
+          message.error(t(p("mergeFileChunksErrorText"), [file.name]));
+          throw err;
+        });
+    } catch (err) {
+      message.error(t(p("multipartUploadError"), [err.message]));
+      throw err;
+    } finally {
+      uploadControllers.current.delete(uploadFile.uid);
+    }
+  };
+
 
   return (
     <Modal
@@ -64,14 +176,25 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       <Upload.Dragger
         name="file"
         multiple
-        action={async (file) => urlToUpload(cluster, join(path, file.name))}
+        {...(scowdEnabled ? {
+          customRequest: ({ file, onSuccess, onError, onProgress }) => {
+            startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError);
+          },
+        } : {
+          action: async (file) => urlToUpload(cluster, join(path, file.name)),
+        })}
         withCredentials
         showUploadList={{
           removeIcon: (file) => {
             return (
-              <DeleteOutlined
-                title={file.status === "uploading" ? t(p("cancelUpload")) : t(p("deleteUploadRecords"))}
-              />
+              file.status === "uploading"
+                ? (
+                  <DeleteOutlined
+                    onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                    title={t(p("cancelUpload"))}
+                  />
+                )
+                : <DeleteOutlined title={t(p("deleteUploadRecords"))} />
             );
           },
         }}
@@ -134,3 +257,4 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     </Modal>
   );
 };
+

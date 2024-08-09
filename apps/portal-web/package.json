@@ -52,8 +52,11 @@
     "@sinclair/typebox": "0.32.34",
     "@uiw/codemirror-theme-github": "4.22.2",
     "@uiw/react-codemirror": "4.21.20",
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/xterm": "5.5.0",
     "antd": "5.18.3",
     "busboy": "1.6.0",
+    "crypto-js": "4.2.0",
     "dayjs": "1.11.11",
     "google-protobuf": "3.21.2",
     "http-proxy": "1.18.1",
@@ -63,6 +66,7 @@
     "next-compose-plugins": "2.2.1",
     "nookies": "2.5.2",
     "nprogress": "0.2.0",
+    "p-limit": "6.1.0",
     "react": "18.3.1",
     "react-async": "10.0.1",
     "react-dom": "18.3.1",
@@ -73,9 +77,7 @@
     "styled-components": "6.1.11",
     "tslib": "2.6.3",
     "typescript": "5.5.2",
-    "ws": "8.17.1",
-    "@xterm/xterm": "5.5.0",
-    "@xterm/addon-fit": "0.10.0"
+    "ws": "8.17.1"
   },
   "devDependencies": {
     "@ddadaal/next-typed-api-routes-cli": "0.9.1",
