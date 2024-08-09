@@ -23,14 +23,14 @@
     "@ddadaal/tsgrpc-client": "0.17.7",
     "@scow/protos": "workspace:*",
     "@scow/config": "workspace:*",
-    "@grpc/grpc-js": "1.10.9"
+    "@grpc/grpc-js": "1.11.1"
   },
   "peerDependencies": {
-    "antd": "5.18.3",
-    "next": "14.2.4",
-    "styled-components": "6.1.11",
-    "@ant-design/icons": "5.3.7",
-    "dayjs": "1.11.11",
+    "antd": "5.20.0",
+    "next": "14.2.5",
+    "styled-components": "6.1.12",
+    "@ant-design/icons": "5.4.0",
+    "dayjs": "1.11.12",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0",
     "react-is": "18.3.1",
@@ -39,17 +39,17 @@
     "react-async": "10.0.1"
   },
   "devDependencies": {
-    "antd": "5.18.3",
-    "next": "14.2.4",
-    "styled-components": "6.1.11",
+    "antd": "5.20.0",
+    "next": "14.2.5",
+    "styled-components": "6.1.12",
     "@types/mime-types": "2.1.4",
     "react": "18.3.1",
     "@types/react": "18.3.3",
     "react-dom": "18.3.1",
     "@types/react-dom": "18.3.0",
     "react-is": "18.3.1",
-    "@ant-design/icons": "5.3.7",
-    "dayjs": "1.11.11",
+    "@ant-design/icons": "5.4.0",
+    "dayjs": "1.11.12",
     "@types/styled-components": "5.1.34"
   },
   "author": "PKUHPC (https://github.com/PKUHPC)",
