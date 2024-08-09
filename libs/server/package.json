@@ -20,11 +20,11 @@
   "dependencies": {
     "@ddadaal/tsgrpc-common": "0.2.5",
     "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@grpc/grpc-js": "1.11.1",
     "nookies": "2.5.2",
     "@scow/config": "workspace:*",
     "@scow/protos": "workspace:*",
-    "dayjs": "1.11.11",
+    "dayjs": "1.11.12",
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/utils": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
