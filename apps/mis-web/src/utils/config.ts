@@ -106,6 +106,8 @@ export interface PublicRuntimeConfig {
 
   JOB_CHARGE_METADATA: jobChargeMetadataType;
 
+  CHARGE_PRECISION: number;
+  MIN_CHARGE_AMOUNT: number;
 }
 
 export const runtimeConfig: ServerRuntimeConfig = getConfig().serverRuntimeConfig;

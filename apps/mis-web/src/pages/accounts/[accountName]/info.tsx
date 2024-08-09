@@ -24,6 +24,7 @@ import { DisplayedAccountState, getDisplayedStateI18nTexts, UserRole } from "src
 import {
   checkQueryAccountNameIsAdmin } from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
 import { getAccounts } from "src/pages/api/tenant/getAccounts";
+import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
 type Props = SSRProps<{
@@ -69,10 +70,10 @@ export const AccountInfoPage: NextPage<Props> = requireAuth(
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item label={t("common.accountBalance")}>
-          {balance.toFixed(2)} {t("common.unit")}
+          {balance.toFixed(publicConfig.CHARGE_PRECISION)} {t("common.unit")}
         </Descriptions.Item>
         <Descriptions.Item label={t("common.blockThresholdAmount")}>
-          {blockThresholdAmount.toFixed(2)} {t("common.unit")}
+          {blockThresholdAmount.toFixed(publicConfig.CHARGE_PRECISION)} {t("common.unit")}
         </Descriptions.Item>
       </Descriptions>
 

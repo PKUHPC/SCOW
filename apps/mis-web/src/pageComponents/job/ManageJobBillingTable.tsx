@@ -283,7 +283,7 @@ const EditPriceModal: React.FC<CommonModalProps & {
           />
         </Form.Item>
         <Form.Item label={t(p("price"))} name="price" initialValue={0} rules={[{ required: true }]}>
-          <InputNumber precision={2} min={0} />
+          <InputNumber precision={publicConfig.CHARGE_PRECISION} min={0} />
         </Form.Item>
         <Form.Item label={t(pCommon("comment"))} name="description">
           <Input />

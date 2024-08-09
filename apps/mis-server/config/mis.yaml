@@ -7,5 +7,6 @@ db:
 
 periodicSyncUserAccountBlockStatus:
   enabled: false
-
-
+# 为保证测试用例通过，消费精度和最小消费金额改为原有值
+chargePrecision: 3
+minChargeAmount: 0

@@ -22,6 +22,7 @@ import { CommonModalProps, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AmountStrategy } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { publicConfig } from "src/utils/config";
 
 const p = prefix("pageComp.job.editableJobBillingTable.");
 const pCommon = prefix("common.");
@@ -80,7 +81,7 @@ const EditPriceModal: React.FC<CommonModalProps & {
           <Select options={Object.values(AmountStrategy).map((x) => ({ label: x, value: x }))} />
         </Form.Item>
         <Form.Item label={t(p("price"))} name="price" rules={[{ required: true }]}>
-          <InputNumber precision={2} min={0} />
+          <InputNumber precision={publicConfig.CHARGE_PRECISION} min={0} />
         </Form.Item>
         <Form.Item label={t(pCommon("comment"))} name="description">
           <Input />

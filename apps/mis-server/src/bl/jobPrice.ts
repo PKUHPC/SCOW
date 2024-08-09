@@ -107,9 +107,18 @@ export async function calculateJobPrice(
 
     amount = amount.multipliedBy(time);
 
-    amount = amount.decimalPlaces(3, Decimal.ROUND_DOWN);
+    amount = amount.decimalPlaces(misConfig.chargePrecision, Decimal.ROUND_DOWN);
 
-    return priceItem.price.multipliedBy(amount).decimalPlaces(3, Decimal.ROUND_HALF_CEIL);
+    // 如果单价大于0，且运行时间大于0，若结果算下来金额为0，按照最低费用计算价格
+    if (priceItem.price.gt(0) && time.gt(0)) {
+      if (priceItem.price.multipliedBy(amount).gt(misConfig.minChargeAmount)) {
+        return priceItem.price.multipliedBy(amount).decimalPlaces(misConfig.chargePrecision, Decimal.ROUND_HALF_CEIL);
+      }
+      // 防止出现精度为2时最小金额设置为0.001的情况，导致生成的费用精度不对
+      return new Decimal(misConfig.minChargeAmount).decimalPlaces(misConfig.chargePrecision, Decimal.ROUND_HALF_CEIL);
+    }
+
+    return new Decimal(0);
   }
   const accountBase = getPriceItem(path, info.tenant);
   const tenantBase = getPriceItem(path);

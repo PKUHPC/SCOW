@@ -266,7 +266,7 @@ export const ChargeTable: React.FC<Props> = ({
             </Form.Item>
             <Form.Item label={t(pCommon("sum"))}>
               <strong>
-                {totalResultData?.totalAmount?.toFixed(2) ?? 0}
+                {totalResultData?.totalAmount?.toFixed(publicConfig.CHARGE_PRECISION) ?? 0}
               </strong>
             </Form.Item>
             <Form.Item>
@@ -330,7 +330,7 @@ export const ChargeTable: React.FC<Props> = ({
           <Table.Column<ChargeInfo>
             dataIndex="amount"
             title={t(p("amount"))}
-            render={(v) => v.toFixed(2)}
+            render={(v) => v.toFixed(publicConfig.CHARGE_PRECISION)}
             sorter={true}
           />
           <Table.Column<ChargeInfo>

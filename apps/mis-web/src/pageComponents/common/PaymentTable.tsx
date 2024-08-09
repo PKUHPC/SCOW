@@ -25,6 +25,7 @@ import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { AccountMultiSelector } from "src/pageComponents/finance/AccountMultiSelector";
 import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
+import { publicConfig } from "src/utils/config";
 
 export enum SearchType {
   account = "account",
@@ -226,7 +227,7 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
           </Form.Item>
           <Form.Item label={t(p("sum"))}>
             <strong>
-              {data ? data.total.toFixed(2) : 0}
+              {data ? data.total.toFixed(publicConfig.CHARGE_PRECISION) : 0}
             </strong>
           </Form.Item>
           <Form.Item>
@@ -262,7 +263,12 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
             : undefined
         }
         <Table.Column dataIndex="time" title={t(p("paymentDate"))} width="13.5%" render={(v) => formatDateTime(v)} />
-        <Table.Column dataIndex="amount" title={t(p("paymentAmount"))} width="10%" render={(v) => v.toFixed(2)} />
+        <Table.Column
+          dataIndex="amount"
+          title={t(p("paymentAmount"))}
+          width="10%"
+          render={(v) => v.toFixed(publicConfig.CHARGE_PRECISION)}
+        />
         <Table.Column
           dataIndex="type"
           title={t(pCommon("type"))}
