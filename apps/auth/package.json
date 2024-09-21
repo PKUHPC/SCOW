@@ -34,7 +34,7 @@
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.32.34",
     "asn1": "0.2.6",
-    "fastify": "4.28.0",
+    "fastify": "5.0.0",
     "fastify-graceful-shutdown": "3.5.3",
     "fastify-plugin": "4.5.1",
     "ioredis": "5.4.1",
