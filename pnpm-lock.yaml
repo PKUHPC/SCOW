@@ -856,7 +856,7 @@ importers:
     dependencies:
       '@connectrpc/connect':
         specifier: 1.4.0
-        version: 1.4.0(@bufbuild/protobuf@1.8.0)
+        version: 1.4.0(@bufbuild/protobuf@2.1.0)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.7
         version: 0.17.7(@grpc/grpc-js@1.10.9)
@@ -1366,8 +1366,8 @@ importers:
         version: 7.3.2
     devDependencies:
       ts-proto:
-        specifier: 1.180.0
-        version: 1.180.0
+        specifier: 2.2.3
+        version: 2.2.3
 
   libs/protos/scheduler-adapter:
     dependencies:
@@ -1382,8 +1382,8 @@ importers:
         version: 7.3.2
     devDependencies:
       ts-proto:
-        specifier: 1.180.0
-        version: 1.180.0
+        specifier: 2.2.3
+        version: 2.2.3
 
   libs/protos/scow:
     dependencies:
@@ -1401,8 +1401,8 @@ importers:
         version: 7.3.2
     devDependencies:
       ts-proto:
-        specifier: 1.180.0
-        version: 1.180.0
+        specifier: 2.2.3
+        version: 2.2.3
 
   libs/protos/scowd:
     dependencies:
@@ -1447,8 +1447,8 @@ importers:
         specifier: workspace:*
         version: link:../protos/scow
       ts-proto:
-        specifier: 1.180.0
-        version: 1.180.0
+        specifier: 2.2.3
+        version: 2.2.3
 
   libs/scheduler-adapter:
     dependencies:
@@ -2453,6 +2453,9 @@ packages:
 
   '@bufbuild/protobuf@1.8.0':
     resolution: {integrity: sha512-qR9FwI8QKIveDnUYutvfzbC21UZJJryYrLuZGjeZ/VGz+vXelUkK+xgkOHsvPEdYEdxtgUUq4313N8QtOehJ1Q==}
+
+  '@bufbuild/protobuf@2.1.0':
+    resolution: {integrity: sha512-+2Mx67Y3skJ4NCD/qNSdBJNWtu6x6Qr53jeNg+QcwiL6mt0wK+3jwHH2x1p7xaYH6Ve2JKOVn0OxU35WsmqI9A==}
 
   '@bufbuild/protoc-gen-es@1.8.0':
     resolution: {integrity: sha512-jnvBKwHq3o/iOgfKxaxn5Za7ay4oAs8KWgoHiDc9Fsb0g+/d1z+mHlHvmevOiCPcVZsnH6V3LImOJvGStPONpA==}
@@ -11331,11 +11334,11 @@ packages:
   ts-poet@6.8.1:
     resolution: {integrity: sha512-uqdjJGnQQjBwUeJggUi4o8VhRjUmEdRfo+uqEL+K8w7mKPfLUFAQ1dSURyhFfbA4T/cWPh8Xa7iBgO7jJNsc1A==}
 
-  ts-proto-descriptors@1.16.0:
-    resolution: {integrity: sha512-3yKuzMLpltdpcyQji1PJZRfoo4OJjNieKTYkQY8pF7xGKsYz/RHe3aEe4KiRxcinoBmnEhmuI+yJTxLb922ULA==}
+  ts-proto-descriptors@2.0.0:
+    resolution: {integrity: sha512-wHcTH3xIv11jxgkX5OyCSFfw27agpInAd6yh89hKG6zqIXnjW9SYqSER2CVQxdPj4czeOhGagNvZBEbJPy7qkw==}
 
-  ts-proto@1.180.0:
-    resolution: {integrity: sha512-Gx+y1ohKNitnBpoA4ELRPl2nHBa4zUkedj3kHKuwYn0THpLiLVLuzYidlqJVZBDooI+l/EROGGqlCt95FItI9g==}
+  ts-proto@2.2.3:
+    resolution: {integrity: sha512-sI9qyTcMg7syJjk0CvkRVxZyAuCbpweO2Kq5Dz/JXaRwpaB9ujMHdFF06raXj5nLxDknzV5cUIcdCuUThPXuYg==}
     hasBin: true
 
   ts-toolbelt@9.6.0:
@@ -13056,6 +13059,8 @@ snapshots:
 
   '@bufbuild/protobuf@1.8.0': {}
 
+  '@bufbuild/protobuf@2.1.0': {}
+
   '@bufbuild/protoc-gen-es@1.8.0(@bufbuild/protobuf@1.8.0)':
     dependencies:
       '@bufbuild/protoplugin': 1.8.0
@@ -13340,6 +13345,10 @@ snapshots:
   '@connectrpc/connect@1.4.0(@bufbuild/protobuf@1.8.0)':
     dependencies:
       '@bufbuild/protobuf': 1.8.0
+
+  '@connectrpc/connect@1.4.0(@bufbuild/protobuf@2.1.0)':
+    dependencies:
+      '@bufbuild/protobuf': 2.1.0
 
   '@connectrpc/protoc-gen-connect-es@1.4.0(@bufbuild/protoc-gen-es@1.8.0(@bufbuild/protobuf@1.8.0))(@connectrpc/connect@1.4.0(@bufbuild/protobuf@1.8.0))':
     dependencies:
@@ -24991,17 +25000,16 @@ snapshots:
     dependencies:
       dprint-node: 1.0.8
 
-  ts-proto-descriptors@1.16.0:
+  ts-proto-descriptors@2.0.0:
     dependencies:
-      long: 5.2.3
-      protobufjs: 7.3.2
+      '@bufbuild/protobuf': 2.1.0
 
-  ts-proto@1.180.0:
+  ts-proto@2.2.3:
     dependencies:
+      '@bufbuild/protobuf': 2.1.0
       case-anything: 2.1.13
-      protobufjs: 7.3.2
       ts-poet: 6.8.1
-      ts-proto-descriptors: 1.16.0
+      ts-proto-descriptors: 2.0.0
 
   ts-toolbelt@9.6.0: {}
 
