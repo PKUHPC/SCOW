@@ -18,7 +18,7 @@
     "protobufjs": "7.3.2"
   },
   "devDependencies": {
-    "ts-proto": "1.180.0"
+    "ts-proto": "2.2.3"
   },
   "keywords": [],
   "author": "",
