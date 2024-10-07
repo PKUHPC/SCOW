@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-config",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "private": true,
   "main": "build/index.js",
