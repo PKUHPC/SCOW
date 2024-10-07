@@ -13,7 +13,7 @@
 import { LinkOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { Space } from "antd";
 import { join } from "path";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { ExtensionRouteQuery, isUrl } from "src/extensions/common";
 import { NavbarLink, navbarLinksRoute } from "src/extensions/navbarLinks";
@@ -221,15 +221,22 @@ interface FetcherProps {
 
 const NavbarLinkFetcher = ({ extension, from, routeQuery, onDataFetched }: FetcherProps) => {
 
+  const lastResultRef = useRef<NavbarLink[] | undefined>(undefined);
+
   const { reload } = useAsync({
     promiseFn: useCallback(async () => {
       const resp = await callExtensionRoute(navbarLinksRoute(from), routeQuery, {}, extension.url)
+        .then((resp) => {
+          const result = resp[200]?.navbarLinks;
+          lastResultRef.current = result;
+          return result;
+        })
         .catch((e) => {
           console.warn(`Failed to call navbarLinks of extension ${extension.name ?? extension.url}. Error: `, e);
-          return { 200: { navbarLinks: [] as NavbarLink[] } };
+          return lastResultRef.current;
         });
 
-      const data = resp[200]?.navbarLinks?.map((x) => {
+      const data = resp?.map((x) => {
 
         if (!isUrl(x.path)) {
           const parts = ["/extensions"];
