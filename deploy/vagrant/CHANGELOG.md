@@ -1,5 +1,11 @@
 # @scow/demo-vagrant
 
+## 2.0.5
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+
 ## 2.0.4
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @scow/utils
 
+## 1.1.2
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+
 ## 1.1.1
 
 ### Patch Changes

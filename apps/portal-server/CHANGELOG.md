@@ -1,5 +1,22 @@
 # @scow/portal-server
 
+## 1.6.4
+
+### Patch Changes
+
+- a47aa76: 增加获取交互式应用和作业模版 JSON.parse 错误的处理
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/lib-scheduler-adapter@1.1.13
+  - @scow/rich-error-model@2.0.1
+  - @scow/lib-config@1.0.2
+  - @scow/config@1.5.3
+  - @scow/lib-server@1.3.3
+  - @scow/lib-scowd@1.1.2
+  - @scow/utils@1.1.2
+  - @scow/lib-ssh@1.0.3
+  - @scow/protos@1.0.15
+
 ## 1.6.3
 
 ### Patch Changes

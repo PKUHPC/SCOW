@@ -1,5 +1,11 @@
 # @scow/grpc-api
 
+## 1.12.1
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+
 ## 1.12.0
 
 ### Minor Changes

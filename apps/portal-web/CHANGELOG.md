@@ -1,5 +1,25 @@
 # @scow/portal-web
 
+## 1.6.4
+
+### Patch Changes
+
+- a47aa76: 增加获取交互式应用和作业模版 JSON.parse 错误的处理
+- 92dd666: 修改了门户系统仪表盘表格中进度条的对齐方式、新增组件 CustomProgress。
+- 213c7f2: 修复了当 getClusterNodesInfo 接口不存在时，进度条为 NaN 的情况。
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/rich-error-model@2.0.1
+  - @scow/lib-operation-log@2.1.9
+  - @scow/lib-config@1.0.2
+  - @scow/lib-decimal@1.0.1
+  - @scow/config@1.5.3
+  - @scow/utils@1.1.2
+  - @scow/lib-auth@1.0.1
+  - @scow/lib-ssh@1.0.3
+  - @scow/lib-web@1.4.3
+  - @scow/protos@1.0.15
+
 ## 1.6.3
 
 ### Patch Changes

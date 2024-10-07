@@ -1,6 +1,6 @@
 {
   "name": "@scow/mis-server",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "",
   "private": true,
   "main": "build/index.js",
