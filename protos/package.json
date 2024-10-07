@@ -1,7 +1,7 @@
 {
   "name": "@scow/grpc-api",
   "private": false,
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "The gRPC API for SCOW",
   "main": "index.js",
   "author": "PKUHPC (https://github.com/PKUHPC)",

@@ -1,5 +1,11 @@
 # @scow/lib-config
 
+## 1.0.2
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+
 ## 1.0.1
 
 ### Patch Changes

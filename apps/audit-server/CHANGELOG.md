@@ -1,5 +1,19 @@
 # @scow/audit-server
 
+## 2.3.6
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/lib-operation-log@2.1.9
+  - @scow/lib-config@1.0.2
+  - @scow/lib-decimal@1.0.1
+  - @scow/config@1.5.3
+  - @scow/lib-server@1.3.3
+  - @scow/utils@1.1.2
+  - @scow/protos@1.0.15
+
 ## 2.3.5
 
 ### Patch Changes

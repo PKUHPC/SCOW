@@ -1,5 +1,12 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.13
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+  - @scow/protos@1.0.15
+
 ## 1.1.12
 
 ### Patch Changes

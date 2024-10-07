@@ -1,5 +1,23 @@
 # @scow/mis-server
 
+## 1.6.4
+
+### Patch Changes
+
+- d26b5c1: 作业费用更改时，如果费用减少需要充值，充值记录的 comment 中记录作业的 user 属性
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/lib-scheduler-adapter@1.1.13
+  - @scow/lib-config@1.0.2
+  - @scow/lib-decimal@1.0.1
+  - @scow/config@1.5.3
+  - @scow/lib-server@1.3.3
+  - @scow/utils@1.1.2
+  - @scow/lib-auth@1.0.1
+  - @scow/lib-hook@1.0.15
+  - @scow/lib-ssh@1.0.3
+  - @scow/protos@1.0.15
+
 ## 1.6.3
 
 ### Patch Changes

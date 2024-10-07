@@ -1,5 +1,13 @@
 # @scow/test-adapter
 
+## 1.1.6
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/lib-config@1.0.2
+
 ## 1.1.5
 
 ### Patch Changes

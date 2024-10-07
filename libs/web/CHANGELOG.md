@@ -1,5 +1,15 @@
 # @scow/lib-web
 
+## 1.4.3
+
+### Patch Changes
+
+- 7c96613: 修改更名后的链接地址和文档描述
+- Updated dependencies [7c96613]
+  - @scow/config@1.5.3
+  - @scow/utils@1.1.2
+  - @scow/protos@1.0.15
+
 ## 1.4.2
 
 ### Patch Changes
