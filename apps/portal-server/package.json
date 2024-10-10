@@ -21,11 +21,11 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {
-    "@connectrpc/connect": "1.4.0",
-    "@ddadaal/tsgrpc-common": "0.2.5",
-    "@ddadaal/tsgrpc-server": "0.19.5",
-    "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@connectrpc/connect": "1.6.0",
+    "@ddadaal/tsgrpc-common": "0.2.6",
+    "@ddadaal/tsgrpc-server": "0.19.6",
+    "@ddadaal/tsgrpc-client": "0.17.8",
+    "@grpc/grpc-js": "1.12.2",
     "@scow/config": "workspace:*",
     "@scow/lib-config": "workspace:*",
     "@scow/lib-scheduler-adapter": "workspace:*",
@@ -37,24 +37,24 @@
     "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/scowd-protos": "workspace:*",
     "@scow/utils": "workspace:*",
-    "@sinclair/typebox": "0.32.34",
-    "dayjs": "1.11.11",
+    "@sinclair/typebox": "0.33.15",
+    "dayjs": "1.11.13",
     "dotenv": "16.4.5",
     "node-cron": "3.0.3",
     "node-ssh": "13.2.0",
     "pino": "8.16.2",
     "pino-pretty": "10.3.1",
     "shell-quote": "1.8.1",
-    "ts-log": "2.2.5",
+    "ts-log": "2.2.7",
     "uuid": "10.0.0",
-    "wait-on": "8.0.0"
+    "wait-on": "8.0.1"
   },
   "devDependencies": {
     "@types/node-cron": "3.0.11",
     "@types/shell-quote": "1.7.5",
-    "@types/ssh2": "1.15.0",
+    "@types/ssh2": "1.15.1",
     "@types/wait-on": "5.3.4",
-    "form-data": "4.0.0"
+    "form-data": "4.0.1"
   },
   "volta": {
     "extends": "../../package.json"

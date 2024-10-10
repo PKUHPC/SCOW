@@ -17,7 +17,7 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {
-    "@grpc/grpc-js": "1.10.9",
+    "@grpc/grpc-js": "1.12.2",
     "@scow/protos": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*"
   },

@@ -18,22 +18,22 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {
-    "@ddadaal/tsgrpc-common": "0.2.5",
-    "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@ddadaal/tsgrpc-common": "0.2.6",
+    "@ddadaal/tsgrpc-client": "0.17.8",
+    "@grpc/grpc-js": "1.12.2",
     "nookies": "2.5.2",
     "@scow/config": "workspace:*",
     "@scow/protos": "workspace:*",
-    "dayjs": "1.11.11",
+    "dayjs": "1.11.13",
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/utils": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*",
     "shell-quote": "1.8.1",
-    "ts-log": "2.2.5"
+    "ts-log": "2.2.7"
   },
   "devDependencies": {
-    "@ddadaal/tsgrpc-server": "0.19.5",
+    "@ddadaal/tsgrpc-server": "0.19.6",
     "@types/shell-quote": "1.7.5"
   },
   "volta": {
