@@ -17,13 +17,13 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {
-    "@ddadaal/tsgrpc-client": "0.17.7",
-    "@grpc/grpc-js": "1.10.9",
+    "@ddadaal/tsgrpc-client": "0.17.8",
+    "@grpc/grpc-js": "1.12.2",
     "@scow/protos": "workspace:*"
   },
   "devDependencies": {
     "@scow/config": "workspace:*",
-    "ts-log": "2.2.5"
+    "ts-log": "2.2.7"
   },
   "volta": {
     "extends": "../../package.json"

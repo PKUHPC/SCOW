@@ -20,9 +20,9 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {
-    "@ddadaal/tsgrpc-common": "0.2.5",
-    "@ddadaal/tsgrpc-server": "0.19.5",
-    "@grpc/grpc-js": "1.10.9",
+    "@ddadaal/tsgrpc-common": "0.2.6",
+    "@ddadaal/tsgrpc-server": "0.19.6",
+    "@grpc/grpc-js": "1.12.2",
     "@scow/lib-config": "workspace:*",
     "@scow/scheduler-adapter-protos": "workspace:*"
   },

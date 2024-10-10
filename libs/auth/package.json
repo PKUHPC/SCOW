@@ -19,7 +19,7 @@
   "repository": "https://github.com/PKUHPC/OpenSCOW",
   "dependencies": {},
   "devDependencies": {
-    "ts-log": "2.2.5"
+    "ts-log": "2.2.7"
   },
   "volta": {
     "extends": "../../package.json"

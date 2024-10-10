@@ -16,7 +16,7 @@
     "pkg": "5.8.1",
     "yargs": "17.7.2",
     "prompts": "2.4.2",
-    "@sinclair/typebox": "0.32.34",
+    "@sinclair/typebox": "0.33.15",
     "js-yaml": "4.1.0",
     "pino": "8.16.2",
     "pino-pretty": "10.3.1",
@@ -24,12 +24,12 @@
     "jszip": "3.10.1",
     "dotenv": "16.4.5",
     "death": "1.1.0",
-    "https-proxy-agent": "7.0.4",
+    "https-proxy-agent": "7.0.5",
     "node-fetch-commonjs": "3.3.2",
     "@scow/config": "workspace:*"
   },
   "devDependencies": {
-    "@types/yargs": "17.0.32",
+    "@types/yargs": "17.0.33",
     "@types/prompts": "2.4.9",
     "@types/js-yaml": "4.0.9",
     "@types/death": "1.1.5"
