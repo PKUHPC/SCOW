@@ -1,10 +1,11 @@
+import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { FileInfo, fileInfo_FileTypeFromJSON } from "@scow/protos/build/portal/file";
 import { FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
 import { config } from "src/config/env";
-import { mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const scowdFileServices = (client: ScowdClient): FileOps => ({
   copy: async (request) => {
@@ -14,7 +15,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.copy({ userId, fromPath, toPath });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -26,7 +30,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.createFile({ userId, filePath: path });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -37,7 +44,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.deleteDirectory({ userId, dirPath: path });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -49,7 +59,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.deleteFile({ userId, filePath: path });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -60,7 +73,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       const res = await client.file.getHomeDirectory({ userId });
       return { path: res.path };
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -71,7 +87,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.makeDirectory({ userId, dirPath: path });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -82,7 +101,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       await client.file.move({ userId, fromPath, toPath });
       return {};
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -103,7 +125,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       });
       return { results };
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -122,7 +147,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
         }
       }
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     } finally {
       call.end();
     }
@@ -166,7 +194,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       return { writtenBytes: Number(res.writtenBytes) };
 
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -179,7 +210,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       return { size: Number(res.sizeByte), type: res.type === FileType.DIR ? "dir" : "file" };
 
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -192,7 +226,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       return { exists: res.exists };
 
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 

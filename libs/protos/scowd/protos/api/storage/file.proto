@@ -93,6 +93,8 @@ message GetFileMetadataRequest {
 message GetFileMetadataResponse {
   uint64 size_byte = 1;
   FileType type = 2;
+  // 文件的MIME类型，例如'text/plain'、'application/json'等
+  string mime = 3;
 }
 
 message GetHomeDirectoryRequest {

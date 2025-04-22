@@ -1,3 +1,4 @@
+import { ConnectError } from "@connectrpc/connect";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -14,7 +15,7 @@ import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
-import { getScowdClient, mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { getClusterLoginNode, getClusterTransferNode, sshConnect, tryGetClusterTransferNode } from "src/utils/ssh";
 
 export const fileServiceServer = plugin((server) => {
@@ -60,8 +61,10 @@ export const fileServiceServer = plugin((server) => {
 
         return [{}];
       } catch (err) {
-        throw mapTRPCExceptionToGRPC(err);
-      }
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err; }
     },
 
     createFile: async ({ request, logger }) => {
@@ -221,7 +224,10 @@ export const fileServiceServer = plugin((server) => {
           }
         }
       } catch (err) {
-        throw mapTRPCExceptionToGRPC(err);
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err;
       } finally {
         call.end();
       }
@@ -324,7 +330,10 @@ export const fileServiceServer = plugin((server) => {
         }];
 
       } catch (err) {
-        throw mapTRPCExceptionToGRPC(err);
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err;
       }
     },
 
@@ -353,7 +362,10 @@ export const fileServiceServer = plugin((server) => {
         return [{}];
 
       } catch (err) {
-        throw mapTRPCExceptionToGRPC(err);
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err;
       }
     },
 

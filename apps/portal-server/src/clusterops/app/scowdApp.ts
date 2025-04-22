@@ -18,7 +18,7 @@ import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
 import { portalConfig } from "src/config/portal";
 import { getClusterAppConfigs, splitSbatchArgs } from "src/utils/app";
 import { callOnOne } from "src/utils/clusters";
-import { mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { displayIdToPort, getTurboVNCBinPath, parseDisplayId } from "src/utils/turbovnc";
 
 interface SessionMetadata {
@@ -99,9 +99,11 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         // make sure lastSubmissionDirectory exists.
         await client.file.makeDirectory({ userId, dirPath: lastSubmissionDirectory });
       } catch (err) {
-        const grpcErr = mapTRPCExceptionToGRPC(err);
-        if (grpcErr.code !== status.ALREADY_EXISTS) {
-          throw grpcErr;
+        if (err instanceof ConnectError) {
+          const grpcErr = { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+          if (grpcErr.code !== status.ALREADY_EXISTS) {
+            throw grpcErr;
+          }
         }
       }
 
@@ -177,7 +179,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
             content: JSON.stringify(lastSubmissionInfo),
           });
         } catch (err) {
-          throw mapTRPCExceptionToGRPC(err);
+          if (err instanceof ConnectError) {
+            throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+          }
+          throw err;
         }
 
 
@@ -299,10 +304,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           });
         }
       } catch (err) {
-        if (err instanceof DetailedError) {
-          throw err;
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
         }
-        throw mapTRPCExceptionToGRPC(err);
+        throw err;
       }
     },
 
@@ -327,10 +332,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           });
         }
       } catch (err) {
-        if (err instanceof GrpcServiceError) {
-          throw err;
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
         }
-        throw mapTRPCExceptionToGRPC(err);
+        throw err;
       };
 
     },
@@ -506,7 +511,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
         return { sessions };
       } catch (err) {
-        throw mapTRPCExceptionToGRPC(err);
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err;
       }
     },
 
@@ -612,10 +620,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         });
 
       } catch (err) {
-        if (err instanceof GrpcServiceError) {
-          throw err;
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
         }
-        throw mapTRPCExceptionToGRPC(err);
+        throw err;
       }
     },
   };

@@ -1,22 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { Desktop } from "@scow/protos/build/portal/desktop";
 import { DesktopOps } from "src/clusterops/api/desktop";
 import { getDesktopConfig } from "src/utils/desktops";
 import { scowdClientNotFound } from "src/utils/errors";
-import { certificates, getLoginNodeScowdUrl, mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { certificates, getLoginNodeScowdUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { displayIdToPort, getTurboVNCBinPath } from "src/utils/turbovnc";
 
 export const scowdDesktopServices = (cluster: string): DesktopOps => ({
@@ -42,11 +31,14 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
         maxDesktops, wm, desktopName,
         desktopDir: desktopsDir, loginNode: host,
       });
-  
+
       return { host, password: res.password, port: displayIdToPort(res.displayId) };
-      
+
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -72,11 +64,14 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
         userId, vncServerBinPath: vncserverBinPath,
         displayId, desktopDir: desktopsDir, loginNode: host,
       });
-  
+
       return {};
-      
+
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -99,9 +94,12 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       const res = await client.desktop.connectToDesktop({ userId, vncPasswdPath: vncPasswdPath, displayId });
 
       return { host, port: displayIdToPort(displayId), password: res.password };
-      
+
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 
@@ -128,13 +126,13 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
         loginNode: host,
         desktopDir: desktopsDir,
       });
-  
+
       const userDeskTops: Desktop[] = res.userDesktops.map((desktop) => {
-  
+
         const createTime = !desktop.createTime ? undefined
           : new Date(Number((desktop.createTime.seconds * BigInt(1000))
             + BigInt(desktop.createTime.nanos / 1000000)));
-  
+
         return {
           desktopName: desktop.desktopName,
           displayId: desktop.displayId,
@@ -142,9 +140,9 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
           createTime: createTime?.toISOString(),
         };
       });
-  
-      return { 
-        host, 
+
+      return {
+        host,
         desktops: userDeskTops.map((desktop) => {
           return {
             displayId: desktop.displayId,
@@ -155,7 +153,10 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
         }),
       };
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     }
   },
 });

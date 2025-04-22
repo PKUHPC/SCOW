@@ -1,34 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
-import { Status } from "@grpc/grpc-js/build/src/constants";
 import { jobInfoToPortalJobInfo, jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
 import { getClusterAssignedAccounts } from "@scow/lib-scow-resource";
-import { checkSchedulerApiVersion, libGetAccounts, libGetUserInfo } from "@scow/lib-server";
-import { createDirectoriesRecursively, sftpReadFile, sftpStat, sftpWriteFile } from "@scow/lib-ssh";
-import { AccountStatusFilter, JobServiceServer, JobServiceService, TimeUnit } from "@scow/protos/build/portal/job";
-import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { ApiVersion } from "@scow/utils/build/version";
-import path, { join } from "path";
+import { libGetAccounts, libGetUserInfo } from "@scow/lib-server";
+import { AccountStatusFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
 import { getClusterOps } from "src/clusterops";
-import { JobTemplate } from "src/clusterops/api/job";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
-import { getClusterLoginNode, sshConnect } from "src/utils/ssh";
+import { getClusterLoginNode } from "src/utils/ssh";
 
 export const jobServiceServer = plugin((server) => {
 
@@ -271,169 +252,31 @@ export const jobServiceServer = plugin((server) => {
     },
 
     submitJob: async ({ request, logger }) => {
-      const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit = TimeUnit.MINUTES,
-        saveAsTemplate, userId, nodeCount, partition, qos, account, comment, workingDirectory, output
-        , errorOutput, memory, scriptOutput } = request;
+      const { cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
-      // make sure working directory exists
-      const host = getClusterLoginNode(cluster);
-      if (!host) { throw clusterNotFound(cluster); }
-      await sshConnect(host, userId, logger, async (ssh) => {
-        const sftp = await ssh.requestSFTP();
-        await createDirectoriesRecursively(sftp, workingDirectory);
-      });
-      const timeUnitConversion = {
-        [TimeUnit.MINUTES]: 1,
-        [TimeUnit.HOURS]: 60,
-        [TimeUnit.DAYS]: 60 * 24,
-      };
-      const maxTimeConversion = maxTime * (timeUnitConversion[maxTimeUnit]);
-      const reply = await callOnOne(
-        cluster,
-        logger,
-        async (client) => await asyncClientCall(client.job, "submitJob", {
-          userId, jobName, account, partition: partition, qos, nodeCount, gpuCount: gpuCount ?? 0,
-          memoryMb: Number(memory?.split("M")[0]), coreCount, timeLimitMinutes: maxTimeConversion,
-          script: command, workingDirectory, stdout: output, stderr: errorOutput, extraOptions: [],
-        }).catch((e) => {
-          const ex = e as ServiceError;
+      const clusterOps = getClusterOps(cluster);
+      if (!clusterOps) { throw clusterNotFound(cluster); }
 
-          const { findDetails } = parseErrorStatus(ex.metadata);
+      const { jobId } = await clusterOps.job.submitJob({ ...request }, logger);
 
-          const errors = findDetails(ErrorInfo);
-
-          if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
-            throw {
-              code: Status.INTERNAL,
-              message: "sbatch failed",
-              details: ex.details,
-            } as ServiceError;
-          } else {
-            throw e;
-          }
-        }),
-      );
-
-      // 保存作业脚本
-      if (scriptOutput) {
-        await sshConnect(host, userId, logger, async (ssh) => {
-          const sftp = await ssh.requestSFTP();
-          const scriptPath = join(workingDirectory, scriptOutput);
-          await sftpWriteFile(sftp)(scriptPath, reply.generatedScript);
-        });
-      }
-
-      if (saveAsTemplate) {
-        const jobInfo: JobTemplate = {
-          jobName,
-          coreCount,
-          maxTime,
-          nodeCount,
-          gpuCount,
-          partition,
-          qos,
-          account,
-          command,
-          comment,
-          workingDirectory,
-          output,
-          errorOutput,
-          memory,
-          scriptOutput,
-          maxTimeUnit,
-        };
-
-
-        const clusterOps = getClusterOps(cluster);
-        if (!clusterOps) { throw clusterNotFound(cluster); }
-
-        logger.info("jobInfo: %o", jobInfo);
-        await clusterOps.job.saveJobTemplate({
-          userId, jobId: reply.jobId, jobInfo,
-        }, logger);
-      }
-      return [{ jobId: reply.jobId }];
+      return [{ jobId }];
     },
 
 
     submitFileAsJob: async ({ request, logger }) => {
-      const { cluster, userId, filePath } = request;
+      const { cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
       if (!host) { throw clusterNotFound(cluster); }
 
-      const script = await sshConnect(host, userId, logger, async (ssh) => {
+      const clusterOps = getClusterOps(cluster);
+      if (!clusterOps) { throw clusterNotFound(cluster); }
 
-        const sftp = await ssh.requestSFTP();
+      const { jobId } = await clusterOps.job.submitFileAsJob({ ...request }, logger);
 
-        // 判断文件操作权限
-        const stat = await sftpStat(sftp)(filePath).catch((e) => {
-          logger.error(e, "stat %s as %s failed", filePath, userId);
-          throw {
-            code: Status.PERMISSION_DENIED, message: `${filePath} is not accessible`,
-          } as ServiceError;
-        });
-        // 文件SIZE大于1M不能提交sbatch执行
-        if (stat.size / (1024 * 1024) > 1) {
-          throw {
-            code: Status.INVALID_ARGUMENT, message: `${filePath} is too large. Maximum file size is 1M`,
-          } as ServiceError;
-        }
-
-        const isTextFile = await ssh.exec("file", [filePath]).then((res) => {
-          return /text/.exec(res);
-        });
-        // 文件不是文本文件不能提交Sbatch执行
-        if (!isTextFile) {
-          throw {
-            code: Status.INVALID_ARGUMENT, message: `${filePath} is not a text file`,
-          } as ServiceError;
-        }
-
-        return await sftpReadFile(sftp)(filePath)
-          .then((buffer) => {
-            return buffer.toString("utf-8");
-          });
-      });
-
-      const scriptFileFullPath = path.dirname(filePath);
-
-      const reply = await callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 5, patch: 0 };
-
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
-
-          return await asyncClientCall(client.job, "submitScriptAsJob", {
-            userId, script, scriptFileFullPath,
-          }).catch((e) => {
-            const ex = e as ServiceError;
-            const { findDetails } = parseErrorStatus(ex.metadata);
-
-            const errors = findDetails(ErrorInfo);
-
-            if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
-              throw {
-                code: Status.INTERNAL,
-                message: "sbatch failed",
-                details: ex.details,
-              } as ServiceError;
-            } else {
-              throw e;
-            }
-          });
-        },
-
-      );
-
-      return [{ jobId: reply.jobId }];
+      return [{ jobId }];
     },
 
   });

@@ -1,6 +1,5 @@
 import { ReaderExtensions } from "@ddadaal/tsgrpc-common";
 import { ObjectWritable } from "@grpc/grpc-js/build/src/object-stream";
-import { TransferInfo } from "@scow/protos/build/portal/file";
 import { Logger } from "ts-log";
 
 export interface CopyRequest {
@@ -153,7 +152,7 @@ export interface FileOps {
   getFileMetadata(req: GetFileMetadataRequest, logger: Logger): Promise<GetFileMetadataReply>;
 
   decompressFile(req: DecompressFileRequest, logger: Logger): Promise<DecompressFileReply>;
-  
+
   // startFileTransfer(req: StartFileTransferRequest, logger: Logger): Promise<StartFileTransferReply>;
   // queryFileTransfer(req: QueryFileTransferRequest, logger: Logger): Promise<QueryFileTransferReply>;
   // terminateFileTransfer(req: TerminateFileTransferRequest, logger: Logger): Promise<TerminateFileTransferReply>;

@@ -1,8 +1,10 @@
+import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { ShellOps } from "src/clusterops/api/shell";
 import { scowdClientNotFound } from "src/utils/errors";
-import { certificates, getLoginNodeScowdUrl, mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { certificates, getLoginNodeScowdUrl } from "src/utils/scowd";
 
 export const scowdShellServices = (): ShellOps => ({
   shell: async (request, logger) => {
@@ -50,7 +52,10 @@ export const scowdShellServices = (): ShellOps => ({
       }
 
     } catch (err) {
-      throw mapTRPCExceptionToGRPC(err);
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
     } finally {
       call.end();
     }

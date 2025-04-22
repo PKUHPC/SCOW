@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TimeUnit } from "@scow/protos/build/portal/job";
 import { Logger } from "ts-log";
 
@@ -88,10 +76,50 @@ export interface RenameJobTemplateReply {
 
 }
 
+export interface SubmitJobRequest {
+  userId: string;
+  cluster: string;
+  partition: string;
+  nodeCount: number;
+  coreCount: number;
+  gpuCount?: number;
+  command: string;
+  jobName: string;
+  qos?: string;
+  maxTime: number; // 最长运行时间
+  account: string;
+  workingDirectory: string;
+  output: string;
+  errorOutput: string;
+  memory?: string;
+  comment?: string;
+  saveAsTemplate: boolean;
+  scriptOutput?: string;
+  maxTimeUnit?: TimeUnit; // 最长运行时间单位，默认为MINUTES
+}
+
+interface SubmitJobReply {
+  jobId: number;
+}
+
+interface SubmitFileAsJobRequest {
+  cluster: string;
+  userId: string;
+  filePath: string;
+}
+
+interface SubmitFileAsJobReply {
+  jobId: number;
+}
+
+
 export interface JobOps {
   listJobTemplates(req: ListJobTemplatesRequest, logger: Logger): Promise<ListJobTemplatesReply>;
   getJobTemplate(req: GetJobTemplateRequest, logger: Logger): Promise<GetJobTemplateReply>;
   saveJobTemplate(req: SaveJobTemplateRequest, logger: Logger): Promise<SaveJobTemplateReply>;
   deleteJobTemplate(req: DeleteJobTemplateRequest, logger: Logger): Promise<DeleteJobTemplateReply>;
   renameJobTemplate(req: RenameJobTemplateRequest, logger: Logger): Promise<RenameJobTemplateReply>;
+
+  submitJob(req: SubmitJobRequest, logger: Logger): Promise<SubmitJobReply>;
+  submitFileAsJob(req: SubmitFileAsJobRequest, logger: Logger): Promise<SubmitFileAsJobReply>;
 }
