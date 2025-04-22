@@ -1,5 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { AccountServiceClient, GetAccountsResponse } from "@scow/protos/build/server/account";
+import { Account_AccountState, AccountServiceClient, GetAccountsResponse } from "@scow/protos/build/server/account";
 import { TenantServiceClient } from "@scow/protos/build/server/tenant";
 import { GetTenantsResponse } from "@scow/protos/generated/server/tenant";
 import { logger } from "src/utils/logger";
@@ -24,7 +24,7 @@ export async function getScowTenants(): Promise<GetTenantsResponse> {
 
 }
 
-// 获取 scow 数据库中的所有账户信息
+// 获取 scow 数据库中的所有未删除账户的账户信息
 export async function getScowAccounts(tenantName?: string, accountName?: string): Promise<GetAccountsResponse> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
@@ -38,7 +38,9 @@ export async function getScowAccounts(tenantName?: string, accountName?: string)
     return { results: []};
   }
 
-  return scowAccounts;
+  const filteredAccountsResult = scowAccounts.results.filter((a) => a.state !== Account_AccountState.DELETED);
+
+  return { results: filteredAccountsResult };
 
 }
 
