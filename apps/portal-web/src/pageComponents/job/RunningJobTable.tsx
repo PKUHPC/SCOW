@@ -198,7 +198,8 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<RunningJobInfo>
           dataIndex="gpus"
-          width="5%"
+          width="7%"
+          ellipsis
           title={t(p("jobInfoTable.gpus"))}
           sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
             a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
@@ -211,7 +212,8 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<RunningJobInfo>
           dataIndex="runningOrQueueTime"
-          width="6.7%"
+          width="9%"
+          ellipsis
           title={t(p("jobInfoTable.runningOrQueueTime"))}
           sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime, ":")}
         />

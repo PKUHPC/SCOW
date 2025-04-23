@@ -277,7 +277,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           defaultPageSize: DEFAULT_PAGE_SIZE,
         }}
         rowKey={runningJobId}
-        scroll={{ x: data?.length ? 1800 : true }}
+        scroll={{ x: data?.length ? 2000 : true }}
         tableLayout="fixed"
       >
         {
@@ -342,21 +342,24 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<RunningJobInfo>
           dataIndex="nodes"
-          width="4.4%"
+          width="5%"
+          ellipsis
           title={t(p("nodes"))}
           sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
             a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
         />
         <Table.Column<RunningJobInfo>
           dataIndex="cores"
-          width="4.4%"
+          width="5%"
+          ellipsis
           title={t(p("cores"))}
           sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
             a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
         />
         <Table.Column<RunningJobInfo>
           dataIndex="gpus"
-          width="4.4%"
+          width="6%"
+          ellipsis
           title={t(p("gpus"))}
           sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
             a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
@@ -369,7 +372,8 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<RunningJobInfo>
           dataIndex="runningOrQueueTime"
-          width="6.3%"
+          width="8%"
+          ellipsis
           title={t(p("time"))}
           sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime)}
         />

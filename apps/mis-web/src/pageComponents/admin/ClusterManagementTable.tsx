@@ -104,9 +104,11 @@ export const ClusterManagementTable: React.FC<Props> = ({
         loading={isLoading}
         pagination={false}
         rowKey="clusterId"
+        scroll={{ x: true }}
       >
         <Table.Column<CombinedClusterInfo>
           dataIndex="clusterId"
+          width="10%"
           title={tArgs(p("table.clusterName"))}
           render={(_, r) => {
             const clusterName = publicConfigClusters[r.clusterId].name;
@@ -123,6 +125,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalGpuCount"
+          width="10%"
           title={tArgs(p("table.gpusCount"))}
         />
         <Table.Column<CombinedClusterInfo>
@@ -149,7 +152,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
         <Table.Column<CombinedClusterInfo>
           dataIndex="operatorId"
           title={tArgs(p("table.operator"))}
-          width="20%"
+          width="15%"
           render={(_, r) => {
             return r.operatorId ? `${r.operatorName}（ID: ${r.operatorId}）` : "";
           }}

@@ -154,7 +154,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
             <InfoPaneContainer>
               <InfoPane
                 loading={loading}
-                tag={{ itemName: "GPU", num: gpuCoreCount, subName: t(p("totalCards")) }}
+                tag={{ itemName: t(p("gpu")), num: gpuCoreCount, subName: t(p("totalCards")) }}
                 paneData={[
                   { itemName: t(p("running")), num: runningGpuCount, color: colors.gpuRunning },
                   { itemName: t(p("idle")), num: idleGpuCount, color: colors.gpuAvailable },
