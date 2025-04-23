@@ -83,7 +83,7 @@ export default function Layout(
   const { hostname, uiConfig } = useUiConfig();
   const footerConfig = uiConfig.config.footer;
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
-    ?? footerConfig?.defaultText ?? "";
+    ?? footerConfig?.defaultText;
 
   const routes = userRoutes(userQuery.data.user, publicConfig, currentClusters, setDefaultCluster, defaultCluster);
 
@@ -122,7 +122,7 @@ export default function Layout(
         publicConfig,
         clusters: publicConfig.CLUSTERS,
         currentAssociateClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
-        defaultClusterContext: 
+        defaultClusterContext:
           defaultClusterContext(publicConfig.CLUSTERS ?? [], currentClusterIdsQuery?.data?.clusterIds ?? []),
       }}
       >

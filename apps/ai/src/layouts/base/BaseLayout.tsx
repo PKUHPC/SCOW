@@ -58,7 +58,7 @@ type Props = PropsWithChildren<{
   routes?: NavItemProps[];
   user?: ClientUserInfo | undefined;
   headerRightContent?: React.ReactNode;
-  footerText?: string;
+  footerText?: string | undefined;
   versionTag?: string | undefined;
 }>;
 
@@ -112,7 +112,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <Content>
             {children}
           </Content>
-          <Footer text={footerText ?? ""} versionTag={versionTag} />
+          <Footer text={footerText} versionTag={versionTag} />
         </ContentPart>
       </StyledLayout>
     </Root>

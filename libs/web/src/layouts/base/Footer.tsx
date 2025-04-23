@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Divider } from "antd";
 import { styled } from "styled-components";
 
@@ -23,36 +11,33 @@ const FooterContainer = styled.div`
 `;
 
 interface Props {
-  text: string;
+  text: string | undefined;
   versionTag: string | undefined;
 }
 
 export const Footer: React.FC<Props> = ({ text, versionTag }) => {
 
-  const versionTagLink = versionTag
-    ? `https://github.com/PKUHPC/SCOW/releases/tag/${versionTag}`
-    : "";
-
   return (
     <>
-      <FooterContainer>
-        <span>Powered by&nbsp;
-          <a href="https://github.com/PKUHPC/SCOW" target="_blank">
-            SCOW
-          </a>
-          &nbsp;
-          <a href={versionTagLink} target="_blank">
-            {versionTag || ""}
-          </a>
-        </span>
-      </FooterContainer>
       {
-        text && (
+        text === "" ? "" : (
           <>
             <Divider style={{ marginTop: 0, marginBottom: 10 }} />
-            <FooterContainer
-              dangerouslySetInnerHTML={{ __html: text }}
-            />
+            {
+              text === undefined ? (
+                <FooterContainer>
+                  <span>Powered by&nbsp;
+                    <a href="https://www.pkuscow.com" target="_blank">
+                      SCOW {versionTag || ""}
+                    </a>
+                  </span>
+                </FooterContainer>
+              ) : (
+                <FooterContainer
+                  dangerouslySetInnerHTML={{ __html: text }}
+                />
+              )
+            }
           </>
         )
       }

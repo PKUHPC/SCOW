@@ -137,7 +137,7 @@ const TopProgressBar = dynamic(
 interface ExtraProps {
   userInfo: User | undefined;
   primaryColor: PrimaryColor;
-  footerText: string;
+  footerText: string | undefined;
   darkModeCookieValue: DarkModeCookie | undefined;
   initialLanguage: string;
   clusterConfigs: Record<string, ClusterConfigSchema>;
@@ -228,7 +228,7 @@ function MyApp({ Component, pageProps, extra }: Props) {
 MyApp.getInitialProps = async (appContext: AppContext) => {
   const extra: ExtraProps = {
     userInfo: undefined,
-    footerText: "",
+    footerText: undefined,
     primaryColor: { defaultColor:"#94070A" },
     darkModeCookieValue: getDarkModeCookieValue(appContext.ctx.req),
     initialLanguage: "",
@@ -301,7 +301,7 @@ MyApp.getInitialProps = async (appContext: AppContext) => {
 
     extra.footerText = (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname])
     ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.footer?.defaultText ?? "";
+    ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
 
     extra.initialLanguage = getCurrentLanguageId(appContext.ctx.req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
   }

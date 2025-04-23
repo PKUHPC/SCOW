@@ -27,7 +27,7 @@ import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 
 interface Props {
-  footerText: string;
+  footerText: string | undefined;
   versionTag: string | undefined;
   initialLanguage: string;
 }

@@ -1,9 +1,9 @@
 # footer部分的配置。可以不填。
 # 对portal-web、mis-web和auth的登录界面有效
-footer:
+# footer:
 
-  # 对所有域名生效的footer文本，默认为空字符串
-  defaultText: ""
+  # 对所有域名生效的footer文本，可以html格式添加链接，为空时不展示footer
+  #defaultText: ""
 
   # 对具体hostname生效的footer文本，可以不填
   # hostnameMap:
