@@ -222,7 +222,7 @@ jobs:
           file: docker/Dockerfile.${{ matrix.file }}
           labels: ${{ steps.meta.outputs.labels }}
           # only build arm64 in tag commits or branches with name starting with `arm-`
-          platforms: linux/amd64${{ (github.ref_type == 'tag' || startsWith(github.ref_name, 'arm-')) && ',linux/arm64' || '' }}
+          platforms: linux/amd64${{ (github.ref_type == 'tag' || startsWith(github.head_ref, 'arm-')) && ',linux/arm64' || '' }}
 
 
   deploy-to-pre-server:
