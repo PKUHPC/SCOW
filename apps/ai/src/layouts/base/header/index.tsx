@@ -36,6 +36,8 @@ const Container = styled.header<ComponentProps>`
   z-index: 50;
   align-items: center;
   background-color: ${({ theme }) => theme.token.colorBgContainer};
+  font-weight:700;
+  font-size:18px;
 `;
 
 const HeaderItem = styled.div`

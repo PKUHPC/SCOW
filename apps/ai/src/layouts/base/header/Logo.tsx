@@ -21,7 +21,7 @@ import { styled } from "styled-components";
 const LogoContainer = styled.h1`
   color: var(--ant-primary-color);
   margin-bottom: 0;
-
+  line-height: 1.1;
   img {
     margin-bottom: 4px;
   }

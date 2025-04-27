@@ -18,20 +18,24 @@ import { antdBreakpoints } from "src/layouts/base/constants";
 import { styled } from "styled-components";
 
 export const HeaderItem = styled.div`
-  padding: 0 16px;
+  padding: 0 8px;
   /* justify-content: center; */
   height: 100%;
 
   @media (max-width: ${antdBreakpoints.md}px) {
     padding-right: 4px;
   }
-
 `;
 
 export const HiddenOnSmallScreenSpan = styled.span`
   @media (max-width: ${antdBreakpoints.md}px) {
     display: none;
   }
+  font-size: 18px !important;
+`;
+
+export const IconContainer = styled.span`
+  font-size: 18px !important;
 `;
 
 interface JumpToAnotherLinkProps {
@@ -52,7 +56,9 @@ export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ user, link
         ? join(link, "/api/auth/callback?token=" + user.token)
         : link}
       >
-        {icon}
+        <IconContainer>
+          {icon}
+        </IconContainer>
         <HiddenOnSmallScreenSpan>
           {linkText}
         </HiddenOnSmallScreenSpan>
