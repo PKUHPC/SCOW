@@ -269,13 +269,27 @@ export default {
         compressFileList: "待压缩文件列表",
         compressFileName: "目标压缩文件名",
       },
+      decompressFilesModal: {
+        decompressionFailed: "文件解压缩失败",
+        decompressionSuccess: "文件解压缩成功",
+        someFilesFailed: "部分文件解压缩失败",
+        decompression: "文件解压缩",
+        decompressionConfirm: "确认解压缩",
+        cancel: "取消",
+        decompressFilesList: "待解压缩文件列表（不同文件解压缩后的同名文件将会进行覆盖）",
+        decompressTargetPath: "目标解压缩路径",
+      },
       fileManager: {
         upload: "上传",
         cluster: "集群",
         uploadFile: "上传文件",
         uploadDir: "上传文件夹",
-        compressionInPrograss: "正在进行压缩: ",
+        compressionInProgress: "正在进行压缩: ",
         compressSelected: "压缩",
+        decompressionInProgress: "正在进行解压缩: ",
+        decompressionSelected: "解压缩",
+        decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
+        
         preview: {
           cantPreview: "文件过大（最大{}）或者格式不支持，请下载后查看",
         },

@@ -23,7 +23,7 @@ interface FormProps {
 
 const fileSuffix = ".zip";
 
-const generateCompressFilesTree = (path: string, files: FileInfo[]): TreeDataNode[] => {
+export const generateFilesTree = (path: string, files: FileInfo[]): TreeDataNode[] => {
   return [{
     title: `${path}`,
     key: "root",
@@ -125,7 +125,8 @@ export const CompressFilesModal: React.FC<Props> = ({
           height={300}
           switcherIcon={<DownOutlined />}
           defaultExpandedKeys={["root"]}
-          treeData={generateCompressFilesTree(path, files)}
+          selectable={false}
+          treeData={generateFilesTree(path, files)}
         />
         <Form.Item
           label={t(p("compressFileName"))}

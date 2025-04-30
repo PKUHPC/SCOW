@@ -13,7 +13,7 @@ import { FileInfo, FileType } from "src/pages/api/file/list";
 import { getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/server/file";
 import { styled } from "styled-components";
 
-import { CompressionModal } from "./DecompressionModal";
+import { DecompressFileInCurrentFolderModal } from "./DecompressFileInCurrentFolderModal";
 import { FileTable } from "./FileTable";
 import { MkdirModal } from "./MkdirModal";
 import { PathBar } from "./PathBar";
@@ -119,8 +119,8 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [dirTree, setDirTree] = useState<DataNode[]>([]);
 
-  const CompressionModalButton = ModalButton(CompressionModal, { icon: <ExpandOutlined />,
-    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) || !!scowdEnabled });
+  const DecompressionModalButton = ModalButton(DecompressFileInCurrentFolderModal, { icon: <ExpandOutlined />,
+    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
 
   const homeDirPromiseFn = useCallback(async () => {
     return visible ?
@@ -268,7 +268,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
               >
                 {t(p("mkdir"))}
               </MkdirButton>
-              <CompressionModalButton
+              <DecompressionModalButton
                 clusterId={clusterId}
                 path={selectedKeys[0]?.toString()}
                 reload={async () => {
@@ -277,7 +277,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
                 }}
               >
                 {t(p("decompression"))}
-              </CompressionModalButton>
+              </DecompressionModalButton>
             </div>
             <div key="right" style={{ display: "flex", gap: "10px" }}>
               <Button

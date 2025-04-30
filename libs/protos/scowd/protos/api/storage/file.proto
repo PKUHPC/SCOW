@@ -201,6 +201,17 @@ message CompressFilesRequest {
 
 message CompressFilesResponse {}
 
+message DecompressFileRequest {
+  string user_id = 1;
+  // 需要解压缩的文件路径
+  string file_path = 2;
+  // 目标解压缩文件路径
+  string decompression_path = 3;
+}
+
+message DecompressFileResponse {}
+
+
 message TransferInfo {
   string to_cluster = 1;
   string file_path = 2;
@@ -276,6 +287,8 @@ service FileService {
   rpc MergeFileChunks(MergeFileChunksRequest) returns (MergeFileChunksResponse);
 
   rpc CompressFiles(CompressFilesRequest) returns (CompressFilesResponse);
+
+  rpc DecompressFile(DecompressFileRequest) returns (DecompressFileResponse);
 
   rpc GetFileMetadata(GetFileMetadataRequest) returns (GetFileMetadataResponse);
   rpc GetHomeDirectory(GetHomeDirectoryRequest) returns (GetHomeDirectoryResponse);

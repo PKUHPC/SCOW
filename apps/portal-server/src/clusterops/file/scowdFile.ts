@@ -233,8 +233,20 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  // TODO scowd decompression
-  decompressFile: async () => {
+  decompressFile: async (request) => {
+    const { userId, filePath, decompressionPath } = request;
+
+    try {
+      await client.file.decompressFile({
+        userId, filePath, decompressionPath,
+      });
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
+    }
+
     return {};
   },
 });

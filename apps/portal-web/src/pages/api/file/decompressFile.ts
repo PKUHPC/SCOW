@@ -13,7 +13,7 @@ import { handlegRPCError, parseIp } from "src/utils/server";
 
 
 export const DecompressFileSchema = typeboxRouteSchema({
-  method: "POST",
+  method: "PATCH",
 
   body: Type.Object({
     clusterId: Type.String(),
@@ -57,16 +57,17 @@ export default route(DecompressFileSchema, async (req, res) => {
     },
   };
 
-  return await asyncUnaryCall(client, "decompressFile", {
+  return asyncUnaryCall(client, "decompressFile", {
     userId: info.identityId, clusterId, filePath, decompressionPath,
   }).then(async () => {
     await callLog(logInfo, OperationResult.SUCCESS);
     return { 204: null };
   }, handlegRPCError({
-    [status.UNIMPLEMENTED]: () => ({ 409: { code: "UNIMPLEMENTED" as const } }),
-    [status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_ARGUMENT" as const } }),
-    [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
+    [status.UNIMPLEMENTED]: (e) => ({ 409: { code: "UNIMPLEMENTED" as const, error: e.details } }),
+    [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
+    [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "PERMISSION_DENIED" as const, error: e.details } }),
     [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
+    [status.UNKNOWN]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

@@ -271,16 +271,6 @@ export const fileServiceServer = plugin((server) => {
 
       if (!host) { throw clusterNotFound(clusterId); }
 
-      const clusterInfo = configClusters[clusterId];
-
-      // 如果已经开启scowd，则暂不支持解压缩功能
-      if (clusterInfo.scowd?.enabled) {
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: "Currently, this interface is not supported in Scowd",
-        } as ServiceError;
-      }
-
       const subLogger = logger.child({ userId, clusterId, filePath, decompressionPath });
       subLogger.info("Decompress file started");
 

@@ -269,13 +269,27 @@ export default {
         compressFileList: "Files to be compressed",
         compressFileName: "Target compressed file name",
       },
+      decompressFilesModal: {
+        decompressionFailed: "Failed to decompress files",
+        decompressionSuccess: "Files decompressed successfully",
+        someFilesFailed: "Some files failed to decompress properly",
+        decompression: "Files Decompression",
+        decompressionConfirm: "Confirm decompression",
+        cancel: "Cancel",
+        decompressFilesList: "Files to be Extracted (Files with the Same Name After Extraction Will Be Overwritten)",
+        decompressTargetPath: "Decompress target directory",
+      },
       fileManager: {
         upload: "Upload",
         cluster: "Cluster",
         uploadFile: "Upload File",
         uploadDir: "Upload Directory",
-        compressionInPrograss: "Compression in progress: ",
+        compressionInProgress: "Compression in progress: ",
         compressSelected: "Compress",
+        decompressionInProgress: "Decompression in progress: ",
+        decompressionSelected: "Decompress",
+        decompressButtonDisabledTooltip: "Decompression is only supported for"
+        + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
         preview: {
           cantPreview: "File too large (maximum {}) or format not supported, please download to view",
         },

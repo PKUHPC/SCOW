@@ -15,7 +15,7 @@ interface FormProps {
   newDirName: string;
 }
 
-export const CompressionModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
+export const DecompressFileInCurrentFolderModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.app.decompressionModal.");
 

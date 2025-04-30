@@ -292,6 +292,17 @@ export const sshFileServices = (host: string): FileOps => ({
       } else if (filePath.endsWith(".zip")) {
         // TODO: 解压文件中文乱码，暂时指定 为 gbk 编码
         return `unzip -O gbk ${filePath} -d ${decompressionPath}`;
+      } else if (filePath.endsWith(".gz")) {
+        const fileName = filePath.split("/").pop();
+        if (fileName === undefined) {
+          throw {
+            code: status.INVALID_ARGUMENT,
+            message: `${filePath} is an invalid file`,
+          } as ServiceError;
+        }
+        // 获取不带.gz扩展名的文件名
+        const outputFile = fileName.substring(0, fileName.length - 3);
+        return `gzip -dc ${filePath} > ${decompressionPath}/${outputFile}`;
       } else {
         throw {
           code: status.INVALID_ARGUMENT,
@@ -328,7 +339,6 @@ export const sshFileServices = (host: string): FileOps => ({
         } as ServiceError;
       }
 
-      console.dir(result, { depth: null });
       return [{}];
     });
   },

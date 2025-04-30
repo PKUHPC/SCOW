@@ -1,6 +1,6 @@
 import { resolve, sep } from "path";
 
-const decompressibleExtensions = [".zip", ".tar", ".tar.gz", ".tgz"];
+export const decompressibleExtensions = [".zip", ".tar", ".tar.gz", ".tgz", ".gz"];
 
 export function getExtension(filename: string) {
   const parts = filename.split(".");
@@ -10,6 +10,10 @@ export function getExtension(filename: string) {
 
 export function isDecompressibleFile(filename: string) {
   return decompressibleExtensions.some((extension) => filename.endsWith(extension));
+}
+
+export function getFilePathWithoutExtension(fileName: string) {
+  return fileName?.replace(/\.[^/.]+$/, "");
 }
 
 /**
