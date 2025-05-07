@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
@@ -20,6 +8,7 @@ import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
 import { getUserIdRule } from "src/utils/createUser";
 import { queryIfInitialized } from "src/utils/init";
+import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
 export const CreateInitAdminSchema = typeboxRouteSchema({
@@ -45,7 +34,7 @@ export const CreateInitAdminSchema = typeboxRouteSchema({
   },
 });
 
-export default typeboxRoute(CreateInitAdminSchema, async (req) => {
+export default route(CreateInitAdminSchema, async (req) => {
   const result = await queryIfInitialized();
 
   if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }

@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { numberToMoney } from "@scow/lib-decimal";
 import { getScowResourceClient } from "@scow/lib-scow-resource";
@@ -26,6 +14,7 @@ import { Money } from "src/models/UserSchemaModel";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
+import { route } from "src/utils/route";
 
 // Cannot use BillingItemType from pageComponents/job/ManageJobBillingTable
 export const BillingItemType = Type.Object({
@@ -40,7 +29,7 @@ export const BillingItemType = Type.Object({
       price: Money,
       amountStrategy: Type.String(),
     })),
-  
+
   settable: Type.Optional(Type.Boolean()),
 });
 export type BillingItemType = Static<typeof BillingItemType>;
@@ -132,7 +121,7 @@ const calculateNextId = (data?: JobBillingItem[], tenant?: string) => {
 };
 
 
-export default /* #__PURE__*/typeboxRoute(GetBillingItemsSchema, async (req, res) => {
+export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
   const { tenant, activeOnly, currentActivatedClusterIds, clusterSortedIdList } = req.query;
 
   if (tenant) {
@@ -147,9 +136,9 @@ export default /* #__PURE__*/typeboxRoute(GetBillingItemsSchema, async (req, res
 
   const clusterConfigs = await getClusterConfigFiles();
 
-  // 如果查询条件 tenantName 存在 且已部署资源管理服务的情况 
+  // 如果查询条件 tenantName 存在 且已部署资源管理服务的情况
   // 判断分区是否为已授权分区
-  let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined; 
+  let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
 
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
@@ -160,14 +149,14 @@ export default /* #__PURE__*/typeboxRoute(GetBillingItemsSchema, async (req, res
       tenantAssignedClustersAndPartitions = response;
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
-      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const, 
+      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
         message: `Get tenant ${tenant} assinged Clusters and Partitions failed.` } };
     }
   }
 
   const isPartitionAssigned = (
-    clusterId: string, 
-    partitionName: string, 
+    clusterId: string,
+    partitionName: string,
   ): boolean => {
     if (!tenantAssignedClustersAndPartitions) {
       return true;
@@ -222,7 +211,7 @@ export default /* #__PURE__*/typeboxRoute(GetBillingItemsSchema, async (req, res
         const path = [cluster, partition.name, qos].filter((x) => x).join(".");
         const pathItem = reply.activeItems.find((item) => item.path === path);
 
-        if (pathItem) {      
+        if (pathItem) {
           result.activeItems.push(sourceToBillingItemType(pathItem));
         } else {
           const settable = isPartitionAssigned(cluster, partition.name);

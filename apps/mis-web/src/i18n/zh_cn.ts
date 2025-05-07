@@ -118,7 +118,8 @@ export default {
     phone: "手机号",
     organization: "组织",
     adjustBill: "调整租户计费",
-    failedGetTenantAssignedClustersAndPartitions: "查询授权集群分区信息失败", 
+    failedGetTenantAssignedClustersAndPartitions: "查询授权集群分区信息失败",
+    finalError: "请求失败，请稍后重试",
   },
   dashboard: {
     title: "仪表盘",

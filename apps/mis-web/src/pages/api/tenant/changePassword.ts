@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { changePassword as libChangePassword, getCapabilities } from "@scow/lib-auth";
 import { OperationType } from "@scow/lib-operation-log";
@@ -22,6 +10,7 @@ import { TenantRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig, runtimeConfig } from "src/utils/config";
+import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 
 // 此API用于租户管理员修改自己租户的用户密码
@@ -59,7 +48,7 @@ export const ChangePasswordAsTenantAdminSchema = typeboxRouteSchema({
 });
 
 
-export default /* #__PURE__*/typeboxRoute(
+export default /* #__PURE__*/route(
   ChangePasswordAsTenantAdminSchema, async (req, res) => {
 
     if (!publicConfig.ENABLE_CHANGE_PASSWORD) {

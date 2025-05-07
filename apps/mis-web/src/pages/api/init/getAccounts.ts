@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
 import { Type } from "@sinclair/typebox";
@@ -18,6 +6,7 @@ import { Account } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { queryIfInitialized } from "src/utils/init";
+import { route } from "src/utils/route";
 
 export const InitGetAccountsSchema = typeboxRouteSchema({
   method: "GET",
@@ -31,14 +20,14 @@ export const InitGetAccountsSchema = typeboxRouteSchema({
   },
 });
 
-export default typeboxRoute(InitGetAccountsSchema, async () => {
+export default route(InitGetAccountsSchema, async () => {
 
   const result = await queryIfInitialized();
 
   if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
 
   const client = getClient(AccountServiceClient);
- 
+
   const reply = await asyncClientCall(client, "getAccounts", {
     tenantName: DEFAULT_TENANT_NAME,
   });

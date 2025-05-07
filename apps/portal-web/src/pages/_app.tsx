@@ -127,7 +127,7 @@ const FailEventHandler: React.FC = () => {
         return;
       }
 
-      message.error(`${tArgs("pages._app.otherError") as string}(${e.status}, ${e.data?.code}))`);
+      message.error(tArgs("common.finalError"));
     });
   }, []);
 

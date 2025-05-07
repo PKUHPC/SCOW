@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import { GetJobsRequest, GetJobsRequest_SortBy as SortBy, JobFilter, JobServiceClient, JobsOfAccountAndUserTarget,
@@ -23,6 +11,7 @@ import { JobSortBy, JobSortOrder } from "src/models/job";
 import { TenantRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
+import { route } from "src/utils/route";
 
 export const mapJobSortByType = {
   "idJob":SortBy.ID_JOB,
@@ -146,7 +135,7 @@ export const getJobInfo = async (request: GetJobsRequest) => {
 };
 
 
-export default /* #__PURE__*/typeboxRoute(GetJobInfoSchema, async (req, res) => {
+export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
   const auth = authenticate((u) =>
     u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
 

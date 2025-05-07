@@ -1,11 +1,12 @@
 
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { FullUserInfo, TenantRole,UserState } from "src/models/User";
 import { getClient } from "src/utils/client";
+import { route } from "src/utils/route";
 
 export const GetTenantUsersSchema = typeboxRouteSchema({
   method: "GET",
@@ -19,7 +20,7 @@ export const GetTenantUsersSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN));
 
-export default typeboxRoute(GetTenantUsersSchema,
+export default route(GetTenantUsersSchema,
   async (req, res) => {
 
     const info = await auth(req, res);

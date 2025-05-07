@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { OperationType } from "@scow/lib-operation-log";
@@ -26,6 +14,7 @@ import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
 import { DEFAULT_INIT_USER_ID } from "src/utils/constants";
 import { queryIfInitialized } from "src/utils/init";
+import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const AddBillingItemSchema = typeboxRouteSchema({
@@ -50,7 +39,7 @@ export const AddBillingItemSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/typeboxRoute(AddBillingItemSchema, async (req, res) => {
+export default /* #__PURE__*/route(AddBillingItemSchema, async (req, res) => {
   const { tenant, amount, itemId, path, price, description } = req.body;
 
   const logInfo = {

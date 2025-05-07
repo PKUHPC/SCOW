@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { ChargingServiceClient } from "@scow/protos/build/server/charging";
@@ -18,6 +6,7 @@ import { Type } from "@sinclair/typebox";
 import { SearchType } from "src/models/User";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
+import { route } from "src/utils/route";
 
 import { buildChargesRequestTarget, getTenantOfAccount, getUserInfoForCharges } from "./charges";
 
@@ -63,7 +52,7 @@ export const GetChargeRecordsTotalCountSchema = typeboxRouteSchema({
   },
 });
 
-export default typeboxRoute(GetChargeRecordsTotalCountSchema, async (req, res) => {
+export default route(GetChargeRecordsTotalCountSchema, async (req, res) => {
   const { endTime, startTime, accountNames, isPlatformRecords, searchType, types, userIdsOrNames,
     preferCache } = req.query;
   const info = await getUserInfoForCharges(accountNames, req, res);

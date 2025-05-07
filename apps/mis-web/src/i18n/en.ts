@@ -119,6 +119,7 @@ export default {
     organization: "Organization",
     adjustBill: "Adjust Tenant Billing",
     failedGetTenantAssignedClustersAndPartitions: "Failed to retrieve authorized cluster partition information",
+    finalError: "Request failed, please try again later",
   },
   dashboard: {
     title: "Dashboard",

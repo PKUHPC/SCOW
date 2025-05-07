@@ -1,4 +1,4 @@
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { OperationType } from "@scow/lib-operation-log";
@@ -9,6 +9,7 @@ import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
+import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const EditUserProfileSchema = typeboxRouteSchema({
@@ -40,7 +41,7 @@ export const EditUserProfileSchema = typeboxRouteSchema({
 });
 
 
-export default /* #__PURE__*/typeboxRoute(EditUserProfileSchema, async (req, res) => {
+export default /* #__PURE__*/route(EditUserProfileSchema, async (req, res) => {
 
   const { identityId, tenantName, email, phone, adminComment, organization } = req.body;
 

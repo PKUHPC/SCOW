@@ -39,6 +39,7 @@ export const languageDic = {
       save: "保存",
       serialNumber: "序号",
       title: "标题",
+      finalError: "请求失败，请稍后再试",
     },
     expirationTimeSelect: {
       oneWeek: "一周",
@@ -185,6 +186,7 @@ export const languageDic = {
       save: "Save",
       serialNumber: "Serial Num",
       title: "Title",
+      finalError: "Request failed, please try again later",
     },
     expirationTimeSelect: {
       oneWeek: "one week",

@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { typeboxRoute, typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { changePassword as libChangePassword, getCapabilities } from "@scow/lib-auth";
 import { OperationType } from "@scow/lib-operation-log";
 import { Type } from "@sinclair/typebox";
@@ -19,6 +19,7 @@ import { OperationResult } from "src/models/operationLog";
 import { PlatformRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
 import { publicConfig, runtimeConfig } from "src/utils/config";
+import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 
 // 此API用于账户管理员修改其他任意用户的密码。
@@ -56,7 +57,7 @@ export const ChangePasswordAsPlatformAdminSchema = typeboxRouteSchema({
 });
 
 
-export default /* #__PURE__*/typeboxRoute(
+export default /* #__PURE__*/route(
   ChangePasswordAsPlatformAdminSchema, async (req, res) => {
 
     if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
@@ -101,5 +102,4 @@ export default /* #__PURE__*/typeboxRoute(
         await callLog(logInfo, OperationResult.FAIL);
         return { [e.status]: null };
       });
-
   });
