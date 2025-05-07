@@ -1,11 +1,13 @@
 import { CloseOutlined, FullscreenExitOutlined, FullscreenOutlined } from "@ant-design/icons";
 import Editor, { loader } from "@monaco-editor/react";
+import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
+import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
 import { getLanguage } from "@scow/lib-web/build/utils/staticFiles";
 import { App, Badge, Button, Modal, Space, Spin, Tabs, Tooltip } from "antd";
 import { editor } from "monaco-editor";
 import { join } from "path";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { publicConfig } from "src/utils/config";
 import { convertToBytes } from "src/utils/format";
 import { styled } from "styled-components";
@@ -86,6 +88,11 @@ loader.config({
   paths: {
     vs: join(publicConfig.BASE_PATH ?? "", "/monaco-assets/vs"),
   },
+  "vs/nls": {
+    availableLanguages: {
+      "*": "zh-cn", // 默认中文，支持 en 切换
+    },
+  },
 });
 
 function ConfirmModal({ open, saving, onSave, onClose }: ConfirmModalProps) {
@@ -148,11 +155,22 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [abortController, setAbortController] = useState(new AbortController());
+  const { dark } = useDarkMode();
+  const languageId = useI18n().currentLanguage.id;
 
   const [options, setOptions] = useState({
     readOnly: true,
     lineNumbersMinChars: 7,
   });
+
+  useEffect(() => {
+    loader.config({
+      "vs/nls": { availableLanguages: {
+        // null 表示采用默认语言，默认语言为英语
+        "*": languageId === SYSTEM_VALID_LANGUAGES.ZH_CN ? "zh-cn" : null,
+      } },
+    });
+  }, [languageId]);
 
   useEffect(() => {
     if (open) {
@@ -404,6 +422,7 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
                 <Editor
                   height={isFullScreen ? "78vh" : "60vh"}
                   defaultLanguage={getLanguage(filename)}
+                  theme={dark ? "vs-dark" : "light"}
                   options={options}
                   value={fileContent}
                   onMount={(editor) => { editorRef.current = editor; }}
