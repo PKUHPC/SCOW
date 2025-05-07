@@ -449,6 +449,11 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
         ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
 
+        SCOWD_SSL_ENABLED: String(config.scowd?.ssl?.enabled ?? false),
+        SCOWD_SSL_CA_CERT_PATH: scowdSslCaCertPath,
+        SCOWD_SSL_SCOW_CERT_PATH: scowdSslScowCertPath,
+        SCOWD_SSL_SCOW_PRIVATE_KEY_PATH: scowdSslScowPrivateKeyPath,
+
         ...serviceLogEnv,
         ...nodeOptions ? { NODE_OPTIONS: nodeOptions } : {},
       },

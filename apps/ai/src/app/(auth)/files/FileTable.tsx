@@ -18,7 +18,7 @@ import { ColumnsType } from "antd/es/table";
 import React from "react";
 import { TableFileInfo } from "src/app/(auth)/files/[cluster]/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { FileType } from "src/server/trpc/route/file";
+import { FileType } from "src/server/trpc/model/file";
 import { compareDateTime, formatDateTime } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";

@@ -12,10 +12,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getUserInfo } from "src/server/auth/server";
+import { withFileDriver } from "src/server/trpc/fileDriver/fileDriver";
 import { logger } from "src/server/utils/logger";
-import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
-import { pipeline, Readable } from "stream";
-import { promisify } from "util";
+import { getClusterLoginNode } from "src/server/utils/ssh";
 import { z } from "zod";
 
 const queryZod = z.object({
@@ -52,38 +51,16 @@ export async function POST(request: NextRequest) {
   }
 
 
-  return await sshConnect(host, user.identityId, logger, async (ssh) => {
-    const sftp = await ssh.requestSFTP();
-
-    const writeStream = sftp.createWriteStream(path);
-
-    const pipelineAsync = promisify(pipeline);
-
-    const readableStream = uploadedFile.stream();
-    const nodeReadableStream = readableStreamToNodeReadable(readableStream);
-    await pipelineAsync(nodeReadableStream, writeStream);
-
-    return NextResponse.json({ message: "success" }, { status: 200 });
-
-  });
-
-}
-
-
-function readableStreamToNodeReadable(readableStream: ReadableStream<Uint8Array>) {
-  const nodeReadable = new Readable();
-  nodeReadable._read = () => {};
-
-  const reader = readableStream.getReader();
-
-  reader.read().then(function processText({ done, value }) {
-    if (done) {
-      nodeReadable.push(null);
-      return;
-    }
-    nodeReadable.push(Buffer.from(value));
-    reader.read().then(processText);
-  });
-
-  return nodeReadable;
+  return await withFileDriver(
+    { clusterId, user:user.identityId },
+    async (driver) => {
+      try {
+        return await driver.upload(path, uploadedFile);
+      } catch (error) {
+        logger.error("Upload file error", error);
+        throw error;
+      }
+    },
+    logger,
+  );
 }
