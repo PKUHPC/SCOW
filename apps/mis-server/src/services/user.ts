@@ -838,9 +838,16 @@ export const userServiceServer = plugin((server) => {
     },
 
     getUsersByIds: async ({ request, em }) => { // 操作日志调用，可以展示已删除
-      const { userIds } = request;
+      const { userIds, fetchAllWhenEmpty = false } = request;
 
-      const users = await em.find(User, { userId: { $in: userIds } });
+      // 动态构造查询条件
+      const condition = fetchAllWhenEmpty && userIds.length === 0
+        ? {} // 条件为空时查询全部用户
+        : { userId: { $in: userIds } }; // 默认行为：按userIds过滤
+
+      const users = await em.find(User, condition, {
+        fields: ["userId", "name"],
+      });
 
       return [{
         users: users.map((x) => ({

@@ -51,7 +51,7 @@ export default route(DecompressFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.decompressFile,
     operationTypePayload:{
-      clusterId,
+      clusterId:"",
       filePath,
       decompressionPath,
     },

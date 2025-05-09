@@ -32,6 +32,7 @@ export const CreateAppSessionSchema = typeboxRouteSchema({
   body: Type.Object({
     cluster: Type.String(),
     appId: Type.String(),
+    appName: Type.String(),
     appJobName: Type.String(),
     account: Type.String(),
     partition: Type.Optional(Type.String()),
@@ -78,7 +79,7 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
   if (!info) { return; }
 
   const {
-    appId, appJobName, cluster, coreCount, nodeCount, gpuCount, memory,
+    appId, appName, appJobName, cluster, coreCount, nodeCount, gpuCount, memory,
     partition, qos, account, maxTime, customAttributes,
   } = req.body;
 
@@ -91,7 +92,7 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createApp,
     operationTypePayload:{
-      accountName: account, clusterId: cluster,
+      accountName: "", clusterId: cluster, appName,
     },
   };
 

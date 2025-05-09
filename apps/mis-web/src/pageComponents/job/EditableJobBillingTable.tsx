@@ -104,6 +104,7 @@ interface Props {
   reload: () => void;
 }
 
+// 该组件是否已经废弃？
 export const EditableJobBillingTable: React.FC<Props> = ({ data, loading, tenant, reload }) => {
 
   const t = useI18nTranslateToString();

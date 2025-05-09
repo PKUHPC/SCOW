@@ -65,6 +65,9 @@ export default /* #__PURE__*/route(ChangePasswordSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.changePassword,
+    operationTypePayload:{
+      userId: info.identityId,
+    },
   };
 
   return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, {

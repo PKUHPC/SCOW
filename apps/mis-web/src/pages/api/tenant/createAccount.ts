@@ -95,7 +95,7 @@ export default route(CreateAccountSchema,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.createAccount,
       operationTypePayload:{
-        tenantName: info.tenant, accountName, accountOwner: ownerId,
+        tenantName: "", accountName, accountOwner: ownerId,
       },
     };
 

@@ -8,7 +8,7 @@ import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getI18nCurrentText, getT, getTArgs, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { getOperationDetail, getOperationResultTexts, getOperationTypeTexts, OperationCodeMap, OperationLogQueryType,
+import { getOperationDetail, getOperationResultTexts, getOperationTypeTexts, OperationLogQueryType,
   OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
@@ -35,6 +35,7 @@ export const GetOperationLogFilter = Type.Object({
   operationDetail: Type.Optional(Type.String()),
   operationTargetAccountName: Type.Optional(Type.String()),
   customEventType: Type.Optional(Type.String()),
+  publicConfigClusters: Type.String(),
 });
 
 export type GetOperationLogFilter = Static<typeof GetOperationLogFilter>;
@@ -63,6 +64,8 @@ export const ExportOperationLogSchema = typeboxRouteSchema({
     200: Type.Any(),
 
     403: Type.Null(),
+
+    404: Type.Object({ code: Type.Literal("USER_NOT_BELONG_TO_TENANT") }),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
@@ -116,7 +119,7 @@ export default route(ExportOperationLogSchema, async (req, res) => {
   const {
     count, columns, type, operatorUserIds, startTime, endTime,
     operationType, operationResult, operationDetail, operationTargetAccountName,
-    customEventType, encoding, timeZone,
+    customEventType, encoding, timeZone, publicConfigClusters,
   } = req.query;
 
   const logSource = getExportSource(type, info, operationTargetAccountName);
@@ -134,6 +137,8 @@ export default route(ExportOperationLogSchema, async (req, res) => {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
   } else {
+    const client = getClient(UserServiceClient);
+
     const filter = {
       operatorUserIds: operatorUserIds ? operatorUserIds.split(",") : [],
       startTime, endTime, operationType,
@@ -167,14 +172,21 @@ export default route(ExportOperationLogSchema, async (req, res) => {
         return { 403: null };
       }
 
-      const client = getClient(UserServiceClient);
       const { users } = await asyncClientCall(client, "getUsers", {
         tenantName: info.tenant,
       });
 
-      filter.operatorUserIds = filter.operatorUserIds.length === 0
-        ? users.map((u) => u.userId)
-        : filter.operatorUserIds.filter((id) => users.find((u) => u.userId === id));
+      // 搜索条件中的userId必须是属于该tenant的
+      if (filter.operatorUserIds.length === 0) {
+        filter.operatorUserIds = users.map((u) => u.userId);
+      } else {
+        const filterUser = filter.operatorUserIds.filter((id) => users.find((u) => u.userId === id));
+        // 租户管理员搜索不在该租户内的操作人员
+        if (filterUser.length === 0) {
+          return { 404: { code: "USER_NOT_BELONG_TO_TENANT" } } as const;
+        }
+        filter.operatorUserIds = filterUser;
+      }
     }
 
     if (type === OperationLogQueryType.PLATFORM) {
@@ -205,21 +217,28 @@ export default route(ExportOperationLogSchema, async (req, res) => {
     const OperationTypeTexts = getOperationTypeTexts(t);
     const OperationResultTexts = getOperationResultTexts(t);
 
+    const { users } = await asyncClientCall(client, "getUsersByIds", {
+      userIds: filter.operatorUserIds,
+      fetchAllWhenEmpty: true, // 开启userIds为空数组时查询所有用户（账户和平台搜索时可能出现）
+    });
+
+    const userMap = new Map(users.map((x) => [x.userId, x.userName]));
+
+
     // 使用 timezone 参数格式化 operationTime
     const formatOperationLog = (x: OperationLog) => {
       return {
         id: x.operationLogId,
-        operationCode: x.operationEvent?.$case ? OperationCodeMap[x.operationEvent?.$case] : "000000",
         operationType: x.operationEvent?.$case === "customEvent"
           ? getI18nCurrentText(x.operationEvent.customEvent.name, languageId)
           : OperationTypeTexts[x.operationEvent?.$case || "unknown"],
         operationDetail: x.operationEvent
           ? x.operationEvent?.$case === "customEvent"
             ? getI18nCurrentText(x.operationEvent.customEvent.content, languageId)
-            : getOperationDetail(x.operationEvent, t, tArgs, languageId)
+            : getOperationDetail(x.operationEvent, t, tArgs, languageId, JSON.parse(publicConfigClusters))
           : "",
         operationResult: OperationResultTexts[x.operationResult],
-        operatorUserId: x.operatorUserId,
+        operatorUserId: `${userMap.get(x.operatorUserId) || ""} (ID: ${x.operatorUserId})`,
         // 使用用户指定的时区格式化时间
         operationTime: x.operationTime ? new Date(x.operationTime).
           toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
@@ -231,12 +250,11 @@ export default route(ExportOperationLogSchema, async (req, res) => {
 
     const headerColumns = {
       id: "Operation Log ID",
-      operationCode: t(p("operationCode")),
+      operationTime: t(p("operationTime")),
       operationType: t(p("operationType")),
+      operatorUserId: t(p("operatorUser")),
       operationDetail: t(p("operationDetail")),
       operationResult: t(p("operationResult")),
-      operationTime: t(p("operationTime")),
-      operatorUserId: t(p("operatorUserId")),
       operatorIp: t(p("operatorIp")),
     };
 

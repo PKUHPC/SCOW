@@ -76,7 +76,7 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypePayload:{
-          clusterId, path,
+          clusterId:"", path,
         },
       };
 
@@ -138,7 +138,7 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypePayload:{
-          clusterId, fromPath, toPath,
+          clusterId:"", fromPath, toPath,
         },
       };
 
@@ -192,7 +192,7 @@ export const file = router({
     })
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(z.void())
-    .use(async ({ input:{ clusterId,path }, ctx, next }) => {
+    .use(async ({ input:{ path }, ctx, next }) => {
       const res = await next({ ctx });
       const { user, req } = ctx;
 
@@ -201,7 +201,7 @@ export const file = router({
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.createDirectory,
         operationTypePayload:{
-          clusterId, path,
+          clusterId:"", path,
         },
       };
 
@@ -240,7 +240,7 @@ export const file = router({
     })
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(z.void())
-    .use(async ({ input:{ clusterId,path }, ctx, next }) => {
+    .use(async ({ input:{ path }, ctx, next }) => {
       const res = await next({ ctx });
 
       const { user, req } = ctx;
@@ -249,7 +249,7 @@ export const file = router({
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.createFile,
         operationTypePayload:{
-          clusterId, path,
+          clusterId:"", path,
         },
       };
 

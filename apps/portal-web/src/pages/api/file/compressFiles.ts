@@ -46,7 +46,7 @@ export default route(CompressFilesSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.compressFiles,
     operationTypePayload:{
-      clusterId: cluster, paths, archivePath,
+      clusterId: "", paths, archivePath,
     },
   };
 

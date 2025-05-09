@@ -15,9 +15,9 @@ import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AccountStatusFilter, ReservedAppAttributeName } from "src/models/job";
 import { AccountListSelector } from "src/pageComponents/job/AccountListSelector";
-import { AppCustomAttribute, FixedValueConfig, ReservedAppAttribute, 
-  SelectConfig, 
-  SelectConfigOption, 
+import { AppCustomAttribute, FixedValueConfig, ReservedAppAttribute,
+  SelectConfig,
+  SelectConfigOption,
   SelectOption } from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
@@ -111,6 +111,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     await api.createAppSession({ body: {
       cluster: clusterId,
       appId,
+      appName,
       appJobName: appJobName,
       nodeCount: nodeCount,
       coreCount: gpuCount ? gpuCount * Math.floor(currentPartitionInfo!.cores / currentPartitionInfo!.gpus) : coreCount,
@@ -167,20 +168,20 @@ export const LaunchAppForm: React.FC<Props> = ({
   const gpuCount = Form.useWatch("gpuCount", form)!;
 
   // 判断系统保留APP字段:账户及分区或qos 是否已配置为固定值字段
-  const fixedAccountName = 
+  const fixedAccountName =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
-  const fixedPartitionName = 
+  const fixedPartitionName =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.PARTITION);
-  const fixedQosName = 
+  const fixedQosName =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.QOS);
 
-  const fixedNodeCountValue = 
+  const fixedNodeCountValue =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT);
-  const fixedCoreCountValue = 
+  const fixedCoreCountValue =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.CORE_COUNT);
-  const fixedGpuCountValue = 
+  const fixedGpuCountValue =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.GPU_COUNT);
-  const fixedMaxTimeValue = 
+  const fixedMaxTimeValue =
     getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
 
   const initialValues = {
@@ -211,7 +212,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       .map((x) => typeof x === "number" ? x : parseInt(x, 10));
   const fixedMaxTimeList
     = getFixedValueListByAttributeName(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME)
-      .map((x) => typeof x === "number" ? x : parseInt(x, 10)); 
+      .map((x) => typeof x === "number" ? x : parseInt(x, 10));
 
   useAsync({ promiseFn: useCallback(async () => {
 
@@ -266,7 +267,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                     return fixedAccountList?.[0].toString();
                   }
                 }
-                
+
                 if (fixedAccountName) {
                   if (lastData && lastAccount && fixedAccountName && lastAccount === fixedAccountName) {
                     return lastAccount;
@@ -274,10 +275,10 @@ export const LaunchAppForm: React.FC<Props> = ({
                     return fixedAccountName;
                   }
                 }
-                
+
                 if (lastData && lastAccount && accountsResp.accounts.includes(lastSub?.account)) {
                   return lastAccount;
-                } 
+                }
 
                 return accountsResp.accounts[0];
               })();
@@ -308,9 +309,9 @@ export const LaunchAppForm: React.FC<Props> = ({
                     // 如果不在当前可选分区中，没有配置固定值或固定选项时则使用当前分区列表第一项
                     // 配置了固定值或固定选项时，则使用固定分区的初始值在可选分区中的信息（没有则为undefined）
                     let firstPartitionInfo: Partition | undefined = undefined;
-                    firstPartitionInfo = setLastPartition ? 
+                    firstPartitionInfo = setLastPartition ?
                       resPartitions.find((item) => item.name === lastPartition)
-                      : (!fixedPartitionName ? 
+                      : (!fixedPartitionName ?
                         resPartitions[0] : resPartitions.find((item) => item.name === fixedPartitionName));
 
                     setCurrentPartitionInfo(firstPartitionInfo);
@@ -338,7 +339,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                       || (firstPartitionInfo?.gpus && firstPartitionInfo.gpus >= lastGpuCount)
                     );
 
-                    const setLastMaxTimeWhenFixed = lastMaxTime && ( 
+                    const setLastMaxTimeWhenFixed = lastMaxTime && (
                       (fixedMaxTimeValue && parseInt(fixedMaxTimeValue, 10) === lastMaxTime)
                       || (fixedMaxTimeList?.some((x) => x === lastMaxTime))
                     );
@@ -357,7 +358,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                       maxTime: fixedMaxTimeValue ? (setLastMaxTimeWhenFixed ? lastMaxTime : fixedMaxTimeValue)
                         : (lastMaxTime ?? initialValues.maxTime),
                     };
-                    
+
                     // 如果存在上一次提交信息且上一次提交信息中的配置HTML表单与当前配置HTML表单内容相同，则填入上一次提交信息中的值
                     const attributesInputObj = {};
                     if (lastAttributes) {
@@ -548,7 +549,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     // 当为 SELECT 类型时
     // 如果配置了默认值，但是默认值不存在于select下选项的value中；或者如果没有配置默认值
     // 则默认显示SELECT的第一项
-    const initialValue = item.type === "SELECT" ? 
+    const initialValue = item.type === "SELECT" ?
       getSelectAttributeInitalValue(item.defaultValue, selectOptions) : item.defaultValue;
 
     const getAttributeElement = (item: any): JSX.Element => {
@@ -736,8 +737,8 @@ export const LaunchAppForm: React.FC<Props> = ({
               <Select
                 loading={availablePartitionsForAccountQuery.isLoading || unblockedAccountsQuery.isLoading}
                 options={currentPartitionInfo?.qos?.map((x) => ({ label: x, value: x }))}
-                placeholder={(!currentPartitionInfo?.qos) || currentPartitionInfo.qos.length === 0 ? 
-                  t(p("noSelectableQos")) : ""} 
+                placeholder={(!currentPartitionInfo?.qos) || currentPartitionInfo.qos.length === 0 ?
+                  t(p("noSelectableQos")) : ""}
               />
             )}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
@@ -803,7 +804,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                   { required: true,
                     type: "integer",
                     max: currentPartitionInfo ?
-                      currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined, 
+                      currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined,
                   },
                 ]}
                 reservedConfig={
@@ -950,7 +951,7 @@ const getFixedValueListByAttributeName = (
 
   // 根据配置类型返回初始值
   if (attribute.reservedConfig.type === "select") {
-    return attribute.reservedConfig.select.map((x) => (x.value)); 
+    return attribute.reservedConfig.select.map((x) => (x.value));
   }
 
   return [];
@@ -1037,7 +1038,7 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
       }
       form.validateFields([name]);
     });
-    
+
     return (
       <Form.Item
         name={name}
@@ -1047,8 +1048,8 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
         dependencies={ignoreDependenciesWhenFixed ? undefined : dependencies}
       >
         <div>
-          { name === "maxTime" ? 
-            formatMinutesToI18nDayHours(typeof value === "string" ? 
+          { name === "maxTime" ?
+            formatMinutesToI18nDayHours(typeof value === "string" ?
               parseInt(value, 10) : value, t) : reservedConfig.fixedValue.value
           }
         </div>
@@ -1058,14 +1059,14 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
   } else if (reservedConfig?.type === "select") {
 
     // 筛选选项：若没有配置requireGpu直接使用，配置了requireGpu项使用与否则看改分区有无GPU
-    const selectOptions = 
+    const selectOptions =
       reservedConfig?.select.filter((x) => !x.requireGpu || (x.requireGpu && currentPartitionIsWithGpu));
 
     // 使用单个useEffect处理所有逻辑
     useEffect(() => {
 
       const selectInitialValue = getSelectAttributeInitalValue(reservedConfig.defaultValue, reservedConfig.select);
-      const initialFormValue = selectInitialValue ? 
+      const initialFormValue = selectInitialValue ?
         (isNumberAttribute ? ensureNumberValue(selectInitialValue) : selectInitialValue) : undefined;
 
       // 判断是否配置了requireGpu选项
@@ -1083,7 +1084,7 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
       // 1. 当前值不存在
       // 2. 当前值不在可选项列表中
       // 3. 有requireGpu配置且当前值不在筛选后的选项中
-      const needsNewValue = !currentValue || !isValueInOptions || 
+      const needsNewValue = !currentValue || !isValueInOptions ||
         (currentPartitionIsWithGpu && hasRequireGpuOption && !selectOptions.some((o) => {
           const optionValue = isNumberAttribute ? ensureNumberValue(o.value) : o.value;
           return optionValue === currentValue;
@@ -1110,7 +1111,7 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
               };
             }
             return {
-              label: `${x.label ? getI18nConfigCurrentText(x.label, languageId) : x.value}`, 
+              label: `${x.label ? getI18nConfigCurrentText(x.label, languageId) : x.value}`,
               value: isNumberAttribute ? ensureNumberValue(x.value) : x.value,
             };
 

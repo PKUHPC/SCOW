@@ -59,7 +59,7 @@ export default /* #__PURE__*/route(ActivateClusterSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.activateCluster,
     operationTypePayload:{
-      userId: info.identityId, clusterId,
+      userId: "", clusterId,
     },
   };
 

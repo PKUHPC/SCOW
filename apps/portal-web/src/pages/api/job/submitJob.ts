@@ -90,7 +90,7 @@ export default route(SubmitJobSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypePayload:{
-      accountName: account,
+      accountName: "",
       clusterId: cluster,
     },
   };

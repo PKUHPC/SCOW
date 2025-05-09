@@ -58,7 +58,7 @@ export default /* #__PURE__*/route(DeleteAccountSchema, async (req,res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteAccount,
     operationTypePayload:{
-      tenantName: info.tenant, accountName, ownerId,
+      accountName, accountOwner: ownerId,
     },
   };
 

@@ -125,9 +125,18 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     });
 
     // 搜索条件中的userId必须是属于该tenant的
-    filter.operatorUserIds = filter.operatorUserIds.length === 0
-      ? users.map((u) => u.userId)
-      : filter.operatorUserIds.filter((id) => users.find((u) => u.userId === id));
+    if (filter.operatorUserIds.length === 0) {
+      filter.operatorUserIds = users.map((u) => u.userId);
+    } else {
+      const filterUser = filter.operatorUserIds.filter((id) => users.find((u) => u.userId === id));
+      // 租户管理员搜索不在该租户内的操作人员应当返回为空
+      if (filterUser.length === 0) {
+        return {
+          200: { results: [], totalCount: 0 },
+        };
+      }
+      filter.operatorUserIds = filterUser;
+    }
   };
 
   if (type === OperationLogQueryType.PLATFORM) {

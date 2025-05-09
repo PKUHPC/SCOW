@@ -250,6 +250,7 @@ export const getAppMetadata = procedure
 const CreateAppInputSchema = z.object({
   clusterId: z.string(),
   appId: z.string(),
+  appName: z.string(),
   appJobName: z.string(),
   algorithms: z.array(IdPrivateSchema),
   isImagePrivate: z.boolean().optional(),
@@ -287,7 +288,7 @@ export const createAppSession = procedure
   .output(z.object({
     jobId: z.number(),
   }))
-  .use(async ({ input:{ clusterId, account }, ctx, next }) => {
+  .use(async ({ input:{ clusterId, appName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -299,13 +300,13 @@ export const createAppSession = procedure
 
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { clusterId, jobId:(res.data as any).jobId, accountName:account } },
+        { clusterId, jobId:(res.data as any).jobId, accountName:"", appName } },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { clusterId, accountName:account } },
+        { clusterId, accountName:"", appName } },
       OperationResult.FAIL);
     }
 

@@ -347,6 +347,7 @@ message GetAllUsersResponse {
 
 message GetUsersByIdsRequest {
   repeated string user_ids = 1;
+  optional bool fetch_all_when_empty = 2;
 }
 
 message GetUsersByIdsResponse {

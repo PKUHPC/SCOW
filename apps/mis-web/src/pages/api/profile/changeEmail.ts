@@ -58,6 +58,9 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.changeEmail,
+    operationTypePayload:{
+      userId: info.identityId,
+    },
   };
 
   return await asyncClientCall(client, "changeEmail", {

@@ -24,6 +24,14 @@ export const getClusterName = (
   return getI18nConfigCurrentText(publicConfigClusters[clusterId]?.name, languageId) || clusterId;
 };
 
+export function getClusterNameWithUndefined(
+  clusterId: string | undefined,
+  languageId: string,
+  publicConfigClusters: Record<string, Cluster>) {
+  return clusterId ?
+    getClusterName(clusterId, languageId, publicConfigClusters) : "-";
+}
+
 export const getSortedClusterValues =
   (publicConfigClusters: Record<string, Cluster>,
     clusterSortedIdList: string[],

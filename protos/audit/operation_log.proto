@@ -23,7 +23,7 @@ message Logout {
 }
 
 message SubmitJob {
-  string account_name = 1;
+  string account_name = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   optional uint32 job_id = 2;
 
   // Optional field. Although currently optional, it is strongly recommended to provide this information.
@@ -92,12 +92,13 @@ message DeleteDesktop {
 }
 
 message CreateApp {
-  string account_name = 1;
+  string account_name = 1;// 当前deprecated，后续issue确定是否真的废弃或保留
   optional uint32 job_id = 2;
 
   // Optional field. Although currently optional, it is strongly recommended to provide this information.
   // Please note, we plan to make this field required in the next major version update.
   optional string cluster_id = 3;
+  optional string app_name = 4;
 }
 
 message CreateAiTrain {
@@ -122,12 +123,12 @@ message SaveImage {
 }
 
 message CreateFile {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string path = 2;
 }
 
 message DeleteFile {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string path = 2;
 }
 
@@ -138,7 +139,7 @@ message InitMultipartUpload {
 }
 
 message UploadFile {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string path = 2;
 }
 
@@ -150,31 +151,31 @@ message MergeFileChunks {
 }
 
 message CreateDirectory {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string path = 2;
 }
 
 message DeleteDirectory {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string path = 2;
 }
 
 
 message MoveFileItem {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string from_path = 2;
   string to_path = 3;
 }
 
 
 message CopyFileItem {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string from_path = 2;
   string to_path = 3;
 }
 
 message CompressFiles {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   repeated string paths = 2;
   string archive_path = 3;
 }
@@ -185,13 +186,13 @@ message SubmitFileItemAsJob {
 }
 
 message DecompressFile {
-  string cluster_id = 1;
+  string cluster_id = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string file_path = 2;
   string decompression_path = 3;
 }
 
 message SetJobTimeLimit {
-  string account_name = 1;
+  string account_name = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   uint32 job_id = 2;
   int64 limit_minutes = 3;
 
@@ -254,7 +255,7 @@ message SetTenantBilling {
   // 集群_分区_QOS
   string path = 2;
   // 计量方式
-  string amount = 3;
+  string amount = 3; // 当前deprecated，后续issue确定是否真的废弃或保留
   common.Money price = 4;
 }
 
@@ -279,18 +280,19 @@ message UnsetTenantFinance {
 }
 
 message TenantChangePassword {
-  string tenant_name = 1;
+  string tenant_name = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string user_id = 2;
 }
 
 message CreateAccount {
-  string tenant_name = 1;
+  string tenant_name = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string account_name = 2;
   string account_owner = 3;
 }
 
 message DeleteAccount {
   string account_name = 1;
+  optional string account_owner = 3; // 当前deprecated，后续issue确定是否真的废弃或保留
 }
 
 message AddAccountToWhitelist {
@@ -304,20 +306,20 @@ message RemoveAccountFromWhitelist {
 }
 
 message AccountPay {
-  string tenant_name = 1;
+  string tenant_name = 1; // 当前deprecated，后续issue确定是否真的废弃或保留
   string account_name = 2;
   common.Money amount = 3;
 }
 
 message BlockAccount {
   string account_name = 1;
-  string user_id = 2;
+  string user_id = 2; // 当前deprecated，后续issue确定是否真的废弃或保留
   string tenant_name =3;
 }
 
 message UnblockAccount {
   string account_name = 1;
-  string user_id = 2;
+  string user_id = 2; // 当前deprecated，后续issue确定是否真的废弃或保留
   string tenant_name =3;
 }
 
@@ -355,16 +357,22 @@ message EditUserProfile {
 }
 
 message ChangePassword {
+  // 保留原始空消息结构，通过 reserved 声明兼容性
+  reserved 1;
+  optional string user_id = 2;
 }
 
 message ChangeEmail {
+  // 保留原始空消息结构，通过 reserved 声明兼容性
+  reserved 1;
+  optional string user_id = 2;
 }
 
 message SetPlatformBilling {
   // 集群_分区_QOS
   string path = 1;
   // 计量方式
-  string amount = 2;
+  string amount = 2; // 当前deprecated，后续issue确定是否真的废弃或保留
   common.Money price = 3;
 }
 

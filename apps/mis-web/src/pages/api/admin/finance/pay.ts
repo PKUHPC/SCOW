@@ -65,7 +65,7 @@ export default route(TenantFinancePaySchema,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.tenantPay,
       operationTypePayload:{
-        tenantName: info.tenant,
+        tenantName,
         amount: numberToMoney(amount),
       },
     };

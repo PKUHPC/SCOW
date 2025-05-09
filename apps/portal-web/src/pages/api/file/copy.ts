@@ -58,7 +58,7 @@ export default route(CopyFileItemSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.copyFileItem,
     operationTypePayload:{
-      clusterId: cluster, fromPath, toPath,
+      clusterId: "", fromPath, toPath,
     },
   };
 

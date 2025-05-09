@@ -54,7 +54,7 @@ export default route(DeleteFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteFile,
     operationTypePayload:{
-      clusterId: cluster, path,
+      clusterId: "", path,
     },
   };
 

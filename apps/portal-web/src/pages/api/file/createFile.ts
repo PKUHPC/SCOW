@@ -55,7 +55,7 @@ export default route(CreateFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createFile,
     operationTypePayload:{
-      clusterId: cluster, path,
+      clusterId: "", path,
     },
   };
 

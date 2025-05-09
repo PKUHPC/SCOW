@@ -90,7 +90,7 @@ export default /* #__PURE__*/route(
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.tenantChangePassword,
       operationTypePayload:{
-        tenantName: info.tenant, userId: identityId,
+        tenantName: "", userId: identityId,
       },
     };
 

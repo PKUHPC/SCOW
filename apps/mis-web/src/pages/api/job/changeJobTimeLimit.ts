@@ -69,7 +69,7 @@ export default /* #__PURE__*/route(ChangeJobTimeLimitSchema,
     const client = getClient(JobServiceClient);
 
     // check if the user can change the job time limit
-    const { job, jobAccessible } = await checkJobAccessible({
+    const { jobAccessible } = await checkJobAccessible({
       actionType: "changeJobLimit",
       jobId,
       cluster,
@@ -95,8 +95,8 @@ export default /* #__PURE__*/route(ChangeJobTimeLimitSchema,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.setJobTimeLimit,
       operationTypePayload:{
-        jobId: +jobId, accountName: job.account, limitMinutes, clusterId: cluster,
-      },
+        jobId: +jobId, accountName: "", limitMinutes, clusterId: cluster,
+      },// accountName: job.account
     };
 
     return await asyncClientCall(client, "changeJobTimeLimit", {

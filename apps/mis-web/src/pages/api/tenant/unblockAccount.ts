@@ -62,7 +62,7 @@ export default /* #__PURE__*/route(UnblockAccountSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.unblockAccount,
     operationTypePayload:{
-      tenantName, accountName, userId: info.identityId,
+      tenantName, accountName, userId: "",
     },
   };
 

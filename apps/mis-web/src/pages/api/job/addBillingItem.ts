@@ -47,7 +47,7 @@ export default /* #__PURE__*/route(AddBillingItemSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: tenant ? OperationType.setTenantBilling : OperationType.setPlatformBilling,
     operationTypePayload:{
-      tenantName: tenant, path, amount, price,
+      tenantName: tenant, path, amount:"", price,
     },
   };
 

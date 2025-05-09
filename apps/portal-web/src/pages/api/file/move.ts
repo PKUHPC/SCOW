@@ -55,7 +55,7 @@ export default route(MoveFileItemSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.moveFileItem,
     operationTypePayload:{
-      clusterId: cluster, fromPath, toPath,
+      clusterId: "", fromPath, toPath,
     },
   };
 

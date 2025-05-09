@@ -56,7 +56,7 @@ export default route(MkdirSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createDirectory,
     operationTypePayload:{
-      clusterId: cluster, path,
+      clusterId: "", path,
     },
   };
 

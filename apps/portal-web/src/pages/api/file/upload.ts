@@ -59,7 +59,7 @@ export default route(UploadFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.uploadFile,
     operationTypePayload:{
-      clusterId: cluster, path,
+      clusterId: "", path,
     },
   };
 

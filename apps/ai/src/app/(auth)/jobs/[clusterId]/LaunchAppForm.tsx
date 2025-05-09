@@ -853,6 +853,7 @@ export const LaunchAppForm = (props: Props) => {
           createAppSessionMutation.mutate({
             clusterId,
             appId: appId!,
+            appName: appName!,
             appJobName,
             algorithms:algorithmVersions.map((id,idx) => ({ id,isPrivate:isAlgorithmPrivates[idx] })),
             image: image?.name,

@@ -17,6 +17,7 @@ import { App, Button, DatePicker, Form, Input, Select, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { getI18nCurrentText, prefix, useI18n, useI18nTranslate, useI18nTranslateToString } from "src/i18n";
@@ -24,12 +25,13 @@ import { Encoding } from "src/models/exportFile";
 import {
   getOperationDetail,
   getOperationResultTexts,
-  getOperationTypeTexts, OperationCodeMap, OperationLog,
+  getOperationTypeTexts, OperationLog,
   OperationLogQueryType,
   OperationResult, OperationSortBy, OperationSortOrder,
 } from "src/models/operationLog";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { User } from "src/stores/UserStore";
 import { styled } from "styled-components";
 
@@ -43,7 +45,7 @@ interface FilterForm {
   customEventType?: string
   operationTime?: [dayjs.Dayjs, dayjs.Dayjs],
   operationResult?: OperationResult;
-  operationDetail?: string;
+  operationDetail?: string; // 这里是将用户、作业ID等视为操作对象；表格中的操作对象是上述操作对象的和
 }
 
 interface PageInfo {
@@ -73,6 +75,8 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
   const t = useI18nTranslateToString();
   const tArgs = useI18nTranslate();
   const languageId = useI18n().currentLanguage.id;
+
+  const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const OperationResultTexts = getOperationResultTexts(t);
   const OperationTypeTexts = getOperationTypeTexts(t);
@@ -164,9 +168,8 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
     return results.map((data) => {
       return {
         ...data,
-        operationCode: data.operationEvent?.$case ? OperationCodeMap[data.operationEvent?.$case] : "000000",
         operationType: data.operationEvent?.$case || "unknown",
-        operationDetail: getOperationDetail(data.operationEvent, t, tArgs, languageId),
+        operationDetail: getOperationDetail(data.operationEvent, t, tArgs, languageId, publicConfigClusters),
       };
     });
   };
@@ -209,6 +212,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           operationDetail: query.operationDetail,
           page: pageInfo.page,
           pageSize: pageInfo.pageSize,
+          publicConfigClusters: JSON.stringify(publicConfigClusters),
         },
       });
     }
@@ -217,12 +221,11 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
 
   const exportOptions = useMemo(() => {
     return [
-      { label: t(p("operationCode")), value: "operationCode" },
+      { label: t(p("operationTime")), value: "operationTime" },
       { label: t(p("operationType")), value: "operationType" },
+      { label: t(p("operatorUser")), value: "operatorUserId" },
       { label: t(p("operationDetail")), value: "operationDetail" },
       { label: t(p("operationResult")), value: "operationResult" },
-      { label: t(p("operationTime")), value: "operationTime" },
-      { label: t(p("operatorUserId")), value: "operatorUserId" },
       { label: t(p("operatorIp")), value: "operatorIp" },
     ];
   }, [t]);
@@ -285,7 +288,10 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
             </Form.Item>
           )}
           <Form.Item label={t(p("operationDetail"))} name="operationDetail">
-            <Input style={{ width: 150 }} />
+            <Input
+              placeholder={t(p("keywordsPlaceholder"))}
+              style={{ width: 180 }}
+            />
           </Form.Item>
           <Form.Item label={t(p("operationTime"))} name="operationTime">
             <DatePicker.RangePicker showTime allowClear={false} presets={getDefaultPresets(languageId)} />
@@ -321,9 +327,11 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           title="ID"
           sorter={true}
         />
-        <Table.Column
-          dataIndex="operationCode"
-          title={t(p("operationCode"))}
+        <Table.Column<OperationLog>
+          dataIndex="operationTime"
+          title={t(p("operationTime"))}
+          render={formatDateTime}
+          sorter={true}
         />
         <Table.Column<OperationLog>
           dataIndex="operationType"
@@ -334,6 +342,12 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
               : OperationTypeTexts[operationType];
           }
           }
+        />
+        <Table.Column<OperationLog>
+          dataIndex="operatorUserId"
+          title={t(p("operatorUser"))}
+          render={(_, r) => (`${r.operatorUserName} (ID: ${r.operatorUserId})`)}
+          sorter={true}
         />
         <Table.Column
           dataIndex="operationDetail"
@@ -347,18 +361,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           dataIndex="operationResult"
           title={t(p("operationResult"))}
           render={(operationResult) => OperationResultTexts[operationResult]}
-          sorter={true}
-        />
-        <Table.Column<OperationLog>
-          dataIndex="operationTime"
-          title={t(p("operationTime"))}
-          render={formatDateTime}
-          sorter={true}
-        />
-        <Table.Column<OperationLog>
-          dataIndex="operatorUserId"
-          title={t(p("operatorUserId"))}
-          render={(_, r) => (`${r.operatorUserId} (${r.operatorUserName})`)}
           sorter={true}
         />
         <Table.Column<OperationLog>

@@ -59,7 +59,7 @@ export default /* #__PURE__*/route(DeactivateClusterSchema, async (req, res) => 
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deactivateCluster,
     operationTypePayload:{
-      userId: info.identityId, clusterId,
+      userId: "", clusterId, // userId不再展示 + 维持兼容性
     },
   };
 
