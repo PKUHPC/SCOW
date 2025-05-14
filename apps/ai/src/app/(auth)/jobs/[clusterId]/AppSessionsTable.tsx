@@ -100,13 +100,21 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       ellipsis: true,
     },
     {
-      title: t(p("servicePort")),
-      dataIndex: "servicePort",
+      title: t(p("inferServiceAddress")),
+      dataIndex: "inferServiceAddress",
       width: "10%",
       ellipsis: true,
       render: (_, record) => {
         if (record.jobType === JobType.INFER) {
-          return record.port;
+          const webHost = window.location.hostname;
+          const host = record.host;
+
+          // 如果没有host，默认在scow节点转发
+          if (!host) {
+            return `${webHost}:${record.port}`;
+          }
+
+          return `${host}:${record.port}`;
         }
       },
     },

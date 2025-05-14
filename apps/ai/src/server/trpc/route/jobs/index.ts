@@ -26,7 +26,9 @@ import {
   saveImage,
 } from "./apps";
 import { getSubmitInferenceParams,submitInferJob } from "./infer";
-import { cancelJob, getSubmitTrainParams, trainJob } from "./jobs";
+import { cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
+  getPodLogs, getPodMonitorInfo, getPodsByJobId, getSubmitTrainParams,
+  trainJob } from "./jobs";
 
 export const jobsRouter = router({
   listAvailableApps,
@@ -45,4 +47,9 @@ export const jobsRouter = router({
   getSubmitTrainParams,
   submitInferJob,
   getSubmitInferenceParams,
+  getJobSchedulingAndStartupLogs,
+  getPodsByJobId,
+  getPodLogs,
+  downloadPodLog,
+  getPodMonitorInfo,
 });

@@ -179,7 +179,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   });
 
   const { job } = await asyncClientCall(client.job, "getJobById", {
-    fields: ["container_job_info"],
+    fields: ["pods"],
     jobId: currentJobInfo.jobId,
   });
 
@@ -189,8 +189,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     return;
   }
 
-  const namespace = job.containerJobInfo?.namespace;
-  const podName = job.containerJobInfo?.podName;
+  // 暂时先用第一个pod
+  const namespace = job.pods[0].namespace;
+  const podName = job.pods[0].podName;
 
   if (!namespace || !podName) {
     log("[shell] Namespace or pod not obtained, please check the adapter version");

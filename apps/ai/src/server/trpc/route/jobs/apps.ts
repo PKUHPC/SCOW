@@ -733,7 +733,7 @@ export const saveImage =
         const client = getAdapterClient(clusterId);
 
         const { job } = await asyncClientCall(client.job, "getJobById", {
-          fields: ["container_job_info"],
+          fields: ["pods"],
           jobId,
         });
 
@@ -744,8 +744,9 @@ export const saveImage =
           });
         }
 
-        const nodeName = job.containerJobInfo?.nodeName;
-        const containerId = job.containerJobInfo?.containerId;
+        // 暂时先用第一个pod
+        const nodeName = job.pods[0].nodeName;
+        const containerId = job.pods[0].containerId;
 
         if (!nodeName || !containerId) {
           throw new TRPCError({
@@ -943,7 +944,7 @@ export const listAppSessions =
               const client = getAdapterClient(clusterId);
               const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, sessionMetadata.jobId, logger);
               if (connectionInfo?.response?.$case === "appConnectionInfo") {
-                host = connectionInfo.response.appConnectionInfo.host;
+                host = aiConfig.inferProxyHost;
                 port = connectionInfo.response.appConnectionInfo.port;
               }
             }

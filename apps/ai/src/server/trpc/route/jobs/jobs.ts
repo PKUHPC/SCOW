@@ -440,3 +440,248 @@ procedure
       jobId,
     });
   });
+
+
+const EventSchema = z.object({
+  objName: z.string().optional(),
+  objNamespace: z.string().optional(),
+  objKind: z.string(),
+  type: z.string(),
+  message: z.string(),
+  reason: z.string(),
+  reportingComponent: z.string(),
+  count: z.number().optional(),
+});
+
+export const getJobSchedulingAndStartupLogs =
+procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/jobLogs/{jobId}",
+      tags: ["jobs"],
+      summary: "Get Job Scheduling And Startup Logs",
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    jobId: z.number(),
+  }))
+  .output(z.object({
+    jobEvent:z.array(EventSchema) ,
+    podEvent:z.array(z.array(EventSchema)),
+  }))
+  .mutation(async ({ input, ctx: { user } }) => {
+
+    const { cluster, jobId } = input;
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    const client = getAdapterClient(cluster);
+    const { job } = await asyncClientCall(client.job, "getJobById", {
+      fields: ["pods","events"],
+      jobId: jobId,
+    });
+
+    return {
+      jobEvent:job?.events ?? [],
+      podEvent:job?.pods.map((i) => i.events) ?? [],
+    };
+  });
+
+export const getPodsByJobId =
+procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/pods/{jobId}",
+      tags: ["jobs"],
+      summary: "Get Job Pods",
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    jobId: z.number(),
+  }))
+  .output(z.object({
+    pods:z.array(z.object({ podId:z.string(),podName:z.string() })),
+  }))
+  .mutation(async ({ input, ctx: { user } }) => {
+
+    const { cluster, jobId } = input;
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    const client = getAdapterClient(cluster);
+    const { job } = await asyncClientCall(client.job, "getJobById", {
+      fields: ["pod_info"],
+      jobId: jobId,
+    });
+
+    return {
+      pods:job?.pods.map((i) => ({ podId:i.podId,podName:i.podName })) ?? [],
+    };
+  });
+
+export const getPodLogs = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/podLogs/{podId}",
+      tags: ["pods"],
+      summary: "Stream Pod Logs via Server-Sent Events",
+      contentTypes: ["text/event-stream"],
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    podId: z.string(),
+  }))
+  .output(z.void()) // 输出无法直接描述流式，使用 void
+  .query(async ({ input, ctx }) => {
+    const { cluster, podId } = input;
+    const userId = ctx.user.identityId;
+    const res = ctx.res; // 从上下文中获取底层响应对象
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    const client = getAdapterClient(cluster);
+
+    // 设置 SSE 头
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    try {
+      // 调用 gRPC 流式方法
+      const logStream = client.job.getPodLogs({ userId,podId });
+
+      // 将 gRPC 流的数据写入响应
+      for await (const message of logStream) {
+        res.write(`data: ${JSON.stringify({ log: message.log })}\n\n`);
+      }
+    } catch (error: any) {
+      res.status(500).write(`event: error\ndata: ${error.message}\n\n`);
+    } finally {
+      res.end();
+    }
+
+    return; // 返回 void，实际数据通过流发送
+  });
+
+export const downloadPodLog = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/podLogs/download/{podId}",
+      tags: ["pods"],
+      summary: "Download all pod logs so far",
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    podId: z.string(),
+  }))
+  .output(z.void())
+  .query(async ({ input: { cluster, podId }, ctx: { user, res } }) => {
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    const client = getAdapterClient(cluster);
+
+    const filename = `${podId}_log.txt`;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Cache-Control", "no-store");
+
+    try {
+      logger.info("Starting to get log stream...");
+      const logStream = client.job.getPodLogs({ userId, podId });
+
+      // 监听流的数据
+      for await (const message of logStream) {
+        // 获取到第一个日志时中断流
+        if (message.log) {
+          logger.info("Get the first log");
+          res.write(message.log + "\n");
+
+          // 终止流，只读取第一个日志
+          logStream.destroy();
+        }
+      }
+
+      res.end();
+      return;
+    } catch (error: any) {
+      logger.error("An error occurred while downloading the log:",error.message);
+      res.end();
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Failed to download logs,${error.message}`,
+      });
+    }
+  });
+
+const dataPointSchema = z.object({
+  timestampMillisecond: z.number().int(), // 这里是毫秒级 UNIX 时间戳
+  value: z.number(),
+});
+
+const timeSeriesDataSchema = z.object({
+  metrics: z.record(z.string(), z.string()),
+  values: z.array(dataPointSchema),
+});
+
+export const getPodMonitorInfo =
+procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/podMonitor/{podName}",
+      tags: ["jobs"],
+      summary: "Get Pod MonitorInfo",
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    podName: z.string(),
+    step:z.number().optional(), // 采样间隔，单位秒
+    startTime:z.string(),
+    endTime:z.string(),
+  }))
+  .output(z.object({
+    monitorData:z.array(timeSeriesDataSchema),
+  }))
+  .mutation(async ({ input, ctx: { user } }) => {
+
+    const { podName,step,startTime,endTime,cluster } = input;
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+    const client = getAdapterClient(cluster);
+
+    try {
+      const { monitorData } = await asyncClientCall(client.job, "getPodMonitorInfo", {
+        podName,
+        stepSeconds:step ?? 15,
+        start:startTime,
+        end:endTime,
+      });
+
+      return { monitorData };
+    } catch (error: any) {
+      logger.error("get pod monitor info error",error.message);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Failed to get pod monitor info,${error.message}`,
+      });
+    }
+  });

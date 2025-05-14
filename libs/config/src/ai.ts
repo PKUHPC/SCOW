@@ -62,6 +62,8 @@ export const AiConfigSchema = Type.Object({
       limitSize: Type.String({ description: "文件编辑大小限制", default: "1m" }),
     }, { description: "文件编辑功能", default: {} }),
   }, { description: "文件管理" })),
+
+  inferProxyHost:Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
 });
 
 const AT_CONFIG_NAME = "ai/config";

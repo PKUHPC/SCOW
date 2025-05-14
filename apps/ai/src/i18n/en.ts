@@ -333,7 +333,7 @@ export default {
         submitAgain:"Submit again",
         enterDir:"Enter directory",
         autoRefresh:"Auto refresh",
-        servicePort:"Infer service port",
+        inferServiceAddress:"Infer service address",
         infer:"Inferring",
       },
       connectToAppLink:{

@@ -333,7 +333,7 @@ export default {
         submitAgain:"再次提交",
         enterDir:"进入目录",
         autoRefresh:"自动刷新",
-        servicePort:"推理服务端口",
+        inferServiceAddress:"推理服务地址",
         infer:"推理",
       },
       connectToAppLink:{
