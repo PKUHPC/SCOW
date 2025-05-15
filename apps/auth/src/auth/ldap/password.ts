@@ -10,11 +10,6 @@
  * See the Mulan PSL v2 for more details.
  */
 
-/**
- * References
- * https://datatracker.ietf.org/doc/html/rfc3062
- * https://stackoverflow.com/questions/65745679/how-do-i-pass-parameters-to-the-ldapjs-exop-function
- */
 
 import { BerWriter } from "asn1";
 import { FastifyBaseLogger } from "fastify";
@@ -80,4 +75,42 @@ export async function modifyPassword(
     await modifyPasswordBase(userDn, undefined, newPassword, client);
     return true;
   });
+}
+
+// Login as self and modify self password
+
+export async function modifyForceFlagBase(
+  userId: string, forceFlag: boolean, client: ldapjs.Client, ldap: LdapConfigSchema,
+): Promise<boolean> {
+
+  try {
+    const modify = promisify(client.modify.bind(client));
+    if (ldap.ppolicy?.pwdMustChangeAtFirstLoginOrResetByAdmin || !forceFlag) {
+      await modify(userId, new ldapjs.Change({
+        operation: "replace",
+        modification: {
+          "pwdReset": forceFlag ? "TRUE" : "FALSE",
+        },
+      }));
+    }
+    return true;
+
+  } catch (e: any) {
+    return handleIfInvalidCredentials(e);
+  }
+}
+
+export async function modifyForceFlag(
+  log: FastifyBaseLogger,
+  ldap: LdapConfigSchema,
+  userDn: string, forceFlag: boolean,
+): Promise<boolean> {
+  try {
+    return await useLdap(log, ldap)(async (client) => {
+      await modifyForceFlagBase(userDn, forceFlag, client, ldap);
+      return true;
+    });
+  } catch (e: any) {
+    return handleIfInvalidCredentials(e);
+  }
 }

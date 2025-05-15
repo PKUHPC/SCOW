@@ -142,6 +142,12 @@ export const LdapConfigSchema = Type.Object({
     mail: Type.Optional(Type.String({ description: "LDAP中对应用户的邮箱的属性名。可不填。此字段只用于在创建用户的时候把邮件信息填入LDAP。" })),
     loginShell: Type.Optional(Type.String({ description: "LDAP中对应用户在 Unix/Linux 系统上的默认shel。当前仅用于判断用户是否被禁止登录" })),
   }, { description: "属性映射" }),
+  ppolicy: Type.Optional(Type.Object({
+    defaultOlcPPolicyDn: Type.Optional(Type.String({ description: "密码策略条目DN，根据该 DN 加载对应的密码规则‌，默认所有用户或组使用此策略" })),
+    pwdMaxFailures: Type.Optional(Type.Number({ description: "允许用户连续输入错误密码的最大次数。" })),
+    pwdLockoutDurationMinutes: Type.Optional(Type.Number({ description: "用户被锁定后的持续时间（分钟），若设为 0 表示必须由管理员手动解锁‌。" })),
+    pwdMustChangeAtFirstLoginOrResetByAdmin: Type.Optional(Type.Boolean({ description: "是否强制用户在首次登录或重置密码后修改密码。" })),
+  })),
 }, { description: "LDAP配置" });
 
 export type LdapConfigSchema = Static<typeof LdapConfigSchema>;

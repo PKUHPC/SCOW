@@ -82,6 +82,12 @@ const CreateUserPageForm: React.FC = () => {
             .then((createdInAuth) => {
               if (createdInAuth.createdInAuth) {
                 message.success(t(p("addCompleted")));
+                api.updatePasswordResetFlag({
+                  body: {
+                    userId: identityId,
+                    forceFlag: true,
+                  },
+                }).catch((e) => { console.log(e); });
               } else {
                 modal.info({
                   title: t("common.addSuccess"),

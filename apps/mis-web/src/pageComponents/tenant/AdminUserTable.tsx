@@ -338,7 +338,15 @@ export const AdminUserTable: React.FC<Props> = ({
                           message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
                         };
                       })
-                      .then(() => { message.success(t(p("changeSuccess"))); })
+                      .then(() => {
+                        message.success(t(p("changeSuccess")));
+                        api.updatePasswordResetFlag({
+                          body: {
+                            userId: r.id,
+                            forceFlag: true,
+                          },
+                        }).catch((e) => { console.log(e, "err"); });
+                      })
                       .catch(() => { message.error(t(p("changeFail"))); });
                   }}
                 >

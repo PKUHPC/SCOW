@@ -195,6 +195,7 @@ export default {
         clusterMonitor: "集群监控",
         resourceStatus: "资源状态",
         alarmLog: "告警日志",
+        userUnlock: "用户登录解封",
       },
       tenantManagement: {
         firstNav: "租户管理",
@@ -1089,6 +1090,18 @@ export default {
       importUsers: {
         importUserInfo: "导入用户信息",
       },
+      lockedUsers: {
+        userUnlock: "用户登录解封",
+        userNotFound: "用户未找到",
+        unlockSuccess: "登录解封成功",
+        unlockFail:"登录解封失败",
+        unlockLogin: "解除登录封锁",
+        confirmUlock: "确认解除用户登录封锁?",
+        confirmUlockText1: "确认要解除用户",
+        confirmUlockText2: "的登录封锁?",
+        lockedTime: "封锁时间",
+        oneChancetoLogin: "解除登录封锁后该用户有一次登录机会，需要成功登录后才会完全恢复正常登录状态",
+      },
       tenants: {
         create: {
           adminExist: "管理员用户已存在",
@@ -1384,6 +1397,8 @@ export default {
       changeEmail: "修改邮箱",
       createAiInferenceJob: "创建推理",
       decompressFile: "解压文件",
+      unlockUser: "解锁用户登录",
+      updatePasswordResetFlag: "更新强制修改密码标识",
     },
     operationDetails: {
       submitJob: "集群: {}, 作业ID: {}",

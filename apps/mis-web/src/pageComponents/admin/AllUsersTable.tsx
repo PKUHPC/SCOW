@@ -379,7 +379,15 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                           message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
                         };
                       })
-                      .then(() => { message.success(t(p("success"))); })
+                      .then(() => {
+                        message.success(t(p("success")));
+                        api.updatePasswordResetFlag({
+                          body: {
+                            userId: r.userId,
+                            forceFlag: true,
+                          },
+                        }).catch((e) => { console.log(e, "err"); });
+                      })
                       .catch(() => { message.error(t(p("fail"))); });
                   }}
                 >

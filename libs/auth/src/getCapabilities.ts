@@ -20,6 +20,8 @@ export interface Capabilities {
   getUser?: boolean;
   accountUserRelation?: boolean;
   deleteUser?: boolean;
+  lockUser?: boolean;
+  updatePasswordResetFlag?: boolean;
 }
 
 

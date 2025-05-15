@@ -709,6 +709,10 @@ message ExportUserBill {
   string account_name = 1;
 }
 
+message UnlockUser {
+  string identity_id = 1;
+}
+
 // INVALID_ARGUMENT: Custom event type name not match with exist type name.
 message CreateOperationLogRequest {
   string operator_user_id = 1;
@@ -822,6 +826,7 @@ message CreateOperationLogRequest {
     CreateAiInferenceJob create_ai_inference_job = 108;
     CompressFiles compress_files = 109;
     DecompressFile decompress_file = 110;
+    UnlockUser unlock_user = 111;
   }
 }
 
@@ -940,6 +945,7 @@ message OperationLog {
     CreateAiInferenceJob create_ai_inference_job = 110;
     CompressFiles compress_files = 111;
     DecompressFile decompress_file = 112;
+    UnlockUser unlock_user = 113;
   }
 }
 

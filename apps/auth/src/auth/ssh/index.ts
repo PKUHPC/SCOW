@@ -42,7 +42,7 @@ function checkLoginNode(sshConfig: SshConfigSchema) {
   return loginNode;
 }
 
-export const createSshAuthProvider = (f: FastifyInstance) => {
+export const createSshAuthProvider = async (f: FastifyInstance) => {
 
   const { ssh } = ensureNotUndefined(authConfig, ["ssh"]);
 
@@ -53,7 +53,7 @@ export const createSshAuthProvider = (f: FastifyInstance) => {
   registerPostHandler(f, loginNode);
 
   return {
-    serveLoginHtml: (callbackUrl, req, rep) => serveLoginHtml(false, callbackUrl, req, rep),
+    serveLoginHtml: (callbackUrl, req, rep) => serveLoginHtml({ err: false }, callbackUrl, req, rep),
     fetchAuthTokenInfo: async () => undefined,
     getUser: async (identityId, req) => {
       return await sshConnect(loginNode, "root", rootKeyPair, req.log, async (ssh) => {
@@ -78,6 +78,9 @@ export const createSshAuthProvider = (f: FastifyInstance) => {
     checkPassword: undefined,
     changeEmail: undefined,
     deleteUser: undefined,
+    unlockUser: undefined,
+    getLockedUsers: undefined,
+    updatePasswordResetFlag: undefined,
   } satisfies AuthProvider;
 
 };

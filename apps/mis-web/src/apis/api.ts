@@ -24,6 +24,7 @@ import type { GetClusterUsersSchema } from "src/pages/api/admin/getClusterUsers"
 import type { GetDailyChargeSchema } from "src/pages/api/admin/getDailyCharge";
 import type { GetDailyPaySchema } from "src/pages/api/admin/getDailyPay";
 import type { GetJobTotalCountSchema } from "src/pages/api/admin/getJobTotalCount";
+import type { GetLockedUsersSchema } from "src/pages/api/admin/getLockedUsers";
 import type { GetMisUsageCountSchema } from "src/pages/api/admin/getMisUsageCount";
 import type { GetNewJobCountSchema } from "src/pages/api/admin/getNewJobCount";
 import type { GetNewUserCountSchema } from "src/pages/api/admin/getNewUserCount";
@@ -46,8 +47,10 @@ import type { SetTenantRoleSchema } from "src/pages/api/admin/setTenantRole";
 import type { GetSyncBlockStatusJobInfoSchema } from "src/pages/api/admin/synchronize/getSyncBlockStateInfo";
 import type { SetSyncBlockStatusStateSchema } from "src/pages/api/admin/synchronize/setSynchronizeState";
 import type { SyncBlockStatusSchema } from "src/pages/api/admin/synchronize/syncBlockStatus";
+import type { UnlockUserSchema } from "src/pages/api/admin/unlockUser";
 import type { UnsetPlatformRoleSchema } from "src/pages/api/admin/unsetPlatformRole";
 import type { UnsetTenantRoleSchema } from "src/pages/api/admin/unsetTenantRole";
+import type { updatePasswordFlagSchema } from "src/pages/api/admin/updatePasswordResetFlag";
 import type { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
@@ -119,12 +122,14 @@ import type { QueryStorageUsageSchema } from "src/pages/api/users/storageUsage";
 import type { UnblockUserInAccountSchema } from "src/pages/api/users/unblockInAccount";
 import type { UnsetAdminSchema } from "src/pages/api/users/unsetAdmin";
 
-
 export const api = {
   activateCluster: apiClient.fromTypeboxRoute<typeof ActivateClusterSchema>("PUT", "/api/admin/activateCluster"),
   changeJobPrice: apiClient.fromTypeboxRoute<typeof ChangeJobPriceSchema>("PATCH", "/api/admin/changeJobPrice"),
   changePasswordAsPlatformAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsPlatformAdminSchema>("PATCH", "/api/admin/changePassword"),
+  getLockedUsers: apiClient.fromTypeboxRoute<typeof GetLockedUsersSchema>("GET", "/api/admin/getLockedUsers"),
+  unlockUser: apiClient.fromTypeboxRoute<typeof UnlockUserSchema>("PATCH", "/api/admin/unlockUser"),
   changeStorageQuota: apiClient.fromTypeboxRoute<typeof ChangeStorageQuotaSchema>("PUT", "/api/admin/changeStorage"),
+  updatePasswordResetFlag: apiClient.fromTypeboxRoute<typeof updatePasswordFlagSchema>("PATCH", "/api/admin/updatePasswordResetFlag"),
   deactivateCluster: apiClient.fromTypeboxRoute<typeof DeactivateClusterSchema>("PUT", "/api/admin/deactivateCluster"),
   editUserProfile: apiClient.fromTypeboxRoute<typeof EditUserProfileSchema>("PUT", "/api/admin/editUserProfile"),
   fetchJobs: apiClient.fromTypeboxRoute<typeof FetchJobsSchema>("POST", "/api/admin/fetchJobs/fetchJobs"),

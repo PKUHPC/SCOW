@@ -34,5 +34,5 @@ export const authPlugin = fp(async (f) => {
 
   const provider = providers[authType];
 
-  f.decorate("auth", provider(f));
+  f.decorate("auth", await provider(f));
 });

@@ -23,9 +23,20 @@ import { AuthTextsType, languages } from "src/i18n";
 import { getHostname } from "src/utils/getHostname";
 
 export async function serveLoginHtml(
-  err: boolean, callbackUrl: string, req: FastifyRequest, rep: FastifyReply,
+  errParamrs: {
+    err: boolean,
+    errMessage?: string,
+    dynamicsErrMessage?: string,
+    lockedMinutes?: number,
+  }, callbackUrl: string, req: FastifyRequest, rep: FastifyReply,
   verifyCaptchaFail?: boolean,
   verifyOtpFail?: boolean,
+  remainCount?: number,
+  changePasswordPamars?: {
+    changePasswordFlag?: boolean,
+    username?: string,
+    password?: string,
+  },
 ) {
 
   const hostname = getHostname(req);
@@ -56,7 +67,7 @@ export async function serveLoginHtml(
   });
 
   return rep.status(
-    verifyCaptchaFail ? 400 : err ? 401 : 200).view("login.liquid", {
+    verifyCaptchaFail ? 400 : errParamrs.err ? 401 : 200).view("login.liquid", {
     authTexts: authTexts,
     cssUrl: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/tailwind.min.css"),
     eyeImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye.png"),
@@ -78,15 +89,18 @@ export async function serveLoginHtml(
     footerTextColor: authUiHostnameConfig?.footerTextColor || authUiDefaultConfig?.footerTextColor || "white",
     themeColor: (hostname && uiConfig.primaryColor?.hostnameMap?.[hostname])
       ?? uiConfig.primaryColor?.defaultColor ?? DEFAULT_PRIMARY_COLOR,
-    err,
+    errParamrs:errParamrs || {},
     ...captchaInfo,
     verifyCaptchaFail,
     enableCaptcha,
     enableTotp,
     showBindOtpButton,
     verifyOtpFail,
+    remainCount,
+    changePasswordPamars: changePasswordPamars || {},
     otpBasePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/otp"),
     refreshCaptchaPath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/refreshCaptcha"),
+    changePasswordUserSelf: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/passwordUserSelf"),
   });
 
 }

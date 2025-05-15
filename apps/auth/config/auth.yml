@@ -82,6 +82,11 @@ ldap:
     name: cn
     mail: mail
     loginShell: loginShell
+  ppolicy:
+    defaultOlcPPolicyDn: "cn=default,ou=pwpolicies,o=pku"
+    pwdLockoutDurationMinutes: 0
+    pwdMaxFailures: 3
+    pwdMustChangeAtFirstLoginOrResetByAdmin: true
 
 ssh:
   baseNode: localhost:22222

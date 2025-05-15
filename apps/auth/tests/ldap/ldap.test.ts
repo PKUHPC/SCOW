@@ -20,6 +20,11 @@ import { ensureNotUndefined } from "src/utils/validations";
 import { allowedCallbackUrl, createFormData } from "tests/utils";
 import { promisify } from "util";
 
+interface RequestHeaders {
+  "Content-Type": string;
+  [key: string]: string;
+}
+
 let server: FastifyInstance;
 
 const callbackUrl = allowedCallbackUrl;
@@ -79,6 +84,15 @@ async function removeEvenNotExist(client: Client, dn: string) {
   });
 }
 
+async function performLogin(payload: string, headers: RequestHeaders) {
+  await saveCaptchaText(server, user.captchaCode, user.captchaToken);
+  return server.inject({
+    method: "POST",
+    url: "/public/auth",
+    payload,
+    headers,
+  });
+};
 
 afterEach(async () => {
   await removeEvenNotExist(client, userDn);
@@ -86,8 +100,6 @@ afterEach(async () => {
   client.destroy();
 
   await server.close();
-
-
 });
 
 async function searchByDn(client: Client, dn: string) {
@@ -104,6 +116,85 @@ const createUser = async () => {
   expect(resp.statusCode).toBe(204);
 
 };
+
+it("locks and unlocks account after configured failed attempts", async () => {
+  await createUser();
+
+  // 执行n次错误登录
+  for (let i = 0; i < (ldap.ppolicy?.pwdMaxFailures || 0); i++) {
+    const { payload, headers } = createFormData({
+      username: user.identityId,
+      password: user.password + "0",
+      callbackUrl,
+      token: user.captchaToken,
+      code: user.captchaCode,
+    });
+    const resp = await performLogin(payload, headers);
+    expect(resp.statusCode).toBe(401);
+  }
+
+  const getUserResp = await server.inject({
+    method: "GET",
+    url: "/lockUser/getLockedUsers",
+    query: { identityId: user.identityId },
+  });
+  expect(getUserResp.statusCode).toBe(200);
+
+  expect(getUserResp.json()).toEqual({ user: [expect.objectContaining({
+    identityId: user.identityId,
+    name: user.name,
+    mail: savedUserMail,
+  })]});
+
+  const unlockResp = await server.inject({
+    method: "PATCH",
+    url: "/lockUser/unlock",
+    payload: { identityId: user.identityId },
+  });
+  expect(unlockResp.statusCode).toBe(204);
+
+  const getUserAgainResp = await server.inject({
+    method: "GET",
+    url: "/lockUser/getLockedUsers",
+    query: { identityId: user.identityId },
+  });
+  expect(getUserAgainResp.json()).toEqual({ user: []});
+});
+
+it("enforce password reset when pwdMustChangeAtFirstLoginOrResetByAdmin is active", async () => {
+  await createUser();
+
+  const lockResp = await server.inject({
+    method: "PATCH",
+    url: "/updatePasswordResetFlag",
+    payload: { identityId:user.identityId, forceFlag: true },
+  });
+  expect(lockResp.statusCode).toBe(204);
+
+  // login
+  const { payload, headers } = createFormData({
+    username: user.identityId,
+    password: user.password,
+    callbackUrl,
+    token: user.captchaToken,
+    code: user.captchaCode,
+  });
+  const loginResp = await performLogin(payload, headers);
+
+  expect(loginResp.statusCode).toBe(200);
+  expect(loginResp.headers.location).toBe(undefined);
+
+  const unlockResp = await server.inject({
+    method: "PATCH",
+    url: "/updatePasswordResetFlag",
+    payload: { identityId:user.identityId, forceFlag: false },
+  });
+  expect(unlockResp.statusCode).toBe(204);
+
+  const loginAgainResp = await performLogin(payload, headers);
+  expect(loginAgainResp.statusCode).toBe(302);
+  expect(loginAgainResp.headers.location).toStartWith(callbackUrl + "?");
+});
 
 it("creates user and group if groupStrategy is newGroupPerUser", async () => {
 
@@ -127,7 +218,6 @@ it("creates user and group if groupStrategy is newGroupPerUser", async () => {
 
   const ldapUser = await searchByDn(client, userDn);
   if (!ldapUser) { fail("response user is not defined"); }
-
 
   const uid = ldap.addUser.uidStart + user.id + "";
 
@@ -181,8 +271,6 @@ it("returns correct error if user already exists", async () => {
 it("test to input a wrong verifyCaptcha", async () => {
   await createUser();
 
-
-
   // login
   const { payload, headers } = createFormData({
     username: user.identityId,
@@ -191,13 +279,7 @@ it("test to input a wrong verifyCaptcha", async () => {
     token: user.captchaToken,
     code: "wrongCaptcha",
   });
-  await saveCaptchaText(server, user.captchaCode, user.captchaToken);
-  const resp = await server.inject({
-    method: "POST",
-    url: "/public/auth",
-    payload,
-    headers,
-  });
+  const resp = await performLogin(payload, headers);
   expect(resp.statusCode).toBe(400);
 });
 
@@ -214,13 +296,7 @@ it("should login with correct username and password", async () => {
     token: user.captchaToken,
     code: user.captchaCode,
   });
-  await saveCaptchaText(server, user.captchaCode, user.captchaToken);
-  const resp = await server.inject({
-    method: "POST",
-    url: "/public/auth",
-    payload,
-    headers,
-  });
+  const resp = await performLogin(payload, headers);
 
 
   expect(resp.statusCode).toBe(302);
@@ -231,8 +307,6 @@ it("should not login with wrong password", async () => {
 
   await createUser();
 
-
-
   // login
   const { payload, headers } = createFormData({
     username: user.identityId,
@@ -241,13 +315,7 @@ it("should not login with wrong password", async () => {
     token: user.captchaToken,
     code: user.captchaCode,
   });
-  await saveCaptchaText(server, user.captchaCode, user.captchaToken);
-  const resp = await server.inject({
-    method: "POST",
-    url: "/public/auth",
-    payload,
-    headers,
-  });
+  const resp = await performLogin(payload, headers);
 
   expect(resp.statusCode).toBe(401);
 });
@@ -389,14 +457,8 @@ it("delete user", async () => {
     token: user.captchaToken,
     code: user.captchaCode,
   });
-  await saveCaptchaText(server, user.captchaCode, user.captchaToken);
 
-  const resp = await server.inject({
-    method: "POST",
-    url: "/public/auth",
-    payload,
-    headers,
-  });
+  const resp = await performLogin(payload, headers);
 
   expect(resp.statusCode).toBe(302);
 

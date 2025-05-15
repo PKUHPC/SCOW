@@ -189,6 +189,16 @@ ldap:
   # 删除用户的相关配置，选填，默认不开启。
   deleteUser:
     enabled: false
+  #密码策略ppolicy模块配置
+  ppolicy:
+      #密码策略条目DN，默认所有用户或组使用此策略。配置后将改变所配置密码策略条目下的策略。
+      defaultOlcPPolicyDn: "cn=default,ou=pwpolicies,o=pku"
+      #账户被锁定后的持续时间（分钟），若设为 0 表示必须由管理员手动解锁‌。
+      pwdLockoutDurationMinutes: 5000
+      #允许用户连续输入错误密码的最大次数。
+      pwdMaxFailures: 5
+      #是否强制用户在首次登录或重置密码后修改密码。单独配置此项可以直接配置，无需加载ppolicy模块
+      pwdMustChangeAtFirstLoginOrResetByAdmin: true
 ```
 
 增加好配置后，运行`./cli compose restart`重启系统即可。
@@ -243,4 +253,69 @@ docker build -f dev/ldap/Dockerfile -t ldap .
 # 启动镜像。服务在389端口监听。
 # 管理员用户为cn=Manager,ou=hpc,o=pku，密码为admin
 docker run -p 389:389 ldap
+```
+
+## LDAP密码策略模块ppolicy
+PPolicy 是 OpenLDAP 内置的密码策略模块，用于实现细粒度的账户密码管理。如果您想要启用用户身份鉴别失败锁定用户等相关密码策略功能，则需要先加载ppolicy模块并配置相关参数:
+1. 加载ppolicy模块并配置密码策略
+
+```bash
+# 首先进入LDAP服务内
+# 加载ppolicy模块
+cat << EOF | ldapadd -Y EXTERNAL -H ldapi:///
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad  // 添加模块加载属性
+olcModuleLoad: ppolicy.la  // 指定加载密码策略模块，生效后需重启服务或重载配置‌
+EOF
+
+#查看模块相关信息
+cat /etc/openldap/slapd.d/cn\=config/cn\=module\{0\}.ldif|grep ^olcModule
+
+# 添加 objectClass 对象，增加额外属性和值
+cat << EOF | ldapadd -Y EXTERNAL -H ldapi:///
+dn: olcOverlay=ppolicy,olcDatabase={2}hdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig  // 覆盖层配置的基类
+objectClass: olcPPolicyConfig  // 密码策略（Password Policy）覆盖层的扩展类‌
+olcOverlay: ppolicy // 启用 ppolicy 覆盖层模块，用于实现 LDAP 密码策略
+olcPPolicyDefault: cn=default,ou=pwpolicies,o={dn}  // 指定默认密码策略条目的 DN（Distinguished Name），所有未明确关联策略的用户将应用此策略‌
+EOF
+
+# 在 pwpolicies 条目下创建密码策略组。
+# cn=Manager,ou={ou},o={dn}为管理员dn，根据实际情况更改，如cn=Manager,ou=hpc,o=pku
+cat << EOF | ldapadd -x -D "cn=Manager,ou={ou},o={dn}" -w admin -H ldap://localhost
+dn: ou=pwpolicies,o={dn}
+ou: pwpolicies
+objectClass: organizationalUnit  // 定义条目的对象类
+EOF
+
+# 定义密码策略组默认密码规则，可以定义多个，例如一个默认，一个安全人员的密码策略
+# 默认密码策略将对所有未分配策略的用户或组使用此策略
+cat << EOF | ldapadd -x -D "cn=Manager,ou={ou},o={dn}" -w admin -H ldap://localhost
+dn: cn=default,ou=pwpolicies,o={dn}
+cn: default
+objectClass: pwdPolicy
+objectClass: person
+pwdAttribute: userPassword
+pwdLockout: TRUE
+pwdMaxFailure: 3
+pwdLockoutDuration: 0
+sn: dummy value
+EOF
+```
+
+2. 在ppolicy模块加载完成和初始化配置后，后续即可以在config/auth.yml配置文件中按需更改密码策略配置。
+
+```yaml title="config/auth.yml"
+ldap: 
+  ppolicy:
+      #密码策略条目DN，默认所有用户或组使用此策略。配置后将改变所配置密码策略条目下的策略。
+      defaultOlcPPolicyDn: "cn=default,ou=pwpolicies,o={dn}"
+      #账户被锁定后的持续时间（分钟），若设为 0 表示必须由管理员手动解锁‌。
+      pwdLockoutDurationMinutes: 5000
+      #允许用户连续输入错误密码的最大次数。
+      pwdMaxFailures: 5
+      #是否强制用户在首次登录或重置密码后修改密码。单独配置此项可以直接配置，无需加载ppolicy模块。
+      pwdMustChangeAtFirstLoginOrResetByAdmin: true
 ```

@@ -15,11 +15,15 @@ import { omitConfigSpec } from "@scow/lib-config";
 import { readVersionFile } from "@scow/utils/build/version";
 import fastify, { FastifyBaseLogger, FastifyInstance, FastifyPluginAsync, FastifyPluginCallback } from "fastify";
 import { registerCaptchaRoute } from "src/auth/captcha";
+import { useLdap } from "src/auth/ldap/helpers";
+import { checkPPolicyModule } from "src/auth/ldap/helpers";
+import { modifyPPolicy } from "src/auth/ldap/updatePPolicy";
 import { authConfig } from "src/config/auth";
 import { config } from "src/config/env";
 import { plugins } from "src/plugins";
 import { routes } from "src/routes";
 import { logger } from "src/utils/logger";
+import { ensureNotUndefined } from "src/utils/validations";
 
 type Plugin = FastifyPluginAsync | FastifyPluginCallback;
 type PluginOverrides = Map<Plugin, Plugin>;
@@ -64,6 +68,13 @@ export function buildApp(pluginOverrides?: PluginOverrides) {
     registerCaptchaRoute(server);
   }
 
+  const { ldap } = ensureNotUndefined(authConfig, ["ldap"]);
+  void useLdap(logger as FastifyBaseLogger, ldap)(async () => {
+    const isPpolicyLoaded = await checkPPolicyModule(logger, ldap);
+    if (isPpolicyLoaded) {
+      await modifyPPolicy(logger as FastifyBaseLogger, ldap);
+    }
+  });
   return server;
 }
 

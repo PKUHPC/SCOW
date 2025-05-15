@@ -17,7 +17,7 @@ import {
   DashboardOutlined,
   InfoOutlined, LineChartOutlined, LinkOutlined, LockOutlined, MoneyCollectOutlined, MonitorOutlined, PartitionOutlined,
   PlusOutlined, PlusSquareOutlined, ProfileOutlined,
-  StarOutlined, ToolOutlined, UserAddOutlined,
+  StarOutlined, ToolOutlined, UnlockOutlined,UserAddOutlined,
   UserOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
@@ -56,6 +56,11 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
           Icon: MoneyCollectOutlined,
           text: t(pPlatform("jobBillingTable")),
           path: "/admin/jobBilling",
+        },
+        {
+          Icon: UnlockOutlined,
+          text: t(pPlatform("userUnlock")),
+          path: "/admin/lockedUsers",
         },
         {
           Icon: CloudServerOutlined,

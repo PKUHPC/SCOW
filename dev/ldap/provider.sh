@@ -209,7 +209,44 @@ olcSpSessionLog: 100
 EOF
 ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/syncprov.ldif
 
-#[7] create SSL certificates
+
+#[7] Configure LDAP Provider. Add ppolicy module.
+echo "Step 7:Configure LDAP Provider. Add ppolicy module."
+cat << EOF | ldapadd -Y EXTERNAL -H ldapi:///
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: ppolicy.la
+EOF
+ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/ppolicy.ldif
+
+cat << EOF | ldapadd -Y EXTERNAL -H ldapi:///
+dn: olcOverlay=ppolicy,olcDatabase={2}hdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcPPolicyConfig
+olcOverlay: ppolicy
+olcPPolicyDefault: cn=default,ou=pwpolicies,$DN
+EOF
+
+cat << EOF | ldapadd -x -D "cn=Manager,$OU,$DN" -w admin -H ldap://localhost
+dn: ou=pwpolicies,$DN
+ou: pwpolicies
+objectClass: organizationalUnit
+EOF
+
+cat << EOF | ldapadd -x -D "cn=Manager,$OU,$DN" -w admin -H ldap://localhost
+dn: cn=default,ou=pwpolicies,$DN
+cn: default
+objectClass: pwdPolicy
+objectClass: person
+pwdAttribute: userPassword
+pwdMaxFailure: 3
+pwdLockoutDuration: 0
+sn: dummy value
+EOF
+
+#[8] create SSL certificates
 : <<!
 Country="CN"
 Province="Beijing"
@@ -221,7 +258,7 @@ EmailAddr="xxx@hpc.pku.edu.cn"
 Phrase="wrongpassword"
 !
 
-echo "Step 7:create SSL certificates"
+echo "Step 8:create SSL certificates"
 
 openssl req -out /etc/pki/tls/certs/server.csr -new -newkey rsa:2048 -nodes -keyout /etc/pki/tls/certs/server.key \
   -subj "/C=$Country/ST=$Province/L=$Locality/O=$OrganName/CN=$CommonName/emailAddress=$EmailAddr"

@@ -119,4 +119,5 @@ export const OperationType: OperationTypeEnum = {
   createAiInferenceJob:"createAiInferenceJob",
   decompressFile: "decompressFile",
   compressFiles: "compressFiles",
+  unlockUser: "unlockUser",
 };

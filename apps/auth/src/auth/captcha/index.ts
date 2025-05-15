@@ -71,7 +71,7 @@ export async function validateCaptcha(
     return true;
   }
 
-  await serveLoginHtml(false, callbackUrl, req, res, true);
+  await serveLoginHtml({ err: true }, callbackUrl, req, res, true);
   return false;
 }
 

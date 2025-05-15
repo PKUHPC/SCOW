@@ -662,6 +662,9 @@ export const mockApi: MockApi<typeof api> = {
     },
   }),
   isAccountBelowBlockThreshold: null,
+  getLockedUsers: null,
+  unlockUser: null,
+  updatePasswordResetFlag: null,
 };
 
 export const MOCK_USER_INFO = {

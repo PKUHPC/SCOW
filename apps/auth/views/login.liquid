@@ -41,18 +41,18 @@
     <div class="w-full h-screen flex">
       <div class="w-1/2 h-screen ml-20 flex items-center justify-center">
         <div class="w-80 max-w-md min-w-max bg-white rounded-lg py-12">
-          <form method="post" action="">
+          <form id="loginForm" method="post" action="">
             <div class="mb-16 text-2xl font-semibold text-center">{{ authTexts.login.accountPasswordLogin }}</div>
             <div class="px-14 flex flex-col items-center">
               <div class="w-80 mb-10">
-                <input type='text' name="username" placeholder="{{ authTexts.login.username }}" required
+                <input type='text' name="username" placeholder="{{ authTexts.login.userId }}" required
                     class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
               </div>
               <div class="w-80 mb-10">
-                <div class="relative flex items-center">
+                <div class="password-field relative flex items-center">
                     <input id="password" name="password" placeholder="{{ authTexts.login.password }}" type="password" required
                         class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
-                    <div id="eye-elem" class="absolute w-5 h-5 right-3 bg-contain"></div>
+                    <div id="eye-elem" class="eye-toggle absolute w-5 h-5 right-3 bg-contain"></div>
                 </div>
               </div>
               {% if enableTotp %}
@@ -99,8 +99,16 @@
               <input type="hidden" name="token" value="{{ token }}" />
               <input type="hidden" name="callbackUrl" value="{{ callbackUrl | escape }}" />
 
-              {% if err %}
-                <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidInput }}</p>
+              {% if errParamrs.err %}
+                {% if errParamrs.lockedMinutes %}
+                  <p class="my-4 text-center text-red-600">
+                    {{ authTexts.login[errParamrs.errMessage]}} {{errParamrs.lockedMinutes}} {{ authTexts.login[errParamrs.dynamicsErrMessage]}}
+                  </p>
+                {% else %}
+                  <p class="my-4 text-center text-red-600">
+                    {{ authTexts.login[errParamrs.errMessage] | append:remainCount | default:authTexts.login.invalidInput }}
+                  </p>
+                {% endif %}
               {% endif %}
               {% if verifyOtpFail %}
                 <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidOtp }}</p>
@@ -132,6 +140,82 @@
     <p class="absolute bottom-0 w-full pl-24 my-4 text-white text-xs" style="color: {{ footerTextColor }}">
       Powered by <a href="https://github.com/PKUHPC/SCOW" target="_blank">SCOW</a>
     </p>
+
+    {% if changePasswordPamars.changePasswordFlag %}
+      <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="flex items-center justify-center min-h-screen">
+          <div class="bg-white rounded-lg px-7 py-8 max-w-xl w-full mx-4">
+            <h3 class="text-2xl font-semibold mb-4">{{ authTexts.changePassword.title }}</h3>
+            <div class="text-red-700">{{authTexts.changePassword.forcePasswordChange}}</div>
+            <form>
+              <div class="space-y-4">
+                <div>
+                  <label class="block font-medium text-gray-700 mt-6 mb-2 ml-2">
+                    <span>{{ authTexts.changePassword.userid }}</span>
+                  </label>
+                  <input value="{{changePasswordPamars.username}}" disabled class="px-8 w-full border rounded px-3 py-2 text-gray-700 " required>
+                </div>
+
+                <div>
+                  <label class="block font-medium text-gray-700">
+                    <span class="text-red-500">*</span>
+                    <span>{{ authTexts.changePassword.newPassword }}</span>
+                  </label>
+                <div>
+                <div class="password-field relative flex items-center mb-4 mt-2">
+                  <input type="password" name="newPassword" placeholder="{{ authTexts.changePassword.passwordRuleVerification }}"
+                      class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" autocomplete="new-password">
+                  <div class="eye-toggle absolute w-5 h-5 right-3 bg-contain"></div>
+                </div>
+
+                <div>
+                  <label class="block font-medium text-gray-700">
+                    <span class="text-red-500">*</span>
+                    <span>{{ authTexts.changePassword.confirmPassword }}</span>
+                  </label>
+                <div>
+                <div class="password-field relative flex items-center mb-4 mt-2">
+                  <input type="password" name="confirmPassword" placeholder="{{ authTexts.changePassword.passwordRuleVerification }}"
+                      class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none">
+                  <div class="eye-toggle absolute w-5 h-5 right-3 bg-contain"></div>
+                </div>
+
+                <p id="modal-bottom-text" class="hidden my-4 text-center text-red-600"></p>
+              </div>
+
+              <div class="mt-6 flex justify-end space-x-3">
+                <button id="submit-btn" type="button" onclick="handleChangePassword()"
+                  class="px-4 py-1 text-white rounded button-primary text-gray-100 focus:outline-none">
+                  {{ authTexts.changePassword.confirm }}
+                </button>
+                <button type="button"
+                  onclick="hideChangePasswordModal()"
+                  class="px-4 py-1 border rounded hover:bg-gray-50">
+                  {{ authTexts.changePassword.cancel }}
+                </button>
+                <script>
+                  function refreshCaptcha(){
+                    const captchaDiv = document.getElementById("captcha");
+                    fetch("{{ refreshCaptchaPath }}", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        token: "{{ token }}",
+                      }),}
+                      ).then( async function (response) {
+                        captchaDiv.innerHTML = await response.text();
+                      }).catch(() => {
+                        captchaDiv.textContent = "{{ authTexts.login.refreshError }}"
+                      });
+                  }
+                </script>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <script>
       // 图片预加载
       const eyeImg = new Image();
@@ -139,19 +223,94 @@
       const eyeCloseImg = new Image();
       eyeCloseImg.src = "{{ eyeCloseImagePath }}";
 
-      const passwordInput = document.getElementById('password');
-      const eyeElem = document.getElementById('eye-elem');
-      eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
-      eyeElem.style.cursor = "pointer"
-      eyeElem.addEventListener("click", function() {
-        if (passwordInput.type === "password") {
-          passwordInput.setAttribute("type", "text");
-          eyeElem.style.backgroundImage =  "url('" + eyeImg.src + "')"
-        } else {
-          passwordInput.setAttribute("type", "password");
-          eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
-        }
+      document.querySelectorAll('.password-field').forEach(container => {
+        const eyeElem = container.querySelector('.eye-toggle');
+        const passwordInput = container.querySelector('input[type="password"]');
+        eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
+        eyeElem.style.cursor = "pointer"
+
+        eyeElem.addEventListener("click", function() {
+          if (passwordInput.type === "password") {
+            passwordInput.setAttribute("type", "text");
+            eyeElem.style.backgroundImage =  "url('" + eyeImg.src + "')"
+          } else {
+            passwordInput.setAttribute("type", "password");
+            eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
+          }
+        })
       })
+
+      function hideChangePasswordModal() {
+        document.getElementById('change-password-modal').classList.add('hidden')
+      }
+
+      function updateBottomDisplay(message) {
+        const bottomText = document.getElementById('modal-bottom-text');
+        if (bottomText) {
+          bottomText.textContent = message;
+          bottomText.classList.remove('hidden');
+        }
+      }
+
+      function handleChangePassword() {
+        const newPassword = document.querySelector('input[name="newPassword"]').value.trim();
+        const confirmPassword = document.querySelector('input[name="confirmPassword"]').value.trim();
+        const passwordRegex = /^(?=.*\d)(?=.*[a-zA-Z])(?=.*[`~!@#\$%^&*()_+\-[\];',./{}|:"<>?]).{8,}$/
+
+        if (!newPassword || !confirmPassword) {
+          updateBottomDisplay("{{authTexts.changePassword.allFieldsAreMandatory}}");
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          updateBottomDisplay("{{authTexts.changePassword.passwordInconsistent}}");
+          return;
+        }
+
+        if(!passwordRegex.test(newPassword)) {
+          updateBottomDisplay("{{authTexts.changePassword.passwordRuleVerification}}");
+          return;
+        }
+
+        const btn = document.getElementById("submit-btn");
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.innerHTML = "{{authTexts.changePassword.submitting}}";
+
+        fetch("{{ changePasswordUserSelf }}", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: "{{changePasswordPamars.username}}",
+            oldPassword: "{{changePasswordPamars.password}}",
+            newPassword: newPassword
+          }),}
+          ).then((res) => {
+            if(res?.status === 500){
+              btn.innerHTML = "{{authTexts.changePassword.confirm}}";
+              btn.disabled = false;
+              updateBottomDisplay("{{authTexts.changePassword.invalidUserNamePassword}}");
+            }else if(res?.status === 204){
+              updateBottomDisplay("{{authTexts.changePassword.modificationSuccessed}}");
+
+              const loginForm = document.getElementById("loginForm")
+              loginForm.elements.username.value = "{{changePasswordPamars.username}}";
+              loginForm.elements.password.value = newPassword;
+              setTimeout(()=>{
+                loginForm.submit();
+              }, 1000)
+            }else{
+              btn.innerHTML = "{{authTexts.changePassword.confirm}}";
+              btn.disabled = false;
+              updateBottomDisplay("{{authTexts.changePassword.modificationFailed}}");
+            }
+          }).catch((e) => {
+            btn.innerHTML = "{{authTexts.changePassword.confirm}}";
+            btn.disabled = false;
+            updateBottomDisplay("{{authTexts.changePassword.modificationFailed}}");
+          }
+        );
+      }
     </script>
 </body>
 </html>

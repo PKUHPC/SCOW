@@ -148,6 +148,16 @@ ldap:
     # extraProps:
     #   key: value
 
+  #密码策略ppolicy模块配置
+  #ppolicy:
+      #密码策略条目DN，根据该 DN 加载对应的密码规则‌，默认所有用户或组使用此策略
+      #defaultPwpoliciesDN: "cn=default,ou=pwpolicies,o=pku"
+      #账户被锁定后的持续时间（秒），若设为 0 表示必须由管理员手动解锁‌。
+      #pwdLockoutDuration: 5000
+      #允许用户连续输入错误密码的最大次数。
+      #pwdMaxFailure: 5
+      #是否强制用户在首次登录或重置密码后修改密码。
+      #pwdMustChange: true
 # 删除用户的相关配置，选填，默认关闭。
   # deleteUser:
   #   enabled: false

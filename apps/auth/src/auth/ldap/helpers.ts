@@ -99,6 +99,88 @@ export const searchOne = async <T>(
   });
 };
 
+export const checkPPolicyModule = async (logger: FastifyBaseLogger, ldapConfig: LdapConfigSchema) => {
+  return await useLdap(logger, ldapConfig)(async (client) => {
+    return new Promise<(boolean) | undefined>((resolve, reject) => {
+      client.search("", {
+        scope: "base",
+        filter: "(objectClass=*)",
+        attributes: ["supportedControl"],
+      }, (err, res) => {
+        if (err) { reject(err as Error); return; }
+
+        res.on("searchEntry", (entry) => {
+          const controls = entry.object.supportedControl || [];
+          const ppolicyOID = "1.3.6.1.4.1.4203.1.10.1";
+          const isSupported = controls.includes(ppolicyOID);
+          resolve(isSupported);
+        });
+
+        res.on("error", (err) => {
+          logger.error("Error. %o", err);
+          reject(err as Error);
+        });
+
+        res.on("end", (result) => {
+          logger.info("Received end event. %o", result);
+          if (result?.status === 0) {
+            resolve(undefined);
+          } else {
+            reject(new Error(result?.errorMessage));
+          }
+        });
+      });
+    });
+  });
+};
+
+export const searchAll = async <T>(
+  logger: FastifyBaseLogger,
+  client: ldapjs.Client,
+  searchBase: string,
+  searchOptions: ldapjs.SearchOptions,
+  furtherCheck: (entry: ldapjs.SearchEntry) => T | undefined,
+) => {
+  return new Promise<(T & { dn: string })[]>((resolve, rej) => {
+    client.search(searchBase, searchOptions, (err, res) => {
+      if (err) {
+        rej(err as Error);
+        return;
+      }
+      logger.info("Search started");
+
+      const results: (T & { dn: string })[] = []; // 存储所有结果的数组
+
+      res.on("searchEntry", (entry) => {
+        logger.info("Get an entry. %o", entry);
+
+        const val = furtherCheck(entry);
+        if (!val) {
+          logger.info("Entity failed to pass further check");
+          return;
+        }
+
+        logger.info("Get an entry with valid info. dn: %s.", entry.dn);
+        results.push({ ...val, dn: entry.dn }); // 收集结果
+      });
+
+      res.on("error", (err) => {
+        logger.error("Error. %o", err);
+        rej(err as Error);
+      });
+
+      res.on("end", (result) => {
+        logger.info("Received end event. %o", result);
+        if (result?.status === 0) {
+          resolve(results); // 返回所有结果
+        } else {
+          rej(new Error(result?.errorMessage));
+        }
+      });
+    });
+  });
+};
+
 export const findUser = async (logger: FastifyBaseLogger,
   config: LdapConfigSchema, client: ldapjs.Client, id: string) => {
   return await searchOne(logger, client, config.searchBase,
@@ -112,6 +194,32 @@ export const findUser = async (logger: FastifyBaseLogger,
             value: id,
           })],
       }),
+    }, (e) => extractUserInfoFromEntry(config, e, logger),
+  );
+};
+
+export const findLockedUsers = async (logger: FastifyBaseLogger,
+  config: LdapConfigSchema, client: ldapjs.Client, id?: string) => {
+  const baseFilters = [
+    ldapjs.parseFilter(config.userFilter),
+    new ldapjs.PresenceFilter({
+      attribute: "pwdAccountLockedTime",
+    }),
+  ];
+  if (id) {
+    baseFilters.push(new ldapjs.EqualityFilter({
+      attribute: config.attrs.uid,
+      value: id,
+    }));
+  }
+
+  return await searchAll(logger, client, config.searchBase,
+    {
+      scope: "sub",
+      filter: new ldapjs.AndFilter({
+        filters: baseFilters,
+      }),
+      attributes: ["*", "+"],
     }, (e) => extractUserInfoFromEntry(config, e, logger),
   );
 };
@@ -133,8 +241,8 @@ export const extractUserInfoFromEntry = (
   const name = config.attrs.name ? takeOne(extractAttr(entry, config.attrs.name)) : undefined;
   const mail = config.attrs.mail ? takeOne(extractAttr(entry, config.attrs.mail)) : undefined;
   const loginShell = config.attrs.loginShell ? takeOne(extractAttr(entry, config.attrs.loginShell)) : undefined;
-
-  return { identityId, name, mail, loginShell };
+  const pwdAccountLockedTime = takeOne(extractAttr(entry, "pwdAccountLockedTime"));
+  return { identityId, name, mail, loginShell, pwdAccountLockedTime };
 };
 
 export function takeOne(val: string | string[] | undefined) {

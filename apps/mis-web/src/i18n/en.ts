@@ -195,6 +195,7 @@ export default {
         clusterMonitor: "Monitor",
         resourceStatus: "Status",
         alarmLog: "Alarms",
+        userUnlock: "User login unlocking",
       },
       tenantManagement: {
         firstNav: "Tenant",
@@ -1090,6 +1091,19 @@ export default {
       importUsers: {
         importUserInfo: "Import User Information",
       },
+      lockedUsers: {
+        userUnlock: "User login unlocking",
+        userNotFound: "User not found",
+        unlockSuccess: "Login unlocked successfully",
+        unlockFail:"Login unlocked failed",
+        unlockLogin: "Unlock login",
+        confirmUlock: "Confirm to unlock user login?",
+        confirmUlockText1: "Confirm to unlock user",
+        confirmUlockText2: "login lock?",
+        lockedTime: "Locked time",
+        oneChancetoLogin: "After unblocking the login, the user has one chance to log in and needs to"
+        + "successfully log in before fully restoring normal login status",
+      },
       tenants: {
         create: {
           adminExist: "Admin User Already Exists",
@@ -1387,6 +1401,8 @@ export default {
       changeEmail: "Modify email",
       createAiInferenceJob: "Create Inference Job",
       decompressFile: "Decompress File",
+      unlockUser: "Unlock user login",
+      updatePasswordResetFlag: "Update mandatory password change identifier",
     },
     operationDetails: {
       submitJob: "Cluster: {}, Job ID: {}",

@@ -1,21 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import formBody from "@fastify/formbody";
 import { Static, Type } from "@sinclair/typebox";
 import { FastifyInstance } from "fastify";
 import { cacheInfo } from "src/auth/cacheInfo";
 import { redirectToWeb } from "src/auth/callback";
-import { findUser, useLdap } from "src/auth/ldap/helpers";
+import { checkPPolicyModule, extractAttr, findUser, searchOne, useLdap } from "src/auth/ldap/helpers";
 import { serveLoginHtml } from "src/auth/loginHtml";
 import { validateOtpCode } from "src/auth/otp/helper";
 import { validateLoginParams } from "src/auth/validateLoginParams";
@@ -64,7 +52,7 @@ export function registerPostHandler(f: FastifyInstance, ldapConfig: LdapConfigSc
           : `User with ${ldapConfig.attrs.uid}=${username} has been marked as deleted`;
 
         logger.info(logMessage);
-        await serveLoginHtml(true, callbackUrl, req, res);
+        await serveLoginHtml({ err: true, errMessage: "invalidUserId" }, callbackUrl, req, res);
         return;
       }
 
@@ -77,10 +65,59 @@ export function registerPostHandler(f: FastifyInstance, ldapConfig: LdapConfigSc
       await useLdap(logger, ldapConfig, { dn: user.dn, password })(async () => {
         logger.info("Binding as %s successful. User info %o", user.dn, user);
         const info = await cacheInfo(user.identityId, req);
-        await redirectToWeb(callbackUrl, info, res);
+        const pwdReset = await searchOne(logger, client, user.dn,
+          {
+            scope: "base",
+            filter: "(objectClass=*)",
+            attributes: ["pwdReset"],
+          }, (entry) => {
+            return extractAttr(entry, "pwdReset");
+          },
+        );
+        if (pwdReset?.[0] === "TRUE") {
+          await serveLoginHtml({ err: false }, callbackUrl, req, res,
+            undefined, undefined, undefined, { username, password, changePasswordFlag: true });
+        } else {
+          await redirectToWeb(callbackUrl, info, res);
+        }
       }).catch(async (err) => {
+        if (err.name === "InvalidCredentialsError") {
+          const pwdAttributes = await searchOne(logger, client, user.dn,
+            {
+              scope: "base",
+              filter: "(objectClass=*)",
+              attributes: ["pwdFailureTime", "pwdAccountLockedTime"],
+            }, (entry) => {
+              const pwdAccountLockedTime = entry.attributes.some((attr) => attr.type === "pwdAccountLockedTime");
+              const pwdFailuretime = extractAttr(entry, "pwdFailureTime");
+
+              return { isLocked: pwdAccountLockedTime, pwdFailuretime };
+            },
+          );
+
+          const remainCount = Number(ldapConfig.ppolicy?.pwdMaxFailures || 0) -
+            (pwdAttributes?.pwdFailuretime?.length || 0);
+
+          const isPpolicyLoaded = await checkPPolicyModule(logger, ldapConfig);
+
+          if (pwdAttributes?.isLocked) {
+            if (ldapConfig.ppolicy?.pwdLockoutDurationMinutes === 0) {
+              await serveLoginHtml({ err: true, errMessage: "accountLocked" },
+                callbackUrl, req, res, undefined, undefined);
+            } else {
+              await serveLoginHtml({ err: true, errMessage: "accountLockedTime1",dynamicsErrMessage:
+                "accountLockedTime2", lockedMinutes: ldapConfig.ppolicy?.pwdLockoutDurationMinutes },
+              callbackUrl, req, res, undefined, undefined);
+            }
+          } else if (typeof ldapConfig.ppolicy?.pwdMaxFailures === "number" && isPpolicyLoaded) {
+            await serveLoginHtml({ err: true, errMessage: "invalidPasswordRemain" },
+              callbackUrl, req, res, undefined, undefined, remainCount > 0 ? remainCount : 1);
+          } else {
+            await serveLoginHtml({ err: true, errMessage: "invalidPassword" },
+              callbackUrl, req, res, undefined, undefined);
+          }
+        }
         logger.info("Binding as %s failed. Err: %o", user.dn, err);
-        await serveLoginHtml(true, callbackUrl, req, res);
       });
 
     });

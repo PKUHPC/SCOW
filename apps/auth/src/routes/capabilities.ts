@@ -21,6 +21,8 @@ const CapabilitiesSchema = Type.Object({
   accountUserRelation: Type.Optional(Type.Boolean({ description: "是否可以管理账户用户关系" })),
   checkPassword: Type.Optional(Type.Boolean({ description: "是否可以验证密码" })),
   deleteUser: Type.Optional(Type.Boolean({ description: "是否可以删除用户" })),
+  lockUser: Type.Optional(Type.Boolean({ description: "是否可以锁定用户登录" })),
+  updatePasswordResetFlag: Type.Optional(Type.Boolean({ description: "是否可以更改强制用户修改密码状态" })),
 });
 
 export type Capabilities = Static<typeof CapabilitiesSchema>;
@@ -42,7 +44,6 @@ export const getCapabilitiesRoute = fp(async (f) => {
       },
     },
     async () => {
-
       const provider = f.auth;
 
       return {
@@ -53,6 +54,8 @@ export const getCapabilitiesRoute = fp(async (f) => {
         getUser: provider.getUser !== undefined,
         accountUserRelation: false,
         deleteUser: provider.deleteUser !== undefined,
+        lockUser: provider.unlockUser !== undefined && provider.getLockedUsers !== undefined,
+        updatePasswordResetFlag: provider.updatePasswordResetFlag !== undefined,
       };
     },
   );

@@ -262,7 +262,7 @@ export async function validateOtpCode(
     return true;
   }
   if (!inputCode) {
-    await serveLoginHtml(false, callbackUrl, req, res, undefined, true);
+    await serveLoginHtml({ err: false }, callbackUrl, req, res, undefined, true);
     return false;
   }
 
@@ -271,7 +271,7 @@ export async function validateOtpCode(
     if (await remoteValidateOtpCode(userInfo.userId, logger, inputCode)) {
       return true;
     } else {
-      await serveLoginHtml(false, callbackUrl, req, res, undefined, true);
+      await serveLoginHtml({ err: false }, callbackUrl, req, res, undefined, true);
       return false;
     }
 
@@ -283,7 +283,7 @@ export async function validateOtpCode(
     userInfo.dn, logger, otpLdap.secretAttributeName, client);
   if (!secretInfo?.value) {
     logger.error("fail to find otp secret from ldap");
-    await serveLoginHtml(false, callbackUrl, req, res, undefined, true);
+    await serveLoginHtml({ err: false }, callbackUrl, req, res, undefined, true);
     return false;
   }
   const result = speakeasy.totp.verify({
@@ -311,7 +311,7 @@ export async function validateOtpCode(
     if (isPreOtpCode) {
       return true;
     } else {
-      await serveLoginHtml(false, callbackUrl, req, res, undefined, true);
+      await serveLoginHtml({ err: false }, callbackUrl, req, res, undefined, true);
       return false;
     }
   }
