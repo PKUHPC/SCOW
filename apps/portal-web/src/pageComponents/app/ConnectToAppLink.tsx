@@ -54,7 +54,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
     if (session.appType?.toLowerCase() === "shadowdesk") {
       return api.checkShadowDeskConnectivity({ query: { id: session.user || "",
-        proxyServer: session.proxyServer || "" } }, signal)
+        proxyServer: session.proxyServer || "", connectPath: session.connectPath || "" } }, signal)
         .then((x) => x.ok);
     } else {
 
@@ -179,9 +179,8 @@ export const ConnectTopAppLink: React.FC<Props> = ({
             return prev;
           }, {});
         };
-
         const formData = connect.formData ? interpolateValues(connect.formData) : undefined;
-        const pathname = join(publicConfig.BASE_PATH, "shadowdesk", connect.path);
+        const pathname = join(publicConfig.BASE_PATH, connect.path);
 
         submitForm(pathname, formData);
 

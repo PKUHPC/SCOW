@@ -54,6 +54,7 @@ export interface AppSession {
   port: number | undefined;
   user?: string | undefined;
   proxyServer?: string | undefined;
+  connectPath?: string | undefined;
   appType: string | undefined;
 }
 

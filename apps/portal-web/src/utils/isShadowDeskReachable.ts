@@ -18,7 +18,8 @@
  * @returns 返回一个 Promise，当检查完成时会解析为 boolean
  */
 
-export async function isShadowDeskReachable(id: string,proxyServer: string, timeout: number = 1000): Promise<boolean> {
+export async function isShadowDeskReachable(id: string,proxyServer: string, timeout: number = 1000,
+  connectPath: string): Promise<boolean> {
 
   if (typeof id !== "string" || id === "") {
     throw new TypeError("Specify a `id`");
@@ -41,11 +42,10 @@ export async function isShadowDeskReachable(id: string,proxyServer: string, time
   };
 
   try {
-
+    const path = connectPath?.split("/")?.[1];
     const url =
-     `http://${proxyServer}/shadowdesk/checkConnectivity?id=${id}`;
+     `http://${proxyServer}/${path}/checkConnectivity?id=${id}`;
     const response = await fetchWithTimeout(url, timeout);
-
     if (response.ok) {
       const result = await response.json();
       if (result.ok) {

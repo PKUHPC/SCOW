@@ -36,6 +36,7 @@ export const AppSession = Type.Object({
   user: Type.Optional(Type.String()),
   proxyServer:Type.Optional(Type.String()),
   appType: Type.Optional(Type.String()),
+  connectPath: Type.Optional(Type.String()),
 });
 export type AppSession = Static<typeof AppSession>;
 

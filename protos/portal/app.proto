@@ -122,6 +122,7 @@ message AppSession {
   // app type: the value may be "web", "vnc" and "shadowDesk"
   optional string app_type = 15;
   string job_name = 16;
+  optional string connect_path = 17;
 }
 
 message ListAppSessionsResponse {

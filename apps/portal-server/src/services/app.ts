@@ -18,7 +18,7 @@ import {
 } from "@scow/protos/build/portal/app";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
 import { getClusterOps } from "src/clusterops";
-import { camelToSnakeCase, convertAttributesFixedValue, 
+import { camelToSnakeCase, convertAttributesFixedValue,
   convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
@@ -229,11 +229,11 @@ export const appServiceServer = plugin((server) => {
           switch (item.config.type) {
             case "fixedValue":
               reservedAppAttribute.config = {
-                $case: "fixedValueConfig", 
+                $case: "fixedValueConfig",
                 fixedValueConfig: {
                   type: GetAppMetadataResponse_ReservedConfigType.FIXED_VALUE,
                   fixedValue: convertAttributesFixedValue(item.config) as FixedValue,
-                },   
+                },
               };
               break;
             case "select":
@@ -241,7 +241,7 @@ export const appServiceServer = plugin((server) => {
                 $case: "selectConfig",
                 selectConfig: {
                   type: GetAppMetadataResponse_ReservedConfigType.SELECT,
-                  defaultInput: item.config.defaultValue ? 
+                  defaultInput: item.config.defaultValue ?
                     convertToOneOfValue(item.config.defaultValue) : undefined,
                   options: item.config.select?.map((x) => {
                     return {
@@ -255,7 +255,7 @@ export const appServiceServer = plugin((server) => {
               };
               break;
             default:
-              break; 
+              break;
           }
 
           reservedAppAttributes.push(reservedAppAttribute);
@@ -266,7 +266,7 @@ export const appServiceServer = plugin((server) => {
         app.attributes.forEach((item) => {
           const attributeType = item.type.toUpperCase();
 
-          const defaultInput: AppCustomAttribute["defaultInput"] = 
+          const defaultInput: AppCustomAttribute["defaultInput"] =
             item.defaultValue ? convertToOneOfValue(item.defaultValue) : undefined;
 
           attributes.push({

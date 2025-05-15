@@ -22,6 +22,7 @@ export const CheckShadowDeskConnectivitySchema = typeboxRouteSchema({
   query: Type.Object({
     id: Type.String(),
     proxyServer: Type.String(),
+    connectPath: Type.String(),
   }),
 
   responses: {
@@ -39,9 +40,8 @@ export default /* #__PURE__*/route(CheckShadowDeskConnectivitySchema, async (req
 
   if (!info) { return; }
 
-  const { id, proxyServer } = req.query;
-
-  const reachable = await isShadowDeskReachable(id, proxyServer, TIMEOUT_MS);
+  const { id, proxyServer, connectPath } = req.query;
+  const reachable = await isShadowDeskReachable(id, proxyServer, TIMEOUT_MS, connectPath);
 
   return { 200: { ok: reachable } };
 });

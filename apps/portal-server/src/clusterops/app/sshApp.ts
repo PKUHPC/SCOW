@@ -370,6 +370,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
           let port: number | undefined = undefined;
           let user: string | undefined = undefined;
           let proxyServer: string | undefined = undefined;
+          let connectPath: string | undefined = undefined;
 
           // judge whether the app is ready
           if (runningJobInfo && runningJobInfo.state === "RUNNING") {
@@ -396,6 +397,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
                 if (app.type === AppType.shadowDesk) {
                   if (serverSessionInfo) {
                     proxyServer = serverSessionInfo.PROXYSERVER as string;
+                    connectPath = app.shadowDesk!.connect.path;
                   }
                   else {
                     logger.error("Getting serverSessionInfo.PROXYSERVER failed");
@@ -463,9 +465,9 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
             port,
             user,
             proxyServer,
+            connectPath,
             appType: apps[sessionMetadata.appId]?.type,
           });
-
         }));
 
         return { sessions };
