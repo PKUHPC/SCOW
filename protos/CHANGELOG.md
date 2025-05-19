@@ -1,5 +1,11 @@
 # @scow/grpc-api
 
+## 1.21.0
+
+### Minor Changes
+
+- 02b64da: 调整操作日志中部分行为操作对象的参数
+
 ## 1.20.0
 
 ### Minor Changes

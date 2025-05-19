@@ -1,5 +1,30 @@
 # @scow/mis-web
 
+## 1.8.4
+
+### Patch Changes
+
+- 9090beb: SCOW 中所有 GPU 改为 加速卡
+- 02b64da: 操作日志整体优化
+- 9a0565c: 修改兜底报错,避免出现 undefined 一类提示
+- 4e2446e: 资源管理开启时在租户管理的作业价格表中不可见未授权分区价格信息，
+  同时优化此时获取租户已授权集群和分区报错时的错误信息处理
+- 88fb722: 调整页脚配置方式
+- 7482019: 登录功能增强：一、支持在用户初次登录、密码重置后登录系统时的强制变更密码功能。二、当用户身份鉴别尝试失败次数达到设定的次数后（可自定义），对该用户进行锁定，并且只能由管理员恢复。
+- Updated dependencies [10b1fa2]
+- Updated dependencies [88fb722]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/lib-web@1.4.13
+  - @scow/protos@1.0.24
+  - @scow/lib-auth@1.0.3
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-notification@1.0.8
+  - @scow/lib-scow-resource@0.2.7
+  - @scow/rich-error-model@2.0.1
+
 ## 1.8.3
 
 ### Patch Changes

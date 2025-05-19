@@ -1,5 +1,23 @@
 # @scow/mis-server
 
+## 1.8.4
+
+### Patch Changes
+
+- Updated dependencies [10b1fa2]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/protos@1.0.24
+  - @scow/lib-auth@1.0.3
+  - @scow/lib-hook@1.0.24
+  - @scow/lib-notification@1.0.8
+  - @scow/lib-scow-resource@0.2.7
+  - @scow/lib-server@1.3.13
+  - @scow/lib-scowd@1.1.7
+  - @scow/lib-scheduler-adapter@1.1.22
+
 ## 1.8.3
 
 ## 1.8.2

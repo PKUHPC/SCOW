@@ -1,5 +1,22 @@
 # @scow/resource
 
+## 0.2.10
+
+### Patch Changes
+
+- 1fecca7: 在资源管理相关页面下不展示已删除的账户，在授权/取消授权逻辑中不处理已删除的账户
+- Updated dependencies [10b1fa2]
+- Updated dependencies [88fb722]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/lib-web@1.4.13
+  - @scow/protos@1.0.24
+  - @scow/lib-hook@1.0.24
+  - @scow/lib-server@1.3.13
+  - @scow/lib-scheduler-adapter@1.1.22
+
 ## 0.2.9
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/scowd-protos
 
+## 0.2.6
+
+### Patch Changes
+
+- 1363e71: 实现 SCOWD 的文件解压缩，并在 SCOWD 开启时文件管理下增加解压缩功能
+- f9c0e7b: 将 sumbitJob 和 submitJobAsFile 接口中 ssh 相关替换为 scowd
+
 ## 0.2.5
 
 ### Patch Changes

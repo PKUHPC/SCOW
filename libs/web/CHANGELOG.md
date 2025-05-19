@@ -1,5 +1,17 @@
 # @scow/lib-web
 
+## 1.4.13
+
+### Patch Changes
+
+- 88fb722: 调整页脚配置方式
+- Updated dependencies [10b1fa2]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/protos@1.0.24
+
 ## 1.4.12
 
 ### Patch Changes

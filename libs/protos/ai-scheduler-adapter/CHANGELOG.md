@@ -1,5 +1,11 @@
 # @scow/ai-scheduler-adapter-protos
 
+## 1.1.1
+
+### Patch Changes
+
+- 10b1fa2: 增加 pod log 和监控信息
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,22 @@
 # @scow/notification
 
+## 0.2.10
+
+### Patch Changes
+
+- 9a0565c: 修改兜底报错,避免出现 undefined 一类提示
+- Updated dependencies [10b1fa2]
+- Updated dependencies [88fb722]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/lib-web@1.4.13
+  - @scow/protos@1.0.24
+  - @scow/lib-notification@1.0.8
+  - @scow/lib-server@1.3.13
+  - @scow/lib-scheduler-adapter@1.1.22
+
 ## 0.2.9
 
 ### Patch Changes

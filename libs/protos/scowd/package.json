@@ -1,6 +1,6 @@
 {
   "name": "@scow/scowd-protos",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "",
   "main": "index.js",
   "private": true,

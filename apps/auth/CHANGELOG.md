@@ -1,5 +1,15 @@
 # @scow/auth
 
+## 1.8.4
+
+### Patch Changes
+
+- 7482019: 登录功能增强：一、支持在用户初次登录、密码重置后登录系统时的强制变更密码功能。二、当用户身份鉴别尝试失败次数达到设定的次数后（可自定义），对该用户进行锁定，并且只能由管理员恢复。
+- Updated dependencies [10b1fa2]
+- Updated dependencies [0904fad]
+  - @scow/config@1.7.1
+  - @scow/lib-server@1.3.13
+
 ## 1.8.3
 
 ## 1.8.2

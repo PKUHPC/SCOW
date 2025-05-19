@@ -1,5 +1,14 @@
 # @scow/cli
 
+## 1.8.4
+
+### Patch Changes
+
+- b5aa294: ai 文件操作接入 scowd
+- Updated dependencies [10b1fa2]
+- Updated dependencies [0904fad]
+  - @scow/config@1.7.1
+
 ## 1.8.3
 
 ## 1.8.2

@@ -1,5 +1,14 @@
 # @scow/lib-operation-log
 
+## 2.1.18
+
+### Patch Changes
+
+- 7482019: 登录功能增强：一、支持在用户初次登录、密码重置后登录系统时的强制变更密码功能。二、当用户身份鉴别尝试失败次数达到设定的次数后（可自定义），对该用户进行锁定，并且只能由管理员恢复。
+- Updated dependencies [59fb3b4]
+- Updated dependencies [7482019]
+  - @scow/protos@1.0.24
+
 ## 2.1.17
 
 ### Patch Changes

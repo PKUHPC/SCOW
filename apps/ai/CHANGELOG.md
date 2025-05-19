@@ -1,5 +1,33 @@
 # @scow/ai
 
+## 0.3.4
+
+### Patch Changes
+
+- 10b1fa2: 获取作业 podId && 调度和启动事件信息，打印日志 && 完善 ai 推理
+- 9090beb: SCOW 中所有 GPU 改为 加速卡
+- 02b64da: 操作日志整体优化
+- 9d23c22: ai 导航栏与 mis 样式统一
+- b5aa294: ai 文件操作接入 scowd
+- 88fb722: 调整页脚配置方式
+- Updated dependencies [10b1fa2]
+- Updated dependencies [10b1fa2]
+- Updated dependencies [88fb722]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/ai-scheduler-adapter-protos@1.1.1
+  - @scow/lib-web@1.4.13
+  - @scow/protos@1.0.24
+  - @scow/lib-auth@1.0.3
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-scow-resource@0.2.7
+  - @scow/lib-server@1.3.13
+  - @scow/lib-scowd@1.1.7
+  - @scow/rich-error-model@2.0.1
+  - @scow/lib-scheduler-adapter@1.1.22
+
 ## 0.3.3
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @scow/portal-web
 
+## 1.8.4
+
+### Patch Changes
+
+- 1363e71: 实现 SCOWD 的文件解压缩，并在 SCOWD 开启时文件管理下增加解压缩功能
+- 9090beb: SCOW 中所有 GPU 改为 加速卡
+- 02b64da: 操作日志整体优化
+- 68a8053: 修复文件编辑器主题色未更跟随 scow 黑暗模式变化的问题和国际化问题
+- 9a0565c: 修改兜底报错,避免出现 undefined 一类提示
+- 88fb722: 调整页脚配置方式
+- 59fb3b4: 交互式应用调用 shadoedesk 接口更改为动态可配置，支持配置多个 shadowdesk
+- Updated dependencies [10b1fa2]
+- Updated dependencies [88fb722]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/lib-web@1.4.13
+  - @scow/protos@1.0.24
+  - @scow/lib-auth@1.0.3
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-notification@1.0.8
+  - @scow/lib-scow-resource@0.2.7
+  - @scow/rich-error-model@2.0.1
+
 ## 1.8.3
 
 ### Patch Changes

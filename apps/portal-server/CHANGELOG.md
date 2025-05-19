@@ -1,5 +1,27 @@
 # @scow/portal-server
 
+## 1.8.4
+
+### Patch Changes
+
+- 1363e71: 实现 SCOWD 的文件解压缩，并在 SCOWD 开启时文件管理下增加解压缩功能
+- 59fb3b4: 交互式应用调用 shadoedesk 接口更改为动态可配置，支持配置多个 shadowdesk
+- f9c0e7b: 将 sumbitJob 和 submitJobAsFile 接口中 ssh 相关替换为 scowd
+- Updated dependencies [10b1fa2]
+- Updated dependencies [1363e71]
+- Updated dependencies [59fb3b4]
+- Updated dependencies [0904fad]
+- Updated dependencies [f9c0e7b]
+- Updated dependencies [7482019]
+  - @scow/config@1.7.1
+  - @scow/scowd-protos@0.2.6
+  - @scow/protos@1.0.24
+  - @scow/lib-scow-resource@0.2.7
+  - @scow/lib-server@1.3.13
+  - @scow/lib-scowd@1.1.7
+  - @scow/rich-error-model@2.0.1
+  - @scow/lib-scheduler-adapter@1.1.22
+
 ## 1.8.3
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/config
 
+## 1.7.1
+
+### Patch Changes
+
+- 10b1fa2: 获取作业 podId && 调度和启动事件信息，打印日志 && 完善 ai 推理
+- 0904fad: 修复了在 ARM 架构下构建镜像时触发条件不正确的问题，确保 x86 和 ARM 架构下的镜像都能正确构建
+
 ## 1.7.0
 
 ### Minor Changes
