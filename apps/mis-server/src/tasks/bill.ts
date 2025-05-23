@@ -39,7 +39,7 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
     return;
   }
 
-  const allUsers = await em.find(User,{});
+  const allUsers = await em.find(User, {}, { fields: ["userId", "name"]});
 
   const allUsersIdNameObj: Record<string, string> =
     allUsers.reduce((userObj: Record<string, string>, user) => {
@@ -64,8 +64,19 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
 
   logger.info(`Generating ${type} bills for term ${term}, start: ${startTimestamp}, end: ${endTimestamp}`);
 
-  const accounts = await em.find(Account, {}, { populate: ["tenant", "users", "users.user"]});
-  const bills = await em.find(AccountBill, { term: term });
+  const accounts = await em.find(Account, {}, {
+    populate: ["tenant", "users", "users.user"],
+    fields: [
+      "accountName",
+      "tenant",
+      "users",
+      "users.user",
+      "users.role",
+      "users.user.name",
+      "users.user.userId",
+    ],
+  });
+  const bills = await em.find(AccountBill, { term: term }, { fields: ["accountName"]});
   const alreadyExistsAccounts = new Set(bills.map((bill) => bill.accountName));
 
   for (const account of accounts) {
@@ -88,6 +99,8 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
       const accountChargesRecord = await em.find(ChargeRecord, {
         accountName: account.accountName,
         time: { $gte: startTimestamp, $lte: endTimestamp },
+      }, {
+        fields: ["amount", "userId", "type", "time"],
       });
 
       const chargesRecord = accountChargesRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]))
@@ -98,6 +111,8 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
         type: misConfig.changeJobPriceType,
         accountName: account.accountName,
         time: { $gte: startTimestamp, $lte: endTimestamp },
+      }, {
+        fields: ["amount", "comment", "time"],
       });
 
 
@@ -127,7 +142,7 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
               .reduce((typeObj: Record<string, Decimal>, record) => {
                 // 由于scow 允许增加type=""的消费记录，此处增加一个other的类型
                 typeObj[record.type || misConfig.bill!.otherChargeTypeText] =
-                (typeObj[record.type || misConfig.bill!.otherChargeTypeText] || Decimal(0)).plus(record.amount);
+                  (typeObj[record.type || misConfig.bill!.otherChargeTypeText] || Decimal(0)).plus(record.amount);
                 return typeObj;
               }, {});
 
@@ -139,20 +154,20 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
           chargesRecord.reduce((userIdObj: Record<string, Decimal>, record) => {
 
             userIdObj[record.userId || ownerId] =
-            (userIdObj[record.userId || ownerId] || Decimal(0)).plus(record.amount);
+              (userIdObj[record.userId || ownerId] || Decimal(0)).plus(record.amount);
 
             return userIdObj;
           }, {});
 
         // 根据费用类型进行归并
         const accountTypeAmountObj: Record<string, Decimal> =
-            chargesRecord.reduce((typeObj: Record<string, Decimal>, record) => {
+          chargesRecord.reduce((typeObj: Record<string, Decimal>, record) => {
 
-              typeObj[record.type || misConfig.bill!.otherChargeTypeText] =
-                (typeObj[record.type || misConfig.bill!.otherChargeTypeText] || Decimal(0)).plus(record.amount);
+            typeObj[record.type || misConfig.bill!.otherChargeTypeText] =
+              (typeObj[record.type || misConfig.bill!.otherChargeTypeText] || Decimal(0)).plus(record.amount);
 
-              return typeObj;
-            }, {});
+            return typeObj;
+          }, {});
 
         let accountAmount = Object.values(userIdAmountObj)
           .reduce((sum, amount) => sum.plus(amount), Decimal(0));
@@ -163,13 +178,13 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
           const payAmount = payRecord.reduce((sum, r) => sum.plus(r.amount), Decimal(0));
 
           const userIdPayAmountObj: Record<string, Decimal> =
-          payRecord.reduce((userIdObj: Record<string, Decimal>, record) => {
-            // 提取存在充值记录中的userId，如果没有，就计在账户拥有者上
-            const jobUserId = record.comment?.split("job user ")[1] || ownerId;
-            userIdObj[jobUserId] =
-            (userIdObj[jobUserId] || Decimal(0)).plus(record.amount);
-            return userIdObj;
-          }, {});
+            payRecord.reduce((userIdObj: Record<string, Decimal>, record) => {
+              // 提取存在充值记录中的userId，如果没有，就计在账户拥有者上
+              const jobUserId = record.comment?.split("job user ")[1] || ownerId;
+              userIdObj[jobUserId] =
+                (userIdObj[jobUserId] || Decimal(0)).plus(record.amount);
+              return userIdObj;
+            }, {});
 
           // 将退费金额计入个人用户的消费记录
           const jobRefundText = misConfig.changeJobPriceType + "2";
@@ -194,7 +209,7 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
           tenantName: account.tenant.$.name,
           accountName: account.accountName,
           accountOwnerId: ownerId,
-          accountOwnerName:  ownerName,
+          accountOwnerName: ownerName,
           term,
           type,
           amount: accountAmount,
@@ -208,7 +223,7 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
           // 将属性 ${misConfig.changeJobPriceType} 改为 ${misConfig.changeJobPriceType}1
           if (userChagresRecordTypeObj[user][misConfig.changeJobPriceType]) {
             userChagresRecordTypeObj[user][misConfig.changeJobPriceType + "1"] =
-            userChagresRecordTypeObj[user][misConfig.changeJobPriceType];
+              userChagresRecordTypeObj[user][misConfig.changeJobPriceType];
 
             delete userChagresRecordTypeObj[user][misConfig.changeJobPriceType];
           }
@@ -258,5 +273,22 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
   }
 
   logger.info(`Finished generating ${type} bills for term ${term}`);
+}
+
+
+export async function generateCustomTermBills(customTerms: string[],
+  em: SqlEntityManager<MySqlDriver>, logger: Logger) {
+  for (const term of customTerms) {
+    const yearOnlyRegex = /^\d{4}$/; // 匹配 YYYY 格式
+    const yearMonthRegex = /^\d{6}$/; // 匹配 YYYYMM 格式
+
+    if (yearOnlyRegex.test(term)) {
+      await generateBill(em, BillType.YEARLY, logger, term);
+    }
+    if (yearMonthRegex.test(term)) {
+      await generateBill(em, BillType.MONTHLY, logger, term);
+    }
+  }
+
 }
 

@@ -14,7 +14,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import cron from "node-cron";
 import { misConfig } from "src/config/mis";
 import { BillType } from "src/entities/AccountBill";
-import { generateBill } from "src/tasks/bill";
+import { generateBill, generateCustomTermBills } from "src/tasks/bill";
 
 export interface BillPlugin {
   yearly: {
@@ -79,16 +79,6 @@ export const billPlugin = plugin(async (f) => {
   } as unknown) as BillPlugin["monthly"]));
 
   if (misConfig.bill.customTerms) {
-    misConfig.bill.customTerms.forEach((term) => {
-      const yearOnlyRegex = /^\d{4}$/; // 匹配 YYYY 格式
-      const yearMonthRegex = /^\d{6}$/; // 匹配 YYYYMM 格式
-
-      if (yearOnlyRegex.test(term)) {
-        void generateBill(f.ext.orm.em.fork(), BillType.YEARLY, logger, term);
-      }
-      if (yearMonthRegex.test(term)) {
-        void generateBill(f.ext.orm.em.fork(), BillType.MONTHLY, logger, term);
-      }
-    });
+    void generateCustomTermBills(misConfig.bill.customTerms, f.ext.orm.em.fork(), logger);
   }
 });
