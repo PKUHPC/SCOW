@@ -695,13 +695,13 @@ export const LaunchAppForm = (props: Props) => {
 
 
   useEffect(() => {
-    setCurrentPartitionInfo(clusterInfo?.partitions[0]);
     const inputParams = trainJobInput || createAppParams;
     if (!inputParams) {
       form.setFieldsValue({
         partition: clusterInfo?.partitions[0]?.name,
         appJobName: genAppJobName(clusterId, appName ?? "t"),
       });
+      setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
     } else {
       const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount } = inputParams;
       const workingDir = "workingDirectory" in inputParams ? inputParams.workingDirectory : undefined;
@@ -730,6 +730,11 @@ export const LaunchAppForm = (props: Props) => {
         workerNodes,
       });
 
+      if (clusterInfo?.partitions && inputParams.partition) {
+        setCurrentPartitionInfo(clusterInfo.partitions.find((p) => p.name === inputParams.partition));
+      } else {
+        setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
+      }
     }
 
   }, [createAppParams, trainJobInput, clusterInfo]);

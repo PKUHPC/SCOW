@@ -348,13 +348,13 @@ export const LaunchInferenceJobForm = (props: Props) => {
 
 
   useEffect(() => {
-    setCurrentPartitionInfo(clusterInfo?.partitions[0]);
     const inputParams = InferenceJobInput;
     if (!inputParams) {
       form.setFieldsValue({
         partition: clusterInfo?.partitions[0]?.name,
         appJobName: genAppJobName(clusterId, "i"),
       });
+      setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
     } else {
       const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
         containerServicePort } = inputParams;
@@ -371,8 +371,13 @@ export const LaunchInferenceJobForm = (props: Props) => {
         command,
         containerServicePort,
       });
-    }
 
+      if (clusterInfo?.partitions && inputParams.partition) {
+        setCurrentPartitionInfo(clusterInfo.partitions.find((p) => p.name === inputParams.partition));
+      } else {
+        setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
+      }
+    }
   }, [InferenceJobInput, clusterInfo]);
 
   const inferenceJobMutation = trpc.jobs.submitInferJob.useMutation({
