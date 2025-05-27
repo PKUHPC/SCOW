@@ -10,8 +10,9 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { Money } from "@scow/protos/build/common/money";
-import { App, Form, Input, InputNumber, Modal } from "antd";
+import { App, Form, Input, InputNumber, Modal, Popover, Space } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -113,7 +114,18 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, targ
         <Form.Item label={t(p("currentPrice"))}>
           <strong>{accountPrices.toString()}</strong>
         </Form.Item>
-        <Form.Item label={`${t(p("newJob"))}${text[target]}`} name="price" rules={[{ required: true }]}>
+
+        <Form.Item
+          label={(
+            <Space>{`${t(p("newJob"))}${text[target]}`}
+              <Popover placement="right" content={<div style={{ maxWidth: "320px" }}>{t(p("annotation"))}</div>}>
+                <QuestionCircleOutlined />
+              </Popover>
+            </Space>
+          )}
+          name="price"
+          rules={[{ required: true }]}
+        >
           <InputNumber
             min={0}
             step={1 / Math.pow(10, publicConfig.JOB_CHARGE_DECIMAL_PRECISION)}

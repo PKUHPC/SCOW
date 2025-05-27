@@ -28,8 +28,8 @@ import { UserBill } from "src/entities/UserBill";
 
 dayjs.extend(timezone);
 
-// 为避免引入退费金额这一新的理解逻辑，将退费的金额视为“作业费用更改2”，存入账单数据库中为：${misConfig.changeJobPriceType}2
-// 而增加的叫“作业费用更改1”，存入账单数据库中为${misConfig.changeJobPriceType}1
+
+// 所有的作业费用更改产生的费用变化，合并为一个值，存入账单数据库中为${misConfig.changeJobPriceType}
 
 export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: BillType,
   logger: Logger, specifiedTerm?: string) {
@@ -173,7 +173,8 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
           .reduce((sum, amount) => sum.plus(amount), Decimal(0));
 
         // 如果有充值记录，那么就要记录退费，充值记录中部分数据未记录用户id，这部分记在账户拥有者上，
-        // 需要加默认赋值0，因为本月可能没有一分钱消费，但是调整了作业费用并进行了充值
+        // 需要加默认赋值0，因为本月可能没有一分钱消费，但是调整了作业费用并进行了充值，
+        // 临时使用属性名：jobRefundText
         if (payRecord.length) {
           const payAmount = payRecord.reduce((sum, r) => sum.plus(r.amount), Decimal(0));
 
@@ -187,21 +188,24 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
             }, {});
 
           // 将退费金额计入个人用户的消费记录
-          const jobRefundText = misConfig.changeJobPriceType + "2";
           for (const key in userIdPayAmountObj) {
-            userChagresRecordTypeObj[key][jobRefundText] = userIdPayAmountObj[key];
+            userChagresRecordTypeObj[key].jobRefund = userIdPayAmountObj[key];
             userIdAmountObj[key] = (userIdAmountObj[key] || Decimal(0)).minus(userIdPayAmountObj[key]);
           }
 
           accountAmount = accountAmount.minus(payAmount);
 
-          accountTypeAmountObj[jobRefundText] = payAmount;
+          accountTypeAmountObj.jobRefund = payAmount;
         }
 
-        // 将属性 ${misConfig.changeJobPriceType} 改为 ${misConfig.changeJobPriceType}1
-        if (accountTypeAmountObj[misConfig.changeJobPriceType]) {
-          accountTypeAmountObj[misConfig.changeJobPriceType + "1"] = accountTypeAmountObj[misConfig.changeJobPriceType];
-          delete accountTypeAmountObj[misConfig.changeJobPriceType];
+        // 将退费金额合并到作业费用更改中
+        if (accountTypeAmountObj.jobRefund) {
+          accountTypeAmountObj[misConfig.changeJobPriceType] =
+          (accountTypeAmountObj[misConfig.changeJobPriceType] || Decimal(0))
+            .minus(accountTypeAmountObj.jobRefund);
+
+          // 删掉退费金额这个属性
+          delete accountTypeAmountObj.jobRefund;
         }
 
         // 插入账户账单数据
@@ -220,12 +224,14 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
         // 插入每个用户的支出情况，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
         const userBills = Object.keys(userIdAmountObj).map((user) => {
 
-          // 将属性 ${misConfig.changeJobPriceType} 改为 ${misConfig.changeJobPriceType}1
-          if (userChagresRecordTypeObj[user][misConfig.changeJobPriceType]) {
-            userChagresRecordTypeObj[user][misConfig.changeJobPriceType + "1"] =
-              userChagresRecordTypeObj[user][misConfig.changeJobPriceType];
+          // 将退费金额合并到作业费用更改中
+          if (userChagresRecordTypeObj[user].jobRefund) {
+            userChagresRecordTypeObj[user][misConfig.changeJobPriceType] =
+              (userChagresRecordTypeObj[user][misConfig.changeJobPriceType] || Decimal(0))
+                .minus(userChagresRecordTypeObj[user].jobRefund);
 
-            delete userChagresRecordTypeObj[user][misConfig.changeJobPriceType];
+            // 删掉退费金额这个属性
+            delete userChagresRecordTypeObj[user].jobRefund;
           }
 
           return new UserBill({

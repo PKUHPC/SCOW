@@ -251,30 +251,28 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     return [...common, ...typeOptions];
   }, [t, searchType]);
 
+  const handleSearch = async () => {
+    const { userIdsOrNames, type, term, accountNames } = await form.validateFields();
+    setQuery({ userIdsOrNames, type, term, accountNames: selectedNames ?? accountNames });
+    setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+  };
+
   return (
     <div>
-      <Space style={{ marginBottom: "20px" }}>
-        <ExclamationCircleOutlined />
-        <span>
-          {t(p("explanation"),[publicConfig.CHANGE_JOB_PRICE_TYPE,
-            publicConfig.CHANGE_JOB_PRICE_TYPE, publicConfig.CHANGE_JOB_PRICE_TYPE])}
-        </span>
-      </Space>
 
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
           form={form}
           initialValues={query}
-          onFinish={async () => {
-            const { userIdsOrNames, type, term, accountNames } = await form.validateFields();
-            setQuery({ userIdsOrNames, type, term, accountNames: selectedNames ?? accountNames });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-          }}
+          onFinish={handleSearch}
         >
 
           <Form.Item name="type" label={t(p("statisticalCycle"))}>
-            <Radio.Group buttonStyle="solid">
+            <Radio.Group
+              buttonStyle="solid"
+              onChange={handleSearch}
+            >
               <Radio.Button value={BillType.SUMMARY}>{t(p("summary"))}</Radio.Button>
               <Radio.Button value={BillType.MONTHLY}>{t(p("month"))}</Radio.Button>
               <Radio.Button value={BillType.YEARLY}>{t(p("year"))}</Radio.Button>

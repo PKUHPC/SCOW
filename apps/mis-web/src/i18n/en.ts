@@ -706,7 +706,6 @@ export default {
         editUserProfile: "Edit User Information",
         editUserProfileError: "Failed to Edit User Information",
         editUserProfileSuccess: "Successfully Edited User Information",
-
       },
       jobPriceChangeModal: {
         tenantPrice: "Tenant Billing",
@@ -718,6 +717,10 @@ export default {
         modifyButton: "Modify ",
         currentPrice: "Current tenant billing for job",
         job: "Jobs",
+        annotation:"When the new billing amount exceeds the current billing amount, "
+        + "the difference will be deducted and can be viewed in the account's consumption records;"
+        + "when the new billing amount is less than the current billing amount, "
+        + "the difference will be refunded and can be viewed in the account's top-up records.",
       },
       tenantSelector: {
         fresh: "Refresh Tenant List",

@@ -19,6 +19,7 @@ import { Encoding } from "src/models/exportFile";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { BillInfo } from "src/pages/api/finance/bill";
+import { publicConfig } from "src/utils/config";
 import { moneyNumberToString, moneyToString } from "src/utils/money";
 
 export interface Props {
@@ -54,7 +55,6 @@ export const UserBillModal: React.FC<Props> = (
         return moneyToString(record.amount);
       },
     },
-
   ];
 
   types.forEach((i) => {

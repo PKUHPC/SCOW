@@ -717,6 +717,10 @@ export default {
         modifyButton: "修改",
         currentPrice: "当前作业租户计费",
         job: "作业",
+        annotation: "新计费 > 当前计费时需要补扣差额部分，可在账户消费记录中查看；新计费 < 当前计费时会退款差额部分，可在账户充值记录中查看",
+
+
+
       },
       tenantSelector:{
         fresh:"刷新租户列表",
