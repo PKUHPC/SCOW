@@ -1,6 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { getLoginNode } from "@scow/config/build/cluster";
-import { getScowdClient as getClient, ScowdClient } from "@scow/lib-scowd/build/client";
+import { getScowdClient as getClient, SafeConnectTransportOptions, ScowdClient } from "@scow/lib-scowd/build/client";
 import { createScowdCertificates } from "@scow/lib-scowd/build/ssl";
 import { removePort } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
@@ -8,6 +8,8 @@ import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { scowdClientNotFound } from "src/server/utils/errors";
 import { logger } from "src/server/utils/logger";
+import { Logger } from "ts-log";
+
 
 export const certificates = createScowdCertificates(config);
 
@@ -27,28 +29,23 @@ export function getLoginNodeScowdUrl(cluster: string, host: string): string | un
   return generateScowdUrl(address, scowdPort);
 }
 
-const scowdClientForClusters = Object.entries(clusters).reduce((prev, [cluster]) => {
-  const clusterInfo = clusters[cluster];
-  const loginNode = getLoginNode(clusterInfo?.loginNodes?.[0]);
-  const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode.address);
-  if (!clusterInfo.scowd?.enabled || !loginNode.scowdPort || !scowdUrl) {
-    prev[cluster] = undefined;
-  } else {
-    const client = getClient(scowdUrl, certificates);
-    prev[cluster] = client;
-  }
-  return prev;
-}, {} as Record<string, ScowdClient | undefined>);
 
 // Cache for ScowdClient instances
 const clientCache = new Map<string, ScowdClient>();
-export const getScowdClient = (cluster: string) => {
+export const getScowdClient = (cluster: string,connectTransportOptions?: SafeConnectTransportOptions) => {
   if (clientCache.has(cluster)) {
     return clientCache.get(cluster)!;
   }
 
-  const client = scowdClientForClusters[cluster];
-  if (!client) { throw scowdClientNotFound(cluster); }
+  const clusterInfo = clusters[cluster];
+  const loginNode = getLoginNode(clusterInfo?.loginNodes?.[0]);
+  const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode.address);
+
+  if (!clusterInfo.scowd?.enabled || !loginNode.scowdPort || !scowdUrl) {
+    throw scowdClientNotFound(cluster);
+  }
+
+  const client = getClient(scowdUrl, certificates, connectTransportOptions);
   clientCache.set(cluster, client);
 
   return client;
@@ -118,4 +115,14 @@ export function mapConnectErrorToTRPCError(err: any): TRPCError {
     code: "INTERNAL_SERVER_ERROR",
     message: "An unknown error occurred.",
   });
+}
+
+
+export async function wrap<T>(p: Promise<T>,logger: Logger): Promise<T> {
+  try {
+    return await p;
+  } catch (err: any) {
+    logger.error(`Error in accessing to scowd (mapped to TRPCError),err:${err}`);
+    throw mapConnectErrorToTRPCError(err);
+  }
 }

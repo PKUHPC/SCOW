@@ -1,0 +1,108 @@
+import { AppConfigSchema } from "@scow/config/build/appForAi";
+import { TRPCError } from "@trpc/server";
+import { clusters } from "src/server/config/clusters";
+import { AlgorithmVersion } from "src/server/entities/AlgorithmVersion";
+import { DatasetVersion } from "src/server/entities/DatasetVersion";
+import { Image as ImageEntity } from "src/server/entities/Image";
+import { ModelVersion } from "src/server/entities/ModelVersion";
+import { AppSession, CreateAppInput } from "src/server/trpc/route/jobs/apps";
+import { clusterNotFound } from "src/server/utils/errors";
+import { getClusterLoginNode } from "src/server/utils/ssh";
+import { Logger } from "ts-log";
+
+import { InferenceJobInput } from "../../route/jobs/infer";
+import { TrainJobInput } from "../../route/jobs/jobs";
+import { ScowdJobDriver } from "./scowdJobDriver";
+import { SshJobDriver } from "./sshJobDriver";
+
+export interface CreateAppExtraParams {
+  isAlgorithmPrivates: boolean[];
+  isDatasetPrivates: boolean[];
+  isModelPrivates: boolean[];
+  algorithmVersions: AlgorithmVersion[];
+  datasetVersions: DatasetVersion[];
+  modelVersions: ModelVersion[];
+  app: AppConfigSchema;
+  proxyBasePath: string;
+  existImage: ImageEntity | undefined
+}
+
+export interface ConnectToAppResponse {
+  appId: string;
+  host: string;
+  port: number;
+  password: string;
+}
+
+export interface SubmitInferJobExtraParams {
+  isModelPrivates: boolean[];
+  modelVersions: ModelVersion[];
+  existImage: ImageEntity | undefined
+}
+
+export interface SubmitTrainJobExtraParams {
+  isAlgorithmPrivates: boolean[];
+  isDatasetPrivates: boolean[];
+  isModelPrivates: boolean[];
+  algorithmVersions: AlgorithmVersion[];
+  datasetVersions: DatasetVersion[];
+  modelVersions: ModelVersion[];
+  existImage: ImageEntity | undefined
+}
+
+export interface JobDriver {
+  createApp(inputParams: CreateAppInput,extraParams: CreateAppExtraParams): Promise<number>;
+  getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput>;
+  getAiJobs(clusterId: string, isRunning: boolean): Promise<AppSession[]>;
+  connectToApp(clusterId: string, sessionId: string): Promise<ConnectToAppResponse>;
+  submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number>;
+  getInferParams(sessionId: string, jobId: number): Promise<InferenceJobInput>;
+  submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number>;
+  getTrainParams(sessionId: string, jobId: number): Promise<TrainJobInput>;
+}
+
+function createJobDriver(opts: {
+  clusterId: string;
+  userId: string;
+  logger: Logger;
+}): JobDriver {
+  const { clusterId, userId, logger } = opts;
+  const cluster = clusters[clusterId];
+  const host = getClusterLoginNode(clusterId);
+
+  if (!cluster) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
+  }
+
+  if (!host) { throw clusterNotFound(clusterId); }
+
+  if (cluster.scowd?.enabled) {
+    return new ScowdJobDriver(clusterId, userId, logger);
+  }
+
+  return new SshJobDriver(host, userId, logger);
+}
+
+
+export async function withJobDriver<T>(
+  params: {
+    clusterId: string;
+    user: string;
+  },
+  handler: (driver: JobDriver) => Promise<T>,
+  logger: Logger,
+) {
+
+  const driver = createJobDriver({
+    clusterId: params.clusterId,
+    userId: params.user,
+    logger,
+  });
+
+  try {
+    return await handler(driver);
+  } catch (err) {
+    logger.error("Error in job operation, executing handler", err);
+    throw err;
+  }
+}

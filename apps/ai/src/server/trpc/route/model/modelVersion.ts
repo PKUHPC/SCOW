@@ -11,30 +11,29 @@
  */
 
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { getUserHomedir, sftpExists } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
 import { SharedStatus } from "src/models/common";
+import { clusters } from "src/server/config/clusters";
 import { Model } from "src/server/entities/Model";
 import { ModelVersion } from "src/server/entities/ModelVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCopyFilePath, checkCreateResourcePath } from "src/server/utils/checkPathPermission";
-import { chmod } from "src/server/utils/chmod";
 import { checkClusterAvailable } from "src/server/utils/clusters";
-import { copyFile } from "src/server/utils/copyFile";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { checkSharePermission, getUpdatedSharedPath, SHARED_TARGET, shareFileOrDir, unShareFileOrDir }
+import { SHARED_TARGET }
   from "src/server/utils/share";
-import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
+import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
+import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
 
 export const VersionListSchema = z.object({
@@ -200,18 +199,27 @@ export const createModelVersion = procedure
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
-    // 检查目录是否存在
+
     const host = getClusterLoginNode(model.clusterId);
 
     if (!host) { throw clusterNotFound(model.clusterId); }
+    // 检查目录是否存在
+    const isPathExisted = await withFileDriver(
+      { clusterId: model.clusterId, user: user.identityId },
+      async (driver) => await driver.exists(input.path),
+      logger,
+    );
+    if (!isPathExisted) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exist` });
+    }
 
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      const sftp = await ssh.requestSFTP();
-
-      if (!(await sftpExists(sftp, input.path))) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exists` });
-      }
-    });
+    // 检查用户是否有读写权限
+    await driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCreateResourcePath(input.path);
+    }, logger);
 
     const modelVersion = new ModelVersion({ ...input, privatePath: input.path, model: model });
     await em.persistAndFlush(modelVersion);
@@ -294,11 +302,12 @@ export const updateModelVersion = procedure
     // 更新已分享目录下的版本路径名称
     if (needUpdateSharedPath) {
       // 获取更新后的已分享版本路径
-      const newVersionSharedPath = await getUpdatedSharedPath({
-        clusterId: model.clusterId,
-        newName: versionName,
-        oldPath: dirname(modelVersion.path),
-      });
+      const newVersionSharedPath = await driver.withFileDriver({
+        clusterId:model.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(versionName,dirname(modelVersion.path));
+      }, logger);
 
       const baseFolderName = basename(modelVersion.path);
       const newPath = join(newVersionSharedPath, baseFolderName);
@@ -382,17 +391,12 @@ export const deleteModelVersion = procedure
       checkClusterAvailable(currentClusterIds, model.clusterId);
 
       try {
-        const host = getClusterLoginNode(model.clusterId);
-        if (!host) { throw clusterNotFound(model.clusterId); }
-
-        await sshConnect(host, user.identityId, logger, async (ssh) => {
-          await checkSharePermission({
-            ssh,
-            logger,
-            sourcePath: modelVersion.privatePath,
-            userId: user.identityId,
-          });
-        });
+        await driver.withFileDriver({
+          clusterId:model.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.checkSharePermission(modelVersion.privatePath);
+        }, logger);
 
         const pathToUnshare
         = model.versions.filter((v) => (v.id !== input.versionId && v.sharedStatus === SharedStatus.SHARED))
@@ -401,10 +405,13 @@ export const deleteModelVersion = procedure
           dirname(modelVersion.path)
           // 除了此版本以外没有其他已分享的版本则取消分享整个模型
           : dirname(dirname(modelVersion.path));
-        await unShareFileOrDir({
-          host,
-          sharedPath: pathToUnshare,
-        });
+
+        await driver.withFileDriver({
+          clusterId:model.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.unShareFileOrDir(pathToUnshare);
+        }, logger);
       } catch (e) {
         logger.error(`ssh failure occured when unshare modelVersion ${input.versionId} of model ${input.modelId}`, e);
       }
@@ -475,16 +482,21 @@ export const shareModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
 
-    const host = getClusterLoginNode(model.clusterId);
-    if (!host) { throw clusterNotFound(model.clusterId); }
+    await driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(modelVersion.privatePath);
+    }, logger);
 
-    const homeTopDir = await sshConnect(host, user.identityId, logger, async (ssh) => {
-      // 确认是否具有分享权限
-      await checkSharePermission({ ssh, logger, sourcePath: modelVersion.privatePath, userId: user.identityId });
-      // 获取分享路径的上级路径
-      const userHomeDir = await getUserHomedir(ssh, user.identityId, logger);
-      return dirname(dirname(userHomeDir));
-    });
+
+    const homeDir = await driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      return await fileDriver.getHomeDirectory();
+    }, logger);
+    const homeTopDir = dirname(dirname(homeDir));
 
     modelVersion.sharedStatus = SharedStatus.SHARING;
     em.persist([modelVersion]);
@@ -520,15 +532,18 @@ export const shareModelVersion = procedure
       await em.persistAndFlush([modelVersion]);
     };
 
-    shareFileOrDir({
-      clusterId: model.clusterId,
-      sourceFilePath:modelVersion.privatePath,
-      userId: user.identityId,
-      sharedTarget: SHARED_TARGET.MODEL,
-      targetName: model.name,
-      targetSubName: modelVersion.versionName,
-      homeTopDir,
-    }, successCallback, failureCallback);
+    driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.shareFileOrDir({
+        sourceFilePath:modelVersion.privatePath ,
+        sharedTarget:SHARED_TARGET.MODEL,
+        targetName:model.name,
+        targetSubName:modelVersion.versionName,
+        homeTopDir,
+      }, successCallback, failureCallback);
+    }, logger);
 
     return;
   });
@@ -568,17 +583,12 @@ export const unShareModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
 
-    const host = getClusterLoginNode(model.clusterId);
-    if (!host) { throw clusterNotFound(model.clusterId); }
-
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      await checkSharePermission({
-        ssh,
-        logger,
-        sourcePath: modelVersion.privatePath,
-        userId: user.identityId,
-      });
-    });
+    await driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(modelVersion.privatePath);
+    }, logger);
 
     modelVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([modelVersion]);
@@ -616,14 +626,19 @@ export const unShareModelVersion = procedure
       await em.persistAndFlush([modelVersion]);
     };
 
-    unShareFileOrDir({
-      host,
-      sharedPath: model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-        // 如果还有其他的已分享版本则只取消此版本的分享
-        dirname(modelVersion.path)
-        // 如果没有其他的已分享版本则取消整个算法的分享
-        : dirname(dirname(modelVersion.path)),
-    }, successCallback, failureCallback);
+    const sharedModelVersionPath =
+    model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+    // 如果还有其他的已分享版本则只取消此版本的分享
+      dirname(modelVersion.path)
+    // 如果没有其他的已分享版本则取消整个算法的分享
+      : dirname(dirname(modelVersion.path));
+
+    driver.withFileDriver({
+      clusterId:model.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.unShareFileOrDir(sharedModelVersionPath, successCallback, failureCallback);
+    }, logger);
 
     return;
   });
@@ -700,14 +715,12 @@ export const copyPublicModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, modelVersion.model.$.clusterId);
     // 3. 检查用户是否能将源模型拷贝至目标目录
-    const host = getClusterLoginNode(modelVersion.model.$.clusterId);
-
-    if (!host) { throw clusterNotFound(modelVersion.model.$.clusterId); }
-
-    await checkCreateResourcePath({ host, userIdentityId: user.identityId, toPath: input.path });
-
-    await checkCopyFilePath({ host, userIdentityId: user.identityId,
-      toPath: input.path, fileName: path.basename(modelVersion.path) });
+    await driver.withFileDriver({
+      clusterId:modelVersion.model.$.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCopyFilePath(input.path,path.basename(modelVersion.path));
+    }, logger);
 
     // 3. 写入数据
     const newModel = new Model({
@@ -729,10 +742,24 @@ export const copyPublicModelVersion = procedure
     });
 
     try {
-      await copyFile({ host, userIdentityId: user.identityId,
-        fromPath: modelVersion.path, toPath: input.path });
+      await withFileDriver(
+        { clusterId:modelVersion.model.$.clusterId, user:user.identityId },
+        async (driver) => {
+          const cluster = clusters[modelVersion.model.$.clusterId];
+
+          await driver.copy(modelVersion.path,
+            cluster.scowd?.enabled ? path.join(input.path,path.basename(modelVersion.path)) : input.path);
+        },
+        logger,
+      );
       // 递归修改文件权限和拥有者
-      await chmod({ host, userIdentityId: "root", permission: "750", path: input.path });
+      await withFileDriver(
+        { clusterId:modelVersion.model.$.clusterId, user:"root" },
+        async (driver) => {
+          await driver.chmod(input.path,"0750");
+        },
+        logger,
+      );
       await em.persistAndFlush([newModel, newModelVersion]);
     } catch (err) {
       console.log(err);

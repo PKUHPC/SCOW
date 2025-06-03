@@ -14,6 +14,7 @@ import { EntityManager } from "@mikro-orm/mysql";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
+import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { sftpExists, sftpReadFile } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
@@ -27,6 +28,7 @@ import { Logger } from "ts-log";
 import { z } from "zod";
 
 import { clusters } from "../trpc/route/config";
+import { wrap } from "../trpc/scowd/scowd";
 
 export const getClusterAppConfigs = (cluster: string) => {
 
@@ -231,7 +233,7 @@ export const checkAppExist = (apps: Record<string, AppConfigSchema>, appId: stri
 };
 
 
-export const fetchJobInputParams = async<T> (
+export const sshFetchJobInputParams = async<T> (
   inputParamsPath: string,
   sftp: SFTPWrapper,
   schema: z.ZodSchema<T>,
@@ -257,6 +259,25 @@ export const fetchJobInputParams = async<T> (
       message: `Failed to parse input params file ${inputParamsPath}`,
     });
   }
+};
+
+export const scowdFetchJobInputParams = async<T> (
+  userId: string,
+  inputParamsPath: string,
+  scowdClient: ScowdClient,
+  schema: z.ZodSchema<T>,
+  logger: Logger,
+): Promise<T> => {
+
+  const inputContent = await wrap(
+    scowdClient.file.readFile({
+      userId,
+      filePath: inputParamsPath,
+    }),
+    logger,
+  );
+  const parsedContent = JSON.parse(inputContent.content.toString());
+  return schema.parse(parsedContent);
 };
 
 export const validateUniquePaths = (paths: (string | undefined)[]) => {

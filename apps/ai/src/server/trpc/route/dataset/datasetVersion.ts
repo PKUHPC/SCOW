@@ -11,30 +11,26 @@
  */
 
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { getUserHomedir, sftpExists } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
 import { SharedStatus } from "src/models/common";
+import { clusters } from "src/server/config/clusters";
 import { Dataset } from "src/server/entities/Dataset";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCopyFilePath, checkCreateResourcePath } from "src/server/utils/checkPathPermission";
-import { chmod } from "src/server/utils/chmod";
 import { checkClusterAvailable } from "src/server/utils/clusters";
-import { copyFile } from "src/server/utils/copyFile";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { checkSharePermission, getUpdatedSharedPath, SHARED_TARGET,
-  shareFileOrDir, unShareFileOrDir } from "src/server/utils/share";
-import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
+import { SHARED_TARGET } from "src/server/utils/share";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
+import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
 
 export const DatasetVersionListSchema = z.object({
@@ -210,19 +206,21 @@ export const createDatasetVersion = procedure
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
     // 检查目录是否存在
-    const host = getClusterLoginNode(dataset.clusterId);
+    await driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCreateResourcePath(input.path);
+    }, logger);
 
-    if (!host) { throw clusterNotFound(dataset.clusterId); }
-
-    await checkCreateResourcePath({ host, userIdentityId: user.identityId, toPath: input.path });
-
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      const sftp = await ssh.requestSFTP();
-
-      if (!(await sftpExists(sftp, path))) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: `${path} does not exists` });
-      }
-    });
+    const isPathExisted = await withFileDriver(
+      { clusterId: dataset.clusterId, user: user.identityId },
+      async (driver) => await driver.exists(input.path),
+      logger,
+    );
+    if (!isPathExisted) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exist` });
+    }
 
     const datasetVersion = new DatasetVersion({ ...input, privatePath: path, dataset: dataset });
     await em.persistAndFlush(datasetVersion);
@@ -311,11 +309,12 @@ export const updateDatasetVersion = procedure
     // 更新已分享目录下的版本路径名称
     if (needUpdateSharedPath) {
       // 获取更新后的已分享版本路径
-      const newVersionSharedPath = await getUpdatedSharedPath({
-        clusterId: dataset.clusterId,
-        newName: versionName,
-        oldPath: dirname(datasetVersion.path),
-      });
+      const newVersionSharedPath = await driver.withFileDriver({
+        clusterId:dataset.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(versionName,dirname(datasetVersion.path));
+      }, logger);
 
       const baseFolderName = basename(datasetVersion.path);
 
@@ -399,17 +398,13 @@ export const deleteDatasetVersion = procedure
       checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
       try {
-        const host = getClusterLoginNode(dataset.clusterId);
-        if (!host) { throw clusterNotFound(dataset.clusterId); }
+        await driver.withFileDriver({
+          clusterId:dataset.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.checkSharePermission(datasetVersion.privatePath);
+        }, logger);
 
-        await sshConnect(host, user.identityId, logger, async (ssh) => {
-          await checkSharePermission({
-            ssh,
-            logger,
-            sourcePath: datasetVersion.privatePath,
-            userId: user.identityId,
-          });
-        });
         const pathToUnshare
         = dataset.versions.filter((v) =>
           (v.id !== datasetVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
@@ -418,11 +413,12 @@ export const deleteDatasetVersion = procedure
           // 除了此版本以外没有其他已分享的版本则取消分享整个数据集
           : dirname(dirname(datasetVersion.path));
 
-        await unShareFileOrDir({
-          host,
-          sharedPath: pathToUnshare,
-        });
-
+        await driver.withFileDriver({
+          clusterId:dataset.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.unShareFileOrDir(pathToUnshare);
+        }, logger);
       } catch (e) {
         logger.error(`ssh failure occured when unshare datasetVersion ${datasetVersionId} of dataset ${datasetId} `, e);
       }
@@ -495,16 +491,21 @@ export const shareDatasetVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
-    const host = getClusterLoginNode(dataset.clusterId);
-    if (!host) { throw clusterNotFound(dataset.clusterId); }
+    await driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(datasetVersion.privatePath);
+    }, logger);
 
-    const homeTopDir = await sshConnect(host, user.identityId, logger, async (ssh) => {
-      // 确认是否具有分享权限
-      await checkSharePermission({ ssh, logger, sourcePath: datasetVersion.privatePath, userId: user.identityId });
-      // 获取分享路径的上级路径
-      const userHomeDir = await getUserHomedir(ssh, user.identityId, logger);
-      return dirname(dirname(userHomeDir));
-    });
+
+    const homeDir = await driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      return await fileDriver.getHomeDirectory();
+    }, logger);
+    const homeTopDir = dirname(dirname(homeDir));
 
     datasetVersion.sharedStatus = SharedStatus.SHARING;
     em.persist([datasetVersion]);
@@ -540,15 +541,18 @@ export const shareDatasetVersion = procedure
       await em.persistAndFlush([datasetVersion]);
     };
 
-    shareFileOrDir({
-      clusterId: dataset.clusterId,
-      sourceFilePath: datasetVersion.privatePath,
-      userId: user.identityId,
-      sharedTarget: SHARED_TARGET.DATASET,
-      targetName: dataset.name,
-      targetSubName: datasetVersion.versionName,
-      homeTopDir,
-    }, successCallback, failureCallback);
+    driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.shareFileOrDir({
+        sourceFilePath:datasetVersion.privatePath ,
+        sharedTarget:SHARED_TARGET.DATASET,
+        targetName:dataset.name,
+        targetSubName:datasetVersion.versionName,
+        homeTopDir,
+      }, successCallback, failureCallback);
+    }, logger);
 
     await em.flush();
     return;
@@ -590,17 +594,12 @@ export const unShareDatasetVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
-    const host = getClusterLoginNode(dataset.clusterId);
-    if (!host) { throw clusterNotFound(dataset.clusterId); }
-
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      await checkSharePermission({
-        ssh,
-        logger,
-        sourcePath: datasetVersion.privatePath,
-        userId: user.identityId,
-      });
-    });
+    await driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(datasetVersion.privatePath);
+    }, logger);
 
     datasetVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([datasetVersion]);
@@ -638,14 +637,19 @@ export const unShareDatasetVersion = procedure
       await em.persistAndFlush([datasetVersion]);
     };
 
-    unShareFileOrDir({
-      host,
-      sharedPath: dataset.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-        // 如果还有其他的已分享版本则只取消此版本的分享
-        dirname(datasetVersion.path)
-        // 如果没有其他的已分享版本则取消整个数据集的分享
-        : dirname(dirname(datasetVersion.path)),
-    }, successCallback, failureCallback);
+    const sharedDatasetVersionPath =
+    dataset.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+    // 如果还有其他的已分享版本则只取消此版本的分享
+      dirname(datasetVersion.path)
+    // 如果没有其他的已分享版本则取消整个数据集的分享
+      : dirname(dirname(datasetVersion.path));
+
+    driver.withFileDriver({
+      clusterId:dataset.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.unShareFileOrDir(sharedDatasetVersionPath, successCallback, failureCallback);
+    }, logger);
 
     await em.flush();
     return;
@@ -722,12 +726,12 @@ export const copyPublicDatasetVersion = procedure
     checkClusterAvailable(currentClusterIds, datasetVersion.dataset.$.clusterId);
 
     // 3. 检查用户是否可以将源文件复制到目标文件
-    const host = getClusterLoginNode(datasetVersion.dataset.$.clusterId);
-
-    if (!host) { throw clusterNotFound(datasetVersion.dataset.$.clusterId); }
-
-    await checkCopyFilePath({ host, userIdentityId: user.identityId,
-      toPath: input.path, fileName: path.basename(datasetVersion.path) });
+    await driver.withFileDriver({
+      clusterId:datasetVersion.dataset.$.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCopyFilePath(input.path,path.basename(datasetVersion.path));
+    }, logger);
 
     // 4. 写入数据
     const newDataset = new Dataset({
@@ -748,10 +752,25 @@ export const copyPublicDatasetVersion = procedure
     });
 
     try {
-      await copyFile({ host, userIdentityId: user.identityId,
-        fromPath: datasetVersion.path, toPath: input.path });
+      await withFileDriver(
+        { clusterId:datasetVersion.dataset.$.clusterId, user:user.identityId },
+        async (driver) => {
+          const cluster = clusters[datasetVersion.dataset.$.clusterId];
+
+          // scowd复制需要再路径最后加上文件夹名
+          await driver.copy(datasetVersion.path,
+            cluster.scowd?.enabled ? path.join(input.path,path.basename(datasetVersion.path)) : input.path);
+        },
+        logger,
+      );
       // 递归修改文件权限和拥有者
-      await chmod({ host, userIdentityId: "root", permission: "750", path: input.path });
+      await withFileDriver(
+        { clusterId:datasetVersion.dataset.$.clusterId, user:"root" },
+        async (driver) => {
+          await driver.chmod(input.path,"0750");
+        },
+        logger,
+      );
       await em.persistAndFlush([newDataset, newDatasetVersion]);
     } catch (err) {
       throw new TRPCError({

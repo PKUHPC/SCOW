@@ -6,9 +6,35 @@ import { clusterNotFound } from "src/server/utils/errors";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { Logger } from "ts-log";
 
-import { FileMeta, ListDirectoryOutput } from "../model/file";
+import { FileMeta, ListDirectoryOutput } from "../../model/file";
 import { ScowdFileDriver } from "./scowdFileDriver";
 import { SshFileDriver } from "./sshFileDriver";
+
+export type callback = () => void;
+export type shareOkCallback = (fullPath: string) => void;
+
+export const SHARED_DIR = "/.shared";
+
+// 分享文件的公共路径前缀
+export enum SHARED_TARGET {
+  DATASET = "/dataset",
+  ALGORITHM = "/algorithm",
+  MODEL = "/model",
+};
+
+
+export interface ShareParams {
+  // 分享源绝对路径
+  sourceFilePath: string,
+  // 分享的类别目录：/dataset, /algorithm, /model
+  sharedTarget: SHARED_TARGET,
+  // 分享的目标名称：数据集，算法，模型的名称
+  targetName: string,
+  // 分享的目标子级名称：数据集版本，算法版本，模型版本的名称
+  targetSubName: string,
+  // 用户家目录/home/{userId}的上级目录
+  homeTopDir: string,
+}
 
 export interface FileDriver {
   deleteFile(path: string): Promise<void>;
@@ -19,12 +45,32 @@ export interface FileDriver {
   makeDirectory(path: string): Promise<void>;
   move(fromPath: string, toPath: string): Promise<void>;
   readDirectory(path: string): Promise<ListDirectoryOutput[]>;
-  download(path: string,download: string,res: NextApiResponse<any>): Promise<void>;
+  download(path: string, download: string,res: NextApiResponse<any>): Promise<void>;
   upload(path: string, uploadedFile: File): Promise<NextResponse<{ message: string; }>>;
   getFileMetadata(path: string): Promise<FileMeta>;
   exists(path: string): Promise<boolean>;
+  chmod(path: string, mode: string): Promise<void>;
+  decompressFile(filePath: string, decompressionPath: string): Promise<void>;
 
-  decompressFile(filePath: string,decompressionPath: string): Promise<void>;
+  /**
+ * 取消分享时删除相应的文件夹
+ * @param sharedPath 需要取消分享的已分享主表绝对路径或子表绝对路径
+ */
+  unShareFileOrDir(sharedPath: string,successCallback?: callback, failureCallback?: callback): Promise<void>;
+
+  shareFileOrDir(shareParams: ShareParams,successCallback?: shareOkCallback, failureCallback?: callback): Promise<void>;
+
+  /**
+ *
+ * @param newName 变更后的名称
+ * @param oldPath 需要变更的原主表绝对路径或者原子表绝对路径
+ *
+ */
+  getUpdatedSharedPath(newName: string,oldPath: string): Promise<string>;
+
+  checkCopyFilePath(toPath: string,fileName: string): Promise<void>;
+  checkCreateResourcePath(toPath: string): Promise<void>;
+  checkSharePermission(sourcePath: string): Promise<void>;
 }
 
 function createFileDriver(opts: {

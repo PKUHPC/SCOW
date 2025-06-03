@@ -79,7 +79,8 @@ message ReadFileResponse {
 message ChangeModeRequest {
   string user_id = 1;
   string path = 2;
-  uint32 mode = 3;
+  string mode = 3;
+  bool recursive  = 4;
 }
 
 message ChangeModeResponse {
@@ -95,6 +96,8 @@ message GetFileMetadataResponse {
   FileType type = 2;
   // 文件的MIME类型，例如'text/plain'、'application/json'等
   string mime = 3;
+  uint32 permission = 4;
+  bool is_symlink = 5;
 }
 
 message GetHomeDirectoryRequest {

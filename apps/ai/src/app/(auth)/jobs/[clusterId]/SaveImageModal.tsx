@@ -47,8 +47,8 @@ export const SaveImageModal: React.FC<Props> = (
       form.resetFields();
       reload();
     },
-    onError() {
-      message.error(t(p("saveFailed")));
+    onError(e) {
+      message.error(`${t(p("saveFailed"))}:${e.message}`);
     },
   });
 

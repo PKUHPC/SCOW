@@ -11,29 +11,25 @@
  */
 
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { getUserHomedir, sftpExists } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import path, { basename, dirname, join } from "path";
+import { clusters } from "src/server/config/clusters";
 import { Algorithm } from "src/server/entities/Algorithm";
 import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCopyFilePath, checkCreateResourcePath } from "src/server/utils/checkPathPermission";
-import { chmod } from "src/server/utils/chmod";
 import { checkClusterAvailable } from "src/server/utils/clusters";
-import { copyFile } from "src/server/utils/copyFile";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { checkSharePermission, getUpdatedSharedPath, SHARED_TARGET,
-  shareFileOrDir, unShareFileOrDir } from "src/server/utils/share";
-import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
+import { SHARED_TARGET } from "src/server/utils/share";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
+import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
 
 export const getAlgorithmVersions = procedure
@@ -208,19 +204,21 @@ export const createAlgorithmVersion = procedure
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
 
     // 检查目录是否存在
-    const host = getClusterLoginNode(algorithm.clusterId);
+    await driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCreateResourcePath(input.path);
+    }, logger);
 
-    if (!host) { throw clusterNotFound(algorithm.clusterId); }
-
-    await checkCreateResourcePath({ host, userIdentityId: user.identityId, toPath: input.path });
-
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      const sftp = await ssh.requestSFTP();
-
-      if (!(await sftpExists(sftp, input.path))) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exists` });
-      }
-    });
+    const isPathExisted = await withFileDriver(
+      { clusterId: algorithm.clusterId, user: user.identityId },
+      async (driver) => await driver.exists(input.path),
+      logger,
+    );
+    if (!isPathExisted) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exist` });
+    }
 
     const algorithmVersion = new AlgorithmVersion({ ...input, privatePath: input.path, algorithm: algorithm });
     await em.persistAndFlush(algorithmVersion);
@@ -298,11 +296,12 @@ export const updateAlgorithmVersion = procedure
     // 更新已分享目录下的版本路径名称
     if (needUpdateSharedPath) {
       // 获取更新后的已分享版本路径
-      const newVersionSharedPath = await getUpdatedSharedPath({
-        clusterId: algorithm.clusterId,
-        newName: input.versionName,
-        oldPath: dirname(algorithmVersion.path),
-      });
+      const newVersionSharedPath = await driver.withFileDriver({
+        clusterId:algorithm.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(input.versionName,dirname(algorithmVersion.path));
+      }, logger);
 
       const baseFolderName = basename(algorithmVersion.path);
 
@@ -376,17 +375,12 @@ export const deleteAlgorithmVersion = procedure
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, algorithm.clusterId);
       try {
-        const host = getClusterLoginNode(algorithm.clusterId);
-        if (!host) { throw clusterNotFound(algorithm.clusterId); }
-
-        await sshConnect(host, user.identityId, logger, async (ssh) => {
-          await checkSharePermission({
-            ssh,
-            logger,
-            sourcePath: algorithmVersion.privatePath,
-            userId: user.identityId,
-          });
-        });
+        await driver.withFileDriver({
+          clusterId:algorithm.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+        }, logger);
 
         const pathToUnshare
         = algorithm.versions.filter((v) =>
@@ -395,10 +389,14 @@ export const deleteAlgorithmVersion = procedure
           dirname(algorithmVersion.path)
           // 除了此版本以外没有其他已分享的版本则取消分享整个算法
           : dirname(dirname(algorithmVersion.path));
-        await unShareFileOrDir({
-          host,
-          sharedPath: pathToUnshare,
-        });
+
+        await driver.withFileDriver({
+          clusterId:algorithm.clusterId,
+          user:user.identityId,
+        }, async (fileDriver) => {
+          await fileDriver.unShareFileOrDir(pathToUnshare);
+        }, logger);
+
       } catch (e) {
         logger.error(`ssh failure occurred when unshare
         algorithmVersion ${algorithmVersionId} of algorithm ${algorithmId}`, e);
@@ -470,16 +468,21 @@ export const shareAlgorithmVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
 
-    const host = getClusterLoginNode(algorithm.clusterId);
-    if (!host) { throw clusterNotFound(algorithm.clusterId); }
+    await driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+    }, logger);
 
-    const homeTopDir = await sshConnect(host, user.identityId, logger, async (ssh) => {
-      // 确认是否具有分享权限
-      await checkSharePermission({ ssh, logger, sourcePath: algorithmVersion.privatePath, userId: user.identityId });
-      // 获取分享路径的上级路径
-      const userHomeDir = await getUserHomedir(ssh, user.identityId, logger);
-      return dirname(dirname(userHomeDir));
-    });
+
+    const homeDir = await driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      return await fileDriver.getHomeDirectory();
+    }, logger);
+    const homeTopDir = dirname(dirname(homeDir));
 
     algorithmVersion.sharedStatus = SharedStatus.SHARING;
     em.persist([algorithmVersion]);
@@ -515,15 +518,18 @@ export const shareAlgorithmVersion = procedure
       await em.persistAndFlush([algorithmVersion]);
     };
 
-    shareFileOrDir({
-      clusterId: algorithm.clusterId,
-      sourceFilePath:algorithmVersion.privatePath,
-      userId: user.identityId,
-      sharedTarget: SHARED_TARGET.ALGORITHM,
-      targetName: algorithm.name,
-      targetSubName: algorithmVersion.versionName,
-      homeTopDir,
-    }, successCallback, failureCallback);
+    driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.shareFileOrDir({
+        sourceFilePath:algorithmVersion.privatePath ,
+        sharedTarget:SHARED_TARGET.ALGORITHM,
+        targetName:algorithm.name,
+        targetSubName:algorithmVersion.versionName,
+        homeTopDir,
+      }, successCallback, failureCallback);
+    }, logger);
 
     return;
   });
@@ -563,17 +569,12 @@ export const unShareAlgorithmVersion = procedure
     if (algorithm.owner !== user.identityId)
       throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId} not accessible` });
 
-    const host = getClusterLoginNode(algorithm.clusterId);
-    if (!host) { throw clusterNotFound(algorithm.clusterId); }
-
-    await sshConnect(host, user.identityId, logger, async (ssh) => {
-      await checkSharePermission({
-        ssh,
-        logger,
-        sourcePath: algorithmVersion.privatePath,
-        userId: user.identityId,
-      });
-    });
+    await driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+    }, logger);
 
     algorithmVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([algorithmVersion]);
@@ -611,15 +612,19 @@ export const unShareAlgorithmVersion = procedure
       await em.persistAndFlush([algorithmVersion]);
     };
 
-    unShareFileOrDir({
-      host,
-      sharedPath: algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-        // 如果还有其他的已分享版本则只取消此版本的分享
-        dirname(algorithmVersion.path)
-        // 如果没有其他的已分享版本则取消整个算法的分享
-        : dirname(dirname(algorithmVersion.path)),
-    }, successCallback, failureCallback);
+    const sharedAlgorithmVersionPath =
+    algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+    // 如果还有其他的已分享版本则只取消此版本的分享
+      dirname(algorithmVersion.path)
+    // 如果没有其他的已分享版本则取消整个算法的分享
+      : dirname(dirname(algorithmVersion.path));
 
+    driver.withFileDriver({
+      clusterId:algorithm.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.unShareFileOrDir(sharedAlgorithmVersionPath, successCallback, failureCallback);
+    }, logger);
     return;
   });
 
@@ -695,12 +700,13 @@ export const copyPublicAlgorithmVersion = procedure
     checkClusterAvailable(currentClusterIds, algorithmVersion.algorithm.$.clusterId);
 
     // 3. 检查用户是否可以将源算法拷贝至目标目录
-    const host = getClusterLoginNode(algorithmVersion.algorithm.$.clusterId);
 
-    if (!host) { throw clusterNotFound(algorithmVersion.algorithm.$.clusterId); }
-
-    await checkCopyFilePath({ host, userIdentityId: user.identityId,
-      toPath: input.path, fileName: path.basename(algorithmVersion.path) });
+    await driver.withFileDriver({
+      clusterId:algorithmVersion.algorithm.$.clusterId,
+      user:user.identityId,
+    }, async (fileDriver) => {
+      await fileDriver.checkCopyFilePath(input.path,path.basename(algorithmVersion.path));
+    }, logger);
 
     // 4. 写入数据
     const newAlgorithm = new Algorithm({
@@ -720,13 +726,29 @@ export const copyPublicAlgorithmVersion = procedure
     });
 
     try {
-      await copyFile({ host, userIdentityId: user.identityId,
-        fromPath: algorithmVersion.path, toPath: input.path });
+      await withFileDriver(
+        { clusterId:algorithmVersion.algorithm.$.clusterId, user:user.identityId },
+        async (driver) => {
+          const cluster = clusters[algorithmVersion.algorithm.$.clusterId];
+
+          // scowd复制需要再路径最后加上文件夹名
+          await driver.copy(algorithmVersion.path,
+            cluster.scowd?.enabled ? path.join(input.path,path.basename(algorithmVersion.path)) : input.path,
+          );
+        },
+        logger,
+      );
       // 递归修改文件权限和拥有者
-      await chmod({ host, userIdentityId: "root", permission: "750", path: input.path });
+      await withFileDriver(
+        { clusterId:algorithmVersion.algorithm.$.clusterId, user:"root" },
+        async (driver) => {
+          await driver.chmod(input.path,"0750");
+        },
+        logger,
+      );
+
       await em.persistAndFlush([newAlgorithm, newAlgorithmVersion]);
     } catch (err) {
-      console.log(err);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: `Copy Error ${err as any}`,

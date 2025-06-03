@@ -227,8 +227,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const webScript = BIN_BASH_SCRIPT_HEADER + appConfig.web!.script;
           const scriptPath = join(workingDirectory, "script.sh");
           await client.file.writeFile({ userId, filePath: scriptPath, content: webScript });
-          // 493 即十进制的 0755
-          await client.file.changeMode({ userId, path: scriptPath, mode: 493 });
+          await client.file.changeMode({ userId, path: scriptPath, mode: "0755" });
 
 
           const configSlurmOptions: string[] = appConfig.slurm?.options ?? [];
@@ -262,8 +261,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const webScript = BIN_BASH_SCRIPT_HEADER + appConfig.shadowDesk!.script;
           const scriptPath = join(workingDirectory, "script.sh");
           await client.file.writeFile({ userId, filePath: scriptPath, content: webScript });
-          // 493 即十进制的 0755
-          await client.file.changeMode({ userId, path: scriptPath, mode: 493 });
+          await client.file.changeMode({ userId, path: scriptPath, mode: "0755" });
 
 
           const configSlurmOptions: string[] = appConfig.slurm?.options ?? [];
@@ -285,8 +283,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const xstartupPath = join(workingDirectory, "xstartup");
           const xstartupScript = BIN_BASH_SCRIPT_HEADER + appConfig.vnc!.xstartup;
           await client.file.writeFile({ userId, filePath: xstartupPath, content: xstartupScript });
-          // 493 即十进制的 0755
-          await client.file.changeMode({ userId, path: xstartupPath, mode: 493 });
+          await client.file.changeMode({ userId, path: xstartupPath, mode: "0755" });
 
 
           const configSlurmOptions: string[] = appConfig.slurm?.options ?? [];

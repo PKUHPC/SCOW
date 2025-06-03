@@ -22,14 +22,15 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { getUpdatedSharedPath, unShareFileOrDir } from "src/server/utils/share";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
 import { booleanQueryParam, clusterExist } from "../utils";
 
 export const ModelListSchema = z.object({
@@ -259,11 +260,12 @@ export const updateModel = procedure
       const sharedVersions = await em.find(ModelVersion, { model, sharedStatus: SharedStatus.SHARED });
       const oldPath = dirname(dirname(sharedVersions[0].path));
       // 获取更新后的当前模型的共享路径名称
-      const newModelSharedPath = await getUpdatedSharedPath({
-        clusterId: model.clusterId,
-        newName: name,
-        oldPath,
-      });
+      const newModelSharedPath = await driver.withFileDriver({
+        clusterId:model.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(name,oldPath);
+      }, logger);
 
       // 更新已分享的版本的共享文件夹地址
       sharedVersions.map((v) => {
@@ -342,7 +344,7 @@ export const deleteModel = procedure
 
     // 获取此模型的共享的模型绝对路径
     if (sharedVersions.length > 0) {
-      const sharedDatasetPath = dirname(dirname(sharedVersions[0].path));
+      const sharedModelPath = dirname(dirname(sharedVersions[0].path));
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, model.clusterId);
@@ -350,10 +352,12 @@ export const deleteModel = procedure
       const host = getClusterLoginNode(model.clusterId);
       if (!host) { throw clusterNotFound(model.clusterId); }
 
-      await unShareFileOrDir({
-        host,
-        sharedPath: sharedDatasetPath,
-      });
+      await driver.withFileDriver({
+        clusterId:model.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        await fileDriver.unShareFileOrDir(sharedModelPath);
+      }, logger);
     }
 
     await em.removeAndFlush([...modelVersions, model]);

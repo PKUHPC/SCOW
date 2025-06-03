@@ -21,14 +21,15 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { getUpdatedSharedPath, unShareFileOrDir } from "src/server/utils/share";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
 import { booleanQueryParam, clusterExist } from "../utils";
 
 export const DatasetListSchema = z.object({
@@ -268,11 +269,12 @@ export const updateDataset = procedure
       const oldPath = dirname(dirname(sharedVersions[0].path));
 
       // 获取更新后的当前数据集的共享路径名称
-      const newDatasetSharedPath = await getUpdatedSharedPath({
-        clusterId: dataset.clusterId,
-        newName: name,
-        oldPath,
-      });
+      const newDatasetSharedPath = await driver.withFileDriver({
+        clusterId:dataset.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(name,oldPath);
+      }, logger);
 
       // 更新已分享的版本的共享文件夹地址
       sharedVersions.map((v) => {
@@ -360,12 +362,12 @@ export const deleteDataset = procedure
       const host = getClusterLoginNode(dataset.clusterId);
       if (!host) { throw clusterNotFound(dataset.clusterId); }
 
-      await unShareFileOrDir({
-        host,
-        sharedPath: sharedDatasetPath,
-      }).catch((e) => {
-        console.error("Error deleting dataVersions of dataset:", e);
-      });
+      await driver.withFileDriver({
+        clusterId:dataset.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        await fileDriver.unShareFileOrDir(sharedDatasetPath);
+      }, logger);
     }
 
     await em.removeAndFlush([...datasetVersions, dataset]);

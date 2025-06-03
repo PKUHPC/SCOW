@@ -53,8 +53,8 @@ export const CopyImageModal: React.FC<Props> = (
       form.resetFields();
       refetch();
     },
-    onError() {
-      message.error(t(p("failed")));
+    onError(e) {
+      message.error(`${t(p("failed"))}:${e.message}`);
     },
   });
 

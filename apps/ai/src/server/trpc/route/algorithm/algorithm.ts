@@ -20,14 +20,15 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { getUpdatedSharedPath, unShareFileOrDir } from "src/server/utils/share";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
 import { booleanQueryParam, clusterExist } from "../utils";
 
 
@@ -249,11 +250,13 @@ export const updateAlgorithm = procedure
       const oldPath = dirname(dirname(sharedVersions[0].path));
 
       // 获取更新后的当前算法的共享路径名称
-      const newAlgorithmSharedPath = await getUpdatedSharedPath({
-        clusterId: algorithm.clusterId,
-        newName: name,
-        oldPath,
-      });
+
+      const newAlgorithmSharedPath = await driver.withFileDriver({
+        clusterId:algorithm.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        return await fileDriver.getUpdatedSharedPath(name,oldPath);
+      }, logger);
 
       // 更新已分享的版本的共享文件夹地址
       sharedVersions.map((v) => {
@@ -335,7 +338,7 @@ export const deleteAlgorithm = procedure
 
     // 获取此算法的共享的算法绝对路径
     if (sharedVersions.length > 0) {
-      const sharedDatasetPath = dirname(dirname(sharedVersions[0].path));
+      const sharedAlgorithmPath = dirname(dirname(sharedVersions[0].path));
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, algorithm.clusterId);
@@ -343,10 +346,12 @@ export const deleteAlgorithm = procedure
       const host = getClusterLoginNode(algorithm.clusterId);
       if (!host) { throw clusterNotFound(algorithm.clusterId); }
 
-      await unShareFileOrDir({
-        host,
-        sharedPath: sharedDatasetPath,
-      });
+      await driver.withFileDriver({
+        clusterId:algorithm.clusterId,
+        user:user.identityId,
+      }, async (fileDriver) => {
+        await fileDriver.unShareFileOrDir(sharedAlgorithmPath);
+      }, logger);
     }
 
     await em.removeAndFlush([...algorithmVersions, algorithm]);

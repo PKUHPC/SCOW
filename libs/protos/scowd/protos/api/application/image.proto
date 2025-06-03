@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package api.application;
+
+option go_package = "scowd/protos/gen/api/application;apiv1";
+
+message LoadedImageRequest {
+  string user_id = 1;
+  string command = 2;
+  string source_path = 3;
+}
+
+message LoadedImageResponse {
+  string image_url = 1;
+}
+
+message LoginInfo {
+  string user_name = 1;
+  string password = 2;
+}
+message PulledImageRequest {
+  string user_id = 1;
+  string command = 2;
+  string source_path = 3;
+  LoginInfo login_info = 4;
+}
+
+message PulledImageResponse {
+  string image_url = 1;
+}
+
+message Harbor {
+  string url = 1;
+  string user = 2;
+  string password = 3;
+}
+message PushImageToHarborRequest {
+  string user_id = 1;
+  string command = 2;
+  string local_image_url = 3;
+  string harbor_image_url = 4;
+  Harbor harbor_info = 5;
+  // 可选，执行push的节点，不传就是在scowd所在节点
+  string node = 6;
+}
+
+message PushImageToHarborResponse {
+}
+
+message CommitContainerImageRequest {
+  string user_id = 1;
+  string command = 2;
+  string formatted_container_id = 3;
+  string node = 4;
+  string image_url = 5;
+}
+
+message CommitContainerImageResponse {
+}
+
+service ImageService {
+  rpc LoadedImage(LoadedImageRequest) returns (LoadedImageResponse) {}
+  rpc PulledImage(PulledImageRequest) returns (PulledImageResponse) {}
+  rpc PushImageToHarbor(PushImageToHarborRequest) returns (PushImageToHarborResponse) {}
+  rpc CommitContainerImage(CommitContainerImageRequest) returns (CommitContainerImageResponse) {}
+}

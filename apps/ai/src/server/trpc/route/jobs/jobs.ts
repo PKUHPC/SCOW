@@ -11,39 +11,20 @@
  */
 
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ServiceError } from "@grpc/grpc-js";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import {
-  getUserHomedir,
-  sftpExists,
-  sftpLstat,
-  sftpReadFile,
-  sftpWriteFile,
-} from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
-import dayjs from "dayjs";
-import { join } from "path";
-import { JobType } from "src/models/Job";
-import { aiConfig } from "src/server/config/ai";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth, fetchJobInputParams, genPublicOrPrivateDataJsonString,
-  validateUniquePaths } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
-import { getClusterLoginNode, sshConnect } from "src/server/utils/ssh";
 import { getIdPrivate } from "src/utils/app";
-import { isParentOrSameFolder } from "src/utils/file";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
-
-const SESSION_METADATA_NAME = "session.json";
-
-
+import { driver } from "../../Driver";
 
 // 分布式训练框架
 export const Framework = z.union([
@@ -63,16 +44,6 @@ const ImageSchema = z.object({
 
 export type Image = z.infer<typeof ImageSchema>;
 
-interface SessionMetadata {
-  sessionId: string;
-  jobName: string;
-  jobId: number;
-  appId?: string;
-  submitTime: string;
-  image: Image;
-  jobType: JobType
-}
-
 export const IdPrivateSchema = z.object({
   id: z.number(),
   isPrivate: z.boolean(),
@@ -80,7 +51,7 @@ export const IdPrivateSchema = z.object({
 
 export type IdPrivate = z.infer<typeof IdPrivateSchema>;
 
-const TrainJobInputSchema = z.object({
+export const TrainJobInputSchema = z.object({
   clusterId: z.string(),
   trainJobName: z.string(),
   algorithms: z.array(IdPrivateSchema),
@@ -147,9 +118,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName ,algorithms, image, framework,
-        remoteImageUrl, datasets,models, mountPoints = [], account, partition, coreCount,
-        nodeCount, gpuCount, memory, maxTime, command, gpuType, psNodes, workerNodes } = input;
+      const { clusterId, trainJobName ,algorithms, image, datasets,models } = input;
 
       const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -166,13 +135,6 @@ procedure
 
       const currentClusterIds = await getCurrentClusters(userId);
       checkClusterAvailable(currentClusterIds, clusterId);
-
-      const host = getClusterLoginNode(clusterId);
-      if (!host) {
-        throw clusterNotFound(clusterId);
-      }
-
-      const client = getAdapterClient(clusterId);
 
       const em = await forkEntityManager();
       const {
@@ -193,138 +155,23 @@ procedure
         datasetVersions, algorithmVersions,modelVersions, image:existImage, userId,
       });
 
-      return await sshConnect(host, userId, logger, async (ssh) => {
-
-        const homeDir = await getUserHomedir(ssh, userId, logger);
-        const sftp = await ssh.requestSFTP();
-
-        mountPoints.forEach((mountPoint) => {
-          if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "mountPoint should be in homeDir",
-            });
-          }
+      const jobId = await driver.withJobDriver({
+        clusterId,
+        user:userId,
+      }, async (jobDriver) => {
+        return await jobDriver.submitTrainJob(input, {
+          isAlgorithmPrivates,
+          isDatasetPrivates,
+          isModelPrivates,
+          algorithmVersions,
+          datasetVersions,
+          modelVersions,
+          existImage,
         });
+      },
+      logger);
 
-        const scowWorkDirectoryName = `${clusterId}-job-${dayjs().format("YYYYMMDD-HHmmss")}`;
-        const trainJobsDirectory = join(aiConfig.appJobsDir, scowWorkDirectoryName);
-
-        // 确保所有映射到容器的路径都不重复
-        validateUniquePaths([
-          trainJobsDirectory,
-          ...isAlgorithmPrivates.map((isAlgorithmPrivate,idx) =>
-            isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path)
-          ,
-          ...isDatasetPrivates.map((isDatasetPrivate,idx) =>
-            isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path)
-          ,
-          ...isModelPrivates.map((isModelPrivate,idx) =>
-            isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
-          ,
-          ...mountPoints,
-        ]);
-
-        // 检查挂载点是否为目录，不能是软链接
-        for (const path of mountPoints) {
-          const lstat = await sftpLstat(sftp)(path).catch((e) => {
-            logger.error(e, "lstat %s as %s failed", path, userId);
-            throw new TRPCError({ code: "FORBIDDEN", message: `${path} is not accessible` });
-          });
-
-          if (lstat.isSymbolicLink()) {
-            throw new TRPCError({ code: "FORBIDDEN", message: `${path} is a symbolic link, not a directory` });
-          }
-        }
-
-        // make sure trainJobsDirectory exists.
-        await ssh.mkdir(trainJobsDirectory);
-        const remoteEntryPath = join(homeDir, trainJobsDirectory, "entry.sh");
-
-        const entryScript = command;
-        await sftpWriteFile(sftp)(remoteEntryPath, entryScript);
-
-        const reply = await asyncClientCall(client.job, "submitJob", {
-          userId,
-          jobName: trainJobName,
-          account,
-          partition: partition!,
-          coreCount,
-          nodeCount,
-          gpuCount: gpuCount ?? 0,
-          memoryMb: Number(memory),
-          timeLimitMinutes: maxTime,
-          workingDirectory: trainJobsDirectory,
-          script: remoteEntryPath,
-          // 对于AI模块，需要传递的额外参数
-          // 第一个参数确定是创建应用or训练任务，
-          // 第二个参数为创建应用时的appId
-          // 第三个参数为镜像地址
-          // 第四个参数为算法版本地址
-          // 第五个参数为数据集版本地址
-          // 第六个参数为模型版本地址
-          // 第七个参数为多挂载点地址，以逗号分隔
-          // 第八个参数为gpuType, 表示训练时硬件卡的类型，由getClusterConfig接口获取
-          // 第九个参数告知适配器 该镜像对应的AI训练框架 如 tensorflow, pytorch 等
-          // 第十个参数为多挂载点地址，以逗号分隔 (此挂载点是只读的)
-          extraOptions: [
-            JobType.TRAIN,
-            "",
-            remoteImageUrl || existImage?.path || "",
-            JSON.stringify(
-              algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
-                ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
-                : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
-              ))
-            ,
-            JSON.stringify(
-              datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
-                ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
-                : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
-              ))
-            ,
-            JSON.stringify(
-              modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-                ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-                : genPublicOrPrivateDataJsonString(modelVersion.path,true),
-              ))
-            ,
-            mountPoints.join(","),
-            gpuType || "",
-            // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
-            // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
-            (nodeCount === 1 && !gpuType?.startsWith("huawei.com")) ? "" : framework || "",
-            aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
-          ],
-          psNodeCount:psNodes,
-          workerNodeCount:workerNodes,
-        }).catch((e) => {
-          const ex = e as ServiceError;
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Submit train job failed, ${ex.details}`,
-          });
-        });
-
-        // Save session metadata
-        const metadata: SessionMetadata = {
-          jobId: reply.jobId,
-          jobName:trainJobName,
-          sessionId: scowWorkDirectoryName,
-          submitTime: new Date().toISOString(),
-          image: {
-            name: remoteImageUrl || existImage!.name,
-            tag: existImage?.tag || "latest",
-          },
-          jobType: JobType.TRAIN,
-        };
-        await sftpWriteFile(sftp)(join(trainJobsDirectory, SESSION_METADATA_NAME), JSON.stringify(metadata));
-
-        // 保存提交参数
-        await sftpWriteFile(sftp)(join(trainJobsDirectory, `${reply.jobId}-input.json`), JSON.stringify(input));
-
-        return { jobId: reply.jobId };
-      });
+      return { jobId };
     },
   );
 
@@ -351,39 +198,13 @@ procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    const host = getClusterLoginNode(clusterId);
-    if (!host) throw new TRPCError({ code: "NOT_FOUND", message: `Cluster ${clusterId} not found.` });
-
-    return await sshConnect(host, userId, logger, async (ssh) => {
-
-      const homeDir = await getUserHomedir(ssh, userId, logger);
-      const jobsDirectory = join(aiConfig.appJobsDir, sessionId);
-
-      const sftp = await ssh.requestSFTP();
-
-      // 读取作业信息
-      const metadataPath = join(jobsDirectory, SESSION_METADATA_NAME);
-
-      if (!await sftpExists(sftp, metadataPath)) {
-        return {} as TrainJobInput;
-      }
-
-      const content = await sftpReadFile(sftp)(metadataPath);
-      const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
-
-      if (sessionMetadata.jobType !== JobType.TRAIN) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Job type of job ${jobId} is not Train`,
-        });
-      }
-
-      const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
-
-      return await fetchJobInputParams<TrainJobInput>(
-        inputParamsPath, sftp, TrainJobInputSchema, logger,
-      );
-    });
+    return await driver.withJobDriver({
+      clusterId,
+      user:userId,
+    }, async (jobDriver) => {
+      return await jobDriver.getTrainParams(sessionId, jobId);
+    },
+    logger);
   });
 
 export const cancelJob =

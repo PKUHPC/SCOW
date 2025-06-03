@@ -10,31 +10,25 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { ServiceError } from "@grpc/grpc-js";
 import { getSortedClusterIds } from "@scow/config/build/cluster";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { sshConnect as libConnect } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { aiConfig } from "src/server/config/ai";
-import { rootKeyPair } from "src/server/config/env";
 import { Image, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
-import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
-import { createHarborImageUrl, getLoadedImage, getPulledImage, isValidImageAddress,
-  pushImageToHarbor } from "src/server/utils/image";
+import { createHarborImageUrl, isValidImageAddress } from "src/server/utils/image";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
-import { checkSharePermission } from "src/server/utils/share";
-import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
+import { driver } from "../../Driver";
 import { clusters } from "../config";
 import { booleanQueryParam, clusterExist } from "../utils";
 
@@ -46,15 +40,6 @@ class NoClusterError extends TRPCError {
     });
   }
 };
-
-class InternalServerError extends TRPCError {
-  constructor(errMessage: string, process: "Create" | "Copy") {
-    super({
-      code: "INTERNAL_SERVER_ERROR",
-      message: `${process} image failed, ${errMessage}`,
-    });
-  }
-}
 
 export const ImageListSchema = z.object({
   id: z.number(),
@@ -214,9 +199,6 @@ export const createImage = procedure
     if (!processClusterId) { throw new NoClusterError(name, tag); }
     checkClusterAvailable(currentClusterIds, processClusterId);
 
-    const host = getClusterLoginNode(processClusterId);
-    if (!host) { throw clusterNotFound(processClusterId); };
-
     const harborImageUrl = createHarborImageUrl(name, tag + tagPostfix, user.identityId);
 
     // 创建一个状态为 creating 的数据
@@ -238,67 +220,29 @@ export const createImage = procedure
       }
 
       try {
-        await libConnect(host, "root", rootKeyPair, logger, async (ssh) => {
-
-          let localImageUrl: string | undefined = undefined;
-          if (source === Source.INTERNAL) {
-            // 本地镜像检查源文件拥有者权限
-            await checkSharePermission({ ssh, logger, sourcePath: sourcePath, userId: user.identityId });
-            // 检查是否为tar文件
-            if (!sourcePath.endsWith(".tar")) {
-              throw new Error(`Image ${name}:${tag} create failed: image is not a tar file`);
-            }
-
-            // 本地镜像时加载镜像
-            localImageUrl = await getLoadedImage({
-              ssh,
-              clusterId: processClusterId,
-              logger,
-              sourcePath,
-            }).catch((e) => {
-              const ex = e as ServiceError;
-              throw new Error(`createImage failed, ${ex.message}`);
-            });
-          } else {
-            // 远程镜像需先拉取到本地
-            localImageUrl = await getPulledImage({
-              ssh,
-              clusterId: processClusterId,
-              logger,
-              sourcePath,
-              loginInfo:{ userName,password },
-            }).catch((e) => {
-              const ex = e as ServiceError;
-              throw new Error(`createImage failed, ${ex.message}`);
-            });
-          };
-
-          if (localImageUrl === undefined) {
-            throw new Error(`Image ${name}:${tag} create failed: localImage not found`);
-          }
-
-          // 制作镜像，上传至harbor
-          await pushImageToHarbor({
-            ssh,
-            clusterId: processClusterId,
-            logger,
-            localImageUrl,
+        await driver.withImageDriver({
+          clusterId:processClusterId,
+          user:user.identityId,
+        },async (imageDriver) => {
+          await imageDriver.createImage({
+            source,
+            sourcePath,
+            name,
+            tag,
+            loginInfo:{ userName,password },
             harborImageUrl,
-          }).catch((e) => {
-            const ex = e as ServiceError;
-            throw new Error(`createImage failed, ${ex.message}`);
           });
+        },logger);
 
-          // 更新数据库
-          image.status = Status.CREATED;
-          await em.persistAndFlush(image);
+        // 更新数据库
+        image.status = Status.CREATED;
+        await em.persistAndFlush(image);
 
-          return;
-
-        });
-      } catch {
+        return;
+      } catch (err) {
         image.status = Status.FAILURE;
         await em.persistAndFlush(image);
+        throw err;
       };
 
     };
@@ -698,9 +642,6 @@ export const copyImage = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, processClusterId);
 
-    const host = getClusterLoginNode(processClusterId);
-    if (!host) { throw clusterNotFound(processClusterId); };
-
     const copyProcess = async () => {
       const em = await forkEntityManager();
       const image = await em.findOne(Image, { name: newName, tag: newTag, owner: user.identityId });
@@ -710,49 +651,31 @@ export const copyImage = procedure
       }
 
       try {
-        await libConnect(host, "root", rootKeyPair, logger, async (ssh) => {
-          // 拉取远程镜像
-          if (sharedImage.path === undefined) {
-            throw new Error(`copyImage error: shared image ${id} do not have path`);
-          }
-          const localImageUrl = await getPulledImage({
-            ssh,
-            clusterId: processClusterId,
-            logger,
+        const harborImageUrl = createHarborImageUrl(newName, newTag + tagPostfix, user.identityId);
+
+        await driver.withImageDriver({
+          clusterId:processClusterId,
+          user:user.identityId,
+        },async (imageDriver) => {
+          await imageDriver.copyImage({
+            imageId:id,
             sourcePath:sharedImage.path,
-          })
-            .catch((e) => {
-              const ex = e as ServiceError;
-              throw new InternalServerError(ex.message, "Copy");
-            });
-          if (!localImageUrl) {
-            throw new Error(`copyImage Error: Image ${newName}:${newTag} create failed: localImage not found`);
-          }
-
-          const harborImageUrl = createHarborImageUrl(newName, newTag + tagPostfix, user.identityId);
-
-          // 制作镜像上传
-          await pushImageToHarbor({
-            ssh,
-            clusterId: processClusterId,
-            logger,
-            localImageUrl,
+            newName,
+            newTag,
             harborImageUrl,
-          }).catch((e) => {
-            const ex = e as ServiceError;
-            throw new Error(`copyImage failed, ${ex.message}`);
           });
+        },
+        logger);
 
-          image.status = Status.CREATED;
-          image.path = harborImageUrl;
-          await em.persistAndFlush(image);
+        image.status = Status.CREATED;
+        image.path = harborImageUrl;
+        await em.persistAndFlush(image);
 
-          return;
-
-        });
-      } catch {
+        return;
+      } catch (err: any) {
         image.status = Status.FAILURE;
         em.persistAndFlush([image]);
+        throw err;
       }
     };
 

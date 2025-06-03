@@ -22,7 +22,7 @@ const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
 
 export const loadedImageRegex = new RegExp(LOADED_IMAGE_REGEX);
 
-const { url: harborUrl, project, user: harborUser, password } = aiConfig.harborConfig;
+export const { url: harborUrl, project, user: harborUser, password } = aiConfig.harborConfig;
 
 // 创建要上传到harbor的镜像地址
 export function createHarborImageUrl(imageName: string, imageTag: string, userId: string): string {
@@ -81,7 +81,7 @@ export async function getLoadedImage({
 }
 
 
-interface LoginInfo {
+export interface LoginInfo {
   userName?: string,
   password?: string,
 }
@@ -175,14 +175,14 @@ export async function commitContainerImage({
   node,
   ssh,
   logger,
-  formateContainerId,
+  formattedContainerId,
   localImageUrl,
   clusterId,
 }: {
   node: string,
   ssh: NodeSSH,
   logger: Logger,
-  formateContainerId: string,
+  formattedContainerId: string,
   localImageUrl: string,
   clusterId: string,
 }): Promise<void> {
@@ -190,17 +190,17 @@ export async function commitContainerImage({
   const runtime = getK8sRuntime(clusterId);
   const command = getRuntimeCommand(runtime);
   const resp = await loggedExec(ssh, logger, true, "sh",
-    ["-c", `${command} ps --no-trunc | grep ${formateContainerId}`]);
+    ["-c", `${command} ps --no-trunc | grep ${formattedContainerId}`]);
   if (!resp.stdout) {
     throw new TRPCError({
       code: "NOT_FOUND",
-      message: `Can not find the container: ${formateContainerId} in node ${node}`,
+      message: `Can not find the container: ${formattedContainerId} in node ${node}`,
     });
   }
 
   // commit镜像
   await loggedExec(ssh, logger, true, command,
-    ["commit", formateContainerId, localImageUrl]);
+    ["commit", formattedContainerId, localImageUrl]);
 }
 
 
