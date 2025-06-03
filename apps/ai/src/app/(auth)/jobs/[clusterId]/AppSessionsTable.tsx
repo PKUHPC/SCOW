@@ -25,6 +25,7 @@ import { JobType } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { calculateAppRemainingTime, compareDateTime, formatDateTime } from "src/utils/datetime";
+import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -89,39 +90,50 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     {
       title: t(p("jobId")),
       dataIndex: "jobId",
-      width: "8%",
+      width: "20px",
       defaultSortOrder: "descend",
       sorter: (a, b) => compareNumber(a.jobId, b.jobId),
     },
     {
       title: t(p("jobName")),
       dataIndex: "jobName",
-      width: "25%",
+      width: "200px",
       ellipsis: true,
     },
     {
-      title: t(p("inferServiceAddress")),
-      dataIndex: "inferServiceAddress",
-      width: "10%",
+      title: t(p("partition")),
+      dataIndex: "partition",
+      width: "80px",
       ellipsis: true,
-      render: (_, record) => {
-        if (record.jobType === JobType.INFER) {
-          const webHost = window.location.hostname;
-          const host = record.host;
-
-          // 如果没有host，默认在scow节点转发
-          if (!host) {
-            return `${webHost}:${record.port}`;
-          }
-
-          return `${host}:${record.port}`;
-        }
-      },
+    },
+    {
+      title: "CPU",
+      dataIndex: "cpusAlloc",
+      width: "20px",
+      ellipsis: true,
+    },
+    {
+      title: "GPU",
+      dataIndex: "gpusAlloc",
+      width: "20px",
+      ellipsis: true,
+    },
+    {
+      title: t(p("memory")),
+      width: "50px",
+      ellipsis: true,
+      render: (_, record) => formatSize(record.memAlloc, ["MB", "GB", "TB"]),
+    },
+    {
+      title: t(p("node")),
+      dataIndex: "nodesAlloc",
+      width: "20px",
+      ellipsis: true,
     },
     {
       title: t(p("jobType")),
       dataIndex: "jobType",
-      width: "8%",
+      width: "20px",
       render: (_, record) => {
         if (record.jobType === JobType.APP) {
           return t(p("app"));
@@ -135,7 +147,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     {
       title: t(p("app")),
       dataIndex: "appId",
-      width: "8%",
+      width: "40px",
       render: (appId: string, record) => record.appName ?? appId,
       sorter: (a, b) => (!a.submitTime || !b.submitTime) ? -1 : compareDateTime(a.submitTime, b.submitTime),
     },
@@ -177,7 +189,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       title: t(p("action")),
       key: "action",
       fixed:"right",
-      width: "550px",
+      width: unfinished ? "500px" : "150px",
       render: (_, record) => (
         <Space>
           {
@@ -349,7 +361,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
         columns={columns}
         rowKey={(record) => record.sessionId}
         loading={isLoading || isFetching}
-        scroll={{ x:true }}
+        scroll={{ x: "max-content" }}
         pagination={{
           showSizeChanger: true,
           defaultPageSize: 50,

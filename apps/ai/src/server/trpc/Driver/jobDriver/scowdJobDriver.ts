@@ -337,7 +337,9 @@ export class ScowdJobDriver implements JobDriver {
     // If a job is not running, it cannot be ready
     const client = getAdapterClient(clusterId);
     const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
-      fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason"],
+      fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason","partition","gpus_alloc",
+        "cpus_alloc","mem_alloc_mb","nodes_alloc",
+      ],
       filter: {
         users: [this.userId], accounts: [],
         states: isRunning ? ["RUNNING", "PENDING"] : terminatedStates,
@@ -414,46 +416,6 @@ export class ScowdJobDriver implements JobDriver {
         return;
       }
 
-      let host: string | undefined = undefined;
-      let port: number | undefined = undefined;
-
-      // 如果是训练，不需要连接信息
-      if (sessionMetadata.jobType === JobType.APP && sessionMetadata.appId) {
-
-        const app = apps[sessionMetadata.appId];
-        // 未找到该应用 不报错。
-        if (!app) {
-          return;
-        }
-        // judge whether the app is ready
-        if (runningJobInfo.state === "RUNNING") {
-          try {
-            const client = getAdapterClient(clusterId);
-            const connectionInfo =
-                await getAppConnectionInfoFromAdapterForAi(client, sessionMetadata.jobId, this.logger);
-            if (connectionInfo?.response?.$case === "appConnectionInfo") {
-              host = connectionInfo.response.appConnectionInfo.host;
-              port = connectionInfo.response.appConnectionInfo.port;
-            }
-          } catch (error: any) {
-            this.logger.info("Job(jobId:%s) gets app connection info failed , reason: %o",
-              sessionMetadata.jobId, error.message);
-          }
-
-        }
-      }
-      // 推理需要端口
-      else if (sessionMetadata.jobType === JobType.INFER) {
-        if (runningJobInfo.state === "RUNNING") {
-          const client = getAdapterClient(clusterId);
-          const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, sessionMetadata.jobId, this.logger);
-          if (connectionInfo?.response?.$case === "appConnectionInfo") {
-            host = aiConfig.inferProxyHost;
-            port = connectionInfo.response.appConnectionInfo.port;
-          }
-        }
-      }
-
       const isPendingOrTerminated = runningJobInfo.state === "PENDING"
             || terminatedStates.includes(runningJobInfo.state);
 
@@ -472,8 +434,11 @@ export class ScowdJobDriver implements JobDriver {
           ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
         timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
         reason: isPendingOrTerminated ? (runningJobInfo.reason ?? "") : undefined,
-        host,
-        port,
+        partition:runningJobInfo.partition,
+        cpusAlloc:runningJobInfo.cpusAlloc ?? 0,
+        gpusAlloc:runningJobInfo.gpusAlloc ?? 0,
+        memAlloc:runningJobInfo.memAllocMb ?? 0,
+        nodesAlloc:runningJobInfo.nodesAlloc ?? 0,
       });
     }));
     const runningStates = ["RUNNING", "PENDING"];

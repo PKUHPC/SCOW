@@ -70,8 +70,11 @@ const AppSessionSchema = z.object({
   runningTime: z.string(),
   timeLimit: z.string(),
   reason: z.string().optional(),
-  host: z.string().optional(),
-  port: z.number().optional(),
+  partition:z.string(),
+  gpusAlloc:z.number(),
+  cpusAlloc:z.number(),
+  memAlloc:z.number(),
+  nodesAlloc:z.number(),
 });
 
 export type AppSession = z.infer<typeof AppSessionSchema>;

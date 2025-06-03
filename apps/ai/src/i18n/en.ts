@@ -335,6 +335,9 @@ export default {
         autoRefresh:"Auto refresh",
         inferServiceAddress:"Infer service address",
         infer:"Inferring",
+        partition:"partition",
+        memory:"memory",
+        node:"node",
       },
       connectToAppLink:{
         connectFailed:"Connect to app failed",

@@ -335,6 +335,9 @@ export default {
         autoRefresh:"自动刷新",
         inferServiceAddress:"推理服务地址",
         infer:"推理",
+        partition:"分区",
+        memory:"内存",
+        node:"节点",
       },
       connectToAppLink:{
         connectFailed:"连接应用失败",
