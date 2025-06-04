@@ -13,6 +13,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
+import { aiConfig } from "src/server/config/ai";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
@@ -118,7 +119,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName ,algorithms, image, datasets,models } = input;
+      const { clusterId, trainJobName ,algorithms, image, datasets,models,maxTime } = input;
 
       const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -128,6 +129,14 @@ procedure
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "The length of trainJobName should not exceed 42",
+        });
+      }
+
+      if (aiConfig.maxJobRunningTimeHours && maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
+          ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
         });
       }
 

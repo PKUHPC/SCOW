@@ -107,6 +107,7 @@ const PublicConfigSchema = z.object({
   LOGIN_NODES: z.record(z.string()),
   NOVNC_CLIENT_URL: z.string(),
   SCOW_RESOURCE: ScowResourceConfigSchema.optional(),
+  MAX_JOB_RUNNING_TIME_HOURS:z.number().optional(),
 });
 
 const UiConfigSchema = z.object({
@@ -214,6 +215,8 @@ export const config = router({
         FILE_EDIT_SIZE: aiConfig.file?.edit.limitSize,
 
         FILE_PREVIEW_SIZE: aiConfig.file?.preview.limitSize,
+
+        MAX_JOB_RUNNING_TIME_HOURS: aiConfig.maxJobRunningTimeHours,
       };
     }),
 

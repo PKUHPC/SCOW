@@ -410,6 +410,7 @@ export default {
         localImage:"Local image",
         remoteImage:"Remote image",
         currentImage:"The currently selected image",
+        maxTimeTips:"The maximum running time cannot exceed {} hours",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"Create successfully",

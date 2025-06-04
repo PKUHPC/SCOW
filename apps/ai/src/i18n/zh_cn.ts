@@ -410,6 +410,7 @@ export default {
         localImage:"本地镜像",
         remoteImage:"远程镜像",
         currentImage:"当前选择镜像",
+        maxTimeTips:"最大运行时间不能超过 {} 小时",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"提交推理成功",

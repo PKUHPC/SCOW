@@ -171,6 +171,9 @@ harborConfig:
 # 选配公共的挂载目录
 # publicMountPoints:
   # - /nfs/public
+
+# 选配作业最大运行时间
+# maxJobRunningTimeHours: 24
 ```
 
 ## 启动服务

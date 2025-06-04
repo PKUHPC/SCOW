@@ -38,6 +38,7 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
+import { usePublicConfig } from "../../context";
 import { validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
 
@@ -158,6 +159,7 @@ export const LaunchAppForm = (props: Props) => {
   const { message } = App.useApp();
   const theme = useTheme();
 
+  const { publicConfig } = usePublicConfig();
   const router = useRouter();
 
   const [form] = Form.useForm<FormFields>();
@@ -1712,7 +1714,20 @@ export const LaunchAppForm = (props: Props) => {
             </Form.Item>
           </>
         ) : null}
-        <Form.Item label={t(p("maxTime"))} name="maxTime" rules={[{ required: true }]}>
+        <Form.Item
+          label={t(p("maxTime"))}
+          name="maxTime"
+          rules={[{ required: true,
+            validator: (_, value) => {
+              if (publicConfig.MAX_JOB_RUNNING_TIME_HOURS !== undefined
+                && (transformTime(value) > publicConfig.MAX_JOB_RUNNING_TIME_HOURS * 60)) {
+                return Promise.reject(new Error(t(p("maxTimeTips"),
+                  [publicConfig.MAX_JOB_RUNNING_TIME_HOURS.toString()])));
+              }
+              return Promise.resolve();
+            },
+          }]}
+        >
           <AfterInputNumber
             min={1}
             step={1}

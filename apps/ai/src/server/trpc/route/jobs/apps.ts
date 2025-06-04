@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import fs from "fs";
 import { join } from "path";
 import { JobType } from "src/models/Job";
+import { aiConfig } from "src/server/config/ai";
 import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -296,7 +297,7 @@ export const createAppSession = procedure
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, appId, appJobName, algorithms,image, datasets, models, customAttributes } = input;
+    const { clusterId, appId, appJobName, maxTime, algorithms,image, datasets, models, customAttributes } = input;
 
     const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
     const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -306,6 +307,14 @@ export const createAppSession = procedure
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "The length of appJobName should not exceed 42",
+      });
+    }
+
+    if (aiConfig.maxJobRunningTimeHours && maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
+        ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
       });
     }
 
