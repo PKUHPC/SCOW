@@ -520,6 +520,8 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
             // 集群ID被切换时，确保返回家目录
             if (previousClusterId !== value) {
+              // 重置已复制项和操作
+              resetSelectedAndOperation();
               toHome(value);
             }
           }}
