@@ -11,7 +11,7 @@
  */
 
 import { ensureNotUndefined } from "@ddadaal/tsgrpc-server";
-import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
+import { Loaded, MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal } from "@scow/lib-decimal";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
@@ -23,7 +23,7 @@ import { ChargeRecord } from "src/entities/ChargeRecord";
 import { PayRecord } from "src/entities/PayRecord";
 import { QueryCache } from "src/entities/QueryCache";
 import { User } from "src/entities/User";
-import { UserRole } from "src/entities/UserAccount";
+import { UserAccount, UserRole } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
 
 dayjs.extend(timezone);
@@ -62,8 +62,6 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
     term = timePeriod.format(timeFormat);
   }
 
-  logger.info(`Generating ${type} bills for term ${term}, start: ${startTimestamp}, end: ${endTimestamp}`);
-
   const accounts = await em.find(Account, {}, {
     populate: ["tenant", "users", "users.user"],
     fields: [
@@ -84,57 +82,73 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
       continue;
     }
 
-    try {
+    const owner = account.users.getItems().find((x) => x.role === UserRole.OWNER);
 
-      const owner = account.users.getItems().find((x) => x.role === UserRole.OWNER);
+    if (!owner) {
+      logger.error("Account %s does not have an owner, do not generate bill", account.accountName);
+      continue;
+    }
 
-      if (!owner) {
-        logger.error("Account %s does not have an owner, do not generate bill", account.accountName);
-        continue;
-      }
+    await generateAnAccountBill(em, account, term, startTimestamp, endTimestamp,
+      type, owner, allUsersIdNameObj, logger);
 
-      const ownerName = owner.user.getEntity().name;
-      const ownerId = owner.user.getEntity().userId;
+  }
 
-      const accountChargesRecord = await em.find(ChargeRecord, {
-        accountName: account.accountName,
-        time: { $gte: startTimestamp, $lte: endTimestamp },
-      }, {
-        fields: ["amount", "userId", "type", "time"],
-      });
+  // 生成新的账单以后，需要删除数据库中存储的类型缓存，保证下次查询时可以查到所有的账单详情类型
+  const queryCache = await em.findOne(QueryCache, { queryKey: "bill_type" });
+  if (queryCache) {
+    await em.removeAndFlush(queryCache);
+  }
 
-      const chargesRecord = accountChargesRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]))
-        .filter((r) => { return r.amount.gt(0); });
+  logger.info(`Finished generating ${type} bills for term ${term}`);
+}
 
-      // 筛选类型为作业费用更改的充值记录，这些费用将以负值的形式统计进作业费用当中
-      const accountPayRecord = await em.find(PayRecord, {
-        type: misConfig.changeJobPriceType,
-        accountName: account.accountName,
-        time: { $gte: startTimestamp, $lte: endTimestamp },
-      }, {
-        fields: ["amount", "comment", "time"],
-      });
+async function generateAnAccountBill(em: SqlEntityManager<MySqlDriver>,
+  account: Loaded<Account, "tenant" | "users" | "users.user", "tenant" | "users" | "users.user" |
+  "accountName" | "users.role" | "users.user.name" | "users.user.userId", never>,
+  term: string, startTimestamp: string, endTimestamp: string,
+  type: BillType, owner: Loaded<UserAccount, "user", "user" | "role" | "user.name" | "user.userId", never>,
+  allUsersIdNameObj: Record<string, string>, logger: Logger) {
+
+  try {
+
+    const ownerName = owner.user.getEntity().name;
+    const ownerId = owner.user.getEntity().userId;
+
+    const accountChargesRecord = await em.find(ChargeRecord, {
+      accountName: account.accountName,
+      time: { $gte: startTimestamp, $lte: endTimestamp },
+    }, {
+      fields: ["amount", "userId", "type", "time"],
+    });
+
+    const chargesRecord = accountChargesRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]))
+      .filter((r) => { return r.amount.gt(0); });
+
+    // 筛选类型为作业费用更改的充值记录，这些费用将以负值的形式统计进作业费用当中
+    const accountPayRecord = await em.find(PayRecord, {
+      type: misConfig.changeJobPriceType,
+      accountName: account.accountName,
+      time: { $gte: startTimestamp, $lte: endTimestamp },
+    }, {
+      fields: ["amount", "comment", "time"],
+    });
 
 
-      const payRecord = accountPayRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]));
+    const payRecord = accountPayRecord.map((x) => ensureNotUndefined(x, ["time", "amount"]));
 
-      if (payRecord.length) {
-        logger.info("Account %s job payRecord: %o", account.accountName, payRecord);
-      }
+    if (chargesRecord.length || payRecord.length) {
 
-      if (chargesRecord.length || payRecord.length) {
-
-        // 将账单信息按照userId分成多个数组，没有id的消费记在账户拥有者上
-        const userChagresRecordObj: Record<string, typeof chargesRecord> =
+      // 将账单信息按照userId分成多个数组，没有id的消费记在账户拥有者上
+      const userChagresRecordObj: Record<string, typeof chargesRecord> =
           chargesRecord.reduce((userChagresRecord: Record<string, typeof chargesRecord>, record) => {
             const userId = record.userId || ownerId;
             userChagresRecord[userId] = userChagresRecord[userId] || [];
             userChagresRecord[userId].push(record);
             return userChagresRecord;
           }, {});
-
         // 将每个用户的消费类型按照不同的类型分别聚合统计
-        const userChagresRecordTypeObj: Record<string, Record<string, Decimal>> =
+      const userChargesRecordTypeObj: Record<string, Record<string, Decimal>> =
           Object.keys(userChagresRecordObj).reduce((userChagresRecordType:
           Record<string, Record<string, Decimal>>, userId) => {
 
@@ -149,8 +163,8 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
             return userChagresRecordType;
           }, {});
 
-        // 计算有多少个用户有消费，分别消费多少，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
-        const userIdAmountObj: Record<string, Decimal> =
+      // 计算有多少个用户有消费，分别消费多少，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
+      const userIdAmountObj: Record<string, Decimal> =
           chargesRecord.reduce((userIdObj: Record<string, Decimal>, record) => {
 
             userIdObj[record.userId || ownerId] =
@@ -159,8 +173,8 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
             return userIdObj;
           }, {});
 
-        // 根据费用类型进行归并
-        const accountTypeAmountObj: Record<string, Decimal> =
+      // 根据费用类型进行归并
+      const accountTypeAmountObj: Record<string, Decimal> =
           chargesRecord.reduce((typeObj: Record<string, Decimal>, record) => {
 
             typeObj[record.type || misConfig.bill!.otherChargeTypeText] =
@@ -169,16 +183,16 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
             return typeObj;
           }, {});
 
-        let accountAmount = Object.values(userIdAmountObj)
-          .reduce((sum, amount) => sum.plus(amount), Decimal(0));
+      let accountAmount = Object.values(userIdAmountObj)
+        .reduce((sum, amount) => sum.plus(amount), Decimal(0));
 
-        // 如果有充值记录，那么就要记录退费，充值记录中部分数据未记录用户id，这部分记在账户拥有者上，
-        // 需要加默认赋值0，因为本月可能没有一分钱消费，但是调整了作业费用并进行了充值，
-        // 临时使用属性名：jobRefundText
-        if (payRecord.length) {
-          const payAmount = payRecord.reduce((sum, r) => sum.plus(r.amount), Decimal(0));
+      // 如果有充值记录，那么就要记录退费，充值记录中部分数据未记录用户id，这部分记在账户拥有者上，
+      // 需要加默认赋值0，因为本月可能没有一分钱消费，但是调整了作业费用并进行了充值，
+      // 临时使用属性名：jobRefundText
+      if (payRecord.length) {
+        const payAmount = payRecord.reduce((sum, r) => sum.plus(r.amount), Decimal(0));
 
-          const userIdPayAmountObj: Record<string, Decimal> =
+        const userIdPayAmountObj: Record<string, Decimal> =
             payRecord.reduce((userIdObj: Record<string, Decimal>, record) => {
               // 提取存在充值记录中的userId，如果没有，就计在账户拥有者上
               const jobUserId = record.comment?.split("job user ")[1] || ownerId;
@@ -187,100 +201,95 @@ export async function generateBill(em: SqlEntityManager<MySqlDriver>, type: Bill
               return userIdObj;
             }, {});
 
-          // 将退费金额计入个人用户的消费记录
-          for (const key in userIdPayAmountObj) {
-            userChagresRecordTypeObj[key].jobRefund = userIdPayAmountObj[key];
-            userIdAmountObj[key] = (userIdAmountObj[key] || Decimal(0)).minus(userIdPayAmountObj[key]);
+        // 将退费金额计入个人用户的消费记录
+        for (const key in userIdPayAmountObj) {
+          if (userChargesRecordTypeObj[key]) {
+            userChargesRecordTypeObj[key].jobRefund = userIdPayAmountObj[key];
+          } else {
+            userChargesRecordTypeObj[key] = { jobRefund: userIdPayAmountObj[key] };
           }
-
-          accountAmount = accountAmount.minus(payAmount);
-
-          accountTypeAmountObj.jobRefund = payAmount;
+          userIdAmountObj[key] = (userIdAmountObj[key] || Decimal(0)).minus(userIdPayAmountObj[key]);
         }
 
-        // 将退费金额合并到作业费用更改中
-        if (accountTypeAmountObj.jobRefund) {
-          accountTypeAmountObj[misConfig.changeJobPriceType] =
+        accountAmount = accountAmount.minus(payAmount);
+
+        accountTypeAmountObj.jobRefund = payAmount;
+      }
+
+      // 将退费金额合并到作业费用更改中
+      if (accountTypeAmountObj.jobRefund) {
+        accountTypeAmountObj[misConfig.changeJobPriceType] =
           (accountTypeAmountObj[misConfig.changeJobPriceType] || Decimal(0))
             .minus(accountTypeAmountObj.jobRefund);
 
-          // 删掉退费金额这个属性
-          delete accountTypeAmountObj.jobRefund;
-        }
-
-        // 插入账户账单数据
-        const newAccountBill = new AccountBill({
-          tenantName: account.tenant.$.name,
-          accountName: account.accountName,
-          accountOwnerId: ownerId,
-          accountOwnerName: ownerName,
-          term,
-          type,
-          amount: accountAmount,
-          details: accountTypeAmountObj,
-        });
-        em.persist(newAccountBill);
-
-        // 插入每个用户的支出情况，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
-        const userBills = Object.keys(userIdAmountObj).map((user) => {
-
-          // 将退费金额合并到作业费用更改中
-          if (userChagresRecordTypeObj[user].jobRefund) {
-            userChagresRecordTypeObj[user][misConfig.changeJobPriceType] =
-              (userChagresRecordTypeObj[user][misConfig.changeJobPriceType] || Decimal(0))
-                .minus(userChagresRecordTypeObj[user].jobRefund);
-
-            // 删掉退费金额这个属性
-            delete userChagresRecordTypeObj[user].jobRefund;
-          }
-
-          return new UserBill({
-            tenantName: account.tenant.$.name,
-            accountName: account.accountName,
-            userId: user,
-            name: allUsersIdNameObj[user],
-            term,
-            amount: userIdAmountObj[user],
-            type,
-            details: userChagresRecordTypeObj[user],
-            accountBill: newAccountBill,
-          });
-        });
-
-        em.persist(userBills);
-
-      } else {
-        // 插入金额为0的账户账单数据
-        const newAccountBill = new AccountBill({
-          tenantName: account.tenant.$.name,
-          accountName: account.accountName,
-          accountOwnerId: ownerId,
-          accountOwnerName: ownerName,
-          term,
-          amount: Decimal(0),
-          type,
-        });
-
-        em.persist(newAccountBill);
+        // 删掉退费金额这个属性
+        delete accountTypeAmountObj.jobRefund;
       }
 
-      await em.flush();
-      logger.info("The bill of account %s produced with %s", account.accountName, term);
-    } catch (error) {
-      logger.info("Failed to produce bill of account %s with %s", account.accountName, term);
-      logger.error(error);
+      // 插入账户账单数据
+      const newAccountBill = new AccountBill({
+        tenantName: account.tenant.$.name,
+        accountName: account.accountName,
+        accountOwnerId: ownerId,
+        accountOwnerName: ownerName,
+        term,
+        type,
+        amount: accountAmount,
+        details: accountTypeAmountObj,
+      });
+      em.persist(newAccountBill);
+
+      // 插入每个用户的支出情况，如果有userId，视为当前userId，没有的话视为账户拥有者的支出
+      const userBills = Object.keys(userIdAmountObj).map((user) => {
+
+        // 将退费金额合并到作业费用更改中
+        if (userChargesRecordTypeObj[user].jobRefund) {
+          userChargesRecordTypeObj[user][misConfig.changeJobPriceType] =
+              (userChargesRecordTypeObj[user][misConfig.changeJobPriceType] || Decimal(0))
+                .minus(userChargesRecordTypeObj[user].jobRefund);
+
+          // 删掉退费金额这个属性
+          delete userChargesRecordTypeObj[user].jobRefund;
+        }
+
+        return new UserBill({
+          tenantName: account.tenant.$.name,
+          accountName: account.accountName,
+          userId: user,
+          name: allUsersIdNameObj[user],
+          term,
+          amount: userIdAmountObj[user],
+          type,
+          details: userChargesRecordTypeObj[user],
+          accountBill: newAccountBill,
+        });
+      });
+
+      em.persist(userBills);
+
+    } else {
+      // 插入金额为0的账户账单数据
+      const newAccountBill = new AccountBill({
+        tenantName: account.tenant.$.name,
+        accountName: account.accountName,
+        accountOwnerId: ownerId,
+        accountOwnerName: ownerName,
+        term,
+        amount: Decimal(0),
+        type,
+      });
+
+      em.persist(newAccountBill);
     }
-  }
 
-  // 生成新的账单以后，需要删除数据库中存储的类型缓存，保证下次查询时可以查到所有的账单详情类型
-  const queryCache = await em.findOne(QueryCache, { queryKey: "bill_type" });
-  if (queryCache) {
-    await em.removeAndFlush(queryCache);
+    await em.flush();
+    em.clear();
+    logger.info("The bill of account %s produced with %s", account.accountName, term);
+  } catch (error) {
+    logger.error("Failed to produce bill of account %s with %s", account.accountName, term);
+    logger.error(error);
   }
-
-  logger.info(`Finished generating ${type} bills for term ${term}`);
 }
-
 
 export async function generateCustomTermBills(customTerms: string[],
   em: SqlEntityManager<MySqlDriver>, logger: Logger) {
