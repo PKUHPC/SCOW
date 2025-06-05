@@ -57,11 +57,13 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
           text: t(pPlatform("jobBillingTable")),
           path: "/admin/jobBilling",
         },
-        {
-          Icon: UnlockOutlined,
-          text: t(pPlatform("userUnlock")),
-          path: "/admin/lockedUsers",
-        },
+        ...((publicConfig.AUTH_PPOLICY_CONFIG?.defaultOlcPPolicyDn &&
+          publicConfig.AUTH_PPOLICY_CONFIG?.pwdMaxFailures) ?
+          [{
+            Icon: UnlockOutlined,
+            text: t(pPlatform("userUnlock")),
+            path: "/admin/lockedUsers",
+          }] : []),
         {
           Icon: CloudServerOutlined,
           text: t(pPlatform("tenantsManagement")),

@@ -305,7 +305,7 @@ sn: dummy value
 EOF
 ```
 
-2. 在ppolicy模块加载完成和初始化配置后，后续即可以在config/auth.yml配置文件中按需更改密码策略配置。
+2. 在`ppolicy`模块加载完成和初始化配置后，后续即可以在`config/auth.yml`配置文件中按需更改密码策略配置。当开启了用户锁定功能，需在`defaultOlcPPolicyDn`存在的条件下，将`pwdMaxFailures`置为0或删除可关闭用户锁定功能。当配置了`defaultOlcPPolicyDn`和`pwdMaxFailures`后在管理系统中会出现用户登录解封菜单。
 
 ```yaml title="config/auth.yml"
 ldap: 
@@ -316,6 +316,6 @@ ldap:
       pwdLockoutDurationMinutes: 5000
       #允许用户连续输入错误密码的最大次数。
       pwdMaxFailures: 5
-      #是否强制用户在首次登录或重置密码后修改密码。单独配置此项可以直接配置，无需加载ppolicy模块。
+      #是否强制用户在首次登录或重置密码后修改密码。
       pwdMustChangeAtFirstLoginOrResetByAdmin: true
 ```

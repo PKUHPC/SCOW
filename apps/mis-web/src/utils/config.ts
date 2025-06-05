@@ -11,6 +11,7 @@
  */
 
 import { AuditConfigSchema } from "@scow/config/build/audit";
+import type { AuthPpolicyConfigSchema } from "@scow/config/build/auth";
 import type { ClusterTextsConfigSchema } from "@scow/config/build/clusterTexts";
 import { ScowResourceConfigSchema } from "@scow/config/build/common";
 import { I18nStringType, SystemLanguageConfig } from "@scow/config/build/i18n";
@@ -45,6 +46,8 @@ export interface ServerRuntimeConfig {
 }
 
 export interface PublicRuntimeConfig {
+  AUTH_PPOLICY_CONFIG: AuthPpolicyConfigSchema;
+
   BASE_PATH: string;
 
   PREDEFINED_CHARGING_TYPES: string[];

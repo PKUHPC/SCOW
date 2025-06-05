@@ -16,6 +16,7 @@ const { getCommonConfig, getSystemLanguageConfig } = require("@scow/config/build
 const { getClusterTextsConfig } = require("@scow/config/build/clusterTexts");
 const { DEFAULT_PRIMARY_COLOR, getUiConfig } = require("@scow/config/build/ui");
 const { getAuditConfig } = require("@scow/config/build/audit");
+const { getAuthConfig } = require("@scow/config/build/auth");
 const { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_SERVER } = require("next/constants");
 const { join } = require("path");
 const { getCapabilities } = require("@scow/lib-auth");
@@ -96,6 +97,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
   const commonConfig = getCommonConfig(configBasePath, console);
   const auditConfig = getAuditConfig(configBasePath, console);
+  const authConfig = getAuthConfig(configBasePath, console);
 
   const versionTag = readVersionFile()?.tag;
 
@@ -122,6 +124,11 @@ const buildRuntimeConfig = async (phase, basePath) => {
    * @type {import("./src/utils/config").PublicRuntimeConfig}
    */
   const publicRuntimeConfig = {
+    AUTH_PPOLICY_CONFIG: {
+      defaultOlcPPolicyDn: authConfig.ldap?.ppolicy?.defaultOlcPPolicyDn,
+      pwdMaxFailures: authConfig.ldap?.ppolicy?.pwdMaxFailures,
+    },
+
     CREATE_USER_CONFIG: {
       misConfig: misConfig.createUser,
       authSupportsCreateUser: capabilities.createUser,
