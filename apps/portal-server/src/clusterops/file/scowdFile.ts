@@ -27,6 +27,12 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     const { userId, path } = request;
 
     try {
+      const { exists } = await client.file.exists({ userId, path });
+
+      if (exists) {
+        throw { code: status.ALREADY_EXISTS, details: `${path} already exists` } as ServiceError;
+      }
+      
       await client.file.createFile({ userId, filePath: path });
       return {};
     } catch (err) {
@@ -84,6 +90,12 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     const { userId, path } = request;
 
     try {
+      const { exists } = await client.file.exists({ userId, path });
+
+      if (exists) {
+        throw { code: status.ALREADY_EXISTS, details: `${path} already exists` } as ServiceError;
+      }
+
       await client.file.makeDirectory({ userId, dirPath: path });
       return {};
     } catch (err) {

@@ -80,6 +80,12 @@ export class ScowdFileDriver implements FileDriver {
   }
 
   async makeDirectory(path: string): Promise<void> {
+    const { exists } = await wrap(this.client.file.exists({ userId: this.userId, path }), this.logger);
+
+    if (exists) {
+      throw new TRPCError({ code: "CONFLICT", message: `${path} already exists` });
+    }
+
     await wrap(
       this.client.file.makeDirectory({
         userId: this.userId,
@@ -89,6 +95,13 @@ export class ScowdFileDriver implements FileDriver {
     );
   }
   async createFile(path: string): Promise<void> {
+
+    const { exists } = await wrap(this.client.file.exists({ userId: this.userId, path }), this.logger);
+
+    if (exists) {
+      throw new TRPCError({ code: "CONFLICT", message: `${path} already exists` });
+    }
+
     await wrap(
       this.client.file.createFile({
         userId: this.userId,
