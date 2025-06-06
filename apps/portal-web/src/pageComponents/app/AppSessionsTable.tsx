@@ -202,7 +202,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
     },
   ];
 
-  const [checked, setChecked] = useState(true);
+  const [checked, setChecked] = useState(false);
   const [disabled] = useState(false);
 
   const reloadTable = useCallback(() => {

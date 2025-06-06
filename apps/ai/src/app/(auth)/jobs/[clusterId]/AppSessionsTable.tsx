@@ -70,7 +70,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   });
   const [form] = Form.useForm<FilterForm>();
 
-  const [checked, setChecked] = useState(true);
+  const [checked, setChecked] = useState(false);
   const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
   const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery({
