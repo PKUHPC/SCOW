@@ -161,6 +161,24 @@ export class ScowdFileDriver implements FileDriver {
   }
 
   async download(path: string,download: string,res: NextApiResponse<any>) {
+    let clientDisconnected = false;
+    const abortController = new AbortController();
+
+    const onResClose = () => {
+      this.logger.info(`Client disconnected during download of ${path}`);
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    const onResError = (err: Error) => {
+      this.logger.error(`Error on response stream for ${path}: ${err.message}`);
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    res.on("close", onResClose);
+    res.on("error", onResError);
+
     try {
       const meta = await wrap(
         this.client.file.getFileMetadata({
@@ -185,18 +203,62 @@ export class ScowdFileDriver implements FileDriver {
         userId: this.userId,
         path,
         chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+      }, {
+        signal: abortController.signal,
       });
 
       for await (const { chunk } of readStream) {
+        if (clientDisconnected || res.destroyed) {
+          this.logger.info(`Download of ${path} aborted due to client disconnection or response destruction.`);
+          break;
+        }
+
         // 如果写入返回 false，表示缓冲区已满，需要等待 `drain` 事件
         if (!res.write(chunk)) {
-          await new Promise((resolve) => res.once("drain", resolve));
+          if (clientDisconnected || res.destroyed) {
+            this.logger.info(`Download of ${path} aborted while write buffer full.`);
+            break;
+          }
+          try {
+            await new Promise<void>((resolve, reject) => {
+              const onDrain = () => {
+                res.removeListener("close", onEarlyCloseOrError);
+                res.removeListener("error", onEarlyCloseOrError);
+                resolve();
+              };
+              const onEarlyCloseOrError = (err?: Error) => {
+                res.removeListener("drain", onDrain);
+                clientDisconnected = true;
+                if (err) {
+                  this.logger.error(`Error (${err.message}) occurred while waiting for drain for ${path}.`);
+                  reject(err);
+                } else {
+                  this.logger.info(`Client closed connection while waiting for drain for ${path}.`);
+                  resolve();
+                }
+              };
+              res.once("drain", onDrain);
+              res.once("close", onEarlyCloseOrError);
+              res.once("error", onEarlyCloseOrError);
+            });
+          } catch (drainError) {
+            this.logger.error("Error while waiting for drain during download:", drainError);
+            break;
+          }
+        }
+        if (clientDisconnected || res.destroyed) {
+          this.logger.info(`Download of ${path} aborted post-write/drain.`);
+          break;
         }
       }
     } catch (err) {
       throw mapConnectErrorToTRPCError(err);
     } finally {
-      res.end();
+      res.removeListener("close", onResClose);
+      res.removeListener("error", onResError);
+      if (!res.writableEnded && !res.destroyed) {
+        res.end();
+      }
     }
   }
 

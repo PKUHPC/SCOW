@@ -20,11 +20,33 @@ export const scowdShellServices = (): ShellOps => ({
     const client = getScowdClient(scowdUrl, certificates);
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
+    let clientDisconnected = false;
+    const abortController = new AbortController();
+
+    const onCallClose = () => {
+      logger.info("Client disconnected during shell session");
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    const onCallError = (err: Error) => {
+      logger.error(`Error on shell session: ${err.message}`);
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    call.on("close", onCallClose);
+    call.on("error", onCallError);
+
     try {
       const scowdStream = client.shell.shell((async function* () {
         yield { message: { case: "connect", value: { cluster, loginNode, userId, rows, cols } } };
 
         for await (const data of call.iter()) {
+          if (clientDisconnected) {
+            logger.info("Shell session aborted due to client disconnection");
+            break;
+          }
 
           if (data.message?.$case === "resize") {
             // 640 and 480 are default values
@@ -43,7 +65,9 @@ export const scowdShellServices = (): ShellOps => ({
             yield { message: { case: "data", value: { data: data.message.data.data as Uint8Array<ArrayBuffer> } } };
           }
         }
-      })());
+      })(), {
+        signal: abortController.signal,
+      });
 
       for await (const data of scowdStream) {
         if (!data?.message.case || data?.message.case === "exit") { break; }
@@ -57,6 +81,8 @@ export const scowdShellServices = (): ShellOps => ({
       }
       throw err;
     } finally {
+      call.removeListener("close", onCallClose);
+      call.removeListener("error", onCallError);
       call.end();
     }
 

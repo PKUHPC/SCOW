@@ -94,15 +94,40 @@ export default route(DownloadFileSchema, async (req, res) => {
     cluster, path, userId: info.identityId,
   });
 
-  await pipeline(
-    stream.iter(),
-    async (x) => {
-      return x.chunk;
-    },
-    res,
-  ).finally(() => {
-    res.end();
+  // Handle client disconnection
+  req.on("close", () => {
+    console.log("Client disconnected, aborting download stream.");
+    stream.cancel(); // Abort the gRPC stream
+    if (!res.writableEnded) {
+      res.end();
+    }
   });
+
+  try {
+    await pipeline(
+      stream.iter(),
+      async (x) => {
+        return x.chunk;
+      },
+      res,
+    );
+  } catch (error: any) {
+    // Handle errors from the pipeline, e.g., if the stream was aborted
+    console.error("Error during pipeline processing:", error.message);
+    if (error.code === "ERR_STREAM_PREMATURE_CLOSE" || error.message?.includes("aborted")) {
+      console.log("Stream was aborted, ensuring response is ended.");
+    } else {
+      // For other errors, you might want to send a specific error response
+      if (!res.headersSent) {
+        res.status(500).send({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }
+  } finally {
+    if (!res.writableEnded) {
+      console.log("Ensuring response is ended in finally block.");
+      res.end();
+    }
+  }
 });
 
 export const config = {

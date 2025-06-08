@@ -2,7 +2,7 @@ import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { FileInfo, fileInfo_FileTypeFromJSON } from "@scow/protos/build/portal/file";
-import { FileType } from "@scow/scowd-protos/build/storage/file_pb";
+import { DownloadResponse, FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
 import { config } from "src/config/env";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
@@ -32,7 +32,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       if (exists) {
         throw { code: status.ALREADY_EXISTS, details: `${path} already exists` } as ServiceError;
       }
-      
+
       await client.file.createFile({ userId, filePath: path });
       return {};
     } catch (err) {
@@ -144,27 +144,103 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  download: async (request) => {
+  download: async (request, logger) => {
     const { userId, path, call } = request;
+    let readStream: AsyncIterable<DownloadResponse> | undefined;
+
+    let clientDisconnected = false;
+    const abortController = new AbortController();
+
+    const onCallClose = () => {
+      logger.info(`Client disconnected during download of ${path}.`);
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    const onCallError = (err: Error) => {
+      logger.error(`Error on server stream for ${path}: ${err.message}`);
+      clientDisconnected = true;
+      abortController.abort();
+    };
+
+    call.on("close", onCallClose);
+    call.on("error", onCallError);
 
     try {
-      const readStream = client.file.download({
+      readStream = client.file.download({
         userId, path, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+      }, {
+        signal: abortController.signal,
       });
 
       for await (const response of readStream) {
-        // 如果写入返回 false，表示缓冲区已满，需要等待 `drain` 事件
+        if (clientDisconnected || call.destroyed) {
+          logger.info(`Download of ${path} aborted due to client disconnection or stream destruction.`);
+          break;
+        }
+
         if (!call.write(response)) {
-          await new Promise((resolve) => call.once("drain", resolve));
+          if (clientDisconnected || call.destroyed) {
+            logger.info(`Download of ${path} aborted while write buffer full.`);
+            break;
+          }
+          try {
+            await new Promise<void>((resolve, reject) => {
+              const onDrain = () => {
+                call.removeListener("close", onEarlyCloseOrError);
+                call.removeListener("error", onEarlyCloseOrError);
+                resolve();
+              };
+              const onEarlyCloseOrError = (err?: Error) => {
+                call.removeListener("drain", onDrain);
+                clientDisconnected = true;
+                if (err) {
+                  logger.error(`Error (${err.message}) occurred while waiting for drain for ${path}.`);
+                  reject(err);
+                } else {
+                  logger.info(`Client closed connection while waiting for drain for ${path}.`);
+                  resolve();
+                }
+              };
+              call.once("drain", onDrain);
+              call.once("close", onEarlyCloseOrError);
+              call.once("error", onEarlyCloseOrError);
+            });
+          } catch (drainError) {
+            logger.error(`Error while waiting for drain for ${path}:`, drainError);
+            break;
+          }
+        }
+
+        if (clientDisconnected || call.destroyed) {
+          logger.info(`Download of ${path} aborted post-write/drain.`);
+          break;
         }
       }
+
+      if (!clientDisconnected && !call.writableEnded && !call.destroyed) {
+        logger.info(`Download of ${path} completed. Ending stream.`);
+        call.end();
+      } else if (clientDisconnected && !call.writableEnded && !call.destroyed) {
+        logger.info(`Download of ${path} was interrupted. Ensuring call is ended.`);
+        call.end();
+      }
+
     } catch (err) {
+      logger.error(`Unhandled error during download of ${path}:`, err);
+      clientDisconnected = true;
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
       }
       throw err;
     } finally {
-      call.end();
+      call.removeListener("close", onCallClose);
+      call.removeListener("error", onCallError);
+
+      if (!call.writableEnded && !call.destroyed) {
+        logger.warn(`Call for ${path} was not properly ended by logic. Ending in finally.`);
+        call.end();
+      }
     }
 
     return {};

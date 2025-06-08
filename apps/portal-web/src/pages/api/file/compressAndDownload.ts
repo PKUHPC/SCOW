@@ -67,15 +67,33 @@ export default route(CompressAndDownloadFileSchema, async (req, res) => {
     cluster, paths, userId: info.identityId,
   });
 
-  await pipeline(
-    stream.iter(),
-    async (x) => {
-      return x.chunk;
-    },
-    res,
-  ).finally(() => {
-    res.end();
+  req.on("close", () => {
+    if (!res.writableEnded) {
+      console.log("Client disconnected, aborting compressAndDownload stream");
+      stream.cancel();
+      res.end();
+    }
   });
+
+  try {
+    await pipeline(
+      stream.iter(),
+      async (x) => {
+        return x.chunk;
+      },
+      res,
+    );
+  } catch (error) {
+    console.error("Error piping compressAndDownload stream:", error);
+    if (!res.writableEnded) {
+      stream.cancel();
+      res.end();
+    }
+  } finally {
+    if (!res.writableEnded) {
+      res.end();
+    }
+  }
 });
 
 export const config = {

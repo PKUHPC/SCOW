@@ -213,23 +213,99 @@ export const fileServiceServer = plugin((server) => {
       const client = getScowdClient(cluster);
 
       try {
+        let clientDisconnected = false;
+        const abortController = new AbortController();
+
+        const onCallClose = () => {
+          subLogger.info("Client disconnected during compressAndDownload.");
+          clientDisconnected = true;
+          abortController.abort();
+        };
+        const onCallError = (err: Error) => {
+          subLogger.error(`Error on server stream during compressAndDownload: ${err.message}`);
+          clientDisconnected = true;
+          abortController.abort();
+        };
+
         const readStream = client.file.compressAndDownload({
           userId, paths, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+        }, {
+          signal: abortController.signal,
         });
 
-        for await (const response of readStream) {
-          // 如果写入返回 false，表示缓冲区已满，需要等待 `drain` 事件
-          if (!call.write(response)) {
-            await new Promise((resolve) => call.once("drain", resolve));
+        call.on("close", onCallClose);
+        call.on("error", onCallError);
+
+        try {
+          for await (const response of readStream) {
+            if (clientDisconnected || call.destroyed) {
+              subLogger.info("compressAndDownload aborted due to client disconnection or stream destruction.");
+              break;
+            }
+            // 如果写入返回 false，表示缓冲区已满，需要等待 `drain` 事件
+            if (!call.write(response)) {
+              if (clientDisconnected || call.destroyed) {
+                subLogger.info("compressAndDownload aborted while write buffer full.");
+                break;
+              }
+              try {
+                await new Promise<void>((resolve, reject) => {
+                  const onDrain = () => {
+                    call.removeListener("close", onEarlyCloseOrError);
+                    call.removeListener("error", onEarlyCloseOrError);
+                    resolve();
+                  };
+                  const onEarlyCloseOrError = (err?: Error) => {
+                    call.removeListener("drain", onDrain);
+                    clientDisconnected = true;
+                    if (err) {
+                      subLogger.error(
+                        `Error (${err.message}) occurred while waiting for drain during compressAndDownload.`,
+                      );
+                      reject(err);
+                    } else {
+                      subLogger.info("Client closed connection while waiting for drain during compressAndDownload.");
+                      resolve(); // Resolve to allow loop to break due to clientDisconnected
+                    }
+                  };
+                  call.once("drain", onDrain);
+                  call.once("close", onEarlyCloseOrError);
+                  call.once("error", onEarlyCloseOrError);
+                });
+              } catch (drainError) {
+                subLogger.error("Error while waiting for drain during compressAndDownload:", drainError);
+                break; // Exit loop on drain error
+              }
+            }
+            if (clientDisconnected || call.destroyed) { // Re-check after potential async drain
+              subLogger.info("compressAndDownload aborted post-write/drain.");
+              break;
+            }
+          }
+        } catch (err) {
+          clientDisconnected = true; // Assume disconnection on any readStream error
+          if (err instanceof ConnectError) {
+            throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+          }
+          throw err;
+        } finally {
+          call.removeListener("close", onCallClose);
+          call.removeListener("error", onCallError);
+          if (!call.writableEnded && !call.destroyed) {
+            subLogger.info("Ensuring call is ended in compressAndDownload finally block.");
+            call.end();
           }
         }
       } catch (err) {
+        // This outer catch handles errors like checkActivatedClusters or getScowdClient
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
         }
+        // Ensure call is ended if it was initiated and an error occurred before the inner try/finally
+        if (call && !call.writableEnded && !call.destroyed) {
+          call.end();
+        }
         throw err;
-      } finally {
-        call.end();
       }
     },
 
