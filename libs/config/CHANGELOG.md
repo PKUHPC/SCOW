@@ -1,5 +1,13 @@
 # @scow/config
 
+## 1.7.2
+
+### Patch Changes
+
+- 238a828: ai 提交应用和训练限制最大运行时间
+- Updated dependencies [80d22df]
+  - @scow/lib-config@1.0.3
+
 ## 1.7.1
 
 ### Patch Changes

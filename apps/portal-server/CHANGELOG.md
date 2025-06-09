@@ -1,5 +1,22 @@
 # @scow/portal-server
 
+## 1.8.5
+
+### Patch Changes
+
+- 79ce4a8: 创建目录和文件夹前先检查存在性
+- 083d57b: 修改了调用 scowd 的 chmod
+- 35e30e7: 修复门户流式接口未能正确中断导致的内存泄漏问题
+- Updated dependencies [238a828]
+- Updated dependencies [80d22df]
+- Updated dependencies [083d57b]
+  - @scow/config@1.7.2
+  - @scow/lib-config@1.0.3
+  - @scow/scowd-protos@0.2.7
+  - @scow/lib-scow-resource@0.2.8
+  - @scow/lib-server@1.3.14
+  - @scow/lib-scowd@1.1.8
+
 ## 1.8.4
 
 ### Patch Changes

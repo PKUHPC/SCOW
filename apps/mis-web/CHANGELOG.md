@@ -1,5 +1,20 @@
 # @scow/mis-web
 
+## 1.8.5
+
+### Patch Changes
+
+- 80d22df: 未开启用户锁定时隐藏解封页面
+- 22b1eb6: 账单页面和修改作业计费功能文案优化，账单查询动作优化
+- Updated dependencies [238a828]
+- Updated dependencies [80d22df]
+  - @scow/config@1.7.2
+  - @scow/lib-config@1.0.3
+  - @scow/lib-notification@1.0.9
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-scow-resource@0.2.8
+  - @scow/lib-web@1.4.14
+
 ## 1.8.4
 
 ### Patch Changes

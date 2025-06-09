@@ -1,5 +1,11 @@
 # @scow/scowd-protos
 
+## 0.2.7
+
+### Patch Changes
+
+- 083d57b: 增加了镜像部分接口，修改了文件的 ChangeMode 和 getFileMetaData
+
 ## 0.2.6
 
 ### Patch Changes

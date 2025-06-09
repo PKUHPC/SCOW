@@ -1,5 +1,11 @@
 # @scow/lib-config
 
+## 1.0.3
+
+### Patch Changes
+
+- 80d22df: 未开启用户锁定时隐藏解封页面
+
 ## 1.0.2
 
 ### Patch Changes

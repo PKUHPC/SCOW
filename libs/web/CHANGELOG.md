@@ -1,5 +1,12 @@
 # @scow/lib-web
 
+## 1.4.14
+
+### Patch Changes
+
+- Updated dependencies [238a828]
+  - @scow/config@1.7.2
+
 ## 1.4.13
 
 ### Patch Changes

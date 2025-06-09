@@ -1,5 +1,22 @@
 # @scow/mis-server
 
+## 1.8.5
+
+### Patch Changes
+
+- 5f156bd: 优化初始化大量账单时的 io
+- 9739fff: 修复账户无消费但名下用户有退费时无法生成月账单的 bug
+- 22b1eb6: 账单页面和修改作业计费功能文案优化，账单查询动作优化
+- Updated dependencies [238a828]
+- Updated dependencies [80d22df]
+  - @scow/config@1.7.2
+  - @scow/lib-config@1.0.3
+  - @scow/lib-hook@1.0.24
+  - @scow/lib-notification@1.0.9
+  - @scow/lib-scow-resource@0.2.8
+  - @scow/lib-server@1.3.14
+  - @scow/lib-scowd@1.1.8
+
 ## 1.8.4
 
 ### Patch Changes

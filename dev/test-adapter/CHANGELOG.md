@@ -1,5 +1,12 @@
 # @scow/test-adapter
 
+## 1.1.11
+
+### Patch Changes
+
+- Updated dependencies [80d22df]
+  - @scow/lib-config@1.0.3
+
 ## 1.1.10
 
 ### Patch Changes

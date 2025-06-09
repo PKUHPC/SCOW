@@ -1,5 +1,26 @@
 # @scow/ai
 
+## 0.3.5
+
+### Patch Changes
+
+- 79ce4a8: 创建目录和文件夹前先检查存在性
+- 8826b02: ai 获取作业列表删除 host 和 port，增加分区、cpu、gpu、内存、节点展示
+- 238a828: ai 提交应用和训练限制最大运行时间
+- efb317b: ai 再次提交作业分区信息回显问题
+- b45116f: 修改 HPC 与 AI 系统交互式应用列表中 10s 自动刷新功能默认为不开启
+- 35e30e7: 修复门户流式接口未能正确中断导致的内存泄漏问题
+- 083d57b: ai 中除了文件的其他所有 ssh 操作均接入 scowd
+- Updated dependencies [238a828]
+- Updated dependencies [80d22df]
+  - @scow/config@1.7.2
+  - @scow/lib-config@1.0.3
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-scow-resource@0.2.8
+  - @scow/lib-server@1.3.14
+  - @scow/lib-web@1.4.14
+  - @scow/lib-scowd@1.1.8
+
 ## 0.3.4
 
 ### Patch Changes

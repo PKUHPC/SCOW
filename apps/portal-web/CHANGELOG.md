@@ -1,5 +1,21 @@
 # @scow/portal-web
 
+## 1.8.5
+
+### Patch Changes
+
+- b45116f: 修改 HPC 与 AI 系统交互式应用列表中 10s 自动刷新功能默认为不开启
+- 35e30e7: 修复门户流式接口未能正确中断导致的内存泄漏问题
+- 253c0ea: 在 HPC 文件管理下切换集群时取消所有已复制项
+- Updated dependencies [238a828]
+- Updated dependencies [80d22df]
+  - @scow/config@1.7.2
+  - @scow/lib-config@1.0.3
+  - @scow/lib-notification@1.0.9
+  - @scow/lib-operation-log@2.1.18
+  - @scow/lib-scow-resource@0.2.8
+  - @scow/lib-web@1.4.14
+
 ## 1.8.4
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.10
+
+### Patch Changes
+
+- 238a828: ai 提交应用和训练限制最大运行时间
+
 ## 1.4.9
 
 ### Patch Changes

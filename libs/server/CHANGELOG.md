@@ -1,5 +1,12 @@
 # @scow/lib-server
 
+## 1.3.14
+
+### Patch Changes
+
+- Updated dependencies [238a828]
+  - @scow/config@1.7.2
+
 ## 1.3.13
 
 ### Patch Changes
