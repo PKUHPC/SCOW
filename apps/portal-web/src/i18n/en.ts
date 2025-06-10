@@ -293,6 +293,7 @@ export default {
           existModalOk: "Confirm",
           errorMessage: "{} error! A total of {} files/directories, {} succeeded, {} abandoned, {} failed",
           successMessage: "{} succeeded! A total of {} files/directories, {} succeeded, {} abandoned",
+          moveCopyToItselfError: "The target directory must not be a child directory of the source directory.",
         },
         delete: {
           confirmTitle: "Confirm Deletion",

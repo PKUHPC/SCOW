@@ -34,7 +34,13 @@ export const MoveFileItemSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     415: Type.Object({ code: Type.Literal("RENAME_FAILED"), error: Type.String() }),
-    400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
+    400: Type.Object({
+      code: Type.Union([
+        Type.Literal("INVALID_CLUSTER"),
+        Type.Literal("INVALID_ARGUMENT"),
+      ]),
+      error: Type.Optional(Type.String()),
+    }),
   },
 });
 
@@ -67,6 +73,7 @@ export default route(MoveFileItemSchema, async (req, res) => {
   }, handlegRPCError({
     [status.INTERNAL]: (e) => ({ 415: { code: "RENAME_FAILED" as const, error: e.details } }),
     [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

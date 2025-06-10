@@ -280,19 +280,20 @@ export default {
         decompressionInProgress: "正在进行解压缩: ",
         decompressionSelected: "解压缩",
         decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
-        
+
         preview: {
           cantPreview: "文件过大（最大{}）或者格式不支持，请下载后查看",
         },
         moveCopy: {
           copy: "复制",
           move: "移动",
-          modalErrorTitle: "文件{}{}出错",
-          existModalTitle: "文件/目录已存在",
-          existModalContent: "文件/目录{}已存在，是否覆盖？",
+          modalErrorTitle: "文件/文件夹 {} {}出错",
+          existModalTitle: "文件/文件夹已存在",
+          existModalContent: "文件/文件夹 {} 已存在，是否覆盖？",
           existModalOk: "确认",
-          errorMessage: "{}错误！总计{}项文件/目录，其中成功{}项，放弃{}项，失败{}项",
-          successMessage: "{}成功！总计{}项文件/目录，其中成功{}项，放弃{}项",
+          errorMessage: "{}错误！总计{}项文件/文件夹，其中成功{}项，放弃{}项，失败{}项",
+          successMessage: "{}成功！总计{}项文件/文件夹，其中成功{}项，放弃{}项",
+          moveCopyToItselfError: "目标文件夹不能是源文件夹的子文件夹",
         },
         delete: {
           confirmTitle: "确认删除",

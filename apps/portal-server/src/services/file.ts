@@ -10,6 +10,7 @@ import {
   FileInfo, fileInfo_FileTypeFromJSON, FileServiceServer, FileServiceService,
   TransferInfo,
 } from "@scow/protos/build/portal/file";
+import path from "path";
 import { getClusterOps } from "src/clusterops";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
@@ -23,6 +24,18 @@ export const fileServiceServer = plugin((server) => {
   server.addService<FileServiceServer>(FileServiceService, {
     copy: async ({ request, logger }) => {
       const { userId, cluster, fromPath, toPath } = request;
+
+      // 校验targetPath是否与fromPath自身相同或是fromPath的子目录
+      // 因为同名文件与文件夹不可能共存，所以此处不用考虑类型为文件的特殊情况
+      const normalizedFromPath = path.normalize(fromPath);
+      const normalizedToPath = path.normalize(toPath);
+      if (toPath === fromPath || normalizedToPath.startsWith(normalizedFromPath + path.sep)) {
+        throw {
+          code: Status.INVALID_ARGUMENT,
+          details: `Can not copy a directory ${fromPath} to itself or its sub directory ${toPath}`,
+        } as ServiceError;
+      }
+
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
@@ -146,6 +159,18 @@ export const fileServiceServer = plugin((server) => {
 
     move: async ({ request, logger }) => {
       const { userId, cluster, fromPath, toPath } = request;
+
+      // 校验targetPath是否与fromPath自身相同或是fromPath的子目录
+      // 因为同名文件与文件夹不可能共存，所以此处不用考虑类型为文件的特殊情况
+      const normalizedFromPath = path.normalize(fromPath);
+      const normalizedToPath = path.normalize(toPath);
+      if (toPath === fromPath || normalizedToPath.startsWith(normalizedFromPath + path.sep)) {
+        throw {
+          code: Status.INVALID_ARGUMENT,
+          details: `Can not copy a directory ${fromPath} to itself or its sub directory ${toPath}`,
+        } as ServiceError;
+      }
+
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);

@@ -457,6 +457,7 @@ export default {
         move: "Move",
         fail: "Failure",
         alreadyExist: "Same directory or file already exists",
+        copyToItselfError: "The target directory must not be a child directory of the source directory.",
         success: "Success",
         exec: "Execute",
         encounterError: "Error encountered during operation",

@@ -11,6 +11,8 @@
  */
 
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { TRPCError } from "@trpc/server";
+import path from "path";
 import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
@@ -158,6 +160,17 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { op, clusterId, fromPath, toPath }, ctx: { user } }) => {
+
+      // 校验targetPath是否与fromPath自身相同或是fromPath的子目录
+      // 因为同名文件与文件夹不可能共存，所以此处不用考虑类型为文件的特殊情况
+      const normalizedFromPath = path.normalize(fromPath);
+      const normalizedToPath = path.normalize(toPath);
+      if (toPath === fromPath || normalizedToPath.startsWith(normalizedFromPath + path.sep)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Can not copy a directory ${fromPath} to itself or its sub directory ${toPath}`,
+        });
+      }
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);

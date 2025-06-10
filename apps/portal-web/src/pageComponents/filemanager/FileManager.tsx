@@ -273,6 +273,15 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           });
           throw error;
         })
+        .httpError(400, ({ code, error }) => {
+          if (code === "INVALID_ARGUMENT") {
+            modal.error({
+              title: t(p("moveCopy.modalErrorTitle"), [file.name, operationText]),
+              content: t(p("moveCopy.moveCopyToItselfError")),
+            });
+          }
+          throw error;
+        })
         .then(() => {
           setOperation((o) => o ? { ...operation, completed: o.completed.concat(file) } : undefined);
           return file;
@@ -663,23 +672,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             </Tooltip>
 
           )}
-
-          {
-            operation ? (
-              operation.started ? (
-                <span>
-                  {t(p("tableInfo.operationStarted"), [operationTexts[operation.op]])} +
-                  {`${operation.completed.length} / ${operation.selected.length}`}
-                </span>
-              ) : (
-                <span>
-                  {t(p("tableInfo.operationNotStarted"), [operationTexts[operation.op], operation.selected.length])}
-                  <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
-                    {t("button.cancelButton")}
-                  </a>
-                </span>
-              )) : ""
-          }
           {
             scowdEnabled && (
               <Button
@@ -698,6 +690,22 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           >
             {t(p("tableInfo.deleteSelected"))}
           </Button>
+          {
+            operation ? (
+              operation.started ? (
+                <span>
+                  {t(p("tableInfo.operationStarted"), [operationTexts[operation.op]])} +
+                  {`${operation.completed.length} / ${operation.selected.length}`}
+                </span>
+              ) : (
+                <span>
+                  {t(p("tableInfo.operationNotStarted"), [operationTexts[operation.op], operation.selected.length])}
+                  <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
+                    {t("button.cancelButton")}
+                  </a>
+                </span>
+              )) : ""
+          }
           {
             compression.started.length - compression.completed.length > 0 && (
               <div>

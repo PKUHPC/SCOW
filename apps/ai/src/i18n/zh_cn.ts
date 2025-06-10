@@ -457,6 +457,7 @@ export default {
         move:"移动",
         fail:"失败",
         alreadyExist:"存在相同的目录或文件",
+        copyToItselfError: "目标文件夹不能是源文件夹的子文件夹",
         success:"成功",
         exec:"执行",
         encounterError:"操作时遇到错误",

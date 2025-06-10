@@ -155,6 +155,14 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
         return;
       }
 
+      if (error.data?.code === "BAD_REQUEST") {
+        Modal.error({
+          title: `${operationText}${t(p("fail"))}`,
+          content: t(p("alreadyExist")),
+        });
+        return;
+      }
+
       Modal.error({
         title: `${operationText}${t(p("fail"))}`,
         content: error.message,
