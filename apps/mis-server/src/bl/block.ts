@@ -158,40 +158,26 @@ export async function updateUnblockStatusInSlurm(
     // 如果已配置资源管理功能,调用适配器的 unblockAccountWithPartitions
     if (commonConfig.scowResource?.enabled) {
       const results = await Promise.allSettled(
-        Object.entries(currentActivatedClusters).map(async ([clusterId, cluster]) => {
+        Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
 
-          // 当前AI集群只能使用AI适配器且不支持分区概念，一旦判断为AI集群只调用原有 unblockAccount 接口
-          // 上述情况以外，如果是HPC集群，调用unblockAccountAssignedPartitionsInCluster
-          if (cluster.ai.enabled) {
-            return await clusterPlugin.callOnOne(
-              clusterId,
-              logger,
-              async (client) => { 
-                await asyncClientCall(client.account, "unblockAccount", {
-                  accountName: account.accountName,
-                }); 
-              },      
-            );
-          } else if (cluster.hpc.enabled) {
-            return await unblockAccountAssignedPartitionsInCluster(
-              account.accountName,
-              account.tenant.getProperty("name"),
-              clusterId,
-              clusterPlugin,
-              logger,
-              scowResourcePlugin,
-            );
-          }
+          return await unblockAccountAssignedPartitionsInCluster(
+            account.accountName,
+            account.tenant.getProperty("name"),
+            clusterId,
+            clusterPlugin,
+            logger,
+            scowResourcePlugin,
+          );
 
         }));
       const errors = results
-        .map((result, index) => result.status === "rejected" ? 
+        .map((result, index) => result.status === "rejected" ?
           { clusterId: Object.keys(currentActivatedClusters)[index], reason: result.reason } : null)
         .filter(Boolean);
-  
+
       if (errors.length > 0) {
-  
-        const errorDetails = errors.map((error) => { 
+
+        const errorDetails = errors.map((error) => {
           return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
         }).join("; ");
         logger.warn("Failed to unblock account %s in adapter: %o", account.accountName, errorDetails);
@@ -284,42 +270,25 @@ export async function unblockAccount(
   if (commonConfig.scowResource?.enabled) {
 
     const results = await Promise.allSettled(
-      Object.entries(currentActivatedClusters).map(async ([clusterId, cluster]) => {
-      
-        // 当前AI集群只能使用AI适配器且不支持分区概念，一旦判断为AI集群只调用原有 unblockAccount 接口
-        // 上述情况以外，如果是HPC集群，调用unblockAccountAssignedPartitionsInCluster
-        if (cluster.ai.enabled) {
-          return await clusterPlugin.callOnOne(
-            clusterId,
-            logger,
-            async (client) => { 
-              await asyncClientCall(client.account, "unblockAccount", {
-                accountName: account.accountName,
-              }); 
-            },      
-          );
-          
-        } else if (cluster.hpc.enabled) {
-          return await unblockAccountAssignedPartitionsInCluster(
-            account.accountName,
-            account.tenant.getProperty("name"),
-            clusterId,
-            clusterPlugin,
-            logger,
-            scowResourcePlugin,
-          );
-        }
-        
+      Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
+        return await unblockAccountAssignedPartitionsInCluster(
+          account.accountName,
+          account.tenant.getProperty("name"),
+          clusterId,
+          clusterPlugin,
+          logger,
+          scowResourcePlugin,
+        );
       }));
 
     const errors = results
-      .map((result, index) => result.status === "rejected" ? 
+      .map((result, index) => result.status === "rejected" ?
         { clusterId: Object.keys(currentActivatedClusters)[index], reason: result.reason } : null)
       .filter(Boolean);
 
     if (errors.length > 0) {
 
-      const errorDetails = errors.map((error) => { 
+      const errorDetails = errors.map((error) => {
         return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
       }).join("; ");
       throw new ServiceError({

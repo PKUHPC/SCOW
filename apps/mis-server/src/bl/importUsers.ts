@@ -97,9 +97,21 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
 
   const accounts: Account[] = [];
   const userAccounts: UserAccount[] = [];
+
+  // 获取只需要创建的账户数据
+  const existingAccountNames = existingAccounts.map((x) => x.accountName);
+  const existingAccountNamesSet = existingAccountNames.length > 0
+    ? new Set(existingAccounts.map((x) => x.accountName)) : undefined;
+  const newAccountsToCreate: Account[] = [];
+
+
   data.accounts.forEach((a) => {
     const account = accountMap[a.accountName];
     accounts.push(account);
+
+    if (existingAccountNamesSet && !existingAccountNamesSet.has(a.accountName)) {
+      newAccountsToCreate.push(account);
+    }
 
     a.users.forEach((u) => {
 
@@ -126,9 +138,10 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
     }
   }
   const finalUserAccounts = userAccounts.filter((_, i) => !indexes.includes(i));
+
   // 如果已配置资源管理服务，则向数据库写入新创建的账户数据
-  if (commonConfig.scowResource?.enabled) {
-    await Promise.all(data.accounts.map(async (acc) => {
+  if (commonConfig.scowResource?.enabled && newAccountsToCreate.length > 0) {
+    await Promise.all(newAccountsToCreate.map(async (acc) => {
       // 失败时已写入的数据不回滚, 再次创同名租户账户时会重新写入默认授权分区
       await scowResourcePlugin?.assignAccountOnCreate({
         accountName: acc.accountName,

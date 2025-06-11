@@ -1,18 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
 import { Head } from "src/utils/head";
@@ -60,6 +48,9 @@ export default function Page() {
     trpc.dashboard.getClusterNodesInfo.useQuery({ clusterId: cluster.id }),
   );
 
+  // 获取用户关联账户的集群分区信息
+  const userAssociatedClusterPartitions = trpc.resource.getUserAssociatedClusterPartitions.useQuery();
+
   // 加载失败的集群、成功的集群、集群信息、平台概览、以及集群概览。
   const [failedClusters, setFailedClusters] = useState<typeof currentClusters>([]);
   const [successfulClusters, setSuccessfulClusters] = useState<typeof currentClusters>([]);
@@ -68,7 +59,7 @@ export default function Page() {
   const [clustersOverview, setClustersOverview] = useState<ClusterOverview[]>([]);
 
   const isLoading = clusterInfoResults.some((result) => result.isLoading) ||
-  clusterNodesResults.some((result) => result.isLoading);
+  clusterNodesResults.some((result) => result.isLoading) || userAssociatedClusterPartitions.isLoading;
 
   useEffect(() => {
     if (!isLoading) {
@@ -76,6 +67,32 @@ export default function Page() {
       const rawClusterInfoResults = clusterInfoResults
         .map((result, index) => {
           if (result.isSuccess) {
+
+            // 如果已配置资源管理系统
+            // 只返回已授权集群及队列的clusterInfo
+            if (userAssociatedClusterPartitions.data) {
+              const associatedClusterPartitions = userAssociatedClusterPartitions.data.clusterPartitions;
+
+              // 如果当前集群存在于已授权集群信息
+              if (Object.keys(associatedClusterPartitions).includes(currentClusters[index].id)) {
+                const assignedPartitions = result.data?.partitions.filter((partition) => {
+                  return associatedClusterPartitions[currentClusters[index].id].includes(partition.partitionName);
+                }) || [];
+                return {
+                  clusterInfo: {
+                    ...result.data,
+                    // 替换队列为已授权队列
+                    partitions: assignedPartitions,
+                    clusterName: currentClusters[index].id,
+                  },
+                  clusterName: currentClusters[index].id,
+                };
+              } else {
+                // 如果当前集群不在已授权集群信息中
+                return null;
+              }
+            }
+
             return {
               clusterInfo: { ...result.data, clusterName: currentClusters[index].id },
               clusterName: currentClusters[index].id,// 保留所有索引
@@ -88,6 +105,34 @@ export default function Page() {
       const rawClusterNodesInfoResults = clusterNodesResults
         .map((result, index) => {
           if (result.isSuccess) {
+
+
+            // 如果已配置资源管理系统
+            // 只返回已授权集群及队列的clusterNodesInfo
+            if (userAssociatedClusterPartitions.data) {
+              const associatedClusterPartitions = userAssociatedClusterPartitions.data.clusterPartitions;
+
+              // 如果当前集群存在于已授权集群信息
+              if (Object.keys(associatedClusterPartitions).includes(currentClusters[index].id)) {
+                // 返回包含已过滤分区的节点信息
+                // 如果一个分区也没有则不再返回对应节点信息
+                const filteredNodesInfo = result.data.nodeInfo?.filter((node) => {
+                  return node.partitions.some((partition: string) =>
+                    associatedClusterPartitions[currentClusters[index].id].includes(partition),
+                  );
+                }) || [];
+                return {
+                  nodeInfo: {
+                    clusterName: currentClusters[index].id, // clusterName变化提前了，hpc没有变化
+                    nodes: filteredNodesInfo || [],
+                  },
+                };
+              } else {
+                // 如果当前集群不在已授权集群信息中
+                return null;
+              }
+            }
+
             return {
               nodeInfo: {
                 clusterName: currentClusters[index].id, // clusterName变化提前了，hpc没有变化
@@ -244,7 +289,26 @@ export default function Page() {
 
     }
 
-  }, [isLoading,currentClusters]);
+  }, [isLoading, currentClusters]);
+
+  const filteredClusters = useMemo(() => {
+    if (!isLoading) {
+      if (!userAssociatedClusterPartitions.data) {
+        return currentClusters;
+      }
+
+      const clusterPartitions = userAssociatedClusterPartitions.data?.clusterPartitions;
+
+      return currentClusters.filter((c) =>
+        Object.keys(clusterPartitions || {}).includes(c.id),
+      );
+    }
+    return [];
+  }, [
+    isLoading,
+    userAssociatedClusterPartitions.data,
+    currentClusters,
+  ]);
 
   return (
     <DashboardPageContent>
@@ -253,7 +317,8 @@ export default function Page() {
         isLoading={isLoading}
         clusterInfo={clustersInfo ? clustersInfo.map((item, idx) => ({ ...item, id: idx })) : []}
         failedClusters={failedClusters ? failedClusters.map((x) => ({ clusterName: x.name })) : []}
-        currentClusters={currentClusters}
+        // 如果已配置资源管理系统，当前currentClusters需同时满足为已授权集群
+        currentClusters={filteredClusters}
         clustersOverview={clustersOverview ?? []}
         platformOverview={platformOverview}
         successfulClusters={successfulClusters}

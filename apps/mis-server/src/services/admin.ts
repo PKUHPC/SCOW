@@ -126,20 +126,15 @@ export const adminServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      const isAiCluster = currentActivatedClusters[cluster].ai.enabled;
-
       const result = await server.ext.clusters.callOnOne(
         cluster,
         logger,
         async (client) => {
-
-          // 执行获取详细账户信息的操作
-          // 如果一个集群在当前系统下为AI集群，那么只能使用 AI适配器 的原有 getAllAccountsWithUsers 接口
-          // 如果是未配置资源管理系统 或者 为AI集群的情况调用原有 getAllAccountsWithUsers 接口
-          if (!commonConfig.scowResource?.enabled || isAiCluster) {
+          // 如果是未配置资源管理系统的情况调用原有 getAllAccountsWithUsers 接口
+          if (!commonConfig.scowResource?.enabled) {
             return await asyncClientCall(client.account, "getAllAccountsWithUsers", {});
 
-          // 如果配置了资源管理系统且不是AI集群，那么使用 getAllAccountsWithUsersAndBlockedDetails 同时获取账户的详细分区封锁信息
+          // 如果配置了资源管理系统，那么使用 getAllAccountsWithUsersAndBlockedDetails 同时获取账户的详细分区封锁信息
           } else {
             // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
             await ensureResourceManagementFeatureAvailable(client, logger);

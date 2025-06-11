@@ -11,10 +11,15 @@
  */
 
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { getCommonConfig } from "@scow/config/src/common";
+import { libGetAccounts } from "@scow/lib-server";
+import { AccountStatusFilter } from "@scow/protos/build/portal/job";
+import { config } from "src/server/config/env";
 import { router } from "src/server/trpc/def";
 import { procedure } from "src/server/trpc/procedure/base";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
+import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { z } from "zod";
 
@@ -40,10 +45,28 @@ export const accountRouter = router({
       const { clusterId, page, pageSize } = input;
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
-      
+
       if (!clusterId || !currentClusterIds.includes(clusterId)) {
         return { accounts: [], count: 0 };
       }
+
+      // 判断是否已部署管理系统，如果是则调用管理系统数据库，返回可用账户列表
+      const commonConfig = getCommonConfig();
+      if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
+        const userUnblockedAccounts = await libGetAccounts(logger,
+          user.identityId,
+          AccountStatusFilter.UNBLOCKED_ONLY,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi.auth.token,
+        );
+
+        const { paginatedItems: paginatedAccounts, totalCount } = paginate(
+          userUnblockedAccounts.accounts, page, pageSize,
+        );
+        return { accounts: paginatedAccounts, count: totalCount };
+
+      }
+
       const client = getAdapterClient(clusterId);
       if (!client) {
         throw clusterNotFound(clusterId);

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { MinusCircleOutlined, PlusCircleOutlined, PlusOutlined } from "@ant-design/icons";
@@ -28,6 +16,7 @@ import { AlgorithmInterface, AlgorithmVersionInterface } from "src/models/Algori
 import { Status } from "src/models/Image";
 import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
+import { AccountAssignedResourceDetail, AccountStatusFilter } from "src/models/Resource";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
 import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
 import { AppCustomAttribute, CreateAppInput } from "src/server/trpc/route/jobs/apps";
@@ -60,8 +49,8 @@ interface Props {
   clusterId: string;
   clusterInfo: ClusterConfig;
   isTraining?: boolean;
-  createAppParams?: CreateAppInput
-  trainJobInput?: TrainJobInput
+  createAppParams?: CreateAppInput;
+  trainJobInput?: TrainJobInput;
 }
 
 export interface DataAttributes {
@@ -168,6 +157,35 @@ export const LaunchAppForm = (props: Props) => {
   const [, forceUpdate] = useState(0);
 
   const [currentPartitionInfo, setCurrentPartitionInfo] = useState<Partition | undefined>();
+  const [filteredClusterInfo, setFilteredClusterInfo] = useState<ClusterConfig | undefined>(clusterInfo);
+  const [selectedAccountName, setSelectedAccountName] = useState<string | undefined>(undefined);
+
+  const { data: associatedResourceDetails,
+    isLoading: isAssociatedResourceDetailsLoading,
+    refetch: refetchAssociatedResourceDetails }
+    = trpc.resource.getUserAssignedResourceDetails.useQuery({
+      accountStatusFilter: AccountStatusFilter.UNBLOCKED_ONLY });
+
+  useEffect(() => {
+    if (!associatedResourceDetails) {
+      setFilteredClusterInfo(clusterInfo);
+    };
+
+    if (!selectedAccountName) {
+      setFilteredClusterInfo(undefined);
+    };
+
+    if (selectedAccountName && associatedResourceDetails) {
+      const assignedPartitions = getAssignedPartitions(clusterId, selectedAccountName, associatedResourceDetails);
+      const filteredPartitions = clusterInfo.partitions.filter((p) => (assignedPartitions?.includes(p.name)));
+      setFilteredClusterInfo({
+        ...clusterInfo,
+        partitions: filteredPartitions,
+      });
+    }
+
+  }, [associatedResourceDetails, clusterInfo, selectedAccountName]);
+
   const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>("min");
 
   const [frameworkOptions, setFrameworkOptions] = useState<{ value: FrameworkType, label: string }[]>([
@@ -426,10 +444,10 @@ export const LaunchAppForm = (props: Props) => {
     ? nodeCount * gpuCount * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
     : nodeCount * coreCount;
 
-
   const handlePartitionChange = (partition: string) => {
-    const partitionInfo = clusterInfo
-      ? clusterInfo.partitions.find((x) => x.name === partition)
+
+    const partitionInfo = filteredClusterInfo
+      ? filteredClusterInfo.partitions.find((x) => (x.name === partition))
       : undefined;
     if (partitionInfo?.gpus) {
       form.setFieldValue("gpuCount", 1);
@@ -695,17 +713,12 @@ export const LaunchAppForm = (props: Props) => {
     }
   }, [createAppParams, trainJobInput, images, form]);
 
-
+  // 如果是再次提交页面，set已提交的值
   useEffect(() => {
     const inputParams = trainJobInput || createAppParams;
-    if (!inputParams) {
-      form.setFieldsValue({
-        partition: clusterInfo?.partitions[0]?.name,
-        appJobName: genAppJobName(clusterId, appName ?? "t"),
-      });
-      setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
-    } else {
+    if (inputParams) {
       const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount } = inputParams;
+
       const workingDir = "workingDirectory" in inputParams ? inputParams.workingDirectory : undefined;
       const customAttributes = "customAttributes" in inputParams ? inputParams.customAttributes : {};
       const command = "command" in inputParams ? inputParams.command : undefined;
@@ -732,14 +745,36 @@ export const LaunchAppForm = (props: Props) => {
         workerNodes,
       });
 
-      if (clusterInfo?.partitions && inputParams.partition) {
-        setCurrentPartitionInfo(clusterInfo.partitions.find((p) => p.name === inputParams.partition));
+      setSelectedAccountName(account);
+    }
+
+  }, [createAppParams, trainJobInput]);
+
+  // 根据授权队列信息 set当前队列
+  useEffect(() => {
+    const inputParams = trainJobInput || createAppParams;
+    if (!inputParams) {
+      form.setFieldsValue({
+        partition: filteredClusterInfo?.partitions[0]?.name,
+        appJobName: genAppJobName(clusterId, appName ?? "t"),
+      });
+      setCurrentPartitionInfo(filteredClusterInfo?.partitions?.[0]);
+    } else {
+      const { partition } = inputParams;
+      const foundPartition = filteredClusterInfo?.partitions?.find((p) => p.name === partition);
+      const partitionWhenNotFound = filteredClusterInfo?.partitions?.[0];
+      form.setFieldsValue({
+        partition: foundPartition ? partition : partitionWhenNotFound?.name,
+      });
+
+      if (foundPartition && inputParams.partition) {
+        setCurrentPartitionInfo(foundPartition);
       } else {
-        setCurrentPartitionInfo(clusterInfo.partitions?.[0]);
+        setCurrentPartitionInfo(partitionWhenNotFound);
       }
     }
 
-  }, [createAppParams, trainJobInput, clusterInfo]);
+  }, [createAppParams, trainJobInput, filteredClusterInfo]);
 
   const createAppSessionMutation = trpc.jobs.createAppSession.useMutation({
     onSuccess() {
@@ -1565,21 +1600,30 @@ export const LaunchAppForm = (props: Props) => {
           name="account"
           rules={[{ required: true }]}
         >
-          <AccountSelector cluster={clusterId} />
+          <AccountSelector
+            cluster={clusterId}
+            onChange={(value) => {
+              setSelectedAccountName(value);
+            }}
+            onReload={refetchAssociatedResourceDetails}
+          />
         </Form.Item>
 
         <Form.Item
           label={t(p("partition"))}
           name="partition"
           rules={[{ required: true }]}
+          dependencies={["account"]}
         >
           <Select
             disabled={!currentPartitionInfo}
-            options={clusterInfo
-              ? clusterInfo.partitions.map((x) => ({ label: x.name, value: x.name }))
+            options={filteredClusterInfo
+              ? filteredClusterInfo.partitions.map((x) => ({ label: x.name, value: x.name }))
               : []
             }
             onChange={handlePartitionChange}
+            loading={isAssociatedResourceDetailsLoading}
+            placeholder={isAssociatedResourceDetailsLoading ? t(p("partitionsLoading")) : t(p("noAssignedPartition"))}
           />
         </Form.Item>
         <Form.Item
@@ -1799,4 +1843,20 @@ export const LaunchAppForm = (props: Props) => {
       </Form.Item>
     </Form>
   );
+};
+
+
+// 已配置资源管理时，获取当前集群下已选择账户的已授权队列信息
+export const getAssignedPartitions = (
+  clusterId: string,
+  accountName: string,
+  assignedResourceDetails: AccountAssignedResourceDetail[]) => {
+  // 如果已配置资源管理系统，则只展示已授权队列
+
+  const accountAssignedInfo = assignedResourceDetails?.find((x) => {
+    return x.accountName === accountName;
+  })?.assignedClusterPartitions;
+
+  return accountAssignedInfo?.[clusterId];
+
 };

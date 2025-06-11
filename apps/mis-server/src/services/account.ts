@@ -352,7 +352,7 @@ export const accountServiceServer = plugin((server) => {
         if (commonConfig.scowResource?.enabled) {
 
           const results =
-            await Promise.allSettled(Object.entries(currentActivatedClusters).map(async ([clusterId, cluster]) => {
+            await Promise.allSettled(Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
               await server.ext.clusters.callOnOne(
                 clusterId,
                 logger,
@@ -363,29 +363,14 @@ export const accountServiceServer = plugin((server) => {
                 },
               );
 
-              // 当前AI集群只能使用AI适配器且不支持分区概念，一旦判断为AI集群只调用原有 unblockAccount 接口
-              // 上述情况以外，如果是HPC集群，调用unblockAccountAssignedPartitionsInCluster
-              if (cluster.ai.enabled) {
-                await server.ext.clusters.callOnOne(
-                  clusterId,
-                  logger,
-                  async (client) => {
-                    await asyncClientCall(client.account, "unblockAccount", {
-                      accountName: account.accountName,
-                    });
-                  },
-                );
-
-              } else if (cluster.hpc.enabled) {
-                await unblockAccountAssignedPartitionsInCluster(
-                  account.accountName,
-                  account.tenant.getProperty("name"),
-                  clusterId,
-                  server.ext.clusters,
-                  logger,
-                  server.ext.resource,
-                );
-              }
+              await unblockAccountAssignedPartitionsInCluster(
+                account.accountName,
+                account.tenant.getProperty("name"),
+                clusterId,
+                server.ext.clusters,
+                logger,
+                server.ext.resource,
+              );
 
             }));
 
@@ -821,6 +806,8 @@ export const accountServiceServer = plugin((server) => {
       const { accountName } = request;
       const account = await em.findOne(Account, {
         accountName,
+      }, {
+        populate: ["tenant"],
       });
 
       if (!account) {
@@ -830,7 +817,8 @@ export const accountServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const thresholdAmount = account.blockThresholdAmount ?? new Decimal(0);
+      const thresholdAmount = account.blockThresholdAmount ??
+        account.tenant.getProperty("defaultAccountBlockThreshold");
       const state = getAccountStateInfo(account.whitelist?.id, account.state, account.balance, thresholdAmount)
         .displayedState;
 

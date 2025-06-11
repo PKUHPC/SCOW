@@ -168,35 +168,6 @@ export const assignAccountCluster = authProcedure
       return;
     }
 
-    // 确保正常账户在**AI集群**下解封
-    const isAiCluster = configClusters.clusterConfigs.find((x) => (x.clusterId === clusterId))?.ai?.enabled;
-    if (isAiCluster) {
-      const accountInfo = await getScowAccounts(tenantName, accountName);
-      const clustersUtil = await getClusterUtils();
-      if (!accountInfo.results[0].blocked) {
-        await clustersUtil.callOnOne(
-          clusterId,
-          logger,
-          async (adapterClient) => {
-            // 对于AI集群，直接在集群下解封
-            await asyncClientCall(adapterClient.account, "unblockAccount", {
-              accountName,
-            });
-          },
-        ).catch((e) => {
-          logger.info(
-            "Unblock account %s in AI cluster (clusterId: %s) failed with error details: %s",
-            accountName, clusterId, e);
-          throw new TRPCError({
-            message:
-            `Can not unblock the account ${accountName} in AI cluster (ClusterId: ${clusterId}).`
-            + " Please confirm the adapter version and try again later",
-            code: "CONFLICT",
-          });
-        });
-      }
-    }
-
     const newAccountCluster = new AccountClusterRule({
       tenantName,
       accountName,
@@ -264,13 +235,23 @@ export const unAssignAccountCluster = authProcedure
       const accountInfo = await getScowAccounts(tenantName, accountName);
       const clustersUtil = await getClusterUtils();
       if (!accountInfo.results[0].blocked) {
+
         await clustersUtil.callOnOne(
           clusterId,
           logger,
           async (adapterClient) => {
-            await asyncClientCall(adapterClient.account, "blockAccount", {
-              accountName,
-            });
+
+            const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
+            // 1.获取当前集群下所有分区
+            const partitionNames = clusterConfig.partitions.map((p) => p.name);
+
+            // 2.封锁当前集群下所有分区
+            if (partitionNames.length > 0) {
+              await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
+                accountName,
+                blockedPartitions:  partitionNames,
+              });
+            }
           },
         ).catch((e) => {
           logger.info("Block account %s in cluster (clusterId: %s) failed with error details: %s",
@@ -357,7 +338,7 @@ export const assignAccountPartition = authProcedure
       if (!accountInfo.results[0].blocked) {
         await clustersUtil.callOnOne(
           clusterId,
-        
+
           logger,
           async (adapterClient) => {
             // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本

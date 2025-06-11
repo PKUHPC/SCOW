@@ -259,12 +259,21 @@ export const unAssignTenantCluster = authProcedure
       async (adapterClient) => {
         await Promise.allSettled(accountNameList.map(async (accountName) => {
           try {
-            // 所有分区下封锁
-            const result = await asyncClientCall(adapterClient.account, "blockAccount", {
-              accountName,
-            });
-            if (result) {
-              successfullyBlockedAccounts.push(accountName);
+
+            const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
+            // 1.获取当前集群下所有分区
+            const partitionNames = clusterConfig.partitions.map((p) => p.name);
+
+            // 2.封锁当前集群下所有分区
+            if (partitionNames.length > 0) {
+              const result = await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
+                accountName,
+                blockedPartitions:  partitionNames,
+              });
+
+              if (result) {
+                successfullyBlockedAccounts.push(accountName);
+              }
             }
           } catch (e) {
             logger.info("Can not unassign account (accountName : %s) in cluster (ClusterId: %s) with error details: %s",

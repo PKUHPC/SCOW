@@ -132,17 +132,7 @@ export const clusterPartitionsInfo = authProcedure
           },
         );
 
-        // 判断适配器返回的调度器名称固定字符串 volcano
-        const isAiCluster = result?.schedulerName === "volcano";
-        // 如果是AI集群, 默认分区为[]
-        if (isAiCluster) {
-          return {
-            schedulerName: result.schedulerName,
-            partitions: [],
-          };
-        } else {
-          return [result];
-        }
+        return [result];
       },
       async () => {
         return MOCK_CLUSTER_PARTITIONS_INFO as any;
@@ -198,10 +188,7 @@ export const currentClustersPartitionsInfo = authProcedure
               },
             );
 
-            // 判断适配器返回的调度器名称固定字符串 volcano
-            const isAiCluster = configInfo?.schedulerName === "volcano";
-            // 不写入AI集群的分区数据
-            if (configInfo && !isAiCluster) {
+            if (configInfo) {
               const partitions: ClusterPartition[] = configInfo.partitions.map((x) => ({
                 clusterId,
                 partition: x.name,

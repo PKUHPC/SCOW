@@ -11,7 +11,6 @@ import { authenticate } from "src/auth/server";
 import { AssignedClusterPartitions } from "src/models/cluster";
 import { PlatformRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
-import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
@@ -134,8 +133,6 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
 
   const nextId = calculateNextId(reply.activeItems, tenant);
 
-  const clusterConfigs = await getClusterConfigFiles();
-
   // 如果查询条件 tenantName 存在 且已部署资源管理服务的情况
   // 判断分区是否为已授权分区
   let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
@@ -161,13 +158,6 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
     if (!tenantAssignedClustersAndPartitions) {
       return true;
     }
-
-    // 如果已授权集群中存在AI集群，则忽略已授权分区，默认可以设置各分区价格
-    if (Object.keys(tenantAssignedClustersAndPartitions.assignedClusterPartitions).includes(clusterId)
-      && clusterConfigs[clusterId]?.ai.enabled) {
-      return true;
-    }
-
     return tenantAssignedClustersAndPartitions.assignedClusterPartitions[clusterId]?.partitionNames
       .includes(partitionName);
   };

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -40,54 +28,44 @@ export async function unblockAccountAssignedPartitionsInCluster(
     } as ServiceError;
   }
 
-  if (unblockedPartitions?.length === 0) {
+  await clusterPlugin.callOnOne(
+    clusterId,
+    logger,
+    async (client) => {
 
-    logger.info("No partitions assigned to account: %s, the default unblocking operation" +
-              " was successfully performed; no additional execution is necessary.",
-    accountName,
-    );
-    // 在集群中执行一次封锁来防止未来冲突
-    await clusterPlugin.callOnOne(
-      clusterId,
-      logger,
-      async (client) => { 
-        // 调用适配器的 blockAccount
-        await asyncClientCall(client.account, "blockAccount", {
+      // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
+      await ensureResourceManagementFeatureAvailable(client, logger);
+
+      // 获取当前集群信息
+      const clusterConfig = await asyncClientCall(client.config, "getClusterConfig", {
+        cluster: clusterId,
+      });
+
+
+      // 1.获取当前集群下所有分区
+      const partitionNames = clusterConfig.partitions.map((p) => p.name);
+
+      // 2.确认是否存在未授权分区需要再次封锁
+      const mayNeedBlockPartitions = partitionNames.filter((p) => !unblockedPartitions.includes(p));
+      if (mayNeedBlockPartitions.length > 0) {
+        await asyncClientCall(client.account, "blockAccountWithPartitions", {
           accountName,
-        }); 
-      },      
-    );
-  } else {
-    await clusterPlugin.callOnOne(
-      clusterId,
-      logger,
-      async (client) => { 
+          blockedPartitions: mayNeedBlockPartitions,
+        });
+      }
 
-        // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
-        await ensureResourceManagementFeatureAvailable(client, logger);
-
-        // 1.获取当前集群下的所有分区数据
-        const clusterConfig = await asyncClientCall(client.config, "getClusterConfig", {
-          cluster: clusterId,
-        }); 
-        const partitionNames = clusterConfig.partitions.map((p) => p.name);
-
-        // 2.确认是否存在未授权分区需要再次封锁
-        const mayNeedBlockPartitions = partitionNames.filter((p) => !unblockedPartitions.includes(p));
-        if (mayNeedBlockPartitions.length > 0) {
-          await asyncClientCall(client.account, "blockAccountWithPartitions", {
-            accountName,
-            blockedPartitions: mayNeedBlockPartitions,
-          }); 
-        }
-
-        // 3.执行解封，调用适配器的 unblockAccountWithPartitions
+      // 3.执行解封，调用适配器的 unblockAccountWithPartitions
+      if (unblockedPartitions.length === 0) {
+        logger.info("There is no assigned partitions for account %s to unblock in cluster %s", accountName, clusterId);
+      } else {
         await asyncClientCall(client.account, "unblockAccountWithPartitions", {
           accountName,
           unblockedPartitions: unblockedPartitions,
-        }); 
-      },      
-    );
-    
-  } 
+        });
+      }
+
+
+    },
+  );
+
 };
