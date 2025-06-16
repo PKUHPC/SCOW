@@ -3,6 +3,7 @@ import { getUserAccountsClusterPartitions } from "@scow/lib-scow-resource/build/
 import { libGetAccounts } from "@scow/lib-server";
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { accountStatusFilterFromJSON } from "@scow/protos/build/portal/job";
+import { TRPCError } from "@trpc/server";
 import { AccountAssignedResourceDetail, AccountStatusFilter } from "src/models/Resource";
 import { config } from "src/server/config/env";
 
@@ -24,8 +25,10 @@ export async function getAssignedClusterPartitions(userId: string): Promise<Reco
   const tenantName = userAffliction?.tenantName;
 
   if (!tenantName) {
-    logger.info(`Afflicted tenant of user id: ${userId} is not found.`);
-    return undefined;
+    throw new TRPCError({
+      message: `Tenant of user ${userId} is not found`,
+      code: "NOT_FOUND",
+    });
   }
   const results
        = await getUserAccountsClusterPartitions(commonConfig.scowResource, accountNames, tenantName);
@@ -54,8 +57,10 @@ export async function getUserAssignedResourceDetails(
   const tenantName = userInfo?.tenantName;
 
   if (!tenantName) {
-    logger.info(`Afflicted tenant of user id: ${userId} is not found.`);
-    return undefined;
+    throw new TRPCError({
+      message: `Tenant of user ${userId} is not found`,
+      code: "NOT_FOUND",
+    });
   }
 
   const associatedAccounts = await libGetAccounts(

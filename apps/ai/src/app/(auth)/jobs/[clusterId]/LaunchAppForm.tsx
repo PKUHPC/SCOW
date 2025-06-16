@@ -167,7 +167,7 @@ export const LaunchAppForm = (props: Props) => {
       accountStatusFilter: AccountStatusFilter.UNBLOCKED_ONLY });
 
   useEffect(() => {
-    if (!associatedResourceDetails) {
+    if (associatedResourceDetails?.results === undefined) {
       setFilteredClusterInfo(clusterInfo);
     };
 
@@ -175,8 +175,9 @@ export const LaunchAppForm = (props: Props) => {
       setFilteredClusterInfo(undefined);
     };
 
-    if (selectedAccountName && associatedResourceDetails) {
-      const assignedPartitions = getAssignedPartitions(clusterId, selectedAccountName, associatedResourceDetails);
+    if (selectedAccountName && associatedResourceDetails?.results) {
+      const assignedPartitions
+        = getAssignedPartitions(clusterId, selectedAccountName, associatedResourceDetails.results);
       const filteredPartitions = clusterInfo.partitions.filter((p) => (assignedPartitions?.includes(p.name)));
       setFilteredClusterInfo({
         ...clusterInfo,

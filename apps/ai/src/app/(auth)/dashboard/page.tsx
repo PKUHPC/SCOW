@@ -70,7 +70,7 @@ export default function Page() {
 
             // 如果已配置资源管理系统
             // 只返回已授权集群及队列的clusterInfo
-            if (userAssociatedClusterPartitions.data) {
+            if (userAssociatedClusterPartitions?.data?.clusterPartitions !== undefined) {
               const associatedClusterPartitions = userAssociatedClusterPartitions.data.clusterPartitions;
 
               // 如果当前集群存在于已授权集群信息
@@ -109,7 +109,7 @@ export default function Page() {
 
             // 如果已配置资源管理系统
             // 只返回已授权集群及队列的clusterNodesInfo
-            if (userAssociatedClusterPartitions.data) {
+            if (userAssociatedClusterPartitions?.data?.clusterPartitions !== undefined) {
               const associatedClusterPartitions = userAssociatedClusterPartitions.data.clusterPartitions;
 
               // 如果当前集群存在于已授权集群信息
@@ -293,11 +293,11 @@ export default function Page() {
 
   const filteredClusters = useMemo(() => {
     if (!isLoading) {
-      if (!userAssociatedClusterPartitions.data) {
+      if (userAssociatedClusterPartitions?.data?.clusterPartitions === undefined) {
         return currentClusters;
       }
 
-      const clusterPartitions = userAssociatedClusterPartitions.data?.clusterPartitions;
+      const clusterPartitions = userAssociatedClusterPartitions?.data?.clusterPartitions;
 
       return currentClusters.filter((c) =>
         Object.keys(clusterPartitions || {}).includes(c.id),
@@ -306,7 +306,7 @@ export default function Page() {
     return [];
   }, [
     isLoading,
-    userAssociatedClusterPartitions.data,
+    userAssociatedClusterPartitions,
     currentClusters,
   ]);
 

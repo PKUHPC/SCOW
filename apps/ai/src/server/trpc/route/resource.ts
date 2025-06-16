@@ -39,7 +39,7 @@ export const resource = router({
 
 
   // 获取资源管理系统中用户关联账户的已授权的集群分区信息
-  // 未配置资源管理返回undefined
+  // 未配置资源管理返回{clusterPartitions: undefined}
   getUserAssociatedClusterPartitions: authProcedure
     .meta({
       openapi: {
@@ -51,8 +51,8 @@ export const resource = router({
     })
     .input(z.void())
     .output(z.object({
-      clusterPartitions: z.record(z.string(), z.array(z.string())),
-    }).optional())
+      clusterPartitions: z.record(z.string(), z.array(z.string())).optional(),
+    }))
     .query(async ({ ctx: { req, res } }) => {
 
       const userInfo = await getUserInfo(req, res);
@@ -64,11 +64,11 @@ export const resource = router({
       }
       const results = await getAssignedClusterPartitions(userInfo.identityId);
 
-      return results ? { clusterPartitions: results } : undefined;
+      return { clusterPartitions: results };
     }),
 
   // 获取资源管理中用户关联的账户，账户已授权集群与分区信息
-  // 未配置资源管理返回undefined
+  // 未配置资源管理返回{results: undefined}
   getUserAssignedResourceDetails: authProcedure
     .meta({
       openapi: {
@@ -84,10 +84,12 @@ export const resource = router({
         AccountStatusFilter.BLOCKED_ONLY,
         AccountStatusFilter.UNBLOCKED_ONLY]).optional(),
     }))
-    .output(z.array(z.object({
-      accountName: z.string(),
-      assignedClusterPartitions: z.record(z.string(), z.array(z.string())),
-    })).optional())
+    .output(z.object({
+      results: z.array(z.object({
+        accountName: z.string(),
+        assignedClusterPartitions: z.record(z.string(), z.array(z.string())),
+      })).optional(),
+    }))
     .query(async ({ input, ctx: { req, res } }) => {
 
       const userInfo = await getUserInfo(req, res);
@@ -99,7 +101,7 @@ export const resource = router({
       }
       const results = await getUserAssignedResourceDetails(userInfo.identityId, input.accountStatusFilter);
 
-      return results;
+      return { results };
     }),
 
 });
