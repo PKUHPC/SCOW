@@ -18,6 +18,7 @@ import {
   createAppSession,
   getAppMetadata,
   getCreateAppParams,
+  getJobDetails,
   listApps,
   listAppSessions,
   listAvailableApps,
@@ -52,4 +53,5 @@ export const jobsRouter = router({
   getPodLogs,
   downloadPodLog,
   getPodMonitorInfo,
+  getJobDetails,
 });

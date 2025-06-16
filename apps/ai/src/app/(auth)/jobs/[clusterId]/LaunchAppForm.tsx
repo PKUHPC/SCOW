@@ -1695,7 +1695,7 @@ export const LaunchAppForm = (props: Props) => {
             <Form.Item
               label={t(p("gpuCount"))}
               name="gpuCount"
-              dependencies={["partition"]}
+              dependencies={["partition","nodeCount"]}
               rules={[
                 {
                   required: true,
@@ -1705,8 +1705,9 @@ export const LaunchAppForm = (props: Props) => {
                   validator:  (_, value) => {
                     const nodeCount = form.getFieldValue("nodeCount") || 0;
                     if (currentPartitionInfo
-    && currentPartitionInfo.gpus > 0
-    && (nodeCount * value > currentPartitionInfo.gpus)) {
+                          && currentPartitionInfo.gpus > 0
+                          && (nodeCount * value > currentPartitionInfo.gpus)
+                    ) {
                       return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
                     }
                     return Promise.resolve();
@@ -1724,7 +1725,7 @@ export const LaunchAppForm = (props: Props) => {
             <Form.Item
               label={t(p("coreCount"))}
               name="coreCount"
-              dependencies={["partition"]}
+              dependencies={["partition","nodeCount"]}
               rules={[
                 { required: true,
                   type: "integer",

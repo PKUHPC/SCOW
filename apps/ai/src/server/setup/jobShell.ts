@@ -109,10 +109,24 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   const clusterId = query.get("cluster");
   const jobId = query.get("jobId");
+  const namespace = query.get("namespace");
+  const podName = query.get("podName");
 
   if (!jobId) {
     log("[params] param-jobId not passed");
     ws.close(0, "param-jobId not passed");
+    return;
+  }
+
+  if (!namespace) {
+    log("[params] param-namespace not passed");
+    ws.close(0, "param-namespace not passed");
+    return;
+  }
+
+  if (!podName) {
+    log("[podName] param-podName not passed");
+    ws.close(0, "param-podName not passed");
     return;
   }
 
@@ -189,13 +203,11 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     return;
   }
 
-  // 暂时先用第一个pod
-  const namespace = job.pods[0].namespace;
-  const podName = job.pods[0].podName;
+  const isValidPod = job.pods.some((p) => p.namespace === namespace && p.podName === podName);
 
-  if (!namespace || !podName) {
-    log("[shell] Namespace or pod not obtained, please check the adapter version");
-    ws.close(0, "Namespace or pod not obtained, please check the adapter version");
+  if (!isValidPod) {
+    log("[shell] Provided podName/namespace not found in job's pod list");
+    ws.close(0, "Invalid podName or namespace for this job");
     return;
   }
 

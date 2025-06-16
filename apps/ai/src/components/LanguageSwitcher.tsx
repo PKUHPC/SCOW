@@ -11,7 +11,7 @@
  */
 
 import { Select } from "antd";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { setCookie } from "nookies";
 import { useEffect, useState } from "react";
 import { languageInfo, useI18n } from "src/i18n";
@@ -27,15 +27,12 @@ interface LanguageSwitcherProps {
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLanguage }) => {
-
   const [selectedLanguage, setSelectedLanguage] = useState("");
-
-  // const { setLanguageId } = useStore(LoginNodeStore);
-
   const i18n = useI18n();
 
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const init = i18n.currentLanguage.id;
@@ -44,24 +41,26 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
     } else {
       const defaultLanguage = initialLanguage;
       setSelectedLanguage(defaultLanguage);
-      setLanguageCookie(defaultLanguage);
+      setLanguageCookie(defaultLanguage, searchParams);
     }
   }, [router]);
 
   const setLanguage = (newLocale: string) => {
     setSelectedLanguage(newLocale);
-    setLanguageCookie(newLocale);
+    setLanguageCookie(newLocale, searchParams);
     i18n.setLanguageById(newLocale);
-    // setLanguageId(newLocale);
   };
 
-  const setLanguageCookie = (newLocale: string) => {
+  const setLanguageCookie = (newLocale: string, searchParams: URLSearchParams | null) => {
     setCookie(null, "language", newLocale, {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
     });
 
-    router.replace(pathname);
+    const queryString = searchParams?.toString();
+    const url = queryString ? `${pathname}?${queryString}` : pathname;
+
+    router.replace(url);
   };
 
   return (

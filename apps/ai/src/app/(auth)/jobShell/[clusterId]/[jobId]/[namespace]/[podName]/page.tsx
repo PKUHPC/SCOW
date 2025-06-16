@@ -64,11 +64,13 @@ const JobShellComponent = dynamic(
     loading: Black,
   });
 
-export default function Page({ params }: { params: { clusterId: string, jobId: string } }) {
+export default function Page({ params }:
+{ params: { clusterId: string, jobId: string, namespace: string, podName: string } })
+{
   const t = useI18nTranslateToString();
   const p = prefix("app.jobShell.");
 
-  const { clusterId, jobId } = params;
+  const { clusterId, jobId, namespace, podName } = params;
   const { publicConfig, user } = usePublicConfig();
 
   const clusterName = publicConfig.CLUSTERS.find((x) => x.id === clusterId)?.name || clusterId;
@@ -95,6 +97,8 @@ export default function Page({ params }: { params: { clusterId: string, jobId: s
           user={user}
           cluster={clusterId}
           jobId={jobId}
+          namespace={namespace}
+          podName={podName}
         />
       </TerminalContainer>
     </Container>

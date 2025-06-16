@@ -14,7 +14,6 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -47,14 +46,7 @@ interface Props {
   status: AppTableStatus
 }
 
-export function compareState(a: string, b: string): -1 | 0 | 1 {
-  const endState = "ENDED";
-  if (a === b || (a !== endState && b !== endState)) { return 0; }
-  if (a === endState) { return -1; }
-  return 1;
-}
-
-const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link" });
+const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link",style:{ padding:0 } });
 
 export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   const t = useI18nTranslateToString();
@@ -149,13 +141,13 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       dataIndex: "appId",
       width: "40px",
       render: (appId: string, record) => record.appName ?? appId,
-      sorter: (a, b) => (!a.submitTime || !b.submitTime) ? -1 : compareDateTime(a.submitTime, b.submitTime),
     },
     {
       title: t(p("submitTime")),
       dataIndex: "submitTime",
       width: "200px",
       render: (_, record) => record.submitTime ? formatDateTime(record.submitTime) : "",
+      sorter: (a, b) => compareDateTime(a.submitTime, b.submitTime),
     },
     {
       title: t(p("state")),
@@ -173,11 +165,8 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           <span>{record.state}</span>
         )
       ),
-      sorter: (a, b) => compareState (a.state, b.state)
-        ? compareState (a.state, b.state) :
-        compareNumber(a.jobId, b.jobId),
+      sorter: (a, b) => a.state.localeCompare(b.state),
       defaultSortOrder: "descend",
-
     },
     ...(unfinished ? [{
       title: t(p("remainingTime")),
@@ -189,9 +178,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       title: t(p("action")),
       key: "action",
       fixed:"right",
-      width: unfinished ? "500px" : "150px",
+      width: unfinished ? "400px" : "200px",
       render: (_, record) => (
-        <Space>
+        <Space direction="horizontal" size="middle" align="center">
           {
             (record.state === "RUNNING") ? (
               <>
@@ -202,9 +191,6 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
                     refreshToken={connectivityRefreshToken}
                   />
                 )}
-                <Link href={`/jobShell/${cluster.id}/${record.jobId}`} target="_blank">
-                  {t(p("enterContainer"))}
-                </Link>
                 <Popconfirm
                   title={t(p("confirmFinish"))}
                   onConfirm={
@@ -251,6 +237,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           }
           <Button
             type="link"
+            style={{ padding:0 }}
             onClick={async () => {
               let basePath = `/jobs/${cluster.id}`;
               const searchParams = new URLSearchParams({
@@ -275,6 +262,18 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           }}
           >
             {t(p("enterDir"))}
+          </a>
+          <a onClick={() => {
+            const searchParams = new URLSearchParams({
+              jobId:  record.jobId.toString(),
+              jobType: record.jobType.toString(),
+              appId: record.appId ?? "",
+              from:status,
+            });
+            router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
+          }}
+          >
+            {t(p("details"))}
           </a>
         </Space>
       ),

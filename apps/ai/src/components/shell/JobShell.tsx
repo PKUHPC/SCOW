@@ -31,9 +31,11 @@ interface Props {
   user: ClientUserInfo;
   cluster: string;
   jobId: string;
+  namespace: string;
+  podName: string;
 }
 
-export const JobShell: React.FC<Props> = ({ user, cluster, jobId }) => {
+export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, podName }) => {
 
   const { publicConfig: { BASE_PATH } } = usePublicConfig();
 
@@ -54,6 +56,8 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId }) => {
       const payload = {
         cluster,
         jobId,
+        namespace,
+        podName,
       };
 
       term.write(

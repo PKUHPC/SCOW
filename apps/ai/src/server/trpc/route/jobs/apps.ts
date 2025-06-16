@@ -11,6 +11,7 @@
  */
 
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { jobInfo_PodStatusToJSON } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppType } from "@scow/config/build/appForAi";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -37,6 +38,7 @@ import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { getIdPrivate } from "src/utils/app";
+import { formatTime } from "src/utils/datetime";
 import { isPortReachable } from "src/utils/isPortReachable";
 import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
@@ -46,7 +48,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { PartitionSchema } from "../config";
 import { booleanQueryParam } from "../utils";
-import { IdPrivateSchema } from "./jobs";
+import { EventSchema, IdPrivateSchema } from "./jobs";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -631,7 +633,6 @@ export const listAppSessions =
         throw clusterNotFound(clusterId);
       }
 
-
       const filteredSessions = await driver.withJobDriver({
         clusterId,
         user:userId,
@@ -644,6 +645,154 @@ export const listAppSessions =
       );
 
       return { sessions: paginatedSessions, count: totalCount };
+    });
+
+const podInfoSchema = z.object({
+  podId: z.string(),
+  podName: z.string(),
+  namespace: z.string(),
+  nodeName:z.string(),
+  podIp: z.string(),
+  podStatus: z.string(),
+  events: z.array(EventSchema),
+  podCreatedTime: z.string().optional(),
+});
+
+const SingleAppSessionSchema = z.object({
+  jobName: z.string(),
+  jobId: z.number(),
+  runningTime: z.string(),
+  submitTime: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  timeLimit: z.string(),
+  state: z.string(),
+  reason: z.string().optional(),
+  qos:z.string(),
+  partition:z.string(),
+  account:z.string(),
+  cpusReq:z.number(),
+  cpusAlloc:z.number().optional(),
+  gpusReq:z.number(),
+  gpusAlloc:z.number().optional(),
+  memReq:z.number(),
+  memAlloc:z.number().optional(),
+  nodesReq:z.number(),
+  nodesAlloc:z.number().optional(),
+  host: z.string().optional(),
+  port: z.number().optional(),
+  jobEvent:z.array(EventSchema),
+  podInfo:z.array(podInfoSchema),
+});
+
+export const getJobDetails =
+  procedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/appSession",
+        tags: ["appSessions"],
+        summary: "Get Job Details",
+      },
+    })
+    .input(z.object({
+      clusterId: z.string(),
+      jobId:z.number(),
+      jobType:z.string(),
+      appId:z.string().optional(),
+    }))
+    .output(SingleAppSessionSchema)
+    .query(async ({ input, ctx: { user } }) => {
+
+      const { clusterId, jobId, jobType,appId } = input;
+
+      const userId = user.identityId;
+
+      const currentClusterIds = await getCurrentClusters(userId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      const clusterHost = getClusterLoginNode(clusterId);
+
+      if (!clusterHost) {
+        throw clusterNotFound(clusterId);
+      }
+
+      const apps = getClusterAppConfigs(clusterId);
+
+      const client = getAdapterClient(clusterId);
+      const { job } = await asyncClientCall(client.job, "getJobById", {
+        fields: [
+          "job_id", "name","state", "partition","elapsed_seconds","time_limit_minutes",
+          "reason","qos","cpus_req","cpus_alloc","mem_req_mb","mem_alloc_mb","gpus_req","gpus_alloc",
+          "nodes_req","nodes_alloc","submit_time","start_time","end_time","partition","account",
+          "pods","events",
+        ],
+        jobId,
+      });
+
+      if (!job) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Can not find this running job(jobId:${jobId})`,
+        });
+      }
+
+      let host: string | undefined = undefined;
+      let port: number | undefined = undefined;
+
+      if (jobType === JobType.APP) {
+        const app = appId ? apps[appId] : undefined;
+        if (!app) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `app id ${appId} is not found`,
+          });
+        }
+        // judge whether the app is ready
+        if (job.state === "RUNNING") {
+          try {
+            const client = getAdapterClient(clusterId);
+            const connectionInfo =
+                await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
+            if (connectionInfo?.response?.$case === "appConnectionInfo") {
+              host = connectionInfo.response.appConnectionInfo.host;
+              port = connectionInfo.response.appConnectionInfo.port;
+            }
+          } catch (error: any) {
+            logger.info("Job(jobId:%s) gets app connection info failed , reason: %o",
+              jobId, error.message);
+          }
+
+        }
+      }
+      // 推理需要端口
+      else if (jobType === JobType.INFER) {
+        if (job.state === "RUNNING") {
+          const client = getAdapterClient(clusterId);
+          const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
+          if (connectionInfo?.response?.$case === "appConnectionInfo") {
+            host = aiConfig.inferProxyHost;
+            port = connectionInfo.response.appConnectionInfo.port;
+          }
+        }
+      }
+
+      const podInfo = job.pods.map((pod) => ({ ...pod,podStatus: jobInfo_PodStatusToJSON(pod.podStatus) }));
+
+      return {
+        ...job,
+        jobId,
+        jobName:job.name,
+        runningTime: job.elapsedSeconds !== undefined
+          ? formatTime(job.elapsedSeconds * 1000) : "",
+        timeLimit:job.timeLimitMinutes ? formatTime(job.timeLimitMinutes * 60 * 1000) : "",
+        memReq:job.memReqMb,
+        memAlloc:job.memAllocMb,
+        host,
+        port,
+        jobEvent:job.events,
+        podInfo,
+      };
     });
 
 

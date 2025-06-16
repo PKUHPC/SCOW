@@ -13,6 +13,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
+import type { ServerResponse } from "http";
 import { aiConfig } from "src/server/config/ai";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -26,6 +27,10 @@ import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
+
+interface ServerResponseWithFlush extends ServerResponse {
+  flush: () => void;
+}
 
 // 分布式训练框架
 export const Framework = z.union([
@@ -272,7 +277,7 @@ procedure
   });
 
 
-const EventSchema = z.object({
+export const EventSchema = z.object({
   objName: z.string().optional(),
   objNamespace: z.string().optional(),
   objKind: z.string(),
@@ -281,6 +286,7 @@ const EventSchema = z.object({
   reason: z.string(),
   reportingComponent: z.string(),
   count: z.number().optional(),
+  time:z.string().optional(),
 });
 
 export const getJobSchedulingAndStartupLogs =
@@ -298,7 +304,7 @@ procedure
     jobId: z.number(),
   }))
   .output(z.object({
-    jobEvent:z.array(EventSchema) ,
+    jobEvent:z.array(EventSchema),
     podEvent:z.array(z.array(EventSchema)),
   }))
   .mutation(async ({ input, ctx: { user } }) => {
@@ -391,9 +397,15 @@ export const getPodLogs = procedure
       // 调用 gRPC 流式方法
       const logStream = client.job.getPodLogs({ userId,podId });
 
+      res.on("close", () => {
+        logStream.cancel();
+        logger.info("SSE client disconnected");
+      });
+
       // 将 gRPC 流的数据写入响应
       for await (const message of logStream) {
         res.write(`data: ${JSON.stringify({ log: message.log })}\n\n`);
+        (res as unknown as ServerResponseWithFlush).flush?.(); // 必须 flush 输出，否则前端不会收到
       }
     } catch (error: any) {
       res.status(500).write(`event: error\ndata: ${error.message}\n\n`);
