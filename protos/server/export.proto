@@ -53,6 +53,9 @@ message ExportedUser {
   repeated TenantRole tenant_roles = 7;
   repeated PlatformRole platform_roles = 8;
   repeated string affiliated_accounts = 9;
+  optional string phone = 10;
+  optional string organization = 11;
+  optional string admin_comment = 12;
 }
 
 message ExportUserRequest {

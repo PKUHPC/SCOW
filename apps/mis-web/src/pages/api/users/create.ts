@@ -30,6 +30,13 @@ export const CreateUserSchema = typeboxRouteSchema({
      * 密码
      */
     password: Type.String(),
+
+    phone: Type.Optional(Type.String()),
+    organization: Type.Optional(Type.String()),
+    /**
+     * 管理员对用户的备注
+     */
+    adminComment: Type.Optional(Type.String()),
   }),
 
   responses: {
@@ -59,7 +66,7 @@ export default /* #__PURE__*/route(CreateUserSchema, async (req, res) => {
   if (!useBuiltinCreateUser()) { return { 501: null }; }
 
 
-  const { email, identityId, name, password } = req.body;
+  const { email, identityId, name, password, phone, organization, adminComment } = req.body;
 
   const auth = authenticate((u) =>
     u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
@@ -105,6 +112,7 @@ export default /* #__PURE__*/route(CreateUserSchema, async (req, res) => {
     name: name,
     password,
     tenantName: info.tenant,
+    phone, organization, adminComment,
   })
     .then(async (res) => {
       await callLog(logInfo, OperationResult.SUCCESS);

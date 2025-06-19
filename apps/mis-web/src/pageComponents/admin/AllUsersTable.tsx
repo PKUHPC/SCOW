@@ -1,4 +1,3 @@
-import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { PlatformUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
@@ -16,11 +15,11 @@ import { Encoding } from "src/models/exportFile";
 import { FullUserInfo, PlatformRole, SortDirectionType, UsersSortFieldType, UserState } from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
+import { AdminUserInfoDrawer } from "src/pageComponents/users/AdminUserInfoDrawer";
 import { type GetAllUsersSchema } from "src/pages/api/admin/getAllUsers";
 import { User } from "src/stores/UserStore";
 import { getRuntimeI18nConfigText } from "src/utils/config";
 
-import { UserInfoDrawer } from "../users/UserInfoDrawer";
 import { ChangeTenantModalLink } from "./ChangeTenantModal";
 
 interface FilterForm {
@@ -135,18 +134,24 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
     } else if (total <= 0) {
       message.error(t(pCommon("exportNoDataErrorMsg")));
     } else {
+      const exportQuery: Record<string, string | number | boolean | string[] | undefined> = {
+        idOrName: query.idOrName,
+        platformRole: currentPlatformRole,
+      };
+
+      // 只有在 sortField 和 sortOrder 都有值时才添加排序参数
+      if (sortInfo.sortField && sortInfo.sortOrder) {
+        exportQuery.sortField = sortInfo.sortField;
+        exportQuery.sortOrder = sortInfo.sortOrder;
+      }
+
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportUser",
         columns,
         count: total,
         timeZone, // 将浏览器时区作为参数传递到后端
-        query: {
-          sortField: sortInfo.sortField,
-          sortOrder: sortInfo.sortOrder,
-          idOrName: query.idOrName,
-          platformRole: currentPlatformRole,
-        },
+        query: exportQuery,
       });
     }
 
@@ -156,10 +161,14 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
     return [
       { label: t(p("userId")), value: "userId" },
       { label: t(p("name")), value: "name" },
+      { label: t(pCommon("email")), value: "email" },
+      { label: t(pCommon("phone")), value: "phone" },
+      { label: t(pCommon("organization")), value: "organization" },
       { label: t(p("tenant")), value: "tenantName" },
-      { label: t(p("availableAccounts")), value: "availableAccounts" },
-      { label: t(pCommon("createTime")), value: "createTime" },
       { label: t(p("roles")), value: "platformRoles" },
+      { label: t(p("availableAccounts")), value: "availableAccounts" },
+      { label: t(pCommon("comment")), value: "adminComment" },
+      { label: t(pCommon("createTime")), value: "createTime" },
     ];
   }, [t]);
 
@@ -264,11 +273,12 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
           onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
         } : false}
         onChange={handleTableChange}
-        scroll={{ x: true }}
+        scroll={{ x: 2000 }}
       >
         <Table.Column<PlatformUserInfo>
           dataIndex="userId"
           title={t(p("userId"))}
+          width={300}
           sorter={true}
           sortDirections={["ascend", "descend"]}
           sortOrder={sortInfo.sortField === "userId" ? sortInfo.sortOrder : null}
@@ -280,22 +290,22 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
           sortDirections={["ascend", "descend"]}
           sortOrder={sortInfo.sortField === "name" ? sortInfo.sortOrder : null}
         />
+        <Table.Column<PlatformUserInfo>
+          dataIndex="email"
+          title={t(pCommon("email"))}
+          render={(_, r) => r.email ?? ""}
+        />
+        <Table.Column<PlatformUserInfo>
+          dataIndex="phone"
+          title={t(pCommon("phone"))}
+          render={(_, r) => r.phone ?? ""}
+        />
+        <Table.Column<PlatformUserInfo>
+          dataIndex="organization"
+          title={t(pCommon("organization"))}
+          render={(_, r) => r.organization ?? ""}
+        />
         <Table.Column dataIndex="tenantName" ellipsis title={t(p("tenant"))} />
-        <Table.Column<PlatformUserInfo>
-          dataIndex="availableAccounts"
-          width="400px"
-          title={t(p("availableAccounts"))}
-          render={(accounts) => accounts.join(", ")}
-        />
-        <Table.Column<PlatformUserInfo>
-          dataIndex="createTime"
-          width="13.5%"
-          title={t(pCommon("createTime"))}
-          sorter={true}
-          sortDirections={["ascend", "descend"]}
-          sortOrder={sortInfo.sortField === "createTime" ? sortInfo.sortOrder : null}
-          render={(time: string) => formatDateTime(time)}
-        />
         <Table.Column<PlatformUserInfo>
           dataIndex="roles"
           width="15%"
@@ -313,6 +323,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
         <Table.Column<PlatformUserInfo>
           dataIndex="operation"
           fixed="right"
+          width={300}
           title={t(pCommon("operation"))}
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
@@ -326,7 +337,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
               </a>
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  {t(p("editUserProfile"))}
+                  {t(pCommon("edit"))}
                 </DisabledA>
               ) : (
                 <EditUserProfileModalLink
@@ -354,7 +365,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                       .finally(() => reload());
                   }}
                 >
-                  {t(p("editUserProfile"))}
+                  {t(pCommon("edit"))}
                 </EditUserProfileModalLink>
               )}
               {r.state === UserState.DELETED ? (
@@ -412,7 +423,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
           )}
         />
       </Table>
-      <UserInfoDrawer
+      <AdminUserInfoDrawer
         open={previewItem !== undefined}
         item={previewItem}
         onClose={() => setPreviewItem(undefined)}

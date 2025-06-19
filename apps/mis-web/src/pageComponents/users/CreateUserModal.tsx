@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { App, Form, Input, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import { api } from "src/apis";
@@ -46,9 +34,11 @@ export const CreateUserModal: React.FC<Props> = ({
   const { message } = App.useApp();
 
   const onOk = async () => {
-    const { password, email, identityId, name } = await form.validateFields();
+    const { password, email, identityId, name, phone, organization, adminComment } = await form.validateFields();
     setLoading(true);
-    await api.createUser({ body: { email, identityId, name: name.trim(), password } })
+    await api.createUser({ body: {
+      email, identityId, name: name.trim(), password, phone, organization, adminComment,
+    } })
       .httpError(409, () => { message.error(t(p("alreadyExist"))); })
       .httpError(400, (e) => {
         if (e.code === "USERID_NOT_VALID") {
@@ -84,7 +74,11 @@ export const CreateUserModal: React.FC<Props> = ({
       onOk={onOk}
     >
       <p>{t(p("notExist"))} {accountName}。</p>
-      <Form form={form} initialValues={newUserInfo}>
+      <Form
+        form={form}
+        initialValues={newUserInfo}
+        labelCol={{ span:5, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
+      >
         <Form.Item
           label={t(pCommon("userId"))}
           name="identityId"
@@ -119,6 +113,28 @@ export const CreateUserModal: React.FC<Props> = ({
           {...confirmPasswordFormItemProps(form, "password", languageId)}
         >
           <Input.Password placeholder={passwordRule(languageId).message} />
+        </Form.Item>
+        <Form.Item
+          label={t(p("phone"))}
+          name="phone"
+        >
+          <Input placeholder={t(p("enterPhone"))} />
+        </Form.Item>
+        <Form.Item
+          label={t(p("organization"))}
+          name="organization"
+          rules={[{
+            max: 50,
+            message: t(p("organizationLength")),
+          }]}
+        >
+          <Input placeholder={t(p("enterOrganization"))} />
+        </Form.Item>
+        <Form.Item
+          label={t(p("comment"))}
+          name="adminComment"
+        >
+          <Input.TextArea placeholder={t(p("enterComment"))} />
         </Form.Item>
       </Form>
     </Modal>

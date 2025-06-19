@@ -1,26 +1,18 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Form, Input } from "antd";
 import React from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getUserIdRule, useBuiltinCreateUser } from "src/utils/createUser";
 import { confirmPasswordFormItemProps, getEmailRule, passwordRule } from "src/utils/form";
+
 export interface CreateUserFormFields {
   identityId: string;
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
+  phone?: string;
+  organization?: string;
+  adminComment?: string;
 }
 
 const p = prefix("pageComp.user.createUserForm.");
@@ -87,6 +79,28 @@ export const CreateUserForm: React.FC = () => {
         ) : undefined
 
       }
+      <Form.Item
+        label={t(p("phone"))}
+        name="phone"
+      >
+        <Input placeholder={t(p("enterPhone"))} />
+      </Form.Item>
+      <Form.Item
+        label={t(p("organization"))}
+        name="organization"
+        rules={[{
+          max: 50,
+          message: t(p("organizationLength")),
+        }]}
+      >
+        <Input placeholder={t(p("enterOrganization"))} />
+      </Form.Item>
+      <Form.Item
+        label={t(p("comment"))}
+        name="adminComment"
+      >
+        <Input.TextArea placeholder={t(p("enterComment"))} />
+      </Form.Item>
     </>
   );
 };

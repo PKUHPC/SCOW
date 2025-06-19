@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FormLayout } from "@scow/lib-web/build/layouts/FormLayout";
 import { App, Button, Form, Input } from "antd";
 import { NextPage } from "next";
@@ -81,7 +69,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
     <Form
       form={form}
       wrapperCol={{ span: 20 }}
-      labelCol={{ span:4, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
+      labelCol={{ span:5, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
       labelAlign="right"
       onFinish={submit}
     >
@@ -118,7 +106,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       <Form.Item name="comment" label={t(p("remark"))}>
         <Input.TextArea />
       </Form.Item>
-      <Form.Item wrapperCol={{ span: 6, offset: 4 }}>
+      <Form.Item wrapperCol={{ span: 6, offset: 5 }}>
         <Button type="primary" htmlType="submit" loading={loading}>
           {t("common.submit")}
         </Button>

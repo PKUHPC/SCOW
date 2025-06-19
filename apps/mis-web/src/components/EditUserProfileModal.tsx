@@ -70,10 +70,6 @@ const EditUserProfileModal: React.FC<Props> = ({
           label={t(p("phone"))}
           name="phone"
           initialValue={phone}
-          rules={[{
-            pattern: /^[0-9]{10,15}$/,
-            message: t(p("errorPhone")),
-          }]}
         >
           <Input placeholder={t(p("enterPhone"))} />
         </Form.Item>
@@ -83,7 +79,7 @@ const EditUserProfileModal: React.FC<Props> = ({
           name="organization"
           initialValue={organization}
           rules={[{
-            max: 255,
+            max: 50,
             message: t(p("organizationLength")),
           }]}
         >

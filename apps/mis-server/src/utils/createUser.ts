@@ -29,7 +29,11 @@ export async function createUserInDatabase(
   email: string,
   tenantName: string,
   logger: Logger,
-  em: SqlEntityManager<MySqlDriver>) {
+  em: SqlEntityManager<MySqlDriver>,
+  phone?: string,
+  organization?: string,
+  adminComment?: string,
+) {
   // get default tenant
   const tenant = await em.findOne(Tenant, { name: tenantName });
   if (!tenant) {
@@ -38,7 +42,7 @@ export async function createUserInDatabase(
 
   // new the user
   const user = new User({
-    email, name, tenant, userId,
+    email, name, tenant, userId, phone, organization, adminComment,
   });
 
   user.storageQuotas.add(Object.keys(configClusters).map((x) => new StorageQuota({

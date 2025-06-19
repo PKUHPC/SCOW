@@ -1,20 +1,39 @@
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
-import { Descriptions, Drawer } from "antd";
+import { Descriptions, Drawer, Tag } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { FullUserInfo } from "src/models/User";
-
+import { PlatformRole } from "src/models/User";
+import { PlatformUserInfo } from "src/models/UserSchemaModel";
 
 interface Props {
   open: boolean;
-  item: Partial<FullUserInfo> | undefined;
+  item: Partial<PlatformUserInfo> | undefined;
   onClose: () => void;
 }
 
-const p = prefix("pageComp.user.userInfoDrawer.");
+const p = prefix("pageComp.user.adminUserInfoDrawer.");
 
-export const UserInfoDrawer: React.FC<Props> = (props) => {
+export const AdminUserInfoDrawer: React.FC<Props> = (props) => {
 
   const t = useI18nTranslateToString();
+
+  const PlatformRoleI18nTexts = {
+    [PlatformRole.PLATFORM_FINANCE]: t("userRoles.platformFinance"),
+    [PlatformRole.PLATFORM_ADMIN]: t("userRoles.platformAdmin"),
+  };
+
+  const formatPlatformRoles = (platformRoles?: (1 | 0)[]) => {
+    if (!platformRoles) return "";
+
+    return platformRoles.map((role) => (
+      <Tag key={role}>{PlatformRoleI18nTexts[role]}</Tag>
+    ));
+  };
+
+  const formatAccount = (accounts?: string[]) => {
+    if (!accounts || accounts.length === 0) return "";
+
+    return accounts.join(", ");
+  };
 
   const drawerItems = [
     [t(p("id")), "id"],
@@ -23,10 +42,12 @@ export const UserInfoDrawer: React.FC<Props> = (props) => {
     [t(p("phone")), "phone"],
     [t(p("organization")), "organization"],
     [t(p("tenant")), "tenant"],
+    [t(p("platformRoles")), "platformRoles", formatPlatformRoles],
+    [t(p("availableAccounts")), "availableAccounts", formatAccount],
     [t(p("comment")), "adminComment"],
     [t(p("createTime")), "createTime", formatDateTime],
   ] as (
-  | [string, keyof FullUserInfo, (v: any) => string]
+  | [string, keyof PlatformUserInfo, (v: any) => string]
   )[];
 
 
@@ -48,7 +69,7 @@ export const UserInfoDrawer: React.FC<Props> = (props) => {
             size="small"
           >
             {drawerItems.map((([label, key, format]) => (
-              <Descriptions.Item key={item.id} label={label}>
+              <Descriptions.Item key={item.userId} label={label}>
                 {format ? format(item[key]) : (item[key] ?? "") as string}
               </Descriptions.Item>
             ))).filter((x) => x)}

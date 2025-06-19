@@ -1,10 +1,8 @@
 
-import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Static } from "@sinclair/typebox";
 import { App, Button, Divider, Form, Input, Space, Table } from "antd";
 import { SortOrder } from "antd/es/table/interface";
-import Link from "next/link";
 import React, { useCallback, useMemo, useState } from "react";
 import { api } from "src/apis";
 import { ChangePasswordModalLink } from "src/components/ChangePasswordModal";
@@ -19,12 +17,11 @@ import { Encoding } from "src/models/exportFile";
 import { AccountState,DeleteFailedReason, FullUserInfo, TenantRole, UserState } from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
+import { TenantUserInfoDrawer } from "src/pageComponents/users/TenantUserInfoDrawer";
 import { type GetTenantUsersSchema } from "src/pages/api/admin/getTenantUsers";
 import { User } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { getRuntimeI18nConfigText } from "src/utils/config";
-
-import { UserInfoDrawer } from "../users/UserInfoDrawer";
 
 interface Props {
   data: Static<typeof GetTenantUsersSchema["responses"]["200"]> | undefined;
@@ -149,9 +146,12 @@ export const AdminUserTable: React.FC<Props> = ({
       { label: t(pCommon("userId")), value: "userId" },
       { label: t(p("name")), value: "name" },
       { label: t(pCommon("email")), value: "email" },
+      { label: t(pCommon("phone")), value: "phone" },
+      { label: t(pCommon("organization")), value: "organization" },
       { label: t(p("tenantRole")), value: "tenantRoles" },
-      { label: t(pCommon("createTime")), value: "createTime" },
       { label: t(p("affiliatedAccountName")), value: "affiliatedAccounts" },
+      { label: t(pCommon("comment")), value: "adminComment" },
+      { label: t(pCommon("createTime")), value: "createTime" },
     ];
   }, [t]);
 
@@ -213,12 +213,13 @@ export const AdminUserTable: React.FC<Props> = ({
           onChange: (page) => setCurrentPageNum(page),
         }}
         rowKey="id"
-        scroll={{ x: filteredData?.length ? 1200 : true }}
+        scroll={{ x: filteredData?.length ? 1600 : true }}
         onChange={handleTableChange}
       >
         <Table.Column<FullUserInfo>
           dataIndex="id"
           title={t(pCommon("userId"))}
+          width="300px"
           sorter={(a, b) => a.id.localeCompare(b.id)}
           sortDirections={["ascend", "descend"]}
           sortOrder={currentSortInfo.field === "id" ? currentSortInfo.order : null}
@@ -233,9 +234,21 @@ export const AdminUserTable: React.FC<Props> = ({
         <Table.Column<FullUserInfo>
           dataIndex="email"
           title={t(pCommon("email"))}
+          width={300}
           sorter={(a, b) => a.email.localeCompare(b.email)}
           sortDirections={["ascend", "descend"]}
           sortOrder={currentSortInfo.field === "email" ? currentSortInfo.order : null}
+        />
+        <Table.Column<FullUserInfo>
+          dataIndex="phone"
+          title={t(pCommon("phone"))}
+          width={200}
+          render={(_, r) => r.phone ?? ""}
+        />
+        <Table.Column<FullUserInfo>
+          dataIndex="organization"
+          title={t(pCommon("organization"))}
+          render={(_, r) => r.organization ?? ""}
         />
         <Table.Column<FullUserInfo>
           dataIndex="tenantRoles"
@@ -251,28 +264,6 @@ export const AdminUserTable: React.FC<Props> = ({
           )}
         />
         <Table.Column<FullUserInfo>
-          dataIndex="createTime"
-          title={t(pCommon("createTime"))}
-          sorter={(a, b) => compareDateTime(a.createTime, b.createTime)}
-          sortDirections={["ascend", "descend"]}
-          sortOrder={currentSortInfo.field === "createTime" ? currentSortInfo.order : null}
-          render={(d) => formatDateTime(d)}
-        />
-        <Table.Column<FullUserInfo>
-          dataIndex="affiliatedAccountNames"
-          title={t(p("affiliatedAccountName"))}
-          render={(_, r) => (
-            <>
-              {r.accountAffiliations.map((x, index) => (
-                <>
-                  <Link href={`/tenant/accounts/${x.accountName}/users`}>{x.accountName}</Link>
-                  {index < r.accountAffiliations.length - 1 && ", "}
-                </>
-              ))}
-            </>
-          )}
-        />
-        <Table.Column<FullUserInfo>
           dataIndex="operation"
           title={t(pCommon("operation"))}
           width="300px"
@@ -284,7 +275,7 @@ export const AdminUserTable: React.FC<Props> = ({
               </a>
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  {t(p("editUserProfile"))}
+                  {t(pCommon("edit"))}
                 </DisabledA>
               ) : (
                 <EditUserProfileModalLink
@@ -313,7 +304,7 @@ export const AdminUserTable: React.FC<Props> = ({
                       .finally(() => reload());
                   }}
                 >
-                  {t(p("editUserProfile"))}
+                  {t(pCommon("edit"))}
                 </EditUserProfileModalLink>
               )}
               {r.state === UserState.DELETED ? (
@@ -438,7 +429,7 @@ export const AdminUserTable: React.FC<Props> = ({
         }}
       >
       </DeleteEntityFailedModal>
-      <UserInfoDrawer
+      <TenantUserInfoDrawer
         open={previewItem !== undefined}
         item={previewItem}
         onClose={() => setPreviewItem(undefined)}

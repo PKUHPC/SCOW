@@ -95,6 +95,9 @@ export const exportServiceServer = plugin((server) => {
         userId: x.userId,
         name: x.name,
         email: x.email,
+        phone: x.phone,
+        organization: x.organization,
+        adminComment: x.adminComment,
         availableAccounts: x.accounts.getItems()
           .filter((ua) => ua.blockedInCluster === UserStatus.UNBLOCKED)
           .map((ua) => {

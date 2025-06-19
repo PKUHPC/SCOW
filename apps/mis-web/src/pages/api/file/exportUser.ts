@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -131,12 +119,15 @@ export default route(ExportUserSchema, async (req, res) => {
       userId: t(pAdmin("userId")),
       name: t(pAdmin("name")),
       email: t(pCommon("email")),
+      phone: t(pCommon("phone")),
       tenantName:  t(pAdmin("tenant")),
-      availableAccounts: t(pAdmin("availableAccounts")),
-      affiliatedAccounts: t(pTenant("affiliatedAccountName")),
-      createTime: t(pCommon("createTime")),
-      tenantRoles: t(pTenant("tenantRole")),
+      organization: t(pCommon("organization")),
       platformRoles: t(pAdmin("roles")),
+      tenantRoles: t(pTenant("tenantRole")),
+      affiliatedAccounts: t(pTenant("affiliatedAccountName")),
+      availableAccounts: t(pAdmin("availableAccounts")),
+      adminComment: t(pCommon("comment")),
+      createTime: t(pCommon("createTime")),
     };
 
     const TenantRoleI18nTexts = {
@@ -154,13 +145,16 @@ export default route(ExportUserSchema, async (req, res) => {
         userId: x.userId,
         name: x.name,
         email: x.email,
+        phone: x.phone,
+        organization: x.organization,
         tenantName: x.tenantName,
-        availableAccounts: x.availableAccounts.join(","),
-        affiliatedAccounts: x.affiliatedAccounts.join(","),
-        createTime: x.createTime ? new Date(x.createTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
         tenantRoles: x.tenantRoles.map((x) => TenantRoleI18nTexts[x]).join(","),
         platformRoles: x.platformRoles.map((x) => PlatformRoleI18nTexts[x]).join(","),
+        availableAccounts: x.availableAccounts.join(","),
+        affiliatedAccounts: x.affiliatedAccounts.join(","),
+        adminComment: x.adminComment,
+        createTime: x.createTime ? new Date(x.createTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
+          : "",
       };
     };
 

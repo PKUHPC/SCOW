@@ -440,9 +440,11 @@ export const userServiceServer = plugin((server) => {
      * 并将公钥插入用户的authorized_keys
      */
     createUser: async ({ request, em, logger }) => {
-      const { name, tenantName, email, identityId, password } = request;
+      const { name, tenantName, email, identityId, password, phone, organization, adminComment } = request;
       const user =
-      await createUserInDatabase(identityId, name, email, tenantName, server.logger, em)
+      await createUserInDatabase(
+        identityId, name, email, tenantName, server.logger, em, phone, organization, adminComment,
+      )
         .catch((e) => {
           if (e.code === Status.ALREADY_EXISTS) {
             throw {
