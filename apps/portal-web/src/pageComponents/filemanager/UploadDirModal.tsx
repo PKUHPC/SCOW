@@ -2,7 +2,6 @@ import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { App, Button, Modal, Upload } from "antd";
 import type { RcFile } from "antd/es/upload";
 import type { UploadFile, UploadProps } from "antd/es/upload/interface";
-import pLimit from "p-limit";
 import { dirname, join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
@@ -278,7 +277,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     );
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
-    const concurrentChunks = 3;
     let uploadedCount = uploadedChunkIndices.size;
 
     const uploadFile = uploadFileList.find((uploadFile) => uploadFile.uid === file.uid);
@@ -294,8 +292,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
     const controller = new AbortController();
     uploadControllers.current.set(uploadFile.uid, controller);
-
-    const limit = pLimit(concurrentChunks);
 
     const uploadChunk = async (start: number): Promise<void> => {
       if (controller.signal.aborted) {
@@ -314,7 +310,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       const formData = new FormData();
       formData.append("file", chunk);
 
-      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName)), {
+      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName), true, join(path, file.name)), {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -328,16 +324,18 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     };
 
     try {
-      const batchSize = 10; // 每次上传10个文件块
-      for (let i = 0; i < totalCount; i += batchSize) {
-        const batchPromises: Promise<void>[] = [];
-        for (let j = i; j < Math.min(i + batchSize, totalCount); j++) {
-          if (controller.signal.aborted) {
-            break;
-          }
-          batchPromises.push(limit(() => uploadChunk(j)));
+      // 顺序上传分片，失败时立即终止
+      for (let i = 0; i < totalCount; i++) {
+        if (controller.signal.aborted) {
+          break;
         }
-        await Promise.all(batchPromises);
+
+        // 如果分片已经上传过，跳过
+        if (uploadedChunkIndices.has(i + 1)) {
+          continue;
+        }
+
+        await uploadChunk(i);
       }
 
       if (!controller.signal.aborted) {

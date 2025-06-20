@@ -1,23 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
-import { OperationType } from "@scow/lib-operation-log";
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { FileServiceClient } from "@scow/protos/build/portal/file";
 import { Type } from "@sinclair/typebox";
+import { join } from "path";
 import { authenticate } from "src/auth/server";
-import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
@@ -57,21 +45,20 @@ export default route(InitMultipartUploadSchema, async (req, res) => {
 
   const { cluster, path, name } = req.body;
 
-  const client = getClient(FileServiceClient);
-
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.initMultipartUpload,
+    operationTypeName: OperationType.uploadFile,
     operationTypePayload:{
-      clusterId: cluster, path, name,
+      clusterId: cluster, path: join(path, name),
     },
   };
+
+  const client = getClient(FileServiceClient);
 
   return asyncUnaryCall(client, "initMultipartUpload", {
     cluster, path, userId: info.identityId, name,
   }).then(async (res) => {
-    await callLog(logInfo, OperationResult.SUCCESS);
     return { 200: {
       ...res,
       filesInfo: res.filesInfo.map(({ mode, mtime, name, size, type }) => ({
@@ -83,8 +70,6 @@ export default route(InitMultipartUploadSchema, async (req, res) => {
     [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
     [status.UNKNOWN]: () => ({ 520: { code: "UNKNOWN_ERROR" as const } }),
     [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
-  },
-  async () => await callLog(logInfo, OperationResult.FAIL),
-  ));
+  }, async () => await callLog(logInfo, OperationResult.FAIL)));
 
 });

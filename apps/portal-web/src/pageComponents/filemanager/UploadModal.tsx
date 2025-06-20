@@ -1,18 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
-import pLimit from "p-limit";
 import { join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
@@ -21,6 +8,7 @@ import { urlToUpload } from "src/pageComponents/filemanager/api";
 import { publicConfig } from "src/utils/config";
 import { calculateBlobSHA256 } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -84,7 +72,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     );
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
-    const concurrentChunks = 3;
     let uploadedCount = uploadedChunkIndices.size;
 
     const uploadFile = uploadFileList.find((uploadFile) => uploadFile.name === file.name);
@@ -100,8 +87,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
     const controller = new AbortController();
     uploadControllers.current.set(uploadFile.uid, controller);
-
-    const limit = pLimit(concurrentChunks);
 
     const uploadChunk = async (start: number): Promise<void> => {
       if (controller.signal.aborted) {
@@ -120,7 +105,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       const formData = new FormData();
       formData.append("file", chunk);
 
-      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName)), {
+      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName), true, join(path, file.name)), {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -135,16 +120,18 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     };
 
     try {
-      const batchSize = 10; // 每次上传10个文件块
-      for (let i = 0; i < totalCount; i += batchSize) {
-        const batchPromises: Promise<void>[] = [];
-        for (let j = i; j < Math.min(i + batchSize, totalCount); j++) {
-          if (controller.signal.aborted) {
-            break;
-          }
-          batchPromises.push(limit(() => uploadChunk(j)));
+      // 顺序上传分片，失败时立即终止
+      for (let i = 0; i < totalCount; i++) {
+        if (controller.signal.aborted) {
+          break;
         }
-        await Promise.all(batchPromises);
+
+        // 如果分片已经上传过，跳过
+        if (uploadedChunkIndices.has(i + 1)) {
+          continue;
+        }
+
+        await uploadChunk(i);
       }
 
       if (!controller.signal.aborted) {

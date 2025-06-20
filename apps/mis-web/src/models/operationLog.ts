@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { OperationEvent, OperationType as LibOperationType } from "@scow/lib-operation-log";
 import { ExportBill, ExportChargeRecord, ExportJobRecord,ExportOperationLog, ExportPayRecord,
   ExportUserBill } from "@scow/protos/build/audit/operation_log";
@@ -425,8 +413,11 @@ export const getOperationDetail = (
         return t(pDetails("createFile"), [operationEvent[logEvent].path]);
       case "deleteFile":
         return t(pDetails("deleteFile"), [operationEvent[logEvent].path]);
-      case "uploadFile":
-        return t(pDetails("uploadFile"), [operationEvent[logEvent].path]);
+      case "uploadFile": {
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("uploadFile"), [clusterName, operationEvent[logEvent].path]);
+      }
       case "createDirectory":
         return t(pDetails("createDirectory"), [operationEvent[logEvent].path]);
       case "deleteDirectory":

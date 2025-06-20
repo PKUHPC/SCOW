@@ -1453,7 +1453,7 @@ export default {
       saveImage: "Job ID: {}, Image: {}, Tag: {}",
       createFile: "File: {}",
       deleteFile: "File: {}",
-      uploadFile: "File: {}",
+      uploadFile: "Cluster: {}, File: {}",
       createDirectory: "Folder: {}",
       deleteDirectory: "Folder: {}",
       moveFileItem: "Source File/Folder: {}, Target File/Folder: {}",

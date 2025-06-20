@@ -26,9 +26,9 @@ export const urlToDownload = (cluster: string, path: string, download: boolean):
   return join(publicConfig.BASE_PATH, "/api/file/download")
   + `?path=${encodeURIComponent(path)}&cluster=${cluster}&download=${download}`;
 };
-export const urlToUpload = (cluster: string, path: string): string => {
+export const urlToUpload = (cluster: string, path: string, chunk?: boolean, originPath?: string): string => {
 
   return join(publicConfig.BASE_PATH, "/api/file/upload")
-  + `?path=${encodeURIComponent(path)}&cluster=${cluster}`;
+  + `?path=${encodeURIComponent(path)}&cluster=${cluster}&chunk=${chunk}&originPath=${originPath}`;
 };
 

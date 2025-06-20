@@ -32,6 +32,8 @@ export const UploadFileSchema = typeboxRouteSchema({
   query: Type.Object({
     cluster: Type.String(),
     path: Type.String(),
+    chunk: Type.Optional(Type.Boolean()), // Added to control logging for chunked uploads
+    originPath: Type.Optional(Type.String()),
   }),
 
   responses: {
@@ -44,7 +46,7 @@ const auth = authenticate(() => true);
 
 export default route(UploadFileSchema, async (req, res) => {
 
-  const { cluster, path } = req.query;
+  const { cluster, path, chunk, originPath } = req.query;
 
   const info = await auth(req, res);
 
@@ -59,7 +61,7 @@ export default route(UploadFileSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.uploadFile,
     operationTypePayload:{
-      clusterId: "", path,
+      clusterId: cluster, path: originPath ? originPath : path,
     },
   };
 
@@ -83,7 +85,9 @@ export default route(UploadFileSchema, async (req, res) => {
     });
 
   }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
+    if (!chunk) {
+      await callLog(logInfo, OperationResult.SUCCESS);
+    }
     return { 204: null };
   }).finally(() => {
     bb.end();

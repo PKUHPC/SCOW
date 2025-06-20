@@ -1449,7 +1449,7 @@ export default {
       saveImage: "作业ID: {}, 镜像: {}, 标签: {}",
       createFile: "文件: {}",
       deleteFile: "文件: {}",
-      uploadFile: "文件: {}",
+      uploadFile: "集群: {}, 文件: {}",
       createDirectory: "文件夹: {}",
       deleteDirectory: "文件夹: {}",
       moveFileItem: "源文件/文件夹: {}, 目标文件/文件夹: {}",
