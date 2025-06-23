@@ -192,6 +192,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SYSTEM_LANGUAGE_CONFIG: systemLanguageConfig,
 
     UI_EXTENSION: portalConfig.uiExtension,
+    UI_CONFIG: uiConfig,
 
     NOTIF_ENABLED: commonConfig.notification?.enabled,
     NOTIF_ADDRESS: commonConfig.notification?.address,

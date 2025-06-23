@@ -1,19 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
 import { NodeInfo } from "@scow/protos/build/portal/config";
 import { Col, Row } from "antd";
-import { NextPage } from "next";
+import { GetServerSideProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { useCallback, useEffect } from "react";
 import { useAsync } from "react-async";
@@ -43,7 +32,11 @@ display: none;
 }
 `;
 
-interface Props {}
+const DashboardPageContent = styled.div``;
+
+interface Props {
+  hostname?: string;
+}
 
 interface FulfilledResult {
   clusterInfo: { clusterName: string; partitions: PartitionInfo[] };
@@ -53,7 +46,7 @@ interface FulfilledNodesResult {
   nodeInfo: { clusterName: string; nodes: NodeInfo[] };
 }
 
-export const DashboardPage: NextPage<Props> = requireAuth(() => true)(() => {
+export const DashboardPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
   const userStore = useStore(UserStore);
   const router = useRouter();
 
@@ -394,6 +387,12 @@ export const DashboardPage: NextPage<Props> = requireAuth(() => true)(() => {
   );
 });
 
-const DashboardPageContent = styled.div``;
+export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => {
+  return {
+    props: {
+      hostname: getHostname(req),
+    },
+  };
+};
 
 export default DashboardPage;

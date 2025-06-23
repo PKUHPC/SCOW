@@ -297,6 +297,12 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
             a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
         />
+        <Table.Column<RunningJobInfo>
+          dataIndex="name"
+          ellipsis
+          title={t(pCommon("workName"))}
+          sorter={(a, b) => a.name.localeCompare(b.name)}
+        />
         {
           showUser && (
             <Table.Column<RunningJobInfo>
@@ -319,12 +325,6 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             />
           )
         }
-        <Table.Column<RunningJobInfo>
-          dataIndex="name"
-          ellipsis
-          title={t(pCommon("workName"))}
-          sorter={(a, b) => a.name.localeCompare(b.name)}
-        />
         <Table.Column<RunningJobInfo>
           dataIndex="partition"
           width="6.3%"

@@ -12,14 +12,13 @@
 
 "use client";
 
-import { DatabaseOutlined, DesktopOutlined } from "@ant-design/icons";
 import React from "react";
 import { useUserQuery } from "src/app/auth";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { Loading } from "src/components/Loading";
-import { useI18n, useI18nTranslateToString } from "src/i18n";
+import { useI18n } from "src/i18n";
 import { BaseLayout } from "src/layouts/base/BaseLayout";
-import { JumpToAnotherLink } from "src/layouts/base/header/Components";
+import { SystemSelect } from "src/layouts/base/header/SystemSelect";
 import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
 import { trpc } from "src/utils/trpc";
 
@@ -27,7 +26,6 @@ import { useUiConfig } from "../uiContext";
 import { PublicConfigContext } from "./context";
 import { defaultClusterContext } from "./defaultClusterContext";
 import { userRoutes } from "./routes";
-
 
 const useConfigQuery = () => {
   return trpc.config.publicConfig.useQuery();
@@ -87,26 +85,16 @@ export default function Layout(
 
   const routes = userRoutes(userQuery.data.user, publicConfig, currentClusters, setDefaultCluster, defaultCluster);
 
-  const t = useI18nTranslateToString();
-
   return (
     <BaseLayout
       routes={routes}
       user={userQuery.data.user}
       headerRightContent={(
         <>
-          <JumpToAnotherLink
+          <SystemSelect
             user={userQuery.data.user}
-            icon={<DatabaseOutlined style={{ paddingRight: 2 }} />}
-            link={publicConfig.MIS_URL}
-            linkText={t("baseLayout.linkTextMis")}
-          />
-          <JumpToAnotherLink
-            user={userQuery.data.user}
-            icon={<DesktopOutlined style={{ paddingRight: 2 }} />}
-            link={publicConfig.PORTAL_URL}
-            linkText="HPC"
-          />
+            publicConfig={publicConfig}
+          ></SystemSelect>
           {
             publicConfig.SYSTEM_LANGUAGE_CONFIG.isUsingI18n ? (
               <LanguageSwitcher initialLanguage={languageId} />

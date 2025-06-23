@@ -10,20 +10,21 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import {
-  AccountBookOutlined, AlertOutlined, BookOutlined, CloudServerOutlined,
-  ClusterOutlined,
-  ControlOutlined,
-  DashboardOutlined,
-  InfoOutlined, LineChartOutlined, LinkOutlined, LockOutlined, MoneyCollectOutlined, MonitorOutlined, PartitionOutlined,
-  PlusOutlined, PlusSquareOutlined, ProfileOutlined,
-  StarOutlined, ToolOutlined, UnlockOutlined,UserAddOutlined,
-  UserOutlined } from "@ant-design/icons";
+import { LinkOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { AccountAffiliation } from "@scow/protos/build/server/user";
 import { join } from "path";
 import { Lang } from "react-typed-i18n";
+import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInfoIcon,
+  AccountListIcon, AccountPayIcon, AccountPaymentsIcon, AccountWhitelistIcon, AdminInfoIcon, AdminManageIcon,
+  AlarmLogIcon, ClusterManagementIcon, CreateAccountIcon, CreateUserIcon,CreatTenantIcon,
+  DashBoardIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
+  ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, OperationLogIcon, PartitionsIcon,
+  PayAccountIcon, PaymentsIcon, PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
+  SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
+  TenantPaymentsIcon, TenantsListIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
+  UserSpaceIcon } from "src/assets/headerIcons";
 import { prefix } from "src/i18n";
 import en from "src/i18n/en";
 import { AccountState, PlatformRole, TenantRole, UserRole } from "src/models/User";
@@ -40,120 +41,120 @@ const pAccount = prefix("layouts.route.accountManagement.");
 export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) => NavItemProps[]
 = (platformRoles, t) => [
   {
-    Icon: UserOutlined,
+    Icon: AdminManageIcon,
     text: t("layouts.route.platformManagement.fistNav"),
     path: "/admin",
     clickToPath: "/admin/info",
     children: [
       {
-        Icon: InfoOutlined,
+        Icon: AdminInfoIcon,
         text: t(pPlatform("info")),
         path: "/admin/info",
       },
 
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ? [
         {
-          Icon: MoneyCollectOutlined,
+          Icon: JobBillingIcon,
           text: t(pPlatform("jobBillingTable")),
           path: "/admin/jobBilling",
         },
         ...((publicConfig.AUTH_PPOLICY_CONFIG?.defaultOlcPPolicyDn &&
           publicConfig.AUTH_PPOLICY_CONFIG?.pwdMaxFailures) ?
           [{
-            Icon: UnlockOutlined,
+            Icon: UnlockLoginIcon,
             text: t(pPlatform("userUnlock")),
             path: "/admin/lockedUsers",
           }] : []),
         {
-          Icon: CloudServerOutlined,
+          Icon: TenantManageIcon,
           text: t(pPlatform("tenantsManagement")),
           path: "/admin/tenants",
           clickToPath: "/admin/tenants/list",
           children: [
             {
-              Icon: UserOutlined,
+              Icon: TenantsListIcon,
               text: t(pPlatform("tenantsList")),
               path: "/admin/tenants/list",
             },
             {
-              Icon: PlusOutlined,
+              Icon: CreatTenantIcon,
               text: t(pPlatform("createTenant")),
               path: "/admin/tenants/create",
             },
           ],
         },
         {
-          Icon: UserOutlined,
+          Icon: UserListIcon,
           text: t(pPlatform("usersList")),
           path: "/admin/users",
         },
         {
-          Icon: AccountBookOutlined,
+          Icon: AccountListIcon,
           text: t(pPlatform("accountList")),
           path: "/admin/accounts",
         },
       ] : []),
       {
-        Icon: MoneyCollectOutlined,
+        Icon: FinanceManagementIcon,
         text: t(pPlatform("financeManagement")),
         path: "/admin/finance",
         clickable: false,
         children: [
           {
-            Icon: PlusSquareOutlined,
+            Icon: FinancePayIcon,
             text: t(pPlatform("tenantPay")),
             path: "/admin/finance/pay",
           },
           {
-            Icon: BookOutlined,
+            Icon: PaymentsIcon,
             text: t(pPlatform("payments")),
             path: "/admin/finance/payments",
           },
           {
-            Icon: BookOutlined,
+            Icon: AccountChargeRecordsIcon,
             text: t(pPlatform("accountChargeRecords")),
             path: "/admin/finance/accountChargeRecords",
           },
           ...(publicConfig.BILL_ENABLED
             ? [{
-              Icon: AccountBookOutlined,
+              Icon: TenantBillsIcon,
               text: t(pPlatform("accountBills")),
               path: "/admin/finance/bills",
             }] : []),
         ],
       },
       {
-        Icon: ToolOutlined,
+        Icon: PlatformDebugIcon,
         text: t(pPlatform("systemDebug")),
         path: "/admin/systemDebug",
         clickable: false,
         children: [
           ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ?
             [{
-              Icon: UserOutlined,
+              Icon: ImportUsersIcon,
               text: t(pPlatform("importUsers")),
               path: "/admin/importUsers",
             }] : []),
           {
-            Icon: LockOutlined,
+            Icon: SlurmBlockStatusIcon,
             text: t(pPlatform("statusSynchronization")),
             path: "/admin/systemDebug/slurmBlockStatus",
           },
           {
-            Icon: BookOutlined,
+            Icon: FetchJobsIcon,
             text: t(pPlatform("jobSynchronization")),
             path: "/admin/systemDebug/fetchJobs",
           },
         ],
       },
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ? [{
-        Icon: ControlOutlined,
+        Icon: ResourceManageIcon,
         text: t(pPlatform("resourceManagement")),
         path: "/admin/resource",
         clickable: false,
         children: [
           {
-            Icon: ClusterOutlined,
+            Icon: ClusterManagementIcon,
             text: t("layouts.route.platformManagement.clusterManagement"),
             path: "/admin/resource/clusterManagement",
           },
@@ -161,25 +162,25 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
       }] : []),
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && publicConfig.CLUSTER_MONITOR.resourceStatus.enabled ?
         [{
-          Icon: MonitorOutlined,
+          Icon: MonitorIcon,
           text: t(pPlatform("clusterMonitor")),
           path: "/admin/monitor",
         }] : []),
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && publicConfig.CLUSTER_MONITOR.alarmLogs.enabled ?
         [{
-          Icon: AlertOutlined,
+          Icon: AlarmLogIcon,
           text: t(pPlatform("alarmLog")),
           path: "/admin/alarmLog",
         }] : []),
       ...(publicConfig.AUDIT_DEPLOYED && platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ?
         [{
-          Icon: BookOutlined,
+          Icon: OperationLogIcon,
           text: t("layouts.route.common.operationLog"),
           path: "/admin/operationLogs",
         }] : []),
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ?
         [{
-          Icon: LineChartOutlined,
+          Icon: StatisticIcon,
           text: t("layouts.route.common.statistic"),
           path: "/admin/statistic",
         }] : []),
@@ -190,40 +191,40 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
 export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransType) => NavItemProps[]
 = (tenantRoles, token, t) => [
   {
-    Icon: CloudServerOutlined,
+    Icon: TenantManageIcon,
     text: t(pTenant("firstNav")),
     path: "/tenant",
     clickToPath: tenantRoles.includes(TenantRole.TENANT_ADMIN) ? "/tenant/info" : "/tenant/finance/payAccount",
     children: [
       ...(tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [
         {
-          Icon: InfoOutlined,
+          Icon: TenantInfoIcon,
           text: t(pTenant("info")),
           path: "/tenant/info",
         },
         {
-          Icon: MoneyCollectOutlined,
+          Icon: ManageJobPriceIcon,
           text: t(pTenant("manageJobPrice")),
           path: "/tenant/jobBillingTable",
         },
         {
-          Icon: BookOutlined,
+          Icon: RunningJobsIcon,
           text: t(pTenant("runningJobs")),
           path: "/tenant/runningJobs",
         },
         {
-          Icon: BookOutlined,
+          Icon: HistoryJobsIcon,
           text: t(pTenant("finishedJobs")),
           path: "/tenant/historyJobs",
         },
         {
-          Icon: UserOutlined,
+          Icon: UserManagementIcon,
           text: t(pTenant("userManagement")),
           path: "/tenant/users",
           clickToPath: "/tenant/users/list",
           children: [
             ...(useBuiltinCreateUser() ? [{
-              Icon: UserAddOutlined,
+              Icon: CreateUserIcon,
               text: t(pTenant("createUser")),
               path: "/tenant/users/create",
             }] : []),
@@ -231,13 +232,13 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
               publicConfig.CREATE_USER_CONFIG.misConfig.enabled &&
               publicConfig.CREATE_USER_CONFIG.misConfig.type === "external"
             ) ? [{
-                Icon: UserAddOutlined,
+                Icon: CreateUserIcon,
                 text: t(pTenant("createUser")),
                 path: publicConfig.CREATE_USER_CONFIG.misConfig.external!.url + "?" + createUserParams(token),
                 openInNewPage: true,
               }] : []),
             {
-              Icon: UserOutlined,
+              Icon: UserListIcon,
               text: t(pTenant("userList")),
               path: "/tenant/users/list",
             },
@@ -254,23 +255,23 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
         //   path: "/tenant/storage",
         // },
         {
-          Icon: AccountBookOutlined,
+          Icon: AccountAdminIcon,
           text: t(pTenant("accountManagement")),
           path: "/tenant/accounts",
           clickToPath: "/tenant/accounts/list",
           children: [
             {
-              Icon: PlusOutlined,
+              Icon: CreateAccountIcon,
               text: t(pTenant("createAccount")),
               path: "/tenant/accounts/create",
             },
             {
-              Icon: AccountBookOutlined,
+              Icon: AccountListIcon,
               text: t(pTenant("accountList")),
               path: "/tenant/accounts/list",
             },
             {
-              Icon: StarOutlined,
+              Icon: AccountWhitelistIcon,
               text: t(pTenant("whitelist")),
               path: "/tenant/accounts/whitelist",
             },
@@ -280,34 +281,34 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
       ...(tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
           tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [
           {
-            Icon: MoneyCollectOutlined,
+            Icon: FinanceManagementIcon,
             text: t(pTenant("financeManagement")),
             path: "/tenant/finance",
             clickable: false,
             children: [
               {
-                Icon: PlusSquareOutlined,
+                Icon: PayAccountIcon,
                 text: t(pTenant("accountPay")),
                 path: "/tenant/finance/payAccount",
               },
               {
-                Icon: ProfileOutlined,
+                Icon: AccountPaymentsIcon,
                 text: t(pTenant("accountPayments")),
                 path: "/tenant/finance/accountPayments",
               },
               {
-                Icon: BookOutlined,
+                Icon: TenantPaymentsIcon,
                 text: t(pTenant("financePayments")),
                 path: "/tenant/finance/payments",
               },
               {
-                Icon: BookOutlined,
+                Icon: AccountChargeRecordsIcon,
                 text: t(pTenant("accountChargeRecords")),
                 path: "/tenant/finance/accountChargeRecords",
               },
               ...(publicConfig.BILL_ENABLED ? [
                 {
-                  Icon: AccountBookOutlined,
+                  Icon: TenantBillsIcon,
                   text: t(pTenant("accountBills")),
                   path: "/tenant/finance/bills",
                 },
@@ -317,7 +318,7 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
         ] : []),
       ...(publicConfig.AUDIT_DEPLOYED && tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [
         {
-          Icon: BookOutlined,
+          Icon: OperationLogIcon,
           text: t("layouts.route.common.operationLog"),
           path: "/tenant/operationLogs",
         },
@@ -328,36 +329,36 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
 
 export const userRoutes: (accounts: AccountAffiliation[], t: TransType) => NavItemProps[] = (accounts, t) => [
   {
-    Icon: DashboardOutlined,
+    Icon: DashBoardIcon,
     text: t("layouts.route.dashboard"),
     path: "/dashboard",
   },
   {
-    Icon: BookOutlined,
+    Icon: UserSpaceIcon,
     text: t(pUserSpace("firstNav")),
     path: "/user",
     clickToPath: accounts.length > 0 ? "/user/runningJobs" : "/user/partitions",
     children: [
       ...(accounts.length > 0 ? [
         {
-          Icon: BookOutlined,
+          Icon: RunningJobsIcon,
           text: t(pUserSpace("runningJobs")),
           path: "/user/runningJobs",
         },
         {
-          Icon: BookOutlined,
+          Icon: HistoryJobsIcon,
           text: t(pUserSpace("finishedJobs")),
           path: "/user/historyJobs",
         },
       ] : []),
       {
-        Icon: PartitionOutlined,
+        Icon: PartitionsIcon,
         text: t(pUserSpace("clusterPartitions")),
         path: "/user/partitions",
       },
       ...(publicConfig.AUDIT_DEPLOYED
         ? [{
-          Icon: BookOutlined,
+          Icon: OperationLogIcon,
           text: t("layouts.route.common.operationLog"),
           path: "/user/operationLogs",
         }]
@@ -370,54 +371,54 @@ export const userRoutes: (accounts: AccountAffiliation[], t: TransType) => NavIt
 export const accountAdminRoutes: (adminAccounts: AccountAffiliation[], t: TransType) => NavItemProps[]
 = (accounts, t) => [
   {
-    Icon: UserOutlined,
+    Icon: AccountAdminIcon,
     text: t(pAccount("firstNav")),
     path: "/accounts",
     children: accounts.filter((x) => x.accountState !== AccountState.DELETED).map((x) => ({
-      Icon: AccountBookOutlined,
+      Icon: AccountAdminIcon,
       text: `${x.accountName}`,
       path: `/accounts/${x.accountName}`,
       clickable: false,
       children: [
         {
-          Icon: InfoOutlined,
+          Icon: AccountInfoIcon,
           text: t(pAccount("info")),
           path: `/accounts/${x.accountName}/info`,
         },
         {
-          Icon: BookOutlined,
+          Icon: RunningJobsIcon,
           text: t(pAccount("runningJobs")),
           path: `/accounts/${x.accountName}/runningJobs`,
         },
         {
-          Icon: BookOutlined,
+          Icon: HistoryJobsIcon,
           text: t(pAccount("finishedJobs")),
           path: `/accounts/${x.accountName}/historyJobs`,
         },
         {
-          Icon: UserOutlined,
+          Icon: UserManagementIcon,
           text: t(pAccount("userManagement")),
           path: `/accounts/${x.accountName}/users`,
         },
         {
-          Icon: BookOutlined,
+          Icon: AccountPayIcon,
           text: t(pAccount("pay")),
           path: `/accounts/${x.accountName}/payments`,
         },
         {
-          Icon: BookOutlined,
+          Icon: AccountCostIcon,
           text: t(pAccount("cost")),
           path: `/accounts/${x.accountName}/charges`,
         },
         ...(publicConfig.BILL_ENABLED
           ? [{
-            Icon: AccountBookOutlined,
+            Icon: TenantBillsIcon,
             text: t(pAccount("bill")),
             path: `/accounts/${x.accountName}/bills`,
           }] : []),
         ...(publicConfig.AUDIT_DEPLOYED
           ? [{
-            Icon: BookOutlined,
+            Icon: OperationLogIcon,
             text: t("layouts.route.common.operationLog"),
             path: `/accounts/${x.accountName}/operationLogs`,
           }]

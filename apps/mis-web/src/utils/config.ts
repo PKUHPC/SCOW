@@ -48,6 +48,8 @@ export interface ServerRuntimeConfig {
 export interface PublicRuntimeConfig {
   AUTH_PPOLICY_CONFIG: AuthPpolicyConfigSchema;
 
+  UI_CONFIG: UiConfigSchema | undefined;
+
   BASE_PATH: string;
 
   PREDEFINED_CHARGING_TYPES: string[];

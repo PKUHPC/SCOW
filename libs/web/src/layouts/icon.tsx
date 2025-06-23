@@ -34,8 +34,7 @@ export function NavIcon({ src, alt = "" }: Props) {
           alt={altName}
           style={{
             ...style,
-            width: "1em",
-            height: "1em",
+            transform: "scale(0.9)",
             filter: dark ? "invert(100%)" : "none",
           }}
           className={className}

@@ -95,6 +95,7 @@ export interface PublicRuntimeConfig {
   SYSTEM_LANGUAGE_CONFIG: SystemLanguageConfig;
 
   UI_EXTENSION?: UiExtensionConfigSchema;
+  UI_CONFIG: UiConfigSchema | undefined;
 
   NOTIF_ENABLED?: boolean;
   NOTIF_ADDRESS?: string;

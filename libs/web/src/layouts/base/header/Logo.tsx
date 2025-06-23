@@ -19,11 +19,9 @@ const LogoContainer = styled.h1`
   color: var(--ant-primary-color);
   margin-bottom: 0;
 
+  line-height: 1.1;
   img {
-    padding: 2px 0;
-  }
-  a {
-    display: flex;
+    margin-bottom: 4px;
   }
 `;
 
@@ -40,7 +38,7 @@ export const Logo: React.FC<Props> = ({ basePath }) => {
   return (
     <LogoContainer>
       <Link href="/">
-        <img height="40px" alt="logo" src={join(basePath, "/api/logo?" + query.toString())} />
+        <img height="35px" alt="logo" src={join(basePath, "/api/logo?" + query.toString())} />
       </Link>
     </LogoContainer>
   );

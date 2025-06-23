@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { LinkOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { LinkOutlined } from "@ant-design/icons";
 import { Space } from "antd";
 import { join } from "path";
 import React, { useCallback, useState } from "react";
@@ -23,6 +23,7 @@ import { antdBreakpoints } from "src/layouts/base/constants";
 import { BigScreenMenu } from "src/layouts/base/header/BigScreenMenu";
 import { HeaderItem, JumpToAnotherLink } from "src/layouts/base/header/components";
 import { Logo } from "src/layouts/base/header/Logo";
+import { SystemSelect } from "src/layouts/base/header/SystemSelect";
 import { UserIndicator } from "src/layouts/base/header/UserIndicator";
 import { NavItemProps, UserInfo, UserLink } from "src/layouts/base/types";
 import { NavIcon } from "src/layouts/icon";
@@ -33,21 +34,25 @@ interface ComponentProps {
 }
 
 const Container = styled.header<ComponentProps>`
+  height: 56px;
   display: flex;
   padding: 0 4px;
-  box-shadow: ${({ theme }) => theme.token.boxShadow };
+  box-shadow: 0px 2px 2px 0px #0000000D;
   z-index: 50;
   align-items: center;
   background-color: ${({ theme }) => theme.token.colorBgContainer};
-  font-weight:700;
   font-size:18px;
   width: 100%;
+  color: #434343;
 `;
-
 
 const MenuPart = styled(HeaderItem)`
   flex: 1;
   min-width: 0;
+`;
+
+const HeaderLogo = styled(HeaderItem)`
+  padding: 0 16px;
 `;
 
 const MenuPartPlaceholder = styled.div`
@@ -72,19 +77,23 @@ const RightContentPart = styled.div`
 
 const IndicatorPart = styled(HeaderItem)`
   flex-wrap: nowrap;
+  margin: 0 10px;
+  padding: 0 10px;
+  &:hover{
+    background-color: #59595914;
+    border-radius: 8px;
+  }
 `;
 
 export interface HeaderNavbarLink {
   icon: React.ReactNode;
   href: string;
-  text: string;
+  text: string | React.ReactNode;
   crossSystem?: boolean;
+  isActive?: boolean;
 };
 
 interface Props {
-  hasSidebar: boolean;
-  setSidebarCollapsed: (collapsed: boolean) => void;
-  sidebarCollapsed: boolean;
   routes?: NavItemProps[];
   user: UserInfo | undefined;
   logout: (() => void) | undefined;
@@ -107,9 +116,7 @@ interface SourcedHeaderNavbarLink {
 };
 
 export const Header: React.FC<Props> = ({
-  hasSidebar, routes,
-  setSidebarCollapsed, sidebarCollapsed,
-  pathname, user, logout,
+  routes,pathname, user, logout,
   basePath, userLinks,
   languageId, activeKeys,
   right, staticNavbarLinks,
@@ -123,7 +130,7 @@ export const Header: React.FC<Props> = ({
     setLinks((links) => {
 
       // remove all existing links from the same extension
-      links = links.filter((x) => x.extension !== extension);    
+      links = links.filter((x) => x.extension !== extension);
       // append newly got links
       links.push(...data.map((x) => ({ link: {
         href: x.path,
@@ -135,12 +142,11 @@ export const Header: React.FC<Props> = ({
       links.sort((a, b) => {
         return b.priority - a.priority;
       });
-
       return links;
     });
   };
 
-  const navbarLinks = [...links.map((x) => x.link), ...(staticNavbarLinks ?? [])];
+  const navbarLinks = [...links.map((x) => x.link)];
 
   const hideLinkText = navbarLinks && navbarLinks.length >= 5;
 
@@ -177,19 +183,11 @@ export const Header: React.FC<Props> = ({
           return undefined;
         }
       })}
-      <HeaderItem>
+      <HeaderLogo>
         <Space size="middle">
-          {hasSidebar
-            ? (
-              <a onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
-                {React.createElement(
-                  sidebarCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined)}
-              </a>
-            ) : <span />
-          }
           <Logo basePath={basePath} />
         </Space>
-      </HeaderItem>
+      </HeaderLogo>
       <MenuPart>
         <BigScreenMenu
           pathname={pathname}
@@ -202,6 +200,10 @@ export const Header: React.FC<Props> = ({
         <LinksPart>
           {navbarLinkComponents}
         </LinksPart>
+        <SystemSelect
+          links={staticNavbarLinks ?? []}
+        >
+        </SystemSelect>
         {right}
         <IndicatorPart>
           <UserIndicator user={user} logout={logout} userLinks={userLinks} languageId={languageId} />

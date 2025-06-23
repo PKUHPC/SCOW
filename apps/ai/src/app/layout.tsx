@@ -11,6 +11,7 @@
  */
 
 import "antd/dist/reset.css";
+import "src/styles/globals.css";
 
 import { DarkModeCookie } from "@scow/lib-web/build/layouts/darkMode";
 import { cookies, headers } from "next/headers";

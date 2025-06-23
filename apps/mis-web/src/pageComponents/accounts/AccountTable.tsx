@@ -279,7 +279,7 @@ export const AccountTable: React.FC<Props> = ({
       >
         <Table.Column<AdminAccountInfo>
           dataIndex="accountName"
-          title={t(p("accountName"))}
+          title={t(p("account"))}
           sorter={(a, b) => a.accountName.localeCompare(b.accountName)}
           sortDirections={["ascend", "descend"]}
           sortOrder={currentSortInfo.field === "accountName" ? currentSortInfo.order : null}

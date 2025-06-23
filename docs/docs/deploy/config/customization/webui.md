@@ -32,11 +32,11 @@ LOGO图片的文件名应为`logo`，后缀应为`svg`, `png`或者`jpg`，如�
 请创建文件`config/ui.yaml`，并根据以下配置说明编写自己的配置
 
 ```yaml title="config/ui.yaml"
-# footer部分的配置。可以不填。
-# 对portal-web、mis-web和auth的登录界面有效
+# footer部分的配置。可以不填，当不配置时会展示默认页脚。
+# 对portal-web、mis-web和auth的dashboard页面有效
 footer:
-    # 对所有域名生效的footer文本，默认为空字符串
-    # 文本支持HTML的标签，将会被放在一个div中。
+    # 对所有域名生效的footer文本，当配置defaultText为""时隐藏页脚
+    # 文本支持HTML的标签，将会被放在一个div中
     defaultText: ""
     # 对某特定来访域名生效的footer文本，可以不填
     hostnameMap: 

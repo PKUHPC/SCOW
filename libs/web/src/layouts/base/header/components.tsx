@@ -17,45 +17,50 @@ import { antdBreakpoints } from "src/layouts/base/constants";
 import { styled } from "styled-components";
 
 export const HeaderItem = styled.div`
-  padding: 0 8px;
-  justify-content: center;
-
   @media (max-width: ${antdBreakpoints.md}px) {
-    padding-right: 4px;
+    padding-right: 8px;
   }
-
-`;
-
-const LinkItem = styled(HeaderItem)`
+  height: 36px;
+  .ant-typography, a {
+    color: #434343 !important;
+    &:hover {
+      color: #595959 !important;
+    }
+  }
 `;
 
 const Link = styled(NextLink)`
   display: flex;
+  padding: 5px 12px;
   flex-wrap: wrap;
   overflow: hidden;
   align-items: center;
 `;
 
 const TypographyLink = styled(Typography.Link)`
-  font-size: 18px !important;
-  display: flex;
+  display: inline-block;
+  height: 100%;
+  width: 100%;
+  padding: 5px 12px;
   flex-wrap: wrap;
   overflow: hidden;
   align-items: center;
 `;
 
 export const TextSpan = styled.span`
+  margin: 0 2px;
 `;
 
 export const IconContainer = styled.span`
-  display: flex;
+  font-size: 16px !important;
   align-items: center;
+  margin-right: 6px;
 `;
 
 interface JumpToAnotherLinkProps {
   icon: React.ReactNode;
   href: string;
-  text: string;
+  text: React.ReactNode;
   hideText?: boolean;
   crossSystem?: boolean;
 }
@@ -101,9 +106,16 @@ export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon
     );
   };
 
-  return (
+  if (!href) { return (
+    <HeaderItem>
+      <TypographyLink onClick={(e) => e.preventDefault()}>
+        {content()}
+      </TypographyLink>
+    </HeaderItem>
+  ); }
 
-    <LinkItem>
+  return (
+    <HeaderItem>
       {
         crossSystem ? (
           <TypographyLink href={href} ref={linkRef}>
@@ -113,8 +125,9 @@ export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon
           <Link href={href} ref={linkRef}>
             {content()}
           </Link>
-        ) }
-    </LinkItem>
+        )
+      }
+    </HeaderItem>
 
   );
 };

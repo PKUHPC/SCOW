@@ -83,17 +83,17 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
 
   const columns: TableColumnsType<NonNullable<typeof data>[number]> = [
     {
+      title: t(p("table.jobId")),
+      dataIndex: "jobId",
+      width: "8%",
+      sorter: (a, b) => compareNumber(a.jobId, b.jobId),
+    },
+    {
       title: t(p("table.jobName")),
       dataIndex: "jobName",
       width: "25%",
       ellipsis: true,
       sorter: (a, b) => a.jobName.localeCompare(b.jobName),
-    },
-    {
-      title: t(p("table.jobId")),
-      dataIndex: "jobId",
-      width: "8%",
-      sorter: (a, b) => compareNumber(a.jobId, b.jobId),
     },
     {
       title: t(p("table.appId")),

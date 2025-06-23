@@ -1,24 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
-import { BookOutlined, DashboardOutlined,
-  DatabaseOutlined, FileImageOutlined, FolderOutlined, LinkOutlined, LockOutlined, OneToOneOutlined,
-  PlusOutlined, ShareAltOutlined, UngroupOutlined } from "@ant-design/icons";
+import { LinkOutlined } from "@ant-design/icons";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
+import { AlgorithmIcon, ClusterIcon, CreateAppIcon, DashBoardIcon,
+  DatasetIcon, fileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
+  PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
+  PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon,
+  RunningJobsIcon, TrainJobIcon } from "src/icons/menuIcons";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Cluster, NavLink, PublicConfig } from "src/server/trpc/route/config";
@@ -38,42 +29,42 @@ export const userRoutes: (
 
   return [
     {
-      Icon: DashboardOutlined,
+      Icon: DashBoardIcon,
       text: t("routes.dashboard"),
       path: "/dashboard",
       clickToPath: "/dashboard",
     },
     {
-      Icon: DatabaseOutlined,
+      Icon: DatasetIcon,
       text: t("routes.data.title"),
       path: "/dataset",
       clickToPath: "/dataset/private",
       children: [
         {
-          Icon: LockOutlined,
+          Icon: PrivateDatasetIcon,
           text: t("routes.data.private"),
           path: "/dataset/private",
         },
         {
-          Icon: ShareAltOutlined,
+          Icon: PublicDatasetIcon,
           text: t("routes.data.public"),
           path: "/dataset/public",
         },
       ],
     },
     {
-      Icon: FileImageOutlined,
+      Icon: ImageIcon,
       text: t("routes.image.title"),
       path: "/image",
       clickToPath: "/image/private",
       children: [
         {
-          Icon: LockOutlined,
+          Icon: PrivateImageIcon,
           text: t("routes.image.private"),
           path: "/image/private",
         },
         {
-          Icon: ShareAltOutlined,
+          Icon: PublicImageIcon,
           text: t("routes.image.public"),
           path: "/image/public",
         },
@@ -81,39 +72,39 @@ export const userRoutes: (
     },
     // 无可用集群时不显示该层级路由
     ...(currentClusters.length > 0 ? [ {
-      Icon: BookOutlined,
+      Icon: ClusterIcon,
       text: t("routes.job.title"),
       path: "/jobs",
       clickToPath: `/jobs/${defaultCluster?.id ?? currentClusters[0].id}/createApps`,
       children: [
         ...currentClusters.map((cluster) => ({
-          Icon: FolderOutlined,
+          Icon: ClusterIcon,
           text: getI18nConfigCurrentText(cluster.name, languageId),
           path: `/jobs/${cluster.id}`,
           clickable: false,
           children:[
             {
-              Icon: PlusOutlined,
+              Icon: CreateAppIcon,
               text: t("routes.job.createApp"),
               path: `/jobs/${cluster.id}/createApps`,
             },
             {
-              Icon: PlusOutlined,
+              Icon: TrainJobIcon,
               text: t("routes.job.trainJob"),
               path: `/jobs/${cluster.id}/trainJobs`,
             },
             {
-              Icon: PlusOutlined,
+              Icon: InferIcon,
               text: t("routes.job.infer"),
               path: `/jobs/${cluster.id}/inference`,
             },
             {
-              Icon: BookOutlined,
+              Icon: RunningJobsIcon,
               text: t("routes.job.runningJobs"),
               path: `/jobs/${cluster.id}/runningJobs`,
             },
             {
-              Icon: BookOutlined,
+              Icon: HistoryJobsIcon,
               text: t("routes.job.historyJobs"),
               path: `/jobs/${cluster.id}/historyJobs`,
             },
@@ -123,36 +114,36 @@ export const userRoutes: (
     },
     ] : []),
     {
-      Icon: UngroupOutlined,
+      Icon: AlgorithmIcon,
       text: t("routes.algorithm.title"),
       path: "/algorithm",
       clickToPath: "/algorithm/private",
       children: [
         {
-          Icon: LockOutlined,
+          Icon: PrivateAlgorithmIcon,
           text: t("routes.algorithm.private"),
           path: "/algorithm/private",
         },
         {
-          Icon: ShareAltOutlined,
+          Icon: PublicAlgorithmIcon,
           text: t("routes.algorithm.public"),
           path: "/algorithm/public",
         },
       ],
     },
     {
-      Icon: OneToOneOutlined,
+      Icon: ModelIcon,
       text: t("routes.model.title"),
       path: "/model",
       clickToPath: "/model/private",
       children: [
         {
-          Icon: LockOutlined,
+          Icon: PrivateModelIcon,
           text: t("routes.model.private"),
           path: "/model/private",
         },
         {
-          Icon: ShareAltOutlined,
+          Icon: PublicModelIcon,
           text: t("routes.model.public"),
           path: "/model/public",
         },
@@ -160,12 +151,12 @@ export const userRoutes: (
     },
     ...(currentClusters.length > 0 ? [
       {
-        Icon: FolderOutlined,
+        Icon: fileIcon,
         text: t("routes.file"),
         path: "/files",
         clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
         children: currentClusters.map((cluster) => ({
-          Icon: FolderOutlined,
+          Icon: fileIcon,
           text: getI18nConfigCurrentText(cluster.name, languageId),
           path: `/files/${cluster.id}`,
           clickToPath: `/files/${cluster.id}/~`,

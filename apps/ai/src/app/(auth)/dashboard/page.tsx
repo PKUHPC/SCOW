@@ -1,7 +1,9 @@
 "use client";
+import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { useUiConfig } from "src/app/uiContext";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
 import { Head } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
@@ -38,7 +40,7 @@ const initialPlatformOverview: PlatformOverview = {
 };
 
 export default function Page() {
-  const { publicConfig: { CLUSTERS: currentClusters } } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: currentClusters, VERSION_TAG: versionTag } } = usePublicConfig();
 
   const clusterInfoResults = currentClusters.map((cluster) =>
     trpc.dashboard.getClusterInfo.useQuery({ clusterId: cluster.id }),
@@ -60,6 +62,11 @@ export default function Page() {
 
   const isLoading = clusterInfoResults.some((result) => result.isLoading) ||
   clusterNodesResults.some((result) => result.isLoading) || userAssociatedClusterPartitions.isLoading;
+
+  const { hostname, uiConfig } = useUiConfig();
+  const footerConfig = uiConfig.config.footer;
+  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
+    ?? footerConfig?.defaultText;
 
   useEffect(() => {
     if (!isLoading) {
@@ -323,6 +330,7 @@ export default function Page() {
         platformOverview={platformOverview}
         successfulClusters={successfulClusters}
       />
+      <Footer text={footerText} versionTag={versionTag} />
     </DashboardPageContent>
   );
 }

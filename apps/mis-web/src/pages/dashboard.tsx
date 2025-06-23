@@ -12,6 +12,7 @@
 
 import { moneyToNumber } from "@scow/lib-decimal";
 import { Head } from "@scow/lib-web/build/components/head";
+import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { Money } from "@scow/protos/build/common/money";
 import { AccountStatus } from "@scow/protos/build/server/user";
 import { Divider } from "antd";
@@ -31,7 +32,6 @@ import { getUserStatus, type GetUserStatusSchema } from "src/pages/api/dashboard
 import { UserStore } from "src/stores/UserStore";
 import { ensureNotUndefined } from "src/utils/checkNull";
 
-
 export type AccountInfo = Omit<AccountStatus, "balance" | "jobChargeLimit" | "usedJobCharge"
 | "blockThresholdAmount" > & {
   balance: number;
@@ -45,6 +45,7 @@ type Props = {
 } | {
   storageQuotas: typeof GetUserStatusSchema["responses"]["200"]["storageQuotas"],
   accounts: Record<string, AccountInfo>;
+  hostname?: string;
 };
 
 export const DashboardPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
@@ -96,6 +97,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
       props: {
         accounts: accountInfo,
         storageQuotas: status.storageQuotas,
+        hostname: getHostname(req),
       },
     };
   }
@@ -127,6 +129,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
     props: {
       accounts,
       storageQuotas: status.storageQuotas,
+      hostname: getHostname(req),
     },
   };
 };

@@ -10,11 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import {
-  CloudServerOutlined,
-  CloudSyncOutlined,
-  LinkOutlined,
-} from "@ant-design/icons";
+import { LinkOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -23,8 +19,9 @@ import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { AllJobsIcon, ApplicationIcon
   , AppSessionsIcon, ClusterFileManagerIcon
   , CreateAppIcon, DashBoardIcon, DesktopIcon
-  , FileManagerIcon, JobIcon, RunningJobsIcon
-  , ShellClusterIcon, ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
+  , FileManagerIcon, FileTransferIcon, FileTransferInfoIcon,JobIcon, RunningJobsIcon
+  , ShellClusterIcon, ShellIcon, ShellLoginIcon,
+  SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
 import { User } from "src/stores/UserStore";
 import { Cluster, LoginNode } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -100,7 +97,7 @@ export const userRoutes: (
           handleClick: () => { setDefaultCluster({ name, id }); },
           children: loginNodes[id]?.map((loginNode) => ({
             openInNewPage: true,
-            Icon: CloudServerOutlined,
+            Icon: ShellLoginIcon,
             text: loginNode.name,
             path: `/shell/${id}/${loginNode.address}`,
             handleClick: () => { setDefaultCluster({ name, id }); },
@@ -119,7 +116,7 @@ export const userRoutes: (
       clickToPath: `/apps/${defaultCluster?.id ?? currentClusters[0].id}/sessions`,
       clickable: true,
       children: currentClusters.map((cluster) => ({
-        Icon: FileManagerIcon,
+        Icon: ApplicationIcon,
         text: getI18nConfigCurrentText(cluster.name, languageId),
         path: `/apps/${cluster.id}`,
         clickToPath: `/apps/${cluster.id}/sessions`,
@@ -156,12 +153,12 @@ export const userRoutes: (
         },
         ...(crossClusterFileTransfer ? [
           {
-            Icon: CloudSyncOutlined,
+            Icon: FileTransferIcon,
             text: t("routes.file.crossClusterFileTransfer"),
             path: "/files/fileTransfer",
           },
           {
-            Icon: ShellClusterIcon,
+            Icon: FileTransferInfoIcon,
             text: t("routes.file.transferProgress"),
             path: "/files/currentTransferInfo",
           },

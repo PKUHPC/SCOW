@@ -1,7 +1,9 @@
 export default {
   // baseLayout
   baseLayout: {
-    linkTextMis: "Management System",
+    linkTextMis: "MIS",
+    linkTextAi: "AI",
+    linkTextHpc: "HPC",
   },
   // routes
   routes: {

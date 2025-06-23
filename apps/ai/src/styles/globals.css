@@ -10,6 +10,50 @@
  * See the Mulan PSL v2 for more details.
  */
 
-@layer base {
+ @font-face {
+  font-family: 'MiSans';
+  src: url('/apps/ai/public/fonts/MiSans-Medium.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 
+@font-face {
+  font-family: 'MiSans';
+  src: url('/apps/ai/public/fonts/MiSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  font-family: 'MiSans', system-ui;
+}
+
+.head-language-select .ant-select-item {
+  color: #434343 !important;
+}
+
+.head-language-select .ant-select-item:not(.ant-select-item-option-selected):hover {
+    color: #595959 !important;
+}
+
+.head-language-select .ant-select-item-option-selected{
+    background-color: transparent !important;
+    color: #94070a !important;
+    font-weight: unset !important;
+}
+
+.head-language-select .ant-select-item-option-selected:hover {
+  background-color: #59595914 !important;
+}
+
+.head-navigation-user-indicator .ant-dropdown-menu-item {
+  color: #434343 !important
+}
+
+.head-navigation-user-indicator .ant-dropdown-menu-item:hover {
+  color: #595959 !important
+}
+
+.head-system-select .ant-dropdown-menu-item {
+  padding: 0 !important;
 }

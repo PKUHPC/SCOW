@@ -5,7 +5,8 @@ export default {
   // baseLayout
   baseLayout: {
     linkTextMis: "管理系统",
-    linkTextAI: "AI",
+    linkTextAI: "人工智能",
+    linkTextHpc: "高性能计算",
   },
   // routes
   routes: {

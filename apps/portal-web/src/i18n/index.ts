@@ -25,8 +25,8 @@ export const languages = languageDictionary({
 });
 
 export const languageInfo = {
-  zh_cn: { name: "CN 简体中文" },
-  en: { name: "US English" },
+  zh_cn: { name: "CN 中" },
+  en: { name: "EN 英" },
 };
 
 // eslint-disable-next-line @typescript-eslint/unbound-method

@@ -39,7 +39,6 @@ interface Props {
 const StyledSider = styled(Sider)`
 
   @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
-    position: absolute !important;
     z-index: 1000;
 
     body, html {

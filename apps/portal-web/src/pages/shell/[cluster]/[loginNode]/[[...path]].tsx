@@ -60,6 +60,7 @@ const TerminalContainer = styled.div`
   display: flex;
   flex: 1;
   height: 100%;
+  background-color: black;
 `;
 
 const Black = styled.div`

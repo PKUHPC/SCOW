@@ -80,7 +80,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         path: "/accountDefaultClusters",
         clickToPath: undefined,
         text: isChinese ? "默认授权集群" : "Default Assigned Clusters",
-        icon: { src: `${urlPrefix}/icons/defaultPartitions.svg` },
+        icon: { src: `${urlPrefix}/icons/defaultClusters.svg` },
       },
       {
         path: "/accountDefaultPartitions",

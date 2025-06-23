@@ -20,7 +20,7 @@ import { NavItemProps } from "src/layouts/base/types";
 export const iconToNode = (Icon: any) => {
   return React.isValidElement(Icon)
     ? Icon
-    : <Icon />;
+    : <Icon style={{ transform: "scale(0.9)" }} />;
 };
 
 export const EXTERNAL_URL_PREFIX = ["http://", "https://"];

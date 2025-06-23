@@ -12,7 +12,6 @@
 
 "use client";
 
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { Space } from "antd";
 import React from "react";
@@ -30,23 +29,23 @@ interface ComponentProps {
 }
 
 const Container = styled.header<ComponentProps>`
+  height: 56px;
   display: flex;
   padding: 0 4px;
-  box-shadow: ${({ theme }) => theme.token.boxShadow };
+  box-shadow: 0px 2px 2px 0px #0000000D;
   z-index: 50;
   align-items: center;
   background-color: ${({ theme }) => theme.token.colorBgContainer};
-  font-weight:700;
   font-size:18px;
+  color: #434343;
 `;
 
 const HeaderItem = styled.div`
   padding: 0 16px;
   /* justify-content: center; */
-  height: 100%;
 `;
 
-const MenuPart = styled(HeaderItem)`
+const MenuPart = styled.div`
   flex: 1;
   min-width: 0;
 `;
@@ -61,12 +60,15 @@ const MenuPartPlaceholder = styled.div`
 const IndicatorPart = styled(HeaderItem)`
   justify-self: flex-end;
   flex-wrap: nowrap;
+  margin: 0 10px;
+  padding: 0 10px;
+  &:hover{
+    background-color: #59595914;
+    border-radius: 8px;
+  }
 `;
 
 interface Props {
-  hasSidebar: boolean;
-  setSidebarCollapsed: (collapsed: boolean) => void;
-  sidebarCollapsed: boolean;
   routes?: NavItemProps[];
   logout: (() => void) | undefined;
   user: ClientUserInfo | undefined;
@@ -77,9 +79,7 @@ interface Props {
 }
 
 export const Header: React.FC<Props> = ({
-  hasSidebar, routes,
-  setSidebarCollapsed,
-  sidebarCollapsed,
+  routes,
   logout,
   user,
   pathname,
@@ -92,14 +92,6 @@ export const Header: React.FC<Props> = ({
     <Container>
       <HeaderItem>
         <Space size="middle">
-          {hasSidebar
-            ? (
-              <a onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
-                {React.createElement(
-                  sidebarCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined)}
-              </a>
-            ) : undefined
-          }
           <Logo />
         </Space>
       </HeaderItem>

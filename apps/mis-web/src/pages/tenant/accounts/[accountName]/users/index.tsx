@@ -14,20 +14,28 @@ import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { RefreshLink, useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
 import { App, Divider, Space } from "antd";
 import { NextPage } from "next";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
+import { BackIcon } from "src/assets/headerIcons";
 import { requireAuth } from "src/auth/requireAuth";
-import { BackButton } from "src/components/BackButton";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { TenantRole } from "src/models/User";
 import { AddUserButton } from "src/pageComponents/users/AddUserButton";
 import { UserTable } from "src/pageComponents/users/UserTable";
 import { Head } from "src/utils/head";
+import { styled } from "styled-components";
 
 const p = prefix("page.tenant.accounts.accountName.users.index.");
+
+const TitleLinkContainer = styled.div`
+    display: inline-flex;
+    align-items: center;
+    margin: 0 16px 0 8px;
+`;
 
 export const AccountUsersPage: NextPage = requireAuth(
   (i) => i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
@@ -64,7 +72,11 @@ export const AccountUsersPage: NextPage = requireAuth(
         <Head title={title} />
         <PageTitle
           beforeTitle={(
-            <BackButton href={"/tenant/accounts/list"} />
+            <TitleLinkContainer>
+              <Link href="/tenant/accounts/list" legacyBehavior>
+                <BackIcon />
+              </Link>
+            </TitleLinkContainer>
           )}
           titleText={title}
         >

@@ -10,13 +10,14 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { DesktopOutlined, RobotOutlined } from "@ant-design/icons";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
+import { theme } from "antd";
 import { join } from "path";
 import { PropsWithChildren, useMemo } from "react";
 import { useStore } from "simstate";
+import { AiIcon, HighComputingIcon, MisIcon } from "src/assets/headerIcons";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { getAvailableRoutes } from "src/layouts/routes";
@@ -43,6 +44,9 @@ export const BaseLayout =
 
   const uiExtensionStore = useStore(UiExtensionStore);
 
+  const { useToken } = theme;
+  const { token } = useToken();
+
   const toCallbackPage = (url: string) => userStore.user
     ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
     : url;
@@ -51,16 +55,23 @@ export const BaseLayout =
 
   if (publicConfig.PORTAL_URL) {
     navbarLinks.push({
-      icon: <DesktopOutlined style={{ paddingRight: 2 }} />,
+      icon: <HighComputingIcon style={{ paddingRight: 2 }} />,
       href: toCallbackPage(publicConfig.PORTAL_URL),
       text: t("layouts.route.navLinkTextPortal"),
       crossSystem: true,
     });
   }
 
+  navbarLinks.push({
+    icon: <MisIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+    href: "",
+    text: <span style={{ color: token.colorPrimary }}>{t("layouts.route.linkTextMis")}</span>,
+    isActive: true,
+  });
+
   if (publicConfig.AI_URL) {
     navbarLinks.push({
-      icon: <RobotOutlined style={{ paddingRight: 2 }} />,
+      icon: <AiIcon style={{ paddingRight: 2 }} />,
       href: publicConfig.AI_URL,
       text: t("layouts.route.navLinkTextAI"),
       crossSystem: true,

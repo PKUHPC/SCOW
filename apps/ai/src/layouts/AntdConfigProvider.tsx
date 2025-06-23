@@ -54,8 +54,17 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
   return (
     <ConfigProvider
       locale={getAntdLocale(currentLangId)}
-      theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor },
-        algorithm: dark ? theme.darkAlgorithm : undefined }}
+      theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
+        fontFamily: "MiSans, sans-serif",
+      },
+      components: {
+        Menu: {
+          itemColor: dark ? "#ffffff" : "#434343",
+          itemHoverColor: dark ? "#ffffff" : "#595959",
+          subMenuItemBg: dark ? "#211112" : "#ffffff",
+        },
+      },
+      algorithm: dark ? theme.darkAlgorithm : undefined }}
     >
       <StyledComponentsThemeProvider color={currentPrimaryColor} locale={currentLangId} primaryColor={primaryColor}>
         <App>

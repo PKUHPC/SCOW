@@ -11,7 +11,7 @@
  */
 
 import { DownOutlined } from "@ant-design/icons";
-import { Dropdown, Typography } from "antd";
+import { Dropdown, theme, Typography } from "antd";
 import Link from "next/link";
 import React from "react";
 import { antdBreakpoints } from "src/layouts/base/constants";
@@ -20,7 +20,8 @@ import { styled } from "styled-components";
 
 import { EXTERNAL_URL_PREFIX } from "../common";
 import { UserInfo, UserLink } from "../types";
-import { USerIcon } from "./UserIcon";
+import { UserIcon } from "./icons";
+const { useToken } = theme;
 
 interface Props {
   user: UserInfo | undefined;
@@ -31,16 +32,22 @@ interface Props {
 
 const Container = styled.div`
   white-space: nowrap;
+  .ant-dropdown-open {
+    color: ${({ theme }) => theme.token.colorPrimary } !important;
+  }
 `;
 
 const InlineBlockA = styled.a`
   cursor: pointer;
-  line-height: 45px;
-  display: inline-block;
-  font-size:16px
+  line-height: 36px;
+  display: inline-flex;
+  color: #434343 !important;
+  font-size: 14px;
 `;
 
 const HiddenOnSmallScreen = styled.span`
+  margin-left: 8px;
+  color: #434343 !important;
   @media (max-width: ${antdBreakpoints.md}px) {
     display: none;
   }
@@ -49,6 +56,7 @@ const HiddenOnSmallScreen = styled.span`
 export const UserIndicator: React.FC<Props> = ({
   user, logout, userLinks, languageId,
 }) => {
+  const { token } = useToken();
 
   return (
     <Container>
@@ -56,17 +64,9 @@ export const UserIndicator: React.FC<Props> = ({
         user ? (
           <Dropdown
             trigger={["click"]}
+            overlayClassName="head-navigation-user-indicator"
             menu={{
               items: [
-                ...user.name ? [{
-                  key: "username",
-                  disabled: true,
-                  label:
-                  `${getCurrentLangLibWebText(languageId, "userIndicatorName")}${user.name}` }] : [],
-                { key: "userid",
-                  disabled: true,
-                  label:
-                  `${getCurrentLangLibWebText(languageId, "userIndicatorId")}${user.identityId}` },
                 { key: "profileLink", label: <Link href="/profile">
                   {getCurrentLangLibWebText(languageId, "userIndicatorInfo")}
                 </Link> },
@@ -93,11 +93,11 @@ export const UserIndicator: React.FC<Props> = ({
             }}
           >
             <InlineBlockA>
-              <USerIcon />
+              <UserIcon style={{ color: token.colorPrimary }} />
               <HiddenOnSmallScreen>
                 {user.name ?? user.identityId}
               </HiddenOnSmallScreen>
-              <DownOutlined />
+              <DownOutlined style={{ fontSize: "13px", marginLeft: "12px" }} />
             </InlineBlockA>
           </Dropdown>
         ) : (

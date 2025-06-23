@@ -10,16 +10,16 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { RobotOutlined } from "@ant-design/icons";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
+import { theme } from "antd";
 import { join } from "path";
 import { PropsWithChildren } from "react";
 import { useStore } from "simstate";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
-import { MisIcon } from "src/icons/headerIcons/headerIcons";
+import { AiIcon, HighComputingIcon, MisIcon } from "src/icons/headerIcons/headerIcons";
 import { userRoutes } from "src/layouts/routes";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
@@ -55,6 +55,8 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
 
   const uiExtensionStore = useStore(UiExtensionStore);
 
+  const { useToken } = theme;
+  const { token } = useToken();
 
   const logout = () => {
     removeDefaultCluster();
@@ -65,7 +67,12 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
     ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
     : url;
 
-  const navbarLinks: HeaderNavbarLink[] = [];
+  const navbarLinks: HeaderNavbarLink[] = [{
+    icon: <HighComputingIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+    href: "",
+    text: <span style={{ color: token.colorPrimary }}>{t("baseLayout.linkTextHpc")}</span>,
+    isActive: true,
+  }];
 
   if (publicConfig.MIS_URL) {
     navbarLinks.push({
@@ -78,7 +85,7 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
 
   if (publicConfig.AI_URL) {
     navbarLinks.push({
-      icon: <RobotOutlined style={{ paddingRight: 2 }} />,
+      icon: <AiIcon style={{ paddingRight: 2 }} />,
       href: publicConfig.AI_URL,
       text: t("baseLayout.linkTextAI"),
       crossSystem: true,

@@ -58,7 +58,7 @@ export const AccountInfoPage: NextPage<Props> = requireAuth(
       <Head title={title} />
       <PageTitle titleText={title} />
       <Descriptions bordered column={1}>
-        <Descriptions.Item label={t("common.accountName")}>
+        <Descriptions.Item label={t("common.account")}>
           {accountName}
         </Descriptions.Item>
         <Descriptions.Item label={t("common.accountOwner")}>

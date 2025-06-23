@@ -129,6 +129,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
       pwdMaxFailures: authConfig.ldap?.ppolicy?.pwdMaxFailures,
     },
 
+    UI_CONFIG: uiConfig,
+
     CREATE_USER_CONFIG: {
       misConfig: misConfig.createUser,
       authSupportsCreateUser: capabilities.createUser,

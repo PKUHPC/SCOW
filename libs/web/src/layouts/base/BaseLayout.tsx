@@ -3,7 +3,7 @@
 import { arrayContainsElement } from "@scow/utils";
 import { Grid, Layout } from "antd";
 import { useRouter } from "next/router";
-import React, { PropsWithChildren, useCallback, useMemo, useState } from "react";
+import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { useAsync } from "react-async";
 import { getExtensionRouteQuery } from "src/extensions/common";
 import { fromNavItemProps, rewriteNavigationsRoute, toNavItemProps } from "src/extensions/navigations";
@@ -34,11 +34,13 @@ const ContentPart = styled.div`
 
 `;
 
-const Content = styled(Layout.Content)`
-  margin: 8px;
+const Content = styled(Layout.Content)<{ isDashboard: boolean }>`
+  margin: ${(props) => props.isDashboard ? "8px 8px 0px" : "8px"};
   padding: 16px;
   flex: 1;
   background: ${({ theme }) => theme.token.colorBgLayout};
+  max-height: ${(props) => props.isDashboard ? "" : "calc(100vh - 78px)"};
+  overflow-y: auto;
 `;
 
 const StyledLayout = styled(Layout)`
@@ -61,12 +63,10 @@ type Props = PropsWithChildren<{
 }>;
 
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
-  children, footerText, versionTag, routes, user, logout,
+  children, routes, user, logout, footerText, versionTag,
   headerNavbarLinks, basePath, userLinks, languageId,
   extensionStoreData, from, headerRightContent,
 }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-
   const router = useRouter();
 
   const { md } = useBreakpoint();
@@ -129,10 +129,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
       <Header
         extensions={extensions}
         routeQuery={routeQuery}
-        setSidebarCollapsed={setSidebarCollapsed}
         pathname={router.asPath}
-        sidebarCollapsed={sidebarCollapsed}
-        hasSidebar={hasSidebar}
         routes={finalRoutes ?? routes}
         user={user}
         logout={logout}
@@ -150,17 +147,15 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
             <SideNav
               activeKeys={activeKeys}
               pathname={router.asPath}
-              collapsed={sidebarCollapsed}
               routes={sidebarRoutes}
-              setCollapsed={setSidebarCollapsed}
             />
           ) : undefined
         }
         <ContentPart>
-          <Content>
+          <Content isDashboard={router.pathname === "/dashboard"}>
             {children}
           </Content>
-          <Footer text={footerText} versionTag={versionTag} />
+          { router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : "" }
         </ContentPart>
       </StyledLayout>
     </Root>

@@ -13,12 +13,13 @@
 "use client";
 
 import { Layout, Menu } from "antd";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { CollapseMenuIcon, ExpandMenuIcon } from "src/icons/headIcons";
 import { calcSelectedKeys, createMenuItems } from "src/layouts/base/common";
 import { antdBreakpoints } from "src/layouts/base/constants";
 import { arrayContainsElement } from "src/utils/array";
 import { useDidUpdateEffect } from "src/utils/hooks";
-import { styled } from "styled-components";
+import { css, styled } from "styled-components";
 
 import { NavItemProps } from "../NavItemProps";
 import BodyMask from "./BodyMask";
@@ -28,9 +29,6 @@ const { Sider } = Layout;
 const breakpoint = "lg";
 
 interface Props {
-  collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
-
   routes: NavItemProps[];
   pathname: string;
 
@@ -39,7 +37,6 @@ interface Props {
 const StyledSider = styled(Sider)`
 
   @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
-    position: absolute !important;
     z-index: 1000;
 
     body, html {
@@ -53,17 +50,62 @@ const StyledSider = styled(Sider)`
   height: 100%;
 
 
+  .ant-menu {
+    padding: 12px 8px;
+  }
+
+  .ant-menu-item {
+    padding-left: 14px;
+  }
+
   .ant-menu-item:first-child {
     margin-top: 0px;
   }
-`;
 
-const Container = styled.div`
-  .ant-layout-sider {
-    background: initial;
+  .ant-menu-title-content {
+    margin-left: 4px;
+  }
+
+  .ant-layout .ant-layout-sider {
+    background: transparent !important;
   }
 `;
 
+const Container = styled.div<{ $width?: number }>`
+  background: ${({ theme }) => theme.token.colorBgContainer};
+  font-weight: 400;
+
+  .ant-layout-sider {
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: #D9D9D9;
+      border-radius: 6px;
+      background-clip: padding-box;
+      border: 1px solid transparent
+    }
+    background: initial !important;
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+    ${(props) => props.$width !== undefined && css`
+      width: ${props.$width}px !important;
+      max-width: ${props.$width}px !important;
+    `}
+  }
+`;
+
+const SidebarIconContainer = styled.div<{ sidebarCollapsed: boolean }>`
+  @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
+    position: relative;
+    z-index: 1000;
+    height: 54px;
+    background: ${({ theme }) => theme.token.colorBgContainer};
+  }
+  border-top: 1px #f0f0f0  solid;
+  padding-left: ${(props) => props.sidebarCollapsed ? 26 : 35}px;
+  padding-top: 17px;
+`;
 
 function getAllParentKeys(routes: NavItemProps[]): string[] {
   return routes.map((x) => {
@@ -76,28 +118,25 @@ function getAllParentKeys(routes: NavItemProps[]): string[] {
 }
 
 export const SideNav: React.FC<Props> = ({
-  collapsed, routes, setCollapsed, pathname,
+  routes,pathname,
 }) => {
 
   const parentKeys = useMemo(() => getAllParentKeys(routes), [routes]);
 
   const [openKeys, setOpenKeys] = useState(parentKeys);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   useDidUpdateEffect(() => {
     setOpenKeys(parentKeys);
   }, [parentKeys]);
 
-  const onBreakpoint = useCallback((broken: boolean) => {
-    // if broken, big to small. collapse the sidebar
-    // if not, small to big, expand the sidebar
-    setCollapsed(broken);
-  }, [setCollapsed]);
 
   const selectedKeys = useMemo(() => calcSelectedKeys(routes, pathname), [routes, pathname]);
 
   useEffect(() => {
     if (window.innerWidth <= antdBreakpoints[breakpoint]) {
-      setCollapsed(true);
+      setSidebarCollapsed(true);
     }
   }, [pathname]);
 
@@ -105,15 +144,14 @@ export const SideNav: React.FC<Props> = ({
     return null;
   }
   return (
-    <Container>
+    <Container $width={sidebarCollapsed ? 72 : 225}>
       <BodyMask
-        onClick={() => setCollapsed(true)}
-        sidebarShown={!collapsed}
+        onClick={() => setSidebarCollapsed(true)}
+        sidebarShown={!sidebarCollapsed}
         breakpoint={antdBreakpoints[breakpoint]}
       />
       <StyledSider
-        onBreakpoint={onBreakpoint}
-        collapsed={collapsed}
+        collapsed={sidebarCollapsed}
         collapsedWidth={0}
         breakpoint={breakpoint}
         trigger={null}
@@ -122,7 +160,7 @@ export const SideNav: React.FC<Props> = ({
           mode="inline"
           selectedKeys={selectedKeys}
           {
-            ...collapsed
+            ...sidebarCollapsed
               ? undefined
               : { openKeys }
           }
@@ -133,6 +171,12 @@ export const SideNav: React.FC<Props> = ({
         >
         </Menu>
       </StyledSider>
+      <SidebarIconContainer sidebarCollapsed={sidebarCollapsed}>
+        <a onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          {React.createElement(
+            sidebarCollapsed ? ExpandMenuIcon : CollapseMenuIcon)}
+        </a>
+      </SidebarIconContainer>
     </Container>
   );
 };

@@ -15,414 +15,647 @@ import React, { LegacyRef } from "react";
 
 // 仪表盘图标
 const dashBoardSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="14" cy="14" r="13" stroke="currentColor" strokeWidth="2" />
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path
-      d="M14 23C9.02944 23 5 18.9706 5 14C5 9.02944 9.02944 5 14 5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <path
-      d="M14 5C15.4082 5 16.7408 5.32341 17.9277 5.9
-    M14 23C18.9706 23 23 18.9706 23 14C23 12.7586 22.7487 11.5759 22.2941 10.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <circle cx="14" cy="14" r="2.25" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M16 12L20 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-
-
-);
-
-
-export const DashBoardIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={dashBoardSVG} {...props} ref={ref} />
-));
-
-// 作业图标
-const jobSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 29 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M1.16675 8V3C1.16675 1.89543 2.06218 1 3.16675 1H26.0001
-C27.1047 1 28.0001 1.89543 28.0001 3V5.44706V17.3059V27C28.0001 28.1046 27.1047 29 26.0001 29
-H3.16675C2.06218 29 1.16675 28.1046 1.16675 27V22"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path d="M1 8H6V9.54118V16.3176V22H1L1 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M10.5 11H22.1667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M10.5 15H19.8333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M10.5 19H17.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-
-);
-
-export const JobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={jobSVG} {...props} ref={ref} />
-));
-
-// shell图标
-const shellSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="26" height="26" rx="1" stroke="currentColor" strokeWidth="2" />
-    <line x1="6.55671e-08" y1="10.25" x2="28" y2="10.25" stroke="currentColor" strokeWidth="1.5" />
-    <circle cx="5" cy="6" r="1" fill="currentColor" />
-    <circle cx="9" cy="6" r="1" fill="currentColor" />
-    <circle cx="13" cy="6" r="1" fill="currentColor" />
-    <path
-      d="M7 15.6001L11.2 18.9251
-    L7 22.2501"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M14 21.2002H20.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-export const ShellIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={shellSVG} {...props} ref={ref} />
-));
-
-// 桌面图标
-const desktopSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 30 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M7 7H3C1.89543 7 1 7.89543 1 9
-    V26C1 27.1046 1.89543 28 3 28
-    H27C28.1046 28 29 27.1046 29 26
-    V9C29 7.89543 28.1046 7 27 7H23"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path
-      d="M8 1H22C22.5523 1 23 1.44771 23 2
-    V3.65294V13.3941V21C23 21.5523 22.5523 22 22 22
-    H8C7.44772 22 7 21.5523 7 21V2C7 1.44772 7.44772 1 8 1Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path d="M10.5 9H19.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M10.5 12H17.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M10.5 15H15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-export const DesktopIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={desktopSVG} {...props} ref={ref} />
-));
-
-// 交互式应用图标
-const applicationSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M26.4292 14.0916C26.4292 16.3292 25.7918 18.5214 24.5902 20.4165
-    C23.3887 22.3116 21.6717 23.8326 19.6365 24.805"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M14.4161 1.18918C12.0487 1.18918 9.73399 1.88183 7.7628 3.18015
-    C5.79161 4.47846 4.25177 6.32455 3.33667 8.48657"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <rect x="1" y="13.902" width="13.2475" height="13.0981" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="18.585" y="0.75" width="8.66503" height="8.56538" rx="1.25" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-);
-
-export const ApplicationIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={applicationSVG} {...props} ref={ref} />
-));
-
-// 文件管理图标
-const fileManagerSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M23 15V5.44706V3C23 1.89543 22.1046 1 21 1
-    H3C1.89543 1 1 1.89543 1 3V27C1 28.1046 1.89543 29 3 29H12"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M22.4615 28H15.7692L13 23.1648L15.7692 18
-    H22.4615L25 23.1648L22.4615 28Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinejoin="round"
-    />
-    <circle cx="2" cy="2" r="2" transform="matrix(1 0 0 -1 17 25)" fill="currentColor" />
-  </svg>
-);
-
-export const FileManagerIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={fileManagerSVG} {...props} ref={ref} />
-));
-
-// 管理mis图标
-const misSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M2 0.75H26.5706C26.9458 0.75 27.25 1.05418 27.25 1.42941V5.24118V7
-C27.25 7.69036 26.6904 8.25 26 8.25H2C1.30964 8.25 0.75 7.69036 0.75 7
-V2C0.75 1.30964 1.30964 0.75 2 0.75Z"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      stroke="currentColor"
-    />
-    <ellipse cx="6.25" cy="4.50004" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="10.25" cy="4.50004" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="14.25" cy="4.50004" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <path
-      d="M2 10.25H26.5706C26.9458 10.25 27.25 10.5542 27.25 10.9294
-V14.7412V16.5C27.25 17.1904 26.6904 17.75 26 17.75H2C1.30964 17.75 0.75 17.1904 0.75 16.5V11.5
-C0.75 10.8096 1.30964 10.25 2 10.25Z"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      stroke="currentColor"
-    />
-    <ellipse cx="6.25" cy="14" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="10.25" cy="14" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="14.25" cy="14" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <path
-      d="M2 19.75H26.5706C26.9458 19.75 27.25 20.0542 27.25 20.4294
-V24.2412V26C27.25 26.6904 26.6904 27.25 26 27.25H2C1.30964 27.25 0.75 26.6904 0.75 26
-V21C0.75 20.3096 1.30964 19.75 2 19.75Z"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      stroke="currentColor"
-    />
-    <ellipse cx="6.25" cy="23.5" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="10.25" cy="23.5" rx="1.25" ry="1.32353" stroke="currentColor" />
-    <ellipse cx="14.25" cy="23.5" rx="1.25" ry="1.32353" stroke="currentColor" />
-  </svg>
-
-);
-
-export const MisIcon = (props) => <Icon component={misSVG} {...props} />;
-
-// 所有作业图标
-const allJobsSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4.67859" y="5.57141" width="20.3214" height="19.4286" rx="1" stroke="#262743" strokeWidth="2" />
-    <rect x="1.10718" y="1" width="7.82143" height="7.82143" rx="1" fill="white" stroke="#262743" strokeWidth="2" />
-    <rect
-      x="1.10718"
-      y="12.7142"
-      width="7.82143"
-      height="7.82143"
-      rx="1"
-      fill="white"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <rect
-      x="11.8214"
-      y="1"
-      width="7.82143"
-      height="7.82143"
-      rx="1"
-      fill="white"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path d="M14.3928 15.2858H21.5357" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M14.3928 17.9642H19.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M14.3928 20.6428H17.9643" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-
-);
-export const AllJobsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={allJobsSVG} {...props} ref={ref} />
-));
-
-// 提交作业图标
-const submitJobSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16.9231 20.6428L20.4616 20.6428" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M18.6923 18.8572L18.6923 22.4286" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path
-      d="M22.2308 14.3929V4.97059
-    V3C22.2308 1.89543 21.3353 1 20.2308 1H3C1.89543 1 1 1.89543 1 3
-    V24C1 25.1046 1.89543 26 3 26H13.8269"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path d="M6.30768 9.92859H16.9231" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6.30768 13.5H14.2692" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6.30768 17.0714H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path
-      d="M23.25 20.6429C23.25 23.1939 21.2029 25.2501 18.6923 25.2501
-    C16.1817 25.2501 14.1346 23.1939 14.1346 20.6429C14.1346 18.0919 16.1817 16.0358 18.6923 16.0358
-    C21.2029 16.0358 23.25 18.0919 23.25 20.6429Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    />
-  </svg>
-);
-export const SubmitJobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={submitJobSVG} {...props} ref={ref} />
-));
-
-// 未结束作业图标
-const runningJobsSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M22.2308 14.3929V4.97059V3
-    C22.2308 1.89543 21.3353 1 20.2308 1H3C1.89543 1 1 1.89543 1 3V24C1 25.1046 1.89543 26 3 26H13.8269"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path d="M6.30768 9.92859H16.9231" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6.30768 13.5H14.2692" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M6.30768 17.0714H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path
-      d="M23.25 20.6429C23.25 23.1939 21.2029 25.2501 18.6923 25.2501
-    C16.1817 25.2501 14.1346 23.1939 14.1346 20.6429C14.1346 18.0919 16.1817 16.0358 18.6923 16.0358
-    C21.2029 16.0358 23.25 18.0919 23.25 20.6429Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    />
-    <path
-      d="M23.25 20.6429C23.25 23.1939 21.2029 25.2501 18.6923 25.2501
-    C16.1817 25.2501 14.1346 23.1939 14.1346 20.6429C14.1346 18.0919 16.1817 16.0358 18.6923 16.0358
-    C21.2029 16.0358 23.25 18.0919 23.25 20.6429Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    />
-    <path d="M18.6923 18.8572L18.6923 21.5357H20.4615" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-export const RunningJobsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={runningJobsSVG} {...props} ref={ref} />
-));
-
-
-// shell集群图标
-const shellClusterSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3.67856" y="1" width="17.6429" height="8.71429" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="1" y="18.8572" width="5.14286" height="5.14286" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="9.92856" y="18.8572" width="5.14286" height="5.14286" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="18.8571" y="18.8572" width="5.14286" height="5.14286" rx="1" stroke="currentColor" strokeWidth="2" />
-    <path d="M6.25 5.35718H10.7143" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M12.5 8.92859L12.5 19.6429" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M3.57144 19.6428V14.3928C3.57144 13.8405 4.01916 13.3928 4.57144 13.3928
-    H20.4286C20.9809 13.3928 21.4286 13.8405 21.4286 14.3928V19.6428"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-export const ShellClusterIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={shellClusterSVG} {...props} ref={ref} />
-));
-
-// 集群文件管理图标
-const clusterFileManagerSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M11.1438 2H3.00003V4.25H12.1724L11.1438 2
-    ZM3.00003 0C1.89546 0 1.00003 0.89543 1.00003 2V4.01347C0.931494 4.14893 0.892883 4.3021 0.892883 4.46429
-    V6.25C0.892883 6.39257 0.922719 6.52817 0.976487 6.6509C0.921837 6.87738 0.892883 7.11388 0.892883 7.35714
-    V22.1071C0.892883 23.764 2.23603 25.1071 3.89288 25.1071H11.4273C11.9796 25.1071 12.4273 24.6594 12.4273 24.1071
-    C12.4273 23.5549 11.9796 23.1071 11.4273 23.1071H3.89288C3.3406 23.1071 2.89288 22.6594 2.89288 22.1071V7.35714
-    C2.89288 6.80486 3.3406 6.35714 3.89288 6.35714H23.1072C23.6595 6.35714 24.1072 6.80486 24.1072 7.35714
-    V13.1017C24.1072 13.654 24.5549 14.1017 25.1072 14.1017C25.6595 14.1017 26.1072 13.654 26.1072 13.1017V7.35714
-    C26.1072 5.70029 24.764 4.35714 23.1072 4.35714H14.1718
-    C14.1886 4.04871 14.1331 3.7286 13.9913 3.41848L12.9628 1.16848
-    C12.6373 0.456608 11.9265 0 11.1438 0H3.00003ZM15 12.2143
-    V14.5714H21.8215V12.2143H15ZM14.5 10.7143C13.9477 10.7143 13.5 11.162 13.5 11.7143V15.0714
-    C13.5 15.2761 13.5615 15.4665 13.6671 15.625
-    C13.5615 15.7835 13.5 15.9739 13.5 16.1786V19.5357C13.5 19.7404 13.5615 19.9308 13.6671 20.0893
-    C13.5615 20.2478 13.5 20.4381 13.5 20.6429
-    V24C13.5 24.5523 13.9477 25 14.5 25H22.3215C22.8737 25 23.3215 24.5523 23.3215 24V20.6429
-    C23.3215 20.4381 23.2599 20.2478 23.1544 20.0893
-    C23.2599 19.9308 23.3215 19.7404 23.3215 19.5357V16.1786C23.3215 15.9739 23.2599 15.7835 23.1544 15.625
-    C23.2599 15.4665 23.3215 15.2761 23.3215 15.0714V11.7143C23.3215 11.162 22.8737 10.7143 22.3215 10.7143
-    H14.5ZM15 16.6786V19.0357H21.8215V16.6786H15ZM15 23.5V21.1429H21.8215V23.5H15ZM15.6199 13.3929
-    C15.6199 12.9786 15.9557 12.6429 16.3699 12.6429H18.7615
-    C19.1757 12.6429 19.5115 12.9786 19.5115 13.3929C19.5115 13.8071 19.1757 14.1429 18.7615 14.1429H16.3699
-    C15.9557 14.1429 15.6199 13.8071 15.6199 13.3929ZM16.3699 17.1071C15.9557 17.1071 15.6199 17.4429 15.6199 17.8571
-    C15.6199 18.2714 15.9557 18.6071 16.3699 18.6071H18.7615C19.1757 18.6071 19.5115 18.2714 19.5115 17.8571
-    C19.5115 17.4429 19.1757 17.1071 18.7615 17.1071H16.3699ZM15.6199 22.3214
-    C15.6199 21.9072 15.9557 21.5714 16.3699 21.5714
-    18.7615C19.1757 21.5714 19.5115 21.9072 19.5115 22.3214C19.5115 22.7356 19.1757 23.0714 18.7615 23.0714
-    H16.3699C15.9557 23.0714 15.6199 22.7356 15.6199 22.3214Z"
+      d="M14.5205 14.8135C14.794 14.8694 15 15.1114 15 15.4014C15 15.6914 14.794 15.9334 14.5205
+        15.9893L14.3994 16.001H3.59961C3.26844 16.0007 3 15.7326 3 15.4014C3 15.0701 3.26844 14.802
+        3.59961 14.8018H14.3994L14.5205 14.8135ZM14 0C16.2091 0 18 1.79086 18 4V9.47656C17.9998 11.6855
+        16.209 13.4766 14 13.4766H4C1.79098 13.4766 0.00019694 11.6855 0 9.47656V4C5.02143e-07 1.79086
+        1.79086 0 4 0H14ZM5.40039 6.95117C4.98618 6.95117 4.65039 7.28696 4.65039 7.70117V9.62598L4.6543
+        9.70312C4.69299 10.081 5.01228 10.376 5.40039 10.376C5.78853 10.3758 6.10804 10.0802 6.14648
+        9.70215L6.15039 9.625V7.7002C6.15013 7.28632 5.81429 6.95135 5.40039 6.95117ZM9 5.02539C8.58587
+        5.02544 8.25007 5.36127 8.25 5.77539V9.62598L8.25391 9.70215C8.29219 10.0804 8.61163 10.3759 9
+        10.376C9.38841 10.376 9.70781 10.0805 9.74609 9.70215L9.75 9.62598V5.77539C9.74993 5.36123 9.41417
+        5.02539 9 5.02539ZM12.6006 3.10059C12.1864 3.10059 11.8506 3.43637 11.8506 3.85059V9.62598L11.8545
+        9.70312C11.8932 10.081 12.2125 10.376 12.6006 10.376C12.9885 10.3757 13.308 10.0809 13.3467
+        9.70312L13.3506 9.62598V3.85059C13.3506 3.43652 13.0146 3.10083 12.6006 3.10059Z"
       fill="currentColor"
     />
   </svg>
 );
-export const ClusterFileManagerIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={clusterFileManagerSVG} {...props} ref={ref} />
-));
 
-// 创建应用图标
-const createAppSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="1" y="14.3928" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14.3929" y="1" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
-    <path d="M15 19L23 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M19 15L19 23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-export const CreateAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={createAppSVG} {...props} ref={ref} />
-));
+export const DashBoardIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={dashBoardSVG} {...props} ref={ref} />
+  ));
 
-// 已创建APP图标
-const appSessionsSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="1" y="14.3928" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
-    <rect x="14" y="14" width="10" height="10" rx="5" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-    <rect x="14.3929" y="1" width="9.5" height="9.5" rx="1" stroke="currentColor" strokeWidth="2" />
+// 作业图标
+const jobSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path
-      d="M17 19.2857L18.4545 21
-    L21 18"
-      stroke="#fff"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091
+        0 12V4C0 1.79086 1.79086 1.61064e-08 4 0H14ZM4 7.40039C3.66863 7.40039 3.40039 7.66863 3.40039
+        8C3.40039 8.33137 3.66863 8.59961 4 8.59961H8L8.12109 8.58789C8.39443 8.53189 8.59961 8.2899
+        8.59961 8C8.59961 7.7101 8.39443 7.46811 8.12109 7.41211L8 7.40039H4ZM4 4.40039C3.66863 4.40039
+        3.40039 4.66863 3.40039 5C3.40039 5.33137 3.66863 5.59961 4 5.59961H11L11.1211 5.58789C11.3944
+        5.53189 11.5996 5.2899 11.5996 5C11.5996 4.7101 11.3944 4.46811 11.1211 4.41211L11 4.40039H4Z"
+      fill="currentColor"
     />
   </svg>
 );
-export const AppSessionsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+
+export const JobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={jobSVG} {...props} ref={ref} />
+  ),
+);
+
+// shell图标
+const shellSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M18 12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0 12V6H18V12ZM4.27051
+        8.37793C4.02144 8.25199 3.70933 8.31472 3.5293 8.54199C3.34971 8.76918 3.36076 9.08635 3.54004
+        9.2998L3.62793 9.38477L5.43262 10.8135L3.62793 12.2432C3.36817 12.4488 3.32375 12.8271 3.5293
+        13.0869C3.73494 13.3465 4.11231 13.39 4.37207 13.1846L6.77246 11.2842C6.91593 11.1705 6.99988
+        10.9975 7 10.8145C6.99993 10.6312 6.9161 10.4575 6.77246 10.3438L4.37207 8.44336L4.27051 8.37793ZM8
+        11.5146C7.66867 11.5146 7.40046 11.7829 7.40039 12.1143C7.40039 12.4456 7.66863 12.7139 8
+        12.7139H11.5996L11.7207 12.7021C11.9942 12.6463 12.2002 12.4043 12.2002 12.1143C12.2001 11.8243
+        11.9942 11.5822 11.7207 11.5264L11.5996 11.5146H8ZM14 0C16.2091 0 18 1.79086 18 4V5H0V4C0 1.79086
+        1.79086 1.61064e-08 4 0H14ZM2.85742 2.85742C2.54183 2.85742 2.28613 3.11312 2.28613 3.42871C2.28619
+        3.74425 2.54187 4 2.85742 4C3.17285 3.99984 3.42865 3.74416 3.42871 3.42871C3.42871 3.11322 3.17288
+        2.85758 2.85742 2.85742ZM5.14258 2.85742C4.82712 2.85758 4.57129 3.11322 4.57129 3.42871C4.57135
+        3.74416 4.82716 3.99984 5.14258 4C5.45813 4 5.71381 3.74425 5.71387 3.42871C5.71387 3.11312 5.45817
+        2.85742 5.14258 2.85742ZM7.42871 2.85742C7.11312 2.85742 6.85742 3.11312 6.85742 3.42871C6.85748
+        3.74425 7.11315 4 7.42871 4C7.7442 3.99993 7.99994 3.74421 8 3.42871C8 3.11316 7.74424 2.8575
+        7.42871 2.85742Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const ShellIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={shellSVG} {...props} ref={ref} />
+  ),
+);
+
+// shell login图标
+const shellLoginSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M3.30664 7.70902C3.64043 7.48899 4.07337 7.48913 4.40723 7.70902L7.26465 9.59281C7.54531 9.77784
+      7.71387 10.0916 7.71387 10.4278V13.4092C7.71374 13.7716 7.51772 14.1057 7.20117 14.2823L4.34473
+      15.876C4.04199 16.0449 3.67288 16.0448 3.37012 15.876L0.512695 14.2823C0.196226 14.1057 0.000122795
+      13.7716 0 13.4092V10.4278C0 10.0917 0.168747 9.77787 0.449219 9.59281L3.30664 7.70902ZM13.5928
+      7.70902C13.9266 7.48914 14.3596 7.489 14.6934 7.70902L17.5508 9.59281C17.8312 9.77787 18 10.0917 18
+      10.4278V13.4092C17.9999 13.7716 17.8038 14.1057 17.4873 14.2823L14.6299 15.876C14.3271 16.0448 13.958
+      16.0449 13.6553 15.876L10.7988 14.2823C10.4823 14.1057 10.2863 13.7716 10.2861 13.4092V10.4278C10.2861
+      10.0916 10.4547 9.77784 10.7354 9.59281L13.5928 7.70902ZM8.44922 0.165072C8.78312 -0.0550239 9.21688
+      -0.0550239 9.55078 0.165072L12.4072 2.04886C12.6879 2.23389 12.8574 2.54763 12.8574
+      2.88382V5.86527C12.8574 6.22762 12.6611 6.56166 12.3447 6.73831L9.4873 8.33206C9.18452 8.50095 8.81548
+      8.50094 8.5127 8.33206L5.65527 6.73831C5.3389 6.56166 5.14261 6.22763 5.14258 5.86527V2.88382C5.14258
+      2.54763 5.31207 2.23389 5.59277 2.04886L8.44922 0.165072Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const ShellLoginIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={shellLoginSVG} {...props} ref={ref} />
+  ),
+);
+
+// 桌面图标
+const desktopSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <mask id="path-1-inside-1_130_1448" fill="white">
+      <path
+        d="M15.4824 1.46582C16.9574 2.05491 18 3.49641 18 5.18164V12C17.9998 14.209 16.209 16
+        14 16H4C1.79098 16 0.00019204 14.209 0 12V5.18164C0 3.49673 1.04206 2.05512 2.5166 1.46582C2.34519
+        1.91144 2.25 2.39537 2.25 2.90137V9.7207C2.25031 11.9296 4.04105 13.7207 6.25 13.7207H11.75C13.9589
+        13.7207 15.7497 11.9296 15.75 9.7207V2.90137C15.75 2.39525 15.6539 1.91152 15.4824 1.46582ZM11.1592
+        0C13.3683 0 15.1592 1.79086 15.1592 4V9.17285C15.159 11.3819 13.3682 13.1729 11.1592 13.1729H7C4.79097
+        13.1728 3.00016 11.3819 3 9.17285V4C3 1.79087 4.79087 7.60561e-06 7 0H11.1592ZM6.04004 5.48047C5.70867
+        5.48048 5.44043 5.74871 5.44043 6.08008C5.44066 6.41124 5.70882 6.67968 6.04004 6.67969H9.04004L9.16113
+        6.66797C9.43429 6.61196 9.63944 6.36975 9.63965 6.08008C9.63965 5.79027 9.43434 5.54829 9.16113
+        5.49219L9.04004 5.48047H6.04004ZM6.04004 3.48047C5.70867 3.48048 5.44043 3.74871 5.44043 4.08008C5.44066
+        4.41124 5.70882 4.67968 6.04004 4.67969H11.04L11.1611 4.66797C11.4343 4.61196 11.6394 4.36975 11.6396
+        4.08008C11.6396 3.79027 11.4343 3.54829 11.1611 3.49219L11.04 3.48047H6.04004Z"
+      />
+    </mask>
+    <path
+      d="M15.4824 1.46582C16.9574 2.05491 18 3.49641 18 5.18164V12C17.9998 14.209 16.209 16 14 16H4C1.79098
+        16 0.00019204 14.209 0 12V5.18164C0 3.49673 1.04206 2.05512 2.5166 1.46582C2.34519 1.91144 2.25 2.39537
+        2.25 2.90137V9.7207C2.25031 11.9296 4.04105 13.7207 6.25 13.7207H11.75C13.9589 13.7207 15.7497 11.9296
+        15.75 9.7207V2.90137C15.75 2.39525 15.6539 1.91152 15.4824 1.46582ZM11.1592 0C13.3683 0 15.1592 1.79086
+        15.1592 4V9.17285C15.159 11.3819 13.3682 13.1729 11.1592 13.1729H7C4.79097 13.1728 3.00016 11.3819 3
+        9.17285V4C3 1.79087 4.79087 7.60561e-06 7 0H11.1592ZM6.04004 5.48047C5.70867 5.48048 5.44043 5.74871 5.44043
+        6.08008C5.44066 6.41124 5.70882 6.67968 6.04004 6.67969H9.04004L9.16113 6.66797C9.43429 6.61196 9.63944
+        6.36975 9.63965 6.08008C9.63965 5.79027 9.43434 5.54829 9.16113 5.49219L9.04004 5.48047H6.04004ZM6.04004
+        3.48047C5.70867 3.48048 5.44043 3.74871 5.44043 4.08008C5.44066 4.41124 5.70882 4.67968 6.04004
+        4.67969H11.04L11.1611 4.66797C11.4343 4.61196 11.6394 4.36975 11.6396 4.08008C11.6396 3.79027 11.4343 3.54829
+        11.1611 3.49219L11.04 3.48047H6.04004Z"
+      fill="currentColor"
+    />
+    <path
+      d="M15.4824 1.46582L15.8533 0.537147L13.7269 -0.312133L14.5491 1.82492L15.4824 1.46582ZM18 12L19
+        12.0001V12H18ZM14 16V17V16ZM0 12H-1V12.0001L0 12ZM2.5166 1.46582L3.44993 1.82484L4.27218 -0.312701L2.14549
+        0.537232L2.5166 1.46582ZM2.25 2.90137L1.25 2.90137V2.90137H2.25ZM2.25 9.7207H1.25V9.72084L2.25 9.7207ZM6.25
+        13.7207V14.7207V13.7207ZM11.75 13.7207V14.7207H11.75L11.75 13.7207ZM15.75
+        9.7207L16.75 9.72084V9.7207H15.75ZM15.1592 9.17285L16.1592 9.17292V9.17285H15.1592ZM7 13.1729L7
+        14.1729H7V13.1729ZM3 9.17285H2V9.17292L3 9.17285ZM3 4L2 4V4H3ZM7
+        0V-1H7L7 0ZM6.04004 5.48047V4.48047H6.04002L6.04004 5.48047ZM5.44043 6.08008H4.44043L4.44043 6.08079L5.44043
+        6.08008ZM6.04004 6.67969L6.04002 7.67969H6.04004V6.67969ZM9.04004 6.67969V7.67969H9.08831L9.13636
+        7.67504L9.04004 6.67969ZM9.16113 6.66797L9.25746 7.66332L9.31015 7.65822L9.36201 7.64758L9.16113
+        6.66797ZM9.63965 6.08008L10.6396 6.08079V6.08008H9.63965ZM9.16113 5.49219L9.3623 4.51263L9.3103
+        4.50195L9.25746 4.49684L9.16113 5.49219ZM9.04004 5.48047L9.13636 4.48512L9.08831
+        4.48047H9.04004V5.48047ZM6.04004 3.48047V2.48047H6.04002L6.04004 3.48047ZM5.44043
+        4.08008H4.44043L4.44043 4.08079L5.44043 4.08008ZM6.04004 4.67969L6.04002 5.67969H6.04004V4.67969ZM11.04
+        4.67969V5.67969H11.0883L11.1364 5.67504L11.04 4.67969ZM11.1611 4.66797L11.2575 5.66332L11.3102 5.65822L11.362
+        5.64758L11.1611 4.66797ZM11.6396 4.08008L12.6396 4.08079V4.08008H11.6396ZM11.1611 3.49219L11.3623
+        2.51263L11.3103 2.50195L11.2575 2.49684L11.1611 3.49219ZM11.04 3.48047L11.1364 2.48512L11.0883
+        2.48047H11.04V3.48047ZM15.4824
+        1.46582L15.1115 2.39449C16.2198 2.83713 17 3.91957 17 5.18164H18H19C19 3.07326 17.695 1.27269 15.8533
+        0.537147L15.4824 1.46582ZM18 5.18164H17V12H18H19V5.18164H18ZM18 12L17 11.9999C16.9999 13.6568 15.6566 15 14
+        15V16V17C16.7614 17 18.9998 14.7612 19 12.0001L18 12ZM14 16V15H4V16V17H14V16ZM4 16V15C2.34335
+        15 1.00014 13.6568 1 11.9999L0 12L-1 12.0001C-0.99976
+        14.7612 1.23861 17 4 17V16ZM0 12H1V5.18164H0H-1V12H0ZM0 5.18164H1C1 3.91966 1.77989 2.83715 2.88771
+        2.39441L2.5166 1.46582L2.14549 0.537232C0.304218 1.2731 -1 3.07381 -1 5.18164H0ZM2.5166
+        1.46582L1.58327 1.1068C1.3691 1.66356 1.25
+        2.269 1.25 2.90137L2.25 2.90137L3.25 2.90137C3.25 2.52174 3.32127 2.15932 3.44993 1.82484L2.5166 1.46582ZM2.25
+        2.90137H1.25V9.7207H2.25H3.25V2.90137H2.25ZM2.25 9.7207L1.25 9.72084C1.25038 12.4818 3.48863 14.7207 6.25
+        14.7207V13.7207V12.7207C4.59347 12.7207 3.25023 11.3774 3.25 9.72056L2.25 9.7207ZM6.25
+        13.7207V14.7207H11.75V13.7207V12.7207H6.25V13.7207ZM11.75 13.7207L11.75 14.7207C14.5114 14.7207 16.7496
+        12.4818 16.75 9.72084L15.75 9.7207L14.75 9.72056C14.7498 11.3774 13.4065 12.7207 11.75 12.7207L11.75
+        13.7207ZM15.75 9.7207H16.75V2.90137H15.75H14.75V9.7207H15.75ZM15.75 2.90137H16.75C16.75 2.26762 16.6295
+        1.6624 16.4157 1.10672L15.4824 1.46582L14.5491 1.82492C14.6783 2.16065 14.75 2.52287 14.75
+        2.90137H15.75ZM11.1592
+        0V1C12.816 1 14.1592 2.34315 14.1592 4H15.1592H16.1592C16.1592 1.23858 13.9206 -1 11.1592 -1V0ZM15.1592
+        4H14.1592V9.17285H15.1592H16.1592V4H15.1592ZM15.1592 9.17285L14.1592 9.17278C14.1591 10.8296 12.8159 12.1729
+        11.1592 12.1729V13.1729V14.1729C13.9206 14.1729 16.159 11.9341 16.1592 9.17292L15.1592 9.17285ZM11.1592
+        13.1729V12.1729H7V13.1729V14.1729H11.1592V13.1729ZM7 13.1729L7 12.1729C5.34332 12.1728 4.00012 10.8296
+        4 9.17278L3 9.17285L2 9.17292C2.0002 11.9341 4.23861 14.1728 7 14.1729L7 13.1729ZM3
+        9.17285H4V4H3H2V9.17285H3ZM3 4L4 4C4 2.34315 5.34315 1.00001 7 1L7 0L7 -1C4.23859 -0.99999 2 1.23858
+        2 4L3 4ZM7 0V1H11.1592V0V-1H7V0ZM6.04004 5.48047L6.04002 4.48047C5.15641 4.48049 4.44043 5.1964
+        4.44043 6.08008H5.44043H6.44043C6.44043 6.30102 6.26094 6.48046 6.04006
+        6.48047L6.04004 5.48047ZM5.44043 6.08008L4.44043 6.08079C4.44105 6.963 5.15585 7.67967 6.04002 7.67969L6.04004
+        6.67969L6.04006 5.67969C6.26179 5.67969 6.44027 5.85949 6.44043 6.07937L5.44043 6.08008ZM6.04004
+        6.67969V7.67969H9.04004V6.67969V5.67969H6.04004V6.67969ZM9.04004 6.67969L9.13636 7.67504L9.25746
+        7.66332L9.16113 6.66797L9.06481 5.67262L8.94372 5.68434L9.04004 6.67969ZM9.16113
+        6.66797L9.36201 7.64758C10.0927 7.49774 10.6391
+        6.8525 10.6396 6.08079L9.63965 6.08008L8.63965 6.07937C8.63978 5.887 8.77583 5.72617 8.96025 5.68835L9.16113
+        6.66797ZM9.63965 6.08008H10.6396C10.6396 5.3068 10.0919 4.66247 9.3623 4.51263L9.16113 5.49219L8.95997
+        6.47175C8.77674 6.43412 8.63965 6.27375 8.63965 6.08008H9.63965ZM9.16113 5.49219L9.25746 4.49684L9.13636
+        4.48512L9.04004 5.48047L8.94372 6.47582L9.06481 6.48754L9.16113 5.49219ZM9.04004
+        5.48047V4.48047H6.04004V5.48047V6.48047H9.04004V5.48047ZM6.04004 3.48047L6.04002 2.48047C5.15641 2.48049
+        4.44043 3.1964 4.44043 4.08008H5.44043H6.44043C6.44043 4.30102 6.26094 4.48046 6.04006 4.48047L6.04004
+        3.48047ZM5.44043 4.08008L4.44043 4.08079C4.44105 4.963 5.15585 5.67967 6.04002 5.67969L6.04004
+        4.67969L6.04006 3.67969C6.26179 3.67969 6.44027 3.85949 6.44043 4.07937L5.44043
+        4.08008ZM6.04004 4.67969V5.67969H11.04V4.67969V3.67969H6.04004V4.67969ZM11.04 4.67969L11.1364 5.67504L11.2575
+        5.66332L11.1611 4.66797L11.0648 3.67262L10.9437 3.68434L11.04 4.67969ZM11.1611 4.66797L11.362 5.64758C12.0927
+        5.49774 12.6391 4.8525 12.6396 4.08079L11.6396 4.08008L10.6396 4.07937C10.6398 3.887 10.7758 3.72617
+        10.9603 3.68835L11.1611 4.66797ZM11.6396 4.08008H12.6396C12.6396 3.3068 12.0919 2.66247 11.3623
+        2.51263L11.1611 3.49219L10.96 4.47175C10.7767 4.43412 10.6396 4.27375 10.6396 4.08008H11.6396ZM11.1611
+        3.49219L11.2575 2.49684L11.1364 2.48512L11.04 3.48047L10.9437
+        4.47582L11.0648 4.48754L11.1611 3.49219ZM11.04 3.48047V2.48047H6.04004V3.48047V4.48047H11.04V3.48047Z"
+      fill="currentColor"
+      mask="url(#path-1-inside-1_130_1448)"
+    />
+  </svg>
+);
+
+export const DesktopIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={desktopSVG} {...props} ref={ref} />
+  ));
+
+// 交互式应用图标
+const applicationSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M6.5791 8.4209C7.68356 8.42098 8.57904 9.31643 8.5791 10.4209V14C8.57908 15.1045 7.68359 15.9999 6.5791
+      16H3C1.89545 16 1.00002 15.1045 1 14V10.4209C1.00006 9.31638 1.89547 8.4209 3 8.4209H6.5791ZM11.7959
+      9.41406C12.5769 8.63301 13.844 8.63301 14.625 9.41406L16.0068 10.7959C16.7879 11.5769 16.7879 12.844 16.0068
+      13.625L14.625 15.0068C13.844 15.7879 12.5769 15.7879 11.7959 15.0068L10.4141 13.625C9.63301 12.844 9.63301
+      11.5769 10.4141 10.7959L11.7959 9.41406ZM6.5791 0C7.6836 8.32308e-05 8.5791 0.895482 8.5791 2V5.5791C8.57902
+      6.68355 7.68355 7.57902 6.5791 7.5791H3C1.89548 7.5791 1.00008 6.6836 1 5.5791V2C1 0.895431 1.89543 0 3
+      0H6.5791ZM15 0C16.1046 0 17 0.895431 17 2V5.5791C16.9999 6.6836 16.1045 7.5791 15 7.5791H11.4209C10.3165
+      7.57901 9.42098 6.68355 9.4209 5.5791V2C9.4209 0.895485 10.3164 8.7991e-05 11.4209 0H15Z"
+      fill="currentColor"
+    />
+  </svg>
+
+);
+
+export const ApplicationIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={applicationSVG} {...props} ref={ref} />
+  ));
+
+// 文件管理图标
+const fileManagerSVG = () => (
+  <svg
+    width="21"
+    height="16"
+    viewBox="0 0 21 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6.55859 0C7.41932 4.77956e-05 8.18376 0.550681 8.45605 1.36719L8.66699 2H18C19.1046 2 20 2.89543
+      20 4V9.75781C19.2849 9.27917 18.4251 9 17.5 9C15.0147 9 13 11.0147 13 13.5C13 14.4253 13.28 15.2849
+      13.7588 16H2C0.895431 16 4.832e-08 15.1046 0 14V2C0 0.895431 0.895431 0 2 0H6.55859ZM18.6943
+      11.2783C18.8846 11.2785 19.0585 11.3869 19.1426 11.5576L20.0186 13.3389C20.0889 13.482 20.0867 13.6507
+      20.0127 13.792L19.1367 15.46C19.0611 15.6039 18.921 15.7007 18.7627 15.7227L18.6943 15.7275H16.3857C16.2291
+      15.7275 16.083 15.6537 15.9893 15.5312L15.9521 15.4756L14.9971 13.8086C14.9115 13.659 14.9088 13.4751
+      14.9902 13.3232L15.9453 11.542C16.0324 11.3799 16.2017 11.2784 16.3857 11.2783H18.6943ZM16.001 13.5527L16.6748
+      14.7275H18.3926L19.0088 13.5527L18.3828 12.2783H16.6846L16.001 13.5527ZM17.499 12.8135C17.8799 12.8135 18.1893
+      13.1221 18.1895 13.5029C18.1894 13.8839 17.88 14.1924 17.499 14.1924C17.1182 14.1922 16.8096 13.8838 16.8096
+      13.5029C16.8097 13.1222 17.1183 12.8137 17.499 12.8135Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const FileManagerIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={fileManagerSVG} {...props} ref={ref} />
+  ));
+
+// 文件传输图标
+const fileTransferSVG = () => (
+  <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M7.55859 1C8.41932 1.00005 9.18376 1.55068 9.45605 2.36719L9.66699 3H17C18.1046 3 19 3.89543
+      19 5V9.75781C18.2849 9.27917 17.4251 9 16.5 9C14.0147 9 12 11.0147 12 13.5C12 14.9141 12.6528 16.175
+      13.6729 17H3C1.89543 17 1 16.1046 1 15V3C1 1.89543 1.89543 1 3 1H7.55859ZM17.2266 11.6377C17.4014
+      11.4712 17.6656 11.4563 17.8564 11.5889L17.9336 11.6553L19.3623 13.1553C19.5493 13.3518 19.5454
+      13.6617 19.3535 13.8535L17.8535 15.3535L17.7754 15.418C17.5813 15.5461 17.3173 15.5244 17.1465
+      15.3535C16.9756 15.1827 16.9539 14.9187 17.082 14.7246L17.1465 14.6465L17.793 14H14C13.7239 14 13.5
+      13.7761 13.5 13.5C13.5 13.2239 13.7239 13 14 13H17.833L17.209 12.3447L17.1475 12.2646C17.0241 12.0675
+      17.0516 11.8043 17.2266 11.6377Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const FileTransferIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={fileTransferSVG} {...props} ref={ref} />
+  ));
+
+// 传输进度图标
+const fileTransferInfoSVG = () => (
+  <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M7.55859 1C8.41932 1.00005 9.18376 1.55068 9.45605 2.36719L9.66699 3H17C18.1046 3 19 3.89543
+      19 5V9.75781C18.2849 9.27917 17.4251 9 16.5 9C14.0147 9 12 11.0147 12 13.5C12 14.9141 12.6528
+      16.175 13.6729 17H3C1.89543 17 1 16.1046 1 15V3C1 1.89543 1.89543 1 3 1H7.55859ZM16.4326 10.5C16.7086
+      10.5001 16.9326 10.7239 16.9326 11C16.9326 11.2761 16.7086 11.4999 16.4326 11.5C16.1008 11.5 15.7744
+      11.5886 15.4854 11.7568L15.3643 11.833C15.0862 12.024 14.8602 12.2871 14.709 12.5957L14.6484
+      12.7305C14.5006 13.0975 14.4625 13.5021 14.5381 13.8926L14.5713 14.0371C14.6613 14.371 14.8338 14.6749
+      15.0713 14.9189L15.1758 15.0195C15.4282 15.2431 15.7322 15.3953 16.0576 15.4619L16.1982 15.4854C16.526
+      15.5268 16.8597 15.4804 17.167 15.3496C17.5185 15.1999 17.8222 14.9453 18.0361 14.6162C18.2501 14.287
+      18.3652 13.8984 18.3652 13.5C18.3652 13.2239 18.5891 13 18.8652 13C19.1412 13.0002 19.3652 13.224 19.3652
+      13.5C19.3652 14.0903 19.1944 14.6682 18.874 15.1611C18.5536 15.6541 18.0967 16.0407 17.5596 16.2695C17.0894
+      16.4697 16.5767 16.5411 16.0732 16.4775L15.8574 16.4414C15.3575 16.3391 14.8946 16.106 14.5127
+      15.7676L14.3545 15.6162C13.9966 15.2484 13.7392 14.7939 13.6055 14.2979L13.5557 14.083C13.4436 13.5037
+      13.5014 12.9029 13.7217 12.3564L13.8115 12.1553C14.0373 11.6948 14.3758 11.2986 14.7979 11.0088L14.9824
+      10.8926C15.4226 10.6364 15.9223 10.5 16.4326 10.5Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const FileTransferInfoIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={fileTransferInfoSVG} {...props} ref={ref} />
+  ));
+
+// 管理mis图标
+const misSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M13.0433 0C13.8163 6.32896e-05 14.5202 0.445918 14.851 1.14453L17.8012 7.37988C18.0652
+          7.93793 18.0572 8.58672 17.7787 9.1377L14.8646 14.9023C14.5243 15.5755 13.8338 16 13.0795
+          16H5.18007C4.45156 15.9999 3.7809 15.6038 3.42909 14.9658L0.248425 9.19922C-0.0736775 8.61508
+          -0.083919 7.90817 0.222058 7.31543L3.43983 1.08301C3.78304 0.41823 4.46905 0.000100327 5.21718
+          0H13.0433Z"
+      fill="currentColor"
+    />
+    <path
+      d="M11.7623 7.07884C12.0147 7.62635 12.0066 8.2585 11.7404 8.79942L11.3535 9.58538C11.017
+          10.2691 10.3212 10.7021 9.55913 10.7021H8.42301C7.68634 10.7021 7.0093 10.2972 6.66087
+          9.64811L6.23786 8.86013C5.92968 8.28605 5.92046 7.59783 6.21317 7.01571L6.67282 6.10155C7.0124
+          5.42619 7.70374 5 8.45966 5H9.52359C10.304 5 11.0131 5.45393 11.3399 6.16265L11.7623 7.07884Z"
+      fill="white"
+    />
+  </svg>
+);
+
+export const MisIcon = (props) => <Icon component={misSVG} {...props} />;
+
+// 高性能计算图标
+const highComputingSVG = () => (
+  <svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12.0332 0.0595703C12.3091 0.0597012 12.533 0.283677 12.5332 0.55957V1.79883C14.1936
+          1.90194 15.579 3.01765 16.0801 4.53613H17.4961C17.7721 4.53613 17.9958 4.76021 17.9961
+          5.03613C17.9961 5.31228 17.7722 5.53613 17.4961 5.53613H16.2725C16.2777 5.62011 16.2812 5.70473
+          16.2812 5.79004V7.55859H17.4961C17.772 7.55869 17.9958 7.78273 17.9961 8.05859C17.9961 8.33468
+          17.7722 8.5585 17.4961 8.55859H16.2812V10.3271C16.2812 10.4123 16.2777 10.4972 16.2725
+          10.5811H17.4961C17.772 10.5812 17.9959 10.8051 17.9961 11.0811C17.9961 11.3571 17.7722 11.581
+          17.4961 11.5811H16.0801C15.5791 13.0999 14.1938 14.2152 12.5332 14.3184V15.5586C12.5331 15.8345
+          12.3091 16.0583 12.0332 16.0586C11.7573 16.0584 11.5333 15.8346 11.5332
+          15.5586V14.3271H9.49805V15.5586C9.49798 15.8346 9.27404 16.0585 8.99805 16.0586C8.72211 16.0584
+          8.49811 15.8346 8.49805 15.5586V14.3271H6.46289V15.5586C6.46282 15.8346 6.23894 16.0585 5.96289
+          16.0586C5.68696 16.0584 5.46296 15.8346 5.46289 15.5586V14.3184C3.80242 14.2154 2.41728 13.1005
+          1.91602 11.582H0.5C0.224007 11.582 0.000242072 11.358 0 11.082C-4.90924e-09 10.8059 0.223858 10.582
+          0.5 10.582H1.72363C1.71834 10.4978 1.71387 10.4127 1.71387 10.3271V8.55957H0.5C0.224117 8.55944
+          0.000242057 8.33543 0 8.05957C-4.90821e-09 7.78351 0.223968 7.5597 0.5 7.55957H1.71387V5.79004C1.71387
+          5.70505 1.7184 5.62078 1.72363 5.53711H0.5C0.224076 5.53698 0.000176209 5.31302 0 5.03711C-4.90821e-09
+          4.76105 0.223968 4.53724 0.5 4.53711H1.91504C2.41592 3.01795 3.80189 1.90178 5.46289 1.79883V0.55957C5.46309
+          0.283678 5.68698 0.059703 5.96289 0.0595703C6.23891 0.0595703 6.46269 0.283596 6.46289
+          0.55957V1.79004H8.49805V0.55957C8.49824 0.283638 8.72208 0.0596382 8.99805 0.0595703C9.27407 0.0595703
+          9.49785 0.283596 9.49805 0.55957V1.79004H11.5332V0.55957C11.5334 0.283638 11.7572 0.059638 12.0332
+          0.0595703ZM6.1416 4.14062C5.03744 4.14092 4.14187 5.03646 4.1416 6.14062V9.97656C4.1416 11.081 5.03728
+          11.9763 6.1416 11.9766H11.8535C12.9581 11.9766 13.8535 11.0811 13.8535 9.97656V6.14062C13.8533 5.03628
+          12.9579 4.14062 11.8535 4.14062H6.1416ZM11.0449 5.03711C12.1495 5.03712 13.0449 5.93255 13.0449
+          7.03711V9.08105C13.0449 10.1856 12.1495 11.081 11.0449 11.0811H6.95117C5.84682 11.0808 4.95117 10.1855
+          4.95117 9.08105V7.03711C4.95117 5.9327 5.84682 5.03736 6.95117 5.03711H11.0449Z"
+      fill="currentColor"
+    />
+  </svg>
+
+);
+
+export const HighComputingIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={appSessionsSVG} {...props} ref={ref} />
+  <Icon component={highComputingSVG} {...props} ref={ref} />
 ));
+
+// 人工智能图标
+const aiSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12 14.499C12.4142 14.499 12.7499 14.8349 12.75 15.249C12.75 15.6632 12.4142 15.999
+          12 15.999H6C5.58579 15.999 5.25 15.6632 5.25 15.249C5.25007 14.8349 5.58583 14.499 6 14.499H12ZM14
+          0C16.2091 0 18 1.79086 18 4V9C18 11.2091 16.2091 13 14 13H4C1.79086 13 8.05332e-08 11.2091 0
+          9V4C0 1.79086 1.79086 1.61064e-08 4 0H14ZM6.05762 4.29199C5.36084 4.29199 4.79609 4.89902 4.7959
+          5.64746C4.7959 6.39608 5.36072 7.00293 6.05762 7.00293C6.75435 7.00272 7.31934 6.39595 7.31934
+          5.64746C7.31914 4.89915 6.75423 4.2922 6.05762 4.29199ZM11.9434 4.29199C11.2468 4.29224 10.6818
+          4.89918 10.6816 5.64746C10.6816 6.39592 11.2467 7.00268 11.9434 7.00293C12.6403 7.00293 13.2061
+          6.39608 13.2061 5.64746C13.2059 4.89902 12.6401 4.29199 11.9434 4.29199Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const AiIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
+  ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  <Icon component={aiSVG} {...props} ref={ref} />
+));
+
+// 所有作业图标
+const allJobsSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0
+      12V4C0 1.79086 1.79086 1.61064e-08 4 0H14ZM4 7.40039C3.66863 7.40039 3.40039 7.66863 3.40039
+      8C3.40039 8.33137 3.66863 8.59961 4 8.59961H8L8.12109 8.58789C8.39443 8.53189 8.59961 8.2899
+      8.59961 8C8.59961 7.7101 8.39443 7.46811 8.12109 7.41211L8 7.40039H4ZM4 4.40039C3.66863 4.40039
+      3.40039 4.66863 3.40039 5C3.40039 5.33137 3.66863 5.59961 4 5.59961H11L11.1211 5.58789C11.3944
+      5.53189 11.5996 5.2899 11.5996 5C11.5996 4.7101 11.3944 4.46811 11.1211 4.41211L11 4.40039H4Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const AllJobsIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={allJobsSVG} {...props} ref={ref} />
+  ));
+
+// 提交作业图标
+const submitJobSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M14 0C16.2091 0 18 1.79086 18 4V8.75781C17.2849 8.27917 16.4251 8 15.5 8C13.0147 8 11 10.0147
+      11 12.5C11 13.9141 11.6528 15.175 12.6729 16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086
+      1.61064e-08 4 0H14ZM15.5 10.5C15.7761 10.5 16 10.7239 16 11V12H17C17.2761 12 17.5 12.2239 17.5
+      12.5C17.5 12.7761 17.2761 13 17 13H16V14C16 14.2761 15.7761 14.5 15.5 14.5C15.2239 14.5 15 14.2761
+      15 14V13H14C13.7239 13 13.5 12.7761 13.5 12.5C13.5 12.2239 13.7239 12 14 12H15V11C15 10.7239
+      15.2239 10.5 15.5 10.5ZM4 7.40039C3.66863 7.40039 3.40039 7.66863 3.40039 8C3.40039 8.33137 3.66863
+      8.59961 4 8.59961H8L8.12109 8.58789C8.39443 8.53189 8.59961 8.2899 8.59961 8C8.59961 7.7101 8.39443
+      7.46811 8.12109 7.41211L8 7.40039H4ZM4 4.40039C3.66863 4.40039 3.40039 4.66863 3.40039 5C3.40039
+      5.33137 3.66863 5.59961 4 5.59961H11L11.1211 5.58789C11.3944 5.53189 11.5996 5.2899 11.5996 5C11.5996
+      4.7101 11.3944 4.46811 11.1211 4.41211L11 4.40039H4Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const SubmitJobIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={submitJobSVG} {...props} ref={ref} />
+  ));
+
+// 未结束作业图标
+const runningJobsSVG = () => (
+  <svg
+    width="19"
+    height="16"
+    viewBox="0 0 19 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M13.5137 0C15.7227 8.59649e-05 17.5137 1.79091 17.5137 4V8.75781C16.8179 8.27912 15.9812 8
+      15.0811 8C12.663 8.00001 10.7031 10.0147 10.7031 12.5C10.7031 13.914 11.3377 15.175 12.3301
+      16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086 1.28249e-07 4 0H13.5137ZM15.0811 9.5C15.3571
+      9.5001 15.5811 9.72392 15.5811 10C15.5811 10.2761 15.3571 10.4999 15.0811 10.5C14.7493 10.5
+      14.4228 10.5886 14.1338 10.7568L14.0127 10.833C13.7347 11.024 13.5086 11.2871 13.3574
+      11.5957L13.2969 11.7305C13.1491 12.0975 13.111 12.5021 13.1865 12.8926L13.2197 13.0371C13.3097
+      13.371 13.4823 13.6749 13.7197 13.9189L13.8242 14.0195C14.0766 14.2431 14.3806 14.3953 14.7061
+      14.4619L14.8467 14.4854C15.1744 14.5268 15.5081 14.4803 15.8154 14.3496C16.167 14.1999 16.4706
+      13.9453 16.6846 13.6162C16.8985 13.287 17.0137 12.8984 17.0137 12.5C17.0137 12.2239 17.2376 12.0001
+      17.5137 12C17.7896 12.0002 18.0137 12.224 18.0137 12.5C18.0137 13.0903 17.8429 13.6682 17.5225
+      14.1611C17.202 14.654 16.7451 15.0408 16.208 15.2695C15.7378 15.4697 15.2251 15.5411 14.7217
+      15.4775L14.5059 15.4414C14.006 15.3391 13.543 15.106 13.1611 14.7676L13.0029 14.6162C12.6451
+      14.2484 12.3876 13.7938 12.2539 13.2979L12.2041 13.083C12.092 12.5038 12.1499 11.9029 12.3701
+      11.3564L12.46 11.1553C12.6857 10.6948 13.0243 10.2986 13.4463 10.0088L13.6309 9.89258C14.071
+      9.63639 14.5707 9.50004 15.0811 9.5ZM3.8916 7.40039C3.56036 7.40055 3.29199 7.66873 3.29199 8C3.29199
+      8.33127 3.56036 8.59945 3.8916 8.59961H7.7832L7.9043 8.58789C8.17777 8.53199 8.38379 8.29 8.38379
+      8C8.38379 7.71 8.17777 7.46801 7.9043 7.41211L7.7832 7.40039H3.8916ZM3.8916 4.40039C3.56036 4.40055
+      3.29199 4.66873 3.29199 5C3.29199 5.33127 3.56036 5.59945 3.8916 5.59961H10.7021L10.8232
+      5.58789C11.0967 5.53198 11.3027 5.28999 11.3027 5C11.3027 4.71001 11.0967 4.46802 10.8232
+      4.41211L10.7021 4.40039H3.8916Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const RunningJobsIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={runningJobsSVG} {...props} ref={ref} />
+  ));
+
+// shell集群图标
+const shellClusterSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M16 9C17.1044 9 17.9998 9.8956 18 11V14C18 15.1046 17.1046 16 16 16H2C0.895431 16 0 15.1046
+      0 14V11C0.000197825 9.8956 0.895553 9 2 9H16ZM2.5 11.8008C2.22386 11.8008 2 12.0394 2 12.334C2.00014
+      12.6284 2.22395 12.8672 2.5 12.8672C2.77605 12.8672 2.99986 12.6284 3 12.334C3 12.0394 2.77614
+      11.8008 2.5 11.8008ZM4.5 11.8008C4.22386 11.8008 4 12.0394 4 12.334C4.00014 12.6284 4.22395
+      12.8672 4.5 12.8672C4.77605 12.8672 4.99986 12.6284 5 12.334C5 12.0394 4.77614 11.8008 4.5
+      11.8008ZM6.5 11.8008C6.22386 11.8008 6 12.0394 6 12.334C6.00014 12.6284 6.22395 12.8672 6.5
+      12.8672C6.77605 12.8672 6.99986 12.6284 7 12.334C7 12.0394 6.77614 11.8008 6.5 11.8008ZM16 0C17.1046
+      0 18 0.895431 18 2V5C18 6.10457 17.1046 7 16 7H2C0.895431 7 4.83199e-08 6.10457 0 5V2C0 0.895431
+      0.895431 8.05319e-09 2 0H16ZM2.5 3.13379C2.22386 3.13379 2 3.37244 2 3.66699C2.00018 3.96138 2.22397
+      4.2002 2.5 4.2002C2.77603 4.2002 2.99982 3.96138 3 3.66699C3 3.37244 2.77614 3.13379 2.5 3.13379ZM4.5
+      3.13379C4.22386 3.13379 4 3.37244 4 3.66699C4.00018 3.96138 4.22397 4.2002 4.5 4.2002C4.77603 4.2002
+      4.99982 3.96138 5 3.66699C5 3.37244 4.77614 3.13379 4.5 3.13379ZM6.5 3.13379C6.22386 3.13379 6 3.37244
+      6 3.66699C6.00018 3.96138 6.22397 4.2002 6.5 4.2002C6.77603 4.2002 6.99982 3.96138 7 3.66699C7 3.37244
+      6.77614 3.13379 6.5 3.13379Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const ShellClusterIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={shellClusterSVG} {...props} ref={ref} />
+  ));
+
+// 集群文件管理图标
+const clusterFileManagerSVG = () => (
+  <svg
+    width="21"
+    height="16"
+    viewBox="0 0 21 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6.55859 0C7.41932 4.77956e-05 8.18376 0.550681 8.45605 1.36719L8.66699 2H18C19.1046 2 20 2.89543
+      20 4V9.75781C19.2849 9.27917 18.4251 9 17.5 9C15.0147 9 13 11.0147 13 13.5C13 14.4253 13.28 15.2849
+      13.7588 16H2C0.895431 16 4.832e-08 15.1046 0 14V2C0 0.895431 0.895431 0 2 0H6.55859ZM18.6943
+      11.2783C18.8846 11.2785 19.0585 11.3869 19.1426 11.5576L20.0186 13.3389C20.0889 13.482 20.0867 13.6507
+      20.0127 13.792L19.1367 15.46C19.0611 15.6039 18.921 15.7007 18.7627 15.7227L18.6943 15.7275H16.3857C16.2291
+      15.7275 16.083 15.6537 15.9893 15.5312L15.9521 15.4756L14.9971 13.8086C14.9115 13.659 14.9088 13.4751
+      14.9902 13.3232L15.9453 11.542C16.0324 11.3799 16.2017 11.2784 16.3857 11.2783H18.6943ZM16.001 13.5527L16.6748
+      14.7275H18.3926L19.0088 13.5527L18.3828 12.2783H16.6846L16.001 13.5527ZM17.499 12.8135C17.8799 12.8135 18.1893
+      13.1221 18.1895 13.5029C18.1894 13.8839 17.88 14.1924 17.499 14.1924C17.1182 14.1922 16.8096 13.8838 16.8096
+      13.5029C16.8097 13.1222 17.1183 12.8137 17.499 12.8135Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const ClusterFileManagerIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={clusterFileManagerSVG} {...props} ref={ref} />
+  ));
+
+// 创建应用图标
+const createAppSVG = () => (
+  <svg
+    width="18"
+    height="16"
+    viewBox="0 0 18 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M1 2C1 0.89543 1.89543 0 3 0H6.52936C7.63393 0 8.52936 0.895431 8.52936 2V5.52936C8.52936 6.63393 7.63393
+      7.52936 6.52936 7.52936H3C1.89543 7.52936 1 6.63393 1 5.52936V2ZM9.47064 2C9.47064 0.89543 10.3661 0 11.4706
+      0H15C16.1046 0 17 0.895431 17 2V5.52936C17 6.63393 16.1046 7.52936 15 7.52936H11.4706C10.3661 7.52936 9.47064
+      6.63393 9.47064 5.52936V2ZM3 8.41168C1.89543 8.41168 1 9.30711 1 10.4117V13.941C1 15.0456 1.89543 15.941
+      3 15.941H6.52936C7.63393 15.941 8.52936 15.0456 8.52936 13.941V10.4117C8.52936 9.30711 7.63393 8.41168
+      6.52936 8.41168H3ZM10.9999 11.5C10.9999 11.2239 11.2238 11 11.4999 11H12.9999V9.5C12.9999 9.22386 13.2238 9
+      13.4999 9C13.7761 9 13.9999 9.22386 13.9999 9.5V11H15.4999C15.776 11 15.9999 11.2239 15.9999 11.5C15.9999
+      11.7761 15.776 12 15.4999 12H13.9999V13.5C13.9999 13.7761 13.7761 14 13.4999 14C13.2238 14 12.9999 13.7761
+      12.9999 13.5V12H11.4999C11.2238 12 10.9999 11.7761 10.9999 11.5Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const CreateAppIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={createAppSVG} {...props} ref={ref} />
+  ));
+
+// 已创建APP图标
+const appSessionsSVG = () => (
+  <svg
+    width="18"
+    height="17"
+    viewBox="0 0 18 17"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M3 0C1.89543 0 1 0.89543 1 2V5.52936C1 6.63393 1.89543 7.52936 3 7.52936H6.52936C7.63393 7.52936 8.52936
+      6.63393 8.52936 5.52936V2C8.52936 0.895431 7.63393 0 6.52936 0H3ZM11.5294 0C10.4248 0 9.52936 0.89543 9.52936
+      2V5.52936C9.52936 6.63393 10.4248 7.52936 11.5294 7.52936H15.0587C16.1633 7.52936 17.0587 6.63393 17.0587
+      5.52936V2C17.0587 0.895431 16.1633 0 15.0587 0H11.5294ZM1 10.5294C1 9.42479 1.89543 8.52936 3
+      8.52936H6.52936C7.63393 8.52936 8.52936 9.42479 8.52936 10.5294V14.0587C8.52936 15.1633 7.63393 16.0587 6.52936
+      16.0587H3C1.89543 16.0587 1 15.1633 1 14.0587V10.5294ZM15.7828 11.3041C15.9611 11.0932 15.9346 10.7777 15.7237
+      10.5994C15.5128 10.4212 15.1974 10.4476 15.0191 10.6585L12.619 13.4976L11.4112 12.0688C11.2329 11.8579 10.9175
+      11.8315 10.7066 12.0098C10.4957 12.1881 10.4693 12.5035 10.6475 12.7144L12.2372 14.5949C12.3322 14.7073 12.4719
+      14.7721 12.619 14.7721C12.7662 14.7721 12.9059 14.7073 13.0009 14.5949L15.7828 11.3041Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+export const AppSessionsIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={appSessionsSVG} {...props} ref={ref} />
+  ));
 
 // 进入图标
 const inSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    width="1em"
+    height="1em"
+    viewBox="0 0 17 17"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path
       d="M10.5303 9.03033C10.8232 8.73744 10.8232 8.26256 10.5303 7.96967L5.75736 3.1967
     C5.46447 2.90381 4.98959 2.90381 4.6967 3.1967C4.40381 3.48959 4.40381 3.96447 4.6967 4.25736L8.93934 8.5
@@ -442,68 +675,39 @@ const inSVG = () => (
   </svg>
 );
 
-export const InIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={inSVG} {...props} ref={ref} />
-));
+export const InIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={inSVG} {...props} ref={ref} />
+  ),
+);
 
 // 作业模板图标
 const templateJobSVG = () => (
-  <svg width="1em" height="1em" viewBox="0 0 23 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <mask id="path-1-inside-1_840_4698" fill="white">
-      <rect x="4" y="3" width="15" height="6" rx="1" />
-    </mask>
-    <rect
-      x="4"
-      y="3"
-      width="15"
-      height="6"
-      rx="1"
-      fill="white"
-      stroke="currentColor"
-      strokeWidth="3"
-      mask="url(#path-1-inside-1_840_4698)"
-    />
-    <rect x="4.5" y="11.5" width="6" height="1" rx="0.5" fill="white" stroke="currentColor" />
-    <rect x="4.5" y="14.5" width="6" height="1" rx="0.5" fill="white" stroke="currentColor" />
-    <mask id="path-4-inside-2_840_4698" fill="white">
-      <rect x="4" y="17" width="7" height="5" rx="1" />
-    </mask>
-    <rect
-      x="4"
-      y="17"
-      width="7"
-      height="5"
-      rx="1"
-      fill="white"
-      stroke="currentColor"
-      strokeWidth="3"
-      mask="url(#path-4-inside-2_840_4698)"
-    />
-    <mask id="path-5-inside-3_840_4698" fill="white">
-      <rect width="7" height="12" rx="1" transform="matrix(-1 0 0 1 19 10)" />
-    </mask>
-    <rect
-      width="7"
-      height="12"
-      rx="1"
-      transform="matrix(-1 0 0 1 19 10)"
-      fill="white"
-      stroke="currentColor"
-      strokeWidth="3"
-      mask="url(#path-5-inside-3_840_4698)"
-    />
+  <svg
+    width="18"
+    height="17"
+    viewBox="0 0 18 17"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path
-      d="M2 1H21C21.5523 1 22 1.44771 22 2V3.97059V14.5588V23C22 23.5523 21.5523 24 21 24
-      H2C1.44771 24 1 23.5523 1 23V2C1 1.44772 1.44772 1 2 1Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M3 0C1.89543 0 1 0.89543 1 2V5.52936C1 6.63393 1.89543 7.52936 3 7.52936H6.52936C7.63393 7.52936 8.52936
+      6.63393 8.52936 5.52936V2C8.52936 0.895431 7.63393 0 6.52936 0H3ZM11.5294 0C10.4248 0 9.52936 0.89543 9.52936
+      2V5.52936C9.52936 6.63393 10.4248 7.52936 11.5294 7.52936H15.0587C16.1633 7.52936 17.0587 6.63393 17.0587
+      5.52936V2C17.0587 0.895431 16.1633 0 15.0587 0H11.5294ZM1 10.5294C1 9.42479 1.89543 8.52936 3
+      8.52936H6.52936C7.63393 8.52936 8.52936 9.42479 8.52936 10.5294V14.0587C8.52936 15.1633 7.63393 16.0587
+      6.52936 16.0587H3C1.89543 16.0587 1 15.1633 1 14.0587V10.5294ZM15.7828 11.3041C15.9611 11.0932 15.9346 10.7777
+      15.7237 10.5994C15.5128 10.4212 15.1974 10.4476 15.0191 10.6585L12.619 13.4976L11.4112 12.0688C11.2329 11.8579
+      10.9175 11.8315 10.7066 12.0098C10.4957 12.1881 10.4693 12.5035 10.6475 12.7144L12.2372 14.5949C12.3322 14.7073
+      12.4719 14.7721 12.619 14.7721C12.7662 14.7721 12.9059 14.7073 13.0009 14.5949L15.7828 11.3041Z"
+      fill="currentColor"
     />
   </svg>
 );
 
-export const TemplateJobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={templateJobSVG} {...props} ref={ref} />
-));
+export const TemplateJobIcon: React.ForwardRefExoticComponent<{}> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={templateJobSVG} {...props} ref={ref} />
+  ));

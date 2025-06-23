@@ -1,13 +1,10 @@
-import { Divider } from "antd";
 import { styled } from "styled-components";
 
 const FooterContainer = styled.div`
   display: flex;
   justify-content: center;
-
-  margin-bottom: 8px;
-  // https://v1.tailwindcss.com/docs/text-color text-gray-500
-  color: #a0aec0;
+  color: rgb(160, 174, 192);
+  margin-bottom: 12px;
 `;
 
 interface Props {
@@ -22,7 +19,6 @@ export const Footer: React.FC<Props> = ({ text, versionTag }) => {
       {
         text === "" ? "" : (
           <>
-            <Divider style={{ marginTop: 0, marginBottom: 10 }} />
             {
               text === undefined ? (
                 <FooterContainer>

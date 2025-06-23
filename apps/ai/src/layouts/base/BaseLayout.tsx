@@ -12,10 +12,9 @@
 
 "use client";
 
-import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { Grid, Layout } from "antd";
 import { usePathname } from "next/navigation";
-import React, { PropsWithChildren, useMemo, useState } from "react";
+import React, { PropsWithChildren, useMemo } from "react";
 import { useI18n } from "src/i18n";
 import { Header } from "src/layouts/base/header";
 import { match } from "src/layouts/base/matchers";
@@ -43,11 +42,13 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)`
-  margin: 8px;
+const Content = styled(Layout.Content)<{ isDashboard: boolean }>`
+  margin: ${(props) => props.isDashboard ? "8px 8px 35px" : "8px"};
   padding: 16px;
   flex: 1;
   background: ${({ theme }) => theme.token.colorBgLayout};
+  max-height: ${(props) => props.isDashboard ? "" : "calc(100vh - 78px)"};
+  overflow-y: auto;
 `;
 
 const StyledLayout = styled(Layout)`
@@ -63,12 +64,10 @@ type Props = PropsWithChildren<{
 }>;
 
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
-  routes = [], children, user = undefined, headerRightContent, versionTag, footerText,
+  routes = [], children, user = undefined, headerRightContent,
 }) => {
 
   const pathname = usePathname() ?? "";
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // get the first level route
   const firstLevelRoute = useMemo(() => routes.find((x) => match(x, pathname)), [routes, pathname]);
@@ -86,10 +85,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   return (
     <Root>
       <Header
-        setSidebarCollapsed={setSidebarCollapsed}
         pathname={pathname}
-        sidebarCollapsed={sidebarCollapsed}
-        hasSidebar={hasSidebar}
         routes={routes}
         user={user}
         logout={() => { useLogoutMutation.mutateAsync().then(() => { location.reload(); }); }}
@@ -102,17 +98,14 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           (hasSidebar) ? (
             <SideNav
               pathname={pathname}
-              collapsed={sidebarCollapsed}
               routes={sidebarRoutes}
-              setCollapsed={setSidebarCollapsed}
             />
           ) : undefined
         }
         <ContentPart>
-          <Content>
+          <Content isDashboard={pathname === "/dashboard"}>
             {children}
           </Content>
-          <Footer text={footerText} versionTag={versionTag} />
         </ContentPart>
       </StyledLayout>
     </Root>
