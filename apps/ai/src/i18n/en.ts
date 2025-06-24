@@ -290,6 +290,9 @@ export default {
       createApps:{
         create:"Create",
         title:"Create Application",
+        searchPlaceholder: "Enter application name",
+        noSearchResult: "No interactive application related to '{}' was found",
+        appNotFoundMessage: "No interactive application available for creation.",
       },
       historyJobs:{
         title:"Completed Jobs",

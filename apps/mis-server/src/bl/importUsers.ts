@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -20,8 +8,10 @@ import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
+import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
+import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
@@ -155,7 +145,34 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
     }));
   }
 
-  await em.persistAndFlush([...Object.values(usersMap), ...accounts, ...finalUserAccounts]);
+  const accountAppBlacklistsToPersist: AccountAppBlacklist[] = [];
+  // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
+  if (commonConfig.allowAppAuthorization && accounts.length > 0) {
+    const affiliatedTenantBlackAppList = await em.find(TenantAppBlacklist, {
+      tenant: tenant,
+    }, { populate: ["tenant"]});
+
+    if (affiliatedTenantBlackAppList.length > 0) {
+      const accountDisabledApps = accounts.flatMap((account) => {
+        return affiliatedTenantBlackAppList.map((t) => {
+          return new AccountAppBlacklist({
+            account: account,
+            cluster: t.cluster,
+            appId: t.appId,
+          });
+        });
+      });
+      // 将禁用应用列表添加到要持久化的实体列表中
+      accountAppBlacklistsToPersist.push(...accountDisabledApps);
+    }
+  }
+
+  await em.persistAndFlush([
+    ...Object.values(usersMap),
+    ...accounts,
+    ...finalUserAccounts,
+    ...accountAppBlacklistsToPersist,
+  ]);
 
   // 账户信息导入scow完成后，更新slurm的block状态
   const failedUnblockAccounts = [] as string[];

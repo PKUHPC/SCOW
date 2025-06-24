@@ -290,6 +290,9 @@ export default {
       createApps:{
         create:"创建",
         title:"创建应用",
+        searchPlaceholder: "请输入应用名",
+        noSearchResult: "未找到与 \"{}\" 相关的交互式应用",
+        appNotFoundMessage: "没有可以创建的交互式应用",
       },
       historyJobs:{
         title:"已完成的作业",

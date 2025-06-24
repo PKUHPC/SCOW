@@ -225,6 +225,8 @@ message GetAppMetadataResponse {
 
 message ListAvailableAppsRequest {
   string cluster = 1;
+  // 当开启授权应用功能后，过滤用户关联账户的可用应用
+  optional string user_id = 2;
 }
 
 message App {

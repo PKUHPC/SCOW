@@ -102,6 +102,8 @@ export interface PublicRuntimeConfig {
   NOTIF_NAME?: string;
 
   SCOW_RESOURCE_ENABLED: boolean | undefined;
+
+  ALLOW_APP_AUTHORIZATION?: boolean;
 }
 
 export const runtimeConfig: ServerRuntimeConfig = getConfig().serverRuntimeConfig;

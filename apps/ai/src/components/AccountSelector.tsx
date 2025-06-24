@@ -10,14 +10,20 @@ interface Props {
   cluster?: string;
   value?: string;
   onChange?: (value: string) => void;
+  useForCreateApp?: boolean;
+  appId?: string;
   onReload?: () => void;
 }
 
-export const AccountSelector: React.FC<Props> = ({ cluster, onChange, value, onReload }) => {
+export const AccountSelector: React.FC<Props> = ({ cluster, onChange, value, useForCreateApp, appId, onReload }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.accountSelector.");
 
-  const { data, isLoading, refetch } = trpc.account.listAccounts.useQuery({ clusterId: cluster });
+  const { data, isLoading, refetch } = trpc.account.listAccounts.useQuery({
+    clusterId: cluster,
+    useForCreateApp,
+    appId,
+  });
 
   useEffect(() => {
 

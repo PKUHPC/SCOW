@@ -713,6 +713,24 @@ message UnlockUser {
   string identity_id = 1;
 }
 
+message AuthorizeApp {
+  string cluster_id = 1;
+  string app_name = 2;
+  oneof target {
+    string account_name = 3;
+    string tenant_name = 4;
+  }
+}
+
+message UnauthorizeApp {
+  string cluster_id = 1;
+  string app_name = 2;
+  oneof target {
+    string account_name = 3;
+    string tenant_name = 4;
+  }
+}
+
 // INVALID_ARGUMENT: Custom event type name not match with exist type name.
 message CreateOperationLogRequest {
   string operator_user_id = 1;
@@ -827,6 +845,8 @@ message CreateOperationLogRequest {
     CompressFiles compress_files = 109;
     DecompressFile decompress_file = 110;
     UnlockUser unlock_user = 111;
+    AuthorizeApp authorize_app = 112;
+    UnauthorizeApp unauthorize_app = 113;
   }
 }
 
@@ -946,6 +966,8 @@ message OperationLog {
     CompressFiles compress_files = 111;
     DecompressFile decompress_file = 112;
     UnlockUser unlock_user = 113;
+    AuthorizeApp authorize_app = 114;
+    UnauthorizeApp unauthorize_app = 115;
   }
 }
 

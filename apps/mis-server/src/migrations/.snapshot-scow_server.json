@@ -20,6 +20,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "所属租户",
           "mappedType": "string"
         },
@@ -30,6 +31,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "所属账户",
           "mappedType": "string"
         },
@@ -40,6 +42,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账户拥有者id",
           "mappedType": "string"
         },
@@ -50,6 +53,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账户拥有者姓名",
           "mappedType": "string"
         },
@@ -60,6 +64,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账期，如202407、2024",
           "mappedType": "string"
         },
@@ -81,6 +86,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账单类型，年度账单或月度账单",
           "mappedType": "string"
         },
@@ -111,6 +117,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
+          "length": null,
           "comment": "账单详情，因为扣费类型不确定，此处用JSON展示，便于拓展",
           "mappedType": "json"
         }
@@ -141,6 +148,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "time": {
@@ -1847,6 +1855,156 @@
           "length": null,
           "mappedType": "integer"
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "app_id": {
+          "name": "app_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "cluster_id": {
+          "name": "cluster_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "default": "CURRENT_TIMESTAMP",
+          "mappedType": "datetime"
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "integer"
+        }
+      },
+      "name": "tenant_app_blacklist",
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_tenant_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "cluster_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_cluster_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "operator_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_operator_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "tenant_app_blacklist_tenant_id_foreign": {
+          "constraintName": "tenant_app_blacklist_tenant_id_foreign",
+          "columnNames": [
+            "tenant_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "tenant",
+          "updateRule": "cascade"
+        },
+        "tenant_app_blacklist_cluster_id_foreign": {
+          "constraintName": "tenant_app_blacklist_cluster_id_foreign",
+          "columnNames": [
+            "cluster_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "cluster",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "tenant_app_blacklist_operator_id_foreign": {
+          "constraintName": "tenant_app_blacklist_operator_id_foreign",
+          "columnNames": [
+            "operator_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "user",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
         "user_id": {
           "name": "user_id",
           "type": "int",
@@ -1914,6 +2072,157 @@
           ],
           "referencedTableName": "user",
           "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "app_id": {
+          "name": "app_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "cluster_id": {
+          "name": "cluster_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "default": "CURRENT_TIMESTAMP",
+          "mappedType": "datetime"
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "integer"
+        }
+      },
+      "name": "account_app_blacklist",
+      "indexes": [
+        {
+          "columnNames": [
+            "account_id"
+          ],
+          "composite": false,
+          "keyName": "account_app_blacklist_account_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "cluster_id"
+          ],
+          "composite": false,
+          "keyName": "account_app_blacklist_cluster_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "operator_id"
+          ],
+          "composite": false,
+          "keyName": "account_app_blacklist_operator_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "account_app_blacklist_account_id_foreign": {
+          "constraintName": "account_app_blacklist_account_id_foreign",
+          "columnNames": [
+            "account_id"
+          ],
+          "localTableName": "account_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "account",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "account_app_blacklist_cluster_id_foreign": {
+          "constraintName": "account_app_blacklist_cluster_id_foreign",
+          "columnNames": [
+            "cluster_id"
+          ],
+          "localTableName": "account_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "cluster",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "account_app_blacklist_operator_id_foreign": {
+          "constraintName": "account_app_blacklist_operator_id_foreign",
+          "columnNames": [
+            "operator_id"
+          ],
+          "localTableName": "account_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "user",
+          "deleteRule": "set null",
           "updateRule": "cascade"
         }
       },
@@ -2084,6 +2393,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "tenant_name": {
@@ -2093,6 +2403,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "所属租户",
           "mappedType": "string"
         },
@@ -2103,6 +2414,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "所属账户",
           "mappedType": "string"
         },
@@ -2113,6 +2425,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "用户id",
           "mappedType": "string"
         },
@@ -2123,6 +2436,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "用户姓名",
           "mappedType": "string"
         },
@@ -2133,6 +2447,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账期，如202407、2024",
           "mappedType": "string"
         },
@@ -2154,6 +2469,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 255,
           "comment": "账单类型，年度账单或月度账单",
           "mappedType": "string"
         },
@@ -2174,6 +2490,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "details": {
@@ -2183,6 +2500,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": null,
           "comment": "账单详情，因为扣费类型不确定，此处用JSON展示，便于拓展",
           "mappedType": "json"
         }

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 export default {
   common: {
     changeSuccess: "Modification Successful",
@@ -198,6 +186,8 @@ export default {
         resourceStatus: "Status",
         alarmLog: "Alarms",
         userUnlock: "User login unlocking",
+        permissionManagement: "Permission Management",
+        appAuthorization: "Authorize application",
       },
       tenantManagement: {
         firstNav: "Tenant",
@@ -220,6 +210,8 @@ export default {
         accountPayments: "Account Pay Records",
         accountChargeRecords: "Account Consumption Records",
         accountBills: "Account Bill Records",
+        permissionManagement: "Permission Management",
+        appAuthorization: "Authorize application",
       },
       accountManagement: {
         firstNav: "Accounts",
@@ -423,6 +415,67 @@ export default {
         be deducted again, so an additional data will be added to the consumption record, which will be counted as {} 1;
         If adjusted downwards, the account balance will need to be refunded, so an additional data
         will be added to the recharge record, and this amount will be counted as {} 2.`,
+      },
+      appAuthorization: {
+        appAuthorizationTable: {
+          title: "Application Authorization",
+          tenant: "Tenant",
+          account: "Account",
+          authorizedAppsCount: "Authorized Applications Count",
+          operation: "Operation",
+          authorizeApp: "Authorize Application",
+          detail: "Details",
+        },
+        appAuthorizationInfoDrawer: {
+          title: "Details",
+          tenant: "Tenant Name",
+          account: "Account Name",
+          cluster: "Cluster Name",
+          authorizedAppsCount: "Authorized Applications Count",
+          authorizedApps: "Authorized Applications",
+        },
+        authorizeAppModal: {
+          title: "Application Authorization",
+          tenant: "Tenant",
+          account: "Account",
+          cluster: "Cluster",
+          searchPlaceholder: "Enter application name",
+          searchButton: "Search",
+          appName: "Application Name",
+          operation: "Operation",
+          status: {
+            authorized: "Authorized",
+            unauthorized: "Unauthorized",
+          },
+          actions: {
+            authorize: "Authorize",
+            unauthorize: "Revoke Authorization",
+          },
+          confirm: {
+            authorize: {
+              title: "Authorization Confirmation",
+              tenantContent: "Are you sure you want to authorize application {1} on cluster {0} for tenant {2}?",
+              accountContent: "Are you sure you want to authorize application {1} on cluster {0} for account {2}?",
+              tenantWarning: "After authorization, all accounts under this tenant will synchronously be "
+              + "granted authorization for this application.",
+            },
+            unauthorize: {
+              title: "Revoke Authorization Confirmation",
+              tenantContent: "Are you sure you want to revoke authorization of application {1} "
+              + "on cluster {0} for tenant {2}?",
+              accountContent: "Are you sure you want to revoke authorization of application {1} "
+              + "on cluster {0} for account {2}?",
+              tenantWarning: "After revocation, all accounts under this tenant will synchronously have "
+              + "their authorization for this application canceled.",
+            },
+          },
+          messages: {
+            authorizeSuccess: "Application authorized successfully",
+            authorizeFailed: "Failed to authorize application",
+            unauthorizeSuccess: "Authorization revoked successfully",
+            unauthorizeFailed: "Failed to revoke authorization",
+          },
+        },
       },
     },
     dashboard: {
@@ -1437,6 +1490,8 @@ export default {
       decompressFile: "Decompress File",
       unlockUser: "Unlock user login",
       updatePasswordResetFlag: "Update mandatory password change identifier",
+      authorizeApp: "Authorize Application",
+      unauthorizeApp: "Revoke Application Authorization",
     },
     operationDetails: {
       submitJob: "Cluster: {}, Job ID: {}",
@@ -1567,6 +1622,8 @@ export default {
       changeEmail: "User: {}",
       editUserProfile: "User: {}",
       decompressFile: "Path: {0} , File {1}",
+      tenantAppAuthorizationLog: "Cluster: {0}, Application: {1}, Tenant: {2}",
+      accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
     },
   },
   userRoles: {

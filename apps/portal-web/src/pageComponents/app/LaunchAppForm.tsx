@@ -169,20 +169,20 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   // 判断系统保留APP字段:账户及分区或qos 是否已配置为固定值字段
   const fixedAccountName =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
   const fixedPartitionName =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.PARTITION);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.PARTITION);
   const fixedQosName =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.QOS);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.QOS);
 
   const fixedNodeCountValue =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT);
   const fixedCoreCountValue =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.CORE_COUNT);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.CORE_COUNT);
   const fixedGpuCountValue =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.GPU_COUNT);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.GPU_COUNT);
   const fixedMaxTimeValue =
-    getInitailFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
+    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
 
   const initialValues = {
     nodeCount: fixedNodeCountValue ? parseInt(fixedNodeCountValue, 10) : 1,
@@ -226,6 +226,8 @@ export const LaunchAppForm: React.FC<Props> = ({
         await api.getAccounts({ query: {
           cluster: clusterId,
           statusFilter: AccountStatusFilter.UNBLOCKED_ONLY,
+          useForCreateApp: true,
+          appId,
         } })
           .httpError(404, (error) => { message.error(error.message); })
           .then(async (accountsResp) => {
@@ -912,7 +914,7 @@ export const LaunchAppForm: React.FC<Props> = ({
 };
 
 // 在已配置固定值或固定选项时，获取系统保留字段的对应formField的固定值初始值
-const getInitailFixedValueByAttributeName = (
+const getInitialFixedValueByAttributeName = (
   reservedAppAttributes: ReservedAppAttribute[] | undefined,
   attributeName: ReservedAppAttributeName,
 ): string | undefined => {

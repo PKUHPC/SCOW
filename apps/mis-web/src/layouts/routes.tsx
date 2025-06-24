@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { LinkOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
@@ -18,10 +6,10 @@ import { join } from "path";
 import { Lang } from "react-typed-i18n";
 import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInfoIcon,
   AccountListIcon, AccountPayIcon, AccountPaymentsIcon, AccountWhitelistIcon, AdminInfoIcon, AdminManageIcon,
-  AlarmLogIcon, ClusterManagementIcon, CreateAccountIcon, CreateUserIcon,CreatTenantIcon,
+  AlarmLogIcon, AuthorizeAppIcon, ClusterManagementIcon, CreateAccountIcon, CreateUserIcon,CreatTenantIcon,
   DashBoardIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
   ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, OperationLogIcon, PartitionsIcon,
-  PayAccountIcon, PaymentsIcon, PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
+  PayAccountIcon, PaymentsIcon, PermissionManagementIcon,PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
   SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
   TenantPaymentsIcon, TenantsListIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
   UserSpaceIcon } from "src/assets/headerIcons";
@@ -123,6 +111,22 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             }] : []),
         ],
       },
+      // 开启资源管理或授权应用时展示 权限管理 导航
+      ...((platformRoles.includes(PlatformRole.PLATFORM_ADMIN) &&
+          (publicConfig.SCOW_RESOURCE_ENABLED || publicConfig.ALLOW_APP_AUTHORIZATION)) ? [{
+          Icon: PermissionManagementIcon,
+          text: t(pPlatform("permissionManagement")),
+          path: "/admin/permissionManagement",
+          clickable: false,
+          children: [
+            ...(publicConfig.ALLOW_APP_AUTHORIZATION ? [{
+              Icon: AuthorizeAppIcon,
+              text: t(pPlatform("appAuthorization")),
+              path: "/admin/permissionManagement/appAuthorization",
+            }] : []),
+            // 如果UI EXtension 添加了资源管理，展示在此处
+          ],
+        }] : []),
       {
         Icon: PlatformDebugIcon,
         text: t(pPlatform("systemDebug")),
@@ -277,6 +281,22 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
             },
           ],
         },
+        // 开启资源管理或授权应用时展示 权限管理 导航
+        ...((tenantRoles.includes(TenantRole.TENANT_ADMIN) &&
+          (publicConfig.SCOW_RESOURCE_ENABLED || publicConfig.ALLOW_APP_AUTHORIZATION)) ? [{
+            Icon: PermissionManagementIcon,
+            text: t(pTenant("permissionManagement")),
+            path: "/tenant/permissionManagement",
+            clickable: false,
+            children: [
+              ...(publicConfig.ALLOW_APP_AUTHORIZATION ? [{
+                Icon: AuthorizeAppIcon,
+                text: t(pTenant("appAuthorization")),
+                path: "/tenant/permissionManagement/appAuthorization",
+              }] : []),
+            // 如果UI EXtension 添加了资源管理，展示在此处
+            ],
+          }] : []),
       ] : []),
       ...(tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
           tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [

@@ -2,7 +2,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
-import { getI18nSeverTypeFormat } from "@scow/lib-server";
+import { getI18nSeverTypeFormat, libCheckAppIsDisabled, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import {
   AppCustomAttribute,
   AppCustomAttribute_AttributeType,
@@ -18,10 +18,13 @@ import {
 } from "@scow/protos/build/portal/app";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
 import { getClusterOps } from "src/clusterops";
+import { commonConfig } from "src/config/common";
+import { config } from "src/config/env";
 import { camelToSnakeCase, convertAttributesFixedValue,
   convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
+import { logger } from "src/utils/logger";
 
 const errorInfo = (reason: string) =>
   encodeMessage(ErrorInfo, { domain: "", reason: reason, metadata: {} });
@@ -115,6 +118,27 @@ export const appServiceServer = plugin((server) => {
           details: [errorInfo("NOT FOUND")],
         });
       }
+
+      // 如果开启了授权应用，提交时再次检查该应用是否已对账户禁用
+      if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization) {
+        const isAppDisabledToAccount = await libCheckAppIsDisabled(
+          logger,
+          cluster,
+          appId,
+          account,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+
+        if (isAppDisabledToAccount) {
+          throw new DetailedError({
+            code: Status.NOT_FOUND,
+            message: `App ${appId} is disabled to account ${account}`,
+            details: [errorInfo("NOT FOUND")],
+          });
+        }
+      }
+
       const attributesConfig = app.attributes;
       attributesConfig?.forEach((attribute) => {
         if (attribute.required && !(attribute.name in customAttributes) && attribute.name !== "sbatchOptions") {
@@ -298,8 +322,15 @@ export const appServiceServer = plugin((server) => {
 
     listAvailableApps: async ({ request }) => {
 
-      const { cluster } = request;
+      const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
+
+      // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
+      if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
+        const availableApps = await libGetUserAvailableClusterApps(
+          logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+        return [ availableApps ];
+      }
 
       const apps = getClusterAppConfigs(cluster);
 

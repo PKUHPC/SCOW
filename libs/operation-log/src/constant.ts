@@ -120,4 +120,6 @@ export const OperationType: OperationTypeEnum = {
   decompressFile: "decompressFile",
   compressFiles: "compressFiles",
   unlockUser: "unlockUser",
+  authorizeApp: "authorizeApp",
+  unauthorizeApp: "unauthorizeApp",
 };

@@ -665,6 +665,50 @@ export const mockApi: MockApi<typeof api> = {
   getLockedUsers: null,
   unlockUser: null,
   updatePasswordResetFlag: null,
+  getTargetAppAuthorizations: async () => ({
+    appLists: [
+      {
+        targetName: "test1",
+        appsInfo: [
+          {
+            appId: "vscode",
+            appName: "vscode",
+            isDisabled: false,
+          },
+          {
+            appId: "emacs",
+            appName: "emacs",
+            isDisabled: false,
+          },
+        ],
+        availableAppsCount: 2,
+      },
+      {
+        targetName: "test2",
+        appsInfo: [
+          {
+            appId: "vscode",
+            appName: "vscode",
+            isDisabled: true,
+          },
+          {
+            appId: "emacs",
+            appName: "emacs",
+            isDisabled: false,
+          },
+        ],
+        availableAppsCount: 1,
+      },
+    ],
+    totalCount: 2,
+  }),
+  authorizeApp: null,
+  getTenantAssignedClustersAndPartitions: async () => ({
+    assignedClusterPartitions: {
+      "hpc01": { partitionNames: ["partition1", "partition2"]},
+      "hpc02": { partitionNames: ["compute", "gpu"]},
+    },
+  }),
 };
 
 export const MOCK_USER_INFO = {

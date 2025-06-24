@@ -1,18 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { getCommonConfig } from "@scow/config/src/common";
 import { libGetAccounts } from "@scow/lib-server";
+import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { config } from "src/server/config/env";
 import { router } from "src/server/trpc/def";
@@ -38,11 +27,13 @@ export const accountRouter = router({
     })
     .input(z.object({
       clusterId: z.optional(z.string()),
+      useForCreateApp: z.optional(z.boolean()),
+      appId: z.optional(z.string()),
       ...paginationSchema.shape,
     }))
     .output(z.object({ accounts: z.array(z.string()), count: z.number() }))
     .query(async ({ input, ctx: { user } }) => {
-      const { clusterId, page, pageSize } = input;
+      const { clusterId, useForCreateApp, appId, page, pageSize } = input;
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
 
@@ -50,8 +41,21 @@ export const accountRouter = router({
         return { accounts: [], count: 0 };
       }
 
-      // 判断是否已部署管理系统，如果是则调用管理系统数据库，返回可用账户列表
       const commonConfig = getCommonConfig();
+
+      let appForbiddenAccounts: string[] = [];
+      // 如果部署了管理系统且开启了授权应用功能
+      // 当在创建交互式应用时查询可用账户时，需要过滤掉此应用未授权的账户
+      if (config.MIS_DEPLOYED &&
+        config.MIS_SERVER_URL &&
+        commonConfig.allowAppAuthorization &&
+        useForCreateApp && appId) {
+        appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
+          clusterId, appId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      }
+
+
+      // 判断是否已部署管理系统，如果是则调用管理系统数据库，返回可用账户列表
       if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
         const userUnblockedAccounts = await libGetAccounts(logger,
           user.identityId,
@@ -63,7 +67,9 @@ export const accountRouter = router({
         const { paginatedItems: paginatedAccounts, totalCount } = paginate(
           userUnblockedAccounts.accounts, page, pageSize,
         );
-        return { accounts: paginatedAccounts, count: totalCount };
+
+        const filteredAccounts = paginatedAccounts.filter((a) => (!appForbiddenAccounts.includes(a)));
+        return { accounts: filteredAccounts, count: totalCount };
 
       }
 
@@ -73,8 +79,11 @@ export const accountRouter = router({
       }
       const { accounts } = await asyncClientCall(client.account, "listAccounts", { userId: user.identityId });
 
+
+      const filteredAccounts = accounts.filter((a) => (!appForbiddenAccounts.includes(a)));
+
       const { paginatedItems: paginatedAccounts, totalCount } = paginate(
-        accounts, page, pageSize,
+        filteredAccounts, page, pageSize,
       );
 
       return { accounts: paginatedAccounts, count: totalCount };

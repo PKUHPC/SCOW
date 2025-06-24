@@ -51,6 +51,7 @@ interface Props {
   isTraining?: boolean;
   createAppParams?: CreateAppInput;
   trainJobInput?: TrainJobInput;
+  useForCreateApp?: boolean;
 }
 
 export interface DataAttributes {
@@ -143,7 +144,7 @@ export const LaunchAppForm = (props: Props) => {
   const p = prefix("app.jobs.launchAppForm.");
 
   const { clusterId, appName, clusterInfo, isTraining = false,
-    appId, attributes = [], appImage, createAppParams, trainJobInput,appComment } = props;
+    appId, attributes = [], appImage, createAppParams, trainJobInput,appComment, useForCreateApp } = props;
 
   const { message } = App.useApp();
   const theme = useTheme();
@@ -1601,8 +1602,11 @@ export const LaunchAppForm = (props: Props) => {
           name="account"
           rules={[{ required: true }]}
         >
+          {/* 只有为创建应用页面时，会结合管理系统部署的授权应用功能过滤应用已授权的账户 */}
           <AccountSelector
             cluster={clusterId}
+            useForCreateApp={useForCreateApp}
+            appId={useForCreateApp ? appId : undefined}
             onChange={(value) => {
               setSelectedAccountName(value);
             }}

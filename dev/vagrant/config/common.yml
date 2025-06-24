@@ -50,9 +50,15 @@ passwordPattern:
 #   # 启动时是否执行封锁状态同步功能（如果暂未初始化资源管理数据，建议关闭；如已完成初始化资源管理数据则建议开启）
 #   syncBlockStatusWhenStart: false
 
-# scow资源管理系统
+# scow消息系统
 # notification:
 #   # 是否启用消息系统
 #   enabled: true
 #   # 消息系统url
 #   address: http://localhost:6004
+
+
+# 在 管理系统/超算平台/AI系统 中是否支持授权交互式应用功能
+# 布尔值，默认为true，不配置时表示开启
+# allowAppAuthorization: true
+

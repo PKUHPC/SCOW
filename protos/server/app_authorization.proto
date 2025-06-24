@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package scow.server;
+
+message GetTargetAppAuthorizationsRequest {
+  uint32 page_size = 1;
+  uint32 page = 2;
+  string cluster_id = 3;
+  enum TargetType {
+    UNKNOWN = 0;
+    TENANT = 1;
+    ACCOUNT = 2;
+  }
+  TargetType target_type = 4;
+  // 当 target_type 为 ACCOUNT 时，tenant_name必须指定 表示租户名
+  optional string tenant_name = 5;
+  // 查询的名称，租户名或账户名
+  optional string filter_target_name = 6;
+}
+
+message AppAuthorizationInfo {
+  string app_id = 1;
+  string app_name = 2;
+  // 应用是否被禁用
+  bool is_disabled = 3;
+}
+
+message TargetAppList {
+  // 当请求对象为 AccountsTarget时 ，target_name 表示 account_name
+  // 当请求对象为 TenantsTarget时， target_name 表示 tenant_name
+  string target_name = 1;
+  repeated AppAuthorizationInfo apps_info = 2;
+  // 已被授权的应用总数
+  uint32 available_apps_count = 3;
+}
+
+message GetTargetAppAuthorizationsResponse {
+  repeated TargetAppList app_lists = 1;
+  uint32 total_count = 2;
+}
+
+message AuthorizeAppRequest {
+  string cluster_id = 1;
+  string app_id = 2;
+  string operator_id = 3;
+
+  enum AuthorizeAction {
+    AUTHORIZE = 0;
+    UNAUTHORIZE = 1;
+  }
+  AuthorizeAction action = 4;
+
+  oneof target {
+    string account_name = 5;
+    string tenant_name = 6;
+  }
+}
+
+message AuthorizeAppResponse {
+  bool executed = 1;
+}
+
+message GetUserAvailableClusterAppsRequest {
+  string cluster_id = 1;
+  string user_id = 2;
+}
+
+message GetUserAvailableClusterAppsResponse {
+  message App {
+    string id = 1;
+    string name = 2;
+    optional string logo_path = 3;
+  }
+  repeated App apps = 1;
+}
+
+message GetAppForbiddenAccountsRequest {
+  string cluster_id = 1;
+  string app_id = 2;
+}
+
+message GetAppForbiddenAccountsResponse {
+  repeated string account_names = 1;
+}
+
+message CheckAppIsDisabledRequest {
+  string cluster_id = 1;
+  string app_id = 2;
+  string account_name = 3;
+}
+
+message CheckAppIsDisabledResponse {
+  bool is_disabled = 1;
+}
+
+service AppAuthorizationService {
+  // 获取账户或租户的App列表
+  rpc GetTargetAppAuthorizations(GetTargetAppAuthorizationsRequest) returns (GetTargetAppAuthorizationsResponse);
+  // 授权/取消授权应用
+  rpc AuthorizeApp(AuthorizeAppRequest) returns (AuthorizeAppResponse);
+  // 获取用户关联的账户在集群下可用的应用列表
+  rpc GetUserAvailableClusterApps(GetUserAvailableClusterAppsRequest) returns (GetUserAvailableClusterAppsResponse);
+  // 获取应用的禁用账户列表
+  rpc GetAppForbiddenAccounts(GetAppForbiddenAccountsRequest) returns (GetAppForbiddenAccountsResponse);
+  // 检查当前账户是否已被禁用此应用
+  rpc CheckAppIsDisabled(CheckAppIsDisabledRequest) returns (CheckAppIsDisabledResponse);
+}

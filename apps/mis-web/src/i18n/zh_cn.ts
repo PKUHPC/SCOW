@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 export default {
   common:{
     changeSuccess:"修改成功",
@@ -198,6 +186,8 @@ export default {
         resourceStatus: "资源状态",
         alarmLog: "告警日志",
         userUnlock: "用户登录解封",
+        permissionManagement: "权限管理",
+        appAuthorization: "授权应用",
       },
       tenantManagement: {
         firstNav: "租户管理",
@@ -220,6 +210,8 @@ export default {
         accountPayments: "账户充值记录",
         accountChargeRecords: "账户消费记录",
         accountBills: "账户账单明细",
+        permissionManagement: "权限管理",
+        appAuthorization: "授权应用",
       },
       accountManagement: {
         firstNav:"账户管理",
@@ -423,6 +415,67 @@ export default {
         如果向下调整，则需要退回账户余额，因此会在充值记录中增加一条数据，这部分金额将会被统计到{}2。`,
 
 
+      },
+      appAuthorization: {
+        appAuthorizationTable: {
+          title: "授权应用",
+          tenant: "租户",
+          account: "账户",
+          authorizedAppsCount: "已授权应用数",
+          operation: "操作",
+          authorizeApp: "授权应用",
+          detail: "详情",
+        },
+        appAuthorizationInfoDrawer: {
+          title: "详情",
+          tenant: "租户名",
+          account: "账户名",
+          cluster: "集群名",
+          authorizedAppsCount: "已授权应用数",
+          authorizedApps: "已授权应用",
+        },
+        authorizeAppModal: {
+          title: "授权应用",
+          tenant: "租户",
+          account: "账户",
+          cluster: "集群",
+          searchPlaceholder: "请输入应用名",
+          searchButton: "搜索",
+          appName: "应用名",
+          operation: "操作",
+          status: {
+            authorized: "已授权",
+            unauthorized: "未授权",
+          },
+          actions: {
+            authorize: "授权",
+            unauthorize: "取消授权",
+          },
+          confirm: {
+            authorize: {
+              title: "授权",
+              tenantContent: "确定要在集群 {0} 下将应用 {1} 对租户 {2} 授权吗？",
+              accountContent: "确定要在集群 {0} 下将应用 {1} 对账户 {2} 授权吗？",
+              tenantWarning: "进行授权后，该租户下所有账户均同步添加该应用的授权",
+
+            },
+            unauthorize: {
+              title: "取消授权",
+              tenantContent: "确定要在集群 {0} 下取消应用 {1} 对租户 {2} 的授权吗？",
+
+              accountContent: "确定要在集群 {0} 下取消应用 {1} 对账户 {2} 的授权吗？",
+
+              tenantWarning: "取消授权后，该租户下所有账户均同步取消该应用的授权",
+
+            },
+          },
+          messages: {
+            authorizeSuccess: "授权应用成功",
+            authorizeFailed: "授权应用失败",
+            unauthorizeSuccess: "取消授权应用成功",
+            unauthorizeFailed: "取消授权应用失败",
+          },
+        },
       },
     },
     dashboard:{
@@ -1433,6 +1486,8 @@ export default {
       decompressFile: "解压文件",
       unlockUser: "解锁用户登录",
       updatePasswordResetFlag: "更新强制修改密码标识",
+      authorizeApp: "授权应用",
+      unauthorizeApp: "取消授权应用",
     },
     operationDetails: {
       submitJob: "集群: {}, 作业ID: {}",
@@ -1563,6 +1618,8 @@ export default {
       changeEmail: "用户: {}",
       editUserProfile: "用户: {}",
       decompressFile: "路径: {0} , 文件 {1}",
+      tenantAppAuthorizationLog: "集群: {0}, 应用: {1}, 租户: {2}",
+      accountAppAuthorizationLog: "集群: {0}, 应用: {1}, 账户: {2}",
     },
   },
   userRoles: {

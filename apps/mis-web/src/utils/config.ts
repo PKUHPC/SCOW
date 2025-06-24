@@ -130,7 +130,12 @@ export interface PublicRuntimeConfig {
 
   BILL_ENABLED?: boolean;
   CHANGE_JOB_PRICE_TYPE: string;
+
+  SCOW_RESOURCE_ENABLED?: boolean;
+  ALLOW_APP_AUTHORIZATION?: boolean;
 }
+
+
 
 export const runtimeConfig: ServerRuntimeConfig = getConfig().serverRuntimeConfig;
 export const publicConfig: PublicRuntimeConfig = getConfig().publicRuntimeConfig;

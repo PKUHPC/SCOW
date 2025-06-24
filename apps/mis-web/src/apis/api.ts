@@ -1,9 +1,10 @@
 /* eslint-disable @stylistic/max-len */
-
 import { apiClient } from "src/apis/client";
 import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
 import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
 import type { ActivateClusterSchema } from "src/pages/api/admin/activateCluster";
+import type { AuthorizeAppSchema } from "src/pages/api/admin/authorization/authorizeApp";
+import type { GetTargetAppAuthorizationsSchema } from "src/pages/api/admin/authorization/getTargetAppAuthorizations";
 import type { ChangeJobPriceSchema } from "src/pages/api/admin/changeJobPrice";
 import type { ChangePasswordAsPlatformAdminSchema } from "src/pages/api/admin/changePassword";
 import type { ChangeStorageQuotaSchema } from "src/pages/api/admin/changeStorage";
@@ -104,6 +105,7 @@ import type { CreateAccountSchema } from "src/pages/api/tenant/createAccount";
 import type { CreateTenantWithExistingUserAsAdminSchema } from "src/pages/api/tenant/createTenantWithExistingUserAsAdmin";
 import type { DeleteAccountSchema } from "src/pages/api/tenant/deleteAccount";
 import type { GetAccountsSchema } from "src/pages/api/tenant/getAccounts";
+import type{ GetTenantAssignedClustersAndPartitionsSchema } from "src/pages/api/tenant/getTenantAssignedClustersAndPartitions";
 import type { GetTenantsSchema } from "src/pages/api/tenant/getTenants";
 import type { SetBlockThresholdSchema } from "src/pages/api/tenant/setBlockThreshold";
 import type { SetDefaultAccountBlockThresholdSchema } from "src/pages/api/tenant/setDefaultAccountBlockThreshold";
@@ -243,4 +245,7 @@ export const api = {
   unblockUserInAccount: apiClient.fromTypeboxRoute<typeof UnblockUserInAccountSchema>("PUT", "/api/users/unblockInAccount"),
   unsetAdmin: apiClient.fromTypeboxRoute<typeof UnsetAdminSchema>("PUT", "/api/users/unsetAdmin"),
   isAccountBelowBlockThreshold:apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>("GET","/api/admin/isAccountBelowBlockThreshold"),
+  getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>("GET", "/api/admin/authorization/getTargetAppAuthorizations"),
+  authorizeApp: apiClient.fromTypeboxRoute<typeof AuthorizeAppSchema>("PUT", "/api/admin/authorization/authorizeApp"),
+  getTenantAssignedClustersAndPartitions: apiClient.fromTypeboxRoute<typeof GetTenantAssignedClustersAndPartitionsSchema>("GET", "/api/tenant/getTenantAssignedClustersAndPartitions"),
 };

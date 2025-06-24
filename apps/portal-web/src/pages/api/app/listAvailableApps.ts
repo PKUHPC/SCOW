@@ -1,20 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
 import { Static, Type } from "@sinclair/typebox";
+import { authenticate } from "src/auth/server";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
@@ -51,22 +40,31 @@ export const ListAvailableAppsSchema = typeboxRouteSchema({
   },
 });
 
-// This API is called from server
-// API call from server doesn't contain any cookie
-// So the API cannot use authenticate way
+// ~~ DEPRECATED: Old implementation, replaced with new version ~~
+// ~~ This API is called from server ~~
+// ~~ API call from server doesn't contain any cookie ~~
+// ~~ So the API cannot use authenticate way ~~
 //
-// it's limitation from next-typed-api-routes
-// Will be resolved after migrating to trpc
+// ~~ it's limitation from next-typed-api-routes ~~
+// ~~ Will be resolved after migrating to trpc ~~
 //
-// For now, the API requires token from query
-// and authenticate manually
-export default /* #__PURE__*/route(ListAvailableAppsSchema, async (req) => {
+// ~~ For now, the API requires token from query ~~
+// ~~ and authenticate manually ~~
+
+
+const auth = authenticate(() => true);
+
+export default /* #__PURE__*/route(ListAvailableAppsSchema, async (req, res) => {
+
+  const info = await auth(req, res);
+
+  if (!info) { return; }
 
   const { cluster } = req.query;
 
   const client = getClient(AppServiceClient);
 
-  return asyncUnaryCall(client, "listAvailableApps", { cluster }).then((reply) => {
+  return asyncUnaryCall(client, "listAvailableApps", { cluster, userId: info.identityId }).then((reply) => {
     return { 200: { apps: reply.apps } };
   }, handlegRPCError({
     [status.UNKNOWN]: (e) => ({ 500: { code: "APP_CONFIG_ERROR" as const,

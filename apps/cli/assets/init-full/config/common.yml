@@ -25,3 +25,8 @@ passwordPattern:
 # 若systemLanguage配置为字符串，类型必须指定为当前系统合法语言["zh_cn"，"en"]的字符串枚举值
 # SCOW直接使用此语言，不允许用户再进行语言切换
 # systemLanguage: "zh_cn"
+
+
+# 在 管理系统/超算平台/AI系统 中是否支持授权交互式应用功能
+# 布尔值，默认为true，不配置时表示开启
+# allowAppAuthorization: true

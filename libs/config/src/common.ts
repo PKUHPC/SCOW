@@ -79,6 +79,8 @@ export const CommonConfigSchema = Type.Object({
   scowResource: Type.Optional(ScowResourceConfigSchema),
 
   notification: Type.Optional(NotificationConfigSchema),
+
+  allowAppAuthorization: Type.Boolean({ description: "开启授权交互式应用功能", default: true }),
 });
 
 export const getSystemLanguageConfig = (systemLanguage: SystemLanguage): SystemLanguageConfig => {

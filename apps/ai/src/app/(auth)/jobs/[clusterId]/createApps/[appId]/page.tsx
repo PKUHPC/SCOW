@@ -51,6 +51,7 @@ export default function Page({ params }: { params: { clusterId: string, appId: s
         clusterInfo={clusterInfo}
         appImage={appInfo.appImage}
         createAppParams={createAppParams}
+        useForCreateApp={true}
       />
     </div>
   );

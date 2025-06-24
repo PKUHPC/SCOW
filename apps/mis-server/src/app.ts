@@ -29,6 +29,8 @@ import { tenantServiceServer } from "src/services/tenant";
 import { userServiceServer } from "src/services/user";
 import { loggerOptions } from "src/utils/logger";
 
+import { appAuthorizationServiceServer } from "./services/appAuthorization";
+
 export async function createServer() {
 
   const server = new Server({
@@ -56,6 +58,7 @@ export async function createServer() {
   await server.register(misConfigServiceServer);
   await server.register(exportServiceServer);
   await server.register(billServiceServer);
+  await server.register(appAuthorizationServiceServer);
 
   return server;
 }

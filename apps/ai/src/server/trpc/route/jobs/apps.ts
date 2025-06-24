@@ -1,19 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { jobInfo_PodStatusToJSON } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppType } from "@scow/config/build/appForAi";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { libCheckAppIsDisabled, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
@@ -21,6 +10,8 @@ import fs from "fs";
 import { join } from "path";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { commonConfig } from "src/server/config/common";
+import { config } from "src/server/config/env";
 import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -169,6 +160,13 @@ export const listAvailableApps = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
+    // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
+    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
+      const availableApps = await libGetUserAvailableClusterApps(
+        logger, clusterId, user.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      return availableApps;
+    }
+
     const apps = getClusterAppConfigs(clusterId);
 
     return {
@@ -299,7 +297,8 @@ export const createAppSession = procedure
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-    const { clusterId, appId, appJobName, maxTime, algorithms,image, datasets, models, customAttributes } = input;
+    const { clusterId, appId, appJobName,
+      maxTime, algorithms,image, datasets, models, customAttributes, account } = input;
 
     const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
     const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -327,6 +326,25 @@ export const createAppSession = procedure
 
     const apps = getClusterAppConfigs(clusterId);
     const app = checkAppExist(apps, appId);
+
+    // 如果开启了授权应用，提交时再次检查该应用是否已对账户禁用
+    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization) {
+      const isAppDisabledToAccount = await libCheckAppIsDisabled(
+        logger,
+        clusterId,
+        appId,
+        account,
+        config.MIS_SERVER_URL,
+        commonConfig.scowApi?.auth?.token,
+      );
+
+      if (isAppDisabledToAccount) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `The appId ${appId} is disabled to account ${account}`,
+        });
+      }
+    }
 
     const proxyBasePath = join(BASE_PATH, "/api/proxy", clusterId);
 

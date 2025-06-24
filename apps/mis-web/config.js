@@ -216,6 +216,9 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     BILL_ENABLED: misConfig.bill?.enabled,
     CHANGE_JOB_PRICE_TYPE: misConfig.changeJobPriceType,
+
+    SCOW_RESOURCE_ENABLED: commonConfig.scowResource.enabled,
+    ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
   };
 
   if (!building) {

@@ -1,26 +1,18 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
+import { Button, Form, Input, Space } from "antd";
+import { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
 import { trpc } from "src/utils/trpc";
 
 import { SelectAppTable } from "../SelectAppTable";
 
+interface FilterForm {
+  appName: string | undefined;
+}
 
 const useClusterAppConfigQuery = (clusterId: string) => {
   return trpc.jobs.listAvailableApps.useQuery({ clusterId });
@@ -35,16 +27,13 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const { publicConfig } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
 
-
-  if (!cluster) {
-    return <NotFoundPage />;
-  }
+  const [filterForm] = Form.useForm<FilterForm>();
+  const initialFilterQuery = {
+    appName: undefined,
+  };
+  const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
 
   const { data, isLoading, isError } = useClusterAppConfigQuery(clusterId);
-
-  if (isLoading) {
-    return <p>loading...</p>;
-  }
 
   if (isError) {
     return (
@@ -52,12 +41,66 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     );
   }
 
+  // 前端过滤查询结果
+  const filteredData = useMemo(() => {
+
+    if (!data?.apps || isLoading) return undefined;
+
+    // 确保 query.appName 是有效的字符串
+    const searchTerm = query.appName?.trim().toLowerCase() || "";
+    if (!searchTerm) {
+      return data;
+    }
+    const filteredValues = data.apps
+      .filter((app) => app.name.toLowerCase().includes(searchTerm));
+    return { apps: filteredValues };
+
+  }, [data, isLoading, query.appName]);
+
   return (
     <>
-      <PageTitle
-        titleText={t(p("title"))}
-      />
-      <SelectAppTable publicPath={publicConfig.PUBLIC_PATH} clusterId={clusterId} apps={data?.apps || []} />
+      {
+        isLoading ? (
+          <div style={{ textAlign: "center", marginTop: "100px" }}>
+            <p>loading...</p>
+          </div>
+        ) : (
+          <>
+            <PageTitle
+              titleText={t(p("title"))}
+            />
+            <Space style={{ marginBottom: "20px", display: "flex", justifyContent: "flex-end" }}>
+              <Form<FilterForm>
+                layout="inline"
+                form={filterForm}
+                initialValues={initialFilterQuery}
+                onFinish={async () => {
+                  const { appName } = await filterForm.validateFields();
+                  setQuery({ appName: appName === "" ? undefined : appName?.trim() });
+                }}
+              >
+                <Form.Item name="appName">
+                  <Input allowClear placeholder={t(p("searchPlaceholder"))} />
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit">
+                    {t("button.searchButton")}
+                  </Button>
+                </Form.Item>
+              </Form>
+            </Space>
+            {
+              !cluster || !filteredData?.apps || filteredData.apps.length === 0 ? (
+                <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
+                  {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("appNotFoundMessage"))}
+                </div>
+              ) : (
+                <SelectAppTable publicPath={publicConfig.PUBLIC_PATH} clusterId={clusterId} apps={filteredData.apps} />
+              )
+            }
+          </>
+        )
+      }
     </>
   );
 }

@@ -467,6 +467,8 @@ export default {
         notFoundMessage: "没有可以创建的交互式应用",
         loading: "正在加载可创建的交互式应用",
         create: "创建",
+        searchPlaceholder: "请输入应用名",
+        noSearchResult: "未找到与 \"{}\" 相关的交互式应用",
       },
       launchAppForm: {
         errorMessage: "创建应用失败",

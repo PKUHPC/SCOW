@@ -467,6 +467,8 @@ export default {
         notFoundMessage: "No interactive application available for creation.",
         loading: "Loading available interactive applications...",
         create: "Create",
+        searchPlaceholder: "Enter application name",
+        noSearchResult: "No interactive application related to '{}' was found",
       },
       launchAppForm: {
         errorMessage: "Failed to create application.",

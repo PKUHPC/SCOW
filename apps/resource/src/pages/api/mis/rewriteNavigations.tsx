@@ -44,7 +44,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
     // 将租户授权分区页面插入到 平台管理-租户管理-三级导航的末端
     const adminTargetNav = body.navs.find((nav) =>
-      (nav.path === "/admin"))?.children?.find((child) => child.path === "/admin/tenants");
+      (nav.path === "/admin"))?.children?.find((child) => child.path === "/admin/permissionManagement");
     if (!adminTargetNav?.children) {
       throw new TRPCError({
         message: "The navigation Platform/Tenants can not be found."
@@ -65,7 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // 将账户默认授权分区页面插入到 租户管理-账户管理-三级导航的末端
   // 将账户授权分区页面插入到账户默认授权分区页面后
     const tenantTargetNav = body.navs.find((nav) =>
-      (nav.path === "/tenant"))?.children?.find((child) => child.path === "/tenant/accounts");
+      (nav.path === "/tenant"))?.children?.find((child) => child.path === "/tenant/permissionManagement");
 
     if (!tenantTargetNav?.children) {
       throw new TRPCError({

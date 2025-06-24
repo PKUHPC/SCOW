@@ -32,8 +32,10 @@ import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
 import { commonConfig } from "src/config/common";
 import { Account, AccountState } from "src/entities/Account";
+import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
+import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { User, UserState } from "src/entities/User";
 import { UserAccount, UserRole as EntityUserRole, UserStatus } from "src/entities/UserAccount";
 import { InternalMessageType } from "src/models/messageType";
@@ -291,8 +293,27 @@ export const accountServiceServer = plugin((server) => {
         account, user, role: EntityUserRole.OWNER, blockedInCluster: UserStatus.UNBLOCKED,
       });
 
+      const entitiesToPersist: (Account | UserAccount | AccountAppBlacklist)[] = [account, userAccount];
+      // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
+      if (commonConfig.allowAppAuthorization) {
+        const affiliatedTenantBlackAppList = await em.find(TenantAppBlacklist, {
+          tenant: tenant,
+        }, { populate: ["tenant"]});
+
+        const accountDisabledApps = affiliatedTenantBlackAppList.map((t) => {
+          return new AccountAppBlacklist({
+            account: account,
+            cluster: t.cluster,
+            appId: t.appId,
+          });
+        });
+        // 将禁用应用列表添加到要持久化的实体列表中
+        entitiesToPersist.push(...accountDisabledApps);
+      }
+
       try {
-        await em.persistAndFlush([account, userAccount]);
+        // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
+        await em.persistAndFlush(entitiesToPersist);
       } catch (e) {
         if (e instanceof UniqueConstraintViolationException) {
           throw {

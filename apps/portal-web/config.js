@@ -200,6 +200,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     SCOW_RESOURCE_ENABLED: commonConfig.scowResource?.enabled,
 
+    ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
   };
 
   if (!building && !testenv) {
