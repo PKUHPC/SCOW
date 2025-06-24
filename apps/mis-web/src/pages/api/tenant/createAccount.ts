@@ -53,7 +53,12 @@ export const CreateAccountSchema = typeboxRouteSchema({
     }),
     /** ownerId不存在 */
     404: Type.Null(),
-    409: Type.Null(),
+    409: Type.Object({
+      code: Type.Union([
+        Type.Literal("ALREADY_EXISTS"),
+        Type.Literal("FAILED_PRECONDITION"),
+      ]),
+    }),
     401: Type.Object({ message: Type.String() }),
   },
 });
@@ -109,9 +114,10 @@ export default route(CreateAccountSchema,
         return { 200: x };
       })
       .catch(handlegRPCError({
-        [Status.ALREADY_EXISTS]: () => ({ 409: null }),
+        [Status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS" as const } }),
         [Status.NOT_FOUND]: () => ({ 404: null }),
         [Status.UNAUTHENTICATED]: (e) => ({ 401: { message: e.details } }),
+        [Status.FAILED_PRECONDITION]: () => ({ 409: { code: "FAILED_PRECONDITION" as const } }),
       },
       async () => await callLog(logInfo, OperationResult.FAIL),
       ));

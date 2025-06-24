@@ -63,6 +63,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
     const { limit } = await form.validateFields();
     setLoading(true);
     await api.setJobChargeLimit({ body: { userId, accountName, limit } })
+      .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
       .then(() => {
         message.success(t(p("setSuccess")));
         reload();
@@ -108,6 +109,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
                     </div>,
                     onOk: async () => {
                       await api.cancelJobChargeLimit({ query: { accountName, userId } })
+                        .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
                         .then(() => {
                           message.success(t(p("cancelSuccess")));
                           onClose();

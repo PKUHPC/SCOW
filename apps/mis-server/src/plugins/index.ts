@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 // Declares all plugins in this file
 // In my yaarxiv project, there can be multiple interface augmentations separated in difference files
 // But in this project, only one augmentation is resolved.
@@ -51,12 +39,15 @@ export const plugins = [
   fetchPlugin,
   statisticPlugin,
   authServicePlugin,
-  syncBlockStatusPlugin,
   clearCachePlugin,
 ];
 
 if (commonConfig.scowResource?.enabled) {
+  // 如果已部署资源管理服务，确保启动时注入顺序的先后，保证启动时如果开启账户同步获取到资源管理服务的数据
   plugins.push(scowResourcePlugin(commonConfig.scowResource));
+  plugins.push(syncBlockStatusPlugin);
+} else {
+  plugins.push(syncBlockStatusPlugin);
 }
 
 if (commonConfig.scowApi) {

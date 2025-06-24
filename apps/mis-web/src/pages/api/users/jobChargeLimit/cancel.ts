@@ -25,6 +25,8 @@ export const CancelJobChargeLimitSchema = typeboxRouteSchema({
     204: Type.Null(),
     // 用户不存在，或者用户没有设置限制
     404: Type.Null(),
+    // 有正在进行的同步账户用户时，防止与因限额取消可能发生解封用户的冲突
+    409: Type.Null(),
   },
 });
 
@@ -65,6 +67,7 @@ export default route(CancelJobChargeLimitSchema, async (req, res) => {
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
+      [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

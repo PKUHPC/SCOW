@@ -200,6 +200,9 @@ export const AccountWhitelistTable: React.FC<Props> = ({
                       await api.dewhitelistAccount({ query: {
                         accountName: r.accountName,
                       } })
+                        .httpError(409, () => {
+                          message.error(t("common.accountUserSyncRunning"));
+                        })
                         .then(() => {
                           message.success(t(p("removeWhiteSuccess")));
                           reload();

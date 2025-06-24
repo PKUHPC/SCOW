@@ -1,23 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { SyncBlockStatusResponse } from "@scow/protos/build/server/admin";
 import cron from "node-cron";
 import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
-import { lastSyncTime, synchronizeBlockStatus } from "src/tasks/syncBlockStatus";
+import { lastSyncTime, synchronizeAccountUser } from "src/tasks/syncAccountUser";
+import { synchronizeBlockStatus } from "src/tasks/syncBlockStatus";
 
 export interface SyncBlockStatusPlugin {
+  // Deprecated 
+  // 同步封锁状态功能已升级为同步账户用户数据功能
+  // 只使用 syncAccountUser
   syncBlockStatus: {
     started: () => boolean;
     start: () => void;
@@ -25,9 +17,20 @@ export interface SyncBlockStatusPlugin {
     schedule: string;
     lastSyncTime: () => Date | null;
     run: () => Promise<SyncBlockStatusResponse | undefined>;
-  }
+  };
+  syncAccountUser: {
+    started: () => boolean;
+    start: () => void;
+    stop: () => void;
+    schedule: string;
+    lastSyncTime: () => Date | null;
+    run: (maxSyncDurationMinutes?: number, operatorId?: string) => Promise<string | undefined>;
+  };
 }
 
+/**
+ * 除封锁状态以外，同步账户及账户下用户关联数据
+ */
 export const syncBlockStatusPlugin = plugin(async (f) => {
   const synchronizeCron = misConfig.periodicSyncUserAccountBlockStatus?.cron ?? "0 4 * * *";
   // 如果配置了资源管理系统服务，则资源管理系统配置项 syncBlockStatusWhenStart 也为 true 时才在启动时满足 synchronizeEnabled
@@ -35,9 +38,17 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
    && !(commonConfig.scowResource?.syncBlockStatusWhenStart === false);
   let synchronizeIsRunning = false;
 
-  const logger = f.logger.child({ plugin: "syncBlockStatus" });
+  const logger = f.logger.child({ plugin: "syncAccountUser" });
   logger.info("misConfig.periodicSyncStatus?.cron: %s", misConfig.periodicSyncUserAccountBlockStatus?.cron);
 
+  const maxSyncDurationMinConfigValue = misConfig.syncAccountUser.maxSyncDurationMinutes;
+
+  /**
+   * Deprecated
+   * 同步封锁状态功能已升级为同步账户用户数据功能
+   * 使用 syncAccountUserTrigger
+   * @returns 
+   */
   const trigger = async () => {
 
     const sublogger = logger.child({ time: new Date() });
@@ -56,23 +67,52 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
       synchronizeIsRunning = false;
     }
   };
+  
+  const syncAccountUserTrigger = async (maxSyncDurationMinutes?: number, operatorId?: string) => {
+
+    const sublogger = logger.child({ time: new Date() });
+
+    if (synchronizeIsRunning) {
+      sublogger.info("Account user synchronization is already running.");
+      return Promise.resolve(undefined);
+    }
+
+    // 确保没有在同步作业过程中执行同步任务，防止同步时间过长导致作业扣费超时
+    const isFetchJobRunning = f.ext.fetch.isRunning;
+    if (isFetchJobRunning) {
+      sublogger.info("Can not start a synchronization task during fetching jobs.");
+      return Promise.resolve(undefined);
+    }
+
+    synchronizeIsRunning = true;
+    sublogger.info("Account user synchronization starts to run.");
+
+    try {
+      return await synchronizeAccountUser(f.ext.orm.em.fork(),
+        sublogger, f.ext, f.ext, operatorId, maxSyncDurationMinutes, f.ext);
+    } finally {
+      synchronizeIsRunning = false;
+    }
+  };
 
   const task = cron.schedule(
     synchronizeCron,
-    () => { void trigger(); },
+    () => { void syncAccountUserTrigger(maxSyncDurationMinConfigValue); },
     {
       timezone: "Asia/Shanghai",
       scheduled: synchronizeEnabled,
     },
   );
 
-  logger.info("Sync block status started.");
+  logger.info("Account user synchronization started.");
 
   f.addCloseHook(() => {
     task.stop();
-    logger.info("Sync block status stopped.");
+    logger.info("Account user synchronization stopped.");
   });
 
+  // Deprecated
+  // 同步封锁状态功能已升级为同步账户用户数据功能
   f.addExtension("syncBlockStatus", ({
     started: () => synchronizeEnabled,
     start: () => {
@@ -90,10 +130,27 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     run: trigger,
   } satisfies SyncBlockStatusPlugin["syncBlockStatus"]));
 
+  f.addExtension("syncAccountUser", ({
+    started: () => synchronizeEnabled,
+    start: () => {
+      logger.info("Account user synchronization is started");
+      synchronizeEnabled = true;
+      task.start();
+    },
+    stop: () => {
+      logger.info("Account user synchronization is stopped");
+      synchronizeEnabled = false;
+      task.stop();
+    },
+    schedule: synchronizeCron,
+    lastSyncTime: () => lastSyncTime,
+    run: (maxSyncDurationMinutes, operatorId) => syncAccountUserTrigger(maxSyncDurationMinutes, operatorId),
+  } satisfies SyncBlockStatusPlugin["syncAccountUser"]));
+
   if (synchronizeEnabled) {
-    logger.info("Started a new synchronization");
-    void trigger();
+    logger.info("Started a new Account user synchronization");
+    void syncAccountUserTrigger(maxSyncDurationMinConfigValue);
   } else {
-    logger.info("Account/Account block synchronization is disabled.");
+    logger.info("Account user synchronization is disabled.");
   }
 });

@@ -49,7 +49,15 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       ownerName: ownerName.trim(),
       comment } })
       .httpError(404, () => { message.error(t(p("tenantNotExistUser"), [tenantName, ownerId])); })
-      .httpError(409, () => { message.error(t(p("accountNameOccupied"))); })
+      .httpError(409, (e) => {
+        if (e.code === "ALREADY_EXISTS") {
+          message.error(t(p("accountNameOccupied")));
+        } else if (e.code === "FAILED_PRECONDITION") {
+          message.error(t("common.accountUserSyncRunning"));
+        } else {
+          message.error(t(p("createAccountFailed")));
+        }
+      })
       .httpError(400, () => { message.error(t(p("userIdAndNameNotMatch"))); })
       .httpError(401, (e) => { message.error(e.message); })
       .then(() => {

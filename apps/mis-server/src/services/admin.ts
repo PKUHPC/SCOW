@@ -14,23 +14,32 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { Status } from "@grpc/grpc-js/build/src/constants";
+import { QueryOrder } from "@mikro-orm/core";
 import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
 import {
   AdminServiceServer, AdminServiceService,
   ClusterAccountInfo,
   ClusterAccountInfo_ImportStatus,
+  listAccountUserSynchronizationsResponse_SyncResultFromJSON,
+  ListAccountUserSynchronizationsResponse_SyncSessionInfo,
+  listAccountUserSynchronizationsResponse_SyncStatusFromJSON,
 } from "@scow/protos/build/server/admin";
 import { updateBlockStatusInSlurm } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { importUsers, ImportUsersData } from "src/bl/importUsers";
 import { commonConfig } from "src/config/common";
+import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
+import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
 import { StorageQuota } from "src/entities/StorageQuota";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, User } from "src/entities/User";
 import { UserAccount, UserRole } from "src/entities/UserAccount";
 import { getTotalStatisticsInfoCached } from "src/utils/cache";
+import { logger } from "src/utils/logger";
+import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
+import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const adminServiceServer = plugin((server) => {
 
@@ -92,6 +101,10 @@ export const adminServiceServer = plugin((server) => {
     },
 
     importUsers: async ({ request, em, logger }) => {
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "import users task");
+
       const { data, whitelist } = request;
 
       if (!data) {
@@ -216,7 +229,19 @@ export const adminServiceServer = plugin((server) => {
       return [{}];
     },
 
-    fetchJobs: async () => {
+    fetchJobs: async ({ em, logger }) => {
+
+      const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, {
+        syncStatus: SyncStatus.RUNNING,
+      });
+      if (isSyncRunningFound) {
+        logger.info("There is a account user synchronization task is running.");
+        throw new ServiceError({
+          code: Status.ALREADY_EXISTS,
+          message: "Account User Sync is running. Please wait for its completion before starting a sync job task.",
+        });
+      }
+
       const reply = await server.ext.fetch.fetch();
 
       return [reply ? reply : { newJobsCount: 0 }];
@@ -224,9 +249,9 @@ export const adminServiceServer = plugin((server) => {
 
     getSyncBlockStatusInfo: async () => {
       return [{
-        syncStarted: server.ext.syncBlockStatus.started(),
-        schedule: server.ext.syncBlockStatus.schedule,
-        lastSyncTime: server.ext.syncBlockStatus.lastSyncTime()?.toISOString() ?? undefined,
+        syncStarted: server.ext.syncAccountUser.started(),
+        schedule: server.ext.syncAccountUser.schedule,
+        lastSyncTime: server.ext.syncAccountUser.lastSyncTime()?.toISOString() ?? undefined,
       }];
     },
 
@@ -234,14 +259,21 @@ export const adminServiceServer = plugin((server) => {
       const { started } = request;
 
       if (started) {
-        server.ext.syncBlockStatus.start();
+        server.ext.syncAccountUser.start();
       } else {
-        server.ext.syncBlockStatus.stop();
+        server.ext.syncAccountUser.stop();
       }
 
       return [{}];
     },
 
+    /**
+     * Deprecated
+     * 同步封锁状态功能已升级为同步账户用户数据功能
+     * 此接口已不再使用
+     * @param param0
+     * @returns
+     */
     syncBlockStatus: async ({ em, logger }) => {
       // check whether there is activated cluster in SCOW
       // cause syncBlockStatus in plugin will skip the check
@@ -292,5 +324,76 @@ export const adminServiceServer = plugin((server) => {
         ... totalRecords, newUser, newAccount, newTenant, refreshTime: refreshTime.toISOString(),
       }];
     },
+
+    // 开始一个同步任务
+    startAccountUserSynchronization: async ({ request, em, logger }) => {
+
+      const { maxSyncDurationMinutes, operatorId } = request;
+      // 确保当前存在在线集群
+      await getActivatedClusters(em, logger);
+
+      const sessionId = await server.ext.syncAccountUser.run(maxSyncDurationMinutes, operatorId);
+      logger.trace("An account user synchronization task is started.");
+      if (!sessionId) {
+        throw {
+          code: Status.ALREADY_EXISTS,
+          message:  "System is busy: either account user synchronization "
+          + "or job synchronization task is running. Please wait for the current operation "
+          + "to finish before starting a new synchronization.",
+        } as ServiceError;
+      }
+      return [{ sessionId }];
+    },
+
+
+    listAccountUserSynchronizations: async ({ request, em }) => {
+
+      const { page, pageSize } = request;
+      const syncDayPeriod = misConfig.syncAccountUser.syncHistoryDayPeriod;
+      const syncPeriodAgo = new Date();
+      syncPeriodAgo.setDate(syncPeriodAgo.getDate() - syncDayPeriod);
+      logger.trace("List account user synchronization history since %o", syncPeriodAgo);
+      const [ syncHistory, count ] = await em.findAndCount(AccountUserSyncRecord, {
+        startTime: { $gte: syncPeriodAgo },
+      },
+      {
+        ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
+        orderBy: { startTime: QueryOrder.DESC },
+      },
+      );
+
+      const syncOperatorIds = syncHistory.map((x) => (x.syncOperatorId));
+      const userIds = syncOperatorIds.filter((id) => typeof id === "string" && id !== undefined && id !== null);
+      const users = await em.find(User, { userId: userIds });
+      const userMap = new Map(users.map((x) => [x.userId, x.name]));
+
+      const results: ListAccountUserSynchronizationsResponse_SyncSessionInfo[] = syncHistory.map((sync) => {
+        return {
+          sessionId: sync.sessionId,
+          startTime: sync.startTime.toISOString(),
+          endTime: sync.updateTime !== undefined && sync.updateTime !== null
+            ? new Date(sync.updateTime).toISOString() : undefined,
+          operatorId: sync.syncOperatorId,
+          operatorName: sync.syncOperatorId ? userMap.get(sync.syncOperatorId) : "",
+          sessionSyncStatus: listAccountUserSynchronizationsResponse_SyncStatusFromJSON(sync.syncStatus),
+          sessionSyncResult: sync.syncResult ?
+            listAccountUserSynchronizationsResponse_SyncResultFromJSON(sync.syncResult) : undefined,
+          sessionSyncDetails: sync.syncDetails ? { results: sync.syncDetails } : undefined,
+        };
+      });
+
+      return [{ syncSessionInfos: results, totalCount: count }];
+    },
+
+    // 检查是否有正在运行的同步任务
+    checkAccountUserSynchronizationRunning: async ({ em }) => {
+
+      const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, {
+        syncStatus: SyncStatus.RUNNING,
+      });
+
+      return [{ isRunning: !!isSyncRunningFound }];
+    },
+
   });
 });

@@ -52,7 +52,7 @@ export const languageDic = {
         accountAssignedSuccessMessage: "授权账户分区成功",
         accountUnassignedSuccessMessage: "取消授权账户分区成功",
         assignContent: "确定在集群 {0} 的分区 {1} 下对 {2} 进行授权吗？",
-        unAssignContent: "确定要在集群 {0} 的分区 {1} 下取消对租户 {2} 的授权吗？",
+        unAssignContent: "确定要在集群 {0} 的分区 {1} 下取消对 {2} 的授权吗？",
         unAssignTenantPartitionExplanation: "取消授权后，该租户下所有账户均无法使用该分区  ",
       },
       setClusterAssignmentModal: {
@@ -62,7 +62,7 @@ export const languageDic = {
         accountAssignedSuccessMessage: "授权账户集群成功",
         accountUnassignedSuccessMessage: "取消授权账户集群成功",
         assignContent: "确定在集群 {0} 下对 {1} 进行授权吗？",
-        unAssignContent: "确定要在集群 {0} 下取消对租户 {1} 的授权吗？",
+        unAssignContent: "确定要在集群 {0} 下取消对 {1} 的授权吗？",
         unAssignTenantClusterExplanation: "取消授权后，该集群所有分区均对该租户取消授权 ",
         unAssignAccountClusterExplanation: "取消授权后，该集群所有分区均对该账户取消授权",
       },
@@ -171,7 +171,7 @@ export const languageDic = {
         accountUnassignedSuccessMessage: "Successfully unassigned account partition",
         assignContent: "Are you sure you want to assign the partition {1} of the cluster {0} to {2}?",
         unAssignContent: "Are you sure you want to unassign"
-        + " the partition {1} of the cluster {0} from the tenant {2}?",
+        + " the partition {1} of the cluster {0} from the {2}?",
         unAssignTenantPartitionExplanation: "After revoking authorization, "
         + "all accounts under this tenant will be unable to use this partition.",
       },
@@ -182,7 +182,7 @@ export const languageDic = {
         accountAssignedSuccessMessage: "Successfully assigned account cluster",
         accountUnassignedSuccessMessage: "Successfully unassigned account cluster",
         assignContent: "Are you sure you want to assign {1} in the cluster {0}?",
-        unAssignContent: "Are you sure you want to unassign the tenant {1} in the cluster {0}?",
+        unAssignContent: "Are you sure you want to unassign the {1} in the cluster {0}?",
         unAssignTenantClusterExplanation: "After revoking authorization, "
         + "all partitions of this cluster will be unauthorized for the tenant.",
         unAssignAccountClusterExplanation: "After revoking authorization, "

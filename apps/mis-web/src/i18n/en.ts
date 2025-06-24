@@ -107,6 +107,8 @@ export default {
     organization: "Organization",
     adjustBill: "Adjust Tenant Billing",
     failedGetTenantAssignedClustersAndPartitions: "Failed to retrieve authorized cluster partition information",
+    accountUserSyncRunning: "Account/User information is currently being synchronized. Please wait for the "
+    + "synchronization to complete before trying again.",
     finalError: "Request failed, please try again later",
     edit: "edit",
   },
@@ -177,7 +179,7 @@ export default {
         accountChargeRecords: "Account Consumption Records",
         accountBills: "Account Bill Records",
         systemDebug: "Platform Operation",
-        statusSynchronization: "Block Status Synchronization",
+        statusSynchronization: "Account/User Synchronization",
         jobSynchronization: "Jobs Synchronization",
         resourceManagement: "Resource Management",
         clusterManagement: "Cluster Management",
@@ -499,6 +501,7 @@ export default {
         notFound: "Account not found.",
         chargeFinished: "Charging finished!",
         deleted:"Account has been deleted",
+        financePayFailed: "Charging failed",
       },
       chargeTable: {
         time: "Deduction Date",
@@ -884,7 +887,11 @@ export default {
         removeSuccess: "User removed successfully!",
         removerUser: "Remove User",
         cannotRemoverUserWhoHaveRunningJobFromAccount: "The user still has a job running, "
-          + " and the user has been blocked. Please wait for the job to end or end the job manually before moving out.",
+          + " and the user has been blocked. Please wait for the job to end or end the job manually before moving out."
+          + " Or there is a Account/User synchronization running. Please try again after synchronization completion.",
+
+        blockUserInAccountFailed: "Block user in account failed.",
+        unblockUserInAccountFailed: "Unblock user in account failed.",
       },
       tenantUserInfoDrawer: {
         id: "User ID",
@@ -1130,6 +1137,7 @@ export default {
           ownerName: "Owner Name",
           remark: "Remark",
           createAccount: "Create Account",
+          createAccountFailed: "Create Account Failed",
         },
         accountName: {
           users: {
@@ -1247,20 +1255,90 @@ export default {
           syncBlockedFailedUserAccount: "Synchronize the data of failed blocked users in the account:",
           syncSchedulerBlockingStatusNow: "Refresh Scheduler User Blocking Status",
         },
+        syncClusterAccountUser: {
+          syncUserAccount: "Account/User Information Synchronization",
+          alertInfo: "SCOW will regularly synchronize the information of accounts and users to the scheduler. "
+          + "You can click Sync Now to perform a manual synchronization.",
+          maxSyncDurationExplanation: "During synchronization, SCOW cannot modify account-related information. "
+          + "To prevent extended synchronization times from affecting normal user experience, SCOW provides"
+          + " a \" Maximum Processing Time for a Single Synchronization \" parameter to control the "
+          + " processing duration. When this time limit is exceeded, the current synchronization will be "
+          + "terminated while preserving all information that has already been synchronized.",
+          syncAlreadyStarted: "Account User Synchronization or Job fetching is already started. "
+          + "Please wait for its completion before starting a new run.",
+          periodicSyncUserAccountInfo: "Periodically Synchronize Account and User Information",
+          turnedOn: "Turned On",
+          paused: "Turned Off",
+          stopSync: "Turn Off Periodically Synchronization",
+          startSync: "Turn On Periodically Synchronization",
+          jobSyncCycle: "Block Status Synchronization Cycle",
+          lastSyncTime: "Last Run Time",
+          notSynced: "Not Synchronized",
+          syncSuccess: "Refreshed Successfully",
+          syncSchedulerUserAccountNow: "Sync Now",
+          maxSyncDurationMinutes: "Maximum Processing Time for a Single Synchronization",
+          maxSyncDurationMinutesModalAlert: "Only effective for the current operation",
+          maxSyncDurationMinutesModalLabel: "Maximum Processing Time for a Single Synchronization"
+          + " (Only effective for the current operation)",
+          minuteUnit: "MINUTE",
+          syncStatusUnknown: "UNKNOWN",
+          syncStatusRunning: "RUNNING",
+          syncStatusSuccess: "SUCCESS",
+          syncStatusFailed: "FAILED",
+          historyTable: {
+            title: "Account/User Synchronization History",
+            explanation: "Last {} days of synchronization records only",
+            index: "Index",
+            operatorId: "Operator",
+            systemOperator: "System",
+            startTime: "Start Time",
+            endTime: "End Time",
+            syncResult: "Synchronization Result",
+            syncDetails: "Synchronization Details",
+            isRunning: "Synchronization in Progress...",
+          },
+          syncDetailsContent: {
+            allSuccessfulMessage: "All online clusters have been successfully synchronized.",
+            hasExceptionMessage: "Exception during synchronization. ",
+            createAccountFailure: "Create Account Failed",
+            blockAccountFailure: "Block Account Failed",
+            unblockAccountFailure: "Unblock Account Failed",
+            addUserToAccountFailure: "Add User to Account Failed",
+            blockUserInAccountFailure: "Block User in Account Failed",
+            removeUserFromAccountFailure: "Remove User from Account Failed",
+            unblockUserInAccountFailure: "Unblock User in Account Failed",
+            partitionsException: "An exception occurred while retrieving authorized partitions for accounts. ",
+            clusterUnexecutedException: "Cluster synchronization exception, synchronization not executed.",
+            chunkFailedException: "An exception occurred during the synchronization process. ",
+            noException: "No exceptions occurred.",
+            unknownException: "Unknown Exception",
+            noSyncData: "Data is consistent, no synchronization needed.",
+            syncCountDetails: "There are {0} differences in data that need to be synchronized. "
+            + "Successfully synchronized: {1}, ",
+            syncFailedCount: "Failed: {}",
+            syncTotallySucceed:  "Data fully synchronized, completed {0} differences",
+            failedDetailDrawerTitle: "Synchronization Failure Details",
+            noSyncDetailsException: "Data exception, synchronization data not obtained",
+            timeoutException: "Partial data synchronization (synchronization timeout). ",
+            syncDetailsWhenTimeout: "{} differential data items have been synchronized.",
+          },
+        },
         fetchJobs: {
           jobInfoSync: "Job Information Synchronization",
           alertMessage: "SCOW will periodically synchronize job information from the cluster. "
           + "You can click 'Sync Now' to manually synchronize immediately.",
           periodicSyncJobInfo: "Periodic Job Info Synchronization",
           turnedOn: "Turned On",
-          paused: "Paused",
-          stopSync: "Stop Synchronization",
-          startSync: "Start Synchronization",
+          paused: "Turned Off",
+          stopSync: "Turn Off Periodically Synchronization",
+          startSync: "Turn On Periodically Synchronization",
           jobSyncCycle: "Job Synchronization Cycle",
           lastSyncTime: "Last Sync Time",
           notSynced: "Not Synchronized",
           jobSyncSuccessMessage: "Job synchronization completed, synchronized to {} new records.",
           syncJobNow: "Sync Now",
+          accountUserSyncRunning: "Account User Synchronization is running. "
+           + "Please wait for its completion before starting a job synchronization.",
         },
       },
       resourceManagement: {

@@ -217,7 +217,11 @@ const buildRuntimeConfig = async (phase, basePath) => {
     BILL_ENABLED: misConfig.bill?.enabled,
     CHANGE_JOB_PRICE_TYPE: misConfig.changeJobPriceType,
 
+    SYNC_HISTORY_DAY_PERIOD: misConfig.syncAccountUser.syncHistoryDayPeriod,
+    MAX_SYNC_DURATION_MINUTES: misConfig.syncAccountUser.maxSyncDurationMinutes,
+
     SCOW_RESOURCE_ENABLED: commonConfig.scowResource.enabled,
+
     ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
   };
 

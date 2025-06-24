@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
@@ -104,6 +92,21 @@ export const MisConfigSchema = Type.Object({
     enabled: Type.Boolean({ description:"是否默认打开", default: true }),
     cron: Type.String({ description: "获取信息的周期的cron表达式", default: "0 4 * * *" }),
   }, { default: {}, description: "用户账户封锁状态同步" })),
+
+  syncAccountUser: Type.Object({
+    maxSyncDurationMinutes:  (Type.Number({
+      description: "单次同步最长处理时间，单位分钟，如不配置默认为5分钟。此配置会作为周期性账户用户同步"
+      + "的固定最长处理时间，会作为手动同步的初始默认最长处理时间，仅在手动同步时支持修改。",
+      default: 5,
+    })),
+    syncHistoryDayPeriod: (Type.Number({
+      description: "同步账户用户历史结果数据查询时间周期，单位天，如不配置默认为7天",
+      default: 7,
+    })),
+  }, { default: {
+    maxSyncDurationMinutes: 5,
+    syncHistoryDayPeriod: 7,
+  }, description: "同步账户用户数据功能相关设置" }),
 
   jobChargeType: Type.String({ description: "对作业计费时，计费费用的的付款类型", default: "作业费用" }),
   changeJobPriceType: Type.String({ description: "修改作业费用时所使用的付款/充值类型", default: "作业费用更改" }),

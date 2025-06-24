@@ -85,8 +85,8 @@ export const ChargeForm: React.FC = () => {
       .httpError(404, () => {
         message.error(t(p("notFound")));
       })
-      .httpError(410, () => {
-        message.error(t(p("deleted")));
+      .httpError(410, (e) => {
+        message.error(e.message || t(p("financePayFailed")));
       })
       .then(() => {
         message.success(t(p("chargeFinished")));

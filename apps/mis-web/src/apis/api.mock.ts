@@ -661,6 +661,17 @@ export const mockApi: MockApi<typeof api> = {
       }],
     },
   }),
+
+  syncAccountUserInfo: async () => ({
+    sessionId: "sessionId",
+  }),
+
+  getSyncAccountUserHistory: async () => ({
+    totalCount: 0,
+    syncHistory: [],
+  }),
+
+
   isAccountBelowBlockThreshold: null,
   getLockedUsers: null,
   unlockUser: null,

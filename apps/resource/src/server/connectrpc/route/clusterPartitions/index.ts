@@ -10,6 +10,8 @@ import {
   GetAccountsAssignedClusterIdsResponse,
   GetAccountsAssignedClustersAndPartitionsRequest,
   GetAccountsAssignedClustersAndPartitionsResponse,
+  GetAccountsAssignedPartitionsForClusterRequest,
+  GetAccountsAssignedPartitionsForClusterResponse,
   GetClusterAssignedAccountsRequest,
   GetClusterAssignedAccountsResponse,
   GetTenantAssignedClustersAndPartitionsRequest,
@@ -19,6 +21,7 @@ import { commonConfig } from "src/server/config/common";
 import { assignCreatedAccount, getAccountAssignedPartitionsInCluster,
   getAccountsAssignedClusterPartitions,
   getAccountsAssignedClusters,
+  getAccountsAssignedPartitionsInCluster,
   getClusterAssignedAccountsData,
   getTenantAssignedClusterPartitions } from "src/utils/commonServer";
 
@@ -54,6 +57,21 @@ export default (router: ConnectRouter) => {
       const { accountName, tenantName, clusterId } = request;
       const data = await getAccountAssignedPartitionsInCluster(accountName, tenantName, clusterId);
       return new GetAccountAssignedPartitionsForClusterResponse({ assignedPartitionNames: data });
+    },
+
+    /**
+     * 批量获取账户在某集群下已授权的分区
+     * 用于账户分区同步等账户的批量操作
+     * 防止获取单一账户授权分区时创建大量并发连接
+     * @param request
+     * @returns
+     */
+    async getAccountsAssignedPartitionsForCluster(request: GetAccountsAssignedPartitionsForClusterRequest, ctx):
+    Promise<GetAccountsAssignedPartitionsForClusterResponse> {
+      await checkScowApiToken(ctx, commonConfig.scowApi);
+      const { accountsWithTenants, clusterId } = request;
+      const data = await getAccountsAssignedPartitionsInCluster(accountsWithTenants, clusterId);
+      return new GetAccountsAssignedPartitionsForClusterResponse({ assignedAccountPartitions: data });
     },
 
     /**

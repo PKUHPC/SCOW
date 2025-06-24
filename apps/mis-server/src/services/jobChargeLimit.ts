@@ -22,11 +22,15 @@ import { setJobCharge } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { UserAccount, UserStatus } from "src/entities/UserAccount";
 import { getUserStateInfo } from "src/utils/accountUserState";
+import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const jobChargeLimitServer = plugin((server) => {
   server.addService<JobChargeLimitServiceServer>(JobChargeLimitServiceService, {
     cancelJobChargeLimit: async ({ request, em, logger }) => {
       const { accountName, userId, tenantName } = request;
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "cancel job charge limit task");
 
       await em.transactional(async (em) => {
         const userAccount = await em.findOne(UserAccount, {
@@ -79,6 +83,9 @@ export const jobChargeLimitServer = plugin((server) => {
 
     setJobChargeLimit: async ({ request, em, logger }) => {
       const { accountName, limit, userId, tenantName } = ensureNotUndefined(request, ["limit"]);
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "set job charge limit task");
 
       await em.transactional(async (em) => {
         const userAccount = await em.findOne(UserAccount, {

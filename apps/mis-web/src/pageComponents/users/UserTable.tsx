@@ -135,8 +135,12 @@ export const UserTable: React.FC<Props> = ({
                           identityId: r.userId,
                           accountName: accountName,
                         } })
-                          .then(() => {
-                            message.success(t(p("unsealSuccess")));
+                          .then((res) => {
+                            if (res.executed) {
+                              message.success(t(p("unsealSuccess")));
+                            } else {
+                              message.error(res.reason || t(p("unblockUserInAccountFailed")));
+                            }                 
                             reload();
                           });
                       },
@@ -157,8 +161,13 @@ export const UserTable: React.FC<Props> = ({
                           identityId: r.userId,
                           accountName: accountName,
                         } })
-                          .then(() => {
-                            message.success(t(p("blockSuccess")));
+                          .then((res) => {
+                            if (res.executed) {
+                              message.success(t(p("blockSuccess")));
+                            } else {
+                              message.error(res.reason || t(p("blockUserInAccountFailed")));
+                            }
+
                             reload();
                           });
                       },

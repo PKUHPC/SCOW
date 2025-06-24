@@ -87,6 +87,9 @@ export const TenantChargeForm: React.FC = () => {
       .httpError(404, () => {
         message.error(t(p("accountNotFound")));
       })
+      .httpError(409, (e) => {
+        message.error(e.message);
+      })
       .then(() => {
         message.success(t(p("chargeFinish")));
         form.resetFields();

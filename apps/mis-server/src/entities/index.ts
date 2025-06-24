@@ -1,7 +1,10 @@
 import { Account } from "src/entities/Account";
+import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountBill } from "src/entities/AccountBill";
+import { AccountUserSyncRecord } from "src/entities/AccountUserSyncRecord";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { ChargeRecord } from "src/entities/ChargeRecord";
+import { Cluster } from "src/entities/Cluster";
 import { JobInfo } from "src/entities/JobInfo";
 import { JobPriceChange } from "src/entities/JobPriceChange";
 import { JobPriceItem } from "src/entities/JobPriceItem";
@@ -10,13 +13,10 @@ import { QueryCache } from "src/entities/QueryCache";
 import { StorageQuota } from "src/entities/StorageQuota";
 import { SystemState } from "src/entities/SystemState";
 import { Tenant } from "src/entities/Tenant";
+import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { User } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
-
-import { AccountAppBlacklist } from "./AccountAppBlacklist";
-import { Cluster } from "./Cluster";
-import { TenantAppBlacklist } from "./TenantAppBlacklist";
 
 export const entities = [
   UserAccount,
@@ -33,6 +33,7 @@ export const entities = [
   SystemState,
   QueryCache,
   Cluster,
+  AccountUserSyncRecord,
   UserBill,
   AccountBill,
   AccountAppBlacklist,

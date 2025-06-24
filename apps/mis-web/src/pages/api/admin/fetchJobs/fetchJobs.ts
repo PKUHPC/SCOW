@@ -12,18 +12,21 @@
 
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { status } from "@grpc/grpc-js";
 import { AdminServiceClient } from "@scow/protos/build/server/admin";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { PlatformRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
+import { handlegRPCError } from "src/utils/server";
 
 export const FetchJobsSchema = typeboxRouteSchema({
   method: "POST",
 
   responses: {
     200: Type.Object({ newJobsCount: Type.Number() }),
+    409: Type.Null(),
   },
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
@@ -36,8 +39,10 @@ export default /* #__PURE__*/route(FetchJobsSchema,
 
     const client = getClient(AdminServiceClient);
 
-    const reply = await asyncClientCall(client, "fetchJobs", {});
-
-    return { 200: { newJobsCount: reply.newJobsCount } };
+    return await asyncClientCall(client, "fetchJobs", {})
+      .then((reply) => ({ 200:  { newJobsCount: reply.newJobsCount } }))
+      .catch(handlegRPCError({
+        [status.ALREADY_EXISTS]: () => ({ 409: null }),
+      }));
 
   });

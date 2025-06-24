@@ -132,6 +132,7 @@ export const ImportUsersTable: React.FC = () => {
             whitelist,
           } })
             .httpError(400, () => { message.error(t(p("incorrectFormat"))); })
+            .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
             .then(() => {
               setSelectedAccounts([]);
               message.success(t(p("importSuccess")));

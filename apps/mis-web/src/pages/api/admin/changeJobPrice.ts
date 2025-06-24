@@ -48,6 +48,7 @@ export const ChangeJobPriceSchema = typeboxRouteSchema({
     403: Type.Null(),
     // 账户未找到或已删除，或作业未找到
     404: Type.Object({ message: Type.String() }),
+    409: Type.Object({ message: Type.String() }),
   },
 });
 
@@ -96,5 +97,6 @@ export default route(ChangeJobPriceSchema,
       .then((x) => ({ 200: x }))
       .catch(handlegRPCError({
         [Status.NOT_FOUND]: (e) => ({ 404: { message: e.message } }),
+        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
       }));
   });

@@ -131,7 +131,11 @@ export interface PublicRuntimeConfig {
   BILL_ENABLED?: boolean;
   CHANGE_JOB_PRICE_TYPE: string;
 
+  SYNC_HISTORY_DAY_PERIOD: MisConfigSchema["syncAccountUser"]["syncHistoryDayPeriod"];
+  MAX_SYNC_DURATION_MINUTES: MisConfigSchema["syncAccountUser"]["maxSyncDurationMinutes"]
+
   SCOW_RESOURCE_ENABLED?: boolean;
+
   ALLOW_APP_AUTHORIZATION?: boolean;
 }
 

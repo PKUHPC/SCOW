@@ -46,6 +46,21 @@ message PartitionNames {
     repeated string partition_names = 1;
 }
 
+message TenantAccountInfo {
+    string tenant_name = 1;
+    string account_name = 2;
+}
+
+message GetAccountsAssignedPartitionsForClusterRequest {
+    string cluster_id = 1;
+    repeated TenantAccountInfo accounts_with_tenants = 2;
+}
+
+message GetAccountsAssignedPartitionsForClusterResponse {
+    map<string, PartitionNames> assigned_account_partitions = 1;
+}
+
+
 message GetAccountsAssignedClustersAndPartitionsRequest {
     repeated string account_names = 1;
     string tenant_name = 2;
@@ -94,6 +109,13 @@ service ClusterPartitionService {
         returns (GetAccountAssignedPartitionsForClusterResponse) {}
 
    /*
+   * description: get accounts with tenants assigned parition names queried by clusterId
+   * A batch processing interface prevents excessive concurrent requests during synchronization or other processes. 
+   */
+    rpc GetAccountsAssignedPartitionsForCluster(GetAccountsAssignedPartitionsForClusterRequest) 
+        returns (GetAccountsAssignedPartitionsForClusterResponse) {}
+
+   /*
    * description: get accounts assigned clusters and partitions
    */ 
     rpc GetAccountsAssignedClustersAndPartitions(GetAccountsAssignedClustersAndPartitionsRequest) 
@@ -110,4 +132,5 @@ service ClusterPartitionService {
    */
     rpc GetClusterAssignedAccounts(GetClusterAssignedAccountsRequest) 
         returns (GetClusterAssignedAccountsResponse) {}
+
 }

@@ -34,7 +34,9 @@ export const BlockUserInAccountSchema = typeboxRouteSchema({
 
   responses: {
     // 如果用户已经block，那么executed为false
-    200: Type.Object({ executed: Type.Boolean() }),
+    200: Type.Object({ executed: Type.Boolean(),
+      reason: Type.Optional(Type.String()),
+    }),
     // 用户不存在
     404: Type.Null(),
   },
@@ -82,7 +84,7 @@ export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) =>
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

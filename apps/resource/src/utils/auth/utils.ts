@@ -40,6 +40,16 @@ export class NoAvailableClustersError extends TRPCError {
   }
 }
 
+export class AccountUserSyncRunningError extends TRPCError {
+  constructor() {
+    super({
+      code: "CONFLICT",
+      message: "There is a account user synchronization task is running. "
+      + "Please perform the authorization or deauthorization operation after the synchronization is completed.",
+    });
+  }
+}
+
 export function isResourceAdmin(user: ClientUserInfo): boolean {
   return user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) 
       || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);

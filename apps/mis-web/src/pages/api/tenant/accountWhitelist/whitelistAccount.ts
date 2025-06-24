@@ -36,6 +36,7 @@ export const WhitelistAccountSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     404: Type.Null(),
+    409: Type.Object({ message: Type.String() }),
   },
 });
 
@@ -75,6 +76,7 @@ export default route(WhitelistAccountSchema,
       })
       .catch(handlegRPCError({
         [Status.NOT_FOUND]: () => ({ 404: null }),
+        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
       },
       async () => await callLog(logInfo, OperationResult.FAIL),
       ));

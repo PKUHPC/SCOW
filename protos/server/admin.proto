@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 syntax = "proto3";
 
 package scow.server;
@@ -142,12 +130,15 @@ message SetSyncBlockStatusStateResponse {
 }
 
 message BlockedFailedUserAccount {
+  option deprecated = true;
   string account_name = 1;
   string user_id= 2;
 }
 message SyncBlockStatusRequest{
+  option deprecated = true;
 }
 message SyncBlockStatusResponse{
+  option deprecated = true;
   repeated string blocked_failed_accounts = 1;
   repeated BlockedFailedUserAccount blocked_failed_user_accounts = 2;
   repeated string unblocked_failed_accounts = 3;
@@ -184,6 +175,152 @@ message GetStatisticInfoResponse {
   google.protobuf.Timestamp refresh_time = 7;
 }
 
+message StartAccountUserSynchronizationRequest {
+  optional string operator_id = 1;
+  optional uint32 max_sync_duration_minutes = 2;
+}
+
+message StartAccountUserSynchronizationResponse {
+  string session_id = 1;
+}
+
+message ListAccountUserSynchronizationsRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2;
+}
+
+message ListAccountUserSynchronizationsResponse {
+  enum SyncStatus {
+    STATUS_UNKNOWN = 0;
+    RUNNING = 1;
+    COMPLETED = 2;
+    UNEXECUTED = 3;
+  }
+  enum SyncResult {
+    RESULT_UNKNOWN = 0;
+    SUCCESS = 1;
+    FAILED = 2;
+  }
+
+  enum SyncExceptionType {
+    EXCEPTION_UNKNOWN = 0;
+    NO_EXCEPTION = 1;
+    CHUNK_FAILED = 2;
+    ASSIGNED_PARTITIONS_FETCH_FAILED = 3;
+    CLUSTER_UNEXECUTED = 4;
+    // 超过管理员指定最长同步处理时间
+    MAX_EXECUTION_TIME_EXCEEDED = 5;
+  }
+
+  message ExceptionDetail {
+    SyncExceptionType exception_type = 1;
+    string exception_message = 2;
+  }
+
+  message AccountOperationResult {
+    string account_name = 1;
+    bool success = 2;
+    optional string failure_message = 3;
+  }
+
+  message UserAccountOperationResult {
+    string account_name = 1;
+    string user_id = 2;
+    bool success = 3;
+    optional string failure_message = 4;
+  }
+
+  message UserOperationResult {
+    string user_id = 1;
+    bool success = 2;
+    optional string failure_message = 3;
+  }
+
+  message CreateAccountOperation {
+    repeated AccountOperationResult results = 1;
+  }
+  message BlockAccountOperation {
+    repeated AccountOperationResult results = 1;
+  }
+  message UnblockAccountOperation {
+    repeated AccountOperationResult results = 1;
+  }
+  message AddUserToAccountOperation {
+    repeated UserAccountOperationResult results = 1;
+  }
+  message BlockUserInAccountOperation {
+    repeated UserAccountOperationResult results = 1;
+  }
+  message RemoveUserFromAccountOperation {
+    repeated UserAccountOperationResult results = 1;
+  }
+  // 暂未使用
+  message UnblockUserInAccountOperation {
+    repeated UserAccountOperationResult results = 1;
+  }
+  // 暂未使用
+  message DeleteAccountOperation {
+    repeated AccountOperationResult results = 1;
+  }
+  // 暂未使用
+  message DeleteUserOperation {
+    repeated UserOperationResult results = 1;
+  }
+
+  message SyncDetailsSummary {
+    optional CreateAccountOperation create_account = 1;
+    optional BlockAccountOperation block_account = 2;
+    optional UnblockAccountOperation unblock_account = 3;
+    optional AddUserToAccountOperation add_user_to_account = 4;
+    optional BlockUserInAccountOperation block_user_in_account = 5;
+    optional RemoveUserFromAccountOperation remove_user_from_account = 6;
+    // 暂未使用
+    optional UnblockUserInAccountOperation unblock_user_in_account = 7;
+    // 暂未使用
+    optional DeleteAccountOperation delete_account = 8;
+    // 暂未使用
+    optional DeleteUserOperation delete_user = 9;
+  }
+
+  message ClusterTotalSyncResult {
+    string cluster_id = 1;
+    SyncStatus cluster_sync_status = 2;
+    optional SyncResult cluster_sync_result = 3;
+    uint32 executed_chunk_count = 4;
+    bool is_all_chunk_executed = 5;
+    uint32 completed_total_sync_count = 6;
+    uint32 successful_total_sync_count = 7;
+    repeated ExceptionDetail cluster_sync_exceptions = 8;
+    optional SyncDetailsSummary cluster_sync_details = 9;
+  }
+
+  message ClusterSyncResults {
+    repeated ClusterTotalSyncResult results = 1;
+  }
+
+  message SyncSessionInfo {
+    string session_id = 1;
+    google.protobuf.Timestamp start_time = 2;
+    optional google.protobuf.Timestamp end_time = 3;
+    optional string operator_id = 4;
+    optional string operator_name = 5;
+    SyncStatus session_sync_status = 6;
+    optional SyncResult session_sync_result = 7;
+    optional ClusterSyncResults session_sync_details = 8;
+  }
+
+  repeated SyncSessionInfo sync_session_infos = 1;
+  uint64 total_count = 2;
+  optional uint32 max_sync_duration_minutes = 3;
+}
+
+message CheckAccountUserSynchronizationRunningRequest {
+}
+
+message CheckAccountUserSynchronizationRunningResponse {
+  bool is_running = 1;
+}
+
 service AdminService {
   rpc ChangeStorageQuota(ChangeStorageQuotaRequest)
       returns (ChangeStorageQuotaResponse);
@@ -209,5 +346,25 @@ service AdminService {
     returns (GetStatisticInfoResponse);
   rpc GetSyncBlockStatusInfo(GetSyncBlockStatusInfoRequest) returns (GetSyncBlockStatusInfoResponse);
   rpc SetSyncBlockStatusState(SetSyncBlockStatusStateRequest) returns (SetSyncBlockStatusStateResponse);
-  rpc SyncBlockStatus(SyncBlockStatusRequest) returns (SyncBlockStatusResponse);
+
+  /** Deprecated
+      for using new api interface of StartAccountUserSynchronization.
+      In addition to executing the blocked status synchronization,
+      it also synchronizes account and account-associated user data to the cluster.
+   */
+  rpc SyncBlockStatus(SyncBlockStatusRequest) returns (SyncBlockStatusResponse) {
+    option deprecated = true;
+  };
+
+  rpc StartAccountUserSynchronization(StartAccountUserSynchronizationRequest) returns (
+    StartAccountUserSynchronizationResponse
+  );
+
+  rpc ListAccountUserSynchronizations(ListAccountUserSynchronizationsRequest) returns (
+    ListAccountUserSynchronizationsResponse
+  );
+
+  rpc CheckAccountUserSynchronizationRunning(CheckAccountUserSynchronizationRunningRequest) returns (
+    CheckAccountUserSynchronizationRunningResponse
+  );
 }

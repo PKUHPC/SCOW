@@ -27,6 +27,8 @@ export const SetJobChargeLimitSchema = typeboxRouteSchema({
     // 用户不存在
     404: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_LIMIT_DATA") }),
+    // 有正在进行的同步账户用户时，防止与因限额改变可能发生封锁用户或解封用户的冲突
+    409: Type.Null(),
   },
 });
 
@@ -67,6 +69,7 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
       [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_LIMIT_DATA" as const } }),
+      [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

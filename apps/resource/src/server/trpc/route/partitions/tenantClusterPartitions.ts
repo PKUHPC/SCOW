@@ -6,9 +6,11 @@ import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";
 import { TenantPartitionRule } from "src/server/entities/TenantPartitionRule";
 import { getScowActivatedClusters, getScowClusterConfigs } from "src/server/mis-server/cluster";
+import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
 import { getScowAccounts, getScowTenants } from "src/server/mis-server/tenantAccount";
 import { authProcedure } from "src/server/trpc/procedure/base";
-import { isResourceAdmin, NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
+import { AccountUserSyncRunningError, isResourceAdmin, 
+  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
@@ -235,6 +237,13 @@ export const unAssignTenantCluster = authProcedure
       });
     }
 
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+
+
     const em = await forkEntityManager();
 
     const tenantCluster = await em.findOne(TenantClusterRule, { tenantName, clusterId });
@@ -414,6 +423,13 @@ export const unAssignTenantPartition = authProcedure
         code: "NOT_FOUND",
       });
     }
+
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+    
 
     const em = await forkEntityManager();
 

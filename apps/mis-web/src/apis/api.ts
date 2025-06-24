@@ -45,8 +45,10 @@ import type { GetAlarmLogsCountSchema } from "src/pages/api/admin/monitor/getAla
 import type { QueryStorageQuotaSchema } from "src/pages/api/admin/queryStorageQuota";
 import type { SetPlatformRoleSchema } from "src/pages/api/admin/setPlatformRole";
 import type { SetTenantRoleSchema } from "src/pages/api/admin/setTenantRole";
+import type { GetSyncAccountUserHistorySchema } from "src/pages/api/admin/synchronize/getSyncAccountUserHistory";
 import type { GetSyncBlockStatusJobInfoSchema } from "src/pages/api/admin/synchronize/getSyncBlockStateInfo";
 import type { SetSyncBlockStatusStateSchema } from "src/pages/api/admin/synchronize/setSynchronizeState";
+import type { SyncAccountUserInfoSchema } from "src/pages/api/admin/synchronize/syncAccountUserInfo";
 import type { SyncBlockStatusSchema } from "src/pages/api/admin/synchronize/syncBlockStatus";
 import type { UnlockUserSchema } from "src/pages/api/admin/unlockUser";
 import type { UnsetPlatformRoleSchema } from "src/pages/api/admin/unsetPlatformRole";
@@ -168,8 +170,10 @@ export const api = {
   setPlatformRole: apiClient.fromTypeboxRoute<typeof SetPlatformRoleSchema>("PUT", "/api/admin/setPlatformRole"),
   setTenantRole: apiClient.fromTypeboxRoute<typeof SetTenantRoleSchema>("PUT", "/api/admin/setTenantRole"),
   getSyncBlockStatusJobInfo: apiClient.fromTypeboxRoute<typeof GetSyncBlockStatusJobInfoSchema>("GET", "/api/admin/synchronize/getSyncBlockStateInfo"),
+  getSyncAccountUserHistory: apiClient.fromTypeboxRoute<typeof GetSyncAccountUserHistorySchema>("GET", "/api/admin/synchronize/getSyncAccountUserHistory"),
   setSyncBlockStatusState: apiClient.fromTypeboxRoute<typeof SetSyncBlockStatusStateSchema>("POST", "/api/admin/synchronize/setSynchronizeState"),
   syncBlockStatus: apiClient.fromTypeboxRoute<typeof SyncBlockStatusSchema>("PUT", "/api/admin/synchronize/syncBlockStatus"),
+  syncAccountUserInfo: apiClient.fromTypeboxRoute<typeof SyncAccountUserInfoSchema>("PUT", "/api/admin/synchronize/syncAccountUserInfo"),
   unsetPlatformRole: apiClient.fromTypeboxRoute<typeof UnsetPlatformRoleSchema>("PUT", "/api/admin/unsetPlatformRole"),
   unsetTenantRole: apiClient.fromTypeboxRoute<typeof UnsetTenantRoleSchema>("PUT", "/api/admin/unsetTenantRole"),
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),

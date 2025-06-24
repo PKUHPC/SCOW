@@ -89,6 +89,9 @@ export const FetchJobsInfoPage: NextPage = requireAuth((u) => u.platformRoles.in
                       onClick={() => {
                         setFetching(true);
                         api.fetchJobs({})
+                          .httpError(409, () => {
+                            message.error(t(p("accountUserSyncRunning")));
+                          })
                           .then(({ newJobsCount }) => {
                             message.success(t(p("jobSyncSuccessMessage"), [newJobsCount]));
                             reload();

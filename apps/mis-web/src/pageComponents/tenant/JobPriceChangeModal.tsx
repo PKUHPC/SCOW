@@ -97,6 +97,11 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, targ
             reload();
             onClose();
           })
+          .httpError(409, () => {
+            message.error(t("common.accountUserSyncRunning"));
+            reload();
+            onClose();
+          })
           .then(() => {
             message.success(t(pCommon("changeSuccess")));
             reload();

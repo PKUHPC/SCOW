@@ -39,6 +39,7 @@ import { toGrpc } from "src/utils/job";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateGetJobsOptions } from "src/utils/queryOptions";
+import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 function filterJobs({
   clusters, accountName, jobEndTimeEnd, tenantName,
@@ -110,6 +111,10 @@ export const jobServiceServer = plugin((server) => {
     },
 
     changeJobPrice: async ({ request, em, logger }) => {
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "change job price task");
+
       const { filter, accountPrice, tenantPrice, reason, operatorId, ipAddress } =
         ensureNotUndefined(request, ["filter"]);
 

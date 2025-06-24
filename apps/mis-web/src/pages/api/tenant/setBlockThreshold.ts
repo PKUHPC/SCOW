@@ -79,6 +79,9 @@ export default /* #__PURE__*/route(SetBlockThresholdSchema, async (req, res) => 
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
+      [Status.FAILED_PRECONDITION]: (e) => {
+        console.dir(e, { depth: null });
+        return { 200 : { executed: false, reason: e.details } }; },
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

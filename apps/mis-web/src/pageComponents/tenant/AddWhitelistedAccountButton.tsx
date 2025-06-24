@@ -149,6 +149,9 @@ const NewAccountModal: React.FC<ModalProps> = ({
       .httpError(404, () => {
         message.error(t(p("notExist")));
       })
+      .httpError(409, () => {
+        message.error(t("common.accountUserSyncRunning"));
+      })
       .then(() => {
         message.success(t(p("addSuccess")));
         refresh();

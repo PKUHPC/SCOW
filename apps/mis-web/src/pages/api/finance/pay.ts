@@ -42,7 +42,7 @@ export const FinancePaySchema = typeboxRouteSchema({
     }),
     // account is not found in current tenant.
     404: Type.Null(),
-    410: Type.Null(),
+    410: Type.Object({ message: Type.Optional(Type.String()) }),
   },
 });
 
@@ -84,7 +84,7 @@ export default route(FinancePaySchema,
       return { 200: { balance: moneyToNumber(replyObj.currentBalance) } };
     }).catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 410: null }),
+      [Status.FAILED_PRECONDITION]: (e) => ({ 410: { message: e.details } }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

@@ -228,7 +228,11 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token, ca
         }
       })
       .httpError(409, (e) => {
-        message.error(e.message);
+        if (e.code === "SYNC_ACCOUNT_USER_IS_RUNNING") {
+          message.error(t("common.accountUserSyncRunning"));
+        } else {
+          message.error(e.message);
+        }
       })
       .httpError(410, ({ code }) => {
         if (code === "USER_DELETED") {

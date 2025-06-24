@@ -43,7 +43,7 @@ export const TenantFinancePaySchema = typeboxRouteSchema({
     }),
     // tenant is not found in platform.
     404: Type.Null(),
-
+    409: Type.Object({ message: Type.Optional(Type.String()) }),
   },
 });
 
@@ -82,6 +82,7 @@ export default route(TenantFinancePaySchema,
       return { 200: { balance: moneyToNumber(replyObj.currentBalance) } };
     }).catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
+      [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

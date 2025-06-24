@@ -32,10 +32,21 @@ type CallOnOne = <T>(
   call: (client: SchedulerAdapterClient) => Promise<T>,
 ) => Promise<T>;
 
+type CallOnOneClient = <T>(
+  cluster: string,
+  logger: Logger,
+  // 在外层创建连接用客户端
+  // 如果clusterClient存在则直接向客户端发送请求
+  clusterClient: SchedulerAdapterClient,
+  call: (client: SchedulerAdapterClient) => Promise<T>,
+) => Promise<T>;
+
+
 export interface ClusterPlugin {
   clusters: {
     callOnAll: CallOnAll;
     callOnOne: CallOnOne;
+    callOnOneClient: CallOnOneClient;
   }
 };
 
@@ -152,6 +163,39 @@ export const clustersPlugin = plugin(async (f) => {
 
       });
     }) as CallOnOne,
+
+    callOnOneClient: (async (cluster, logger, clusterClient, call) => {
+
+      logger.info("Calling actions on cluster " + cluster);
+
+      return await call(clusterClient).catch((e) => {
+
+        logger.error("Cluster ops fails at %o", e);
+
+        const errorDetail = e instanceof Error ? e : JSON.stringify(e);
+
+        const reason = "Cluster ID : " + cluster + ", Details : " + errorDetail.toString();
+        const clusterErrorDetails = [{
+          clusterId: cluster,
+          details: errorDetail,
+        }];
+
+        // 统一错误处理
+        if (e instanceof Error) {
+          throw new ServiceError({
+            code: status.INTERNAL,
+            details: reason,
+            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR,
+              { clusterErrors: JSON.stringify(clusterErrorDetails) }),
+          });
+        // 如果是已经封装过的grpc error, 直接抛出错误
+        } else {
+          throw e;
+        }
+
+      });
+    }) as CallOnOneClient,
+
 
     // throws error if failed.
     callOnAll: (async (clusters, logger, call) => {

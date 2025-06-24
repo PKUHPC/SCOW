@@ -58,6 +58,63 @@ export async function getAccountAssignedPartitionsInCluster(
 }
 
 /**
+ * 批量获取账户的某集群下的已授权分区
+ * @param accountsWithTenants
+ * @param clusterId
+ * @returns
+ */
+export async function getAccountsAssignedPartitionsInCluster(
+  accountsWithTenants: { accountName: string, tenantName: string }[], clusterId: string):
+  Promise<Record<string, PartitionNames>> {
+
+  if (process.env.NODE_ENV === "test" || USE_MOCK) {
+    return {
+      "accountA": { partitionNames: ["compute1", "compute2"]},
+      "accountB": { partitionNames: ["compute1", "compute2"]},
+    };
+  }
+
+  const conditions = accountsWithTenants.map(({ accountName, tenantName }) => {
+    return {
+      accountName,
+      tenantName,
+      clusterId,
+    };
+  });
+
+  const em = await forkEntityManager();
+  const found = await em.find(AccountPartitionRule, { $or: conditions });
+
+  // 首先为所有账户创建空记录
+  const result: Record<string, PartitionNames> = {};
+  accountsWithTenants.forEach(({ accountName }) => {
+    result[accountName] = {
+      partitionNames: [],
+      _set: new Set<string>(),
+    } as PartitionNames & { _set: Set<string> };
+  });
+
+  // 然后填充找到的分区
+  found.forEach((cur) => {
+    const key = cur.accountName;
+    const item = result[key] as PartitionNames & { _set: Set<string> };
+
+    if (!item._set.has(cur.partition)) {
+      item._set.add(cur.partition);
+      item.partitionNames.push(cur.partition);
+    }
+  });
+
+  // 删除临时使用的Set
+  Object.values(result).forEach((item) => {
+    delete (item as any)._set;
+  });
+
+  return result;
+}
+
+
+/**
  * 获取账户集群下的已授权分区
  * @param accountNames
  * @param tenantName

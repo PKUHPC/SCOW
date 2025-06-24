@@ -36,6 +36,7 @@ import {
 import { CHARGE_TYPE_OTHERS } from "src/utils/constants";
 import { DEFAULT_PAGE_SIZE } from "src/utils/orm";
 import { mapChargesSortField } from "src/utils/queryOptions";
+import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const chargingServiceServer = plugin((server) => {
 
@@ -64,6 +65,10 @@ export const chargingServiceServer = plugin((server) => {
     },
 
     pay: async ({ request, em, logger }) => {
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "pay task");
+
       const {
         accountName, tenantName, type, amount, comment, ipAddress, operatorId,
       } = ensureNotUndefined(request, ["amount"]);
@@ -122,6 +127,9 @@ export const chargingServiceServer = plugin((server) => {
 
 
     charge: async ({ request, em, logger }) => {
+
+      // 检查当前是否有正在执行的同步用户账户操作
+      await checkRunningSyncTask(em, logger, "fee deduction task");
 
       const { accountName, type, amount, comment, tenantName, userId, metadata }
         = ensureNotUndefined(request, ["amount"]);

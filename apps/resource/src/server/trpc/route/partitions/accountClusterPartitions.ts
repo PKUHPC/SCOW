@@ -5,9 +5,11 @@ import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { callHook } from "src/server/hookClient";
 import { getScowActivatedClusters, getScowClusterConfigs } from "src/server/mis-server/cluster";
+import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
 import { getScowAccounts } from "src/server/mis-server/tenantAccount";
 import { authProcedure } from "src/server/trpc/procedure/base";
-import { isResourceAdmin, NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
+import { AccountUserSyncRunningError, isResourceAdmin, 
+  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
@@ -159,6 +161,12 @@ export const assignAccountCluster = authProcedure
       throw new NoAvailableClustersError;
     }
 
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+    
     const em = await forkEntityManager();
 
     const accountCluster = await em.findOne(AccountClusterRule, { tenantName, accountName, clusterId });
@@ -217,6 +225,13 @@ export const unAssignAccountCluster = authProcedure
         code: "NOT_FOUND",
       });
     }
+
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+    
 
     const em = await forkEntityManager();
 
@@ -318,7 +333,12 @@ export const assignAccountPartition = authProcedure
       });
     }
 
-
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+    
     const em = await forkEntityManager();
 
     return await em.transactional(async (em) => {
@@ -413,6 +433,13 @@ export const unAssignAccountPartition = authProcedure
         code: "NOT_FOUND",
       });
     }
+
+    // 检查当前是否有正在进行的账户用户同步任务
+    const checkRunning = await checkSyncAccountUserRunning();
+    if (checkRunning.isRunning) {
+      throw new AccountUserSyncRunningError();
+    }
+    
 
     const em = await forkEntityManager();
 

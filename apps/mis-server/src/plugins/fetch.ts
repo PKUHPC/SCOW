@@ -23,6 +23,7 @@ export interface FetchPlugin {
     schedule: string;
     lastFetched: () => Date | null;
     fetch: () => Promise<{ newJobsCount: number }>;
+    isRunning: boolean;
   }
 }
 
@@ -35,7 +36,7 @@ export const fetchPlugin = plugin(async (f) => {
 
   const trigger = () => {
     if (fetchIsRunning) return;
-
+    
     fetchIsRunning = true;
     return fetchJobs(f.ext.orm.em.fork(), logger, f.ext).finally(() => { fetchIsRunning = false; });
   };
@@ -81,5 +82,6 @@ export const fetchPlugin = plugin(async (f) => {
     schedule: misConfig.fetchJobs.periodicFetch.cron,
     lastFetched: () => lastFetched,
     fetch: trigger,
+    isRunning: fetchIsRunning,
   } as FetchPlugin["fetch"]));
 });

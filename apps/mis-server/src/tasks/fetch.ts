@@ -12,6 +12,7 @@ import { emptyJobPriceInfo } from "src/bl/jobPrice";
 import { createPriceMap } from "src/bl/PriceMap";
 import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
+import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
 import { JobInfo } from "src/entities/JobInfo";
 import { UserAccount } from "src/entities/UserAccount";
 import { InternalMessageType } from "src/models/messageType";
@@ -63,6 +64,15 @@ export async function fetchJobs(
   logger.info("Start fetching.");
 
   logger.info("Loading Tenant Account associations");
+
+  const isSyncAccountUserRunning = await em.findOne(AccountUserSyncRecord, {
+    syncStatus: SyncStatus.RUNNING,
+  });
+  if (isSyncAccountUserRunning) {
+    logger.info(
+      "An account user synchronization task is running.This will skip fetching Jobs in cluster!");
+    return [{ newJobsCount: 0 }];
+  }
 
   const accounts = await em.find(Account, { }, { populate: ["tenant"]});
 

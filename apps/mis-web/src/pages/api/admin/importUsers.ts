@@ -26,6 +26,7 @@ export const ImportUsersSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_DATA") }),
+    409: Type.Object({ message: Type.Optional(Type.String()) }),
   },
 });
 
@@ -70,6 +71,7 @@ export default route(ImportUsersSchema,
       })
       .catch(handlegRPCError({
         [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_DATA" } } as const),
+        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
       },
       async () => await callLog(logInfo, OperationResult.FAIL),
       ));
