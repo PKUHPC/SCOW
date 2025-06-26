@@ -92,6 +92,7 @@ export async function calculateJobPrice(
   const path = [info.cluster, info.partition, info.qos] as [string, string, string];
 
   async function calculatePrice(priceItem: JobPriceItem, partition: Partition) {
+
     const time = new Decimal(info.timeUsed).div(3600); // 秒到小时
 
     const amountFn = amountStrategyFuncs[priceItem.amount] || customAmountStrategyFuncs[priceItem.amount];

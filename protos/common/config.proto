@@ -196,6 +196,8 @@ message NodeInfo {
   uint32 gpu_count = 10;
   uint32 alloc_gpu_count = 11;
   uint32 idle_gpu_count = 12;
+  // node migration flag
+  bool removable = 13;
 }
 
 

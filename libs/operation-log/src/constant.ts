@@ -122,4 +122,6 @@ export const OperationType: OperationTypeEnum = {
   unlockUser: "unlockUser",
   authorizeApp: "authorizeApp",
   unauthorizeApp: "unauthorizeApp",
+  migrateNode:"migrateNode",
+  activateNode:"activateNode",
 };

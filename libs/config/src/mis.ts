@@ -218,6 +218,16 @@ export const MisConfigSchema = Type.Object({
   deleteAccount: Type.Optional(Type.Object({
     enabled: Type.Boolean({ description: "是否启用从SCOW中删除账户", default: false }),
   })),
+
+  nodeMigration: Type.Optional(
+    Type.Object({
+      enabled: Type.Boolean({ description: "是否启用节点迁移功能", default: false }),
+      migratableClusterGroups: Type.Optional(Type.Array(Type.Object({
+        group: Type.Array(Type.String(), { description: "可以相互迁移的集群组, 如果enabled为true必须填写" }),
+      }))),
+    }),
+  ),
+
 });
 
 const MIS_CONFIG_NAME = "mis";

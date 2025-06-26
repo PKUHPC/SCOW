@@ -189,3 +189,10 @@ bill:
 #   # 类型：整数型
 #   # 默认 7 天， 不配置则为 7 天
 #   syncHistoryDayPeriod: 7
+
+# 节点迁移功能
+# nodeMigration:
+#   enabled: true
+#   migratableClusterGroups:
+#     - group: ["linux", "ai01"]
+#     - group: ["linux", "ai02", "crane01"]

@@ -110,6 +110,45 @@ message DeactivateClusterResponse {
   bool executed = 1;
 }
 
+enum NodeStatus {
+  ACTIVE_MIGRATABLE = 0; // 当前集群在线且可迁移
+  OCCUPIED_BY_JOBS = 1; // 当前集群在线但存在运行中作业（不可迁移）
+  LOCKED_BY_OTHER_CLUSTER = 2; // 该节点已在其他集群上线（跨集群互斥）, 预留暂不用
+  OFFLINE_RECOVERABLE = 3; // 当前集群已下线且可重新上线
+}
+
+message MigrateNodeInfo {
+  string node_name = 1;
+  repeated string partitions = 2;
+  NodeStatus node_status = 3;
+  repeated MigratableCluster migratable_cluster_list = 4;
+
+  message MigratableCluster {
+    string cluster = 1;
+    repeated string partitions = 2;
+  }
+}
+
+message GetClusterMigrateNodesInfoRequest {
+  // if the value of node_names = [], request all nodes info
+  string cluster = 1;
+  repeated string node_names = 2;
+}
+
+message GetClusterMigrateNodesInfoResponse {
+  repeated MigrateNodeInfo nodes = 1;
+}
+
+message MigrateNodeRequest {
+  string node_name = 1;
+  optional string origin_cluster = 2;
+  string destination_cluster = 3;
+}
+
+message MigrateNodeResponse {
+
+}
+
 service ConfigService {
 
   /**
@@ -136,4 +175,8 @@ service ConfigService {
   rpc ActivateCluster(ActivateClusterRequest) returns (ActivateClusterResponse);
 
   rpc DeactivateCluster(DeactivateClusterRequest) returns (DeactivateClusterResponse);
+
+  rpc GetClusterMigrateNodesInfo(GetClusterMigrateNodesInfoRequest) returns (GetClusterMigrateNodesInfoResponse);
+
+  rpc MigrateNode(MigrateNodeRequest) returns (MigrateNodeResponse);
 }

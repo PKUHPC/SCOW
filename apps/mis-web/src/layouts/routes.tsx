@@ -1,4 +1,4 @@
-import { LinkOutlined } from "@ant-design/icons";
+import { LinkOutlined, RetweetOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { AccountAffiliation } from "@scow/protos/build/server/user";
@@ -162,6 +162,12 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             text: t("layouts.route.platformManagement.clusterManagement"),
             path: "/admin/resource/clusterManagement",
           },
+          ...(publicConfig.NODE_MIGRATION?.enabled ?
+            [{
+              Icon: RetweetOutlined,
+              text: t("layouts.route.platformManagement.nodeMigration"),
+              path: "/admin/resource/nodeMigration",
+            }] : []),
         ],
       }] : []),
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && publicConfig.CLUSTER_MONITOR.resourceStatus.enabled ?

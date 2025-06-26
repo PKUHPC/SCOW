@@ -148,6 +148,13 @@ createUser:
 #       en: "The billing for  jobId {{ idJob }} of Cluster {{ cluster }}"
 #       zh_cn: "集群 {{ cluster }} 的作业ID {{ idJob }} 的计费"
 
+# 节点迁移功能
+# nodeMigration:
+#   enabled: true
+#   migratableClusterGroups:
+#     - group: ["linux", "ai01"]
+#     - group: ["linux", "ai02", "crane01"]
+
 # 删除用户相关配置
 # deleteUser:
 

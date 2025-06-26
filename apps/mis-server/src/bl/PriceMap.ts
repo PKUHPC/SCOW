@@ -97,7 +97,7 @@ export async function createPriceMap(
     logger.info(e);
     return {};
   });
-  
+
   // partitions info for activated clusters
   const partitionsForClusters: Record<string, Partition[]> = {};
 
@@ -106,10 +106,10 @@ export async function createPriceMap(
       const result = await clusterPlugin.callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),      
+        async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
       );
       partitionsForClusters[cluster] = result.partitions;
-    } catch (error) { 
+    } catch (error) {
       logger.info(`Can not get cluster's (clusterId: ${cluster}) config info from adapter.`, error);
     };
   }));

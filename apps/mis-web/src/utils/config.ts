@@ -65,6 +65,8 @@ export interface PublicRuntimeConfig {
 
   DELETE_ACCOUNT_CONFIG?: MisConfigSchema["deleteAccount"],
 
+  NODE_MIGRATION?: MisConfigSchema["nodeMigration"],
+
   ADD_USER_TO_ACCOUNT: {
     accountAdmin: {
       allowed: boolean,

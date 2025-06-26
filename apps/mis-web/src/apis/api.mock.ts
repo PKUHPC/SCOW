@@ -18,7 +18,7 @@ import type { RunningJob } from "@scow/protos/build/common/job";
 import { type Account } from "@scow/protos/build/server/account";
 import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
 import { type api } from "src/apis/api";
-import { ClusterConnectionStatus } from "src/models/cluster";
+import { ClusterConnectionStatus, NodeStatus } from "src/models/cluster";
 import { OperationResult } from "src/models/operationLog";
 import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, PlatformRole,
   TenantRole, UserInfo, UserRole, UserState,UserStatus } from "src/models/User";
@@ -596,6 +596,29 @@ export const mockApi: MockApi<typeof api> = {
   activateCluster: async () => ({ executed: true }),
   deactivateCluster: async () => ({ executed: true }),
 
+  getClusterMigrateNodesInfo: async () => ({
+    nodes: [
+      {
+        nodeName: "node1",
+        nodeStatus: NodeStatus.ACTIVE_MIGRATABLE,
+        cluster: "linux1",
+        migratableClusterList: [
+          {
+            cluster: "cluster1",
+            partitions: ["queue1", "queue2"],
+          },
+          {
+            cluster:  "cluster2",
+            partitions: ["queue1", "queue2"],
+          },
+        ],
+        partitions: ["partition1", "partition2"],
+      },
+    ],
+  }),
+
+  migrateNode: async () => null,
+  activateNode: async () => null,
   exportAccount: null,
   exportChargeRecord: null,
   exportPayRecord: null,

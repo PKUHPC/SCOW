@@ -183,6 +183,8 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     unlockUser: t(pTypes("unlockUser")),
     authorizeApp: t(pTypes("authorizeApp")),
     unauthorizeApp: t(pTypes("unauthorizeApp")),
+    migrateNode: t(pTypes("migrateNode")),
+    activateNode: t(pTypes("activateNode")),
   };
 
 };
@@ -296,7 +298,9 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
 //   exportJobRecord: "040311",
 //   exportBill: "040312",
 //   exportUserBill: "040313",
-//   customEvent: "050001",
+//   migrateNode: "040401",
+// activateNode: "040402",
+// customEvent: "050001",
 // };
 
 type OperationTextsArgsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string | React.ReactNode;
@@ -730,6 +734,14 @@ export const getOperationDetail = (
         ]) : t(pDetails("tenantAppAuthorizationLog"), [clusterName, operationEvent[logEvent].appName,
           operationEvent[logEvent].target.tenantName]);
       }
+      case "migrateNode":
+        return t(pDetails("migrateNode"),
+          [operationEvent[logEvent].nodeName,
+            operationEvent[logEvent].originCluster ,
+            operationEvent[logEvent].destinationCluster]);
+      case "activateNode":
+        return t(pDetails("activateNode"),
+          [operationEvent[logEvent].nodeName, operationEvent[logEvent].destinationCluster]);
       default:
         return "-";
     }

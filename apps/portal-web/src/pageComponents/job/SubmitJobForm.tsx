@@ -319,7 +319,6 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
     }, [selectableAccounts, partitionsReloadTrigger]),
   });
 
-
   // 根据当前缓存的账户分区列表获取当前选择的分区信息
   const handlePartitionCacheMap = (cacheMap: Record<string, Partition[]>) => {
     const account = form.getFieldValue("account");

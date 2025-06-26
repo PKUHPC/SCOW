@@ -209,6 +209,17 @@ message DeleteUser {
   string user_id = 1;
 }
 
+message MigrateNode {
+  string node_name = 1;
+  string origin_cluster = 2;
+  string destination_cluster = 3;
+}
+
+message ActivateNode {
+  string node_name = 1;
+  string destination_cluster = 2;
+}
+
 message AddUserToAccount {
   string account_name = 1;
   string user_id = 2;
@@ -847,6 +858,8 @@ message CreateOperationLogRequest {
     UnlockUser unlock_user = 111;
     AuthorizeApp authorize_app = 112;
     UnauthorizeApp unauthorize_app = 113;
+    MigrateNode migrate_node = 114;
+    ActivateNode activate_node = 115;
   }
 }
 
@@ -968,6 +981,8 @@ message OperationLog {
     UnlockUser unlock_user = 113;
     AuthorizeApp authorize_app = 114;
     UnauthorizeApp unauthorize_app = 115;
+    MigrateNode migrate_node = 116;
+    ActivateNode activate_node = 117;
   }
 }
 

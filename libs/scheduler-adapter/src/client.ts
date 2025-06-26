@@ -15,6 +15,7 @@ import { AccountServiceClient } from "@scow/scheduler-adapter-protos/build/proto
 import { AppServiceClient } from "@scow/scheduler-adapter-protos/build/protos/app";
 import { ConfigServiceClient } from "@scow/scheduler-adapter-protos/build/protos/config";
 import { JobServiceClient } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { NodeServiceClient } from "@scow/scheduler-adapter-protos/build/protos/node";
 import { UserServiceClient } from "@scow/scheduler-adapter-protos/build/protos/user";
 import { VersionServiceClient } from "@scow/scheduler-adapter-protos/build/protos/version";
 
@@ -28,6 +29,7 @@ export interface SchedulerAdapterClient {
   user: UserServiceClient;
   job: JobServiceClient;
   config: ConfigServiceClient;
+  node: NodeServiceClient;
   version: VersionServiceClient;
   app: AppServiceClient;
 }
@@ -54,6 +56,7 @@ export const getSchedulerAdapterClient = (address: string, sslConfig: SslConfig)
     user: getClient(address, sslConfig, UserServiceClient),
     job: getClient(address, sslConfig, JobServiceClient),
     config: getClient(address, sslConfig, ConfigServiceClient),
+    node: getClient(address, sslConfig, NodeServiceClient),
     version: getClient(address, sslConfig, VersionServiceClient),
     app: getClient(address, sslConfig, AppServiceClient),
   } as SchedulerAdapterClient;

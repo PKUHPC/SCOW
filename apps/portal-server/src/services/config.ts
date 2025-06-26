@@ -15,7 +15,7 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { getClusterConfigs } from "@scow/config/build/cluster";
-import { checkSchedulerApiVersion, convertClusterConfigsToServerProtoType, 
+import { checkSchedulerApiVersion, convertClusterConfigsToServerProtoType,
   libGetUserInfo, NO_CLUSTERS } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
@@ -51,8 +51,8 @@ export const staticConfigServiceServer = plugin((server) => {
       // 如果部署了资源管理扩展功能
       if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled) {
         // 获取用户在scow中的信息
-        const userInfo = await libGetUserInfo(logger, 
-          userId, 
+        const userInfo = await libGetUserInfo(logger,
+          userId,
           config.MIS_SERVER_URL,
           commonConfig.scowApi?.auth?.token,
         );
@@ -72,7 +72,7 @@ export const staticConfigServiceServer = plugin((server) => {
           logger,
           async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
         );
-      
+
         const partitionsResult: Partition[] = [];
         clusterPartitionsInfo.partitions.forEach((p) => {
           if (assignedPartitions.includes(p.name)) {

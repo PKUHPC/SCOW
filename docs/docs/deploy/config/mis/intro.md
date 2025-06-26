@@ -133,6 +133,17 @@ deleteAccount:
   # 是否允许用户从SCOW中删除账户，默认为false
   enabled: false
 
+# 节点迁移功能
+nodeMigration:
+
+  # 是否开启节点迁移功能，默认为false
+  enabled: false
+
+   # 可以相互迁移的集群组, 组内各集群之间部分节点根据实际情况具有相互迁移可能性，如果enabled为true必须填写
+  migratableClusterGroups:
+    - group: ["linux", "ai01"]
+    - group: ["linux", "ai02", "crane01"]
+
 # # 新增导航链接相关配置
 # navLinks:
 #   # 链接名

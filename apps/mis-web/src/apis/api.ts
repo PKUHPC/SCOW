@@ -3,6 +3,7 @@ import { apiClient } from "src/apis/client";
 import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
 import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
 import type { ActivateClusterSchema } from "src/pages/api/admin/activateCluster";
+import type { ActivateNodeSchema } from "src/pages/api/admin/activateNode";
 import type { AuthorizeAppSchema } from "src/pages/api/admin/authorization/authorizeApp";
 import type { GetTargetAppAuthorizationsSchema } from "src/pages/api/admin/authorization/getTargetAppAuthorizations";
 import type { ChangeJobPriceSchema } from "src/pages/api/admin/changeJobPrice";
@@ -19,6 +20,7 @@ import type { GetActiveUserCountSchema } from "src/pages/api/admin/getActiveUser
 import type { GetAllAccountsSchema } from "src/pages/api/admin/getAllAccounts";
 import type { GetAllTenantsSchema } from "src/pages/api/admin/getAllTenants";
 import type { GetAllUsersSchema } from "src/pages/api/admin/getAllUsers";
+import type { GetClusterMigrateNodesInfoSchema } from "src/pages/api/admin/getClusterMigrateNodesInfo";
 import type { GetClustersConnectionInfoSchema } from "src/pages/api/admin/getClustersConnectionInfo";
 import type { GetClustersRuntimeInfoSchema } from "src/pages/api/admin/getClustersRuntimeInfo";
 import type { GetClusterUsersSchema } from "src/pages/api/admin/getClusterUsers";
@@ -39,6 +41,7 @@ import type { GetTopSubmitJobUserSchema } from "src/pages/api/admin/getTopSubmit
 import type { GetUsersWithMostJobSubmissionsSchema } from "src/pages/api/admin/getUsersWithMostJobSubmissions";
 import type { ImportUsersSchema } from "src/pages/api/admin/importUsers";
 import type { AccountThresholdSchema } from "src/pages/api/admin/isAccountBelowBlockThreshold";
+import type { MigrateNodeSchema } from "src/pages/api/admin/migrateNode";
 import type { GetAlarmDbIdSchema } from "src/pages/api/admin/monitor/getAlarmDbId";
 import type { GetAlarmLogsSchema } from "src/pages/api/admin/monitor/getAlarmLogs";
 import type { GetAlarmLogsCountSchema } from "src/pages/api/admin/monitor/getAlarmLogsCount";
@@ -148,6 +151,9 @@ export const api = {
   getClusterUsers: apiClient.fromTypeboxRoute<typeof GetClusterUsersSchema>("GET", "/api/admin/getClusterUsers"),
   getClustersConnectionInfo: apiClient.fromTypeboxRoute<typeof GetClustersConnectionInfoSchema>("GET", "/api/admin/getClustersConnectionInfo"),
   getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>("GET", "/api/admin/getClustersRuntimeInfo"),
+  getClusterMigrateNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterMigrateNodesInfoSchema>("GET", "/api/admin/getClusterMigrateNodesInfo"),
+  migrateNode: apiClient.fromTypeboxRoute<typeof MigrateNodeSchema>("PATCH", "/api/admin/migrateNode"),
+  activateNode: apiClient.fromTypeboxRoute<typeof ActivateNodeSchema>("PATCH", "/api/admin/activateNode"),
   getDailyCharge: apiClient.fromTypeboxRoute<typeof GetDailyChargeSchema>("GET", "/api/admin/getDailyCharge"),
   getDailyPay: apiClient.fromTypeboxRoute<typeof GetDailyPaySchema>("GET", "/api/admin/getDailyPay"),
   getJobTotalCount: apiClient.fromTypeboxRoute<typeof GetJobTotalCountSchema>("GET", "/api/admin/getJobTotalCount"),

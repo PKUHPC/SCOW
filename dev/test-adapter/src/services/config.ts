@@ -61,5 +61,6 @@ export const configServiceServer = plugin((server) => {
     listImplementedOptionalFeatures: async () => {
       return [];
     },
+
   });
 });
