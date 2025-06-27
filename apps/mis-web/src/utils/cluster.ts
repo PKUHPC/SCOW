@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { SimpleClusterSchema } from "@scow/config/build/cluster";
+import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
 import { I18nStringType } from "@scow/config/build/i18n";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 
@@ -30,6 +30,20 @@ export function getClusterNameWithUndefined(
   publicConfigClusters: Record<string, Cluster>) {
   return clusterId ?
     getClusterName(clusterId, languageId, publicConfigClusters) : "-";
+}
+
+/**
+ * 有一个启用了的集群启用存储管理，则认为开启了存储管理功能
+ * @param {Record<String, import("@scow/config/build/cluster").ClusterConfigSchema>} clusters
+ * @returns {boolean} storageEnabled
+ */
+export function getStorageEnabled(
+  clusterConfigs: Record<string, ClusterConfigSchema>, activatedClusterIds: string[],
+) {
+
+  return Object.entries(clusterConfigs).filter(([cluster, config]) =>
+    config.storage?.enabled && activatedClusterIds.includes(cluster),
+  ).length > 0;
 }
 
 export const getSortedClusterValues =
@@ -62,4 +76,3 @@ export const getPublicConfigClusters =
 
     return publicConfigClusters;
   };
-

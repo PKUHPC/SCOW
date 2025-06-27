@@ -25,6 +25,7 @@ export const CopyFileItemSchema = typeboxRouteSchema({
       code: Type.Literal("CP_CMD_FAILED"),
       error: Type.String(),
     }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     400: Type.Object({
       code: Type.Union([
         Type.Literal("INVALID_CLUSTER"),
@@ -64,6 +65,7 @@ export default route(CopyFileItemSchema, async (req, res) => {
   }, handlegRPCError({
     [status.INTERNAL]: (e) => ({ 415: { code: "CP_CMD_FAILED" as const, error: e.details } }),
     [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
     [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),

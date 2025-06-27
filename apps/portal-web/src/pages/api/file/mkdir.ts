@@ -35,6 +35,7 @@ export const MkdirSchema = typeboxRouteSchema({
   responses: {
     204: Type.Null(),
     409: Type.Object({ code: Type.Literal("ALREADY_EXISTS") }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
   },
 });
@@ -68,6 +69,7 @@ export default route(MkdirSchema, async (req, res) => {
   }, handlegRPCError({
     [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
     [status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS" as const } }),
+    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

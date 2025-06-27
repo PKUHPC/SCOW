@@ -26,6 +26,7 @@ export const CompressFilesSchema = typeboxRouteSchema({
       error: Type.String(),
     }),
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
   },
 });
 
@@ -58,6 +59,7 @@ export default route(CompressFilesSchema, async (req, res) => {
   }, handlegRPCError({
     [status.INTERNAL]: (e) => ({ 415: { code: "COMPRESS_FAILED" as const, error: e.details } }),
     [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

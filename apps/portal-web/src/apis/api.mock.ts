@@ -423,6 +423,14 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   decompressFile: null,
+
+  getUserStorageInfo: async () => ({
+    storageInfos: [{
+      path: "/data/home",
+      quotaBytes: 321321321,
+      usedStorageBytes: 123123123,
+    }],
+  }),
 };
 
 

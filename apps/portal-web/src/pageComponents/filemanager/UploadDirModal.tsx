@@ -25,6 +25,7 @@ interface UploadProgressEvent {
 }
 
 const p = prefix("pageComp.fileManagerComp.uploadDirModal.");
+const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
@@ -145,7 +146,11 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         const exists = await checkFolderExists(folderPath);
         if (!exists) {
           try {
-            await api.mkdir({ body: { cluster, path: folderPath } }).httpError(409, () => {});
+            await api.mkdir({ body: { cluster, path: folderPath } })
+              .httpError(409, () => {})
+              .httpError(429, () => {
+                message.error(t(pCommon("noSpaceError")));
+              });
           } catch {
             /* Handle mkdir error if necessary */
           }
@@ -264,7 +269,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
     const { tempFileDir, chunkSizeByte, filesInfo } = await api.initMultipartUpload({
       body: { cluster, path: folderPath, name: file.name },
-    });
+    }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
 
     const uploadedChunkIndices = new Set(
       filesInfo

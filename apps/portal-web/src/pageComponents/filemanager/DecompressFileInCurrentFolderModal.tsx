@@ -18,7 +18,8 @@ interface FormProps {
 export const DecompressFileInCurrentFolderModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.app.decompressionModal.");
-
+  const pCommon = prefix("common.");
+  
   const { message } = App.useApp();
   const [form] = Form.useForm<FormProps>();
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ export const DecompressFileInCurrentFolderModal: React.FC<Props> = ({ open, onCl
       .httpError(400, () => { message.error(t(p("typeError"))); })
       .httpError(403, () => { message.error(t(p("permissionDenied"))); })
       .httpError(409, () => { message.error(t(p("unimplementedError"))); })
+      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
       .httpError(500, (err) => {
         message.error(`${t(p("failure"))} Details: ${err.error}`);
       })

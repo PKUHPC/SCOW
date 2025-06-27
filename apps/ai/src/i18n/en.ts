@@ -735,7 +735,7 @@ export default {
       exitEdit: "Exit Edit Mode",
       failedGetFile: "Failed to get file: {}",
       cantReadFile: "Cannot read file: {}",
-      saveFileFail: "File save failed: {}",
+      saveFileFail: "File save failed",
       saveFileSuccess: "File saved successfully",
       fileSizeExceeded: "File too large (maximum {}), please download and edit",
       fileFetchAbortPrompt: "Fetch {} operation was aborted",

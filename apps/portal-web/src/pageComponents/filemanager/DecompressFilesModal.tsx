@@ -42,9 +42,9 @@ export const DecompressFilesModal: React.FC<Props> = ({
     setDecompression((decompression) => ({
       ...decompression, decompressionStarted: decompression.decompressionStarted.concat(decompressionPath),
     }));
-      
+
     await Promise.allSettled(files.map(async (f: FileInfo) => {
-      
+
       return api.decompressFile({
         body: {
           clusterId: cluster,
@@ -55,8 +55,9 @@ export const DecompressFilesModal: React.FC<Props> = ({
       }).httpError(400, (err) => { throw err; })
         .httpError(403, (err) => { throw err; })
         .httpError(409, (err) => { throw err; })
+        .httpError(429, (err) => { throw err; })
         .httpError(500, (err) => { throw err; });
-             
+
     })).then((decompressionResults) => {
 
       setLoading(false);
@@ -67,17 +68,17 @@ export const DecompressFilesModal: React.FC<Props> = ({
         }
         return acc;
       }, []);
-          
+
       if (errors.length === 0) {
         message.success(t(p("decompressionSuccess")));
       }
-          
+
       if (errors.length > 0) {
         const errorDetails = errors.map((error) => {
           return `Filename: ${error?.fileName} \n`
                   + `Reason: ${error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason}`;
         }).join("; \n\n");
-          
+
         if (errors.length === files.length) {
           modal.error({
             title: t(p("decompressionFailed")),
@@ -88,7 +89,7 @@ export const DecompressFilesModal: React.FC<Props> = ({
             title: t(p("someFilesFailed")),
             content: <div style={{ whiteSpace: "pre-wrap" }}>{errorDetails}</div>,
           });
-        }                 
+        }
       }
       reload();
       setDecompression((decompression) => {
@@ -96,12 +97,12 @@ export const DecompressFilesModal: React.FC<Props> = ({
         if (decompression.decompressionCompleted.length + 1 === decompression.decompressionStarted.length) {
           return { decompressionCompleted: [], decompressionStarted: []};
         }
-        
-        return { ...decompression, 
+
+        return { ...decompression,
           decompressionCompleted: decompression.decompressionCompleted.concat(decompressionPath) };
       });
     });
-   
+
   };
 
   const onSubmit = async () => {

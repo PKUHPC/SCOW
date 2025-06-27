@@ -52,6 +52,20 @@ export function getFileTransferEnabled(
   return fileTransferEnabled;
 }
 
+/**
+ * 有一个启用了的集群启用存储管理，则认为开启了存储管理功能
+ * @param {Record<String, import("@scow/config/build/cluster").ClusterConfigSchema>} clusters
+ * @returns {boolean} storageEnabled
+ */
+export function getStorageEnabled(
+  clusterConfigs: Record<string, ClusterConfigSchema>, activatedClusterIds: string[],
+) {
+
+  return Object.entries(clusterConfigs).filter(([cluster, config]) =>
+    config.storage?.enabled && activatedClusterIds.includes(cluster),
+  ).length > 0;
+}
+
 export interface Cluster { id: string; name: I18nStringType; };
 
 export const getLoginDesktopEnabled = (

@@ -1,6 +1,6 @@
 import { Collection, Entity, Enum, ManyToOne, OneToMany, PrimaryKey, Property, Ref } from "@mikro-orm/core";
-import { StorageQuota } from "src/entities/StorageQuota";
 import { Tenant } from "src/entities/Tenant";
+import { TenantUserStorageQuota } from "src/entities/TenantUserStorageQuota";
 import { UserAccount } from "src/entities/UserAccount";
 import { CURRENT_TIMESTAMP, DATETIME_TYPE, EntityOrRef, toRef } from "src/utils/orm";
 import { type AnyJson } from "src/utils/types";
@@ -31,8 +31,8 @@ export class User {
   @Property({ unique: true })
   userId: string;
 
-  @OneToMany(() => StorageQuota, (u) => u.user)
-  storageQuotas = new Collection<StorageQuota>(this);
+  @OneToMany(() => TenantUserStorageQuota, (quota) => quota.user)
+  storageQuotas = new Collection<TenantUserStorageQuota>(this);
 
   @Property()
   name: string;

@@ -25,7 +25,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
   const close = async (messageId: number) => {
     if (!readIdsRef.current.has(messageId)) {
       await api.markMessageRead({ body: { messageId } });
-      
+
       readIdsRef.current.add(messageId); // 标记为已读
     }
     notifApi.destroy(messageId);
@@ -57,17 +57,19 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      const { results } = await api.getUnreadMessage({
+      const results = await api.getUnreadMessage({
         query: { messageType: AdminMessageType.SystemNotification },
-      }).httpError(500, () => {});
+      }).httpError(500, () => {}).then((res) => res).catch(() => undefined);
 
-      for (const msg of results.messages) {
-        const content = renderingMessage(msg, currentLanguage.id);
+      if (results) {
+        for (const msg of results.results.messages) {
+          const content = renderingMessage(msg, currentLanguage.id);
 
-        // 使用 ref 来检查已通知的 ID
-        if (content && !notifiedIdsRef.current.has(msg.id)) {
-          openNotification(content);
-          notifiedIdsRef.current.add(msg.id); // 更新 ref 中的 ID 集合
+          // 使用 ref 来检查已通知的 ID
+          if (content && !notifiedIdsRef.current.has(msg.id)) {
+            openNotification(content);
+            notifiedIdsRef.current.add(msg.id); // 更新 ref 中的 ID 集合
+          }
         }
       }
     };

@@ -25,6 +25,7 @@ import { AllJobsIcon, ApplicationIcon
 import { User } from "src/stores/UserStore";
 import { Cluster, LoginNode } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
+
 export const userRoutes: (
   user: User | undefined,
   currentClusters: Cluster[],

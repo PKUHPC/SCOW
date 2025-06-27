@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
 import { App, Button, Checkbox, Col, Form, Input, InputNumber, Row, Select, Space } from "antd";
 import dayjs from "dayjs";
@@ -85,6 +73,7 @@ interface Props {
 }
 
 const p = prefix("pageComp.job.submitJobForm.");
+const pCommon = prefix("common.");
 
 export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submitJobPromptText }) => {
 
@@ -132,6 +121,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
           throw e;
         }
       })
+      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
       .then(({ jobId }) => {
         message.success(t(p("successMessage")) + jobId);
         Router.push("/jobs/runningJobs");

@@ -29,6 +29,7 @@ export const InitMultipartUploadSchema = typeboxRouteSchema({
       filesInfo: Type.Array(FileInfo),
     }),
     403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     500: Type.Object({ code: Type.Literal("INITIAL_UPLOAD_FAILED") }),
     501: Type.Object({ code: Type.Literal("UNIMPLEMENTED") }),
     520: Type.Object({ code: Type.Literal("UNKNOWN_ERROR") }),
@@ -70,6 +71,8 @@ export default route(InitMultipartUploadSchema, async (req, res) => {
     [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
     [status.UNKNOWN]: () => ({ 520: { code: "UNKNOWN_ERROR" as const } }),
     [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
-  }, async () => await callLog(logInfo, OperationResult.FAIL)));
-
+    [status.RESOURCE_EXHAUSTED]: (e) => ({ 429: { code: "NO_SPACE" as const, error: e.details } }),
+  },
+  async () => await callLog(logInfo, OperationResult.FAIL),
+  ));
 });

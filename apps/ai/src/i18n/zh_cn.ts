@@ -736,7 +736,7 @@ export default {
       exitEdit: "退出编辑",
       failedGetFile: "获取文件: {} 失败",
       cantReadFile: "无法读取文件: {}",
-      saveFileFail: "文件保存失败: {}",
+      saveFileFail: "文件保存失败",
       saveFileSuccess: "文件保存成功",
       fileSizeExceeded: "文件过大（最大{}），请下载后编辑",
       fileFetchAbortPrompt: "获取文件 {} 操作被终止",

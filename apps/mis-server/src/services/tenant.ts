@@ -1,3 +1,4 @@
+import { ConnectError } from "@connectrpc/connect";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -11,11 +12,13 @@ import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
 import { Account } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
+import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
+import { getScowdClient } from "src/utils/scowd";
 import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 
@@ -148,10 +151,42 @@ export const tenantServiceServer = plugin((server) => {
 
             return true;
           })
+          .then(async () => {
+            // 设置用户的存储配额
+            for (const [cluster, config] of Object.entries(configClusters)) {
+              if (config.storage?.enabled && config.scowd?.enabled) {
+                const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
+                const scowdClient = getScowdClient(cluster);
+
+                const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
+                if (quotaBytes === undefined) {
+                  const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
+                    path: config.storage.paths[0],
+                  })).totalStorageBytes;
+
+                  await scowdClient.storageQuota.setUserStorageQuota({
+                    userId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+                  });
+                } else {
+                  await scowdClient.storageQuota.setUserStorageQuota({
+                    userId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+                  });
+                }
+              }
+            }
+
+            return true;
+          })
           .catch(async (e) => {
             if (e.status === 409) {
               logger.warn("User exists in auth.");
               return false;
+            } else if (e instanceof ConnectError) {
+              server.logger.error("Failed to set user storage quota.", e);
+              throw {
+                code: Status.INTERNAL,
+                message: `Failed to set user ${userId} storage quota.`,
+              } as ServiceError;
             } else {
               logger.error("Error creating user in auth.", e);
               throw {

@@ -11,7 +11,7 @@ import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInf
   ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, OperationLogIcon, PartitionsIcon,
   PayAccountIcon, PaymentsIcon, PermissionManagementIcon,PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
   SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
-  TenantPaymentsIcon, TenantsListIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
+  TenantPaymentsIcon, TenantsListIcon, TenantStorageQuotaIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
   UserSpaceIcon } from "src/assets/headerIcons";
 import { prefix } from "src/i18n";
 import en from "src/i18n/en";
@@ -198,8 +198,9 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
   },
 ];
 
-export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransType) => NavItemProps[]
-= (tenantRoles, token, t) => [
+export const tenantRoutes: (
+  tenantRoles: TenantRole[], storageEnabled: boolean, token: string, t: TransType
+) => NavItemProps[] = (tenantRoles, storageEnabled, token, t) => [
   {
     Icon: TenantManageIcon,
     text: t(pTenant("firstNav")),
@@ -285,6 +286,18 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
               text: t(pTenant("whitelist")),
               path: "/tenant/accounts/whitelist",
             },
+            {
+              Icon: AccountChargeRecordsIcon,
+              text: t(pTenant("accountChargeRecords")),
+              path: "/tenant/finance/accountChargeRecords",
+            },
+            ...(publicConfig.BILL_ENABLED ? [
+              {
+                Icon: TenantBillsIcon,
+                text: t(pTenant("accountBills")),
+                path: "/tenant/finance/bills",
+              },
+            ] : []),
           ],
         },
         // 开启资源管理或授权应用时展示 权限管理 导航
@@ -342,6 +355,13 @@ export const tenantRoutes: (tenantRoles: TenantRole[], token: string, t: TransTy
             ],
           },
         ] : []),
+      ...(storageEnabled && tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [
+        {
+          Icon: TenantStorageQuotaIcon,
+          text: t(pTenant("storageManager")),
+          path: "/tenant/storageManager",
+        },
+      ] : []),
       ...(publicConfig.AUDIT_DEPLOYED && tenantRoles.includes(TenantRole.TENANT_ADMIN) ? [
         {
           Icon: OperationLogIcon,
@@ -460,7 +480,7 @@ export const customNavLinkRoutes = (navLinkItems: NavItemProps[]): NavItemProps[
   return navLinkItems;
 };
 
-export const getAvailableRoutes = (user: User | undefined, t: TransType): NavItemProps[] => {
+export const getAvailableRoutes = (user: User | undefined, storageEnabled: boolean, t: TransType): NavItemProps[] => {
 
   if (!user) { return []; }
 
@@ -476,7 +496,7 @@ export const getAvailableRoutes = (user: User | undefined, t: TransType): NavIte
   }
 
   if (user.tenantRoles.length !== 0) {
-    routes.push(...tenantRoutes(user.tenantRoles, user.token, t));
+    routes.push(...tenantRoutes(user.tenantRoles, storageEnabled, user.token, t));
   }
 
   if (user.platformRoles.length !== 0) {

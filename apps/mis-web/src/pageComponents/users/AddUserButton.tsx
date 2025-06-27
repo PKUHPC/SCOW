@@ -143,7 +143,7 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token, ca
   useEffect(() => {
     const checkAccountStatus = async () => {
       try {
-        const result = await api.isAccountBelowBlockThreshold({
+        const result = await api.accountThreshold({
           query: { accountName: currentAffiliation?.accountName ?? "" },
         });
         setIsBelowBlockThreshold(result.isBelowBlockThreshold);

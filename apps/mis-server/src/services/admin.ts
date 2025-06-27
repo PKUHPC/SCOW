@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
@@ -32,7 +20,6 @@ import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
 import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
-import { StorageQuota } from "src/entities/StorageQuota";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, User } from "src/entities/User";
 import { UserAccount, UserRole } from "src/entities/UserAccount";
@@ -84,20 +71,21 @@ export const adminServiceServer = plugin((server) => {
 
     },
 
-    queryStorageQuota: async ({ request, em }) => {
-      const { cluster, userId } = request;
+    queryStorageQuota: async () => {
+      // const { cluster, userId } = request;
 
-      const quota = await em.findOne(StorageQuota, {
-        user: { userId }, cluster,
-      });
+      // const quota = await em.findOne(StorageQuota, {
+      //   user: { userId }, cluster,
+      // });
 
-      if (!quota) {
-        throw {
-          code: Status.NOT_FOUND, message: `User ${userId} or cluster ${cluster} is not found`,
-        } as ServiceError;
-      }
+      // if (!quota) {
+      //   throw {
+      //     code: Status.NOT_FOUND, message: `User ${userId} or cluster ${cluster} is not found`,
+      //   } as ServiceError;
+      // }
 
-      return [{ currentQuota: quota.storageQuota }];
+      // return [{ currentQuota: quota.storageQuota }];
+      return [{ currentQuota: 0 }];
     },
 
     importUsers: async ({ request, em, logger }) => {

@@ -1,3 +1,4 @@
+import { ConnectError } from "@connectrpc/connect";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -7,9 +8,11 @@ import { InitServiceServer, InitServiceService } from "@scow/protos/build/server
 import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
 import { SystemState } from "src/entities/SystemState";
+import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
+import { getScowdClient } from "src/utils/scowd";
 import { userExists } from "src/utils/userExists";
 
 export const initServiceServer = plugin((server) => {
@@ -71,11 +74,41 @@ export const initServiceServer = plugin((server) => {
 
           return true;
         })
+        .then(async () => {
+          // 设置用户的存储配额
+          for (const [cluster, config] of Object.entries(configClusters)) {
+            if (config.storage?.enabled && config.scowd?.enabled) {
+              const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
+              const scowdClient = getScowdClient(cluster);
+
+              const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
+              if (quotaBytes === undefined) {
+                const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
+                  path: config.storage.paths[0],
+                })).totalStorageBytes;
+
+                await scowdClient.storageQuota.setUserStorageQuota({
+                  userId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+                });
+              } else {
+                await scowdClient.storageQuota.setUserStorageQuota({
+                  userId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+                });
+              }
+            }
+          }
+
+          return true;
+        })
         // If the call of creating user of auth fails,  delete the user created in the database.
         .catch(async (e) => {
           if (e.status === 409) {
             server.logger.warn(`User with userId ${ userId }  exists in auth.`);
             return false;
+          }
+
+          if (e instanceof ConnectError) {
+            server.logger.error("Failed to set user storage quota.", e);
           }
           // 回滚数据库
           await em.removeAndFlush(user);

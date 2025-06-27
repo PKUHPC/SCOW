@@ -1,3 +1,4 @@
+import { ConnectError } from "@connectrpc/connect";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
@@ -31,6 +32,7 @@ import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account,AccountState } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
+import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
@@ -38,6 +40,7 @@ import { getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
+import { getScowdClient } from "src/utils/scowd";
 import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 
@@ -64,10 +67,8 @@ export const userServiceServer = plugin((server) => {
             status: PFUserStatus[x.blockedInCluster],
             jobChargeLimit: x.jobChargeLimit ? decimalToMoney(x.jobChargeLimit) : undefined,
             usedJobChargeLimit: x.usedJobCharge ? decimalToMoney(x.usedJobCharge) : undefined,
-            storageQuotas: x.user.$.storageQuotas.getItems().reduce((prev, curr) => {
-              prev[curr.cluster] = curr.storageQuota;
-              return prev;
-            }, {}),
+            // 该 storageQuotas 是旧逻辑，不方便删除，需研判
+            storageQuotas: {},
             userStateInAccount: accountUserInfo_UserStateInAccountFromJSON(x.state),
             displayedUserState: displayedState,
           };
@@ -122,14 +123,9 @@ export const userServiceServer = plugin((server) => {
         return prev;
       }, {});
 
-      const storageQuotas = user.storageQuotas.getItems().reduce((prev, curr) => {
-        prev[curr.cluster] = curr.storageQuota;
-        return prev;
-      }, {});
-
       return [{
         accountStatuses,
-        storageQuotas,
+        storageQuotas: {},
       }];
     },
 
@@ -490,11 +486,45 @@ export const userServiceServer = plugin((server) => {
             .catch(() => {});
           return true;
         })
+        .then(async () => {
+          // 设置用户的存储配额
+          for (const [cluster, config] of Object.entries(configClusters)) {
+            if (config.storage?.enabled && config.scowd?.enabled) {
+              const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
+              const scowdClient = getScowdClient(cluster);
+
+              const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
+              if (quotaBytes === undefined) {
+                const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
+                  path: config.storage.paths[0],
+                })).totalStorageBytes;
+
+                await scowdClient.storageQuota.setUserStorageQuota({
+                  userId: identityId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+                });
+              } else {
+                await scowdClient.storageQuota.setUserStorageQuota({
+                  userId: identityId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+                });
+              }
+            }
+          }
+
+          return true;
+        })
         // If the call of creating user of auth fails,  delete the user created in the database.
         .catch(async (e) => {
           if (e.status === 409) {
             server.logger.warn("User exists in auth.");
             return false;
+          } else if (e instanceof ConnectError) {
+            await em.removeAndFlush(user);
+
+            server.logger.error("Failed to set user storage quota.", e);
+            throw {
+              code: Status.INTERNAL,
+              message: `Failed to set user ${identityId} storage quota.`,
+            } as ServiceError;
           } else {
             // 回滚数据库
             await em.removeAndFlush(user);
@@ -574,11 +604,11 @@ export const userServiceServer = plugin((server) => {
       const userAccounts = user.accounts.getItems();
       // 这里商量是不要管有没有封锁直接删，但要不要先封锁了再删？
 
-      
+
       // 如果userAccounts存在，则
       // 检查当前是否有正在执行的同步用户账户操作
       await checkRunningSyncTask(em, logger, "delete user who has affiliated accounts task");
-      
+
       // 如果用户为账户拥有者且该用户没有被删除，提示管理员需要先删除拥有的账户再删除用户
       const countAccountOwner = async () => {
         const ownedAccounts = userAccounts

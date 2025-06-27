@@ -23,6 +23,7 @@ interface UploadProgressEvent {
 }
 
 const p = prefix("pageComp.fileManagerComp.uploadModal.");
+const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
@@ -61,7 +62,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   const startMultipartUpload = async (file: File, onProgress: OnProgressCallback) => {
     const { tempFileDir, chunkSizeByte, filesInfo } = await api.initMultipartUpload({
       body: { cluster, path, name: file.name },
-    });
+    }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
 
     const uploadedChunkIndices = new Set(
       filesInfo.map((item) => {
@@ -136,6 +137,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
       if (!controller.signal.aborted) {
         await api.mergeFileChunks({ body: { cluster, path, name: file.name, sizeByte: file.size } })
+          .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
           .httpError(520, (err) => {
             message.error(t(p("mergeFileChunksErrorText"), [file.name]));
             throw err;

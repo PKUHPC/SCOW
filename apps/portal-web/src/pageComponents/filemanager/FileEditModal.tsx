@@ -3,11 +3,12 @@ import Editor, { loader } from "@monaco-editor/react";
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
 import { getLanguage } from "@scow/lib-web/build/utils/staticFiles";
-import { App, Badge, Button, Modal, Space, Spin, Tabs, Tooltip } from "antd";
+import { Alert, App, Badge, Button, Modal, Space, Spin, Tabs, Tooltip } from "antd";
 import { editor } from "monaco-editor";
 import { join } from "path";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { StorageInfo } from "src/pages/api/storage/getUserStorageUsage";
 import { publicConfig } from "src/utils/config";
 import { convertToBytes } from "src/utils/format";
 import { styled } from "styled-components";
@@ -66,6 +67,7 @@ interface PreviewFileProps {
 interface Props {
   previewFile: PreviewFileProps;
   setPreviewFile: Dispatch<SetStateAction<PreviewFileProps>>;
+  storageInfo?: StorageInfo;
 }
 
 interface ConfirmModalProps {
@@ -80,7 +82,7 @@ interface FilenameProps {
   filename: string;
 }
 
-const DEFAULT_FILE_EDIT_LIMIT_SIZE = "1m";
+export const DEFAULT_FILE_EDIT_LIMIT_SIZE = "1m";
 
 const p = prefix("pageComp.fileManagerComp.fileEditModal.");
 
@@ -138,7 +140,7 @@ const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
   );
 };
 
-export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) => {
+export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile, storageInfo }) => {
 
   const t = useI18nTranslateToString();
 
@@ -267,8 +269,8 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
       }
       message.success(t(p("saveFileSuccess")));
       setIsEdit(false);
-    }).catch((error) => {
-      message.error(t(p("saveFileFail"), [error]));
+    }).catch(() => {
+      message.error(t(p("saveFileFail")));
     }).finally(() => {
       setSaving(false);
     });
@@ -380,21 +382,33 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
           )
           : (
             <Tooltip
-              title={downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])}
+              title={
+                downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])
+              }
             >
               <Button disabled={true}>{t(p("edit"))}</Button>
             </Tooltip>
           )
       ) : (
-        <Space>
-          <Button type="primary" disabled={!isEdit} loading={saving} onClick={handleSave}>{t(p("save"))}</Button>
-          <Button
-            disabled={saving}
-            onClick={() => {
-              handleExitEditMode();
-            }}
-          >{t(p("exitEdit"))}</Button>
-        </Space>
+        <>
+          { storageInfo && storageInfo.quotaBytes - storageInfo.usedStorageBytes <= convertToBytes("10M") && (
+            <Alert
+              style={{ textAlign: "left", marginBottom: "10px" }}
+              message={t(p("quotaLimit"))}
+              type="warning"
+              showIcon
+            />
+          )}
+          <Space>
+            <Button type="primary" disabled={!isEdit} loading={saving} onClick={handleSave}>{t(p("save"))}</Button>
+            <Button
+              disabled={saving}
+              onClick={() => {
+                handleExitEditMode();
+              }}
+            >{t(p("exitEdit"))}</Button>
+          </Space>
+        </>
 
       )
     );

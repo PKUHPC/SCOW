@@ -68,6 +68,7 @@ import type { ExportJobRecordSchema } from "src/pages/api/file/exportJobRecord";
 import type { ExportOperationLogSchema } from "src/pages/api/file/exportOperationLog";
 import type { ExportPayRecordSchema } from "src/pages/api/file/exportPayRecord";
 import type { ExportUserSchema } from "src/pages/api/file/exportUser";
+import type { exportUserBillSchema } from "src/pages/api/file/exportUserBill";
 import type { GetBillsSchema } from "src/pages/api/finance/bill";
 import type { GetBillTypesSchema } from "src/pages/api/finance/billTypes";
 import type { GetChargesSchema } from "src/pages/api/finance/charges";
@@ -100,6 +101,9 @@ import type { MarkMessageReadSchema } from "src/pages/api/notification/markMessa
 import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
+import type { GetTenantQuotaSchema } from "src/pages/api/storage/getTenantQuota";
+import type { SetTenantUserDefaultQuotaSchema } from "src/pages/api/storage/setTenantUserDefaultQuota";
+import type { SetTenantUserQuotaSchema } from "src/pages/api/storage/setTenantUserQuota";
 import type { DewhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/dewhitelistAccount";
 import type { GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
 import type { WhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/whitelistAccount";
@@ -138,7 +142,7 @@ export const api = {
   changeStorageQuota: apiClient.fromTypeboxRoute<typeof ChangeStorageQuotaSchema>("PUT", "/api/admin/changeStorage"),
   updatePasswordResetFlag: apiClient.fromTypeboxRoute<typeof updatePasswordFlagSchema>("PATCH", "/api/admin/updatePasswordResetFlag"),
   deactivateCluster: apiClient.fromTypeboxRoute<typeof DeactivateClusterSchema>("PUT", "/api/admin/deactivateCluster"),
-  editUserProfile: apiClient.fromTypeboxRoute<typeof EditUserProfileSchema>("PUT", "/api/admin/editUserProfile"),
+  editUserProfile: apiClient.fromTypeboxRoute<typeof EditUserProfileSchema>("PATCH", "/api/admin/editUserProfile"),
   fetchJobs: apiClient.fromTypeboxRoute<typeof FetchJobsSchema>("POST", "/api/admin/fetchJobs/fetchJobs"),
   getFetchJobInfo: apiClient.fromTypeboxRoute<typeof GetFetchJobInfoSchema>("GET", "/api/admin/fetchJobs/getFetchInfo"),
   setFetchState: apiClient.fromTypeboxRoute<typeof SetFetchStateSchema>("POST", "/api/admin/fetchJobs/setFetchState"),
@@ -169,6 +173,7 @@ export const api = {
   getTopSubmitJobUser: apiClient.fromTypeboxRoute<typeof GetTopSubmitJobUserSchema>("GET", "/api/admin/getTopSubmitJobUser"),
   getUsersWithMostJobSubmissions: apiClient.fromTypeboxRoute<typeof GetUsersWithMostJobSubmissionsSchema>("GET", "/api/admin/getUsersWithMostJobSubmissions"),
   importUsers: apiClient.fromTypeboxRoute<typeof ImportUsersSchema>("POST", "/api/admin/importUsers"),
+  accountThreshold: apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>("GET", "/api/admin/isAccountBelowBlockThreshold"),
   getAlarmDbId: apiClient.fromTypeboxRoute<typeof GetAlarmDbIdSchema>("GET", "/api/admin/monitor/getAlarmDbId"),
   getAlarmLogs: apiClient.fromTypeboxRoute<typeof GetAlarmLogsSchema>("GET", "/api/admin/monitor/getAlarmLogs"),
   getAlarmLogsCount: apiClient.fromTypeboxRoute<typeof GetAlarmLogsCountSchema>("GET", "/api/admin/monitor/getAlarmLogsCount"),
@@ -188,17 +193,21 @@ export const api = {
   getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof GetClusterConfigFilesSchema>("GET", "/api//clusterConfigsInfo"),
   getUserStatus: apiClient.fromTypeboxRoute<typeof GetUserStatusSchema>("GET", "/api/dashboard/status"),
   exportAccount: apiClient.fromTypeboxRoute<typeof ExportAccountSchema>("GET", "/api/file/exportAccount"),
+  exportBill: apiClient.fromTypeboxRoute<typeof ExportBillSchema>("GET", "/api/file/exportBill"),
   exportChargeRecord: apiClient.fromTypeboxRoute<typeof ExportChargeRecordSchema>("GET", "/api/file/exportChargeRecord"),
+  exportJobRecord: apiClient.fromTypeboxRoute<typeof ExportJobRecordSchema>("GET", "/api/file/exportJobRecord"),
   exportOperationLog: apiClient.fromTypeboxRoute<typeof ExportOperationLogSchema>("GET", "/api/file/exportOperationLog"),
   exportPayRecord: apiClient.fromTypeboxRoute<typeof ExportPayRecordSchema>("GET", "/api/file/exportPayRecord"),
   exportUser: apiClient.fromTypeboxRoute<typeof ExportUserSchema>("GET", "/api/file/exportUser"),
-  exportBill: apiClient.fromTypeboxRoute<typeof ExportBillSchema>("GET", "/api/file/exportBill"),
-  exportJobRecord: apiClient.fromTypeboxRoute<typeof ExportJobRecordSchema>("GET", "/api/file/exportJobRecord"),
+  exportUserBill: apiClient.fromTypeboxRoute<typeof exportUserBillSchema>("GET", "/api/file/exportUserBill"),
+  getBills: apiClient.fromTypeboxRoute<typeof GetBillsSchema>("GET", "/api/finance/bill"),
+  getBillTypes: apiClient.fromTypeboxRoute<typeof GetBillTypesSchema>("GET", "/api/finance/billTypes"),
   getCharges: apiClient.fromTypeboxRoute<typeof GetChargesSchema>("GET", "/api/finance/charges"),
   getChargeRecordsTotalCount: apiClient.fromTypeboxRoute<typeof GetChargeRecordsTotalCountSchema>("GET", "/api/finance/getChargeRecordsTotalCount"),
   getUsedPayTypes: apiClient.fromTypeboxRoute<typeof GetUsedPayTypesSchema>("GET", "/api/finance/getUsedPayTypes"),
   financePay: apiClient.fromTypeboxRoute<typeof FinancePaySchema>("POST", "/api/finance/pay"),
   getPayments: apiClient.fromTypeboxRoute<typeof GetPaymentsSchema>("GET", "/api/finance/payments"),
+  getUserBills: apiClient.fromTypeboxRoute<typeof GetUserBillsSchema>("GET", "/api/finance/userBill"),
   completeInit: apiClient.fromTypeboxRoute<typeof CompleteInitSchema>("POST", "/api/init/completeInit"),
   createInitAdmin: apiClient.fromTypeboxRoute<typeof CreateInitAdminSchema>("POST", "/api/init/createInitAdmin"),
   initGetAccounts: apiClient.fromTypeboxRoute<typeof InitGetAccountsSchema>("GET", "/api/init/getAccounts"),
@@ -219,14 +228,14 @@ export const api = {
   getCustomEventTypes: apiClient.fromTypeboxRoute<typeof GetCustomEventTypesSchema>("GET", "/api/log/getCustomEventTypes"),
   getOperationLogs: apiClient.fromTypeboxRoute<typeof GetOperationLogsSchema>("GET", "/api/log/getOperationLog"),
   getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>("GET", "/api/notification/getUnreadMessages"),
-  getBills: apiClient.fromTypeboxRoute<typeof GetBillsSchema>("GET", "/api/finance/bill"),
-  getUserBills: apiClient.fromTypeboxRoute<typeof GetUserBillsSchema>("GET", "/api/finance/userBill"),
-  getBillTypes: apiClient.fromTypeboxRoute<typeof GetBillTypesSchema>("GET", "/api/finance/billTypes"),
   markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
   getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>("GET", "/api//simpleClustersInfo"),
+  getTenantQuota: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSchema>("GET", "/api/storage/getTenantQuota"),
+  setTenantUserQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserQuotaSchema>("PUT", "/api/storage/setTenantUserQuota"),
+  setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>("PUT", "/api/storage/setTenantUserDefaultQuota"),
   dewhitelistAccount: apiClient.fromTypeboxRoute<typeof DewhitelistAccountSchema>("DELETE", "/api/tenant/accountWhitelist/dewhitelistAccount"),
   getWhitelistedAccounts: apiClient.fromTypeboxRoute<typeof GetWhitelistedAccountsSchema>("GET", "/api/tenant/accountWhitelist/getWhitelistedAccounts"),
   whitelistAccount: apiClient.fromTypeboxRoute<typeof WhitelistAccountSchema>("PUT", "/api/tenant/accountWhitelist/whitelistAccount"),
@@ -254,7 +263,6 @@ export const api = {
   queryStorageUsage: apiClient.fromTypeboxRoute<typeof QueryStorageUsageSchema>("GET", "/api/users/storageUsage"),
   unblockUserInAccount: apiClient.fromTypeboxRoute<typeof UnblockUserInAccountSchema>("PUT", "/api/users/unblockInAccount"),
   unsetAdmin: apiClient.fromTypeboxRoute<typeof UnsetAdminSchema>("PUT", "/api/users/unsetAdmin"),
-  isAccountBelowBlockThreshold:apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>("GET","/api/admin/isAccountBelowBlockThreshold"),
   getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>("GET", "/api/admin/authorization/getTargetAppAuthorizations"),
   authorizeApp: apiClient.fromTypeboxRoute<typeof AuthorizeAppSchema>("PUT", "/api/admin/authorization/authorizeApp"),
   getTenantAssignedClustersAndPartitions: apiClient.fromTypeboxRoute<typeof GetTenantAssignedClustersAndPartitionsSchema>("GET", "/api/tenant/getTenantAssignedClustersAndPartitions"),

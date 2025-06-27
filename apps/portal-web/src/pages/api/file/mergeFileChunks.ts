@@ -26,6 +26,7 @@ export const MergeFileChunksSchema = typeboxRouteSchema({
     204: Type.Null(),
     403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
     404: Type.Object({ code: Type.Literal("FILE_NOT_EXISTS") }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     501: Type.Object({ code: Type.Literal("UNIMPLEMENTED") }),
     520: Type.Object({ code: Type.Literal("MERGE_CHUNKS_FAILED") }),
   },
@@ -62,6 +63,7 @@ export default route(MergeFileChunksSchema, async (req, res) => {
     [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
     [status.UNKNOWN]: () => ({ 520: { code: "MERGE_CHUNKS_FAILED" as const } }),
     [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
+    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

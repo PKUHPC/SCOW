@@ -249,8 +249,8 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
       }
       message.success(t(p("saveFileSuccess")));
       setIsEdit(false);
-    }).catch((error) => {
-      message.error(t(p("saveFileFail"), [error]));
+    }).catch(() => {
+      message.error(t(p("saveFileFail")));
     }).finally(() => {
       setSaving(false);
     });

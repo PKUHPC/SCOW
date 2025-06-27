@@ -21,6 +21,7 @@ import { AiIcon, HighComputingIcon, MisIcon } from "src/assets/headerIcons";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { getAvailableRoutes } from "src/layouts/routes";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 
@@ -34,13 +35,16 @@ export const BaseLayout =
 ({ footerText, versionTag, initialLanguage, children }: PropsWithChildren<Props>) => {
 
   const userStore = useStore(UserStore);
+  const clusterStore = useStore(ClusterInfoStore);
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const systemLanguageConfig = publicConfig.SYSTEM_LANGUAGE_CONFIG;
 
-  const routes = useMemo(() => getAvailableRoutes(userStore.user, t), [userStore.user, t]);
+  const routes = useMemo(() => getAvailableRoutes(
+    userStore.user, clusterStore.storageEnabled, t,
+  ), [userStore.user, clusterStore.storageEnabled, t]);
 
   const uiExtensionStore = useStore(UiExtensionStore);
 

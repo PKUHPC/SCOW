@@ -724,6 +724,21 @@ message UnlockUser {
   string identity_id = 1;
 }
 
+message SetTenantUserDefaultQuota {
+  string tenant_name = 1;
+  string cluster = 2;
+  string path = 3;
+  uint64 storage_quota = 4;
+}
+
+message SetTenantUserQuota {
+  string user_id = 1;
+  string cluster = 2;
+  string path = 3;
+  optional uint64 storage_quota = 4;
+  optional bool use_tenant_default_user_quota = 5;
+}
+
 message AuthorizeApp {
   string cluster_id = 1;
   string app_name = 2;
@@ -860,6 +875,8 @@ message CreateOperationLogRequest {
     UnauthorizeApp unauthorize_app = 113;
     MigrateNode migrate_node = 114;
     ActivateNode activate_node = 115;
+    SetTenantUserDefaultQuota set_tenant_user_default_quota = 116;
+    SetTenantUserQuota set_tenant_user_quota = 117;
   }
 }
 
@@ -983,6 +1000,8 @@ message OperationLog {
     UnauthorizeApp unauthorize_app = 115;
     MigrateNode migrate_node = 116;
     ActivateNode activate_node = 117;
+    SetTenantUserDefaultQuota set_tenant_user_default_quota = 118;
+    SetTenantUserQuota set_tenant_user_quota = 119;
   }
 }
 

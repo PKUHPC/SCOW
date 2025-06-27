@@ -1,4 +1,4 @@
-import { Code, ConnectError } from "@connectrpc/connect";
+import { Code } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { getLoginNode } from "@scow/config/build/cluster";
@@ -56,8 +56,8 @@ export function getLoginNodeFromAddress(cluster: string, address: string) {
   return loginNode;
 }
 
-// 映射 tRPC 状态码到 gRPC 状态码的函数
-function mapTRPCStatusToGRPC(statusCode: Code): status {
+// 映射 connectRPC 状态码到 gRPC 状态码的函数
+export function mapConnectRpcStatusToGrpc(statusCode: Code): status {
   switch (statusCode) {
     case Code.Canceled:
       return status.CANCELLED;
@@ -94,16 +94,4 @@ function mapTRPCStatusToGRPC(statusCode: Code): status {
     default:
       return status.OK;
   }
-}
-
-// 映射 tRPC 异常到 gRPC 异常的函数
-export function mapTRPCExceptionToGRPC(err: any): ServiceError {
-  if (err instanceof ConnectError) {
-    return { code: mapTRPCStatusToGRPC(err.code), details: err.message } as ServiceError;
-  }
-
-  return {
-    code: status.UNKNOWN,
-    details: "An unknown error occurred.",
-  } as ServiceError;
 }

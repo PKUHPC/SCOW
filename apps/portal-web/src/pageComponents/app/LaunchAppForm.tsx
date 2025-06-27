@@ -68,6 +68,7 @@ const inputNumberFloorConfig = {
 };
 
 const p = prefix("pageComp.app.launchAppForm.");
+const pCommon = prefix("common.");
 
 export const LaunchAppForm: React.FC<Props> = ({
   clusterId, appId, attributes, appName, appComment, reservedAppAttributes }) => {
@@ -144,6 +145,7 @@ export const LaunchAppForm: React.FC<Props> = ({
           throw e;
         }
       })
+      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
       .then(() => {
         message.success(t(p("successMessage")));
         Router.push(`/apps/${clusterId}/sessions`);

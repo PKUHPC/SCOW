@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package scow.server;
+
+message GetTenantQuotaRequest {
+  string tenant_name = 1;
+  string cluster = 2;
+  string path = 3;
+  optional string id_or_name = 4;
+  uint32 page = 5;
+
+  // if undefined or 0, page_size is 10
+  optional uint64 page_size = 6;
+}
+
+message UserQuotaInfo {
+  string user_id = 1;
+  string user_name = 2;
+  uint64 quota_bytes = 3;
+  uint64 used_storage_bytes = 4;
+  bool use_default = 5;
+}
+
+message GetTenantQuotaResponse {
+  uint64 total_storage_bytes = 1;
+  uint64 remaining_storage_bytes = 2;
+  uint64 user_default_quota_bytes = 3;
+  uint64 total_user_count = 4;
+  repeated UserQuotaInfo users_quota_info = 5;
+}
+
+message SetTenantUserQuotaRequest {
+  string cluster = 1;
+  string path = 2;
+  string user_id = 3;
+  optional uint64 user_quota_bytes = 4;
+  optional bool use_tenant_default_user_quota = 5;
+}
+
+
+message SetTenantUserQuotaResponse {
+}
+
+message SetTenantUserDefaultQuotaRequest {
+  string tenant_name = 1;
+  string cluster = 2;
+  string path = 3;
+  uint64 user_quota_bytes = 4;
+}
+
+message SetTenantUserDefaultQuotaResponse {
+  uint32 successes = 1;
+  uint32 failures = 2;
+}
+
+message GetUserStorageUsageRequest {
+  string user_id = 1;
+  string cluster = 2;
+  // 考虑以后可能会存在集群下多个共享存储路径，此处设置为数组
+  // 空数组代表查询所有
+  repeated string paths = 3;
+}
+
+message StorageUsage {
+  string path = 1;
+  uint64 quota_bytes = 2;
+  uint64 used_storage_bytes = 3;
+}
+
+message GetUserStorageUsageResponse {
+  repeated StorageUsage quota_usage = 1;
+}
+
+service StorageService {
+  rpc GetTenantQuota(GetTenantQuotaRequest) returns (GetTenantQuotaResponse);
+  rpc SetTenantUserQuota(SetTenantUserQuotaRequest) returns (SetTenantUserQuotaResponse);
+  rpc SetTenantUserDefaultQuota(SetTenantUserDefaultQuotaRequest) returns (SetTenantUserDefaultQuotaResponse);
+
+  rpc GetUserStorageUsage(GetUserStorageUsageRequest) returns (GetUserStorageUsageResponse);
+}

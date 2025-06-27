@@ -213,6 +213,7 @@ export default {
         accountPayments: "Account Pay Records",
         accountChargeRecords: "Account Consumption Records",
         accountBills: "Account Bill Records",
+        storageManager: "Storage Manager",
         permissionManagement: "Permission Management",
         appAuthorization: "Authorize application",
       },
@@ -921,6 +922,50 @@ export default {
         availableAccounts: "Available Accounts",
       },
     },
+    storage: {
+      tenantStorageManangerTable: {
+        notFoundStorageConfig: "System error, no corresponding storage configuration found",
+        totalStorage: "Total Storage",
+        remainingStorage: "Remaining Storage",
+        userDefaultQuota: "User Default Storage Quota",
+        edit: "Edit",
+        user: "User",
+        storageQuota: "Storage Quota",
+        storageUsed: "Storage Used",
+        operation: "Operation",
+        modifyQuota: "Modify Quota",
+      },
+      userDefaultQuotaChangeModal: {
+        modifyDefaultQuota: "Modify Default Storage Quota",
+        confirm: "Confirm",
+        modifyUserDeulatQuotaSuccess: "Successfully modified user default storage quota",
+        modifyPartialSuccess: "System error, modified {} users successfully, failed {} users",
+        cluster: "Cluster",
+        tip: "Changes take effect immediately. "
+          + "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. "
+          + "Please proceed with caution",
+      },
+      userQuotaChangeModal: {
+        modifyStorageQuota: "Modify Storage Quota",
+        confirm: "Confirm",
+        modifyUserQuotaSuccess: "Successfully modified user storage quota",
+        modifyUserQuotaFailed: "Failed to modify user storage quota, please try again later",
+        cluster: "Cluster",
+        user: "User",
+        defaultStorageQuota: "Default Storage Quota",
+        currentUsage: "Current Usage",
+        storageQuota: "Storage Quota",
+        useDefaultStroageQuota: "Use tenant's default user storage quota",
+        currentDefaultStorageQuota: "Current tenant's default user storage quota",
+        confirmUseDefaultStorageQuota: "Confirm using the default user storage quota under the tenant?",
+        alreadyUsedDefault: "User already uses tenant default value, please do not modify repeatedly",
+        useDefaultValue: "Use Default Value",
+        setStorageQuota: "Set Storage Quota",
+        tip: "Changes take effect immediately. " +
+          "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. " +
+          "Please proceed with caution",
+      },
+    },
   },
   component: {
     errorPages: {
@@ -1153,6 +1198,9 @@ export default {
             },
           },
         },
+      },
+      storageManager: {
+        storageManager: "存储管理",
       },
     },
     init: {
@@ -1606,6 +1654,8 @@ export default {
       decompressFile: "Decompress File",
       unlockUser: "Unlock user login",
       updatePasswordResetFlag: "Update mandatory password change identifier",
+      setTenantUserDefaultQuota: "Modify the default storage quota for users under a tenant",
+      setTenantUserQuota: "Modify the default storage quota for a user",
       authorizeApp: "Authorize Application",
       unauthorizeApp: "Revoke Application Authorization",
       migrateNode: "Migrate Node",
@@ -1740,6 +1790,8 @@ export default {
       changeEmail: "User: {}",
       editUserProfile: "User: {}",
       decompressFile: "Path: {0} , File {1}",
+      setTenantUserQuota: "User: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
+      setTenantUserDefaultQuota: "Tenant: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}",
       tenantAppAuthorizationLog: "Cluster: {0}, Application: {1}, Tenant: {2}",
       accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
       migrateNode: "Node: {}, Source Cluster: {}, Target cluster: {}",

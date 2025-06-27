@@ -37,6 +37,7 @@ export const generateFilesTree = (path: string, files: FileInfo[]): TreeDataNode
 const fileManagerP = prefix("pageComp.fileManagerComp.fileManager.");
 
 const p = prefix("pageComp.fileManagerComp.compressFilesModal.");
+const pCommon = prefix("common.");
 
 export const CompressFilesModal: React.FC<Props> = ({
   open, onClose, reload, setCompression, path, files, cluster }) => {
@@ -62,6 +63,8 @@ export const CompressFilesModal: React.FC<Props> = ({
         content: error,
       });
       throw error;
+    }).httpError(429, () => {
+      message.error(t(pCommon("noSpaceError")));
     }).then(() => {
       reload();
       message.success(t(p("compressSuccess")));

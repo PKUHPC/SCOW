@@ -1,6 +1,7 @@
 export default {
   common: {
     finalError: "Request failed, please try again later",
+    noSpaceError: "Insufficient storage space, please clean up the space or contact the administrator",
   },
   // baseLayout
   baseLayout: {
@@ -240,10 +241,12 @@ export default {
         exitEdit: "Exit Edit Mode",
         failedGetFile: "Failed to get file: {}",
         cantReadFile: "Cannot read file: {}",
-        saveFileFail: "File save failed: {}",
+        saveFileFail: "File save failed",
         saveFileSuccess: "File saved successfully",
         fileSizeExceeded: "File too large (maximum {}), please download and edit",
         fileFetchAbortPrompt: "Fetch {} operation was aborted",
+        quotaLimit: "The storage space is less than 10M. Saving the file may cause the file content to be lost.",
+
       },
       createFileModal: {
         createErrorMessage: "File or directory with the same name already exists!",
@@ -282,6 +285,8 @@ export default {
         decompressionSelected: "Decompress",
         decompressButtonDisabledTooltip: "Decompression is only supported for"
         + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
+        storageQuota: "Storage Quota",
+        usage: "Usage",
         preview: {
           cantPreview: "File too large (maximum {}) or format not supported, please download to view",
         },

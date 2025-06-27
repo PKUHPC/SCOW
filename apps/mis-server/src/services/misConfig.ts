@@ -1,15 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { ConnectError } from "@connectrpc/connect";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
@@ -26,7 +15,7 @@ import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 import { getUniqueMigrationGroups, handleValidationErrors,NodeClusterStatus,
   NodeClusterStatusWithPartitions, performClusterChecks
   ,validateMigratableClustersConfig } from "src/utils/migrateNode";
-import { getScowdClient, mapTRPCExceptionToGRPC } from "src/utils/scowd";
+import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
@@ -135,7 +124,10 @@ export const misConfigServiceServer = plugin((server) => {
             logger.info("Scowd is not functioning properly on cluster %s. err: %o",
               clusterId, err);
 
-            throw mapTRPCExceptionToGRPC(err);
+            if (err instanceof ConnectError) {
+              throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+            }
+            throw err;
           }
 
         } else {

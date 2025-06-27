@@ -120,6 +120,8 @@ export const OperationType: OperationTypeEnum = {
   decompressFile: "decompressFile",
   compressFiles: "compressFiles",
   unlockUser: "unlockUser",
+  setTenantUserDefaultQuota: "setTenantUserDefaultQuota",
+  setTenantUserQuota: "setTenantUserQuota",
   authorizeApp: "authorizeApp",
   unauthorizeApp: "unauthorizeApp",
   migrateNode:"migrateNode",

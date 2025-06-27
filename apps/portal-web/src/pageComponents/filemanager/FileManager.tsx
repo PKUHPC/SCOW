@@ -8,13 +8,15 @@ import {
 } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
+import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Dropdown, MenuProps, Select, Space, Switch, Tooltip } from "antd";
+import { App, Button, Divider, Dropdown, MenuProps, Select, Space, Switch, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { join } from "path";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis/api";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -111,6 +113,7 @@ export interface DeCompression {
 }
 
 const p = prefix("pageComp.fileManagerComp.fileManager.");
+const pCommon = prefix("common.");
 
 enum UploadType {
   File = "file",
@@ -158,7 +161,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     scaleStep: 0.5,
   });
   const { currentClusters } = useStore(ClusterInfoStore);
-
   const [operation, setOperation] = useState<Operation | undefined>(undefined);
   const [compression, setCompression] = useState<Compression>({ started: [], completed: []});
   const [showHiddenFile, setShowHiddenFile] = useState(false);
@@ -167,7 +169,18 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   });
 
   const { loginNodes } = useStore(LoginNodeStore);
+  const { storageEnabled, fullClusterConfigs } = useStore(ClusterInfoStore);
   const loginNode = loginNodes[currentClusterRef.current.id][0].address;
+
+  const promiseFn = useCallback(async () => {
+    if (!storageEnabled || !fullClusterConfigs[currentClusterRef.current.id].storage?.enabled) return undefined;
+    const { storageInfos } = await api.getUserStorageInfo({ query: {
+      cluster: currentClusterRef.current.id,
+    } });
+    return storageInfos;
+  }, [storageEnabled, currentClusterRef.current.id]);
+
+  const { data: storageInfos } = useAsync({ promiseFn, watch: currentClusterRef.current.id });
 
   const CompressFilesButton = ModalButton(CompressFilesModal, {
     icon: <CompressOutlined />,
@@ -273,6 +286,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           });
           throw error;
         })
+        .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
         .httpError(400, ({ code, error }) => {
           if (code === "INVALID_ARGUMENT") {
             modal.error({
@@ -731,6 +745,30 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           <Switch checked={showHiddenFile} onChange={onHiddenClick}></Switch>
         </Space>
       </OperationBar>
+
+      <TableTitle justify="space-between">
+        {
+          storageInfos ? (
+            <div>
+              <span>
+                <Space>
+                  {`${t(p("storageQuota"))}(${fullClusterConfigs[currentClusterRef.current.id].storage?.paths[0]})`}
+                  <strong>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</strong>
+                </Space>
+              </span>
+              <Divider type="vertical" />
+              <span>
+                <Space>
+                  {t(p("usage"))}
+                  <strong>
+                    {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
+                  </strong>
+                </Space>
+              </span>
+            </div>
+          ) : undefined
+        }
+      </TableTitle>
       <FileTable
         files={files}
         filesFilter={(files) => files.filter((file) => showHiddenFile || !file.name.startsWith("."))}
@@ -889,7 +927,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         )}
       />
       <ImagePreviewer previewImage={previewImage} setPreviewImage={setPreviewImage} />
-      <FileEditModal previewFile={previewFile} setPreviewFile={setPreviewFile} />
+      <FileEditModal
+        previewFile={previewFile}
+        setPreviewFile={setPreviewFile}
+        storageInfo={storageInfos?.[0]}
+      />
       <UploadModal
         open={isUploadModalOpen}
         onClose={handleUploadModalClose}

@@ -26,6 +26,7 @@ export const DecompressFileSchema = typeboxRouteSchema({
     403: Type.Object({ code: Type.Literal("PERMISSION_DENIED") }),
     409: Type.Object({ code: Type.Literal("UNIMPLEMENTED") }),
     400: Type.Object({ code: Type.Literal("INVALID_ARGUMENT") }),
+    429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     500: Type.Object({
       code: Type.Literal("INTERNAL"),
       // stderr of file decompression command
@@ -68,6 +69,7 @@ export default route(DecompressFileSchema, async (req, res) => {
     [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "PERMISSION_DENIED" as const, error: e.details } }),
     [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
     [status.UNKNOWN]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
+    [status.RESOURCE_EXHAUSTED]: (e) => ({ 429: { code: "NO_SPACE" as const, error: e.details } }),
   },
   async () => await callLog(logInfo, OperationResult.FAIL),
   ));

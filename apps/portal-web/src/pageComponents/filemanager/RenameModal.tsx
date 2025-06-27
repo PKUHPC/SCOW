@@ -29,6 +29,7 @@ interface FormProps {
 }
 
 const p = prefix("pageComp.fileManagerComp.renameModal.");
+const pCommon = prefix("common.");
 
 export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
 
@@ -43,6 +44,9 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     const { newFileName } = await form.validateFields();
     setLoading(true);
     await api.moveFileItem({ body: { cluster, fromPath: path, toPath: join(dirname(path), newFileName) } })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      })
       .then(() => {
         message.success(t(p("successMessage")));
         reload();

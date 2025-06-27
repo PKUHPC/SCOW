@@ -105,6 +105,8 @@ export const convertClusterConfigsToServerProtoType = (
           runtime: clusterConfigSchemaProto_K8sRuntimeFromJSON(item.k8s.runtime.toUpperCase()),
           kubeconfig: { path: item.k8s.kubeconfig.path },
         } : undefined,
+
+      storage: item.storage,
     };
 
     clusterConfigsProto.push(protoItem);

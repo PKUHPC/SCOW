@@ -13,7 +13,7 @@
 import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
 import { getSortedClusterIds } from "@scow/lib-web/build/utils/cluster";
 import { useEffect, useState } from "react";
-import { Cluster, getPublicConfigClusters } from "src/utils/cluster";
+import { Cluster, getPublicConfigClusters, getStorageEnabled } from "src/utils/cluster";
 
 // export function ClusterInfoStore(
 export function ClusterInfoStore(
@@ -44,9 +44,10 @@ export function ClusterInfoStore(
    = initialDefaultClusterId ? activatedClusters[initialDefaultClusterId] : undefined;
 
   const [ defaultCluster, setDefaultCluster ] = useState<Cluster | undefined>(initialDefaultCluster);
+  const [ fullClusterConfigs, _ ] = useState<Record<string, ClusterConfigSchema>>(clusterConfigs);
+  const [ storageEnabled, setStorageEnabled ] = useState<boolean>(false);
 
   useEffect(() => {
-
     // 可用集群不存在时
     if (Object.keys(activatedClusters).length === 0) {
       setDefaultCluster(undefined);
@@ -65,14 +66,18 @@ export function ClusterInfoStore(
       }
     }
 
+    setStorageEnabled(getStorageEnabled(clusterConfigs, Object.keys(activatedClusters)));
+
   }, [activatedClusters]);
 
   return {
+    fullClusterConfigs,
     publicConfigClusters,
     clusterSortedIdList,
     activatedClusters,
     setActivatedClusters,
     defaultCluster,
     setDefaultCluster,
+    storageEnabled,
   };
 }

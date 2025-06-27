@@ -15,6 +15,7 @@ import { getSortedClusterIds } from "@scow/lib-web/build/utils/cluster";
 import { useLocalStorage } from "@scow/lib-web/build/utils/hooks";
 import { useEffect, useState } from "react";
 import { Cluster, getDesktopEnabled, getFileTransferEnabled, getPublicConfigClusters,
+  getStorageEnabled,
   isEqual } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
 
@@ -42,6 +43,8 @@ export function ClusterInfoStore(
   // 当前启用中集群
   const [activatedClusters, setActivatedClusters] = useState<Cluster[]>(!publicConfig.MIS_DEPLOYED
     ? publicConfigClusters : initialCurrentClusters);
+  const [ fullClusterConfigs, _ ] = useState<Record<string, ClusterConfigSchema>>(clusterConfigs);
+
 
   useEffect(() => {
     if (userAssociatedClusterIds) {
@@ -89,6 +92,8 @@ export function ClusterInfoStore(
   const [crossClusterFileTransferEnabled, setCrossClusterFileTransferEnabled]
    = useState<boolean>(initialEnableFileTransfer);
 
+  const [ storageEnabled, setStorageEnabled ] = useState<boolean>(false);
+
   useEffect(() => {
 
     if (publicConfig.MIS_DEPLOYED) {
@@ -124,6 +129,10 @@ export function ClusterInfoStore(
             setDefaultCluster(currentClusters[0]);
           }
         }
+
+        setStorageEnabled(getStorageEnabled(
+          clusterConfigs, Object.values(activatedClusters).map((cluster) => cluster.id),
+        ));
       }
     }
 
@@ -141,5 +150,7 @@ export function ClusterInfoStore(
     crossClusterFileTransferEnabled,
     activatedClusters,
     setActivatedClusters,
+    storageEnabled,
+    fullClusterConfigs,
   };
 }

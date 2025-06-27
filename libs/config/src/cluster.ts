@@ -96,6 +96,11 @@ export const LoginDeskopConfigSchema = Type.Object({
   desktopsDir: Type.String({ description: "将创建的登录节点桌面信息的保存到什么位置。相对于用户的家目录" }),
 });
 
+export const StorageConfigSchema = Type.Object({
+  enabled: Type.Boolean({ description: "是否开启存储配额管理", default: false }),
+  paths: Type.Array(Type.String({ description: "集群共享存储挂在路径" }), { default: []}),
+});
+
 const TurboVncConfigSchema = Type.String({ description: "TurboVNC的安装路径" });
 
 export type LoginDeskopConfigSchema = Static<typeof LoginDeskopConfigSchema>;
@@ -138,6 +143,8 @@ export const ClusterConfigSchema = Type.Object({
       path: Type.String({ description: "集群 kubeconfig 文件路径" }),
     }, { description: "k8s 集群 kubeconfig 相关配置" }),
   }, { description: "k8s 集群配置" })),
+
+  storage: Type.Optional(StorageConfigSchema),
 });
 
 

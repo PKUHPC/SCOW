@@ -45,6 +45,7 @@ interface ModalProps {
 }
 
 const p = prefix("pageComp.job.jobTemplateModal.");
+const pCommon = prefix("common.");
 
 export const JobTemplateTable: React.FC<Props> = () => {
 
@@ -128,6 +129,7 @@ const NewTemplateNameModal: React.FC<ModalProps> = ({
       .httpError(404, () => {
         message.error(t(p("errorMessage")));
       })
+      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
       .then(() => {
         message.success(t(p("changeSuccessMessage")));
         reload();

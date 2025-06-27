@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package api.storage;
+
+option go_package = "scowd/protos/gen/api/storage;apiv1";
+
+message GetUsersStorageQuotaRequest {
+  repeated string user_ids = 1;
+  string path = 2;
+}
+
+message UserStorageQuotaInfo {
+  string user_id = 1;
+  uint64 used_storage_bytes = 2;
+  uint64 block_soft_limit_bytes = 3;
+  // 目前仅使用 硬限制 进行用户配额限制
+  uint64 block_hard_limit_bytes = 4;
+  int32 block_grace_days = 5;
+}
+
+message GetUsersStorageQuotaResponse {
+  repeated UserStorageQuotaInfo user_quota_infos = 1;
+}
+
+message GetFilesystemStorageUsageRequest {
+  string path = 1;
+}
+
+message GetFilesystemStorageUsageResponse {
+  uint64 total_storage_bytes = 1;
+  uint64 used_storage_bytes = 2;
+}
+
+message SetUsersStorageQuotaRequest {
+  repeated string user_ids = 1;
+  string path = 2;
+  uint64 quota_bytes = 3;
+}
+
+message SetUsersStorageQuotaResponse {
+  repeated string succeeded_user_ids = 1;
+  repeated string failed_user_ids = 2;
+}
+
+message SetUserStorageQuotaRequest {
+  string user_id = 1;
+  string path = 2;
+  uint64 quota_bytes = 3;
+}
+
+message SetUserStorageQuotaResponse {
+}
+
+service StorageQuotaService {
+  rpc GetUsersStorageQuota(GetUsersStorageQuotaRequest) returns (GetUsersStorageQuotaResponse) {}
+  rpc GetFilesystemStorageUsage(GetFilesystemStorageUsageRequest) returns (GetFilesystemStorageUsageResponse) {}
+  rpc SetUsersStorageQuota(SetUsersStorageQuotaRequest) returns (SetUsersStorageQuotaResponse) {}
+  rpc SetUserStorageQuota(SetUserStorageQuotaRequest) returns (SetUserStorageQuotaResponse) {}
+}

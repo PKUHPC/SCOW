@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Server } from "@ddadaal/tsgrpc-server";
 import { omitConfigSpec } from "@scow/lib-config";
 import { readVersionFile } from "@scow/utils/build/version";
@@ -17,6 +5,7 @@ import { config } from "src/config/env";
 import { plugins } from "src/plugins";
 import { accountServiceServer } from "src/services/account";
 import { adminServiceServer } from "src/services/admin";
+import { appAuthorizationServiceServer } from "src/services/appAuthorization";
 import { billServiceServer } from "src/services/bill";
 import { chargingServiceServer } from "src/services/charging";
 import { configServiceServer } from "src/services/config";
@@ -25,11 +14,10 @@ import { initServiceServer } from "src/services/init";
 import { jobServiceServer } from "src/services/job";
 import { jobChargeLimitServer } from "src/services/jobChargeLimit";
 import { misConfigServiceServer } from "src/services/misConfig";
+import { storageServiceServer } from "src/services/storage";
 import { tenantServiceServer } from "src/services/tenant";
 import { userServiceServer } from "src/services/user";
 import { loggerOptions } from "src/utils/logger";
-
-import { appAuthorizationServiceServer } from "./services/appAuthorization";
 
 export async function createServer() {
 
@@ -66,6 +54,7 @@ export async function createServer() {
   await server.register(misConfigServiceServer);
   await server.register(exportServiceServer);
   await server.register(billServiceServer);
+  await server.register(storageServiceServer);
   await server.register(appAuthorizationServiceServer);
 
   return server;

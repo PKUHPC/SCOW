@@ -1,6 +1,7 @@
 export default {
   common: {
     finalError: "请求失败，请稍后重试",
+    noSpaceError: "存储空间不足，请清理空间或联系管理员",
   },
   // baseLayout
   baseLayout: {
@@ -240,10 +241,11 @@ export default {
         exitEdit: "退出编辑",
         failedGetFile: "获取文件: {} 失败",
         cantReadFile: "无法读取文件: {}",
-        saveFileFail: "文件保存失败: {}",
+        saveFileFail: "文件保存失败",
         saveFileSuccess: "文件保存成功",
         fileSizeExceeded: "文件过大（最大{}），请下载后编辑",
         fileFetchAbortPrompt: "获取文件 {} 操作被终止",
+        quotaLimit: "存储空间已不足 10M，保存文件可能会丢失文件内容",
       },
       createFileModal: {
         createErrorMessage: "同名文件或者目录已经存在！",
@@ -281,7 +283,8 @@ export default {
         decompressionInProgress: "正在进行解压缩: ",
         decompressionSelected: "解压缩",
         decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
-
+        storageQuota: "存储配额",
+        usage: "使用量",
         preview: {
           cantPreview: "文件过大（最大{}）或者格式不支持，请下载后查看",
         },
