@@ -23,7 +23,7 @@
     "@connectrpc/connect-node": "1.6.1",
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@ddadaal/tsgrpc-common": "0.2.6",
-    "@ddadaal/tsgrpc-server": "0.19.6",
+    "@ddadaal/tsgrpc-server": "0.19.7",
     "@grpc/grpc-js": "1.12.5",
     "@scow/config": "workspace:*",
     "@scow/scow-resource-protos": "workspace:*",

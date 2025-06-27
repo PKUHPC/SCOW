@@ -24,6 +24,14 @@ export async function createServer() {
     host: config.HOST,
     port: config.PORT,
     logger: loggerOptions,
+    grpcServerOptions: {
+      // 连接空闲超时配置 - 30分钟后关闭空闲连接
+      "grpc.max_connection_idle_ms": 30 * 60 * 1000,
+      // 连接最大存活时间 - 2小时后强制关闭连接
+      "grpc.max_connection_age_ms": 2 * 60 * 60 * 1000,
+      // 连接最大存活时间的宽限期 - 5分钟
+      "grpc.max_connection_age_grace_ms": 5 * 60 * 1000,
+    },
   });
 
   server.logger.info({ version: readVersionFile() }, "Running @scow/portal-server");

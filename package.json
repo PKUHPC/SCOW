@@ -59,7 +59,7 @@
   "pnpm": {
     "patchedDependencies": {
       "react-typed-i18n@2.3.0": "patches/react-typed-i18n@2.3.0.patch",
-      "next@14.2.4": "patches/next@14.2.4.patch"
+      "next@14.2.30": "patches/next@14.2.30.patch"
     }
   }
 }

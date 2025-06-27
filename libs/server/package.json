@@ -35,7 +35,7 @@
     "ts-log": "2.2.7"
   },
   "devDependencies": {
-    "@ddadaal/tsgrpc-server": "0.19.6",
+    "@ddadaal/tsgrpc-server": "0.19.7",
     "@types/shell-quote": "1.7.5"
   },
   "volta": {
