@@ -377,7 +377,7 @@ const misSVG = () => (
 
 export const MisIcon = (props) => <Icon component={misSVG} {...props} />;
 
-// 高性能计算图标
+// 超算平台图标
 const highComputingSVG = () => (
   <svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

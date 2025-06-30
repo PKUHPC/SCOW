@@ -11,6 +11,7 @@
  */
 
 import { arrayContainsElement } from "@scow/utils";
+import { Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/interface";
 import Router from "next/router";
 import React from "react";
@@ -51,7 +52,13 @@ export function createMenuItems(
         icon: iconToNode(route.Icon),
         key: route.path,
         title: route.text,
-        label: route.text,
+        label:
+        <Tooltip
+          title={route.text?.length > 13 ? route.text : null}
+          mouseEnterDelay={0.3}
+          placement="bottomLeft"
+        >{route.text}
+        </Tooltip>,
         onTitleClick:(route.clickable ?? parentClickable)
           ? handleClick
           : undefined,
@@ -62,7 +69,13 @@ export function createMenuItems(
     return {
       icon: iconToNode(route.Icon),
       key: route.path,
-      label: route.text,
+      label:
+        <Tooltip
+          title={route.text?.length > 13 ? route.text : null}
+          mouseEnterDelay={0.3}
+          placement="bottomLeft"
+        >{route.text}
+        </Tooltip>,
       onClick: handleClick,
     } as ItemType;
   }

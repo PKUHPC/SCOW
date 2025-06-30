@@ -52,19 +52,19 @@ export const SystemSelect: React.FC<Props> = ({
         trigger={["click"]}
         overlayClassName="head-system-select"
         menu={{
-          items: [{ key: "hpc", label: (
-            <JumpToAnotherLink
-              user={user}
-              icon={<HighComputingIcon style={{ paddingRight: 2 }} />}
-              link={publicConfig.PORTAL_URL}
-              linkText={<span>{t("baseLayout.linkTextHpc")}</span>}
-            />
-          ) }, { key: "mis", label: (
+          items: [{ key: "mis", label: (
             <JumpToAnotherLink
               user={user}
               icon={<MisIcon style={{ paddingRight: 2 }} />}
               link={publicConfig.MIS_URL}
               linkText={<span>{t("baseLayout.linkTextMis")}</span>}
+            />
+          ) }, { key: "hpc", label: (
+            <JumpToAnotherLink
+              user={user}
+              icon={<HighComputingIcon style={{ paddingRight: 2 }} />}
+              link={publicConfig.PORTAL_URL}
+              linkText={<span>{t("baseLayout.linkTextHpc")}</span>}
             />
           ) }, { key: "ai", label: (
             <JumpToAnotherLink

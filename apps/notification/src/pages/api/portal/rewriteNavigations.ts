@@ -11,11 +11,9 @@
  */
 
 import { NextApiRequest, NextApiResponse } from "next";
-import { join } from "path";
 import { PlatformRole } from "src/models/user";
 import { validateToken } from "src/server/auth/token";
 import { getLanguage } from "src/utils/i18n";
-import { BASE_PATH } from "src/utils/processEnv";
 
 import { applyMiddleware } from "../middleware/cors";
 
@@ -28,6 +26,7 @@ interface NavItem {
     src: string;
     alt?: string
   },
+  svgIcon?: string; // 使用被插入系统的svg icon，icon可以随菜单变色
   openInNewPage?: boolean | undefined;
   children?: NavItem[] | undefined;
   hideIfNotActive?: boolean | undefined;
@@ -71,32 +70,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         path: "/notification",
         clickToPath: undefined,
         text: language.myMsgs,
-        icon: { src: join(BASE_PATH, "/icons/notification.svg") },
+        svgIcon: "NotificationIcon",
       },
       {
         path: "/subscription",
         clickToPath: undefined,
         text: language.msgSub,
-        icon: { src: join(BASE_PATH, "/icons/subscription.svg") },
+        svgIcon: "SubscriptionIcon",
       },
       ...cookie && userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ? [
         {
           path: "/message-config",
           clickToPath: undefined,
           text: language.msgConfig,
-          icon: { src: join(BASE_PATH, "/icons/msg-config.svg") },
+          svgIcon: "MessageConfigIcon",
         },
         {
           path: "/send-message",
           clickToPath: undefined,
           text: language.sendMsg,
-          icon: { src: join(BASE_PATH, "/icons/send-msg.svg") },
+          svgIcon: "SendMessageIcon",
         },
         {
           path: "/create-custom-message-type",
           clickToPath: undefined,
           text: language.createType,
-          icon: { src: join(BASE_PATH, "/icons/create-custom-type.svg") },
+          svgIcon: "CreateCustomMessageIcon",
         },
       ] : [],
     ],

@@ -1,10 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { NextApiRequest, NextApiResponse } from "next";
-import { getBaseUrl } from "src/app/ServerClientProvider";
 import { applyMiddleware } from "src/applyMiddleware";
 import { PlatformRole, TenantRole } from "src/models/user";
 import { validateToken } from "src/server/auth/token";
-import { BASE_PATH } from "src/utils/processEnv";
 
 interface NavItem {
   path: string;
@@ -15,6 +13,7 @@ interface NavItem {
     src: string;
     alt?: string
   },
+  svgIcon?: string; // 使用被插入系统的svg icon，icon可以随菜单变色
   openInNewPage?: boolean | undefined;
   children?: NavItem[] | undefined;
 };
@@ -35,10 +34,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const isChinese = scowLangId === "zh_cn";
 
-  const baseUrl = getBaseUrl();
-
-  const urlPrefix = `${baseUrl}${BASE_PATH}`;
-
   const userInfo = await validateToken(scowUserToken);
 
   if (userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
@@ -57,7 +52,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       path: "/tenantPartitions",
       clickToPath: undefined,
       text: isChinese ? "授权集群分区" : "Assign Cluster Partition",
-      icon: { src: `${urlPrefix}/icons/assignedPartitions.svg` },
+      svgIcon: "AccountPartitionsIcon",
     });
   }
 
@@ -80,19 +75,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         path: "/accountDefaultClusters",
         clickToPath: undefined,
         text: isChinese ? "默认授权集群" : "Default Assigned Clusters",
-        icon: { src: `${urlPrefix}/icons/defaultClusters.svg` },
+        svgIcon: "DefaultClustersIcon",
       },
       {
         path: "/accountDefaultPartitions",
         clickToPath: undefined,
         text: isChinese ? "默认授权分区" : "Default Assigned Partitions",
-        icon: { src: `${urlPrefix}/icons/defaultPartitions.svg` },
+        svgIcon: "DefaultPartitionsIcon",
       },
       {
         path: "/accountPartitions",
         clickToPath: undefined,
         text: isChinese ? "授权集群分区" : "Assign Cluster Partitions",
-        icon: { src: `${urlPrefix}/icons/assignedPartitions.svg` },
+        svgIcon: "AccountPartitionsIcon",
       },
     );
   }

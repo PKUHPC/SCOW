@@ -16,8 +16,16 @@ import { ColumnsType } from "antd/es/table";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { styled } from "styled-components";
 
 import { AmountStrategyDescriptionsItem } from "./AmonutStrategyDescriptionsItem";
+
+const TableContainer = styled.div`
+  .ant-table-content {
+    max-height: 500px;
+    overflow-y: auto !important;
+  }
+`;
 
 export interface JobBillingTableItem {
   index: number;
@@ -129,14 +137,16 @@ export const JobBillingTable: React.FC<Props> = ({ data, loading, isUserPartitio
   ];
 
   return (
-    <Table
-      dataSource={data}
-      columns={columns}
-      scroll={{ x: 800, y: 500 }}
-      size="middle"
-      bordered
-      pagination={false}
-      loading={loading}
-    />
+    <TableContainer>
+      <Table
+        dataSource={data}
+        columns={columns}
+        scroll={{ x: 800 }}
+        size="middle"
+        bordered
+        pagination={false}
+        loading={loading}
+      />
+    </TableContainer>
   );
 };

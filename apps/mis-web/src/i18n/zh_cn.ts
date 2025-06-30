@@ -153,8 +153,8 @@ export default {
         operationLog:"操作日志",
         statistic: "平台数据统计",
       },
-      navLinkTextPortal: "高性能计算",
-      navLinkTextAI: "人工智能",
+      navLinkTextPortal: "超算平台",
+      navLinkTextAI: "智算平台",
       linkTextMis: "管理系统",
       dashboard: "仪表盘",
       user: {

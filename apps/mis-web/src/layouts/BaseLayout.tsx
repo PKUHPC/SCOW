@@ -55,7 +55,12 @@ export const BaseLayout =
     ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
     : url;
 
-  const navbarLinks: HeaderNavbarLink[] = [];
+  const navbarLinks: HeaderNavbarLink[] = [{
+    icon: <MisIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+    href: "",
+    text: <span style={{ color: token.colorPrimary }}>{t("layouts.route.linkTextMis")}</span>,
+    isActive: true,
+  }];
 
   if (publicConfig.PORTAL_URL) {
     navbarLinks.push({
@@ -65,13 +70,6 @@ export const BaseLayout =
       crossSystem: true,
     });
   }
-
-  navbarLinks.push({
-    icon: <MisIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
-    href: "",
-    text: <span style={{ color: token.colorPrimary }}>{t("layouts.route.linkTextMis")}</span>,
-    isActive: true,
-  });
 
   if (publicConfig.AI_URL) {
     navbarLinks.push({

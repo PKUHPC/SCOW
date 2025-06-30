@@ -67,12 +67,7 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
     ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
     : url;
 
-  const navbarLinks: HeaderNavbarLink[] = [{
-    icon: <HighComputingIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
-    href: "",
-    text: <span style={{ color: token.colorPrimary }}>{t("baseLayout.linkTextHpc")}</span>,
-    isActive: true,
-  }];
+  const navbarLinks: HeaderNavbarLink[] = [];
 
   if (publicConfig.MIS_URL) {
     navbarLinks.push({
@@ -82,6 +77,13 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       crossSystem: true,
     });
   }
+
+  navbarLinks.push({
+    icon: <HighComputingIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+    href: "",
+    text: <span style={{ color: token.colorPrimary }}>{t("baseLayout.linkTextHpc")}</span>,
+    isActive: true,
+  });
 
   if (publicConfig.AI_URL) {
     navbarLinks.push({

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { LinkOutlined } from "@ant-design/icons";
 import { join } from "path";
 import { ExtensionRouteQuery,isUrl } from "src/extensions/common";
@@ -17,6 +5,10 @@ import { defineExtensionRoute } from "src/extensions/routes";
 import { NavItemProps } from "src/layouts/base/types";
 import { NavIcon } from "src/layouts/icon";
 import { z } from "zod";
+
+import { AccountPartitionsIcon, CreateCustomMessageIcon, DefaultClustersIcon,
+  DefaultPartitionsIcon, MessageConfigIcon, NotificationIcon,
+  SendMessageIcon, SubscriptionIcon } from "./menuIcon";
 
 export const BaseNavItem = z.object({
   path: z.string({ description: "目标路径。如果是外部链接，需要以 http:// 或 https:// 开头。如果是SCOW的路径，无需加base path" }),
@@ -26,6 +18,7 @@ export const BaseNavItem = z.object({
     src: z.string(),
     alt: z.string().optional(),
   })),
+  svgIcon: z.optional(z.string({ description: "映射本目录下的svg icon，icon可以随菜单变色" })),
   openInNewPage: z.boolean().optional(),
   hideIfNotActive: z.boolean().optional(),
 });
@@ -76,9 +69,19 @@ export const toNavItemProps = (
   returnedItems: NavItem[],
   extensionName?: string,
 ): NavItemProps[] => {
-
   // create a map with original origin items paths
   const originalItemsMap = new Map<string, NavItemProps>();
+
+  const svgIconMap = {
+    DefaultClustersIcon,
+    DefaultPartitionsIcon,
+    AccountPartitionsIcon,
+    NotificationIcon,
+    SubscriptionIcon,
+    MessageConfigIcon,
+    SendMessageIcon,
+    CreateCustomMessageIcon,
+  };
 
   const convertToMap = (navs: NavItemProps) => {
     originalItemsMap.set(navs.path, navs);
@@ -86,6 +89,16 @@ export const toNavItemProps = (
       originalItemsMap.set(navs.clickToPath, navs);
     }
     navs.children?.forEach(convertToMap);
+  };
+
+  const renderIcon = (item) => {
+    if (item.svgIcon && svgIconMap[item.svgIcon]) {
+      return svgIconMap[item.svgIcon];
+    }
+    return (item.icon
+      ? <NavIcon src={item.icon.src} alt={item.icon.alt} />
+      : originalItemsMap.get(item.path)?.Icon
+    ) ?? LinkOutlined;
   };
 
   const convertPath = (returnedPath: string) => {
@@ -106,17 +119,13 @@ export const toNavItemProps = (
   originalItems.forEach(convertToMap);
 
   const rec = (items: NavItem[]): NavItemProps[] => {
-
     return items.map((item) => ({
       path: convertPath(item.path),
       clickable: originalItemsMap.get(item.path)?.clickable,
       clickToPath: item.clickToPath ? convertPath(item.clickToPath) : undefined,
       text: item.text,
       openInNewPage: item.openInNewPage,
-      Icon: (item.icon
-        ? <NavIcon src={item.icon.src} alt={item.icon.alt} />
-        : originalItemsMap.get(item.path)?.Icon
-      ) ?? LinkOutlined,
+      Icon: renderIcon(item),
       handleClick: originalItemsMap.get(item.path)?.handleClick,
       children: item.children ? rec(item.children) : undefined,
       hideIfNotActive: item.hideIfNotActive,
@@ -124,5 +133,4 @@ export const toNavItemProps = (
   };
 
   return rec(returnedItems);
-
 };
