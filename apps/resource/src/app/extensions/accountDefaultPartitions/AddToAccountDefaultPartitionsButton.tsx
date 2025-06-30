@@ -48,8 +48,8 @@ const NewPartitionModal: React.FC<ModalProps> = ({
   const selectableClusterPartitionList = useMemo(() => {
     const currentDefaultPartitionsSet
       = new Set(defaultPartitions?.map((item) => `${item.clusterId}-${item.partition}`));
-    
-    const currentAvailableClusterIds = defaultClusterIds?.length && defaultClusterIds?.length > 0 
+
+    const currentAvailableClusterIds = defaultClusterIds?.length && defaultClusterIds?.length > 0
       ? currentClusters?.filter((x) => (defaultClusterIds?.includes(x.id)))?.map((x) => (x.id))
       : [];
     const currentClusterIdsSet = new Set(currentAvailableClusterIds);
@@ -57,7 +57,7 @@ const NewPartitionModal: React.FC<ModalProps> = ({
     const selectableClusterPartitions = data?.assignedPartitions.filter((x) => {
       const isInAssignedPartitions = true;
       const isInCurrentClusterIds = currentClusterIdsSet.has(x.clusterId);
-      const isNotInDefaultPartitions = !currentDefaultPartitionsSet.has(`${x.clusterId}-${x.partition}`);  
+      const isNotInDefaultPartitions = !currentDefaultPartitionsSet.has(`${x.clusterId}-${x.partition}`);
       return isInAssignedPartitions && isInCurrentClusterIds && isNotInDefaultPartitions;
     });
 

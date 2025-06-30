@@ -5,6 +5,7 @@ import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Space, Table } from "antd";
 import React, { useMemo, useState } from "react";
+import { usePublicConfig } from "src/app/publicConfigContext";
 import { I18nDicType } from "src/models/i18n";
 import { trpc } from "src/server/trpc/api";
 import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
@@ -23,19 +24,30 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
   assignedClusterIds, currentClusters, tenantName, isLoading, reload, language, languageId,
 }) => {
 
+  const { clusterSortedIdList } = usePublicConfig();
   const { message, modal } = App.useApp();
 
   const [currentPageNum, setCurrentPageNum] = useState<number>(1);
 
-  const displayedData = useMemo(() => assignedClusterIds 
+  const clusterSortedIdMap = Object.fromEntries(
+    clusterSortedIdList.map((id, index) => [id, index]),
+  );
+
+  const displayedData = useMemo(() => assignedClusterIds
     ? assignedClusterIds
       .map((id) => {
         const name = currentClusters.find((cluster) => cluster.id === id)?.name;
         return name ? { id, name } : null;
       })
+      .sort((a, b) => {
+        // 使用 clusterSortedIdList 的索引进行排序
+        const aIndex = a?.id ? (clusterSortedIdMap[a.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+        const bIndex = b?.id ? (clusterSortedIdMap[b.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+        return aIndex - bIndex;
+      })
       .filter((item) => item !== null)
-    : undefined, 
-  [assignedClusterIds, currentClusters]);
+    : undefined,
+  [assignedClusterIds, currentClusters, clusterSortedIdMap]);
 
   const removeFromDefaultClustersMutation = trpc.partitions.removeFromAccountDefaultClusters.useMutation({
     onSuccess() {

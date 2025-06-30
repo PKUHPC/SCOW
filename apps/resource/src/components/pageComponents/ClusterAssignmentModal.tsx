@@ -5,6 +5,7 @@ import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Divider, Form, Modal, Space, Table, Tag } from "antd";
 import { useMemo } from "react";
+import { usePublicConfig } from "src/app/publicConfigContext";
 import { I18nDicType } from "src/models/i18n";
 import { AssignmentState, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -48,22 +49,32 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
   currentClustersData,
 }) => {
 
+  const { clusterSortedIdList } = usePublicConfig();
   const [form] = Form.useForm<FormFields>();
   const { message, modal } = App.useApp();
 
   // 租户授权集群展示列表为当前在线集群
   // 账户授权集群展示列表为租户已授权的集群与在线集群的交集
   const displayedTotalClusterList = useMemo(() => {
+
+    const clusterSortedIdMap = Object.fromEntries(
+      clusterSortedIdList.map((id, index) => [id, index]),
+    );
     const assignedSet = new Set(assignedClusters);
     const clustersData = operationType === PartitionOperationType.ACCOUNT_OPERATION ?
       currentClustersData?.filter((x) => tenantAssignedClusters?.includes(x.id))
       : (currentClustersData ?? []);
-    return clustersData?.map((item) => {
-      return {
-        ...item,
-        assignmentState: assignedSet.has(item.id) ?
-          AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
-      };
+    return (clustersData || []).map((item) => ({
+
+      ...item,
+      assignmentState: assignedSet.has(item.id) ?
+        AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
+
+    })).sort((a, b) => {
+      // 使用 clusterSortedIdList 的索引进行排序
+      const aIndex = clusterSortedIdMap[a.id] ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = clusterSortedIdMap[b.id] ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
     });
   }, [assignedClusters, currentClustersData]);
 

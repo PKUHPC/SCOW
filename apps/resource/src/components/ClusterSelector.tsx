@@ -33,7 +33,8 @@ export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
       onChange={(value) => {
         onChange?.(value ? {
           id: value,
-          name: currentClusters.find((cluster) => cluster.id === value)?.name ?? value }
+          name: currentClusters.find((cluster) => cluster.id === value)?.name ?? value,
+        }
           : undefined);
       }
       }

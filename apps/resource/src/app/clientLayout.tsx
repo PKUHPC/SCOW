@@ -14,8 +14,9 @@ import StyledComponentsRegistry from "src/components/layout/styleRegistry/Styled
 import { ScowParamsProvider } from "src/components/ScowParamsProvider";
 import { ServerErrorPage } from "src/components/ServerErrorPage";
 import { trpc } from "src/server/trpc/api";
-import { UiConfig } from "src/server/trpc/route/config";
+import { PublicConfig, UiConfig } from "src/server/trpc/route/config";
 
+import { PublicConfigContext } from "./publicConfigContext";
 import { UiConfigContext } from "./uiContext";
 
 const useReportHeightToScow = () => {
@@ -63,9 +64,15 @@ export function ClientLayout(props: {
     });
   };
 
-  const useConfig = useConfigQuery();
+  const usePublicConfigQuery = () => {
+    return trpc.config.publicConfig.useQuery();
+  };
 
-  const uiConfig = useConfig.data || {} as UiConfig;
+  const useUiConfig = useConfigQuery();
+  const usePublicConfig = usePublicConfigQuery();
+
+  const uiConfig = useUiConfig.data || {} as UiConfig;
+  const publicConfig = usePublicConfig.data || {} as PublicConfig;
 
   const host = (typeof window === "undefined") ? "" : location.host;
   const hostname = host?.includes(":") ? host?.split(":")[0] : host;
@@ -84,7 +91,7 @@ export function ClientLayout(props: {
             <AntdStyleRegistry>
               <body>
                 {
-                  useConfig.isLoading ? (
+                  useUiConfig.isLoading || usePublicConfig.isLoading ? (
                     <AntdConfigProvider
                       color={DEFAULT_PRIMARY_COLOR}
                       primaryColor={{ defaultColor: color,darkModeColor }}
@@ -102,7 +109,13 @@ export function ClientLayout(props: {
                               uiConfig,
                             }}
                           >
-                            {props.children}
+                            <PublicConfigContext.Provider
+                              value={{
+                                clusterSortedIdList: publicConfig?.CLUSTER_SORTED_ID_LIST ?? [],
+                              }}
+                            >
+                              {props.children}
+                            </PublicConfigContext.Provider>
                           </UiConfigContext.Provider>
                         </ErrorBoundary>
                       </AntdConfigProvider>

@@ -1,5 +1,8 @@
+import { getClusterConfigs, getSortedClusterIds } from "@scow/config/build/cluster";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
+import { join } from "path";
 import { uiConfig } from "src/server/config/ui";
+import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
 import { router } from "../def";
@@ -21,6 +24,17 @@ const UiConfigSchema = z.object({
 });
 export type UiConfig = z.infer<typeof UiConfigSchema>;
 
+
+const configPath = USE_MOCK ? join(__dirname, "config") : undefined;
+const clustersInit = getClusterConfigs(configPath, console);
+// 配置文件中的已配置集群
+export const clusters = clustersInit;
+
+const PublicConfigSchema = z.object({
+  CLUSTER_SORTED_ID_LIST: z.array(z.string()),
+});
+export type PublicConfig = z.infer<typeof PublicConfigSchema>;
+
 export const config = router({
 
   getUiConfig: baseProcedure
@@ -38,6 +52,25 @@ export const config = router({
       return {
         config: uiConfig,
         defaultPrimaryColor: DEFAULT_PRIMARY_COLOR,
+      };
+    }),
+
+
+  publicConfig: baseProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/config",
+        tags: ["config"],
+        summary: "config",
+      },
+    })
+    .input(z.void())
+    .output(PublicConfigSchema)
+    .query(async () => {
+
+      return {
+        CLUSTER_SORTED_ID_LIST: getSortedClusterIds(clusters),
       };
     }),
 });

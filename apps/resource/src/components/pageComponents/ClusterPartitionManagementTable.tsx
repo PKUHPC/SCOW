@@ -37,9 +37,9 @@ export const PartitionManagementTable: React.FC<Props> = ({
     error: currentClustersError,
   } = trpc.misServer.currentClusters.useQuery();
 
-  const { data: currentClustersPartitionsData, 
-    refetch: currentClustersPartitionsRefetch, 
-    isFetching: currentClustersPartitionsIsFetching, 
+  const { data: currentClustersPartitionsData,
+    refetch: currentClustersPartitionsRefetch,
+    isFetching: currentClustersPartitionsIsFetching,
     error: currentClustersPartitionsError } =
     trpc.misServer.currentClustersPartitionsInfo.useQuery();
 
@@ -140,13 +140,13 @@ interface ClusterPartitionManagementInfoTableProps {
 }
 
 const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTableProps> = ({
-  data, 
-  isLoading, 
+  data,
+  isLoading,
   reload,
   operationType,
   languageId,
-  language, 
-  tenantAssignedClusters, 
+  language,
+  tenantAssignedClusters,
   tenantAssignedPartitions,
   currentClustersData,
   currentClustersPartitionsData,
@@ -180,15 +180,15 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
     tenantName?: string,
     accountName?: string,
   ): AssignedClustersPartitionsSchema | undefined => {
-    
+
     if (!sourceData) return undefined;
 
-    const found = sourceData.find((x) => 
-      accountName 
+    const found = sourceData.find((x) =>
+      accountName
         ? x.tenantName === tenantName && x.accountName === accountName
         : x.tenantName === tenantName,
     );
-  
+
     return found?.assignedInfo;
   };
 
@@ -297,8 +297,8 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
         assignedAccountName={clusterPreviewItem?.accountName}
         assignedTenantName={clusterPreviewItem?.tenantName ?? ""}
         assignedClusters={
-          getPreviewAssignedInfo(filteredData, 
-            clusterPreviewItem?.tenantName, 
+          getPreviewAssignedInfo(filteredData,
+            clusterPreviewItem?.tenantName,
             clusterPreviewItem?.accountName)?.assignedClusters
            ?? []}
         operationType={operationType}
@@ -319,8 +319,8 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
         assignedAccountName={partitionPreviewItem?.accountName}
         assignedTenantName={partitionPreviewItem?.tenantName ?? ""}
         assignedInfo={
-          getPreviewAssignedInfo(filteredData, 
-            partitionPreviewItem?.tenantName, 
+          getPreviewAssignedInfo(filteredData,
+            partitionPreviewItem?.tenantName,
             partitionPreviewItem?.accountName)
         }
         operationType={operationType}

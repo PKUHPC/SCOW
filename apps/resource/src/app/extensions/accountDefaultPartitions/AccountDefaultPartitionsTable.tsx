@@ -5,6 +5,7 @@ import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Input, Space, Table } from "antd";
 import React, { useMemo, useState } from "react";
+import { usePublicConfig } from "src/app/publicConfigContext";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -21,7 +22,7 @@ interface FilterForm {
 
 interface AccountDefaultPartitionsProps {
   data: ClusterPartition[] | undefined;
-  defaultClusterIds?: string[],  
+  defaultClusterIds?: string[],
   tenantName?: string;
   isLoading: boolean;
   reload: () => void;
@@ -32,6 +33,8 @@ interface AccountDefaultPartitionsProps {
 export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsProps> = ({
   data, defaultClusterIds, tenantName, isLoading, reload, language, languageId,
 }) => {
+
+  const { clusterSortedIdList } = usePublicConfig();
 
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<FilterForm>();
@@ -49,18 +52,25 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
 
   const filteredData = useMemo(() => {
     if (!data || !currentClustersData) return undefined;
-  
+
     const { cluster, partition } = query;
     const lowerPartition = partition?.toLowerCase();
-  
+    const clusterSortedIdMap = Object.fromEntries(
+      clusterSortedIdList.map((id, index) => [id, index]),
+    );
     return data.filter((x) => {
       const partitionMatch = lowerPartition ? x.partition.toLowerCase().includes(lowerPartition) : true;
       const clusterMatch = cluster?.id ? x.clusterId === cluster.id : true;
       const onlineMatch = currentClustersData.results?.some((currentCluster) => currentCluster.id === x.clusterId);
 
       return clusterMatch && partitionMatch && onlineMatch;
+    }).sort((a, b) => {
+      // 使用 clusterSortedIdList 的索引进行排序
+      const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
     });
-  }, [data, query, currentClustersData]);
+  }, [data, query, currentClustersData, clusterSortedIdList]);
 
   const removeFromDefaultPartitionsMutation = trpc.partitions.removeFromAccountDefaultPartitions.useMutation({
     onSuccess() {

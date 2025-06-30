@@ -1,5 +1,6 @@
 "use client";
 
+
 import { Cluster } from "@scow/config/build/type";
 import { Head } from "@scow/lib-web/build/components/head";
 import { message } from "antd";

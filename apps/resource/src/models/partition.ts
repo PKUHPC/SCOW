@@ -17,3 +17,5 @@ export interface ClusterPartition {
   clusterId: string,
   partition: string,
 }
+
+

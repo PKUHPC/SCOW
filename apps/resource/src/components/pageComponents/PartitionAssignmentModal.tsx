@@ -5,6 +5,7 @@ import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag, Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
+import { usePublicConfig } from "src/app/publicConfigContext";
 import { I18nDicType } from "src/models/i18n";
 import { AssignmentState, ClusterPartition, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -51,21 +52,23 @@ interface FilterForm {
 }
 
 export const PartitionAssignmentModal: React.FC<Props> = ({
-  operationType, 
-  assignedTenantName, 
+  operationType,
+  assignedTenantName,
   assignedAccountName,
-  assignedInfo, 
-  onClose, 
-  reload, 
-  open, 
-  language, 
+  assignedInfo,
+  onClose,
+  reload,
+  open,
+  language,
   languageId,
-  tenantAssignedPartitions, 
-  currentClustersData, 
+  tenantAssignedPartitions,
+  currentClustersData,
   currentClustersPartitionsData,
   currentClustersDataFetching,
   currentClustersPartitionsFetching,
 }) => {
+
+  const { clusterSortedIdList } = usePublicConfig();
 
   const [form] = Form.useForm<FormFields>();
   const [partitionsInconsistency, setPartitionDataInconsistency]
@@ -93,6 +96,10 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     // 已授权的集群Id Set
     const assignedClusterIdsSet = new Set(assignedInfo?.assignedClusters);
 
+    const clusterSortedIdMap = Object.fromEntries(
+      clusterSortedIdList.map((id, index) => [id, index]),
+    );
+
     // 如果是租户页面，使用当前在线集群的所有分区
     // 如果是账户页面，使用当前在线集群的所有分区与租户已授权分区的交集
     const clusterPartitionsData = operationType === PartitionOperationType.ACCOUNT_OPERATION ?
@@ -111,10 +118,20 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
           AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
         selectable: assignedClusterIdsSet.has(item.clusterId) ? true : false,
       };
+    }).sort((a, b) => {
+      // 使用 clusterSortedIdList 的索引进行排序
+      const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
+      return aIndex - bIndex;
     });
 
     return filteredData;
-  }, [assignedInfo, currentClustersPartitionsData, tenantAssignedPartitions]);
+  }, [assignedInfo,
+    currentClustersPartitionsData,
+    tenantAssignedPartitions,
+    currentClustersData,
+    clusterSortedIdList,
+  ]);
 
   // 判断是否存在集群连接获取分区信息失败的情况
   useEffect(() => {
@@ -122,23 +139,23 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     const currentClusterIds = currentClustersData?.map((x) => x.id);
     let hasInconsistency: boolean = false;
     // 如果是平台管理下的租户授权分区，当前已获取的在线集群下如果分区为空则推测获取数据出现问题
-    if (operationType === PartitionOperationType.TENANT_OPERATION && 
+    if (operationType === PartitionOperationType.TENANT_OPERATION &&
       currentClustersPartitionsData &&
       currentClusterIds) {
       hasInconsistency = currentClusterIds.some((id) => {
         return !currentClustersPartitionsData.find((x) => x.clusterId === id);
-      });   
+      });
     }
 
     // 如果是租户管理下的账户授权分区，当前已获取的在线集群下如果租户已授权的分区数据存在分区为空则推测获取数据出现问题
-    if (operationType === PartitionOperationType.ACCOUNT_OPERATION && 
+    if (operationType === PartitionOperationType.ACCOUNT_OPERATION &&
       currentClustersPartitionsData &&
       currentClusterIds &&
       tenantAssignedPartitions) {
       hasInconsistency = tenantAssignedPartitions.some((x) => {
-        return currentClusterIds.includes(x.clusterId) && 
+        return currentClusterIds.includes(x.clusterId) &&
         !currentClustersPartitionsData.find((c) => c.clusterId === x.clusterId);
-      });     
+      });
     }
 
     if (hasInconsistency) {
@@ -146,9 +163,9 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     }
   }, [currentClustersData, currentClustersPartitionsData, tenantAssignedPartitions]);
 
-  const [filteredPartitionList, setFilteredPartitionList] = 
+  const [filteredPartitionList, setFilteredPartitionList] =
     useState<DisplayedPartition[] | undefined>(displayedTotalPartitionList);
-  
+
   useEffect(() => {
     const { cluster, partition } = query;
     if (displayedTotalPartitionList) {

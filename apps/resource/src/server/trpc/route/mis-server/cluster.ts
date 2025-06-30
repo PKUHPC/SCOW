@@ -61,7 +61,10 @@ export const currentClusters = authProcedure
         const activatedRuntimeInfo = clustersRuntimeInfo.results.
           filter((x) => x.activationStatus === ClusterActivationStatus.ACTIVATED);
         const activatedClusters: Cluster[] = activatedRuntimeInfo.map((item) => {
-          return { id: item.clusterId, name: modifiedClustersInfo[item.clusterId].displayName };
+          return {
+            id: item.clusterId,
+            name: modifiedClustersInfo[item.clusterId].displayName,
+          };
         });
 
         return { results: activatedClusters };
