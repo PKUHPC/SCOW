@@ -10,12 +10,16 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { getCommonConfig } from "@scow/config/src/common";
+import { validateToken as authValidateToken } from "@scow/lib-auth";
+import { libWebChangeEmail } from "@scow/lib-web/build/server/user";
 import { IncomingMessage } from "http";
 import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
 import { NextRequest } from "next/server";
 import { deleteUserToken, getUserToken } from "src/server/auth/cookie";
+import { config } from "src/server/config/env";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
-import { USE_MOCK } from "src/utils/processEnv";
+import { AUTH_INTERNAL_URL, USE_MOCK } from "src/utils/processEnv";
 
 import { validateToken } from "./token";
 
@@ -46,5 +50,22 @@ export async function getUserInfo(req: RequestType, res?: NextApiResponse): Prom
 
   return { ...result, token };
 
+}
+
+export async function changeEmail(req: RequestType, newEmail: string) {
+
+  const token = getUserToken(req);
+  if (!token) { return undefined; }
+
+  const resp = await authValidateToken(AUTH_INTERNAL_URL, token).catch(() => undefined);
+
+  if (!resp) {
+    return undefined;
+  }
+
+  const commonConfig = getCommonConfig();
+
+  return await libWebChangeEmail(resp.identityId, newEmail,
+    config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 }
 

@@ -6,6 +6,7 @@ import type { getClusterConfigFilesSchema } from "src/pages/api//getClusterConfi
 import type { GetClustersRuntimeInfoSchema } from "src/pages/api//getClustersRuntimeInfo";
 import type { GetUserAssociatedClusterIdsSchema } from "src/pages/api//getUserAssociatedClusterIds";
 import type { GetUserAssociatedClusterPartitionsSchema } from "src/pages/api//getUserAssociatedClusterPartitions";
+import type { GetUserInfoSchema } from "src/pages/api//getUserInfo";
 import type { CheckAppConnectivitySchema } from "src/pages/api/app/checkConnectivity";
 import type { CheckShadowDeskConnectivitySchema } from "src/pages/api/app/checkShadowDeskConnectivity";
 import type { ConnectToAppSchema } from "src/pages/api/app/connectToApp";
@@ -61,6 +62,7 @@ import type { SubmitFileAsJobSchema } from "src/pages/api/job/submitFileAsJob";
 import type { SubmitJobSchema } from "src/pages/api/job/submitJob";
 import type { GetUnreadMessageSchema } from "src/pages/api/notification/getUnreadMessages";
 import type { MarkMessageReadSchema } from "src/pages/api/notification/markMessageRead";
+import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
 import type { getUserStorageInfoSchema } from "src/pages/api/storage/getUserStorageUsage";
@@ -114,6 +116,7 @@ export const api = {
   getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>("GET", "/api//getClustersRuntimeInfo"),
   getUserAssociatedClusterIds: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterIdsSchema>("GET", "/api//getUserAssociatedClusterIds"),
   getUserAssociatedClusterPartitions: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterPartitionsSchema>("GET", "/api//getUserAssociatedClusterPartitions"),
+  getUserInfo: apiClient.fromTypeboxRoute<typeof GetUserInfoSchema>("GET", "/api//getUserInfo"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/job/getAccounts"),
@@ -128,6 +131,7 @@ export const api = {
   getUnreadMessage: apiClient.fromTypeboxRoute<typeof GetUnreadMessageSchema>("GET", "/api/notification/getUnreadMessages"),
   markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
+  changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
   getUserStorageInfo: apiClient.fromTypeboxRoute<typeof getUserStorageInfoSchema>("GET", "/api/storage/getUserStorageUsage"),
 };

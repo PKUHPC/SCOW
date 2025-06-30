@@ -16,7 +16,7 @@ import { joinWithUrl } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { deleteUserToken, getUserToken, setUserTokenCookie } from "src/server/auth/cookie";
-import { getUserInfo } from "src/server/auth/server";
+import { changeEmail, getUserInfo } from "src/server/auth/server";
 import { validateToken } from "src/server/auth/token";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
@@ -30,11 +30,33 @@ import { z } from "zod";
 
 import { booleanQueryParam } from "./utils";
 
+export const TenantRole = {
+  TENANT_ADMIN: 0,
+  TENANT_FINANCE: 1,
+} as const;
+
+export const PlatformRole = {
+  PLATFORM_ADMIN: 0,
+  PLATFORM_FINANCE: 1,
+} as const;
 
 const ClientUserInfoSchema = z.object({
   identityId: z.string(),
   name: z.optional(z.string()),
   token: z.string(),
+  phone: z.optional(z.string()),
+  email: z.optional(z.string()),
+  tenantName: z.optional(z.string()),
+  organization: z.optional(z.string()),
+  tenantRoles: z.optional(z.array(z.union([
+    z.literal(TenantRole.TENANT_ADMIN),
+    z.literal(TenantRole.TENANT_FINANCE),
+  ]))),
+  platformRoles: z.optional(z.array(z.union([
+    z.literal(PlatformRole.PLATFORM_ADMIN),
+    z.literal(PlatformRole.PLATFORM_FINANCE),
+  ]))),
+  createTime: z.optional(z.string()),
 });
 
 export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
@@ -213,6 +235,30 @@ export const auth = router({
         await callLog(logInfo, OperationResult.SUCCESS);
       }
 
+      return;
+    }),
+
+  changeEmail: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/changeEmail",
+        tags: ["auth"],
+        summary: "更改邮箱",
+      },
+    })
+    .input(z.object({
+      identityId:z.string(),
+      newEmail:z.string(),
+    }))
+    .output(z.void())
+    .mutation(async ({ ctx: { req },input:{ newEmail } }) => {
+      await changeEmail(req, newEmail).catch((error) => {
+        throw new TRPCError({
+          message: `change email failed,${error.message}`,
+          code: "BAD_REQUEST",
+        });
+      });
       return;
     }),
 });

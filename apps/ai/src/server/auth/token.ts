@@ -10,8 +10,11 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { getUser, validateToken as authValidateToken } from "@scow/lib-auth";
+import { getCommonConfig } from "@scow/config/src/common";
+import { validateToken as authValidateToken } from "@scow/lib-auth";
+import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { UserInfo } from "src/models/User";
+import { config } from "src/server/config/env";
 import { AUTH_INTERNAL_URL, USE_MOCK } from "src/utils/processEnv";
 
 import { mockUserInfo } from "./server";
@@ -30,13 +33,13 @@ export async function validateToken(token: string | undefined): Promise<UserInfo
     return undefined;
   }
 
-  const userInfo = await getUser(AUTH_INTERNAL_URL, { identityId: resp.identityId })
-    .catch(() => undefined);
+  const commonConfig = getCommonConfig();
+
+  const userInfo = await libWebGetUserInfo(resp.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
   return {
     identityId: resp.identityId,
-    name: userInfo?.name,
+    ...userInfo,
   };
-
 }
 

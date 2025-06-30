@@ -52,16 +52,20 @@ export default {
   pageComp: {
     // profile
     profile: {
-      changPasswordModal: {
-        successMessage: "Password changed successfully",
-        errorMessage: "Incorrect original password",
-        changePassword: "Change Password",
-        oldPassword: "Old Password",
-        newPassword: "New Password",
-        confirm: "Confirm Password",
-        userNotExist:"User Not Exist",
-        unavailable:"This feature is not available in the current configuration",
-      },
+      successMessage: "Password changed successfully",
+      errorMessage: "Incorrect original password",
+      changePassword: "Change Password",
+      oldPassword: "Old Password",
+      newPassword: "New Password",
+      confirm: "Confirm Password",
+      userNotExist:"User Not Exist",
+      unavailable:"This feature is not available in the current configuration",
+      changeEmailFail: "Failed to change email.",
+      changeEmailSuccess: "Email changed successfully!",
+      changeEmail: "Change Email",
+      oldEmail: "Old Email",
+      newEmail: "New Email",
+      inputEmail: "Please enter a new email",
     },
     // job
     job: {
@@ -673,6 +677,16 @@ export default {
       name: "User Name",
       changePassword: "Change Password",
       loginPassword: "Login Password",
+      platformRole: "Platform Role",
+      tenantRole:"Tenant Role",
+      phone: "Phone",
+      organization: "Organization",
+      createTime:"Creation Time",
+      email:"Email",
+      platformAdmin: "Platform Admin",
+      platformFinance: "Platform Financial Officer",
+      tenantAdmin: "Tenant Admin",
+      tenantFinance: "Financial Officer",
     },
     shell: {
       loginNode: {

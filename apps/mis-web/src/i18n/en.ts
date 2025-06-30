@@ -1088,6 +1088,7 @@ export default {
       index: {
         accountInfo: "Account Information",
       },
+      accountSecurity: "Account Security",
     },
     user: {
       partitions: {

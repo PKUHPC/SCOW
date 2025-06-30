@@ -1,108 +1,28 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
-import { Descriptions, Typography } from "antd";
+import Profile from "@scow/lib-web/build/components/profile";
 import { usePublicConfig } from "src/app/(auth)/context";
-import { ModalButton } from "src/components/ModalLink";
-import { Section } from "src/components/Section";
-import { prefix, useI18nTranslateToString } from "src/i18n";
-import { antdBreakpoints } from "src/styles/constants";
-import { Head } from "src/utils/head";
-import { styled } from "styled-components";
-
-import { ChangePasswordModal } from "./ChangePasswordModal";
-
-const Container = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-`;
-
-const Part = styled(Section)`
-  min-width: 400px;
-  max-width: 600px;
-  flex: 1;
-  margin: 0 8px 16px 0;
-  @media (min-width: ${antdBreakpoints.md}px) {
-    margin: 0 16px 32px 0;
-  }
-`;
-
-const TitleText = styled(Typography.Title)`
-&& {
-  width: 100vw;
-  font-weight: 700;
-  font-size: 24px;
-  padding: 0 0 10px 20px;
-  margin-left: -25px;
-  border-bottom: 1px solid #ccc;
-  @media (min-width: ${antdBreakpoints.md}px) {
-    padding: 0 0 20px 30px;
-  }
-}
-`;
-
-const ChangePasswordModalButton = ModalButton(ChangePasswordModal, { type: "link" });
+import { useUser } from "src/app/auth";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { trpc } from "src/utils/trpc";
 
 export default function Page() {
   const t = useI18nTranslateToString();
   const p = prefix("app.profile.");
 
-  const { publicConfig, user } = usePublicConfig();
+  const { publicConfig } = usePublicConfig();
+  const languageId = useI18n().currentLanguage.id;
+
+  const user = useUser();
 
   return (
-    <Container>
-      <Head title={t(p("accountInfo"))} />
-      <TitleText>
-        {t(p("userInfo"))}
-      </TitleText>
-      <Part title>
-        <Descriptions
-          column={1}
-          labelStyle={{ paddingLeft:"10px", marginBottom:"10px" }}
-          contentStyle={{ paddingLeft:"10px" }}
-        >
-          <Descriptions.Item label={t(p("userId"))}>
-            {user.identityId}
-          </Descriptions.Item>
-          <Descriptions.Item label={t(p("userName"))}>
-            {user.name}
-          </Descriptions.Item>
-        </Descriptions>
-      </Part>
-      {
-        publicConfig.ENABLE_CHANGE_PASSWORD ? (
-          <>
-            <TitleText>
-              {t(p("changePw"))}
-            </TitleText>
-            <Part title>
-              <Descriptions
-                column={1}
-                labelStyle={{ paddingLeft:"10px", paddingTop:"5px" }}
-                contentStyle={{ paddingLeft:"10px" }}
-              >
-                <Descriptions.Item label={t(p("loginPw"))}>
-                  <span style={{ width:"200px" }}>********</span>
-                  <ChangePasswordModalButton identityId={user.identityId}>
-                    {t(p("changePw"))}
-                  </ChangePasswordModalButton>
-                </Descriptions.Item>
-              </Descriptions>
-            </Part>
-          </>
-        ) : undefined
-      }
-    </Container>
+    <Profile
+      user={user}
+      languageId={languageId}
+      publicConfig={publicConfig}
+      passwordPatternMessage={t(p("newPwPlaceholder"))}
+      aiChangePassword={trpc.auth.changePassword}
+      aiChangeEmail={trpc.auth.changeEmail}
+    >
+    </Profile>
   );
 }

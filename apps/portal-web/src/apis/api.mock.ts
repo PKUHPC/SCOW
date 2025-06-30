@@ -271,6 +271,8 @@ export const mockApi: MockApi<typeof api> = {
 
   changePassword: async () => null,
 
+  changeEmail: async () => null,
+
   checkPassword: null,
 
   validateToken: null,
@@ -326,6 +328,17 @@ export const mockApi: MockApi<typeof api> = {
     clusterIds: ["hpc00", "hpc01", "hpc02"],
   }),
 
+  getUserInfo: async () => ({
+    userInfo: {
+      phone: "123123123",
+      email: "123@qq.com",
+      tenantName: "default",
+      organization: "1211",
+      tenantRoles: [0, 1],
+      platformRoles: [0],
+      createTime: "2024-12-05T02:05:05.105Z",
+    },
+  }),
 
   mergeFileChunks: null,
   initMultipartUpload: async () => ({

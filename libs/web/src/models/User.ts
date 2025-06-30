@@ -15,13 +15,14 @@ export const PlatformRole = {
 export type PlatformRole = ValueOf<typeof PlatformRole>;
 
 export interface UserInfo {
+  tenant?: string;
   identityId: string;
   name?: string;
-  phone?: string,
-  email?: string,
-  tenantName?: string,
-  organization?: string,
+  token: string;
   tenantRoles?: TenantRole[];
   platformRoles?: PlatformRole[];
-  createTime?: string,
+  email?: string;
+  phone?: string;
+  organization?: string;
+  createTime?: string;
 }

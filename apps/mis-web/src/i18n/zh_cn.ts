@@ -1081,6 +1081,7 @@ export default {
       index: {
         accountInfo: "账号信息",
       },
+      accountSecurity: "账号安全",
     },
     user: {
       partitions: {
