@@ -473,6 +473,7 @@ export default {
         train: "训练",
         inference: "推理",
         inferServiceAddress:"推理服务地址",
+        return:"返回",
       },
       jobLogs:{
         title:"容器 {} 的日志",

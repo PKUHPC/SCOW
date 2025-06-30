@@ -73,7 +73,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const appId = searchParams?.get("appId");
   const from = searchParams?.get("from");
 
-  const [selectedPod, setSelectedPod] = useState(-1);
+  const [selectedPodId, setSelectedPodId] = useState<string | null>(null);
 
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
@@ -96,7 +96,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     return <LoadingOutlined />;
   }
 
-  const decriptionsItems: DescriptionsProps["items"] = [
+  const descriptionsItems: DescriptionsProps["items"] = [
     {
       key: "1",
       label: t(p("jobName")),
@@ -277,7 +277,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       children: (
         <Descriptions
           column={2}
-          items={decriptionsItems}
+          items={descriptionsItems}
         />
       ),
     },
@@ -323,13 +323,13 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     {
       title: t(p("action")),
       key:"action",
-      render: (_, record,idx) => (
+      render: (_, record) => (
         <Space>
           <a onClick={() => {
-            if (selectedPod === idx) {
-              setSelectedPod(-1);
+            if (selectedPodId === record.podId) {
+              setSelectedPodId(null);
             } else {
-              setSelectedPod(idx);
+              setSelectedPodId(record.podId);
             }
           }}
           >
@@ -361,7 +361,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
             );
           }}
         >
-          &lt; 返回
+          &lt; {t(p("return"))}
         </a>
         <Divider type="vertical" />
         <span style={{ fontWeight:600 }}>{jobDetails.jobName}</span>
@@ -383,26 +383,29 @@ export default function Page({ params }: { params: { clusterId: string } }) {
         />
       </Container>
       {
-        selectedPod >= 0 ? (
-          <Container>
-            <Table<EventDataType>
-              title={() => (
-                <Typography.Title level={5}>
-                  {t(p("containerEventsTitle"), [podListData[selectedPod].podName])}
-                </Typography.Title>
-              )}
-              columns={eventColumns}
-              dataSource={podListData[selectedPod].events}
-              pagination={{
-                hideOnSinglePage:true,
-                defaultPageSize: 4,
-              }}
-            />
-          </Container>
-        )
-          : null
-      }
+        selectedPodId && (() => {
+          const selectedPodData = podListData.find((pod) => pod.podId === selectedPodId);
+          if (!selectedPodData) return null;
 
+          return (
+            <Container>
+              <Table<EventDataType>
+                title={() => (
+                  <Typography.Title level={5}>
+                    {t(p("containerEventsTitle"), [selectedPodData.podName])}
+                  </Typography.Title>
+                )}
+                columns={eventColumns}
+                dataSource={selectedPodData.events}
+                pagination={{
+                  hideOnSinglePage: true,
+                  defaultPageSize: 4,
+                }}
+              />
+            </Container>
+          );
+        })()
+      }
     </>
   );
 }

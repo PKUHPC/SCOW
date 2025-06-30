@@ -473,6 +473,7 @@ export default {
         train: "Train",
         inference: "Inference",
         inferServiceAddress:"Infer service address",
+        return:"Return",
       },
       jobLogs:{
         title:"Logs for pod {}",
