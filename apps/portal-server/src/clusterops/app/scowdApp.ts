@@ -322,18 +322,13 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const data = JSON.parse(content.toString()) as SubmissionInfo;
           return { lastSubmissionInfo: data };
         } catch (error) {
-          logger.error("Parsing JSON failed, the content is %s,the error is %o",content.toString(),error);
-
-          throw new GrpcServiceError({
-            code: Status.UNAVAILABLE, message: `${appId} last submission record not available`,
-          });
+          logger.error("Parsing JSON failed, the content is %s,the error is %o",content.toString(), error);
         }
       } catch (err) {
-        if (err instanceof ConnectError) {
-          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
-        }
-        throw err;
+        logger.error("Reading last submission file failed. It will be recreated after next submission.", err);
       };
+
+      return { lastSubmissionInfo: undefined };
 
     },
 

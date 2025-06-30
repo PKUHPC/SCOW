@@ -299,8 +299,8 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
           const data = JSON.parse(content.toString()) as SubmissionInfo;
           return { lastSubmissionInfo: data };
         } catch (error) {
-          logger.error("Parsing JSON failed, the content is %s,the error is %o",content.toString(),error);
-          throw { code: Status.UNAVAILABLE, message: `${appId} last submission record not available` } as ServiceError;
+          logger.error("Parsing JSON failed, the content is %s,the error is %o",content.toString(), error);
+          return { lastSubmissionInfo: undefined };
         }
       });
     },

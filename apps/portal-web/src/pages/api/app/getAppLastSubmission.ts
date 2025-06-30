@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
@@ -66,5 +54,10 @@ export default /* #__PURE__*/route(GetAppLastSubmissionSchema, async (req, res) 
 
   return asyncUnaryCall(client, "getAppLastSubmission", {
     userId: info.identityId, cluster, appId,
-  }).then(({ lastSubmissionInfo }) => ({ 200: { lastSubmissionInfo: lastSubmissionInfo } }));
+  })
+    .then(({ lastSubmissionInfo }) => ({ 200: { lastSubmissionInfo: lastSubmissionInfo } }))
+    .catch(() => {
+      console.warn("LastSubmission found failed. It will be recreated after next submission.");
+      return { 200: { lastSubmissionInfo: undefined } };
+    });
 });
