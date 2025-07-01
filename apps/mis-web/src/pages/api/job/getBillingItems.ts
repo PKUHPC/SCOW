@@ -9,10 +9,11 @@ import { Static, Type } from "@sinclair/typebox";
 import { USE_MOCK } from "src/apis/useMock";
 import { authenticate } from "src/auth/server";
 import { AssignedClusterPartitions } from "src/models/cluster";
-import { PlatformRole } from "src/models/User";
+import { PlatformRole, TenantRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
+import { queryIfInitialized } from "src/utils/init";
 import { route } from "src/utils/route";
 
 // Cannot use BillingItemType from pageComponents/job/ManageJobBillingTable
@@ -39,8 +40,8 @@ export const GetBillingItemsSchema = typeboxRouteSchema({
   query: Type.Object({
     /**
      * Platform admin can query any tenant
-     * Not login user can only query platform default (by not setting the tenant field)
-     * Login user can only query the platform default and tenant the user belongs to
+     * Not login user can only query platform default (by not setting the tenant field) ===> only when not initialized
+     * Login user can only query the platform default and tenant the user belongs to ===> must be administrator
      */
     tenant: Type.Optional(Type.String()),
 
@@ -121,10 +122,17 @@ const calculateNextId = (data?: JobBillingItem[], tenant?: string) => {
 
 
 export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
+
   const { tenant, activeOnly, currentActivatedClusterIds, clusterSortedIdList } = req.query;
 
-  if (tenant) {
-    const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || (u.tenant === tenant));
+  // if not initialized, every one can get billing items
+  if (await queryIfInitialized()) {
+    // 权限要求：
+    // 平台管理员
+    // 租户管理员，且查询的租户为所属租户
+    const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+     (u.tenantRoles.includes(TenantRole.TENANT_ADMIN) && u.tenant === tenant),
+    );
     const info = await auth(req, res);
     if (!info) { return; }
   }
