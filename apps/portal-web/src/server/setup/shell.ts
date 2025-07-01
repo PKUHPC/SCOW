@@ -190,6 +190,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   ws.on("close", async () => {
     stream.write({ message: { $case: "disconnect", disconnect: {} } });
     stream.end();
+    stream.removeAllListeners();
   });
 
   ws.on("error", async (err) => {
@@ -204,6 +205,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     }, OperationResult.FAIL);
     stream.write({ message: { $case: "disconnect", disconnect: {} } });
     stream.end();
+    stream.removeAllListeners();
   });
 });
 

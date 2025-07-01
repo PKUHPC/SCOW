@@ -1,13 +1,13 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
-import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
-import { FileServiceClient } from "@scow/protos/build/portal/file";
+// import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
+// import { FileServiceClient } from "@scow/protos/build/portal/file";
 import { Type } from "@sinclair/typebox";
-import { randomUUID } from "crypto";
-import { contentType } from "mime-types";
-import { basename } from "path";
-import { authenticate } from "src/auth/server";
-import { getClient } from "src/utils/client";
-import { pipeline } from "src/utils/pipeline";
+// import { randomUUID } from "crypto";
+// import { contentType } from "mime-types";
+// import { basename } from "path";
+// import { authenticate } from "src/auth/server";
+// import { getClient } from "src/utils/client";
+// import { pipeline } from "src/utils/pipeline";
 import { route } from "src/utils/route";
 
 export const CompressAndDownloadFileSchema = typeboxRouteSchema({
@@ -24,76 +24,81 @@ export const CompressAndDownloadFileSchema = typeboxRouteSchema({
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
 
     404: Type.Object({ code: Type.Literal("NOT_EXISTS") }),
+
+    501: Type.Object({ code: Type.Literal("NOT_IMPLEMENTED") }),
   },
 });
 
 // if the contentType is one of these, they can be previewed
 // return as text/plain
-const textFiles = ["application/x-sh"];
+// const textFiles = ["application/x-sh"];
 
-function getContentType(filename: string, defaultValue: string) {
-  const type = contentType(basename(filename));
+// function getContentType(filename: string, defaultValue: string) {
+//   const type = contentType(basename(filename));
 
-  if (!type) {
-    return defaultValue;
-  }
+//   if (!type) {
+//     return defaultValue;
+//   }
 
-  if (textFiles.some((x) => type.startsWith(x))) {
-    return "text/plain; charset=utf-8";
-  }
+//   if (textFiles.some((x) => type.startsWith(x))) {
+//     return "text/plain; charset=utf-8";
+//   }
 
-  return type;
-}
+//   return type;
+// }
 
-const auth = authenticate(() => true);
+// const auth = authenticate(() => true);
 
-export default route(CompressAndDownloadFileSchema, async (req, res) => {
-  const info = await auth(req, res);
-  if (!info) { return; }
+export default route(CompressAndDownloadFileSchema, async () => {
 
-  const { cluster, paths } = req.query;
+  return { 501: { code: "NOT_IMPLEMENTED" as const } };
 
-  const client = getClient(FileServiceClient);
+  // const info = await auth(req, res);
+  // if (!info) { return; }
 
-  const filename = randomUUID().toString() + ".zip";
-  const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
+  // const { cluster, paths } = req.query;
 
-  res.writeHead(200, {
-    "Content-Type": getContentType(filename, "application/octet-stream"),
-    "Content-Disposition": `attachment; ${dispositionParm}`,
-  });
+  // const client = getClient(FileServiceClient);
 
-  const stream = asyncReplyStreamCall(client, "compressAndDownload", {
-    cluster, paths, userId: info.identityId,
-  });
+  // const filename = randomUUID().toString() + ".zip";
+  // const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
-  req.on("close", () => {
-    if (!res.writableEnded) {
-      console.log("Client disconnected, aborting compressAndDownload stream");
-      stream.cancel();
-      res.end();
-    }
-  });
+  // res.writeHead(200, {
+  //   "Content-Type": getContentType(filename, "application/octet-stream"),
+  //   "Content-Disposition": `attachment; ${dispositionParm}`,
+  // });
 
-  try {
-    await pipeline(
-      stream.iter(),
-      async (x) => {
-        return x.chunk;
-      },
-      res,
-    );
-  } catch (error) {
-    console.error("Error piping compressAndDownload stream:", error);
-    if (!res.writableEnded) {
-      stream.cancel();
-      res.end();
-    }
-  } finally {
-    if (!res.writableEnded) {
-      res.end();
-    }
-  }
+  // const stream = asyncReplyStreamCall(client, "compressAndDownload", {
+  //   cluster, paths, userId: info.identityId,
+  // });
+
+  // req.on("close", () => {
+  //   if (!res.writableEnded) {
+  //     console.log("Client disconnected, aborting compressAndDownload stream");
+  //     stream.cancel();
+  //     res.end();
+  //   }
+  // });
+
+  // try {
+  //   await pipeline(
+  //     stream.iter(),
+  //     async (x) => {
+  //       return x.chunk;
+  //     },
+  //     res,
+  //   );
+  // } catch (error) {
+  //   console.error("Error piping compressAndDownload stream:", error);
+  //   if (!res.writableEnded) {
+  //     stream.cancel();
+  //     res.end();
+  //   }
+  // } finally {
+  //   if (!res.writableEnded) {
+  //     res.end();
+  //   }
+  // }
 });
 
 export const config = {

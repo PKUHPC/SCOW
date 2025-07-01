@@ -344,6 +344,10 @@ export default {
           submitFailedMessage: "Submitted Failed",
           downloadSelected: "Download",
           showHiddenFiles: "Show hidden files: ",
+          downloadButtonDisabledTooltip: {
+            multipleItems: "Please select a single file to download, or compress multiple files before downloading",
+            noSelection: "Please select a file to download",
+          },
         },
       },
       fileTable: {

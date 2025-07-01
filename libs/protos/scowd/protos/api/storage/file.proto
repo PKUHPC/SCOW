@@ -178,6 +178,8 @@ message DownloadRequest {
   string user_id = 1;
   string path = 2;
   uint32 chunk_size_byte = 3;
+  optional uint64 offset_bytes = 4;
+  optional uint32 limit_bytes = 5;
 }
 
 message DownloadResponse {
