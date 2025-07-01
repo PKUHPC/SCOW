@@ -406,6 +406,7 @@ export default {
         partitionsLoading: "Retrieving data...",
         noAssignedPartition: "No Assigned Queue",
         maxTimeTips:"The maximum running time cannot exceed {} hours",
+        priority:"Priority",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"Create successfully",
@@ -473,6 +474,7 @@ export default {
         train: "Train",
         inference: "Inference",
         inferServiceAddress:"Infer service address",
+        priority:"priority",
         return:"Return",
       },
       jobLogs:{

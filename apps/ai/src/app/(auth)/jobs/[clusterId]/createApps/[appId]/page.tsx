@@ -22,8 +22,6 @@ export default function Page({ params }: { params: { clusterId: string, appId: s
 
   const { data: appInfo, isLoading: isAppLoading } = trpc.jobs.getAppMetadata.useQuery({ clusterId, appId });
 
-  const { data: clusterInfo, isLoading: isClusterLoading } = trpc.config.getClusterConfig.useQuery({ clusterId });
-
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
   const { data: createAppParams, isLoading: isCreateAppParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
     { clusterId, jobId: parsedJobId!, sessionId: sessionId! }, {
@@ -33,8 +31,7 @@ export default function Page({ params }: { params: { clusterId: string, appId: s
 
 
   if (
-    isAppLoading || isClusterLoading
-    || !appInfo || !clusterInfo
+    isAppLoading || !appInfo
     || (!!jobId && !!sessionId && (isCreateAppParamsLoading))) {
     return <LoadingOutlined />;
   }
@@ -48,7 +45,6 @@ export default function Page({ params }: { params: { clusterId: string, appId: s
         clusterId={clusterId}
         attributes={appInfo.attributes}
         appComment={appInfo.appComment}
-        clusterInfo={clusterInfo}
         appImage={appInfo.appImage}
         createAppParams={createAppParams}
         useForCreateApp={true}

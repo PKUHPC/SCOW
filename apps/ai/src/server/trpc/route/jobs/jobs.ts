@@ -70,6 +70,7 @@ export const TrainJobInputSchema = z.object({
   mountPoints: z.array(z.string()).optional(),
   account: z.string(),
   partition: z.string().optional(),
+  qos:z.string().optional(),
   coreCount: z.number(),
   nodeCount: z.number(),
   gpuCount: z.number().optional(),

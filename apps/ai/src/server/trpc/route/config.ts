@@ -244,6 +244,32 @@ export const config = router({
       return await asyncClientCall(client.config, "getClusterConfig", {});
     }),
 
+  getAvailablePartitions: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/config/cluster/availablePartitions",
+        tags: ["config"],
+        summary: "GetAvailablePartitions",
+      },
+    })
+    .input(z.object({ accountName: z.string(),clusterId:z.string() }))
+    .output(z.array(PartitionSchema))
+    .query(async ({ input:{ accountName, clusterId }, ctx: { user } }) => {
+      const client = getAdapterClient(clusterId);
+      if (!client) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:`cluster ${clusterId} is not found`,
+        });
+      }
+      const { partitions } = await asyncClientCall(client.config, "getAvailablePartitions", {
+        accountName,userId:user.identityId,
+      });
+
+      return partitions;
+    }),
+
   getUiConfig: baseProcedure
     .meta({
       openapi: {

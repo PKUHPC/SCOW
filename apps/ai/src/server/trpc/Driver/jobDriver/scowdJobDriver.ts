@@ -42,7 +42,7 @@ export class ScowdJobDriver implements JobDriver {
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
     const { workingDirectory,mountPoints = [],clusterId,appId,customAttributes,
       startCommand,appJobName,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,
+      remoteImageUrl,gpuType,qos,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,app,proxyBasePath,existImage } = extraParams;
@@ -193,6 +193,7 @@ export class ScowdJobDriver implements JobDriver {
       jobName: appJobName,
       account,
       partition: partition!,
+      qos,
       coreCount,
       nodeCount,
       gpuCount: gpuCount ?? 0,
@@ -507,7 +508,7 @@ export class ScowdJobDriver implements JobDriver {
 
   async submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
-      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort } = inputParams;
+      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos } = inputParams;
     const { isModelPrivates,modelVersions,existImage } = extraParams;
     const { path:homeDir } = await wrap(
       this.client.file.getHomeDirectory({
@@ -579,6 +580,7 @@ export class ScowdJobDriver implements JobDriver {
       jobName: InferenceJobName,
       account,
       partition: partition!,
+      qos,
       coreCount,
       nodeCount,
       gpuCount: gpuCount ?? 0,
@@ -700,7 +702,7 @@ export class ScowdJobDriver implements JobDriver {
 
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,
+      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,existImage } = extraParams;
@@ -781,6 +783,7 @@ export class ScowdJobDriver implements JobDriver {
       jobName: trainJobName,
       account,
       partition: partition!,
+      qos,
       coreCount,
       nodeCount,
       gpuCount: gpuCount ?? 0,

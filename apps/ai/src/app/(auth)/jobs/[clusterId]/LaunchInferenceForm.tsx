@@ -1,3 +1,15 @@
+/**
+ * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+ * SCOW is licensed under Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *          http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+ * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+ * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 "use client";
 
 import { MinusCircleOutlined, PlusCircleOutlined, PlusOutlined } from "@ant-design/icons";
@@ -12,7 +24,6 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Status } from "src/models/Image";
 import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
-import { AccountStatusFilter } from "src/models/Resource";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { getIdPrivate } from "src/utils/app";
 import { formatSize } from "src/utils/format";
@@ -22,7 +33,7 @@ import { styled, useTheme } from "styled-components";
 
 import { validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
-import { DataAttributes, getAssignedPartitions } from "./LaunchAppForm";
+import { DataAttributes } from "./LaunchAppForm";
 
 const AfterInputNumber = styled(InputNumber)`
   .ant-select-focused .ant-select-selector{
@@ -32,7 +43,6 @@ const AfterInputNumber = styled(InputNumber)`
 
 interface Props {
   clusterId: string;
-  clusterInfo: ClusterConfig;
   InferenceJobInput?: InferenceJobInput
 }
 
@@ -48,6 +58,7 @@ interface FixedFormFields {
   };
   mountPoints: string[] | undefined;
   partition: string | undefined;
+  qos: string;
   coreCount: number;
   nodeCount: number;
   gpuCount: number | undefined;
@@ -60,17 +71,13 @@ interface FixedFormFields {
 type FormFields = FixedFormFields;
 type TimeUnit = "min" | "hour" | "day";
 
-interface ClusterConfig {
-  partitions: Partition[];
-  schedulerName: string,
-}
-
 interface Partition {
   name: string;
   memMb: number;
   cores: number;
   gpus: number;
   nodes: number;
+  qos: string[];
   comment?: string;
   gpuType?: string;
 }
@@ -105,7 +112,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
   const p = prefix("app.jobs.launchAppForm.");
   const pInfer = prefix("app.jobs.LaunchInferenceForm.");
 
-  const { clusterId, clusterInfo,InferenceJobInput } = props;
+  const { clusterId,InferenceJobInput } = props;
 
   const { message } = App.useApp();
   const theme = useTheme();
@@ -118,37 +125,6 @@ export const LaunchInferenceJobForm = (props: Props) => {
   const [, forceUpdate] = useState(0);
 
   const [currentPartitionInfo, setCurrentPartitionInfo] = useState<Partition | undefined>();
-  const [filteredClusterInfo, setFilteredClusterInfo] = useState<ClusterConfig | undefined>(clusterInfo);
-  const [selectedAccountName, setSelectedAccountName] = useState<string | undefined>(undefined);
-
-  const { data: associatedResourceDetails,
-    isLoading: isAssociatedResourceDetailsLoading,
-    refetch: refetchAssociatedResourceDetails }
-    = trpc.resource.getUserAssignedResourceDetails.useQuery({
-      accountStatusFilter: AccountStatusFilter.UNBLOCKED_ONLY });
-
-  useEffect(() => {
-    if (associatedResourceDetails?.results === undefined) {
-      setFilteredClusterInfo(clusterInfo);
-    };
-
-    if (!selectedAccountName) {
-      setFilteredClusterInfo(undefined);
-    };
-
-    if (selectedAccountName && associatedResourceDetails?.results) {
-      const assignedPartitions
-        = getAssignedPartitions(clusterId, selectedAccountName, associatedResourceDetails.results);
-      const filteredPartitions = clusterInfo.partitions.filter((p) => (assignedPartitions?.includes(p.name)));
-      setFilteredClusterInfo({
-        ...clusterInfo,
-        partitions: filteredPartitions,
-      });
-    }
-
-  }, [associatedResourceDetails, clusterInfo, selectedAccountName]);
-
-
   const [maxTimeUnitValue, setMaxTimeUnitValue] = useState<TimeUnit>("min");
 
   const isUnlimitedTime = Form.useWatch("isUnlimitedTime", form);
@@ -270,7 +246,14 @@ export const LaunchInferenceJobForm = (props: Props) => {
   const coreCount = Form.useWatch("coreCount", form);
   const gpuCount = Form.useWatch("gpuCount", form)!;
 
+  const account = Form.useWatch("account", form);
+
   const imageId = Form.useWatch(["image", "name"], form);
+
+  const { data:partitions, isLoading:getAvailablePartitionIsLoading } = trpc.config.getAvailablePartitions.useQuery(
+    { accountName:account,clusterId },
+    { enabled:!!account },
+  );
 
   const memorySize = (currentPartitionInfo ?
     currentPartitionInfo.gpus ? nodeCount * gpuCount
@@ -285,8 +268,8 @@ export const LaunchInferenceJobForm = (props: Props) => {
 
 
   const handlePartitionChange = (partition: string) => {
-    const partitionInfo = filteredClusterInfo
-      ? filteredClusterInfo.partitions.find((x) => x.name === partition)
+    const partitionInfo = partitions
+      ? partitions.find((x) => x.name === partition)
       : undefined;
     if (partitionInfo?.gpus) {
       form.setFieldValue("gpuCount", 1);
@@ -295,7 +278,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
     }
 
     setCurrentPartitionInfo(partitionInfo);
-
+    form.setFieldValue("qos", partitionInfo?.qos[0]);
   };
 
   useEffect(() => {
@@ -366,14 +349,20 @@ export const LaunchInferenceJobForm = (props: Props) => {
     }
   }, [InferenceJobInput, images, form]);
 
-  // 如果是再次提交，set已填入的值
+
   useEffect(() => {
     const inputParams = InferenceJobInput;
-    if (inputParams) {
+    if (!inputParams) {
+      form.setFieldsValue({
+        partition: partitions?.[0]?.name,
+        qos:partitions?.[0]?.qos[0],
+        appJobName: genAppJobName(clusterId, "i"),
+      });
+      setCurrentPartitionInfo(partitions?.[0]);
+    } else {
       const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
-        containerServicePort } = inputParams;
+        containerServicePort,qos } = inputParams;
       const command = "command" in inputParams ? inputParams.command : undefined;
-
       form.setFieldsValue({
         mountPoints,
         nodeCount,
@@ -387,35 +376,25 @@ export const LaunchInferenceJobForm = (props: Props) => {
         containerServicePort,
       });
 
-      setSelectedAccountName(account);
-    }
-  }, [InferenceJobInput]);
-
-  // 根据授权队列信息 set队列
-  useEffect(() => {
-    const inputParams = InferenceJobInput;
-    if (!inputParams) {
-      form.setFieldsValue({
-        partition: filteredClusterInfo?.partitions[0]?.name,
-        appJobName: genAppJobName(clusterId, "i"),
-      });
-      setCurrentPartitionInfo(filteredClusterInfo?.partitions?.[0]);
-    } else {
-      const { partition } = inputParams;
-      const foundPartition = filteredClusterInfo?.partitions?.find((p) => p.name === partition);
-      const partitionWhenNotFound = filteredClusterInfo?.partitions?.[0];
-
-      form.setFieldsValue({
-        partition: foundPartition ? partition : partitionWhenNotFound?.name,
-      });
-
-      if (foundPartition && inputParams.partition) {
-        setCurrentPartitionInfo(foundPartition);
+      const matchedPartition = partitions?.find((p) => p.name === inputParams.partition);
+      if (inputParams.partition) {
+        setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
       } else {
-        setCurrentPartitionInfo(partitionWhenNotFound);
+        setCurrentPartitionInfo(partitions?.[0]);
+      }
+
+      const matchedQos = matchedPartition?.qos.find((q) => q === qos);
+      if (inputParams.qos) {
+        form.setFieldsValue({
+          qos:matchedQos ?? partitions?.[0]?.qos[0],
+        });
+      } else {
+        form.setFieldsValue({
+          qos:partitions?.[0]?.qos[0],
+        });
       }
     }
-  }, [InferenceJobInput, filteredClusterInfo]);
+  }, [InferenceJobInput, partitions]);
 
   const inferenceJobMutation = trpc.jobs.submitInferJob.useMutation({
     onSuccess() {
@@ -449,7 +428,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
       onFinish={async () => {
 
         const { appJobName, image, remoteImageUrl,mountPoints, account, partition, coreCount,
-          gpuCount, maxTime, command, containerServicePort } = await form.validateFields();
+          gpuCount, maxTime, command, containerServicePort,qos } = await form.validateFields();
 
         const modelVersions =
                 modelGroups.map((_,index) => form.getFieldValue(["modelArray", index, "version"]))
@@ -478,6 +457,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
           command: command || "",
           gpuType: currentPartitionInfo!.gpuType,
           containerServicePort,
+          qos,
         });
       }
       }
@@ -819,13 +799,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
           name="account"
           rules={[{ required: true }]}
         >
-          <AccountSelector
-            cluster={clusterId}
-            onChange={(value) => {
-              setSelectedAccountName(value);
-            }}
-            onReload={refetchAssociatedResourceDetails}
-          />
+          <AccountSelector cluster={clusterId} />
         </Form.Item>
 
         <Form.Item
@@ -836,13 +810,23 @@ export const LaunchInferenceJobForm = (props: Props) => {
         >
           <Select
             disabled={!currentPartitionInfo}
-            options={filteredClusterInfo
-              ? filteredClusterInfo.partitions.map((x) => ({ label: x.name, value: x.name }))
+            loading={getAvailablePartitionIsLoading}
+            options={partitions
+              ? partitions.map((x) => ({ label: x.name, value: x.name }))
               : []
             }
             onChange={handlePartitionChange}
-            loading={isAssociatedResourceDetailsLoading}
-            placeholder={isAssociatedResourceDetailsLoading ? t(p("partitionsLoading")) : t(p("noAssignedPartition"))}
+          />
+        </Form.Item>
+        <Form.Item
+          label={t(p("priority"))}
+          name="qos"
+          rules={[{ required: true }]}
+        >
+          <Select
+            loading={getAvailablePartitionIsLoading}
+            disabled={!currentPartitionInfo}
+            options={currentPartitionInfo ? currentPartitionInfo.qos.map((x) => ({ label: x, value: x })) : []}
           />
         </Form.Item>
         <Form.Item
@@ -867,7 +851,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
             <Form.Item
               label={t(p("gpuCount"))}
               name="gpuCount"
-              dependencies={["partition"]}
+              dependencies={["partition","nodeCount"]}
               rules={[
                 {
                   required: true,
@@ -896,7 +880,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
             <Form.Item
               label={t(p("coreCount"))}
               name="coreCount"
-              dependencies={["partition"]}
+              dependencies={["partition","nodeCount"]}
               rules={[
                 { required: true,
                   type: "integer",

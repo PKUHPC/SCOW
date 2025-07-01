@@ -406,6 +406,7 @@ export default {
         partitionsLoading: "查询中...",
         noAssignedPartition: "无可用队列",
         maxTimeTips:"最大运行时间不能超过 {} 小时",
+        priority:"优先级",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"提交推理成功",
@@ -473,6 +474,7 @@ export default {
         train: "训练",
         inference: "推理",
         inferServiceAddress:"推理服务地址",
+        priority:"优先级",
         return:"返回",
       },
       jobLogs:{

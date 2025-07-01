@@ -124,7 +124,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     },
     {
       key: "6",
-      label: "QOS",
+      label: t(p("priority")),
       children: jobDetails.qos,
     },
     {
@@ -160,7 +160,8 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     {
       key: "13",
       label: t(p("startTime")),
-      children: jobDetails.startTime ? formatDateTime(jobDetails.startTime) : "",
+      children: jobDetails.state === "PENDING" ? "-" :
+        jobDetails.startTime ? formatDateTime(jobDetails.startTime) : "-",
     },
     {
       key: "14",
@@ -171,7 +172,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       key: "15",
       label: t(p("endTime")),
       children: (jobDetails.state === "RUNNING" || jobDetails.state === "PENDING") ? "-" :
-        jobDetails.endTime ? formatDateTime(jobDetails.endTime) : "",
+        jobDetails.endTime ? formatDateTime(jobDetails.endTime) : "-",
     },
     {
       key: "16",

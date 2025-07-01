@@ -16,7 +16,6 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { useSearchParams } from "next/navigation";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
 import { trpc } from "src/utils/trpc";
 
 import { LaunchInferenceJobForm } from "../LaunchInferenceForm";
@@ -32,11 +31,6 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const jobId = searchParams?.get("jobId");
   const sessionId = searchParams?.get("sessionId");
 
-
-  const { data: clusterInfo, isLoading: isClusterLoading, isError } =
-  trpc.config.getClusterConfig.useQuery({ clusterId });
-
-
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
   const { data: submitInferenceParams, isLoading: isSubmitTrainParamsLoading } =
@@ -47,18 +41,8 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     });
 
 
-  if (
-    isClusterLoading
-    || !clusterInfo
-    || (!!jobId && !!sessionId && (isSubmitTrainParamsLoading))) {
-
+  if (!!jobId && !!sessionId && (isSubmitTrainParamsLoading)) {
     return <LoadingOutlined />;
-  }
-
-  if (isError) {
-    return (
-      <ServerErrorPage />
-    );
   }
 
   return (
@@ -66,7 +50,6 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       <PageTitle titleText={t(p("title"))} />
       <LaunchInferenceJobForm
         clusterId={clusterId}
-        clusterInfo={clusterInfo}
         InferenceJobInput={submitInferenceParams}
       />
     </div>
