@@ -79,6 +79,9 @@ const IndicatorPart = styled(HeaderItem)`
   flex-wrap: nowrap;
   margin: 0 10px;
   padding: 0 10px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
   &:hover{
     background-color: #59595914;
     border-radius: 8px;

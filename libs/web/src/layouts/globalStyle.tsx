@@ -14,21 +14,6 @@
 import { createGlobalStyle } from "styled-components";
 
 export const GlobalStyle = createGlobalStyle`
-
-  @font-face {
-    font-family: 'MiSans';
-    src: url('/libs/web/fonts/MiSans-Medium.woff2') format('woff2');
-    font-weight: 400;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: 'MiSans';
-    src: url('/libs/web/fonts/MiSans-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-display: swap;
-  }
-
   :root {
     font-family: 'MiSans', system-ui;
   }

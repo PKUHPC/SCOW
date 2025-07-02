@@ -12,6 +12,7 @@
 
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
+import "src/styles/globals.css";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
