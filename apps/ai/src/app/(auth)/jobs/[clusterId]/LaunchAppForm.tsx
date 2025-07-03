@@ -700,7 +700,7 @@ export const LaunchAppForm = (props: Props) => {
     }
   }, [createAppParams, trainJobInput, images, form]);
 
-
+  // 其他参数处理
   useEffect(() => {
     const inputParams = trainJobInput || createAppParams;
     if (!inputParams) {
@@ -711,7 +711,7 @@ export const LaunchAppForm = (props: Props) => {
       });
       setCurrentPartitionInfo(partitions?.[0]);
     } else {
-      const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount,qos } = inputParams;
+      const { account, gpuCount, coreCount, maxTime, mountPoints, nodeCount } = inputParams;
       const workingDir = "workingDirectory" in inputParams ? inputParams.workingDirectory : undefined;
       const customAttributes = "customAttributes" in inputParams ? inputParams.customAttributes : {};
       const command = "command" in inputParams ? inputParams.command : undefined;
@@ -728,7 +728,6 @@ export const LaunchAppForm = (props: Props) => {
         nodeCount,
         framework,
         account,
-        partition,
         gpuCount,
         coreCount,
         maxTime,
@@ -737,7 +736,19 @@ export const LaunchAppForm = (props: Props) => {
         psNodes,
         workerNodes,
       });
+    }
+  }, [createAppParams, trainJobInput]);
 
+  // 处理分区和分区下的参数QOS
+  useEffect(() => {
+    const inputParams = trainJobInput || createAppParams;
+    if (inputParams && (!form.isFieldsTouched([
+      "partition","qos",
+    ]) || !currentPartitionInfo)) {
+      const { partition,qos } = inputParams;
+      form.setFieldsValue({
+        partition,
+      });
       const matchedPartition = partitions?.find((p) => p.name === inputParams.partition);
       if (inputParams.partition) {
         setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
@@ -755,10 +766,7 @@ export const LaunchAppForm = (props: Props) => {
           qos:partitions?.[0]?.qos[0],
         });
       }
-
-
     }
-
   }, [createAppParams, trainJobInput, partitions]);
 
   const createAppSessionMutation = trpc.jobs.createAppSession.useMutation({

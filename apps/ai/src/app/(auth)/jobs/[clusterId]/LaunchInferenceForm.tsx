@@ -360,14 +360,13 @@ export const LaunchInferenceJobForm = (props: Props) => {
       });
       setCurrentPartitionInfo(partitions?.[0]);
     } else {
-      const { account, partition, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
-        containerServicePort,qos } = inputParams;
+      const { account, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
+        containerServicePort } = inputParams;
       const command = "command" in inputParams ? inputParams.command : undefined;
       form.setFieldsValue({
         mountPoints,
         nodeCount,
         account,
-        partition,
         gpuCount,
         coreCount,
         maxTime,
@@ -375,7 +374,20 @@ export const LaunchInferenceJobForm = (props: Props) => {
         command,
         containerServicePort,
       });
+    }
+  }, [InferenceJobInput]);
 
+
+  // 处理分区和分区下的参数QOS
+  useEffect(() => {
+    const inputParams = InferenceJobInput;
+    if (inputParams && (!form.isFieldsTouched([
+      "partition","qos",
+    ]) || !currentPartitionInfo)) {
+      const { partition,qos } = inputParams;
+      form.setFieldsValue({
+        partition,
+      });
       const matchedPartition = partitions?.find((p) => p.name === inputParams.partition);
       if (inputParams.partition) {
         setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
