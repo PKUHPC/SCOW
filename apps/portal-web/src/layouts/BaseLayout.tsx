@@ -13,13 +13,13 @@
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
+import { AiIcon, HighComputingIcon, MisIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { theme } from "antd";
 import { join } from "path";
 import { PropsWithChildren } from "react";
 import { useStore } from "simstate";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
-import { AiIcon, HighComputingIcon, MisIcon } from "src/icons/headerIcons/headerIcons";
 import { userRoutes } from "src/layouts/routes";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";

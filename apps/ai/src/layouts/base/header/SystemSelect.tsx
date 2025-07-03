@@ -1,10 +1,10 @@
 "use client";
 import { DownOutlined } from "@ant-design/icons";
+import { AiIcon, HighComputingIcon, MisIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { UserInfo } from "@scow/lib-web/build/layouts/base/types";
 import { Dropdown, theme } from "antd";
 import React from "react";
 import { useI18nTranslateToString } from "src/i18n";
-import { AiIcon, HighComputingIcon, MisIcon } from "src/icons/headIcons";
 import { JumpToAnotherLink } from "src/layouts/base/header/Components";
 import { styled } from "styled-components";
 

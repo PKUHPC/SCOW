@@ -1,16 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-@font-face {
+/* @font-face {
   font-family: 'MiSans';
   src: url('../../assets/fonts/MiSans-Medium.woff2') format('woff2');
   font-weight: 400;
@@ -22,11 +10,11 @@
   src: url('../../assets/fonts/MiSans-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
-}
+} */
 
-:root {
+/* :root {
   font-family: 'MiSans', system-ui;
-}
+} */
 
 .head-language-select .ant-select-item {
   color: #434343 !important;
