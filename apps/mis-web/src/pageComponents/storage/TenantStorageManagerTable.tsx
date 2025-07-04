@@ -3,7 +3,7 @@ import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/s
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
 import { App, Button, Divider, Form, Input, Result, Space, Table } from "antd";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -78,6 +78,10 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
     };
   });
   const [form] = Form.useForm<FilterForm>();
+
+  useEffect(() => {
+    setQuery({ ...query, cluster: sortedClusters[0] });
+  }, [sortedClusters]);
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
