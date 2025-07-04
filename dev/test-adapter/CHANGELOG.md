@@ -1,5 +1,15 @@
 # @scow/test-adapter
 
+## 1.1.12
+
+### Patch Changes
+
+- b961d74: 增加节点迁移页面与功能
+- a4d7ac3: 原有同步账户封锁状态功能升级为同步账户/用户信息功能
+- Updated dependencies [b961d74]
+- Updated dependencies [a4d7ac3]
+  - @scow/scheduler-adapter-protos@1.5.0
+
 ## 1.1.11
 
 ### Patch Changes

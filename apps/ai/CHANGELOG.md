@@ -1,5 +1,55 @@
 # @scow/ai
 
+## 0.4.0
+
+### Minor Changes
+
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- 36cb511: 新增 AI 作业详情页，作业事件;新增 pod 列表、事件、日志
+- eb1f439: 修复内存泄漏问题
+- 36cec12: 修复 ai 再次提交作业后切换账户和分区无效
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- f4c5c4a: ai 再次提交作业页面切换账户刷新过期值
+- 38ddbb9: 修复 misans 字体未加载、head 登录字段未居中
+- 3c7eaf6: 调整 mis、portal、ai 个人信息页面布局样式，并将三系统个人信息页面展示内容统一
+- 0d36f92: 解封没有授权分区/队列的账户时删除调用 blockAccount 接口逻辑
+  增加 AI 授权队列功能，在 AI 仪表盘、作业等页面增加获取授权队列逻辑
+- ebb4e3d: ai 应用训练推理增加优先级
+- 40e9e1e: 再次提交作业从 cpu 分区自动切换到 gpu 分区，gpu 数默认 0
+- be8bb65: 修改未开启资源管理时，仪表盘和创建应用作业页面 trpc 报错的问题
+- 0f7e1d3: 修改 HPC 文件管理下已复制项展示位置, 增加 HPC 和 AI 下的文件夹复制移动的路径校验
+- ac237b1: 1.调整 logo 位置 2.系统跳转下拉框 3.拓展菜单图标样式不随菜单颜色变化 4.英文遮挡 bug
+- 54e95db: hpc、mis、ai 顶部侧边导航栏 UI 交互调整
+  footer 调整只在 dashboard 展示
+- c80e77a: 修复 pod 列表分页后，点击 事件 只响应第一页的 bug
+- 9d967d0: 取消 misan 字体、优化图标引入
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [38ddbb9]
+- Updated dependencies [3c7eaf6]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [0d36f92]
+- Updated dependencies [ac237b1]
+- Updated dependencies [778e6c7]
+- Updated dependencies [54e95db]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-operation-log@2.2.0
+  - @scow/lib-server@1.4.0
+  - @scow/lib-scowd@1.2.0
+  - @scow/lib-web@1.5.0
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scow-resource@0.2.9
+  - @scow/lib-scheduler-adapter@1.1.23
+  - @scow/protos@1.0.25
+
 ## 0.3.5
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-hook",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "",
   "private": true,
   "main": "build/index.js",

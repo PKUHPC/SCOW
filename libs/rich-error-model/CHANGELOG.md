@@ -1,5 +1,11 @@
 # @scow/rich-error-model
 
+## 2.0.2
+
+### Patch Changes
+
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+
 ## 2.0.1
 
 ### Patch Changes

@@ -1,5 +1,49 @@
 # @scow/mis-web
 
+## 1.9.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+- a4d7ac3: 原有同步账户封锁状态功能升级为同步账户/用户信息功能
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- b306d39: 优化 hpc 上传文件时的操作日志
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- 38ddbb9: 修复 misans 字体未加载、head 登录字段未居中
+- 11a84b7: 存储管理新增租户可用集群校验
+- 3c7eaf6: 调整 mis、portal、ai 个人信息页面布局样式，并将三系统个人信息页面展示内容统一
+- b961d74: 增加节点迁移页面与功能
+- aca4045: 为 GetBillingItems 接口完善初始化后的权限校验
+- ac237b1: 1.调整 logo 位置 2.系统跳转下拉框 3.拓展菜单图标样式不随菜单颜色变化 4.英文遮挡 bug
+- 5772fea: 新增创建用户的表单项，修改用户列表展示和导出字段
+- 54e95db: hpc、mis、ai 顶部侧边导航栏 UI 交互调整
+  footer 调整只在 dashboard 展示
+- 9d967d0: 取消 misan 字体、优化图标引入
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [38ddbb9]
+- Updated dependencies [3c7eaf6]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [0d36f92]
+- Updated dependencies [ac237b1]
+- Updated dependencies [778e6c7]
+- Updated dependencies [54e95db]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-operation-log@2.2.0
+  - @scow/lib-web@1.5.0
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scow-resource@0.2.9
+  - @scow/lib-notification@1.0.10
+  - @scow/protos@1.0.25
+
 ## 1.8.5
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/docs
 
+## 1.4.11
+
+### Patch Changes
+
+- 5da1b58: 新增存储管理配置说明，文档地址 SCOW/docs/deploy/config/mis/storage/storage_manager
+- a4d7ac3: 原有同步账户封锁状态功能升级为同步账户/用户信息功能
+
 ## 1.4.10
 
 ### Patch Changes

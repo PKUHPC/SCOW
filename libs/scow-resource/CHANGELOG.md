@@ -1,5 +1,18 @@
 # @scow/lib-scow-resource
 
+## 0.2.9
+
+### Patch Changes
+
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- 0d36f92: 解封没有授权分区/队列的账户时删除调用 blockAccount 接口逻辑
+  增加 AI 授权队列功能，在 AI 仪表盘、作业等页面增加获取授权队列逻辑
+- Updated dependencies [778e6c7]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+
 ## 0.2.8
 
 ### Patch Changes

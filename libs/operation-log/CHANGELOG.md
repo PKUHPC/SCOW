@@ -1,5 +1,18 @@
 # @scow/lib-operation-log
 
+## 2.2.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- b961d74: 增加节点迁移页面与功能
+  - @scow/protos@1.0.25
+
 ## 2.1.18
 
 ### Patch Changes

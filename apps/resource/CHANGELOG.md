@@ -1,5 +1,41 @@
 # @scow/resource
 
+## 0.3.0
+
+### Minor Changes
+
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- d92dbf4: 资源管理各集群分区页面按照集群优先级排序
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- 0d36f92: 解封没有授权分区/队列的账户时删除调用 blockAccount 接口逻辑
+  增加 AI 授权队列功能，在 AI 仪表盘、作业等页面增加获取授权队列逻辑
+- a4d7ac3: 原有同步账户封锁状态功能升级为同步账户/用户信息功能
+- ac237b1: 1.调整 logo 位置 2.系统跳转下拉框 3.拓展菜单图标样式不随菜单颜色变化 4.英文遮挡 bug
+- 54e95db: hpc、mis、ai 顶部侧边导航栏 UI 交互调整
+  footer 调整只在 dashboard 展示
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [38ddbb9]
+- Updated dependencies [3c7eaf6]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [ac237b1]
+- Updated dependencies [778e6c7]
+- Updated dependencies [54e95db]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-server@1.4.0
+  - @scow/lib-web@1.5.0
+  - @scow/lib-scheduler-adapter@1.1.23
+  - @scow/lib-hook@1.0.25
+  - @scow/protos@1.0.25
+
 ## 0.2.11
 
 ### Patch Changes

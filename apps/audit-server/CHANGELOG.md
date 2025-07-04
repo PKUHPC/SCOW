@@ -1,5 +1,24 @@
 # @scow/audit-server
 
+## 2.3.18
+
+### Patch Changes
+
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- b961d74: 增加节点迁移页面与功能
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [778e6c7]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-operation-log@2.2.0
+  - @scow/lib-server@1.4.0
+  - @scow/protos@1.0.25
+
 ## 2.3.17
 
 ### Patch Changes

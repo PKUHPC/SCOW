@@ -1,5 +1,16 @@
 # @scow/cli
 
+## 1.9.0
+
+### Patch Changes
+
+- 5da1b58: 新增存储管理配置说明，文档地址 SCOW/docs/deploy/config/mis/storage/storage_manager
+- Updated dependencies [778e6c7]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+
 ## 1.8.5
 
 ### Patch Changes

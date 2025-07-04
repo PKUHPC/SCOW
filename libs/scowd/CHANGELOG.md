@@ -1,5 +1,17 @@
 # @scow/lib-scowd
 
+## 1.2.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+
+### Patch Changes
+
+- Updated dependencies [5da1b58]
+- Updated dependencies [eb1f439]
+  - @scow/scowd-protos@0.3.0
+
 ## 1.1.8
 
 ### Patch Changes

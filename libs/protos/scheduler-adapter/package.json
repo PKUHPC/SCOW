@@ -1,6 +1,6 @@
 {
   "name": "@scow/scheduler-adapter-protos",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "",
   "main": "build/index.js",
   "private": true,

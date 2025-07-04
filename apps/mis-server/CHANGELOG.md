@@ -1,5 +1,42 @@
 # @scow/mis-server
 
+## 1.9.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+- a4d7ac3: 原有同步账户封锁状态功能升级为同步账户/用户信息功能
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- 1874b38: 更新 @ddadaal/tsgrpc-server 0.19.6 至 0.19.7
+- b961d74: 增加节点迁移页面与功能
+- 0d36f92: 解封没有授权分区/队列的账户时删除调用 blockAccount 接口逻辑
+  增加 AI 授权队列功能，在 AI 仪表盘、作业等页面增加获取授权队列逻辑
+- 5772fea: 新增创建用户的表单项，修改用户列表展示和导出字段
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [0d36f92]
+- Updated dependencies [a4d7ac3]
+- Updated dependencies [778e6c7]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-server@1.4.0
+  - @scow/lib-scowd@1.2.0
+  - @scow/lib-scow-resource@0.2.9
+  - @scow/lib-scheduler-adapter@1.1.23
+  - @scow/scheduler-adapter-protos@1.5.0
+  - @scow/lib-hook@1.0.25
+  - @scow/lib-notification@1.0.10
+  - @scow/protos@1.0.25
+
 ## 1.8.5
 
 ### Patch Changes

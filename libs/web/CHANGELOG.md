@@ -1,5 +1,28 @@
 # @scow/lib-web
 
+## 1.5.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- 38ddbb9: 修复 misans 字体未加载、head 登录字段未居中
+- 3c7eaf6: 调整 mis、portal、ai 个人信息页面布局样式，并将三系统个人信息页面展示内容统一
+- ac237b1: 1.调整 logo 位置 2.系统跳转下拉框 3.拓展菜单图标样式不随菜单颜色变化 4.英文遮挡 bug
+- 54e95db: hpc、mis、ai 顶部侧边导航栏 UI 交互调整
+  footer 调整只在 dashboard 展示
+- Updated dependencies [778e6c7]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/protos@1.0.25
+
 ## 1.4.14
 
 ### Patch Changes

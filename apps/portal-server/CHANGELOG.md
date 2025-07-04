@@ -1,5 +1,41 @@
 # @scow/portal-server
 
+## 1.9.0
+
+### Minor Changes
+
+- 778e6c7: 在管理系统增加对租户/账户授权交互式应用功能，在审计系统内增加授权/取消授权的日志
+  并在 HPC 系统和 AI 系统实现仅展示可用应用
+
+### Patch Changes
+
+- eb1f439: 修复内存泄漏问题
+- d511518: 上一次交互式应用记录获取失败时直接按默认参数打开创建应用页面
+- 1874b38: 更新 @ddadaal/tsgrpc-server 0.19.6 至 0.19.7
+- b961d74: 增加节点迁移页面与功能
+- 0f7e1d3: 修改 HPC 文件管理下已复制项展示位置, 增加 HPC 和 AI 下的文件夹复制移动的路径校验
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [eb1f439]
+- Updated dependencies [1874b38]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [0d36f92]
+- Updated dependencies [a4d7ac3]
+- Updated dependencies [778e6c7]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/scowd-protos@0.3.0
+  - @scow/lib-server@1.4.0
+  - @scow/lib-scowd@1.2.0
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scow-resource@0.2.9
+  - @scow/lib-scheduler-adapter@1.1.23
+  - @scow/scheduler-adapter-protos@1.5.0
+  - @scow/protos@1.0.25
+
 ## 1.8.5
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.23
+
+### Patch Changes
+
+- b961d74: 增加节点迁移页面与功能
+- Updated dependencies [b961d74]
+- Updated dependencies [a4d7ac3]
+  - @scow/scheduler-adapter-protos@1.5.0
+  - @scow/protos@1.0.25
+
 ## 1.1.22
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/scheduler-adapter-protos
 
+## 1.5.0
+
+### Minor Changes
+
+- b961d74: **节点迁移功能**需要**1.8.0 及以上版本**的接口
+- a4d7ac3: **同步账户/用户信息功能**需要**1.9.0 及以上版本**的接口
+
 ## 1.4.1
 
 ### Patch Changes

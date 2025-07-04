@@ -1,5 +1,20 @@
 # @scow/grpc-api
 
+## 1.22.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+- a4d7ac3: 新增同步账户用户信息数据相关接口 StartAccountUserSynchronization，ListAccountUserSynchronizations，CheckAccountUserSynchronizationRunning
+- 778e6c7: 在 proto/server 下增加授权交互式应用的 proto 文件 app_authorization,
+  在 proto/portal 下对 listAvailableApps 中增加可选查询参数 user_id 获取用户可用应用列表,
+  在 proto/audit 中增加授权交互式应用日志的相关 message
+- b961d74: 新增节点迁移状态获取与节点迁移相关接口
+
+### Patch Changes
+
+- 5772fea: 新增创建用户的表单项，修改用户列表展示和导出字段
+
 ## 1.21.0
 
 ### Minor Changes

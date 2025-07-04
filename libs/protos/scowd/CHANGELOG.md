@@ -1,5 +1,15 @@
 # @scow/scowd-protos
 
+## 0.3.0
+
+### Minor Changes
+
+- 5da1b58: 新增租户管理员存储管理功能
+
+### Patch Changes
+
+- eb1f439: 修复内存泄漏问题
+
 ## 0.2.7
 
 ### Patch Changes

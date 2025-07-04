@@ -1,5 +1,32 @@
 # @scow/notification
 
+## 0.2.12
+
+### Patch Changes
+
+- 1874b38: 更新 next 14.2.4 至 14.2.30
+- ac237b1: 1.调整 logo 位置 2.系统跳转下拉框 3.拓展菜单图标样式不随菜单颜色变化 4.英文遮挡 bug
+- 54e95db: hpc、mis、ai 顶部侧边导航栏 UI 交互调整
+  footer 调整只在 dashboard 展示
+- Updated dependencies [778e6c7]
+- Updated dependencies [5da1b58]
+- Updated dependencies [1874b38]
+- Updated dependencies [38ddbb9]
+- Updated dependencies [3c7eaf6]
+- Updated dependencies [b961d74]
+- Updated dependencies [b961d74]
+- Updated dependencies [5da1b58]
+- Updated dependencies [ac237b1]
+- Updated dependencies [778e6c7]
+- Updated dependencies [54e95db]
+- Updated dependencies [a4d7ac3]
+  - @scow/config@1.8.0
+  - @scow/lib-server@1.4.0
+  - @scow/lib-web@1.5.0
+  - @scow/lib-scheduler-adapter@1.1.23
+  - @scow/lib-notification@1.0.10
+  - @scow/protos@1.0.25
+
 ## 0.2.11
 
 ### Patch Changes

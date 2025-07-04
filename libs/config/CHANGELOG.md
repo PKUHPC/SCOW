@@ -1,5 +1,19 @@
 # @scow/config
 
+## 1.8.0
+
+### Minor Changes
+
+- 778e6c7: 在 common.yaml 中增加是否开启授权应用的配置 allowAppAuthorization,
+  文档相对路径/SCOW/docs/deploy/config/customization/custom-app-authorization
+- b961d74: 新增节点迁移功能相关配置，文档在/SCOW/docs/deploy/config/mis/migrate-node/index
+- a4d7ac3: 新增同步账户/用户信息配置 syncAccountUser：包含 maxSyncDurationMinutes，syncHistoryDayPeriod 的配置项，
+  文档相对路径/SCOW/docs/deploy/config/mis/schedulers/sync
+
+### Patch Changes
+
+- 5da1b58: 新增存储管理配置说明，文档地址 SCOW/docs/deploy/config/mis/storage/storage_manager
+
 ## 1.7.2
 
 ### Patch Changes
