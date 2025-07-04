@@ -363,8 +363,10 @@ export const LaunchInferenceJobForm = (props: Props) => {
         mountPoints,
         nodeCount,
         account,
-        gpuCount,
-        coreCount,
+        // 有可用分区后，再次提交作业可能从cpu分区(不可用)自动切换到gpu分区
+        // 但是保存的参数还是cpu数，gpuCount为undefined
+        gpuCount:gpuCount ?? 1,
+        coreCount:coreCount ?? 1,
         maxTime,
         appJobName: genAppJobName(clusterId,"i"),
         command,
