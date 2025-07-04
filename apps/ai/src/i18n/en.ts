@@ -433,7 +433,7 @@ export default {
         jobName: "Job name",
         cluster: "Cluster",
         jobId: "Job id",
-        partition: "Partition",
+        queue: "Queue",
         state: "State",
         user: "User",
         cpusReq: "Requested cpu cores",

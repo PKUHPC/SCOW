@@ -433,7 +433,7 @@ export default {
         jobName: "作业名",
         cluster: "集群",
         jobId: "作业Id",
-        partition: "分区",
+        queue: "队列",
         state: "状态",
         user: "用户",
         cpusReq: "申请CPU核数",

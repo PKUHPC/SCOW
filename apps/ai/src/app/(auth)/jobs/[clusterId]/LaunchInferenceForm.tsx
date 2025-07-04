@@ -349,17 +349,13 @@ export const LaunchInferenceJobForm = (props: Props) => {
     }
   }, [InferenceJobInput, images, form]);
 
-
   useEffect(() => {
     const inputParams = InferenceJobInput;
-    if (!inputParams) {
-      form.setFieldsValue({
-        partition: partitions?.[0]?.name,
-        qos:partitions?.[0]?.qos[0],
-        appJobName: genAppJobName(clusterId, "i"),
-      });
-      setCurrentPartitionInfo(partitions?.[0]);
-    } else {
+    form.setFieldsValue({
+      appJobName: genAppJobName(clusterId, "i"),
+    });
+
+    if (inputParams) {
       const { account, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
         containerServicePort } = inputParams;
       const command = "command" in inputParams ? inputParams.command : undefined;
@@ -381,29 +377,46 @@ export const LaunchInferenceJobForm = (props: Props) => {
   // 处理分区和分区下的参数QOS
   useEffect(() => {
     const inputParams = InferenceJobInput;
-    if (inputParams && (!form.isFieldsTouched([
-      "partition","qos",
-    ]) || !currentPartitionInfo)) {
-      const { partition,qos } = inputParams;
+    if (!inputParams) {
       form.setFieldsValue({
-        partition,
+        partition: partitions?.[0]?.name,
+        qos:partitions?.[0]?.qos[0],
       });
-      const matchedPartition = partitions?.find((p) => p.name === inputParams.partition);
-      if (inputParams.partition) {
-        setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
-      } else {
-        setCurrentPartitionInfo(partitions?.[0]);
-      }
+      setCurrentPartitionInfo(partitions?.[0]);
+    }
 
-      const matchedQos = matchedPartition?.qos.find((q) => q === qos);
-      if (inputParams.qos) {
+    if (inputParams) {
+      if (!form.isFieldsTouched(["partition","qos","account"])) {
+        const { partition,qos } = inputParams;
+
+        const matchedPartition = partitions?.find((p) => p.name === partition);
+        if (inputParams.partition) {
+          setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
+        } else {
+          setCurrentPartitionInfo(partitions?.[0]);
+        }
+
         form.setFieldsValue({
-          qos:matchedQos ?? partitions?.[0]?.qos[0],
+          partition:matchedPartition?.name ?? partitions?.[0].name,
         });
-      } else {
+
+        const matchedQos = matchedPartition?.qos.find((q) => q === qos);
+        if (inputParams.qos) {
+          form.setFieldsValue({
+            qos:matchedQos ?? partitions?.[0]?.qos[0],
+          });
+        } else {
+          form.setFieldsValue({
+            qos:partitions?.[0]?.qos[0],
+          });
+        }
+      }
+      else {
         form.setFieldsValue({
+          partition: partitions?.[0]?.name,
           qos:partitions?.[0]?.qos[0],
         });
+        setCurrentPartitionInfo(partitions?.[0]);
       }
     }
   }, [InferenceJobInput, partitions]);
@@ -811,7 +824,9 @@ export const LaunchInferenceJobForm = (props: Props) => {
           name="account"
           rules={[{ required: true }]}
         >
-          <AccountSelector cluster={clusterId} />
+          <AccountSelector
+            cluster={clusterId}
+          />
         </Form.Item>
 
         <Form.Item

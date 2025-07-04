@@ -4,7 +4,7 @@ import { CopyOutlined, DatabaseOutlined, DeleteOutlined, EyeInvisibleOutlined, E
 import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
-import { App, Button, Divider, Modal, Space } from "antd";
+import { App, Button, Divider, Space } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -148,7 +148,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       const operationText = operationTexts[operation!.op];
 
       if (error.data?.code === "CONFLICT") {
-        Modal.error({
+        modal.error({
           title: `${operationText}${t(p("fail"))}`,
           content: t(p("alreadyExist")),
         });
@@ -156,14 +156,14 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       }
 
       if (error.data?.code === "BAD_REQUEST") {
-        Modal.error({
+        modal.error({
           title: `${operationText}${t(p("fail"))}`,
           content: t(p("alreadyExist")),
         });
         return;
       }
 
-      Modal.error({
+      modal.error({
         title: `${operationText}${t(p("fail"))}`,
         content: error.message,
       });

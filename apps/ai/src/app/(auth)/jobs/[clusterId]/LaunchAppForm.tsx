@@ -703,14 +703,11 @@ export const LaunchAppForm = (props: Props) => {
   // 其他参数处理
   useEffect(() => {
     const inputParams = trainJobInput || createAppParams;
-    if (!inputParams) {
-      form.setFieldsValue({
-        partition: partitions?.[0]?.name,
-        qos:partitions?.[0]?.qos[0],
-        appJobName: genAppJobName(clusterId, appName ?? "t"),
-      });
-      setCurrentPartitionInfo(partitions?.[0]);
-    } else {
+    form.setFieldsValue({
+      appJobName: genAppJobName(clusterId, appName ?? "t"),
+    });
+
+    if (inputParams) {
       const { account, gpuCount, coreCount, maxTime, mountPoints, nodeCount } = inputParams;
       const workingDir = "workingDirectory" in inputParams ? inputParams.workingDirectory : undefined;
       const customAttributes = "customAttributes" in inputParams ? inputParams.customAttributes : {};
@@ -731,7 +728,6 @@ export const LaunchAppForm = (props: Props) => {
         gpuCount,
         coreCount,
         maxTime,
-        appJobName: genAppJobName(clusterId, appName ?? "t"),
         command,
         psNodes,
         workerNodes,
@@ -742,29 +738,50 @@ export const LaunchAppForm = (props: Props) => {
   // 处理分区和分区下的参数QOS
   useEffect(() => {
     const inputParams = trainJobInput || createAppParams;
-    if (inputParams && (!form.isFieldsTouched([
-      "partition","qos",
-    ]) || !currentPartitionInfo)) {
-      const { partition,qos } = inputParams;
-      form.setFieldsValue({
-        partition,
-      });
-      const matchedPartition = partitions?.find((p) => p.name === inputParams.partition);
-      if (inputParams.partition) {
-        setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
-      } else {
-        setCurrentPartitionInfo(partitions?.[0]);
-      }
 
-      const matchedQos = matchedPartition?.qos.find((q) => q === qos);
-      if (inputParams.qos) {
+    if (!inputParams) {
+      form.setFieldsValue({
+        partition: partitions?.[0]?.name,
+        qos:partitions?.[0]?.qos[0],
+      });
+      setCurrentPartitionInfo(partitions?.[0]);
+    }
+
+    if (inputParams) {
+      // 且分区、qos和账户没有修改过才设置再次提交的分区参数
+      if (!form.isFieldsTouched(["partition","qos","account"])) {
+        const { partition,qos } = inputParams;
+
+        const matchedPartition = partitions?.find((p) => p.name === partition);
+        if (inputParams.partition) {
+          setCurrentPartitionInfo(matchedPartition ?? partitions?.[0]);
+        } else {
+          setCurrentPartitionInfo(partitions?.[0]);
+        }
+
         form.setFieldsValue({
-          qos:matchedQos ?? partitions?.[0]?.qos[0],
+          partition:matchedPartition?.name ?? partitions?.[0].name,
         });
-      } else {
+
+        const matchedQos = matchedPartition?.qos.find((q) => q === qos);
+        if (inputParams.qos) {
+          form.setFieldsValue({
+            qos:matchedQos ?? partitions?.[0]?.qos[0],
+          });
+        }
+        else {
+          form.setFieldsValue({
+            qos:partitions?.[0]?.qos[0],
+          });
+        }
+      }
+      // 分区、qos和账户有修改过则设置接口获取的数据
+      else {
         form.setFieldsValue({
+          partition: partitions?.[0]?.name,
           qos:partitions?.[0]?.qos[0],
         });
+        setCurrentPartitionInfo(partitions?.[0]);
       }
     }
   }, [createAppParams, trainJobInput, partitions]);

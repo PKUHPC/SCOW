@@ -114,7 +114,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     },
     {
       key: "4",
-      label: t(p("partition")),
+      label: t(p("queue")),
       children: jobDetails.partition,
     },
     {
