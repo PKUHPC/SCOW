@@ -155,7 +155,7 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
       return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${tenant} assinged Clusters and Partitions failed.` } };
+        message: `Get tenant ${tenant} assigned Clusters and Partitions failed.` } };
     }
   }
 

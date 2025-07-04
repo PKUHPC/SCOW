@@ -11,7 +11,6 @@ interface Props {
   open: boolean;
   onClose: () => void;
   reload: () => void;
-  tenantName: string;
   cluster: Cluster;
   path: string;
   defaultQuotaBytes: number;
@@ -26,7 +25,7 @@ const p = prefix("pageComp.storage.userDefaultQuotaChangeModal.");
 const pCommon = prefix("common.");
 
 export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
-  open, onClose, reload, tenantName, cluster, path, defaultQuotaBytes, totalQuotaBytes,
+  open, onClose, reload, cluster, path, defaultQuotaBytes, totalQuotaBytes,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -51,7 +50,7 @@ export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
 
         setLoading(true);
         await api.setTenantUserDefaultQuota({ body: {
-          tenantName, cluster: cluster.id, path, userQuotaBytes: formatGBToBytes(quotaGB),
+          cluster: cluster.id, path, userQuotaBytes: formatGBToBytes(quotaGB),
         } })
           .then((res) => {
             if (res.failures === 0) {

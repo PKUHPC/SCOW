@@ -110,6 +110,7 @@ export default {
     accountUserSyncRunning: "当前正在执行账户/用户信息同步，请等待该同步执行完成后重试。",
     finalError: "请求失败，请稍后重试",
     edit: "编辑",
+    idOrName: "用户ID/姓名",
   },
   dashboard: {
     title: "仪表盘",
@@ -931,6 +932,7 @@ export default {
         storageUsed: "已使用量",
         operation: "操作",
         modifyQuota: "修改配额",
+        clusterNotEnabledStorageManager: "可用集群暂未开启存储管理",
       },
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "修改默认存储配额",

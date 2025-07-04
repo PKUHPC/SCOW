@@ -1,10 +1,13 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
+import { getScowResourceClient } from "@scow/lib-scow-resource";
+import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { StorageServiceClient } from "@scow/protos/build/server/storage";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
+import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
 export const UserQuotaInfo = Type.Object({
@@ -31,7 +34,6 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-    tenantName: Type.String(),
     cluster: Type.String(),
     path: Type.String(),
     idOrName: Type.Optional(Type.String()),
@@ -43,25 +45,44 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
     200: TenantQuotaInfo,
 
     403: Type.Null(),
-
+    409: Type.Object({
+      code: Type.String(),
+    }),
   },
 });
 
-const auth = authenticate((u) => {
-  return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-});
 
 export default route(GetTenantQuotaSchema, async (req, res) => {
 
+  const { cluster, path, idOrName, page, pageSize } = req.query;
+
+  const auth = authenticate((u) => {
+    return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  });
   const info = await auth(req, res);
 
   if (!info) { return; };
 
-  const { tenantName, cluster, path, idOrName, page, pageSize } = req.query;
+  if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && info.tenant) {
+    const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
+    try {
+      const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({
+        tenantName: info.tenant,
+      });
+
+      if (!response.assignedClusterPartitions[cluster]) {
+        return { 403: null };
+      }
+    } catch (e) {
+      mapTRPCExceptionToGRPC(e);
+      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
+        message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.` } };
+    }
+  }
 
   const client = getClient(StorageServiceClient);
 
   return asyncUnaryCall(client, "getTenantQuota", {
-    tenantName, cluster, path, idOrName, page, pageSize,
+    tenantName: info.tenant, cluster, path, idOrName, page, pageSize,
   }).then((res) => ({ 200: { ...res } }));
 });

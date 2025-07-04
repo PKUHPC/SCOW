@@ -2,7 +2,7 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Space, Table } from "antd";
+import { App, Button, Divider, Form, Input, Result, Space, Table } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -15,8 +15,8 @@ import { UserDefaultQuotaChangeModal } from "src/pageComponents/storage/UserDefa
 import { UserQuotaChangeModal } from "src/pageComponents/storage/UserQuotaChangeModal";
 import { type GetTenantQuotaSchema, UserQuotaInfo } from "src/pages/api/storage/getTenantQuota";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import { UserStore } from "src/stores/UserStore";
 import { Cluster, getSortedClusterValues } from "src/utils/cluster";
+import { publicConfig } from "src/utils/config";
 
 interface PageInfo {
   page: number;
@@ -25,7 +25,7 @@ interface PageInfo {
 
 interface FilterForm {
   idOrName: string;
-  cluster: Cluster;
+  cluster: Cluster | undefined;
 }
 
 interface Props {
@@ -42,17 +42,36 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
 
   const { message } = App.useApp();
 
-  const userStore = useStore(UserStore);
+  const getTenantAssignedClusterIds = useCallback(async () => {
+    if (publicConfig.SCOW_RESOURCE_ENABLED) {
+      const tenantAssignedClusterPartitions = await api.getTenantAssignedClustersAndPartitions({});
+      return Object.keys(tenantAssignedClusterPartitions.assignedClusterPartitions);
+    }
+    return undefined;
+  }, []);
+
+  const { data: availableClusterIds, isLoading: availableClusterIdsLoading } = useAsync({
+    promiseFn: getTenantAssignedClusterIds,
+    skip: !publicConfig.SCOW_RESOURCE_ENABLED,
+  });
 
   const {
     publicConfigClusters, clusterSortedIdList, activatedClusters, fullClusterConfigs,
   } = useStore(ClusterInfoStore);
   const sortedClusters = useMemo(() => getSortedClusterValues(publicConfigClusters, clusterSortedIdList)
     .filter((x) => {
-      return Object.keys(activatedClusters).includes(x.id) && fullClusterConfigs[x.id].storage?.enabled;
-    }), [activatedClusters]);
+      return (publicConfig.SCOW_RESOURCE_ENABLED ? availableClusterIds?.includes(x.id) : true)
+        && Object.keys(activatedClusters).includes(x.id)
+        && fullClusterConfigs[x.id].storage?.enabled;
+    }), [availableClusterIds, activatedClusters, fullClusterConfigs]);
 
   const [query, setQuery] = useState<FilterForm>(() => {
+    if (sortedClusters.length === 0) {
+      return {
+        idOrName: "",
+        cluster: undefined,
+      };
+    }
     return {
       idOrName: "",
       cluster: sortedClusters[0],
@@ -63,18 +82,20 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
   const storageConfig = useMemo(() => {
+    if (!query.cluster) return undefined;
     return fullClusterConfigs[query.cluster.id].storage;
   }, [query.cluster]);
 
   const promiseFn = useCallback(async () => {
     if (!storageConfig) {
-      message.error(t(p("notFoundStorageConfig")));
+      // 如果是所有集群都未开启存储管理则无需提示没有存储配置
+      if (sortedClusters.length > 0) message.error(t(p("notFoundStorageConfig")));
       return;
     }
+    if (!query.cluster || sortedClusters.length <= 0) return;
 
     return await api.getTenantQuota({ query: {
       ...query,
-      tenantName: userStore.user!.tenant,
       cluster: query.cluster.id,
       path: storageConfig.paths[0],
       page: pageInfo.page,
@@ -82,61 +103,68 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
     } });
   }, [pageInfo, query]);
 
-  const { data, isLoading, reload } = useAsync({ promiseFn });
+  const { data, isLoading, reload } = useAsync({ promiseFn, skip: !query.cluster });
 
   return (
-    <div>
-      <FilterFormContainer>
-        <Form<FilterForm>
-          form={form}
-          initialValues={query}
-          onFinish={async () => {
-            const currentQuery = await form.validateFields();
-            setQuery({
-              ...query,
-              idOrName: currentQuery.idOrName,
-            });
-            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
-          }}
-        >
-          <FilterFormTabs
-            onChange={(clusterId) => {
-              const cluster = sortedClusters.find((cluster) => cluster.id === clusterId);
-              if (cluster) {
-                setQuery({
-                  ...query,
-                  cluster,
-                });
-              }
-            }}
-            tabs={
-              sortedClusters.map((cluster) => ({
-                title: getI18nConfigCurrentText(cluster.name, languageId), key: cluster.id, node: (
-                  <>
-                    <Space>
-                      <Form.Item label={"用户"} name="idOrName">
-                        <Input placeholder="用户ID/姓名" />
-                      </Form.Item>
-                      <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
-                    </Space>
-                  </>
-                ),
-              }))
-            }
+    <>
+      {
+        !isLoading && !availableClusterIdsLoading && sortedClusters.length === 0 ? (
+          <Result
+            title={t(p("clusterNotEnabledStorageManager"))}
           />
-        </Form>
-      </FilterFormContainer>
-      <StorageInfoTable
-        reload={reload}
-        data={data}
-        isLoading={isLoading}
-        pageInfo={pageInfo}
-        setPageInfo={setPageInfo}
-        tenantName={userStore.user!.tenant}
-        cluster={query.cluster}
-        path={storageConfig?.paths[0] || "" }
-      />
-    </div>
+        ) : (
+          <div>
+            <FilterFormContainer>
+              <Form<FilterForm>
+                form={form}
+                initialValues={query}
+                onFinish={async () => {
+                  const currentQuery = await form.validateFields();
+                  setQuery({
+                    ...query,
+                    idOrName: currentQuery.idOrName,
+                  });
+                  setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                } }
+              >
+                <FilterFormTabs
+                  onChange={(clusterId) => {
+                    const cluster = sortedClusters.find((cluster) => cluster.id === clusterId);
+                    if (cluster) {
+                      setQuery({
+                        ...query,
+                        cluster,
+                      });
+                    }
+                  } }
+                  tabs={sortedClusters.map((cluster) => ({
+                    title: getI18nConfigCurrentText(cluster.name, languageId), key: cluster.id, node: (
+                      <>
+                        <Space>
+                          <Form.Item label={t(pCommon("user"))} name="idOrName">
+                            <Input placeholder={t(pCommon("idOrName"))} />
+                          </Form.Item>
+                          <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+                        </Space>
+                      </>
+                    ),
+                  }))}
+                />
+              </Form>
+            </FilterFormContainer>
+            <StorageInfoTable
+              reload={reload}
+              data={data}
+              isLoading={isLoading || availableClusterIdsLoading}
+              pageInfo={pageInfo}
+              setPageInfo={setPageInfo}
+              cluster={query.cluster}
+              path={storageConfig?.paths[0] || ""}
+            />
+          </div>
+        )
+      }
+    </>
   );
 };
 
@@ -146,14 +174,13 @@ interface StorageInfoTableProps {
   setPageInfo?: (info: PageInfo) => void;
   isLoading: boolean;
   reload: () => void;
-  tenantName: string;
-  cluster: Cluster;
+  cluster: Cluster | undefined;
   path: string;
 }
 
 
 const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
-  data, pageInfo, setPageInfo, isLoading, reload, tenantName, cluster, path,
+  data, pageInfo, setPageInfo, isLoading, reload, cluster, path,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -185,14 +212,17 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
                     <strong>{formatBytesToGB(data.userDefaultQuotaBytes).toFixed(2) + " GB"}</strong>
                   </Space>
                 </span>
-                <ChangeDefaultQuotaLink
-                  reload={reload}
-                  tenantName={tenantName}
-                  cluster={cluster}
-                  path={path}
-                  defaultQuotaBytes={data.userDefaultQuotaBytes}
-                  totalQuotaBytes={data.totalStorageBytes}
-                >{t(p("edit"))}</ChangeDefaultQuotaLink>
+                {
+                  cluster && (
+                    <ChangeDefaultQuotaLink
+                      reload={reload}
+                      cluster={cluster}
+                      path={path}
+                      defaultQuotaBytes={data.userDefaultQuotaBytes}
+                      totalQuotaBytes={data.totalStorageBytes}
+                    >{t(p("edit"))}</ChangeDefaultQuotaLink>
+                  )
+                }
               </Space>
             </div>
           ) : undefined
@@ -234,18 +264,20 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
           title={t(p("operation"))}
           fixed="right"
           render={(_, r) => (
-            <ChangeQuotaLink
-              reload={reload}
-              username={r.userName}
-              userId={r.userId}
-              cluster={cluster}
-              path={path}
-              quotaBytes={r.quotaBytes}
-              usedStorageBytes={r.usedStorageBytes}
-              useDefault={r.useDefault}
-              totalQuotaBytes={data?.totalStorageBytes || 0}
-              defaultQuotaBytes={data?.userDefaultQuotaBytes || 0}
-            >{t(p("modifyQuota"))}</ChangeQuotaLink>
+            cluster && (
+              <ChangeQuotaLink
+                reload={reload}
+                username={r.userName}
+                userId={r.userId}
+                cluster={cluster}
+                path={path}
+                quotaBytes={r.quotaBytes}
+                usedStorageBytes={r.usedStorageBytes}
+                useDefault={r.useDefault}
+                totalQuotaBytes={data?.totalStorageBytes || 0}
+                defaultQuotaBytes={data?.userDefaultQuotaBytes || 0}
+              >{t(p("modifyQuota"))}</ChangeQuotaLink>
+            )
           )}
         />
       </Table>

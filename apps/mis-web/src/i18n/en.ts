@@ -111,6 +111,7 @@ export default {
     + "synchronization to complete before trying again.",
     finalError: "Request failed, please try again later",
     edit: "edit",
+    idOrName: "User ID/Name",
   },
   dashboard: {
     title: "Dashboard",
@@ -934,6 +935,8 @@ export default {
         storageUsed: "Storage Used",
         operation: "Operation",
         modifyQuota: "Modify Quota",
+        clusterNotEnabledStorageManager: "Storage management is not enabled for the available cluster yet",
+
       },
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "Modify Default Storage Quota",
