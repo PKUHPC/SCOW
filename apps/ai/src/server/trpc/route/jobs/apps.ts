@@ -39,7 +39,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { PartitionSchema } from "../config";
 import { booleanQueryParam } from "../utils";
-import { EventSchema, IdPrivateSchema } from "./jobs";
+import { EnvVariableSchema, EventSchema, IdPrivateSchema } from "./jobs";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -256,6 +256,7 @@ export const CreateAppInputSchema = z.object({
   workingDirectory: z.string().optional(),
   customAttributes: z.record(z.string(), z.union([z.number(), z.string(), z.undefined()])),
   gpuType: z.string().optional(),
+  envVariables:z.array(EnvVariableSchema).optional(),
 });
 
 export type CreateAppInput = z.infer<typeof CreateAppInputSchema>;

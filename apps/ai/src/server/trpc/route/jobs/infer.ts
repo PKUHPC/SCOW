@@ -25,7 +25,7 @@ import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
-import { IdPrivateSchema } from "./jobs";
+import { EnvVariableSchema, IdPrivateSchema } from "./jobs";
 
 // 分布式训练框架
 export const Framework = z.union([
@@ -74,6 +74,7 @@ export const InferenceJobInputSchema = z.object({
   gpuType: z.string().optional(),
   // 容器内服务端口
   containerServicePort:z.number(),
+  envVariables:z.array(EnvVariableSchema).optional(),
 });
 
 export type InferenceJobInput = z.infer<typeof InferenceJobInputSchema>;

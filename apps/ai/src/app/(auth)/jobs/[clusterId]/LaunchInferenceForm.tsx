@@ -31,9 +31,9 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
-import { validateMountPoints } from "./common";
+import { validateEnvKeyFormat, validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
-import { DataAttributes } from "./LaunchAppForm";
+import { DataAttributes,EnvVariable } from "./LaunchAppForm";
 
 const AfterInputNumber = styled(InputNumber)`
   .ant-select-focused .ant-select-selector{
@@ -66,6 +66,7 @@ interface FixedFormFields {
   maxTime: number;
   containerServicePort: number;
   command?: string;
+  envVariables?: EnvVariable[];
 }
 
 type FormFields = FixedFormFields;
@@ -359,6 +360,8 @@ export const LaunchInferenceJobForm = (props: Props) => {
       const { account, gpuCount, coreCount, maxTime, mountPoints, nodeCount,
         containerServicePort } = inputParams;
       const command = "command" in inputParams ? inputParams.command : undefined;
+      const envVariables = "envVariables" in inputParams ? inputParams.envVariables : undefined;
+
       form.setFieldsValue({
         mountPoints,
         nodeCount,
@@ -371,10 +374,10 @@ export const LaunchInferenceJobForm = (props: Props) => {
         appJobName: genAppJobName(clusterId,"i"),
         command,
         containerServicePort,
+        envVariables,
       });
     }
   }, [InferenceJobInput]);
-
 
   // 处理分区和分区下的参数QOS
   useEffect(() => {
@@ -455,7 +458,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
       onFinish={async () => {
 
         const { appJobName, image, remoteImageUrl,mountPoints, account, partition, coreCount,
-          gpuCount, maxTime, command, containerServicePort,qos } = await form.validateFields();
+          gpuCount, maxTime, command, containerServicePort,qos,envVariables } = await form.validateFields();
 
         const modelVersions =
                 modelGroups.map((_,index) => form.getFieldValue(["modelArray", index, "version"]))
@@ -485,6 +488,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
           gpuType: currentPartitionInfo!.gpuType,
           containerServicePort,
           qos,
+          envVariables,
         });
       }
       }
@@ -683,6 +687,51 @@ export const LaunchInferenceJobForm = (props: Props) => {
             </Form.Item>
           </div>
         </Form.Item>
+
+        <Form.List name="envVariables">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map((field, index) => {
+                const { key, ...restField } = field;
+
+                return (
+                  <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      label={`${t(p("envVariables"))}-${index + 1}`}
+                      name={[field.name, "key"]}
+                      rules={[
+                        { required: true, message:t(p("envVariablesKeyPlaceholder")) },
+                        validateEnvKeyFormat(t(p("envVariablesKeyRule")),t(p("sameEnvVariablesKey"))),
+                      ]}
+                    >
+                      <Input placeholder={t(p("envVariablesKeyPlaceholder"))} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[field.name, "value"]}
+                      rules={[{ required: true, message:t(p("envVariablesValuePlaceholder")) }]}
+                    >
+                      <Input placeholder={t(p("envVariablesValuePlaceholder"))} />
+                    </Form.Item>
+                    <MinusCircleOutlined
+                      onClick={() => remove(field.name)}
+                    />
+                  </Space>
+                );
+              })}
+              <Form.Item>
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  icon={<PlusOutlined />}
+                >
+                  {t(p("addEnvVariables"))}
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
 
         {modelGroups.map((_, index) => {
           const isPrivate = form.getFieldValue(["modelArray", index, "type"]) === AccessibilityType.PRIVATE;

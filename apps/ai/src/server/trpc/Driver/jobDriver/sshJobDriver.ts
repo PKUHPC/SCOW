@@ -40,7 +40,7 @@ export class SshJobDriver implements JobDriver {
 
     const { workingDirectory,mountPoints = [],clusterId,appId,customAttributes,
       startCommand,appJobName,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,qos,
+      remoteImageUrl,gpuType,qos,envVariables = [],
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,app,proxyBasePath,existImage } = extraParams;
@@ -181,6 +181,7 @@ export class SshJobDriver implements JobDriver {
         // 用户指定应用工作目录，如果不存在，则默认为用户的appJobsDirectory
         workingDirectory: workingDirectory ?? join(homeDir, appJobsDirectory),
         script: remoteEntryPath,
+        envVariables,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数确定是创建应用or训练任务，
         // 第二个参数为创建应用时的appId
@@ -403,7 +404,7 @@ export class SshJobDriver implements JobDriver {
 
   async submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
-      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos } = inputParams;
+      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = []} = inputParams;
     const { isModelPrivates,modelVersions,existImage } = extraParams;
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
 
@@ -464,6 +465,7 @@ export class SshJobDriver implements JobDriver {
         timeLimitMinutes: maxTime,
         workingDirectory: inferJobsDirectory,
         script: remoteEntryPath,
+        envVariables,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数为镜像地址
         // 第二个参数为模型版本地址
@@ -546,7 +548,7 @@ export class SshJobDriver implements JobDriver {
 
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,
+      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,existImage } = extraParams;
@@ -614,6 +616,7 @@ export class SshJobDriver implements JobDriver {
         timeLimitMinutes: maxTime,
         workingDirectory: trainJobsDirectory,
         script: remoteEntryPath,
+        envVariables,
         // 对于AI模块，需要传递的额外参数
         // 第一个参数确定是创建应用or训练任务，
         // 第二个参数为创建应用时的appId

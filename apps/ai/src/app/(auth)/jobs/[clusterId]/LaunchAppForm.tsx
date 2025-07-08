@@ -39,7 +39,7 @@ import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
 import { usePublicConfig } from "../../context";
-import { validateMountPoints } from "./common";
+import { validateEnvKeyFormat, validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
 
 const AfterInputNumber = styled(InputNumber)`
@@ -69,6 +69,11 @@ export interface DataAttributes {
   name?: number;
   version?: number;
   desc?: string;
+}
+
+export interface EnvVariable {
+  key: string;
+  value: string;
 }
 
 interface FixedFormFields {
@@ -102,6 +107,7 @@ interface FixedFormFields {
   // TensorFlow特有参数
   psNodes?: number;
   workerNodes?: number;
+  envVariables?: EnvVariable[];
 }
 
 interface CustomFormFields {
@@ -715,6 +721,7 @@ export const LaunchAppForm = (props: Props) => {
       const framework = "framework" in inputParams ? inputParams.framework : undefined;
       const psNodes = "psNodes" in inputParams ? inputParams.psNodes : undefined;
       const workerNodes = "workerNodes" in inputParams ? inputParams.workerNodes : undefined;
+      const envVariables = "envVariables" in inputParams ? inputParams.envVariables : undefined;
 
       form.setFieldsValue({
         mountPoints,
@@ -733,6 +740,7 @@ export const LaunchAppForm = (props: Props) => {
         command,
         psNodes,
         workerNodes,
+        envVariables,
       });
     }
   }, [createAppParams, trainJobInput]);
@@ -750,7 +758,7 @@ export const LaunchAppForm = (props: Props) => {
     }
 
     if (inputParams) {
-      // 且分区、qos和账户没有修改过才设置再次提交的分区参数
+    // 且分区、qos和账户没有修改过才设置再次提交的分区参数
       if (!form.isFieldsTouched(["partition","qos","account"])) {
         const { partition,qos } = inputParams;
 
@@ -839,7 +847,8 @@ export const LaunchAppForm = (props: Props) => {
       onFinish={async () => {
 
         const { appJobName, image, remoteImageUrl, framework, startCommand,mountPoints, account, partition, coreCount,
-          gpuCount, maxTime, command, customFields, psNodes, workerNodes,qos } = await form.validateFields();
+          gpuCount, maxTime, command, customFields, psNodes, workerNodes,qos,envVariables } =
+          await form.validateFields();
 
         const algorithmVersions =
         algorithmGroups.map((_,index) => form.getFieldValue(["algorithmArray", index, "version"]))
@@ -891,6 +900,7 @@ export const LaunchAppForm = (props: Props) => {
             psNodes,
             workerNodes,
             qos,
+            envVariables:envVariables,
           });
         } else {
           let workingDirectory: string | undefined;
@@ -931,6 +941,7 @@ export const LaunchAppForm = (props: Props) => {
             customAttributes: customFormKeyValue.customFields,
             gpuType: currentPartitionInfo!.gpuType,
             qos,
+            envVariables,
           });
         }
       }
@@ -1607,6 +1618,51 @@ export const LaunchAppForm = (props: Props) => {
           );
         })
         }
+
+        <Form.List name="envVariables">
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map((field, index) => {
+                const { key, ...restField } = field;
+
+                return (
+                  <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      label={`${t(p("envVariables"))}-${index + 1}`}
+                      name={[field.name, "key"]}
+                      rules={[
+                        { required: true, message:t(p("envVariablesKeyPlaceholder")) },
+                        validateEnvKeyFormat(t(p("envVariablesKeyRule")),t(p("sameEnvVariablesKey"))),
+                      ]}
+                    >
+                      <Input placeholder={t(p("envVariablesKeyPlaceholder"))} />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[field.name, "value"]}
+                      rules={[{ required: true, message:t(p("envVariablesValuePlaceholder")) }]}
+                    >
+                      <Input placeholder={t(p("envVariablesValuePlaceholder"))} />
+                    </Form.Item>
+                    <MinusCircleOutlined
+                      onClick={() => remove(field.name)}
+                    />
+                  </Space>
+                );
+              })}
+              <Form.Item>
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  icon={<PlusOutlined />}
+                >
+                  {t(p("addEnvVariables"))}
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
 
         <Divider orientation="left" orientationMargin="0">{t(p("resource"))}</Divider>
         <Form.Item

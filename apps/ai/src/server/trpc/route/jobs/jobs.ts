@@ -57,6 +57,11 @@ export const IdPrivateSchema = z.object({
 
 export type IdPrivate = z.infer<typeof IdPrivateSchema>;
 
+export const EnvVariableSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
 export const TrainJobInputSchema = z.object({
   clusterId: z.string(),
   trainJobName: z.string(),
@@ -81,6 +86,7 @@ export const TrainJobInputSchema = z.object({
   // TensorFlow特有参数
   psNodes: z.number().optional(),
   workerNodes: z.number().optional(),
+  envVariables:z.array(EnvVariableSchema).optional(),
 });
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;
