@@ -1,24 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber, compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
-import type { CheckboxChangeEvent } from "antd/es/checkbox";
 import { useRouter } from "next/router";
 import { join } from "path";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -202,26 +189,10 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
     },
   ];
 
-  const [checked, setChecked] = useState(false);
-  const [disabled] = useState(false);
-
   const reloadTable = useCallback(() => {
     reload();
     setConnectivityRefreshToken((f) => !f);
   }, [reload, setConnectivityRefreshToken]);
-
-  const onChange = (e: CheckboxChangeEvent) => {
-    setChecked(e.target.checked);
-  };
-
-  useEffect(() => {
-    if (checked) {
-      const interval = setInterval(() => {
-        reloadTable();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [reload, checked]);
 
   return (
     <div>
@@ -247,15 +218,6 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
             <Space>
               <Button loading={isLoading} onClick={() => reloadTable()}>{t("button.refreshButton")}</Button>
             </Space>
-          </Form.Item>
-          <Form.Item>
-            <Checkbox
-              checked={checked}
-              disabled={disabled}
-              onChange={onChange}
-            >
-              {t(p("filterForm.autoRefresh"))}
-            </Checkbox>
           </Form.Item>
           <Form.Item>
             <Checkbox

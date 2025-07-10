@@ -463,7 +463,6 @@ export default {
         },
         filterForm: {
           appJobName: "作业名",
-          autoRefresh: "10s自动刷新",
           onlyNotEnded: "只展示未结束的作业",
         },
       },

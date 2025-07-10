@@ -325,7 +325,6 @@ export default {
         saveImage:"保存镜像",
         submitAgain:"再次提交",
         enterDir:"进入目录",
-        autoRefresh:"自动刷新",
         infer:"推理",
         partition:"分区",
         memory:"内存",

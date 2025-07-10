@@ -325,7 +325,6 @@ export default {
         saveImage:"Save image",
         submitAgain:"Submit again",
         enterDir:"Enter directory",
-        autoRefresh:"Auto refresh",
         infer:"Inferring",
         partition:"partition",
         memory:"memory",

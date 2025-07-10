@@ -10,53 +10,26 @@ import { getUserHomedir,
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
 import dayjs from "dayjs";
-import fs from "fs";
 import { join } from "path";
 import { quote } from "shell-quote";
 import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
 import { configClusters } from "src/config/clusters";
 import { portalConfig } from "src/config/portal";
-import { getClusterAppConfigs, splitSbatchArgs } from "src/utils/app";
+import { APP_LAST_SUBMISSION_INFO, BIN_BASH_SCRIPT_HEADER, getClusterAppConfigs,
+  SERVER_ENTRY_COMMAND,
+  SERVER_SESSION_INFO,
+  ServerSessionInfoData,
+  SESSION_METADATA_NAME,
+  SessionMetadata,
+  SHADOWDESK_SESSION,
+  ShadowDeskSession,
+  splitSbatchArgs, VNC_ENTRY_COMMAND, VNC_OUTPUT_FILE, VNC_SESSION_INFO } from "src/utils/app";
 import { callOnOne } from "src/utils/clusters";
 import { getIpFromProxyGateway } from "src/utils/proxy";
 import { sshConnect } from "src/utils/ssh";
 import { displayIdToPort, getTurboVNCBinPath, parseDisplayId,
   refreshPassword, refreshPasswordByProxyGateway } from "src/utils/turbovnc";
 
-interface SessionMetadata {
-  sessionId: string;
-  jobName: string;
-  jobId: number;
-  appId: string;
-  submitTime: string;
-}
-
-// All keys are strings except PORT
-interface ServerSessionInfoData {
-  [key: string]: string | number | undefined;
-  HOST: string;
-  PORT: number;
-  PASSWORD?: string;
-}
-
-interface ShadowDeskSession {
-  [key: string]: string | number;
-  SHADOWDESK_USER: string;
-}
-
-const SERVER_ENTRY_COMMAND = fs.readFileSync("assets/slurm/server_entry.sh", { encoding: "utf-8" });
-const VNC_ENTRY_COMMAND = fs.readFileSync("assets/slurm/vnc_entry.sh", { encoding: "utf-8" });
-
-const VNC_OUTPUT_FILE = "output";
-
-const SESSION_METADATA_NAME = "session.json";
-
-const SERVER_SESSION_INFO = "server_session_info.json";
-const SHADOWDESK_SESSION = "shadowdesk_session.json";
-const VNC_SESSION_INFO = "VNC_SESSION_INFO";
-
-const APP_LAST_SUBMISSION_INFO = "last_submission.json";
-const BIN_BASH_SCRIPT_HEADER = "#!/bin/bash -l\n";
 
 export const sshAppServices = (cluster: string, host: string): AppOps => {
 
@@ -595,4 +568,3 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
     },
   };
 };
-

@@ -1,22 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -62,7 +50,6 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   });
   const [form] = Form.useForm<FilterForm>();
 
-  const [checked, setChecked] = useState(false);
   const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
   const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery({
@@ -280,20 +267,10 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     },
   ];
 
-
   const reloadTable = useCallback(() => {
     refetch();
     setConnectivityRefreshToken((f) => !f);
-  }, [setConnectivityRefreshToken]);
-
-  useEffect(() => {
-    if (checked && unfinished) {
-      const interval = setInterval(() => {
-        reloadTable();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [checked, unfinished]);
+  }, [refetch, setConnectivityRefreshToken]);
 
   const filteredData = useMemo(() => {
     if (!data) { return []; }
@@ -339,19 +316,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button loading={isLoading} onClick={() => refetch()}>{t("button.refreshButton")}</Button>
+              <Button loading={isLoading} onClick={() => reloadTable()}>{t("button.refreshButton")}</Button>
             </Space>
           </Form.Item>
-          {unfinished && (
-            <Form.Item>
-              <Checkbox
-                checked={checked}
-                onChange={(e) => { setChecked(e.target.checked); }}
-              >
-                10s{t(p("autoRefresh"))}
-              </Checkbox>
-            </Form.Item>
-          ) }
         </Form>
       </FilterFormContainer>
       <Table

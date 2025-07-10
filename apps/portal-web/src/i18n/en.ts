@@ -465,7 +465,6 @@ export default {
         },
         filterForm: {
           appJobName: "Job Name",
-          autoRefresh: "Auto-refresh every 10s",
           onlyNotEnded: "Show only running jobs",
         },
       },

@@ -11,50 +11,24 @@ import { errorInfo, getAppConnectionInfoFromAdapter,getEnvVariables } from "@sco
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
 import dayjs from "dayjs";
-import fs from "fs";
 import { join } from "path";
 import { quote } from "shell-quote";
 import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
 import { portalConfig } from "src/config/portal";
-import { getClusterAppConfigs, splitSbatchArgs } from "src/utils/app";
+import { APP_LAST_SUBMISSION_INFO, BIN_BASH_SCRIPT_HEADER, ENDED_SESSIONS, getClusterAppConfigs, readEndedSessionsFile,
+  SERVER_ENTRY_COMMAND,
+  SERVER_SESSION_INFO,
+  ServerSessionInfoData,
+  SESSION_METADATA_NAME,
+  SessionMetadata,
+  SHADOWDESK_SESSION,
+  ShadowDeskSession,
+  splitSbatchArgs, VNC_ENTRY_COMMAND, VNC_OUTPUT_FILE, VNC_SESSION_INFO,
+  writeEndedSessionsFileContent } from "src/utils/app";
 import { callOnOne } from "src/utils/clusters";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { displayIdToPort, getTurboVNCBinPath, parseDisplayId } from "src/utils/turbovnc";
 
-interface SessionMetadata {
-  sessionId: string;
-  jobId: number;
-  jobName: string;
-  appId: string;
-  submitTime: string;
-}
-
-// All keys are strings except PORT
-interface ServerSessionInfoData {
-  [key: string]: string | number;
-  HOST: string;
-  PORT: number;
-  PASSWORD: string;
-}
-
-interface ShadowDeskSession {
-  [key: string]: string | number;
-  SHADOWDESK_USER: string;
-}
-
-const SERVER_ENTRY_COMMAND = fs.readFileSync("assets/slurm/server_entry.sh", { encoding: "utf-8" });
-const VNC_ENTRY_COMMAND = fs.readFileSync("assets/slurm/vnc_entry.sh", { encoding: "utf-8" });
-
-const VNC_OUTPUT_FILE = "output";
-
-const SESSION_METADATA_NAME = "session.json";
-
-const SERVER_SESSION_INFO = "server_session_info.json";
-const SHADOWDESK_SESSION = "shadowdesk_session.json";
-const VNC_SESSION_INFO = "VNC_SESSION_INFO";
-
-const APP_LAST_SUBMISSION_INFO = "last_submission.json";
-const BIN_BASH_SCRIPT_HEADER = "#!/bin/bash -l\n";
 
 export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps => {
 
@@ -363,10 +337,66 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         if (!(await client.file.exists({ userId, path: userAppJobDir })).exists) { return { sessions: []}; }
 
         // get all job directories
-        const list = (await client.file.readDirectory({ userId, dirPath: userAppJobDir })).filesInfo;
+        const originalDirList = (await client.file.readDirectory({ userId, dirPath: userAppJobDir })).filesInfo;
+        const list = originalDirList.filter((item) => item.name !== ENDED_SESSIONS);
         const sessions = [] as AppSession[];
 
+        const endedSessionsFilePath = join(userAppJobDir, ENDED_SESSIONS);
+        // 定义用于存储已存在的 endedSessions 的 session 信息
+        const existingEndedSessions: SessionMetadata[] = [];
+        // 定义用于存储本次需要添加的 endedSessions
+        const newEndedSessions: SessionMetadata[] = [];
+
+        const existingSessionIds = new Set<string>();
+
+        // 如果ended_sessions.json 已存在，将其中的信息作为已结束的交互式应用的session信息
+        if ((await client.file.exists({ userId, path: endedSessionsFilePath })).exists) {
+
+          try {
+            const endedSessionLines = await readEndedSessionsFile(client, userId, endedSessionsFilePath, logger);
+            existingEndedSessions.push(...endedSessionLines);
+          } catch (err) {
+            logger.warn("Error occurred in reading endedSessionsFile. The file will be recreated.", err);
+          }
+
+
+          if (existingEndedSessions.length > 0) {
+            logger.trace(`Found ${existingEndedSessions.length} ended sessions in ${ENDED_SESSIONS}`);
+            for (const endedSession of existingEndedSessions) {
+              const endedJobDir = join(userAppJobDir, endedSession.sessionId);
+              sessions.push({
+                jobId: endedSession.jobId,
+                appId: endedSession.appId,
+                appName: apps[endedSession.appId]?.name,
+                jobName: endedSession.jobName ?? "",
+                sessionId: endedSession.sessionId,
+                submitTime: new Date(endedSession.submitTime),
+                state: "ENDED",
+                dataPath: endedJobDir,
+                runningTime: "",
+                timeLimit: "",
+                appType: apps[endedSession.appId]?.type,
+                host: undefined,
+                port: undefined,
+              });
+            }
+
+            // 获取已存在的 endedSessions 的 sessionId，对应session的目录名
+            existingEndedSessions.map((session) => {
+              existingSessionIds.add(session.sessionId);
+            });
+
+          }
+
+        }
+
         await Promise.all(list.map(async ({ name }) => {
+
+          // 如果name是已存在的 endedSessions 的 sessionId，则跳过
+          if (existingSessionIds.has(name)) {
+            return;
+          }
+
           const jobDir = join(userAppJobDir, name);
           const metadataPath = join(jobDir, SESSION_METADATA_NAME);
 
@@ -474,6 +504,26 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
               host = connectionInfo.response.appConnectionInfo.host;
               port = connectionInfo.response.appConnectionInfo.port;
             }
+          } else {
+
+            // 如果不是 RUNNING 或 PENDING 的文件， 将文件写入 ended_sessions.json
+            if (runningJobInfo && runningJobInfo.state === "PENDING") {
+              logger.trace(`Job ${sessionMetadata.jobId} is a pending job,`
+                + " skipping in saving to ended_sessions.json");
+            } else {
+              logger.trace(`Job ${sessionMetadata.jobId} is not running, saving to endedSessions.json ...`);
+
+              // write app session (except running jobs) to last endedSessions.json
+              const endedSessionInfo: SessionMetadata = {
+                jobId: sessionMetadata.jobId,
+                jobName: sessionMetadata.jobName,
+                sessionId: sessionMetadata.sessionId,
+                submitTime: sessionMetadata.submitTime,
+                appId: sessionMetadata.appId,
+              };
+
+              newEndedSessions.push(endedSessionInfo);
+            }
           }
 
           const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
@@ -504,7 +554,16 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
         }));
 
+        try {
+          await writeEndedSessionsFileContent(
+            client, userId, endedSessionsFilePath, existingEndedSessions, newEndedSessions, logger,
+          );
+        } catch (err) {
+          logger.warn("Error occurred in writing ended sessions. It will be executed again on the next request.", err);
+        }
+
         return { sessions };
+
       } catch (err) {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;

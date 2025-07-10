@@ -62,6 +62,8 @@ message WriteFileRequest {
   string user_id = 1;
   string file_path = 2;
   string content = 3;
+  // 表示是否为追加写入，默认为false，表示创建或覆盖
+  optional bool append = 4;
 }
 
 message WriteFileResponse {

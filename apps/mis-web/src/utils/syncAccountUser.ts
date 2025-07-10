@@ -41,7 +41,7 @@ export function getSyncDetails(
     [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]:  t(p("removeUserFromAccountFailure")),
   };
 
-  const getExceptionMessage = 
+  const getExceptionMessage =
   (exceptionType: SyncExceptionType | SyncExceptionTypeProto, totalSuccessfulCount: number): string => {
 
     switch (exceptionType) {
@@ -73,7 +73,7 @@ export function getSyncDetails(
     return aIndex - bIndex;
   }).map((clusterResult: ClusterTotalSyncResultProto) => {
 
-    const { clusterId, completedTotalSyncCount, 
+    const { clusterId, completedTotalSyncCount,
       successfulTotalSyncCount, clusterSyncExceptions, clusterSyncDetails } = clusterResult;
 
     let i18nExceptionMessage: string = "";
