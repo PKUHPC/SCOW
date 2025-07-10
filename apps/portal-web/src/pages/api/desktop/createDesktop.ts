@@ -20,6 +20,7 @@ import { authenticate } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { callLog } from "src/server/operationLog";
+import { checkUserAssignedClusters } from "src/utils/checkClusterIsAssgined";
 import { getClient } from "src/utils/client";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { route } from "src/utils/route";
@@ -74,6 +75,12 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
   const info = await auth(req, res);
 
   if (!info) { return; }
+
+  // 验证当前集群是否为用户关联账户的已授权集群
+  const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
+  if (!isClusterAssigned) {
+    return { 401: { code: "INVALID_CLUSTER" as const } };
+  }
 
   const client = getClient(DesktopServiceClient);
 

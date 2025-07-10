@@ -16,6 +16,7 @@ import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
+import { checkUserAssignedClusters } from "src/utils/checkClusterIsAssgined";
 import { getClient } from "src/utils/client";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { route } from "src/utils/route";
@@ -39,6 +40,8 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
     }),
     // 功能没有启用
     501: Type.Object({ code: Type.Literal("CLUSTER_LOGIN_DESKTOP_NOT_ENABLED") }),
+    // 无效集群
+    401: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
   },
 });
 
@@ -59,6 +62,11 @@ export default /* #__PURE__*/route(LaunchDesktopSchema, async (req, res) => {
 
   if (!info) { return; }
 
+  // 验证当前集群是否为用户关联账户的已授权集群
+  const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
+  if (!isClusterAssigned) {
+    return { 401: { code: "INVALID_CLUSTER" as const } };
+  }
 
   const client = getClient(DesktopServiceClient);
 

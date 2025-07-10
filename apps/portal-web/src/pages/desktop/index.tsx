@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getSortedClusterIds } from "@scow/config/build/cluster";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -20,14 +8,14 @@ import { USE_MOCK } from "src/apis/useMock";
 import { getTokenFromCookie } from "src/auth/cookie";
 import { requireAuth } from "src/auth/requireAuth";
 import { AuthResultError, ssrAuthenticate } from "src/auth/server";
-import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
+import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { UnifiedErrorPage } from "src/components/errorPages/UnifiedErrorPage";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { DesktopTable } from "src/pageComponents/desktop/DesktopTable";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster, getLoginDesktopEnabled } from "src/utils/cluster";
-import { publicConfig } from "src/utils/config";
+import { publicConfig, runtimeConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 type Props = {
   error: AuthResultError;
@@ -44,7 +32,7 @@ export const DesktopIndexPage: NextPage<Props> = requireAuth(() => true)(
 
     const { enableLoginDesktop } = useStore(ClusterInfoStore);
     if (!enableLoginDesktop || props.loginDesktopEnabledClusters.length === 0) {
-      return <NotFoundPage />;
+      return <ClusterNotAvailablePage />;
     }
 
     const t = useI18nTranslateToString();
@@ -81,17 +69,39 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
   }
 
   const token = getTokenFromCookie({ req });
+  // 所有配置集群
   const resp = await api.getClusterConfigFiles({ query: { token } });
   const clusterConfigs = resp.clusterConfigs;
   const clusterSortedIdList = getSortedClusterIds(resp.clusterConfigs);
+  // 集群在线信息
   const currentClusters = await api.getClustersRuntimeInfo({ query: { token } });
 
+  // 当前启用中的集群
   const activatedClusterIds = currentClusters?.results
     .filter((x) => x.activationStatus === ClusterActivationStatus.ACTIVATED).map((x) => x.clusterId) ?? [];
   const sortedCurrentClusterIds = clusterSortedIdList.filter((id) => activatedClusterIds.includes(id));
 
-  const sortedClusterIdList = publicConfig.MIS_DEPLOYED ?
-    sortedCurrentClusterIds : clusterSortedIdList;
+
+  let sortedClusterIdList: string[];
+
+  // 1. 如果部署了管理系统，且部署了资源管理服务
+  // 选取已授权且在线集群的集群ID
+  if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
+    const userAssociatedClusterIds = await api.getUserAssociatedClusterIds({ query: {
+      token,
+      userId: info.identityId,
+    } });
+    sortedClusterIdList = sortedCurrentClusterIds
+      .filter((id) => ((userAssociatedClusterIds.clusterIds ?? []).includes(id)));
+  // 2. 如果部署了管理系统，未部署资源管理
+  // 选取在线集群的集群ID
+  } else if (publicConfig.MIS_DEPLOYED) {
+    sortedClusterIdList = sortedCurrentClusterIds;
+  // 3. 如果没有部署管理系统
+  // 选取系统所有已配置集群的集群ID
+  } else {
+    sortedClusterIdList = clusterSortedIdList;
+  }
 
   const loginDesktopEnabledClusters = sortedClusterIdList
     .filter((clusterId) => getLoginDesktopEnabled(clusterId, clusterConfigs))
