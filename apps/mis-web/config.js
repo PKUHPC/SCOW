@@ -222,7 +222,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SYNC_HISTORY_DAY_PERIOD: misConfig.syncAccountUser.syncHistoryDayPeriod,
     MAX_SYNC_DURATION_MINUTES: misConfig.syncAccountUser.maxSyncDurationMinutes,
 
-    SCOW_RESOURCE_ENABLED: commonConfig.scowResource.enabled,
+    SCOW_RESOURCE_ENABLED: commonConfig.scowResource?.enabled,
 
     ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
   };

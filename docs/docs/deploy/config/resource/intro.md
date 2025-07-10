@@ -39,7 +39,7 @@ uiExtension:
 ```YAML
 
 # 是否开启资源管理系统
-resource:
+scowResource:
   # 非必填，默认为 false
   enabled: true
   # 资源管理系统部署的url，在内网能访问即可
