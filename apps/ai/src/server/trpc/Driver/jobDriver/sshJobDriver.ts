@@ -11,6 +11,12 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { AppSession,CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
+  SESSION_METADATA_NAME,SessionMetadata,TENSORBOARD_ENTRY_COMMAND,
+  VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
+import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
+  from "src/server/trpc/route/jobs/infer";
+import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import { genPublicOrPrivateDataJsonString, getClusterAppConfigs, sshFetchJobInputParams,
   validateUniquePaths } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
@@ -21,11 +27,6 @@ import { formatTime } from "src/utils/datetime";
 import { isParentOrSameFolder } from "src/utils/file";
 import { Logger } from "ts-log";
 
-import { AppSession,CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
-  SESSION_METADATA_NAME,SessionMetadata,VNC_ENTRY_COMMAND } from "../../route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
-  from "../../route/jobs/infer";
-import { TrainJobInput, TrainJobInputSchema } from "../../route/jobs/jobs";
 import { ConnectToAppResponse, CreateAppExtraParams, JobDriver, SubmitInferJobExtraParams,
   SubmitTrainJobExtraParams } from "./jobDriver";
 
@@ -549,6 +550,7 @@ export class SshJobDriver implements JobDriver {
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
       remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
+      tensorBoardDataPath,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,existImage } = extraParams;
@@ -601,6 +603,15 @@ export class SshJobDriver implements JobDriver {
 
       const entryScript = command;
       await sftpWriteFile(sftp)(remoteEntryPath, entryScript);
+
+      // TensorBoard的命令
+      const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
+      const tensorBoardPathPrefix = `/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`;
+      const tensorBoardScript = "tensorboard --logdir /output/training_logs --host 0.0.0.0 " +
+          `--path_prefix ${tensorBoardPathPrefix}`;
+      const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
+
+      await sftpWriteFile(sftp)(remoteTensorBoardEntryPath, tensorBoardEntryScript);
 
       const client = getAdapterClient(clusterId);
       const reply = await asyncClientCall(client.job, "submitJob", {
@@ -659,6 +670,7 @@ export class SshJobDriver implements JobDriver {
         ],
         psNodeCount:psNodes,
         workerNodeCount:workerNodes,
+        tensorBoardDataPath,
       }).catch((e) => {
         const ex = e as ServiceError;
         throw new TRPCError({

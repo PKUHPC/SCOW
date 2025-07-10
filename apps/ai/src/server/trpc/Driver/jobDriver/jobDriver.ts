@@ -6,12 +6,12 @@ import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { Image as ImageEntity } from "src/server/entities/Image";
 import { ModelVersion } from "src/server/entities/ModelVersion";
 import { AppSession, CreateAppInput } from "src/server/trpc/route/jobs/apps";
+import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
+import { TrainJobInput } from "src/server/trpc/route/jobs/jobs";
 import { clusterNotFound } from "src/server/utils/errors";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { Logger } from "ts-log";
 
-import { InferenceJobInput } from "../../route/jobs/infer";
-import { TrainJobInput } from "../../route/jobs/jobs";
 import { ScowdJobDriver } from "./scowdJobDriver";
 import { SshJobDriver } from "./sshJobDriver";
 

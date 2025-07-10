@@ -61,6 +61,7 @@
     "@scow/lib-ssh": "workspace:*",
     "@scow/lib-web": "workspace:*",
     "@scow/protos": "workspace:*",
+    "@scow/scowd-protos": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",

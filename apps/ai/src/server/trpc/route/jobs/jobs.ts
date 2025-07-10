@@ -16,17 +16,19 @@ import { TRPCError } from "@trpc/server";
 import type { ServerResponse } from "http";
 import { aiConfig } from "src/server/config/ai";
 import { callLog } from "src/server/setup/operationLog";
+import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
-import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
+import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
-import { getCurrentClusters } from "../../../utils/clusters";
-import { driver } from "../../Driver";
+interface ServerResponseWithFlush extends ServerResponse {
+  flush: () => void;
+}
 
 interface ServerResponseWithFlush extends ServerResponse {
   flush: () => void;
@@ -87,6 +89,7 @@ export const TrainJobInputSchema = z.object({
   psNodes: z.number().optional(),
   workerNodes: z.number().optional(),
   envVariables:z.array(EnvVariableSchema).optional(),
+  tensorBoardDataPath:z.string().optional(),
 });
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;

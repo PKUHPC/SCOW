@@ -413,6 +413,11 @@ export default {
         noAssignedPartition: "No Assigned Queue",
         maxTimeTips:"The maximum running time cannot exceed {} hours",
         priority:"Priority",
+        trainResults: "Training Results",
+        tensorBoardDataPath: "TensorBoard Data Source",
+        tensorBoardDataPlaceholder: "Enter the TensorBoard data source path",
+        vGPUTips:"The current queue is a vGPU resource and does not support creating multi node jobs",
+        appJobTips:"App job does not support multiple nodes",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"Create successfully",
@@ -482,6 +487,7 @@ export default {
         inferServiceAddress:"Infer service address",
         priority:"priority",
         return:"Return",
+        view:"View",
       },
       jobLogs:{
         title:"Logs for pod {}",

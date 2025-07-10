@@ -10,20 +10,22 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
+  SESSION_METADATA_NAME,SessionMetadata, TENSORBOARD_ENTRY_COMMAND,
+  VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
+import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
+  from "src/server/trpc/route/jobs/infer";
+import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
+import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
 import { genPublicOrPrivateDataJsonString, getClusterAppConfigs, scowdFetchJobInputParams,
   validateUniquePaths } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { formatTime } from "src/utils/datetime";
 import { isParentOrSameFolder } from "src/utils/file";
+import { BASE_PATH } from "src/utils/processEnv";
 import { Logger } from "ts-log";
 
-import { AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
-  SESSION_METADATA_NAME,SessionMetadata, VNC_ENTRY_COMMAND } from "../../route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
-  from "../../route/jobs/infer";
-import { TrainJobInput, TrainJobInputSchema } from "../../route/jobs/jobs";
-import { getScowdClient, wrap } from "../../scowd/scowd";
 import { ConnectToAppResponse, CreateAppExtraParams, JobDriver,
   SubmitInferJobExtraParams, SubmitTrainJobExtraParams } from "./jobDriver";
 
@@ -705,6 +707,7 @@ export class ScowdJobDriver implements JobDriver {
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
       remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
+      tensorBoardDataPath,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,existImage } = extraParams;
@@ -767,6 +770,7 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    // 训练任务的命令
     const remoteEntryPath = join(homeDir, trainJobsDirectory, "entry.sh");
     const entryScript = command;
 
@@ -775,6 +779,22 @@ export class ScowdJobDriver implements JobDriver {
         userId: this.userId,
         filePath: remoteEntryPath,
         content: entryScript,
+      }),
+      this.logger,
+    );
+
+    // TensorBoard的命令
+    const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
+    const tensorBoardPathPrefix = join(BASE_PATH,`/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`);
+    const tensorBoardScript = "tensorboard --logdir /output/training_logs --host 0.0.0.0 " +
+    `--path_prefix ${tensorBoardPathPrefix}`;
+    const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
+
+    await wrap(
+      this.client.file.writeFile({
+        userId: this.userId,
+        filePath: remoteTensorBoardEntryPath,
+        content: tensorBoardEntryScript,
       }),
       this.logger,
     );
@@ -836,6 +856,7 @@ export class ScowdJobDriver implements JobDriver {
       ],
       psNodeCount:psNodes,
       workerNodeCount:workerNodes,
+      tensorBoardDataPath,
     }).catch((e) => {
       const ex = e as ServiceError;
       throw new TRPCError({

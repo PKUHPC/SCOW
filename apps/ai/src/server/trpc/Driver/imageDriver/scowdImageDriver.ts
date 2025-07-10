@@ -1,12 +1,12 @@
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { TRPCError } from "@trpc/server";
 import { Source } from "src/server/entities/Image";
+import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
 import { getK8sRuntime, getRuntimeCommand, harborUrl, harborUser,password } from "src/server/utils/image";
 import { Logger } from "ts-log";
 
-import { getScowdClient, wrap } from "../../scowd/scowd";
 import { copyImageParams, CreateImageParams, ImageDriver, saveImageParams } from "./imageDriver";
 
 export class ScowdImageDriver implements ImageDriver {

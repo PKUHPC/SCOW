@@ -413,6 +413,11 @@ export default {
         noAssignedPartition: "无可用队列",
         maxTimeTips:"最大运行时间不能超过 {} 小时",
         priority:"优先级",
+        trainResults:"训练结果展示",
+        tensorBoardDataPath:"数据源",
+        tensorBoardDataPlaceholder:"请输入tensorBoard数据源",
+        vGPUTips:"当前队列为vGPU资源，不支持创建多节点作业",
+        appJobTips:"应用作业不支持多节点",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"提交推理成功",
@@ -482,6 +487,7 @@ export default {
         inferServiceAddress:"推理服务地址",
         priority:"优先级",
         return:"返回",
+        view:"查看",
       },
       jobLogs:{
         title:"容器 {} 的日志",

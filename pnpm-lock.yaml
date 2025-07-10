@@ -193,6 +193,9 @@ importers:
       '@scow/rich-error-model':
         specifier: workspace:*
         version: link:../../libs/rich-error-model
+      '@scow/scowd-protos':
+        specifier: workspace:*
+        version: link:../../libs/protos/scowd
       '@scow/utils':
         specifier: workspace:*
         version: link:../../libs/utils

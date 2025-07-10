@@ -16,7 +16,8 @@ import { MinusCircleOutlined, PlusCircleOutlined, PlusOutlined } from "@ant-desi
 import { I18nStringType } from "@scow/config/build/i18n";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Checkbox, Col,
-  Divider, Form, Input, InputNumber, Radio, Row, Select, Space, Spin } from "antd";
+  Divider, Form, Input, InputNumber, Radio, Row, Select, Space, Spin,
+  Switch } from "antd";
 import { Rule } from "antd/es/form";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
@@ -38,7 +39,6 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
-import { usePublicConfig } from "../../context";
 import { validateEnvKeyFormat, validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
 
@@ -108,6 +108,8 @@ interface FixedFormFields {
   psNodes?: number;
   workerNodes?: number;
   envVariables?: EnvVariable[];
+  needTensorBoard?: boolean;
+  tensorBoardDataPath?: string;
 }
 
 interface CustomFormFields {
@@ -162,7 +164,6 @@ export const LaunchAppForm = (props: Props) => {
   const { message } = App.useApp();
   const theme = useTheme();
 
-  const { publicConfig } = usePublicConfig();
   const router = useRouter();
 
   const [form] = Form.useForm<FormFields>();
@@ -185,6 +186,7 @@ export const LaunchAppForm = (props: Props) => {
   ]);
 
   const imageSource = Form.useWatch("imageSource", form);
+  const needTensorBoard = Form.useWatch("needTensorBoard", form);
 
   // 记录添加了多少算法
   const [algorithmGroups, setAlgorithmGroups] = useState<{}[]>([]);
@@ -411,6 +413,7 @@ export const LaunchAppForm = (props: Props) => {
   const account = Form.useWatch("account", form);
 
   const nodeCount = Form.useWatch("nodeCount", form);
+  const workerNodeCount = Form.useWatch("workerNodes", form);
 
   const coreCount = Form.useWatch("coreCount", form);
 
@@ -454,9 +457,12 @@ export const LaunchAppForm = (props: Props) => {
 
   };
 
+  const isAscend910 = currentPartitionInfo?.gpuType === "huawei.com/Ascend910";
+  const isVgpu = currentPartitionInfo?.gpuType === "volcano.sh/vgpu-number";
+
   useEffect(() => {
     // 特殊处理，如果是华为Ascend910，则增加MindSpore选项
-    if (currentPartitionInfo?.gpuType === "huawei.com/Ascend910") {
+    if (isAscend910) {
       setFrameworkOptions((prevOptions) => {
         return prevOptions.find((item) => item.value === "mindspore") ?
           prevOptions : [...prevOptions, { value: "mindspore", label: "MindSpore" }];
@@ -466,7 +472,7 @@ export const LaunchAppForm = (props: Props) => {
         return prevOptions.filter((item) => item.value !== "mindspore");
       });
     }
-  }, [currentPartitionInfo]);
+  }, [isAscend910]);
   const customFormItems = useMemo(() => attributes.map((item, index) => {
     const rules: Rule[] = item.type === "NUMBER"
       ? [{ type: "integer" }, { required: item.required }]
@@ -722,6 +728,7 @@ export const LaunchAppForm = (props: Props) => {
       const psNodes = "psNodes" in inputParams ? inputParams.psNodes : undefined;
       const workerNodes = "workerNodes" in inputParams ? inputParams.workerNodes : undefined;
       const envVariables = "envVariables" in inputParams ? inputParams.envVariables : undefined;
+      const tensorBoardDataPath = "tensorBoardDataPath" in inputParams ? inputParams.tensorBoardDataPath : undefined;
 
       form.setFieldsValue({
         mountPoints,
@@ -741,6 +748,10 @@ export const LaunchAppForm = (props: Props) => {
         psNodes,
         workerNodes,
         envVariables,
+        ...tensorBoardDataPath ? {
+          needTensorBoard:true,
+          tensorBoardDataPath,
+        } : {},
       });
     }
   }, [createAppParams, trainJobInput]);
@@ -758,8 +769,8 @@ export const LaunchAppForm = (props: Props) => {
     }
 
     if (inputParams) {
-    // 且分区、qos和账户没有修改过才设置再次提交的分区参数
-      if (!form.isFieldsTouched(["partition","qos","account"])) {
+    // 且分区、qos没有修改过才设置再次提交的分区参数
+      if (!form.isFieldsTouched(["partition","qos"])) {
         const { partition,qos } = inputParams;
 
         const matchedPartition = partitions?.find((p) => p.name === partition);
@@ -770,7 +781,7 @@ export const LaunchAppForm = (props: Props) => {
         }
 
         form.setFieldsValue({
-          partition:matchedPartition?.name ?? partitions?.[0].name,
+          partition:matchedPartition?.name ?? partitions?.[0]?.name,
         });
 
         const matchedQos = matchedPartition?.qos.find((q) => q === qos);
@@ -817,10 +828,13 @@ export const LaunchAppForm = (props: Props) => {
   });
 
   const handleFormChange = (changedValues: Partial<FormFields>, allValues: FormFields) => {
-    const { psNodes, workerNodes } = allValues;
+    const { psNodes, workerNodes,nodeCount } = allValues;
     if ("psNodes" in changedValues || "workerNodes" in changedValues) {
       const newTotal = (psNodes || 0) + (workerNodes || 0);
       form.setFieldsValue({ nodeCount: newTotal });
+    }
+    else if ("nodeCount" in changedValues) {
+      form.setFieldsValue({ psNodes: 0,workerNodes:nodeCount });
     }
   };
 
@@ -847,7 +861,7 @@ export const LaunchAppForm = (props: Props) => {
       onFinish={async () => {
 
         const { appJobName, image, remoteImageUrl, framework, startCommand,mountPoints, account, partition, coreCount,
-          gpuCount, maxTime, command, customFields, psNodes, workerNodes,qos,envVariables } =
+          gpuCount, maxTime, command, customFields, psNodes, workerNodes,qos,envVariables,tensorBoardDataPath } =
           await form.validateFields();
 
         const algorithmVersions =
@@ -901,6 +915,7 @@ export const LaunchAppForm = (props: Props) => {
             workerNodes,
             qos,
             envVariables:envVariables,
+            tensorBoardDataPath:tensorBoardDataPath?.trim(),
           });
         } else {
           let workingDirectory: string | undefined;
@@ -1714,60 +1729,69 @@ export const LaunchAppForm = (props: Props) => {
               required: true,
               type: "integer",
             },
+            {
+              validator(_, value) {
+                if (isVgpu && value > 1) {
+                  return Promise.reject(new Error());
+                }
+                return Promise.resolve();
+              },
+            },
           ]}
+          help={isTraining ? (isVgpu ? t(p("vGPUTips")) : undefined)
+            : t(p("appJobTips"))
+          }
         >
           <InputNumber
             min={1}
-            max={isTraining ? undefined : 1}
+            max={isTraining ? (isVgpu ? 1 : undefined) : 1}
             {...inputNumberFloorConfig}
             // framework是tensorflow且不是华为卡时 不允许手动改
-            disabled={isTraining && framework === "tensorflow"
-        && (currentPartitionInfo ? currentPartitionInfo.gpuType !== "huawei.com/Ascend910" : true)}
+            disabled={isTraining && framework === "tensorflow" && !isAscend910}
           />
         </Form.Item>
         {/* tensorflow训练框架时，除了huawei.com/Ascend910的卡之外，都要区分PS node 和worker node */}
-        {(isTraining && framework === "tensorflow"
-        && (currentPartitionInfo ? currentPartitionInfo.gpuType !== "huawei.com/Ascend910" : true)) ? (
-            <>
-              <Form.Item
-                label={t(p("psNodes"))}
-                name="psNodes"
-                initialValue={1}
-                rules={[
-                  { required: true,
-                    type: "integer",
-                  },
-                ]}
-              >
-                <InputNumber
-                  defaultValue={1}
-                  min={1}
-                  {...inputNumberFloorConfig}
-                />
-              </Form.Item>
-            </>
-          ) : null}
-        {(isTraining && framework === "tensorflow"
-        && (currentPartitionInfo ? currentPartitionInfo.gpuType !== "huawei.com/Ascend910" : true)) ? (
-            <>
-              <Form.Item
-                label={t(p("workerNodes"))}
-                name="workerNodes"
-                initialValue={nodeCount - 1}
-                rules={[
-                  { required: true,
-                    type: "integer",
-                  },
-                ]}
-              >
-                <InputNumber
-                  defaultValue={nodeCount - 1}
-                  min={1}
-                  {...inputNumberFloorConfig}
-                />
-              </Form.Item>
-            </>
-          ) : null}
+        {(isTraining && framework === "tensorflow" && !isAscend910) && (
+          <>
+            <Form.Item
+              label={t(p("psNodes"))}
+              name="psNodes"
+              initialValue={1}
+              rules={[
+                { required: true,
+                  type: "integer",
+                },
+              ]}
+            >
+              <InputNumber
+                defaultValue={1}
+                min={0}
+                {...inputNumberFloorConfig}
+              />
+            </Form.Item>
+          </>
+        )}
+        {/* tensorflow训练框架时，除了huawei.com/Ascend910的卡之外，都要区分PS node 和worker node */}
+        {(isTraining && framework === "tensorflow" && (!isAscend910)) && (
+          <>
+            <Form.Item
+              label={t(p("workerNodes"))}
+              name="workerNodes"
+              initialValue={nodeCount - 1}
+              rules={[
+                { required: true,
+                  type: "integer",
+                },
+              ]}
+            >
+              <InputNumber
+                defaultValue={nodeCount - 1}
+                min={1}
+                {...inputNumberFloorConfig}
+              />
+            </Form.Item>
+          </>
+        )}
         {
           currentPartitionInfo?.gpus ? (
             <Form.Item
@@ -1824,33 +1848,22 @@ export const LaunchAppForm = (props: Props) => {
           )
         }
         {/* 分布式训练或者华为的卡训练，需要指定训练框架 */}
-        {(isTraining && (nodeCount > 1 || currentPartitionInfo?.gpuType === "huawei.com/Ascend910")) ? (
-          <>
-            {/* 手动选择算法框架，下拉框只有 tensorflow, pytorch */}
-            <Form.Item
-              label={t(p("framework"))}
-              name="framework"
-              rules={[{ required: true }]}
-            >
-              <Select options={frameworkOptions}>
-              </Select>
-            </Form.Item>
-          </>
-        ) : null}
-        <Form.Item
-          label={t(p("maxTime"))}
-          name="maxTime"
-          rules={[{ required: true,
-            validator: (_, value) => {
-              if (publicConfig.MAX_JOB_RUNNING_TIME_HOURS !== undefined
-                && (transformTime(value) > publicConfig.MAX_JOB_RUNNING_TIME_HOURS * 60)) {
-                return Promise.reject(new Error(t(p("maxTimeTips"),
-                  [publicConfig.MAX_JOB_RUNNING_TIME_HOURS.toString()])));
-              }
-              return Promise.resolve();
-            },
-          }]}
-        >
+        {
+          (isTraining && (nodeCount > 1 || (workerNodeCount && workerNodeCount >= 1) || isAscend910)) && (
+            <>
+              {/* 手动选择算法框架，下拉框只有 tensorflow, pytorch */}
+              <Form.Item
+                label={t(p("framework"))}
+                name="framework"
+                rules={[{ required: true }]}
+              >
+                <Select options={frameworkOptions}>
+                </Select>
+              </Form.Item>
+            </>
+          )
+        }
+        <Form.Item label={t(p("maxTime"))} name="maxTime" rules={[{ required: true }]}>
           <AfterInputNumber
             min={1}
             step={1}
@@ -1897,10 +1910,44 @@ export const LaunchAppForm = (props: Props) => {
         {
           isTraining ? (
             <>
-              <Divider orientation="left" orientationMargin="0" plain>{t(p("runningSetting"))}</Divider>
+              <Divider orientation="left" orientationMargin="0">{t(p("runningSetting"))}</Divider>
               <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>
                 <Input.TextArea minLength={3} />
               </Form.Item>
+              <Divider orientation="left" orientationMargin="0">{t(p("trainResults"))}</Divider>
+              <Form.Item
+                label="TensorBoard"
+                name="needTensorBoard"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+              { needTensorBoard ?
+                (
+                  <Form.Item
+                    label={t(p("tensorBoardDataPath"))}
+                    name="tensorBoardDataPath"
+                    rules={[{ required: true }]}
+                  >
+                    <Input
+                      placeholder={t(p("tensorBoardDataPlaceholder"))}
+                      prefix={
+                        (
+                          <FileSelectModal
+                            allowedFileType={["DIR"]}
+                            onSubmit={(path: string) => {
+                              form.setFieldsValue({
+                                tensorBoardDataPath: path,
+                              });
+                            }}
+                            clusterId={clusterId ?? ""}
+                          />
+                        )
+                      }
+                    />
+                  </Form.Item>
+                )
+                : null}
             </>
           ) : null
         }

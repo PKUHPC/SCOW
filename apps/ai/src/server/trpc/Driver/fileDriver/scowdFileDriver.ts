@@ -1,16 +1,16 @@
 import { ScowdClient } from "@scow/lib-scowd/build/client";
+import { FileType as scowdFileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { TRPCError } from "@trpc/server";
 import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 import path, { basename, dirname, join } from "path";
 import { config } from "src/server/config/env";
+import { ListDirectoryOutput } from "src/server/trpc/model/file";
+import { getScowdClient,mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
 import { Logger } from "ts-log";
 
-import { FileType as scowdFileType } from "../../../../../../../libs/protos/scowd/build/storage/file_pb";
-import { ListDirectoryOutput } from "../../model/file";
-import { getScowdClient,mapConnectErrorToTRPCError, wrap } from "../../scowd/scowd";
 import { callback, FileDriver, SHARED_DIR, shareOkCallback, ShareParams } from "./fileDriver";
 import { getContentType, readableStreamToNodeReadable } from "./sshFileDriver";
 

@@ -2,11 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 import { clusters } from "src/server/config/clusters";
+import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
 import { clusterNotFound } from "src/server/utils/errors";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { Logger } from "ts-log";
 
-import { FileMeta, ListDirectoryOutput } from "../../model/file";
 import { ScowdFileDriver } from "./scowdFileDriver";
 import { SshFileDriver } from "./sshFileDriver";
 

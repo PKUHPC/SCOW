@@ -267,6 +267,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
     ? nodeCount * gpuCount * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
     : nodeCount * coreCount;
 
+  const isVgpu = currentPartitionInfo?.gpuType === "volcano.sh/vgpu-number";
 
   const handlePartitionChange = (partition: string) => {
     const partitionInfo = partitions
@@ -391,7 +392,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
     }
 
     if (inputParams) {
-      if (!form.isFieldsTouched(["partition","qos","account"])) {
+      if (!form.isFieldsTouched(["partition","qos"])) {
         const { partition,qos } = inputParams;
 
         const matchedPartition = partitions?.find((p) => p.name === partition);
@@ -916,11 +917,20 @@ export const LaunchInferenceJobForm = (props: Props) => {
               required: true,
               type: "integer",
             },
+            {
+              validator(_, value) {
+                if (isVgpu && value > 1) {
+                  return Promise.reject(new Error());
+                }
+                return Promise.resolve();
+              },
+            },
           ]}
+          help={isVgpu ? t(p("vGPUTips")) : undefined}
         >
           <InputNumber
             min={1}
-            max={undefined}
+            max={isVgpu ? 1 : undefined}
             {...inputNumberFloorConfig}
           />
         </Form.Item>

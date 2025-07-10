@@ -46,7 +46,7 @@ interface Props {
   status: AppTableStatus
 }
 
-const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link",style:{ padding:0 } });
+const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link" });
 
 export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   const t = useI18nTranslateToString();

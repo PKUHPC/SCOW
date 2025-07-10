@@ -9,13 +9,13 @@ import { NextResponse } from "next/server";
 import path, { basename, dirname, join } from "path";
 import { FileInfo } from "src/models/File";
 import { config } from "src/server/config/env";
+import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { sshConnect } from "src/server/utils/ssh";
 import { pipeline, Readable } from "stream";
 import { Logger } from "ts-log";
 import { promisify } from "util";
 
-import { FileMeta, ListDirectoryOutput } from "../../model/file";
 import { callback, FileDriver, SHARED_DIR, shareOkCallback, ShareParams } from "./fileDriver";
 
 export class SshFileDriver implements FileDriver {

@@ -85,6 +85,7 @@ export interface SessionMetadata {
 
 export const SERVER_ENTRY_COMMAND = fs.readFileSync("assets/app/server_entry.sh", { encoding: "utf-8" });
 export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", { encoding: "utf-8" });
+export const TENSORBOARD_ENTRY_COMMAND = fs.readFileSync("assets/app/tensorboard_entry.sh", { encoding: "utf-8" });
 
 export const SESSION_METADATA_NAME = "session.json";
 
@@ -703,6 +704,11 @@ const SingleAppSessionSchema = z.object({
   port: z.number().optional(),
   jobEvent:z.array(EventSchema),
   podInfo:z.array(podInfoSchema),
+  tensorBoardInfo:z.object({
+    node:z.string(),
+    port:z.number(),
+  }).optional(),
+
 });
 
 export const getJobDetails =
@@ -745,7 +751,7 @@ export const getJobDetails =
           "job_id", "name","state", "partition","elapsed_seconds","time_limit_minutes",
           "reason","qos","cpus_req","cpus_alloc","mem_req_mb","mem_alloc_mb","gpus_req","gpus_alloc",
           "nodes_req","nodes_alloc","submit_time","start_time","end_time","partition","account",
-          "pods","events",
+          "pods","events","tensor_board_info",
         ],
         jobId,
       });

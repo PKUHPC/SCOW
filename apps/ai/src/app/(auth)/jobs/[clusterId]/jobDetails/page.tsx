@@ -241,6 +241,26 @@ export default function Page({ params }: { params: { clusterId: string } }) {
         })(),
       }]
       : []),
+    ...(jobType === JobType.TRAIN
+      ? [{
+        key: "21",
+        label: "TensorBoard",
+        children: (() => {
+          const node = jobDetails.tensorBoardInfo?.node;
+          const port = jobDetails.tensorBoardInfo?.port;
+          if (node && port) {
+            // 复用应用连接中的absolute代理
+            const pathname = join("/api/proxy", clusterId, "absolute", node, port.toString()) + "/";
+            return (
+              <Link href={pathname} target="_blank">
+                {t(p("view"))}
+              </Link>
+            );
+          }
+          return "-";
+        })(),
+      }]
+      : []),
   ];
 
   const eventColumns: TableProps<EventDataType>["columns"] = [
