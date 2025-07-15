@@ -15,7 +15,7 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { aiConfig } from "src/server/config/ai";
-import { Image, Source, Status } from "src/server/entities/Image";
+import { Image, ImageType, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
@@ -54,6 +54,9 @@ export const ImageListSchema = z.object({
   isShared: z.boolean(),
   clusterId: z.string().optional(),
   createTime: z.string().optional(),
+  types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+  inferServicePort:z.string().optional(),
+  startCommand:z.string().optional(),
 });
 
 export const list = procedure
@@ -71,11 +74,19 @@ export const list = procedure
     isPublic: booleanQueryParam().optional(),
     clusterId: z.string().optional(),
     withExternal: booleanQueryParam().optional(),
+    // GET请求不能传array类型
+    types: z.string().optional().default(""),
   }))
   .output(z.object({ items: z.array(ImageListSchema), count: z.number() }))
   .query(async ({ input, ctx:{ user } }) => {
 
-    const { clusterId, isPublic, nameOrTagOrDesc, withExternal, pageSize, page } = input;
+    const { clusterId, isPublic, nameOrTagOrDesc, withExternal,types:rawTypes, pageSize, page } = input;
+
+    const types = rawTypes
+      ? rawTypes.split(",").filter((t): t is ImageType =>
+        Object.values(ImageType).includes(t as ImageType))
+      : [];
+
     const em = await forkEntityManager();
 
     const isPublicQuery = isPublic ? {
@@ -91,10 +102,19 @@ export const list = procedure
       ],
     } : {};
 
+    const typesQuery = types.length > 0
+      ? {
+        $or: types.map((type) => ({
+          types: { $like: `%${type}%` },
+        })),
+      }
+      : {};
+
     const [items, count] = await em.findAndCount(Image, {
       $and: [
         nameOrTagOrDescQuery,
         isPublicQuery,
+        typesQuery,
         input.clusterId ? (withExternal ? { $or: [{ clusterId }, { clusterId: { $eq: null } }]} : { clusterId }) : {},
       ],
     }, {
@@ -116,7 +136,48 @@ export const list = procedure
         isShared: Boolean(x.isShared),
         clusterId: x.clusterId,
         createTime: x.createTime ? x.createTime.toISOString() : undefined,
+        types:x.types ?? [],
+        inferServicePort:x.inferServicePort,
+        startCommand:x.startCommand,
       }; }), count };
+  });
+
+export const getImageById = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/image",
+      tags: ["image"],
+      summary: "Get image by id",
+    },
+  })
+  .input(z.object({
+    imageId:z.number(),
+  }))
+  .output(z.object({
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    inferServicePort:z.string().optional(),
+    startCommand:z.string().optional(),
+  }))
+  .query(async ({ input:{ imageId } }) => {
+    const em = await forkEntityManager();
+
+    const image = await em.findOne(Image, {
+      id:imageId,
+    });
+
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Image ${imageId} not found`,
+      });
+    };
+
+    return {
+      types:image.types ?? [],
+      inferServicePort:image.inferServicePort,
+      startCommand:image.startCommand,
+    };
   });
 
 export const createImage = procedure
@@ -137,6 +198,9 @@ export const createImage = procedure
     clusterId: z.string(),
     userName:z.string().optional(),
     password:z.string().optional(),
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    inferServicePort:z.string().optional(),
+    startCommand:z.string().optional(),
   }))
   .output(z.number())
   .use(async ({ input:{ clusterId, tag }, ctx, next }) => {
@@ -263,6 +327,9 @@ export const updateImage = procedure
   .input(z.object({
     id: z.number(),
     description: z.string().optional(),
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    inferServicePort:z.string().optional(),
+    startCommand:z.string().optional(),
   }))
   .output(z.number())
   .use(async ({ input:{ id }, ctx, next }) => {
@@ -288,24 +355,27 @@ export const updateImage = procedure
     return res;
   })
   .mutation(
-    async ({ input, ctx: { user } }) => {
+    async ({ input:{ id,description,types,inferServicePort,startCommand }, ctx: { user } }) => {
       const em = await forkEntityManager();
 
-      const image = await em.findOne(Image, { id: input.id });
+      const image = await em.findOne(Image, { id: id });
       if (!image) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: `Image ${input.id} not found`,
+          message: `Image ${id} not found`,
         });
       };
 
       if (image.owner !== user.identityId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: `Image ${input.id} not accessible`,
+          message: `Image ${id} not accessible`,
         });
       }
-      image.description = input.description;
+      image.description = description;
+      image.types = types;
+      image.inferServicePort = inferServicePort;
+      image.startCommand = startCommand;
 
       await em.flush();
       return image.id;
@@ -560,7 +630,18 @@ export const copyImage = procedure
       summary: "copy a image",
     },
   })
-  .input(z.object({ id: z.number(), newName: z.string(), newTag: z.string(),clusterId:z.optional(z.string()) }))
+  .input(z.object(
+    {
+      id: z.number(),
+      newName: z.string(),
+      newTag: z.string(),
+      clusterId:z.optional(z.string()),
+      newTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+      newInferServicePort:z.string().optional(),
+      newStartCommand:z.string().optional(),
+      newDescription:z.string().optional(),
+    },
+  ))
   .output(z.number())
   .use(async ({ input:{ id, newTag }, ctx, next }) => {
     const res = await next({ ctx });
@@ -590,7 +671,7 @@ export const copyImage = procedure
 
     const em = await forkEntityManager();
 
-    const { id, newName, newTag, clusterId } = input;
+    const { id, newName, newTag, clusterId,newTypes,newInferServicePort,newStartCommand,newDescription } = input;
 
     // tag的唯一标识符
     const tagPostfix = dayjs().unix().toString();
@@ -629,8 +710,11 @@ export const copyImage = procedure
       source: Source.EXTERNAL,
       sourcePath: sharedImage.path,
       status: Status.CREATING,
-      description: sharedImage.description,
+      description: newDescription,
       clusterId,
+      types:newTypes,
+      inferServicePort:newInferServicePort,
+      startCommand:newStartCommand,
     });
     await em.persistAndFlush(image);
 

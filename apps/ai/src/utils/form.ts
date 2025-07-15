@@ -59,3 +59,8 @@ export const createInterdependentValidator = <T>(
     return Promise.resolve();
   },
 });
+
+export const inputNumberFloorConfig = {
+  formatter: (value: number | undefined) => `${Math.floor(value ?? 0)}`,
+  parser: (value: string | undefined) => Math.floor(value ? +value : 0),
+};

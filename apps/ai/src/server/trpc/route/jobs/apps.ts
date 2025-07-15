@@ -12,7 +12,7 @@ import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
-import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
+import { Image as ImageEntity, ImageType, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { allApps, checkAppExist, checkCreateAppEntity,
@@ -487,6 +487,9 @@ export const saveImage =
       imageName: z.string(),
       imageTag: z.string(),
       imageDesc: z.string().optional(),
+      imageTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+      imageInferServicePort:z.string().optional(),
+      imageStartCommand:z.string().optional(),
     }))
     .output(z.object({ imageId:z.number() }))
     .use(async ({ input:{ jobId,imageTag }, ctx, next }) => {
@@ -516,7 +519,8 @@ export const saveImage =
     .mutation(
       async ({ input, ctx: { user } }) => {
         const userId = user.identityId;
-        const { clusterId, jobId, imageName, imageTag, imageDesc } = input;
+        const { clusterId, jobId, imageName, imageTag, imageDesc,imageTypes,
+          imageInferServicePort,imageStartCommand } = input;
 
         // tag的唯一标识符
         const tagPostfix = dayjs().unix().toString();
@@ -575,6 +579,10 @@ export const saveImage =
           source: Source.EXTERNAL,
           status: Status.CREATING,
           sourcePath: harborImageUrl,
+          types:imageTypes,
+          inferServicePort:imageInferServicePort,
+          startCommand:imageStartCommand,
+          clusterId,
         });
         await em.persistAndFlush(newImage);
 

@@ -33,7 +33,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
-  const { data: submitInferenceParams, isLoading: isSubmitTrainParamsLoading } =
+  const { data: submitInferenceParams, isLoading: isSubmitInferParamsLoading } =
   trpc.jobs.getSubmitInferenceParams.useQuery(
     { clusterId, jobId: parsedJobId!, sessionId: sessionId! }, {
       enabled: (!!jobId && !!sessionId),
@@ -41,7 +41,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     });
 
 
-  if (!!jobId && !!sessionId && (isSubmitTrainParamsLoading)) {
+  if (!!jobId && !!sessionId && (isSubmitInferParamsLoading)) {
     return <LoadingOutlined />;
   }
 

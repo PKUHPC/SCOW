@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { MinusCircleOutlined, PlusCircleOutlined, PlusOutlined } from "@ant-design/icons";
@@ -26,7 +14,7 @@ import { AccountSelector } from "src/components/AccountSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmInterface, AlgorithmVersionInterface } from "src/models/Algorithm";
-import { Status } from "src/models/Image";
+import { ImageType, Status } from "src/models/Image";
 import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
@@ -34,6 +22,7 @@ import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVe
 import { AppCustomAttribute, CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import { FrameworkType, TrainJobInput } from "src/server/trpc/route/jobs/jobs";
 import { getIdPrivate } from "src/utils/app";
+import { inputNumberFloorConfig } from "src/utils/form";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -145,12 +134,6 @@ const initialValues = {
   gpuCount: 1,
   maxTime: 60,
 } as Partial<FormFields>;
-
-const inputNumberFloorConfig = {
-  formatter: (value: number | undefined) => `${Math.floor(value ?? 0)}`,
-  parser: (value: string | undefined) => Math.floor(value ? +value : 0),
-};
-
 
 export const LaunchAppForm = (props: Props) => {
 
@@ -390,6 +373,7 @@ export const LaunchAppForm = (props: Props) => {
     isPublic: isImagePublic !== undefined ? parseBooleanParam(isImagePublic) : undefined,
     clusterId,
     withExternal: "true",
+    types:isTraining ? ImageType.TRAIN : ImageType.APP,
   }, {
     enabled: isImagePublic !== undefined,
   });
@@ -979,6 +963,7 @@ export const LaunchAppForm = (props: Props) => {
                 image: { type: undefined, name: undefined },
                 remoteImageUrl: undefined,
                 startCommand: undefined,
+                command:undefined,
               });
             }}
             style={{ userSelect:"none" }}
@@ -1050,8 +1035,13 @@ export const LaunchAppForm = (props: Props) => {
                     <Select
                       style={{ minWidth: 200 }}
                       allowClear
-                      onChange={() => {
-                        form.setFieldValue("startCommand", undefined);
+                      onChange={(value: number) => {
+                        const command = images?.items.find((x) => x.id === value)?.startCommand;
+                        if (isTraining) {
+                          form.setFieldValue("command", command);
+                        } else {
+                          form.setFieldValue("startCommand", command);
+                        }
                       }}
                       loading={isImagesLoading && isImagePublic !== undefined}
                       showSearch
@@ -1093,13 +1083,19 @@ export const LaunchAppForm = (props: Props) => {
         {(!isTraining && imageSource !== ImageSource.DEFAULT) ?
           (
             <Form.Item
-              label={t(p("startCommand"))}
+              label={t(p("command"))}
               name="startCommand"
             >
               <Input placeholder={t(p("startCommandPlaceholder"))} />
             </Form.Item>
           ) : null }
-
+        {
+          isTraining && (
+            <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>
+              <Input.TextArea />
+            </Form.Item>
+          )
+        }
         <Form.List name="mountPoints">
           {(fields, { add, remove }) => (
             <>
@@ -1685,7 +1681,6 @@ export const LaunchAppForm = (props: Props) => {
           name="account"
           rules={[{ required: true }]}
         >
-          {/* 只有为创建应用页面时，会结合管理系统部署的授权应用功能过滤应用已授权的账户 */}
           <AccountSelector
             cluster={clusterId}
             useForCreateApp={useForCreateApp}
@@ -1910,10 +1905,6 @@ export const LaunchAppForm = (props: Props) => {
         {
           isTraining ? (
             <>
-              <Divider orientation="left" orientationMargin="0">{t(p("runningSetting"))}</Divider>
-              <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>
-                <Input.TextArea minLength={3} />
-              </Form.Item>
               <Divider orientation="left" orientationMargin="0">{t(p("trainResults"))}</Divider>
               <Form.Item
                 label="TensorBoard"

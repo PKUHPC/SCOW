@@ -20,9 +20,9 @@ export default {
     },
     job: {
       title: "Jobs",
-      createApp: "Create App",
+      createApp: "App",
       trainJob: "Training",
-      runningJobs: "Running Jobs",
+      unfinishedJobs: "Unfinished Jobs",
       historyJobs: "Completed Jobs",
       infer: "Inferring",
     },
@@ -297,8 +297,8 @@ export default {
       historyJobs:{
         title:"Completed Jobs",
       },
-      runningJobs:{
-        title:"Running Jobs",
+      unfinishedJobs:{
+        title:"Unfinished Jobs",
       },
       trainJobs:{
         title:"Training",
@@ -353,7 +353,6 @@ export default {
         selectImage:"Please select an image or fill in the remote image address",
         remoteImageUrl:"Remote image address",
         RemoteImageUrlPlaceholder:"Please enter the remote image address",
-        startCommand:"Start command",
         startCommandPlaceholder:"Start command",
         mounts:"Mount points",
         mountsPlaceholder:"Please provide mount point addresses",
@@ -422,7 +421,7 @@ export default {
         submitSuccessfully:"Create successfully",
         submitFailed:"Create failed",
         inferConfig:"inference config",
-        containerServicePort:"container service port",
+        containerServicePort:"Service port",
         unlimitedTime:"unlimited time",
         addModel:"add model",
       },
@@ -570,7 +569,10 @@ export default {
       public: "Public Images",
       model:{
         internal:"Local files",
-        external:"Remote mirror ",
+        external:"Remote mirror",
+        app:"App",
+        training:"Training",
+        inferring:"Inferring",
       },
       copyImageModal: {
         success: "Copy Image Success",
@@ -601,10 +603,12 @@ export default {
         imageAddressIsIllegal: "Image address is illegal",
         userName: "Username",
         userNamePlaceholder: "Username cannot be empty",
-        tip: "To log in to the mirror site, the following username and password are required." +
-        "Please fill them in when verifying permissions.",
         password: "Password",
         passwordPlaceholder: "Password cannot be empty",
+        type:"type",
+        inferServicePort:"servicePort",
+        startCommand:"startCommand",
+        userNameAndPassword:"Please provide a username and password for the private image address",
       },
       imageListTable: {
         delSuccess: "Delete Image Success",
@@ -632,6 +636,7 @@ export default {
         delText1: "The image is being created. Are you sure you want to force delete?",
         confirmDel: "Are you sure you want to delete this image?",
         delText2: "If this image has been shared, the shared image will also be deleted.",
+        type:"Type",
       },
     },
     model: {

@@ -100,7 +100,7 @@ export const userRoutes: (
             },
             {
               Icon: RunningJobsIcon,
-              text: t("routes.job.runningJobs"),
+              text: t("routes.job.unfinishedJobs"),
               path: `/jobs/${cluster.id}/runningJobs`,
             },
             {

@@ -21,7 +21,7 @@ import { AppSessionsTable, AppTableStatus } from "../AppSessionsTable";
 
 export default function Page({ params }: { params: { clusterId: string } }) {
   const t = useI18nTranslateToString();
-  const p = prefix("app.jobs.runningJobs.");
+  const p = prefix("app.jobs.unfinishedJobs.");
 
   const { clusterId } = params;
 

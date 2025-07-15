@@ -10,11 +10,12 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { App, Form, Input, Modal } from "antd";
+import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { getImageTexts, ImageType } from "src/models/Image";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
-import { imageNameValidation, imageTagValidation } from "src/utils/form";
+import { imageNameValidation, imageTagValidation, inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 interface Props {
@@ -28,6 +29,9 @@ interface Props {
 interface FormFields {
   name: string,
   tag: string,
+  types?: ImageType[],
+  inferServicePort?: number,
+  startCommand?: string,
   description?: string,
 }
 
@@ -36,9 +40,37 @@ export const SaveImageModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.saveImageModal.");
+  const pCreate = prefix("app.image.createEditImageModal.");
+
+  const TypeText = {
+    APP: getImageTexts(t).APP,
+    TRAIN: getImageTexts(t).TRAIN,
+    INFER: getImageTexts(t).INFER,
+  };
 
   const [form] = Form.useForm<FormFields>();
+  const types = Form.useWatch("types", form);
+
   const { message } = App.useApp();
+
+  const { data: jobParams, isLoading: isGetJobParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
+    {
+      clusterId,
+      jobId:appSession.jobId,
+      sessionId: appSession.sessionId,
+    },
+  );
+
+  const imageId = jobParams?.image;
+  const { data: imageData, isLoading: isGetImageDataLoading } = trpc.image.getImageById.useQuery(
+    {
+      imageId:imageId!,
+    },
+    {
+      // 作业参数获取完且使用的本地镜像
+      enabled: !isGetJobParamsLoading && !!imageId,
+    },
+  );
 
   const saveImageMutation = trpc.jobs.saveImage.useMutation({
     onSuccess() {
@@ -54,7 +86,7 @@ export const SaveImageModal: React.FC<Props> = (
 
   const handleFinish = async () => {
 
-    const { name, tag, description } = await form.validateFields();
+    const { name, tag, description,types,inferServicePort,startCommand } = await form.validateFields();
 
     await saveImageMutation.mutateAsync({
       jobId: appSession.jobId,
@@ -62,8 +94,10 @@ export const SaveImageModal: React.FC<Props> = (
       imageName: name,
       imageTag: tag,
       imageDesc: description?.trim(),
+      imageTypes:types ?? [],
+      imageInferServicePort:inferServicePort?.toString(),
+      imageStartCommand:startCommand,
     });
-
   };
 
   return (
@@ -74,12 +108,19 @@ export const SaveImageModal: React.FC<Props> = (
       confirmLoading={saveImageMutation.isLoading}
       onCancel={onClose}
       width={800}
+      // 获取作业参数接口loading 或 使用的本地镜像时获取镜像数据接口loading
+      loading={isGetJobParamsLoading || (!!jobParams?.image && isGetImageDataLoading)}
     >
       <Form
         form={form}
         onFinish={handleFinish}
         wrapperCol={{ span: 20 }}
         labelCol={{ span: 4 }}
+        initialValues={{
+          types:imageData?.types,
+          inferServicePort: Number(imageData?.inferServicePort),
+          startCommand: jobParams?.startCommand ?? imageData?.startCommand,
+        }}
       >
         <Form.Item label={t(p("originalName"))}>
           {appSession.image.name}
@@ -106,6 +147,44 @@ export const SaveImageModal: React.FC<Props> = (
           ]}
         >
           <Input />
+        </Form.Item>
+        <Form.Item
+          label={t(pCreate("type"))}
+          name="types"
+          rules={[
+            { required: true },
+          ]}
+        >
+          <Select
+            style={{ minWidth: "100px" }}
+            mode="multiple"
+            allowClear
+            options={
+              Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
+          />
+        </Form.Item>
+        {types?.includes(ImageType.INFER) && (
+          <Form.Item
+            label={t(pCreate("inferServicePort"))}
+            name="inferServicePort"
+            rules={[
+              {
+                required: true,
+                transform: (v) => Number(v),
+                type: "integer",
+              },
+            ]}
+          >
+            <InputNumber
+              min={1}
+              max={65535}
+              style={{ width: "100%" }}
+              {...inputNumberFloorConfig}
+            />
+          </Form.Item>
+        )}
+        <Form.Item label={t(pCreate("startCommand"))} name="startCommand">
+          <Input.TextArea />
         </Form.Item>
         <Form.Item label={t(p("description"))} name="description">
           <Input.TextArea />

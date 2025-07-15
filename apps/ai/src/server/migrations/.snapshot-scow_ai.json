@@ -642,6 +642,42 @@
           ],
           "mappedType": "enum"
         },
+        "types": {
+          "name": "types",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "default": "'APP,TRAIN,INFER'",
+          "enumItems": [
+            "APP",
+            "TRAIN",
+            "INFER"
+          ],
+          "mappedType": "string"
+        },
+        "infer_service_port": {
+          "name": "infer_service_port",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "start_command": {
+          "name": "start_command",
+          "type": "TEXT",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "text"
+        },
         "create_time": {
           "name": "create_time",
           "type": "DATETIME(6)",

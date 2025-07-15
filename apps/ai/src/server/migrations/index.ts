@@ -19,6 +19,7 @@ import { Migration20240126070152 } from "./Migration20240126070152";
 import { Migration20240129034339 } from "./Migration20240129034339";
 import { Migration20240131083455 } from "./Migration20240131083455";
 import { Migration20241227021546 } from "./Migration20241227021546";
+import { Migration20250618075022 } from "./Migration20250618075022";
 
 
 export const migrations =
@@ -32,4 +33,5 @@ export const migrations =
   Migration20240129034339,
   Migration20240131083455,
   Migration20241227021546,
+  Migration20250618075022,
 ].map((x) => ({ name: x.name, class: x }));

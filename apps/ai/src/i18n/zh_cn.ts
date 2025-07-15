@@ -20,9 +20,9 @@ export default {
     },
     job:{
       title:"作业",
-      createApp: "创建应用",
+      createApp: "应用",
       trainJob: "训练",
-      runningJobs: "正在运行的作业",
+      unfinishedJobs: "未结束的作业",
       historyJobs: "已完成的作业",
       infer: "推理",
     },
@@ -297,7 +297,7 @@ export default {
       historyJobs:{
         title:"已完成的作业",
       },
-      runningJobs:{
+      unfinishedJobs:{
         title:"未结束的作业",
       },
       trainJobs:{
@@ -353,7 +353,6 @@ export default {
         selectImage:"请选择镜像或填写远程镜像地址",
         remoteImageUrl:"远程镜像地址",
         RemoteImageUrlPlaceholder:"请输入远程镜像地址",
-        startCommand:"启动命令",
         startCommandPlaceholder:"运行镜像里程序的启动命令",
         mounts:"挂载点",
         mountsPlaceholder:"请提供挂载点地址",
@@ -422,7 +421,7 @@ export default {
         submitSuccessfully:"提交推理成功",
         submitFailed:"提交推理失败",
         inferConfig:"推理配置",
-        containerServicePort:"容器内服务端口",
+        containerServicePort:"服务端口",
         unlimitedTime:"不限时",
         addModel:"添加模型",
       },
@@ -571,6 +570,9 @@ export default {
       model:{
         internal:"本地文件",
         external:"远程镜像",
+        app:"应用",
+        training:"训练",
+        inferring:"推理",
       },
       copyImageModal: {
         success:"复制镜像成功",
@@ -597,15 +599,16 @@ export default {
         selectImage:"选择镜像",
         imageAddress:"镜像地址",
         selectImagePlaceHolder:"请选择镜像文件",
-        inputImagePlaceHolder:"请输入远程镜像地址",
+        inputImagePlaceHolder:"请填写远程镜像地址",
         imageAddressIsIllegal:"镜像地址不合法",
         userName:"用户名",
         userNamePlaceholder:"用户名不能为空",
-        tip:"镜像站登录需使用以下用户名密码，权限验证时请填写",
-
         password:"密码",
         passwordPlaceholder:"密码不能为空",
-
+        type:"类型",
+        inferServicePort:"服务端口",
+        startCommand:"运行命令",
+        userNameAndPassword:"私有镜像地址请提供用户名和密码",
       },
       imageListTable:{
         delSuccess:"删除镜像成功",
@@ -633,6 +636,7 @@ export default {
         delText1:"镜像正在创建中，是否强制删除？",
         confirmDel:"是否确认删除镜像",
         delText2:"如该镜像已分享，则分享的镜像也会被删除。",
+        type:"类型",
       },
     },
     model:{

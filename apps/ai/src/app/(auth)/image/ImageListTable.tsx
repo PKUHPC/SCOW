@@ -15,14 +15,14 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Input, Space, Table, Tag } from "antd";
+import { App, Button, Form, Input, Select, Space, Table, Tag } from "antd";
 import NextError from "next/error";
 import { useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { getImageTexts, Status } from "src/models/Image";
+import { getImageTexts, ImageType, Status } from "src/models/Image";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
@@ -43,6 +43,7 @@ interface FilterForm {
   cluster?: Cluster | undefined,
   nameOrTagOrDesc?: string | undefined,
   isShared?: boolean,
+  types: ImageType[],
 }
 
 interface PageInfo {
@@ -64,11 +65,18 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
     EXTERNAL: getImageTexts(t).EXTERNAL,
   };
 
+  const TypeText = {
+    APP: getImageTexts(t).APP,
+    TRAIN: getImageTexts(t).TRAIN,
+    INFER: getImageTexts(t).INFER,
+  };
+
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
       cluster: undefined,
       nameOrTagOrDesc: undefined,
       isPublic: isPublic,
+      types:[],
     };
   });
 
@@ -78,7 +86,11 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
   const cluster = Form.useWatch("cluster", form);
 
   const { data, refetch, isFetching, error } = trpc.image.list.useQuery({
-    ...pageInfo, ...query, isPublic: parseBooleanParam(isPublic), clusterId: cluster?.id,
+    ...pageInfo,
+    ...query,
+    isPublic: parseBooleanParam(isPublic),
+    clusterId: cluster?.id,
+    types:query.types.join(","),
   });
 
   const { modal, message } = App.useApp();
@@ -126,8 +138,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { nameOrTagOrDesc } = await form.validateFields();
-            setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim() });
+            const { nameOrTagOrDesc,types } = await form.validateFields();
+            setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim(),types });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             refetch();
           }}
@@ -136,6 +148,15 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
             <SingleClusterSelector
               allowClear={true}
               value={undefined}
+            />
+          </Form.Item>
+          <Form.Item label={t(p("type"))} name="types">
+            <Select
+              style={{ minWidth: "100px" }}
+              mode="multiple"
+              allowClear
+              options={
+                Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
             />
           </Form.Item>
           <Form.Item name="nameOrTagOrDesc">
@@ -163,12 +184,12 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
         loading={isFetching}
         columns={[
           { dataIndex: "name", title: t(p("name")) },
+          { dataIndex: "tag", title: t(p("tag")) },
           { dataIndex: "clusterId", title: t(p("cluster")),
             render: (_, r) =>
               getI18nConfigCurrentText(clusters.find((x) => (x.id === r.clusterId))?.name, languageId) ?? r.clusterId },
-          { dataIndex: "tag", title: t(p("tag")) },
-          { dataIndex: "source", title: t(p("source")),
-            render: (_, r) => sourceText[r.source] },
+          { dataIndex: "types", title: t(p("type")),render: (_, r) => r.types.map((t) => <Tag>{TypeText[t]}</Tag>) },
+          { dataIndex: "source", title: t(p("source")),render: (_, r) => sourceText[r.source] },
           { dataIndex: "description", title: t(p("description")) },
           isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),
             render: (_, r) => r.owner } : {},
@@ -270,10 +291,18 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                 (
                   <CopyImageModalButton
                     refetch={refetch}
-                    copiedId={r.id}
-                    copiedName={r.name}
-                    copiedTag={r.tag}
-                    copiedClusterId={r.clusterId}
+                    imageProps={
+                      {
+                        copiedId:r.id,
+                        copiedName: r.name,
+                        copiedTag: r.tag,
+                        copiedClusterId: r.clusterId,
+                        copiedTypes: r.types,
+                        copiedInferServicePort: Number(r.inferServicePort) ,
+                        copiedStartCommand: r.startCommand,
+                        copiedDescription: r.description,
+                      }
+                    }
                   >
                     {t("button.copyButton")}
                   </CopyImageModalButton>

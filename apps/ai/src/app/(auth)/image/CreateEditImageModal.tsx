@@ -12,15 +12,16 @@
 
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Form, Input, Modal, Select } from "antd";
+import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React, { useEffect } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { getImageTexts, ImageInterface, Source } from "src/models/Image";
+import { getImageTexts, ImageInterface, ImageType, Source } from "src/models/Image";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
-import { createInterdependentValidator, imageNameValidation, imageTagValidation } from "src/utils/form";
+import { createInterdependentValidator, imageNameValidation, imageTagValidation,
+  inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 import { defaultClusterContext } from "../defaultClusterContext";
@@ -45,6 +46,9 @@ interface FormFields {
   sourcePath: string,
   userName?: string,
   password?: string,
+  types: ImageType[],
+  inferServicePort?: number,
+  startCommand?: string,
 }
 
 export const CreateEditImageModal: React.FC<Props> = ({
@@ -57,6 +61,12 @@ export const CreateEditImageModal: React.FC<Props> = ({
   const sourceText = {
     INTERNAL: getImageTexts(t).INTERNAL,
     EXTERNAL: getImageTexts(t).EXTERNAL,
+  };
+
+  const TypeText = {
+    APP: getImageTexts(t).APP,
+    TRAIN: getImageTexts(t).TRAIN,
+    INFER: getImageTexts(t).INFER,
   };
 
   const [form] = Form.useForm<FormFields>();
@@ -82,6 +92,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
 
   const cluster = Form.useWatch("cluster", form);
   const source = Form.useWatch("source", form);
+  const types = Form.useWatch("types", form);
 
   const createMutation = trpc.image.createImage.useMutation({
     onSuccess() {
@@ -124,11 +135,15 @@ export const CreateEditImageModal: React.FC<Props> = ({
 
   const onOk = async () => {
     form.validateFields();
-    const { name, cluster, tag, description, source, sourcePath,userName,password } = await form.validateFields();
+    const { name, cluster, tag, description, source, sourcePath,userName,password,types,
+      inferServicePort,startCommand } = await form.validateFields();
     if (isEdit && editData) {
       editMutation.mutate({
         id: editData.id,
         description,
+        types,
+        inferServicePort:inferServicePort?.toString(),
+        startCommand,
       });
     } else {
       createMutation.mutate({
@@ -140,6 +155,9 @@ export const CreateEditImageModal: React.FC<Props> = ({
         sourcePath,
         userName,
         password,
+        types,
+        inferServicePort:inferServicePort?.toString(),
+        startCommand,
       });
     };
   };
@@ -158,7 +176,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
         onFinish={onOk}
         wrapperCol={{ span: 20 }}
         labelCol={{ span: 4 }}
-        initialValues={isEdit && editData ? editData : { cluster: defaultCluster }}
+        initialValues={(isEdit && editData) ? editData : { cluster: defaultCluster }}
       >
         { (isEdit && editData) ? (
           <>
@@ -175,16 +193,16 @@ export const CreateEditImageModal: React.FC<Props> = ({
               {editData.tag}
             </Form.Item>
             <Form.Item
-              label={t(p("source"))}
-            >
-              {sourceText[editData.source]}
-            </Form.Item>
-            <Form.Item
               label={t(p("cluster"))}
             >
               {getI18nConfigCurrentText(
                 clusters.find((x) => (x.id === editData.clusterId))?.name, languageId)
                       ?? editData.clusterId }
+            </Form.Item>
+            <Form.Item
+              label={t(p("source"))}
+            >
+              {sourceText[editData.source]}
             </Form.Item>
           </>
 
@@ -222,28 +240,61 @@ export const CreateEditImageModal: React.FC<Props> = ({
           </>
         )
         }
-        <Form.Item label={t(p("description"))} name="description">
-          <Input.TextArea />
+        <Form.Item
+          label={t(p("type"))}
+          name="types"
+          rules={[
+            { required: true },
+          ]}
+        >
+          <Select
+            style={{ minWidth: "100px" }}
+            mode="multiple"
+            allowClear
+            options={
+              Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
+          />
         </Form.Item>
-
+        {types?.includes(ImageType.INFER) && (
+          <Form.Item
+            label={t(p("inferServicePort"))}
+            name="inferServicePort"
+            rules={[
+              {
+                required: true,
+                transform: (v) => Number(v),
+                type: "integer",
+              },
+            ]}
+          >
+            <InputNumber
+              min={1}
+              max={65535}
+              style={{ width: "100%" }}
+              {...inputNumberFloorConfig}
+            />
+          </Form.Item>
+        )}
         { !isEdit && (
+          <Form.Item
+            label={t(p("source"))}
+            name="source"
+            rules={[
+              { required: true },
+            ]}
+          >
+            <Select
+              style={{ minWidth: "100px" }}
+              onChange={() => {
+                form.setFieldsValue({ sourcePath: "" });
+              }}
+              options={
+                Object.entries(sourceText).map(([key, value]) => ({ label:value, value:key }))}
+            />
+          </Form.Item>
+        )}
+        {!isEdit && (
           <>
-            <Form.Item
-              label={t(p("source"))}
-              name="source"
-              rules={[
-                { required: true },
-              ]}
-            >
-              <Select
-                style={{ minWidth: "100px" }}
-                onChange={() => {
-                  form.setFieldsValue({ sourcePath: "" });
-                }}
-                options={
-                  Object.entries(sourceText).map(([key, value]) => ({ label:value, value:key }))}
-              />
-            </Form.Item>
             <Form.Item
               label={source === Source.INTERNAL ? t(p("selectImage")) : t(p("imageAddress")) }
               name="sourcePath"
@@ -297,11 +348,8 @@ export const CreateEditImageModal: React.FC<Props> = ({
                     name="userName"
                     dependencies={["password"]}
                     rules={[createInterdependentValidator<FormFields>("password", t(p("userNamePlaceholder")))]}
-                    tooltip={(
-                      <span>{t(p("tip"))}</span>
-                    )}
                   >
-                    <Input />
+                    <Input placeholder={t(p("userNameAndPassword"))} />
                   </Form.Item>
                   <Form.Item
                     label={t(p("password"))}
@@ -309,14 +357,19 @@ export const CreateEditImageModal: React.FC<Props> = ({
                     dependencies={["userName"]}
                     rules={[createInterdependentValidator<FormFields>("userName", t(p("passwordPlaceholder")))]}
                   >
-                    <Input.Password />
+                    <Input.Password placeholder={t(p("userNameAndPassword"))} />
                   </Form.Item>
                 </>
               ) : undefined
             }
           </>
         ) }
-
+        <Form.Item label={t(p("startCommand"))} name="startCommand">
+          <Input.TextArea />
+        </Form.Item>
+        <Form.Item label={t(p("description"))} name="description">
+          <Input.TextArea />
+        </Form.Item>
       </Form>
     </Modal>
   );

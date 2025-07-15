@@ -21,11 +21,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AccountSelector } from "src/components/AccountSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { Status } from "src/models/Image";
+import { ImageType, Status } from "src/models/Image";
 import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { getIdPrivate } from "src/utils/app";
+import { inputNumberFloorConfig } from "src/utils/form";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -100,12 +101,6 @@ const initialValues = {
   maxTime: 60,
   isUnlimitedTime:true,
 } as Partial<FormFields>;
-
-const inputNumberFloorConfig = {
-  formatter: (value: number | undefined) => `${Math.floor(value ?? 0)}`,
-  parser: (value: string | undefined) => Math.floor(value ? +value : 0),
-};
-
 
 export const LaunchInferenceJobForm = (props: Props) => {
 
@@ -223,6 +218,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
     isPublic: isImagePublic !== undefined ? parseBooleanParam(isImagePublic) : undefined,
     clusterId,
     withExternal: "true",
+    types:ImageType.INFER,
   }, {
     enabled: isImagePublic !== undefined,
   });
@@ -510,6 +506,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
               form.setFieldsValue({
                 image: { type: undefined, name: undefined },
                 remoteImageUrl: undefined,
+                command:undefined,
               });
             }}
             style={{ userSelect:"none" }}
@@ -571,6 +568,12 @@ export const LaunchInferenceJobForm = (props: Props) => {
                       showSearch
                       optionFilterProp="label"
                       options={imageOptions}
+                      onChange={(value: number) => {
+                        const selectedImage = images?.items.find((x) => x.id === value);
+                        form.setFieldValue("command", selectedImage?.startCommand);
+                        form.setFieldValue("containerServicePort",
+                          selectedImage?.inferServicePort ? Number(selectedImage?.inferServicePort) : undefined);
+                      }}
                     />
                   </Form.Item>
                 </Space>
@@ -604,15 +607,19 @@ export const LaunchInferenceJobForm = (props: Props) => {
           rules={[
             {
               required: true,
+              transform: (v) => Number(v),
               type: "integer",
             },
           ]}
         >
           <InputNumber
             min={1}
-            max={undefined}
+            max={65535}
             {...inputNumberFloorConfig}
           />
+        </Form.Item>
+        <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>
+          <Input.TextArea />
         </Form.Item>
         <Form.List name="mountPoints">
           {(fields, { add, remove }) => (
@@ -1053,14 +1060,6 @@ export const LaunchInferenceJobForm = (props: Props) => {
             </Form.Item>
           </Col>
         </Row>
-        {
-          <>
-            <Divider orientation="left" orientationMargin="0" plain>{t(p("runningSetting"))}</Divider>
-            <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>
-              <Input.TextArea minLength={3} />
-            </Form.Item>
-          </>
-        }
       </Spin>
       <Form.Item>
         <Button

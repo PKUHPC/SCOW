@@ -28,6 +28,12 @@ export enum Status {
   CREATED = "CREATED",
   FAILURE = "FAILURE",
 }
+export enum ImageType {
+  APP = "APP",
+  TRAIN = "TRAIN",
+  INFER = "INFER",
+}
+
 const p = prefix("app.image.model.");
 
 export const getImageTexts = (t: TextsTransType) => {
@@ -35,6 +41,9 @@ export const getImageTexts = (t: TextsTransType) => {
   return {
     INTERNAL:t(p("internal")),
     EXTERNAL:t(p("external")),
+    APP:t(p("app")),
+    TRAIN : t(p("training")),
+    INFER : t(p("inferring")),
   };
 
 };

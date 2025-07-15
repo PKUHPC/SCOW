@@ -24,6 +24,12 @@ export enum Status {
   FAILURE = "FAILURE",
 }
 
+export enum ImageType {
+  APP = "APP",
+  TRAIN = "TRAIN",
+  INFER = "INFER",
+}
+
 export class Image {
   id!: number;
   name: string;
@@ -46,6 +52,10 @@ export class Image {
   status: Status;
   createTime?: Date;
   updateTime?: Date;
+  // 镜像分类，类型的取值为：应用、训练、推理，支持多选
+  types: ImageType[];
+  inferServicePort?: string;
+  startCommand?: string;
 
   constructor(init: {
     name: string;
@@ -61,6 +71,9 @@ export class Image {
     clusterId?: string;
     createTime?: Date;
     updateTime?: Date;
+    types: ImageType[];
+    inferServicePort?: string;
+    startCommand?: string;
   }) {
     this.name = init.name;
     this.owner = init.owner;
@@ -73,6 +86,9 @@ export class Image {
     this.isShared = init.isShared ?? false;
     this.status = init.status;
     this.clusterId = init.clusterId;
+    this.types = init.types;
+    this.inferServicePort = init.inferServicePort;
+    this.startCommand = init.startCommand;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -105,6 +121,14 @@ imageEntitySchema.addProperty("sourcePath", String);
 imageEntitySchema.addProperty("path", String, { nullable: true });
 imageEntitySchema.addProperty("isShared", Boolean);
 imageEntitySchema.addEnum("status", String, { items: () => Status });
+imageEntitySchema.addEnum("types", String, {
+  columnType: "varchar(255)",
+  items: () => ImageType,
+  array: true,
+  default:[ImageType.APP, ImageType.TRAIN, ImageType.INFER],
+});
+imageEntitySchema.addProperty("inferServicePort", String, { nullable: true });
+imageEntitySchema.addProperty("startCommand", String, { columnType: "TEXT",nullable: true });
 imageEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 imageEntitySchema.addProperty("updateTime", Date, {
   columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
