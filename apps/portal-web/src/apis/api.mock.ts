@@ -115,6 +115,16 @@ export const mockApi: MockApi<typeof api> = {
 
   getAllJobs: async () => ({ results: [job]}),
 
+  getAllClustersAvailableApps: async () => ({
+    results: [{
+      clusterId: "hpc01",
+      apps: [
+        { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg" },
+        { id: "emacs", name: "Emacs" },
+        { id: "jupyter", name: "jupyter" },
+      ],
+    }],
+  }),
   listAvailableApps: async () => ({
     apps: [
       { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg" },
@@ -401,7 +411,30 @@ export const mockApi: MockApi<typeof api> = {
       }],
     },
   }),
-
+  getAllClustersInfo: async () => ({
+    results: [{
+      clusterId: "aaa",
+      clusterInfo: {
+        clusterId: "aaa",
+        nodeCount: 4,
+        runningNodeCount: 1,
+        idleNodeCount: 3,
+        notAvailableNodeCount: 0,
+        cpuCoreCount: 8,
+        runningCpuCount: 4,
+        idleCpuCount: 3,
+        notAvailableCpuCount: 1,
+        gpuCoreCount: 6,
+        runningGpuCount: 3,
+        idleGpuCount: 2,
+        notAvailableGpuCount: 1,
+        jobCount: 14,
+        runningJobCount: 4,
+        pendingJobCount: 10,
+        partitions: [],
+      },
+    }],
+  }),
   getClustersRuntimeInfo: async () => ({
     results: [{
       clusterId: "hpc01",
@@ -409,6 +442,25 @@ export const mockApi: MockApi<typeof api> = {
       operatorId: undefined,
       operatorName: undefined,
       comment: "",
+    }],
+  }),
+  getAllClusterNodesInfo: async () => ({
+    results: [{
+      clusterId: "abc",
+      nodeInfo: [{
+        gpuCount: 1,
+        state: 1,
+        partitions: ["linux","compute"],
+        cpuCoreCount: 1,
+        idleGpuCount: 1,
+        nodeName: "h1",
+        allocCpuCoreCount: 1,
+        idleCpuCoreCount: 1,
+        totalMemMb: 0.23,
+        allocMemMb: 0.32,
+        idleMemMb: 0.5,
+        allocGpuCount: 0.5,
+      }],
     }],
   }),
   getClusterNodesInfo: async () => ({

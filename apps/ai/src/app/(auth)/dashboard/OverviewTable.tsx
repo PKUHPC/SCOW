@@ -1,17 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { blue,gray } from "@ant-design/colors";
-import { I18nStringType } from "@scow/config/build/i18n";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { PartitionInfo, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
@@ -27,15 +14,14 @@ import { DashboardSection } from "./DashboardSection";
 import { InfoPanes } from "./InfoPanes";
 
 export interface ClusterInfo extends PartitionInfo {
-  id: number;
-  clusterName: I18nStringType | undefined;
+  clusterId: string;
   cpuUsage: string;
   gpuUsage?: string;
 }
 
 interface Props {
   clusterInfo: ClusterInfo[];
-  failedClusters: ({ clusterName: I18nStringType })[];
+  failedClusters: Cluster[];
   currentClusters: Cluster[];
   isLoading: boolean;
   clustersOverview: ClusterOverview[];
@@ -55,7 +41,7 @@ interface InfoProps {
 }
 
 interface TableProps {
-  clusterName: I18nStringType;
+  clusterId: string;
   info?: InfoProps
 }
 
@@ -101,21 +87,24 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
   const t = useI18nTranslateToString();
   const p = prefix("app.dashboard.overviewTable.");
 
-  const [selectId, setSelectId] = useState<number | undefined>(undefined);
+  const [selectId, setSelectId] = useState<string | undefined>(undefined);
 
-  const selectItem = useMemo(() => clusterInfo[selectId ?? 0], [clusterInfo, selectId]);
+  const selectItem = useMemo(
+    () => clusterInfo.find((c) => c.clusterId === selectId) || clusterInfo[0],
+    [clusterInfo, selectId],
+  );
 
   // 控制Tab切换
   const [activeTabKey, setActiveTabKey] = useState("platformOverview");
 
   // 找到对应平台概览
   const selectedClusterOverview = useMemo(() => {
-    if (activeTabKey === "platformOverview" || !selectItem?.clusterName) {
+    if (activeTabKey === "platformOverview" || !selectItem?.clusterId) {
       return undefined;
     };
     const view = clustersOverview.find(
       (overview) =>
-        overview.clusterName === activeTabKey,
+        overview.clusterId === activeTabKey,
     );
     return view;
   }, [activeTabKey, clustersOverview, languageId, selectItem]);
@@ -126,25 +115,32 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
       setSelectId(undefined);
       return clustersOverview;
     }
-    const info = clusterInfo.filter((info) => info.clusterName === activeTabKey);
+    const info = clusterInfo.filter((info) => info.clusterId === activeTabKey);
     return info;
   }, [activeTabKey, clusterInfo, languageId]);
 
   useEffect(() => {
     if (activeTabKey !== "platformOverview") {
-      const selectedInfo = clusterInfo.find((info) => info.clusterName === activeTabKey);
+      const selectedInfo = clusterInfo.find((info) => info.clusterId === activeTabKey);
       if (selectedInfo) {
-        setSelectId(selectedInfo.id);
+        setSelectId(selectedInfo.clusterId);
       }
     }
   }, [activeTabKey, clusterInfo]);
 
   const dataSource = (filteredClusterInfo.map((x, index) =>
-    ({ clusterName: x.clusterName, info: { ...x, id: index, cpuUsage: (x.runningCpuCount / x.cpuCoreCount) * 100,
-      gpuUsage: x.gpuCoreCount === 0 ? undefined
-        : (x.runningGpuCount / x.gpuCoreCount) * 100 } })) as any[]);
+    ({
+      clusterId: x.clusterId,
+      info: {
+        ...x,
+        id: index,
+        cpuUsage: ((x.runningCpuCount / x.cpuCoreCount) * 100).toFixed(2),
+        gpuUsage: x.gpuCoreCount === 0 ? undefined : ((x.runningGpuCount / x.gpuCoreCount) * 100).toFixed(2),
+      },
+    })) as TableProps[]);
 
-  const finalDataSource = activeTabKey === "platformOverview" ? dataSource.concat(failedClusters) : dataSource;
+  const finalDataSource = activeTabKey === "platformOverview" ?
+    dataSource.concat(failedClusters.map((c) => ({ clusterId: c.id }))) : dataSource;
 
   return (
     (isLoading || currentClusters.length > 0) ? (
@@ -165,14 +161,12 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           loading={isLoading}
           pagination={false}
           scroll={{ y:275 }}
-          rowClassName={(tableProps) => (tableProps.info?.id === selectId ? "rowBgColor" : "")}
+          rowClassName={(tableProps) => (tableProps.clusterId === selectId ? "rowBgColor" : "")}
           onRow={(r) => {
             return {
               onClick() {
-                if (r.info?.id !== undefined) {
-                  setSelectId(r.info?.id);
-                  setActiveTabKey(getI18nConfigCurrentText(r.clusterName, languageId));
-                }
+                setSelectId(r.clusterId);
+                setActiveTabKey(getI18nConfigCurrentText(r.clusterId, languageId));
               },
             };
           }}
@@ -183,12 +177,11 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             title={t(p("cluster"))}
             hidden={activeTabKey !== "platformOverview"}
             sorter={(a, b, sortOrder) =>
-              compareWithUndefined(getI18nConfigCurrentText(a.clusterName, languageId),
-                getI18nConfigCurrentText(b.clusterName, languageId), sortOrder)}
-            render={(clusterName) => (
+              compareWithUndefined(a.clusterId, b.clusterId, sortOrder)}
+            render={(_, r) => (
               <span style={{ fontWeight:700 }}>
-                {getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == clusterName)?.name
-                ?? clusterName, languageId)}
+                {getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == r.clusterId)?.name
+                ?? r.clusterId, languageId)}
               </span>
             )}
           />

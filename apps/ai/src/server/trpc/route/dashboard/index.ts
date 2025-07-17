@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { NodeInfo_NodeState } from "@scow/protos/build/portal/config";
@@ -43,7 +31,6 @@ export const PartitionSchema = z.object({
 
 // 定义集群信息
 const ClusterInfoSchema = z.object({
-  clusterName: z.string(),
   partitions: z.array(PartitionSchema), // 分区列表
 });
 
@@ -70,6 +57,28 @@ const ClusterNodesInfoSchema = z.object({
 const ClusterNodesInfoInput = z.object({
   clusterId: z.string(),
   nodeNames: z.string().optional(), // 将 nodeNames 定义为逗号分隔的字符串
+});
+
+// 批量获取集群信息的输入和输出模式
+const AllClustersInfoInput = z.object({
+  clusterIds: z.array(z.string()),
+});
+
+const AllClustersInfoSchema = z.object({
+  clusters: z.array(ClusterInfoSchema.extend({
+    clusterId: z.string(),
+  })),
+});
+
+// 批量获取集群节点信息的输入和输出模式
+const AllClustersNodesInfoInput = z.object({
+  clusterIds: z.array(z.string()),
+});
+
+const AllClustersNodesInfoSchema = z.object({
+  clusters: z.array(ClusterNodesInfoSchema.extend({
+    clusterId: z.string(),
+  })),
 });
 
 
@@ -108,7 +117,9 @@ export const dashboard = router({
 
       // 返回集群信息
       return {
-        clusterName: reply.clusterName, // 集群名称
+        // 不能使用适配器返回的集群名称
+        // 适配器返回的集群名称是 slurm 的集群名，不一定和 scow 集群名匹配
+        clusterName: clusterId,
         partitions: reply.partitions, // 分区信息
       };
     }),
@@ -147,5 +158,101 @@ export const dashboard = router({
       return {
         nodeInfo: reply.nodes, // 节点信息
       };
+    }),
+
+  // 批量获取多个集群的信息
+  getAllClustersInfo: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/dashboard/clusters",
+        tags: ["dashboard"],
+        summary: "Get all clusters info",
+      },
+    })
+    .input(AllClustersInfoInput)
+    .output(AllClustersInfoSchema)
+    .query(async ({ input }) => {
+      const { clusterIds } = input;
+
+      const results = await Promise.allSettled(
+        clusterIds.map(async (clusterId) => {
+          const client = getAdapterClient(clusterId);
+          if (!client) {
+            throw new Error(`Cluster ${clusterId} is not found`);
+          }
+
+          const reply = await asyncClientCall(client.config, "getClusterInfo", {
+            cluster: clusterId,
+          });
+
+          return {
+            clusterId,
+            partitions: reply.partitions,
+          };
+        }),
+      );
+
+      const clusters = results
+        .map((result, index) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          } else {
+            const clusterId = clusterIds[index];
+            const errorMessage = result.reason?.message || "Unknown error";
+            console.error(`Failed to get cluster info for ${clusterId}: ${errorMessage}`);
+            return null;
+          }
+        })
+        .filter((cluster) => cluster !== null);
+
+      return { clusters };
+    }),
+
+  // 批量获取多个集群的节点信息
+  getAllClustersNodesInfo: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/dashboard/clusters/nodes",
+        tags: ["dashboard"],
+        summary: "Get all clusters nodes info",
+      },
+    })
+    .input(AllClustersNodesInfoInput)
+    .output(AllClustersNodesInfoSchema)
+    .query(async ({ input }) => {
+      const { clusterIds } = input;
+
+      const results = await Promise.allSettled(
+        clusterIds.map(async (clusterId) => {
+          const client = getAdapterClient(clusterId);
+          if (!client) {
+            throw new Error(`Cluster ${clusterId} is not found`);
+          }
+
+          const reply = await asyncClientCall(client.config, "getClusterNodesInfo", { nodeNames: []});
+
+          return {
+            clusterId,
+            nodeInfo: reply.nodes,
+          };
+        }),
+      );
+
+      const clusters = results
+        .map((result, index) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          } else {
+            const clusterId = clusterIds[index];
+            const errorMessage = result.reason?.message || "Unknown error";
+            console.error(`Failed to get cluster nodes info for ${clusterId}: ${errorMessage}`);
+            return null;
+          }
+        })
+        .filter((cluster) => cluster !== null);
+
+      return { clusters };
     }),
 });

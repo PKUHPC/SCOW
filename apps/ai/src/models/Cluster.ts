@@ -28,7 +28,8 @@ export interface Cluster {
 }
 
 export interface ClusterOverview {
-  clusterName: string,
+  clusterId: string,
+  partitionName: string,
   nodeCount: number,
   runningNodeCount: number,
   idleNodeCount: number,

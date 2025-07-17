@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { ConfigServiceClient, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
@@ -42,7 +30,22 @@ export const PartitionInfo = Type.Object({
 export type PartitionInfo = Static<typeof PartitionInfo>;
 
 export const ClusterInfo = Type.Object({
-  clusterName: Type.String(),
+  clusterId: Type.String(),
+  nodeCount: Type.Number(),
+  runningNodeCount: Type.Number(),
+  idleNodeCount: Type.Number(),
+  notAvailableNodeCount: Type.Number(),
+  cpuCoreCount: Type.Number(),
+  runningCpuCount: Type.Number(),
+  idleCpuCount: Type.Number(),
+  notAvailableCpuCount: Type.Number(),
+  gpuCoreCount: Type.Number(),
+  runningGpuCount: Type.Number(),
+  idleGpuCount: Type.Number(),
+  notAvailableGpuCount: Type.Number(),
+  jobCount: Type.Number(),
+  runningJobCount: Type.Number(),
+  pendingJobCount: Type.Number(),
   partitions: Type.Array(PartitionInfo),
 });
 
@@ -80,6 +83,6 @@ export default route(GetClusterRunningInfoSchema, async (req, res) => {
     cluster:clusterId,
   });
 
-  return { 200: { clusterInfo: reply } };
+  return { 200: { clusterInfo: { ...reply, clusterId } } };
 
 });

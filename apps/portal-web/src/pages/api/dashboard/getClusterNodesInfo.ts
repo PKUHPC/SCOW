@@ -41,7 +41,7 @@ export const GetClusterNodesInfoSchema = typeboxRouteSchema({
 
   query: Type.Object({
     nodeNames: Type.Optional(Type.Array(Type.String())),
-    cluster :Type.String(),
+    cluster: Type.String(),
   }),
 
   responses: {

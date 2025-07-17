@@ -1,5 +1,6 @@
 /* eslint-disable @stylistic/max-len */
 
+
 import { apiClient } from "src/apis/client";
 import type { GetClusterInfoSchema } from "src/pages/api//cluster";
 import type { getClusterConfigFilesSchema } from "src/pages/api//getClusterConfigFiles";
@@ -11,6 +12,7 @@ import type { CheckAppConnectivitySchema } from "src/pages/api/app/checkConnecti
 import type { CheckShadowDeskConnectivitySchema } from "src/pages/api/app/checkShadowDeskConnectivity";
 import type { ConnectToAppSchema } from "src/pages/api/app/connectToApp";
 import type { CreateAppSessionSchema } from "src/pages/api/app/createAppSession";
+import type { GetAllClustersAvailableAppsSchema } from "src/pages/api/app/getAllClustersAvailableApps";
 import type { GetAppLastSubmissionSchema } from "src/pages/api/app/getAppLastSubmission";
 import type { GetAppMetadataSchema } from "src/pages/api/app/getAppMetadata";
 import type { GetAppSessionsSchema } from "src/pages/api/app/getAppSessions";
@@ -18,6 +20,8 @@ import type { ListAvailableAppsSchema } from "src/pages/api/app/listAvailableApp
 import type { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
+import type { GetAllClusterNodesInfoSchema } from "src/pages/api/dashboard/getAllClusterNodesInfo";
+import type { GetAllClustersInfoSchema } from "src/pages/api/dashboard/getAllClustersInfo";
 import type { GetClusterRunningInfoSchema } from "src/pages/api/dashboard/getClusterInfo";
 import type { GetClusterNodesInfoSchema } from "src/pages/api/dashboard/getClusterNodesInfo";
 import type { GetQuickEntriesSchema } from "src/pages/api/dashboard/getQuickEntries";
@@ -73,6 +77,7 @@ export const api = {
   checkShadowDeskConnectivity: apiClient.fromTypeboxRoute<typeof CheckShadowDeskConnectivitySchema>("GET", "/api/app/checkShadowDeskConnectivity"),
   connectToApp: apiClient.fromTypeboxRoute<typeof ConnectToAppSchema>("POST", "/api/app/connectToApp"),
   createAppSession: apiClient.fromTypeboxRoute<typeof CreateAppSessionSchema>("POST", "/api/app/createAppSession"),
+  getAllClustersAvailableApps: apiClient.fromTypeboxRoute<typeof GetAllClustersAvailableAppsSchema>("GET", "/api/app/getAllClustersAvailableApps"),
   getAppLastSubmission: apiClient.fromTypeboxRoute<typeof GetAppLastSubmissionSchema>("GET", "/api/app/getAppLastSubmission"),
   getAppMetadata: apiClient.fromTypeboxRoute<typeof GetAppMetadataSchema>("GET", "/api/app/getAppMetadata"),
   getAppSessions: apiClient.fromTypeboxRoute<typeof GetAppSessionsSchema>("GET", "/api/app/getAppSessions"),
@@ -81,6 +86,8 @@ export const api = {
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
   getClusterInfo: apiClient.fromTypeboxRoute<typeof GetClusterInfoSchema>("GET", "/api//cluster"),
+  getAllClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetAllClusterNodesInfoSchema>("GET", "/api/dashboard/getAllClusterNodesInfo"),
+  getAllClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllClustersInfoSchema>("GET", "/api/dashboard/getAllClustersInfo"),
   getClusterRunningInfo: apiClient.fromTypeboxRoute<typeof GetClusterRunningInfoSchema>("GET", "/api/dashboard/getClusterInfo"),
   getClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterNodesInfoSchema>("GET", "/api/dashboard/getClusterNodesInfo"),
   getQuickEntries: apiClient.fromTypeboxRoute<typeof GetQuickEntriesSchema>("GET", "/api/dashboard/getQuickEntries"),

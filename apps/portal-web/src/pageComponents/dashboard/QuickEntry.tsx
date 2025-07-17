@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Entry } from "@scow/protos/build/portal/dashboard";
 import { Button, Spin } from "antd";
 import { useCallback, useState } from "react";
@@ -99,26 +87,34 @@ export const QuickEntry: React.FC<Props> = ({ currentClusters, publicConfigClust
 
   // apps包含在哪些集群上可以创建app
   const { data:apps, isLoading:getAppsLoading } = useAsync({ promiseFn: useCallback(async () => {
-    const appsInfo = await Promise.all(currentClusters.map((x) => {
-      return api.listAvailableApps({ query: { cluster: x.id } });
-    }));
+    // 检查 currentClusters 是否为空
+    if (!currentClusters || currentClusters.length === 0) {
+      return {};
+    }
+
+    const clusterIds = currentClusters.map((cluster) => cluster.id);
+    const appsResponse = await api.getAllClustersAvailableApps({ query: { clusterIds } });
+    const appsInfo = appsResponse.results;
 
     const appWithCluster: AppWithCluster = {};
-    appsInfo.forEach((x, idx) => {
-      x.apps.forEach((y) => {
-        if (!appWithCluster[y.id]) {
-          appWithCluster[y.id] = {
-            app: y,
+    appsInfo.forEach((clusterApps) => {
+      const cluster = currentClusters.find((c) => c.id === clusterApps.clusterId);
+      if (!cluster) return;
+
+      clusterApps.apps.forEach((app) => {
+        if (!appWithCluster[app.id]) {
+          appWithCluster[app.id] = {
+            app: app,
             clusters: [],
           };
         }
 
         // 只要有一个集群配置了app图片，快捷方式就可以显示app图片了
-        if (!appWithCluster[y.id].app.logoPath && y.logoPath) {
-          appWithCluster[y.id].app.logoPath = y.logoPath;
+        if (!appWithCluster[app.id].app.logoPath && app.logoPath) {
+          appWithCluster[app.id].app.logoPath = app.logoPath;
         }
 
-        appWithCluster[y.id].clusters.push(currentClusters[idx]);
+        appWithCluster[app.id].clusters.push(cluster);
       });
     });
 
