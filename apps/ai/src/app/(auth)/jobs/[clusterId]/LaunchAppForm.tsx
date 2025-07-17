@@ -88,7 +88,7 @@ interface FixedFormFields {
   partition: string | undefined;
   qos: string;
   coreCount: number;
-  nodeCount: number;
+  nodeCount?: number;
   gpuCount: number | undefined;
   account: string;
   maxTime: number;
@@ -99,6 +99,7 @@ interface FixedFormFields {
   envVariables?: EnvVariable[];
   needTensorBoard?: boolean;
   tensorBoardDataPath?: string;
+  isDistributedTrain: boolean;
 }
 
 interface CustomFormFields {
@@ -129,11 +130,15 @@ const genAppJobName = (clusterId: string, appName: string): string => {
 };
 
 const initialValues = {
-  nodeCount:1,
+  nodeCount:2,
+  psNodes:1,
+  workerNodes:1,
+  isDistributedTrain:false,
   coreCount: 1,
   gpuCount: 1,
   maxTime: 60,
 } as Partial<FormFields>;
+const DISTRIBUTED_TRAIN_INITIAL_NODE_COUNT = 2;
 
 export const LaunchAppForm = (props: Props) => {
 
@@ -166,10 +171,15 @@ export const LaunchAppForm = (props: Props) => {
       value: "pytorch",
       label: "PyTorch",
     },
+    {
+      value: "mpi",
+      label: "Mpi",
+    },
   ]);
 
   const imageSource = Form.useWatch("imageSource", form);
   const needTensorBoard = Form.useWatch("needTensorBoard", form);
+  const isDistributedTrain = Form.useWatch("isDistributedTrain", form);
 
   // 记录添加了多少算法
   const [algorithmGroups, setAlgorithmGroups] = useState<{}[]>([]);
@@ -398,6 +408,9 @@ export const LaunchAppForm = (props: Props) => {
 
   const nodeCount = Form.useWatch("nodeCount", form);
   const workerNodeCount = Form.useWatch("workerNodes", form);
+  const psNodeCount = Form.useWatch("psNodes", form);
+
+  const totalNodeCount = nodeCount ?? ((workerNodeCount ?? 0) + (psNodeCount ?? 0) || 1);
 
   const coreCount = Form.useWatch("coreCount", form);
 
@@ -413,15 +426,15 @@ export const LaunchAppForm = (props: Props) => {
   );
 
   const memorySize = (currentPartitionInfo ?
-    currentPartitionInfo.gpus ? nodeCount * gpuCount
+    currentPartitionInfo.gpus ? totalNodeCount * gpuCount
     * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
     * Math.floor(currentPartitionInfo.memMb / currentPartitionInfo.cores) :
-      nodeCount * coreCount * Math.floor(currentPartitionInfo.memMb / currentPartitionInfo.cores) : 0);
+      totalNodeCount * coreCount * Math.floor(currentPartitionInfo.memMb / currentPartitionInfo.cores) : 0);
   const memoryDisplay = formatSize(memorySize, ["MB", "GB", "TB"]);
 
   const coreCountSum = currentPartitionInfo?.gpus
-    ? nodeCount * gpuCount * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
-    : nodeCount * coreCount;
+    ? totalNodeCount * gpuCount * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
+    : totalNodeCount * coreCount;
 
 
   const handlePartitionChange = (partition: string) => {
@@ -709,8 +722,8 @@ export const LaunchAppForm = (props: Props) => {
       const customAttributes = "customAttributes" in inputParams ? inputParams.customAttributes : {};
       const command = "command" in inputParams ? inputParams.command : undefined;
       const framework = "framework" in inputParams ? inputParams.framework : undefined;
-      const psNodes = "psNodes" in inputParams ? inputParams.psNodes : undefined;
-      const workerNodes = "workerNodes" in inputParams ? inputParams.workerNodes : undefined;
+      const psNodes = "psNodes" in inputParams ? inputParams.psNodes : 1;
+      const workerNodes = "workerNodes" in inputParams ? inputParams.workerNodes : 1;
       const envVariables = "envVariables" in inputParams ? inputParams.envVariables : undefined;
       const tensorBoardDataPath = "tensorBoardDataPath" in inputParams ? inputParams.tensorBoardDataPath : undefined;
 
@@ -720,7 +733,11 @@ export const LaunchAppForm = (props: Props) => {
           ...customAttributes,
           workingDir,
         },
-        nodeCount,
+        // 单机训练不显示节点数，在前端展示的nodeCount均是 >= 2
+        // 单机作业再次提交作业时 nodeCount 是 1,但是前端展示的nodeCount均是 >= 2
+        // 故单机作业的再次提交，nodeCount初始值设为 DISTRIBUTED_TRAIN_INITIAL_NODE_COUNT(值为2)
+        nodeCount:nodeCount === 1 ? DISTRIBUTED_TRAIN_INITIAL_NODE_COUNT : nodeCount,
+        isDistributedTrain: nodeCount > 1 ? true : false,
         framework,
         account,
         // 有可用分区后，再次提交作业可能从cpu分区(不可用)自动切换到gpu分区
@@ -811,16 +828,6 @@ export const LaunchAppForm = (props: Props) => {
     },
   });
 
-  const handleFormChange = (changedValues: Partial<FormFields>, allValues: FormFields) => {
-    const { psNodes, workerNodes,nodeCount } = allValues;
-    if ("psNodes" in changedValues || "workerNodes" in changedValues) {
-      const newTotal = (psNodes || 0) + (workerNodes || 0);
-      form.setFieldsValue({ nodeCount: newTotal });
-    }
-    else if ("nodeCount" in changedValues) {
-      form.setFieldsValue({ psNodes: 0,workerNodes:nodeCount });
-    }
-  };
 
   const transformTime = (amount: number) => {
     switch (maxTimeUnitValue) {
@@ -841,7 +848,6 @@ export const LaunchAppForm = (props: Props) => {
         imageSource: isTraining ? ImageSource.LOCAL : ImageSource.DEFAULT,
       }}
       labelAlign="left"
-      onValuesChange={handleFormChange}
       onFinish={async () => {
 
         const { appJobName, image, remoteImageUrl, framework, startCommand,mountPoints, account, partition, coreCount,
@@ -879,14 +885,14 @@ export const LaunchAppForm = (props: Props) => {
             algorithms:algorithmVersions.map((id,idx) => ({ id,isPrivate:isAlgorithmPrivates[idx] })),
             image: image?.name,
             isImagePrivate:!isImagePublic,
-            remoteImageUrl,
+            remoteImageUrl:remoteImageUrl?.trim(),
             framework,
             datasets: datasetVersions.map((id,idx) => ({ id,isPrivate:isDatasetPrivates[idx] })),
             models: modelVersions.map((id,idx) => ({ id,isPrivate:isModelPrivates[idx] })),
             mountPoints,
             account: account,
             partition: partition,
-            nodeCount: nodeCount,
+            nodeCount: totalNodeCount,
             coreCount: gpuCount ?
               gpuCount * Math.floor(currentPartitionInfo!.cores / currentPartitionInfo!.gpus) :
               coreCount,
@@ -922,14 +928,14 @@ export const LaunchAppForm = (props: Props) => {
             algorithms:algorithmVersions.map((id,idx) => ({ id,isPrivate:isAlgorithmPrivates[idx] })),
             image: image?.name,
             isImagePrivate:!isImagePublic,
-            remoteImageUrl,
+            remoteImageUrl:remoteImageUrl?.trim(),
             startCommand,
             datasets: datasetVersions.map((id,idx) => ({ id,isPrivate:isDatasetPrivates[idx] })),
             models: modelVersions.map((id,idx) => ({ id,isPrivate:isModelPrivates[idx] })),
             mountPoints,
             account: account,
             partition: partition,
-            nodeCount: nodeCount,
+            nodeCount: totalNodeCount,
             coreCount: gpuCount ?
               gpuCount * Math.floor(currentPartitionInfo!.cores / currentPartitionInfo!.gpus) :
               coreCount,
@@ -1715,43 +1721,59 @@ export const LaunchAppForm = (props: Props) => {
             options={currentPartitionInfo ? currentPartitionInfo.qos.map((x) => ({ label: x, value: x })) : []}
           />
         </Form.Item>
-        <Form.Item
-          label={t(p("nodeCount"))}
-          name="nodeCount"
-          dependencies={["partition"]}
-          rules={[
-            {
-              required: true,
-              type: "integer",
-            },
-            {
-              validator(_, value) {
-                if (isVgpu && value > 1) {
-                  return Promise.reject(new Error());
+        {/* vgpu只能单机训练 */}
+        {
+          isTraining && !isVgpu && (
+            <Form.Item label={t(p("distributedTrain"))} rules={[{ required: true }]} style={{ marginBottom:0 }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <Form.Item
+                  rules={[{ required: true }]}
+                  name="isDistributedTrain"
+                  valuePropName="checked"
+                  style={{ display: "inline-block", marginRight: 8 }}
+                >
+                  <Switch />
+                </Form.Item>
+                {
+                  isDistributedTrain && (
+                    <Form.Item
+                      name="framework"
+                      rules={[{ required: true,message:t(p("needFramework")) }]}
+                    >
+                      <Select options={frameworkOptions} style={{ minWidth: 150 }}>
+                      </Select>
+                    </Form.Item>
+                  )
                 }
-                return Promise.resolve();
-              },
-            },
-          ]}
-          help={isTraining ? (isVgpu ? t(p("vGPUTips")) : undefined)
-            : t(p("appJobTips"))
-          }
-        >
-          <InputNumber
-            min={1}
-            max={isTraining ? (isVgpu ? 1 : undefined) : 1}
-            {...inputNumberFloorConfig}
-            // framework是tensorflow且不是华为卡时 不允许手动改
-            disabled={isTraining && framework === "tensorflow" && !isAscend910}
-          />
-        </Form.Item>
-        {/* tensorflow训练框架时，除了huawei.com/Ascend910的卡之外，都要区分PS node 和worker node */}
-        {(isTraining && framework === "tensorflow" && !isAscend910) && (
+              </div>
+            </Form.Item>
+          )
+        }
+        {
+          isDistributedTrain && framework !== "tensorflow" && (
+            <Form.Item
+              label={t(p("nodeCount"))}
+              name="nodeCount"
+              dependencies={["partition"]}
+              rules={[
+                {
+                  required: true,
+                  type: "integer",
+                },
+              ]}
+            >
+              <InputNumber
+                min={2}
+                {...inputNumberFloorConfig}
+              />
+            </Form.Item>
+          )
+        }
+        {(isDistributedTrain && framework === "tensorflow") && (
           <>
             <Form.Item
               label={t(p("psNodes"))}
               name="psNodes"
-              initialValue={1}
               rules={[
                 { required: true,
                   type: "integer",
@@ -1759,20 +1781,17 @@ export const LaunchAppForm = (props: Props) => {
               ]}
             >
               <InputNumber
-                defaultValue={1}
                 min={0}
                 {...inputNumberFloorConfig}
               />
             </Form.Item>
           </>
         )}
-        {/* tensorflow训练框架时，除了huawei.com/Ascend910的卡之外，都要区分PS node 和worker node */}
-        {(isTraining && framework === "tensorflow" && (!isAscend910)) && (
+        {(isDistributedTrain && framework === "tensorflow") && (
           <>
             <Form.Item
               label={t(p("workerNodes"))}
               name="workerNodes"
-              initialValue={nodeCount - 1}
               rules={[
                 { required: true,
                   type: "integer",
@@ -1780,7 +1799,6 @@ export const LaunchAppForm = (props: Props) => {
               ]}
             >
               <InputNumber
-                defaultValue={nodeCount - 1}
                 min={1}
                 {...inputNumberFloorConfig}
               />
@@ -1792,18 +1810,15 @@ export const LaunchAppForm = (props: Props) => {
             <Form.Item
               label={t(p("gpuCount"))}
               name="gpuCount"
-              dependencies={["partition","nodeCount"]}
+              dependencies={["partition","nodeCount","psNodes","workerNodes"]}
               rules={[
                 {
                   required: true,
                   type: "integer",
-                  // 单机最多8张卡
-                  max: 8,
                   validator:  (_, value) => {
-                    const nodeCount = form.getFieldValue("nodeCount") || 0;
                     if (currentPartitionInfo
                           && currentPartitionInfo.gpus > 0
-                          && (nodeCount * value > currentPartitionInfo.gpus)) {
+                          && (totalNodeCount * value > currentPartitionInfo.gpus)) {
                       return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
                     }
                     return Promise.resolve();
@@ -1821,13 +1836,12 @@ export const LaunchAppForm = (props: Props) => {
             <Form.Item
               label={t(p("coreCount"))}
               name="coreCount"
-              dependencies={["partition","nodeCount"]}
+              dependencies={["partition","nodeCount","psNodes","workerNodes"]}
               rules={[
                 { required: true,
                   type: "integer",
                   validator: (_, value) => {
-                    const nodeCount = form.getFieldValue("nodeCount") || 0;
-                    if (currentPartitionInfo && (nodeCount * value > currentPartitionInfo.cores)) {
+                    if (currentPartitionInfo && (totalNodeCount * value > currentPartitionInfo.cores)) {
                       return Promise.reject(new Error("Total cores exceed the available cores in the partition"));
                     }
                     return Promise.resolve();
@@ -1840,22 +1854,6 @@ export const LaunchAppForm = (props: Props) => {
                 {...inputNumberFloorConfig}
               />
             </Form.Item>
-          )
-        }
-        {/* 分布式训练或者华为的卡训练，需要指定训练框架 */}
-        {
-          (isTraining && (nodeCount > 1 || (workerNodeCount && workerNodeCount >= 1) || isAscend910)) && (
-            <>
-              {/* 手动选择算法框架，下拉框只有 tensorflow, pytorch */}
-              <Form.Item
-                label={t(p("framework"))}
-                name="framework"
-                rules={[{ required: true }]}
-              >
-                <Select options={frameworkOptions}>
-                </Select>
-              </Form.Item>
-            </>
           )
         }
         <Form.Item label={t(p("maxTime"))} name="maxTime" rules={[{ required: true }]}>
@@ -1886,7 +1884,7 @@ export const LaunchAppForm = (props: Props) => {
               (
                 <Col span={12} sm={6}>
                   <Form.Item label={t(p("totalGpus"))}>
-                    {nodeCount * gpuCount}
+                    {totalNodeCount * gpuCount}
                   </Form.Item>
                 </Col>
               ) : null

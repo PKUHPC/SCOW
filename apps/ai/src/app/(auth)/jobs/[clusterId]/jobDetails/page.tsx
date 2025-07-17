@@ -279,6 +279,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     {
       title: t(p("message")),
       dataIndex: "message",
+      width: "50%",
     },
     {
       title: t(p("reason")),
@@ -314,6 +315,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
             hideOnSinglePage:true,
             defaultPageSize: 4,
           }}
+          scroll={{ y: 350 }}
         />
       ),
     }] : [],

@@ -39,6 +39,7 @@ export const Framework = z.union([
   z.literal("tensorflow"),
   z.literal("pytorch"),
   z.literal("mindspore"),
+  z.literal("mpi"),
 ]);
 
 export type FrameworkType = z.infer<typeof Framework>;

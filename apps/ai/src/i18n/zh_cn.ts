@@ -415,7 +415,8 @@ export default {
         tensorBoardDataPath:"数据源",
         tensorBoardDataPlaceholder:"请输入tensorBoard数据源",
         vGPUTips:"当前队列为vGPU资源，不支持创建多节点作业",
-        appJobTips:"应用作业不支持多节点",
+        needFramework:"请选择框架",
+        distributedTrain:"分布式训练",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"提交推理成功",

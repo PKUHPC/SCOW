@@ -415,7 +415,8 @@ export default {
         tensorBoardDataPath: "TensorBoard Data Source",
         tensorBoardDataPlaceholder: "Enter the TensorBoard data source path",
         vGPUTips:"The current queue is a vGPU resource and does not support creating multi node jobs",
-        appJobTips:"App job does not support multiple nodes",
+        needFramework:"Please enter framework",
+        distributedTrain:"Distributed train",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"Create successfully",
