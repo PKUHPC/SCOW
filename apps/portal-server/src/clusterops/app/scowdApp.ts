@@ -337,8 +337,14 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         if (!(await client.file.exists({ userId, path: userAppJobDir })).exists) { return { sessions: []}; }
 
         // get all job directories
-        const originalDirList = (await client.file.readDirectory({ userId, dirPath: userAppJobDir })).filesInfo;
-        const list = originalDirList.filter((item) => item.name !== ENDED_SESSIONS);
+        let list: { name: string, [key: string]: any }[];
+        try {
+          list = (await client.file.readDirectory({ userId, dirPath: userAppJobDir })).filesInfo;
+        } catch (error: any) {
+          // 如果用户应用作业目录不存在或不是目录，返回空会话列表
+          logger.warn(`Failed to read user app job directory ${userAppJobDir} for user ${userId}: ${error}`);
+          return { sessions: []};
+        }
         const sessions = [] as AppSession[];
 
         const endedSessionsFilePath = join(userAppJobDir, ENDED_SESSIONS);
@@ -385,9 +391,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
             existingEndedSessions.map((session) => {
               existingSessionIds.add(session.sessionId);
             });
-
           }
-
         }
 
         await Promise.all(list.map(async ({ name }) => {
@@ -400,9 +404,16 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const jobDir = join(userAppJobDir, name);
           const metadataPath = join(jobDir, SESSION_METADATA_NAME);
 
-          if (!(await client.file.exists({ userId, path: metadataPath })).exists) {
+          try {
+            if (!(await client.file.exists({ userId, path: metadataPath })).exists) {
+              return;
+            }
+          } catch (error: any) {
+            // 可能由于没有读取权限或 jobDir 本身并不是目录而报错，此时忽略这个条目
+            logger.warn(`Failed to check metadata file ${metadataPath} for user ${userId}: ${error}`);
             return;
           }
+
 
           const content = (await client.file.readFile({ userId, filePath: metadataPath })).content;
 
@@ -430,7 +441,13 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           if (runningJobInfo && runningJobInfo.state === "RUNNING") {
             // 对于k8s这种通过容器运行作业的集群，当把容器中的作业工作目录挂载到宿主机中时，目录中新生成的文件不会马上反映到宿主机中，
             // 具体体现为sftpExists无法找到新生成的SERVER_SESSION_INFO和VNC_SESSION_INFO文件，必须实际读取一次目录，才能识别到它们
-            await client.file.readDirectory({ userId, dirPath: jobDir });
+            try {
+              await client.file.readDirectory({ userId, dirPath: jobDir });
+            } catch (error: any) {
+              // 如果路径不是目录，跳过此条目
+              logger.warn(`Failed to read directory ${jobDir} for user ${userId}: ${error}`);
+              return;
+            }
 
             if (app.type === AppType.web || app.type === AppType.shadowDesk) {
               // for server apps,
