@@ -159,7 +159,7 @@ export const createDatasetVersion = procedure
     datasetId: z.number(),
   }))
   .output(z.object({ datasetVersionId: z.number() }))
-  .use(async ({ input:{ datasetId }, ctx, next }) => {
+  .use(async ({ input:{ datasetId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -169,15 +169,32 @@ export const createDatasetVersion = procedure
       operationTypeName: OperationType.createDatasetVersion,
     };
 
+    const em = await forkEntityManager();
+
+    const dataset = await em.findOne(Dataset, { id: datasetId });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:(res.data as any).datasetVersionId } },
+        {
+          datasetId,
+          versionId:(res.data as any).datasetVersionId,
+          datasetName:dataset.name,
+          datasetVersionName:versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId } },
+        {
+          datasetId,
+          datasetName:dataset.name,
+          datasetVersionName:versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 
@@ -243,7 +260,7 @@ export const updateDatasetVersion = procedure
     datasetId: z.number(),
   }))
   .output(z.number())
-  .use(async ({ input:{ datasetId }, ctx, next }) => {
+  .use(async ({ input:{ datasetId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -253,15 +270,33 @@ export const updateDatasetVersion = procedure
       operationTypeName: OperationType.updateDatasetVersion,
     };
 
+    const em = await forkEntityManager();
+
+    const dataset = await em.findOne(Dataset, { id: datasetId });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:res.data as number } },
+        {
+          datasetId,
+          versionId:res.data as number,
+          datasetName:dataset.name,
+          datasetVersionName:versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:0 } },
+        {
+          datasetId,
+          versionId:0,
+          datasetName:dataset.name,
+          datasetVersionName:versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 
@@ -344,7 +379,6 @@ export const deleteDatasetVersion = procedure
   }))
   .output(z.void())
   .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -352,16 +386,39 @@ export const deleteDatasetVersion = procedure
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.deleteDatasetVersion,
     };
+    const em = await forkEntityManager();
+
+    const dataset = await em.findOne(Dataset, { id: datasetId });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
+    const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
+    if (!datasetVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
+
+    const res = await next({ ctx });
 
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:datasetVersionId } },
+        {
+          datasetId,
+          versionId:datasetVersionId,
+          datasetName:dataset.name,
+          datasetVersionName:datasetVersion.versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:datasetVersionId } },
+        {
+          datasetId,
+          versionId:datasetVersionId,
+          datasetName:dataset.name,
+          datasetVersionName:datasetVersion.versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 
@@ -457,15 +514,37 @@ export const shareDatasetVersion = procedure
       operationTypeName: OperationType.shareDatasetVersion,
     };
 
+    const em = await forkEntityManager();
+
+    const dataset = await em.findOne(Dataset, { id: datasetId });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
+    const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
+    if (!datasetVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
+
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:datasetVersionId } },
+        {
+          datasetId,
+          versionId:datasetVersionId,
+          datasetName:dataset.name,
+          datasetVersionName:datasetVersion.versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { datasetId, versionId:datasetVersionId } },
+        {
+          datasetId,
+          versionId:datasetVersionId,
+          datasetName:dataset.name,
+          datasetVersionName:datasetVersion.versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 
@@ -673,7 +752,7 @@ export const copyPublicDatasetVersion = procedure
     path: z.string(),
   }))
   .output(z.object({ newDatasetId: z.number(), newDatasetVersionId: z.number() }))
-  .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
+  .use(async ({ input:{ datasetId, datasetVersionId,datasetName,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -683,17 +762,44 @@ export const copyPublicDatasetVersion = procedure
       operationTypeName: OperationType.copyDatasetVersion,
     };
 
+    const em = await forkEntityManager();
+
+    const dataset = await em.findOne(Dataset, { id: datasetId });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
+    const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
+    if (!datasetVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
+
+
     if (res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { sourceDatasetId:datasetId, sourceDatasetVersionId:datasetVersionId,
+        {
+          sourceDatasetId:datasetId,
+          sourceDatasetVersionId:datasetVersionId,
           targetDatasetId:(res.data as any).newDatasetId,
-          targetDatasetVersionId:(res.data as any).newDatasetVersionId } },
+          targetDatasetVersionId:(res.data as any).newDatasetVersionId,
+          sourceDatasetName:dataset.name,
+          sourceDatasetVersionName:datasetVersion.versionName,
+          targetDatasetName:datasetName,
+          targetDatasetVersionName:versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
       await callLog({ ...logInfo, operationTypePayload:
-        { sourceDatasetId:datasetId, sourceDatasetVersionId:datasetVersionId } },
+        {
+          sourceDatasetId:datasetId,
+          sourceDatasetVersionId:datasetVersionId,
+          sourceDatasetName:dataset.name,
+          sourceDatasetVersionName:datasetVersion.versionName,
+          targetDatasetName:datasetName,
+          targetDatasetVersionName:versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 

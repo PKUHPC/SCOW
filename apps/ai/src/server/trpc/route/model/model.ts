@@ -127,7 +127,7 @@ export const createModel = procedure
     clusterId: z.string(),
   }))
   .output(z.number())
-  .use(async ({ input:{ clusterId }, ctx, next }) => {
+  .use(async ({ input:{ clusterId,name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -138,13 +138,23 @@ export const createModel = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId, modelId:res.data as number } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          clusterId,
+          modelId:res.data as number,
+          modelName: name,
+        } },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          clusterId,
+          modelName: name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -189,7 +199,7 @@ export const updateModel = procedure
     description: z.string().optional(),
   }))
   .output(z.number())
-  .use(async ({ input:{ id }, ctx, next }) => {
+  .use(async ({ input:{ id,name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -200,13 +210,23 @@ export const updateModel = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId:id,
+          modelName:name,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId:id,
+          modelName:name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -296,7 +316,6 @@ export const deleteModel = procedure
   .input(z.object({ id: z.number() }))
   .output(z.object({ success: z.boolean() }))
   .use(async ({ input:{ id }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -304,15 +323,33 @@ export const deleteModel = procedure
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.deleteModel,
     };
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id });
+
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${id} not found` });
+    }
+
+    const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId:id,
+          modelName:model.name,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId:id,
+          modelName:model.name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;

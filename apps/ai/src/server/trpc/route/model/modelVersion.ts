@@ -160,7 +160,7 @@ export const createModelVersion = procedure
     modelId: z.number(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ modelId }, ctx, next }) => {
+  .use(async ({ input:{ modelId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -170,14 +170,33 @@ export const createModelVersion = procedure
       operationTypeName: OperationType.createModelVersion,
     };
 
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id: modelId });
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+    }
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId:(res.data as any).id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId:(res.data as any).id,
+          modelName:model.name,
+          modelVersionName: versionName,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          modelName:model.name,
+          modelVersionName: versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -243,7 +262,7 @@ export const updateModelVersion = procedure
     modelId: z.number(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
+  .use(async ({ input:{ modelId,versionId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -253,14 +272,34 @@ export const updateModelVersion = procedure
       operationTypeName: OperationType.updateModelVersion,
     };
 
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id: modelId });
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+    }
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName: versionName,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName: versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -337,7 +376,6 @@ export const deleteModelVersion = procedure
   }))
   .output(z.object({ success: z.boolean() }))
   .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -346,14 +384,40 @@ export const deleteModelVersion = procedure
       operationTypeName: OperationType.deleteModelVersion,
     };
 
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id: modelId });
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+    }
+
+    const modelVersion = await em.findOne(ModelVersion, { id: versionId });
+    if (!modelVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName:modelVersion.versionName,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName:modelVersion.versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -451,14 +515,38 @@ export const shareModelVersion = procedure
       operationTypeName: OperationType.shareModelVersion,
     };
 
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id: modelId });
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+    }
+
+    const modelVersion = await em.findOne(ModelVersion, { id: versionId });
+    if (!modelVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName:modelVersion.versionName,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ modelId,versionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          modelId,
+          versionId,
+          modelName:model.name,
+          modelVersionName:modelVersion.versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -661,7 +749,7 @@ export const copyPublicModelVersion = procedure
     path: z.string(),
   }))
   .output(z.object({ targetModelId:z.number(),targetModelVersionId:z.number() }))
-  .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
+  .use(async ({ input:{ modelId,versionId,modelName,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -671,19 +759,43 @@ export const copyPublicModelVersion = procedure
       operationTypeName: OperationType.copyModelVersion,
     };
 
+    const em = await forkEntityManager();
+    const model = await em.findOne(Model, { id: modelId });
+    if (!model) {
+      throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+    }
+
+    const modelVersion = await em.findOne(ModelVersion, { id: versionId });
+    if (!modelVersion)
+      throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ sourceModelId:modelId,
-        sourceModelVersionId:versionId,
-        targetModelId: (res.data as any).targetModelId,
-        targetModelVersionId: (res.data as any).targetModelVersionId,
-      } },
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          sourceModelId:modelId,
+          sourceModelVersionId:versionId,
+          targetModelId: (res.data as any).targetModelId,
+          targetModelVersionId: (res.data as any).targetModelVersionId,
+          sourceModelName:model.name,
+          sourceModelVersionName:modelVersion.versionName,
+          targetModelName:modelName,
+          targetModelVersionName:versionName,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ sourceModelId:modelId,
-        sourceModelVersionId:versionId,
-      } },
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          sourceModelId:modelId,
+          sourceModelVersionId:versionId,
+          sourceModelName:model.name,
+          sourceModelVersionName:modelVersion.versionName,
+          targetModelName:modelName,
+          targetModelVersionName:versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 

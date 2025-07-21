@@ -203,29 +203,7 @@ export const createImage = procedure
     startCommand:z.string().optional(),
   }))
   .output(z.number())
-  .use(async ({ input:{ clusterId, tag }, ctx, next }) => {
-    const res = await next({ ctx });
-
-    const { user, req } = ctx;
-    const logInfo = {
-      operatorUserId: user.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.createImage,
-    };
-
-    if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId:clusterId ?? "", tag, imageId:res.data as number } },
-        OperationResult.SUCCESS);
-    }
-
-    if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId:clusterId ?? "" } },
-        OperationResult.FAIL);
-    }
-
-    return res;
-  })
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input, ctx: { user, req } }) => {
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     if (input.clusterId && !clusterExist(input.clusterId, currentClusterIds)) {
@@ -283,6 +261,12 @@ export const createImage = procedure
         throw new Error(`copyImage error: image ${name}:${tag} not found`);
       }
 
+      const logInfo = {
+        operatorUserId: user.identityId,
+        operatorIp: parseIp(req) ?? "",
+        operationTypeName: OperationType.createImage,
+      };
+
       try {
         await driver.withImageDriver({
           clusterId:processClusterId,
@@ -302,10 +286,29 @@ export const createImage = procedure
         image.status = Status.CREATED;
         await em.persistAndFlush(image);
 
+        await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId:input.clusterId,
+            tag,
+            imageId:image.id,
+            imageName:name,
+          },
+        },
+        OperationResult.SUCCESS);
+
         return;
       } catch (err) {
         image.status = Status.FAILURE;
         await em.persistAndFlush(image);
+
+        await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId:input.clusterId,
+            tag,
+            imageName:name,
+          },
+        },
+        OperationResult.FAIL);
         throw err;
       };
 
@@ -333,8 +336,6 @@ export const updateImage = procedure
   }))
   .output(z.number())
   .use(async ({ input:{ id }, ctx, next }) => {
-    const res = await next({ ctx });
-
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -342,14 +343,40 @@ export const updateImage = procedure
       operationTypeName: OperationType.updateImage,
     };
 
+    const em = await forkEntityManager();
+
+    const image = await em.findOne(Image, { id: id });
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Image ${id} not found`,
+      });
+    };
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id ,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -394,8 +421,6 @@ export const deleteImage = procedure
   .input(z.object({ id: z.number(), force: booleanQueryParam().optional() }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
-    const res = await next({ ctx });
-
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -403,14 +428,40 @@ export const deleteImage = procedure
       operationTypeName: OperationType.deleteImage,
     };
 
+    const em = await forkEntityManager();
+
+    const image = await em.findOne(Image, { id: id });
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Image ${id} not found`,
+      });
+    };
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id ,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -568,8 +619,6 @@ export const shareOrUnshareImage = procedure
   .input(z.object({ id: z.number(), share: z.boolean() }))
   .output(z.void())
   .use(async ({ input:{ id, share }, ctx, next }) => {
-    const res = await next({ ctx });
-
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -577,14 +626,40 @@ export const shareOrUnshareImage = procedure
       operationTypeName: OperationType.shareImage,
     };
 
+    const em = await forkEntityManager();
+
+    const image = await em.findOne(Image, { id: id });
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Image ${id} not found`,
+      });
+    };
+
+    const res = await next({ ctx });
+
     if (share && res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (share && !res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ imageId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo,
+        operationTypePayload:{
+          imageId:id,
+          clusterId:image.clusterId ?? "",
+          imageName:image.name,
+          tag:image.tag,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -643,9 +718,7 @@ export const copyImage = procedure
     },
   ))
   .output(z.number())
-  .use(async ({ input:{ id, newTag }, ctx, next }) => {
-    const res = await next({ ctx });
-
+  .use(async ({ input:{ id, newTag,newName,clusterId }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -653,15 +726,44 @@ export const copyImage = procedure
       operationTypeName: OperationType.copyImage,
     };
 
+    const em = await forkEntityManager();
+
+    const image = await em.findOne(Image, { id: id });
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Image ${id} not found`,
+      });
+    };
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-        { sourceImageId:id, targetImageId:res.data as number, targetImageTag:newTag } },
+      await callLog({ ...logInfo,
+        operationTypePayload:
+        { sourceImageId:id,
+          targetImageId:res.data as number,
+          targetImageTag:newTag,
+          targetImageName:newName,
+          clusterId:clusterId ?? "",
+          sourceImageName:image.name,
+          sourceImageTag:image.tag,
+        },
+      },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-        { sourceImageId:id } },
+      await callLog({ ...logInfo,
+        operationTypePayload:
+        { sourceImageId:id,
+          targetImageTag:newTag,
+          targetImageName:newName,
+          clusterId:clusterId ?? "",
+          sourceImageName:image.name,
+          sourceImageTag:image.tag,
+        },
+      },
       OperationResult.FAIL);
     }
 

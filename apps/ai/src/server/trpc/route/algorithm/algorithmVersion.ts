@@ -163,7 +163,7 @@ export const createAlgorithmVersion = procedure
     algorithmId: z.number(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ algorithmId }, ctx, next }) => {
+  .use(async ({ input:{ algorithmId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -173,14 +173,30 @@ export const createAlgorithmVersion = procedure
       operationTypeName: OperationType.createAlgorithmVersion,
     };
 
+    const em = await forkEntityManager();
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not Found` });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:(res.data as any).id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId,
+        versionId:(res.data as any).id,
+        algorithmName:algorithm.name,
+        algorithmVersionName:versionName,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId,
+          algorithmName:algorithm.name,
+          algorithmVersionName:versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -241,7 +257,7 @@ export const updateAlgorithmVersion = procedure
     versionDescription: z.string().optional(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
+  .use(async ({ input:{ algorithmId,algorithmVersionId,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -251,14 +267,32 @@ export const updateAlgorithmVersion = procedure
       operationTypeName: OperationType.updateAlgorithmVersion,
     };
 
+    const em = await forkEntityManager();
+
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId,
+        versionId:algorithmVersionId,
+        algorithmName:algorithm.name,
+        algorithmVersionName: versionName,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId,
+          versionId:algorithmVersionId,
+          algorithmName:algorithm.name,
+          algorithmVersionName: versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -327,7 +361,6 @@ export const deleteAlgorithmVersion = procedure
   .input(z.object({ algorithmVersionId: z.number(), algorithmId:z.number() }))
   .output(z.void())
   .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -336,14 +369,37 @@ export const deleteAlgorithmVersion = procedure
       operationTypeName: OperationType.deleteAlgorithmVersion,
     };
 
+    const em = await forkEntityManager();
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
+
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId,
+        versionId:algorithmVersionId,
+        algorithmName:algorithm.name,
+        algorithmVersionName:algorithmVersion.versionName,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId,
+          versionId:algorithmVersionId,
+          algorithmName:algorithm.name,
+          algorithmVersionName:algorithmVersion.versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -437,14 +493,36 @@ export const shareAlgorithmVersion = procedure
       operationTypeName: OperationType.shareAlgorithmVersion,
     };
 
+    const em = await forkEntityManager();
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
+
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
+
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId,
+        versionId:algorithmVersionId,
+        algorithmName:algorithm.name,
+        algorithmVersionName:algorithmVersion.versionName,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId,versionId:algorithmVersionId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId,
+          versionId:algorithmVersionId,
+          algorithmName:algorithm.name,
+          algorithmVersionName:algorithmVersion.versionName,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -646,7 +724,7 @@ export const copyPublicAlgorithmVersion = procedure
     path: z.string(),
   }))
   .output(z.object({ targetAlgorithmId:z.number(),targetAlgorithmVersionId:z.number() }))
-  .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
+  .use(async ({ input:{ algorithmId,algorithmVersionId,algorithmName,versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -656,19 +734,39 @@ export const copyPublicAlgorithmVersion = procedure
       operationTypeName: OperationType.copyAlgorithmVersion,
     };
 
+    const em = await forkEntityManager();
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
+
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ sourceAlgorithmId:algorithmId,
+      await callLog({ ...logInfo, operationTypePayload:{
+        sourceAlgorithmId:algorithmId,
         sourceAlgorithmVersionId:algorithmVersionId,
         targetAlgorithmId: (res.data as any).targetAlgorithmId,
         targetAlgorithmVersionId: (res.data as any).targetAlgorithmVersionId,
+        sourceAlgorithmName:algorithm.name,
+        sourceAlgorithmVersionName:algorithmVersion.versionName,
+        targetAlgorithmName:algorithmName,
+        targetAlgorithmVersionName:versionName,
       } },
       OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ sourceAlgorithmId:algorithmId,
-        sourceAlgorithmVersionId:algorithmVersionId,
-      } },
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          sourceAlgorithmId:algorithmId,
+          sourceAlgorithmVersionId:algorithmVersionId,
+          sourceAlgorithmName:algorithm.name,
+          sourceAlgorithmVersionName:algorithmVersion.versionName,
+          targetAlgorithmName:algorithmName,
+          targetAlgorithmVersionName:versionName,
+        },
+      },
       OperationResult.FAIL);
     }
 

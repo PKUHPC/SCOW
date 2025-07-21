@@ -119,7 +119,7 @@ export const createAlgorithm = procedure
     description: z.string().optional(),
   }))
   .output(z.number())
-  .use(async ({ input:{ clusterId }, ctx, next }) => {
+  .use(async ({ input:{ clusterId,name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -130,13 +130,23 @@ export const createAlgorithm = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId, algorithmId:res.data as number } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        algorithmId:res.data as number,
+        algorithmName:name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          clusterId,
+          algorithmName:name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -192,14 +202,33 @@ export const updateAlgorithm = procedure
       operationTypeName: OperationType.updateAlgorithm,
     };
 
+    const em = await forkEntityManager();
+    const algorithm = await em.findOne(Algorithm, { id });
+
+    if (!algorithm) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Algorithm (id:${id}) is not found`,
+      });
+    }
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId:id,
+        algorithmName:algorithm.name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId:id,
+          algorithmName:algorithm.name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -287,7 +316,6 @@ export const deleteAlgorithm = procedure
   .input(z.object({ id: z.number() }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -296,14 +324,35 @@ export const deleteAlgorithm = procedure
       operationTypeName: OperationType.deleteAlgorithm,
     };
 
+    const em = await forkEntityManager();
+    const algorithm = await em.findOne(Algorithm, { id });
+
+    if (!algorithm) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Algorithm (id:${id}) is not found`,
+      });
+    }
+
+    const res = await next({ ctx });
+
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        algorithmId:id,
+        algorithmName:algorithm.name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ algorithmId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          algorithmId:id,
+          algorithmName:algorithm.name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;

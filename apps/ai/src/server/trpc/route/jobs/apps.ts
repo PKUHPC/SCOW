@@ -492,32 +492,8 @@ export const saveImage =
       imageStartCommand:z.string().optional(),
     }))
     .output(z.object({ imageId:z.number() }))
-    .use(async ({ input:{ jobId,imageTag }, ctx, next }) => {
-      const res = await next({ ctx });
-
-      const { user, req } = ctx;
-      const logInfo = {
-        operatorUserId: user.identityId,
-        operatorIp: parseIp(req) ?? "",
-        operationTypeName: OperationType.saveImage,
-      };
-
-      if (res.ok) {
-        await callLog({ ...logInfo, operationTypePayload:
-        { jobId, imageId:(res.data as any).imageId,tag:imageTag } },
-        OperationResult.SUCCESS);
-      }
-
-      if (!res.ok) {
-        await callLog({ ...logInfo, operationTypePayload:
-        { jobId, imageId:0, tag:"-" } },
-        OperationResult.FAIL);
-      }
-
-      return res;
-    })
     .mutation(
-      async ({ input, ctx: { user } }) => {
+      async ({ input, ctx: { user, req } }) => {
         const userId = user.identityId;
         const { clusterId, jobId, imageName, imageTag, imageDesc,imageTypes,
           imageInferServicePort,imageStartCommand } = input;
@@ -594,6 +570,12 @@ export const saveImage =
             throw new Error(`copyImage error: image ${imageName}:${imageTag} not found`);
           }
 
+          const logInfo = {
+            operatorUserId: user.identityId,
+            operatorIp: parseIp(req) ?? "",
+            operationTypeName: OperationType.saveImage,
+          };
+
           try {
             await driver.withImageDriver({
               clusterId,
@@ -612,10 +594,18 @@ export const saveImage =
             image.status = Status.CREATED;
             await em.persistAndFlush(image);
 
+            await callLog({ ...logInfo, operationTypePayload:
+              { jobId, imageName,tag:imageTag } },
+            OperationResult.SUCCESS);
+
             return;
           } catch (error: any) {
             image.status = Status.FAILURE;
             await em.persistAndFlush(image);
+
+            await callLog({ ...logInfo, operationTypePayload:
+              { jobId, imageName, tag:imageTag } },
+            OperationResult.FAIL);
 
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",

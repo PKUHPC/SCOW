@@ -133,7 +133,7 @@ export const createDataset = procedure
     description: z.string().optional(),
   }))
   .output(z.number())
-  .use(async ({ input:{ clusterId }, ctx, next }) => {
+  .use(async ({ input:{ clusterId,name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -144,13 +144,23 @@ export const createDataset = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId, datasetId:res.data as number } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        datasetId:res.data as number,
+        datasetName:name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ clusterId } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          clusterId,
+          datasetName:name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -197,7 +207,7 @@ export const updateDataset = procedure
     description: z.string().optional(),
   }))
   .output(z.number())
-  .use(async ({ input:{ id }, ctx, next }) => {
+  .use(async ({ input:{ id,name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -208,13 +218,22 @@ export const updateDataset = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ datasetId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        datasetId:id,
+        datasetName:name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ datasetId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:
+        {
+          datasetId:id,
+          datasetName:name,
+        },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
@@ -308,7 +327,6 @@ export const deleteDataset = procedure
   .input(z.object({ id: z.number() }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
-    const res = await next({ ctx });
 
     const { user, req } = ctx;
     const logInfo = {
@@ -316,15 +334,29 @@ export const deleteDataset = procedure
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.deleteDataset,
     };
+    const em = await forkEntityManager();
+    const dataset = await em.findOne(Dataset, { id });
+    if (!dataset)
+      throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${id} not found` });
+
+    const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ datasetId:id } },
-        OperationResult.SUCCESS);
+      await callLog({ ...logInfo, operationTypePayload:{
+        datasetId:id,
+        datasetName:dataset.name,
+      },
+      },
+      OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{ datasetId:id } },
-        OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload:{
+        datasetId:id,
+        datasetName:dataset.name,
+      },
+      },
+      OperationResult.FAIL);
     }
 
     return res;
