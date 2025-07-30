@@ -2,7 +2,7 @@ import { PictureOutlined } from "@ant-design/icons";
 import { Avatar, Button, Card, Col, Form, Input, message, Row, Space, Spin, Tooltip } from "antd";
 import Link from "next/link";
 import { join } from "path";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -79,6 +79,11 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
     return { apps: filteredValues };
 
   }, [data, query]);
+
+  useEffect(() => {
+    filterForm.resetFields();
+    setQuery(initialFilterQuery);
+  }, [clusterId, filterForm]);
 
   return (
     <Spin spinning={isLoading} tip={isLoading ? t(p("loading")) : ""} style={{ marginTop: "150px" }}>

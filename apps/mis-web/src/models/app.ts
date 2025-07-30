@@ -17,3 +17,9 @@ export const AuthorizeAction = {
   UNAUTHORIZE: 1,
 } as const;
 export type AuthorizeAction = ValueOf<typeof AuthorizeAction>;
+
+export const UpdateDefaultAppAction = {
+  ADD_TO_DEFAULT_APPS: 0,
+  REMOVE_FROM_DEFAULT_APPS: 1,
+} as const;
+export type UpdateDefaultAppAction = ValueOf<typeof UpdateDefaultAppAction>;

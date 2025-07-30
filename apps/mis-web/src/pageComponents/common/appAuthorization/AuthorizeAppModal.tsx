@@ -2,7 +2,7 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { AppAuthorizationInfo } from "@scow/protos/build/server/app_authorization";
 import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -95,6 +95,13 @@ const AuthorizeAppModal: React.FC<Props> = ({
 
   }, [appsInfo, query]);
 
+  useEffect(() => {
+    if (open) {
+      filterForm.resetFields();
+      setQuery(initialFilterQuery);
+    }
+  }, [open, filterForm]);
+
   return (
     <Modal
       title={t(p("title"))}
@@ -186,14 +193,6 @@ const AuthorizeAppModal: React.FC<Props> = ({
                           <p>
                             {contentTexts}
                           </p>
-                          {
-                            targetType === AppAuthTargetType.TENANT ?
-                              (
-                                <p style={{ color: "red" }}>
-                                  {t(p("confirm.authorize.tenantWarning"))}
-                                </p>
-                              ) : undefined
-                          }
                         </>
                       ),
                       onOk: async () => {

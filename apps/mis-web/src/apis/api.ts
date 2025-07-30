@@ -107,6 +107,8 @@ import type { SetTenantUserQuotaSchema } from "src/pages/api/storage/setTenantUs
 import type { DewhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/dewhitelistAccount";
 import type { GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
 import type { WhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/whitelistAccount";
+import type { GetTenantAppsSchema } from "src/pages/api/tenant/authorization/getTenantApps";
+import type { UpdateDefaultAppSchema } from "src/pages/api/tenant/authorization/updateDefaultApp";
 import type { BlockAccountSchema } from "src/pages/api/tenant/blockAccount";
 import type { ChangePasswordAsTenantAdminSchema } from "src/pages/api/tenant/changePassword";
 import type { CreateTenantSchema } from "src/pages/api/tenant/create";
@@ -266,4 +268,6 @@ export const api = {
   getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>("GET", "/api/admin/authorization/getTargetAppAuthorizations"),
   authorizeApp: apiClient.fromTypeboxRoute<typeof AuthorizeAppSchema>("PUT", "/api/admin/authorization/authorizeApp"),
   getTenantAssignedClustersAndPartitions: apiClient.fromTypeboxRoute<typeof GetTenantAssignedClustersAndPartitionsSchema>("GET", "/api/tenant/getTenantAssignedClustersAndPartitions"),
+  getTenantApps: apiClient.fromTypeboxRoute<typeof GetTenantAppsSchema>("GET", "/api/tenant/authorization/getTenantApps"),
+  updateDefaultApp: apiClient.fromTypeboxRoute<typeof UpdateDefaultAppSchema>("PUT", "/api/tenant/authorization/updateDefaultApp"),
 };

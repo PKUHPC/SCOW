@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Form, Input, Space } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -56,6 +56,11 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     return { apps: filteredValues };
 
   }, [data, isLoading, query.appName]);
+
+  useEffect(() => {
+    filterForm.resetFields();
+    setQuery(initialFilterQuery);
+  }, [clusterId, filterForm]);
 
   return (
     <>

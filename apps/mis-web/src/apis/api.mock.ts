@@ -737,6 +737,21 @@ export const mockApi: MockApi<typeof api> = {
     totalCount: 2,
   }),
   authorizeApp: null,
+  getTenantApps: async () => ({
+    tenantApps: [
+      {
+        id: "vscode",
+        name: "vscode",
+        isDefault: true,
+      },
+      {
+        id: "emacs",
+        name: "emacs",
+        isDefault: false,
+      },
+    ],
+  }),
+  updateDefaultApp: null,
   getTenantAssignedClustersAndPartitions: async () => ({
     assignedClusterPartitions: {
       "hpc01": { partitionNames: ["partition1", "partition2"]},

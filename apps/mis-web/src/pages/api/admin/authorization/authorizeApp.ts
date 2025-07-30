@@ -79,10 +79,10 @@ export default route(AuthorizeAppSchema, async (req, res) => {
       return { 200: { executed: true } };
     })
     .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.details } }),
+      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
+      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
+      [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.message } }),
+      [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.message } }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));

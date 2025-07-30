@@ -187,6 +187,8 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     unauthorizeApp: t(pTypes("unauthorizeApp")),
     migrateNode: t(pTypes("migrateNode")),
     activateNode: t(pTypes("activateNode")),
+    addToDefaultApps: t(pTypes("addToDefaultApps")),
+    removeFromDefaultApps: t(pTypes("removeFromDefaultApps")),
   };
 
 };
@@ -659,6 +661,14 @@ export const getOperationDetail = (
       case "activateNode":
         return t(pDetails("activateNode"),
           [operationEvent[logEvent].nodeName, operationEvent[logEvent].destinationCluster]);
+      case "addToDefaultApps":
+      case "removeFromDefaultApps":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("updateDefaultApp"),[
+          clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].tenantName,
+        ]);
+      }
       default:
         return "-";
     }

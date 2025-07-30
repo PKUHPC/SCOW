@@ -1787,6 +1787,123 @@
           "length": null,
           "mappedType": "integer"
         },
+        "app_id": {
+          "name": "app_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "cluster_id": {
+          "name": "cluster_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "removed_at": {
+          "name": "removed_at",
+          "type": "DATETIME(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "default": "current_timestamp(6)",
+          "mappedType": "datetime"
+        }
+      },
+      "name": "tenant_default_app_removed_list",
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_default_app_removed_list_tenant_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "cluster_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_default_app_removed_list_cluster_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "tenant_default_app_removed_list_tenant_id_foreign": {
+          "constraintName": "tenant_default_app_removed_list_tenant_id_foreign",
+          "columnNames": [
+            "tenant_id"
+          ],
+          "localTableName": "tenant_default_app_removed_list",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "tenant",
+          "updateRule": "cascade"
+        },
+        "tenant_default_app_removed_list_cluster_id_foreign": {
+          "constraintName": "tenant_default_app_removed_list_cluster_id_foreign",
+          "columnNames": [
+            "cluster_id"
+          ],
+          "localTableName": "tenant_default_app_removed_list",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "cluster",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
         "cluster": {
           "name": "cluster",
           "type": "varchar(255)",
@@ -2102,156 +2219,6 @@
           "length": null,
           "mappedType": "integer"
         },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "int",
-          "unsigned": true,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": null,
-          "mappedType": "integer"
-        },
-        "app_id": {
-          "name": "app_id",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": 255,
-          "mappedType": "string"
-        },
-        "cluster_id": {
-          "name": "cluster_id",
-          "type": "int",
-          "unsigned": true,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": null,
-          "mappedType": "integer"
-        },
-        "disabled_at": {
-          "name": "disabled_at",
-          "type": "datetime",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "length": null,
-          "default": "CURRENT_TIMESTAMP",
-          "mappedType": "datetime"
-        },
-        "operator_id": {
-          "name": "operator_id",
-          "type": "int",
-          "unsigned": true,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "length": null,
-          "mappedType": "integer"
-        }
-      },
-      "name": "tenant_app_blacklist",
-      "indexes": [
-        {
-          "columnNames": [
-            "tenant_id"
-          ],
-          "composite": false,
-          "keyName": "tenant_app_blacklist_tenant_id_index",
-          "constraint": false,
-          "primary": false,
-          "unique": false
-        },
-        {
-          "columnNames": [
-            "cluster_id"
-          ],
-          "composite": false,
-          "keyName": "tenant_app_blacklist_cluster_id_index",
-          "constraint": false,
-          "primary": false,
-          "unique": false
-        },
-        {
-          "columnNames": [
-            "operator_id"
-          ],
-          "composite": false,
-          "keyName": "tenant_app_blacklist_operator_id_index",
-          "constraint": false,
-          "primary": false,
-          "unique": false
-        },
-        {
-          "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": true,
-          "primary": true,
-          "unique": true
-        }
-      ],
-      "checks": [],
-      "foreignKeys": {
-        "tenant_app_blacklist_tenant_id_foreign": {
-          "constraintName": "tenant_app_blacklist_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
-          "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "referencedTableName": "tenant",
-          "updateRule": "cascade"
-        },
-        "tenant_app_blacklist_cluster_id_foreign": {
-          "constraintName": "tenant_app_blacklist_cluster_id_foreign",
-          "columnNames": [
-            "cluster_id"
-          ],
-          "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "referencedTableName": "cluster",
-          "deleteRule": "cascade",
-          "updateRule": "cascade"
-        },
-        "tenant_app_blacklist_operator_id_foreign": {
-          "constraintName": "tenant_app_blacklist_operator_id_foreign",
-          "columnNames": [
-            "operator_id"
-          ],
-          "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
-          "referencedTableName": "user",
-          "deleteRule": "set null",
-          "updateRule": "cascade"
-        }
-      },
-      "nativeEnums": {}
-    },
-    {
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "int",
-          "unsigned": true,
-          "autoincrement": true,
-          "primary": true,
-          "nullable": false,
-          "length": null,
-          "mappedType": "integer"
-        },
         "user_id": {
           "name": "user_id",
           "type": "int",
@@ -2368,6 +2335,156 @@
           "length": null,
           "mappedType": "integer"
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "app_id": {
+          "name": "app_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "cluster_id": {
+          "name": "cluster_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "DATETIME(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "default": "current_timestamp(6)",
+          "mappedType": "datetime"
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "integer"
+        }
+      },
+      "name": "tenant_app_blacklist",
+      "indexes": [
+        {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_tenant_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "cluster_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_cluster_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "operator_id"
+          ],
+          "composite": false,
+          "keyName": "tenant_app_blacklist_operator_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {
+        "tenant_app_blacklist_tenant_id_foreign": {
+          "constraintName": "tenant_app_blacklist_tenant_id_foreign",
+          "columnNames": [
+            "tenant_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "tenant",
+          "updateRule": "cascade"
+        },
+        "tenant_app_blacklist_cluster_id_foreign": {
+          "constraintName": "tenant_app_blacklist_cluster_id_foreign",
+          "columnNames": [
+            "cluster_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "cluster",
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
+        },
+        "tenant_app_blacklist_operator_id_foreign": {
+          "constraintName": "tenant_app_blacklist_operator_id_foreign",
+          "columnNames": [
+            "operator_id"
+          ],
+          "localTableName": "tenant_app_blacklist",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "user",
+          "deleteRule": "set null",
+          "updateRule": "cascade"
+        }
+      },
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
         "account_id": {
           "name": "account_id",
           "type": "int",
@@ -2400,13 +2517,13 @@
         },
         "disabled_at": {
           "name": "disabled_at",
-          "type": "datetime",
+          "type": "DATETIME(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "length": null,
-          "default": "CURRENT_TIMESTAMP",
+          "length": 6,
+          "default": "current_timestamp(6)",
           "mappedType": "datetime"
         },
         "operator_id": {
@@ -2448,6 +2565,18 @@
           ],
           "composite": false,
           "keyName": "account_app_blacklist_operator_id_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "idx_cluster_account_app",
+          "columnNames": [
+            "cluster_id",
+            "account_id",
+            "app_id"
+          ],
+          "composite": true,
           "constraint": false,
           "primary": false,
           "unique": false

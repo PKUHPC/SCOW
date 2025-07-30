@@ -1,3 +1,5 @@
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { Space } from "antd";
 import { NextPage } from "next";
 import { useCallback } from "react";
 import { useAsync } from "react-async";
@@ -7,13 +9,12 @@ import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAva
 import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
-import { AppAuthTargetType } from "src/models/app";
 import { TenantRole } from "src/models/User";
-import { AppAuthorizationTable } from "src/pageComponents/common/appAuthorization/AppAuthorizationTable";
+import { DefaultAppsTable } from "src/pageComponents/tenant/DefaultAppsTable";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-export const AppAuthorizationPage: NextPage =
+export const DefaultAppsPage: NextPage =
   requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
 
     if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
@@ -41,10 +42,15 @@ export const AppAuthorizationPage: NextPage =
 
     return (
       <div>
-        <Head title={t("pageComp.commonComponent.appAuthorization.appAuthorizationTable.title")} />
-        <PageTitle titleText={t("pageComp.commonComponent.appAuthorization.appAuthorizationTable.title")} />
-        <AppAuthorizationTable
-          targetType={AppAuthTargetType.ACCOUNT}
+        <Head title={t("page.tenant.permissionManagement.defaultApps.title")} />
+        <PageTitle titleText={t("page.tenant.permissionManagement.defaultApps.title")} />
+        <Space style={{ marginBottom: "20px" }}>
+          <ExclamationCircleOutlined />
+          <span>
+            {t("page.tenant.permissionManagement.defaultApps.explanation")}
+          </span>
+        </Space>
+        <DefaultAppsTable
           tenantAvailableClusterIds={availableClusterIds}
           loading={isLoading}
           reload={reload}
@@ -53,4 +59,4 @@ export const AppAuthorizationPage: NextPage =
     );
   });
 
-export default AppAuthorizationPage;
+export default DefaultAppsPage;

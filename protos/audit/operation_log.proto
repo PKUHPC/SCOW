@@ -817,6 +817,18 @@ message UnauthorizeApp {
   }
 }
 
+message AddToDefaultApps {
+  string cluster_id = 1;
+  string app_name = 2;
+  string tenant_name = 3;
+}
+
+message RemoveFromDefaultApps {
+  string cluster_id = 1;
+  string app_name = 2;
+  string tenant_name = 3;
+}
+
 // INVALID_ARGUMENT: Custom event type name not match with exist type name.
 message CreateOperationLogRequest {
   string operator_user_id = 1;
@@ -937,6 +949,8 @@ message CreateOperationLogRequest {
     ActivateNode activate_node = 115;
     SetTenantUserDefaultQuota set_tenant_user_default_quota = 116;
     SetTenantUserQuota set_tenant_user_quota = 117;
+    AddToDefaultApps add_to_default_apps = 118;
+    RemoveFromDefaultApps remove_from_default_apps = 119;
   }
 }
 
@@ -1062,6 +1076,8 @@ message OperationLog {
     ActivateNode activate_node = 117;
     SetTenantUserDefaultQuota set_tenant_user_default_quota = 118;
     SetTenantUserQuota set_tenant_user_quota = 119;
+    AddToDefaultApps add_to_default_apps = 120;
+    RemoveFromDefaultApps remove_from_default_apps = 121;
   }
 }
 

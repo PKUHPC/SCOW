@@ -7,7 +7,7 @@ import { Lang } from "react-typed-i18n";
 import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInfoIcon,
   AccountListIcon, AccountPayIcon, AccountPaymentsIcon, AccountWhitelistIcon, AdminInfoIcon, AdminManageIcon,
   AlarmLogIcon, AuthorizeAppIcon, ClusterManagementIcon, CreateAccountIcon, CreateUserIcon,CreatTenantIcon,
-  DashBoardIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
+  DashBoardIcon, DefaultAuthorizedAppIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
   ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, OperationLogIcon, PartitionsIcon,
   PayAccountIcon, PaymentsIcon, PermissionManagementIcon,PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
   SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
@@ -308,11 +308,16 @@ export const tenantRoutes: (
             path: "/tenant/permissionManagement",
             clickable: false,
             children: [
-              ...(publicConfig.ALLOW_APP_AUTHORIZATION ? [{
-                Icon: AuthorizeAppIcon,
-                text: t(pTenant("appAuthorization")),
-                path: "/tenant/permissionManagement/appAuthorization",
-              }] : []),
+              ...(publicConfig.ALLOW_APP_AUTHORIZATION ? [
+                {
+                  Icon: DefaultAuthorizedAppIcon,
+                  text: t(pTenant("defaultAuthorizedApp")),
+                  path: "/tenant/permissionManagement/defaultApps",
+                }, {
+                  Icon: AuthorizeAppIcon,
+                  text: t(pTenant("appAuthorization")),
+                  path: "/tenant/permissionManagement/appAuthorization",
+                }] : []),
             // 如果UI EXtension 添加了资源管理，展示在此处
             ],
           }] : []),

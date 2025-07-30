@@ -108,8 +108,8 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
     }))
     .catch(handlegRPCError({
       [status.FAILED_PRECONDITION]: (e) => ({ 409: {
-        code: "FAILED_PRECONDITION" as const, message: e.details } }),
+        code: "FAILED_PRECONDITION" as const, message: e.message } }),
       [status.INVALID_ARGUMENT]: (e) => ({ 400: {
-        code: "INVALID_ARGUMENT" as const, message: e.details } }),
+        code: "INVALID_ARGUMENT" as const, message: e.message } }),
     }));
 });

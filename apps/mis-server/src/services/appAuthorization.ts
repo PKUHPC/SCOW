@@ -4,8 +4,10 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { raw } from "@mikro-orm/core";
 import { libCheckActivatedClusters, libCheckAppIdInClusterApps } from "@scow/lib-server";
 import { AppAuthorizationInfo, AppAuthorizationServiceServer,
-  AppAuthorizationServiceService, AuthorizeAppRequest_AuthorizeAction,
-  GetTargetAppAuthorizationsRequest_TargetType }
+  AppAuthorizationServiceService,
+  GetTargetAppAuthorizationsRequest_TargetType,
+  GetTenantAppsResponse_TenantApp,
+  UpdateDefaultAppRequest_UpdateAction }
   from "@scow/protos/build/server/app_authorization";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
@@ -15,9 +17,13 @@ import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
+import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
-import { formatTargetAppInfoList, getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
+import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
+import { addToTenantDefaultApps, authorizeAccountApp,
+  authorizeTenantApp, formatTargetAppInfoList,
+  removeFromTenantDefaultApps } from "src/utils/appAuthorization";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 
@@ -162,168 +168,51 @@ export const appAuthorizationServiceServer = plugin((server) => {
           message: "Request target of tenant or account is not found.",
         });
       }
-      // 验证clusterId是否在当前在线集群中
-      const foundCluster = await em.findOne(Cluster, { clusterId: clusterId });
-      if (!foundCluster) {
-        throw new ServiceError({
-          code: Status.NOT_FOUND,
-          message: `Cluster ${clusterId} is not found.`,
-        });
-      }
-      const currentActivatedClusters = await getActivatedClusters(em, logger);
-      libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-      // 验证user存在
-      const foundOperator = await em.findOne(User, { userId: operatorId });
-      if (!foundOperator || foundOperator.state === UserState.DELETED) {
-        throw new ServiceError({
-          code: Status.NOT_FOUND,
-          message: `Operator ${operatorId} is not found or deleted.`,
-        });
-      }
+      return await em.transactional(async (em) => {
 
-      // 验证appId是否在当前交互式应用列表中
-      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
-      const clusterApps = configClusters[clusterId].ai?.enabled
-        ? getAiClusterAppConfigs(clusterId)
-        : getClusterAppConfigs(clusterId);
-
-      libCheckAppIdInClusterApps({ appId, appIds: Object.keys(clusterApps), clusterId, logger });
-
-      // ************************************对帐户执行授权/取消授权APP操作************************************************
-      if (target.$case === "accountName") {
-        const foundAccount = await em.findOne(Account, { accountName: target.accountName },
-          { populate: ["tenant"]});
-        // 检查当前appId是否不在租户禁用app列表之中
-        if (!foundAccount || foundAccount?.state === AccountState.DELETED) {
+        const [foundCluster, foundOperator] = await Promise.all([
+          em.findOne(Cluster, { clusterId: clusterId }),
+          em.findOne(User, { userId: operatorId }),
+        ]);
+        // 验证clusterId是否在当前在线集群中
+        if (!foundCluster) {
           throw new ServiceError({
             code: Status.NOT_FOUND,
-            message: `Account ${target.accountName} is not found or has been deleted.`,
+            message: `Cluster ${clusterId} is not found.`,
           });
         }
-        const tenantName = foundAccount?.tenant.getProperty("name");
-        const foundDisabledApp = await em.findOne(TenantAppBlacklist, {
-          cluster: { clusterId: clusterId },
-          tenant: { name: tenantName },
-          appId: appId,
-        });
-        if (foundDisabledApp) {
-          throw new ServiceError({
-            code: Status.UNAVAILABLE,
-            message: `Can not authorize the app ${appId} which is not authorized to account's tenant ${tenantName}.`,
-          });
-        }
+        const currentActivatedClusters = await getActivatedClusters(em, logger);
+        libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
-        const accountDisabledAppItem = await em.findOne(AccountAppBlacklist, {
-          account: { accountName: target.accountName },
-          appId: appId,
-          cluster: { clusterId: clusterId },
-        });
-        // 如果是授权交互式应用，则判断是否在当前账户禁用列表
-        // 如果在则移除；如果不在则直接返回执行成功
-        if (action === AuthorizeAppRequest_AuthorizeAction.AUTHORIZE) {
-          if (!accountDisabledAppItem) {
-            logger.info(`App ${appId} is already authorized to account ${target.accountName}`);
-            return [{ executed: true }];
-          } else {
-            em.remove(accountDisabledAppItem);
-          }
-        // 如果是取消授权交互式应用，则判断是否在当前账户禁用列表
-        // 如果在则直接返回执行成功
-        // 如果不在则添加
-        } else {
-          if (accountDisabledAppItem) {
-            logger.info(`App ${appId} has already been unauthorized to account ${target.accountName}`);
-          } else {
-            const newItem = new AccountAppBlacklist({
-              account: foundAccount,
-              appId: appId,
-              cluster: foundCluster,
-              operator: foundOperator,
-            });
-            em.persist(newItem);
-          }
-        }
-
-      // ************************************对租户执行授权/取消授权APP操作************************************************
-      } else {
-        const foundTenant = await em.findOne(Tenant, { name: target.tenantName });
-        if (!foundTenant) {
+        // 验证user存在
+        if (!foundOperator || foundOperator.state === UserState.DELETED) {
           throw new ServiceError({
             code: Status.NOT_FOUND,
-            message: `Tenant ${target.tenantName} is not found.`,
+            message: `Operator ${operatorId} is not found or deleted.`,
           });
         }
 
-        const foundTenantDisabledApp = await em.findOne(TenantAppBlacklist, {
-          cluster: { clusterId: clusterId },
-          tenant: { name: target.tenantName },
-          appId: appId,
-        }, { populate: ["tenant", "cluster"]});
-        const foundAccountsDisableApps = await em.find(AccountAppBlacklist, {
-          cluster: { clusterId: clusterId },
-          account: { tenant: { name: target.tenantName } },
-          appId: appId,
-        }, { populate: ["account", "account.tenant", "cluster"]});
+        // 验证appId是否在当前交互式应用列表中
+        // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+        const clusterApps = configClusters[clusterId].ai?.enabled
+          ? getAiClusterAppConfigs(clusterId)
+          : getClusterAppConfigs(clusterId);
 
-        // 如果是授权交互式应用，则该租户下所有账户也授权此应用
-        if (action === AuthorizeAppRequest_AuthorizeAction.AUTHORIZE) {
-          if (foundTenantDisabledApp) {
-            em.remove(foundTenantDisabledApp);
-          }
+        libCheckAppIdInClusterApps({ appId, appIds: Object.keys(clusterApps), clusterId, logger });
 
-          if (foundAccountsDisableApps.length > 0) {
-            em.remove([...foundAccountsDisableApps]);
-          }
-        // 如果是取消授权交互式应用，则判断是否在当前租户禁用列表
-        // 默认同时取消授权租户下关联账户此应用
+        if (target.$case === "accountName") {
+          await authorizeAccountApp(
+            em, target.accountName, clusterId, appId, action, foundCluster, foundOperator, logger);
+          // ************************************对租户执行授权/取消授权APP操作************************************************
         } else {
-          if (foundTenantDisabledApp) {
-            logger.info(`App ${appId} has already been unauthorized to tenant ${target.tenantName}`);
-          } else {
-            const newItem = new TenantAppBlacklist({
-              tenant: foundTenant,
-              appId: appId,
-              cluster: foundCluster,
-              operator: foundOperator,
-            });
-            em.persist(newItem);
-          }
-
-          // 查询所有的账户包含已删除账户
-          const tenantAccounts = await em.find(Account, { tenant: { name: target.tenantName } }, {
-            populate: ["tenant"],
-          });
-          // 获取已存在的黑名单记录
-          const existingBlacklists = await em.find(AccountAppBlacklist, {
-            account: { tenant: { name: target.tenantName } },
-            cluster: { clusterId: clusterId },
-            appId: appId,
-          });
-
-          // 创建已存在账户的集合，用于快速查找
-          const existingAccountIds = new Set(existingBlacklists.map((item) => item.account.id));
-
-          // 只为不在黑名单中的账户创建新记录
-          const newBlacklistItems = tenantAccounts
-            .filter((account) => !existingAccountIds.has(account.id))
-            .map((account) => new AccountAppBlacklist({
-              account,
-              appId,
-              cluster: foundCluster,
-              operator: foundOperator,
-            }));
-
-          if (newBlacklistItems.length > 0) {
-            em.persist(newBlacklistItems);
-          }
+          await authorizeTenantApp(
+            em, target.tenantName, clusterId, appId, action, foundCluster, foundOperator, logger);
         }
-      }
 
-      // 持久化
-      await em.flush();
-      return [{ executed: true }];
+        return [{ executed: true }];
 
+      });
     },
 
     getUserAvailableClusterApps: async ({ request, em }) => {
@@ -492,6 +381,160 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
       return [{ isDisabled: !!found }];
     },
+
+    getTenantApps: async ({ request , em }) => {
+
+      if (!commonConfig.allowAppAuthorization) {
+        throw new ServiceError({
+          code: Status.FAILED_PRECONDITION,
+          message: "App Authorization is not supported. Please confirm the common config file.",
+        });
+      }
+
+      const { clusterId, tenantName } = request;
+      const currentActivatedClusters = await getActivatedClusters(em, logger);
+      libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
+
+      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+      const clusterApps = configClusters[clusterId].ai?.enabled
+        ? getAiClusterAppConfigs(clusterId)
+        : getClusterAppConfigs(clusterId);
+      const currentClusterAppIds = Object.keys(clusterApps);
+      if (currentClusterAppIds.length === 0) {
+        // 该集群下没有可以使用的交互式应用
+        return [{ tenantApps: []}];
+      }
+
+      return await em.transactional(async (em) => {
+
+        const [tenantBlackApps, tenantDefaultRemovedApps] = await Promise.all([
+          em.find(TenantAppBlacklist, {
+            cluster: { clusterId },
+            tenant: { name: tenantName },
+          }, { populate: ["tenant", "cluster"]}),
+
+          em.find(TenantDefaultAppRemovedList, {
+            cluster: { clusterId },
+            tenant: { name: tenantName },
+          }, { populate: ["tenant", "cluster"]}),
+        ]);
+
+        // 提取ID集合
+        const blackAppIds = new Set(tenantBlackApps.map((app) => app.appId));
+        const removedAppIds = new Set(tenantDefaultRemovedApps.map((app) => app.appId));
+
+        // 获取租户已授权应用，默认授权应用
+        const tenantApps: GetTenantAppsResponse_TenantApp[] = currentClusterAppIds
+          .filter((id) => !blackAppIds.has(id))
+          .map((appId) => ({
+            id: appId,
+            name: clusterApps[appId].name,
+            logoPath: clusterApps[appId].logoPath,
+            isDefault: !removedAppIds.has(appId),
+          }));
+
+        return [ { tenantApps } ];
+
+      });
+    },
+
+
+    updateDefaultApp: async ({ request, em }) => {
+
+      if (!commonConfig.allowAppAuthorization) {
+        throw new ServiceError({
+          code: Status.FAILED_PRECONDITION,
+          message: "App Authorization is not supported. Please confirm the common config file.",
+        });
+      }
+      const { clusterId, tenantName, appId, updateAction, operatorId } = request;
+
+      const currentActivatedClusters = await getActivatedClusters(em, logger);
+      libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
+
+      // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+      const clusterApps = configClusters[clusterId].ai?.enabled
+        ? getAiClusterAppConfigs(clusterId)
+        : getClusterAppConfigs(clusterId);
+      const currentClusterAppIds = Object.keys(clusterApps);
+      if (currentClusterAppIds.length === 0) {
+        // 该集群下没有可以使用的交互式应用
+        logger.info("There is no app configs in the cluster: %s", clusterId);
+      }
+
+      const appIsNotInConfig = !currentClusterAppIds.includes(appId);
+
+      return await em.transactional(async (em) => {
+
+        const [
+          foundTenant,
+          foundCluster,
+          foundOperator,
+          // 查询要更新的 租户及APP 是否在 TenantDefaultAppRemovedList 中
+          foundRemovedApp,
+          // 查询租户已经被禁用的 APP 列表
+          tenantBlackApps,
+        ] = await Promise.all([
+          em.findOne(Tenant, { name: tenantName }),
+          em.findOne(Cluster, { clusterId: clusterId }),
+          em.findOne(User, { userId: operatorId }),
+          em.findOne(TenantDefaultAppRemovedList, {
+            cluster: { clusterId: clusterId },
+            tenant: { name: tenantName },
+            appId: appId,
+          }, { populate: ["cluster", "tenant"]}),
+          em.find(TenantAppBlacklist, {
+            cluster: { clusterId: clusterId },
+            tenant: { name: tenantName },
+          }, { populate: ["tenant", "cluster"]}),
+        ]);
+
+        if (!foundTenant) {
+          throw new ServiceError({
+            code: Status.NOT_FOUND,
+            message: `Tenant ${tenantName} is not found.`,
+          });
+        }
+        if (!foundCluster) {
+          throw new ServiceError({
+            code: Status.NOT_FOUND,
+            message: `Cluster ${clusterId} is not found.`,
+          });
+        }
+        if (!foundOperator) {
+          throw new ServiceError({
+            code: Status.NOT_FOUND,
+            message: `Operator ${operatorId} is not found.`,
+          });
+        }
+
+        const appIsInTenantBlacklist = tenantBlackApps.map((app) => app.appId)?.includes(appId);
+        // appId 不在config配置文件中
+        // 或者 在租户禁用app列表中
+        // 添加或移除均认为失败，不去更新租户下账户的授权数据
+        if (appIsNotInConfig || appIsInTenantBlacklist) {
+          throw new ServiceError({
+            code: Status.NOT_FOUND,
+            message:
+              `App ${appId} is not in apps config of cluster ${clusterId} or is blocked to tenant ${tenantName}.`,
+          });
+        }
+
+
+        // 添加应用到默认授权应用时
+        if (updateAction === UpdateDefaultAppRequest_UpdateAction.ADD_TO_DEFAULT_APPS) {
+          await addToTenantDefaultApps(em, clusterId, tenantName, appId, foundCluster, logger, foundRemovedApp);
+
+        // 从默认授权应用中移除时
+        } else {
+          await removeFromTenantDefaultApps(em, clusterId, tenantName, appId,
+            foundTenant, foundCluster, foundOperator, logger, foundRemovedApp);
+        }
+        return [{ executed: true }];
+      });
+    },
+
+
   });
 });
 

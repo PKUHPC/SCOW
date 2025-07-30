@@ -11,7 +11,7 @@ import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
-import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
+import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
@@ -146,9 +146,10 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
   }
 
   const accountAppBlacklistsToPersist: AccountAppBlacklist[] = [];
-  // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
+  // 如果开启授权应用功能
+  // 新建账户时按照所属租户禁用的默认应用列表来写入账户禁用app
   if (commonConfig.allowAppAuthorization && accounts.length > 0) {
-    const affiliatedTenantBlackAppList = await em.find(TenantAppBlacklist, {
+    const affiliatedTenantBlackAppList = await em.find(TenantDefaultAppRemovedList, {
       tenant: tenant,
     }, { populate: ["tenant"]});
 

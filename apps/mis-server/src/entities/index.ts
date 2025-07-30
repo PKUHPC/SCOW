@@ -19,6 +19,8 @@ import { User } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
 
+import { TenantDefaultAppRemovedList } from "./TenantDefaultAppRemovedList";
+
 export const entities = [
   UserAccount,
   AccountWhitelist,
@@ -40,4 +42,5 @@ export const entities = [
   TenantUserStorageQuota,
   AccountAppBlacklist,
   TenantAppBlacklist,
+  TenantDefaultAppRemovedList,
 ];

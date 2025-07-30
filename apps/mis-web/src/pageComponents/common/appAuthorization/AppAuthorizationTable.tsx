@@ -3,7 +3,7 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { TargetAppList } from "@scow/protos/build/server/app_authorization";
 import { Static } from "@sinclair/typebox";
 import { Button, Divider, Form, Input, Space, Table } from "antd";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -32,11 +32,12 @@ interface Props {
   targetType: AppAuthTargetType;
   loading: boolean;
   tenantAvailableClusterIds?: string[];
+  reload?: () => void;
 }
 
 const p = prefix("pageComp.commonComponent.appAuthorization.appAuthorizationTable.");
 
-export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvailableClusterIds, loading }) => {
+export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvailableClusterIds, loading, reload }) => {
 
   const { activatedClusters } = useStore(ClusterInfoStore);
 
@@ -45,6 +46,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   }
 
   const [selectedClusterId, setSelectedClusterId] = useState<string>("");
+
   const availableClusters: Record<string, Cluster> = useMemo(() => {
     if (targetType === AppAuthTargetType.ACCOUNT && publicConfig.SCOW_RESOURCE_ENABLED) {
       const clusters = Object.entries(activatedClusters)
@@ -53,16 +55,20 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
           result[clusterId] = cluster;
           return result;
         }, {});
-      // 保持与下方集群切换Tab初始集群一致
-      if (Object.entries(clusters)?.length > 0) {
-        setSelectedClusterId(Object.entries(clusters)[0][0]);
-      }
       return clusters;
     }
-    // 保持与下方集群切换Tab初始集群一致
-    setSelectedClusterId(Object.entries(activatedClusters)[0][0]);
     return activatedClusters;
-  },[targetType, activatedClusters, tenantAvailableClusterIds]);
+  }, [targetType, activatedClusters, tenantAvailableClusterIds]);
+
+  // 仅在初始化时或当前选中的集群不再可用时才设置
+  useEffect(() => {
+    const clusterEntries = Object.entries(availableClusters);
+    if (clusterEntries.length > 0) {
+      if (!selectedClusterId || !availableClusters[selectedClusterId]) {
+        setSelectedClusterId(clusterEntries[0][0]);
+      }
+    }
+  }, [availableClusters, selectedClusterId]);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return { filterName: undefined };
@@ -73,7 +79,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
-  const [form] = Form.useForm<FilterForm>();
+  const [filterForm] = Form.useForm<FilterForm>();
 
   const promiseFn = useCallback(async () => {
 
@@ -93,6 +99,17 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   }, [query, pageInfo, selectedClusterId]);
   const { data, isLoading, reload: reloadTargetAppList } = useAsync({ promiseFn });
 
+  const reloadFullTable = () => {
+    reload?.();
+    reloadTargetAppList();
+  };
+
+  const handleClusterChange = (clusterId: string) => {
+    setSelectedClusterId(clusterId);
+    filterForm.resetFields();
+    setQuery({ filterName: undefined });
+  };
+
   return (
     <div>
       <FilterFormTabs
@@ -100,15 +117,15 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
           title: `${getI18nConfigCurrentText(cluster.name, languageId) || clusterId}`,
           key: clusterId,
         }))}
-        onChange={(value) => { setSelectedClusterId(value); }}
+        onChange={handleClusterChange}
       />
       <FilterFormContainer>
         <Form<FilterForm>
           layout="inline"
-          form={form}
+          form={filterForm}
           initialValues={query}
           onFinish={async () => {
-            const { filterName } = await form.validateFields();
+            const { filterName } = await filterForm.validateFields();
             setQuery({ filterName: filterName === "" ? undefined : filterName?.trim() });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
@@ -133,7 +150,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
         setPageInfo={setPageInfo}
         isLoading={isLoading || loading}
         reload={() => {
-          reloadTargetAppList();
+          reloadFullTable();
         }}
       />
 

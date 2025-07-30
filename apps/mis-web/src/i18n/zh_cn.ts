@@ -215,6 +215,7 @@ export default {
         accountBills: "账户账单明细",
         storageManager: "存储管理",
         permissionManagement: "权限管理",
+        defaultAuthorizedApp: "默认授权应用",
         appAuthorization: "授权应用",
       },
       accountManagement: {
@@ -460,8 +461,6 @@ export default {
               title: "授权",
               tenantContent: "确定要在集群 {0} 下将应用 {1} 对租户 {2} 授权吗？",
               accountContent: "确定要在集群 {0} 下将应用 {1} 对账户 {2} 授权吗？",
-              tenantWarning: "进行授权后，该租户下所有账户均同步添加该应用的授权",
-
             },
             unauthorize: {
               title: "取消授权",
@@ -469,7 +468,7 @@ export default {
 
               accountContent: "确定要在集群 {0} 下取消应用 {1} 对账户 {2} 的授权吗？",
 
-              tenantWarning: "取消授权后，该租户下所有账户均同步取消该应用的授权",
+              tenantWarning: "取消授权后，如果是默认授权应用，会同步移出；该租户下所有账户也均同步取消该应用的授权",
 
             },
           },
@@ -788,6 +787,30 @@ export default {
       changeDefaultAccountBlockThresholdModal: {
         defaultAccountBlockThresholdAmount: "默认账户封锁阈值",
         setAmount: "设置默认账户封锁阈值",
+      },
+      defaultApps: {
+        defaultAppsTable: {
+          appName: "应用名",
+          operation: "操作",
+          removeFromDefaultApps: {
+            title: "移出默认授权应用",
+            confirmContent: "确认从租户 {0} 在 集群 {1} 的默认授权应用下移出应用 {2} 吗？",
+            confirmWarn: "移出默认授权应用后，该租户下所有账户均同步取消该应用的授权",
+            removeSuccessMessage: "已从默认授权应用下移出",
+            removeFailedMessage: "默认授权应用移出失败",
+          },
+          addToDefaultApps: {
+            title: "添加默认授权应用",
+            tenant: "租户",
+            cluster: "集群",
+            modalWarn: "添加默认授权应用后，该租户下所有账户均同步添加该应用的授权",
+            app: "应用",
+            appDefaultPlaceholder: "请选择应用",
+            noAppsPlaceholder: "没有可以选择的应用",
+            addSuccessMessage: "默认授权应用已添加",
+            addFailedMessage: "默认授权应用添加失败",
+          },
+        },
       },
     },
     user:{
@@ -1197,6 +1220,13 @@ export default {
       },
       storageManager: {
         storageManager: "存储管理",
+      },
+      permissionManagement: {
+        defaultApps: {
+          title: "默认授权应用",
+          explanation: "添加或移出默认授权应用会同步更改租户下所有账户该应用的授权；"
+          + "新建账户时，会自动添加默认授权应用到该账户的授权应用中。",
+        },
       },
     },
     init: {
@@ -1652,6 +1682,8 @@ export default {
       unauthorizeApp: "取消授权应用",
       migrateNode: "迁移节点",
       activateNode: "上线节点",
+      addToDefaultApps: "添加默认授权应用",
+      removeFromDefaultApps: "移出默认授权应用",
     },
     operationDetails: {
       submitJob: "集群: {}, 作业ID: {}",
@@ -1790,6 +1822,7 @@ export default {
       accountAppAuthorizationLog: "集群: {0}, 应用: {1}, 账户: {2}",
       migrateNode: "节点: {}, 源集群: {}, 目标集群: {}",
       activateNode: "节点: {}, 集群: {}",
+      updateDefaultApp: "集群: {0}, 应用: {1}, 租户: {2}",
     },
   },
   userRoles: {

@@ -216,7 +216,8 @@ export default {
         accountBills: "Account Bill Records",
         storageManager: "Storage Manager",
         permissionManagement: "Permission Management",
-        appAuthorization: "Authorize application",
+        defaultAuthorizedApp: "Default Authorized Application",
+        appAuthorization: "Authorize Application",
       },
       accountManagement: {
         firstNav: "Accounts",
@@ -461,8 +462,6 @@ export default {
               title: "Authorization Confirmation",
               tenantContent: "Are you sure you want to authorize application {1} on cluster {0} for tenant {2}?",
               accountContent: "Are you sure you want to authorize application {1} on cluster {0} for account {2}?",
-              tenantWarning: "After authorization, all accounts under this tenant will synchronously be "
-              + "granted authorization for this application.",
             },
             unauthorize: {
               title: "Revoke Authorization Confirmation",
@@ -470,7 +469,8 @@ export default {
               + "on cluster {0} for tenant {2}?",
               accountContent: "Are you sure you want to revoke authorization of application {1} "
               + "on cluster {0} for account {2}?",
-              tenantWarning: "After revocation, all accounts under this tenant will synchronously have "
+              tenantWarning: "After revocation, if it is a default authorized application, "
+              + "it will be synchronized and removed. all accounts under this tenant will synchronously have "
               + "their authorization for this application canceled.",
             },
           },
@@ -789,6 +789,33 @@ export default {
       changeDefaultAccountBlockThresholdModal: {
         defaultAccountBlockThresholdAmount: "Default Account Block Threshold Amount",
         setAmount: "Set Default Account Block Threshold",
+      },
+      defaultApps: {
+        defaultAppsTable: {
+          appName: "Application Name",
+          operation: "Operation",
+          removeFromDefaultApps: {
+            title: "Remove Default Authorized Application",
+            confirmContent: "Confirm removing application {2} from default authorized "
+            + "applications for tenant {0} in cluster {1}?",
+            confirmWarn: "After removing from default authorized applications, all accounts "
+            + "under this tenant will synchronously cancel the authorization of this application",
+            removeSuccessMessage: "Removed from default authorized applications",
+            removeFailedMessage: "Failed to remove default authorized application",
+          },
+          addToDefaultApps: {
+            title: "Add Default Authorized Application",
+            tenant: "Tenant",
+            cluster: "Cluster",
+            modalWarn: "After adding to default authorized applications, all accounts under this tenant "
+            + "will synchronously add the authorization of this application",
+            app: "Application",
+            appDefaultPlaceholder: "Please select an application",
+            noAppsPlaceholder: "No available applications",
+            addSuccessMessage: "Default authorized application added",
+            addFailedMessage: "Failed to add default authorized application",
+          },
+        },
       },
     },
     user: {
@@ -1204,7 +1231,16 @@ export default {
         },
       },
       storageManager: {
-        storageManager: "存储管理",
+        storageManager: "Storage Manager",
+      },
+      permissionManagement: {
+        defaultApps: {
+          title: "Default Authorized Application",
+          explanation: "Adding or removing a default authorized application will synchronize the "
+          + "application's authorization changes across all accounts under the tenant. When a new account "
+          + "is created, the default authorized application will be automatically added to the "
+          + "account's authorized applications.",
+        },
       },
     },
     init: {
@@ -1664,6 +1700,8 @@ export default {
       unauthorizeApp: "Revoke Application Authorization",
       migrateNode: "Migrate Node",
       activateNode: "Activate Node",
+      addToDefaultApps: "Add to Default Authorized Applications",
+      removeFromDefaultApps: "Remove from Default Authorized Applications",
     },
     operationDetails: {
       submitJob: "Cluster: {}, Job ID: {}",
@@ -1802,6 +1840,7 @@ export default {
       accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
       migrateNode: "Node: {}, Source Cluster: {}, Target cluster: {}",
       activateNode: "Node: {}, Cluster: {}",
+      updateDefaultApp: "Cluster: {0}, Application: {1}, Tenant: {2}",
     },
   },
   userRoles: {

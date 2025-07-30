@@ -126,4 +126,6 @@ export const OperationType: OperationTypeEnum = {
   unauthorizeApp: "unauthorizeApp",
   migrateNode:"migrateNode",
   activateNode:"activateNode",
+  addToDefaultApps: "addToDefaultApps",
+  removeFromDefaultApps: "removeFromDefaultApps",
 };

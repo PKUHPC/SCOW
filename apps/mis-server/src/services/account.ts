@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError as GrpcServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
@@ -35,7 +23,7 @@ import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
-import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
+import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
 import { UserAccount, UserRole as EntityUserRole, UserStatus } from "src/entities/UserAccount";
 import { InternalMessageType } from "src/models/messageType";
@@ -306,9 +294,10 @@ export const accountServiceServer = plugin((server) => {
       });
 
       const entitiesToPersist: (Account | UserAccount | AccountAppBlacklist)[] = [account, userAccount];
-      // 如果开启授权应用功能，新建账户时按照所属租户禁用的app列表来写入账户禁用app
+      // 如果开启授权应用功能
+      // 新建账户时按照所属租户禁用默认应用列表来写入账户禁用app
       if (commonConfig.allowAppAuthorization) {
-        const affiliatedTenantBlackAppList = await em.find(TenantAppBlacklist, {
+        const affiliatedTenantBlackAppList = await em.find(TenantDefaultAppRemovedList, {
           tenant: tenant,
         }, { populate: ["tenant"]});
 
@@ -522,7 +511,7 @@ export const accountServiceServer = plugin((server) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
       await checkRunningSyncTask(em, logger, "whitelist account task");
-      
+
       const { accountName, comment, operatorId, tenantName, expirationTime } = request;
 
       const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } },

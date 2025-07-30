@@ -93,6 +93,37 @@ message CheckAppIsDisabledResponse {
   bool is_disabled = 1;
 }
 
+message GetTenantAppsRequest {
+  string cluster_id = 1;
+  string tenant_name = 2;
+}
+
+message GetTenantAppsResponse {
+  message TenantApp {
+    string id = 1;
+    string name = 2;
+    optional string logo_path = 3;
+    bool is_default = 4;
+  }
+  repeated TenantApp tenant_apps = 1;
+}
+
+message UpdateDefaultAppRequest {
+  string cluster_id = 1;
+  string tenant_name = 2;
+  string app_id = 3;
+  enum UpdateAction {
+    ADD_TO_DEFAULT_APPS = 0;
+    REMOVE_FROM_DEFAULT_APPS = 1;
+  }
+  UpdateAction update_action = 4;
+  string operator_id = 5;
+}
+
+message UpdateDefaultAppResponse {
+  bool executed = 1;
+}
+
 service AppAuthorizationService {
   // 获取账户或租户的App列表
   rpc GetTargetAppAuthorizations(GetTargetAppAuthorizationsRequest) returns (GetTargetAppAuthorizationsResponse);
@@ -104,4 +135,8 @@ service AppAuthorizationService {
   rpc GetAppForbiddenAccounts(GetAppForbiddenAccountsRequest) returns (GetAppForbiddenAccountsResponse);
   // 检查当前账户是否已被禁用此应用
   rpc CheckAppIsDisabled(CheckAppIsDisabledRequest) returns (CheckAppIsDisabledResponse);
+  // 获取租户已授权的应用列表, 包含是否为默认授权应用
+  rpc GetTenantApps(GetTenantAppsRequest) returns (GetTenantAppsResponse);
+  // 更新默认授权应用：添加或移除
+  rpc UpdateDefaultApp(UpdateDefaultAppRequest) returns (UpdateDefaultAppResponse);
 }

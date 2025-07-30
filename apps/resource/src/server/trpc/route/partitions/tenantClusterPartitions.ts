@@ -9,7 +9,7 @@ import { getScowActivatedClusters, getScowClusterConfigs } from "src/server/mis-
 import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
 import { getScowAccounts, getScowTenants } from "src/server/mis-server/tenantAccount";
 import { authProcedure } from "src/server/trpc/procedure/base";
-import { AccountUserSyncRunningError, isResourceAdmin, 
+import { AccountUserSyncRunningError, isResourceAdmin,
   NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { forkEntityManager } from "src/utils/getOrm";
@@ -429,7 +429,7 @@ export const unAssignTenantPartition = authProcedure
     if (checkRunning.isRunning) {
       throw new AccountUserSyncRunningError();
     }
-    
+
 
     const em = await forkEntityManager();
 
@@ -850,7 +850,7 @@ export const tenantAssignedPartitions = authProcedure
   .input(z.object({
     tenantName: z.string(),
   }))
-  .output(z.object({
+  .output(z.object({ 
     tenantName: z.string(),
     assignedPartitions: z.array(AssignedPartitionSchema),
     assignedTotalCount: z.number(),

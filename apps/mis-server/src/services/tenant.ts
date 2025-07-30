@@ -10,13 +10,17 @@ import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
+import { commonConfig } from "src/config/common";
 import { Account } from "src/entities/Account";
+import { Cluster } from "src/entities/Cluster";
 import { Tenant } from "src/entities/Tenant";
+import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
+import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { getScowdClient } from "src/utils/scowd";
 import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
@@ -114,6 +118,39 @@ export const tenantServiceServer = plugin((server) => {
           }
           throw { code: Status.INTERNAL, message: "Error creating tenant in database." } as ServiceError;
         });
+
+        // 如果开启授权应用功能
+        // 在所有集群下不添加应用到租户的默认授权应用
+        if (commonConfig.allowAppAuthorization) {
+          for (const [clusterId, config] of Object.entries(configClusters)) {
+            // 如果集群开启了 AI 功能，在当前版本下默认为此集群为AI集群，获取AI集群下的交互式应用列表
+            const clusterApps = config.ai?.enabled
+              ? getAiClusterAppConfigs(clusterId)
+              : getClusterAppConfigs(clusterId);
+
+            const foundCluster = await em.findOne(Cluster, {
+              clusterId: clusterId,
+            });
+            if (!foundCluster) {
+              throw {
+                code: Status.NOT_FOUND,
+                message: `Cluster (ID: ${clusterId}) for authorizing application is not found`,
+                details: "CLUSTER_NOT_FOUND",
+              } as ServiceError;
+            };
+
+            for (const appId of Object.keys(clusterApps)) {
+              const newItem = new TenantDefaultAppRemovedList({
+                cluster: foundCluster,
+                tenant: newTenant,
+                appId: appId,
+              });
+              em.persist(newItem);
+            }
+          }
+
+          await em.flush();
+        }
 
         // 在数据库中创建user
         const user =

@@ -1,11 +1,15 @@
-import { Entity, ManyToOne, PrimaryKey, Property, Ref } from "@mikro-orm/core";
+import { Entity, Index, ManyToOne, PrimaryKey, Property, Ref } from "@mikro-orm/core";
 import { Cluster } from "src/entities/Cluster";
 import { User } from "src/entities/User";
-import { EntityOrRef, toRef } from "src/utils/orm";
+import { CURRENT_TIMESTAMP, DATETIME_TYPE, EntityOrRef, toRef } from "src/utils/orm";
 
 import { Account } from "./Account";
 
 @Entity()
+@Index({
+  name: "idx_cluster_account_app",
+  properties: ["cluster", "account", "appId"],
+})
 export class AccountAppBlacklist {
   @PrimaryKey()
   id!: number;
@@ -19,8 +23,8 @@ export class AccountAppBlacklist {
   @ManyToOne(() => Cluster, { deleteRule: "cascade", ref: true, nullable: false })
   cluster: Ref<Cluster>;
 
-  @Property({ defaultRaw: "CURRENT_TIMESTAMP" })
-  disabledAt: Date = new Date();
+  @Property({ columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP })
+  disabledAt: Date;
 
   @ManyToOne(() => User, { deleteRule: "set null", ref: true, nullable: true })
   operator?: Ref<User>;
@@ -30,6 +34,7 @@ export class AccountAppBlacklist {
     appId: string,
     cluster: EntityOrRef<Cluster>,
     operator?: EntityOrRef<User>,
+    disabledAt?: Date,
   }) {
     this.account = toRef(init.account);
     this.appId = init.appId;
@@ -37,6 +42,6 @@ export class AccountAppBlacklist {
     if (init.operator) {
       this.operator = toRef(init.operator);
     }
-    this.disabledAt = new Date();
+    this.disabledAt = init.disabledAt ?? new Date();
   }
 }
