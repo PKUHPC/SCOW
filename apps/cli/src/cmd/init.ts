@@ -28,6 +28,7 @@ const initAllAssets = [
   join(__dirname, "../../assets/init-full/fluent"),
   join(__dirname, "../../assets/init-full/plugins"),
   join(__dirname, "../../assets/init-full/public"),
+  join(__dirname, "../../assets/init-full/quantum"),
 ];
 
 const initAssets = [
@@ -36,6 +37,7 @@ const initAssets = [
   join(__dirname, "../../assets/init/fluent"),
   join(__dirname, "../../assets/init/plugins"),
   join(__dirname, "../../assets/init/public"),
+  join(__dirname, "../../assets/init/quantum"),
 ];
 
 // fs.promise.cp throws error for config dir

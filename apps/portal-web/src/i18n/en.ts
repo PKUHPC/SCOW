@@ -8,6 +8,7 @@ export default {
     linkTextMis: "MIS",
     linkTextAI: "AI",
     linkTextHpc: "HPC",
+    linkTextQuantum: "Quantum",
   },
   // routes
   routes: {

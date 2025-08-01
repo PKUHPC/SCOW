@@ -52,7 +52,7 @@ COPY patches ./patches
 RUN pnpm i --offline --prod --frozen-lockfile
 
 # delete next.js build caches to reduce 200MB+ image size
-RUN rm -rf apps/mis-web/.next/cache apps/portal-web/.next/cache apps/ai/.next/cache apps/notification/.next/cache apps/resource/.next/cache
+RUN rm -rf apps/mis-web/.next/cache apps/portal-web/.next/cache apps/ai/.next/cache apps/notification/.next/cache apps/resource/.next/cache apps/quantum/.next/cache
 
 FROM base AS runner
 

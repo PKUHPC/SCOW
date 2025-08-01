@@ -118,3 +118,4 @@ export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttrib
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
   <Icon component={expandMenuSVG} {...props} ref={ref} />
 ));
+

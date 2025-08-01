@@ -1,0 +1,19 @@
+# 量子系统数据库的信息。可以不修改
+db:
+  host: db
+  port: 3306
+  user: root
+  dbName: scow_quantum
+
+# 后端代理接口配置，指向代理服务的监听地址
+backend:
+  apiBase: http://qobody:8088
+
+# 带有量子计算库的jupyter配置
+jupyter:
+  cluster: "hpc01" # 带有量子计算库的jupyter的交互式应用所在的集群ID
+  appId: "jupyter-tensorcircuit" #带量子计算库的jupyter的交互式应用的appId
+
+# 默认推荐的量子计算设备
+device:
+  recommend: ["t59", "t40", "t13"]

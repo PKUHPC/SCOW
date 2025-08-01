@@ -1,0 +1,9 @@
+# https://www.anaconda.com/docs/tools/working-with-conda/packages/pip-install
+name: tensorcircuit
+dependencies:
+    - python=3.10
+    - jupyter
+    - pip
+    - pip:
+        - ./tensorcircuit-0.12.0+qobody-py3-none-any.whl[cloud]
+        - cirq==1.1.0

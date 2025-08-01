@@ -1,6 +1,6 @@
 "use client";
 import { DownOutlined } from "@ant-design/icons";
-import { AiIcon, HighComputingIcon, MisIcon } from "@scow/lib-web/build/layouts/base/header/icons";
+import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { UserInfo } from "@scow/lib-web/build/layouts/base/types";
 import { Dropdown, theme } from "antd";
 import React from "react";
@@ -74,6 +74,21 @@ export const SystemSelect: React.FC<Props> = ({
               linkText={<span style={{ color: token.colorPrimary }}>{t("baseLayout.linkTextAi")}</span>}
             />
           ) },
+          ...(publicConfig.QUANTUM_URL
+            ? [
+              {
+                key: "quantum",
+                label: (
+                  <JumpToAnotherLink
+                    user={user}
+                    icon={<QuantumIcon style={{ paddingRight: 2 }} />}
+                    link={publicConfig.QUANTUM_URL}
+                    linkText={<span>{t("baseLayout.linkTextQuantum")}</span>}
+                  />
+                ),
+              },
+            ]
+            : []),
           ],
         }}
       >

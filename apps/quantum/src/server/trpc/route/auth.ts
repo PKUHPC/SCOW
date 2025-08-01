@@ -1,0 +1,174 @@
+
+import { changePassword, checkPassword, deleteToken } from "@scow/lib-auth";
+import { joinWithUrl } from "@scow/utils";
+import { TRPCError } from "@trpc/server";
+import { join } from "path";
+import { deleteUserToken, getUserToken, setUserTokenCookie } from "src/server/auth/cookie";
+import { getUserInfo } from "src/server/auth/server";
+import { validateToken } from "src/server/auth/token";
+import { commonConfig } from "src/server/config/common";
+import { config } from "src/server/config/env";
+import { router } from "src/server/trpc/def";
+import { authProcedure, baseProcedure } from "src/server/trpc/procedure/base";
+import { BASE_PATH } from "src/utils/processEnv";
+import { z } from "zod";
+
+import { ErrorCode } from "./utils";
+
+
+const ClientUserInfoSchema = z.object({
+  identityId: z.string(),
+  name: z.optional(z.string()),
+  token: z.string(),
+});
+
+export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
+
+export const auth = router({
+
+  getUserInfo: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/auth/userInfo",
+        tags: ["auth"],
+        summary: "获取用户信息及token",
+      },
+    })
+    .input(z.void())
+    .output(z.object({
+      user: ClientUserInfoSchema,
+    }))
+    .query(async ({ ctx: { req, res } }) => {
+      const userInfo = await getUserInfo(req, res);
+      if (!userInfo) {
+        throw new TRPCError({
+          message: "User is UNAUTHORIZED",
+          code: "UNAUTHORIZED",
+        });
+      }
+      return { user: userInfo };
+    }),
+
+  callback: baseProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/auth/callback",
+        tags: ["auth"],
+        summary: "登录后回调，写入cookie",
+      },
+    })
+    .input(z.object({
+      token:z.string(),
+    }))
+    .output(z.void())
+    .query(async ({ ctx: { res }, input }) => {
+      const { token } = input;
+
+      const info = await validateToken(token);
+      if (info) {
+        // set token cache
+        setUserTokenCookie(token, res);
+        res.redirect(BASE_PATH);
+      } else {
+        throw new TRPCError({
+          message: "Token has expired",
+          code: "FORBIDDEN",
+        });
+      }
+    }),
+
+  login: baseProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/auth",
+        tags: ["auth"],
+        summary: "登录",
+      },
+    })
+    .input(z.void())
+    .output(z.void())
+    .query(async ({ ctx: { req, res } }) => {
+
+      const callbackUrl = `${config.PROTOCOL || "http"}://${req.headers.host}`
+       + join(BASE_PATH, "/api/auth/callback");
+
+      const target = joinWithUrl(config.AUTH_EXTERNAL_URL,
+        `public/auth?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+
+      res.redirect(target);
+    }),
+
+  logout: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/logout",
+        tags: ["auth"],
+        summary: "登出",
+      },
+    })
+    .input(z.void())
+    .output(z.void())
+    .mutation(async ({ ctx: { req, res } }) => {
+
+      const token = getUserToken(req) || "";
+      await deleteToken(token, config.AUTH_INTERNAL_URL);
+      deleteUserToken(res);
+
+    }),
+
+  changePassword: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/changePassword",
+        tags: ["auth"],
+        summary: "更改密码",
+      },
+    })
+    .input(z.object({
+      identityId:z.string(),
+      oldPassword:z.string(),
+      newPassword:z.string(),
+    }))
+    .output(z.void())
+    .mutation(async ({ input:{ identityId, oldPassword, newPassword } }) => {
+      const checkRes = await checkPassword(config.AUTH_INTERNAL_URL, {
+        identityId,
+        password: oldPassword,
+      }, console);
+
+      if (!checkRes?.success) {
+        throw new TRPCError({
+          message: ErrorCode.OLD_PASSWORD_IS_WRONG,
+          code: "CONFLICT",
+        });
+      }
+
+      const passwordPattern = commonConfig.passwordPattern?.regex && new RegExp(commonConfig.passwordPattern?.regex);
+      if (passwordPattern && !passwordPattern.test(newPassword)) {
+        throw new TRPCError({
+          message: "password is not valid",
+          code: "BAD_REQUEST",
+        });
+      }
+
+      const changeRes = await changePassword(config.AUTH_INTERNAL_URL, {
+        identityId,
+        newPassword,
+      }, console)
+        .catch((e) => e.status);
+
+      if (changeRes) {
+        throw new TRPCError({
+          message: changeRes,
+          code: "BAD_REQUEST",
+        });
+      }
+
+      return;
+    }),
+});

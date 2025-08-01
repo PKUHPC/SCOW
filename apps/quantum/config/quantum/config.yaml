@@ -1,0 +1,17 @@
+db:
+  host: localhost
+  port: 3306
+  user: root
+  password: mysqlrootpassword
+  dbName: scow_quantum
+
+
+backend:
+  apiBase: http://host.docker.internal:8088
+
+jupyter:
+  cluster: "mock cluster"
+  appId: "quantum jupyter"
+
+device:
+  recommend: ["t59", "t40", "t13"]

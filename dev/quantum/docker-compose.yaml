@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "18382:18382"
+    environment:
+      - QOBODY_BASE_URL=http://host.docker.internal:3000/api/tc/a_usersa/
+
+  qobody:
+    image: ccimage.pku.edu.cn/scow/qobody
+    ports:
+      - "8088:8088"
+    env_file:
+      - ./.env.local
+    environment:
+      - QOST_CHIPS=t9=tianxuan_s1&t40=tianxuan_s2&t13=tianji_s2&t60=tianji_m1&simulator:tc=simulator:tc&t59=tianji_m2

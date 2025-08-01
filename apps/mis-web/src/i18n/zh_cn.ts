@@ -156,6 +156,7 @@ export default {
       },
       navLinkTextPortal: "超算平台",
       navLinkTextAI: "智算平台",
+      navLinkTextQuantum: "量子云",
       linkTextMis: "管理系统",
       dashboard: "仪表盘",
       user: {

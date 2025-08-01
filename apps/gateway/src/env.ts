@@ -35,6 +35,9 @@ export const config = envConfig({
   RESOURCE_PATH: str({ desc: "资源管理系统路径", default: "/resource" }),
   RESOURCE_PATH_INTERNAL_URL: str({ desc: "资源管理系统内部路径", default: "http://resource:3000" }),
 
+  QUANTUM_PATH: str({ desc: "量子计算系统路径", default: "/quantum" }),
+  QUANTUM_PATH_INTERNAL_URL: str({ desc: "量子计算系统内部路径", default: "http://quantum:3000" }),
+
   VNC_PATH: str({ desc: "VNC客户端路径", default: "/vnc/" }),
   NOVNC_INTERNAL_URL: str({ desc: "NOVNC内部地址", default: "http://novnc:80/" }),
 

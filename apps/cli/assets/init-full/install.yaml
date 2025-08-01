@@ -164,3 +164,14 @@
 # plugins:
 #   # 启用的插件
 #   enabledPlugins: ["plugin1"]
+
+# 量子系统设置
+# quantum:
+#   # 量子系统的子路径
+#   basePath: /quantum
+
+#   qobody:
+#     image: ccimage.pku.edu.cn/scow/qobody
+#     # 云平台的token，必填
+#     token: "云平台的token"
+

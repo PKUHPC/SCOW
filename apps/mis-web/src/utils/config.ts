@@ -71,6 +71,8 @@ export interface PublicRuntimeConfig {
 
   AI_URL: string | undefined;
 
+  QUANTUM_URL: string | undefined;
+
   PUBLIC_PATH: string;
 
   NAV_LINKS?: NavLink[];

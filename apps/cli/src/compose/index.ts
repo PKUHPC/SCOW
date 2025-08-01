@@ -36,6 +36,9 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   const AI_PATH = config.ai?.basePath || "/ai";
   checkPathFormat("ai.basePath", AI_PATH);
 
+  const QUANTUM_PATH = config.quantum?.basePath || "/quantum";
+  checkPathFormat("quantum.basePath", QUANTUM_PATH);
+
   const RESOURCE_PATH = config.resource?.basePath || "/resource";
   checkPathFormat("resource.basePath", RESOURCE_PATH);
 
@@ -133,6 +136,18 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     listen 80 default_server;
     return 444;
   }`;
+
+  // quantum的芯片映射
+  const chipMapping = new URLSearchParams({
+    t9: "tianxuan_s1",
+    t40: "tianxuan_s2",
+    t13: "tianji_s2",
+    t60: "tianji_m1",
+    t59: "tianji_m2",
+    "simulator:tc": "simulator:tc",
+  });
+
+
   // GATEWAY
   addService("gateway", {
     image: scowImage,
@@ -144,6 +159,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       "AI_PATH": AI_PATH,
       "RESOURCE_PATH": RESOURCE_PATH,
       "NOTIFICATION_PATH": NOTIFICATION_PATH,
+      "QUANTUM_PATH": QUANTUM_PATH,
       "CLIENT_MAX_BODY_SIZE": config.gateway.uploadFileSizeLimit,
       "PROXY_READ_TIMEOUT": config.gateway.proxyReadTimeout,
       "PUBLIC_PATH": publicPath,
@@ -299,6 +315,8 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "MIS_SERVER_URL": config.mis ? "mis-server:5000" : "",
         "AI_URL": join(BASE_PATH, AI_PATH),
         "AI_DEPLOYED": config.ai ? "true" : "false",
+        "QUANTUM_URL": join(BASE_PATH, QUANTUM_PATH),
+        "QUANTUM_DEPLOYED": config.quantum ? "true" : "false",
         "AUTH_EXTERNAL_URL": config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         "AUTH_INTERNAL_URL": authUrl || "http://auth:5000",
         "NOVNC_CLIENT_URL": join(BASE_PATH, "/vnc"),
@@ -362,6 +380,8 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "PORTAL_DEPLOYED": config.portal ? "true" : "false",
         "AI_URL": join(BASE_PATH, AI_PATH),
         "AI_DEPLOYED": config.ai ? "true" : "false",
+        "QUANTUM_URL": join(BASE_PATH, QUANTUM_PATH),
+        "QUANTUM_DEPLOYED": config.quantum ? "true" : "false",
         "AUTH_EXTERNAL_URL": config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         "AUTH_INTERNAL_URL": authUrl || "http://auth:5000",
         "PUBLIC_PATH": join(BASE_PATH, publicPath),
@@ -436,6 +456,8 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "DB_PASSWORD": config.ai.dbPassword,
         "PORTAL_URL": join(BASE_PATH, PORTAL_PATH),
         "PORTAL_DEPLOYED": config.portal ? "true" : "false",
+        "QUANTUM_URL": join(BASE_PATH, QUANTUM_PATH),
+        "QUANTUM_DEPLOYED": config.quantum ? "true" : "false",
         "AUTH_EXTERNAL_URL": config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         "AUTH_INTERNAL_URL": authUrl || "http://auth:5000",
         "PUBLIC_PATH": join(BASE_PATH, publicPath),
@@ -475,6 +497,53 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "MYSQL_ROOT_PASSWORD": config.ai.dbPassword,
       },
       ports: config.ai.portMappings?.db ? { [config.ai.portMappings?.db]: 3306 } : {},
+    });
+  }
+
+  if (config.quantum) {
+    if (!config.mis) {
+      throw new Error("Invalid config: quantum requires mis to be enabled");
+    }
+
+    if (!config.portal) {
+      throw new Error("Invalid config: quantum requires portal to be enabled");
+    }
+
+    addService("quantum", {
+      image: scowImage,
+      ports: {},
+      environment: {
+        "SCOW_LAUNCH_APP": "quantum",
+        "NEXT_PUBLIC_BASE_PATH": join(BASE_PATH, QUANTUM_PATH),
+        "DB_PASSWORD": config.mis.dbPassword,
+        "MIS_URL": join(BASE_PATH, MIS_PATH),
+        "MIS_SERVER_URL": config.mis ? "mis-server:5000" : "",
+        "PORTAL_URL": join(BASE_PATH, PORTAL_PATH),
+        "PORTAL_SERVER_URL": config.portal ? "portal-server:5000" : "",
+        "AI_URL": join(BASE_PATH, AI_PATH),
+        "AI_DEPLOYED": config.ai ? "true" : "false",
+        "PUBLIC_PATH": join(BASE_PATH, publicPath),
+        "PROTOCOL": config.gateway.protocol,
+        "AUTH_EXTERNAL_URL": config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
+        "AUTH_INTERNAL_URL": authUrl || "http://auth:5000",
+        ...serviceLogEnv,
+        ...nodeOptions ? { NODE_OPTIONS: nodeOptions } : {},
+      },
+      volumes: {
+        "/etc/hosts": "/etc/hosts",
+        "./config": "/etc/scow",
+        "~/.ssh": "/root/.ssh",
+      },
+    });
+
+    addService("qobody", {
+      image: config.quantum.qobody.image,
+      ports: {},
+      environment: {
+        "QOST_TOKEN": config.quantum.qobody.token,
+        "QOST_CHIPS": chipMapping.toString(),
+      },
+      volumes: {},
     });
   }
 

@@ -89,6 +89,7 @@ const PublicConfigSchema = z.object({
   ENABLE_CHANGE_PASSWORD: z.boolean().optional(),
   MIS_URL: z.string().optional(),
   PORTAL_URL: z.string().optional(),
+  QUANTUM_URL: z.string().optional(),
   CLUSTERS: z.array(ClusterSchema),
   CLUSTER_SORTED_ID_LIST: z.array(z.string()),
   PASSWORD_PATTERN: z.string().optional(),
@@ -181,6 +182,8 @@ export const config = router({
         MIS_SERVER_URL: envConfig.MIS_SERVER_URL,
 
         PORTAL_URL: envConfig.PORTAL_URL,
+
+        QUANTUM_URL: envConfig.QUANTUM_DEPLOYED ? envConfig.QUANTUM_URL : "",
 
         CLUSTERS: getSortedClusters(clusters).map((cluster) => ({ id: cluster.id, name: cluster.displayName })),
 

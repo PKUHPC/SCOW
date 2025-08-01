@@ -44,7 +44,7 @@ let appDirs = process.argv.slice(2);
 if (appDirs.length === 0) {
   appDirs = [
     "portal-web", "portal-server", "auth", "mis-web", "mis-server",
-    "gateway", "audit-server", "ai", "notification", "resource"
+    "gateway", "audit-server", "ai", "notification", "resource", "quantum"
   ].map((x) => join(APPS_BASE_PATH, x));
 }
 

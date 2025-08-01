@@ -158,6 +158,7 @@ export default {
       linkTextMis: "MIS",
       navLinkTextPortal: "HPC",
       navLinkTextAI: "AI",
+      navLinkTextQuantum: "Quantum",
       dashboard: "Dashboard",
       user: {
         firstNav: "My SCOW",

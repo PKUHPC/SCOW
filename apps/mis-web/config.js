@@ -51,6 +51,9 @@ const specs = {
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
   AI_URL: str({ desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统", default: "" }),
 
+  QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
+  QUANTUM_URL: str({ desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统", default: "" }),
+
   PUBLIC_PATH: str({ desc: "SCOW公共文件的路径，需已包含SCOW的base path", default: "/public/" }),
 
   AUDIT_DEPLOYED: bool({ desc: "是否部署了审计系统", default: false }),
@@ -157,6 +160,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     PORTAL_URL: config.PORTAL_DEPLOYED ? (config.PORTAL_URL || misConfig.portalUrl || "") : undefined,
 
     AI_URL: config.AI_DEPLOYED ? (config.AI_URL || misConfig.aiUrl || "") : undefined,
+
+    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || misConfig.quantumUrl)  : undefined,
 
     PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 

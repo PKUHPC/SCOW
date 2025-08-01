@@ -13,7 +13,7 @@
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
-import { AiIcon, HighComputingIcon, MisIcon } from "@scow/lib-web/build/layouts/base/header/icons";
+import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { theme } from "antd";
 import { join } from "path";
 import { PropsWithChildren } from "react";
@@ -90,6 +90,15 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       icon: <AiIcon style={{ paddingRight: 2 }} />,
       href: publicConfig.AI_URL,
       text: t("baseLayout.linkTextAI"),
+      crossSystem: true,
+    });
+  }
+
+  if (publicConfig.QUANTUM_URL) {
+    navbarLinks.push({
+      icon: <QuantumIcon style={{ paddingRight: 2 }} />,
+      href: publicConfig.QUANTUM_URL,
+      text: t("baseLayout.linkTextQuantum"),
       crossSystem: true,
     });
   }

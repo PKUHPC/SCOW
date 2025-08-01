@@ -8,6 +8,7 @@ export default {
     linkTextMis: "管理系统",
     linkTextAI: "智算平台",
     linkTextHpc: "超算平台",
+    linkTextQuantum: "量子云",
   },
   // routes
   routes: {

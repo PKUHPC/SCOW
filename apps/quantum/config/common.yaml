@@ -1,0 +1,28 @@
+# 创建用户、修改密码时，密码的规则。必须设置
+passwordPattern:
+  # 正则表达式。下面为默认值
+  regex: ^(?=.*\d)(?=.*[a-zA-Z])(?=.*[`~!@#\$%^&*()_+\-[\];',./{}|:"<>?]).{8,}$
+
+  # 出错时的消息。下面为默认值
+  errorMessage: 必须包含字母、数字和符号，长度大于等于8位
+
+
+# 设置系统语言 可选配置 类型为对象或字符串，默认值为对象类型
+# 1.systemLanguage对象类型
+# systemLanguage:
+#   # 可选，默认为true。
+#   # 如果true，则SCOW在用户未手动选择语言时，自动优先根据cookies, 其次根据浏览器header判断语言，判断失败使用下方配置的default语言。
+#   # 如果为false，则SCOW在首次进入系统用户未手动选择语言时使用下方配置的default语言，
+#   # 用户手动选择过语言之后优先从cookies中进行判断，cookies不存在合法语言信息则使用下方配置的默认语言。
+#   autoDetectWhenUserNotSet: true
+#   # 默认语言，选填。
+#   # 类型必须为当前系统合法语言["zh_cn"，"en"]的字符串枚举值
+#   # 若没有配置，则默认为"zh_cn"
+#   default: "zh_cn"
+
+# 2.systemLanguage字符串类型
+# 若systemLanguage配置为字符串，类型必须指定为当前系统合法语言["zh_cn"，"en"]的字符串枚举值
+# SCOW直接使用此语言，不允许用户再进行语言切换
+# systemLanguage: "zh_cn"
+
+

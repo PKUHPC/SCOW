@@ -621,3 +621,4 @@ export const TemplateJobIcon: React.ForwardRefExoticComponent<{}> =
   React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={templateJobSVG} {...props} ref={ref} />
   ));
+

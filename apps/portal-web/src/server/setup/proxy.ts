@@ -64,6 +64,7 @@ export function parseProxyTarget(
   if (type === "relative") {
     return `http://${node}:${port}/${path.join("/")}`;
   } else if (type === "absolute") {
+    console.log("fullUri", `http://${node}:${port}${fullUri}`);
     return `http://${node}:${port}${fullUri}`;
   } else {
     return new Error("type is not absolute or relative");

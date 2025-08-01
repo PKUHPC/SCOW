@@ -80,5 +80,5 @@ export const checkConfig = ({
     tryRead(getAiConfig);
   } else {
     logger.debug("AI is not deployed. Skip AI config check.");
-  }
+  } // 这里要加quantum吗?
 };

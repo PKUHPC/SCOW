@@ -68,6 +68,8 @@ export interface PublicRuntimeConfig {
 
   AI_URL: string | undefined;
 
+  QUANTUM_URL: string | undefined;
+
   NOVNC_CLIENT_URL: string;
 
   PASSWORD_PATTERN: string | undefined;

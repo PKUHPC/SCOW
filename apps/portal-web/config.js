@@ -63,6 +63,9 @@ const specs = {
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
   AI_URL: str({ desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统", default: "" }),
 
+  QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
+  QUANTUM_URL: str({ desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统", default: "" }),
+
   NOVNC_CLIENT_URL: str({ desc: "novnc客户端的URL。如果和本系统域名相同，可以只写完整路径", default: "/vnc" }),
 
   CLIENT_MAX_BODY_SIZE: str({ desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值", default: "1G" }),
@@ -164,6 +167,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     MIS_SERVER_URL: config.MIS_DEPLOYED ? config.MIS_SERVER_URL : undefined,
 
     AI_URL: config.AI_DEPLOYED ? (config.AI_URL || portalConfig.aiUrl) : undefined,
+
+    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || portalConfig.quantumUrl)  : undefined,
 
     NOVNC_CLIENT_URL: config.NOVNC_CLIENT_URL,
 

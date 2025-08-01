@@ -203,3 +203,30 @@ export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttrib
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
   <Icon component={expandMenuSVG} {...props} ref={ref} />
 ));
+
+const quantumSVG = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="17"
+    viewBox="0 0 256 256"
+    focusable="false"
+  >
+    <path
+      d="M202.85 104.675C191.4 74.475 162.225 53 128.05 53S64.7 74.45 53.25 104.65C31.825 110.275 16 129.775 16
+        153c0 27.625 22.375 50 49.975 50h124.05C217.625 203 240 180.625 240 153c0-23.175-15.775-42.675-37.15-48.325z"
+      fill="currentColor"
+      stroke="#000"
+      strokeWidth="10"
+    />
+    <g fill="currentColor" stroke="#000" strokeWidth="7.5" strokeDasharray="10 5">
+      <circle cx="128" cy="128" r="30" />
+    </g>
+  </svg>
+);
+
+
+export const QuantumIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
+  ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  <Icon component={quantumSVG} {...props} ref={ref} />
+));

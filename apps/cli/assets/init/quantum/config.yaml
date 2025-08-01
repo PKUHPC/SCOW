@@ -1,0 +1,4 @@
+# # 带有量子计算库的jupyter的信息
+# jupyter:
+#   cluster: 带有量子计算库的jupyter的交互式应用所在的集群
+#   appId: 带量子计算库的jupyter的交互式应用的appId

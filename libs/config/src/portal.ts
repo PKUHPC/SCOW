@@ -39,6 +39,8 @@ export const PortalConfigSchema = Type.Object({
 
   aiUrl: Type.Optional(Type.String({ description: "AI系统的部署URL或者路径" })),
 
+  quantumUrl: Type.Optional(Type.String({ description: "量子系统的部署URL或者路径" })),
+
   shell: Type.Boolean({ description: "是否启用终端功能", default: true }),
 
   file: Type.Optional(Type.Object({
