@@ -12,7 +12,7 @@
 
 "use client";
 
-import { parsePlaceholder } from "@scow/lib-config/build/parse";
+import { extractPlaceholders,parsePlaceholder } from "@scow/lib-config/build/parse";
 import { App } from "antd";
 import { join } from "path";
 import { useEffect } from "react";
@@ -29,6 +29,37 @@ export interface Props {
   cluster: string;
   refreshToken: boolean;
 }
+
+/**
+ * 从字段对象中提取所有 {{ KEY }} 占位符，生成用于替换的值映射。
+ * 优先使用 baseInterpolatedValues 中的值，也可以扩展支持其他来源。
+ */
+const buildInterpolatedValues = (
+  obj: Record<string, string> | undefined,
+  base: Record<string, string>,
+): Record<string, string> => {
+  if (!obj) return base;
+  const placeholderKeys = extractPlaceholders(obj);
+  const values: Record<string, string> = { ...base };
+
+  for (const key of placeholderKeys) {
+    if (!(key in values)) {
+      values[key] = key; // 仅当 base 中没有，才用 key 作为默认值
+    }
+  }
+
+  return values;
+};
+
+const interpolateValues = (
+  obj: Record<string, string>,
+  valueMap: Record<string, string>,
+): Record<string, string> => {
+  return Object.entries(obj).reduce<Record<string, string>>((acc, [key, val]) => {
+    acc[key] = parsePlaceholder(val, valueMap);
+    return acc;
+  }, {});
+};
 
 export const ConnectTopAppLink: React.FC<Props> = ({
   session, cluster, refreshToken,
@@ -65,18 +96,21 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
     if (reply.type === "web") {
       const { connect, host, password, port, proxyType } = reply;
-      const interpolatedValues = { HOST: host, PASSWORD: password, PORT: port };
-      const path = parsePlaceholder(connect.path, interpolatedValues);
 
-      const interpolateValues = (obj: Record<string, string>): Record<string, string> => {
-        return Object.keys(obj).reduce<Record<string, string>>((prev, curr) => {
-          prev[curr] = parsePlaceholder(obj[curr], interpolatedValues);
-          return prev;
-        }, {});
+      const baseInterpolatedValues = {
+        HOST: host,
+        PASSWORD: password,
+        PORT: String(port),
       };
 
-      const query = connect.query ? interpolateValues(connect.query) : {};
-      const formData = connect.formData ? interpolateValues(connect.formData) : undefined;
+      // 各自独立的插值上下文
+      const queryInterpolatedValues = buildInterpolatedValues(connect.query, baseInterpolatedValues);
+      const formInterpolatedValues = buildInterpolatedValues(connect.formData, baseInterpolatedValues);
+
+      const query = connect.query ? interpolateValues(connect.query, queryInterpolatedValues) : {};
+      const formData = connect.formData ? interpolateValues(connect.formData, formInterpolatedValues) : undefined;
+
+      const path = parsePlaceholder(connect.path, queryInterpolatedValues);
 
       const pathname = join(BASE_PATH, "/api/proxy", cluster, proxyType, host, String(port), path);
 

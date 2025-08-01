@@ -38,6 +38,25 @@ export function parsePlaceholder(str: string, valueObj: object, showUndefined: b
 }
 
 /**
+ * Extract all {{ KEY }} placeholders from a string-object's values
+ * @param obj the object with string values
+ * @returns a Set of unique placeholder keys
+ */
+export function extractPlaceholders(obj: Record<string, string>): Set<string> {
+  const pattern = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+  const keys = new Set<string>();
+
+  for (const value of Object.values(obj)) {
+    const matches = value.matchAll(pattern);
+    for (const match of matches) {
+      keys.add(match[1]);
+    }
+  }
+
+  return keys;
+}
+
+/**
  * Replace value1,value2 to [value1, value2]
  * @param str the original string
  * @param valueObj the array
