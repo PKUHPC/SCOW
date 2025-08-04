@@ -60,6 +60,10 @@ jupyter:
 # 默认推荐的量子计算设备
 device:
   recommend: ["t59", "t40", "t13"]
+
+# 量子作业默认遵循的比特秒计价
+billing:
+  defaultBitSecondPrice: 0.35
 ```
 
 ## 启动服务

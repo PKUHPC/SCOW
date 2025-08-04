@@ -94,7 +94,8 @@ export function createJobManager(orm: MikroORM) {
 
               const qits = new Decimal(estimateData.data.qits);
 
-              const amountHighPrecision = qits.times("0.000001").times("0.5");
+              const amountHighPrecision = qits.times("0.000001")
+                .times(quantumConfig.billing.defaultBitSecondPrice);
 
               const amount = numberToMoney(amountHighPrecision.toNumber());
 

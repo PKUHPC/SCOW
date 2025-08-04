@@ -9,6 +9,7 @@ import { allowedChipsArr, allowedQosValues } from "src/models/device";
 import { EstimateTaskSchema, TaskEstimateArray } from "src/models/task";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
+import { quantumConfig } from "src/server/config/quantum";
 import { callBackendApi } from "src/server/trpc/route/backend/common";
 import { logger } from "src/server/utils/logger";
 import { getMisClient } from "src/utils/client";
@@ -234,7 +235,7 @@ export const estimateAccountCanAfford = async (
 
   const qits = new Decimal(estimateData.data.qits);
 
-  const amount = qits.times("0.000001").times("0.5");
+  const amount = qits.times("0.000001").times(quantumConfig.billing.defaultBitSecondPrice);
 
   const newBalance = accountInfo.balance.minus(amount);
 

@@ -24,6 +24,12 @@ export const QuantumConfigSchema = Type.Object({
   device: Type.Object({
     recommend: Type.Array(Type.String(), { description: "展示在仪表盘推荐使用的设备" }),
   }),
+  billing: Type.Object({
+    defaultBitSecondPrice: Type.Number({
+      description: "量子作业按该比特秒计价，如设置为0.35即每比特秒0.35元",
+      default: 0.35,
+    }),
+  }),
   taskChargeComment: Type.String({
     description: "给量子作业扣费时，扣费项的备注。可以使用{{ 属性名 }}使用作业信息中的属性。",
     default: "量子作业ID：{{ id }}",
