@@ -87,13 +87,13 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     },
     {
       title: "CPU",
-      dataIndex: "cpusAlloc",
+      render: (_, record) => record.state === "PENDING" ? record.cpusReq : record.cpusAlloc,
       width: "20px",
       ellipsis: true,
     },
     {
       title: "GPU",
-      dataIndex: "gpusAlloc",
+      render: (_, record) => record.state === "PENDING" ? record.gpusReq : record.gpusAlloc,
       width: "20px",
       ellipsis: true,
     },
@@ -101,11 +101,12 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       title: t(p("memory")),
       width: "50px",
       ellipsis: true,
-      render: (_, record) => formatSize(record.memAlloc, ["MB", "GB", "TB"]),
+      render: (_, record) => formatSize(record.state === "PENDING" ? record.memReq : record.memAlloc ,
+        ["MB", "GB", "TB"]),
     },
     {
       title: t(p("node")),
-      dataIndex: "nodesAlloc",
+      render: (_, record) => record.state === "PENDING" ? record.nodesReq : record.nodesAlloc,
       width: "20px",
       ellipsis: true,
     },
@@ -196,7 +197,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
             ) : undefined
           }
           {
-            (record.state === "PENDING" || record.state === "SUSPENDED") ? (
+            (record.state === "PENDING" || record.state === "SUSPENDED" || record.state === "QUEUED") ? (
               <Popconfirm
                 title={t(p("confirmCancel"))}
                 onConfirm={
@@ -287,7 +288,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
         ...x,
         jobName:x.jobName ? x.jobName : x.sessionId,
         remainingTime: x.state === "RUNNING" ? calculateAppRemainingTime(x.runningTime, x.timeLimit) :
-          x.state === "PENDING" ? "" : x.timeLimit,
+          ["PENDING","QUEUED"].includes(x.state) ? "" : x.timeLimit,
       }),
     );
 

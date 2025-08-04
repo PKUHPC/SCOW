@@ -433,6 +433,7 @@ export default {
         saveImage:"保存镜像",
         originalName:"原镜像名称",
         originalTag:"原镜像标签",
+        imageTips:"该镜像({})已被删除",
         imageName:"镜像名称",
         imageTag:"镜像标签",
         description:"镜像描述",

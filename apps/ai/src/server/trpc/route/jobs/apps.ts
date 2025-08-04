@@ -69,6 +69,10 @@ const AppSessionSchema = z.object({
   cpusAlloc:z.number(),
   memAlloc:z.number(),
   nodesAlloc:z.number(),
+  gpusReq:z.number(),
+  cpusReq:z.number(),
+  memReq:z.number(),
+  nodesReq:z.number(),
 });
 
 export type AppSession = z.infer<typeof AppSessionSchema>;

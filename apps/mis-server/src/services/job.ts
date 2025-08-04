@@ -289,7 +289,7 @@ export const jobServiceServer = plugin((server) => {
 
           const runningJobs = await asyncClientCall(client.job, "getJobs", {
             fields,
-            filter: { users: userId ? [userId] : [], accounts: accountNames, states: ["RUNNING", "PENDING"]},
+            filter: { users: userId ? [userId] : [], accounts: accountNames, states: ["RUNNING", "PENDING","QUEUED"]},
           }).then((x) => x.jobs);
 
           if (jobIdList.length > 0) {

@@ -62,13 +62,19 @@ export const SaveImageModal: React.FC<Props> = (
   );
 
   const imageId = jobParams?.image;
-  const { data: imageData, isLoading: isGetImageDataLoading } = trpc.image.getImageById.useQuery(
+  const {
+    data: imageData,
+    isLoading: isGetImageDataLoading,
+    error: imageDataError,
+  } = trpc.image.getImageById.useQuery(
     {
       imageId:imageId!,
     },
     {
       // 作业参数获取完且使用的本地镜像
       enabled: !isGetJobParamsLoading && !!imageId,
+      retry:false,
+      onError() {},
     },
   );
 
@@ -125,7 +131,12 @@ export const SaveImageModal: React.FC<Props> = (
         <Form.Item label={t(p("originalName"))}>
           {appSession.image.name}
         </Form.Item>
-        <Form.Item label={t(p("originalTag"))}>
+        <Form.Item
+          label={t(p("originalTag"))}
+          help={imageDataError ? t(p("imageTips"),[`${appSession.image.name}:${appSession.image.tag || ""}`])
+            : undefined}
+          validateStatus="error"
+        >
           {appSession.image.tag || ""}
         </Form.Item>
         <Form.Item

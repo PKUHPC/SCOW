@@ -433,6 +433,7 @@ export default {
         saveImage:"Save image",
         originalName:"Original image name",
         originalTag:"Original image tag",
+        imageTips:"The image ({}) has been deleted",
         imageName:"Image name",
         imageTag:"Image tag",
         description:"Image description",

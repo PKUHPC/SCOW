@@ -59,6 +59,7 @@ export const InferenceJobInputSchema = z.object({
   clusterId: z.string(),
   InferenceJobName: z.string(),
   image: z.number().optional(),
+  isImagePrivate: z.boolean().optional(),
   remoteImageUrl: z.string().optional(),
   models: z.array(IdPrivateSchema),
   mountPoints: z.array(z.string()).optional(),

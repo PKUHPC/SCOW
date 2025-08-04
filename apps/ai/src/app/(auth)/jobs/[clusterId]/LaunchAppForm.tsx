@@ -78,7 +78,7 @@ interface FixedFormFields {
     index: DataAttributes;
   };
   imageSource: ImageSource;
-  image: { type: AccessibilityType, name: number };
+  image: { type?: AccessibilityType, name: number };
   remoteImageUrl: string | undefined;
   framework: FrameworkType | undefined;
   startCommand?: string;
@@ -690,19 +690,27 @@ export const LaunchAppForm = (props: Props) => {
         ["image", "name"],
       ])) {
         form.setFieldValue("imageSource", inputParams.remoteImageUrl ? ImageSource.REMOTE : ImageSource.LOCAL);
-        if ("startCommand" in inputParams) {
-          form.setFieldValue("startCommand", inputParams.startCommand);
+
+        // 处理远程镜像
+        if (inputParams.remoteImageUrl) {
+          form.setFieldValue("remoteImageUrl", inputParams.remoteImageUrl);
+          if ("startCommand" in inputParams) {
+            form.setFieldValue("startCommand", inputParams.startCommand);
+          }
         }
-        if (images?.items?.length) {
+        // 处理本地镜像
+        else {
+          // 先直接设置镜像类型调接口获取镜像数据
           form.setFieldValue(["image", "type"], inputParams.isImagePrivate ?
             AccessibilityType.PRIVATE : AccessibilityType.PUBLIC);
 
-          form.setFieldValue(["image", "name"], inputParams.image);
-        } else {
-          if (inputParams.remoteImageUrl) {
-            form.setFieldValue("remoteImageUrl", inputParams.remoteImageUrl);
-          } else {
-            form.setFieldValue(["image", "type"], AccessibilityType.PRIVATE);
+          // 数据库中有之前存的镜像id才去回显镜像数据,若数据库中已删除了该镜像
+          if (images?.items?.find((image) => inputParams.image === image.id)) {
+            form.setFieldValue(["image", "name"], inputParams.image);
+
+            if ("startCommand" in inputParams) {
+              form.setFieldValue("startCommand", inputParams.startCommand);
+            }
           }
         }
       }

@@ -338,15 +338,17 @@ export class ScowdJobDriver implements JobDriver {
     const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
       "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT","CANCELED"];
 
+    const runningStates = ["RUNNING", "PENDING","QUEUED"];
+
     // If a job is not running, it cannot be ready
     const client = getAdapterClient(clusterId);
     const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
       fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason","partition","gpus_alloc",
-        "cpus_alloc","mem_alloc_mb","nodes_alloc",
+        "cpus_alloc","mem_alloc_mb","nodes_alloc","gpus_req", "cpus_req","mem_req_mb","nodes_req",
       ],
       filter: {
         users: [this.userId], accounts: [],
-        states: isRunning ? ["RUNNING", "PENDING"] : terminatedStates,
+        states: isRunning ? runningStates : terminatedStates,
       },
     }).then((resp) => resp.jobs);
 
@@ -420,8 +422,8 @@ export class ScowdJobDriver implements JobDriver {
         return;
       }
 
-      const isPendingOrTerminated = runningJobInfo.state === "PENDING"
-            || terminatedStates.includes(runningJobInfo.state);
+      const statesNeedReason = new Set(["PENDING", "QUEUED",...terminatedStates]);
+      const needReason = statesNeedReason.has(runningJobInfo.state);
 
       sessions.push({
         jobId: sessionMetadata.jobId,
@@ -437,15 +439,18 @@ export class ScowdJobDriver implements JobDriver {
         runningTime: runningJobInfo.elapsedSeconds !== undefined
           ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
         timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
-        reason: isPendingOrTerminated ? (runningJobInfo.reason ?? "") : undefined,
+        reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
         partition:runningJobInfo.partition,
         cpusAlloc:runningJobInfo.cpusAlloc ?? 0,
         gpusAlloc:runningJobInfo.gpusAlloc ?? 0,
         memAlloc:runningJobInfo.memAllocMb ?? 0,
         nodesAlloc:runningJobInfo.nodesAlloc ?? 0,
+        cpusReq:runningJobInfo.cpusReq,
+        gpusReq:runningJobInfo.gpusReq,
+        memReq:runningJobInfo.memReqMb,
+        nodesReq:runningJobInfo.nodesReq,
       });
     }));
-    const runningStates = ["RUNNING", "PENDING"];
 
     const filteredSessions = sessions.filter((session) =>
       isRunning

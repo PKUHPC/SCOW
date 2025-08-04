@@ -33,28 +33,28 @@ function pad(num: number) {
 }
 
 function calculateRunningOrQueueTime(r: RunningJob) {
-  if (r.state !== "PENDING") {
-    return r.runningTime;
+  if (["PENDING", "QUEUED"].includes(r.state)) {
+    // calculate to format [{days}-][{Hours}:]{MM}:{SS}
+    const diffMs = dayjs().diff(r.submissionTime);
+    const seconds = diffMs / 1000;
+    const minutes = seconds / 60;
+    const hours = minutes / 60;
+    const days = hours / 24;
+
+    let text = "";
+    text += days >= 1 ? Math.floor(days) + "-" : "";
+    const hoursModulo = Math.floor(hours % 24);
+    text += hours >= 1 ? pad(hoursModulo) + ":" : "";
+    const minModulo = Math.floor(minutes % 60);
+    text += pad(minModulo);
+    text += ":";
+    const secModulo = Math.floor(seconds % 60);
+    text += pad(secModulo);
+
+    return text;
   }
 
-  // calculate to format [{days}-][{Hours}:]{MM}:{SS}
-  const diffMs = dayjs().diff(r.submissionTime);
-  const seconds = diffMs / 1000;
-  const minutes = seconds / 60;
-  const hours = minutes / 60;
-  const days = hours / 24;
-
-  let text = "";
-  text += days >= 1 ? Math.floor(days) + "-" : "";
-  const hoursModulo = Math.floor(hours % 24);
-  text += hours >= 1 ? pad(hoursModulo) + ":" : "";
-  const minModulo = Math.floor(minutes % 60);
-  text += pad(minModulo);
-  text += ":";
-  const secModulo = Math.floor(seconds % 60);
-  text += pad(secModulo);
-
-  return text;
+  return r.runningTime;
 }
 
 export function runningJobId(r: RunningJobInfo) {
