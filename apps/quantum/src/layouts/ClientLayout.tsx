@@ -4,6 +4,7 @@ import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { UserInfo } from "@scow/lib-web/build/layouts/base/types";
 import { DarkModeCookie, DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
+import { theme } from "antd";
 import { join } from "path";
 import React from "react";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
@@ -48,9 +49,12 @@ const ClientLayoutLoaded = ({
     ? join(url, "/api/auth/callback?token=" + user.token)
     : url;
 
+  const { useToken } = theme;
+  const { token } = useToken();
+
   const navbarLinks: HeaderNavbarLink[] = [
     {
-      icon: <QuantumIcon style={{ paddingRight: 2, color: "#b60003" }} />,
+      icon: <QuantumIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
       href: "",
       text: t("route.linkTextQuantum"),
       isActive: true,

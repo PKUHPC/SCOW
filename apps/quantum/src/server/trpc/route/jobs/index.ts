@@ -1,6 +1,7 @@
 import { router } from "src/server/trpc/def";
 
 import {
+  cancelJob,
   checkAppConnectivity,
   connectToApp,
   getQuantumConfig,
@@ -11,4 +12,5 @@ export const jobsRouter = router({
   getQuantumConfig,
   connectToApp,
   checkAppConnectivity,
+  cancelJob,
 });

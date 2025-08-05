@@ -1,5 +1,5 @@
 import { Card, Col, Row, Spin, Tabs } from "antd";
-import { NextPage } from "next"; ;
+import { NextPage } from "next";
 import React, { useEffect, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AllowedChipIdType, DeviceCardsData, DevicesMap } from "src/models/device";
@@ -16,7 +16,15 @@ export const DashboardPage: NextPage = () => {
   const pName = prefix("pageComp.device.name.");
 
 
-  const { data: recommendedDevices, isLoading, isError, error } = trpc.backend.device.getRecommendedDevices.useQuery();
+  const { data: recommendedDevices, isLoading, isError, error } = trpc.backend.device.getRecommendedDevices.useQuery(
+    undefined,
+    {
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 2,
+    },
+  );
 
   const { data, isLoading: isLoading2, isError: isError2, error: error2 } =
     trpc.backend.device.findDevice.useQuery(

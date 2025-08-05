@@ -27,7 +27,7 @@ const Container = styled.div`
 
 const { Text } = Typography;
 
-export const JobDetailPage: NextPage = () => {
+export const ChipDetailPage: NextPage = () => {
   const router = useRouter();
   const chipId = queryToString(router.query.chipId);
 
@@ -231,12 +231,10 @@ export const JobDetailPage: NextPage = () => {
               </Row>
             </div>
           </Col>
-          {/* 还原背景色 */}
-          <Col span={5} style={{ backgroundColor: "#ffffff", flexGrow: 1 }}></Col>
         </Row>
       </Container>
     </>
   );
 };
 
-export default JobDetailPage;
+export default ChipDetailPage;

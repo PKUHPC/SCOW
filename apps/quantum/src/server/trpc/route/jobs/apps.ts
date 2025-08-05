@@ -1,10 +1,15 @@
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
+import { getAppConnectionInfoFromAdapter } from "@scow/lib-server";
 import { AppServiceClient, WebAppProps_ProxyType } from "@scow/protos/build/portal/app";
 import { calculateAppRemainingTime } from "src/models/job";
 import { quantumConfig } from "src/server/config/quantum";
 import { procedure } from "src/server/trpc/procedure/base";
+import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
+import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getPortalClient } from "src/utils/client";
+import { isPortReachable } from "src/utils/isPortReachable";
+import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
 import { booleanQueryParam } from "../utils";
@@ -48,6 +53,10 @@ export const listAppSessions =
     }))
     .output(z.object({ sessions: z.array(AppSessionSchema) }))
     .query(async ({ input, ctx: { user } }) => {
+
+      if (USE_MOCK) {
+        return { sessions: [], count: 0 };
+      }
 
       const { page, pageSize } = input;
 
@@ -99,6 +108,7 @@ export const getQuantumConfig =
       return quantumConfig.jupyter;
     });
 
+const TIMEOUT_MS = 3000;
 
 export const checkAppConnectivity =
     procedure
@@ -120,20 +130,23 @@ export const checkAppConnectivity =
 
           const { jobId, clusterId } = input;
 
+          const currentClusterIds = await getCurrentClusters(user.identityId);
+          checkClusterAvailable(currentClusterIds, clusterId);
+
           try {
 
-            const client = getPortalClient(AppServiceClient);
+            const client = getAdapterClient(clusterId);
 
-            // const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
+            const connectionInfo = await getAppConnectionInfoFromAdapter(client, jobId, logger);
 
-            // if (connectionInfo?.response?.$case === "appConnectionInfo") {
-            //   const host = connectionInfo.response.appConnectionInfo.host;
-            //   const port = connectionInfo.response.appConnectionInfo.port;
-            //   const reachable = await isPortReachable(port, host, TIMEOUT_MS);
-            //   return { ok: reachable };
-            // } else {
-            return { ok: false };
-            // }
+            if (connectionInfo?.response?.$case === "appConnectionInfo") {
+              const host = connectionInfo.response.appConnectionInfo.host;
+              const port = connectionInfo.response.appConnectionInfo.port;
+              const reachable = await isPortReachable(port, host, TIMEOUT_MS);
+              return { ok: reachable };
+            } else {
+              return { ok: false };
+            }
           } catch {
             return { ok: false };
           }
@@ -208,3 +221,33 @@ export const connectToApp =
         throw e;
       });
     });
+
+export const cancelJob =
+    procedure
+      .meta({
+        openapi: {
+          method: "DELETE",
+          path: "/jobs/{jobId}",
+          tags: ["jobs"],
+          summary: "Cancel Train Job or App Session",
+        },
+      })
+      .input(z.object({
+        cluster: z.string(),
+        jobId: z.number(),
+      }))
+      .output(z.void())
+      .mutation(async ({ input, ctx: { user } }) => {
+
+        const { cluster, jobId } = input;
+        const userId = user.identityId;
+
+        const currentClusterIds = await getCurrentClusters(userId);
+        checkClusterAvailable(currentClusterIds, cluster);
+
+        const client = getAdapterClient(cluster);
+        await asyncUnaryCall(client.job, "cancelJob", {
+          userId,
+          jobId,
+        });
+      });

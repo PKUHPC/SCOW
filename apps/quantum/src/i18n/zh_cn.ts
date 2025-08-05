@@ -2,7 +2,7 @@ export default {
   route: {
     dashboard: "仪表盘",
     linkTextQuantum: "量子云",
-    linkTextHpc: "高性能计算",
+    linkTextHpc: "超算平台",
     linkTextMis: "管理系统",
     linkTextAI: "人工智能",
     devices: "运行设备",
@@ -151,6 +151,7 @@ export default {
         portNotOpen: "应用端口还未开放",
         connect: "连接",
       },
+      operateFailed: "操作失败",
     },
   },
   page: {
@@ -161,6 +162,7 @@ export default {
     },
     quantum: {
       back: "返回",
+      jobDetail: "作业详情",
       jobInfo: "作业信息",
       jobName: "作业名",
       chart:  "图示",

@@ -4,7 +4,7 @@ import {
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber, compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Checkbox, Form, Input, Space, Table, Tooltip } from "antd";
+import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, Tooltip } from "antd";
 import { CheckboxChangeEvent } from "antd/es/checkbox";
 import type { ColumnType } from "antd/es/table";
 import { join } from "path";
@@ -52,6 +52,9 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
   const [query, setQuery] = useState<FilterForm>(() => {
     return { appJobName: undefined };
   });
+
+  const { message } = App.useApp();
+
   const [form] = Form.useForm<FilterForm>();
 
   const t = useI18nTranslateToString();
@@ -71,6 +74,7 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
   , [quantumConfigQuery.data]);
 
   const [onlyNotEnded, setOnlyNotEnded] = useState(false);
+  const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
   const filteredData = useMemo(() => {
     if (!data) { return []; }
@@ -101,6 +105,16 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
   const portalUrl = publicConfig.publicConfig.portalUrl;
 
   const appCreateUrl = `apps/${cluster}/create/${appId}`;
+
+  const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
+    onError: (e) => {
+      message.error(`${t(p("operateFailed"))}: ${e.message}`);
+    },
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
 
   const columns: ColumnType<AppSessionTableRow>[] = [
     {
@@ -187,7 +201,48 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
     },
   ];
 
-  if (!isDashboard) {
+  if (!isDashboard && cluster) {
+    const renderActionButtons = (record: AppSessionTableRow) => {
+    // 提取公共的 Popconfirm 和 onConfirm 逻辑
+      const handleConfirm = async () => {
+        await cancelJobMutation.mutateAsync({
+          cluster,
+          jobId: record.jobId,
+        });
+        message.success(t(p("table.popFinishConfirmMessage")));
+      };
+
+      const popconfirmProps = {
+        title: t(p("table.popFinishConfirmTitle")),
+        onConfirm: handleConfirm,
+      };
+
+      if (record.state === "RUNNING") {
+        return (
+          <>
+            <ConnectTopAppLink
+              session={record}
+              cluster={cluster}
+              refreshToken={connectivityRefreshToken}
+            />
+            <Popconfirm {...popconfirmProps}>
+              <a>{t("button.finishButton")}</a>
+            </Popconfirm>
+          </>
+        );
+      }
+
+      if (["PENDING", "SUSPENDED"].includes(record.state)) {
+        return (
+          <Popconfirm {...popconfirmProps}>
+            <a>{t("button.cancelButton")}</a>
+          </Popconfirm>
+        );
+      }
+
+      return null;
+    };
+
     columns.push({
       title: t("button.actionButton"),
       key: "action",
@@ -195,51 +250,7 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
       width: "10%",
       render: (record: AppSessionTableRow) => (
         <Space>
-          {
-            (record.state === "RUNNING") && (
-              <>
-                {cluster && (
-                  <ConnectTopAppLink
-                    session={record}
-                    cluster={cluster}
-                  />
-                )}
-                {/* <Popconfirm
-                title={t(p("table.popFinishConfirmTitle"))}
-                  onConfirm={async () =>
-                    api.cancelJob({ query: {
-                      cluster: cluster.id,
-                      jobId: record.jobId,
-                    } })
-                      .then(() => {
-                        message.success(t(p("table.popFinishConfirmMessage")));
-                        refetch();
-                      })
-                  }
-              >
-                <a>{t("button.finishButton")}</a>
-                </Popconfirm> */}
-              </>
-            )
-          }
-          {/* {
-            (record.state === "PENDING" || record.state === "SUSPENDED") ? (
-              <Popconfirm
-                title={t(p("table.popFinishConfirmTitle"))}
-                onConfirm={async () =>
-                  message.success(t(p("table.popCancelConfirmMessage")))
-                }
-              >
-                <a>{t("button.cancelButton")}</a>
-              </Popconfirm>
-            ) : undefined
-          } */}
-          {/* <a onClick={() => {
-            router.push(join("/files"));
-          }}
-          >
-            {t(p("table.linkToPath"))} 进入目录暂时还未实现
-          </a> */}
+          {renderActionButtons(record)}
         </Space>
       ),
     });
@@ -250,7 +261,8 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
 
   const reloadTable = useCallback(() => {
     refetch();
-  }, [refetch]);
+    setConnectivityRefreshToken((f) => !f);
+  }, [refetch, setConnectivityRefreshToken]);
 
   const onChange = (e: CheckboxChangeEvent) => {
     setChecked(e.target.checked);

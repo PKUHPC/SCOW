@@ -16,7 +16,6 @@ interface Props {
 
 interface FilterForm {
   jobId: number | undefined,
-  tags: string | undefined,
   qubits: number | undefined,
   shots: number | undefined,
 }
@@ -42,7 +41,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
       jobId: undefined,
-      tags: undefined,
       qubits: undefined,
       shots: undefined,
     };
@@ -61,20 +59,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
         : {
           sorter: (a, b) => a.jobId - b.jobId,
         }),
-    },
-    {
-      title: t(p("jobName")),
-      dataIndex: "name",
-      width: "80px",
-      render: (name?: string) => name ?? EMPTY_STRING,
-      ellipsis: true,
-    },
-    {
-      title: t(p("tags")),
-      dataIndex: "tags",
-      width: "80px",
-      render: (tags?: string) => tags ?? EMPTY_STRING,
-      ellipsis: true,
     },
     {
       title: t(p("account")),
@@ -99,12 +83,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       dataIndex: "qubits",
       width: "30px",
       render: (qubits?: number) => qubits ?? EMPTY_STRING,
-    },
-    {
-      title: t(p("priority")),
-      dataIndex: "prior",
-      width: "60px",
-      render: (prior?: number) => prior ?? EMPTY_STRING,
     },
     {
       title: t(p("submitTime")),
@@ -149,10 +127,9 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
 
     const result = data.tasks.filter((x) => {
       const dataMatchedJobId = !query.jobId || (Number(x.jobId) === query.jobId);
-      const dataMatchedTags = !query.tags || (x.tags === query.tags);
       const dataMatchedQubits = !query.qubits || (x.qubits === query.qubits);
       const dataMatchedShots = !query.shots || (x.shots === query.shots);
-      return dataMatchedJobId && dataMatchedTags && dataMatchedQubits && dataMatchedShots;
+      return dataMatchedJobId && dataMatchedQubits && dataMatchedShots;
     }).map((x) => {
       const processedX = { ...x };
 
@@ -164,7 +141,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       return {
         ...processedX,
         submitTime: formatDateTime(processedX.submitTime),
-        account: EMPTY_STRING, // 后续必不为空
       };
     });
 
@@ -189,9 +165,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
             >
               <Form.Item label={t(p("jobId"))} name="jobId">
                 <InputNumber style={{ minWidth: "160px" }} />
-              </Form.Item>
-              <Form.Item label={t(p("tags"))} name="tags">
-                <Input style={{ minWidth: "160px" }} />
               </Form.Item>
               <Form.Item label="Qubits" name="qubits">
                 <InputNumber style={{ minWidth: "160px" }} />

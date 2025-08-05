@@ -290,7 +290,7 @@ export const JobDetailPage: NextPage = () => {
           &lt; {t(p("back"))}
         </a>
         <Divider type="vertical" />
-        <span style={{ fontWeight: 600 }}>{data?.task?.name ?? EMPTY_STRING}</span>
+        <span style={{ fontWeight: 600 }}>{t(p("jobDetail"))}</span>
 
         <div style={{ margin: "12px 0 -12px 0" }}>{t(p("jobInfo"))}</div>
         <Divider />

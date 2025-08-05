@@ -97,8 +97,8 @@ export default {
         t60v15s1: "Virtual 15-qubit @t60, qubits connected by tunable couplers",
         t60: "60-qubit quantum chip, qubits connected by tunable couplers",
         t59: "59-qubit quantum chip, qubits connected by tunable couplers",
-        "simulator:tc": "Self-developed quantum state simulator, a tensor network-based simulation"
-        + " engine capable of overcoming memory limitations of state simulators",
+        "simulator:tc": "Self-developed quantum state simulator, a tensor network-based simulation" +
+        " engine capable of overcoming memory limitations of state simulators",
         t13v6: "Virtual 6-qubit @t13, qubits connected by tunable couplers",
         testing: "local测试芯片",
         gateFidelity: "with average gate fidelity of {} (single) and {} (double)",
@@ -151,6 +151,7 @@ export default {
         portNotOpen: "Application port is not open yet.",
         connect: "Connect",
       },
+      operateFailed: "Failed to operate job.",
     },
   },
   page: {
@@ -161,6 +162,7 @@ export default {
     },
     quantum: {
       back: "back",
+      jobDetail: "Job Detail",
       jobInfo: "Job Info",
       jobName: "Job Name",
       chart:  "chart",

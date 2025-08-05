@@ -173,15 +173,15 @@ interface DeviceCard {
 export const DeviceCardsData: DeviceCard[] = [
   {
     id: "t9",
-    path: join(BASE_PATH, "/device/1.jpg"),
+    path: join(BASE_PATH, "/device/1.png"),
   },
   {
     id: "t40v20s1",
-    path: join(BASE_PATH, "/device/2.jpg"),
+    path: join(BASE_PATH, "/device/2.png"),
   },
   {
     id: "t40",
-    path: join(BASE_PATH, "/device/3.jpg"),
+    path: join(BASE_PATH, "/device/3.png"),
   },
   {
     id: "t13v7",
@@ -189,59 +189,59 @@ export const DeviceCardsData: DeviceCard[] = [
   },
   {
     id: "t40v20s2",
-    path: join(BASE_PATH, "/device/5.jpg"),
+    path: join(BASE_PATH, "/device/5.png"),
   },
   {
     id: "t13",
-    path: join(BASE_PATH, "/device/6.jpg"),
+    path: join(BASE_PATH, "/device/6.png"),
   },
   {
     id: "t59v15s3",
-    path: join(BASE_PATH, "/device/1.jpg"),
+    path: join(BASE_PATH, "/device/7.png"),
   },
   {
     id: "t59v14s4",
-    path: join(BASE_PATH, "/device/2.jpg"),
+    path: join(BASE_PATH, "/device/8.png"),
   },
   {
     id: "t60v15s4",
-    path: join(BASE_PATH, "/device/3.jpg"),
+    path: join(BASE_PATH, "/device/9.png"),
   },
   {
     id: "t60v15s2",
-    path: join(BASE_PATH, "/device/4.png"),
+    path: join(BASE_PATH, "/device/10.png"),
   },
   {
     id: "t59v14s2",
-    path: join(BASE_PATH, "/device/5.jpg"),
+    path: join(BASE_PATH, "/device/11.png"),
   },
   {
     id: "t60v15s3",
-    path: join(BASE_PATH, "/device/6.jpg"),
+    path: join(BASE_PATH, "/device/12.png"),
   },
   {
     id: "t59v16s1",
-    path: join(BASE_PATH, "/device/1.jpg"),
+    path: join(BASE_PATH, "/device/13.png"),
   },
   {
     id: "t60v15s1",
-    path: join(BASE_PATH, "/device/2.jpg"),
+    path: join(BASE_PATH, "/device/14.png"),
   },
   {
     id: "t60",
-    path: join(BASE_PATH, "/device/3.jpg"),
+    path: join(BASE_PATH, "/device/15.png"),
   },
   {
     id: "t59",
-    path: join(BASE_PATH, "/device/4.png"),
-  },
-  {
-    id: "simulator:tc",
-    path: join(BASE_PATH, "/device/5.jpg"),
+    path: join(BASE_PATH, "/device/16.png"),
   },
   {
     id: "t13v6",
-    path: join(BASE_PATH, "/device/6.jpg"),
+    path: join(BASE_PATH, "/device/17.png"),
+  },
+  {
+    id: "simulator:tc",
+    path: join(BASE_PATH, "/device/18.png"),
   },
 ];
 

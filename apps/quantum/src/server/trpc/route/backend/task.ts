@@ -222,7 +222,7 @@ export const task = router({
           jobId: job.id,
           submitTime: new Date(job.submitTime.getTime()).toString(),
           lastSyncTime: job.lastSyncTime,
-          account: "", // 这里后续加上账户信息
+          account: job.accountName,
           duration: calculateDuration(job.info.ts),
         })),
       };

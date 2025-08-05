@@ -3,26 +3,29 @@
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
 import { App } from "antd";
 import { join } from "path";
+import { useEffect } from "react";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { trpc } from "src/utils/trpc";
+
 export interface Props {
   session: AppSession;
   cluster: string;
+  refreshToken: boolean;
 }
 
 export const ConnectTopAppLink: React.FC<Props> = ({
-  session, cluster,
+  session, cluster, refreshToken,
 }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.appSessionTable.connectToAppLink.");
 
   const { message } = App.useApp();
 
-  // const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({ clusterId: cluster, jobId: session.jobId }, {
-  //   enabled: !!session.jobId,
-  // }); // 后面补上
+  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({ clusterId: cluster, jobId: session.jobId }, {
+    enabled: !!session.jobId,
+  });
 
   const connectMutation = trpc.jobs.connectToApp.useMutation(
     {
@@ -32,9 +35,9 @@ export const ConnectTopAppLink: React.FC<Props> = ({
     },
   );
 
-  // useEffect(() => {
-  //   refetch();
-  // }, [refreshToken]);
+  useEffect(() => {
+    refetch();
+  }, [refreshToken]);
 
 
   const onClick = async () => {
@@ -92,6 +95,6 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   };
 
   return (
-    <DisabledA disabled={false} onClick={onClick} message={t(p("notReady"))}>{t(p("connect"))}</DisabledA>
+    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))}>{t(p("connect"))}</DisabledA>
   );
 };

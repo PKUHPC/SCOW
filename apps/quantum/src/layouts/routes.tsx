@@ -1,8 +1,6 @@
-import { BookOutlined, DashboardOutlined, ProductOutlined, QuestionOutlined } from "@ant-design/icons";
-import { QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { useI18nTranslateToString } from "src/i18n";
-import { JupyterIcon } from "src/icons/headerIcons/headerIcons";
+import { DashboardIcon, DeviceIcon, HelpIcon, JupyterIcon, QuantumJobIcon } from "src/icons/headerIcons/headerIcons";
 
 export const useRoutes = (basePath: string, portalUrl: string): NavItemProps[] => {
 
@@ -10,12 +8,12 @@ export const useRoutes = (basePath: string, portalUrl: string): NavItemProps[] =
 
   return [
     {
-      Icon: DashboardOutlined,
+      Icon: DashboardIcon,
       path: "/dashboard",
       text: t("route.dashboard"),
     },
     {
-      Icon: ProductOutlined,
+      Icon: DeviceIcon,
       path: "/devices",
       text: t("route.devices"),
     },
@@ -31,27 +29,27 @@ export const useRoutes = (basePath: string, portalUrl: string): NavItemProps[] =
         //   text: t("route.jupyter.create"),
         // },
         {
-          Icon: BookOutlined,
+          Icon: JupyterIcon,
           text: t("route.jupyter.list"),
           path: "/jupyter/list",
         },
       ],
     },
     {
-      Icon:QuantumIcon,
+      Icon: QuantumJobIcon,
       path: "/quantum",
       text: t("route.quantum.root"),
       clickToPath: "/quantum/list",
       children: [
         {
-          Icon: BookOutlined,
+          Icon: QuantumJobIcon,
           text: t("route.quantum.list"),
           path: "/quantum/list",
         },
       ],
     },
     {
-      Icon: QuestionOutlined,
+      Icon: HelpIcon,
       path: "/help",
       text: t("route.help.root"),
     },

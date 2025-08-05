@@ -1,9 +1,9 @@
 import { Card, Col, Row, Spin } from "antd";
-import { NextPage } from "next"; ;
+import { NextPage } from "next";
 import React, { useEffect, useMemo,useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AllowedChipIdType, DeviceCardsData, DevicesMap } from "src/models/device";
-import DeviceCard from "src/pageComponents/dashboard/DeviceCard"; ;
+import DeviceCard from "src/pageComponents/dashboard/DeviceCard";
 import { getGateFidelities, mapDeviceStateToDisplayState } from "src/utils/chip";
 import { trpc } from "src/utils/trpc";
 

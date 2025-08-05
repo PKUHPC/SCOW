@@ -147,7 +147,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     "simulator:tc": "simulator:tc",
   });
 
-
   // GATEWAY
   addService("gateway", {
     image: scowImage,
@@ -526,6 +525,12 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "PROTOCOL": config.gateway.protocol,
         "AUTH_EXTERNAL_URL": config.auth.custom?.external?.url || join(BASE_PATH, "/auth"),
         "AUTH_INTERNAL_URL": authUrl || "http://auth:5000",
+
+        ADAPTER_SSL_ENABLED: String(config.adapter?.ssl?.enabled ?? false),
+        ADAPTER_SSL_CA_CERT_PATH: adapterSslCaCertPath,
+        ADAPTER_SSL_SCOW_CERT_PATH: adapterSslScowCertPath,
+        ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: adapterSslScowPrivateKeyPath,
+
         ...serviceLogEnv,
         ...nodeOptions ? { NODE_OPTIONS: nodeOptions } : {},
       },
