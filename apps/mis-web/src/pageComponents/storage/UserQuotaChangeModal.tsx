@@ -82,19 +82,19 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
         style={{ marginTop: "20px" }}
       >
         <Form.Item label={t(p("user"))} style={{ marginBottom: "10px" }}>
-          <strong>{`${username}(ID: ${userId})`}</strong>
+          <span>{`${username}(ID: ${userId})`}</span>
         </Form.Item>
         <Form.Item label={t(p("cluster"))} style={{ marginBottom: "10px" }}>
-          <strong>{getI18nConfigCurrentText(cluster.name, languageId)}</strong>
+          <span>{getI18nConfigCurrentText(cluster.name, languageId)}</span>
         </Form.Item>
         <Form.Item label={`${t(p("defaultStorageQuota"))}(GB)`} style={{ marginBottom: "10px" }}>
-          <strong>{formatBytesToGB(defaultQuotaBytes).toFixed(2)}</strong>
+          <span>{formatBytesToGB(defaultQuotaBytes).toFixed(2)}</span>
         </Form.Item>
         <Form.Item label={`${t(p("currentUsage"))}/${t(p("storageQuota"))}(GB)`} style={{ marginBottom: "10px" }}>
           <Space>
-            <strong>
+            <span>
               {`${formatBytesToGB(usedStorageBytes).toFixed(2)} / ${formatBytesToGB(quotaBytes).toFixed(2)}`}
-            </strong>
+            </span>
             { !useDefault && (
               <a onClick={() => {
                 modal.confirm({
@@ -104,9 +104,9 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
                   icon: <ExclamationCircleOutlined />,
                   content: <Space direction="vertical">
                     <span>{`${t(p("currentDefaultStorageQuota"))}（GB）：`}
-                      <strong>
+                      <span>
                         {formatBytesToGB(defaultQuotaBytes).toFixed(2)}
-                      </strong>
+                      </span>
                     </span>
                     <span>{t(p("confirmUseDefaultStorageQuota"))}</span>
                   </Space>,

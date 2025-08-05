@@ -25,7 +25,7 @@ export const AllJobsPage: NextPage = requireAuth(() => true)(
     return (
       <div>
         <Head title={t("pages.jobs.allJobs.title")} />
-        <PageTitle titleText={t("pages.jobs.allJobs.pageTitle")} />
+        <PageTitle titleText={t("pages.jobs.allJobs.title")} />
         <AllJobQueryTable
           userId={userStore.user.identityId}
         />

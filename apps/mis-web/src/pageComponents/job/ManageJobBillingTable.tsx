@@ -6,6 +6,7 @@ import { App, Button, Form, Input, InputNumber, Modal, Popover, Select, Space, T
 import React, { useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { SettingIcon } from "src/assets/operationIcon";
 import { AmountStrategyDescriptionsItem } from "src/components/AmonutStrategyDescriptionsItem";
 import { CommonModalProps, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -55,7 +56,7 @@ publicConfig.CUSTOM_AMOUNT_STRATEGIES?.forEach((i) => {
 const p = prefix("pageComp.job.manageJobBillingTable.");
 const pCommon = prefix("common.");
 
-export const ManageJobBillingTable: React.FC<Props> = ({ 
+export const ManageJobBillingTable: React.FC<Props> = ({
   data, loading, tenant, reload, isFromPlatformAdmin }) => {
 
   const t = useI18nTranslateToString();
@@ -170,7 +171,7 @@ export const ManageJobBillingTable: React.FC<Props> = ({
         render={(_, r) => {
           return {
             children: (
-              <Space>
+              <Space style={{ marginLeft: "4px" }}>
                 {
                   r.settable ? (
                     <EditPriceModalLink
@@ -181,27 +182,29 @@ export const ManageJobBillingTable: React.FC<Props> = ({
                       reload={reload}
                       tenant={tenant}
                     >
-                      {t(pCommon("set"))}
+                      <Tooltip title={t(pCommon("set"))}>
+                        <SettingIcon />
+                      </Tooltip>
                     </EditPriceModalLink>
                   ) : (
                     isFromPlatformAdmin ? (
                       <Tooltip title={t(p("canNotSetUnAssignedPartition"))}>
-                        <Button 
+                        <Button
                           type="link"
                           disabled
-                          style={{ 
-                            textAlign: "left", 
-                            display: "flex", 
+                          style={{
+                            textAlign: "left",
+                            display: "flex",
                             padding: "0",
                             height: "auto",
                           }}
                         >
-                          {t(pCommon("set"))}
+                          <SettingIcon disabled />
                         </Button>
                       </Tooltip>
                     ) : undefined
                   )
-                }               
+                }
               </Space>
             ),
           };
@@ -258,14 +261,14 @@ const EditPriceModal: React.FC<CommonModalProps & {
         form={form}
       >
         <Form.Item label={t(p("object"))}>
-          <strong>{tenant ? (t(pCommon("tenant")) + tenant) : t(pCommon("platform"))}</strong>
+          <span>{tenant ? (t(pCommon("tenant")) + tenant) : t(pCommon("platform"))}</span>
         </Form.Item>
         <Form.Item label={t(p("priceItem"))}>
-          {t(pCommon("cluster"))} <strong>{getClusterName(cluster, languageId, publicConfigClusters)}</strong>，
-          {t(pCommon("partition"))} <strong>{partition}</strong>，QOS <strong>{qos}</strong>
+          {t(pCommon("cluster"))} <span>{getClusterName(cluster, languageId, publicConfigClusters)}</span>，
+          {t(pCommon("partition"))} <span>{partition}</span>，QOS <span>{qos}</span>
         </Form.Item>
         <Form.Item label={t(p("newItemId"))}>
-          <strong>{nextId}</strong>
+          <span>{nextId}</span>
         </Form.Item>
         <Form.Item
           label={(

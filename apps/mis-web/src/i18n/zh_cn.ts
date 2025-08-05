@@ -146,7 +146,7 @@ export default {
   footer: "Powered by SCOW",
 
   runningJob: {
-    title: "本用户未结束的作业",
+    title: "未结束的作业",
   },
   layouts: {
     route: {
@@ -227,7 +227,7 @@ export default {
         userManagement: "用户管理",
         pay: "充值记录",
         cost: "消费记录",
-        bill: "账单明细",
+        bill: "账户账单明细",
       },
     },
   },
@@ -1117,10 +1117,10 @@ export default {
         loading: "数据加载中...",
       },
       operationLogs: {
-        userOperationLog: "本用户操作日志",
+        userOperationLog: "操作日志",
       },
       historyJobs: {
-        userCompletedJob: "本用户已结束的作业",
+        userCompletedJob: "已结束的作业",
       },
     },
     tenant: {
@@ -1183,13 +1183,13 @@ export default {
           title: "账户消费记录",
         },
         bills: {
-          title: "账单明细",
+          title: "账户账单明细",
         },
       },
       accounts: {
         whitelist: {
           title: "白名单账户",
-          whitelistAccountList: "白名单账户列表",
+          whitelistAccountList: "账户白名单",
         },
         list: {
           title: "账户列表",
@@ -1253,14 +1253,14 @@ export default {
         },
       },
       operationLogs: {
-        platformOperationLog: "平台操作日志",
+        platformOperationLog: "操作日志",
       },
       jobBilling: {
-        jobBillingPriceTable: "作业计费价格表",
+        jobBillingPriceTable: "作业价格表",
         managementObject: "管理对象",
       },
       importUsers: {
-        importUserInfo: "导入用户信息",
+        importUserInfo: "导入用户",
       },
       lockedUsers: {
         userUnlock: "用户登录解封",
@@ -1505,7 +1505,7 @@ export default {
         },
       },
       statistic: {
-        dataOverview: "数据总览",
+        dataOverview: "平台数据统计",
         dateRange: "日期筛选",
         user: "用户",
         account: "账户",

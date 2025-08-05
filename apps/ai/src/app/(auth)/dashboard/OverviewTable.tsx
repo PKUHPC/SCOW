@@ -1,9 +1,9 @@
-import { blue,gray } from "@ant-design/colors";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { PartitionInfo, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { useDarkMode } from "src/layouts/darkMode";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
 import { Cluster } from "src/utils/cluster";
 import { compareWithUndefined } from "src/utils/dashboard";
@@ -69,7 +69,6 @@ const Container = styled.div`
     align-items: center;
     justify-content: start;
     font-size: 16px;
-    font-weight: 600;
   }
 
   .rowBgColor{
@@ -83,6 +82,7 @@ const Container = styled.div`
 export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
   currentClusters, isLoading, clustersOverview, platformOverview, successfulClusters }) => {
 
+  const { dark } = useDarkMode();
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const p = prefix("app.dashboard.overviewTable.");
@@ -179,7 +179,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             sorter={(a, b, sortOrder) =>
               compareWithUndefined(a.clusterId, b.clusterId, sortOrder)}
             render={(_, r) => (
-              <span style={{ fontWeight:700 }}>
+              <span>
                 {getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == r.clusterId)?.name
                 ?? r.clusterId, languageId)}
               </span>
@@ -209,10 +209,10 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                 <div>
                   <CustomProgress
                     percent={Math.min(Number(r.info?.usageRatePercentage.toFixed(2) ?? 0), 100)}
-                    width="120px"
-                    height="15px"
-                    bgColor={gray[0]}
-                    progressColor={blue[5]}
+                    width="145px"
+                    height="20px"
+                    bgColor={dark ? "#E3E3E326" : "#43434326"}
+                    progressColor="#6897D0"
                   />
                 </div>
               ) : "-"
@@ -227,10 +227,10 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                 <div>
                   <CustomProgress
                     percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
-                    width="120px"
-                    height="15px"
-                    bgColor={gray[0]}
-                    progressColor={blue[5]}
+                    width="145px"
+                    height="20px"
+                    bgColor={dark ? "#E3E3E326" : "#43434326"}
+                    progressColor="#6897D0"
                   />
                 </div>
               ) : "-"
@@ -245,10 +245,10 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                 <div>
                   <CustomProgress
                     percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
-                    width="120px"
-                    height="15px"
-                    bgColor={gray[0]}
-                    progressColor={blue[5]}
+                    width="145px"
+                    height="20px"
+                    bgColor={dark ? "#E3E3E326" : "#43434326"}
+                    progressColor="#6897D0"
                   />
                 </div>
               ) : "-"

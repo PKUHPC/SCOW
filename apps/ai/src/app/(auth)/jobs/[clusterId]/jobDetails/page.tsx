@@ -3,22 +3,22 @@
 import { LoadingOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { DescriptionsProps, TableProps, TabsProps } from "antd";
-import { Descriptions, Divider, Space, Table, Tabs, Typography } from "antd";
+import { Descriptions, Divider, Space, Table, Tabs, Tooltip,Typography } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
 import { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { EnterContainerIcon, EventIcon, LogIcon } from "src/icons/operationIcon";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
-import { JobType } from "src/models/Job";
+import { JobType, statusColors } from "src/models/Job";
 import { formatDateTime } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
 import { AppTableStatus } from "../AppSessionsTable";
-
 
 const Container = styled.div`
   padding: 20px;
@@ -337,6 +337,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     {
       title: t(p("podStatus")),
       dataIndex: "podStatus",
+      render: (value) => <span style={{ color: statusColors[value.toUpperCase()] }}>{value}</span>,
     },
     {
       title: t(p("podCreatedTime")),
@@ -347,26 +348,30 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       title: t(p("action")),
       key:"action",
       render: (_, record) => (
-        <Space>
-          <a onClick={() => {
-            if (selectedPodId === record.podId) {
-              setSelectedPodId(null);
-            } else {
-              setSelectedPodId(record.podId);
-            }
-          }}
-          >
-            {t(p("viewEvents"))}
-          </a>
+        <Space size={16}>
+          <Tooltip title={t(p("viewEvents"))}>
+            <EventIcon onClick={() => {
+              if (selectedPodId === record.podId) {
+                setSelectedPodId(null);
+              } else {
+                setSelectedPodId(record.podId);
+              }
+            }}
+            />
+          </Tooltip>
           {
             from === AppTableStatus.UNFINISHED ? (
               <Link href={`/jobShell/${clusterId}/${jobId}/${record.namespace}/${record.podName}`} target="_blank">
-                {t(p("enterContainer"))}
+                <Tooltip title={t(p("enterContainer"))}>
+                  <EnterContainerIcon />
+                </Tooltip>
               </Link>
             ) : null
           }
           <Link href={`/jobs/${clusterId}/jobLogs/${record.podId}`} target="_blank">
-            {t(p("viewLogs"))}
+            <Tooltip title={t(p("viewLogs"))}>
+              <LogIcon />
+            </Tooltip>
           </Link>
         </Space>
       ),
@@ -377,7 +382,6 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     <>
       <Container>
         <a
-          style={{ fontWeight:600 }}
           onClick={() => {
             router.push(
               join(`/jobs/${clusterId}/${from === AppTableStatus.UNFINISHED ? "runningJobs" : "historyJobs"}`),
@@ -387,7 +391,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
           &lt; {t(p("return"))}
         </a>
         <Divider type="vertical" />
-        <span style={{ fontWeight:600 }}>{jobDetails.jobName}</span>
+        <span>{jobDetails.jobName}</span>
         <Tabs defaultActiveKey="1" items={tabsItems} style={{ height:"520px" }} />
       </Container>
       <Container>

@@ -17,12 +17,14 @@ type Props = React.PropsWithChildren<{
   onClick?: () => void;
   disabled?: boolean;
   message?: React.ReactNode;
+  abledMessage?: string;
 }>;
 
-export const DisabledA: React.FC<Props> = React.forwardRef(({ onClick, disabled, message, children }, ref) => {
+export const DisabledA: React.FC<Props> = React.forwardRef(({
+  onClick, disabled, message, children, abledMessage }, ref) => {
 
   if (!disabled) {
-    return <a onClick={onClick}>{children}</a>;
+    return <Tooltip title={abledMessage}><a onClick={onClick}>{children}</a></Tooltip>;
   }
 
   if (message) {

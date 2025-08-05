@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { Select, theme } from "antd";
+import { Select } from "antd";
 import { useRouter } from "next/router";
 import { setCookie } from "nookies";
 import { useEffect, useState } from "react";
@@ -18,8 +18,6 @@ import { useStore } from "simstate";
 import { languageInfo, useI18n } from "src/i18n";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { styled } from "styled-components";
-
-const { useToken } = theme;
 
 const Container = styled.div`
   white-space: nowrap;

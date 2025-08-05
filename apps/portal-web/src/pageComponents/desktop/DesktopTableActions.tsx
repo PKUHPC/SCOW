@@ -10,10 +10,11 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { Popconfirm, Space } from "antd";
+import { Popconfirm, Space, Tooltip } from "antd";
 import React, { useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { DeleteIcon, StartIcon } from "src/icons/operationIcon";
 import type { DesktopItem } from "src/pageComponents/desktop/DesktopTable";
 import { Cluster } from "src/utils/cluster";
 import { openDesktop } from "src/utils/vnc";
@@ -36,24 +37,22 @@ export const DesktopTableActions: React.FC<Props> = ({ cluster, reload, record }
   return (
     <div>
       <Space size="middle">
-        <a
-          onClick={async () => {
-
+        <Tooltip title={t("button.startButton")}>
+          <StartIcon
+            onClick={async () => {
             // launch desktop
-            const resp = await api.launchDesktop({
-              body: {
-                cluster: cluster.id,
-                loginNode: record.addr,
-                displayId: record.desktopId,
-              },
-            });
+              const resp = await api.launchDesktop({
+                body: {
+                  cluster: cluster.id,
+                  loginNode: record.addr,
+                  displayId: record.desktopId,
+                },
+              });
 
-            openDesktop(cluster.id, resp.host, resp.port, resp.password);
-          }}
-        >
-          {t("button.startButton")}
-        </a>
-
+              openDesktop(cluster.id, resp.host, resp.port, resp.password);
+            }}
+          />
+        </Tooltip>
         <Popconfirm
           title={t(p("popConfirmTitle"))}
           open={isPopconfirmVisible}
@@ -76,14 +75,13 @@ export const DesktopTableActions: React.FC<Props> = ({ cluster, reload, record }
             setIsPopconfirmVisible(false);
           }}
         >
-
-          <a
-            onClick={() => {
-              setIsPopconfirmVisible(true);
-            }}
-          >
-            {t("button.deleteButton")}
-          </a>
+          <Tooltip title={t("button.deleteButton")}>
+            <DeleteIcon
+              onClick={() => {
+                setIsPopconfirmVisible(true);
+              }}
+            />
+          </Tooltip>
         </Popconfirm>
       </Space>
     </div>

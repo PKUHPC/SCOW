@@ -147,7 +147,7 @@ export default {
   footer: "Powered by SCOW",
 
   runningJob: {
-    title: "My Running Jobs",
+    title: "Running Jobs",
   },
   layouts: {
     route: {
@@ -228,7 +228,7 @@ export default {
         userManagement: "Users",
         pay: "Pay Records",
         cost: "Consumption Records",
-        bill: "Bill Records",
+        bill: "Account Bill Records",
       },
     },
   },
@@ -1129,10 +1129,10 @@ export default {
         loading: "Loading partitions...",
       },
       operationLogs: {
-        userOperationLog: "User Operation Log",
+        userOperationLog: "Operation Log",
       },
       historyJobs: {
-        userCompletedJob: "User's Completed Jobs",
+        userCompletedJob: "Completed Jobs",
       },
     },
     tenant: {
@@ -1195,7 +1195,7 @@ export default {
           title: "Account Consumption Records",
         },
         bills: {
-          title: "Bill Detail",
+          title: "Account Bill Detail",
         },
       },
       accounts: {
@@ -1267,14 +1267,14 @@ export default {
         },
       },
       operationLogs: {
-        platformOperationLog: "Platform Operation Log",
+        platformOperationLog: "Operation Log",
       },
       jobBilling: {
         jobBillingPriceTable: "Job Billing Price Table",
         managementObject: "For ",
       },
       importUsers: {
-        importUserInfo: "Import User Information",
+        importUserInfo: "Import User",
       },
       lockedUsers: {
         userUnlock: "User login unlocking",
@@ -1523,7 +1523,7 @@ export default {
         },
       },
       statistic: {
-        dataOverview: "Data Overview",
+        dataOverview: "statistic",
         dateRange: "Date Range",
         user: "User",
         account: "Account",

@@ -35,7 +35,7 @@ import { JobBillingTableItem } from "../api/job/getAvailableBillingTable";
 
 const ClusterCommentTitle = styled(Typography.Title)`
   padding-top: 8px;
-  font-weight: 600;
+  font-weight: 400;
   font-size: 16px;
 `;
 
@@ -74,7 +74,7 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
     if (!isResourceDeployed) return activatedClusters;
     return Object.fromEntries(
       Object.entries(activatedClusters).filter(([clusterId, _]) => assignedClusterIds.includes(clusterId)),
-    );  
+    );
   }, [activatedClusters, isResourceDeployed, assignedClusterIds]);
 
   const clusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList)
@@ -177,11 +177,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const clusterTexts = runtimeConfig.CLUSTER_TEXTS_CONFIG;
 
   // 如果部署了资源管理系统，获取用户关联账户的已授权集群信息
-  let assignedClusterIds: string[] = []; 
+  let assignedClusterIds: string[] = [];
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && typeof user !== "number") {
     const userAccounts = user.accountAffiliations.map((aff) => (aff.accountName));
     assignedClusterIds = await getUserAccountsClusterIds(
-      runtimeConfig.SCOW_RESOURCE_CONFIG, 
+      runtimeConfig.SCOW_RESOURCE_CONFIG,
       userAccounts,
       user.tenant,
     );
@@ -194,10 +194,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
       : (clusterTexts[user.tenant] ?? clusterTexts.default)
   ) : undefined;
 
-  return { props: { 
+  return { props: {
     text: applicableTexts,
     isResourceDeployed: !!runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled,
-    assignedClusterIds, 
+    assignedClusterIds,
   } };
 };
 

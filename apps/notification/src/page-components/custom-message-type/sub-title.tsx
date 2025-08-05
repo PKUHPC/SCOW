@@ -31,7 +31,6 @@ const Indicator = styled.div`
 `;
 
 const TitleText = styled.div`
-  font-weight: 700;
   font-size: 16px;
   margin-left: 5px;
 `;

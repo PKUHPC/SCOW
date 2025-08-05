@@ -1,26 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Input, Modal, Select, Space, Table } from "antd";
+import { App, Button, Form, Input, Modal, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { CreateNewVersionIcon, DeleteIcon,EditIcon } from "src/icons/operationIcon";
 import { DatasetTypeText, getDatasetTexts } from "src/models/Dateset";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
@@ -226,7 +215,7 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
           ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
             render: (_: any, r: DatasetInterface) => {
               return (
-                <>
+                <Space direction="horizontal">
                   <CreateEditVersionModalButton
                     datasetId={r.id}
                     datasetName={r.name}
@@ -235,7 +224,9 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                       refetch();
                     }}
                   >
-                    {t(p("createNewVersion"))}
+                    <Tooltip title={t(p("createNewVersion"))}>
+                      <CreateNewVersionIcon />
+                    </Tooltip>
                   </CreateEditVersionModalButton>
                   <EditDatasetModalButton
                     refetch={refetch}
@@ -244,7 +235,9 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                     clusters={clusters}
                     currentClusterIds={currentClusterIds}
                   >
-                    {t("button.editButton")}
+                    <Tooltip title={t("button.editButton")}>
+                      <EditIcon />
+                    </Tooltip>
                   </EditDatasetModalButton>
                   <Button
                     type="link"
@@ -252,9 +245,11 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                       deleteDataset(r.id);
                     }}
                   >
-                    {t("button.deleteButton")}
+                    <Tooltip title={t("button.deleteButton")}>
+                      <DeleteIcon />
+                    </Tooltip>
                   </Button>
-                </>
+                </Space>
               );
             },
           }] : [],

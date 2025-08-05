@@ -14,10 +14,12 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
-import { App, Divider, Popover, Space, Table, Tag } from "antd";
+import { App, Divider, Popover, Space, Table, Tag, Tooltip } from "antd";
 import { LinkProps } from "next/link";
 import React from "react";
 import { api } from "src/apis";
+import { CancleManageIcon, LockIcon, QuotaManagementIcon,
+  RemoveUserIcon, SetAsManageIcon, UnlockIcon } from "src/assets/operationIcon";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { DisplayedUserState, UserRole, UserStateInAccount } from "src/models/User";
@@ -119,118 +121,120 @@ export const UserTable: React.FC<Props> = ({
               currentUsed={r.usedJobChargeLimit}
               status={r.status}
             >
-              {t(p("limitManage"))}
+              <Tooltip title={t(p("limitManage"))}>
+                <QuotaManagementIcon />
+              </Tooltip>
             </SetJobChargeLimitLink>
             {
               r.userStateInAccount === UserStateInAccount.BLOCKED_BY_ADMIN
                 ? (
-                  <a onClick={() => {
-                    modal.confirm({
-                      title: t(p("confirmNotBlock")),
-                      icon: <ExclamationCircleOutlined />,
-                      content: `${t(p("confirmUnsealText1"))}${accountName}
+                  <Tooltip title={t(p("unseal"))}>
+                    <UnlockIcon onClick={() => {
+                      modal.confirm({
+                        title: t(p("confirmNotBlock")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: `${t(p("confirmUnsealText1"))}${accountName}
                       ${t(p("confirmUnsealText2"))}${r.name}（ID：${r.userId}${t(p("confirmUnsealText3"))}`,
-                      onOk: async () => {
-                        await api.unblockUserInAccount({ body: {
-                          identityId: r.userId,
-                          accountName: accountName,
-                        } })
-                          .then((res) => {
-                            if (res.executed) {
-                              message.success(t(p("unsealSuccess")));
-                            } else {
-                              message.error(res.reason || t(p("unblockUserInAccountFailed")));
-                            }                 
-                            reload();
-                          });
-                      },
-                    });
-                  }}
-                  >
-                    {t(p("unseal"))}
-                  </a>
+                        onOk: async () => {
+                          await api.unblockUserInAccount({ body: {
+                            identityId: r.userId,
+                            accountName: accountName,
+                          } })
+                            .then((res) => {
+                              if (res.executed) {
+                                message.success(t(p("unsealSuccess")));
+                              } else {
+                                message.error(res.reason || t(p("unblockUserInAccountFailed")));
+                              }
+                              reload();
+                            });
+                        },
+                      });
+                    }}
+                    />
+                  </Tooltip>
                 ) : (
-                  <a onClick={() => {
-                    modal.confirm({
-                      title: t(p("confirmBlock")),
-                      icon: <ExclamationCircleOutlined />,
-                      content: `${t(p("confirmBlockText1"))}${accountName}
+                  <Tooltip title={t(p("block"))}>
+                    <LockIcon onClick={() => {
+                      modal.confirm({
+                        title: t(p("confirmBlock")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: `${t(p("confirmBlockText1"))}${accountName}
                       ${t(p("confirmBlockText2"))}${r.name}（ID：${r.userId}）？`,
-                      onOk: async () => {
-                        await api.blockUserInAccount({ body: {
-                          identityId: r.userId,
-                          accountName: accountName,
-                        } })
-                          .then((res) => {
-                            if (res.executed) {
-                              message.success(t(p("blockSuccess")));
-                            } else {
-                              message.error(res.reason || t(p("blockUserInAccountFailed")));
-                            }
-
-                            reload();
-                          });
-                      },
-                    });
-                  }}
-                  >
-                    {t(p("block"))}
-                  </a>
+                        onOk: async () => {
+                          await api.blockUserInAccount({ body: {
+                            identityId: r.userId,
+                            accountName: accountName,
+                          } })
+                            .then((res) => {
+                              if (res.executed) {
+                                message.success(t(p("blockSuccess")));
+                              } else {
+                                message.error(res.reason || t(p("blockUserInAccountFailed")));
+                              }
+                              reload();
+                            });
+                        },
+                      });
+                    }}
+                    />
+                  </Tooltip>
                 )
             }
             {
               canSetAdmin ? (
                 r.role === UserRole.ADMIN
                   ? (
-                    <a onClick={() => {
-                      modal.confirm({
-                        title: t(p("confirmCancelAdmin")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: `${t(p("confirmCancelAdminText1"))}${r.name} （ID：${r.userId}）
+                    <Tooltip title={t(p("cancelAdmin"))}>
+                      <CancleManageIcon onClick={() => {
+                        modal.confirm({
+                          title: t(p("confirmCancelAdmin")),
+                          icon: <ExclamationCircleOutlined />,
+                          content: `${t(p("confirmCancelAdminText1"))}${r.name} （ID：${r.userId}）
                         ${t(p("confirmCancelAdminText2"))}${accountName}${t(p("confirmCancelAdminText3"))}`,
-                        onOk: async () => {
-                          await api.unsetAdmin({ body: {
-                            identityId: r.userId,
-                            accountName: accountName,
-                          } })
-                            .then(() => {
-                              message.success(t(p("operateSuccess")));
-                              reload();
-                            });
-                        },
-                      });
-                    }}
-                    >
-                      {t(p("cancelAdmin"))}
-                    </a>
+                          onOk: async () => {
+                            await api.unsetAdmin({ body: {
+                              identityId: r.userId,
+                              accountName: accountName,
+                            } })
+                              .then(() => {
+                                message.success(t(p("operateSuccess")));
+                                reload();
+                              });
+                          },
+                        });
+                      }}
+                      />
+                    </Tooltip>
                   ) : r.role === UserRole.USER ? (
-                    <a onClick={() => {
-                      modal.confirm({
-                        title: t(p("confirmGrantAdmin")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: ` ${t(p("confirmGrantAdminText1"))}${r.name} （ID：${r.userId}）
+                    <Tooltip title={t(p("grantAdmin"))}>
+                      <SetAsManageIcon onClick={() => {
+                        modal.confirm({
+                          title: t(p("confirmGrantAdmin")),
+                          icon: <ExclamationCircleOutlined />,
+                          content: ` ${t(p("confirmGrantAdminText1"))}${r.name} （ID：${r.userId}）
                         ${t(p("confirmGrantAdminText2"))}${accountName}${t(p("confirmCancelAdminText3"))}`,
-                        onOk: async () => {
-                          await api.setAdmin({ body: {
-                            identityId: r.userId,
-                            accountName: accountName,
-                          } })
-                            .then(() => {
-                              message.success(t(p("operateSuccess")));
-                              reload();
-                            });
-                        },
-                      });
-                    }}
-                    >
-                      {t(p("grantAdmin"))}
-                    </a>
+                          onOk: async () => {
+                            await api.setAdmin({ body: {
+                              identityId: r.userId,
+                              accountName: accountName,
+                            } })
+                              .then(() => {
+                                message.success(t(p("operateSuccess")));
+                                reload();
+                              });
+                          },
+                        });
+                      }}
+                      />
+                    </Tooltip>
                   ) : undefined
               ) : undefined
             }
             <DisabledA
               disabled={r.role === UserRole.OWNER}
               message={t(p("cannotRemove"))}
+              abledMessage={t(p("removerUser"))}
               onClick={() => {
                 modal.confirm({
                   title: t(p("confirmRemove")),
@@ -273,7 +277,9 @@ export const UserTable: React.FC<Props> = ({
                 });
               }}
             >
-              {t(p("removerUser"))}
+              {r.role === UserRole.OWNER ? <RemoveUserIcon disabled /> : (
+                <RemoveUserIcon />
+              )}
             </DisabledA>
           </Space>
         )}

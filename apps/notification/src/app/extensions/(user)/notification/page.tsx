@@ -77,18 +77,16 @@ const NotificationPage = () => {
   return (
     <div>
       <PageTitle titleText={language.notification.pageTitle}>
-        <div style={{ textAlign: "right", margin: "10px 0" }}>
+        <div style={{ textAlign: "right", marginBottom: "10px" }}>
           <NoShadowButton
             type="primary"
-            shape="round"
-            size="large"
             onClick={handleMarkAllRead}
             loading={isMarkAllReadPending}
             style={{ marginRight: "10px" }}
           >
             {language.notification.markAllRead}
           </NoShadowButton>
-          <Button size="large" shape="round" onClick={handleDeleteAll} loading={isDeleteAllReadPending}>
+          <Button onClick={handleDeleteAll} loading={isDeleteAllReadPending}>
             {language.notification.deleteReadMsg}
           </Button>
         </div>

@@ -3,9 +3,10 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Divider, Form, Modal, Space, Table, Tag } from "antd";
+import { App, Divider, Form, Modal, Space, Table, Tag, Tooltip } from "antd";
 import { useMemo } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
+import { AuthorizeIcon, CancleAuthorizeIcon } from "src/assets/operationIcon";
 import { I18nDicType } from "src/models/i18n";
 import { AssignmentState, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -213,11 +214,11 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
         {
           operationType === PartitionOperationType.TENANT_OPERATION ? (
             <Form.Item label={language.common.tenant}>
-              <strong>{assignedTenantName}</strong>
+              <span>{assignedTenantName}</span>
             </Form.Item>
           ) : (
             <Form.Item label={language.common.account}>
-              <strong>{assignedAccountName}</strong>
+              <span>{assignedAccountName}</span>
             </Form.Item>
           )
         }
@@ -280,77 +281,75 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
             <Space>
               {
                 r.assignmentState === AssignmentState.ASSIGNED && (
-                  <a onClick={() => {
-                    const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
-                      ? getCurrentLangTextArgs(
-                        language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
-                        [r.id, assignedTenantName])
-                      : getCurrentLangTextArgs(
-                        language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
-                        [r.id, assignedAccountName]);
-                    modal.confirm({
-                      title: language.common.unassign,
-                      icon: <ExclamationCircleOutlined />,
-                      content: (
-                        <>
-                          <p>
-                            {contentTexts}
-                          </p>
-                          {
-                            operationType === PartitionOperationType.TENANT_OPERATION ?
-                              (
-                                <p style={{ color: "red" }}>
-                                  {language.clusterPartitionManagement.
-                                    setClusterAssignmentModal.unAssignTenantClusterExplanation}
-                                </p>
-                              ) : (
-                                <p style={{ color: "red" }}>
-                                  {language.clusterPartitionManagement.
-                                    setClusterAssignmentModal.unAssignAccountClusterExplanation}
-                                </p>
-                              )
-                          }
-                        </>
-                      ),
-                      onOk: async () => {
+                  <Tooltip title={language.common.unassign}>
+                    <CancleAuthorizeIcon onClick={() => {
+                      const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
+                        ? getCurrentLangTextArgs(
+                          language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
+                          [r.id, assignedTenantName])
+                        : getCurrentLangTextArgs(
+                          language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
+                          [r.id, assignedAccountName]);
+                      modal.confirm({
+                        title: language.common.unassign,
+                        icon: <ExclamationCircleOutlined />,
+                        content: (
+                          <>
+                            <p>
+                              {contentTexts}
+                            </p>
+                            {
+                              operationType === PartitionOperationType.TENANT_OPERATION ?
+                                (
+                                  <p style={{ color: "red" }}>
+                                    {language.clusterPartitionManagement.
+                                      setClusterAssignmentModal.unAssignTenantClusterExplanation}
+                                  </p>
+                                ) : (
+                                  <p style={{ color: "red" }}>
+                                    {language.clusterPartitionManagement.
+                                      setClusterAssignmentModal.unAssignAccountClusterExplanation}
+                                  </p>
+                                )
+                            }
+                          </>
+                        ),
+                        onOk: async () => {
                         // 对租户/账户取消授权
-                        await unAssignCluster(r.id);
-                      },
-                    });
-                  }}
-                  >
-                    {language.common.unassign}
-                  </a>
+                          await unAssignCluster(r.id);
+                        },
+                      });
+                    }}
+                    />
+                  </Tooltip>
                 )}
               {
                 r.assignmentState === AssignmentState.UNASSIGNED && (
-                  <a onClick={() => {
-                    const operationTarget = operationType === PartitionOperationType.TENANT_OPERATION
-                      ? `${language.common.tenant}${assignedTenantName}`
-                      : `${language.common.account}${assignedAccountName}`;
-                    const contentTexts = getCurrentLangTextArgs(
-                      language.clusterPartitionManagement.setClusterAssignmentModal.assignContent,
-                      [r.id, operationTarget]);
-                    modal.confirm({
-                      title: language.common.assign,
-                      icon: <ExclamationCircleOutlined />,
-                      content: contentTexts,
-                      onOk: async () => {
+                  <Tooltip title={language.common.assign}>
+                    <AuthorizeIcon onClick={() => {
+                      const operationTarget = operationType === PartitionOperationType.TENANT_OPERATION
+                        ? `${language.common.tenant}${assignedTenantName}`
+                        : `${language.common.account}${assignedAccountName}`;
+                      const contentTexts = getCurrentLangTextArgs(
+                        language.clusterPartitionManagement.setClusterAssignmentModal.assignContent,
+                        [r.id, operationTarget]);
+                      modal.confirm({
+                        title: language.common.assign,
+                        icon: <ExclamationCircleOutlined />,
+                        content: contentTexts,
+                        onOk: async () => {
                         // 对租户/账户授权;
-                        await assignCluster(r.id);
-                      },
-                    });
-                  }}
-                  >
-                    {language.common.assign}
-                  </a>
+                          await assignCluster(r.id);
+                        },
+                      });
+                    }}
+                    />
+                  </Tooltip>
                 )}
             </Space>
           )}
         />
       </Table>
-
     </Modal>
-
   );
 };

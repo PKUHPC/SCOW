@@ -1,21 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Modal, Table } from "antd";
+import { App, Button, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { CancleShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface } from "src/models/Algorithm";
 import { SharedStatus } from "src/models/common";
 import { Cluster } from "src/server/trpc/route/config";
@@ -27,7 +16,6 @@ import { trpc } from "src/utils/trpc";
 
 import { CopyPublicAlgorithmModal } from "./CopyPublicAlgorithmModal";
 import { CreateAndEditVersionModal } from "./CreateAndEditVersionModal";
-
 
 export interface Props {
   isPublic?: boolean;
@@ -142,11 +130,13 @@ export const AlgorithmVersionList: React.FC<Props> = (
                   algorithmVersionId={r.id}
                   cluster={cluster}
                 >
-                  {t("button.copyButton")}
+                  <Tooltip title={t("button.copyButton")}>
+                    <CopyIcon />
+                  </Tooltip>
                 </CopyPublicAlgorithmModalButton>
               ) :
                 (
-                  <>
+                  <Space direction="horizontal">
                     <EditVersionModalButton
                       algorithmId={algorithmId}
                       algorithmName={algorithmName}
@@ -158,7 +148,9 @@ export const AlgorithmVersionList: React.FC<Props> = (
                         versionDescription:r.versionDescription,
                       }}
                     >
-                      {t("button.editButton")}
+                      <Tooltip title={t("button.editButton")}>
+                        <EditIcon />
+                      </Tooltip>
                     </EditVersionModalButton>
                     <Button
                       type="link"
@@ -173,7 +165,9 @@ export const AlgorithmVersionList: React.FC<Props> = (
                         }
                       }}
                     >
-                      {t(p("check"))}
+                      <Tooltip title={t(p("check"))}>
+                        <ViewFileIcon />
+                      </Tooltip>
                     </Button>
                     <Button
                       type="link"
@@ -199,7 +193,17 @@ export const AlgorithmVersionList: React.FC<Props> = (
                         });
                       }}
                     >
-                      {t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}
+                      <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                        {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
+                          <CancleShareIcon
+                            disabled={r.sharedStatus === SharedStatus.UNSHARING}
+                          />
+                        ) : (
+                          <ShareIcon
+                            disabled={r.sharedStatus === SharedStatus.SHARING}
+                          />
+                        )}
+                      </Tooltip>
                     </Button>
                     <Button
                       type="link"
@@ -208,9 +212,14 @@ export const AlgorithmVersionList: React.FC<Props> = (
                         deleteAlgorithmVersion(r.id);
                       }}
                     >
-                      {t("button.deleteButton")}
+                      <Tooltip title={t("button.deleteButton")}>
+                        <DeleteIcon
+                          disabled={r.sharedStatus === SharedStatus.SHARING
+                            || r.sharedStatus === SharedStatus.UNSHARING}
+                        />
+                      </Tooltip>
                     </Button>
-                  </>
+                  </Space>
                 );
 
             },

@@ -85,19 +85,19 @@ export const JobChargeLimitModal: React.FC<Props> = ({
         initialValues={{ limit: 0 }}
       >
         <Form.Item label={t(pCommon("user"))}>
-          <strong>{username} (ID: {userId})</strong>
+          <span>{username} (ID: {userId})</span>
         </Form.Item>
         <Form.Item label={t(pCommon("accountName"))}>
-          <strong>{accountName}</strong>
+          <span>{accountName}</span>
         </Form.Item>
         <Form.Item label={t(p("alreadyUsed"))}>
           {currentLimit && currentUsed
             ? (
               <Space>
                 <span>
-                  <strong>
+                  <span>
                     {moneyToString(currentUsed)} / {moneyToString(currentLimit)}
-                  </strong>
+                  </span>
                 </span>
                 <a onClick={() => {
                   modal.confirm({

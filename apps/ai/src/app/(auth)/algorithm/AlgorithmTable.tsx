@@ -14,12 +14,13 @@
 
 import { PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Modal, Select, Space, Table, TableColumnsType } from "antd";
+import { App, Button, Form, Input, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { CreateNewVersionIcon, DeleteIcon, EditIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface, AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
 import { formatDateTime } from "src/utils/datetime";
@@ -152,14 +153,16 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
     ...!isPublic ? [{ dataIndex: "action", title:  t(p("action")),
       render: (_: any, r: AlgorithmInterface) => {
         return (
-          <>
+          <Space direction="horizontal">
             <CreateVersionModalButton
               refetch={ () => { refetch(); }}
               algorithmId={r.id}
               algorithmName={r.name}
               cluster={getCurrentCluster(r.clusterId)}
             >
-              {t(p("createNewVersion"))}
+              <Tooltip title={t(p("createNewVersion"))}>
+                <CreateNewVersionIcon />
+              </Tooltip>
             </CreateVersionModalButton>
             <EditAlgorithmModalButton
               refetch={refetch}
@@ -171,7 +174,9 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 algorithmDescription:r.description,
               }}
             >
-              {t("button.editButton")}
+              <Tooltip title={t("button.editButton")}>
+                <EditIcon />
+              </Tooltip>
             </EditAlgorithmModalButton>
             <Button
               type="link"
@@ -179,9 +184,11 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 deleteAlgorithm(r.id);
               }}
             >
-              {t("button.deleteButton")}
+              <Tooltip title={t("button.deleteButton")}>
+                <DeleteIcon />
+              </Tooltip>
             </Button>
-          </>
+          </Space>
         );
       },
     }] : [],

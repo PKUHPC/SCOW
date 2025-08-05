@@ -41,6 +41,9 @@ const Content = styled(Layout.Content)<{ isDashboard: boolean }>`
   background: ${({ theme }) => theme.token.colorBgLayout};
   max-height: ${(props) => props.isDashboard ? "" : "calc(100vh - 78px)"};
   overflow-y: auto;
+  .ant-table-wrapper .ant-table {
+    scrollbar-color: auto !important;
+  }
 `;
 
 const StyledLayout = styled(Layout)`

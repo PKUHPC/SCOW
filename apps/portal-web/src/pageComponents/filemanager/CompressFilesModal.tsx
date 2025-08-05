@@ -121,7 +121,7 @@ export const CompressFilesModal: React.FC<Props> = ({
       confirmLoading={loading}
     >
       <Form form={form} onFinish={onSubmit}>
-        <strong>{t(p("compressFileList"))}</strong>
+        <span>{t(p("compressFileList"))}</span>
         <Tree
           showLine
           style={{ marginTop: "8px" }}

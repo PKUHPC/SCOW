@@ -11,11 +11,12 @@
  */
 
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Modal, Table } from "antd";
+import { App, Button, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback } from "react";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { CancleShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
 import { ModelInterface } from "src/models/Model";
 import { Cluster } from "src/server/trpc/route/config";
@@ -138,11 +139,13 @@ export const ModelVersionList: React.FC<Props> = (
                   data={r}
                   cluster={cluster}
                 >
-                  {t("button.copyButton")}
+                  <Tooltip title={t("button.copyButton")}>
+                    <CopyIcon />
+                  </Tooltip>
                 </CopyPublicModelModalButton>
               ) :
                 (
-                  <>
+                  <Space direction="horizontal">
                     <EditVersionModalButton
                       modelId={modelId}
                       modelName={modelName}
@@ -156,7 +159,9 @@ export const ModelVersionList: React.FC<Props> = (
                       }}
 
                     >
-                      {t("button.editButton")}
+                      <Tooltip title={t("button.editButton")}>
+                        <EditIcon />
+                      </Tooltip>
                     </EditVersionModalButton>
 
                     <Button
@@ -172,7 +177,9 @@ export const ModelVersionList: React.FC<Props> = (
                         }
                       }}
                     >
-                      {t(p("check"))}
+                      <Tooltip title={t(p("check"))}>
+                        <ViewFileIcon />
+                      </Tooltip>
                     </Button>
                     <Button
                       type="link"
@@ -199,7 +206,17 @@ export const ModelVersionList: React.FC<Props> = (
                         });
                       }}
                     >
-                      {t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}
+                      <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                        {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
+                          <CancleShareIcon
+                            disabled={r.sharedStatus === SharedStatus.UNSHARING}
+                          />
+                        ) : (
+                          <ShareIcon
+                            disabled={r.sharedStatus === SharedStatus.SHARING}
+                          />
+                        )}
+                      </Tooltip>
                     </Button>
                     <Button
                       type="link"
@@ -208,9 +225,14 @@ export const ModelVersionList: React.FC<Props> = (
                         deleteModelVersion(r.id);
                       }}
                     >
-                      {t("button.deleteButton")}
+                      <Tooltip title={t("button.deleteButton")}>
+                        <DeleteIcon
+                          disabled={r.sharedStatus === SharedStatus.SHARING
+                            || r.sharedStatus === SharedStatus.UNSHARING}
+                        />
+                      </Tooltip>
                     </Button>
-                  </>
+                  </Space>
                 );
 
             },

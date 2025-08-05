@@ -176,10 +176,10 @@ export const InitUsersAndAccountsTable: React.FC = () => {
     <div>
       <FormLayout maxWidth={800}>
         <Typography.Paragraph>
-          {t(p("defaultTenant"))}<strong>{t(p("initAdmin"))}</strong>。
+          {t(p("defaultTenant"))}<span>{t(p("initAdmin"))}</span>。
         </Typography.Paragraph>
         <Typography.Paragraph>
-          <strong>{t(p("initAdmin"))}</strong>{t(p("set"))}
+          <span>{t(p("initAdmin"))}</span>{t(p("set"))}
         </Typography.Paragraph>
         <Tabs defaultActiveKey="user" tabBarExtraContent={<a onClick={reload}>{t(pCommon("fresh"))}</a>}>
           <Tabs.TabPane tab={t(pCommon("user"))} key="user">

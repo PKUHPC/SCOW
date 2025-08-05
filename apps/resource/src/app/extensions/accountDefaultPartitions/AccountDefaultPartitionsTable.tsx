@@ -3,9 +3,10 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Space, Table } from "antd";
+import { App, Button, Form, Input, Space, Table, Tooltip } from "antd";
 import React, { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
+import { RemoveDefaultPartitionIcon } from "src/assets/operationIcon";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -201,7 +202,9 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
                   });
                 }}
               >
-                {language.accountDefaultPartitions.removeModal.title}
+                <Tooltip title={language.accountDefaultPartitions.removeModal.title}>
+                  <RemoveDefaultPartitionIcon />
+                </Tooltip>
               </Button>
             </Space>
           )}

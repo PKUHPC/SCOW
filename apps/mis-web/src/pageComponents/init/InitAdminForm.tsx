@@ -125,8 +125,8 @@ export const InitAdminForm: React.FC = () => {
     <div>
       <Typography.Paragraph>{t(p("initAdmin"))}</Typography.Paragraph>
       <Typography.Paragraph>
-        {t(p("addAdmin"))}<strong>{t(p("platFormAdmin"))}</strong>{t(p("and"))}
-        <strong>{t(p("defaultTenant"))}</strong>{t(pCommon("role"))}。
+        {t(p("addAdmin"))}<span>{t(p("platFormAdmin"))}</span>{t(p("and"))}
+        <span>{t(p("defaultTenant"))}</span>{t(pCommon("role"))}。
       </Typography.Paragraph>
       <AlertContainer>
         <Alert

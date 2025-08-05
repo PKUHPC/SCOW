@@ -266,14 +266,14 @@ export const ChargeTable: React.FC<Props> = ({
               </Select>
             </Form.Item>
             <Form.Item label={t("common.total")}>
-              <strong>
+              <span>
                 {totalResultData?.totalCount ?? 0}
-              </strong>
+              </span>
             </Form.Item>
             <Form.Item label={t(pCommon("sum"))}>
-              <strong>
+              <span>
                 {totalResultData?.totalAmount ? moneyNumberToString(totalResultData.totalAmount) : 0}
-              </strong>
+              </span>
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>

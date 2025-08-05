@@ -34,8 +34,6 @@ const JobInfoContainer = styled.div`
 
 const JobNumber = styled(Statistic)<{ color: string }>`
   margin: 0;
-  font-weight: 700;
-
   & .ant-statistic-content-value-int {
     font-size: clamp(24px, 5vw, 64px);
     color: ${(props) => props.color};  // 动态设置颜色
@@ -46,7 +44,6 @@ const JobNumber = styled(Statistic)<{ color: string }>`
 
 const JobLabel = styled(Text)`
   margin: 0;
-  font-weight:500;
 `;
 
 const JobInfoRow = styled.div`

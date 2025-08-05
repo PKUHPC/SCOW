@@ -15,9 +15,7 @@ import React from "react";
 import { styled } from "styled-components";
 
 const Container = styled.div`
-  margin: 0 0 20px 0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
 `;
 
@@ -30,7 +28,7 @@ type PageTitleProps = React.PropsWithChildren<{
 export const TitleText = styled(Typography.Title)`
   margin: 0 !important;
   && {
-    font-size: 28px;
+    font-size: 20px !important;
   }
 `;
 

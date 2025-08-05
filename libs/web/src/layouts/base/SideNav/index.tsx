@@ -70,12 +70,6 @@ const Container = styled.div<{ $width?: number }>`
     &::-webkit-scrollbar {
       width: 6px;
     }
-    &::-webkit-scrollbar-thumb {
-      background-color: #D9D9D9;
-      border-radius: 6px;
-      background-clip: padding-box;
-      border: 1px solid transparent
-    }
     background: initial !important;
     max-height: calc(100vh - 110px);
     overflow: auto;

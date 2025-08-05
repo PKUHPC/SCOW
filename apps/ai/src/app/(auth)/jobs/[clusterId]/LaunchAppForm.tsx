@@ -992,11 +992,11 @@ export const LaunchAppForm = (props: Props) => {
             label={t(p("currentImage"))}
           >
             <Space>
-              <strong>
+              <span>
                 {selectedImage
                   ? imageOptions?.find((x) => x.value === selectedImage)?.label
                   : appImage && imageSource === ImageSource.DEFAULT ? `${appImage?.name}:${appImage?.tag}` : "-"}
-              </strong>
+              </span>
             </Space>
           </Form.Item>
         )}

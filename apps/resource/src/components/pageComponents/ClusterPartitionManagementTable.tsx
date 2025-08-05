@@ -1,8 +1,9 @@
 "use client";
 
 import { Cluster } from "@scow/config/build/type";
-import { Button, Divider, Form, Input, message, Space, Table } from "antd";
+import { Button, Divider, Form, Input, message, Space, Table, Tooltip } from "antd";
 import React, { useMemo, useState } from "react";
+import { AuthorizedClusterIcon, AuthorizedPartitionIcon, DetailIcon } from "src/assets/operationIcon";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
@@ -15,7 +16,6 @@ import { ModalButton } from "../ModalLink";
 import { AssignedDetailsDrawer } from "./AssignedDetailsDrawer";
 import { ClusterAssignmentModal } from "./ClusterAssignmentModal";
 import { PartitionAssignmentModal } from "./PartitionAssignmentModal";
-
 
 interface Props {
   operationType: PartitionOperationType;
@@ -269,19 +269,17 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
             // 维持上一次模态框选中的账户/租户数据
             return (
               <Space>
-                <>
-                  <a onClick={() => setClusterPreviewItem(r)}>
-                    {language.clusterPartitionManagement.common.assignCluster}
-                  </a>
-                  <Divider type="vertical" />
-                  <a onClick={() => setPartitionPreviewItem(r)}>
-                    {language.clusterPartitionManagement.common.assignPartition}
-                  </a>
-                  <Divider type="vertical" />
-                  <a onClick={() => setPreviewItem(r)}>
-                    {language.common.detail}
-                  </a>
-                </>
+                <Tooltip title={language.clusterPartitionManagement.common.assignCluster}>
+                  <AuthorizedClusterIcon onClick={() => setClusterPreviewItem(r)} />
+                </Tooltip>
+                <Divider type="vertical" />
+                <Tooltip title={language.clusterPartitionManagement.common.assignPartition}>
+                  <AuthorizedPartitionIcon onClick={() => setPartitionPreviewItem(r)} />
+                </Tooltip>
+                <Divider type="vertical" />
+                <Tooltip title={language.common.detail}>
+                  <DetailIcon onClick={() => setPreviewItem(r)} />
+                </Tooltip>
               </Space>
             );
           }}

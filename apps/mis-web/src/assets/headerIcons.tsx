@@ -1098,6 +1098,26 @@ export const ClusterManagementIcon: React.ForwardRefExoticComponent<{}> = React.
   ),
 );
 
+// 节点迁移图标
+const nodeMigrationSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M14 0C16.209 0 17.9998 1.79102 18 4V11.8574C17.9998 14.0664 16.209 15.8574 14 15.8574H7C8.21435
+      14.9452 9 13.4932 9 11.8574C9 9.096 6.76142 6.85742 4 6.85742C2.36426 6.85742 0.912214 7.64308 0
+      8.85742V4C0.000190109 1.79102 1.79098 1.61042e-08 4 0H14ZM4 8.85742C5.65685 8.85742 7 10.2006 7
+      11.8574C7 13.5143 5.65685 14.8574 4 14.8574C2.34315 14.8574 1 13.5143 1 11.8574C1 10.2006 2.34315
+      8.85742 4 8.85742Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const NodeMigrationIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={nodeMigrationSVG} {...props} ref={ref} />
+  ),
+);
+
 // 集群监控图标
 const monitorSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">

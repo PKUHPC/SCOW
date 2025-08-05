@@ -21,6 +21,7 @@ const ItemContainer = styled.div`
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
+  align-items: center;
   height: 100%;
   width: 100%;
   position: relative;
@@ -38,6 +39,7 @@ const NameContainer = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   user-select: none;
+  position: relative;
 `;
 
 interface Props {
@@ -86,13 +88,16 @@ export const EntryItem: React.FC<Props> = ({ style,
           )}
       </AvatarContainer>
       {
-        [entryBaseName, ...entryExtraInfo ?? []].map((x, i) => (
-          <NameContainer
-            key={i}
-            style={{ fontWeight:`${((entryExtraInfo) && (i == 1)) ? "700"
-              : "500"}`, position:"relative", bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}` }}
-          >{x}</NameContainer>
-        ))
+        <>
+          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}` }}>
+            {entryBaseName}
+          </NameContainer>
+          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+            fontSize: "12px", maxWidth: "130px" }}
+          >
+            {[...entryExtraInfo ?? []].join(" / ")}
+          </NameContainer>
+        </>
       }
     </ItemContainer>
   );

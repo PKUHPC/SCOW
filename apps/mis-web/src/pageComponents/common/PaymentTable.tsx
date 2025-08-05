@@ -224,14 +224,14 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
             <Input style={{ width: 180 }} placeholder={t(p("searchTypePlaceholder"))} />
           </Form.Item>
           <Form.Item label={t(p("total"))}>
-            <strong>
+            <span>
               {data ? data.results.length : 0}
-            </strong>
+            </span>
           </Form.Item>
           <Form.Item label={t(p("sum"))}>
-            <strong>
+            <span>
               {data ? moneyNumberToString(data.total) : 0}
-            </strong>
+            </span>
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>

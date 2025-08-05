@@ -114,10 +114,10 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, targ
     >
       <Form form={form}>
         <Form.Item label={t(p("job"))}>
-          <strong>{`${jobNames.toString()}(ID: ${jobIds.toString()})`}</strong>
+          <span>{`${jobNames.toString()}(ID: ${jobIds.toString()})`}</span>
         </Form.Item>
         <Form.Item label={t(p("currentPrice"))}>
-          <strong>{accountPrices.toString()}</strong>
+          <span>{accountPrices.toString()}</span>
         </Form.Item>
 
         <Form.Item

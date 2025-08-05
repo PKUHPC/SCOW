@@ -29,7 +29,7 @@ export function createMenuItems(
   function createMenuItem(route: NavItemProps): ItemType {
     if (arrayContainsElement(route.children)) {
       return {
-        icon: <route.Icon />,
+        icon: <span style={{ maxWidth: "18px", maxHeight: "36px" }}><route.Icon /></span>,
         key: route.path,
         title: route.text,
         label: route.text,
@@ -53,7 +53,7 @@ export function createMenuItems(
     }
 
     return {
-      icon: <route.Icon />,
+      icon: <span style={{ maxWidth: "18px", maxHeight: "36px" }}><route.Icon /></span>,
       key: route.path,
       label: (
         <Link href={route.clickToPath ?? route.path} {...route.openInNewPage ? { target: "_blank" } : {}}>

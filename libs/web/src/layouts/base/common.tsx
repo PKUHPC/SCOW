@@ -19,9 +19,13 @@ import { match } from "src/layouts/base/matchers";
 import { NavItemProps } from "src/layouts/base/types";
 
 export const iconToNode = (Icon: any) => {
-  return React.isValidElement(Icon)
-    ? Icon
-    : <Icon style={{ transform: "scale(0.9)" }} />;
+  return (
+    <span style={{ maxWidth: "18px", maxHeight: "36px" }}>
+      {React.isValidElement(Icon)
+        ? Icon
+        : <Icon style={{ transform: "scale(0.9)" }} />}
+    </span>
+  );
 };
 
 export const EXTERNAL_URL_PREFIX = ["http://", "https://"];

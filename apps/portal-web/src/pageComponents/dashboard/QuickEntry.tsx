@@ -4,13 +4,12 @@ import { useCallback, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { Localized, prefix } from "src/i18n";
+import { EntryEditIcon } from "src/icons/headerIcons/headerIcons";
 import { DashboardSection } from "src/pageComponents/dashboard/DashboardSection";
 import { Sortable } from "src/pageComponents/dashboard/Sortable";
 import { App } from "src/pages/api/app/listAvailableApps";
 import { Cluster } from "src/utils/cluster";
-import { styled, useTheme } from "styled-components";
-
-import Bullet from "./Bullet";
+import { styled } from "styled-components";
 
 const CardsContainer = styled.div`
   display: flex;
@@ -124,22 +123,11 @@ export const QuickEntry: React.FC<Props> = ({ currentClusters, publicConfigClust
   const [isEditable, setIsEditable] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  const theme = useTheme();
-
   return (
     <DashboardSection
-      style={{ marginBottom: "16px", minHeight: "320px" }}
+      style={{ marginBottom: "16px", minHeight: "320px", boxShadow: "#0000000D 0px 4px 4px 0px" }}
       title={ (
-        <>
-          <Bullet style={{
-            width: "0.8em", /* 与字体大小相对应 */
-            height:" 0.8em", /* 与字体大小相对应 */
-            backgroundColor:theme.token.colorPrimary, /* 与主题颜色相对应 */
-            marginRight:"1em",
-          }}
-          />
-          <Localized id={p("quickEntry")} />
-        </>
+        <Localized id={p("quickEntry")} />
       )}
       extra={
         isEditable ? (
@@ -157,9 +145,7 @@ export const QuickEntry: React.FC<Props> = ({ currentClusters, publicConfigClust
             </EditButton>
           </div>
         ) : (
-          <EditButton onClick={() => { setIsEditable(true); setIsFinished(false); }}>
-            <Localized id={p("edit")} />
-          </EditButton>
+          <EntryEditIcon onClick={() => { setIsEditable(true); setIsFinished(false); }}></EntryEditIcon>
         )}
     >
       <CardsContainer>

@@ -1,4 +1,4 @@
-import { LinkOutlined, RetweetOutlined } from "@ant-design/icons";
+import { LinkOutlined } from "@ant-design/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { AccountAffiliation } from "@scow/protos/build/server/user";
@@ -8,7 +8,7 @@ import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInf
   AccountListIcon, AccountPayIcon, AccountPaymentsIcon, AccountWhitelistIcon, AdminInfoIcon, AdminManageIcon,
   AlarmLogIcon, AuthorizeAppIcon, ClusterManagementIcon, CreateAccountIcon, CreateUserIcon,CreatTenantIcon,
   DashBoardIcon, DefaultAuthorizedAppIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
-  ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, OperationLogIcon, PartitionsIcon,
+  ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, NodeMigrationIcon,OperationLogIcon, PartitionsIcon,
   PayAccountIcon, PaymentsIcon, PermissionManagementIcon,PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
   SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
   TenantPaymentsIcon, TenantsListIcon, TenantStorageQuotaIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
@@ -164,7 +164,7 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
           },
           ...(publicConfig.NODE_MIGRATION?.enabled ?
             [{
-              Icon: RetweetOutlined,
+              Icon: NodeMigrationIcon,
               text: t("layouts.route.platformManagement.nodeMigration"),
               path: "/admin/resource/nodeMigration",
             }] : []),

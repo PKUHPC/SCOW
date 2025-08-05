@@ -24,6 +24,7 @@ import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { TitleText } from "src/components/PageTitle";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { DeleteIcon, DownloadIcon, RenameIcon, SubmitIcon } from "src/icons/operationIcon";
 import { urlToDownload } from "src/pageComponents/filemanager/api";
 import { CompressFilesModal } from "src/pageComponents/filemanager/CompressFilesModal";
 import { CreateFileModal } from "src/pageComponents/filemanager/CreateFileModal";
@@ -776,16 +777,16 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               <span>
                 <Space>
                   {`${t(p("storageQuota"))}(${fullClusterConfigs[currentClusterRef.current.id].storage?.paths[0]})`}
-                  <strong>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</strong>
+                  <span>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</span>
                 </Space>
               </span>
               <Divider type="vertical" />
               <span>
                 <Space>
                   {t(p("usage"))}
-                  <strong>
+                  <span>
                     {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
-                  </strong>
+                  </span>
                 </Space>
               </span>
             </div>
@@ -840,12 +841,14 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           )
         )}
         actionRender={(_, i: FileInfo) => (
-          <Space>
+          <Space split={<Divider type="vertical" />}>
             {
               i.type === "FILE" && (
-                <a href={urlToDownload(currentClusterRef.current.id, join(path, i.name), true)}>
-                  {t(p("tableInfo.download"))}
-                </a>
+                <Tooltip title={t(p("tableInfo.download"))}>
+                  <a href={urlToDownload(currentClusterRef.current.id, join(path, i.name), true)}>
+                    <DownloadIcon />
+                  </a>
+                </Tooltip>
               )
             }
             {/* {
@@ -860,90 +863,94 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               path={join(path, i.name)}
               reload={reload}
             >
-              {t(p("tableInfo.rename"))}
+              <Tooltip title={t(p("tableInfo.rename"))}>
+                <RenameIcon />
+              </Tooltip>
             </RenameLink>
-            <a onClick={() => {
-              const fullPath = join(path, i.name);
-              modal.confirm({
-                title: t(p("tableInfo.deleteConfirmTitle")),
-                // icon: < />,
-                content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
-                okText: t(p("tableInfo.deleteConfirmOk")),
-                onOk: async () => {
-                  await (i.type === "FILE" ? api.deleteFile : api.deleteDir)({
-                    query: {
-                      cluster: currentClusterRef.current.id,
-                      path: fullPath,
-                    },
-                  })
-                    .then(() => {
-                      message.success(t(p("tableInfo.deleteSuccessMessage")));
-                      resetSelectedAndOperation();
-                      reload();
-                    });
-                },
-              });
-            }}
-            >
-              {t("button.deleteButton")}
-            </a>
+
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon onClick={() => {
+                const fullPath = join(path, i.name);
+                modal.confirm({
+                  title: t(p("tableInfo.deleteConfirmTitle")),
+                  // icon: < />,
+                  content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
+                  okText: t(p("tableInfo.deleteConfirmOk")),
+                  onOk: async () => {
+                    await (i.type === "FILE" ? api.deleteFile : api.deleteDir)({
+                      query: {
+                        cluster: currentClusterRef.current.id,
+                        path: fullPath,
+                      },
+                    })
+                      .then(() => {
+                        message.success(t(p("tableInfo.deleteSuccessMessage")));
+                        resetSelectedAndOperation();
+                        reload();
+                      });
+                  },
+                });
+              }}
+              />
+            </Tooltip>
+
             {
               i.type === "FILE" ? (
-                <a onClick={() => {
-                  const fullPath = join(path, i.name);
-                  modal.confirm({
-                    title: t(p("tableInfo.submitConfirmTitle")),
-                    content: (
-                      <>
-                        <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
-                        <p>
-                          {t(p("tableInfo.submitConfirmContent"),
-                            [i.name, getI18nConfigCurrentText(currentClusterRef.current.name, languageId)])}
-                        </p>
-                      </>
-                    ),
-                    okText: t(p("tableInfo.submitConfirmOk")),
-                    onOk: async () => {
-                      await api.submitFileAsJob({
-                        body: {
-                          cluster: currentClusterRef.current.id,
-                          filePath: fullPath,
-                        },
-                      })
-                        .httpError(500, (e) => {
-                          if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
+                <Tooltip title={t("button.submitButton")}>
+                  <SubmitIcon onClick={() => {
+                    const fullPath = join(path, i.name);
+                    modal.confirm({
+                      title: t(p("tableInfo.submitConfirmTitle")),
+                      content: (
+                        <>
+                          <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
+                          <p>
+                            {t(p("tableInfo.submitConfirmContent"),
+                              [i.name, getI18nConfigCurrentText(currentClusterRef.current.name, languageId)])}
+                          </p>
+                        </>
+                      ),
+                      okText: t(p("tableInfo.submitConfirmOk")),
+                      onOk: async () => {
+                        await api.submitFileAsJob({
+                          body: {
+                            cluster: currentClusterRef.current.id,
+                            filePath: fullPath,
+                          },
+                        })
+                          .httpError(500, (e) => {
+                            if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
                             || e.code === "UNIMPLEMENTED") {
-                            modal.error({
-                              title: t(p("tableInfo.submitFailedMessage")),
-                              content: e.message,
-                            });
-                          } else {
-                            message.error(e.message);
-                            throw e;
-                          }
-                        })
-                        .httpError(400, (e) => {
-                          if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
-                            modal.error({
-                              title: t(p("tableInfo.submitFailedMessage")),
-                              content: e.message,
-                            });
-                          } else {
-                            message.error(e.message);
-                            throw e;
-                          }
-                        })
-                        .then((result) => {
-                          message.success(t(p("tableInfo.submitSuccessMessage"), [result.jobId]));
-                          resetSelectedAndOperation();
-                          reload();
-                        });
-                    },
-                  });
-                }}
-                >
-                  {t("button.submitButton")}
-                </a>
+                              modal.error({
+                                title: t(p("tableInfo.submitFailedMessage")),
+                                content: e.message,
+                              });
+                            } else {
+                              message.error(e.message);
+                              throw e;
+                            }
+                          })
+                          .httpError(400, (e) => {
+                            if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
+                              modal.error({
+                                title: t(p("tableInfo.submitFailedMessage")),
+                                content: e.message,
+                              });
+                            } else {
+                              message.error(e.message);
+                              throw e;
+                            }
+                          })
+                          .then((result) => {
+                            message.success(t(p("tableInfo.submitSuccessMessage"), [result.jobId]));
+                            resetSelectedAndOperation();
+                            reload();
+                          });
+                      },
+                    });
+                  }}
+                  />
+                </Tooltip>
               ) : undefined
             }
           </Space>

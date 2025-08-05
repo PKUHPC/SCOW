@@ -15,12 +15,13 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table } from "antd";
+import { App, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { AdjustBillingIcon, DetailIcon } from "src/assets/operationIcon";
 import { ClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TableTitle } from "src/components/TableTitle";
@@ -318,17 +319,17 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
           data ? (
             <div>
               <span>
-                {t(p("jobNumber"))}<strong>{data.totalCount}</strong>
+                {t(p("jobNumber"))}<span>{data.totalCount}</span>
               </span>
               <Divider type="vertical" />
               <span>
                 {t(p("tenantPriceSum"))}
-                <strong>{nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}</strong>
+                <span>{nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}</span>
               </span>
               <Divider type="vertical" />
               <span>
                 {t(p("platformPriceSum"))}
-                <strong>{nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}</strong>
+                <span>{nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}</span>
               </span>
             </div>
           ) : undefined
@@ -370,8 +371,8 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
       >
         <Table.Column dataIndex="idJob" width="5.2%" title={t(pCommon("clusterWorkId"))} />
         <Table.Column dataIndex="jobName" ellipsis title={t(pCommon("workName"))} />
+        <Table.Column dataIndex="user" ellipsis title={t(pCommon("userId"))} />
         <Table.Column dataIndex="account" ellipsis title={t(pCommon("account"))} />
-        <Table.Column dataIndex="user" ellipsis title={t(pCommon("user"))} />
         <Table.Column<JobInfo>
           dataIndex="cluster"
           ellipsis
@@ -410,16 +411,19 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
           width="10%"
           render={(_, r) =>
             (
-              <>
-                <a
-                  onClick={() => {
-                    setOpen(true);
-                    setSelectedJobs([r]);
-                  }}
-                  style={{ marginRight: 10 }}
-                >{t(pCommon("adjustBill"))}</a>
-                <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
-              </>
+              <Space size={16}>
+                <Tooltip title={t(pCommon("adjustBill"))}>
+                  <AdjustBillingIcon
+                    onClick={() => {
+                      setOpen(true);
+                      setSelectedJobs([r]);
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip title={t(pCommon("detail"))}>
+                  <DetailIcon onClick={() => setPreviewItem(r)} />
+                </Tooltip>
+              </Space>
             )
           }
         />

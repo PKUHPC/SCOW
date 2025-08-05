@@ -19,6 +19,7 @@ import { List, PaginationProps, Typography } from "antd";
 import { join } from "path";
 import React, { useContext, useState } from "react";
 import { PageInfo } from "src/app/extensions/(user)/notification/page";
+import { DeleteIcon } from "src/assets/icons/operationIcon";
 import { ScowParamsContext } from "src/components/scow-params-provider";
 import { I18nDicType } from "src/models/i18n";
 import { RenderContent, renderingMessage } from "src/utils/rendering-message";
@@ -161,15 +162,14 @@ export const NotificationList: React.FC<Props> = ({
                   <span>{item.isRead ? compLang.read : compLang.unread}</span>
                 </StatusContainer>
                 <ContentContainer>
-                  <div style={{ fontWeight: 700 }}>【{renderingContent.title}】</div>
+                  <div>【{renderingContent.title}】</div>
                   <Text ellipsis>
                     {renderingContent.content}
                   </Text>
                 </ContentContainer>
                 <ActionsContainer>
                   <div>{renderingContent.createdAt}</div>
-                  <img
-                    src={join(basePath, "/icons/delete-msg.svg")}
+                  <DeleteIcon
                     onClick={async (e) => {
                       e.stopPropagation();
                       await handleDelete(item.id);

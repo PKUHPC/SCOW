@@ -11,11 +11,12 @@
  */
 
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Table } from "antd";
+import { App, Button, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon,ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
@@ -141,7 +142,7 @@ export const DatasetVersionList: React.FC<Props> = (
         { dataIndex: "action", title: t(p("action")),
           render: (_, r) => {
             return !isPublic ? (
-              <>
+              <Space direction="horizontal">
                 <CreateEditVersionModalButton
                   key="edit"
                   datasetId={r.datasetId}
@@ -151,7 +152,9 @@ export const DatasetVersionList: React.FC<Props> = (
                   editData={r}
                   refetch={refetch}
                 >
-                  {t("button.editButton")}
+                  <Tooltip title={t("button.editButton")}>
+                    <EditIcon />
+                  </Tooltip>
                 </CreateEditVersionModalButton>
                 <Button
                   type="link"
@@ -166,7 +169,9 @@ export const DatasetVersionList: React.FC<Props> = (
                     }
                   }}
                 >
-                  {t(p("check"))}
+                  <Tooltip title={t(p("check"))}>
+                    <ViewFileIcon />
+                  </Tooltip>
                 </Button>
                 <Button
                   type="link"
@@ -191,7 +196,19 @@ export const DatasetVersionList: React.FC<Props> = (
                       },
                     });
                   }}
-                >{t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}</Button>
+                >
+                  <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                    {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
+                      <CancleShareIcon
+                        disabled={r.sharedStatus === SharedStatus.UNSHARING}
+                      />
+                    ) : (
+                      <ShareIcon
+                        disabled={r.sharedStatus === SharedStatus.SHARING}
+                      />
+                    )}
+                  </Tooltip>
+                </Button>
                 <Button
                   type="link"
                   disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
@@ -199,9 +216,11 @@ export const DatasetVersionList: React.FC<Props> = (
                     deleteDatasetVersion(r.id, r.datasetId);
                   }}
                 >
-                  {t("button.deleteButton")}
+                  <Tooltip title={t("button.deleteButton")}>
+                    <DeleteIcon />
+                  </Tooltip>
                 </Button>
-              </>
+              </Space>
             ) : (
               <CopyPublicDatasetModalButton
                 datasetId={r.datasetId}
@@ -210,7 +229,9 @@ export const DatasetVersionList: React.FC<Props> = (
                 cluster={cluster}
                 data={r}
               >
-                {t("button.copyButton")}
+                <Tooltip title={t("button.copyButton")}>
+                  <CopyIcon />
+                </Tooltip>
               </CopyPublicDatasetModalButton>
             );
           },

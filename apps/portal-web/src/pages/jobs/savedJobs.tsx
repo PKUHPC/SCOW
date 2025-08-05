@@ -25,7 +25,7 @@ export const SavedJobsPage: NextPage = requireAuth(() => true)(
     return (
       <div>
         <Head title={t("pages.jobs.savedJobs.title")} />
-        <PageTitle titleText={t("pages.jobs.savedJobs.pageTitle")} />
+        <PageTitle titleText={t("pages.jobs.savedJobs.title")} />
         <JobTemplateTable />
       </div>
     );

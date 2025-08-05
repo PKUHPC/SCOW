@@ -44,7 +44,6 @@ const IFrame = styled.iframe`
 const TitleText = styled(Typography.Title)`
 && {
   width: 100vw;
-  font-weight: 700;
   font-size: 28px;
   padding: 0 0 10px 20px;
   margin-left: -25px;

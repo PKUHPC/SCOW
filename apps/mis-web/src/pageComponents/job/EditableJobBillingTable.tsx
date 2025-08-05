@@ -69,10 +69,10 @@ const EditPriceModal: React.FC<CommonModalProps & {
         }}
       >
         <Form.Item label={t(pCommon("tenant"))}>
-          <strong>{tenant ?? t(p("defaultPrice"))}</strong>
+          <span>{tenant ?? t(p("defaultPrice"))}</span>
         </Form.Item>
         <Form.Item label={t(p("path"))}>
-          <strong>{path}</strong>
+          <span>{path}</span>
         </Form.Item>
         <Form.Item label={t(p("id"))} name="itemId" rules={[{ required: true }]}>
           <Input />

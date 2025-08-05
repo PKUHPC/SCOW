@@ -39,7 +39,7 @@ const ProgressBar = styled.div<{ percent: number, progressColor: string }>`
 `;
 
 const ProgressLabel = styled.div`
-  width: 50px;
+  width: 55px;
   margin-left: 10px;
   text-align: right;
   font-size: 0.9rem;

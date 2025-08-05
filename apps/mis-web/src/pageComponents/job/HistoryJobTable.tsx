@@ -17,12 +17,13 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, AutoComplete, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table } from "antd";
+import { App, AutoComplete, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { DetailIcon } from "src/assets/operationIcon";
 import { ClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TableTitle } from "src/components/TableTitle";
@@ -369,7 +370,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           data ? (
             <div>
               <span>
-                {t(p("jobNumber"))}：<strong>{data.totalCount}</strong>
+                {t(p("jobNumber"))}：<span>{data.totalCount}</span>
               </span>
               {
                 showedPrices.includes("account") ? (
@@ -377,7 +378,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
                     <Divider type="vertical" />
                     <span>
                       {finalPriceText.account}{t(pCommon("sum"))}：
-                      <strong>{nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}</strong>
+                      <span>{nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}</span>
                     </span>
                   </>
                 ) : undefined
@@ -388,7 +389,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
                     <Divider type="vertical" />
                     <span>
                       {finalPriceText.tenant}{t(pCommon("sum"))}：
-                      <strong>{nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}</strong>
+                      <span>{nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}</span>
                     </span>
                   </>
                 ) : undefined
@@ -442,7 +443,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
               dataIndex="user"
               width="12%"
               ellipsis
-              title={t(pCommon("user"))}
+              title={t(pCommon("userId"))}
               sorter={true}
             />
           ) : undefined
@@ -498,7 +499,13 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           title={t(pCommon("more"))}
           width="4.5%"
           fixed="right"
-          render={(_, r) => <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>}
+          render={(_, r) => (
+            <Tooltip title={t(pCommon("detail"))}>
+              <DetailIcon
+                onClick={() => setPreviewItem(r)}
+              />
+            </Tooltip>
+          )}
         />
       </Table>
       <HistoryJobDrawer

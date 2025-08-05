@@ -1,10 +1,11 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Space, Table } from "antd";
+import { App, Button, Form, Input, Space, Table, Tooltip } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { RemoveDefaultAuthIcon } from "src/assets/operationIcon";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
@@ -211,7 +212,9 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
                   });
                 }}
               >
-                {t(p("removeFromDefaultApps.title"))}
+                <Tooltip title={t(p("removeFromDefaultApps.title"))}>
+                  <RemoveDefaultAuthIcon />
+                </Tooltip>
               </Button>
             </Space>
           )}

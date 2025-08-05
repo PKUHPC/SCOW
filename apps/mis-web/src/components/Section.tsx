@@ -31,7 +31,6 @@ const Title = styled.div`
 
 const TitleText = styled(Typography.Title)`
 && {
-  font-weight: 700;
   font-size: 24px;
 }
 `;

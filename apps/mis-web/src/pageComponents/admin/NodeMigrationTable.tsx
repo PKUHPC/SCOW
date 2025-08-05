@@ -14,13 +14,14 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { debounce } from "@scow/lib-web/build/utils/debounce";
 import { useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
-import { App, Button, Divider,Form, Input, Space, Table } from "antd";
+import { App, Button, Divider,Form, Input, Space, Table, Tooltip } from "antd";
 import { Popover,Tag } from "antd";
 import { useCallback } from "react";
 import React, { useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { NodeMigrationIcon, NodeOnlineIcon } from "src/assets/operationIcon";
 import { DisabledA } from "src/components/DisabledA";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -270,11 +271,13 @@ export const NodeMigrationTable: React.FC = () => {
 
                         }}
                       >
-                        {tArgs(pTable("migrate"))}
+                        <Tooltip title={tArgs(pTable("migrate"))}>
+                          <NodeMigrationIcon />
+                        </Tooltip>
                       </MigrateNodeModalLink>
                     ) : (
                       <DisabledA message={tArgs(pTable("unmetMigrationCondition"))} disabled={true}>
-                        {tArgs(pTable("migrate"))}
+                        <NodeMigrationIcon disabled />
                       </DisabledA>
                     )
                 }
@@ -311,11 +314,13 @@ export const NodeMigrationTable: React.FC = () => {
 
                       }}
                     >
-                      {tArgs(pTable("activate"))}
+                      <Tooltip title={tArgs(pTable("activate"))}>
+                        <NodeOnlineIcon />
+                      </Tooltip>
                     </UploadNodeModalLink>
                   ) : (
                     <DisabledA message={tArgs(pTable("unmetOnlineCondition"))} disabled={true}>
-                      {tArgs(pTable("activate"))}
+                      <NodeOnlineIcon disabled />
                     </DisabledA>
                   )
                 }

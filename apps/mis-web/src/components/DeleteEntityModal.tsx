@@ -130,7 +130,7 @@ const DeleteEntityModal: React.FC<Props> = ({ name, id, onClose, onComplete, ope
         }}
       /><br />
       <div dangerouslySetInnerHTML={{ __html: t(p(deletePrompt1)) }} /><br />
-      <p><b dangerouslySetInnerHTML={{ __html: t(p(deletePrompt2)) }} /></p><br />
+      <p dangerouslySetInnerHTML={{ __html: t(p(deletePrompt2)) }}></p><br />
       <Form
         form={form}
         initialValues={undefined}

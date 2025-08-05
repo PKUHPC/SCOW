@@ -167,11 +167,11 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       ]}
     >
       <p>
-        {t(p("uploadRemark1"))}<strong>{path}</strong>{t(p("uploadRemark2"))}
+        {t(p("uploadRemark1"))}<span>{path}</span>{t(p("uploadRemark2"))}
       </p>
       { !scowdEnabled && (
         <p>
-          {t(p("uploadRemark3"))}<strong>{publicConfig.CLIENT_MAX_BODY_SIZE}</strong>{t(p("uploadRemark4"))}
+          {t(p("uploadRemark3"))}<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>{t(p("uploadRemark4"))}
         </p>
       )}
       <Upload.Dragger

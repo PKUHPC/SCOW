@@ -15,13 +15,14 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Input, Select, Space, Table, Tag } from "antd";
+import { App, Button, Form, Input, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
 import { useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon } from "src/icons/operationIcon";
 import { getImageTexts, ImageType, Status } from "src/models/Image";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
@@ -212,12 +213,11 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
               const shareOrUnshareStr = r.isShared ? t(p("cancelShare")) : t(p("share"));
               return !isPublic ?
                 (
-                  <>
+                  <Space direction="horizontal">
                     { r.status === Status.CREATED && (
                       <Button
                         type="link"
                         onClick={() => {
-
                           modal.confirm({
                             title: `${shareOrUnshareStr}${t(p("image"))}`,
                             content: `${t(p("confirmText"),[shareOrUnshareStr,r.name,r.tag])}`,
@@ -235,7 +235,9 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                           });
                         }}
                       >
-                        {shareOrUnshareStr}
+                        <Tooltip title={shareOrUnshareStr}>
+                          { r.isShared ? <CancleShareIcon /> : <ShareIcon />}
+                        </Tooltip>
                       </Button>
                     )}
 
@@ -260,7 +262,9 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                         clusters={clusters}
                         currentClusterIds={currentClusterIds}
                       >
-                        {t("button.editButton")}
+                        <Tooltip title={t("button.editButton")}>
+                          <EditIcon />
+                        </Tooltip>
                       </EditImageModalButton>
                     )}
                     <Button
@@ -284,9 +288,11 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                         });
                       }}
                     >
-                      {t("button.deleteButton")}
+                      <Tooltip title={t("button.deleteButton")}>
+                        <DeleteIcon />
+                      </Tooltip>
                     </Button>
-                  </>
+                  </Space>
                 ) :
                 (
                   <CopyImageModalButton
@@ -304,7 +310,9 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                       }
                     }
                   >
-                    {t("button.copyButton")}
+                    <Tooltip title={t("button.copyButton")}>
+                      <CopyIcon />
+                    </Tooltip>
                   </CopyImageModalButton>
                 );
             },

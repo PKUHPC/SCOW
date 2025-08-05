@@ -17,10 +17,11 @@ import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { WhitelistedAccount } from "@scow/protos/build/server/account";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Space, Table } from "antd";
+import { App, Button, Divider, Form, Input, Space, Table, Tooltip } from "antd";
 import { SortOrder } from "antd/lib/table/interface";
 import React, { useMemo, useState } from "react";
 import { api } from "src/apis";
+import { RemoveFromWhitelistIcon } from "src/assets/operationIcon";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Money } from "src/models/UserSchemaModel";
@@ -129,13 +130,13 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             data ? (
               <div>
                 <span>
-                  {t(p("whiteList"))}：<strong>{data.results.length ?? 0}</strong>
+                  {t(p("whiteList"))}：<span>{data.results.length ?? 0}</span>
                 </span>
                 <>
                   <Divider type="vertical" />
                   <span>
-                    {t(p("debtSum"))}：<strong>{
-                      moneyNumberToString(getTotalDebtAmount(data))} {t(pCommon("unit"))}</strong>
+                    {t(p("debtSum"))}：<span>{
+                      moneyNumberToString(getTotalDebtAmount(data))} {t(pCommon("unit"))}</span>
                   </span>
                 </>
               </div>
@@ -190,29 +191,29 @@ export const AccountWhitelistTable: React.FC<Props> = ({
           <Table.Column<WhitelistedAccount>
             title={t(pCommon("operation"))}
             render={(_, r) => (
-              <Space split={<Divider type="vertical" />}>
-                <a onClick={() => {
-                  modal.confirm({
-                    title: t(p("confirmRemoveWhite")),
-                    icon: <ExclamationCircleOutlined />,
-                    content: `${t(p("confirmRemoveWhiteText1"))}${r.accountName}${t(p("confirmRemoveWhiteText2"))}`,
-                    onOk: async () => {
-                      await api.dewhitelistAccount({ query: {
-                        accountName: r.accountName,
-                      } })
-                        .httpError(409, () => {
-                          message.error(t("common.accountUserSyncRunning"));
-                        })
-                        .then(() => {
-                          message.success(t(p("removeWhiteSuccess")));
-                          reload();
-                        });
-                    },
-                  });
-                }}
-                >
-                  {t(p("removeWhite"))}
-                </a>
+              <Space split={<Divider type="vertical" />} style={{ marginLeft: "4px" }}>
+                <Tooltip title={t(p("removeWhite"))}>
+                  <RemoveFromWhitelistIcon onClick={() => {
+                    modal.confirm({
+                      title: t(p("confirmRemoveWhite")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: `${t(p("confirmRemoveWhiteText1"))}${r.accountName}${t(p("confirmRemoveWhiteText2"))}`,
+                      onOk: async () => {
+                        await api.dewhitelistAccount({ query: {
+                          accountName: r.accountName,
+                        } })
+                          .httpError(409, () => {
+                            message.error(t("common.accountUserSyncRunning"));
+                          })
+                          .then(() => {
+                            message.success(t(p("removeWhiteSuccess")));
+                            reload();
+                          });
+                      },
+                    });
+                  }}
+                  />
+                </Tooltip>
               </Space>
             )}
           />

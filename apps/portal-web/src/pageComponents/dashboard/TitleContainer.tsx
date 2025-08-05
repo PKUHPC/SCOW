@@ -55,7 +55,7 @@ export const TitleContainer: React.FC<Props> = ({ total, name, display, subName 
 
   return (
     <Container>
-      <Title style={{ fontWeight:700 }}>{name}</Title>
+      <Title>{name}</Title>
 
       <SubContainer>
         <Title style={{ marginRight:"0.35em" }}>{subName}</Title>

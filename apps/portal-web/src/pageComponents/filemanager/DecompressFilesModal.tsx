@@ -125,7 +125,7 @@ export const DecompressFilesModal: React.FC<Props> = ({
       confirmLoading={loading}
     >
       <Form form={form} onFinish={onSubmit}>
-        <strong>{t(p("decompressFilesList"))}</strong>
+        <span>{t(p("decompressFilesList"))}</span>
         <Tree
           showLine
           style={{ marginTop: "8px" }}

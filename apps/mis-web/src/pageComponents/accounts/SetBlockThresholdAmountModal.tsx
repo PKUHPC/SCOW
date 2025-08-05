@@ -85,23 +85,23 @@ export const SetBlockThresholdAmountModal: React.FC<Props> = ({
         form={form}
       >
         <Form.Item label={t(pCommon("accountName"))}>
-          <strong>{accountName}</strong>
+          <span>{accountName}</span>
         </Form.Item>
         <Form.Item label={t(pCommon("balance"))}>
-          <strong>{moneyToString(balance)} {t(pCommon("unit"))}</strong>
+          <span>{moneyToString(balance)} {t(pCommon("unit"))}</span>
         </Form.Item>
         <Form.Item label={t(p("defaultBlockThresholdAmount"))}>
-          <strong>{moneyToString(defaultBlockThresholdAmount)} {t(pCommon("unit"))}</strong>
+          <span>{moneyToString(defaultBlockThresholdAmount)} {t(pCommon("unit"))}</span>
         </Form.Item>
         <Form.Item label={t(p("curBlockThresholdAmount"))}>
           <Space>
-            { <strong>{currentAmount ? (
+            { <span>{currentAmount ? (
               <>
                 {moneyToString(currentAmount)} {t(pCommon("unit"))}
               </>
             ) : (
               t(p("defaultBlockThresholdAmount"))
-            )} </strong> }
+            )} </span> }
             { currentAmount !== undefined && (
               <a onClick={() => {
                 modal.confirm({
@@ -109,9 +109,9 @@ export const SetBlockThresholdAmountModal: React.FC<Props> = ({
                   icon: <ExclamationCircleOutlined />,
                   content: <Space direction="vertical">
                     <span>{t(p("curDefaultBlockThresholdAmount"))}
-                      <strong>
+                      <span>
                         {moneyToString(defaultBlockThresholdAmount)} {t(pCommon("unit"))}
-                      </strong>
+                      </span>
                     </span>
                     <span>{t(p("confirmUseDefaultBlockThresholdAmount"))}</span>
                   </Space>,

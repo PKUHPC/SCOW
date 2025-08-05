@@ -2,11 +2,12 @@ import { Decimal, moneyToNumber } from "@scow/lib-decimal";
 import { getMonthlyBillPresets, getYearlyBillPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { Button, DatePicker, Form, Input, message, Radio, Table } from "antd";
+import { Button, DatePicker, Form, Input, message, Radio, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
+import { DetailIcon } from "src/assets/operationIcon";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { BillType } from "src/models/bill";
@@ -163,14 +164,14 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     title: t(pCommon("operation")),
     render: (text, record) => {
       return new Decimal(moneyToNumber(record.amount)).isEqualTo(0) ? "-" : (
-        <Button
-          type="primary"
-          size="small"
-          onClick={() => {
-            setOpen(true);
-            setAccountBill(record);
-          }}
-        >详情</Button>
+        <Tooltip title={t(pCommon("detail"))}>
+          <DetailIcon
+            onClick={() => {
+              setOpen(true);
+              setAccountBill(record);
+            }}
+          />
+        </Tooltip>
       );
     },
   });

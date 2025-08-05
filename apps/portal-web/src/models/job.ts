@@ -103,3 +103,13 @@ export enum ReservedAppAttributeName {
   GPU_COUNT = "GPU_COUNT",
   MAX_TIME = "MAX_TIME",
 }
+
+export const statusColors: Record<string, string> = {
+  RUNNING: "#46B600",
+  PENDING: "#B0B600",
+  COMPLETED: "#3584D9",
+  FAILED: "#D93566",
+  CANCELED: "#A1A1A1",
+  TIMEOUT: "#5FBDEC",
+  ENDED: "#6A6A6A",
+};

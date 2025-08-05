@@ -55,7 +55,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
     <ConfigProvider
       locale={getAntdLocale(currentLangId)}
       theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-        fontFamily: "MiSans, sans-serif",
+        colorText: dark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif",
       },
       components: {
         Menu: {

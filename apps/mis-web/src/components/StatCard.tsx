@@ -20,7 +20,6 @@ type Props = React.PropsWithChildren<{
 }>;
 
 const Title = styled.h3`
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

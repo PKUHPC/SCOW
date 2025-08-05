@@ -12,12 +12,13 @@
 
 "use client";
 
-import { extractPlaceholders,parsePlaceholder } from "@scow/lib-config/build/parse";
-import { App } from "antd";
+import { extractPlaceholders, parsePlaceholder } from "@scow/lib-config/build/parse";
+import { App, Tooltip } from "antd";
 import { join } from "path";
 import { useEffect } from "react";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { ConnectIcon } from "src/icons/operationIcon";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { trpc } from "src/utils/trpc";
 import { openDesktop } from "src/utils/vnc";
@@ -147,6 +148,10 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   };
 
   return (
-    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))}>{t(p("connect"))}</DisabledA>
+    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))}>
+      <Tooltip title={t(p("connect"))}>
+        <ConnectIcon disabled={!data} />
+      </Tooltip>
+    </DisabledA>
   );
 };

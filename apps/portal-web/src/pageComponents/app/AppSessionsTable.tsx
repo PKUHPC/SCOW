@@ -10,7 +10,9 @@ import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { CancelIcon, EndIcon, EnterDirectoryIcon } from "src/icons/operationIcon";
 import { calculateAppRemainingTime, compareState } from "src/models/job";
+import { statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/app/ConnectToAppLink";
 import { Cluster } from "src/utils/cluster";
 
@@ -103,12 +105,12 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
         record.reason ? (
           <Tooltip title={record.reason}>
             <Space>
-              {record.state}
+              <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
               <ExclamationCircleOutlined />
             </Space>
           </Tooltip>
         ) : (
-          <span>{record.state}</span>
+          <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
         )
       ),
       sorter: (a, b) => compareState (a.state, b.state)
@@ -132,7 +134,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
       fixed:"right",
       width: "10%",
       render: (record) => (
-        <Space>
+        <Space size={16}>
           {
             (record.state === "RUNNING") ? (
               <>
@@ -154,7 +156,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
                       })
                   }
                 >
-                  <a>{t("button.finishButton")}</a>
+                  <Tooltip title={t("button.finishButton")}>
+                    <EndIcon />
+                  </Tooltip>
                 </Popconfirm>
               </>
             ) : undefined
@@ -174,16 +178,19 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
                     })
                 }
               >
-                <a>{t("button.cancelButton")}</a>
+                <Tooltip title={t("button.cancelButton")}>
+                  <CancelIcon />
+                </Tooltip>
               </Popconfirm>
             ) : undefined
           }
-          <a onClick={() => {
-            router.push(join("/files", cluster.id, record.dataPath));
-          }}
-          >
-            {t(p("table.linkToPath"))}
-          </a>
+          <Tooltip title={t(p("table.linkToPath"))}>
+            <EnterDirectoryIcon
+              onClick={() => {
+                router.push(join("/files", cluster.id, record.dataPath));
+              }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

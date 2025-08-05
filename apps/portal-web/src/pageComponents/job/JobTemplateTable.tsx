@@ -12,7 +12,7 @@
 
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobTemplateInfo } from "@scow/protos/build/portal/job";
-import { App, Button, Form, Input, Modal, Popconfirm, Space, Table } from "antd";
+import { App, Button, Form, Input, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import React, { useCallback, useState } from "react";
@@ -23,6 +23,7 @@ import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { DeleteIcon, RenameIcon,UsingTemplateIcon } from "src/icons/operationIcon";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 
@@ -188,20 +189,22 @@ const InfoTable: React.FC<InfoTableProps> = ({
       dataIndex: "action",
       title: t("button.actionButton"),
       render:(_, r) => (
-        <Space>
-          <Link
-            href={{
-              pathname: "/jobs/submit",
-              query: {
-                cluster: cluster.id,
-                jobTemplateId: r.id,
-              },
-            }}
-            onClick={r.jobName === "unknown" ? (e) => e.preventDefault() : undefined}
-            style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
-          >
-            {t(p("useTemplate"))}
-          </Link>
+        <Space size={16} style={{ marginLeft: 4 }}>
+          <Tooltip title={t(p("useTemplate"))}>
+            <Link
+              href={{
+                pathname: "/jobs/submit",
+                query: {
+                  cluster: cluster.id,
+                  jobTemplateId: r.id,
+                },
+              }}
+              onClick={r.jobName === "unknown" ? (e) => e.preventDefault() : undefined}
+              style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
+            >
+              <UsingTemplateIcon />
+            </Link>
+          </Tooltip>
           <Popconfirm
             title={t(p("popConfirm"))}
             onConfirm={async () =>
@@ -220,18 +223,20 @@ const InfoTable: React.FC<InfoTableProps> = ({
                 })
             }
           >
-            <a>{t("button.deleteButton")}</a>
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon />
+            </Tooltip>
           </Popconfirm>
-          <a
-            style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
-            onClick={() => {
-              if (r.jobName === "unknown") return;
+          <Tooltip title={t("button.renameButton")}>
+            <RenameIcon
+              style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
+              onClick={() => {
+                if (r.jobName === "unknown") return;
 
-              setTemplateId(r.id); setModalShow(true);
-            }}
-          >
-            {t("button.renameButton")}
-          </a>
+                setTemplateId(r.id); setModalShow(true);
+              }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

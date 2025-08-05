@@ -23,3 +23,12 @@ export enum ImageSource {
   REMOTE = "remote",
 }
 
+export const statusColors: Record<string, string> = {
+  RUNNING: "#46B600",
+  PENDING: "#B0B600",
+  COMPLETED: "#3584D9",
+  FAILED: "#D93566",
+  CANCELED: "#A1A1A1",
+  TIMEOUT: "#5FBDEC",
+  ENDED: "#6A6A6A",
+};

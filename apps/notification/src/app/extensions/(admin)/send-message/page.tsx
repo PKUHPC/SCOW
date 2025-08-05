@@ -26,7 +26,7 @@ const SendMessagePage = () => {
   return (
     <>
       <PageTitle titleText={language.sendMessage.pageTitle}></PageTitle>
-      <div style={{ fontWeight: 700, fontSize: "16px" }}>{language.sendMessage.pageTip}</div>
+      <div style={{ fontSize: "16px" }}>{language.sendMessage.pageTip}</div>
       <Divider style={{ margin: "10px 0" }} />
       <div style={{ marginTop: "40px" }}>
         <MessageForm lang={language} />

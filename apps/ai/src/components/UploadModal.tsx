@@ -67,10 +67,10 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       ]}
     >
       <p>
-        {t(p("uploadTo"))}：<strong>{path}</strong>。{t(p("covered"))}。
+        {t(p("uploadTo"))}：<span>{path}</span>。{t(p("covered"))}。
       </p>
       <p>
-        {t(p("maxSize"))}：<strong>{publicConfig.CLIENT_MAX_BODY_SIZE}</strong>。
+        {t(p("maxSize"))}：<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>。
       </p>
       <Upload.Dragger
         name="file"

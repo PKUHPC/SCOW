@@ -1,26 +1,14 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import React, { ComponentType, CSSProperties, ReactElement } from "react";
-import { AllJobsIcon, DeskTopIcon, RunningJobIcon,
-  ShellIcon, SubmitJobIcon, TemplatejobIcon } from "src/icons/EntryItemIcon";
+import { AllJobsIcon, DesktopIcon, RunningJobsIcon,
+  ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
 
 const iconMap = {
-  PlusCircleOutlined: <SubmitJobIcon />,
-  BookOutlined: <RunningJobIcon />,
-  SaveOutlined: <TemplatejobIcon />,
-  DesktopOutlined: <DeskTopIcon />,
-  MacCommandOutlined: <ShellIcon />,
-  AllJobsOutlined:<AllJobsIcon />,
+  PlusCircleOutlined: <SubmitJobIcon styles={{ transform: "scale(3.4)" }} />,
+  BookOutlined: <RunningJobsIcon styles={{ transform: "scale(3.4)" }} />,
+  SaveOutlined: <TemplateJobIcon styles={{ transform: "scale(3.4)" }} />,
+  DesktopOutlined: <DesktopIcon styles={{ transform: "scale(3.4)" }} />,
+  MacCommandOutlined: <ShellIcon styles={{ transform: "scale(3.4)" }} />,
+  AllJobsOutlined:<AllJobsIcon styles={{ transform: "scale(3.4)" }} />,
 };
 
 export type IconName = keyof typeof iconMap;

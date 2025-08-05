@@ -72,7 +72,7 @@ export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
         style={{ marginTop: "20px" }}
       >
         <Form.Item label={t(p("cluster"))} style={{ marginBottom: "10px" }}>
-          <strong>{getI18nConfigCurrentText(cluster.name, languageId)}</strong>
+          <span>{getI18nConfigCurrentText(cluster.name, languageId)}</span>
         </Form.Item>
         <Form.Item
           label={(

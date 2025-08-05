@@ -7,8 +7,10 @@ import styled from "styled-components";
 const Container = styled.div`
   margin: 0 0 8px 0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  h1 {
+    margin-top: 0px;
+  }
 `;
 
 type PageTitleProps = React.PropsWithChildren<{
@@ -20,7 +22,7 @@ type PageTitleProps = React.PropsWithChildren<{
 
 export const TitleText = styled(Typography.Title)`
   && {
-    font-size: 28px;
+    font-size: 20px !important;
   }
 `;
 

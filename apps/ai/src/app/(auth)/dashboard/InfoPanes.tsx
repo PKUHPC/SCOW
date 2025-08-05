@@ -69,10 +69,9 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
       tab:
       <div style={{ width:"max-content", height:"40px",
         textAlign: "center", lineHeight:"40px",
-        color:`${activeTabKey === "platformOverview" ? "#FFF" : "#000"}`,
+        color:`${activeTabKey === "platformOverview" ? "#FFF" : ""}`,
         background:`${activeTabKey === "platformOverview" ? theme.token.colorPrimary : "transparent"}`,
         borderRadius:"5px",
-        fontWeight:"700",
         paddingLeft:"20px",
         paddingRight:"20px",
       }}

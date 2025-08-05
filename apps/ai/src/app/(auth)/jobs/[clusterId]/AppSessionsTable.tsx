@@ -8,7 +8,9 @@ import React, { useCallback, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { JobType } from "src/models/Job";
+import { CancelIcon, DetailIcon, EndIcon,
+  EnterDirectoryIcon, SaveImageIcon, SubmitAgainIcon } from "src/icons/operationIcon";
+import { JobType, statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { calculateAppRemainingTime, compareDateTime, formatDateTime } from "src/utils/datetime";
@@ -34,7 +36,7 @@ interface Props {
   status: AppTableStatus
 }
 
-const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link" });
+const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link", style: { padding: 0 } });
 
 export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   const t = useI18nTranslateToString();
@@ -145,12 +147,12 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
         record.reason ? (
           <Tooltip title={record.reason}>
             <Space>
-              {record.state}
+              <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
               <ExclamationCircleOutlined />
             </Space>
           </Tooltip>
         ) : (
-          <span>{record.state}</span>
+          <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
         )
       ),
       sorter: (a, b) => a.state.localeCompare(b.state),
@@ -168,7 +170,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       fixed:"right",
       width: unfinished ? "400px" : "200px",
       render: (_, record) => (
-        <Space direction="horizontal" size="middle" align="center">
+        <Space direction="horizontal" align="center" size={16}>
           {
             (record.state === "RUNNING") ? (
               <>
@@ -191,7 +193,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
                     }
                   }
                 >
-                  <a>{t("button.finishButton")}</a>
+                  <Tooltip title={t("button.finishButton")}>
+                    <EndIcon />
+                  </Tooltip>
                 </Popconfirm>
               </>
             ) : undefined
@@ -210,7 +214,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
                   }
                 }
               >
-                <a>{t("button.cancelButton")}</a>
+                <Tooltip title={t("button.cancelButton")}>
+                  <CancelIcon />
+                </Tooltip>
               </Popconfirm>
             ) : undefined
           }
@@ -220,7 +226,11 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
                 reload={refetch}
                 appSession={record}
                 clusterId={cluster.id}
-              >{t(p("saveImage"))}</SaveImageModalButton>
+              >
+                <Tooltip title={t(p("saveImage"))}>
+                  <SaveImageIcon />
+                </Tooltip>
+              </SaveImageModalButton>
             ) : undefined
           }
           <Button
@@ -244,25 +254,31 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
               }
               router.push(`${basePath}?${searchParams.toString()}`);
             }}
-          >{t(p("submitAgain"))}</Button>
-          <a onClick={() => {
-            router.push(join("/files", cluster.id, record.dataPath));
-          }}
           >
-            {t(p("enterDir"))}
-          </a>
-          <a onClick={() => {
-            const searchParams = new URLSearchParams({
-              jobId:  record.jobId.toString(),
-              jobType: record.jobType.toString(),
-              appId: record.appId ?? "",
-              from:status,
-            });
-            router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
-          }}
-          >
-            {t(p("details"))}
-          </a>
+            <Tooltip title={t(p("submitAgain"))}>
+              <SubmitAgainIcon />
+            </Tooltip>
+          </Button>
+          <Tooltip title={t(p("enterDir"))}>
+            <EnterDirectoryIcon
+              onClick={() => {
+                router.push(join("/files", cluster.id, record.dataPath));
+              }}
+            />
+          </Tooltip>
+          <Tooltip title={t(p("details"))}>
+            <DetailIcon
+              onClick={() => {
+                const searchParams = new URLSearchParams({
+                  jobId:  record.jobId.toString(),
+                  jobType: record.jobType.toString(),
+                  appId: record.appId ?? "",
+                  from:status,
+                });
+                router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
+              }}
+            />
+          </Tooltip>
         </Space>
       ),
     },

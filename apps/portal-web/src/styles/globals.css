@@ -1,4 +1,11 @@
-/* @font-face {
+@font-face {
+  font-family: 'MiSans';
+  src: url('../../assets/fonts/MiSans-Regular.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'MiSans';
   src: url('../../assets/fonts/MiSans-Medium.woff2') format('woff2');
   font-weight: 400;
@@ -10,4 +17,4 @@
   src: url('../../assets/fonts/MiSans-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
-} */
+}

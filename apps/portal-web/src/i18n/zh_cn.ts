@@ -590,7 +590,7 @@ export default {
       },
       NotificationCard: {
         message: "消息",
-        check: "查看",
+        check: "查看全部 >",
         noMessage: "当前没有未读消息",
         fetchNotifError: "获取未读消息失败",
       },
@@ -647,10 +647,10 @@ export default {
         confirmTransferContent: "确认从 {} 传输到 {} 吗?",
         confirmOk: "确认",
         transferStartInfo: "传输任务已经开始",
-        transferTitle: "跨集群文件传输",
+        transferTitle: "文件传输",
       },
       currentTransferInfo: {
-        checkTransfer: "文件传输进度查看",
+        checkTransfer: "传输进度",
       },
     },
     jobs: {

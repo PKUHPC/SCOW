@@ -14,11 +14,12 @@ import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, Form, Input, InputNumber, message, Popconfirm, Select, Space, Table } from "antd";
+import { Button, Form, Input, InputNumber, message, Popconfirm, Select, Space, Table, Tooltip } from "antd";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { DetailIcon, EndIcon, ModifyDeadlineIcon } from "src/assets/operationIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
@@ -26,13 +27,13 @@ import { ModalLink } from "src/components/ModalLink";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { runningJobId, RunningJobInfo } from "src/models/job";
+import { statusColors } from "src/models/job";
 import { BatchChangeJobTimeLimitButton } from "src/pageComponents/job/BatchChangeJobTimeLimitButton";
 import { ChangeJobTimeLimitModal } from "src/pageComponents/job/ChangeJobTimeLimitModal";
 import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import type { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
-
 
 interface FilterForm {
   jobId: number | undefined;
@@ -369,6 +370,10 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           width="6%"
           title={t(pCommon("status"))}
           sorter={(a, b) => a.state.localeCompare(b.state)}
+          render={(text: string): React.ReactNode => {
+            const color = statusColors[text.toUpperCase()];
+            return <span style={{ color }}>{text}</span>;
+          }}
         />
         <Table.Column<RunningJobInfo>
           dataIndex="runningOrQueueTime"
@@ -396,8 +401,12 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           width="12%"
           fixed="right"
           render={(_, r) => (
-            <Space>
-              <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
+            <Space size={16}>
+              <Tooltip title={t(pCommon("detail"))}>
+                <DetailIcon
+                  onClick={() => setPreviewItem(r)}
+                />
+              </Tooltip>
               <Popconfirm
                 title={t(p("finishJobConfirm"))}
                 onConfirm={async () =>
@@ -412,14 +421,18 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
                   })
                 }
               >
-                <a>{t(p("finishJobButton"))}</a>
+                <Tooltip title={t(p("finishJobButton"))}>
+                  <EndIcon />
+                </Tooltip>
               </Popconfirm>
               {changeJobLimitEnabled && (
                 <ChangeJobTimeLimitModalLink
                   reload={reload}
                   data={[r]}
                 >
-                  {t(p("changeLimit"))}
+                  <Tooltip title={t(p("changeLimit"))}>
+                    <ModifyDeadlineIcon />
+                  </Tooltip>
                 </ChangeJobTimeLimitModalLink>
               )}
             </Space>

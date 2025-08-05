@@ -36,7 +36,6 @@ const Container = styled.div`
 `;
 
 const JobRange = styled.div`
-  font-weight: 700;
   position: absolute;  /* 需要使用 absolute 定位 */
   width: max-content;
   top: 50%;

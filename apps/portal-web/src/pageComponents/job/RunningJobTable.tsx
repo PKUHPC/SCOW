@@ -12,7 +12,7 @@
 
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Form, InputNumber, Popconfirm, Space, Table } from "antd";
+import { App, Button, Form, InputNumber, Popconfirm, Space, Table, Tooltip } from "antd";
 import Router from "next/router";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
@@ -23,7 +23,9 @@ import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { DetailIcon, EndIcon, EnterDirectoryIcon } from "src/icons/operationIcon";
 import { runningJobId, RunningJobInfo } from "src/models/job";
+import { statusColors } from "src/models/job";
 import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
@@ -209,6 +211,10 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           width="6.1%"
           title={t(p("jobInfoTable.state"))}
           sorter={(a, b) => a.state.localeCompare(b.state)}
+          render={(text: string): React.ReactNode => {
+            const color = statusColors[text.toUpperCase()];
+            return <span style={{ color }}>{text}</span>;
+          }}
         />
         <Table.Column<RunningJobInfo>
           dataIndex="runningOrQueueTime"
@@ -232,14 +238,20 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column<RunningJobInfo>
           title={t(p("jobInfoTable.more"))}
-          width="10%"
+          width="9%"
           fixed="right"
           render={(_, r) => (
-            <Space>
-              <a onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}>
-                {t(p("jobInfoTable.linkToPath"))}
-              </a>
-              <a onClick={() => setPreviewItem(r)}>{t("button.detailButton")}</a>
+            <Space size={16} style={{ marginLeft: 5 }}>
+              <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
+                <EnterDirectoryIcon
+                  onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
+                />
+              </Tooltip>
+              <Tooltip title={t("button.detailButton")}>
+                <DetailIcon
+                  onClick={() => setPreviewItem(r)}
+                />
+              </Tooltip>
               <Popconfirm
                 title={t(p("jobInfoTable.popConfirm"))}
                 onConfirm={async () =>
@@ -253,7 +265,9 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
                     })
                 }
               >
-                <a>{t("button.finishButton")}</a>
+                <Tooltip title={t("button.finishButton")}>
+                  <EndIcon />
+                </Tooltip>
               </Popconfirm>
             </Space>
           )}

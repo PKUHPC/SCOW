@@ -11,16 +11,21 @@
  */
 
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
-import { App, Button, Card, List, Typography } from "antd";
+import { App, Card, List, Typography } from "antd";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { api } from "src/apis";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { publicConfig } from "src/utils/config";
 import { RenderContent, renderingMessage } from "src/utils/renderingMessage";
-import { useTheme } from "styled-components";
+import { styled } from "styled-components";
 
-import Bullet from "./Bullet";
+const NotifContainer = styled.div`
+  height: 100%;
+  .ant-card .ant-card-body {
+    padding: 12px 24px !important;
+  }
+`;
 
 const { Text } = Typography;
 
@@ -74,50 +79,54 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
     // return () => clearInterval(timer);
   }, [interval, currentLanguage.id]);
 
-  const theme = useTheme();
-
   return (
-    <Card
-      style={{ marginBottom: "16px", height: "100%" }}
-      loading={loading}
-      title={ (
-        <>
-          <Bullet style={{
-            width: "0.8em", /* 与字体大小相对应 */
-            height: "0.8em", /* 与字体大小相对应 */
-            backgroundColor: theme.token.colorPrimary, /* 与主题颜色相对应 */
-            marginRight: "1em",
-          }}
-          />
-          <Localized id={p("message")} />
-        </>
-      )}
-      extra={(
-        <Button
-          onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}
-        >
-          {t(p("check"))}
-        </Button>
-      )}
-    >
-      <List
-        itemLayout="horizontal"
-        locale={{ emptyText: t(p("noMessage")) }}
-        dataSource={msgContents}
-        renderItem={(item) => (
-          <List.Item key={item.id} style={{ borderBottom: "none", padding: "4px 0" }}>
-            <List.Item.Meta
-              style={{
-                ...dark ? { background: "#282828" } : { background: "#F7F7F7" },
-                borderRadius: "4px", padding: "4px 6px",
-              }}
-              title=<div style={{ fontWeight: 700, fontSize: "14px", margin: "0" }}>{item.title}</div>
-              description=<Text style={{ fontWeight: 350, fontSize: "14px" }} ellipsis={true}>{item.description}</Text>
-            />
-          </List.Item>
+    <NotifContainer>
+      <Card
+        style={{ height: "100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
+        loading={loading}
+        title={ (
+          <>
+            <Localized id={p("message")} />
+          </>
         )}
-      />
-    </Card>
+        extra={(
+          <a
+            onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}
+          >
+            {t(p("check"))}
+          </a>
+        )}
+      >
+        <List
+          itemLayout="horizontal"
+          locale={{ emptyText: t(p("noMessage")) }}
+          dataSource={msgContents}
+          renderItem={(item) => (
+            <List.Item key={item.id} style={{ borderBottom: "none", padding: "4px 0" }}>
+              <List.Item.Meta
+                style={{
+                  ...dark ? { background: "#282828" } : { background: "#FAFAFA" },
+                  borderRadius: "8px", padding: "12px 22px",
+                }}
+                title={(
+                  <div style={{ fontSize: "14px", margin: "0", color: dark ? "#FFFFFF" : "#434343" }}>
+                    {item.title}
+                  </div>
+                )}
+                description={(
+                  <Text
+                    style={{ fontWeight: 350, fontSize: "14px", color: dark ? "#FFFFFF99" : "#43434399" }}
+                    ellipsis={true}
+                  >{item.description}
+                  </Text>
+                )}
+              />
+            </List.Item>
+          )}
+        />
+      </Card>
+    </NotifContainer>
+
   );
 };
 

@@ -73,7 +73,6 @@ const formateData = (data: {
 
 const TitleText = styled.span`
   font-size: 24px;
-  font-weight: bold;
 `;
 
 export const PlatformStatisticsPage: NextPage = requireAuth(

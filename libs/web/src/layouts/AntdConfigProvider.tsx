@@ -44,15 +44,16 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, color, locale })
     <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
       <ConfigProvider
         locale={locale === "zh_cn" ? zhCNlocale : enUSlocale}
-        theme={{ token: { colorPrimary: color, colorInfo: color, fontFamily: "MiSans, sans-serif" },
-          components: {
-            Menu: {
-              itemColor: dark ? "#ffffff" : "#434343",
-              itemHoverColor: dark ? "#ffffff" : "#595959",
-              subMenuItemBg: dark ? "#211112" : "#ffffff",
-            },
+        theme={{ token: { colorText: dark ? "#ffffff" : "#434343", colorPrimary: color,
+          colorInfo: color, fontFamily: "MiSans, sans-serif" },
+        components: {
+          Menu: {
+            itemColor: dark ? "#ffffff" : "#434343",
+            itemHoverColor: dark ? "#ffffff" : "#595959",
+            subMenuItemBg: dark ? "#211112" : "#ffffff",
           },
-          algorithm: dark ? theme.darkAlgorithm : undefined }}
+        },
+        algorithm: dark ? theme.darkAlgorithm : undefined }}
       >
         <StyledComponentsThemeProvider color={color} locale={locale}>
           <App>

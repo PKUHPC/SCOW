@@ -57,7 +57,6 @@ const ItemContainer = styled.div`
   box-shadow: 0px 2px 10px 0px #1C01011A;
   background-color: ${(p) => p.theme.token.colorBgBlur};
   font-size:18px;
-  font-weight:700;
 `;
 
 const p = prefix("pageComp.dashboard.addEntryModal.");

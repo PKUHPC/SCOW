@@ -1,21 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber, compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/portal/job";
-import { Button, DatePicker, Form, InputNumber, Popover, Space, Table } from "antd";
+import { Button, DatePicker, Form, InputNumber, Popover, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import Router from "next/router";
 import { join } from "path";
@@ -27,6 +15,8 @@ import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { EnterDirectoryIcon } from "src/icons/operationIcon";
+import { statusColors } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 
@@ -204,9 +194,13 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
       />
       <Table.Column<JobInfo>
         dataIndex="state"
-        width="6%"
+        width="7%"
         title={t(p("state"))}
         sorter={(a, b) => a.state.localeCompare(b.state)}
+        render={(text: string): React.ReactNode => {
+          const color = statusColors[text.toUpperCase()];
+          return <span style={{ color }}>{text}</span>;
+        }}
       />
       <Table.Column<JobInfo>
         dataIndex="submitTime"
@@ -254,9 +248,11 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         fixed="right"
         render={(_, r) => (
           <Space>
-            <a onClick={() => Router.push(join("/files", cluster.id, r.workingDirectory))}>
-              {t(p("linkToPath"))}
-            </a>
+            <Tooltip title={t(p("linkToPath"))}>
+              <EnterDirectoryIcon
+                onClick={() => Router.push(join("/files", cluster.id, r.workingDirectory))}
+              />
+            </Tooltip>
           </Space>
         )}
       />

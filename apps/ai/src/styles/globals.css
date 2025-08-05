@@ -1,4 +1,11 @@
-/* @font-face {
+@font-face {
+  font-family: 'MiSans';
+  src: url('../../assets/fonts/MiSans-Regular.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'MiSans';
   src: url('../../assets/fonts/MiSans-Medium.woff2') format('woff2');
   font-weight: 400;
@@ -10,12 +17,47 @@
   src: url('../../assets/fonts/MiSans-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
-} */
+}
 
-/* :root {
+:root {
   font-family: 'MiSans', system-ui;
-} */
+  color: #434343;
+}
 
+h1 {
+  font-weight: 400 !important;
+}
+
+/* 对表格组件样式统一处理 */
+.ant-table-wrapper .ant-table {
+  border-radius: 8px !important;
+}
+
+.ant-table-wrapper .ant-table-thead >tr>th {
+    font-weight: 400;
+}
+
+.ant-table-wrapper .ant-table-container {
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #0505050F;
+}
+
+.ant-table-wrapper .ant-table-content {
+    border-radius: 8px;
+}
+.ant-table-wrapper .ant-table {
+    font-size: 13px !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected {
+  font-weight: 400 !important;
+}
+
+.ant-pagination .ant-pagination-item-active {
+  font-weight: 400 !important;
+}
+
+ /* 对head右侧操作栏悬浮窗做样式处理  */
 .head-language-select .ant-select-item {
   color: #434343 !important;
 }
@@ -24,7 +66,7 @@
     color: #595959 !important;
 }
 
-.head-language-select .ant-select-item-option-selected{
+.head-language-select .ant-select-item-option-selected {
     background-color: transparent !important;
     color: #94070a !important;
     font-weight: unset !important;

@@ -19,7 +19,7 @@ type Props = React.PropsWithChildren<{
 }>;
 
 const Title = styled.h3`
-  font-weight: 600;
+  font-weight: 400;
 `;
 
 const ChildrenContainer = styled.div`

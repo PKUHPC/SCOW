@@ -4,7 +4,7 @@ import { CopyOutlined, DatabaseOutlined, DeleteOutlined, EyeInvisibleOutlined, E
 import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
-import { App, Button, Divider, Space } from "antd";
+import { App, Button, Divider, Space, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -20,6 +20,7 @@ import { TitleText } from "src/components/PageTitle";
 import { TableTitle } from "src/components/TableTitle";
 import { UploadModal } from "src/components/UploadModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { convertToBytes } from "src/utils/format";
@@ -466,9 +467,11 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
           <Space>
             {
               i.type === "FILE" && (
-                <a href={urlToDownload(cluster.id, join(path, i.name), true, publicConfig.BASE_PATH)}>
-                  {t(p("download"))}
-                </a>
+                <Tooltip title={t(p("download"))}>
+                  <a href={urlToDownload(cluster.id, join(path, i.name), true, publicConfig.BASE_PATH)}>
+                    <DownloadIcon />
+                  </a>
+                </Tooltip>
               )
             }
             <RenameLink
@@ -476,31 +479,33 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
               path={join(path, i.name)}
               reload={reload}
             >
-              {t(p("rename"))}
+              <Tooltip title={t(p("rename"))}>
+                <RenameIcon />
+              </Tooltip>
             </RenameLink>
-            <a onClick={() => {
-              const fullPath = join(path, i.name);
-              modal.confirm({
-                title: t(p("confirmDelTitle")),
-                // icon: < />,
-                content: `${t(p("confirmDelTitle"))}${fullPath}？`,
-                okText: t("button.confirmButton"),
-                onOk: () => {
-                  deleteMutation.mutate({
-                    target: i.type, clusterId: cluster.id, path: fullPath,
-                  }, {
-                    onSuccess: () => {
-                      message.success(t(p("delSuccessful")));
-                      resetSelectedAndOperation();
-                      reload();
-                    },
-                  });
-                },
-              });
-            }}
-            >
-              {t("button.deleteButton")}
-            </a>
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon onClick={() => {
+                const fullPath = join(path, i.name);
+                modal.confirm({
+                  title: t(p("confirmDelTitle")),
+                  // icon: < />,
+                  content: `${t(p("confirmDelTitle"))}${fullPath}？`,
+                  okText: t("button.confirmButton"),
+                  onOk: () => {
+                    deleteMutation.mutate({
+                      target: i.type, clusterId: cluster.id, path: fullPath,
+                    }, {
+                      onSuccess: () => {
+                        message.success(t(p("delSuccessful")));
+                        resetSelectedAndOperation();
+                        reload();
+                      },
+                    });
+                  },
+                });
+              }}
+              />
+            </Tooltip>
           </Space>
         )}
       />

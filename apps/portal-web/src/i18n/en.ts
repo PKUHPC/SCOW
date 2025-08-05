@@ -592,7 +592,7 @@ export default {
       },
       NotificationCard: {
         message: "Message",
-        check: "Check",
+        check: "Check All >",
         noMessage: "There are currently no unread messages",
         fetchNotifError: "Failed to get unread messages",
       },
@@ -649,10 +649,10 @@ export default {
         confirmTransferContent: "Are you sure to transfer from {} to {}?",
         confirmOk: "Confirm",
         transferStartInfo: "Transfer task has started",
-        transferTitle: "Cross-cluster file transfer",
+        transferTitle: "File transfer",
       },
       currentTransferInfo: {
-        checkTransfer: "Check file transfer progress",
+        checkTransfer: "Transfer progress",
       },
     },
     jobs: {

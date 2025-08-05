@@ -144,18 +144,18 @@ export const ChangeJobTimeLimitModal: React.FC<Props> = ({ open, onClose, data, 
           Array.from(dataGroupedByCluster.entries()).map(([cluster, data]) => (
             <>
               <Form.Item label={t(pCommon("cluster"))}>
-                <strong>{getI18nConfigCurrentText(cluster.name, languageId)}</strong>
+                <span>{getI18nConfigCurrentText(cluster.name, languageId)}</span>
               </Form.Item>
               <Form.Item label={t(pCommon("workId"))}>
-                <strong>
+                <span>
                   {data.map((x) => x.name).join(", ")}
                   <span>
                     &nbsp;&nbsp;(ID:&nbsp;{data.map((x) => x.jobId).join(", ")})
                   </span>
-                </strong>
+                </span>
               </Form.Item>
               <Form.Item label={t(p("currentTimeLimit"))}>
-                <strong>{data.map((x) => x.timeLimit).join(", ")}</strong>
+                <span>{data.map((x) => x.timeLimit).join(", ")}</span>
               </Form.Item>
               <Divider />
             </>
@@ -197,7 +197,7 @@ export const ChangeJobTimeLimitModal: React.FC<Props> = ({ open, onClose, data, 
         arrayContainsElement(completionStatus?.current?.failed)
           ? (
             <Form.Item label={t(p("modifyWork"))}>
-              <strong>{completionStatus.current.failed.map((x) => x.jobId).join(", ")}</strong>
+              <span>{completionStatus.current.failed.map((x) => x.jobId).join(", ")}</span>
             </Form.Item>
           ) : undefined
       }

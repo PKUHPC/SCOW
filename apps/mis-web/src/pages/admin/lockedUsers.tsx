@@ -1,11 +1,12 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Form, Input, Table } from "antd";
+import { App, Button, Form, Input, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { NextPage } from "next";
 import { useCallback, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
+import { UnlockLoginIcon } from "src/assets/operationIcon";
 import { requireAuth } from "src/auth/requireAuth";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { PageTitle } from "src/components/PageTitle";
@@ -94,27 +95,28 @@ export const LockedUsersPage: NextPage =
             title={t(pCommon("operation"))}
             fixed="right"
             render={(_, r) => (
-              <a onClick={() => {
-                modal.confirm({
-                  title: t(p("confirmUlock")),
-                  icon: <ExclamationCircleOutlined />,
-                  content: `${t(p("confirmUlockText1"))}${r.name}（ID：${r.identityId}）
+              <Tooltip title={t(p("unlockLogin"))}>
+                <UnlockLoginIcon
+                  onClick={() => {
+                    modal.confirm({
+                      title: t(p("confirmUlock")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: `${t(p("confirmUlockText1"))}${r.name}（ID：${r.identityId}）
                     ${t(p("confirmUlockText2"))}(${t(p("oneChancetoLogin"))})`,
-                  onOk: async () => {
-                    await api.unlockUser({ body: { identityId: r.identityId } })
-                      .httpError(404, () => { message.error(`${t(p("userNotFound"))}`); })
-                      .httpError(501, () => { message.error("featureUnavailable"); })
-                      .then(() => {
-                        message.success(`${t(p("unlockSuccess"))}`);
-                        reload();
-                      })
-                      .catch(() => { message.error(`${t(p("unlockFail"))}`); });
-                  },
-                });
-              }}
-              >
-                {t(p("unlockLogin"))}
-              </a>
+                      onOk: async () => {
+                        await api.unlockUser({ body: { identityId: r.identityId } })
+                          .httpError(404, () => { message.error(`${t(p("userNotFound"))}`); })
+                          .httpError(501, () => { message.error("featureUnavailable"); })
+                          .then(() => {
+                            message.success(`${t(p("unlockSuccess"))}`);
+                            reload();
+                          })
+                          .catch(() => { message.error(`${t(p("unlockFail"))}`); });
+                      },
+                    });
+                  }}
+                />
+              </Tooltip>
             )}
           />
         </Table>

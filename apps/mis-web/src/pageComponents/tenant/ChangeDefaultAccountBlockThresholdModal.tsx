@@ -75,7 +75,7 @@ export const ChangeDefaultAccountBlockThresholdModal: React.FC<Props> = ({
         initialValues={{ blockThresholdAmount: moneyToString(currentAmount) }}
       >
         <Form.Item label={t(pCommon("tenantName"))}>
-          <strong>{tenantName}</strong>
+          <span>{tenantName}</span>
         </Form.Item>
         <Form.Item name="blockThresholdAmount" label={t(p("setAmount"))} required>
           <InputNumber

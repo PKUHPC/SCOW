@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { ConnectIcon } from "src/icons/operationIcon";
 import { type ConnectToAppSchema } from "src/pages/api/app/connectToApp";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -199,8 +200,11 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       disabled={!isConnected}
       onClick={onClick}
       message={session.appType?.toLowerCase() === "shadowdesk" ? t(p("notReady")) : t(p("portNotOpen"))}
+      abledMessage={t(p("connect"))}
     >
-      {t(p("connect"))}
+      { isConnected ? (
+        <ConnectIcon />
+      ) : <ConnectIcon disabled />}
     </DisabledA>
   );
 };

@@ -31,7 +31,6 @@ export const SortableItem: FC<EntryCardItemProps> = (props) => {
     transition: transition || undefined,
     boxShadow: "none",
     borderRadius:"8px",
-    fontWeight:700,
   };
 
   return (
