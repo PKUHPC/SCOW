@@ -84,7 +84,7 @@ export const getAlgorithmVersions = procedure
 export const getMultipleAlgorithmVersions = procedure
   .meta({
     openapi: {
-      method: "GET",
+      method: "POST",
       path: "/algorithms/versions",
       tags: ["algorithmVersion"],
       summary: "get multiple algorithmVersions",
@@ -92,12 +92,7 @@ export const getMultipleAlgorithmVersions = procedure
   })
   .input(z.object({
     ...paginationSchema.shape,
-    algorithmIds: z.string()
-      .transform((val) => val.split(",").map(Number))
-      .refine((arr) => arr.every((num) => !isNaN(num)), {
-        message: "algorithmIds must be a comma-separated list of numbers",
-      })
-    ,
+    algorithmIds: z.array(z.number()),
     isPublic:booleanQueryParam().optional(),
   }))
   .output(

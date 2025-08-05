@@ -71,11 +71,11 @@ export function useDataVersionOptions<T>(
   } {
 
   const { data: privateVersions, isLoading: isPrivateDataVersionsLoading } = queryHook({
-    [`${dataType}Ids`]: privateIds.join(","),
+    [`${dataType}Ids`]: privateIds,
   });
 
   const { data: publicVersions, isLoading: isPublicDataVersionsLoading } = queryHook({
-    [`${dataType}Ids`]: publicIds.join(","), isPublic:"true",
+    [`${dataType}Ids`]: publicIds, isPublic:"true",
   });
 
   const privateDataVersionOptions = useMemo(() => {

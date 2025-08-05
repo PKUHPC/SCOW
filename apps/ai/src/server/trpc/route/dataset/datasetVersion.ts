@@ -92,7 +92,7 @@ export const versionList = procedure
 export const getMultipleDatasetVersions = procedure
   .meta({
     openapi: {
-      method: "GET",
+      method: "POST",
       path: "/datasets/versions",
       tags: ["datasetVersion"],
       summary: "Get multiple datasetVersions",
@@ -100,12 +100,7 @@ export const getMultipleDatasetVersions = procedure
   })
   .input(z.object({
     ...paginationSchema.shape,
-    datasetIds: z.string()
-      .transform((val) => val.split(",").map(Number))
-      .refine((arr) => arr.every((num) => !isNaN(num)), {
-        message: "datasetIds must be a comma-separated list of numbers",
-      })
-    ,
+    datasetIds: z.array(z.number()),
     isPublic: booleanQueryParam().optional(),
   }))
   .output(z.array(z.object({ items: z.array(DatasetVersionListSchema), count: z.number() })))

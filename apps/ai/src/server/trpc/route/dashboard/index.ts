@@ -164,7 +164,7 @@ export const dashboard = router({
   getAllClustersInfo: authProcedure
     .meta({
       openapi: {
-        method: "GET",
+        method: "POST",
         path: "/dashboard/clusters",
         tags: ["dashboard"],
         summary: "Get all clusters info",
@@ -213,7 +213,7 @@ export const dashboard = router({
   getAllClustersNodesInfo: authProcedure
     .meta({
       openapi: {
-        method: "GET",
+        method: "POST",
         path: "/dashboard/clusters/nodes",
         tags: ["dashboard"],
         summary: "Get all clusters nodes info",
