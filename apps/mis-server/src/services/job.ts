@@ -28,6 +28,7 @@ import {
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { createPriceMap, getActiveBillingItems } from "src/bl/PriceMap";
+import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
@@ -277,6 +278,8 @@ export const jobServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
+      const isAiCluster = configClusters[cluster].ai?.enabled;
+
       const reply = await server.ext.clusters.callOnOne(
         cluster,
         logger,
@@ -289,7 +292,9 @@ export const jobServiceServer = plugin((server) => {
 
           const runningJobs = await asyncClientCall(client.job, "getJobs", {
             fields,
-            filter: { users: userId ? [userId] : [], accounts: accountNames, states: ["RUNNING", "PENDING","QUEUED"]},
+            filter: { users: userId ? [userId] : [], accounts: accountNames,
+              // ai集群中才有 QUEUED 状态的作业
+              states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])]},
           }).then((x) => x.jobs);
 
           if (jobIdList.length > 0) {
