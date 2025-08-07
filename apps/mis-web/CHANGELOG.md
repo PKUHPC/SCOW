@@ -1,5 +1,34 @@
 # @scow/mis-web
 
+## 1.9.1
+
+### Patch Changes
+
+- ff956a2: 增加表单 tenant_default_app_removed_list, 增加租户默认授权应用的功能
+- 05e24b2: 仪表盘、表单 UI 优化、更换字体、table 表格操作项更换为 icon
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- 20e3d50: 显示 QUEUED 状态的作业
+- 0dcc325: 修复资源管理在 mis-web 下的可选配置判定及部署文档参数错误
+- d10f80f: ai 镜像、算法、数据集和模型操作日志修改
+- 3b724ac: ai footer 层级优化、dashboard entry ui 优化
+- Updated dependencies [3545301]
+- Updated dependencies [ff956a2]
+- Updated dependencies [05e24b2]
+- Updated dependencies [2dd5f4c]
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+- Updated dependencies [3b724ac]
+  - @scow/lib-web@1.5.1
+  - @scow/lib-operation-log@2.2.1
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-notification@1.0.11
+  - @scow/lib-scow-resource@0.2.10
+  - @scow/protos@1.0.26
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.0
 
 ### Minor Changes

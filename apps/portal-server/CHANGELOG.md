@@ -1,5 +1,28 @@
 # @scow/portal-server
 
+## 1.9.1
+
+### Patch Changes
+
+- 54c35c1: HPC 提交作业时采用 getAvailablePartitions 单一逻辑接口
+- 25d6396: 删除高性能计算与人工智能系统中交互式应用 10s 自动刷新 UI,
+  添加 ended_sessions.json 文件，存储已结束的交互式应用 session 信息，优化后台查询性能
+- 308256e: 修复获取交互式应用列表时，当 appDir 中有文件时会无法加载数据的问题
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [25d6396]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+  - @scow/lib-server@1.4.1
+  - @scow/config@1.8.1
+  - @scow/scowd-protos@0.3.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-scow-resource@0.2.10
+  - @scow/lib-scowd@1.2.1
+  - @scow/protos@1.0.26
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.24
+
 ## 1.9.0
 
 ### Minor Changes

@@ -1,5 +1,20 @@
 # @scow/audit-server
 
+## 2.3.19
+
+### Patch Changes
+
+- Updated dependencies [ff956a2]
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+  - @scow/lib-operation-log@2.2.1
+  - @scow/lib-server@1.4.1
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+  - @scow/protos@1.0.26
+
 ## 2.3.18
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @scow/lib-web
 
+## 1.5.1
+
+### Patch Changes
+
+- 3545301: 量子作业列表与详情显示增加比特秒以及一些 UI 细节
+- 05e24b2: 仪表盘、表单 UI 优化、更换字体、table 表格操作项更换为 icon
+- 2dd5f4c: 量子链接功能与 UI 细节完善
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- 3b724ac: ai footer 层级优化、dashboard entry ui 优化
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+  - @scow/config@1.8.1
+  - @scow/protos@1.0.26
+
 ## 1.5.0
 
 ### Minor Changes

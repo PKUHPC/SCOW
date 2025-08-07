@@ -1,5 +1,16 @@
 # @scow/grpc-api
 
+## 1.23.0
+
+### Minor Changes
+
+- ff956a2: 增加默认授权应用相关接口: getTenantApps, updateDefaultApp
+  增加默认授权应用相关日志 message: AddToDefaultApps, RemoveFromDefaultApps
+
+### Patch Changes
+
+- d10f80f: ai 镜像、算法、数据集和模型操作日志修改
+
 ## 1.22.0
 
 ### Minor Changes

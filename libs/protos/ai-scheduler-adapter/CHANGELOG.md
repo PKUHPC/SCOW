@@ -1,5 +1,12 @@
 # @scow/ai-scheduler-adapter-protos
 
+## 1.1.2
+
+### Patch Changes
+
+- 7547140: AI 训练推理增加自定义环境变量
+- d83b20f: AI 训练增加 TensorBoard 及查看
+
 ## 1.1.1
 
 ### Patch Changes

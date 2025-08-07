@@ -1,5 +1,12 @@
 # @scow/lib-operation-log
 
+## 2.2.1
+
+### Patch Changes
+
+- ff956a2: 增加表单 tenant_default_app_removed_list, 增加租户默认授权应用的功能
+  - @scow/protos@1.0.26
+
 ## 2.2.0
 
 ### Minor Changes

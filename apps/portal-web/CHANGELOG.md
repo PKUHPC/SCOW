@@ -1,5 +1,35 @@
 # @scow/portal-web
 
+## 1.9.1
+
+### Patch Changes
+
+- f7ea255: 修改创建桌面/连接桌面时无集群权限的错误状态码
+- 05e24b2: 仪表盘、表单 UI 优化、更换字体、table 表格操作项更换为 icon
+- 4aa0263: 新增融合接口，减少仪表盘请求
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- 3d18c90: 在创建桌面时增加已授权集群的校验逻辑
+- 25d6396: 删除高性能计算与人工智能系统中交互式应用 10s 自动刷新 UI,
+  添加 ended_sessions.json 文件，存储已结束的交互式应用 session 信息，优化后台查询性能
+- 3b724ac: ai footer 层级优化、dashboard entry ui 优化
+- Updated dependencies [3545301]
+- Updated dependencies [ff956a2]
+- Updated dependencies [05e24b2]
+- Updated dependencies [2dd5f4c]
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+- Updated dependencies [3b724ac]
+  - @scow/lib-web@1.5.1
+  - @scow/lib-operation-log@2.2.1
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-notification@1.0.11
+  - @scow/lib-scow-resource@0.2.10
+  - @scow/protos@1.0.26
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.0
 
 ### Minor Changes

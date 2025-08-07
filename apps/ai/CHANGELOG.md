@@ -1,5 +1,51 @@
 # @scow/ai
 
+## 0.4.1
+
+### Patch Changes
+
+- ff956a2: 增加表单 tenant_default_app_removed_list, 增加租户默认授权应用的功能
+- 664a30c: ai 带有复杂对象的查询请求改成 POST
+- 7547140: AI 训练推理增加自定义环境变量
+- b90381d: ai 分布式训练交互优化 和 修复 ai 事件信息过多或者翻页时显示不全
+- 05e24b2: 仪表盘、表单 UI 优化、更换字体、table 表格操作项更换为 icon
+- 4aa0263: 新增融合接口，减少仪表盘请求
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- dbcc148: ai 应用训练推理增加优先级
+- 20e3d50: 修复再次提交作业时镜像的回显；未结束作业列表 pending 状态的作业显示申请的资源数
+- d83b20f: AI 训练增加 TensorBoard 及查看
+- 06e8d98: 正在运行镜像被删除后，未结束作业列表报错
+- dbcc148: image 增加类型、端口、命令字段，镜像操作和提交作业相应修改
+- 25d6396: 删除高性能计算与人工智能系统中交互式应用 10s 自动刷新 UI,
+  添加 ended_sessions.json 文件，存储已结束的交互式应用 session 信息，优化后台查询性能
+- 44af4cf: ai 提交应用 formData 无传递自定义的参数
+- d10f80f: ai 镜像、算法、数据集和模型操作日志修改
+- 3b724ac: ai footer 层级优化、dashboard entry ui 优化
+- Updated dependencies [3545301]
+- Updated dependencies [ff956a2]
+- Updated dependencies [7547140]
+- Updated dependencies [05e24b2]
+- Updated dependencies [2dd5f4c]
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [25d6396]
+- Updated dependencies [d83b20f]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+- Updated dependencies [3b724ac]
+  - @scow/lib-web@1.5.1
+  - @scow/lib-operation-log@2.2.1
+  - @scow/ai-scheduler-adapter-protos@1.1.2
+  - @scow/lib-server@1.4.1
+  - @scow/config@1.8.1
+  - @scow/scowd-protos@0.3.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-scow-resource@0.2.10
+  - @scow/lib-scowd@1.2.1
+  - @scow/protos@1.0.26
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.24
+
 ## 0.4.0
 
 ### Minor Changes

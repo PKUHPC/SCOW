@@ -1,5 +1,26 @@
 # @scow/mis-server
 
+## 1.9.1
+
+### Patch Changes
+
+- ff956a2: 增加表单 tenant_default_app_removed_list, 增加租户默认授权应用的功能
+- 6904a2a: 管理系统中 queued 状态作业只出现在 ai 集群中
+- 20e3d50: 显示 QUEUED 状态的作业
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+  - @scow/lib-server@1.4.1
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-hook@1.0.26
+  - @scow/lib-notification@1.0.11
+  - @scow/lib-scow-resource@0.2.10
+  - @scow/lib-scowd@1.2.1
+  - @scow/protos@1.0.26
+  - @scow/lib-scheduler-adapter@1.1.24
+
 ## 1.9.0
 
 ### Minor Changes

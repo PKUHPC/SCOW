@@ -1,5 +1,26 @@
 # @scow/resource
 
+## 0.3.1
+
+### Patch Changes
+
+- 05e24b2: 仪表盘、表单 UI 优化、更换字体、table 表格操作项更换为 icon
+- Updated dependencies [3545301]
+- Updated dependencies [05e24b2]
+- Updated dependencies [2dd5f4c]
+- Updated dependencies [562d068]
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+- Updated dependencies [3b724ac]
+  - @scow/lib-web@1.5.1
+  - @scow/lib-server@1.4.1
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+  - @scow/lib-hook@1.0.26
+  - @scow/protos@1.0.26
+  - @scow/lib-scheduler-adapter@1.1.24
+
 ## 0.3.0
 
 ### Minor Changes

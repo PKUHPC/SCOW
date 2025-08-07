@@ -1,5 +1,17 @@
 # @scow/lib-server
 
+## 1.4.1
+
+### Patch Changes
+
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+  - @scow/config@1.8.1
+  - @scow/protos@1.0.26
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.24
+
 ## 1.4.0
 
 ### Minor Changes

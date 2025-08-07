@@ -1,5 +1,13 @@
 # @scow/gateway
 
+## 1.9.1
+
+### Patch Changes
+
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- Updated dependencies [44af4cf]
+  - @scow/lib-config@1.0.4
+
 ## 1.9.0
 
 ## 1.8.5

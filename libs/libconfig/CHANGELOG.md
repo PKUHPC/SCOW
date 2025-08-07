@@ -1,5 +1,11 @@
 # @scow/lib-config
 
+## 1.0.4
+
+### Patch Changes
+
+- 44af4cf: ai 提交应用 formData 无传递自定义的参数
+
 ## 1.0.3
 
 ### Patch Changes

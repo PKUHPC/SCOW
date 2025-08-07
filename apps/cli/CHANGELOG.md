@@ -1,5 +1,18 @@
 # @scow/cli
 
+## 1.9.1
+
+### Patch Changes
+
+- 2dd5f4c: 量子链接功能与 UI 细节完善
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- e6cf7d0: 使量子作业按比特秒计价从配置文件定义
+- Updated dependencies [562d068]
+- Updated dependencies [e6cf7d0]
+- Updated dependencies [44af4cf]
+  - @scow/config@1.8.1
+  - @scow/lib-config@1.0.4
+
 ## 1.9.0
 
 ### Patch Changes

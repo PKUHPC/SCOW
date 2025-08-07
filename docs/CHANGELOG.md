@@ -1,5 +1,16 @@
 # @scow/docs
 
+## 1.4.12
+
+### Patch Changes
+
+- ff956a2: 增加表单 tenant_default_app_removed_list, 增加租户默认授权应用的功能
+- 562d068: 增加量子系统，包含提交展示量子作业、使用 jupyter 交互式应用、量子计费、使用帮助等基础功能
+- 0dcc325: 修复资源管理在 mis-web 下的可选配置判定及部署文档参数错误
+- 7547140: 增加 ai 框架文档
+- 3b724ac: ai footer 层级优化、dashboard entry ui 优化
+- e6cf7d0: 使量子作业按比特秒计价从配置文件定义
+
 ## 1.4.11
 
 ### Patch Changes

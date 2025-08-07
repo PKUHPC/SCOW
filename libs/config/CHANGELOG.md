@@ -1,5 +1,14 @@
 # @scow/config
 
+## 1.8.1
+
+### Patch Changes
+
+- 562d068: 增加 quantum/config.yaml，配置量子系统相关事项，文档相对路径：/SCOW/docs/deploy/config/quantum/intro
+- e6cf7d0: 使量子作业按比特秒计价从配置文件定义
+- Updated dependencies [44af4cf]
+  - @scow/lib-config@1.0.4
+
 ## 1.8.0
 
 ### Minor Changes
