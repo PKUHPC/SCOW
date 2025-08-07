@@ -48,9 +48,14 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
     queryCache: new QueryCache({
       onError: (error, query) => {
         const { data, message: msg } = error as TRPCClientError<AppRouter>;
+        const silent = query?.meta?.silent;
+
         if (data?.code && data?.code === "UNAUTHORIZED") {
           window.location.href = join(props.basePath, "/api/auth");
-        } else if (msg) {
+        } else if (silent) {
+          return;
+        }
+        else if (msg) {
           message.error(msg);
         } else if (data?.code && query?.meta?.[data?.code]) {
           const msg = query?.meta?.[data?.code] as string;

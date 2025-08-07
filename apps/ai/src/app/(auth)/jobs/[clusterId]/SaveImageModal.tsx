@@ -74,7 +74,9 @@ export const SaveImageModal: React.FC<Props> = (
       // 作业参数获取完且使用的本地镜像
       enabled: !isGetJobParamsLoading && !!imageId,
       retry:false,
-      onError() {},
+      meta: {
+        silent: true,
+      },
     },
   );
 
