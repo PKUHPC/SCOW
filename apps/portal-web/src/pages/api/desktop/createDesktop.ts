@@ -79,7 +79,7 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
   // 验证当前集群是否为用户关联账户的已授权集群
   const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
   if (!isClusterAssigned) {
-    return { 401: { code: "INVALID_CLUSTER" as const } };
+    return { 400: { code: "INVALID_CLUSTER" as const } };
   }
 
   const client = getClient(DesktopServiceClient);

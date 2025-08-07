@@ -41,7 +41,7 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
     // 功能没有启用
     501: Type.Object({ code: Type.Literal("CLUSTER_LOGIN_DESKTOP_NOT_ENABLED") }),
     // 无效集群
-    401: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
+    400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
   },
 });
 
@@ -65,7 +65,7 @@ export default /* #__PURE__*/route(LaunchDesktopSchema, async (req, res) => {
   // 验证当前集群是否为用户关联账户的已授权集群
   const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
   if (!isClusterAssigned) {
-    return { 401: { code: "INVALID_CLUSTER" as const } };
+    return { 400: { code: "INVALID_CLUSTER" as const } };
   }
 
   const client = getClient(DesktopServiceClient);
