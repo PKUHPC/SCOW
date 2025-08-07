@@ -82,24 +82,28 @@ export function createJobManager(orm: MikroORM) {
                 return;
               }
 
-              const MIN_BALANCE = 50;
+              const MIN_BALANCE = new Decimal(50);
 
-              const balance = estimateData.data.balance ? estimateData.data.balance * 1e-6 : undefined;
+              const balance = estimateData.data.balance ?
+                new Decimal(estimateData.data.balance).times("0.000001") : undefined;
 
-              if (balance && balance < MIN_BALANCE) {
+              if (balance?.isLessThan(MIN_BALANCE)) {
                 logger.warn("Not enough balance for job", balance);
               }
 
               const client = getMisClient(ChargingServiceClient);
 
-              const qits = new Decimal(estimateData.data.qits);
+              const qits = new Decimal(estimateData.data.qits).times("0.000001");
 
-              const amountHighPrecision = qits.times("0.000001")
-                .times(quantumConfig.billing.defaultBitSecondPrice);
+              const amountHighPrecision = qits.times(quantumConfig.billing.defaultBitSecondPrice);
 
               const amount = numberToMoney(amountHighPrecision.toNumber());
 
               if (job.state === "completed") {
+
+                job.qits = qits;
+
+                await em.persistAndFlush(job);
 
                 const comment = parsePlaceholder(quantumConfig.taskChargeComment, job);
 

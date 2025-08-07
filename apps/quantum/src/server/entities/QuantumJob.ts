@@ -1,5 +1,7 @@
 import { EntitySchema, JsonType } from "@mikro-orm/core";
+import { Decimal } from "@scow/lib-decimal";
 import { DetailTask, type TaskStates } from "src/models/task";
+import { DecimalType } from "src/server/utils/decimal";
 
 export class QuantumJob {
   id!: number;
@@ -21,6 +23,8 @@ export class QuantumJob {
 
   lastSyncTime: Date;
 
+  qits?: Decimal;
+
   constructor(init: {
     jobId: string;
     submitTime: Date;
@@ -30,6 +34,7 @@ export class QuantumJob {
     tenantName: string;
     info: DetailTask;
     lastSyncTime: Date;
+    qits?: Decimal;
   }) {
     this.jobId = init.jobId;
     this.submitTime = init.submitTime;
@@ -39,6 +44,7 @@ export class QuantumJob {
     this.accountName = init.accountName;
     this.state = init.state;
     this.lastSyncTime = init.lastSyncTime;
+    this.qits = init.qits;
   }
 
 }
@@ -55,6 +61,7 @@ export const quantumJobSchema = new EntitySchema<QuantumJob>({
     tenantName: { type: "string", nullable: false, index: true },
     accountName: { type: "string", nullable: false, index: true },
     lastSyncTime: { type: "datetime", index: true },
+    qits: { type: DecimalType, index: true, nullable: true },
   },
 });
 

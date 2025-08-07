@@ -1,11 +1,14 @@
 "use client";
 
-import { Button, Form, Input, InputNumber, Space, Table, TableColumnsType } from "antd";
+import { Decimal } from "@scow/lib-decimal";
+import { Button, Form, Input, InputNumber, Space, Table, TableColumnsType, Tooltip } from "antd";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { DetailIcon } from "src/icons/headerIcons/headerIcons";
 import { EMPTY_STRING } from "src/models/common";
+import { statusColors } from "src/models/job";
 import { FindTask } from "src/models/task";
 import { formatDateTime, formatTime } from "src/utils/datetime";
 import { trpc } from "src/utils/trpc";
@@ -18,6 +21,7 @@ interface FilterForm {
   jobId: number | undefined,
   qubits: number | undefined,
   shots: number | undefined,
+  accountName: string | undefined,
 }
 
 export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
@@ -43,6 +47,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       jobId: undefined,
       qubits: undefined,
       shots: undefined,
+      accountName: undefined,
     };
   });
 
@@ -53,7 +58,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
     {
       title: t(p("jobId")),
       dataIndex: "jobId",
-      width: "60px",
+      width: "50px",
       ...(isDashboard
         ? {}
         : {
@@ -69,7 +74,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
     {
       title: t(p("device")),
       dataIndex: "device",
-      width: "60px",
+      width: "50px",
       ellipsis: true,
     },
     {
@@ -81,7 +86,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
     {
       title: "Qubits",
       dataIndex: "qubits",
-      width: "30px",
+      width: "20px",
       render: (qubits?: number) => qubits ?? EMPTY_STRING,
     },
     {
@@ -102,9 +107,19 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       render: (duration: number) => duration ? formatTime(duration) : EMPTY_STRING,
     },
     {
+      title: t(p("qits")),
+      dataIndex: "qits",
+      width: "60px",
+      render: (qits?: Decimal) => qits?.toString() ?? EMPTY_STRING,
+    },
+    {
       title: t(p("state")),
       dataIndex: "state",
       width: "30px",
+      render: (state: string) => (
+        <span style={{ color: statusColors[state.toUpperCase()] }}>
+          {state.toUpperCase()}</span>
+      ),
     },
     ...(isDashboard
       ? []
@@ -114,7 +129,9 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
           width: "30px",
           render: (r: FindTask) => (
             <Link href={{ pathname: `/quantum/${r.id}/detail` }}>
-              {t(p("detail"))}
+              <Tooltip title={t(p("detail"))}>
+                <DetailIcon />
+              </Tooltip>
             </Link>
           ),
         },
@@ -129,7 +146,8 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       const dataMatchedJobId = !query.jobId || (Number(x.jobId) === query.jobId);
       const dataMatchedQubits = !query.qubits || (x.qubits === query.qubits);
       const dataMatchedShots = !query.shots || (x.shots === query.shots);
-      return dataMatchedJobId && dataMatchedQubits && dataMatchedShots;
+      const dataMatchedAccountName = !query.accountName || (x.account === query.accountName.trim());
+      return dataMatchedJobId && dataMatchedQubits && dataMatchedShots && dataMatchedAccountName;
     }).map((x) => {
       const processedX = { ...x };
 
@@ -165,6 +183,9 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
             >
               <Form.Item label={t(p("jobId"))} name="jobId">
                 <InputNumber style={{ minWidth: "160px" }} />
+              </Form.Item>
+              <Form.Item label={t(p("account"))} name="accountName">
+                <Input style={{ minWidth: "160px" }} />
               </Form.Item>
               <Form.Item label="Qubits" name="qubits">
                 <InputNumber style={{ minWidth: "160px" }} />

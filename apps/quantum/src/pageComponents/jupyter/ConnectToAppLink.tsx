@@ -6,6 +6,7 @@ import { join } from "path";
 import { useEffect } from "react";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { ConnectIcon } from "src/icons/headerIcons/headerIcons";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { trpc } from "src/utils/trpc";
 
@@ -95,6 +96,15 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   };
 
   return (
-    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))}>{t(p("connect"))}</DisabledA>
+    <DisabledA
+      disabled={!data}
+      onClick={onClick}
+      message={t(p("notReady"))}
+      abledMessage={t(p("connect"))}
+    >
+      { data ? (
+        <ConnectIcon />
+      ) : <ConnectIcon disabled />}
+    </DisabledA>
   );
 };

@@ -256,12 +256,18 @@ export const JobDetailPage: NextPage = () => {
     },
     {
       key: "9",
+      label: t(p("qits")),
+      span: 2,
+      children: data?.task.qits?.toString() ?? EMPTY_STRING,
+    },
+    {
+      key: "10",
       label: t(p("runDur")),
       span: 2,
       children: data?.task.duration ? formatTime(data.task.duration) : EMPTY_STRING,
     },
     {
-      key: "10",
+      key: "11",
       label: t(p("qosOptions")),
       children: (() => {
         const device = data?.task?.device;

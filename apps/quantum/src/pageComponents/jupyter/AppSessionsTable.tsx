@@ -12,7 +12,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { usePublicConfig } from "src/context/PublicConfigContext";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { calculateAppRemainingTime, compareState } from "src/models/job";
+import { CancelIcon, EndIcon } from "src/icons/headerIcons/headerIcons";
+import { calculateAppRemainingTime, compareState, statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/jupyter/ConnectToAppLink";
 import { trpc } from "src/utils/trpc";
 
@@ -167,12 +168,12 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
         record.reason ? (
           <Tooltip title={record.reason}>
             <Space>
-              {record.state}
+              <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state.toUpperCase()}</span>
               <ExclamationCircleOutlined />
             </Space>
           </Tooltip>
         ) : (
-          <span>{record.state}</span>
+          <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state.toUpperCase()}</span>
         )
       ),
       ...(isDashboard
@@ -226,7 +227,9 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
               refreshToken={connectivityRefreshToken}
             />
             <Popconfirm {...popconfirmProps}>
-              <a>{t("button.finishButton")}</a>
+              <Tooltip title={t("button.finishButton")}>
+                <EndIcon />
+              </Tooltip>
             </Popconfirm>
           </>
         );
@@ -235,7 +238,9 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
       if (["PENDING", "SUSPENDED"].includes(record.state)) {
         return (
           <Popconfirm {...popconfirmProps}>
-            <a>{t("button.cancelButton")}</a>
+            <Tooltip title={t("button.cancelButton")}>
+              <CancelIcon />
+            </Tooltip>
           </Popconfirm>
         );
       }

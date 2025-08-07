@@ -4,6 +4,7 @@ import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { UserInfo } from "@scow/lib-web/build/layouts/base/types";
 import { DarkModeCookie, DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
+import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
 import { theme } from "antd";
 import { join } from "path";
 import React from "react";
@@ -56,7 +57,7 @@ const ClientLayoutLoaded = ({
     {
       icon: <QuantumIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
       href: "",
-      text: t("route.linkTextQuantum"),
+      text: <span style={{ color: token.colorPrimary }}>{t("route.linkTextQuantum")}</span>,
       isActive: true,
     },
     {
@@ -150,6 +151,7 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
           }}
           locale={systemInitialLanguage}
         >
+          <GlobalStyle />
           <ClientLayoutLoaded
             basePath={publicConfigQuery.data.basePath}
             user={userQuery.data.user}

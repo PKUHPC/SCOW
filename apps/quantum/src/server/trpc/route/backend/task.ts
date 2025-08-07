@@ -224,6 +224,7 @@ export const task = router({
           lastSyncTime: job.lastSyncTime,
           account: job.accountName,
           duration: calculateDuration(job.info.ts),
+          qits: job.qits,
         })),
       };
     }),
@@ -263,6 +264,7 @@ export const task = router({
           submitTime: new Date(task.submitTime.getTime()).toString(),
           account: "", // 这里后续加上账户信息
           duration: calculateDuration(task.info.ts),
+          qits: task.qits,
         }),
       };
     }),

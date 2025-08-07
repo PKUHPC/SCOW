@@ -14,7 +14,7 @@ import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
 
-export const DEFAULT_PRIMARY_COLOR = "#94070A";
+export const DEFAULT_PRIMARY_COLOR = "#B60003";
 
 export const UiConfigSchema = Type.Object({
   footer: Type.Optional(Type.Object({

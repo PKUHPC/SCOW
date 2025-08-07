@@ -10,6 +10,22 @@ import { styled } from "styled-components";
 
 const Container = styled.div`
   white-space: nowrap;
+  &:hover{
+    background-color: #59595914 !important;
+    border-radius: 8px;
+  }
+
+  .ant-select-single {
+    height: 36px;
+  }
+
+  .ant-select-open .ant-select-selection-item{
+    color: ${({ theme }) => theme.token.colorPrimary } !important;
+  }
+
+  .ant-select-selector {
+    color: #434343 !important;
+  }
 `;
 
 interface LanguageSwitcherProps {
@@ -52,11 +68,14 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
   return (
     <Container>
       <Select
-        style={{ border: "1px solid #DEDEDE", borderRadius:"5px", backgroundColor:"#fafafa", fontWeight:700 }}
         value={selectedLanguage}
         onChange={(value) => {
           setLanguage(value);
         }}
+        variant="borderless"
+        suffixIcon={null}
+        popupMatchSelectWidth={false}
+        popupClassName="head-language-select"
       >
         {Object.entries(languageInfo).map(([id, { name }]) => (
           <option key={id} value={id}>

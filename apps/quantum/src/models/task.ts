@@ -1,3 +1,4 @@
+import { Decimal } from "@scow/lib-decimal";
 import { z } from "zod";
 
 export const TaskStates = {
@@ -104,6 +105,7 @@ export const FindTaskSchema = FoundTaskSchema.extend({
   submitTime: z.string(),
   account: z.string(),
   duration: z.number(),
+  qits: z.instanceof(Decimal).optional(),
 });
 export type FindTask = z.infer<typeof FindTaskSchema>;
 
@@ -113,6 +115,7 @@ export const GetTaskDetailSchema = DetailTaskSchema.extend({
   account: z.string(),
   jobId: z.number(),
   duration: z.number(),
+  qits: z.instanceof(Decimal).optional(),
 });
 
 export type GetTaskDetail = z.infer<typeof GetTaskDetailSchema>;
