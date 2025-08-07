@@ -86,37 +86,37 @@ export default function Layout(
   const routes = userRoutes(userQuery.data.user, publicConfig, currentClusters, setDefaultCluster, defaultCluster);
 
   return (
-    <BaseLayout
-      routes={routes}
-      user={userQuery.data.user}
-      headerRightContent={(
-        <>
-          <SystemSelect
-            user={userQuery.data.user}
-            publicConfig={publicConfig}
-          ></SystemSelect>
-          {
-            publicConfig.SYSTEM_LANGUAGE_CONFIG.isUsingI18n ? (
-              <LanguageSwitcher initialLanguage={languageId} />
-            ) : undefined
-          }
-        </>
-      )}
-      versionTag={publicConfig.VERSION_TAG}
-      footerText={footerText}
-    >
-      <PublicConfigContext.Provider value={{
-        user: userQuery.data.user,
-        publicConfig,
-        clusters: publicConfig.CLUSTERS,
-        currentAssociateClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
-        defaultClusterContext:
+    <PublicConfigContext.Provider value={{
+      user: userQuery.data.user,
+      publicConfig,
+      clusters: publicConfig.CLUSTERS,
+      currentAssociateClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
+      defaultClusterContext:
           defaultClusterContext(publicConfig.CLUSTERS ?? [], currentClusterIdsQuery?.data?.clusterIds ?? []),
-      }}
+    }}
+    >
+      <BaseLayout
+        routes={routes}
+        user={userQuery.data.user}
+        headerRightContent={(
+          <>
+            <SystemSelect
+              user={userQuery.data.user}
+              publicConfig={publicConfig}
+            ></SystemSelect>
+            {
+              publicConfig.SYSTEM_LANGUAGE_CONFIG.isUsingI18n ? (
+                <LanguageSwitcher initialLanguage={languageId} />
+              ) : undefined
+            }
+          </>
+        )}
+        versionTag={publicConfig.VERSION_TAG}
+        footerText={footerText}
       >
-        {children}
-      </PublicConfigContext.Provider>
-    </BaseLayout>
-  );
 
+        {children}
+      </BaseLayout>
+    </PublicConfigContext.Provider>
+  );
 }

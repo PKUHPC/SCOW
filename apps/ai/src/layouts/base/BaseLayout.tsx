@@ -12,9 +12,12 @@
 
 "use client";
 
+import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { Grid, Layout } from "antd";
 import { usePathname } from "next/navigation";
 import React, { PropsWithChildren, useMemo } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
+import { useUiConfig } from "src/app/uiContext";
 import { useI18n } from "src/i18n";
 import { Header } from "src/layouts/base/header";
 import { match } from "src/layouts/base/matchers";
@@ -85,6 +88,11 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const languageId = useI18n().currentLanguage.id;
 
+  const { hostname, uiConfig } = useUiConfig();
+  const footerConfig = uiConfig.config.footer;
+  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
+    ?? footerConfig?.defaultText;
+
   return (
     <Root>
       <Header
@@ -109,6 +117,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <Content isDashboard={pathname === "/dashboard"}>
             {children}
           </Content>
+          { pathname === "/dashboard" ?
+            <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} /> : "" }
         </ContentPart>
       </StyledLayout>
     </Root>

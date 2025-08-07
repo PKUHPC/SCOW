@@ -1,10 +1,8 @@
 "use client";
 
-import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
-import { useUiConfig } from "src/app/uiContext";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
 import { Head } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
@@ -41,7 +39,7 @@ const initialPlatformOverview: PlatformOverview = {
 };
 
 export default function Page() {
-  const { publicConfig: { CLUSTERS: currentClusters, VERSION_TAG: versionTag } } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: currentClusters } } = usePublicConfig();
 
   // 使用批量接口获取所有集群信息
   const clusterIds = currentClusters.map((cluster) => cluster.id);
@@ -68,11 +66,6 @@ export default function Page() {
 
   const isLoading = allClustersInfoResult.isLoading ||
     allClustersNodesResult.isLoading || userAssociatedClusterPartitions.isLoading;
-
-  const { hostname, uiConfig } = useUiConfig();
-  const footerConfig = uiConfig.config.footer;
-  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
-    ?? footerConfig?.defaultText;
 
   useEffect(() => {
     if (!isLoading && allClustersInfoResult.data && allClustersNodesResult.data) {
@@ -315,7 +308,6 @@ export default function Page() {
         platformOverview={platformOverview}
         successfulClusters={successfulClusters}
       />
-      <Footer text={footerText} versionTag={versionTag} />
     </DashboardPageContent>
   );
 }

@@ -71,7 +71,7 @@ export const EntryItem: React.FC<Props> = ({ style,
             <img
               src={join(publicConfig.PUBLIC_PATH, logoPath)}
               onError={() => handleImageError(entryBaseName)}
-              style={{ maxWidth:"60px", objectFit:"contain",
+              style={{ maxWidth:"70px", objectFit:"contain",
                 position:"relative", top:`${(entryExtraInfo?.length ?? 0 - 0) * 8}px` }}
             />
           ) : (

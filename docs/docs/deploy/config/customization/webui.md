@@ -34,6 +34,7 @@ LOGO图片的文件名应为`logo`，后缀应为`svg`, `png`或者`jpg`，如�
 ```yaml title="config/ui.yaml"
 # footer部分的配置。可以不填，当不配置时会展示默认页脚。
 # 对portal-web、mis-web和auth的dashboard页面有效
+# 注意：此配置对 v1.8.4 之后版本生效。此前版本配置 defaultText: "" 时展示默认页脚。
 footer:
     # 对所有域名生效的footer文本，当配置defaultText为""时隐藏页脚
     # 文本支持HTML的标签，将会被放在一个div中

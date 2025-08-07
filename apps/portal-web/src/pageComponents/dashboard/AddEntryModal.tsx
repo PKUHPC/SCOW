@@ -46,17 +46,17 @@ const ItemsContainer = styled.div`
   gap: 12px;
   max-height: 650px; /* 设置最大高度 */
   overflow: auto; /* 启用滚动条 */
+  padding: 14px;
 `;
 
 const ItemContainer = styled.div`
   cursor: pointer;
   height: 170px;
   flex: 1 1 200px;
-  max-width: 200px;
+  max-width: 165px;
   padding-bottom: 12px;
   box-shadow: 0px 2px 10px 0px #1C01011A;
   background-color: ${(p) => p.theme.token.colorBgBlur};
-  font-size:18px;
 `;
 
 const p = prefix("pageComp.dashboard.addEntryModal.");

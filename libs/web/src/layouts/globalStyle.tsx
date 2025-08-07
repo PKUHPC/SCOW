@@ -65,7 +65,7 @@ export const GlobalStyle = createGlobalStyle`
     }
   }
 
-  .ant-card-head-title {
+  .ant-card-head-title, .ant-modal-title {
     font-weight: 400 !important;
   }
 
