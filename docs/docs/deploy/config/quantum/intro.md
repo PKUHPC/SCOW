@@ -36,7 +36,7 @@ quantum:
     token: 
 ```
 
-### 编写 AI 服务配置
+### 编写量子服务配置
 
 在`config/quantum/config.yaml`文件中，修改所需要的配置
 
