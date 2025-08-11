@@ -11,8 +11,11 @@
  */
 
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { libGetUserQuotaUsage } from "@scow/lib-web/build/server/storage";
 import { TRPCError } from "@trpc/server";
 import path from "path";
+import { commonConfig } from "src/server/config/common";
+import { config as envConfig } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
@@ -392,11 +395,11 @@ export const file = router({
 
     }),
 
-  decompression: authProcedure
+  decompressFile: authProcedure
     .meta({
       openapi: {
         method: "POST",
-        path: "/file/unzip",
+        path: "/file/decompressFile",
         tags: ["file"],
         summary: "解压文件",
       },
@@ -417,4 +420,60 @@ export const file = router({
       );
     }),
 
+  compressFiles: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/file/compressFiles",
+        tags: ["file"],
+        summary: "压缩文件",
+      },
+    })
+    .input(z.object({ clusterId: z.string(), filePaths: z.array(z.string()), archivePath: z.string() }))
+    .output(z.void())
+    .mutation(async ({ input: { clusterId, filePaths, archivePath }, ctx: { user } }) => {
+
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      return await withFileDriver(
+        { clusterId, user:user.identityId },
+        async (driver) => {
+          await driver.compressFiles(filePaths, archivePath);
+        },
+        logger,
+      );
+    }),
+
+
+  getUserStorageInfo: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/file/storageInfo",
+        tags: ["file"],
+        summary: "获取用户存储配额",
+      },
+    })
+    .input(z.object({
+      clusterId: z.string(),
+      paths: z.string()
+        .transform((val) => val === "" ? [] : val.split(",")),
+    }))
+    .output(z.array(z.object({
+      path:z.string(),
+      quotaBytes:z.number(),
+      usedStorageBytes:z.number(),
+    })))
+    .query(async ({ input: { clusterId, paths }, ctx: { user } }) => {
+
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      const { quotaUsage } = await libGetUserQuotaUsage(
+        user.identityId, clusterId, paths, envConfig.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
+      );
+
+      return quotaUsage;
+    }),
 });

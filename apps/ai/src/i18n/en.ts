@@ -411,6 +411,7 @@ export default {
         partitionsLoading: "Retrieving data...",
         noAssignedPartition: "No Assigned Queue",
         maxTimeTips:"The maximum running time cannot exceed {} hours",
+        requireMaxTime:"Please enter maxTime",
         priority:"Priority",
         trainResults: "Training Results",
         tensorBoardDataPath: "TensorBoard Data Source",
@@ -550,6 +551,14 @@ export default {
         preview: {
           cantPreview: "File too large (maximum {}) or format not supported, please download to view",
         },
+        storageQuota: "Storage quota",
+        usage: "Usage",
+        compress:"Compress",
+        decompress:"Decompress",
+        compressing:"Compressing in progress",
+        decompressing:"Decompressing in progress",
+        decompressButtonDisabledTooltip: "Decompression is only supported for"
+        + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
       },
       fileTable: {
         name: "File Name",
@@ -797,13 +806,27 @@ export default {
       select: "Please Select Cluster",
     },
     decompressionModal: {
-      success: "Decompression Successful",
-      alreadyExisted: "Directory with the same name already exists",
-      decompress: "Decompress File",
-      confirmText: "Are you sure to decompress the file in the same folder?",
+      success: "File decompression successful",
+      failed: "File decompression failed",
+      someFailed: "Some files failed to decompress",
+      toDecompressList: "List of files to be decompressed" +
+      "(files with the same name will be overwritten after decompression)",
+      decompress: "Decompress file",
+      decompressionPath: "Target decompression path",
+    },
+    compressionModal:{
+      success: "File compression successful",
+      failed: "File compression failed",
+      alreadyExisted: "File/Folder already exists",
+      overwrite: "File/Folder {} already exists. Do you want to overwrite?",
+      compress: "File/Folder compression",
+      confirm:"Confirm",
+      toCompressList: "List of files to be compressed",
+      zipFileName: "Target compressed file name",
     },
     mkdirModal: {
-      success: "Creation Successful",
+      success: "Create Successfully",
+      failed:"Create Failed",
       alreadyExisted: "Directory with the same name already exists",
       mkDir: "Create Directory",
       dirPath: "Path to the directory to be created",
@@ -852,5 +875,8 @@ export default {
       light: "Light Mode",
       dark: "Dark Mode",
     },
+  },
+  common: {
+    noSpaceError: "Insufficient storage space, please clean up the space or contact the administrator",
   },
 };

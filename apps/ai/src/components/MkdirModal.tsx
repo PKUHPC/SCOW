@@ -32,6 +32,7 @@ interface FormProps {
 export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.mkdirModal.");
+  const pCommon = prefix("common.");
 
   const { message } = App.useApp();
   const [form] = Form.useForm<FormProps>();
@@ -46,6 +47,12 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
     onError: (e) => {
       if (e.data?.code === "CONFLICT") {
         message.error(t(p("alreadyExisted")));
+      }
+      else if (e.data?.code === "TOO_MANY_REQUESTS") {
+        message.error(t(pCommon("noSpaceError")));
+      }
+      else {
+        message.error(`${t(p("failed"))}: ${e.message}`);
       }
     },
   });

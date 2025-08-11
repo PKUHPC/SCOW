@@ -29,7 +29,7 @@ export default function Page({ params }: { params: { cluster: string; resourceId
 
   const router = useRouter();
 
-  const { cluster, path: pathParts } = params;
+  const { cluster, path: pathParts = []} = params;
 
   const decodePathParts = useMemo(() => {
     return pathParts.map((path) => decodeURIComponent(path));

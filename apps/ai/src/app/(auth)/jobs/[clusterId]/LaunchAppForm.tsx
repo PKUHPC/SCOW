@@ -10,6 +10,7 @@ import { Rule } from "antd/es/form";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { AccountSelector } from "src/components/AccountSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -152,6 +153,7 @@ export const LaunchAppForm = (props: Props) => {
   const { message } = App.useApp();
   const theme = useTheme();
 
+  const { publicConfig } = usePublicConfig();
   const router = useRouter();
 
   const [form] = Form.useForm<FormFields>();
@@ -1864,7 +1866,24 @@ export const LaunchAppForm = (props: Props) => {
             </Form.Item>
           )
         }
-        <Form.Item label={t(p("maxTime"))} name="maxTime" rules={[{ required: true }]}>
+        <Form.Item
+          label={t(p("maxTime"))}
+          name="maxTime"
+          rules={[{
+            validator: (_, value) => {
+              if (!value) {
+                return Promise.reject(new Error(t(p("requireMaxTime"))));
+              }
+
+              if (publicConfig.MAX_JOB_RUNNING_TIME_HOURS !== undefined
+                        && (transformTime(value) > publicConfig.MAX_JOB_RUNNING_TIME_HOURS * 60)) {
+                return Promise.reject(new Error(t(p("maxTimeTips"),
+                  [publicConfig.MAX_JOB_RUNNING_TIME_HOURS.toString()])));
+              }
+              return Promise.resolve();
+            },
+          }]}
+        >
           <AfterInputNumber
             min={1}
             step={1}
@@ -1873,9 +1892,13 @@ export const LaunchAppForm = (props: Props) => {
             addonAfter={
               (
                 <Select
-                  style={{ flex: "0 1 auto" }}
+                  style={{ flex: "0 1 auto", minWidth:"70px" }}
                   value={maxTimeUnitValue}
-                  onChange={(value) => setMaxTimeUnitValue(value)}
+                  onChange={(value) => {
+                    setMaxTimeUnitValue(value);
+                    // 手动更新 maxTime 的值，并触发验证
+                    form.validateFields(["maxTime"]);
+                  }}
                 >
                   <Select.Option value="min">{t(p("min"))}</Select.Option>
                   <Select.Option value="hour">{t(p("hour"))}</Select.Option>

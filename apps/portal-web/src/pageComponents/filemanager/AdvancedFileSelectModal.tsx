@@ -11,9 +11,10 @@ import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { FileInfo, FileType } from "src/pages/api/file/list";
 import { getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/server/file";
+import { fileInfoKey } from "src/utils/file";
 import { styled } from "styled-components";
 
-import { DecompressFileInCurrentFolderModal } from "./DecompressFileInCurrentFolderModal";
+import { DecompressFilesModal } from "./DecompressFilesModal";
 import { FileTable } from "./FileTable";
 import { MkdirModal } from "./MkdirModal";
 import { PathBar } from "./PathBar";
@@ -119,7 +120,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [dirTree, setDirTree] = useState<DataNode[]>([]);
 
-  const DecompressionModalButton = ModalButton(DecompressFileInCurrentFolderModal, { icon: <ExpandOutlined />,
+  const DecompressionModalButton = ModalButton(DecompressFilesModal, { icon: <ExpandOutlined />,
     disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
 
   const homeDirPromiseFn = useCallback(async () => {
@@ -237,6 +238,10 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
       && (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)));
   };
 
+  const keysToFiles = (keys: React.Key[]) => {
+    return curDirContent?.items.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
+  };
+
   return (
     <>
       <Button size="small" onClick={() => { setVisible(true); }}><FolderAddOutlined /></Button>
@@ -269,8 +274,9 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
                 {t(p("mkdir"))}
               </MkdirButton>
               <DecompressionModalButton
-                clusterId={clusterId}
-                path={selectedKeys[0]?.toString()}
+                cluster={clusterId}
+                sourcePath={path}
+                files={keysToFiles(selectedKeys)}
                 reload={async () => {
                   curDirContentReload();
                   setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent?.items ?? []));

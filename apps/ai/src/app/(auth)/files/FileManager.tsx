@@ -1,6 +1,7 @@
-import { CopyOutlined, DatabaseOutlined, DeleteOutlined, EyeInvisibleOutlined, EyeOutlined,
-  FileAddOutlined, FolderAddOutlined, HomeOutlined, ScissorOutlined, SnippetsOutlined, UploadOutlined,
-  UpOutlined } from "@ant-design/icons";
+import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, ExpandOutlined,
+  EyeInvisibleOutlined, EyeOutlined,FileAddOutlined, FolderAddOutlined, HomeOutlined,
+  ScissorOutlined, SnippetsOutlined, UploadOutlined,UpOutlined } from "@ant-design/icons";
+import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -11,6 +12,8 @@ import { join } from "path";
 import React, { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useOperation } from "src/app/(auth)/files/[cluster]/context";
+import { CompressionModal } from "src/components/CompressionModal";
+import { DecompressionModal } from "src/components/DecompressionModal";
 import { FileEditModal } from "src/components/FileEditModal";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ImagePreviewer } from "src/components/ImagePreviewer";
@@ -23,9 +26,10 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
+import { isDecompressibleFile } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
-import { styled } from "styled-components";
+import { styled, useTheme } from "styled-components";
 
 import { urlToDownload } from "./api";
 import { CreateFileModal } from "./CreateFileModal";
@@ -69,10 +73,17 @@ interface PromiseSettledResult {
   value?: FileInfo | undefined;
 }
 
+export interface Compression {
+  started: string[];
+  completed: string[];
+}
+
 export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.fileManager.");
   const languageId = useI18n().currentLanguage.id;
+
+  const theme = useTheme();
 
   const operationTexts = {
     copy: t(p("copy")),
@@ -80,13 +91,15 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
   };
   const { message, modal } = App.useApp();
   const router = useRouter();
-  const { publicConfig } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs } = usePublicConfig();
 
   const prevPathRef = useRef<string>(path);
 
   const [selectedKeys, setSelectedKeys] = useState<FileInfoKey[]>([]);
   const { operation, setOperation } = useOperation();
   const [showHiddenFile, setShowHiddenFile] = useState(false);
+  const [decompression, setDecompression] = useState<Compression>({ started: [], completed: []});
+  const [compression, setCompression] = useState<Compression>({ started: [], completed: []});
 
   const [previewFile, setPreviewFile] = useState({
     open: false,
@@ -105,6 +118,10 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
     clusterId: cluster.id, path,
   }, { enabled: path !== "~" });
 
+  const { data: storageInfos } = trpc.file.getUserStorageInfo.useQuery(
+    { clusterId:cluster.id,paths:"" },
+    { enabled: scowClusterConfigs[cluster.id]?.storage.enabled },
+  );
 
   const reload = filesQuery.refetch;
 
@@ -120,6 +137,25 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
 
   const toHome = () => {
     router.push(fullUrl("~"));
+  };
+
+  const CompressFilesButton = ModalButton(CompressionModal, {
+    icon: <CompressOutlined />,
+    disabled: selectedKeys.length === 0,
+  });
+
+  const DecompressFilesButton = ModalButton(DecompressionModal, {
+    icon: <ExpandOutlined />,
+    disabled: selectedKeys.length === 0 ||
+    selectedKeys.some((sKey) => (!isDecompressibleFile(sKey.toString()))),
+  });
+
+  const getDecompressButtonDisabledReason = () => {
+    if (selectedKeys.length > 0 &&
+        selectedKeys.some((sKey) => (!isDecompressibleFile(sKey.toString())))) {
+      return t(p("decompressButtonDisabledTooltip"));
+    }
+    return "";
   };
 
   useEffect(() => {
@@ -389,6 +425,33 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
             {t(p("pasteSelected"))}
           </Button>
           {
+            scowClusterConfigs[cluster.id]?.scowdEnabled && (
+              <>
+                <CompressFilesButton
+                  clusterId={cluster.id}
+                  reload={reload}
+                  path={path}
+                  files={keysToFiles(selectedKeys)}
+                  setCompression={setCompression}
+                >
+                  {t(p("compress"))}
+                </CompressFilesButton>
+                <Tooltip title={getDecompressButtonDisabledReason()}>
+                  <span>
+                    <DecompressFilesButton
+                      clusterId={cluster.id}
+                      reload={reload}
+                      sourcePath={path}
+                      files={keysToFiles(selectedKeys)}
+                      setDecompression={setDecompression}
+                    >
+                      {t(p("decompress"))}
+                    </DecompressFilesButton>
+                  </span>
+                </Tooltip>
+              </>
+            )}
+          {
             operation ? (
               operation.started ? (
                 <span>
@@ -403,6 +466,26 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
                   </a>
                 </span>
               )) : ""
+          }
+          {
+            compression.started.length - compression.completed.length > 0 && (
+              <div>
+                <span style={{ color: theme.token.colorPrimary }}>
+                  {t(p("compressing"))}:
+                  {`${compression.completed.length} / ${compression.started.length}`}
+                </span>
+              </div>
+            )
+          }
+          {
+            decompression.started.length - decompression.completed.length > 0 && (
+              <div>
+                <span style={{ color: theme.token.colorPrimary }}>
+                  {t(p("decompressing"))}:
+                  {`${decompression.completed.length} / ${decompression.started.length}`}
+                </span>
+              </div>
+            )
           }
         </Space>
         <Space wrap>
@@ -428,6 +511,30 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
           </MkdirButton>
         </Space>
       </OperationBar>
+
+      <TableTitle justify="space-between">
+        {
+          storageInfos && (
+            <div>
+              <span>
+                <Space>
+                  {`${t(p("storageQuota"))}(${scowClusterConfigs[cluster.id].storage.paths[0]})`}:
+                  <strong>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</strong>
+                </Space>
+              </span>
+              <Divider type="vertical" />
+              <span>
+                <Space>
+                  {t(p("usage"))}:
+                  <strong>
+                    {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
+                  </strong>
+                </Space>
+              </span>
+            </div>
+          )
+        }
+      </TableTitle>
       <FileTable
         files={filesQuery.data ?? []}
         filesFilter={(files) => files.filter((file) => showHiddenFile || !file.name.startsWith("."))}

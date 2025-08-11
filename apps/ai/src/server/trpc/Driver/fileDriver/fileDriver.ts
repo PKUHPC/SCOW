@@ -51,6 +51,7 @@ export interface FileDriver {
   exists(path: string): Promise<boolean>;
   chmod(path: string, mode: string): Promise<void>;
   decompressFile(filePath: string, decompressionPath: string): Promise<void>;
+  compressFiles(paths: string[], archivePath: string): Promise<void>;
 
   /**
  * 取消分享时删除相应的文件夹
@@ -113,8 +114,8 @@ export async function withFileDriver<T>(
 
   try {
     return await handler(driver);
-  } catch (err) {
-    logger.error("Error in file operation, executing handler", err);
+  } catch (err: any) {
+    logger.error("Error in file operation, executing handler", err.message);
     throw err;
   }
 }

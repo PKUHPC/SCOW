@@ -31,6 +31,10 @@ const useConfigQuery = () => {
   return trpc.config.publicConfig.useQuery();
 };
 
+const useScowClusterConfigsQuery = () => {
+  return trpc.config.getScowClusterConfig.useQuery();
+};
+
 const useCurrentClusterIdsQuery = () => {
   return trpc.resource.getCurrentUserAssignedClusters.useQuery();
 };
@@ -42,6 +46,7 @@ export default function Layout(
 
   const userQuery = useUserQuery();
   const configQuery = useConfigQuery();
+  const scowClusterConfigsQuery = useScowClusterConfigsQuery();
   const currentClusterIdsQuery = useCurrentClusterIdsQuery();
 
   const languageId = useI18n().currentLanguage.id;
@@ -58,7 +63,7 @@ export default function Layout(
     return;
   }
 
-  if (configQuery.isLoading || currentClusterIdsQuery.isLoading) {
+  if (configQuery.isLoading || currentClusterIdsQuery.isLoading || scowClusterConfigsQuery.isLoading) {
     return (
       <BaseLayout user={userQuery.data.user}>
         {children}
@@ -66,7 +71,7 @@ export default function Layout(
     );
   }
 
-  if (configQuery.isError) {
+  if (configQuery.isError || scowClusterConfigsQuery.isError) {
     return (
       <BaseLayout>
         <ServerErrorPage />
@@ -75,6 +80,7 @@ export default function Layout(
   }
 
   const publicConfig = configQuery.data;
+  const scowClusterConfigs = scowClusterConfigsQuery.data;
   const { setDefaultCluster, defaultCluster, currentClusters }
    = defaultClusterContext(publicConfig.CLUSTERS, currentClusterIdsQuery?.data?.clusterIds ?? []);
 
@@ -90,6 +96,7 @@ export default function Layout(
       user: userQuery.data.user,
       publicConfig,
       clusters: publicConfig.CLUSTERS,
+      scowClusterConfigs,
       currentAssociateClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
       defaultClusterContext:
           defaultClusterContext(publicConfig.CLUSTERS ?? [], currentClusterIdsQuery?.data?.clusterIds ?? []),

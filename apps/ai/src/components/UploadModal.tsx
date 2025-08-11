@@ -38,6 +38,7 @@ enum FileType {
 export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.uploadModal.");
+  const pCommon = prefix("common.");
 
   const { message, modal } = App.useApp();
   const { publicConfig } = usePublicConfig();
@@ -93,7 +94,13 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             message.success(`${file.name}${t(p("success"))}`);
             reload();
           } else if (file.status === "error") {
-            message.error(`${file.name}${t(p("failed"))}`);
+            // 优先使用 response 中的消息，如果没有则回退到 error.message
+            const errorMsg = file.response?.message || // 后端主动返回的 message
+                              file.error?.message || // 网络或异常错误
+                              `${file.name}${t(p("failed"))}`; // 默认提示
+
+
+            message.error(file.response?.code === "TOO_MANY_REQUESTS" ? t(pCommon("noSpaceError")) : errorMsg);
           }
         }}
         beforeUpload={(file) => {

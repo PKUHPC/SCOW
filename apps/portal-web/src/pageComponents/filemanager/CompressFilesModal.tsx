@@ -68,6 +68,9 @@ export const CompressFilesModal: React.FC<Props> = ({
     }).then(() => {
       reload();
       message.success(t(p("compressSuccess")));
+    }).catch((e) => {
+      throw e;
+    }).finally(() => {
       setCompression((compression) => {
         // 如果所有开始的任务都已经完成则清空
         if (compression.completed.length + 1 === compression.started.length) {
@@ -76,10 +79,7 @@ export const CompressFilesModal: React.FC<Props> = ({
 
         return { ...compression, completed: compression.completed.concat(zipFileName) };
       });
-    }).catch((e) => {
-      throw e;
     });
-
   };
 
   const onSubmit = async () => {

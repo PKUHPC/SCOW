@@ -411,6 +411,7 @@ export default {
         partitionsLoading: "查询中...",
         noAssignedPartition: "无可用队列",
         maxTimeTips:"最大运行时间不能超过 {} 小时",
+        requireMaxTime:"请输入最大运行时间",
         priority:"优先级",
         trainResults:"训练结果展示",
         tensorBoardDataPath:"数据源",
@@ -550,6 +551,14 @@ export default {
         preview: {
           cantPreview: "文件过大（最大{}）或者格式不支持，请下载后查看",
         },
+        storageQuota: "存储配额",
+        usage: "使用量",
+        compress:"压缩",
+        decompress:"解压缩",
+        compressing:"正在压缩",
+        decompressing:"正在解压缩",
+        decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
+        // 占位对齐
       },
       fileTable:{
         name:"文件名",
@@ -797,13 +806,27 @@ export default {
       select:"请选择集群",
     },
     decompressionModal:{
-      success:"解压成功",
-      alreadyExisted:"已存在同名目录",
+      success:"文件解压缩成功",
+      failed:"文件解压缩失败",
+      someFailed:"部分文件解压缩失败",
+      toDecompressList:"待解压缩文件列表（不同文件解压缩后的同名文件将会进行覆盖）",
+
       decompress:"解压文件",
-      confirmText:"是否确认在同级文件夹解压缩文件",
+      decompressionPath:"目标解压缩路径",
+    },
+    compressionModal:{
+      success:"文件压缩成功",
+      failed:"文件压缩失败",
+      alreadyExisted:"文件/文件夹已存在",
+      overwrite:"文件/文件夹 {} 已存在，是否覆盖？",
+      confirm:"确认",
+      compress:"文件/文件夹压缩",
+      toCompressList:"待压缩文件列表",
+      zipFileName:"目标压缩文件名",
     },
     mkdirModal:{
       success:"创建成功",
+      failed:"创建失败",
       alreadyExisted:"已存在同名目录",
       mkDir:"创建目录",
       dirPath:"要创建的目录的目录",
@@ -852,5 +875,8 @@ export default {
       light:"亮色",
       dark:"暗色",
     },
+  },
+  common: {
+    noSpaceError: "存储空间不足，请清理空间或联系管理员",
   },
 };

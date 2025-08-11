@@ -21,6 +21,7 @@ import { Cluster, PublicConfig } from "src/server/trpc/route/config";
 export const PublicConfigContext = React.createContext<{
   publicConfig: PublicConfig,
   clusters: Cluster[],
+  scowClusterConfigs: Record<string, { scowdEnabled: boolean,storage: { enabled: boolean,paths: string[] } }>;
   user: ClientUserInfo;
   currentAssociateClusterIds: string[],
   defaultClusterContext: {

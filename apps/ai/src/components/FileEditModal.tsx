@@ -128,6 +128,8 @@ const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
 export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) => {
 
   const t = useI18nTranslateToString();
+  const pCommon = prefix("common.");
+
 
   const { open, filename, fileSize, filePath, clusterId } = previewFile;
 
@@ -243,18 +245,23 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
     await fetch(urlToUpload(clusterId, filePath, publicConfig.BASE_PATH), {
       method: "POST",
       body: formData,
-    }).then((response) => {
+    }).then(async (response) => {
       if (!response.ok) {
-        return Promise.reject(response.statusText);
+        const errorBody = await response.json().catch(() => null);
+        const errorCode = errorBody?.code || "Unknown code";
+        return Promise.reject(new Error(errorCode));
+
       }
       message.success(t(p("saveFileSuccess")));
       setIsEdit(false);
-    }).catch(() => {
+    }).catch((e) => {
       message.error(t(p("saveFileFail")));
+      if (e.message === "TOO_MANY_REQUESTS") {
+        message.error(t(pCommon("noSpaceError")));
+      }
     }).finally(() => {
       setSaving(false);
     });
-
   };
 
   const downloadFile = () => {

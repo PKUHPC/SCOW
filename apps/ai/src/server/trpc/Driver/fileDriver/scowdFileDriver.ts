@@ -341,6 +341,19 @@ export class ScowdFileDriver implements FileDriver {
     );
   }
 
+  async compressFiles(paths: string[],archivePath: string): Promise<void> {
+    await wrap(
+      this.client.file.compressFiles(
+        {
+          userId: this.userId,
+          paths,
+          archivePath,
+        },
+      ),
+      this.logger,
+    );
+  }
+
   // 以root身份删除取消分享的文件夹
   async unShareFileOrDir(sharedPath: string,successCallback?: callback,failureCallback?: callback): Promise<void> {
     await wrap(

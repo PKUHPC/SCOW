@@ -10,9 +10,11 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { resolve, sep } from "path";
+import { TreeDataNode } from "antd";
+import { join, resolve, sep } from "path";
+import { FileInfo } from "src/models/File";
 
-const decompressibleExtensions = [".zip", ".tar", ".tar.gz", ".tgz"];
+const decompressibleExtensions = [".zip", ".tar", ".tar.gz", ".tgz", ".gz"];
 
 export function getExtension(filename: string) {
   const parts = filename.split(".");
@@ -43,3 +45,19 @@ export function isParentOrSameFolder(potentialParentFolderPath: string, childFol
          normalizedChildPath.startsWith(parentPathWithTrailingSlash);
 }
 
+export function getFilePathWithoutExtension(fileName: string) {
+  return fileName?.replace(/\.[^/.]+$/, "");
+}
+
+export const generateFilesTree = (path: string, files: FileInfo[]): TreeDataNode[] => {
+  return [{
+    title: `${path}`,
+    key: "root",
+    children: files.map((f) => ({
+      title: f.name,
+      key: f.name,
+    })),
+  }];
+};
+
+export const fileInfoKey = (f: FileInfo, path: string): React.Key => join(path, f.name);

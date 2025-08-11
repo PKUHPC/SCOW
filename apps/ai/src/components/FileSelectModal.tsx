@@ -16,15 +16,16 @@ import type { DataNode, EventDataNode } from "antd/es/tree";
 import Link from "next/link";
 import { join } from "path";
 import React, { Key, useEffect, useState } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { FileInfo, FileType } from "src/models/File";
-import { getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/utils/file";
+import { fileInfoKey,getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/utils/file";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
-import { CompressionModal } from "./DecompressionModal";
+import { DecompressionModal } from "./DecompressionModal";
 import { FileTable } from "./FileTable";
 import { MkdirModal } from "./MkdirModal";
 import { PathBar } from "./PathBar";
@@ -120,6 +121,8 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
   const t = useI18nTranslateToString();
   const p = prefix("component.fileSelectModal.");
 
+  const { scowClusterConfigs } = usePublicConfig();
+
   const [visible, setVisible] = useState(false);
   const [prevPath, setPrevPath] = useState<string>("~");
   const [path, setPath] = useState<string>("~");
@@ -128,7 +131,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [dirTree, setDirTree] = useState<DataNode[]>([]);
 
-  const CompressionModalButton = ModalButton(CompressionModal, { icon: <ExpandOutlined />,
+  const DecompressionModalButton = ModalButton(DecompressionModal, { icon: <ExpandOutlined />,
     disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
 
   const { data: homeDir } = trpc.file.getHomeDir.useQuery({ clusterId }, {
@@ -161,7 +164,12 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
     } else {
       setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent));
     }
+
   }, [curDirContent]);
+
+  const keysToFiles = (keys: React.Key[]) => {
+    return curDirContent?.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
+  };
 
   const onDirExpand = (expandDirs: Key[],
     { node, expanded }: { node: EventDataNode<DataNode>, expanded: boolean }) => {
@@ -263,16 +271,21 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
               >
                 {t(p("mkdir"))}
               </MkdirButton>
-              <CompressionModalButton
-                clusterId={clusterId}
-                path={selectedKeys[0]?.toString()}
-                reload={async () => {
-                  await refetch();
-                  setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent ?? []));
-                }}
-              >
-                {t(p("depression"))}
-              </CompressionModalButton>
+              {
+                scowClusterConfigs[clusterId]?.scowdEnabled && (
+                  <DecompressionModalButton
+                    clusterId={clusterId}
+                    reload={async () => {
+                      await refetch();
+                      setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent ?? []));
+                    }}
+                    sourcePath={path}
+                    files={keysToFiles(selectedKeys)}
+                  >
+                    {t(p("depression"))}
+                  </DecompressionModalButton>
+                )
+              }
             </div>
             <div key="right">
               <Button key="cancel" onClick={() => { closeModal(); }}>{t("button.cancelButton")}</Button>

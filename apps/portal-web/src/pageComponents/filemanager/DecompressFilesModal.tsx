@@ -17,7 +17,7 @@ interface Props {
   files: FileInfo[];
   onClose: () => void;
   reload: () => void;
-  setDecompression: React.Dispatch<React.SetStateAction<DeCompression>>;
+  setDecompression?: React.Dispatch<React.SetStateAction<DeCompression>>;
 }
 
 interface FormProps {
@@ -39,7 +39,7 @@ export const DecompressFilesModal: React.FC<Props> = ({
 
   const handleDecompress = async (decompressionPath: string) => {
 
-    setDecompression((decompression) => ({
+    setDecompression?.((decompression) => ({
       ...decompression, decompressionStarted: decompression.decompressionStarted.concat(decompressionPath),
     }));
 
@@ -92,7 +92,7 @@ export const DecompressFilesModal: React.FC<Props> = ({
         }
       }
       reload();
-      setDecompression((decompression) => {
+      setDecompression?.((decompression) => {
         // 如果所有开始的任务都已经完成则清空
         if (decompression.decompressionCompleted.length + 1 === decompression.decompressionStarted.length) {
           return { decompressionCompleted: [], decompressionStarted: []};

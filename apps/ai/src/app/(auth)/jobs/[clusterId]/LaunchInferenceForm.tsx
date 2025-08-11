@@ -1029,7 +1029,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
                     addonAfter={
                       (
                         <Select
-                          style={{ flex: "0 1 auto" }}
+                          style={{ flex: "0 1 auto", minWidth:"70px" }}
                           value={maxTimeUnitValue}
                           onChange={(value) => setMaxTimeUnitValue(value)}
                         >

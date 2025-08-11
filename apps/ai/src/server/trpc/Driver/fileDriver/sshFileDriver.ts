@@ -225,6 +225,13 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
+  async compressFiles(): Promise<void> {
+    throw new TRPCError({
+      code: "METHOD_NOT_SUPPORTED",
+      message: "To use this interface, you need to enable scowd.",
+    });
+  }
+
   async upload(path: string, uploadedFile: File): Promise<NextResponse<{ message: string; }>> {
     return sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();

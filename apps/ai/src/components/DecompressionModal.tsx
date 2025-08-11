@@ -12,52 +12,116 @@
 
 "use client";
 
-import { App, Form, Modal } from "antd";
+import { DownOutlined } from "@ant-design/icons";
+import { App, Form, Input, Modal, Tree } from "antd";
+import { join } from "path";
+import { useState } from "react";
+import { Compression } from "src/app/(auth)/files/FileManager";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { FileInfo } from "src/models/File";
+import { generateFilesTree, getFilePathWithoutExtension } from "src/utils/file";
 import { trpc } from "src/utils/trpc";
 
 interface Props {
   open: boolean;
-  onClose: () => void;
-  reload: (() => void) | ((dirName: string) => Promise<void>);
   clusterId: string;
-  path: string;
+  sourcePath: string;
+  files: FileInfo[];
+  onClose: () => void;
+  reload: () => void;
+  setDecompression?: React.Dispatch<React.SetStateAction<Compression>>;
 }
 
 interface FormProps {
-  newDirName: string;
+  decompressionPath: string;
 }
 
-export const CompressionModal: React.FC<Props> = ({ open, onClose, path, reload, clusterId }) => {
+export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clusterId, sourcePath,
+  files, setDecompression }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.decompressionModal.");
+  const pCommon = prefix("common.");
 
-  const { message } = App.useApp();
+
+  const { message,modal } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
-  const mutation = trpc.file.decompression.useMutation({
-    onSuccess: () => {
-      message.success(t(p("success")));
-      reload(form.getFieldValue("newDirName"));
-      onClose();
-      form.resetFields();
-    },
-    onError: (e) => {
-      message.error(e.message);
+  const [loading, setLoading] = useState(false);
+
+  const mutation = trpc.file.decompressFile.useMutation({
+    // 不显示错误信息trpcClient.tsx中的兜底信息
+    onError:(e) => {
+      if (e.data?.code === "TOO_MANY_REQUESTS") {
+        message.error(t(pCommon("noSpaceError")));
+      }
     },
   });
 
-  const onSubmit = async () => {
+  const handleDecompress = async (decompressionPath: string) => {
 
-    const pathParts = path.split("/");
-    pathParts.pop(); // 移除文件名
-    const decompressionPath = pathParts.join("/");
+    setDecompression?.((decompression) => ({
+      ...decompression, started: decompression.started.concat(decompressionPath),
+    }));
 
-    mutation.mutate({
-      clusterId,
-      filePath: path,
-      decompressionPath,
+    await Promise.allSettled(files.map(async (f: FileInfo) => {
+
+      return mutation.mutateAsync({
+        clusterId,
+        filePath: join(sourcePath, f.name),
+        decompressionPath,
+      });
+    })).then((decompressionResults) => {
+
+      setLoading(false);
+
+      const errors = decompressionResults.reduce((acc: { fileName: string; reason: any }[], result, index) => {
+        if (result.status === "rejected") {
+          acc.push({ fileName: files[index].name, reason: result.reason });
+        }
+        return acc;
+      }, []);
+
+      if (errors.length === 0) {
+        message.success(t(p("success")));
+      }
+
+      if (errors.length > 0) {
+        const errorDetails = errors.map((error) => {
+          return `Filename: ${error?.fileName} \n`
+          + `Reason: ${error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason}`;
+        }).join("; \n\n");
+
+        if (errors.length === files.length) {
+          modal.error({
+            title: t(p("failed")),
+            content: <div style={{ whiteSpace: "pre-wrap" }}>{errorDetails}</div>,
+          });
+        } else {
+          modal.error({
+            title: t(p("someFailed")),
+            content: <div style={{ whiteSpace: "pre-wrap" }}>{errorDetails}</div>,
+          });
+        }
+      }
+      reload();
+      setDecompression?.((decompression) => {
+        // 如果所有开始的任务都已经完成则清空
+        if (decompression.completed.length + 1 === decompression.started.length) {
+          return { completed: [], started: []};
+        }
+
+        return { ...decompression,
+          completed: decompression.completed.concat(decompressionPath) };
+      });
     });
+  };
+
+  const onSubmit = async () => {
+    const { decompressionPath } = await form.validateFields();
+    setLoading(true);
+    handleDecompress(decompressionPath);
+    onClose();
+    form.resetFields();
   };
 
   return (
@@ -67,11 +131,30 @@ export const CompressionModal: React.FC<Props> = ({ open, onClose, path, reload,
       okText={t("button.confirmButton")}
       cancelText={t("button.cancelButton")}
       onCancel={onClose}
-      confirmLoading={mutation.isLoading}
+      confirmLoading={loading}
       destroyOnClose
-      onOk={onSubmit}
+      onOk={form.submit}
     >
-      {`${t(p("confirmText"))} ${path}`}
+      <Form form={form} onFinish={onSubmit}>
+        <strong>{t(p("toDecompressList"))}</strong>
+        <Tree
+          showLine
+          style={{ marginTop: "8px" }}
+          height={300}
+          switcherIcon={<DownOutlined />}
+          defaultExpandedKeys={["root"]}
+          selectable={false}
+          treeData={generateFilesTree(sourcePath, files)}
+        />
+        <Form.Item
+          label={t(p("decompressionPath"))}
+          name="decompressionPath"
+          rules={[{ required: true }]}
+          initialValue={ join(sourcePath, getFilePathWithoutExtension(files[0]?.name) || "") }
+        >
+          <Input />
+        </Form.Item>
+      </Form>
     </Modal>
   );
 };

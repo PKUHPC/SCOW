@@ -154,6 +154,11 @@ const ClusterConfigSchema = z.object({
   partitions: z.array(PartitionSchema),
 });
 
+const StorageConfigSchema = z.object({
+  enabled:z.boolean(),
+  paths:z.array(z.string()),
+});
+
 export const config = router({
 
   publicConfig: authProcedure
@@ -245,6 +250,36 @@ export const config = router({
         });
       }
       return await asyncClientCall(client.config, "getClusterConfig", {});
+    }),
+
+  getScowClusterConfig: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/config/scowCluster",
+        tags: ["config"],
+        summary: "ScowClusterConfig",
+      },
+    })
+    .input(z.void())
+    .output(z.record(z.string(), z.object({
+      scowdEnabled: z.boolean(),
+      storage: StorageConfigSchema,
+    })))
+    .query(async () => {
+      const clusterConfigs = Object.keys(clusters).reduce((acc, clusterId) => {
+        const cluster = clusters[clusterId];
+        acc[clusterId] = {
+          scowdEnabled: cluster.scowd?.enabled ?? false,
+          storage:{
+            enabled:cluster.storage?.enabled ?? false,
+            paths:cluster.storage?.paths ?? [],
+          },
+        };
+        return acc;
+      }, {} as Record<string, { scowdEnabled: boolean, storage: { enabled: boolean,paths: string[] } }>);
+
+      return clusterConfigs;
     }),
 
   getAvailablePartitions: authProcedure

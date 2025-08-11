@@ -56,9 +56,19 @@ export async function POST(request: NextRequest) {
     async (driver) => {
       try {
         return await driver.upload(path, uploadedFile);
-      } catch (error) {
-        logger.error("Upload file error", error);
-        throw error;
+      } catch (error: any) {
+        const rawMessage = error?.message || "Unknown error";
+        const rawCode = error?.code || "UPLOAD_FAILED";
+
+        logger.error(`Upload file error: ${rawMessage}`);
+
+        return NextResponse.json(
+          {
+            code: rawCode,
+            message: rawMessage,
+          },
+          { status: 500 },
+        );
       }
     },
     logger,
