@@ -354,6 +354,8 @@ export default {
         selectImage:"Please select an image or fill in the remote image address",
         remoteImageUrl:"Remote image address",
         RemoteImageUrlPlaceholder:"Please enter the remote image address",
+        editDefaultStartCommand:"Edit default startCommand",
+        requireStartCommand:"Please enter the startCommand",
         startCommandPlaceholder:"Start command",
         mounts:"Mount points",
         mountsPlaceholder:"Please provide mount point addresses",

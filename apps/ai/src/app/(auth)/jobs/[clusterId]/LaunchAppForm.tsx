@@ -41,6 +41,7 @@ const AfterInputNumber = styled(InputNumber)`
 interface Props {
   appId?: string;
   appName?: string;
+  appStartCommand?: string;
   appImage?: {
     name: string;
     tag: string;
@@ -148,7 +149,7 @@ export const LaunchAppForm = (props: Props) => {
   const p = prefix("app.jobs.launchAppForm.");
 
   const { clusterId, appName, isTraining = false,useForCreateApp,
-    appId, attributes = [], appImage, createAppParams, trainJobInput,appComment } = props;
+    appId, attributes = [], appImage, createAppParams, trainJobInput,appComment,appStartCommand } = props;
 
   const { message } = App.useApp();
   const theme = useTheme();
@@ -180,6 +181,7 @@ export const LaunchAppForm = (props: Props) => {
   ]);
 
   const imageSource = Form.useWatch("imageSource", form);
+  const isStartCommandEditable = Form.useWatch("isStartCommandEditable", form);
   const needTensorBoard = Form.useWatch("needTensorBoard", form);
   const isDistributedTrain = Form.useWatch("isDistributedTrain", form);
 
@@ -698,6 +700,7 @@ export const LaunchAppForm = (props: Props) => {
           form.setFieldValue("remoteImageUrl", inputParams.remoteImageUrl);
           if ("startCommand" in inputParams) {
             form.setFieldValue("startCommand", inputParams.startCommand);
+            form.setFieldValue("isStartCommandEditable", true);
           }
         }
         // 处理本地镜像
@@ -855,7 +858,8 @@ export const LaunchAppForm = (props: Props) => {
       form={form}
       initialValues={{
         ... initialValues,
-        imageSource: isTraining ? ImageSource.LOCAL : ImageSource.DEFAULT,
+        imageSource: !isTraining && appImage ? ImageSource.DEFAULT : ImageSource.LOCAL,
+        startCommand:appStartCommand,
       }}
       labelAlign="left"
       onFinish={async () => {
@@ -984,7 +988,7 @@ export const LaunchAppForm = (props: Props) => {
             }}
             style={{ userSelect:"none" }}
           >
-            {!isTraining && <Radio value={ImageSource.DEFAULT}> {t(p("defaultImage"))} </Radio>}
+            {!isTraining && appImage && <Radio value={ImageSource.DEFAULT}> {t(p("defaultImage"))} </Radio>}
             <Radio value={ImageSource.LOCAL}> {t(p("localImage"))} </Radio>
             <Radio value={ImageSource.REMOTE}> {t(p("remoteImage"))} </Radio>
           </Radio.Group>
@@ -1096,15 +1100,30 @@ export const LaunchAppForm = (props: Props) => {
           customFormItems
         }
 
-        {(!isTraining && imageSource !== ImageSource.DEFAULT) ?
-          (
-            <Form.Item
-              label={t(p("command"))}
-              name="startCommand"
-            >
-              <Input placeholder={t(p("startCommandPlaceholder"))} />
-            </Form.Item>
-          ) : null }
+        {!isTraining &&
+        (
+          <Form.Item label={t(p("command"))} rules={[{ required: true }]} style={{ marginBottom:0 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Form.Item
+                name="isStartCommandEditable"
+                valuePropName="checked"
+                style={{ display: "inline-block", marginRight: 8 }}
+              >
+                <Checkbox>
+                  {t(p("editDefaultStartCommand"))}
+                </Checkbox>
+              </Form.Item>
+              <Form.Item
+                name="startCommand"
+                rules={[{ required: true,message:t(p("requireStartCommand")) }]}
+                style={{ flex: 1 }}
+              >
+                <Input disabled={!isStartCommandEditable} placeholder={t(p("startCommandPlaceholder"))} />
+              </Form.Item>
+            </div>
+          </Form.Item>
+        )
+        }
         {
           isTraining && (
             <Form.Item label={t(p("command"))} name="command" rules={[{ required: true }]}>

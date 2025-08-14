@@ -195,9 +195,10 @@ export const getAppMetadata = procedure
     appImage: z.object({
       name: z.string(),
       tag: z.string(),
-    }),
+    }).optional(),
     attributes: z.array(AppCustomAttributeSchema),
     appComment: I18nStringSchema.optional(),
+    appStartCommand:z.string(),
   }))
   .query(async ({ input, ctx: { user } }) => {
     const { clusterId, appId } = input;
@@ -232,8 +233,15 @@ export const getAppMetadata = procedure
     }
 
     const comment = app.appComment ?? "";
+    const startCommand = app.web?.startCommand ?? app.vnc?.xstartup ?? "";
 
-    return { appName: app.name, appImage: app.image, attributes, appComment: comment };
+    return {
+      appName: app.name,
+      appImage: app.image,
+      attributes,
+      appComment: comment,
+      appStartCommand:startCommand,
+    };
   });
 
 export const CreateAppInputSchema = z.object({

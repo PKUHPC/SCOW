@@ -197,7 +197,9 @@ export class SshJobDriver implements JobDriver {
           JobType.APP,
           app.type,
           // 优先用户填写的远程镜像地址
-          (remoteImageUrl || (existImage ? existImage.path : `${app.image.name}:${app.image.tag || "latest"}`)) || "",
+          remoteImageUrl
+            ?? (existImage?.path
+            ?? (app.image ? `${app.image.name}:${app.image.tag || "latest"}` : "")),
           JSON.stringify(
             algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
               ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
@@ -234,7 +236,7 @@ export class SshJobDriver implements JobDriver {
         sessionId: scowWorkDirectoryName,
         submitTime: new Date().toISOString(),
         appId,
-        image: existImage ? { name: existImage.name, tag: existImage.tag } : app.image,
+        image: existImage ? { name: existImage.name, tag: existImage.tag } : app.image ?? { name: "default" },
         jobType: JobType.APP,
       };
       await sftpWriteFile(sftp)(join(appJobsDirectory, SESSION_METADATA_NAME), JSON.stringify(metadata));

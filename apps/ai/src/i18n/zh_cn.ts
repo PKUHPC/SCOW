@@ -354,6 +354,8 @@ export default {
         selectImage:"请选择镜像或填写远程镜像地址",
         remoteImageUrl:"远程镜像地址",
         RemoteImageUrlPlaceholder:"请输入远程镜像地址",
+        editDefaultStartCommand:"修改默认命令",
+        requireStartCommand:"请输入运行命令",
         startCommandPlaceholder:"运行镜像里程序的启动命令",
         mounts:"挂载点",
         mountsPlaceholder:"请提供挂载点地址",
