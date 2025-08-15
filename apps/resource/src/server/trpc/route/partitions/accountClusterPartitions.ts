@@ -4,12 +4,12 @@ import { TRPCError } from "@trpc/server";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { callHook } from "src/server/hookClient";
-import { getScowActivatedClusters, getScowClusterConfigs } from "src/server/mis-server/cluster";
-import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
+import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
 import { getScowAccounts } from "src/server/mis-server/tenantAccount";
-import { authProcedure } from "src/server/trpc/procedure/base";
-import { AccountUserSyncRunningError, isResourceAdmin, 
-  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
+import { adminAuthProcedure } from "src/server/trpc/procedure/base";
+import { getAvailablePartitionsResult } from "src/server/utils/clusterPartitions";
+import { checkClusterIdAvailable, checkClusterPartitionAvailable,
+  checkSyncRunning } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
@@ -25,7 +25,7 @@ export const AssignedPartitionSchema = z.object({
   partition: z.string(),
 });
 
-export const allAccountsAssignedClustersPartitions = authProcedure
+export const allAccountsAssignedClustersPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -40,23 +40,16 @@ export const allAccountsAssignedClustersPartitions = authProcedure
     }),
   )
   .output(z.array(AllAssignedInfoSchema))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
 
         const { tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
-
-        // 检查现在是否有可用集群
-        const currentClusters = await getScowActivatedClusters();
-        if (!currentClusters || currentClusters.length === 0) {
-          throw new NoAvailableClustersError();
-        }
-        const currentClusterIds = currentClusters.map((c) => c.id);
+        // 获取当前在线的集群分区信息
+        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+        const currentClusterIds = Object.keys(currentClusterPartitions);
 
         const resultMap: Record<string , AllAssignedInfoSchema> = {};
 
@@ -92,10 +85,13 @@ export const allAccountsAssignedClustersPartitions = authProcedure
 
         // 获取已授权分区信息
         const qbPartitions = em.createQueryBuilder(AccountPartitionRule, "apr");
-        const accountAssignedPartitionsInfo = await qbPartitions
+        const qbResult = await qbPartitions
           .select(["tenantName", "accountName", "partition", "clusterId"])
           .where({ "clusterId":  { $in: currentClusterIds } })
           .execute();
+
+        const accountAssignedPartitionsInfo: AccountPartitionRule[]
+          = getAvailablePartitionsResult(currentClusterPartitions, qbResult);
 
         accountAssignedPartitionsInfo.forEach((item) => {
           // 只获取与 从scow获取的租户已授权分区信息
@@ -130,7 +126,7 @@ export const allAccountsAssignedClustersPartitions = authProcedure
   });
 
 
-export const assignAccountCluster = authProcedure
+export const assignAccountCluster = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -145,28 +141,16 @@ export const assignAccountCluster = authProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, accountName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    const configClusters = await getScowClusterConfigs();
-    if (configClusters.clusterConfigs.length === 0) {
-      logger.info("Can not find cluster config files.");
-      throw new NoAvailableClustersError;
-    }
-
+    await checkClusterIdAvailable(clusterId);
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-    
+    await checkSyncRunning();
+
     const em = await forkEntityManager();
 
     const accountCluster = await em.findOne(AccountClusterRule, { tenantName, accountName, clusterId });
@@ -187,7 +171,7 @@ export const assignAccountCluster = authProcedure
 
   });
 
-export const unAssignAccountCluster = authProcedure
+export const unAssignAccountCluster = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -202,36 +186,15 @@ export const unAssignAccountCluster = authProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    // 检查现在是否有可用集群
-    const currentClusters = await getScowActivatedClusters();
-    if (!currentClusters || currentClusters.length === 0) {
-      throw new NoAvailableClustersError();
-    }
-    const currentClusterIds = currentClusters.map((c) => c.id);
-    if (!currentClusterIds.includes(clusterId)) {
-      throw new TRPCError({
-        message: `Can not find cluster ${clusterId} in current activated clusters.
-             Please refresh the page and try again later`,
-        code: "NOT_FOUND",
-      });
-    }
-
+    await checkClusterIdAvailable(clusterId);
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-    
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
 
@@ -293,11 +256,11 @@ export const unAssignAccountCluster = authProcedure
 
   });
 
-export const assignAccountPartition = authProcedure
+export const assignAccountPartition = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
-      path: "/assinAccountPartition",
+      path: "/assignAccountPartition",
       tags: ["AccountClustersPartitions"],
       summary: "为账户授权分区",
     },
@@ -309,36 +272,16 @@ export const assignAccountPartition = authProcedure
     partition: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    // 检查现在是否有可用集群
-    const currentClusters = await getScowActivatedClusters();
-    if (!currentClusters || currentClusters.length === 0) {
-      throw new NoAvailableClustersError();
-    }
-    const currentClusterIds = currentClusters.map((c) => c.id);
-    if (!currentClusterIds.includes(clusterId)) {
-      throw new TRPCError({
-        message: `Can not find cluster ${clusterId} in current activated clusters.
-          Please refresh the page and try again later`,
-        code: "NOT_FOUND",
-      });
-    }
-
+    await checkClusterPartitionAvailable(clusterId, partition, logger);
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-    
+    await checkSyncRunning();
+
     const em = await forkEntityManager();
 
     return await em.transactional(async (em) => {
@@ -395,7 +338,7 @@ export const assignAccountPartition = authProcedure
   });
 
 
-export const unAssignAccountPartition = authProcedure
+export const unAssignAccountPartition = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -411,35 +354,15 @@ export const unAssignAccountPartition = authProcedure
     partition: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-    // 检查现在是否有可用集群
-    const currentClusters = await getScowActivatedClusters();
-    if (!currentClusters || currentClusters.length === 0) {
-      throw new NoAvailableClustersError();
-    }
-    const currentClusterIds = currentClusters.map((c) => c.id);
-    if (!currentClusterIds.includes(clusterId)) {
-      throw new TRPCError({
-        message: `Can not find cluster ${clusterId} in current activated clusters.
-          Please confirm the adapter version and try again later`,
-        code: "NOT_FOUND",
-      });
-    }
-
+    await checkClusterPartitionAvailable(clusterId, partition, logger);
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-    
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
 
@@ -489,7 +412,7 @@ export const unAssignAccountPartition = authProcedure
 
   });
 
-export const accountAssignedPartitions = authProcedure
+export const accountAssignedPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -508,30 +431,35 @@ export const accountAssignedPartitions = authProcedure
     assignedPartitions: z.array(AssignedPartitionSchema),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
         const { accountName, tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        // 获取当前在线的集群分区信息
+        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+        const currentClusterIds = Object.keys(currentClusterPartitions);
 
         const em = await forkEntityManager();
 
-        const [res, count] = await em.findAndCount(AccountPartitionRule,
-          { accountName, tenantName },
+        const res = await em.find(AccountPartitionRule,
+          {
+            accountName,
+            tenantName,
+            clusterId: { $in: currentClusterIds },
+          },
         );
+        const filteredResult = getAvailablePartitionsResult(currentClusterPartitions, res);
 
         return {
           accountName,
           tenantName: tenantName,
-          assignedPartitions: res.map((item) => ({
+          assignedPartitions: filteredResult.map((item) => ({
             clusterId: item.clusterId,
             partition: item.partition,
           })),
-          assignedTotalCount: count,
+          assignedTotalCount: filteredResult.length,
         };
       },
       async () => {
@@ -541,7 +469,7 @@ export const accountAssignedPartitions = authProcedure
 
   });
 
-export const accountAssignedClusters = authProcedure
+export const accountAssignedClusters = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -560,20 +488,22 @@ export const accountAssignedClusters = authProcedure
     assignedClusters: z.array(z.string()),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
         const { accountName, tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        const currentClusterIds = await getScowActivatedClusterIds();
 
         const em = await forkEntityManager();
 
         const [res, count] = await em.findAndCount(AccountClusterRule,
-          { accountName, tenantName },
+          {
+            accountName,
+            tenantName,
+            clusterId: { $in: currentClusterIds },
+          },
         );
 
         return {

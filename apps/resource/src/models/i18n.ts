@@ -78,30 +78,42 @@ export const languageDic = {
     accountDefaultClusters: {
       title: "默认授权集群",
       defaultAccountClustersNotFoundError: "无法获取租户下设置的默认授权集群",
-      explanation: "新建账户时，会自动添加默认授权集群信息到该账户的授权集群中",
+      explanation1: "默认授权集群是该租户下的一个集群组，它影响租户内的所有账户，具体如下：",
+      explanation2: "新建账户时，该账户的初始授权集群即默认授权集群；",
+      explanation3: "将集群添加或者移出默认授权集群时，所有账户的授权集群也同步添加或移出该集群；",
       removeModal: {
         title: "移出默认集群",
         content: "确认从租户 {0} 的默认授权集群下移出集群 {1} 吗？",
+        removeWarn: "移出默认授权集群后，该租户下所有账户均同步取消该集群及集群下分区的授权",
         removedSuccessMessage: "已从默认授权集群下移出",
+        successExplanation: "以下账户 {} 同步取消授权时失败，请管理员确认。",
       },
       addModal: {
         title: "添加默认授权集群",
+        addWarn: "添加默认授权集群后，该租户下所有账户均同步添加该集群的授权",
         successMessage: "默认授权集群已添加",
+        successExplanation: "以下账户 {} 同步授权时失败，请管理员确认。",
       },
       noDataText: "当前暂无可以添加的集群，请确认租户下是否已有已授权集群。",
     },
     accountDefaultPartitions: {
       title: "默认授权分区",
       defaultAccountPartitionsNotFoundError: "无法获取租户下设置的默认授权分区",
-      explanation: "新建账户时，会自动添加默认授权分区信息到该账户的授权分区中",
+      explanation1: "默认授权分区是该租户下的一个分区组，它影响租户内的所有账户，具体如下：",
+      explanation2: "新建账户时，该账户的初始授权分区即默认授权分区；",
+      explanation3: "将分区添加或者移出默认授权分区时，所有账户的授权分区也同步添加或移出该分区；",
       addModal: {
         title: "添加默认授权分区",
+        addWarn: "添加默认授权分区后，该租户下所有账户均同步添加该分区及分区所属集群的授权",
         successMessage: "默认授权分区已添加",
+        successExplanation: "以下账户 {} 同步授权时失败，请管理员确认。",
       },
       removeModal: {
         title: "移出默认授权分区",
         content: "确认从租户 {0} 的默认授权分区下移出分区 {1} 吗？",
+        removeWarn: "移出默认授权分区后，该租户下所有账户均同步取消该分区的授权",
         successMessage: "已从租户下设置的默认授权分区移出",
+        successExplanation: "以下账户 {} 同步取消授权时失败，请管理员确认。",
       },
       noDataText: "当前暂无可以添加的分区，请确认租户下是否已有已授权分区。",
     },
@@ -200,16 +212,28 @@ export const languageDic = {
     accountDefaultClusters: {
       title: "Default Assigned Clusters",
       defaultAccountClustersNotFoundError: "Unable to retrieve the default assigned clusters set for the tenant",
-      explanation: "When creating a new account, default authorized cluster information will be automatically "
-      + "added to the account's authorized clusters.",
+      explanation1: "A default authorized cluster is a cluster group under the tenant that affects all accounts "
+      + "within the tenant, specifically as follows:",
+      explanation2: "When creating a new account, the initial authorized cluster for that account will be the "
+      + "default authorized cluster;",
+      explanation3: "When adding or removing a cluster from the default authorized cluster, the authorized "
+      + "clusters for all accounts will be synchronously added or removed accordingly;",
       removeModal: {
         title: "Remove Default Cluster",
+        removeWarn: "After removing the default authorized cluster, all accounts under the tenant will "
+        + "synchronously have their authorization for the cluster and its partitions revoked.",
         content: "Are you sure you want to remove cluster {1} from the default assigned clusters of tenant {0}?",
         removedSuccessMessage: "Successfully removed from the default assigned clusters",
+        successExplanation: "The following accounts {} failed to synchronously revoke authorization. "
+        + "Please confirm with the administrator.",
       },
       addModal: {
         title: "Add Default Cluster",
+        addWarn: "After adding the default authorized cluster, all accounts under the tenant "
+        + "will synchronously be granted authorization for the cluster.",
         successMessage: "Successfully added to the default assigned clusters",
+        successExplanation: "The following accounts {} failed to synchronize authorization. "
+        + "Please confirm with the administrator.",
       },
       noDataText: "No clusters are available to add at the moment. "
       + "Please confirm if the tenant already has authorized clusters.",
@@ -217,16 +241,28 @@ export const languageDic = {
     accountDefaultPartitions: {
       title: "Default Assigned Partitions",
       defaultAccountPartitionsNotFoundError: "Unable to retrieve the default assigned partitions set for the tenant",
-      explanation: "When creating a new account, default authorized partition information will be automatically "
-      + "added to the account's authorized partitions.",
+      explanation1: "A default authorized partition is a partition group under the tenant that affects all accounts "
+      + "within the tenant, specifically as follows:",
+      explanation2: "When creating a new account, the initial authorized partition for that account will be the "
+      + "default authorized partition;",
+      explanation3: "When adding or removing a partition from the default authorized partition, the authorized "
+      + "partitions for all accounts will be synchronously added or removed accordingly;",
       addModal: {
         title: "Add Default Partition",
+        addWarn: "After adding the default authorized partition, all accounts under the tenant will synchronously be "
+        + "granted authorization for the partition and its parent cluster.",
         successMessage: "Successfully added to the default assigned partitions",
+        successExplanation: "The following accounts {} failed to synchronize authorization. "
+        + "Please confirm with the administrator.",
       },
       removeModal: {
         title: "Remove Default Partition",
+        removeWarn: "After removing the default authorized partition, all accounts under the tenant will "
+        + "synchronously have their authorization for the partition revoked.",
         content: "Are you sure you want to remove partition {1} from the default assigned partitions of tenant {0}?",
         successMessage: "Successfully removed from the tenant's default assigned partitions",
+        successExplanation: "The following accounts {} failed to synchronously revoke authorization. "
+        + "Please confirm with the administrator.",
       },
       noDataText: "No partitions are available to add at the moment. "
       + "Please confirm if the tenant already has authorized partitions.",

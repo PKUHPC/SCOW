@@ -10,7 +10,7 @@ import { config } from "./env";
 import { resourceConfig } from "./resource";
 
 
-const distPath = "src/server/db";
+const distPath = "src/server";
 
 const { host, port, user, dbName, password, debug } = resourceConfig.db;
 

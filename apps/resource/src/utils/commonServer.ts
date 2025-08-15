@@ -5,6 +5,7 @@ import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";
 import { TenantPartitionRule } from "src/server/entities/TenantPartitionRule";
 import { callHook } from "src/server/hookClient";
+import { getAvailablePartitionsResult } from "src/server/utils/clusterPartitions";
 
 import { forkEntityManager } from "./getOrm";
 import { logger } from "./logger";
@@ -16,15 +17,23 @@ import { USE_MOCK } from "./processEnv";
  * @param tenantName
  * @returns
  */
-export async function getAccountsAssignedClusters(accountNames: string[], tenantName: string):
-Promise<string[]> {
+export async function getAccountsAssignedClusters(
+  accountNames: string[],
+  tenantName: string,
+  currentClusterIds: string[],
+):
+  Promise<string[]> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return ["hpc01"];
   }
 
   const em = await forkEntityManager();
-  const results = await em.find(AccountClusterRule, { tenantName, accountName: { $in: accountNames } });
+  const results = await em.find(AccountClusterRule, {
+    tenantName,
+    accountName: { $in: accountNames },
+    clusterId: { $in: currentClusterIds },
+  });
 
   const clusterIds = results.map((item) => (item.clusterId));
   const uniqueClusterIds = clusterIds.reduce<string[]>((acc, id) => {
@@ -44,7 +53,11 @@ Promise<string[]> {
  * @returns
  */
 export async function getAccountAssignedPartitionsInCluster(
-  accountName: string, tenantName: string, clusterId: string):
+  accountName: string,
+  tenantName: string,
+  clusterId: string,
+  currentClusterPartitions: Record<string, string[]>,
+):
   Promise<string[]> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
@@ -52,9 +65,15 @@ export async function getAccountAssignedPartitionsInCluster(
   }
 
   const em = await forkEntityManager();
-  const found = await em.find(AccountPartitionRule, { accountName, tenantName, clusterId });
+  const found = await em.find(AccountPartitionRule,
+    {
+      accountName,
+      tenantName,
+      clusterId,
+    });
 
-  return found.map((item) => item.partition);
+  return found.filter((item) => currentClusterPartitions[clusterId]?.includes(item.partition))
+    .map((item) => item.partition);
 }
 
 /**
@@ -64,7 +83,10 @@ export async function getAccountAssignedPartitionsInCluster(
  * @returns
  */
 export async function getAccountsAssignedPartitionsInCluster(
-  accountsWithTenants: { accountName: string, tenantName: string }[], clusterId: string):
+  accountsWithTenants: { accountName: string, tenantName: string }[],
+  clusterId: string,
+  currentClusterPartitions: Record<string, string[]>,
+):
   Promise<Record<string, PartitionNames>> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
@@ -84,6 +106,7 @@ export async function getAccountsAssignedPartitionsInCluster(
 
   const em = await forkEntityManager();
   const found = await em.find(AccountPartitionRule, { $or: conditions });
+  const filteredResult = getAvailablePartitionsResult(currentClusterPartitions, found);
 
   // 首先为所有账户创建空记录
   const result: Record<string, PartitionNames> = {};
@@ -95,7 +118,7 @@ export async function getAccountsAssignedPartitionsInCluster(
   });
 
   // 然后填充找到的分区
-  found.forEach((cur) => {
+  filteredResult.forEach((cur) => {
     const key = cur.accountName;
     const item = result[key] as PartitionNames & { _set: Set<string> };
 
@@ -121,7 +144,7 @@ export async function getAccountsAssignedPartitionsInCluster(
  * @returns
  */
 export async function getAccountsAssignedClusterPartitions(
-  accountNames: string[], tenantName: string):
+  accountNames: string[], tenantName: string, currentClusterPartitions: Record<string, string[]>):
   Promise<Record<string, PartitionNames>> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
@@ -130,16 +153,25 @@ export async function getAccountsAssignedClusterPartitions(
     };
   }
 
+  const currentClusterIds = Object.keys(currentClusterPartitions);
+
   const em = await forkEntityManager();
 
   // 获取集群
   const foundClusters = await em.find(AccountClusterRule, {
-    accountName: { $in: accountNames }, tenantName });
+    accountName: { $in: accountNames },
+    tenantName,
+    clusterId: { $in: currentClusterIds },
+  });
   // 获取分区
   const foundPartitions = await em.find(AccountPartitionRule, {
-    accountName: { $in: accountNames }, tenantName });
+    accountName: { $in: accountNames },
+    tenantName,
+    clusterId: { $in: currentClusterIds },
+  });
+  const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundPartitions);
 
-  const results = mapToClusterPartitions(foundClusters, foundPartitions);
+  const results = mapToClusterPartitions(foundClusters, filteredPartitionsResult);
 
   return results;
 }
@@ -149,8 +181,9 @@ export async function getAccountsAssignedClusterPartitions(
  * @param tenantName
  * @returns
  */
-export async function getTenantAssignedClusterPartitions(tenantName: string):
-Promise<Record<string, PartitionNames>> {
+export async function getTenantAssignedClusterPartitions(
+  tenantName: string, currentClusterPartitions: Record<string, string[]>):
+  Promise<Record<string, PartitionNames>> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return {
@@ -158,11 +191,20 @@ Promise<Record<string, PartitionNames>> {
     };
   }
 
+  const currentClusterIds = Object.keys(currentClusterPartitions);
+
   const em = await forkEntityManager();
 
-  const foundClusters = await em.find(TenantClusterRule, { tenantName });
-  const foundPartitions = await em.find(TenantPartitionRule, { tenantName });
-  const results = mapToClusterPartitions(foundClusters, foundPartitions);
+  const foundClusters = await em.find(TenantClusterRule, {
+    tenantName,
+    clusterId: { $in: currentClusterIds },
+  });
+  const foundPartitions = await em.find(TenantPartitionRule, {
+    tenantName,
+    clusterId: { $in: currentClusterIds },
+  });
+  const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundPartitions);
+  const results = mapToClusterPartitions(foundClusters, filteredPartitionsResult);
 
   return results;
 }
@@ -172,8 +214,12 @@ Promise<Record<string, PartitionNames>> {
  * @param accountName
  * @param tenantName
  */
-export async function assignCreatedAccount(accountName: string, tenantName: string):
-Promise<boolean> {
+export async function assignCreatedAccount(
+  accountName: string,
+  tenantName: string,
+  currentClusterPartitions: Record<string, string[]>,
+):
+  Promise<boolean> {
 
   const em = await forkEntityManager();
 
@@ -195,9 +241,20 @@ Promise<boolean> {
     await em.removeAndFlush(existedPartitions);
   }
 
+  const currentClusterIds = Object.keys(currentClusterPartitions);
+
   // 获取租户下设置的账户默认授权的集群和分区
-  const foundDefaultClusters = await em.find(TenantClusterRule, { tenantName, isAccountDefaultCluster: true });
-  const foundDefaultPartitions = await em.find(TenantPartitionRule, { tenantName, isAccountDefaultPartition: true });
+  const foundDefaultClusters = await em.find(TenantClusterRule,
+    { tenantName,
+      isAccountDefaultCluster: true,
+      clusterId: { $in: currentClusterIds },
+    });
+  const foundDefaultPartitions = await em.find(TenantPartitionRule, {
+    tenantName,
+    isAccountDefaultPartition: true,
+    clusterId: { $in: currentClusterIds },
+  });
+  const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundDefaultPartitions);
 
   const foundDefaultClusterIds = foundDefaultClusters.map((item) => (item.clusterId));
   foundDefaultClusterIds.forEach((clusterId) => {
@@ -209,7 +266,7 @@ Promise<boolean> {
     em.persist(accountCluster);
   });
 
-  foundDefaultPartitions.forEach((item) => {
+  filteredPartitionsResult.forEach((item) => {
     const accountPartition = new AccountPartitionRule({
       accountName,
       tenantName,
@@ -235,7 +292,6 @@ Promise<boolean> {
  */
 export async function getClusterAssignedAccountsData(clusterId: string, tenantName: string):
 Promise<string[]> {
-
   const em = await forkEntityManager();
   const found = await em.find(AccountClusterRule, { clusterId, tenantName });
 

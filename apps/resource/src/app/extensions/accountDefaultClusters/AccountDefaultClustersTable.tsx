@@ -51,8 +51,19 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
   [assignedClusterIds, currentClusters, clusterSortedIdMap]);
 
   const removeFromDefaultClustersMutation = trpc.partitions.removeFromAccountDefaultClusters.useMutation({
-    onSuccess() {
-      message.success(language.accountDefaultClusters.removeModal.removedSuccessMessage);
+    onSuccess(data) {
+      // 如果存在同步取消授权失败的租户下的账户，在成功通知中单独提示
+      if (data?.failedUnassignedAccounts.length > 0) {
+        modal.success({
+          title: language.accountDefaultClusters.removeModal.removedSuccessMessage,
+          content: getCurrentLangTextArgs(
+            language.accountDefaultClusters.removeModal.successExplanation,
+            [data.failedUnassignedAccounts.join(", ")]),
+        });
+      } else {
+        message.success(language.accountDefaultClusters.removeModal.removedSuccessMessage);
+      }
+
       reload();
     },
     onError(e) {
@@ -80,12 +91,16 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
 
   return (
     <div>
-      <Space style={{ marginBottom: "20px" }}>
-        <ExclamationCircleOutlined />
-        <span>
-          {language.accountDefaultClusters.explanation}
-        </span>
-      </Space>
+      <div style={{ marginBottom: "20px" }}>
+        <p style={{ lineHeight: "1.8" }}>
+          <ExclamationCircleOutlined />
+          <span style={{ marginLeft: "4px" }}>{language.accountDefaultClusters.explanation1}</span>
+          <br />
+          <strong>&bull; </strong>{language.accountDefaultClusters.explanation2}
+          <br />
+          <strong>&bull; </strong>{language.accountDefaultClusters.explanation3}
+        </p>
+      </div>
       <Table
         tableLayout="fixed"
         dataSource={displayedData as Cluster[]}
@@ -117,8 +132,17 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
                   modal.confirm({
                     title: language.accountDefaultClusters.removeModal.title,
                     icon: <ExclamationCircleOutlined />,
-                    content: getCurrentLangTextArgs(language.accountDefaultClusters.removeModal.content,
-                      [tenantName, clusterName]),
+                    content: (
+                      <>
+                        <p>
+                          {getCurrentLangTextArgs(language.accountDefaultClusters.removeModal.content,
+                            [tenantName, clusterName])}
+                        </p>
+                        <p style={{ color: "red" }}>
+                          {language.accountDefaultClusters.removeModal.removeWarn}
+                        </p>
+                      </>
+                    ),
                     onOk: async () => {
                       // 移出默认集群
                       await removerFromDefaultClusters(r.id);

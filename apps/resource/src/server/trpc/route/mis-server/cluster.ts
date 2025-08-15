@@ -6,7 +6,8 @@ import { ConfigServiceClient as CommonConfigClient } from "@scow/protos/build/co
 import { ClusterActivationStatus, ConfigServiceClient } from "@scow/protos/build/server/config";
 import { TRPCError } from "@trpc/server";
 import { getScowActivatedClusters } from "src/server/mis-server/cluster";
-import { isResourceAdmin, NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
+import { checkClusterIdAvailable, isResourceAdmin,
+  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { logger } from "src/utils/logger";
 import { getScowClient } from "src/utils/scowClient";
@@ -112,18 +113,7 @@ export const clusterPartitionsInfo = authProcedure
         const { clusterId } = input;
 
         // 检查当前请求集群是否可用
-        const currentClusters = await getScowActivatedClusters();
-        if (!currentClusters || currentClusters.length === 0) {
-          throw new NoAvailableClustersError();
-        }
-        const currentClusterIds = currentClusters.map((c) => c.id);
-        if (!currentClusterIds.includes(clusterId)) {
-          throw new TRPCError({
-            message: `Can not find cluster ${clusterId} in current activated clusters.
-              Please refresh the page and try again later`,
-            code: "NOT_FOUND",
-          });
-        }
+        await checkClusterIdAvailable(clusterId);
 
         const clustersUtil = await getClusterUtils();
 

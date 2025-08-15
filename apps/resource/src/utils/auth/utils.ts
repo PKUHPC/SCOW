@@ -1,5 +1,8 @@
 import { TRPCError } from "@trpc/server";
+import { Logger as PinoLogger } from "pino";
 import { PlatformRole, TenantRole } from "src/models/user";
+import { getScowActivatedClusterPartitions, getScowActivatedClusters } from "src/server/mis-server/cluster";
+import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Logger } from "ts-log";
 
@@ -51,7 +54,46 @@ export class AccountUserSyncRunningError extends TRPCError {
 }
 
 export function isResourceAdmin(user: ClientUserInfo): boolean {
-  return user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) 
+  return user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
       || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
 }
+
+
+export async function checkClusterIdAvailable(clusterId: string): Promise<void> {
+  const currentClusters = await getScowActivatedClusters();
+  if (!currentClusters || currentClusters.length === 0) {
+    throw new NoAvailableClustersError();
+  }
+  const currentClusterIds = currentClusters.map((c) => c.id);
+  if (!currentClusterIds.includes(clusterId)) {
+    throw new TRPCError({
+      message: `Can not find cluster ${clusterId} in current activated clusters.
+        Please refresh the page and try again later`,
+      code: "NOT_FOUND",
+    });
+  }
+}
+
+export async function checkClusterPartitionAvailable(
+  clusterId: string,
+  partitionName: string,
+  logger: PinoLogger,
+): Promise<void> {
+  const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+  if (!currentClusterPartitions[clusterId]?.includes(partitionName)) {
+    throw new TRPCError({
+      message: `Can not find the combination of  cluster ${clusterId} and partition ${partitionName}`
+      + " in current activated clusters. Please refresh the page and try again later",
+      code: "NOT_FOUND",
+    });
+  }
+}
+
+export async function checkSyncRunning(): Promise<void> {
+  const checkRunning = await checkSyncAccountUserRunning();
+  if (checkRunning.isRunning) {
+    throw new AccountUserSyncRunningError();
+  }
+}
+
 

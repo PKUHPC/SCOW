@@ -74,8 +74,18 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
   }, [data, query, currentClustersData, clusterSortedIdList]);
 
   const removeFromDefaultPartitionsMutation = trpc.partitions.removeFromAccountDefaultPartitions.useMutation({
-    onSuccess() {
-      message.success(language.accountDefaultPartitions.removeModal.successMessage);
+    onSuccess(data) {
+
+      if (data?.failedUnassignedAccounts.length > 0) {
+        modal.success({
+          title: language.accountDefaultPartitions.removeModal.successMessage,
+          content: getCurrentLangTextArgs(
+            language.accountDefaultPartitions.removeModal.successExplanation,
+            [data.failedUnassignedAccounts.join(", ")]),
+        });
+      } else {
+        message.success(language.accountDefaultPartitions.removeModal.successMessage);
+      }
       form.resetFields();
       reload();
       currentClustersRefetch();
@@ -112,12 +122,16 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
 
   return (
     <div>
-      <Space style={{ marginBottom: "20px" }}>
-        <ExclamationCircleOutlined />
-        <span>
-          {language.accountDefaultPartitions.explanation}
-        </span>
-      </Space>
+      <div style={{ marginBottom: "20px" }}>
+        <p style={{ lineHeight: "1.8" }}>
+          <ExclamationCircleOutlined />
+          <span style={{ marginLeft: "4px" }}>{language.accountDefaultPartitions.explanation1}</span>
+          <br />
+          <strong>&bull; </strong>{language.accountDefaultPartitions.explanation2}
+          <br />
+          <strong>&bull; </strong>{language.accountDefaultPartitions.explanation3}
+        </p>
+      </div>
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
@@ -193,8 +207,17 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
                   modal.confirm({
                     title: language.accountDefaultPartitions.removeModal.title,
                     icon: <ExclamationCircleOutlined />,
-                    content: getCurrentLangTextArgs(language.accountDefaultPartitions.removeModal.content,
-                      [tenantName, r.partition]),
+                    content: (
+                      <>
+                        <p>
+                          {getCurrentLangTextArgs(language.accountDefaultPartitions.removeModal.content,
+                            [tenantName, r.partition])}
+                        </p>
+                        <p style={{ color: "red" }}>
+                          {language.accountDefaultPartitions.removeModal.removeWarn}
+                        </p>
+                      </>
+                    ),
                     onOk: async () => {
                       // 移出分区请求
                       await removerFromDefaultPartitions(r.clusterId, r.partition);

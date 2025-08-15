@@ -120,10 +120,15 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
         selectable: assignedClusterIdsSet.has(item.clusterId) ? true : false,
       };
     }).sort((a, b) => {
-      // 使用 clusterSortedIdList 的索引进行排序
+      // 先使用 clusterSortedIdList 的索引进行排序
       const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
       const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
-      return aIndex - bIndex;
+      // cluster 索引不同时，按 cluster 顺序排序
+      if (aIndex !== bIndex) {
+        return aIndex - bIndex;
+      }
+      // cluster 索引相同时，按 partition 名称排序
+      return (a.partition ?? "").localeCompare(b.partition ?? "");
     });
 
     return filteredData;

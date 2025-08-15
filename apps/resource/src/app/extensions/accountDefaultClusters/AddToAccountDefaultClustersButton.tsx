@@ -93,8 +93,13 @@ const NewClusterModal: React.FC<ModalProps> = ({
       open={open}
       onCancel={close}
       onOk={onOk}
-      confirmLoading={isFetching}
+      confirmLoading={isFetching || addToDefaultClustersMutation.isLoading}
     >
+      <>
+        <p style={{ color: "red" }}>
+          {language.accountDefaultClusters.addModal.addWarn}
+        </p>
+      </>
       {
         selectableClustersList.length === 0
         && (

@@ -5,6 +5,10 @@ import { getClusterConfigsTypeFormat } from "@scow/lib-web/build/utils/typeConve
 import { ConfigServiceClient as CommonConfigClient } from "@scow/protos/build/common/config";
 import { ConfigServiceClient } from "@scow/protos/build/server/config";
 import { GetClusterConfigFilesResponse } from "@scow/protos/generated/common/config";
+import { TRPCError } from "@trpc/server";
+import { Logger } from "pino";
+import { NoAvailableClustersError } from "src/utils/auth/utils";
+import { getClusterUtils } from "src/utils/clusterAdapter";
 import { USE_MOCK } from "src/utils/processEnv";
 import { getScowClient } from "src/utils/scowClient";
 
@@ -56,4 +60,64 @@ export async function getScowActivatedClusters(): Promise<Cluster[]> {
   return activatedClusters;
 }
 
+// 获取当前在线集群ID列表
+export async function getScowActivatedClusterIds(): Promise<string[]> {
+  const currentClusters = await getScowActivatedClusters();
+  if (!currentClusters || currentClusters.length === 0) {
+    throw new NoAvailableClustersError();
+  }
+  const currentClusterIds = currentClusters.map((c) => c.id);
+  return currentClusterIds;
+}
+
+// 获取当前在线集群及分区
+export async function getScowActivatedClusterPartitions(
+  logger: Logger,
+): Promise<Record<string, string[]>> {
+
+  // 获取当前在线中的集群
+  const currentClusters = await getScowActivatedClusters();
+  if (!currentClusters || currentClusters.length === 0) {
+    throw new NoAvailableClustersError();
+  }
+  const currentClusterIds = currentClusters.map((c) => c.id);
+
+  const clusterPartitions: Record<string, string[]> = {};
+
+  const clustersUtil = await getClusterUtils();
+  const results =
+    await Promise.allSettled(currentClusterIds.map(async (clusterId) => {
+      const configInfo = await clustersUtil.callOnOne(
+        clusterId,
+        logger,
+        async (client) => {
+          return await asyncClientCall(client.config, "getClusterConfig", {});
+        },
+      );
+
+      if (configInfo) {
+        clusterPartitions[clusterId] = configInfo.partitions.map((p) => (p.name));
+      }
+    }));
+
+  const errors = results.reduce((acc: { clusterId: string; reason: any }[], result, index) => {
+    if (result.status === "rejected") {
+      acc.push({ clusterId: currentClusterIds[index], reason: result.reason });
+    }
+    return acc;
+  }, []);
+
+  if (errors.length > 0) {
+    const errorDetails = errors.map((error) => {
+      return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
+    }).join("; ");
+    throw new TRPCError({
+      message: `Can not get partitions info, error: ${errorDetails}`,
+      code: "NOT_FOUND",
+    });
+
+  }
+  return clusterPartitions;
+
+}
 

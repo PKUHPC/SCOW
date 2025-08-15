@@ -35,4 +35,16 @@ export const AccountPartitionRuleSchema = new EntitySchema<AccountPartitionRule>
     createTime: { type: "date", columnType: DATETIME_TYPE },
     updateTime: { type: "date", columnType: DATETIME_TYPE, onUpdate: () => new Date() },
   },
+  indexes: [
+    {
+      // 添加索引以提高按 租户+账户名+集群 或 租户+账户名 查询的性能
+      properties: ["tenantName", "accountName", "clusterId"],
+      name: "idx_tenant_account_cluster",
+    },
+    {
+      // 添加索引以提高按 租户+集群+分区 或 租户+集群 查询的性能
+      properties: ["tenantName", "clusterId", "partition"],
+      name: "idx_tenant_cluster_partition",
+    },
+  ],
 });

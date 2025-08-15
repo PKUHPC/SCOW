@@ -2,6 +2,7 @@
 
 import { PlusOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
+import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Modal, Select, Space } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
@@ -30,7 +31,7 @@ const NewPartitionModal: React.FC<ModalProps> = ({
   tenantName, defaultPartitions, defaultClusterIds, currentClusters, open, close, refresh, language, languageId,
 }) => {
 
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
   const { data, refetch, isFetching, error: tenantPartitionsListError }
@@ -81,8 +82,17 @@ const NewPartitionModal: React.FC<ModalProps> = ({
   }, [selectableClusterPartitionList, cluster]);
 
   const addToDefaultPartitionsMutation = trpc.partitions.addToAccountDefaultPartitions.useMutation({
-    onSuccess() {
-      message.success(language.accountDefaultPartitions.addModal.successMessage);
+    onSuccess(data) {
+      if (data?.failedAssignedAccounts.length > 0) {
+        modal.success({
+          title: language.accountDefaultPartitions.addModal.successMessage,
+          content: getCurrentLangTextArgs(
+            language.accountDefaultPartitions.addModal.successExplanation, [data.failedAssignedAccounts.join(", ")]),
+        });
+      } else {
+        message.success(language.accountDefaultPartitions.addModal.successMessage);
+      }
+
       form.resetFields();
       close();
       refresh();
@@ -123,8 +133,13 @@ const NewPartitionModal: React.FC<ModalProps> = ({
       open={open}
       onCancel={close}
       onOk={onOk}
-      confirmLoading={isFetching}
+      confirmLoading={isFetching || addToDefaultPartitionsMutation.isLoading}
     >
+      <>
+        <p style={{ color: "red" }}>
+          {language.accountDefaultPartitions.addModal.addWarn}
+        </p>
+      </>
       {
         Object.keys(selectableClusterPartitionList).length === 0
         && (

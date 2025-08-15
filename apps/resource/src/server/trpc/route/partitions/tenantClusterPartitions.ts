@@ -1,17 +1,16 @@
-import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { TRPCError } from "@trpc/server";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";
 import { TenantPartitionRule } from "src/server/entities/TenantPartitionRule";
-import { getScowActivatedClusters, getScowClusterConfigs } from "src/server/mis-server/cluster";
-import { checkSyncAccountUserRunning } from "src/server/mis-server/synchronization";
+import { callHook } from "src/server/hookClient";
+import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
 import { getScowAccounts, getScowTenants } from "src/server/mis-server/tenantAccount";
-import { authProcedure } from "src/server/trpc/procedure/base";
-import { AccountUserSyncRunningError, isResourceAdmin,
-  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
-import { getClusterUtils } from "src/utils/clusterAdapter";
+import { adminAuthProcedure } from "src/server/trpc/procedure/base";
+import { getAvailablePartitionsResult } from "src/server/utils/clusterPartitions";
+import { assignTenantAccountsPartitionThroughCluster,
+  unAssignTenantAccountsThroughCluster } from "src/server/utils/resourceAssignment";
+import { checkClusterIdAvailable, checkClusterPartitionAvailable, checkSyncRunning } from "src/utils/auth/utils";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
 import { USE_MOCK } from "src/utils/processEnv";
@@ -49,7 +48,7 @@ export const AllAssignedInfoSchema = z.object({
 });
 export type AllAssignedInfoSchema = z.infer<typeof AllAssignedInfoSchema>;
 
-export const allTenantAssignedClustersPartitions = authProcedure
+export const allTenantAssignedClustersPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -60,20 +59,14 @@ export const allTenantAssignedClustersPartitions = authProcedure
   })
   .input(z.void())
   .output(z.array(AllAssignedInfoSchema))
-  .query(async ({ ctx: { user } }) => {
+  .query(async () => {
 
     return mock(
       async () => {
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
 
-        // 检查现在是否有可用集群
-        const currentClusters = await getScowActivatedClusters();
-        if (!currentClusters || currentClusters.length === 0) {
-          throw new NoAvailableClustersError();
-        }
-        const currentClusterIds = currentClusters.map((c) => c.id);
+        // 获取当前在线的集群分区信息
+        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+        const currentClusterIds = Object.keys(currentClusterPartitions);
 
         const resultMap: Record<string , AllAssignedInfoSchema> = {};
 
@@ -109,11 +102,13 @@ export const allTenantAssignedClustersPartitions = authProcedure
 
         // 获取已授权分区信息
         const qbPartitions = em.createQueryBuilder(TenantPartitionRule, "tpr");
-        const tenantAssignedPartitionsInfo = await qbPartitions
+        const result = await qbPartitions
           .select(["tenantName", "partition", "clusterId"])
           .where({ "clusterId":  { $in: currentClusterIds } })
-          // .groupBy("tenantName")
           .execute();
+
+        // 在当前在线集群分区中过滤分区结果
+        const tenantAssignedPartitionsInfo = getAvailablePartitionsResult(currentClusterPartitions, result);
 
         tenantAssignedPartitionsInfo.forEach((item) => {
           // 只获取与 从scow获取的租户已授权分区信息
@@ -147,7 +142,7 @@ export const allTenantAssignedClustersPartitions = authProcedure
   });
 
 
-export const assignTenantCluster = authProcedure
+export const assignTenantCluster = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -161,21 +156,13 @@ export const assignTenantCluster = authProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    const configClusters = await getScowClusterConfigs();
-    if (configClusters.clusterConfigs.length === 0) {
-      logger.info("Can not find cluster config files.");
-      throw new NoAvailableClustersError;
-    }
+    await checkClusterIdAvailable(clusterId);
 
     const em = await forkEntityManager();
 
@@ -199,7 +186,7 @@ export const assignTenantCluster = authProcedure
 
   });
 
-export const unAssignTenantCluster = authProcedure
+export const unAssignTenantCluster = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -213,36 +200,16 @@ export const unAssignTenantCluster = authProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    // 检查现在是否有可用集群
-    const currentClusters = await getScowActivatedClusters();
-    if (!currentClusters || currentClusters.length === 0) {
-      throw new NoAvailableClustersError();
-    }
-    const currentClusterIds = currentClusters.map((c) => c.id);
-    if (!currentClusterIds.includes(clusterId)) {
-      throw new TRPCError({
-        message: `Can not find cluster ${clusterId} in current activated clusters.
-        Please refresh the page and try again later`,
-        code: "NOT_FOUND",
-      });
-    }
-
+    await checkClusterIdAvailable(clusterId);
+    // 为了避免账户授权分区信息有冲突
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
 
@@ -253,89 +220,106 @@ export const unAssignTenantCluster = authProcedure
       return;
     }
 
-    // 在 scow 下获取租户 tenantName 下的所有账户
-    const scowTenantAccounts = await getScowAccounts(tenantName);
-    const accountNameList = scowTenantAccounts.results.map((a) => a.accountName);
+    // 调用适配器，在集群下封锁租户下的账户
+    const clusterProcessResult = await unAssignTenantAccountsThroughCluster(tenantName, clusterId, logger);
+    const { failedBlockedAccounts, successfullyBlockedAccounts } = clusterProcessResult;
 
-    // 调用适配器接口, 在集群下封锁这个租户下的所有账户
-    const failedBlockedAccounts: string[] = [];
-    const successfullyBlockedAccounts: string[] = [];
+    // 在同一个事务中完成数据更新
+    return await em.transactional(async (em) => {
 
-    const clustersUtil = await getClusterUtils();
-    await clustersUtil.callOnOne(
-      clusterId,
-      logger,
-      async (adapterClient) => {
-        await Promise.allSettled(accountNameList.map(async (accountName) => {
-          try {
+      if (successfullyBlockedAccounts.length > 0) {
+        // 移除账户集群授权数据，移除账户分区授权数据
+        const deletedAccountClusterCount = await em.nativeDelete(
+          AccountClusterRule,
+          {
+            accountName: { $in: successfullyBlockedAccounts },
+            tenantName,
+            clusterId,
+          },
+        );
+        const deletedAccountPartitionCount = await em.nativeDelete(
+          AccountPartitionRule,
+          {
+            accountName: { $in: successfullyBlockedAccounts },
+            tenantName,
+            clusterId,
+          },
+        );
+        logger.info(`Removed ${deletedAccountClusterCount} account cluster rules, `
+        + `${deletedAccountPartitionCount} account partition rules `
+        + `during unassign cluster ${clusterId} of tenant ${tenantName}.`);
 
-            const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
-            // 1.获取当前集群下所有分区
-            const partitionNames = clusterConfig.partitions.map((p) => p.name);
-
-            // 2.封锁当前集群下所有分区
-            if (partitionNames.length > 0) {
-              const result = await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
-                accountName,
-                blockedPartitions:  partitionNames,
-              });
-
-              if (result) {
-                successfullyBlockedAccounts.push(accountName);
-              }
-            }
-          } catch (e) {
-            logger.info("Can not unassign account (accountName : %s) in cluster (ClusterId: %s) with error details: %s",
-              accountName, clusterId, e);
-            failedBlockedAccounts.push(accountName);
-          };
+        // call hook
+        await Promise.all(successfullyBlockedAccounts.map((accountName) => {
+          callHook("accountUnassignedFromCluster", { accountName, tenantName, clusterId }, logger);
         }));
-      },
-    );
 
-    // 如果取消授权成功的账户数据存在
-    if (successfullyBlockedAccounts.length > 0) {
-    // 移除账户集群授权数据，移除账户分区授权数据
-      const removedAccountClusters = await em.find(AccountClusterRule, {
-        accountName: { $in: successfullyBlockedAccounts }, clusterId });
-      const removedAccountPartitions = await em.find(AccountPartitionRule, {
-        accountName: { $in: successfullyBlockedAccounts }, clusterId });
-      em.remove([...removedAccountClusters, ...removedAccountPartitions]);
+      };
 
-      // 取消该集群的默认账户授权集群，取消该集群下分区的默认账户授权分区
-      tenantCluster.isAccountDefaultCluster = false;
-      const tenantClusterPartitions = await em.find(TenantPartitionRule, { tenantName, clusterId });
-      tenantClusterPartitions.forEach((tp) => (tp.isAccountDefaultPartition = false));
-    };
+      // 如果取消授权失败的账户数据存在
+      // 只更改默认授权数据，扔出错误
+      if (failedBlockedAccounts.length > 0) {
+        await em.nativeUpdate(
+          TenantPartitionRule,
+          {
+            tenantName,
+            clusterId,
+          },
+          {
+            isAccountDefaultPartition: false,
+          },
+        );
+        await em.nativeUpdate(
+          TenantClusterRule,
+          {
+            tenantName,
+            clusterId,
+          },
+          {
+            isAccountDefaultCluster: false,
+          },
+        );
 
-    // 如果取消授权失败的账户数据存在
-    if (failedBlockedAccounts.length > 0) {
-    // 若上述等待移除的数据存在，则同步到数据库
-      await em.flush();
-
-      logger.info(
-        `Unassign tenant ${tenantName} from cluster (ClusterId: ${clusterId}) failed.`
+        logger.info(
+          `Unassign tenant ${tenantName} from cluster (ClusterId: ${clusterId}) failed.`
         + ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,`
         + ` while ${successfullyBlockedAccounts.toString()} were successfully unassigned.`,
-      );
-      throw new TRPCError({
-        message:
+        );
+        throw new TRPCError({
+          message:
         `Unassign tenant ${tenantName} from cluster (ClusterId: ${clusterId}) failed.`
         + ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,`,
-        code: "CONFLICT",
-      });
-    }
+          code: "CONFLICT",
+        });
+      }
 
-    // 如果没有取消授权失败的账户数据，则移除租户集群授权数据，移除租户授权分区数据
-    const removedTenantClusterPartitions = await em.find(TenantPartitionRule, { tenantName, clusterId });
-    em.remove([tenantCluster, ...removedTenantClusterPartitions]);
-    await em.flush();
+      // 如果没有取消授权失败的账户数据，则移除租户集群授权数据，移除租户授权分区数据
+      const deletedTenantPartitionCount = await em.nativeDelete(
+        TenantPartitionRule,
+        {
+          tenantName,
+          clusterId,
+        },
+      );
+      logger.info(`Removed ${deletedTenantPartitionCount} tenant partition rules `
+        + `during unassign cluster ${clusterId} of tenant ${tenantName}.`);
+
+      // 避免不同事物内实体混乱，用nativeDelete执行租户集群规则实体删除
+      await em.nativeDelete(
+        TenantClusterRule,
+        {
+          tenantName,
+          clusterId,
+        },
+      );
+
+    });
 
   });
 
 
 
-export const assignTenantPartition = authProcedure
+export const assignTenantPartition = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -350,15 +334,13 @@ export const assignTenantPartition = authProcedure
     partition: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
+    await checkClusterPartitionAvailable(clusterId, partition ,logger);
 
     const em = await forkEntityManager();
 
@@ -385,7 +367,7 @@ export const assignTenantPartition = authProcedure
   });
 
 
-export const unAssignTenantPartition = authProcedure
+export const unAssignTenantPartition = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -400,36 +382,16 @@ export const unAssignTenantPartition = authProcedure
     partition: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
-    // 检查现在是否有可用集群
-    const currentClusters = await getScowActivatedClusters();
-    if (!currentClusters || currentClusters.length === 0) {
-      throw new NoAvailableClustersError();
-    }
-    const currentClusterIds = currentClusters.map((c) => c.id);
-    if (!currentClusterIds.includes(clusterId)) {
-      throw new TRPCError({
-        message: `Can not find cluster ${clusterId} in current activated clusters.
-          Please refresh the page and try again later`,
-        code: "NOT_FOUND",
-      });
-    }
-
+    await checkClusterPartitionAvailable(clusterId, partition ,logger);
+    // 为了避免账户授权分区信息有冲突
     // 检查当前是否有正在进行的账户用户同步任务
-    const checkRunning = await checkSyncAccountUserRunning();
-    if (checkRunning.isRunning) {
-      throw new AccountUserSyncRunningError();
-    }
-
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
 
@@ -441,78 +403,74 @@ export const unAssignTenantPartition = authProcedure
       return;
     }
 
-    // 在 scow 下获取租户 tenantName 下的所有账户
-    const scowTenantAccounts = await getScowAccounts(tenantName);
-    const accountNameList = scowTenantAccounts.results.map((a) => a.accountName);
-
-    // 调用适配器接口, 在集群下封锁这个租户下的所有账户
-    const failedBlockedAccounts: string[] = [];
-    const successfullyBlockedAccounts: string[] = [];
-
-    const clustersUtil = await getClusterUtils();
-    await clustersUtil.callOnOne(
-      clusterId,
-      logger,
-      async (adapterClient) => {
-        await Promise.allSettled(accountNameList.map(async (accountName) => {
-          try {
-            // 指定分区下封锁
-            // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
-            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-            const result = await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
-              accountName,
-              blockedPartitions: [partition],
-            });
-            if (result) {
-              successfullyBlockedAccounts.push(accountName);
-            }
-          } catch (e) {
-            logger.info("Can not unassign account (accountName : %s) in cluster (ClusterId: %s) with error details: %s",
-              accountName, clusterId, e);
-            failedBlockedAccounts.push(accountName);
-          };
-        }));
-      },
+    const clusterProcessResult = await unAssignTenantAccountsThroughCluster(
+      tenantName, clusterId, logger, partition,
     );
+    const { successfullyBlockedAccounts, failedBlockedAccounts } = clusterProcessResult;
 
-    // 如果取消授权成功的账户数据存在
-    if (successfullyBlockedAccounts.length > 0) {
-      // 移除账户分区授权数据
-      const removedAccountPartitions = await em.find(AccountPartitionRule, {
-        accountName: { $in: successfullyBlockedAccounts }, partition, clusterId });
-      em.remove([...removedAccountPartitions]);
+    // 在同一个数据库事务中完成数据更新
+    return await em.transactional(async (em) => {
+      // 如果取消授权成功的账户数据存在
+      if (successfullyBlockedAccounts.length > 0) {
+        // 移除账户分区授权数据
+        const deletedAccountPartitionCount = await em.nativeDelete(
+          AccountPartitionRule,
+          {
+            accountName: { $in: successfullyBlockedAccounts },
+            tenantName,
+            partition,
+            clusterId,
+          },
+        );
+        logger.info(`Removed ${deletedAccountPartitionCount} account partition rules `
+        + `during unassign cluster's partition ${clusterId}:${partition} of tenant ${tenantName}.`);
+      };
 
-      // 取消该集群的默认账户授权集群，取消该集群下分区的默认账户授权分区
-      tenantPartition.isAccountDefaultPartition = false;
-    };
+      // 如果取消授权失败的账户数据存在
+      // 只更改默认授权数据，扔出错误
+      if (failedBlockedAccounts.length > 0) {
 
-    // 如果取消授权失败的账户数据存在
-    if (failedBlockedAccounts.length > 0) {
-      // 若上述等待移除的数据存在，则同步到数据库
-      await em.flush();
+        await em.nativeUpdate(
+          TenantPartitionRule,
+          {
+            tenantName,
+            clusterId,
+          },
+          {
+            isAccountDefaultPartition: false,
+          },
+        );
 
-      logger.info(
-        `Unassign tenant ${tenantName} from partition ${partition} of cluster (ClusterId: ${clusterId}) failed.`
+        logger.info(
+          `Unassign tenant ${tenantName} from partition ${partition} of cluster (ClusterId: ${clusterId}) failed.`
           + ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned,`
           + ` while ${successfullyBlockedAccounts.toString()} were successfully unassigned.`);
 
-      throw new TRPCError({
-        message:
+        throw new TRPCError({
+          message:
           `Unassign tenant ${tenantName} from partition ${partition} of cluster (ClusterId: ${clusterId}) failed.`
           + ` Accounts ${failedBlockedAccounts.toString()} were failed to be unassigned.`,
-        code: "CONFLICT",
-      });
-    }
+          code: "CONFLICT",
+        });
+      }
 
-    // 如果没有取消授权失败的账户数据，则移除租户集群授权数据，移除租户授权分区数据
-    const removedTenantClusterPartitions = await em.find(TenantPartitionRule, { tenantName, clusterId, partition });
-    em.remove([...removedTenantClusterPartitions]);
-    await em.flush();
+      // 如果没有取消授权失败的账户数据，则移除租户授权分区数据
+      // 避免不同事物内实体混乱，用nativeDelete执行租户集群规则实体删除
+      await em.nativeDelete(
+        TenantPartitionRule,
+        {
+          tenantName,
+          clusterId,
+          partition,
+        },
+      );
+
+    });
 
   });
 
 
-export const accountDefaultClusters = authProcedure
+export const accountDefaultClusters = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -529,20 +487,22 @@ export const accountDefaultClusters = authProcedure
     assignedClusters: z.array(z.string()),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
         const { tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        // 检查现在是否有可用集群
+        const currentClusterIds = await getScowActivatedClusterIds();
 
         const em = await forkEntityManager();
 
         const [res, count] = await em.findAndCount(TenantClusterRule,
-          { tenantName, isAccountDefaultCluster: true },
+          { tenantName,
+            isAccountDefaultCluster: true,
+            clusterId: { $in: currentClusterIds },
+          },
         );
 
         return {
@@ -557,7 +517,7 @@ export const accountDefaultClusters = authProcedure
     );
   });
 
-export const accountDefaultPartitions = authProcedure
+export const accountDefaultPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -574,26 +534,32 @@ export const accountDefaultPartitions = authProcedure
     assignedPartitions: z.array(AssignedPartitionSchema),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
         const { tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        // 获取当前在线的集群分区信息
+        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+        const currentClusterIds = Object.keys(currentClusterPartitions);
 
         const em = await forkEntityManager();
 
-        const [res, count] = await em.findAndCount(TenantPartitionRule,
-          { tenantName, isAccountDefaultPartition: true },
+        const res = await em.find(TenantPartitionRule,
+          {
+            tenantName,
+            isAccountDefaultPartition: true,
+            clusterId: { $in: currentClusterIds },
+          },
         );
+        // 在当前在线集群分区中过滤分区结果
+        const filteredResult = getAvailablePartitionsResult(currentClusterPartitions, res);
 
         return {
           tenantName,
-          assignedTotalCount: count,
-          assignedPartitions: res.map((item) => ({
+          assignedTotalCount: filteredResult.length,
+          assignedPartitions: filteredResult.map((item) => ({
             clusterId: item.clusterId,
             partition: item.partition,
           })),
@@ -605,8 +571,10 @@ export const accountDefaultPartitions = authProcedure
     );
   });
 
-
-export const addToAccountDefaultPartitions = authProcedure
+// 在租户分区授权规则中写入添加默认分区的授权信息
+// 同时同步向租户下所有账户添加此分区的授权信息
+// 如果账户未授权该租户所属集群，同时授权集群信息
+export const addToAccountDefaultPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -620,63 +588,137 @@ export const addToAccountDefaultPartitions = authProcedure
     clusterId: z.string(),
     partition: z.string(),
   }))
-  .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .output(z.object({
+    failedAssignedAccounts: z.array(z.string()),
+  }))
+  .mutation(async ({ input }) => {
 
-    if (USE_MOCK) return;
+    if (USE_MOCK) return { failedAssignedAccounts: []};
 
     const { tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
+    await checkClusterPartitionAvailable(clusterId, partition ,logger);
+    // 为了避免账户授权分区信息有冲突
+    // 检查当前是否有正在进行的账户用户同步任务
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
 
-    return await em.transactional(async (em) => {
+    const [tenantCluster, tenantPartition, existedAccountPartitions ] = await Promise.all([
+      em.findOne(TenantClusterRule, { tenantName, clusterId }),
+      em.findOne(TenantPartitionRule, { tenantName, clusterId, partition }),
+      em.find(AccountPartitionRule, {
+        tenantName: tenantName,
+        clusterId: clusterId,
+        partition: partition,
+      }),
+    ]);
 
-      const tenantCluster = await em.findOne(TenantClusterRule, { tenantName, clusterId });
-
-      if (!tenantCluster) {
-        throw new TRPCError({
-          message: `The cluster (ClusterId: ${clusterId})
+    if (!tenantCluster) {
+      throw new TRPCError({
+        message: `The cluster (ClusterId: ${clusterId})
            has not been assigned to Tenant: ${tenantName}`,
-          code: "CONFLICT",
-        });
-      }
+        code: "CONFLICT",
+      });
+    }
 
-      if (!tenantCluster.isAccountDefaultCluster) {
-        throw new TRPCError({
-          message: `The cluster (ClusterId: ${clusterId})
+    if (!tenantCluster.isAccountDefaultCluster) {
+      throw new TRPCError({
+        message: `The cluster (ClusterId: ${clusterId})
            is not the default account clusters assigned to Tenant: ${tenantName}`,
-          code: "CONFLICT",
-        });
-      }
+        code: "CONFLICT",
+      });
+    }
 
-      const tenantPartition = await em.findOne(TenantPartitionRule, { tenantName, clusterId, partition });
-
-      if (!tenantPartition) {
-        throw new TRPCError({
-          message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
+    if (!tenantPartition) {
+      throw new TRPCError({
+        message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
            has not been assigned to Tenant: ${tenantName}`,
-          code: "CONFLICT",
+        code: "CONFLICT",
+      });
+    }
+
+    // 为了避免不再次重复授权该账户下的分区授权信息，如果已经添加了默认分区授权信息，会报错
+    if (tenantPartition.isAccountDefaultPartition) {
+      throw new TRPCError({
+        message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
+           as already been in the account default partitions of Tenant: ${tenantName}`,
+        code: "CONFLICT",
+      });
+    }
+
+    // 查询账户的已授权分区信息
+    const existedAccountNames = existedAccountPartitions.map((x) => x.accountName);
+    const clusterProcessResult = await assignTenantAccountsPartitionThroughCluster(
+      tenantName, clusterId, partition, existedAccountNames, logger,
+    );
+    const { failedUnblockedAccounts, successfullyUnblockedAccounts, accountsToProcessInEm } = clusterProcessResult;
+
+    return await em.transactional(async (em) => {
+      const accountClustersToPersist: AccountClusterRule[] = [];
+      const accountPartitionsToPersist: AccountPartitionRule[] = [];
+      for (const accountName of accountsToProcessInEm) {
+        // 检查集群是否已授权，如没有，则重新授权
+        const accountCluster = await em.findOne(AccountClusterRule, {
+          accountName,
+          tenantName,
+          clusterId,
         });
+        if (!accountCluster) {
+          const newAccountCluster = new AccountClusterRule({
+            accountName,
+            tenantName,
+            clusterId,
+          });
+          accountClustersToPersist.push(newAccountCluster);
+        }
+        const newAccountPartition = new AccountPartitionRule({
+          accountName,
+          tenantName,
+          clusterId,
+          partition,
+        });
+        accountPartitionsToPersist.push(newAccountPartition);
+
+      };
+
+      // 为所有账户写入授权信息
+      if (accountPartitionsToPersist.length > 0 || accountClustersToPersist.length > 0) {
+        await Promise.all([
+          em.insertMany(AccountClusterRule, accountClustersToPersist),
+          em.insertMany(AccountPartitionRule, accountPartitionsToPersist),
+        ]);
+
+        // call hook
+        // 同步添加租户下账户授权分区时补充添加的账户的集群授权
+        await Promise.all(accountClustersToPersist.map((ac) => {
+          callHook("accountAssignedToClusters", {
+            accountName: ac.accountName, tenantName, clusterIds: [clusterId]}, logger);
+        }));
+      };
+      await em.nativeUpdate(TenantPartitionRule, {
+        tenantName,
+        clusterId,
+        partition,
+      }, {
+        isAccountDefaultPartition: true,
+      });
+
+      // 如果取消授权失败的账户数据存在, 返回失败的账户名
+      if (failedUnblockedAccounts.length > 0) {
+        logger.info(
+          `Add to tenant ${tenantName} default partition ${partition} from cluster (ClusterId: ${clusterId}) failed.`
+        + ` Accounts ${failedUnblockedAccounts.toString()} were failed to be assigned,`
+        + ` while ${successfullyUnblockedAccounts.toString()} were successfully assigned.`,
+        );
       }
-
-      if (tenantPartition.isAccountDefaultPartition) {
-        logger.info(`The partition (ClusterId: ${clusterId}, Name: ${partition})
-           has already been in the account default partitions of Tenant: ${tenantName}`);
-        return;
-      }
-
-      tenantPartition.isAccountDefaultPartition = true;
-      await em.persistAndFlush(tenantPartition);
-
+      return { failedAssignedAccounts: failedUnblockedAccounts };
     });
-
   });
 
-export const removeFromAccountDefaultPartitions = authProcedure
+// 1.在租户集群授权规则中写入移出默认集群的授权信息
+// 2.同时同步向租户下所有账户取消此分区的授权信息
+export const removeFromAccountDefaultPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -690,46 +732,83 @@ export const removeFromAccountDefaultPartitions = authProcedure
     clusterId: z.string(),
     partition: z.string(),
   }))
-  .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .output(z.object({
+    failedUnassignedAccounts: z.array(z.string()),
+  }))
+  .mutation(async ({ input }) => {
 
-    if (USE_MOCK) return;
+    if (USE_MOCK) return { failedUnassignedAccounts: []};
 
     const { tenantName, clusterId, partition } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
-
+    await checkClusterPartitionAvailable(clusterId, partition ,logger);
+    // 为了避免账户授权分区信息有冲突
+    // 检查当前是否有正在进行的账户用户同步任务
+    await checkSyncRunning();
     const em = await forkEntityManager();
 
-    return await em.transactional(async (em) => {
+    const tenantPartition = await em.findOne(TenantPartitionRule, { tenantName, clusterId, partition });
 
-      const tenantPartition = await em.findOne(TenantPartitionRule, { tenantName, clusterId, partition });
-
-      if (!tenantPartition) {
-        throw new TRPCError({
-          message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
+    if (!tenantPartition) {
+      throw new TRPCError({
+        message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
            has not been assigned to Tenant: ${tenantName}`,
-          code: "CONFLICT",
-        });
+        code: "CONFLICT",
+      });
+    }
+    // 为了避免不再次重复更改该账户下的分区授权信息，如果已经移出了默认分区授权信息，会报错
+    if (!tenantPartition.isAccountDefaultPartition) {
+      throw new TRPCError({
+        message: `The partition (ClusterId: ${clusterId}, Name: ${partition})
+           has already removed from the account default partitions of Tenant: ${tenantName}`,
+        code: "CONFLICT",
+      });
+    }
+
+    const clusterProcessResult = await unAssignTenantAccountsThroughCluster(
+      tenantName, clusterId, logger, partition,
+    );
+    const { failedBlockedAccounts, successfullyBlockedAccounts } = clusterProcessResult;
+    // 在同一个事务下更新数据
+    return await em.transactional(async (em) => {
+      // 移除该租户下账户的授权分区信息
+      const deletedCount = await em.nativeDelete(AccountPartitionRule, {
+        accountName: { $in: successfullyBlockedAccounts },
+        tenantName,
+        clusterId,
+        partition,
+      });
+      logger.info(`${deletedCount} accounts' partitions authorization is revoked `
+        + `for tenant default partition ${partition} of ${tenantName} is removed`);
+
+      // 修改租户默认授权应用在字段
+      await em.nativeUpdate(TenantPartitionRule, {
+        tenantName,
+        clusterId,
+        partition,
+      }, {
+        isAccountDefaultPartition: false,
+      });
+
+      // 如果取消授权失败的账户数据存在
+      if (failedBlockedAccounts.length > 0) {
+        logger.info(
+          `Some accounts of tenant  ${tenantName} partition unassigned failed. `
+          + `(ClusterId: ${clusterId}, Partition: ${partition})`
+        + ` Accounts ${clusterProcessResult.failedBlockedAccounts.toString()} were failed to be unassigned,`
+        + ` while ${clusterProcessResult.successfullyBlockedAccounts.toString()} were successfully unassigned.`,
+        );
       }
 
-      if (!tenantPartition.isAccountDefaultPartition) {
-        logger.info(`The partition (ClusterId: ${clusterId}, Name: ${partition})
-           has already removed from the account default partitions of Tenant: ${tenantName}`);
-        return;
-      }
-
-      tenantPartition.isAccountDefaultPartition = false;
-      await em.persistAndFlush(tenantPartition);
-
+      return { failedUnassignedAccounts: failedBlockedAccounts };
     });
 
   });
 
 
-export const addToAccountDefaultClusters = authProcedure
+// 1.在租户集群授权规则中写入添加默认集群的授权信息
+// 2.同时同步向租户下所有账户添加此集群授权信息
+export const addToAccountDefaultClusters = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -743,15 +822,13 @@ export const addToAccountDefaultClusters = authProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
 
     const { tenantName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
+    await checkClusterIdAvailable(clusterId);
 
     const em = await forkEntityManager();
 
@@ -766,20 +843,56 @@ export const addToAccountDefaultClusters = authProcedure
         });
       }
 
+      // 为了避免不再次重复授权该账户下的集群授权信息，如果已经添加了默认集群授权信息，会报错
       if (tenantCluster.isAccountDefaultCluster) {
-        logger.info(`The cluster (ClusterId: ${clusterId})
-           has already been in the account default partitions of Tenant: ${tenantName}`);
-        return;
+        throw new TRPCError({
+          message: `The cluster (ClusterId: ${clusterId}) has already been in`
+          + ` the account default partitions of Tenant: ${tenantName}`,
+          code: "CONFLICT",
+        });
+      }
+
+      // 在 scow 下获取租户 tenantName 下的所有账户
+      const scowTenantAccounts = await getScowAccounts(tenantName);
+      const accountNameList = scowTenantAccounts.results.map((a) => a.accountName);
+
+      // 查找账户已授权集群信息
+      const accountClusters = await em.find(AccountClusterRule, {
+        tenantName: tenantName,
+        clusterId: clusterId,
+      });
+      const existedAccountNames = accountClusters.map((x) => x.accountName);
+
+      const accountClustersToPersist: AccountClusterRule[] = [];
+      accountNameList.forEach((accountName) => {
+        if (!existedAccountNames.includes(accountName)) {
+          const newAccountCluster = new AccountClusterRule({
+            accountName,
+            tenantName,
+            clusterId,
+          });
+          accountClustersToPersist.push(newAccountCluster);
+        }
+      });
+      // 为所有账户写入集群的授权信息
+      if (accountClustersToPersist.length > 0) {
+        await em.insertMany(AccountClusterRule, accountClustersToPersist);
+        // call hook
+        await Promise.all(accountClustersToPersist.map((ac) => {
+          callHook("accountAssignedToClusters", {
+            accountName: ac.accountName, tenantName, clusterIds: [clusterId]}, logger);
+        }));
       }
 
       tenantCluster.isAccountDefaultCluster = true;
       await em.persistAndFlush(tenantCluster);
-
     });
 
   });
 
-export const removeFromAccountDefaultClusters = authProcedure
+// 1.在租户集群授权规则中写入移出默认集群的授权信息
+// 2.同时移出租户下所有账户的此集群授权信息
+export const removeFromAccountDefaultClusters = adminAuthProcedure
   .meta({
     openapi: {
       method: "PUT",
@@ -792,53 +905,110 @@ export const removeFromAccountDefaultClusters = authProcedure
     tenantName: z.string(),
     clusterId: z.string(),
   }))
-  .output(z.void())
-  .mutation(async ({ input, ctx: { user } }) => {
+  .output(z.object({
+    failedUnassignedAccounts: z.array(z.string()),
+  }))
+  .mutation(async ({ input }) => {
 
-    if (USE_MOCK) return;
+    if (USE_MOCK) return { failedUnassignedAccounts: []};
 
     const { tenantName, clusterId } = input;
 
-    if (!isResourceAdmin(user)) {
-      throw new UserForbiddenError(user.identityId);
-    }
+    await checkClusterIdAvailable(clusterId);
+    // 为了避免账户授权分区信息有冲突
+    // 检查当前是否有正在进行的账户用户同步任务
+    await checkSyncRunning();
 
     const em = await forkEntityManager();
+    const tenantCluster = await em.findOne(TenantClusterRule, { tenantName, clusterId });
 
-    return await em.transactional(async (em) => {
-
-      const tenantCluster = await em.findOne(TenantClusterRule, { tenantName, clusterId });
-
-      if (!tenantCluster) {
-        throw new TRPCError({
-          message: `The partition (ClusterId: ${clusterId}) has not been assigned to Tenant: ${tenantName}`,
-          code: "CONFLICT",
-        });
-      }
-
-      if (!tenantCluster.isAccountDefaultCluster) {
-        logger.info(`The partition (ClusterId: ${clusterId})
-           has already removed from the account default partitions of Tenant: ${tenantName}`);
-        return;
-      }
-
-      const relatedAccountDefaultPartitions = await em.find(TenantPartitionRule, { tenantName, clusterId });
-      relatedAccountDefaultPartitions.forEach((partition) => {
-        partition.isAccountDefaultPartition = false;
+    if (!tenantCluster) {
+      throw new TRPCError({
+        message: `The partition (ClusterId: ${clusterId}) has not been assigned to Tenant: ${tenantName}`,
+        code: "CONFLICT",
       });
-      em.persist(relatedAccountDefaultPartitions);
+    }
+    // 为了避免不再次重复取消账户下的集群授权信息，如果已经移出了默认集群授权信息，会报错
+    if (!tenantCluster.isAccountDefaultCluster) {
+      throw new TRPCError({
+        message: `The cluster (ClusterId: ${clusterId}) has already removed from Tenant: ${tenantName}`,
+        code: "CONFLICT",
+      });
+    }
 
-      tenantCluster.isAccountDefaultCluster = false;
-      em.persist(tenantCluster);
+    const clusterProcessResult = await unAssignTenantAccountsThroughCluster(
+      tenantName, clusterId, logger,
+    );
+    const { failedBlockedAccounts, successfullyBlockedAccounts } = clusterProcessResult;
 
-      await em.flush();
+    // 在同一个事务中进行数据更新
+    return await em.transactional(async (em) => {
+      // 取消账户集群/分区的授权
+      if (successfullyBlockedAccounts.length > 0) {
+        const deletedAccountClusterCount = await em.nativeDelete(
+          AccountClusterRule, {
+            accountName: { $in: successfullyBlockedAccounts },
+            tenantName,
+            clusterId,
+          },
+        );
+
+        const deletedAccountPartitionCount = await em.nativeDelete(
+          AccountPartitionRule, {
+            accountName: { $in: successfullyBlockedAccounts },
+            tenantName,
+            clusterId,
+          },
+        );
+        logger.info(`Successfully unassign ${deletedAccountClusterCount} account cluster rules `
+          + `and ${deletedAccountPartitionCount} account partition rules during remove `
+          + `default cluster ${clusterId} from tenant ${tenantName}`,
+        );
+
+        // call hook
+        await Promise.all(successfullyBlockedAccounts.map((accountName) => {
+          callHook("accountUnassignedFromCluster", {
+            accountName, tenantName, clusterId }, logger);
+        }));
+      }
+
+      // 更新租户分区的默认分区字段
+      const updatedTenantPartitionCount = await em.nativeUpdate(
+        TenantPartitionRule, {
+          tenantName,
+          clusterId,
+        },
+        { isAccountDefaultPartition: false },
+      );
+      logger.info(`Successfully update ${updatedTenantPartitionCount} tenant partition rules `
+          + `during remove default cluster ${clusterId} from tenant ${tenantName}`,
+      );
+
+      // 更新租户集群的默认集群字段
+      await em.nativeUpdate(
+        TenantClusterRule, {
+          tenantName,
+          clusterId,
+        },
+        { isAccountDefaultCluster: false },
+      );
+
+      // 如果取消授权失败的账户数据存在
+      if (failedBlockedAccounts.length > 0) {
+        logger.info(
+          `Some accounts of tenant  ${tenantName} partition unassigned failed in Cluster ${clusterId}. `
+        + ` Accounts ${clusterProcessResult.failedBlockedAccounts.toString()} were failed to be unassigned,`
+        + ` while ${clusterProcessResult.successfullyBlockedAccounts.toString()} were successfully unassigned.`,
+        );
+      }
+
+      return { failedUnassignedAccounts: failedBlockedAccounts };
 
     });
-
   });
 
 
-export const tenantAssignedPartitions = authProcedure
+export const tenantAssignedPartitions = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -850,32 +1020,35 @@ export const tenantAssignedPartitions = authProcedure
   .input(z.object({
     tenantName: z.string(),
   }))
-  .output(z.object({ 
+  .output(z.object({
     tenantName: z.string(),
     assignedPartitions: z.array(AssignedPartitionSchema),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
 
         const { tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        // 获取当前在线的集群分区信息
+        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
+        const currentClusterIds = Object.keys(currentClusterPartitions);
 
         const em = await forkEntityManager();
 
-        const [res, count] = await em.findAndCount(TenantPartitionRule,
-          { tenantName },
+        const res = await em.find(TenantPartitionRule,
+          { tenantName,
+            clusterId: { $in: currentClusterIds },
+          },
         );
+        const filteredResult = getAvailablePartitionsResult(currentClusterPartitions, res);
 
         return {
           tenantName,
-          assignedTotalCount: count,
-          assignedPartitions: res.map((item) => ({
+          assignedTotalCount: filteredResult.length,
+          assignedPartitions: filteredResult.map((item) => ({
             clusterId: item.clusterId,
             partition: item.partition,
           })),
@@ -889,7 +1062,7 @@ export const tenantAssignedPartitions = authProcedure
 
   });
 
-export const tenantAssignedClusters = authProcedure
+export const tenantAssignedClusters = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
@@ -906,21 +1079,23 @@ export const tenantAssignedClusters = authProcedure
     assignedClusters: z.array(z.string()),
     assignedTotalCount: z.number(),
   }))
-  .query(async ({ input, ctx: { user } }) => {
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
 
         const { tenantName } = input;
 
-        if (!isResourceAdmin(user)) {
-          throw new UserForbiddenError(user.identityId);
-        }
+        // 检查现在是否有可用集群
+        const currentClusterIds = await getScowActivatedClusterIds();
 
         const em = await forkEntityManager();
 
         const [res, count] = await em.findAndCount(TenantClusterRule,
-          { tenantName },
+          {
+            tenantName,
+            clusterId: { $in: currentClusterIds },
+          },
         );
 
         return {

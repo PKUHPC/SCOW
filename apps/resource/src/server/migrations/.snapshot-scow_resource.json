@@ -10,6 +10,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "account_name": {
@@ -89,6 +90,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "account_name": {
@@ -155,6 +157,30 @@
       "name": "account_partition_rule",
       "indexes": [
         {
+          "keyName": "idx_tenant_account_cluster",
+          "columnNames": [
+            "tenant_name",
+            "account_name",
+            "cluster_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "idx_tenant_cluster_partition",
+          "columnNames": [
+            "tenant_name",
+            "cluster_id",
+            "partition"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
           "keyName": "PRIMARY",
           "columnNames": [
             "id"
@@ -178,6 +204,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "tenant_name": {
@@ -207,6 +234,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 1,
           "default": "false",
           "mappedType": "boolean"
         },
@@ -267,6 +295,7 @@
           "autoincrement": true,
           "primary": true,
           "nullable": false,
+          "length": null,
           "mappedType": "integer"
         },
         "tenant_name": {
@@ -306,6 +335,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
+          "length": 1,
           "default": "false",
           "mappedType": "boolean"
         },
