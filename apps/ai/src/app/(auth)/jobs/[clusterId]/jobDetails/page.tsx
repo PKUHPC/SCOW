@@ -50,6 +50,7 @@ interface PodListDataType {
   podStatus: string;
   namespace: string;
   podCreatedTime?: string;
+  podEndTime?: string;
 }
 
 export default function Page({ params }: { params: { clusterId: string } }) {
@@ -69,6 +70,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const router = useRouter();
 
   const jobId = searchParams?.get("jobId");
+  const sessionId = searchParams?.get("sessionId");
   const jobType = searchParams?.get("jobType");
   const appId = searchParams?.get("appId");
   const from = searchParams?.get("from");
@@ -78,7 +80,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
   const { data: jobDetails, isLoading: isGettingJobDetailsLoading } = trpc.jobs.getJobDetails.useQuery(
-    { clusterId, jobId: parsedJobId!, jobType:jobType! ,appId:appId ?? undefined },
+    { clusterId, jobId: parsedJobId!, jobType:jobType! ,appId:appId ?? undefined, sessionId:sessionId! },
     {
       enabled: (!!parsedJobId && !!jobType),
       retry: false,
@@ -214,13 +216,18 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       })(),
     },
     {
-      key: "20",
+      key: "22",
       label: t(p("nodesAlloc")),
       children: jobDetails.nodesAlloc,
     },
+    {
+      key: "23",
+      label: t(p("image")),
+      children: jobDetails.imageNameOrUrl,
+    },
     ...(jobType === JobType.INFER
       ? [{
-        key: "21",
+        key: "24",
         label: t(p("inferServiceAddress")),
         children: (() => {
           if (jobType === JobType.INFER) {
@@ -243,7 +250,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       : []),
     ...(jobType === JobType.TRAIN
       ? [{
-        key: "21",
+        key: "24",
         label: "TensorBoard",
         children: (() => {
           const node = jobDetails.tensorBoardInfo?.node;
@@ -345,6 +352,11 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       render: (_, record) => record.podCreatedTime ? formatDateTime(record.podCreatedTime) : "",
     },
     {
+      title: t(p("podEndTime")),
+      dataIndex: "podEndTime",
+      render: (_, record) => record.podEndTime ? formatDateTime(record.podEndTime) : "",
+    },
+    {
       title: t(p("action")),
       key:"action",
       render: (_, record) => (
@@ -368,7 +380,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
               </Link>
             ) : null
           }
-          <Link href={`/jobs/${clusterId}/jobLogs/${record.podId}`} target="_blank">
+          <Link href={`/jobs/${clusterId}/jobLogs/${record.podId}/${record.podName}`} target="_blank">
             <Tooltip title={t(p("viewLogs"))}>
               <LogIcon />
             </Tooltip>

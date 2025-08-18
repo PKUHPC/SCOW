@@ -685,42 +685,56 @@ export const LaunchAppForm = (props: Props) => {
   // 处理镜像
   useEffect(() => {
     const inputParams = trainJobInput || createAppParams;
-    if (inputParams && (inputParams.remoteImageUrl || inputParams.image)) {
-      if (!form.isFieldsTouched([
-        "imageSource",
-        "startCommand",
-        "remoteImageUrl",
-        ["image", "type"],
-        ["image", "name"],
-      ])) {
-        form.setFieldValue("imageSource", inputParams.remoteImageUrl ? ImageSource.REMOTE : ImageSource.LOCAL);
+    if (inputParams) {
+      if (inputParams.remoteImageUrl || inputParams.image) {
+        if (!form.isFieldsTouched([
+          "imageSource",
+          "startCommand",
+          "remoteImageUrl",
+          ["image", "type"],
+          ["image", "name"],
+        ])) {
+          form.setFieldValue("imageSource", inputParams.remoteImageUrl ? ImageSource.REMOTE : ImageSource.LOCAL);
 
-        // 处理远程镜像
-        if (inputParams.remoteImageUrl) {
-          form.setFieldValue("remoteImageUrl", inputParams.remoteImageUrl);
-          if ("startCommand" in inputParams) {
-            form.setFieldValue("startCommand", inputParams.startCommand);
-            form.setFieldValue("isStartCommandEditable", true);
-          }
-        }
-        // 处理本地镜像
-        else {
-          // 先直接设置镜像类型调接口获取镜像数据
-          form.setFieldValue(["image", "type"], inputParams.isImagePrivate ?
-            AccessibilityType.PRIVATE : AccessibilityType.PUBLIC);
-
-          // 数据库中有之前存的镜像id才去回显镜像数据,若数据库中已删除了该镜像
-          if (images?.items?.find((image) => inputParams.image === image.id)) {
-            form.setFieldValue(["image", "name"], inputParams.image);
-
+          // 处理远程镜像
+          if (inputParams.remoteImageUrl) {
+            form.setFieldValue("remoteImageUrl", inputParams.remoteImageUrl);
             if ("startCommand" in inputParams) {
               form.setFieldValue("startCommand", inputParams.startCommand);
+              form.setFieldValue("isStartCommandEditable", true);
+            }
+          }
+          // 处理本地镜像
+          else {
+          // 先直接设置镜像类型调接口获取镜像数据
+            form.setFieldValue(["image", "type"], inputParams.isImagePrivate ?
+              AccessibilityType.PRIVATE : AccessibilityType.PUBLIC);
+
+            // 数据库中有之前存的镜像id才去回显镜像数据,若数据库中已删除了该镜像
+            if (images?.items?.find((image) => inputParams.image === image.id)) {
+              form.setFieldValue(["image", "name"], inputParams.image);
+
+              if ("startCommand" in inputParams) {
+                form.setFieldValue("startCommand", inputParams.startCommand);
+              }
             }
           }
         }
       }
+      // 默认镜像
+      else {
+        if (!form.isFieldsTouched(["startCommand"]) && "startCommand" in inputParams) {
+          form.setFieldValue("startCommand", inputParams.startCommand);
+        }
+      }
     }
-  }, [createAppParams, trainJobInput, images, form]);
+    // 直接提交作业的情况
+    else {
+      if (!form.isFieldsTouched(["startCommand"]) && imageSource === ImageSource.DEFAULT) {
+        form.setFieldValue("startCommand", appStartCommand);
+      }
+    }
+  }, [createAppParams, trainJobInput, images, form, imageSource, appStartCommand]);
 
   // 其他参数处理
   useEffect(() => {
@@ -859,7 +873,6 @@ export const LaunchAppForm = (props: Props) => {
       initialValues={{
         ... initialValues,
         imageSource: !isTraining && appImage ? ImageSource.DEFAULT : ImageSource.LOCAL,
-        startCommand:appStartCommand,
       }}
       labelAlign="left"
       onFinish={async () => {
@@ -1911,7 +1924,7 @@ export const LaunchAppForm = (props: Props) => {
             addonAfter={
               (
                 <Select
-                  style={{ flex: "0 1 auto", minWidth:"70px" }}
+                  style={{ minWidth:"70px" }}
                   value={maxTimeUnitValue}
                   onChange={(value) => {
                     setMaxTimeUnitValue(value);

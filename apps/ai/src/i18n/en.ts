@@ -475,6 +475,8 @@ export default {
         nodeName: "Node name",
         podStatus: "Status",
         podCreatedTime: "Created time",
+        podEndTime: "End time",
+        image: "Image",
         action: "Action",
         viewEvents: "Events",
         enterContainer: "Enter pod",
@@ -495,6 +497,9 @@ export default {
       },
       jobLogs:{
         title:"Logs for pod {}",
+        rowsCount:"Display the number of recent rows",
+        rows:"rows",
+        all:"Show all",
       },
     },
     jobShell:{

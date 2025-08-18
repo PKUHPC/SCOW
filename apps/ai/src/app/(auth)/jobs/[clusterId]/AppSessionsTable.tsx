@@ -274,6 +274,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
                   jobType: record.jobType.toString(),
                   appId: record.appId ?? "",
                   from:status,
+                  sessionId:record.sessionId,
                 });
                 router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
               }}

@@ -475,6 +475,8 @@ export default {
         nodeName: "所在节点",
         podStatus: "状态",
         podCreatedTime: "创建时间",
+        podEndTime: "结束时间",
+        image: "镜像",
         action: "操作",
         viewEvents: "事件",
         enterContainer: "进入容器",
@@ -495,6 +497,9 @@ export default {
       },
       jobLogs:{
         title:"容器 {} 的日志",
+        rowsCount:"显示最近行数",
+        rows:"行",
+        all:"显示全部",
       },
     },
     jobShell:{

@@ -687,6 +687,7 @@ const podInfoSchema = z.object({
   podStatus: z.string(),
   events: z.array(EventSchema),
   podCreatedTime: z.string().optional(),
+  podEndTime: z.string().optional(),
 });
 
 const SingleAppSessionSchema = z.object({
@@ -718,8 +719,21 @@ const SingleAppSessionSchema = z.object({
     node:z.string(),
     port:z.number(),
   }).optional(),
-
+  imageNameOrUrl:z.string(),
 });
+
+async function getImageInfo(imageId?: number, remoteImageUrl?: string): Promise<string> {
+  if (imageId) {
+    const em = await forkEntityManager();
+    const image = await em.findOne(ImageEntity, { id: imageId });
+    if (!image) {
+      logger.error("Image(id: %d) is not found", imageId);
+      return "-";
+    }
+    return `${image.name}: ${image.tag}`;
+  }
+  return remoteImageUrl ?? "-";
+}
 
 export const getJobDetails =
   procedure
@@ -734,13 +748,14 @@ export const getJobDetails =
     .input(z.object({
       clusterId: z.string(),
       jobId:z.number(),
+      sessionId:z.string(),
       jobType:z.string(),
       appId:z.string().optional(),
     }))
     .output(SingleAppSessionSchema)
     .query(async ({ input, ctx: { user } }) => {
 
-      const { clusterId, jobId, jobType,appId } = input;
+      const { clusterId, jobId, jobType, appId, sessionId } = input;
 
       const userId = user.identityId;
 
@@ -776,6 +791,8 @@ export const getJobDetails =
       let host: string | undefined = undefined;
       let port: number | undefined = undefined;
 
+      let imageNameOrUrl = "";
+
       if (jobType === JobType.APP) {
         const app = appId ? apps[appId] : undefined;
         if (!app) {
@@ -798,8 +815,18 @@ export const getJobDetails =
             logger.info("Job(jobId:%s) gets app connection info failed , reason: %o",
               jobId, error.message);
           }
-
         }
+
+        // 获取APP作业提交参数
+        const appJobParams = await driver.withJobDriver({
+          clusterId,
+          user:userId,
+        }, async (jobDriver) => {
+          return await jobDriver.getAppParams(sessionId, jobId);
+        },
+        logger);
+
+        imageNameOrUrl = await getImageInfo(appJobParams.image, appJobParams.remoteImageUrl);
       }
       // 推理需要端口
       else if (jobType === JobType.INFER) {
@@ -811,6 +838,29 @@ export const getJobDetails =
             port = connectionInfo.response.appConnectionInfo.port;
           }
         }
+
+        // 获取推理作业提交参数
+        const inferJobParams = await driver.withJobDriver({
+          clusterId,
+          user:userId,
+        }, async (jobDriver) => {
+          return await jobDriver.getInferParams(sessionId, jobId);
+        },
+        logger);
+
+        imageNameOrUrl = await getImageInfo(inferJobParams.image, inferJobParams.remoteImageUrl);
+      }
+      else {
+        // 获取训练作业提交参数
+        const trainJobParams = await driver.withJobDriver({
+          clusterId,
+          user:userId,
+        }, async (jobDriver) => {
+          return await jobDriver.getTrainParams(sessionId, jobId);
+        },
+        logger);
+
+        imageNameOrUrl = await getImageInfo(trainJobParams.image, trainJobParams.remoteImageUrl);
       }
 
       const podInfo = job.pods.map((pod) => ({ ...pod,podStatus: jobInfo_PodStatusToJSON(pod.podStatus) }));
@@ -828,6 +878,7 @@ export const getJobDetails =
         port,
         jobEvent:job.events,
         podInfo,
+        imageNameOrUrl,
       };
     });
 

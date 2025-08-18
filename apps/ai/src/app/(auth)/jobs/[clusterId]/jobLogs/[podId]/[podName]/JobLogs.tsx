@@ -18,9 +18,10 @@ interface Props {
   user: ClientUserInfo;
   cluster: string;
   podId: string;
+  rowLimit?: number
 }
 
-export const JobLogs: React.FC<Props> = ({ user, cluster, podId }) => {
+export const JobLogs: React.FC<Props> = ({ user, cluster, podId, rowLimit }) => {
   const { publicConfig: { BASE_PATH } } = usePublicConfig();
 
   const container = useRef<HTMLDivElement>(null);
@@ -30,6 +31,7 @@ export const JobLogs: React.FC<Props> = ({ user, cluster, podId }) => {
     if (container.current && !terminalInitialized.current) {
       const term = new Terminal({
         cursorBlink: true,
+        scrollback: rowLimit ?? Number.MAX_SAFE_INTEGER,
       });
 
       const fitAddon = new FitAddon();
@@ -40,8 +42,12 @@ export const JobLogs: React.FC<Props> = ({ user, cluster, podId }) => {
       term.write(`*** Connecting to cluster ${cluster} for pod ${podId} as as ${user.identityId} ***\r\n`);
 
       // === 使用 SSE 连接日志流 ===
-      const sseUrl = join(BASE_PATH, `api/jobs/podLogs/${podId}`) + `?cluster=${cluster}`;
-      const eventSource = new EventSource(sseUrl);
+      const url = new URL(join(BASE_PATH, `api/jobs/podLogs/${podId}`), window.location.origin);
+      url.searchParams.set("cluster", cluster);
+      if (rowLimit) {
+        url.searchParams.set("rowLimit", rowLimit.toString());
+      }
+      const eventSource = new EventSource(url.toString());
 
       eventSource.onmessage = (e) => {
         try {
@@ -75,7 +81,7 @@ export const JobLogs: React.FC<Props> = ({ user, cluster, podId }) => {
         terminalInitialized.current = false;
       };
     }
-  }, [container.current]);
+  }, [container.current,rowLimit]);
 
   return (
     <TerminalContainer ref={container} />

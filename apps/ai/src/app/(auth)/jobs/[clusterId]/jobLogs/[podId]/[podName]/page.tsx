@@ -2,8 +2,9 @@
 
 import "@xterm/xterm/css/xterm.css";
 
-import { Button, Space } from "antd";
+import { Button, Select, Space } from "antd";
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled } from "styled-components";
@@ -51,24 +52,43 @@ const JobLogComponent = dynamic(
   });
 
 export default function Page({ params }:
-{ params: { clusterId: string, podId: string } })
+{ params: { clusterId: string, podId: string, podName: string, } })
 {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.jobLogs.");
 
-  const { clusterId, podId } = params;
+  const { clusterId, podId, podName } = params;
   const { user } = usePublicConfig();
+  const [rowLimit, setRowLimit] = useState<number | null>(1000);
 
   return (
     <Container>
       <Header>
-        <h2>
-          {t(p("title"), [podId])}
+        <h2 style={{ display:"flex" }}>
+          {t(p("title"), [podName])}
         </h2>
         <Space wrap>
-          <Button onClick={() => window.location.reload()}>
-            {t("button.refreshButton")}
-          </Button>
+          <h2 style={{ display:"flex",alignItems:"center" }}>
+            {t(p("rowsCount"))}:
+            &nbsp;
+            <Select
+              value={rowLimit}
+              style={{ width: 120 }}
+              onChange={setRowLimit}
+              options={[
+                { value: 1000, label: "1000 " + t(p("rows")) },
+                { value: 2000, label: "2000 " + t(p("rows")) },
+                { value: 5000, label: "5000 " + t(p("rows")) },
+                { value: 10000, label: "10000 " + t(p("rows")) },
+                { value: null, label: t(p("all")) },
+              ]}
+              getPopupContainer={(trigger) => trigger.parentElement}
+            />
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <Button onClick={() => window.location.reload()}>
+              {t("button.refreshButton")}
+            </Button>
+          </h2>
         </Space>
       </Header>
       <TerminalContainer>
@@ -76,6 +96,7 @@ export default function Page({ params }:
           user={user}
           cluster={clusterId}
           podId={podId}
+          rowLimit={rowLimit ?? undefined}
         />
       </TerminalContainer>
     </Container>

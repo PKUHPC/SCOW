@@ -387,10 +387,11 @@ export const getPodLogs = procedure
   .input(z.object({
     cluster: z.string(),
     podId: z.string(),
+    rowLimit:z.number().optional(),
   }))
   .output(z.void()) // 输出无法直接描述流式，使用 void
   .query(async ({ input, ctx }) => {
-    const { cluster, podId } = input;
+    const { cluster, podId, rowLimit } = input;
     const userId = ctx.user.identityId;
     const res = ctx.res; // 从上下文中获取底层响应对象
 
@@ -406,7 +407,7 @@ export const getPodLogs = procedure
 
     try {
       // 调用 gRPC 流式方法
-      const logStream = client.job.getPodLogs({ userId,podId });
+      const logStream = client.job.getPodLogs({ userId,podId,rowLimit });
 
       res.on("close", () => {
         logStream.cancel();
