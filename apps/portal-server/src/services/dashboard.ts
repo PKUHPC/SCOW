@@ -1,21 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
+import { AppConfigSchema } from "@scow/config/build/app";
 import { DashboardServiceServer, DashboardServiceService, Entry }
   from "@scow/protos/build/portal/dashboard";
 import { promises as fsPromises } from "fs";
 import path from "path";
+import { getClusterAppConfigs } from "src/utils/app";
 
 const quickEntryPath = "/var/lib/scow/portal/quickEntries";
 
@@ -31,7 +21,6 @@ export const dashboardServiceServer = plugin((server) => {
       try {
         // 同步读取 JSON 文件
         const data = await fsPromises.readFile(filePath, "utf8");
-
         // 将 JSON 字符串解析为 JavaScript 对象
         jsonObject = JSON.parse(data);
       } catch (error) {
@@ -48,8 +37,38 @@ export const dashboardServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
+      // 缓存集群应用配置
+      const clusterAppConfigsCache = new Map<string, Record<string, AppConfigSchema>>();
+      const getCachedClusterAppConfigs = (clusterId: string): Record<string, AppConfigSchema> | undefined => {
+        if (!clusterAppConfigsCache.has(clusterId)) {
+          clusterAppConfigsCache.set(clusterId, getClusterAppConfigs(clusterId));
+        }
+        return clusterAppConfigsCache.get(clusterId);
+      };
+
+      // 在返回的appEntry中添加appLogoPath,
+      // 使前端无论是否还有对应应用的授权仍然可以显示保存的快捷方式的logo（如果存在logo图片）
+      const mappedEntries = jsonObject.map((entry) => {
+        if (entry.entry?.$case === "app") {
+          const { appId, clusterId } = entry.entry.app;
+          const clusterApps = getCachedClusterAppConfigs(clusterId);
+          const currentLogoPath = clusterApps?.[appId]?.logoPath || undefined;
+          return {
+            ...entry,
+            entry: {
+              ...entry.entry,
+              app: {
+                ...entry.entry.app,
+                appLogoPath: currentLogoPath,
+              },
+            },
+          };
+        }
+        return entry;
+      });
+
       return [{
-        quickEntries:jsonObject,
+        quickEntries: mappedEntries,
       }];
     },
     saveQuickEntries:async ({ request, logger }) => {

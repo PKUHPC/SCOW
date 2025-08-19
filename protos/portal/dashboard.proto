@@ -30,6 +30,10 @@ message ShellEntry {
 message AppEntry {
   string app_id = 1;
   string cluster_id = 2;
+  // 应用图标的路径
+  // 只在getQuickEntriesResponse中使用，获取查询时config下配置的应用图标路径
+  // 前端会根据这个路径加载应用图标
+  optional string app_logo_path = 3;
 }
 
 message Entry {

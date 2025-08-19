@@ -50,7 +50,7 @@ export default /* #__PURE__*/route(GetAllClustersAvailableAppsSchema, async (req
         };
       } catch (error) {
         console.error(
-          `failed to get cluster ${clusterId}'s avaliable apps: `,
+          `failed to get cluster ${clusterId}'s available apps: `,
           error instanceof Error ? error.message : "Unknown error",
         );
       }
