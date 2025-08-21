@@ -49,7 +49,11 @@ export const allAccountsAssignedClustersPartitions = adminAuthProcedure
 
         // 获取当前在线的集群分区信息
         const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
-        const currentClusterIds = Object.keys(currentClusterPartitions);
+        const currentClusterIdsWithPartitions = Object.keys(currentClusterPartitions);
+
+        // 在线集群
+        const currentClusterIds = await getScowActivatedClusterIds();
+
 
         const resultMap: Record<string , AllAssignedInfoSchema> = {};
 
@@ -87,7 +91,7 @@ export const allAccountsAssignedClustersPartitions = adminAuthProcedure
         const qbPartitions = em.createQueryBuilder(AccountPartitionRule, "apr");
         const qbResult = await qbPartitions
           .select(["tenantName", "accountName", "partition", "clusterId"])
-          .where({ "clusterId":  { $in: currentClusterIds } })
+          .where({ "clusterId":  { $in: currentClusterIdsWithPartitions } })
           .execute();
 
         const accountAssignedPartitionsInfo: AccountPartitionRule[]

@@ -3,10 +3,9 @@ import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
 import { NextRequest } from "next/server";
 import { PlatformRole,TenantRole } from "src/models/user";
 import { deleteUserToken, getUserToken } from "src/server/auth/cookie";
+import { validateToken } from "src/server/auth/token";
+import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { USE_MOCK } from "src/utils/processEnv";
-
-import { ClientUserInfo } from "../trpc/route/auth";
-import { validateToken } from "./token";
 
 export const MOCK_USER_INFO: ClientUserInfo = {
   tenant: "default",

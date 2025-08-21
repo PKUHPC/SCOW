@@ -7,13 +7,12 @@ import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag, Tooltip } 
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
 import { AuthorizeIcon, CancleAuthorizeIcon } from "src/assets/operationIcon";
+import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { I18nDicType } from "src/models/i18n";
 import { AssignmentState, ClusterPartition, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
 import { AssignedClustersPartitionsSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
-
-import { SingleClusterSelector } from "../ClusterSelector";
-import { FilterFormContainer } from "../FilterFormContainer";
 
 interface Props {
   operationType: PartitionOperationType

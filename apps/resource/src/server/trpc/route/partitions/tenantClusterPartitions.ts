@@ -66,7 +66,10 @@ export const allTenantAssignedClustersPartitions = adminAuthProcedure
 
         // 获取当前在线的集群分区信息
         const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
-        const currentClusterIds = Object.keys(currentClusterPartitions);
+        const currentClusterIdsWithPartitions = Object.keys(currentClusterPartitions);
+
+        // 当前在线集群
+        const currentClusterIds = await getScowActivatedClusterIds();
 
         const resultMap: Record<string , AllAssignedInfoSchema> = {};
 
@@ -104,7 +107,7 @@ export const allTenantAssignedClustersPartitions = adminAuthProcedure
         const qbPartitions = em.createQueryBuilder(TenantPartitionRule, "tpr");
         const result = await qbPartitions
           .select(["tenantName", "partition", "clusterId"])
-          .where({ "clusterId":  { $in: currentClusterIds } })
+          .where({ "clusterId":  { $in: currentClusterIdsWithPartitions } })
           .execute();
 
         // 在当前在线集群分区中过滤分区结果

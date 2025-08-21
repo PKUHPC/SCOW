@@ -1,9 +1,8 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { Logger } from "pino";
+import { getScowAccounts } from "src/server/mis-server/tenantAccount";
 import { getClusterUtils } from "src/utils/clusterAdapter";
-
-import { getScowAccounts } from "../mis-server/tenantAccount";
 
 export interface UnassignResult {
   failedBlockedAccounts: string[],

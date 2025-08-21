@@ -5,7 +5,6 @@ import { getClusterConfigsTypeFormat } from "@scow/lib-web/build/utils/typeConve
 import { ConfigServiceClient as CommonConfigClient } from "@scow/protos/build/common/config";
 import { ConfigServiceClient } from "@scow/protos/build/server/config";
 import { GetClusterConfigFilesResponse } from "@scow/protos/generated/common/config";
-import { TRPCError } from "@trpc/server";
 import { Logger } from "pino";
 import { NoAvailableClustersError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
@@ -111,11 +110,7 @@ export async function getScowActivatedClusterPartitions(
     const errorDetails = errors.map((error) => {
       return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
     }).join("; ");
-    throw new TRPCError({
-      message: `Can not get partitions info, error: ${errorDetails}`,
-      code: "NOT_FOUND",
-    });
-
+    logger.warn(`Failed to get cluster partitions for some clusters: ${errorDetails}`);
   }
   return clusterPartitions;
 

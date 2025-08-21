@@ -4,10 +4,11 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { App, Button, Form, Modal, Space } from "antd";
 import React, { useMemo, useState } from "react";
+import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { I18nDicType } from "src/models/i18n";
 import { trpc } from "src/server/trpc/api";
 
-import { SingleClusterSelector } from "../../../components/ClusterSelector";
+
 
 interface FormProps {
   // clusterId: string,

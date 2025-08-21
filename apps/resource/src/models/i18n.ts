@@ -130,6 +130,7 @@ export const languageDic = {
       tenantNotFound: "无法获取租户名，请刷新后重试",
       unassignPartitionWithoutAssignedClusterWarn: "集群暂未被授权，无法授权分区。请先授权集群信息。",
       tenantAssignedClustersNotFound: "无法获取租户已授权的集群数据，请刷新后重试",
+      partitionsNotFound: "未获取到集群 {} 分区数据，无法对分区进行授权相关操作",
     },
   },
   en: {
@@ -282,6 +283,8 @@ export const languageDic = {
       unassignPartitionWithoutAssignedClusterWarn: "Unable to assign partition "
       + "if the cluster has not been authorized. Please authorize the cluster first.",
       tenantAssignedClustersNotFound: "Unable to retrieve tenant's assigned clusters. Please refresh and try again",
+      partitionsNotFound: "The partition data for the cluster {} could not be retrieved, and therefore, "
+      + "authorization-related operations for the partition cannot be performed.",
     },
   },
 };

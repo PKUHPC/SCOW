@@ -4,9 +4,8 @@ import { App, ConfigProvider, theme } from "antd";
 import enUSlocale from "antd/locale/en_US";
 import zhCNlocale from "antd/locale/zh_CN";
 import { useContext } from "react";
+import { ScowParamsContext } from "src/components/ScowParamsProvider";
 import { ThemeProvider } from "styled-components";
-
-import { ScowParamsContext } from "../ScowParamsProvider";
 
 type Props = React.PropsWithChildren<{
   color: string | undefined;

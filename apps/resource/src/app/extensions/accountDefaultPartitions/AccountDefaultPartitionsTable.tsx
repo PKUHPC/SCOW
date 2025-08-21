@@ -4,16 +4,17 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Input, Space, Table, Tooltip } from "antd";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
 import { RemoveDefaultPartitionIcon } from "src/assets/operationIcon";
+import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
+import { getMissingPartitionClusterNames } from "src/utils/checkData";
 import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
 
-import { SingleClusterSelector } from "../../../components/ClusterSelector";
-import { FilterFormContainer } from "../../../components/FilterFormContainer";
 import { AddToAccountDefaultPartitionsButton } from "./AddToAccountDefaultPartitionsButton";
 
 interface FilterForm {
@@ -50,6 +51,26 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
   const { data: currentClustersData,
     refetch: currentClustersRefetch,
     isFetching: currentClustersFetching } = trpc.misServer.currentClusters.useQuery();
+
+
+  const { data: currentClustersPartitionsData,
+    isFetching: currentClustersPartitionsIsFetching } =
+      trpc.misServer.currentClustersPartitionsInfo.useQuery();
+
+  // 判断租户管理下账户授权分区页面是否有获取分区异常的数据
+  // 只检查当前页面可以展示的租户已授权集群的数据
+  useEffect(() => {
+    if (currentClustersPartitionsData && defaultClusterIds && currentClustersData) {
+      // 筛选出集群分区获取失败的情况
+      const missingPartitionClusters = getMissingPartitionClusterNames(
+        defaultClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
+      if (missingPartitionClusters.length > 0) {
+        message.error(
+          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
+      }
+    }
+  }, [currentClustersPartitionsData, defaultClusterIds, currentClustersData]);
+
 
   const filteredData = useMemo(() => {
     if (!data || !currentClustersData) return undefined;
@@ -174,7 +195,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
       <Table
         tableLayout="fixed"
         dataSource={filteredData}
-        loading={isLoading || currentClustersFetching}
+        loading={isLoading || currentClustersFetching || currentClustersPartitionsIsFetching}
         pagination={{
           showSizeChanger: true,
           defaultPageSize: DEFAULT_PAGE_SIZE,
@@ -195,7 +216,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
         <Table.Column<ClusterPartition>
           dataIndex="partition"
           title={language.common.partition}
-          sorter={(a, b) => a.partition.localeCompare(b.partition)}
+          sorter={(a, b) => (a.partition.localeCompare(b.partition))}
         />
         <Table.Column<ClusterPartition>
           title={language.common.operation}

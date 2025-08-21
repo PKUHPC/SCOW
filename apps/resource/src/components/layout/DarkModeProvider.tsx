@@ -2,8 +2,7 @@
 
 import { ConfigProvider, theme } from "antd";
 import { PropsWithChildren, useContext } from "react";
-
-import { ScowParamsContext } from "../ScowParamsProvider";
+import { ScowParamsContext } from "src/components/ScowParamsProvider";
 
 export const DarkModeProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
 

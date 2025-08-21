@@ -1,21 +1,22 @@
 "use client";
 
 import { Cluster } from "@scow/config/build/type";
+import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Divider, Form, Input, message, Space, Table, Tooltip } from "antd";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AuthorizedClusterIcon, AuthorizedPartitionIcon, DetailIcon } from "src/assets/operationIcon";
+import { FilterFormContainer } from "src/components/FilterFormContainer";
+import { ModalButton } from "src/components/ModalLink";
+import { AssignedDetailsDrawer } from "src/components/pageComponents/AssignedDetailsDrawer";
+import { ClusterAssignmentModal } from "src/components/pageComponents/ClusterAssignmentModal";
+import { PartitionAssignmentModal } from "src/components/pageComponents/PartitionAssignmentModal";
 import { I18nDicType } from "src/models/i18n";
 import { ClusterPartition, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
-import { AllAssignedInfoSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
+import { AllAssignedInfoSchema,
+  AssignedClustersPartitionsSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
+import { getMissingPartitionClusterNames } from "src/utils/checkData";
 import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
-
-import { AssignedClustersPartitionsSchema } from "../../server/trpc/route/partitions/tenantClusterPartitions";
-import { FilterFormContainer } from "../FilterFormContainer";
-import { ModalButton } from "../ModalLink";
-import { AssignedDetailsDrawer } from "./AssignedDetailsDrawer";
-import { ClusterAssignmentModal } from "./ClusterAssignmentModal";
-import { PartitionAssignmentModal } from "./PartitionAssignmentModal";
 
 interface Props {
   operationType: PartitionOperationType;
@@ -49,6 +50,21 @@ export const PartitionManagementTable: React.FC<Props> = ({
   if (currentClustersPartitionsError) {
     message.error(language.globalMessage.currentClusterPartitionsNotFoundError);
   }
+
+  // 判断平台管理下租户授权分区页面是否有获取分区异常的数据
+  useEffect(() => {
+    if (currentClustersPartitionsData && currentClustersData) {
+      // 当前集群ID列表
+      const currentClusterIds = currentClustersData.results.map((c) => c.id);
+      const missingPartitionClusters = getMissingPartitionClusterNames(
+        currentClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
+      // 平台管理下授权分区页面报错
+      if (operationType === PartitionOperationType.TENANT_OPERATION && missingPartitionClusters.length > 0) {
+        message.error(
+          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
+      }
+    }
+  }, [currentClustersPartitionsData, currentClustersData]);
 
   // 仅在账户授权时启用
   const { data: accountsData, refetch: accountsRefetch, isFetching: accountIsFetching } =
@@ -88,6 +104,22 @@ export const PartitionManagementTable: React.FC<Props> = ({
           enabled: operationType === PartitionOperationType.TENANT_OPERATION,
         },
       );
+
+  // 判断租户管理下账户授权分区页面是否有获取分区异常的数据
+  // 只检查当前页面可以展示的租户已授权集群的数据
+  useEffect(() => {
+    if (currentClustersPartitionsData && tenantAssignedClustersData && currentClustersData) {
+      // 租户已授权集群ID列表
+      const currentClusterIds = tenantAssignedClustersData.assignedClusters;
+      const missingPartitionClusters = getMissingPartitionClusterNames(
+        currentClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
+      // 租户管理下授权分区页面报错
+      if (operationType === PartitionOperationType.ACCOUNT_OPERATION && missingPartitionClusters.length > 0) {
+        message.error(
+          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
+      }
+    }
+  }, [currentClustersPartitionsData, tenantAssignedClustersData, currentClustersData]);
 
   const handleReload = () => {
     if (operationType === PartitionOperationType.ACCOUNT_OPERATION) {

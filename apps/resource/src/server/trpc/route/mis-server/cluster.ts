@@ -4,17 +4,15 @@ import { Cluster } from "@scow/config/build/type";
 import { getClusterConfigsTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
 import { ConfigServiceClient as CommonConfigClient } from "@scow/protos/build/common/config";
 import { ClusterActivationStatus, ConfigServiceClient } from "@scow/protos/build/server/config";
-import { TRPCError } from "@trpc/server";
 import { getScowActivatedClusters } from "src/server/mis-server/cluster";
+import { authProcedure } from "src/server/trpc/procedure/base";
+import { mock,MOCK_ACTIVATED_CLUSTER_INFO, MOCK_CLUSTER_PARTITIONS_INFO } from "src/server/trpc/route/mock";
 import { checkClusterIdAvailable, isResourceAdmin,
   NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { logger } from "src/utils/logger";
 import { getScowClient } from "src/utils/scowClient";
 import { z } from "zod";
-
-import { authProcedure } from "../../procedure/base";
-import { mock,MOCK_ACTIVATED_CLUSTER_INFO, MOCK_CLUSTER_PARTITIONS_INFO } from "../mock";
 
 export const I18nStringSchema = z.union([
   z.string(),
@@ -32,6 +30,7 @@ export const ClusterSchema = z.object({
   name: I18nStringSchema,
 });
 
+export type ClusterWithName = z.infer<typeof ClusterSchema>;
 
 export const currentClusters = authProcedure
   .meta({
@@ -134,7 +133,6 @@ export const clusterPartitionsInfo = authProcedure
 
   });
 
-
 export const ClusterPartition = z.object({
   clusterId: z.string(),
   partition: z.string(),
@@ -201,13 +199,8 @@ export const currentClustersPartitionsInfo = authProcedure
           const errorDetails = errors.map((error) => {
             return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
           }).join("; ");
-          throw new TRPCError({
-            message: `Can not get partitions info, error: ${errorDetails}`,
-            code: "NOT_FOUND",
-          });
-
+          logger.warn(`Failed to get cluster partitions for some clusters: ${errorDetails}`);
         }
-
 
         return clusterPartitions;
       },
