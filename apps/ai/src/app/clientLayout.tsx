@@ -91,41 +91,39 @@ export function ClientLayout(props: {
     <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
       <StyledComponentsRegistry>
         <AntdStyleRegistry>
-          <body>
-            {
-              useConfig.isLoading || publicConfig.isLoading ?
-                <Loading />
-                : (
-                  <DarkModeProvider initial={initialDark}>
-                    <I18nProvider initialLanguage={{
-                      id: initialLanguage,
-                      definitions: languagesMap[initialLanguage as keyof typeof languagesMap],
-                    }}
+          {
+            useConfig.isLoading || publicConfig.isLoading ?
+              <Loading />
+              : (
+                <DarkModeProvider initial={initialDark}>
+                  <I18nProvider initialLanguage={{
+                    id: initialLanguage,
+                    definitions: languagesMap[initialLanguage as keyof typeof languagesMap],
+                  }}
+                  >
+                    <AntdConfigProvider
+                      color={color}
+                      locale={initialLanguage}
+                      primaryColor={{ defaultColor: color,darkModeColor }}
                     >
-                      <AntdConfigProvider
-                        color={color}
-                        locale={initialLanguage}
-                        primaryColor={{ defaultColor: color,darkModeColor }}
-                      >
-                        <GlobalStyle />
-                        <TopProgressBar />
-                        <ErrorBoundary Component={RootErrorContent} pathname={pathname ?? ""}>
-                          <UiConfigContext.Provider
-                            value={{
-                              hostname,
-                              uiConfig,
-                            }}
-                          >
-                            {children}
-                          </UiConfigContext.Provider>
-                        </ErrorBoundary>
-                      </AntdConfigProvider>
-                    </I18nProvider>
+                      <GlobalStyle />
+                      <TopProgressBar />
+                      <ErrorBoundary Component={RootErrorContent} pathname={pathname ?? ""}>
+                        <UiConfigContext.Provider
+                          value={{
+                            hostname,
+                            uiConfig,
+                          }}
+                        >
+                          {children}
+                        </UiConfigContext.Provider>
+                      </ErrorBoundary>
+                    </AntdConfigProvider>
+                  </I18nProvider>
 
-                  </DarkModeProvider>
-                )
-            }
-          </body>
+                </DarkModeProvider>
+              )
+          }
         </AntdStyleRegistry>
       </StyledComponentsRegistry>
     </StyleProvider>

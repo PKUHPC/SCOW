@@ -15,11 +15,11 @@
 import React, { useContext } from "react";
 import { UiConfig } from "src/server/trpc/route/config";
 
-export const UiConfigContext = React.createContext<{
-  hostname: string,
-  uiConfig: UiConfig,
-}>(undefined!);
+interface UiCtx { hostname: string; uiConfig: UiConfig }
 
-export const useUiConfig = () => {
-  return useContext(UiConfigContext);
-};
+export const UiConfigContext = React.createContext<UiCtx>({
+  hostname: "",
+  uiConfig: {} as UiConfig,
+});
+
+export const useUiConfig = () => useContext(UiConfigContext);

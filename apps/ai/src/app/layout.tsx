@@ -39,15 +39,17 @@ export default function MyApp({ children }: { children: React.ReactNode }) {
         <link href={join(BASE_PATH, "manifest.json")} rel="manifest" id="manifest" />
         <link href={join(BASE_PATH, "/api/icon?type=favicon")} rel="icon" type="image/x-icon" />
       </head>
-      <ServerClientProvider>
-        <ClientLayout
-          initialDark={dark}
-          languageCookie={languageCookie}
-          acceptLanguageHeader={acceptLanguageHeader}
-        >
-          {children}
-        </ClientLayout>
-      </ServerClientProvider>
+      <body>
+        <ServerClientProvider>
+          <ClientLayout
+            initialDark={dark}
+            languageCookie={languageCookie}
+            acceptLanguageHeader={acceptLanguageHeader}
+          >
+            {children}
+          </ClientLayout>
+        </ServerClientProvider>
+      </body>
     </html>
   );
 

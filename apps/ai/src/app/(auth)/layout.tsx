@@ -85,7 +85,7 @@ export default function Layout(
    = defaultClusterContext(publicConfig.CLUSTERS, currentClusterIdsQuery?.data?.clusterIds ?? []);
 
   const { hostname, uiConfig } = useUiConfig();
-  const footerConfig = uiConfig.config.footer;
+  const footerConfig = uiConfig.config?.footer;
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
     ?? footerConfig?.defaultText;
 

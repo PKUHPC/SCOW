@@ -678,6 +678,16 @@
           "length": null,
           "mappedType": "text"
         },
+        "failed_reason": {
+          "name": "failed_reason",
+          "type": "TEXT",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": null,
+          "mappedType": "text"
+        },
         "create_time": {
           "name": "create_time",
           "type": "DATETIME(6)",

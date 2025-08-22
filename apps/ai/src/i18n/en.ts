@@ -658,6 +658,10 @@ export default {
         delText2: "If this image has been shared, the shared image will also be deleted.",
         type:"Type",
       },
+      imageQuota:{
+        quota:"Image Quota",
+        usedQuota:"Usage Quota",
+      },
     },
     model: {
       private: "My Models",

@@ -176,7 +176,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
         onFinish={onOk}
         wrapperCol={{ span: 20 }}
         labelCol={{ span: 4 }}
-        initialValues={(isEdit && editData) ? editData : { cluster: defaultCluster }}
+        initialValues={(isEdit && editData) ? editData : { cluster: defaultCluster ?? "" }}
       >
         { (isEdit && editData) ? (
           <>
@@ -332,7 +332,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                         form.setFields([{ name: "sourcePath", value: path, touched: true }]);
                         form.validateFields(["sourcePath"]);
                       }}
-                      clusterId={cluster?.id ?? defaultCluster.id}
+                      clusterId={cluster?.id ?? defaultCluster?.id ?? ""}
                     />
                   ) : undefined
                 }

@@ -15,19 +15,52 @@ import { TRPCError } from "@trpc/server";
 import { NodeSSH } from "node-ssh";
 import { Logger } from "ts-log";
 
-import { aiConfig } from "../config/ai";
 import { clusters } from "../config/clusters";
+import { getHarborConfig, HarborClient, harborPassword, harborUrl, harborUser } from "./harbor";
 
 const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
 
 export const loadedImageRegex = new RegExp(LOADED_IMAGE_REGEX);
 
-export const { url: harborUrl, project, user: harborUser, password } = aiConfig.harborConfig;
+export function getUserHarborProjectName(userId: string) {
+  return `u_${userId}`;
+}
 
 // 创建要上传到harbor的镜像地址
-export function createHarborImageUrl(imageName: string, imageTag: string, userId: string): string {
+export async function createHarborImageUrl(imageName: string, imageTag: string,
+  userId: string,logger: Logger): Promise<string> {
+  const projectName = getUserHarborProjectName(userId);
 
-  return `${harborUrl}/${project}/${userId}/${imageName}:${imageTag}`;
+  const harborConfig = getHarborConfig();
+  const harbor = new HarborClient(harborConfig);
+
+  try {
+    await harbor.getProjectInfo(projectName);
+
+    return `${harborUrl}/${projectName}/${imageName}:${imageTag}`;
+
+  } catch (e: any) {
+    if (e.message.includes("404")) {
+      // 项目不存在 ⇒ 创建
+      const createRes = await harbor.createProject(projectName);
+
+      if (!createRes.ok) {
+        const msg = await createRes.text();
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Failed to create project ${projectName} ⇒ ${createRes.status} ${msg}`,
+        });
+      }
+      logger.info(`Project created: ${projectName}`);
+
+      return `${harborUrl}/${userId}/${imageName}:${imageTag}`;
+    }
+
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Failed to check/create project ${projectName} ⇒ ${e.message}`,
+    });
+  }
 };
 
 export enum k8sRuntime {
@@ -144,7 +177,7 @@ export async function pushImageToHarbor({
   const command = getRuntimeCommand(runtime);
 
   // login harbor
-  await loggedExec(ssh, logger, true, command, ["login", harborUrl, "-u", harborUser, "-p", password]);
+  await loggedExec(ssh, logger, true, command, ["login", harborUrl, "-u", harborUser, "-p", harborPassword]);
 
   // tag
   await loggedExec(ssh, logger, true, command, ["tag", localImageUrl, harborImageUrl]);
@@ -219,3 +252,6 @@ export function isValidImageAddress(imageAddress: string) {
   );
   return ImageAddressRegex.test(imageAddress);
 }
+
+// 把字节转 GB，保留 2 位
+export const bytesToGB = (n: number) => +(n / (1024 ** 3)).toFixed(2);

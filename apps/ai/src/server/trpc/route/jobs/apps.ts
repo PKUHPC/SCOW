@@ -553,7 +553,7 @@ export const saveImage =
 
         const formattedContainerId = formatContainerId(clusterId, containerId);
 
-        const harborImageUrl = createHarborImageUrl(imageName, imageTag + tagPostfix, user.identityId);
+        const harborImageUrl = await createHarborImageUrl(imageName, imageTag + tagPostfix, user.identityId,logger);
         const localImageUrl = `${userId}/${imageName}:${imageTag + tagPostfix}`;
 
         // 数据库添加image
@@ -612,6 +612,7 @@ export const saveImage =
 
             return;
           } catch (error: any) {
+            image.failedReason = error.message;
             image.status = Status.FAILURE;
             await em.persistAndFlush(image);
 

@@ -12,7 +12,7 @@
 
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Input, Select, Space, Table, Tag, Tooltip } from "antd";
@@ -32,6 +32,7 @@ import { trpc } from "src/utils/trpc";
 
 import { CopyImageModal } from "./CopyImageModal";
 import { CreateEditImageModal } from "./CreateEditImageModal";
+import { ImageQuota } from "./ImageQuota";
 
 
 interface Props {
@@ -94,6 +95,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
     types:query.types.join(","),
   });
 
+  const { data: imageQuota, refetch: refetchImageQuota } = trpc.image.getImageQuota.useQuery();
+
   const { modal, message } = App.useApp();
 
   if (error) {
@@ -109,6 +112,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
     onSuccess: () => {
       message.success(t(p("delSuccess")));
       refetch();
+      refetchImageQuota();
     },
     onError: (err) => {
       const { data } = err as TRPCClientError<AppRouter>;
@@ -143,6 +147,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
             setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim(),types });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             refetch();
+            refetchImageQuota();
           }}
         >
           <Form.Item label={t(p("cluster"))} name="cluster">
@@ -179,6 +184,14 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           </Space>
         )}
       </FilterFormContainer>
+      {
+        !isPublic && (
+          <ImageQuota
+            usedGiB={imageQuota ? imageQuota.usedGB : "-"}
+            totalGiB={imageQuota && imageQuota.totalGB !== -1 ? imageQuota.totalGB : "-"}
+          />
+        )
+      }
       <Table
         rowKey="id"
         dataSource={data?.items}
@@ -202,7 +215,17 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                 case Status.CREATED:
                   return <Tag color="success">{t(p("success"))}</Tag>;
                 default:
-                  return <Tag color="error">{t(p("error"))}</Tag>;
+                  return r.failedReason ? (
+                    <Tooltip title={r.failedReason}>
+                      <Space>
+                        <Tag color="error">{t(p("error"))}</Tag>
+                        <ExclamationCircleOutlined />
+                      </Space>
+                    </Tooltip>
+                  ) : (
+                    <Tag color="error">{t(p("error"))}</Tag>
+                  );
+
               }
             },
           },

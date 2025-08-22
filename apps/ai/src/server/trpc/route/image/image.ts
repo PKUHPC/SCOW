@@ -14,13 +14,13 @@ import { getSortedClusterIds } from "@scow/config/build/cluster";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
-import { aiConfig } from "src/server/config/ai";
 import { Image, ImageType, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
-import { createHarborImageUrl, isValidImageAddress } from "src/server/utils/image";
+import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
+import { bytesToGB, createHarborImageUrl, getUserHarborProjectName, isValidImageAddress } from "src/server/utils/image";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
@@ -57,6 +57,7 @@ export const ImageListSchema = z.object({
   types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
   inferServicePort:z.string().optional(),
   startCommand:z.string().optional(),
+  failedReason:z.string().optional(),
 });
 
 export const list = procedure
@@ -119,7 +120,7 @@ export const list = procedure
       ],
     }, {
       ...paginationProps(page, pageSize),
-      orderBy: { createTime: "desc" },
+      orderBy: isPublic ? { name:"asc" } : { createTime: "desc" },
     });
 
     return { items: items.map((x) => {
@@ -139,6 +140,7 @@ export const list = procedure
         types:x.types ?? [],
         inferServicePort:x.inferServicePort,
         startCommand:x.startCommand,
+        failedReason:x.failedReason,
       }; }), count };
   });
 
@@ -241,7 +243,7 @@ export const createImage = procedure
     if (!processClusterId) { throw new NoClusterError(name, tag); }
     checkClusterAvailable(currentClusterIds, processClusterId);
 
-    const harborImageUrl = createHarborImageUrl(name, tag + tagPostfix, user.identityId);
+    const harborImageUrl = await createHarborImageUrl(name, tag + tagPostfix, user.identityId, logger);
 
     // 创建一个状态为 creating 的数据
     const image = new Image({
@@ -297,7 +299,8 @@ export const createImage = procedure
         OperationResult.SUCCESS);
 
         return;
-      } catch (err) {
+      } catch (err: any) {
+        image.failedReason = err.message;
         image.status = Status.FAILURE;
         await em.persistAndFlush(image);
 
@@ -311,7 +314,6 @@ export const createImage = procedure
         OperationResult.FAIL);
         throw err;
       };
-
     };
 
     createProcess();
@@ -491,15 +493,10 @@ export const deleteImage = procedure
       });
     }
 
+    const harborConfig = getHarborConfig();
+    const harbor = new HarborClient(harborConfig);
     // 获取harbor中的reference以删除镜像
-    const getReferenceUrl = `${aiConfig.harborConfig.protocol}://${aiConfig.harborConfig.url}/api/v2.0/projects`
-    + `/${aiConfig.harborConfig.project}/repositories/${user.identityId}%252F${image.name}/artifacts`;
-    const getReferenceRes = await fetch(getReferenceUrl, {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-      },
-    });
+    const getReferenceRes = await harbor.getReference({ userId:user.identityId,imageName:image.name });
 
     if (!getReferenceRes.ok) {
       const errorText = await getReferenceRes.text(); // 首先获取文本形式的响应体
@@ -513,7 +510,7 @@ export const deleteImage = procedure
       try {
         const errorBody = JSON.parse(errorText); // 尝试解析为 JSON
         const errorMessage = errorBody.errors.map((i: { message?: string }) => i.message).join();
-        logger.error("Failed to get image reference url %s: %s", getReferenceUrl, errorMessage);
+        logger.error("Failed to get image reference: %s", errorMessage);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to get image reference: " + errorMessage,
@@ -530,13 +527,13 @@ export const deleteImage = procedure
     let reference = "";
 
     // 判断是否是唯一的标签，如果是需要删除上级的特定Artifact
-    let needDeleteArtifact: boolean = false;
+    let needDeleteRepository: boolean = false;
 
     for (const item of referenceRes) {
       if (item.tags?.length > 0 && item.tags.find((i: { name: string }) =>
         i.name === image.tag + (image.tagPostfix ?? ""))) {
         reference = item.digest;
-        needDeleteArtifact = (item.tags.length === 1);
+        needDeleteRepository = (item.tags.length === 1);
       }
     }
 
@@ -547,55 +544,39 @@ export const deleteImage = procedure
       return;
     }
 
-    const authInfo = Buffer.from(`${aiConfig.harborConfig.user}:${aiConfig.harborConfig.password}`).toString("base64");
+    // 如果上面的tag是最相同imageName下相同镜像的最后一个标签，则删除整个Repository
+    if (needDeleteRepository) {
+      const deleteRepository = await harbor.deleteRepository({ userId:user.identityId,imageName:image.name });
 
-    // 如果上面的tag是最相同imageName下相同镜像的最后一个标签，则删除整个Artifact
-    if (needDeleteArtifact) {
 
-      const deleteArtifactUrl = `${aiConfig.harborConfig.protocol}://${aiConfig.harborConfig.url}/api/v2.0/projects`
-      + `/${aiConfig.harborConfig.project}/repositories/${user.identityId}%252F${image.name}`
-      + `/artifacts/${reference}`;
-
-      const deleteArtifact = await fetch(deleteArtifactUrl, {
-        method: "DELETE",
-        headers: {
-          "content-type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Basic ${authInfo}`,
-        },
-      });
       // harbor 删除出错，但状态本身就是失败时无需操作
-      if (!deleteArtifact.ok) {
-        const errorBody = await deleteArtifact.json();
+      if (!deleteRepository.ok) {
+        const errorBody = await deleteRepository.json();
         // 来自harbor的错误信息
         const errorMessage = errorBody.errors.map((i: { message?: string }) => i.message).join();
-        logger.error("Failed to delete image artifact url %s", deleteArtifactUrl);
+        logger.error("Failed to delete image repository url %s", deleteRepository);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete image tag: " + errorMessage,
+          message: "Failed to delete image repository: " + errorMessage,
         });
       }
 
-    // 如果上面的tag不是最相同imageName下相同镜像的最后一个标签，则只删除该标签
+    // 如果上面的tag不是相同imageName下相同镜像的最后一个标签，则只删除该标签
     } else {
-      const deleteUrl = `${aiConfig.harborConfig.protocol}://${aiConfig.harborConfig.url}/api/v2.0/projects`
-      + `/${aiConfig.harborConfig.project}/repositories/${user.identityId}%252F${image.name}`
-      + `/artifacts/${reference}/tags/${image.tag + (image.tagPostfix ?? "")}`;
-
-      const deleteRes = await fetch(deleteUrl, {
-        method: "DELETE",
-        headers: {
-          "content-type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Basic ${authInfo}`,
-        },
+      const deleteRes = await harbor.deleteTag({
+        userId:user.identityId,
+        imageName:image.name,
+        reference,
+        imageTag:image.tag,
+        imageTagPostfix: image.tagPostfix ?? "",
       });
+
       // harbor 删除出错，但状态本身就是失败时无需操作
       if (!deleteRes.ok) {
         const errorBody = await deleteRes.json();
         // 来自harbor的错误信息
         const errorMessage = errorBody.errors.map((i: { message?: string }) => i.message).join();
-        logger.error("Failed to delete image tag url %s", deleteUrl);
+        logger.error("Failed to delete image tag");
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete image tag: " + errorMessage,
@@ -837,7 +818,7 @@ export const copyImage = procedure
       }
 
       try {
-        const harborImageUrl = createHarborImageUrl(newName, newTag + tagPostfix, user.identityId);
+        const harborImageUrl = await createHarborImageUrl(newName, newTag + tagPostfix, user.identityId,logger);
 
         await driver.withImageDriver({
           clusterId:processClusterId,
@@ -859,6 +840,7 @@ export const copyImage = procedure
 
         return;
       } catch (err: any) {
+        image.failedReason = err.message;
         image.status = Status.FAILURE;
         em.persistAndFlush([image]);
         throw err;
@@ -868,4 +850,83 @@ export const copyImage = procedure
     copyProcess();
     return image.id;
 
+  });
+
+export const getImageQuota = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/images/quota",
+      tags: ["image"],
+      summary: "get image quota",
+    },
+  })
+  .input(z.void())
+  .output(z.object({
+    totalGB:z.number(),
+    usedGB:z.number(),
+  }))
+  .query(async ({ ctx: { user } }) => {
+    const projectName = getUserHarborProjectName(user.identityId);
+
+    const harborConfig = getHarborConfig();
+    const harbor = new HarborClient(harborConfig);
+
+    // 读取全局“Default disk space per project”
+    async function fetchDefaultProjectQuota() {
+      const res = await harbor.getHarborConfig();
+      if (!res.ok) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Harbor configurations error: ${res.status}`,
+        });
+      }
+      const cfg = await res.json();
+
+      // Harbor 配置里：
+      // quota_per_project_enable: boolean，开启项目配额
+      // storage_per_project: number，单位 GiB，-1 代表无限
+      const enabled = cfg?.quota_per_project_enable;
+      const storageGiB = cfg?.storage_per_project;
+
+      // 未开启或值异常时，按无限处理（-1）
+      const totalGB =
+        typeof storageGiB === "number"
+          ? (storageGiB === -1 ? -1 : +(storageGiB).toFixed(2))
+          : -1;
+
+      // 规范化：如果没启用也视为无限
+      return {
+        totalGB: enabled === false ? -1 : totalGB,
+        usedGB: 0,
+      };
+    }
+
+    // 读取项目 summary（存在时优先用真实数据）
+    async function fetchProjectSummary(name: string) {
+      const res = await harbor.getProjectSummary(name);
+
+      if (!res.ok) {
+        const err: any = new Error(`Harbor project summary error: ${res.status}`);
+        (err.status = res.status);
+        throw err;
+      }
+      const data = await res.json();
+      const hardBytes = data?.quota?.hard?.storage ?? null;
+      const usedBytes = data?.quota?.used?.storage ?? null;
+
+      return {
+        totalGB: hardBytes != null ? bytesToGB(hardBytes) : 0,
+        usedGB: usedBytes != null ? bytesToGB(usedBytes) : 0,
+      };
+    }
+
+    try {
+      return await fetchProjectSummary(projectName);
+    } catch (e: any) {
+      logger.error(`fetch project summary failed: ${e.message}`);
+
+      // 兜底默认配额，避免接口直接失败
+      return await fetchDefaultProjectQuota();
+    }
   });

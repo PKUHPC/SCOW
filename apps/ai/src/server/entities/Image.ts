@@ -56,6 +56,7 @@ export class Image {
   types: ImageType[];
   inferServicePort?: string;
   startCommand?: string;
+  failedReason?: string;
 
   constructor(init: {
     name: string;
@@ -74,6 +75,7 @@ export class Image {
     types: ImageType[];
     inferServicePort?: string;
     startCommand?: string;
+    failedReason?: string;
   }) {
     this.name = init.name;
     this.owner = init.owner;
@@ -89,6 +91,7 @@ export class Image {
     this.types = init.types;
     this.inferServicePort = init.inferServicePort;
     this.startCommand = init.startCommand;
+    this.failedReason = init.failedReason;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -129,6 +132,7 @@ imageEntitySchema.addEnum("types", String, {
 });
 imageEntitySchema.addProperty("inferServicePort", String, { nullable: true });
 imageEntitySchema.addProperty("startCommand", String, { columnType: "TEXT",nullable: true });
+imageEntitySchema.addProperty("failedReason", String, { columnType: "TEXT",nullable: true });
 imageEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 imageEntitySchema.addProperty("updateTime", Date, {
   columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });

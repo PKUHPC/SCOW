@@ -4,7 +4,8 @@ import { Source } from "src/server/entities/Image";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
-import { getK8sRuntime, getRuntimeCommand, harborUrl, harborUser,password } from "src/server/utils/image";
+import { harborPassword, harborUrl, harborUser } from "src/server/utils/harbor";
+import { getK8sRuntime, getRuntimeCommand } from "src/server/utils/image";
 import { Logger } from "ts-log";
 
 import { copyImageParams, CreateImageParams, ImageDriver, saveImageParams } from "./imageDriver";
@@ -137,7 +138,7 @@ export class ScowdImageDriver implements ImageDriver {
         harborInfo:{
           url:harborUrl,
           user:harborUser,
-          password:password,
+          password:harborPassword,
         },
       }),
       this.logger,
@@ -196,7 +197,7 @@ export class ScowdImageDriver implements ImageDriver {
         harborInfo:{
           url:harborUrl,
           user:harborUser,
-          password:password,
+          password:harborPassword,
         },
       }),
       this.logger,
@@ -243,7 +244,7 @@ export class ScowdImageDriver implements ImageDriver {
         harborInfo:{
           url:harborUrl,
           user:harborUser,
-          password:password,
+          password:harborPassword,
         },
         node,
       }),

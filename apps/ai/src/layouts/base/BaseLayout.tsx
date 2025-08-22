@@ -89,7 +89,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   const languageId = useI18n().currentLanguage.id;
 
   const { hostname, uiConfig } = useUiConfig();
-  const footerConfig = uiConfig.config.footer;
+  const footerConfig = uiConfig.config?.footer;
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
     ?? footerConfig?.defaultText;
 

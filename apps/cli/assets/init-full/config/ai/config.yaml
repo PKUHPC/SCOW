@@ -1,0 +1,28 @@
+# AI 系统服务的 url，默认不修改
+url: ai:5000
+# AI 系统数据库的信息。可以不修改
+db:
+  host: ai-db
+  port: 3306
+  user: root
+  password: xxxxxxxxxx
+  dbName: scow_ai
+  debug: true
+# AI 系统镜像保存 Harbor 仓库配置
+harborConfig:
+  # Harbor 仓库地址
+  url: 10.0.0.xxx
+  # Harbor 仓库中用于当前系统镜像管理的已存在的项目名称
+  project: projectName
+  # Harbor 仓库可登录用户的用户名
+  # (建议使用上述项目的项目管理员以上权限人员，需具有 API 2.0 接口访问权限)
+  user: user
+  # Harbor 仓库可登录用户的登录密码
+  password: password
+
+# 选配公共的挂载目录
+# publicMountPoints:
+  # - /nfs/public
+
+# 选配作业最大运行时间
+# maxJobRunningTimeHours: 24

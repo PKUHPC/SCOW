@@ -658,6 +658,10 @@ export default {
         delText2:"如该镜像已分享，则分享的镜像也会被删除。",
         type:"类型",
       },
+      imageQuota:{
+        quota:"镜像总配额",
+        usedQuota:"使用量",
+      },
     },
     model:{
       private:"我的模型",
