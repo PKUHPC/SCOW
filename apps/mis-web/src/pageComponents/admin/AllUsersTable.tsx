@@ -1,12 +1,10 @@
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { PlatformUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Space, Table, Tooltip } from "antd";
+import { App, Button, Divider, Form, Input, Space, Table } from "antd";
 import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
-import { ChangePasswordIcon, ChangeTenantIcon, DetailIcon,
-  EditIcon } from "src/assets/operationIcon";
 import { ChangePasswordModalLink } from "src/components/ChangePasswordModal";
 import { DisabledA } from "src/components/DisabledA";
 import { EditUserProfileModalLink } from "src/components/EditUserProfileModal";
@@ -329,17 +327,17 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
           title={t(pCommon("operation"))}
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
-              <Tooltip title={t(p("detail"))}>
-                <DetailIcon onClick={() => setPreviewItem({
-                  ...r,
-                  id: r.userId,
-                  tenant: r.tenantName,
-                })}
-                />
-              </Tooltip>
+              <a onClick={() => setPreviewItem({
+                ...r,
+                id: r.userId,
+                tenant: r.tenantName,
+              })}
+              >
+                {t(p("detail"))}
+              </a>
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <EditIcon disabled />
+                  {t(pCommon("edit"))}
                 </DisabledA>
               ) : (
                 <EditUserProfileModalLink
@@ -367,14 +365,12 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                       .finally(() => reload());
                   }}
                 >
-                  <Tooltip title={t(pCommon("edit"))}>
-                    <EditIcon />
-                  </Tooltip>
+                  {t(pCommon("edit"))}
                 </EditUserProfileModalLink>
               )}
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <ChangePasswordIcon disabled />
+                  {t(p("changePassword"))}
                 </DisabledA>
               ) : (
                 <ChangePasswordModalLink
@@ -406,14 +402,12 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                       .catch(() => { message.error(t(p("fail"))); });
                   }}
                 >
-                  <Tooltip title={t(p("changePassword"))}>
-                    <ChangePasswordIcon />
-                  </Tooltip>
+                  {t(p("changePassword"))}
                 </ChangePasswordModalLink>
               )}
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <ChangeTenantIcon disabled />
+                  {t(p("changeTenant"))}
                 </DisabledA>
               ) : (
                 <ChangeTenantModalLink
@@ -422,9 +416,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                   userId={r.userId}
                   reload={reload}
                 >
-                  <Tooltip title={t(p("changeTenant"))}>
-                    <ChangeTenantIcon />
-                  </Tooltip>
+                  {t(p("changeTenant"))}
                 </ChangeTenantModalLink>
               )}
             </Space>

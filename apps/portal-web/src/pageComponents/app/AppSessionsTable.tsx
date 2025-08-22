@@ -2,7 +2,8 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber, compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Checkbox, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Checkbox, Divider, Form, Input, Popconfirm, Space,
+  Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/router";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
@@ -134,7 +135,14 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
       fixed:"right",
       width: "10%",
       render: (record) => (
-        <Space size={16}>
+        <Space size={8}>
+          <Tooltip title={t(p("table.linkToPath"))}>
+            <EnterDirectoryIcon
+              onClick={() => {
+                router.push(join("/files", cluster.id, record.dataPath));
+              }}
+            />
+          </Tooltip>
           {
             (record.state === "RUNNING") ? (
               <>
@@ -184,13 +192,6 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
               </Popconfirm>
             ) : undefined
           }
-          <Tooltip title={t(p("table.linkToPath"))}>
-            <EnterDirectoryIcon
-              onClick={() => {
-                router.push(join("/files", cluster.id, record.dataPath));
-              }}
-            />
-          </Tooltip>
         </Space>
       ),
     },

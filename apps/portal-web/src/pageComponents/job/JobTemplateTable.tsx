@@ -12,7 +12,7 @@
 
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobTemplateInfo } from "@scow/protos/build/portal/job";
-import { App, Button, Form, Input, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
+import { App, Button, Divider,Form, Input, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import React, { useCallback, useState } from "react";
@@ -189,7 +189,7 @@ const InfoTable: React.FC<InfoTableProps> = ({
       dataIndex: "action",
       title: t("button.actionButton"),
       render:(_, r) => (
-        <Space size={16} style={{ marginLeft: 4 }}>
+        <Space size={8} style={{ marginLeft: 4 }}>
           <Tooltip title={t(p("useTemplate"))}>
             <Link
               href={{
@@ -204,6 +204,16 @@ const InfoTable: React.FC<InfoTableProps> = ({
             >
               <UsingTemplateIcon />
             </Link>
+          </Tooltip>
+          <Tooltip title={t("button.renameButton")}>
+            <RenameIcon
+              style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
+              onClick={() => {
+                if (r.jobName === "unknown") return;
+
+                setTemplateId(r.id); setModalShow(true);
+              }}
+            />
           </Tooltip>
           <Popconfirm
             title={t(p("popConfirm"))}
@@ -227,16 +237,6 @@ const InfoTable: React.FC<InfoTableProps> = ({
               <DeleteIcon />
             </Tooltip>
           </Popconfirm>
-          <Tooltip title={t("button.renameButton")}>
-            <RenameIcon
-              style={r.jobName === "unknown" ? { color: "grey", cursor: "not-allowed" } : {}}
-              onClick={() => {
-                if (r.jobName === "unknown") return;
-
-                setTemplateId(r.id); setModalShow(true);
-              }}
-            />
-          </Tooltip>
         </Space>
       ),
     },

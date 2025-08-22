@@ -11,10 +11,10 @@
  */
 
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Space,Table, Tooltip } from "antd";
+import { App, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon,ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
@@ -37,7 +37,7 @@ export interface Props {
   cluster: Cluster;
 }
 
-const CopyPublicDatasetModalButton = ModalButton(CopyPublicDatasetModal, { type: "link" });
+const CopyPublicDatasetModalButton = ModalLink(CopyPublicDatasetModal);
 
 export const DatasetVersionList: React.FC<Props> = (
   { datasets, datasetId, datasetName, isPublic, cluster },
@@ -47,7 +47,7 @@ export const DatasetVersionList: React.FC<Props> = (
   const pCommon = prefix("app.common.");
 
   const { modal, message } = App.useApp();
-  const CreateEditVersionModalButton = ModalButton(CreateEditDSVersionModal, { type: "link" });
+  const CreateEditVersionModalButton = ModalLink(CreateEditDSVersionModal);
 
   const router = useRouter();
 
@@ -156,9 +156,8 @@ export const DatasetVersionList: React.FC<Props> = (
                     <EditIcon />
                   </Tooltip>
                 </CreateEditVersionModalButton>
-                <Button
-                  type="link"
-                  onClick={async () => {
+                <Tooltip title={t(p("check"))}>
+                  <ViewFileIcon onClick={async () => {
                     const checkExistRes =
                     await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
 
@@ -168,36 +167,32 @@ export const DatasetVersionList: React.FC<Props> = (
                       deleteDatasetVersion(r.id, r.datasetId, true);
                     }
                   }}
-                >
-                  <Tooltip title={t(p("check"))}>
-                    <ViewFileIcon />
-                  </Tooltip>
-                </Button>
-                <Button
-                  type="link"
-                  disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
-                  onClick={() => {
-                    modal.confirm({
-                      title: t(p("share")),
-                      content:
+                  />
+                </Tooltip>
+                <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                  <span onClick={() => {
+                    if (r.sharedStatus !== SharedStatus.SHARING && r.sharedStatus !== SharedStatus.UNSHARING) {
+                      modal.confirm({
+                        title: t(p("share")),
+                        content:
                       `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
-                      onOk: async () => {
-                        if (r.sharedStatus === SharedStatus.SHARED) {
-                          await unShareMutation.mutateAsync({
-                            datasetVersionId: r.id,
-                            datasetId: r.datasetId,
-                          });
-                        } else {
-                          await shareMutation.mutateAsync({
-                            datasetVersionId: r.id,
-                            datasetId: r.datasetId,
-                          });
-                        }
-                      },
-                    });
+                        onOk: async () => {
+                          if (r.sharedStatus === SharedStatus.SHARED) {
+                            await unShareMutation.mutateAsync({
+                              datasetVersionId: r.id,
+                              datasetId: r.datasetId,
+                            });
+                          } else {
+                            await shareMutation.mutateAsync({
+                              datasetVersionId: r.id,
+                              datasetId: r.datasetId,
+                            });
+                          }
+                        },
+                      });
+                    }
                   }}
-                >
-                  <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                  >
                     {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
                       <CancleShareIcon
                         disabled={r.sharedStatus === SharedStatus.UNSHARING}
@@ -207,19 +202,15 @@ export const DatasetVersionList: React.FC<Props> = (
                         disabled={r.sharedStatus === SharedStatus.SHARING}
                       />
                     )}
-                  </Tooltip>
-                </Button>
-                <Button
-                  type="link"
-                  disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
-                  onClick={() => {
+                  </span>
+                </Tooltip>
+
+                <Tooltip title={t("button.deleteButton")}>
+                  <DeleteIcon onClick={() => {
                     deleteDatasetVersion(r.id, r.datasetId);
                   }}
-                >
-                  <Tooltip title={t("button.deleteButton")}>
-                    <DeleteIcon />
-                  </Tooltip>
-                </Button>
+                  />
+                </Tooltip>
               </Space>
             ) : (
               <CopyPublicDatasetModalButton

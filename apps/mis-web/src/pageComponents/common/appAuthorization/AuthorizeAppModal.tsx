@@ -1,11 +1,10 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { AppAuthorizationInfo } from "@scow/protos/build/server/app_authorization";
-import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag, Tooltip } from "antd";
+import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { AuthorizeIcon, CancleAuthorizeIcon } from "src/assets/operationIcon";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -182,60 +181,60 @@ const AuthorizeAppModal: React.FC<Props> = ({
               {
                 r.isDisabled ? (
                   // 授权应用
-                  <Tooltip title={t(p("actions.authorize"))}>
-                    <AuthorizeIcon onClick={() => {
-                      const contentTexts = (targetType === AppAuthTargetType.TENANT)
-                        ? t(p("confirm.authorize.tenantContent"), [clusterName, r.appName, targetName])
-                        : t(p("confirm.authorize.accountContent"), [clusterName, r.appName, targetName]);
-                      modal.confirm({
-                        title: t(p("confirm.authorize.title")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: (
-                          <>
-                            <p>
-                              {contentTexts}
-                            </p>
-                          </>
-                        ),
-                        onOk: async () => {
-                          await authorizeApp(r.appId, AuthorizeAction.AUTHORIZE);
-                        },
-                      });
-                    }}
-                    />
-                  </Tooltip>
+                  <a onClick={() => {
+                    const contentTexts = (targetType === AppAuthTargetType.TENANT)
+                      ? t(p("confirm.authorize.tenantContent"), [clusterName, r.appName, targetName])
+                      : t(p("confirm.authorize.accountContent"), [clusterName, r.appName, targetName]);
+                    modal.confirm({
+                      title: t(p("confirm.authorize.title")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: (
+                        <>
+                          <p>
+                            {contentTexts}
+                          </p>
+                        </>
+                      ),
+                      onOk: async () => {
+                        await authorizeApp(r.appId, AuthorizeAction.AUTHORIZE);
+                      },
+                    });
+                  }}
+                  >
+                    {t(p("actions.authorize"))}
+                  </a>
                 ) : (
                   // 取消授权应用
-                  <Tooltip title={t(p("actions.unauthorize"))}>
-                    <CancleAuthorizeIcon onClick={() => {
-                      const contentTexts = (targetType === AppAuthTargetType.TENANT)
-                        ? t(p("confirm.unauthorize.tenantContent"), [clusterName, r.appName, targetName])
-                        : t(p("confirm.unauthorize.accountContent"), [clusterName, r.appName, targetName]);
-                      modal.confirm({
-                        title: t(p("confirm.unauthorize.title")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: (
-                          <>
-                            <p>
-                              {contentTexts}
-                            </p>
-                            {
-                              targetType === AppAuthTargetType.TENANT ?
-                                (
-                                  <p style={{ color: "red" }}>
-                                    {t(p("confirm.unauthorize.tenantWarning"))}
-                                  </p>
-                                ) : undefined
-                            }
-                          </>
-                        ),
-                        onOk: async () => {
-                          await authorizeApp(r.appId, AuthorizeAction.UNAUTHORIZE);
-                        },
-                      });
-                    }}
-                    />
-                  </Tooltip>
+                  <a onClick={() => {
+                    const contentTexts = (targetType === AppAuthTargetType.TENANT)
+                      ? t(p("confirm.unauthorize.tenantContent"), [clusterName, r.appName, targetName])
+                      : t(p("confirm.unauthorize.accountContent"), [clusterName, r.appName, targetName]);
+                    modal.confirm({
+                      title: t(p("confirm.unauthorize.title")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: (
+                        <>
+                          <p>
+                            {contentTexts}
+                          </p>
+                          {
+                            targetType === AppAuthTargetType.TENANT ?
+                              (
+                                <p style={{ color: "red" }}>
+                                  {t(p("confirm.unauthorize.tenantWarning"))}
+                                </p>
+                              ) : undefined
+                          }
+                        </>
+                      ),
+                      onOk: async () => {
+                        await authorizeApp(r.appId, AuthorizeAction.UNAUTHORIZE);
+                      },
+                    });
+                  }}
+                  >
+                    {t(p("actions.unauthorize"))}
+                  </a>
                 )
               }
             </Space>

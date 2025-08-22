@@ -19,6 +19,7 @@ import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
 import { App, AutoComplete, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
+import { useRouter } from "next/router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -344,7 +345,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
   data, pageInfo, setPageInfo, setSorter, isLoading,
   showAccount, showUser, showedPrices, priceTexts,
 }) => {
-
+  const router = useRouter();
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { publicConfigClusters } = useStore(ClusterInfoStore);
@@ -496,16 +497,20 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           ))
         }
         <Table.Column<JobInfo>
-          title={t(pCommon("more"))}
+          title={t(pCommon("operation"))}
           width="4.5%"
           fixed="right"
-          render={(_, r) => (
-            <Tooltip title={t(pCommon("detail"))}>
-              <DetailIcon
-                onClick={() => setPreviewItem(r)}
-              />
-            </Tooltip>
-          )}
+          render={(_, r) => {
+            return router.pathname === "/user/historyJobs" ? (
+              <Tooltip title={t(pCommon("detail"))}>
+                <DetailIcon
+                  onClick={() => setPreviewItem(r)}
+                />
+              </Tooltip>
+            ) : (
+              <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
+            );
+          }}
         />
       </Table>
       <HistoryJobDrawer

@@ -149,7 +149,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
   return (
     <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))}>
-      <Tooltip title={t(p("connect"))}>
+      <Tooltip title={t(p("entry"))}>
         <ConnectIcon disabled={!data} />
       </Tooltip>
     </DisabledA>

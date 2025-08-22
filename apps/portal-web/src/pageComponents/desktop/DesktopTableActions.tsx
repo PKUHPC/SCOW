@@ -36,7 +36,7 @@ export const DesktopTableActions: React.FC<Props> = ({ cluster, reload, record }
 
   return (
     <div>
-      <Space size="middle">
+      <Space size={8}>
         <Tooltip title={t("button.startButton")}>
           <StartIcon
             onClick={async () => {

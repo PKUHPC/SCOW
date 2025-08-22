@@ -21,8 +21,6 @@ import Link from "next/link";
 import React, { useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { BlockageThresholdIcon, DeleteIcon, LockIcon, ManageMemberIcon,
-  UnlockIcon } from "src/assets/operationIcon";
 import { DeleteEntityFailedModal } from "src/components/DeleteEntityFailedModal";
 import { DeleteEntityModalLink } from "src/components/DeleteEntityModal";
 import { DisabledA } from "src/components/DisabledA";
@@ -376,9 +374,7 @@ export const AccountTable: React.FC<Props> = ({
               {showedTab === "TENANT" && (r.state !== AccountState.DELETED ? (
                 <>
                   <Link href={{ pathname: `/tenant/accounts/${r.accountName}/users` }}>
-                    <Tooltip title={t(p("mangerMember"))}>
-                      <ManageMemberIcon />
-                    </Tooltip>
+                    {t(p("mangerMember"))}
                   </Link>
                   <SetBlockThresholdAmountLink
                     accountName={r.accountName}
@@ -387,87 +383,83 @@ export const AccountTable: React.FC<Props> = ({
                     currentAmount={r.blockThresholdAmount}
                     defaultBlockThresholdAmount={r.defaultBlockThresholdAmount}
                   >
-                    <Tooltip title={t(p("blockThresholdAmount"))}>
-                      <BlockageThresholdIcon />
-                    </Tooltip>
+                    {t(p("blockThresholdAmount"))}
                   </SetBlockThresholdAmountLink>
                 </>
               ) : (
                 <>
                   <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
-                    <ManageMemberIcon disabled />
+                    {t(p("mangerMember"))}
                   </DisabledA>
                   <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
-                    <BlockageThresholdIcon disabled />
+                    {t(p("blockThresholdAmount"))}
                   </DisabledA>
                 </>
               )
               )}
               {
                 r.state === AccountState.BLOCKED_BY_ADMIN && (
-                  <Tooltip title={t(p("unblock"))}>
-                    <UnlockIcon
-                      onClick={() => {
-                        modal.confirm({
-                          title: t(p("unblockConfirmTitle")),
-                          icon: <ExclamationCircleOutlined />,
-                          content: t(p("unblockConfirmContent"), [r.tenantName, r.accountName]),
-                          onOk: async () => {
-                            await api.unblockAccount({
-                              body: {
-                                tenantName: r.tenantName,
-                                accountName: r.accountName,
-                              },
-                            })
-                              .then((res) => {
-                                if (res.executed) {
-                                  message.success(t(p("unblockSuccess")));
-                                  reload();
-                                } else {
-                                  message.error(res.reason || t(p("unblockFail")));
-                                }
-                              });
-                          },
-                        });
+                  <a
+                    onClick={() => {
+                      modal.confirm({
+                        title: t(p("unblockConfirmTitle")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: t(p("unblockConfirmContent"), [r.tenantName, r.accountName]),
+                        onOk: async () => {
+                          await api.unblockAccount({
+                            body: {
+                              tenantName: r.tenantName,
+                              accountName: r.accountName,
+                            },
+                          })
+                            .then((res) => {
+                              if (res.executed) {
+                                message.success(t(p("unblockSuccess")));
+                                reload();
+                              } else {
+                                message.error(res.reason || t(p("unblockFail")));
+                              }
+                            });
+                        },
+                      });
 
-                      }}
-                    />
-                  </Tooltip>
+                    }}
+                  >{t(p("unblock"))}
+                  </a>
                 )}
               {
                 !r.isInWhitelist && (r.state === AccountState.NORMAL || r.state === AccountState.FROZEN) && (
-                  <Tooltip title={t(p("block"))}>
-                    <LockIcon
-                      onClick={() => {
-                        modal.confirm({
-                          title: t(p("blockConfirmTitle")),
-                          icon: <ExclamationCircleOutlined />,
-                          content: t(p("blockConfirmContent"), [r.tenantName, r.accountName]),
-                          onOk: async () => {
-                            await api.blockAccount({
-                              body: {
-                                tenantName: r.tenantName,
-                                accountName: r.accountName,
-                              },
-                            })
-                              .then((res) => {
-                                if (res.executed) {
-                                  message.success(t(p("blockSuccess")));
-                                  reload();
-                                } else {
-                                  message.error(res.reason || t(p("blockFail")));
-                                }
-                              });
-                          },
-                        });
-                      }}
-                    />
-                  </Tooltip>
+                  <a
+                    onClick={() => {
+                      modal.confirm({
+                        title: t(p("blockConfirmTitle")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: t(p("blockConfirmContent"), [r.tenantName, r.accountName]),
+                        onOk: async () => {
+                          await api.blockAccount({
+                            body: {
+                              tenantName: r.tenantName,
+                              accountName: r.accountName,
+                            },
+                          })
+                            .then((res) => {
+                              if (res.executed) {
+                                message.success(t(p("blockSuccess")));
+                                reload();
+                              } else {
+                                message.error(res.reason || t(p("blockFail")));
+                              }
+                            });
+                        },
+                      });
+                    }}
+                  > {t(p("block"))}
+                  </a>
                 )}
               {showedTab === "TENANT" && deleteEnabled === true && (
                 r.state === AccountState.DELETED ? (
                   <DisabledA message={t(pDelete("accountDeleted"))} disabled={true}>
-                    <DeleteIcon disabled />
+                    {t(p("delete"))}
                   </DisabledA>
                 ) : (
                   <DeleteEntityModalLink
@@ -539,9 +531,7 @@ export const AccountTable: React.FC<Props> = ({
                         });
                     }}
                   >
-                    <Tooltip title={t(p("delete"))}>
-                      <DeleteIcon />
-                    </Tooltip>
+                    {t(p("delete"))}
                   </DeleteEntityModalLink>
                 )
               )}

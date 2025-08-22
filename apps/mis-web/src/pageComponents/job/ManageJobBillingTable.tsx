@@ -6,7 +6,6 @@ import { App, Button, Form, Input, InputNumber, Modal, Popover, Select, Space, T
 import React, { useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { SettingIcon } from "src/assets/operationIcon";
 import { AmountStrategyDescriptionsItem } from "src/components/AmonutStrategyDescriptionsItem";
 import { CommonModalProps, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -182,9 +181,7 @@ export const ManageJobBillingTable: React.FC<Props> = ({
                       reload={reload}
                       tenant={tenant}
                     >
-                      <Tooltip title={t(pCommon("set"))}>
-                        <SettingIcon />
-                      </Tooltip>
+                      {t(pCommon("set"))}
                     </EditPriceModalLink>
                   ) : (
                     isFromPlatformAdmin ? (
@@ -199,7 +196,7 @@ export const ManageJobBillingTable: React.FC<Props> = ({
                             height: "auto",
                           }}
                         >
-                          <SettingIcon disabled />
+                          {t(pCommon("set"))}
                         </Button>
                       </Tooltip>
                     ) : undefined

@@ -2,9 +2,8 @@
 
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, Divider, Form, Input, message, Space, Table, Tooltip } from "antd";
+import { Button, Divider, Form, Input, message, Space, Table } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
-import { AuthorizedClusterIcon, AuthorizedPartitionIcon, DetailIcon } from "src/assets/operationIcon";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { AssignedDetailsDrawer } from "src/components/pageComponents/AssignedDetailsDrawer";
@@ -301,17 +300,19 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
             // 维持上一次模态框选中的账户/租户数据
             return (
               <Space>
-                <Tooltip title={language.clusterPartitionManagement.common.assignCluster}>
-                  <AuthorizedClusterIcon onClick={() => setClusterPreviewItem(r)} />
-                </Tooltip>
-                <Divider type="vertical" />
-                <Tooltip title={language.clusterPartitionManagement.common.assignPartition}>
-                  <AuthorizedPartitionIcon onClick={() => setPartitionPreviewItem(r)} />
-                </Tooltip>
-                <Divider type="vertical" />
-                <Tooltip title={language.common.detail}>
-                  <DetailIcon onClick={() => setPreviewItem(r)} />
-                </Tooltip>
+                <>
+                  <a onClick={() => setClusterPreviewItem(r)}>
+                    {language.clusterPartitionManagement.common.assignCluster}
+                  </a>
+                  <Divider type="vertical" />
+                  <a onClick={() => setPartitionPreviewItem(r)}>
+                    {language.clusterPartitionManagement.common.assignPartition}
+                  </a>
+                  <Divider type="vertical" />
+                  <a onClick={() => setPreviewItem(r)}>
+                    {language.common.detail}
+                  </a>
+                </>
               </Space>
             );
           }}

@@ -1,5 +1,5 @@
-import Icon from "@ant-design/icons";
-import React, { LegacyRef } from "react";
+import InitIcon from "@ant-design/icons";
+import React, { Ref } from "react";
 import { styled } from "styled-components";
 
 interface IconProps {
@@ -29,31 +29,35 @@ export const DisableIconContainer = styled.div`
   color: #8c8c8c;
 `;
 
+export const Icon = styled(InitIcon)`
+  flex: 1;
+  justify-content: center;
+`;
+
 // 详情图标
 const detailSVG = () => (
-  <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="17" height="10" viewBox="0 0 17 10" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
-      d="M5.0625 8.64844C5.3355 8.70464 5.54092 8.94671 5.54102 9.23633C5.54102 9.526 5.33552 9.76797
-        5.0625 9.82422L4.94141 9.83594H0.75C0.418629 9.83594 0.150391 9.5677 0.150391 9.23633C0.150495
-        8.90505 0.418693 8.63672 0.75 8.63672H4.94141L5.0625 8.64844ZM9.65527 2.8457C11.1018 2.8457 12.2752
-        4.0183 12.2754 5.46484L12.2617 5.7334C12.2213 6.13003 12.09 6.49899 11.8926 6.82324L13.7598
-        8.69043L13.8369 8.78418C13.9903 9.01695 13.9645 9.33319 13.7598 9.53809C13.5549 9.74295 13.2387 9.7686
-        13.0059 9.61523L12.9111 9.53809L11.0527 7.67969C10.6482 7.93543 10.1692 8.08496 9.65527 8.08496L9.3877
-        8.07129C8.06707 7.93707 7.03636 6.82083 7.03613 5.46484C7.03629 4.01848 8.20893 2.84598 9.65527
-        2.8457ZM9.65527 4.0459C8.87167 4.04617 8.23649 4.68122 8.23633 5.46484C8.23657 6.2484 8.87173 6.88449
-        9.65527 6.88477C10.4391 6.88477 11.0749 6.24857 11.0752 5.46484C11.075 4.68105 10.4391 4.0459 9.65527
-        4.0459ZM5.0625 4.35254C5.33546 4.40872 5.54084 4.65088 5.54102 4.94043C5.54102 5.23009 5.33551 5.47206
-        5.0625 5.52832L4.94141 5.54004H0.75C0.418629 5.54004 0.150391 5.2718 0.150391 4.94043C0.150589 4.60923
-        0.418752 4.34082 0.75 4.34082H4.94141L5.0625 4.35254ZM12.2754 0.150391C12.6066 0.150553 12.876 0.41873
-        12.876 0.75C12.8758 1.08113 12.6065 1.34945 12.2754 1.34961H0.75C0.41873 1.34961 0.150553 1.08123
-        0.150391 0.75C0.150391 0.418629 0.418629 0.150391 0.75 0.150391H12.2754Z"
+      d="M0.834961 8.35156C1.2958 8.35167 1.66895 8.72082 1.66895 9.17578C1.66879 9.63062 1.29571
+      9.99989 0.834961 10C0.374133 9.99998 0.000150924 9.63067 0 9.17578C0 8.72076 0.37404 8.35158
+      0.834961 8.35156ZM16.373 8.57617C16.704 8.57648 16.9725 8.84477 16.9727 9.17578C16.9722 9.50661
+      16.7039 9.77509 16.373 9.77539H3.94238C3.61142 9.77522 3.34319 9.50669 3.34277 9.17578C3.34297
+      8.84469 3.61128 8.57634 3.94238 8.57617H16.373ZM0.834961 4.17578C1.2958 4.17589 1.66895 4.54504
+      1.66895 5C1.66865 5.45471 1.29562 5.82313 0.834961 5.82324C0.374224 5.82322 0.000298013 5.45477
+      0 5C0 4.54498 0.37404 4.1758 0.834961 4.17578ZM12.7061 4.40039C13.037 4.40077 13.3055 4.66904 13.3057
+      5C13.3053 5.33083 13.0369 5.59923 12.7061 5.59961H3.94238C3.61138 5.59944 3.34313 5.33096 3.34277 5C3.34297
+      4.66891 3.61128 4.40056 3.94238 4.40039H12.7061ZM0.834961 0C1.29576 0.000157547 1.66895 0.369286 1.66895
+      0.824219C1.66884 1.27906 1.2957 1.64828 0.834961 1.64844C0.374107 1.64842 0.000109188 1.27914 0 0.824219C0
+      0.369202 0.37404 2.1214e-05 0.834961 0ZM16.373 0.224609C16.704 0.224914 16.9725 0.493208 16.9727
+      0.824219C16.9724 1.15515 16.704 1.42352 16.373 1.42383H3.94238C3.61134 1.42365 3.34307 1.15523 3.34277
+      0.824219C3.34297 0.493126 3.61128 0.224782 3.94238 0.224609H16.373Z"
       fill="currentColor"
     />
   </svg>
 );
 
 export const DetailIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={detailSVG} {...props} ref={ref} />
     </IconContainer>
@@ -62,28 +66,29 @@ export const DetailIcon: React.ForwardRefExoticComponent<IconProps> = React.forw
 
 // 结束图标
 const endSVG = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
-      d="M7.99118 1.18945C8.15685 0.902523 8.52356 0.804118 8.81051 0.969727C9.9107 1.60492 10.7712
-        2.58525 11.2578 3.75879C11.7442 4.93225 11.8299 6.23371 11.5019 7.46094C11.1739 8.68815 10.4494
-        9.77259 9.44235 10.5469C8.43527 11.3211 7.2009 11.7425 5.93063 11.7441C4.66053 11.7457 3.4249
-        11.3282 2.41598 10.5566C1.40709 9.78495 0.679745 8.70184 0.348597 7.47559C0.0175002 6.24922
-        0.100512 4.94714 0.583949 3.77246C1.0674 2.59797 1.92519 1.61553 3.0234 0.977539C3.30996 0.811128
-        3.67828 0.908757 3.84469 1.19531C4.01048 1.48165 3.91298 1.84828 3.62692 2.01465C2.75676 2.52002
-        2.07734 3.29897 1.6943 4.22949C1.31143 5.15988 1.24562 6.19078 1.50778 7.16211C1.77011 8.13356 2.3462
-        8.99122 3.14547 9.60254C3.94483 10.2139 4.92331 10.5452 5.92965 10.5439C6.93595 10.5426 7.9141 10.2091
-        8.71188 9.5957C9.50936 8.98243 10.0819 8.12324 10.3418 7.15137C10.6016 6.17913 10.5348 5.14741 10.1494
-        4.21777C9.76396 3.28832 9.08227 2.51192 8.2109 2.00879C7.92394 1.8431 7.8255 1.47642 7.99118
-        1.18945ZM5.92379 0.150391C6.25508 0.150484 6.52339 0.418694 6.5234 0.75V3.62305C6.5234 3.95436
-        6.25508 4.22354 5.92379 4.22363C5.59242 4.22363 5.32418 3.95442 5.32418 3.62305V0.75C5.32419
-        0.418637 5.59243 0.150391 5.92379 0.150391Z"
+      d="M8.32617 1.08496C8.49188 0.798048 8.85954 0.700541 9.14648 0.866211C10.3081 1.53703 11.2158
+      2.57242 11.7295 3.81152C12.2431 5.05064 12.3345 6.42481 11.9883 7.7207C11.6418 9.01657 10.8769
+      10.1619 9.81348 10.9795C8.74988 11.7972 7.44609 12.2424 6.10449 12.2441C4.76302 12.2457 3.45813
+      11.8042 2.39258 10.9893C1.32714 10.1743 0.560614 9.03038 0.210938 7.73535C-0.138692 6.44016
+      -0.0516609 5.06576 0.458984 3.8252C0.969668 2.58463 1.87502 1.54677 3.03516 0.873047C3.32167
+      0.706769 3.68907 0.804364 3.85547 1.09082C4.02175 1.37735 3.9242 1.74475 3.6377 1.91113C2.70589
+      2.45228 1.97852 3.2858 1.56836 4.28223C1.15831 5.27854 1.08838 6.38268 1.36914 7.42285C1.65007
+      8.46301 2.26624 9.38256 3.12207 10.0371C3.97793 10.6915 5.02612 11.0453 6.10352 11.0439C7.18106
+      11.0426 8.22875 10.6851 9.08301 10.0283C9.93694 9.37155 10.5509 8.45093 10.8291 7.41016C11.1071
+      6.36931 11.0337 5.26572 10.6211 4.27051C10.2085 3.27529 9.47984 2.44307 8.54688 1.9043C8.25991
+      1.73862 8.16051 1.37193 8.32617 1.08496ZM6.09668 0C6.42805 -2.02634e-08 6.69629 0.268239 6.69629
+      0.599609V4.87109C6.6961 5.2023 6.42793 5.4707 6.09668 5.4707C5.76564 5.47045 5.49726 5.20215 5.49707
+      4.87109V0.599609C5.49707 0.268396 5.76553 0.00025494 6.09668 0Z"
       fill="currentColor"
     />
   </svg>
+
 );
 
 export const EndIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={endSVG} {...props} ref={ref} />
     </IconContainer>
@@ -92,29 +97,21 @@ export const EndIcon: React.ForwardRefExoticComponent<IconProps> = React.forward
 
 // 修改作业时限图标
 const modifyDeadlineSVG = () => (
-  <svg width="18" height="15" viewBox="0 0 18 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
-      d="M13.5 0.400391C14.9359 0.400391 16.0996 1.56406 16.0996 3V6C16.0996 6.0246 16.0947 6.04844
-      16.0918 6.07227C17.2533 6.98785 18 8.40622 18 10C18 12.7614 15.7614 15 13 15C11.1745 15 9.57792
-      14.0215 8.70508 12.5605C8.64083 12.584 8.57243 12.5996 8.5 12.5996H3.5C2.06406 12.5996 0.900391
-      11.4359 0.900391 10V3C0.900391 1.56406 2.06406 0.400391 3.5 0.400391H13.5ZM13 6.2002C10.9013 6.2002
-      9.2002 7.90132 9.2002 10C9.2002 12.0987 10.9013 13.7998 13 13.7998C15.0987 13.7998 16.7998 12.0987
-      16.7998 10C16.7998 7.90132 15.0987 6.2002 13 6.2002ZM13 7.5C13.2761 7.5 13.5 7.72386 13.5
-      8V9.61816L14.3838 10.6797C14.5605 10.8917 14.5322 11.207 14.3203 11.3838C14.1347 11.5385 13.8702
-      11.5358 13.6885 11.3906L13.6162 11.3203L12.6621 10.1758C12.5573 10.05 12.5 9.89128 12.5 9.72754V8C12.5
-      7.72386 12.7239 7.5 13 7.5ZM3.5 1.59961C2.7268 1.59961 2.09961 2.2268 2.09961 3V10C2.09961 10.7732
-      2.7268 11.4004 3.5 11.4004H8.2002C8.07074 10.9559 8 10.4863 8 10C8 7.23858 10.2386 5 13 5C13.6728 5
-      14.3145 5.13307 14.9004 5.37402V3C14.9004 2.2268 14.2732 1.59961 13.5 1.59961H3.5ZM7 5.5C7.27614 5.5
-      7.5 5.72386 7.5 6C7.5 6.27614 7.27614 6.5 7 6.5H4C3.72386 6.5 3.5 6.27614 3.5 6C3.5 5.72386 3.72386 5.5
-      4 5.5H7ZM10 3.5C10.2761 3.5 10.5 3.72386 10.5 4C10.5 4.27614 10.2761 4.5 10 4.5H4C3.72386 4.5 3.5 4.27614
-      3.5 4C3.5 3.72386 3.72386 3.5 4 3.5H10Z"
+      d="M6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6C0 2.68629
+      2.68629 0 6 0ZM6 1.2002C3.34903 1.2002 1.2002 3.34903 1.2002 6C1.2002 8.65097 3.34903 10.7998 6
+      10.7998C8.65097 10.7998 10.7998 8.65097 10.7998 6C10.7998 3.34903 8.65097 1.2002 6 1.2002ZM6
+      3.09961C6.27601 3.09961 6.49979 3.32365 6.5 3.59961V5.57812L7.58398 6.87988C7.76054 7.09192 7.73232
+      7.4072 7.52051 7.58398C7.30837 7.76077 6.99221 7.73167 6.81543 7.51953L5.66211 6.13574C5.55746 6.01006
+      5.50007 5.85105 5.5 5.6875V3.59961C5.50021 3.32365 5.72399 3.09961 6 3.09961Z"
       fill="currentColor"
     />
   </svg>
 );
 
 export const ModifyDeadlineIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={modifyDeadlineSVG} {...props} ref={ref} />
     </IconContainer>
@@ -157,7 +154,7 @@ const quotaManagementSVG = () => (
 );
 
 export const QuotaManagementIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={quotaManagementSVG} {...props} ref={ref} />
     </IconContainer>
@@ -190,7 +187,7 @@ const lockSVG = () => (
 );
 
 export const LockIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={lockSVG} {...props} ref={ref} />
     </IconContainer>
@@ -222,7 +219,7 @@ const removeUserSVG = () => (
 );
 
 export const RemoveUserIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={removeUserSVG} {...props} ref={ref} />
@@ -261,7 +258,7 @@ const setAsManageSVG = () => (
 );
 
 export const SetAsManageIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={setAsManageSVG} {...props} ref={ref} />
     </IconContainer>
@@ -291,7 +288,7 @@ const cancleManageSVG = () => (
 );
 
 export const CancleManageIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={cancleManageSVG} {...props} ref={ref} />
     </IconContainer>
@@ -328,7 +325,7 @@ const settingSVG = () => (
 );
 
 export const SettingIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={settingSVG} {...props} ref={ref} />
@@ -374,7 +371,7 @@ const adjustBillingSVG = () => (
 );
 
 export const AdjustBillingIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={adjustBillingSVG} {...props} ref={ref} />
     </IconContainer>
@@ -399,7 +396,7 @@ const changePasswordSVG = () => (
 );
 
 export const ChangePasswordIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={changePasswordSVG} {...props} ref={ref} />
@@ -434,7 +431,7 @@ const deleteSVG = () => (
 );
 
 export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={deleteSVG} {...props} ref={ref} />
@@ -465,7 +462,7 @@ const editSVG = () => (
 );
 
 export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={editSVG} {...props} ref={ref} />
@@ -505,7 +502,7 @@ const manageMemberSVG = () => (
 );
 
 export const ManageMemberIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={manageMemberSVG} {...props} ref={ref} />
@@ -538,7 +535,7 @@ const blockageThresholdSVG = () => (
 );
 
 export const BlockageThresholdIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={blockageThresholdSVG} {...props} ref={ref} />
@@ -576,7 +573,7 @@ const unlockSVG = () => (
 );
 
 export const UnlockIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={unlockSVG} {...props} ref={ref} />
     </IconContainer>
@@ -609,7 +606,7 @@ const removeFromWhitelistSVG = () => (
 );
 
 export const RemoveFromWhitelistIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={removeFromWhitelistSVG} {...props} ref={ref} />
     </IconContainer>
@@ -640,7 +637,7 @@ const changeTenantSVG = () => (
 );
 
 export const ChangeTenantIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={changeTenantSVG} {...props} ref={ref} />
@@ -680,7 +677,7 @@ const viewSVG = () => (
 );
 
 export const ViewIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={viewSVG} {...props} ref={ref} />
     </IconContainer>
@@ -702,7 +699,7 @@ const stopUseSVG = () => (
 );
 
 export const StopUseIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={stopUseSVG} {...props} ref={ref} />
     </IconContainer>
@@ -724,7 +721,7 @@ const startUseSVG = () => (
 );
 
 export const StartUseIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={startUseSVG} {...props} ref={ref} />
     </IconContainer>
@@ -759,7 +756,7 @@ const authorizedAppSVG = () => (
 );
 
 export const AuthorizedAppIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={authorizedAppSVG} {...props} ref={ref} />
     </IconContainer>
@@ -793,7 +790,7 @@ const modifyQuotaSVG = () => (
 );
 
 export const ModifyQuotaIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={modifyQuotaSVG} {...props} ref={ref} />
     </IconContainer>
@@ -824,7 +821,7 @@ const unlockLoginSVG = () => (
 );
 
 export const UnlockLoginIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={unlockLoginSVG} {...props} ref={ref} />
     </IconContainer>
@@ -848,7 +845,7 @@ const authorizeSVG = () => (
 );
 
 export const AuthorizeIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={authorizeSVG} {...props} ref={ref} />
     </IconContainer>
@@ -881,7 +878,7 @@ const cancleAuthorizeSVG = () => (
 );
 
 export const CancleAuthorizeIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={cancleAuthorizeSVG} {...props} ref={ref} />
     </IconContainer>
@@ -911,7 +908,7 @@ const nodeOnlineSVG = () => (
 );
 
 export const NodeOnlineIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={nodeOnlineSVG} {...props} ref={ref} />
@@ -944,7 +941,7 @@ const nodeMigrationSVG = () => (
 );
 
 export const NodeMigrationIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={nodeMigrationSVG} {...props} ref={ref} />
@@ -986,7 +983,7 @@ const removeDefaultAuthSVG = () => (
 );
 
 export const RemoveDefaultAuthIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={removeDefaultAuthSVG} {...props} ref={ref} />
     </IconContainer>

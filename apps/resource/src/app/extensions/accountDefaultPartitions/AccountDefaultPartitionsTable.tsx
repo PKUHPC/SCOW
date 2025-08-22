@@ -3,10 +3,9 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Space, Table, Tooltip } from "antd";
+import { App, Button, Form, Input, Space, Table } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
-import { RemoveDefaultPartitionIcon } from "src/assets/operationIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { I18nDicType } from "src/models/i18n";
@@ -246,9 +245,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
                   });
                 }}
               >
-                <Tooltip title={language.accountDefaultPartitions.removeModal.title}>
-                  <RemoveDefaultPartitionIcon />
-                </Tooltip>
+                {language.accountDefaultPartitions.removeModal.title}
               </Button>
             </Space>
           )}

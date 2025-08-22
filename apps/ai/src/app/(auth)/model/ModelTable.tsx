@@ -6,7 +6,7 @@ import { App, Button, Form, Input, Modal, Space, Table, TableColumnsType, Toolti
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CreateNewVersionIcon, DeleteIcon, EditIcon } from "src/icons/operationIcon";
 import { ModelInterface } from "src/models/Model";
@@ -37,8 +37,8 @@ interface PageInfo {
 const CreateModalModalButton =
 ModalButton(CreateAndEditModalModal, { type: "primary", icon: <PlusOutlined /> });
 const EditModalModalButton =
-ModalButton(CreateAndEditModalModal, { type: "link" });
-const CreateVersionModalButton = ModalButton(CreateAndEditVersionModal, { type: "link" });
+ModalLink(CreateAndEditModalModal);
+const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 
 export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
@@ -111,7 +111,7 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
       render: (_: any, r: ModelInterface) => {
         return (
-          <Space direction="horizontal">
+          <Space>
             <CreateVersionModalButton
               refetch={() => { refetch(); } }
               modelId={r.id}
@@ -137,16 +137,12 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 <EditIcon />
               </Tooltip>
             </EditModalModalButton>
-            <Button
-              type="link"
-              onClick={() => {
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon onClick={() => {
                 deleteModel(r.id);
               }}
-            >
-              <Tooltip title={t("button.deleteButton")}>
-                <DeleteIcon />
-              </Tooltip>
-            </Button>
+              />
+            </Tooltip>
           </Space>
         );
       },

@@ -1,15 +1,15 @@
 "use client";
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { App, Button, Form, Input, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Input, Popconfirm, Popover,Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { CancelIcon, DetailIcon, EndIcon,
-  EnterDirectoryIcon, SaveImageIcon, SubmitAgainIcon } from "src/icons/operationIcon";
+import { CancelIcon, DetailIcon, EndIcon, EnterDirectoryIcon, MoreIcon, NoHoverEndIcon,
+  NoHoverSaveImageIcon, NoHoverSubmitAgainIcon, SaveImageIcon, SubmitAgainIcon } from "src/icons/operationIcon";
 import { JobType, statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
@@ -18,6 +18,7 @@ import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { styled } from "styled-components";
 
 import { ConnectTopAppLink } from "./ConnectToAppLink";
 import { SaveImageModal } from "./SaveImageModal";
@@ -36,7 +37,18 @@ interface Props {
   status: AppTableStatus
 }
 
-const SaveImageModalButton = ModalButton(SaveImageModal, { type: "link", style: { padding: 0 } });
+const PopIconContainer = styled.div`
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px;
+  &:hover {
+    background: #B6000314;
+  }
+`;
+
+const SaveImageModalButton = ModalLink(SaveImageModal);
 
 export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
   const t = useI18nTranslateToString();
@@ -168,118 +180,10 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       title: t(p("action")),
       key: "action",
       fixed:"right",
-      width: unfinished ? "400px" : "200px",
+      width: unfinished ? "250px" : "120px",
       render: (_, record) => (
-        <Space direction="horizontal" align="center" size={16}>
-          {
-            (record.state === "RUNNING") ? (
-              <>
-                {record.jobType === JobType.APP && (
-                  <ConnectTopAppLink
-                    session={record}
-                    cluster={cluster.id}
-                    refreshToken={connectivityRefreshToken}
-                  />
-                )}
-                <Popconfirm
-                  title={t(p("confirmFinish"))}
-                  onConfirm={
-                    async () => {
-                      await cancelJobMutation.mutateAsync({
-                        cluster: cluster.id,
-                        jobId: record.jobId,
-                      });
-                      message.success(t(p("jobFinishReq")));
-                    }
-                  }
-                >
-                  <Tooltip title={t("button.finishButton")}>
-                    <EndIcon />
-                  </Tooltip>
-                </Popconfirm>
-              </>
-            ) : undefined
-          }
-          {
-            (record.state === "PENDING" || record.state === "SUSPENDED" || record.state === "QUEUED") ? (
-              <Popconfirm
-                title={t(p("confirmCancel"))}
-                onConfirm={
-                  async () => {
-                    await cancelJobMutation.mutateAsync({
-                      cluster: cluster.id,
-                      jobId: record.jobId,
-                    });
-                    message.success(t(p("jobCancelReq")));
-                  }
-                }
-              >
-                <Tooltip title={t("button.cancelButton")}>
-                  <CancelIcon />
-                </Tooltip>
-              </Popconfirm>
-            ) : undefined
-          }
-          {
-            (record.state === "RUNNING" && record.jobType === JobType.APP) ? (
-              <SaveImageModalButton
-                reload={refetch}
-                appSession={record}
-                clusterId={cluster.id}
-              >
-                <Tooltip title={t(p("saveImage"))}>
-                  <SaveImageIcon />
-                </Tooltip>
-              </SaveImageModalButton>
-            ) : undefined
-          }
-          <Button
-            type="link"
-            style={{ padding:0 }}
-            onClick={async () => {
-              let basePath = `/jobs/${cluster.id}`;
-              const searchParams = new URLSearchParams({
-                jobId:  record.jobId.toString(),
-                sessionId: record.sessionId,
-              });
-
-              if (record.jobType === JobType.APP) {
-                if (record.appId) {
-                  basePath += `/createApps/${record.appId}`;
-                }
-              } else if (record.jobType === JobType.TRAIN) {
-                basePath += "/trainJobs";
-              } else if (record.jobType === JobType.INFER) {
-                basePath += "/inference";
-              }
-              router.push(`${basePath}?${searchParams.toString()}`);
-            }}
-          >
-            <Tooltip title={t(p("submitAgain"))}>
-              <SubmitAgainIcon />
-            </Tooltip>
-          </Button>
-          <Tooltip title={t(p("enterDir"))}>
-            <EnterDirectoryIcon
-              onClick={() => {
-                router.push(join("/files", cluster.id, record.dataPath));
-              }}
-            />
-          </Tooltip>
-          <Tooltip title={t(p("details"))}>
-            <DetailIcon
-              onClick={() => {
-                const searchParams = new URLSearchParams({
-                  jobId:  record.jobId.toString(),
-                  jobType: record.jobType.toString(),
-                  appId: record.appId ?? "",
-                  from:status,
-                  sessionId:record.sessionId,
-                });
-                router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
-              }}
-            />
-          </Tooltip>
+        <Space>
+          {renderActionIcon(record)}
         </Space>
       ),
     },
@@ -310,6 +214,181 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     );
 
   }, [data, query]);
+
+  const renderActionIcon = (record: AppSession) => {
+    const actionIcons = [
+      <Tooltip title={t(p("details"))}>
+        <DetailIcon
+          onClick={() => {
+            const searchParams = new URLSearchParams({
+              jobId:  record.jobId.toString(),
+              jobType: record.jobType.toString(),
+              appId: record.appId ?? "",
+              from:status,
+              sessionId:record.sessionId,
+            });
+            router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
+          }}
+        />
+      </Tooltip>,
+      <Tooltip title={t(p("enterDir"))}>
+        <EnterDirectoryIcon
+          onClick={() => {
+            router.push(join("/files", cluster.id, record.dataPath));
+          }}
+        />
+      </Tooltip>,
+      <Tooltip title={t(p("submitAgain"))}>
+        <SubmitAgainIcon onClick={async () => {
+          let basePath = `/jobs/${cluster.id}`;
+          const searchParams = new URLSearchParams({
+            jobId:  record.jobId.toString(),
+            sessionId: record.sessionId,
+          });
+
+          if (record.jobType === JobType.APP) {
+            if (record.appId) {
+              basePath += `/createApps/${record.appId}`;
+            }
+          } else if (record.jobType === JobType.TRAIN) {
+            basePath += "/trainJobs";
+          } else if (record.jobType === JobType.INFER) {
+            basePath += "/inference";
+          }
+          router.push(`${basePath}?${searchParams.toString()}`);
+        }}
+        />
+      </Tooltip>,
+      (record.state === "RUNNING") ? (
+        <Popconfirm
+          title={t(p("confirmFinish"))}
+          onConfirm={
+            async () => {
+              await cancelJobMutation.mutateAsync({
+                cluster: cluster.id,
+                jobId: record.jobId,
+              });
+              message.success(t(p("jobFinishReq")));
+            }
+          }
+        >
+          <Tooltip title={t("button.finishButton")}>
+            <EndIcon />
+          </Tooltip>
+        </Popconfirm>
+      ) : undefined,
+      (record.state === "PENDING" || record.state === "SUSPENDED" || record.state === "QUEUED") ? (
+        <Popconfirm
+          title={t(p("confirmCancel"))}
+          onConfirm={
+            async () => {
+              await cancelJobMutation.mutateAsync({
+                cluster: cluster.id,
+                jobId: record.jobId,
+              });
+              message.success(t(p("jobCancelReq")));
+            }
+          }
+        >
+          <Tooltip title={t("button.cancelButton")}>
+            <CancelIcon />
+          </Tooltip>
+        </Popconfirm>
+      ) : undefined,
+    ];
+    if (record.state === "RUNNING" && record.jobType === JobType.APP) {
+      const showActionIcons = [
+        <Tooltip title={t(p("details"))}>
+          <DetailIcon
+            onClick={() => {
+              const searchParams = new URLSearchParams({
+                jobId:  record.jobId.toString(),
+                jobType: record.jobType.toString(),
+                appId: record.appId ?? "",
+                from:status,
+                sessionId:record.sessionId,
+              });
+              router.push(join(`/jobs/${cluster.id}/jobDetails?${searchParams.toString()}`));
+            }}
+          />
+        </Tooltip>,
+        <Tooltip title={t(p("enterDir"))}>
+          <EnterDirectoryIcon
+            onClick={() => {
+              router.push(join("/files", cluster.id, record.dataPath));
+            }}
+          />
+        </Tooltip>,
+        <ConnectTopAppLink
+          session={record}
+          cluster={cluster.id}
+          refreshToken={connectivityRefreshToken}
+        />,
+        <Popover
+          content={[
+            <Popconfirm
+              title={t(p("confirmFinish"))}
+              onConfirm={
+                async () => {
+                  await cancelJobMutation.mutateAsync({
+                    cluster: cluster.id,
+                    jobId: record.jobId,
+                  });
+                  message.success(t(p("jobFinishReq")));
+                }
+              }
+            >
+              <PopIconContainer>
+                <NoHoverEndIcon />
+                <span style={{ marginLeft: "8px" }}>{t("button.finishButton")}</span>
+              </PopIconContainer>
+            </Popconfirm>,
+            <PopIconContainer onClick={async () => {
+              let basePath = `/jobs/${cluster.id}`;
+              const searchParams = new URLSearchParams({
+                jobId:  record.jobId.toString(),
+                sessionId: record.sessionId,
+              });
+
+              if (record.jobType === JobType.APP) {
+                if (record.appId) {
+                  basePath += `/createApps/${record.appId}`;
+                }
+              } else if (record.jobType === JobType.TRAIN) {
+                basePath += "/trainJobs";
+              } else if (record.jobType === JobType.INFER) {
+                basePath += "/inference";
+              }
+              router.push(`${basePath}?${searchParams.toString()}`);
+            }}
+            >
+              <NoHoverSubmitAgainIcon />
+              <span style={{ marginLeft: "8px" }}>{t(p("submitAgain"))}</span>
+            </PopIconContainer>,
+            <SaveImageModalButton
+              reload={refetch}
+              appSession={record}
+              clusterId={cluster.id}
+            >
+              <PopIconContainer>
+                <NoHoverSaveImageIcon />
+                <span style={{ marginLeft: "8px", color: "#434343" }}>{t(p("saveImage"))}</span>
+              </PopIconContainer>
+            </SaveImageModalButton>,
+          ]}
+          trigger="click"
+          placement="bottomRight"
+        >
+          <Tooltip title={t(p("more"))}>
+            <MoreIcon />
+          </Tooltip>
+        </Popover>,
+      ];
+      return showActionIcons;
+    } else {
+      return actionIcons;
+    }
+  };
 
   return (
     <>

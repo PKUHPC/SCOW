@@ -105,7 +105,10 @@ export default {
           timeLimit: "作业时间限制",
           reason: "说明",
           more: "更多",
+          operation: "操作",
           linkToPath: "进入目录",
+          successMessage: "任务结束请求已经提交!",
+          popConfirm: "确定结束这个任务吗?",
         },
       },
       // fileSelectModal
@@ -122,7 +125,7 @@ export default {
         newTemplateName: "新模板名",
         templateName: "模板名",
         comment: "备注",
-        useTemplate:"使用模板",
+        useTemplate:"模板提交",
         popConfirm: "确定删除这个模板吗?",
         deleteSuccessMessage: "模板已删除!",
       },
@@ -165,6 +168,7 @@ export default {
           nodesOrReason: "说明",
           timeLimit: "作业时间限制",
           more: "更多",
+          operation: "操作",
           linkToPath: "进入目录",
           popConfirm: "确定结束这个任务吗?",
           successMessage: "任务结束请求已经提交!",
@@ -472,7 +476,7 @@ export default {
         notConnectableMessage: "此应用目前无法连接",
         notReady: "应用还未准备好",
         portNotOpen: "应用端口还未开放",
-        connect: "连接",
+        connect: "进入",
       },
       createApps: {
         notFoundMessage: "没有可以创建的交互式应用",
@@ -655,8 +659,8 @@ export default {
     },
     jobs: {
       allJobs: {
-        title: "历史作业",
-        pageTitle: "本用户所有历史作业",
+        title: "所有作业",
+        pageTitle: "本用户所有所有作业",
       },
       runningJobs: {
         title: "未结束的作业",

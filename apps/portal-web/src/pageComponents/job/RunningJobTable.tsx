@@ -237,19 +237,19 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit, ":")}
         />
         <Table.Column<RunningJobInfo>
-          title={t(p("jobInfoTable.more"))}
-          width="9%"
+          title={t(p("jobInfoTable.operation"))}
+          width="8%"
           fixed="right"
           render={(_, r) => (
-            <Space size={16} style={{ marginLeft: 5 }}>
-              <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
-                <EnterDirectoryIcon
-                  onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
-                />
-              </Tooltip>
+            <Space size={8} style={{ marginLeft: 5 }}>
               <Tooltip title={t("button.detailButton")}>
                 <DetailIcon
                   onClick={() => setPreviewItem(r)}
+                />
+              </Tooltip>
+              <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
+                <EnterDirectoryIcon
+                  onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
                 />
               </Tooltip>
               <Popconfirm

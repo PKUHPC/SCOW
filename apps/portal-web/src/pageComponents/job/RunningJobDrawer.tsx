@@ -20,7 +20,7 @@ import { getClusterName } from "src/utils/cluster";
 
 interface Props {
   open: boolean;
-  item: RunningJobInfo | undefined;
+  item;
   onClose: () => void;
 }
 
@@ -72,7 +72,7 @@ export const RunningJobDrawer: React.FC<Props> = ({
                 {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
                 {format ?
                   (key === "cluster" ?
-                    getClusterName(item[key].id, languageId, publicConfigClusters) : format(item[key], item))
+                    getClusterName(item[key]?.id, languageId, publicConfigClusters) : format(item[key], item))
                   : item[key] as string}
               </Descriptions.Item>
             ))}

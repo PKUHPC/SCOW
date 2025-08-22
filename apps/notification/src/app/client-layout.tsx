@@ -11,6 +11,7 @@
  */
 
 "use client";
+import "src/styles/globals.css";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { useQuery } from "@connectrpc/connect-query";

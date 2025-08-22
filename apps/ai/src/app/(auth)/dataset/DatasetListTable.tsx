@@ -7,7 +7,7 @@ import { App, Button, Form, Input, Modal, Select, Space, Table, Tooltip } from "
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CreateNewVersionIcon, DeleteIcon,EditIcon } from "src/icons/operationIcon";
 import { DatasetTypeText, getDatasetTexts } from "src/models/Dateset";
@@ -49,8 +49,8 @@ interface PageInfo {
 }
 
 const CreateDatasetModalButton = ModalButton(CreateEditDatasetModal, { type: "primary", icon: <PlusOutlined /> });
-const EditDatasetModalButton = ModalButton(CreateEditDatasetModal, { type: "link" });
-const CreateEditVersionModalButton = ModalButton(CreateEditDSVersionModal, { type: "link" });
+const EditDatasetModalButton = ModalLink(CreateEditDatasetModal);
+const CreateEditVersionModalButton = ModalLink(CreateEditDSVersionModal);
 
 export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentClusterIds }) => {
   const t = useI18nTranslateToString();
@@ -239,16 +239,12 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                       <EditIcon />
                     </Tooltip>
                   </EditDatasetModalButton>
-                  <Button
-                    type="link"
-                    onClick={() => {
+                  <Tooltip title={t("button.deleteButton")}>
+                    <DeleteIcon onClick={() => {
                       deleteDataset(r.id);
                     }}
-                  >
-                    <Tooltip title={t("button.deleteButton")}>
-                      <DeleteIcon />
-                    </Tooltip>
-                  </Button>
+                    />
+                  </Tooltip>
                 </Space>
               );
             },

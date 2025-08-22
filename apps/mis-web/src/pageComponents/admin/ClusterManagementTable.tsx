@@ -14,11 +14,10 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Space, Table, Tag, Tooltip } from "antd";
+import { App, Button, Form, Space, Table, Tag } from "antd";
 import React, { useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { StartUseIcon, StopUseIcon } from "src/assets/operationIcon";
 import { ClusterSelector } from "src/components/ClusterSelector";
 import { DeactivateClusterModalLink } from "src/components/DeactivateClusterModal";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -189,46 +188,46 @@ export const ClusterManagementTable: React.FC<Props> = ({
                 {
                   r.hpcEnabled && r.activationStatus === ClusterActivationStatus.DEACTIVATED
                   && (
-                    <Space>
-                      <Tooltip title={tArgs(p("table.activate"))}>
-                        <StartUseIcon
-                          onClick={() => {
-                            modal.confirm({
-                              title: tArgs(p("activateModal.title")),
-                              icon: <ExclamationCircleOutlined />,
-                              content: (
-                                <>
-                                  <p>
-                                    {tArgs(p("activateModal.content"), [
-                                      <strong key="clusterId">{r.clusterId}</strong>,
-                                      <strong key="clusterName">{clusterName}</strong>,
-                                    ])},
-                                  </p>
-                                  <p style={{ color: "red" }}>{tArgs(p("activateModal.contentAttention"))}</p>
-                                </>
-                              ),
-                              onOk: async () => {
-                                await api.activateCluster({
-                                  body: {
-                                    clusterId: r.clusterId,
-                                  },
-                                })
-                                  .then((res) => {
-                                    if (res.executed) {
-                                      message.success(tArgs(p("activateModal.successMessage")));
-                                      reload();
-                                    } else {
-                                      message.error(res.reason || tArgs(p("activateModal.failureMessage")));
-                                      reload();
-                                    }
-                                  });
-                              },
-                            });
+                    <>
+                      <a
+                        onClick={() => {
+                          modal.confirm({
+                            title: tArgs(p("activateModal.title")),
+                            icon: <ExclamationCircleOutlined />,
+                            content: (
+                              <>
+                                <p>
+                                  {tArgs(p("activateModal.content"), [
+                                    <strong key="clusterId">{r.clusterId}</strong>,
+                                    <strong key="clusterName">{clusterName}</strong>,
+                                  ])},
+                                </p>
+                                <p style={{ color: "red" }}>{tArgs(p("activateModal.contentAttention"))}</p>
+                              </>
+                            ),
+                            onOk: async () => {
+                              await api.activateCluster({
+                                body: {
+                                  clusterId: r.clusterId,
+                                },
+                              })
+                                .then((res) => {
+                                  if (res.executed) {
+                                    message.success(tArgs(p("activateModal.successMessage")));
+                                    reload();
+                                  } else {
+                                    message.error(res.reason || tArgs(p("activateModal.failureMessage")));
+                                    reload();
+                                  }
+                                });
+                            },
+                          });
 
-                          }}
-                        />
-                      </Tooltip>
-                    </Space>
+                        }}
+                      >
+                        {tArgs(p("table.activate"))}
+                      </a>
+                    </>
                   )
                 }
                 { r.hpcEnabled && r.activationStatus === ClusterActivationStatus.ACTIVATED && (
@@ -253,9 +252,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
 
                       }}
                     >
-                      <Tooltip title={tArgs(p("table.deactivate"))}>
-                        <StopUseIcon />
-                      </Tooltip>
+                      {tArgs(p("table.deactivate"))}
                     </DeactivateClusterModalLink>
                   </>
                 )

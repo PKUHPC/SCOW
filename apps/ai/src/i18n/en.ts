@@ -331,11 +331,12 @@ export default {
         memory:"memory",
         node:"node",
         details:"Details",
+        more: "More",
       },
       connectToAppLink:{
         connectFailed:"Connect to app failed",
         notReady:"App not ready yet",
-        connect:"Connect",
+        entry:"Entry",
       },
       launchAppForm:{
         autoAdd:"The path of the working directory will automatically be added as a mount point",

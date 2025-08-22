@@ -1,11 +1,10 @@
 
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Space, Table, Tooltip } from "antd";
+import { App, Button, Divider, Form, Input, Space, Table } from "antd";
 import { SortOrder } from "antd/es/table/interface";
 import React, { useCallback, useMemo, useState } from "react";
 import { api } from "src/apis";
-import { ChangePasswordIcon, DeleteIcon, DetailIcon, EditIcon } from "src/assets/operationIcon";
 import { ChangePasswordModalLink } from "src/components/ChangePasswordModal";
 import { DeleteEntityFailedModal } from "src/components/DeleteEntityFailedModal";
 import { DeleteEntityModalLink } from "src/components/DeleteEntityModal";
@@ -271,12 +270,12 @@ export const AdminUserTable: React.FC<Props> = ({
           fixed="right"
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
-              <Tooltip title={t(p("detail"))}>
-                <DetailIcon onClick={() => setPreviewItem(r)} />
-              </Tooltip>
+              <a onClick={() => setPreviewItem(r)}>
+                {t(p("detail"))}
+              </a>
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <EditIcon disabled />
+                  {t(pCommon("edit"))}
                 </DisabledA>
               ) : (
                 <EditUserProfileModalLink
@@ -305,14 +304,12 @@ export const AdminUserTable: React.FC<Props> = ({
                       .finally(() => reload());
                   }}
                 >
-                  <Tooltip title={t(pCommon("edit"))}>
-                    <EditIcon />
-                  </Tooltip>
+                  {t(pCommon("edit"))}
                 </EditUserProfileModalLink>
               )}
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <ChangePasswordIcon disabled />
+                  {t(p("changePassword"))}
                 </DisabledA>
               ) : (
                 <ChangePasswordModalLink
@@ -344,23 +341,21 @@ export const AdminUserTable: React.FC<Props> = ({
                       .catch(() => { message.error(t(p("changeFail"))); });
                   }}
                 >
-                  <Tooltip title={t(p("changePassword"))}>
-                    <ChangePasswordIcon />
-                  </Tooltip>
+                  {t(p("changePassword"))}
                 </ChangePasswordModalLink>
               )
               }
               { deleteEnabled === true ? r.platformRoles.includes(0) ? (
                 <DisabledA message={t(pDelete("platformAdmin"))} disabled={true}>
-                  <DeleteIcon disabled />
+                  {t(p("delete"))}
                 </DisabledA>
               ) : user.identityId === r.id ? (
                 <DisabledA message={t(pDelete("cannotDeleteSelf"))} disabled={true}>
-                  <DeleteIcon disabled />
+                  {t(p("delete"))}
                 </DisabledA>
               ) : r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  <DeleteIcon disabled />
+                  {t(p("delete"))}
                 </DisabledA>
               ) : (
                 <DeleteEntityModalLink
@@ -419,9 +414,7 @@ export const AdminUserTable: React.FC<Props> = ({
                       });
                   }}
                 >
-                  <Tooltip title={t(p("delete"))}>
-                    <DeleteIcon />
-                  </Tooltip>
+                  {t(p("delete"))}
                 </DeleteEntityModalLink>
               ) : null}
             </Space>

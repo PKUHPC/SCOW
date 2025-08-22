@@ -34,7 +34,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, co
     <ConfigProvider
       locale={ scowLangId === "zh_cn" ? zhCNlocale : enUSlocale}
       theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-        colorText: scowDark ? "#ffffff" : "#434343" },
+        colorText: scowDark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif" },
       algorithm: scowDark ? theme.darkAlgorithm : undefined }}
     >
       <StyledComponentsThemeProvider color={currentPrimaryColor} primaryColor={primaryColor}>

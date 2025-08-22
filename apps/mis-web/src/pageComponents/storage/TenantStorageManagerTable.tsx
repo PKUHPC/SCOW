@@ -2,12 +2,11 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Result, Space, Table, Tooltip } from "antd";
+import { App, Button, Divider, Form, Input, Result, Space, Table } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { ModifyQuotaIcon } from "src/assets/operationIcon";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
 import { TableTitle } from "src/components/TableTitle";
@@ -282,9 +281,7 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
                 totalQuotaBytes={data?.totalStorageBytes || 0}
                 defaultQuotaBytes={data?.userDefaultQuotaBytes || 0}
               >
-                <Tooltip title={t(p("modifyQuota"))}>
-                  <ModifyQuotaIcon />
-                </Tooltip>
+                {t(p("modifyQuota"))}
               </ChangeQuotaLink>
             )
           )}

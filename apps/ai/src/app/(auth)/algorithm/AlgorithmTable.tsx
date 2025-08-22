@@ -18,7 +18,7 @@ import { App, Button, Form, Input, Modal, Select, Space, Table, TableColumnsType
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CreateNewVersionIcon, DeleteIcon, EditIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface, AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
@@ -58,10 +58,10 @@ interface PageInfo {
 }
 
 const CreateAlgorithmModalButton =
-ModalButton(CreateAndEditAlgorithmModal, { type: "primary", icon: <PlusOutlined /> });
+  ModalButton(CreateAndEditAlgorithmModal, { type: "primary", icon: <PlusOutlined /> });
 const EditAlgorithmModalButton =
-ModalButton(CreateAndEditAlgorithmModal, { type: "link" });
-const CreateVersionModalButton = ModalButton(CreateAndEditVersionModal, { type: "link" });
+  ModalLink(CreateAndEditAlgorithmModal);
+const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 
 export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
@@ -178,16 +178,12 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 <EditIcon />
               </Tooltip>
             </EditAlgorithmModalButton>
-            <Button
-              type="link"
-              onClick={() => {
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon onClick={() => {
                 deleteAlgorithm(r.id);
               }}
-            >
-              <Tooltip title={t("button.deleteButton")}>
-                <DeleteIcon />
-              </Tooltip>
-            </Button>
+              />
+            </Tooltip>
           </Space>
         );
       },

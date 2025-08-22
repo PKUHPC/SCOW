@@ -11,10 +11,10 @@
  */
 
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Modal, Space,Table, Tooltip } from "antd";
+import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback } from "react";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancleShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
@@ -37,8 +37,8 @@ export interface Props {
   cluster: Cluster;
 }
 
-const EditVersionModalButton = ModalButton(CreateAndEditVersionModal, { type: "link" });
-const CopyPublicModelModalButton = ModalButton(CopyPublicModelModal, { type: "link" });
+const EditVersionModalButton = ModalLink(CreateAndEditVersionModal);
+const CopyPublicModelModalButton = ModalLink(CopyPublicModelModal);
 
 export const ModelVersionList: React.FC<Props> = (
   { isPublic, modelId, modelName, cluster },
@@ -163,10 +163,8 @@ export const ModelVersionList: React.FC<Props> = (
                         <EditIcon />
                       </Tooltip>
                     </EditVersionModalButton>
-
-                    <Button
-                      type="link"
-                      onClick={async () => {
+                    <Tooltip title={t(p("check"))}>
+                      <ViewFileIcon onClick={async () => {
                         const checkExistRes =
                         await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
 
@@ -176,37 +174,33 @@ export const ModelVersionList: React.FC<Props> = (
                           deleteModelVersion(r.id, true);
                         }
                       }}
-                    >
-                      <Tooltip title={t(p("check"))}>
-                        <ViewFileIcon />
-                      </Tooltip>
-                    </Button>
-                    <Button
-                      type="link"
-                      disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
-                      onClick={() => {
-                        confirm({
-                          title: t(p("share")),
-                          content:
+                      />
+                    </Tooltip>
+                    <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                      <span onClick={() => {
+                        if (r.sharedStatus !== SharedStatus.SHARING && r.sharedStatus !== SharedStatus.UNSHARING) {
+                          confirm({
+                            title: t(p("share")),
+                            content:
                           `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
-                          onOk: async () => {
-                            if (r.sharedStatus === SharedStatus.SHARED) {
+                            onOk: async () => {
+                              if (r.sharedStatus === SharedStatus.SHARED) {
 
-                              await unShareMutation.mutateAsync({
-                                versionId: r.id,
-                                modelId,
-                              });
-                            } else {
-                              await shareMutation.mutateAsync({
-                                versionId: r.id,
-                                modelId,
-                              });
-                            }
-                          },
-                        });
+                                await unShareMutation.mutateAsync({
+                                  versionId: r.id,
+                                  modelId,
+                                });
+                              } else {
+                                await shareMutation.mutateAsync({
+                                  versionId: r.id,
+                                  modelId,
+                                });
+                              }
+                            },
+                          });
+                        }
                       }}
-                    >
-                      <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                      >
                         {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
                           <CancleShareIcon
                             disabled={r.sharedStatus === SharedStatus.UNSHARING}
@@ -216,25 +210,19 @@ export const ModelVersionList: React.FC<Props> = (
                             disabled={r.sharedStatus === SharedStatus.SHARING}
                           />
                         )}
-                      </Tooltip>
-                    </Button>
-                    <Button
-                      type="link"
-                      disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
-                      onClick={() => {
-                        deleteModelVersion(r.id);
-                      }}
-                    >
-                      <Tooltip title={t("button.deleteButton")}>
-                        <DeleteIcon
-                          disabled={r.sharedStatus === SharedStatus.SHARING
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={t("button.deleteButton")}>
+                      <DeleteIcon
+                        disabled={r.sharedStatus === SharedStatus.SHARING
                             || r.sharedStatus === SharedStatus.UNSHARING}
-                        />
-                      </Tooltip>
-                    </Button>
+                        onClick={() => {
+                          deleteModelVersion(r.id);
+                        }}
+                      />
+                    </Tooltip>
                   </Space>
                 );
-
             },
           },
         ]}

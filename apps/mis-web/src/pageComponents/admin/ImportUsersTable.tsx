@@ -19,7 +19,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { ViewIcon } from "src/assets/operationIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -236,11 +235,7 @@ export const ImportUsersTable: React.FC = () => {
             dataIndex="users"
             title={t(p("userList"))}
             render={(_, r) => (
-              <Space style={{ marginLeft: "6px" }}>
-                <Tooltip title={t("common.view")}>
-                  <ViewIcon onClick={() => setusersList(r.users)} />
-                </Tooltip>
-              </Space>
+              <a onClick={() => setusersList(r.users)}>{t("common.view")}</a>
             )}
           />
         </Table>

@@ -15,13 +15,12 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
+import { App, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { AdjustBillingIcon, DetailIcon } from "src/assets/operationIcon";
 import { ClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { TableTitle } from "src/components/TableTitle";
@@ -411,19 +410,16 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
           width="10%"
           render={(_, r) =>
             (
-              <Space size={16}>
-                <Tooltip title={t(pCommon("adjustBill"))}>
-                  <AdjustBillingIcon
-                    onClick={() => {
-                      setOpen(true);
-                      setSelectedJobs([r]);
-                    }}
-                  />
-                </Tooltip>
-                <Tooltip title={t(pCommon("detail"))}>
-                  <DetailIcon onClick={() => setPreviewItem(r)} />
-                </Tooltip>
-              </Space>
+              <>
+                <a
+                  onClick={() => {
+                    setOpen(true);
+                    setSelectedJobs([r]);
+                  }}
+                  style={{ marginRight: 10 }}
+                >{t(pCommon("adjustBill"))}</a>
+                <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
+              </>
             )
           }
         />

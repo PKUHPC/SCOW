@@ -20,7 +20,7 @@ import NextError from "next/error";
 import { useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
-import { ModalButton } from "src/components/ModalLink";
+import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon } from "src/icons/operationIcon";
 import { getImageTexts, ImageType, Status } from "src/models/Image";
@@ -53,8 +53,8 @@ interface PageInfo {
 }
 
 const CreateImageModalButton = ModalButton(CreateEditImageModal, { type: "primary", icon: <PlusOutlined /> });
-const EditImageModalButton = ModalButton(CreateEditImageModal, { type: "link" });
-const CopyImageModalButton = ModalButton(CopyImageModal, { type: "link" });
+const EditImageModalButton = ModalLink(CreateEditImageModal);
+const CopyImageModalButton = ModalLink(CopyImageModal);
 
 export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClusterIds }) => {
   const t = useI18nTranslateToString();
@@ -215,9 +215,21 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                 (
                   <Space direction="horizontal">
                     { r.status === Status.CREATED && (
-                      <Button
-                        type="link"
-                        onClick={() => {
+                      <EditImageModalButton
+                        refetch={refetch}
+                        isEdit={true}
+                        editData={r}
+                        clusters={clusters}
+                        currentClusterIds={currentClusterIds}
+                      >
+                        <Tooltip title={t("button.editButton")}>
+                          <EditIcon />
+                        </Tooltip>
+                      </EditImageModalButton>
+                    )}
+                    { r.status === Status.CREATED && (
+                      <Tooltip title={shareOrUnshareStr}>
+                        <span onClick={() => {
                           modal.confirm({
                             title: `${shareOrUnshareStr}${t(p("image"))}`,
                             content: `${t(p("confirmText"),[shareOrUnshareStr,r.name,r.tag])}`,
@@ -234,13 +246,11 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                             },
                           });
                         }}
-                      >
-                        <Tooltip title={shareOrUnshareStr}>
+                        >
                           { r.isShared ? <CancleShareIcon /> : <ShareIcon />}
-                        </Tooltip>
-                      </Button>
+                        </span>
+                      </Tooltip>
                     )}
-
                     {/* { r.source === Source.INTERNAL && (
                     <Space split={<Divider type="vertical" />}>
                       <Button
@@ -253,23 +263,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                       </Button>
                     </Space>
                   )} */}
-
-                    { r.status === Status.CREATED && (
-                      <EditImageModalButton
-                        refetch={refetch}
-                        isEdit={true}
-                        editData={r}
-                        clusters={clusters}
-                        currentClusterIds={currentClusterIds}
-                      >
-                        <Tooltip title={t("button.editButton")}>
-                          <EditIcon />
-                        </Tooltip>
-                      </EditImageModalButton>
-                    )}
-                    <Button
-                      type="link"
-                      onClick={() => {
+                    <Tooltip title={t("button.deleteButton")}>
+                      <DeleteIcon onClick={() => {
                         modal.confirm({
                           title: t(p("delImage")),
                           content: r.status === Status.CREATING ? (
@@ -287,11 +282,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                           },
                         });
                       }}
-                    >
-                      <Tooltip title={t("button.deleteButton")}>
-                        <DeleteIcon />
-                      </Tooltip>
-                    </Button>
+                      />
+                    </Tooltip>
                   </Space>
                 ) :
                 (

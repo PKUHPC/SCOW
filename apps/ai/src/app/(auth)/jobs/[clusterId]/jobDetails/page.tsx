@@ -10,7 +10,6 @@ import { join } from "path";
 import { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { EnterContainerIcon, EventIcon, LogIcon } from "src/icons/operationIcon";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { JobType, statusColors } from "src/models/Job";
 import { formatDateTime } from "src/utils/datetime";
@@ -360,31 +359,27 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       title: t(p("action")),
       key:"action",
       render: (_, record) => (
-        <Space size={16}>
-          <Tooltip title={t(p("viewEvents"))}>
-            <EventIcon onClick={() => {
-              if (selectedPodId === record.podId) {
-                setSelectedPodId(null);
-              } else {
-                setSelectedPodId(record.podId);
-              }
-            }}
-            />
-          </Tooltip>
+        <Space>
+          <a onClick={() => {
+            if (selectedPodId === record.podId) {
+              setSelectedPodId(null);
+            } else {
+              setSelectedPodId(record.podId);
+            }
+          }}
+          >
+            {t(p("viewEvents"))}
+          </a>
+          <Link href={`/jobs/${clusterId}/jobLogs/${record.podId}/${record.podName}`} target="_blank">
+            {t(p("viewLogs"))}
+          </Link>
           {
             from === AppTableStatus.UNFINISHED ? (
               <Link href={`/jobShell/${clusterId}/${jobId}/${record.namespace}/${record.podName}`} target="_blank">
-                <Tooltip title={t(p("enterContainer"))}>
-                  <EnterContainerIcon />
-                </Tooltip>
+                {t(p("enterContainer"))}
               </Link>
             ) : null
           }
-          <Link href={`/jobs/${clusterId}/jobLogs/${record.podId}/${record.podName}`} target="_blank">
-            <Tooltip title={t(p("viewLogs"))}>
-              <LogIcon />
-            </Tooltip>
-          </Link>
         </Space>
       ),
     },

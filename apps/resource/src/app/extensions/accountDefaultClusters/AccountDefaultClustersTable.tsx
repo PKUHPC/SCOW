@@ -3,10 +3,9 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Space, Table, Tooltip } from "antd";
+import { App, Button, Space, Table } from "antd";
 import React, { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
-import { RemoveDefaultClusterIcon } from "src/assets/operationIcon";
 import { I18nDicType } from "src/models/i18n";
 import { trpc } from "src/server/trpc/api";
 import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
@@ -150,9 +149,7 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
                   });
                 }}
               >
-                <Tooltip title={language.accountDefaultClusters.removeModal.title}>
-                  <RemoveDefaultClusterIcon />
-                </Tooltip>
+                {language.accountDefaultClusters.removeModal.title}
               </Button>
             </Space>
           )}

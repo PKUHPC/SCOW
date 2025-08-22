@@ -1,4 +1,5 @@
 "use client";
+import "src/styles/globals.css";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";

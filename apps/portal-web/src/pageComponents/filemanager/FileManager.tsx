@@ -841,7 +841,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           )
         )}
         actionRender={(_, i: FileInfo) => (
-          <Space split={<Divider type="vertical" />}>
+          <Space size={8}>
             {
               i.type === "FILE" && (
                 <Tooltip title={t(p("tableInfo.download"))}>
@@ -867,33 +867,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                 <RenameIcon />
               </Tooltip>
             </RenameLink>
-
-            <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon onClick={() => {
-                const fullPath = join(path, i.name);
-                modal.confirm({
-                  title: t(p("tableInfo.deleteConfirmTitle")),
-                  // icon: < />,
-                  content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
-                  okText: t(p("tableInfo.deleteConfirmOk")),
-                  onOk: async () => {
-                    await (i.type === "FILE" ? api.deleteFile : api.deleteDir)({
-                      query: {
-                        cluster: currentClusterRef.current.id,
-                        path: fullPath,
-                      },
-                    })
-                      .then(() => {
-                        message.success(t(p("tableInfo.deleteSuccessMessage")));
-                        resetSelectedAndOperation();
-                        reload();
-                      });
-                  },
-                });
-              }}
-              />
-            </Tooltip>
-
             {
               i.type === "FILE" ? (
                 <Tooltip title={t("button.submitButton")}>
@@ -953,6 +926,31 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                 </Tooltip>
               ) : undefined
             }
+            <Tooltip title={t("button.deleteButton")}>
+              <DeleteIcon onClick={() => {
+                const fullPath = join(path, i.name);
+                modal.confirm({
+                  title: t(p("tableInfo.deleteConfirmTitle")),
+                  // icon: < />,
+                  content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
+                  okText: t(p("tableInfo.deleteConfirmOk")),
+                  onOk: async () => {
+                    await (i.type === "FILE" ? api.deleteFile : api.deleteDir)({
+                      query: {
+                        cluster: currentClusterRef.current.id,
+                        path: fullPath,
+                      },
+                    })
+                      .then(() => {
+                        message.success(t(p("tableInfo.deleteSuccessMessage")));
+                        resetSelectedAndOperation();
+                        reload();
+                      });
+                  },
+                });
+              }}
+              />
+            </Tooltip>
           </Space>
         )}
       />

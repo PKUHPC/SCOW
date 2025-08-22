@@ -2,12 +2,11 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TargetAppList } from "@scow/protos/build/server/app_authorization";
 import { Static } from "@sinclair/typebox";
-import { Button, Divider, Form, Input, Space, Table, Tooltip } from "antd";
+import { Button, Divider, Form, Input, Space, Table } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { AuthorizedAppIcon, DetailIcon } from "src/assets/operationIcon";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -217,21 +216,18 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
                 appsInfo={r.appsInfo}
                 reload={reload}
               >
-                <Tooltip title={t(p("authorizeApp"))}>
-                  <AuthorizedAppIcon />
-                </Tooltip>
-
+                {t(p("authorizeApp"))}
               </AuthorizeAppModalLink>
-              <Tooltip title={t(p("detail"))}>
-                <DetailIcon onClick={() => setPreviewItem({
-                  targetName: r.targetName,
-                  clusterId,
-                  availableAppsCount: r.availableAppsCount,
-                  availableAppNames: r.appsInfo.filter((x) => !x.isDisabled).map((x) => x.appName),
-                  targetType,
-                })}
-                />
-              </Tooltip>
+              <a onClick={() => setPreviewItem({
+                targetName: r.targetName,
+                clusterId,
+                availableAppsCount: r.availableAppsCount,
+                availableAppNames: r.appsInfo.filter((x) => !x.isDisabled).map((x) => x.appName),
+                targetType,
+              })}
+              >
+                {t(p("detail"))}
+              </a>
             </Space>
           )}
         />

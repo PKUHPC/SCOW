@@ -15,6 +15,7 @@ import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Form, Input, InputNumber, message, Popconfirm, Select, Space, Table, Tooltip } from "antd";
+import { useRouter } from "next/router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -234,7 +235,7 @@ const ChangeJobTimeLimitModalLink = ModalLink(ChangeJobTimeLimitModal);
 export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
   data, isLoading, reload, showAccount, showUser, showCluster, selection,
 }) => {
-
+  const router = useRouter();
   const [previewItem, setPreviewItem] = useState<RunningJobInfo | undefined>(undefined);
 
   // 非用户页面或者用户页面且用户允许修改作业时限
@@ -242,6 +243,77 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
+
+  const renderOperation = useCallback((r: RunningJobInfo) => {
+    if (router.pathname === "/user/runningJobs" || router.pathname === "/dashboard") {
+      return (
+        <Space size={16}>
+          <Tooltip title={t(pCommon("detail"))}>
+            <DetailIcon
+              onClick={() => setPreviewItem(r)}
+            />
+          </Tooltip>
+          {changeJobLimitEnabled && (
+            <ChangeJobTimeLimitModalLink
+              reload={reload}
+              data={[r]}
+            >
+              <Tooltip title={t(p("changeLimit"))}>
+                <ModifyDeadlineIcon />
+              </Tooltip>
+            </ChangeJobTimeLimitModalLink>
+          )}
+          <Popconfirm
+            title={t(p("finishJobConfirm"))}
+            onConfirm={async () =>
+              api.cancelJob({
+                query: {
+                  cluster: r.cluster.id,
+                  jobId: r.jobId,
+                },
+              }).then(() => {
+                message.success(t(p("finishJobSuccess")));
+                reload();
+              })
+            }
+          >
+            <Tooltip title={t(p("finishJobButton"))}>
+              <EndIcon />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      );
+    }
+    return (
+      <Space size={16}>
+        <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
+        {changeJobLimitEnabled && (
+          <ChangeJobTimeLimitModalLink
+            reload={reload}
+            data={[r]}
+          >
+            {t(p("changeLimit"))}
+          </ChangeJobTimeLimitModalLink>
+        )}
+        <Popconfirm
+          title={t(p("finishJobConfirm"))}
+          onConfirm={async () =>
+            api.cancelJob({
+              query: {
+                cluster: r.cluster.id,
+                jobId: r.jobId,
+              },
+            }).then(() => {
+              message.success(t(p("finishJobSuccess")));
+              reload();
+            })
+          }
+        >
+          <a>{t(p("finishJobButton"))}</a>
+        </Popconfirm>
+      </Space>
+    );
+  }, []);
 
   return (
     <>
@@ -397,46 +469,12 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         />
 
         <Table.Column<RunningJobInfo>
-          title={t(pCommon("more"))}
-          width="12%"
+          title={t(pCommon("operation"))}
+          width={router.pathname === "/user/runningJobs" || router.pathname === "/dashboard" ? "8%" : "12%"}
           fixed="right"
-          render={(_, r) => (
-            <Space size={16}>
-              <Tooltip title={t(pCommon("detail"))}>
-                <DetailIcon
-                  onClick={() => setPreviewItem(r)}
-                />
-              </Tooltip>
-              <Popconfirm
-                title={t(p("finishJobConfirm"))}
-                onConfirm={async () =>
-                  api.cancelJob({
-                    query: {
-                      cluster: r.cluster.id,
-                      jobId: r.jobId,
-                    },
-                  }).then(() => {
-                    message.success(t(p("finishJobSuccess")));
-                    reload();
-                  })
-                }
-              >
-                <Tooltip title={t(p("finishJobButton"))}>
-                  <EndIcon />
-                </Tooltip>
-              </Popconfirm>
-              {changeJobLimitEnabled && (
-                <ChangeJobTimeLimitModalLink
-                  reload={reload}
-                  data={[r]}
-                >
-                  <Tooltip title={t(p("changeLimit"))}>
-                    <ModifyDeadlineIcon />
-                  </Tooltip>
-                </ChangeJobTimeLimitModalLink>
-              )}
-            </Space>
-          )}
+          render={(_, r) => {
+            return renderOperation(r);
+          }}
         />
       </Table>
       <RunningJobDrawer

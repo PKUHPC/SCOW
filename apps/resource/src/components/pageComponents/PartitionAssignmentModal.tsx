@@ -6,7 +6,6 @@ import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/
 import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag, Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
-import { AuthorizeIcon, CancleAuthorizeIcon } from "src/assets/operationIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { I18nDicType } from "src/models/i18n";
@@ -442,51 +441,50 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
             <Space>
               {
                 r.assignmentState === AssignmentState.ASSIGNED && (
-                  <Tooltip title={language.common.unassign}>
-                    <CancleAuthorizeIcon onClick={() => {
-                      const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
-                        ? getCurrentLangTextArgs(
-                          language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
-                            r.clusterId, r.partition, assignedTenantName,
-                          ])
-                        : getCurrentLangTextArgs(
-                          language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
-                            r.clusterId, r.partition, assignedAccountName,
-                          ]);
-                      modal.confirm({
-                        title: language.common.unassign,
-                        icon: <ExclamationCircleOutlined />,
-                        content: (
-                          <>
-                            <p>
-                              {contentTexts}
-                            </p>
-                            {
-                              operationType === PartitionOperationType.TENANT_OPERATION &&
+                  <a onClick={() => {
+                    const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
+                      ? getCurrentLangTextArgs(
+                        language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
+                          r.clusterId, r.partition, assignedTenantName,
+                        ])
+                      : getCurrentLangTextArgs(
+                        language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
+                          r.clusterId, r.partition, assignedAccountName,
+                        ]);
+                    modal.confirm({
+                      title: language.common.unassign,
+                      icon: <ExclamationCircleOutlined />,
+                      content: (
+                        <>
+                          <p>
+                            {contentTexts}
+                          </p>
+                          {
+                            operationType === PartitionOperationType.TENANT_OPERATION &&
                             (
                               <p style={{ color: "red" }}>
                                 {language.clusterPartitionManagement.
                                   setPartitionAssignmentModal.unAssignTenantPartitionExplanation}
                               </p>
                             )
-                            }
-                          </>
-                        ),
-                        onOk: async () => {
+                          }
+                        </>
+                      ),
+                      onOk: async () => {
                         // 对租户/账户取消授权
-                          await unAssignPartition(r.clusterId, r.partition!);
-                        },
-                      });
+                        await unAssignPartition(r.clusterId, r.partition!);
+                      },
+                    });
 
-                    }}
-                    />
-                  </Tooltip>
+                  }}
+                  >
+                    {language.common.unassign}
+                  </a>
                 )}
               {
                 r.assignmentState === AssignmentState.UNASSIGNED && (
                   <Tooltip
-                    title={!r.selectable ? language.globalMessage.unassignPartitionWithoutAssignedClusterWarn :
-                      language.common.assign}
+                    title={!r.selectable ? language.globalMessage.unassignPartitionWithoutAssignedClusterWarn : ""}
                   >
                     <Button
                       type="link"
@@ -508,7 +506,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
                         });
                       }}
                     >
-                      <AuthorizeIcon disabled={!r.selectable} />
+                      {language.common.assign}
                     </Button>
                   </Tooltip>
                 )}
