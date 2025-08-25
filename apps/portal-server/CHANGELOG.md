@@ -1,5 +1,18 @@
 # @scow/portal-server
 
+## 1.9.2
+
+### Patch Changes
+
+- 3c03a17: 无论是否有权限都展示快捷入口中已添加的交互式应用图标
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-scow-resource@0.2.11
+  - @scow/lib-server@1.4.2
+  - @scow/protos@1.0.27
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.25
+
 ## 1.9.1
 
 ### Patch Changes

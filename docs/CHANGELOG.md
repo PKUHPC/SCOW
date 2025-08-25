@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.13
+
+### Patch Changes
+
+- d90b03b: 修复量子配置文档错误
+
 ## 1.4.12
 
 ### Patch Changes

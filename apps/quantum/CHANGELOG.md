@@ -1,5 +1,19 @@
 # @scow/quantum
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-operation-log@2.2.2
+  - @scow/lib-scow-resource@0.2.11
+  - @scow/lib-server@1.4.2
+  - @scow/lib-web@1.5.2
+  - @scow/protos@1.0.27
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.25
+
 ## 0.1.1
 
 ### Patch Changes

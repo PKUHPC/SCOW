@@ -1,5 +1,13 @@
 # @scow/lib-web
 
+## 1.5.2
+
+### Patch Changes
+
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/protos@1.0.27
+
 ## 1.5.1
 
 ### Patch Changes

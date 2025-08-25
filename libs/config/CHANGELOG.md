@@ -1,5 +1,11 @@
 # @scow/config
 
+## 1.8.2
+
+### Patch Changes
+
+- 579f164: AI 提交作业页面优化（默认镜像和运行命令）
+
 ## 1.8.1
 
 ### Patch Changes

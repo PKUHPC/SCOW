@@ -1,5 +1,18 @@
 # @scow/mis-server
 
+## 1.9.2
+
+### Patch Changes
+
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-hook@1.0.27
+  - @scow/lib-notification@1.0.12
+  - @scow/lib-scow-resource@0.2.11
+  - @scow/lib-server@1.4.2
+  - @scow/protos@1.0.27
+  - @scow/lib-scheduler-adapter@1.1.25
+
 ## 1.9.1
 
 ### Patch Changes

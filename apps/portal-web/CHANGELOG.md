@@ -1,5 +1,21 @@
 # @scow/portal-web
 
+## 1.9.2
+
+### Patch Changes
+
+- 3298daf: 更换表格操作 icon
+- 01c3cd0: 将文件管理的解压缩界面统一成交互式应用处的展示
+- 3c03a17: 无论是否有权限都展示快捷入口中已添加的交互式应用图标
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-notification@1.0.12
+  - @scow/lib-operation-log@2.2.2
+  - @scow/lib-scow-resource@0.2.11
+  - @scow/lib-web@1.5.2
+  - @scow/protos@1.0.27
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.1
 
 ### Patch Changes

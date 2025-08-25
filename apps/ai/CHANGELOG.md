@@ -1,5 +1,24 @@
 # @scow/ai
 
+## 0.4.2
+
+### Patch Changes
+
+- 8ad4413: ai 作业的输出日志支持选择显示行数
+- a38f1a4: ai 增加镜像配额，由 harbor 限制，并且兼容之前的版本，自动数据迁移
+- 01c3cd0: 增加压缩解压缩、存储管理
+- 579f164: AI 提交作业页面优化（默认镜像和运行命令）
+- 8ad4413: 作业详情增加镜像信息和 pod 结束时间
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-operation-log@2.2.2
+  - @scow/lib-scow-resource@0.2.11
+  - @scow/lib-server@1.4.2
+  - @scow/lib-web@1.5.2
+  - @scow/protos@1.0.27
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.25
+
 ## 0.4.1
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @scow/resource
 
+## 0.3.2
+
+### Patch Changes
+
+- c5530fb: 添加/移出默认授权集群或分区时同步更新租户下的所有账户的授权数据
+  在与分区相关的接口中增加了在线集群下分区的鉴权逻辑，补充了部分接口中对在线集群的鉴权
+- ca07c2c: 某一授权的集群分区信息获取失败时其他已授权集群分区正常返回
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+  - @scow/lib-hook@1.0.27
+  - @scow/lib-server@1.4.2
+  - @scow/lib-web@1.5.2
+  - @scow/protos@1.0.27
+  - @scow/lib-scheduler-adapter@1.1.25
+
 ## 0.3.1
 
 ### Patch Changes

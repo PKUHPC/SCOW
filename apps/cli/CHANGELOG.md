@@ -1,5 +1,13 @@
 # @scow/cli
 
+## 1.9.2
+
+### Patch Changes
+
+- a38f1a4: 增加 ai 的配置文件模版
+- Updated dependencies [579f164]
+  - @scow/config@1.8.2
+
 ## 1.9.1
 
 ### Patch Changes
