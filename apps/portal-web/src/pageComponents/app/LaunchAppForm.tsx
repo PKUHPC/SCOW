@@ -5,7 +5,7 @@ import { Rule } from "antd/es/form";
 import { NamePath } from "antd/es/form/interface";
 import { FormInstance } from "antd/lib";
 import dayjs from "dayjs";
-import Router from "next/router";
+import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -92,6 +92,8 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const router = useRouter();
+
   const createErrorModal = (message: string) => modal.error({
     title: t(p("errorMessage")),
     content: message,
@@ -148,7 +150,14 @@ export const LaunchAppForm: React.FC<Props> = ({
       .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
       .then(() => {
         message.success(t(p("successMessage")));
-        Router.push(`/apps/${clusterId}/sessions`);
+        const searchParams = new URLSearchParams(window.location.search);
+        const callbackPath = searchParams.get("callbackPath");
+
+        if (callbackPath) {
+          window.location.href = callbackPath;
+        } else {
+          router.push(`/apps/${clusterId}/sessions`);
+        }
       }).finally(() => {
         setLoading(false);
       });
@@ -887,7 +896,16 @@ export const LaunchAppForm: React.FC<Props> = ({
 
         <Form.Item>
           <Button
-            onClick={() => Router.push(`/apps/${clusterId}/createApps`)}
+            onClick={() => {
+              const searchParams = new URLSearchParams(window.location.search);
+              const callbackPath = searchParams.get("callbackPath");
+
+              if (callbackPath) {
+                window.location.href = callbackPath;
+              } else {
+                router.push(`/apps/${clusterId}/createApps`);
+              }
+            }}
             style={{ marginRight: "10px" }}
           >
             {t("button.cancelButton")}

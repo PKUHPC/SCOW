@@ -15,6 +15,8 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancelIcon, EndIcon } from "src/icons/headerIcons/headerIcons";
 import { calculateAppRemainingTime, compareState, statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/jupyter/ConnectToAppLink";
+import { trimPathSlashes } from "src/utils/path";
+import { BASE_PATH } from "src/utils/processEnv";
 import { trpc } from "src/utils/trpc";
 
 interface Props {
@@ -103,9 +105,21 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
   const publicConfig = usePublicConfig();
 
   // 5. 构建动态URL
-  const portalUrl = publicConfig.publicConfig.portalUrl;
+  const { basePath, portalUrl } = publicConfig.publicConfig;
 
-  const appCreateUrl = `apps/${cluster}/create/${appId}`;
+  const formattedBasePath = trimPathSlashes(basePath);
+  const formattedAppBasePath = trimPathSlashes(BASE_PATH);
+
+  const pathSegments = [
+    formattedBasePath,
+    formattedAppBasePath,
+    "jupyter",
+    "list",
+  ].filter((segment) => segment !== "");
+
+  const callbackPath = `/${pathSegments.join("/")}`;
+
+  const appCreateUrl = `apps/${cluster}/create/${appId}?callbackPath=${encodeURIComponent(callbackPath)}`;
 
   const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
     onError: (e) => {
@@ -329,7 +343,7 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
               <Form.Item style={{ marginLeft: "auto" }}>
                 <Button
                   type="primary" // Set type to primary for the desired style
-                  onClick={() => window.open(join(portalUrl, appCreateUrl), "_blank")} // Handle navigation
+                  onClick={() => window.location.href = join(portalUrl, appCreateUrl)}
                   disabled={!cluster || !appId}
                 >
                   {t("page.jupyter.create")} jupyter
