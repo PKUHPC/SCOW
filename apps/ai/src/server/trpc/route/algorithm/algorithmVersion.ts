@@ -642,13 +642,6 @@ export const unShareAlgorithmVersion = procedure
     if (algorithm.owner !== user.identityId)
       throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId} not accessible` });
 
-    await driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
-    }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(algorithmVersion.privatePath);
-    }, logger);
-
     algorithmVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([algorithmVersion]);
     await em.flush();

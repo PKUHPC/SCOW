@@ -596,7 +596,7 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
-      workingDirectory: inferJobsDirectory,
+      workingDirectory: join(homeDir, inferJobsDirectory),
       script: remoteEntryPath,
       envVariables,
       // 对于AI模块，需要传递的额外参数
@@ -818,7 +818,7 @@ export class ScowdJobDriver implements JobDriver {
       gpuCount: gpuCount ?? 0,
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
-      workingDirectory: trainJobsDirectory,
+      workingDirectory: join(homeDir, trainJobsDirectory),
       script: remoteEntryPath,
       envVariables,
       // 对于AI模块，需要传递的额外参数

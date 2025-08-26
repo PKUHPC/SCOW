@@ -668,13 +668,6 @@ export const unShareDatasetVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
-    await driver.withFileDriver({
-      clusterId:dataset.clusterId,
-      user:user.identityId,
-    }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(datasetVersion.privatePath);
-    }, logger);
-
     datasetVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([datasetVersion]);
     await em.flush();

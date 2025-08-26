@@ -666,13 +666,6 @@ export const unShareModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
 
-    await driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
-    }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(modelVersion.privatePath);
-    }, logger);
-
     modelVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([modelVersion]);
     await em.flush();
