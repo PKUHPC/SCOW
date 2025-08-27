@@ -55,21 +55,15 @@ const ClientLayoutLoaded = ({
 
   const navbarLinks: HeaderNavbarLink[] = [
     {
-      icon: <QuantumIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
-      href: "",
-      text: <span style={{ color: token.colorPrimary }}>{t("route.linkTextQuantum")}</span>,
-      isActive: true,
+      icon: <MisIcon style={{ paddingRight: 2 }} />,
+      href: toCallbackPage(misUrl),
+      text: t("route.linkTextMis"),
+      crossSystem: true,
     },
     {
       icon: <HighComputingIcon style={{ paddingRight: 2 }} />,
       href: toCallbackPage(portalUrl),
       text: t("route.linkTextHpc"),
-      crossSystem: true,
-    },
-    {
-      icon: <MisIcon style={{ paddingRight: 2 }} />,
-      href: toCallbackPage(misUrl),
-      text: t("route.linkTextMis"),
       crossSystem: true,
     },
   ];
@@ -82,6 +76,13 @@ const ClientLayoutLoaded = ({
       crossSystem: true,
     });
   }
+
+  navbarLinks.push({
+    icon: <QuantumIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+    href: "",
+    text: <span style={{ color: token.colorPrimary }}>{t("route.linkTextQuantum")}</span>,
+    isActive: true,
+  });
 
   return (
     <LibBaseLayout

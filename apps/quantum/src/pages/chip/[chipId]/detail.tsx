@@ -89,7 +89,6 @@ export const ChipDetailPage: NextPage = () => {
     <>
       <Container>
         <a
-          style={{ fontWeight: 600 }}
           onClick={() => {
             router.push(join("/devices"));
           }}
@@ -97,7 +96,7 @@ export const ChipDetailPage: NextPage = () => {
           &lt; {t(p("back"))}
         </a>
         <Divider type="vertical" />
-        <span style={{ fontWeight: 600 }}>{t(pName(typedChipId))}</span>
+        <span>{t(pName(typedChipId))}</span>
 
         <div style={{ margin: "12px 0 -12px 0" }}>{t(p("info"))}</div>
         <Divider />

@@ -51,9 +51,9 @@ export const DashboardPage: NextPage = () => {
   }, [data, languageId]);
 
   return (
-    <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh", padding: "24px" }}>
+    <div style={{ minHeight: "100vh" }}>
       <Card style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>{t(p("device"))}</h2>
+        <h2 style={{ fontSize: 18, marginBottom: 16, marginTop: -4 }}>{t(p("device"))}</h2>
         <Row gutter={[16, 16]}>
           {
             isLoading || isLoading2 ? (
@@ -80,7 +80,7 @@ export const DashboardPage: NextPage = () => {
         </Row>
       </Card>
       <Card>
-        <h2 style={{ fontSize: 20, fontWeight: 600 }}>{t(p("recentJob"))}</h2>
+        <h2 style={{ fontSize: 18 }}>{t(p("recentJob"))}</h2>
         <Tabs defaultActiveKey="quantum">
           <Tabs.TabPane tab={t(p("quantum"))} key="quantum">
             <JobsTable isDashboard={true} />

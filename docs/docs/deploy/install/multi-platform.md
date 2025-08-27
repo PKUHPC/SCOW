@@ -17,7 +17,7 @@ SCOW系统支持以下运行环境的镜像。您只需在支持的机器上安�
 
 ## 编译支持多架构的镜像
 
-直接运行`docker build`构建出来的镜像为只支持您编译时机器的架构的镜像。要想编译出同时支持以上所有架构的的镜像，请参考以下步骤：
+直接运行`docker build`构建出来的镜像为只支持您编译时机器的架构的镜像。要想编译出同时支持以上所有架构的镜像，请参考以下步骤：
 
 1. 根据docker官方的[`Multi-platform images`文档](https://docs.docker.com/build/building/multi-platform/)，创建并使用支持多平台编译的builder
 

@@ -81,8 +81,8 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
     time: [dayjs.Dayjs, dayjs.Dayjs]
     types: string[]
   }>(() => ({
-    // name作为账户名时可能为 undefined 、长度不定的的数组
-    // name作为租户名时可能为 undefined 、长度为1的的数组
+    // name作为账户名时可能为 undefined 、长度不定的数组
+    // name作为租户名时可能为 undefined 、长度为1的数组
     names: accountNames,
     time: [today.subtract(1, "year"), today],
     types: [],

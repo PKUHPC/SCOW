@@ -46,9 +46,9 @@ export const DevicesPage: NextPage = () => {
   }, [DeviceCardsData]);
 
   return (
-    <div style={{ backgroundColor: "#f5f5f5", minHeight: "100vh", padding: "24px" }}>
+    <div style={{ minHeight: "100vh" }}>
       <Card style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>{t(p("device"))}</h2>
+        <h2 style={{ fontSize: 18, marginBottom: 16, marginTop: -4 }}>{t(p("device"))}</h2>
         <Row gutter={[16, 16]}>
           {
             isLoading ? (

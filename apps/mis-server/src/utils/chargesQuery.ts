@@ -82,6 +82,7 @@ export const getChargesSearchType = (type: string | undefined) => {
   const typesToSearch = [
     misConfig.jobChargeType,
     misConfig.changeJobPriceType,
+    misConfig.quantumJobChargeType,
     ...(misConfig.customChargeTypes || []),
   ];
 

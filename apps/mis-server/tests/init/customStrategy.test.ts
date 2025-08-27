@@ -29,6 +29,7 @@ jest.mock("@scow/config/build/mis", () => {
         },
         jobChargeType: "作业费用",
         changeJobPriceType: "作业费用更改",
+        quantumJobChargeType: "量子作业费用",
         jobChargeComment: "集群: {{ cluster }}，作业ID：{{ idJob }}",
         customAmountStrategies: [
           {

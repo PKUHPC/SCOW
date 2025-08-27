@@ -28,7 +28,6 @@ const Part = styled(Section)`
 const TitleText = styled(Typography.Title)`
 && {
   width: 100vw;
-  font-weight: 700;
   font-size: 24px;
   padding: 0 0 10px 20px;
   margin-left: -25px;

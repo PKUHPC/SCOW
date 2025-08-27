@@ -31,7 +31,8 @@ export const queryBillTypesCache = async (em: SqlEntityManager<MySqlDriver>) => 
     const uniqueKeys = new Set<string>();
     // 预先添加作业费用及作业费用更改两种类型，使其排序在前
     uniqueKeys.add(misConfig.jobChargeType)
-      .add(misConfig.changeJobPriceType);
+      .add(misConfig.changeJobPriceType)
+      .add(misConfig.quantumJobChargeType);
 
     const results = await em.getConnection().execute("SELECT details FROM account_bill WHERE details IS NOT NULL");
 

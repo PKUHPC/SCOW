@@ -34,7 +34,8 @@ export const QuantumConfigSchema = Type.Object({
     description: "给量子作业扣费时，扣费项的备注。可以使用{{ 属性名 }}使用作业信息中的属性。",
     default: "量子作业ID：{{ id }}",
   }),
-  taskChargeType: Type.String({ description: "对量子作业计费时，计费费用的的付款类型", default: "量子作业费用" }),
+  taskChargeType: Type.String({ description: "对量子作业计费时，计费费用的付款类型，请和管理系统的quantumJobChargeType保持一致",
+    default: "量子作业费用" }),
 });
 
 const QUANTUM_CONFIG_NAME = "quantum/config";

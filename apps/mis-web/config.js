@@ -189,6 +189,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     CHARGE_TYPE_LIST: [
       misConfig.jobChargeType,
       misConfig.changeJobPriceType,
+      misConfig.quantumJobChargeType,
       ...(misConfig.customChargeTypes || []),
     ],
 

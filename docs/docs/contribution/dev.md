@@ -113,7 +113,7 @@ pnpm build
 
 开发环境包括
 
-- 可以通过`3306`端口连接的的MySQL8数据库
+- 可以通过`3306`端口连接的MySQL8数据库
     - root密码为[dev/.env.dev](%REPO_FILE_URL%/dev/.env.dev)中的`MYSQL_ROOT_PASSWORD`，为`mysqlrootpassword`
 - 可以通过`6379`端口连接的redis:alpine
 - 可以通过`3307`端口连接的mariadb:5.5作为job table

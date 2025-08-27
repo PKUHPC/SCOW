@@ -203,3 +203,8 @@ bill:
 #   migratableClusterGroups:
 #     - group: ["linux", "ai01"]
 #     - group: ["linux", "ai02", "crane01"]
+
+# 计费费用类型
+# jobChargeType: "作业费用"
+# changeJobPriceType: "作业费用更改"
+# quantumJobChargeType: "量子作业费用" // 需和量子配置的taskChargeType保持一致

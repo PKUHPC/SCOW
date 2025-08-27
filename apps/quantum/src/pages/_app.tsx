@@ -1,5 +1,6 @@
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
+import "src/styles/globals.css";
 
 import { DarkModeCookie } from "@scow/lib-web/build/layouts/darkMode";
 import App, { AppContext, AppInitialProps, AppProps } from "next/app";

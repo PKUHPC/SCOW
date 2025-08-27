@@ -14,6 +14,7 @@
 | [fetchJobs](#fetchjobs)                             | `object` | Required | cannot be null | [Untitled schema](definition-properties-fetchjobs.md "undefined#/properties/fetchJobs")                             |
 | [jobChargeType](#jobchargetype)                     | `string` | Required | cannot be null | [Untitled schema](definition-properties-jobchargetype.md "undefined#/properties/jobChargeType")                     |
 | [changeJobPriceType](#changejobpricetype)           | `string` | Required | cannot be null | [Untitled schema](definition-properties-changejobpricetype.md "undefined#/properties/changeJobPriceType")           |
+| [quantumJobChargeType](#quantumjobchargetype)       | `string` | Required | cannot be null | [Untitled schema](definition-properties-quantumjobchargetype.md "undefined#/properties/quantumJobChargeType")       |
 | [jobChargeComment](#jobchargecomment)               | `string` | Required | cannot be null | [Untitled schema](definition-properties-jobchargecomment.md "undefined#/properties/jobChargeComment")               |
 
 ## db
@@ -142,7 +143,7 @@ The default value is:
 
 ## jobChargeType
 
-对作业计费时，计费费用的的付款类型
+对作业计费时，计费费用的付款类型
 
 `jobChargeType`
 
@@ -190,6 +191,32 @@ The default value is:
 
 ```json
 "作业费用更改"
+```
+
+## quantumJobChargeType
+
+对量子作业计费时，计费费用的付款类型
+
+`quantumJobChargeType`
+
+*   is required
+
+*   Type: `string`
+
+*   cannot be null
+
+*   defined in: [Untitled schema](definition-properties-quantumjobchargetype.md "undefined#/properties/quantumJobChargeType")
+
+### quantumJobChargeType Type
+
+`string`
+
+### quantumJobChargeType Default Value
+
+The default value is:
+
+```json
+"量子作业费用"
 ```
 
 ## jobChargeComment

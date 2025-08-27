@@ -67,7 +67,6 @@ const CenterLabel = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  font-weight: bold;
   opacity: 0.2;
 `;
 
@@ -200,7 +199,6 @@ export const JobDetailPage: NextPage = () => {
         textAnchor={x > numCx ? "start" : "end"}
         dominantBaseline="central"
         fontSize={14}
-        fontWeight="bold"
       >
         {name}
       </text>
@@ -288,7 +286,6 @@ export const JobDetailPage: NextPage = () => {
     <>
       <Container>
         <a
-          style={{ fontWeight: 600 }}
           onClick={() => {
             router.push(join("/quantum/list"));
           }}
@@ -296,7 +293,7 @@ export const JobDetailPage: NextPage = () => {
           &lt; {t(p("back"))}
         </a>
         <Divider type="vertical" />
-        <span style={{ fontWeight: 600 }}>{t(p("jobDetail"))}</span>
+        <span>{t(p("jobDetail"))}</span>
 
         <div style={{ margin: "12px 0 -12px 0" }}>{t(p("jobInfo"))}</div>
         <Divider />
@@ -353,7 +350,7 @@ export const JobDetailPage: NextPage = () => {
                       </ResponsiveContainer>
                       <CenterLabel>
                         <div>2</div>
-                        <div style={{ fontSize: "12px", fontWeight: "normal" }}>qubits</div>
+                        <div style={{ fontSize: "12px" }}>qubits</div>
                       </CenterLabel>
                     </PolarChartContainer>
                   ) : (

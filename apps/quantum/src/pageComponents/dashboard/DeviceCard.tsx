@@ -1,6 +1,6 @@
 import { Button, Card, Tag, Typography } from "antd";
 import { useRouter } from "next/router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { DisplayedDeviceState, getDisplayedStateI18nTexts } from "src/models/device";
 import { formatTimestamp } from "src/utils/datetime";
@@ -23,6 +23,7 @@ const DeviceCardWrapper = styled(Card)`
   overflow: hidden;
   border-radius: 8px;
   position: relative;
+  box-shadow: #0000000D 0px 4px 4px 0px;
   .ant-card-body {
     padding: 0 !important;
   }
@@ -59,7 +60,6 @@ const Header = styled.div`
 
 const NameText = styled(Text)`
   font-size: 16px;
-  font-weight: 600;
 `;
 
 const DetailsButton = styled(Button)`
@@ -71,6 +71,11 @@ const DetailsButton = styled(Button)`
 const StatusTag = styled(Tag)`
   margin: 0 !important;
 `;
+
+// 将高清图路径转换为低清图路径
+const getLowResPath = (highResPath: string): string => {
+  return highResPath.replace(/\.png$/, "_low.jpg");
+};
 
 export default function DeviceCard({ id, path, name, description, status, updateTime, gateFidelity }: Props) {
   const router = useRouter();
@@ -85,10 +90,27 @@ export default function DeviceCard({ id, path, name, description, status, update
     router.push(`/chip/${id}/detail`);
   };
 
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const lowResPath = getLowResPath(path); // 生成低清图的路径
+
+  useEffect(() => {
+    const image = new Image();
+    image.src = path;
+    image.onload = () => {
+      setIsImageLoaded(true);
+    };
+    return () => {
+      image.onload = null;
+    };
+  }, [path]);
+
   return (
     <DeviceCardWrapper>
       <ImageWrapper>
-        <img src={path} alt="Device" />
+        <img
+          src={isImageLoaded ? path : lowResPath} // 加载完成后显示高清图，否则显示低清图
+          alt="Device"
+        />
       </ImageWrapper>
 
       <InfoSection>
@@ -101,7 +123,6 @@ export default function DeviceCard({ id, path, name, description, status, update
               }</StatusTag>
             )}
         </Header>
-
         <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
           {description}
         </Text>

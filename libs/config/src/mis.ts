@@ -108,8 +108,10 @@ export const MisConfigSchema = Type.Object({
     syncHistoryDayPeriod: 7,
   }, description: "同步账户用户数据功能相关设置" }),
 
-  jobChargeType: Type.String({ description: "对作业计费时，计费费用的的付款类型", default: "作业费用" }),
+  jobChargeType: Type.String({ description: "对作业计费时，计费费用的付款类型", default: "作业费用" }),
   changeJobPriceType: Type.String({ description: "修改作业费用时所使用的付款/充值类型", default: "作业费用更改" }),
+  quantumJobChargeType: Type.String({ description: "对量子作业计费时，计费费用的付款类型，请和量子云的taskChargeType保持一致",
+    default: "量子作业费用" }),
 
   jobChargeComment: Type.String({
     description: "给作业扣费时，扣费项的备注。可以使用{{ 属性名 }}使用作业信息中的属性。字段参考src/entities/JobInfo",

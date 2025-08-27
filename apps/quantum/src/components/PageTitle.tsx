@@ -20,7 +20,7 @@ type PageTitleProps = React.PropsWithChildren<{
 
 export const TitleText = styled(Typography.Title)`
   && {
-    font-size: 28px;
+    font-size: 20px;
   }
 `;
 

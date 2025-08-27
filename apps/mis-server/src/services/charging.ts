@@ -275,6 +275,7 @@ export const chargingServiceServer = plugin((server) => {
       const typesToSearch = [
         misConfig.jobChargeType,
         misConfig.changeJobPriceType,
+        misConfig.quantumJobChargeType,
         ...(misConfig.customChargeTypes || []),
       ];
 

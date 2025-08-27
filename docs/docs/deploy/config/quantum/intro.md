@@ -173,6 +173,9 @@ device:
 # 量子作业默认遵循的比特秒计价
 billing:
   defaultBitSecondPrice: 0.35
+
+# 对量子作业计费时，计费费用的付款类型，请和管理系统的quantumJobChargeType保持一致
+# taskChargeType: "量子作业费用" 
 ```
 
 ## 启动服务

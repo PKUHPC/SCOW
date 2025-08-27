@@ -139,7 +139,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
 
   // quantum的芯片映射
   const chipMapping = new URLSearchParams({
-    t9: "tianxuan_s1",
     t40: "tianxuan_s2",
     t13: "tianji_s2",
     t60: "tianji_m1",
