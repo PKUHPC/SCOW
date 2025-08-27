@@ -13,15 +13,15 @@ export const PartitionSchema = z.object({
   nodeCount: z.number(),
   runningNodeCount: z.number(),
   idleNodeCount: z.number(),
-  notAvailableNodeCount: z.number(),
+  notAvailableNodeCount: z.number().optional(),
   cpuCoreCount: z.number(),
   runningCpuCount: z.number(),
   idleCpuCount: z.number(),
-  notAvailableCpuCount: z.number(),
+  notAvailableCpuCount: z.number().optional(),
   gpuCoreCount: z.number(),
   runningGpuCount: z.number(),
   idleGpuCount: z.number(),
-  notAvailableGpuCount: z.number(),
+  notAvailableGpuCount: z.number().optional(),
   jobCount: z.number(),
   runningJobCount: z.number(),
   pendingJobCount: z.number(),
@@ -62,6 +62,7 @@ const ClusterNodesInfoInput = z.object({
 // 批量获取集群信息的输入和输出模式
 const AllClustersInfoInput = z.object({
   clusterIds: z.array(z.string()),
+  isFullDisplayMode: z.boolean().optional(),
 });
 
 const AllClustersInfoSchema = z.object({
@@ -173,7 +174,7 @@ export const dashboard = router({
     .input(AllClustersInfoInput)
     .output(AllClustersInfoSchema)
     .query(async ({ input }) => {
-      const { clusterIds } = input;
+      const { clusterIds, isFullDisplayMode } = input;
 
       const results = await Promise.allSettled(
         clusterIds.map(async (clusterId) => {
@@ -186,10 +187,24 @@ export const dashboard = router({
             cluster: clusterId,
           });
 
-          return {
-            clusterId,
-            partitions: reply.partitions,
-          };
+          if (isFullDisplayMode || isFullDisplayMode === undefined) {
+            return {
+              clusterId,
+              partitions: reply.partitions,
+            };
+          } else {
+            return {
+              clusterId,
+              partitions: reply.partitions.map((partition) => ({
+                ...partition,
+                notAvailableNodeCount: undefined,
+                notAvailableCpuCount: undefined,
+                notAvailableGpuCount: undefined,
+              })),
+            };
+          }
+
+
         }),
       );
 

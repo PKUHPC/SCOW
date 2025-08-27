@@ -10,7 +10,8 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import React from "react";
+import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
+import React, { useContext } from "react";
 import { styled } from "styled-components";
 
 interface PieInfoProps {
@@ -39,15 +40,37 @@ const TextContainer = styled.div`
   .status {
     font-size: 1em;
   }
+
+  .simplifiedStatus{
+    font-size: 1.5em;
+    white-space: nowrap;
+  }
 `;
 
 const PieInfo: React.FC<PieInfoProps> = ({ percentage, value, status, color }) => {
+
+  const isFullDisplayMode = useContext(DisplayModeContext);
+
   return (
     <TextContainer color={color}>
-      <div className="percentage">{percentage}%</div>
-      <div className="crossLine" style={{ height:"2px", backgroundColor:"#DEDEDE", width:"7.5em" }}></div>
-      <div className="value">{value}</div>
-      <div className="status">{status}</div>
+      {
+        isFullDisplayMode && (
+          <>
+            <div className="percentage">{percentage}%</div>
+            <div className="crossLine" style={{ height:"2px", backgroundColor:"#DEDEDE", width:"7.5em" }}></div>
+          </>
+        )
+      }
+      {
+        isFullDisplayMode ? (
+          <>
+            <div className="value">{value}</div>
+            <div className="status">{status}</div>
+          </>
+        ) : (
+          <div className="simplifiedStatus">{value} {status}</div>
+        )
+      }
     </TextContainer>
   );
 };

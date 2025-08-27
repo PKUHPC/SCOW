@@ -1,7 +1,8 @@
+import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { Col, Row } from "antd";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -63,6 +64,13 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
 
   const { publicConfigClusters, currentClusters } = useStore(ClusterInfoStore);
 
+  // 判断是否显示全部资源
+  const { user } = useStore(UserStore);
+
+  const isFullDisplayMode = useMemo(() => {
+    return user?.isAdmin || publicConfig.DASHBOARD_USER_DISPLAY_MODE === "full";
+  }, [user]);
+
   const { data, isLoading } = useAsync({
     promiseFn: useCallback(async () => {
       // 检查 currentClusters 是否为空
@@ -80,7 +88,7 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
 
       // 并行获取集群信息和节点信息
       const [clusterInfoResponse, nodeInfoResponse, userPartitions] = await Promise.all([
-        api.getAllClustersInfo({ query: { clusterIds } }).httpError(500, () => []),
+        api.getAllClustersInfo({ query: { clusterIds, isFullDisplayMode } }).httpError(500, () => []),
         api.getAllClusterNodesInfo({ query: { clusterIds } }).httpError(500, () => ({ results: []})),
         api.getUserAssociatedClusterPartitions({}),
       ]);
@@ -131,7 +139,12 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
       const filteredClusterResults = filterByPermissions(
         clusterInfoResults.map((result) => ({
           clusterId: result.clusterInfo.clusterId,
-          partitions: result.clusterInfo.partitions,
+          partitions: result.clusterInfo.partitions.map((partition) => ({
+            ...partition,
+            notAvailableNodeCount: partition.notAvailableNodeCount ?? 0,
+            notAvailableCpuCount: partition.notAvailableCpuCount ?? 0,
+            notAvailableGpuCount: partition.notAvailableGpuCount ?? 0,
+          })),
         })),
         (item, assignedPartitions) => ({
           clusterId: item.clusterId,
@@ -275,15 +288,17 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
           </NotificationCol>
         )}
       </Row>
-      <OverviewTable
-        isLoading={isLoading}
-        clusterInfo={data?.clustersInfo ? data.clustersInfo.map((item, idx) => ({ ...item, id: idx })) : []}
-        failedClusters={data?.failedClusters ?? []}
-        currentClusters={currentClusters}
-        clustersOverview={data?.clustersOverview ?? []}
-        platformOverview={data?.platformOverview}
-        successfulClusters={data?.successfulClusters}
-      />
+      <DisplayModeContext.Provider value={isFullDisplayMode}>
+        <OverviewTable
+          isLoading={isLoading}
+          clusterInfo={data?.clustersInfo ? data.clustersInfo.map((item, idx) => ({ ...item, id: idx })) : []}
+          failedClusters={data?.failedClusters ?? []}
+          currentClusters={currentClusters}
+          clustersOverview={data?.clustersOverview ?? []}
+          platformOverview={data?.platformOverview}
+          successfulClusters={data?.successfulClusters}
+        />
+      </DisplayModeContext.Provider>
     </DashboardPageContent>
   );
 });

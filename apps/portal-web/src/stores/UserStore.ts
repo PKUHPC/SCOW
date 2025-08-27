@@ -18,6 +18,7 @@ export interface User {
   identityId: string;
   name?: string;
   token: string;
+  isAdmin: boolean; // 是否为管理员(租户或平台管理员)
 }
 
 export function UserStore(initialUser: User | undefined = undefined) {

@@ -19,6 +19,7 @@ export const GetAllClustersInfoSchema = typeboxRouteSchema({
 
   query: Type.Object({
     clusterIds: Type.Array(Type.String()),
+    isFullDisplayMode: Type.Boolean(),
   }),
 
   responses: {
@@ -37,7 +38,7 @@ export default route(GetAllClustersInfoSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { clusterIds } = req.query;
+  const { clusterIds, isFullDisplayMode } = req.query;
 
   const client = getClient(ConfigServiceClient);
 
@@ -48,9 +49,26 @@ export default route(GetAllClustersInfoSchema, async (req, res) => {
         cluster: clusterId.trim(),
       });
 
-      return {
-        clusterInfo: { ...reply, clusterId },
-      } as ClusterInfoResult;
+      if (isFullDisplayMode) {
+        // 完整模式，返回所有数据
+        return { clusterInfo: { ...reply, clusterId } } as ClusterInfoResult;
+      } else {
+        // 简化模式，过滤掉特定的字段
+        const filteredReply = {
+          ...reply,
+          notAvailableNodeCount: undefined,
+          notAvailableCpuCount: undefined,
+          notAvailableGpuCount: undefined,
+          partitions: reply.partitions.map((partition) => ({
+            ...partition,
+            notAvailableNodeCount: undefined,
+            notAvailableCpuCount: undefined,
+            notAvailableGpuCount: undefined,
+          })),
+        };
+        return { clusterInfo: { ...filteredReply, clusterId } } as ClusterInfoResult;
+      }
+
     } catch (error) {
       console.error(
         `Failed to get cluster info for ${clusterId}:`, error instanceof Error ? error.message : "Unknown error",

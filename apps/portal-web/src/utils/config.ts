@@ -106,6 +106,8 @@ export interface PublicRuntimeConfig {
   SCOW_RESOURCE_ENABLED: boolean | undefined;
 
   ALLOW_APP_AUTHORIZATION?: boolean;
+
+  DASHBOARD_USER_DISPLAY_MODE: "full" | "simplified";
 }
 
 export const runtimeConfig: ServerRuntimeConfig = getConfig().serverRuntimeConfig;

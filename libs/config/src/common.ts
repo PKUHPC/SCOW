@@ -81,6 +81,19 @@ export const CommonConfigSchema = Type.Object({
   notification: Type.Optional(NotificationConfigSchema),
 
   allowAppAuthorization: Type.Boolean({ description: "开启授权交互式应用功能", default: true }),
+
+  // 仪表盘配置
+  dashboard: Type.Optional(Type.Object({
+  // 该配置项仅对普通用户生效，平台管理员和租户管理员不受影响，始终以 full 模式展示。
+  // 可选值：
+  //   - full: 完整模式，显示所有资源数据。
+  //   - simplified: 简化模式，只显示可用节点总数、运行中的数量等基本信息。
+    userDisplayMode:
+      Type.Union([
+        Type.Literal("full", { description: "完整模式" }),
+        Type.Literal("simplified", { description: "简化模式" }),
+      ]),
+  })),
 });
 
 export const getSystemLanguageConfig = (systemLanguage: SystemLanguage): SystemLanguageConfig => {

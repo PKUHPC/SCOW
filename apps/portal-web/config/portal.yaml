@@ -86,3 +86,4 @@ shell: true
 uiExtension:
   - name: test测试
     url: http://localhost:16566
+

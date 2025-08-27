@@ -278,9 +278,17 @@ MyApp.getInitialProps = async (appContext: AppContext) => {
       const userInfo = await api.validateToken({ query: { token } }).catch(() => undefined);
 
       if (userInfo) {
+
+        const { userInfo: userInfo2 } = await api.getUserInfo({ query: { token: token, userId: userInfo.identityId } });
+        const isTenantAdmin = userInfo2.tenantRoles?.includes(0) ?? false;
+        const isPlatformAdmin = userInfo2.platformRoles?.includes(0) ?? false;
+
+        const isAdmin = isTenantAdmin || isPlatformAdmin;
+
         extra.userInfo = {
           ...userInfo,
           token: token,
+          isAdmin,
         };
 
         if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {

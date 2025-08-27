@@ -1,5 +1,6 @@
 "use client";
 
+import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -39,13 +40,25 @@ const initialPlatformOverview: PlatformOverview = {
 };
 
 export default function Page() {
-  const { publicConfig: { CLUSTERS: currentClusters } } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: currentClusters, DASHBOARD_USER_DISPLAY_MODE }, user } = usePublicConfig();
+
+  // 判断是否展示全部资源
+  const isFullDisplayMode = useMemo(() => {
+
+    const isTenantAdmin = user.tenantRoles?.includes(0) ?? false;
+    const isPlatformAdmin = user.platformRoles?.includes(0) ?? false;
+    const isAdmin = isTenantAdmin || isPlatformAdmin;
+
+    return isAdmin || DASHBOARD_USER_DISPLAY_MODE === "full";
+
+  }, [user]);
 
   // 使用批量接口获取所有集群信息
   const clusterIds = currentClusters.map((cluster) => cluster.id);
 
+  // 增加参数
   const allClustersInfoResult = trpc.dashboard.getAllClustersInfo.useQuery(
-    { clusterIds },
+    { clusterIds, isFullDisplayMode },
     { enabled: clusterIds.length > 0 },
   );
 
@@ -72,13 +85,23 @@ export default function Page() {
       // 集群信息
       const rawClusterInfoResults = allClustersInfoResult.data.clusters
         .map((cluster) => {
+
+          const clusterPartitions = cluster.partitions.map((partition) => {
+            return {
+              ...partition,
+              notAvailableNodeCount: partition.notAvailableNodeCount ?? 0,
+              notAvailableCpuCount: partition.notAvailableCpuCount ?? 0,
+              notAvailableGpuCount: partition.notAvailableGpuCount ?? 0,
+            };
+          });
+
           // 如果已配置资源管理系统，只返回已授权集群及队列的clusterInfo
           if (userAssociatedClusterPartitions?.data?.clusterPartitions !== undefined) {
             const associatedClusterPartitions = userAssociatedClusterPartitions.data.clusterPartitions;
 
             // 如果当前集群存在于已授权集群信息
             if (Object.keys(associatedClusterPartitions).includes(cluster.clusterId)) {
-              const assignedPartitions = cluster.partitions.filter((partition) => {
+              const assignedPartitions = clusterPartitions.filter((partition) => {
                 return associatedClusterPartitions[cluster.clusterId].includes(partition.partitionName);
               });
               return {
@@ -92,7 +115,7 @@ export default function Page() {
           }
 
           return {
-            partitions: cluster.partitions,
+            partitions: clusterPartitions,
             clusterId: cluster.clusterId,
           };
         })
@@ -299,15 +322,17 @@ export default function Page() {
   return (
     <DashboardPageContent>
       <Head title={"dashboard"} />
-      <OverviewTable
-        isLoading={isLoading}
-        clusterInfo={clustersInfo ? clustersInfo.map((item) => ({ ...item })) : []}
-        failedClusters={failedClusters}
-        currentClusters={filteredClusters}
-        clustersOverview={clustersOverview ?? []}
-        platformOverview={platformOverview}
-        successfulClusters={successfulClusters}
-      />
+      <DisplayModeContext.Provider value={isFullDisplayMode}>
+        <OverviewTable
+          isLoading={isLoading}
+          clusterInfo={clustersInfo ? clustersInfo.map((item) => ({ ...item })) : []}
+          failedClusters={failedClusters}
+          currentClusters={filteredClusters}
+          clustersOverview={clustersOverview ?? []}
+          platformOverview={platformOverview}
+          successfulClusters={successfulClusters}
+        />
+      </DisplayModeContext.Provider>
     </DashboardPageContent>
   );
 }

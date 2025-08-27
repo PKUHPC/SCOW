@@ -1,8 +1,9 @@
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
+import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { PartitionInfo, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext,useEffect, useMemo, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterOverview, PlatformOverview } from "src/models/cluster";
 import { InfoPanes } from "src/pageComponents/dashboard/InfoPanes";
@@ -140,11 +141,14 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
         ...x,
         id: index,
         cpuUsage: ((x.runningCpuCount / x.cpuCoreCount) * 100).toFixed(2),
-        gpuUsage: x.gpuCoreCount === 0 ? undefined : ((x.runningGpuCount / x.gpuCoreCount) * 100).toFixed(2) },
+        gpuUsage: x.gpuCoreCount === 0 ? undefined : ((x.runningGpuCount / x.gpuCoreCount) * 100).toFixed(2),
+      },
     })) as TableProps[]);
 
   const finalDataSource = activeTabKey === "platformOverview" ?
     dataSource.concat(failedClusters.map((c) => ({ clusterId: c.id }))) : dataSource;
+
+  const isFullDisplayMode = useContext(DisplayModeContext);
 
   return (
     (isLoading || currentClusters.length > 0) ? (
@@ -159,13 +163,13 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
         <TableContainer>
           <Table
             style={{
-              marginTop:"15px",
+              marginTop: "15px",
             }}
             tableLayout="fixed"
             dataSource={finalDataSource}
             loading={isLoading}
             pagination={false}
-            scroll={{ y:275 }}
+            scroll={{ y: 275 }}
             rowClassName={(tableProps) => (tableProps.info?.id === selectId ? "rowBgColor" : "")}
             onRow={(r) => {
               return {
@@ -180,14 +184,14 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           >
             <Table.Column<TableProps>
               dataIndex="clusterName"
-              width="15%"
+              width={isFullDisplayMode ? "15%" : "33.3%"}
               title={t(p("clusterName"))}
               hidden={activeTabKey !== "platformOverview"}
               sorter={(a, b, sortOrder) => compareWithUndefined(a.clusterId, b.clusterId, sortOrder)}
               render={(_, r) => (
                 <span>
                   {getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == r.clusterId)?.name
-                ?? r.clusterId, languageId)}
+                    ?? r.clusterId, languageId)}
                 </span>
               )}
             />
@@ -205,68 +209,74 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
               sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.nodeCount, b.info?.nodeCount, sortOrder)}
               render={(_, r) => r.info?.nodeCount ?? "-"}
             />
-            <Table.Column<TableProps>
-              dataIndex="usageRatePercentage"
-              title={t(p("usageRatePercentage"))}
-              sorter={(a, b, sortOrder) =>
-                compareWithUndefined(a.info?.usageRatePercentage, b.info?.usageRatePercentage, sortOrder)}
-              hidden={clusterInfo.every((item) => item.usageRatePercentage === undefined)}
-              render={(_, r) => (
-                (r.info?.usageRatePercentage !== undefined && !isNaN(r.info.usageRatePercentage)) ? (
-                  <div>
-                    <CustomProgress
-                      percent={Math.min(Number(r.info?.usageRatePercentage.toFixed(2) ?? 0), 100)}
-                      width="145px"
-                      height="20px"
-                      bgColor={dark ? "#E3E3E326" : "#43434326"}
-                      progressColor="#6897D0"
-                    />
-                  </div>
-                ) : "-"
-              )}
-            />
-            <Table.Column<TableProps>
-              dataIndex="cpuUsage"
-              title={t(p("cpuUsage"))}
-              sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.cpuUsage, b.info?.cpuUsage, sortOrder)}
-              render={(_, r) => (
-                (r.info?.cpuUsage !== undefined && !isNaN(parseFloat(r.info?.cpuUsage))) ? (
-                  <div>
-                    <CustomProgress
-                      percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
-                      width="145px"
-                      height="20px"
-                      bgColor={dark ? "#E3E3E326" : "#43434326"}
-                      progressColor="#6897D0"
-                    />
-                  </div>
-                ) : "-"
-              )}
-            />
-            <Table.Column<TableProps>
-              dataIndex="gpuUsage"
-              title={t(p("gpuUsage"))}
-              sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.gpuUsage, b.info?.gpuUsage, sortOrder) }
-              render={(_, r) => (
-                (r.info?.gpuUsage !== undefined && !isNaN(parseFloat(r.info?.gpuUsage))) ? (
-                  <div>
-                    <CustomProgress
-                      percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
-                      width="145px"
-                      height="20px"
-                      bgColor={dark ? "#E3E3E326" : "#43434326"}
-                      progressColor="#6897D0"
-                    />
-                  </div>
-                ) : "-"
-              )}
-            />
+            {
+              isFullDisplayMode && (
+                <>
+                  <Table.Column<TableProps>
+                    dataIndex="usageRatePercentage"
+                    title={t(p("usageRatePercentage"))}
+                    sorter={(a, b, sortOrder) =>
+                      compareWithUndefined(a.info?.usageRatePercentage, b.info?.usageRatePercentage, sortOrder)}
+                    hidden={clusterInfo.every((item) => item.usageRatePercentage === undefined)}
+                    render={(_, r) => (
+                      (r.info?.usageRatePercentage !== undefined && !isNaN(r.info.usageRatePercentage)) ? (
+                        <div>
+                          <CustomProgress
+                            percent={Math.min(Number(r.info?.usageRatePercentage.toFixed(2) ?? 0), 100)}
+                            width="145px"
+                            height="20px"
+                            bgColor={dark ? "#E3E3E326" : "#43434326"}
+                            progressColor="#6897D0"
+                          />
+                        </div>
+                      ) : "-"
+                    )}
+                  />
+                  <Table.Column<TableProps>
+                    dataIndex="cpuUsage"
+                    title={t(p("cpuUsage"))}
+                    sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.cpuUsage, b.info?.cpuUsage, sortOrder)}
+                    render={(_, r) => (
+                      (r.info?.cpuUsage !== undefined && !isNaN(parseFloat(r.info?.cpuUsage))) ? (
+                        <div>
+                          <CustomProgress
+                            percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
+                            width="145px"
+                            height="20px"
+                            bgColor={dark ? "#E3E3E326" : "#43434326"}
+                            progressColor="#6897D0"
+                          />
+                        </div>
+                      ) : "-"
+                    )}
+                  />
+                  <Table.Column<TableProps>
+                    dataIndex="gpuUsage"
+                    title={t(p("gpuUsage"))}
+                    sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.gpuUsage, b.info?.gpuUsage, sortOrder)}
+                    render={(_, r) => (
+                      (r.info?.gpuUsage !== undefined && !isNaN(parseFloat(r.info?.gpuUsage))) ? (
+                        <div>
+                          <CustomProgress
+                            percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
+                            width="145px"
+                            height="20px"
+                            bgColor={dark ? "#E3E3E326" : "#43434326"}
+                            progressColor="#6897D0"
+                          />
+                        </div>
+                      ) : "-"
+                    )}
+                  />
+                </>
+              )
+            }
             <Table.Column<TableProps>
               dataIndex="pendingJobCount"
               title={t(p("pendingJobCount"))}
               sorter={(a, b, sortOrder) =>
                 compareWithUndefined(a.info?.pendingJobCount, b.info?.pendingJobCount, sortOrder)}
-              render={(_, r) => r.info?.pendingJobCount ?? "-" }
+              render={(_, r) => r.info?.pendingJobCount ?? "-"}
             />
             <Table.Column<TableProps>
               dataIndex="partitionStatus"
