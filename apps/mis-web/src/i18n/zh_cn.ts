@@ -108,6 +108,7 @@ export default {
     adjustBill: "调整租户计费",
     failedGetTenantAssignedClustersAndPartitions: "查询授权集群分区信息失败",
     accountUserSyncRunning: "当前正在执行账户/用户信息同步，请等待该同步执行完成后重试。",
+
     finalError: "请求失败，请稍后重试",
     edit: "编辑",
     idOrName: "用户ID/姓名",

@@ -286,18 +286,6 @@ export const tenantRoutes: (
               text: t(pTenant("whitelist")),
               path: "/tenant/accounts/whitelist",
             },
-            {
-              Icon: AccountChargeRecordsIcon,
-              text: t(pTenant("accountChargeRecords")),
-              path: "/tenant/finance/accountChargeRecords",
-            },
-            ...(publicConfig.BILL_ENABLED ? [
-              {
-                Icon: TenantBillsIcon,
-                text: t(pTenant("accountBills")),
-                path: "/tenant/finance/bills",
-              },
-            ] : []),
           ],
         },
         // 开启资源管理或授权应用时展示 权限管理 导航
