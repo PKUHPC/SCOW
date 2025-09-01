@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
@@ -44,7 +32,6 @@ export const Framework = z.union([
 
 export type FrameworkType = z.infer<typeof Framework>;
 
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ImageSchema = z.object({
   name: z.string(),
@@ -56,6 +43,9 @@ export type Image = z.infer<typeof ImageSchema>;
 export const IdPrivateSchema = z.object({
   id: z.number(),
   isPrivate: z.boolean(),
+  // 提交时对应的名称
+  // 在展示作业详情时使用
+  currentNameVersion: z.string().optional(),
 });
 
 export type IdPrivate = z.infer<typeof IdPrivateSchema>;
@@ -64,6 +54,7 @@ export const EnvVariableSchema = z.object({
   key: z.string(),
   value: z.string(),
 });
+export type EnvVariable = z.infer<typeof EnvVariableSchema>;
 
 export const TrainJobInputSchema = z.object({
   clusterId: z.string(),
@@ -71,6 +62,8 @@ export const TrainJobInputSchema = z.object({
   algorithms: z.array(IdPrivateSchema),
   image: z.number().optional(),
   isImagePrivate: z.boolean().optional(),
+  // 提交时选择的本地镜像的名称,用于详情展示
+  localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
   framework: Framework.optional(),
   datasets: z.array(IdPrivateSchema),

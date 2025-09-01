@@ -16,7 +16,7 @@ import { Image as ImageEntity, ImageType, Source, Status } from "src/server/enti
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { allApps, checkAppExist, checkCreateAppEntity,
-  checkEntityAuth, getAllTags, getClusterAppConfigs } from "src/server/utils/app";
+  checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
@@ -252,6 +252,8 @@ export const CreateAppInputSchema = z.object({
   algorithms: z.array(IdPrivateSchema),
   isImagePrivate: z.boolean().optional(),
   image: z.number().optional(),
+  // 提交时选择的本地镜像的名称,用于详情展示
+  localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
   startCommand: z.string().optional(),
   datasets: z.array(IdPrivateSchema),
@@ -289,7 +291,6 @@ export const createAppSession = procedure
   }))
   .use(async ({ input:{ clusterId, appName }, ctx, next }) => {
     const res = await next({ ctx });
-
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -691,6 +692,18 @@ const podInfoSchema = z.object({
   podEndTime: z.string().optional(),
 });
 
+const ExtraDisplayInputsSchema = z.object({
+  isDefaultImage: z.boolean().optional(),
+  imageNameOrUrl: z.string().optional(),
+  datasetNames: z.array(z.string().optional()).optional(),
+  algorithmNames: z.array(z.string().optional()).optional(),
+  modelNames: z.array(z.string().optional()).optional(),
+  mountPoints: z.array(z.string()).optional(),
+  envVariables:z.array(EnvVariableSchema).optional(),
+  startCommand: z.string().optional(),
+}).optional();
+export type ExtraDisplayInputs = z.infer<typeof ExtraDisplayInputsSchema>;
+
 const SingleAppSessionSchema = z.object({
   jobName: z.string(),
   jobId: z.number(),
@@ -720,21 +733,8 @@ const SingleAppSessionSchema = z.object({
     node:z.string(),
     port:z.number(),
   }).optional(),
-  imageNameOrUrl:z.string(),
+  extraDisplayInputs: ExtraDisplayInputsSchema,
 });
-
-async function getImageInfo(imageId?: number, remoteImageUrl?: string): Promise<string> {
-  if (imageId) {
-    const em = await forkEntityManager();
-    const image = await em.findOne(ImageEntity, { id: imageId });
-    if (!image) {
-      logger.error("Image(id: %d) is not found", imageId);
-      return "-";
-    }
-    return `${image.name}: ${image.tag}`;
-  }
-  return remoteImageUrl ?? "-";
-}
 
 export const getJobDetails =
   procedure
@@ -792,7 +792,16 @@ export const getJobDetails =
       let host: string | undefined = undefined;
       let port: number | undefined = undefined;
 
-      let imageNameOrUrl = "";
+      // 初始定义需要额外展示的参数
+      let extraDisplayResult: ExtraDisplayInputs = {
+        imageNameOrUrl: undefined,
+        isDefaultImage: undefined,
+        datasetNames: undefined,
+        algorithmNames: undefined,
+        modelNames: undefined,
+        startCommand: undefined,
+        envVariables: undefined,
+      };
 
       if (jobType === JobType.APP) {
         const app = appId ? apps[appId] : undefined;
@@ -802,6 +811,7 @@ export const getJobDetails =
             message: `app id ${appId} is not found`,
           });
         }
+
         // judge whether the app is ready
         if (job.state === "RUNNING") {
           try {
@@ -827,7 +837,7 @@ export const getJobDetails =
         },
         logger);
 
-        imageNameOrUrl = await getImageInfo(appJobParams.image, appJobParams.remoteImageUrl);
+        extraDisplayResult = formatJobDetailsExtraInputs(appJobParams, extraDisplayResult);
       }
       // 推理需要端口
       else if (jobType === JobType.INFER) {
@@ -849,7 +859,7 @@ export const getJobDetails =
         },
         logger);
 
-        imageNameOrUrl = await getImageInfo(inferJobParams.image, inferJobParams.remoteImageUrl);
+        extraDisplayResult = formatJobDetailsExtraInputs(inferJobParams, extraDisplayResult);
       }
       else {
         // 获取训练作业提交参数
@@ -861,7 +871,7 @@ export const getJobDetails =
         },
         logger);
 
-        imageNameOrUrl = await getImageInfo(trainJobParams.image, trainJobParams.remoteImageUrl);
+        extraDisplayResult = formatJobDetailsExtraInputs(trainJobParams, extraDisplayResult);
       }
 
       const podInfo = job.pods.map((pod) => ({ ...pod,podStatus: jobInfo_PodStatusToJSON(pod.podStatus) }));
@@ -879,7 +889,7 @@ export const getJobDetails =
         port,
         jobEvent:job.events,
         podInfo,
-        imageNameOrUrl,
+        extraDisplayInputs: extraDisplayResult,
       };
     });
 

@@ -1,18 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { UseQueryResult } from "@tanstack/react-query";
 import { FormInstance } from "antd";
 import { useMemo } from "react";
+import { TextsTransType } from "src/models/Algorithm";
 import { parseBooleanParam } from "src/utils/parse";
 
 import { AccessibilityType } from "./LaunchAppForm";
@@ -105,9 +94,9 @@ export function useDataVersionOptions<T>(
     isPublicDataVersionsLoading,
   };
 }
-
 interface EntityWithVersions {
   id: number;
+  name: string;
   versions: {
     id: number,
     path: string
@@ -116,6 +105,7 @@ interface EntityWithVersions {
 
 interface Version {
   id: number;
+  versionName: string;
 }
 
 export function setEntityInitData<T extends Version, U extends EntityWithVersions>(
@@ -129,6 +119,7 @@ export function setEntityInitData<T extends Version, U extends EntityWithVersion
   isPrivate: boolean,
   form: FormInstance,
   setShowKey: string,
+  t: TextsTransType,
 ) {
   form.setFieldValue(setShowKey, true);
   form.setFieldValue([entityType, index,"type"], isPrivate ? AccessibilityType.PRIVATE : AccessibilityType.PUBLIC);
@@ -140,12 +131,16 @@ export function setEntityInitData<T extends Version, U extends EntityWithVersion
     entity.versions.some((version) => version.id === entityId),
   );
 
+  const i18nVersionTag = t("app.jobs.launchAppForm.versionTag");
   if (foundEntity) {
     form.setFieldValue([entityType,index, "name"], foundEntity.id);
     if (versions.length) {
       const hasVersion = versions.some((version) => version.id === entityId);
       if (hasVersion) {
         form.setFieldValue([entityType,index, "version"], entityId);
+        const versionName = versions.find((x) => x.id === entityId)?.versionName;
+        const selectedNameVersion = `${foundEntity.name}（${i18nVersionTag}：${versionName}）`;
+        form.setFieldValue([entityType, index, "selectedNameVersion"], selectedNameVersion);
       }
     }
   }

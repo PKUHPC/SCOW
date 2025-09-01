@@ -228,12 +228,14 @@ export class ScowdJobDriver implements JobDriver {
             : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
           ))
         ,
+
         JSON.stringify(
           datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
             ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
             : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
           ))
         ,
+
         JSON.stringify(
           modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
             ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)

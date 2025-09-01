@@ -22,7 +22,7 @@ import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
 import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
 import { AppCustomAttribute, CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import { FrameworkType, TrainJobInput } from "src/server/trpc/route/jobs/jobs";
-import { getIdPrivate } from "src/utils/app";
+import { getIdPrivate, setJobCreationNameVersion } from "src/utils/app";
 import { inputNumberFloorConfig } from "src/utils/form";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
@@ -60,6 +60,7 @@ export interface DataAttributes {
   name?: number;
   version?: number;
   desc?: string;
+  selectedNameVersion?: string;
 }
 
 export interface EnvVariable {
@@ -80,7 +81,7 @@ interface FixedFormFields {
     index: DataAttributes;
   };
   imageSource: ImageSource;
-  image: { type?: AccessibilityType, name: number };
+  image: { type?: AccessibilityType, name: number, selectedNameTag?: string };
   remoteImageUrl: string | undefined;
   framework: FrameworkType | undefined;
   startCommand?: string;
@@ -612,6 +613,7 @@ export const LaunchAppForm = (props: Props) => {
             isAlgorithmPrivates[index],
             form,
             "showAlgorithm",
+            t,
           );
         }
       });
@@ -623,6 +625,7 @@ export const LaunchAppForm = (props: Props) => {
   useEffect(() => {
     // 处理数据集相关数据
     const inputParams = trainJobInput || createAppParams;
+
     const { ids:datasetIds, isPrivates:isDatasetPrivates } =
     inputParams?.datasets?.length ? getIdPrivate(inputParams.datasets) : {};
 
@@ -643,6 +646,7 @@ export const LaunchAppForm = (props: Props) => {
             isDatasetPrivates[index],
             form,
             "showDataset",
+            t,
           );
         }
       });
@@ -674,6 +678,7 @@ export const LaunchAppForm = (props: Props) => {
             isModelPrivates[index],
             form,
             "showModel",
+            t,
           );
         }
       });
@@ -711,8 +716,11 @@ export const LaunchAppForm = (props: Props) => {
               AccessibilityType.PRIVATE : AccessibilityType.PUBLIC);
 
             // 数据库中有之前存的镜像id才去回显镜像数据,若数据库中已删除了该镜像
-            if (images?.items?.find((image) => inputParams.image === image.id)) {
+            const existedImage = images?.items?.find((image) => inputParams.image === image.id);
+            if (existedImage) {
               form.setFieldValue(["image", "name"], inputParams.image);
+              const reSubmitImageNameTag = `${existedImage.name}:${existedImage.tag}`;
+              form.setFieldValue(["image", "selectedNameTag"], reSubmitImageNameTag);
 
               if ("startCommand" in inputParams) {
                 form.setFieldValue("startCommand", inputParams.startCommand);
@@ -880,6 +888,7 @@ export const LaunchAppForm = (props: Props) => {
         const { appJobName, image, remoteImageUrl, framework, startCommand,mountPoints, account, partition, coreCount,
           gpuCount, maxTime, command, customFields, psNodes, workerNodes,qos,envVariables,tensorBoardDataPath } =
           await form.validateFields();
+        const selectedImageNameTag = form.getFieldValue(["image", "selectedNameTag"]);
 
         const algorithmVersions =
         algorithmGroups.map((_,index) => form.getFieldValue(["algorithmArray", index, "version"]))
@@ -888,6 +897,9 @@ export const LaunchAppForm = (props: Props) => {
         algorithmGroups.map((_,index) =>
           form.getFieldValue(["algorithmArray", index, "type"]) === AccessibilityType.PRIVATE)
           .filter((x) => x !== undefined);
+        const algorithmNameVersions =
+          algorithmGroups.map((_,index) => form.getFieldValue(["algorithmArray", index, "selectedNameVersion"]))
+            .filter((x) => x !== undefined);
 
         const datasetVersions =
         datasetGroups.map((_,index) => form.getFieldValue(["datasetArray", index, "version"]))
@@ -896,6 +908,9 @@ export const LaunchAppForm = (props: Props) => {
         datasetGroups.map((_,index) =>
           form.getFieldValue(["datasetArray", index, "type"]) === AccessibilityType.PRIVATE)
           .filter((x) => x !== undefined);
+        const datasetNameVersions =
+          datasetGroups.map((_,index) => form.getFieldValue(["datasetArray", index, "selectedNameVersion"]))
+            .filter((x) => x !== undefined);
 
         const modelVersions =
         modelGroups.map((_,index) => form.getFieldValue(["modelArray", index, "version"]))
@@ -904,18 +919,33 @@ export const LaunchAppForm = (props: Props) => {
         modelGroups.map((_,index) =>
           form.getFieldValue(["modelArray", index, "type"]) === AccessibilityType.PRIVATE)
           .filter((x) => x !== undefined);
+        const modelNameVersions =
+          modelGroups.map((_,index) => form.getFieldValue(["modelArray", index, "selectedNameVersion"]))
+            .filter((x) => x !== undefined);
 
         if (isTraining) {
           await trainJobMutation.mutateAsync({
             clusterId,
             trainJobName: appJobName,
-            algorithms:algorithmVersions.map((id,idx) => ({ id,isPrivate:isAlgorithmPrivates[idx] })),
+            algorithms:algorithmVersions.map((id,idx) => ({ id,
+              isPrivate:isAlgorithmPrivates[idx],
+              currentNameVersion: algorithmNameVersions[idx],
+            })),
             image: image?.name,
+            localImageName: selectedImageNameTag,
             isImagePrivate:!isImagePublic,
             remoteImageUrl:remoteImageUrl?.trim(),
             framework,
-            datasets: datasetVersions.map((id,idx) => ({ id,isPrivate:isDatasetPrivates[idx] })),
-            models: modelVersions.map((id,idx) => ({ id,isPrivate:isModelPrivates[idx] })),
+            datasets: datasetVersions.map((id,idx) => ({
+              id,
+              isPrivate:isDatasetPrivates[idx],
+              currentNameVersion: datasetNameVersions[idx],
+            })),
+            models: modelVersions.map((id,idx) => ({
+              id,
+              isPrivate:isModelPrivates[idx],
+              currentNameVersion: modelNameVersions[idx],
+            })),
             mountPoints,
             account: account,
             partition: partition,
@@ -952,13 +982,25 @@ export const LaunchAppForm = (props: Props) => {
             appId: appId!,
             appName: appName!,
             appJobName,
-            algorithms:algorithmVersions.map((id,idx) => ({ id,isPrivate:isAlgorithmPrivates[idx] })),
+            algorithms:algorithmVersions.map((id,idx) => ({ id,
+              isPrivate:isAlgorithmPrivates[idx],
+              currentNameVersion: algorithmNameVersions[idx],
+            })),
             image: image?.name,
             isImagePrivate:!isImagePublic,
+            localImageName: selectedImageNameTag,
             remoteImageUrl:remoteImageUrl?.trim(),
             startCommand,
-            datasets: datasetVersions.map((id,idx) => ({ id,isPrivate:isDatasetPrivates[idx] })),
-            models: modelVersions.map((id,idx) => ({ id,isPrivate:isModelPrivates[idx] })),
+            datasets: datasetVersions.map((id,idx) => ({
+              id,
+              isPrivate:isDatasetPrivates[idx],
+              currentNameVersion: datasetNameVersions[idx],
+            })),
+            models: modelVersions.map((id,idx) => ({
+              id,
+              isPrivate:isModelPrivates[idx],
+              currentNameVersion: modelNameVersions[idx],
+            })),
             mountPoints,
             account: account,
             partition: partition,
@@ -993,7 +1035,7 @@ export const LaunchAppForm = (props: Props) => {
           <Radio.Group
             onChange={() => {
               form.setFieldsValue({
-                image: { type: undefined, name: undefined },
+                image: { type: undefined, name: undefined, selectedNameTag: undefined },
                 remoteImageUrl: undefined,
                 startCommand: undefined,
                 command:undefined,
@@ -1075,6 +1117,10 @@ export const LaunchAppForm = (props: Props) => {
                         } else {
                           form.setFieldValue("startCommand", command);
                         }
+                        const selectedName = images?.items.find((x) => x.id === value)?.name;
+                        const selectedTag = images?.items.find((x) => x.id === value)?.tag;
+                        form.setFieldValue(["image", "selectedNameTag"],
+                          selectedName ? `${selectedName}:${selectedTag}` : undefined);
                       }}
                       loading={isImagesLoading && isImagePublic !== undefined}
                       showSearch
@@ -1292,7 +1338,7 @@ export const LaunchAppForm = (props: Props) => {
                         setIsAlgorithmTouched(true);
                         form.setFieldsValue({
                           algorithmArray: {
-                            [index]: { name: undefined, version: undefined },
+                            [index]: { name: undefined, version: undefined, selectedNameVersion: undefined },
                           },
                         });
                         // 强制再次渲染，不然后面的name，version的selectOptions不会变
@@ -1323,6 +1369,7 @@ export const LaunchAppForm = (props: Props) => {
                       onChange={() => {
                         setIsAlgorithmTouched(true);
                         form.setFieldValue(["algorithmArray",index, "version"], undefined);
+                        form.setFieldValue(["algorithmArray",index, "selectedNameVersion"], undefined);
                         forceUpdate((prev) => prev + 1);
                       }}
                       loading={isPrivate ? isPrivateAlgorithmLoading : isPublicAlgorithmLoading}
@@ -1358,8 +1405,11 @@ export const LaunchAppForm = (props: Props) => {
                       loading={isPrivate ? isPrivateAlgorithmVersionsLoading : isPublicAlgorithmVersionsLoading}
                       showSearch
                       optionFilterProp="label"
-                      onChange={() => {
+                      onChange={(value: number) => {
                         setIsAlgorithmTouched(true);
+                        setJobCreationNameVersion(
+                          "algorithmArray", form, index, algorithmOptions, algorithmVersionOptions, value, t);
+
                         forceUpdate((prev) => prev + 1);
                       }}
                       options={algorithmVersionOptions}
@@ -1433,7 +1483,7 @@ export const LaunchAppForm = (props: Props) => {
                         setIsDatasetTouched(true);
                         form.setFieldsValue({
                           datasetArray: {
-                            [index]: { name: undefined, version: undefined },
+                            [index]: { name: undefined, version: undefined, selectedNameVersion: undefined },
                           },
                         });
                         // 强制再次渲染，不然后面的name，version的selectOptions不会变
@@ -1464,6 +1514,7 @@ export const LaunchAppForm = (props: Props) => {
                       onChange={() => {
                         setIsDatasetTouched(true);
                         form.setFieldValue(["datasetArray",index, "version"], undefined);
+                        form.setFieldValue(["datasetArray",index, "selectedNameVersion"], undefined);
                         forceUpdate((prev) => prev + 1);
                       }}
                       loading={isPrivate ? isPrivateDatasetLoading : isPublicDatasetLoading}
@@ -1499,8 +1550,11 @@ export const LaunchAppForm = (props: Props) => {
                       loading={isPrivate ? isPrivateDatasetVersionsLoading : isPublicDatasetVersionsLoading}
                       showSearch
                       optionFilterProp="label"
-                      onChange={() => {
+                      onChange={(value: number) => {
                         setIsDatasetTouched(true);
+                        setJobCreationNameVersion(
+                          "datasetArray", form, index, datasetOptions, datasetVersionOptions, value, t);
+
                         forceUpdate((prev) => prev + 1);
                       }}
                       options={datasetVersionOptions}
@@ -1574,7 +1628,7 @@ export const LaunchAppForm = (props: Props) => {
                         setIsModelTouched(true);
                         form.setFieldsValue({
                           modelArray: {
-                            [index]: { name: undefined, version: undefined },
+                            [index]: { name: undefined, version: undefined, selectedNameVersion: undefined },
                           },
                         });
                         // 强制再次渲染，不然后面的name，version的selectOptions不会变
@@ -1605,6 +1659,7 @@ export const LaunchAppForm = (props: Props) => {
                       onChange={() => {
                         setIsModelTouched(true);
                         form.setFieldValue(["modelArray",index, "version"], undefined);
+                        form.setFieldValue(["modelArray",index, "selectedNameVersion"], undefined);
                         forceUpdate((prev) => prev + 1);
                       }}
                       loading={isPrivate ? isPrivateModelLoading : isPublicModelLoading}
@@ -1640,8 +1695,11 @@ export const LaunchAppForm = (props: Props) => {
                       loading={isPrivate ? isPrivateModelVersionsLoading : isPublicModelVersionsLoading}
                       showSearch
                       optionFilterProp="label"
-                      onChange={() => {
+                      onChange={(value: number) => {
                         setIsModelTouched(true);
+                        setJobCreationNameVersion(
+                          "modelArray", form, index, modelOptions, modelVersionOptions, value, t);
+
                         forceUpdate((prev) => prev + 1);
                       }}
                       options={modelVersionOptions}

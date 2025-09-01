@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { EntityManager } from "@mikro-orm/mysql";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
@@ -28,6 +16,9 @@ import { Logger } from "ts-log";
 import { z } from "zod";
 
 import { clusters } from "../trpc/route/config";
+import { CreateAppInput, ExtraDisplayInputs } from "../trpc/route/jobs/apps";
+import { InferenceJobInput } from "../trpc/route/jobs/infer";
+import { TrainJobInput } from "../trpc/route/jobs/jobs";
 import { wrap } from "../trpc/scowd/scowd";
 
 export const getClusterAppConfigs = (cluster: string) => {
@@ -363,3 +354,43 @@ export const checkEntityAuth = ({ datasetVersions, algorithmVersions,modelVersio
     });
   }
 };
+
+// 封装在作业详情增加的 input.json 中的额外展示内容
+export function formatJobDetailsExtraInputs(
+  inputParams: CreateAppInput | TrainJobInput | InferenceJobInput,
+  extraDisplayInputs: ExtraDisplayInputs,
+): ExtraDisplayInputs {
+
+  const result = {
+    ...extraDisplayInputs,
+    ...inputParams,
+    isDefaultImage: (!inputParams.remoteImageUrl && !inputParams.image),
+    imageNameOrUrl: inputParams.image ? inputParams.localImageName : inputParams.remoteImageUrl,
+    modelNames:
+      inputParams.models
+        .filter((x) => x.currentNameVersion !== undefined)
+        .map((m) => m.currentNameVersion) ?? [],
+    startCommand: "startCommand" in inputParams
+      ? inputParams.startCommand
+      : "command" in inputParams
+        ? inputParams.command
+        : undefined,
+  };
+
+  if ("datasets" in inputParams && "algorithms" in inputParams) {
+    return {
+      ... result,
+      datasetNames:
+        inputParams.datasets
+          .filter((x) => x.currentNameVersion !== undefined)
+          .map((d) => d.currentNameVersion) ?? [],
+      algorithmNames:
+        inputParams.algorithms
+          .filter((x) => x.currentNameVersion !== undefined)
+          .map((a) => a.currentNameVersion) ?? [],
+    };
+  }
+
+  return result;
+
+}
