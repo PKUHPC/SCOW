@@ -1,12 +1,16 @@
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
-import { Col, Divider, Row, Spin, Typography } from "antd";
+import { Col, Divider, Radio, Row, Spin, Typography } from "antd";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { join } from "path";
 import React, { useEffect, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { AllowedChipIdType, allowedChipsArr, DevicesMap } from "src/models/device";
-import { getGateFidelities, getReadoutFidelity, mapDeviceStateToDisplayState } from "src/utils/chip";
+import { EMPTY_STRING } from "src/models/common";
+import { AllowedChipIdType, allowedChipsArr, AveragesState, DeviceDetailInfo,
+  visualizationChipsArr } from "src/models/device";
+import { GateFidelityTable } from "src/pageComponents/chip/GateFidelityTable";
+import { VisualizationContainer } from "src/pageComponents/chip/VisualizationContainer";
+import { calculateAverage, getGateFidelities, getReadoutFidelity } from "src/utils/chip";
 import { formatTimestamp } from "src/utils/datetime";
 import { BASE_PATH } from "src/utils/processEnv";
 import { trpc } from "src/utils/trpc";
@@ -48,16 +52,31 @@ export const ChipDetailPage: NextPage = () => {
   const pDescription = prefix("pageComp.device.description.");
 
   const { data, isLoading, isError, error } =
-    trpc.backend.device.findDevice.useQuery({ id: [typedChipId], accountName: "_" });
+    trpc.backend.device.getDeviceDetail.useQuery({ id: typedChipId, accountName: "_" });
 
-  const [deviceInfo, setDeviceInfo] = useState<DevicesMap | undefined>(undefined);
+  const [deviceInfo, setDeviceInfo] = useState<DeviceDetailInfo | undefined>(undefined);
   const [formattedUpdateTime, setFormattedUpdateTime] = useState<string | undefined>(undefined);
   const [gateFidelities, setGateFidelities] = useState<string[] | undefined>(undefined);
   const [readoutFidelity, setReadoutFidelity] = useState<string[] | undefined>(undefined);
 
+  // 该芯片是否支持可视化
+  const hasVisualization = visualizationChipsArr.includes(typedChipId);
+  const [activeTabShowType, setActiveTabShowType] = useState<"chart" | "data">(
+    hasVisualization ? "chart" : "data",
+  );
+
+  const [averages, setAverages] = useState<AveragesState>({
+    t1Avg: EMPTY_STRING,
+    t2Avg: EMPTY_STRING,
+    sqErrAvg: EMPTY_STRING,
+    f0ErrAvg: EMPTY_STRING,
+    f1ErrAvg: EMPTY_STRING,
+    czErrAvg: EMPTY_STRING,
+  });
+
   useEffect(() => {
-    if (data && data.devices.length > 0) {
-      const device = data.devices[0];
+    if (data) {
+      const device = data.device;
 
       const gateFidelities = device.Err ? getGateFidelities(device.Err) : undefined;
       setGateFidelities(gateFidelities);
@@ -65,12 +84,11 @@ export const ChipDetailPage: NextPage = () => {
       const readoutFidelity = device.Err ? getReadoutFidelity(device.Err) : undefined;
       setReadoutFidelity(readoutFidelity);
 
-      const newDeviceInfo: DevicesMap = {
+      const newDeviceInfo: DeviceDetailInfo = {
         ...device,
         gateFidelity: device.Err
           ? t(pDescription("gateFidelity"), [...gateFidelities!])
           : undefined,
-        status: device.state ? mapDeviceStateToDisplayState(device.state) : undefined,
       };
 
       setDeviceInfo(newDeviceInfo);
@@ -84,6 +102,39 @@ export const ChipDetailPage: NextPage = () => {
       setFormattedUpdateTime(undefined);
     }
   }, [data, languageId]);
+
+  useEffect(() => {
+
+    const t1Avg = deviceInfo?.bits
+      ? calculateAverage(deviceInfo.bits.map((bit) => bit.T1), 1)
+      : EMPTY_STRING;
+    const t2Avg = deviceInfo?.bits
+      ? calculateAverage(deviceInfo.bits.map((bit) => bit.T2), 1)
+      : EMPTY_STRING;
+    const sqErrAvg = deviceInfo?.bits
+      ? calculateAverage(deviceInfo.bits.map((bit) => bit.SingleQubitErrRate), 5)
+      : EMPTY_STRING;
+    const f0ErrAvg = deviceInfo?.bits
+      ? calculateAverage(deviceInfo.bits.map((bit) => bit.ReadoutF0Err), 5)
+      : EMPTY_STRING;
+    const f1ErrAvg = deviceInfo?.bits
+      ? calculateAverage(deviceInfo.bits.map((bit) => bit.ReadoutF1Err), 5)
+      : EMPTY_STRING;
+
+    const czErrAvg = deviceInfo?.links
+      ? calculateAverage(deviceInfo.links.map((link) => link.CZErrRate).filter((x) => x !== undefined), 3)
+      : EMPTY_STRING;
+
+    setAverages({
+      t1Avg,
+      t2Avg,
+      sqErrAvg,
+      f0ErrAvg,
+      f1ErrAvg,
+      czErrAvg,
+    });
+
+  }, [deviceInfo]);
 
   return (
     <>
@@ -229,6 +280,36 @@ export const ChipDetailPage: NextPage = () => {
                 </Col>
               </Row>
             </div>
+          </Col>
+        </Row>
+
+        <Row justify="space-between" style={{ margin: "24px 0 -12px 0" }} align="middle">
+          <Col>
+            <div>{t(p("gateFidelity"))}</div>
+          </Col>
+          <Col>
+            {
+              hasVisualization && (
+                <Radio.Group
+                  defaultValue="chart"
+                  buttonStyle="solid"
+                  onChange={(e) => setActiveTabShowType(e.target.value)}
+                >
+                  <Radio.Button value="chart">{t(p("chart"))}</Radio.Button>
+                  <Radio.Button value="data">{t(p("data"))}</Radio.Button>
+                </Radio.Group>
+              )
+            }
+          </Col>
+        </Row>
+        <Divider />
+        <Row gutter={16}>
+          <Col span={24}>
+            {activeTabShowType === "chart" ? (
+              <VisualizationContainer deviceInfo={deviceInfo} />
+            ) : (
+              <GateFidelityTable deviceInfo={deviceInfo} averages={averages} />
+            )}
           </Col>
         </Row>
       </Container>

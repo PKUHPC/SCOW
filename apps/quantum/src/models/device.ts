@@ -128,12 +128,19 @@ export const DetailedDeviceSchema = BaseDeviceSchema.extend({
   langs: z.array(z.string()).optional(), // detail 接口有 langs, usage, memo
   memo: z.string().optional(),
   usage: z.string().optional(),
+  layout: z.record(z.string(), z.any()).optional(),
 });
 
 export const GetDeviceDetailOutputSchema = z.object({
   device: DetailedDeviceSchema,
 });
 
+// 芯片详情数据
+export const DeviceDetailInfoSchema = DetailedDeviceSchema.extend({
+  gateFidelity: z.string().optional(),
+});
+
+export type DeviceDetailInfo = z.infer<typeof DeviceDetailInfoSchema>;
 
 export const GetDeviceTopologyInputSchema = z.object({
   id: z.enum(allowedChipsArr),
@@ -241,3 +248,31 @@ export const DeviceCardsData: DeviceCard[] = [
 ];
 
 export const GetRecommendedDevicesOutputSchema = z.array(z.enum(allowedChipsArr));
+
+// 芯片详情页平均值
+export interface AveragesState {
+  t1Avg: string | number;
+  t2Avg: string | number;
+  sqErrAvg: string | number;
+  f0ErrAvg: string | number;
+  f1ErrAvg: string | number;
+  czErrAvg: string | number;
+}
+
+export interface QubitData {
+  Q: number;
+  Err: { SQ: number };
+}
+
+export interface CZGateData {
+  Q: [number, number];
+  Fidelity: number;
+}
+
+export type LayoutMap = Record<number, { x: number; y: number }>;
+
+export const visualizationChipsArr = [
+  "t40",
+  "t13",
+  "t59",
+];

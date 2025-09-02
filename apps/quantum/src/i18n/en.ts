@@ -221,6 +221,12 @@ export default {
       readoutFidelity: "Readout Fidelity (Average)",
       shotsLimit: "Shots Limit",
       recoCircuitDepth: "Recommended Circuit Depth",
+      gateFidelity: "Gate Fidelity",
+      chart:  "Chart",
+      data:  "Data",
+      dataTable: "Data Table",
+      SQFidelity: "SQ Fidelity (RB)",
+      CZFidelity: "CZ Fidelity (RB)",
     },
   },
   button: {

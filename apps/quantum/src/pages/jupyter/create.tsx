@@ -1,6 +1,5 @@
 import { Typography } from "antd";
 import { join } from "path";
-import { usePublicConfig } from "src/context/PublicConfigContext";
 import { useI18nTranslateToString } from "src/i18n";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
@@ -41,8 +40,6 @@ export default function Home() {
       <div>Error loading quantum configuration.</div>
     );
   }
-
-  console.log("publicConfigQuery.data", publicConfigQuery.data);
 
   // 5. 构建动态URL
   const portalUrl = publicConfigQuery.data.portalUrl;

@@ -221,6 +221,12 @@ export default {
       readoutFidelity: "读取保真度 (平均)",
       shotsLimit: "Shots限制",
       recoCircuitDepth: "线路深度推荐",
+      gateFidelity: "门保真度",
+      chart:  "图示",
+      data:  "数据",
+      dataTable: "数据表格",
+      SQFidelity: "单比特门",
+      CZFidelity: "两比特门",
     },
   },
   button: {
