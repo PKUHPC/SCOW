@@ -859,7 +859,7 @@ export const copyPublicDatasetVersion = procedure
       );
       // 递归修改文件权限和拥有者
       await withFileDriver(
-        { clusterId:datasetVersion.dataset.$.clusterId, user:"root" },
+        { clusterId:datasetVersion.dataset.$.clusterId, user: user.identityId },
         async (driver) => {
           await driver.chmod(input.path,"0750");
         },

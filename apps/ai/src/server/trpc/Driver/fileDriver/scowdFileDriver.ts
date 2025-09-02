@@ -358,7 +358,7 @@ export class ScowdFileDriver implements FileDriver {
   async unShareFileOrDir(sharedPath: string,successCallback?: callback,failureCallback?: callback): Promise<void> {
     await wrap(
       this.client.file.deleteDirectory({
-        userId: "root",
+        userId: this.userId,
         dirPath: sharedPath,
       }),
       this.logger,
@@ -385,7 +385,7 @@ export class ScowdFileDriver implements FileDriver {
     try {
       const targetDirectoryExists = await wrap(
         this.client.file.exists({
-          userId: "root",
+          userId: this.userId,
           path:targetDirectory,
         }),
         this.logger,
@@ -395,7 +395,7 @@ export class ScowdFileDriver implements FileDriver {
       if (!targetDirectoryExists.exists) {
         await wrap(
           this.client.file.makeDirectory({
-            userId: "root",
+            userId: this.userId,
             dirPath: targetDirectory,
           }),
           this.logger,
@@ -403,7 +403,7 @@ export class ScowdFileDriver implements FileDriver {
 
         await wrap(
           this.client.file.changeMode({
-            userId: "root",
+            userId: this.userId,
             path: SHARED_DIR,
             mode: "555",
             recursive:true,
@@ -414,7 +414,7 @@ export class ScowdFileDriver implements FileDriver {
 
       const targetFullDirExists = await wrap(
         this.client.file.exists({
-          userId: "root",
+          userId: this.userId,
           path:targetFullDir,
         }),
         this.logger,
@@ -424,7 +424,7 @@ export class ScowdFileDriver implements FileDriver {
       if (!targetFullDirExists.exists) {
         await wrap(
           this.client.file.makeDirectory({
-            userId: "root",
+            userId: this.userId,
             dirPath: targetFullDir,
           }),
           this.logger,
@@ -434,7 +434,7 @@ export class ScowdFileDriver implements FileDriver {
       // 复制并从顶层目录递归修改文件夹权限
       await wrap(
         this.client.file.copy({
-          userId: "root",
+          userId: this.userId,
           // sourceFilePath: /nfs/home/demo_admin2/1111
           // targetFullDir /nfs/.shared/demo_admin2/dataset/oyx0529/v1
           // 需要再targetFullDir 需要拼上sourceFilePath 的末尾
@@ -446,7 +446,7 @@ export class ScowdFileDriver implements FileDriver {
 
       await wrap(
         this.client.file.changeMode({
-          userId: "root",
+          userId: this.userId,
           path: targetTopDir,
           mode: "555",
           recursive:true,
@@ -464,7 +464,7 @@ export class ScowdFileDriver implements FileDriver {
   async getUpdatedSharedPath(newName: string, oldPath: string): Promise<string> {
     const oldPathExistsRes = await wrap(
       this.client.file.exists({
-        userId: "root",
+        userId: this.userId,
         path:oldPath,
       }),
       this.logger,
@@ -478,9 +478,9 @@ export class ScowdFileDriver implements FileDriver {
 
     await wrap(
       this.client.file.move({
-        userId: "root",
-        fromPath:oldPath,
-        toPath:newPath,
+        userId: this.userId,
+        fromPath: oldPath,
+        toPath: newPath,
       }),
       this.logger,
     );

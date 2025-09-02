@@ -826,7 +826,7 @@ export const copyPublicAlgorithmVersion = procedure
       );
       // 递归修改文件权限和拥有者
       await withFileDriver(
-        { clusterId:algorithmVersion.algorithm.$.clusterId, user:"root" },
+        { clusterId:algorithmVersion.algorithm.$.clusterId, user: user.identityId },
         async (driver) => {
           await driver.chmod(input.path,"0750");
         },

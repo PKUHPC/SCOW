@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { FileOutlined, FolderOutlined } from "@ant-design/icons";
@@ -24,17 +12,6 @@ import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";
 
 type ColumnKey = ("type" | "name" | "mtime" | "size" | "mode" | "action");
-
-const nodeModeToString = (mode: number) => {
-  const numberPermission = (mode & parseInt("777", 8)).toString(8);
-
-  const toStr = (char: string) => {
-    const num = +char;
-    return ((num & 4) !== 0 ? "r" : "-") + ((num & 2) !== 0 ? "w" : "-") + ((num & 1) !== 0 ? "x" : "-");
-  };
-
-  return [0, 1, 2].reduce((prev, curr) => prev + toStr(numberPermission[curr]), "");
-};
 
 interface Props extends TableProps<TableFileInfo> {
   files: TableFileInfo[];
@@ -110,12 +87,6 @@ export const FileTable: React.FC<Props> = (
             : compareNumber(a.size, b.size)
           : a.type.localeCompare(b.type);
       },
-    },
-    {
-      key: "mode",
-      dataIndex: "mode",
-      title: t(p("mode")),
-      render: (mode: number | undefined) => mode === undefined ? "" : nodeModeToString(mode),
     },
     ...(actionRender ? [{
       key: "action",

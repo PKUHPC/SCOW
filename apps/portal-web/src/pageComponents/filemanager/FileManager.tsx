@@ -585,9 +585,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           }}
           breadcrumbItemRender={(pathSegment, index, path) =>
             (index === 0 ? (
-              <Link href={fullUrl("/")} title="/" onClick={(e) => e.stopPropagation()}>
-                <DatabaseOutlined />
-              </Link>
+              <DatabaseOutlined />
             ) : (
               <Link
                 href={fullUrl(path)}

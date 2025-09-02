@@ -854,7 +854,7 @@ export const copyPublicModelVersion = procedure
       );
       // 递归修改文件权限和拥有者
       await withFileDriver(
-        { clusterId:modelVersion.model.$.clusterId, user:"root" },
+        { clusterId:modelVersion.model.$.clusterId, user: user.identityId },
         async (driver) => {
           await driver.chmod(input.path,"0750");
         },
