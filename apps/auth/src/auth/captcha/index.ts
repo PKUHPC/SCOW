@@ -45,6 +45,9 @@ export async function createCaptcha(f: FastifyInstance, token?: string): Promise
 
   const options = {
     size: 4,
+    // 默认高度为 50，但是由于生成svg有内联的rect样式，导致视觉上高度与填写框不一致
+    // 所以此处更改高度为 65
+    height: 65,
     ignorechars: "0oIi1l",
     noise: 3,
     color: true,
@@ -71,7 +74,7 @@ export async function validateCaptcha(
     return true;
   }
 
-  await serveLoginHtml({ err: true }, callbackUrl, req, res, true);
+  await serveLoginHtml({ err: false }, callbackUrl, req, res, true);
   return false;
 }
 

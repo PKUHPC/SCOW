@@ -113,13 +113,13 @@ allowedCallbackHostnames：
 
 ## 验证码功能
 
-在`auth.yaml`配置中，可以配置关于登录验证码的功能
+在`auth.yaml`配置中，可以配置关于登录验证码的功能，默认为启用
   
 ```yaml title="config/auth.yml"
-# 默认不启用登录验证码功能
+# 默认启用登录验证码功能
 # captcha:
-  # enabled为true开启登录验证码功能
-  # enabled: false
+  # enabled为false则关闭登录验证码功能
+  # enabled: true
 ```
 
 启用登录验证码时UI界面：

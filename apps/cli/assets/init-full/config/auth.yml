@@ -107,8 +107,8 @@ authType: ssh
 
 # 验证码配置
 # captcha:
-  # 是否开启验证码。默认为false
-  # enabled: false
+  # 是否开启验证码。默认为true
+  # enabled: true
 
 # 登录允许回调主机名
 # allowedCallbackHostnames:

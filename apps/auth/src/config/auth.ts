@@ -244,8 +244,8 @@ export const AuthConfigSchema = Type.Object({
     { description: "模仿用户，如果登录的用户的ID为某个key，则改为以对应的value的用户登录。修改此配置无需重启认证系统" },
   )),
   captcha: Type.Object({
-    enabled: Type.Boolean({ description: "验证码功能是否启用", default: false }),
-  }, { default: {} }),
+    enabled: Type.Boolean({ description: "验证码功能是否启用，默认为启用", default: true }),
+  }, { default: { enabled: true } }),
   otp: Type.Optional(OtpConfigSchema),
   ui: Type.Optional(UiConfigSchema),
 });
