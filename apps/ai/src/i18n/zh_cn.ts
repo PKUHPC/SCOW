@@ -331,6 +331,7 @@ export default {
         memory:"内存",
         node:"节点",
         details:"详情",
+        stateQuestionMarkLiteral: "详情页可查看更多状态信息",
         more: "更多",
       },
       connectToAppLink:{
@@ -487,6 +488,7 @@ export default {
         podStatus: "状态",
         podCreatedTime: "创建时间",
         podEndTime: "结束时间",
+        podReason: "说明",
         image: "镜像",
         action: "操作",
         viewEvents: "事件",

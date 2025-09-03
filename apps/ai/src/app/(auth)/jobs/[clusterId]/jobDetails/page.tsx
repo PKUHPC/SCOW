@@ -53,6 +53,8 @@ interface PodListDataType {
   namespace: string;
   podCreatedTime?: string;
   podEndTime?: string;
+  // pod状态的原因说明，当前可返回 pending 和 failed 的原因
+  podReason?: string;
 }
 
 export default function Page({ params }: { params: { clusterId: string } }) {
@@ -537,6 +539,11 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       title: t(p("podEndTime")),
       dataIndex: "podEndTime",
       render: (_, record) => record.podEndTime ? formatDateTime(record.podEndTime) : "",
+    },
+    {
+      title: t(p("podReason")),
+      dataIndex: "podReason",
+      render: (_, record) => record.podReason ?? "",
     },
     {
       title: t(p("action")),

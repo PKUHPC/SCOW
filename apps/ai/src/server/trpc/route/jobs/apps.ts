@@ -690,6 +690,7 @@ const podInfoSchema = z.object({
   events: z.array(EventSchema),
   podCreatedTime: z.string().optional(),
   podEndTime: z.string().optional(),
+  podReason: z.string().optional(),
 });
 
 const ExtraDisplayInputsSchema = z.object({

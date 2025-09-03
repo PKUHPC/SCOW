@@ -331,6 +331,7 @@ export default {
         memory:"memory",
         node:"node",
         details:"Details",
+        stateQuestionMarkLiteral: "The details page provides more status information.",
         more: "More",
       },
       connectToAppLink:{
@@ -487,6 +488,7 @@ export default {
         podStatus: "Status",
         podCreatedTime: "Created time",
         podEndTime: "End time",
+        podReason: "Reason",
         image: "Image",
         action: "Action",
         viewEvents: "Events",

@@ -1,7 +1,7 @@
 "use client";
 
-import { ExclamationCircleOutlined } from "@ant-design/icons";
-import { App, Button, Form, Input, Popconfirm, Popover,Space, Table, TableColumnsType, Tooltip } from "antd";
+import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { App, Button, Form, Input, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancelIcon, DetailIcon, EndIcon, EnterDirectoryIcon, MoreIcon, NoHoverEndIcon,
-  NoHoverSaveImageIcon, NoHoverSubmitAgainIcon, SaveImageIcon, SubmitAgainIcon } from "src/icons/operationIcon";
+  NoHoverSaveImageIcon, NoHoverSubmitAgainIcon, SubmitAgainIcon } from "src/icons/operationIcon";
 import { JobType, statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
@@ -152,7 +152,14 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       sorter: (a, b) => compareDateTime(a.submitTime, b.submitTime),
     },
     {
-      title: t(p("state")),
+      title: (
+        <Space>
+          {t(p("state"))}
+          <Popover content={t(p("stateQuestionMarkLiteral"))}>
+            <QuestionCircleOutlined />
+          </Popover>
+        </Space>
+      ),
       dataIndex: "state",
       width: "120px",
       render: (_, record) => (
