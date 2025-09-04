@@ -67,8 +67,6 @@ interface JumpToAnotherLinkProps {
 
 export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon, text, hideText, crossSystem }) => {
 
-  console.log("来到JumpToAnotherLink", href, icon, text, hideText, crossSystem);
-
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   const linkRef = useRef<HTMLAnchorElement>(null);

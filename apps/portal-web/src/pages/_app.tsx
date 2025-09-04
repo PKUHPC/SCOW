@@ -128,6 +128,12 @@ const FailEventHandler: React.FC = () => {
         return;
       }
 
+      // 网络问题或标签休眠期间的定时任务会报错到此处处理
+      // 忽略通知接口的错误
+      if (e.request?.url?.includes("/api/notification/getUnreadMessages") && e.status === -1) {
+        return;
+      }
+
       message.error(tArgs("common.finalError"));
     });
   }, []);

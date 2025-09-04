@@ -59,7 +59,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
     const fetchNotifications = async () => {
       const results = await api.getUnreadMessage({
         query: { messageType: AdminMessageType.SystemNotification },
-      }).httpError(500, () => {}).then((res) => res).catch(() => undefined);
+      }).httpError(500, () => {}).then((res) => res).catch(() => {});
 
       if (results) {
         for (const msg of results.results.messages) {
