@@ -31,6 +31,18 @@ export const KillDesktopSchema = typeboxRouteSchema({
     displayId: Type.Number(),
     cluster: Type.String(),
     loginNode: Type.String(),
+    desktopInfo: Type.Optional(Type.Object({ desktop: Type.Union([
+      Type.Object({
+        $case: Type.Literal("vnc"),
+        vnc: Type.Object({
+          displayId: Type.Number() }),
+      }),
+      Type.Object({
+        $case: Type.Literal("shadowdesk"),
+        shadowdesk: Type.Object({
+          desktopName: Type.String() }),
+      }),
+    ]) })),
   }),
 
   responses: {
@@ -45,7 +57,7 @@ const auth = authenticate(() => true);
 
 export default /* #__PURE__*/route(KillDesktopSchema, async (req, res) => {
 
-  const { cluster, loginNode, displayId } = req.body;
+  const { cluster, loginNode, displayId, desktopInfo } = req.body;
 
   const clusterConfigs = await getClusterConfigFiles();
   const loginDesktopEnabled = getLoginDesktopEnabled(cluster, clusterConfigs);
@@ -72,7 +84,7 @@ export default /* #__PURE__*/route(KillDesktopSchema, async (req, res) => {
   };
 
   return await asyncUnaryCall(client, "killDesktop", {
-    cluster, loginNode, displayId, userId: info.identityId,
+    cluster, loginNode, displayId, userId: info.identityId, desktopInfo,
   }).then(async () => {
     await callLog(logInfo, OperationResult.SUCCESS);
     return { 204: null };
@@ -80,5 +92,4 @@ export default /* #__PURE__*/route(KillDesktopSchema, async (req, res) => {
     await callLog(logInfo, OperationResult.FAIL);
     throw e;
   });
-
 });

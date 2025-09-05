@@ -92,8 +92,15 @@ export const LoginDeskopConfigSchema = Type.Object({
   enabled: Type.Boolean({ description: "是否启动登录节点上的桌面功能" }),
   wms: Type.Array(
     Type.Object({ name: Type.String({ description: "名称" }), wm: Type.String({ description: "wm值" }) })),
-  maxDesktops: Type.Integer({ description: "每个登录节点上最多创建多少个桌面" }),
+  maxDesktops: Type.Integer({ description: "每个登录节点上最多创建多少个vnc桌面" }),
   desktopsDir: Type.String({ description: "将创建的登录节点桌面信息的保存到什么位置。相对于用户的家目录" }),
+  shadowDesk: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否配置有ShadowDesk远程控制工具", default: false }),
+    proxyServer: Type.String({ description: "代理服务器的地址和端口，例如 '10.129.227.58:8765'" }),
+    wms: Type.Array(Type.String({ description: "shadowdesk支持的桌面类型", default: ["xfce"]})),
+    appId: Type.String({ description: "api对接请求头参数" }),
+    appSecret: Type.String({ description: "api入参加签的秘钥" }),
+  })),
 });
 
 export const StorageConfigSchema = Type.Object({

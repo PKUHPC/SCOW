@@ -12,6 +12,7 @@
 
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { executeAsUser, getUserHomedir, sshRmrf } from "@scow/lib-ssh";
+import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { dirname, join } from "path";
 import {
   addDesktopToFile,
@@ -163,6 +164,7 @@ it("should return an array of desktops from host", async () => {
         displayId: testDesktopInfo.displayId,
         desktopName: testDesktopInfo.desktopName,
         wm: testDesktopInfo.wm,
+        remoteControlTool: RemoteControlTool.VNC,
         createTime: undefined }],
     },
   );

@@ -11,6 +11,7 @@
  */
 
 import { PlusOutlined } from "@ant-design/icons";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { Button, Form, Select, Table } from "antd";
 import { ColumnsType } from "antd/es/table";
@@ -29,9 +30,12 @@ import { DesktopTableActions } from "src/pageComponents/desktop/DesktopTableActi
 import { NewDesktopTableModal } from "src/pageComponents/desktop/NewDesktopTableModal";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
-import { Cluster } from "src/utils/cluster";
+import { publicConfig } from "src/utils/config";
 
 const NewDesktopTableModalButton = ModalButton(NewDesktopTableModal, { type: "primary", icon: <PlusOutlined /> });
+
+interface Cluster { id: string; name: I18nStringType; shadowdeskEnabled?: boolean;
+  hasShadowdeskConfig?: boolean; shadowdeskAvailableWms?: string[]; };
 
 interface Props {
   loginDesktopEnabledClusters: Cluster[]
@@ -43,7 +47,13 @@ export interface DesktopItem {
   wm: string,
   createTime?: string,
   addr: string,
+  remoteControlTool?: RemoteControlTool,
 };
+
+enum RemoteControlTool {
+  VNC = 0,
+  SHADOWDESK = 1,
+}
 
 const p = prefix("pageComp.desktop.desktopTable.");
 
@@ -72,6 +82,12 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
     : loginDesktopEnabledClusters[0];
   const cluster = currentClusters.find((x) => x.id === clusterQuery) ?? enabledDefaultCluster;
   const loginNode = loginNodes[cluster.id].find((x) => x.address === loginQuery) ?? undefined;
+  // 是否在集群配置登录节点中配置了shadowdesk
+  const hasShadowdeskConfig = loginDesktopEnabledClusters.find((x) => x.id === cluster.id)?.hasShadowdeskConfig;
+  const shadowdeskEnabled = loginDesktopEnabledClusters.find((x) => x.id === cluster.id)?.shadowdeskEnabled;
+  const hasShadowDesk = (hasShadowdeskConfig ? shadowdeskEnabled : publicConfig.SHADOW_DESK_ENABLED) || false;
+  const shadowdeskAvailableWms = (hasShadowdeskConfig ? loginDesktopEnabledClusters.find(
+    (x) => x.id === cluster.id)?.shadowdeskAvailableWms : publicConfig.SHADOW_DESK_WMS) || [];
 
   const { data, isLoading, reload } = useAsync({
     promiseFn: useCallback(async () => {
@@ -82,13 +98,16 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
       });
       return userDesktops.map(
         (userDesktop) => userDesktop.desktops.map(
-          (x) => ({
-            desktopId: x.displayId,
-            desktopName: x.desktopName,
-            createTime: x.createTime,
-            addr: userDesktop.host,
-            wm: x.wm,
-          }) satisfies DesktopItem,
+          (x) => {
+            const dataSource = x.type === "vnc" ? x.vnc : x.shadowdesk;
+            return {
+              desktopId: dataSource?.displayId || 0,
+              desktopName: dataSource?.desktopName || "",
+              createTime: dataSource?.createTime,
+              addr: userDesktop.host,
+              wm: dataSource?.wm || "",
+              remoteControlTool: x.type === "shadowdesk" ? RemoteControlTool.SHADOWDESK : RemoteControlTool.VNC,
+            } satisfies DesktopItem; },
         ),
       ).flat();
     }, [cluster, loginNode?.address]),
@@ -116,11 +135,22 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
       },
       sorter:(a, b) => a.wm.localeCompare(b.wm),
     },
+    ...(
+      hasShadowDesk ? [{
+        title: "远程控制工具",
+        dataIndex: "remoteControlTool",
+        key: "remoteControlTool",
+        width: "18%",
+        render: (remoteControlTool) => {
+          return remoteControlTool === 0 ? "vnc" : "shadowdesk";
+        },
+      }] : []
+    ),
     {
       title: t(p("tableItem.addr")),
       dataIndex: "addr",
       key: "addr",
-      width: "20%",
+      width: hasShadowDesk ? "16%" : "20%",
       render: (addr: string) => {
         return loginNodes[cluster.id].find((x) => x.address === addr)?.name || addr;
       },
@@ -130,7 +160,7 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
       title: t(p("tableItem.createTime")),
       dataIndex: "createTime",
       key: "createTime",
-      width: "15%",
+      width: hasShadowDesk ? "12%" : "15%",
       render: (createTime) => {
         return createTime ? dayjs(createTime).format("YYYY-MM-DD[T]HH:mm:ss") : "";
       },
@@ -139,7 +169,7 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
     {
       title: t("button.actionButton"),
       key: "action",
-      width: "15%",
+      width: hasShadowDesk ? "12%" : "15%",
       render: (_, record) => (
         <DesktopTableActions cluster={cluster} reload={reload} record={record} />
       ),
@@ -196,6 +226,8 @@ export const DesktopTable: React.FC<Props> = ({ loginDesktopEnabledClusters }) =
               cluster={cluster}
               loginNodes={loginNodes[cluster.id]}
               availableWms={availableWms?.wms ?? []}
+              shadowdeskAvailableWms={shadowdeskAvailableWms}
+              hasShadowDesk={hasShadowDesk}
             >
               {t(p("filterForm.createNewDesktop"))}
             </NewDesktopTableModalButton>

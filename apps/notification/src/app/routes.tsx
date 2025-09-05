@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { CustomMessageIcon, MessageConfigIcon, MyMessageIcon,
+import { MessageConfigIcon, MyMessageIcon,
   SendMessageIcon, SubscriptionIcon } from "src/assets/icons/menuIcons";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { PlatformRole, UserInfo } from "src/models/user";

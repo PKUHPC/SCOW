@@ -15,12 +15,13 @@ title: 登录节点桌面功能
 
 请确认集群配置满足以下条件：
 
-- **桌面节点**已安装TurboVNC 3.0版本或者以上（[官方安装教程](https://turbovnc.org/Downloads/YUM)）
+- **VNC:** 桌面节点已安装`TurboVNC 3.0`版本或者以上（[官方安装教程](https://turbovnc.org/Downloads/YUM)）。
+- **ShadowDesk(可选):** 桌面节点需要安装最新`ShadowDesk`和`ShadowDesk agent`的软件安装包。
 
 ## 支持的桌面
-
 在`config/portal.yml`文件的`loginDesktop.wms`部分可以配置支持的桌面, 也可以在`config/clusters`下的集群配置文件内分集群配置支持的桌面，`config/clusters`配置文件下的配置优先级高于`config/portal.yml`文件。
 
+### VNC
 ```yaml title="config/portal.yaml 或 config/clusters/[集群ID]/config.yml"
 loginDesktop:
   wms: 
@@ -44,3 +45,22 @@ loginDesktop:
 | GNOME 3  | ` `（空字符串）         | `yum groupinstall "GNOME Desktop"`         | **不可用** |
 
 根据TurboVNC的文档，如果需要启动其他桌面，您可以将wm值设置为任意`/usr/share/xsessions`下的文件名（不包括`.desktop`后缀）来启动对应的桌面。
+
+### ShadowDesk
+```yaml title="config/portal.yaml 或 config/clusters/[集群ID]/config.yml"
+loginDesktop:
+  shadowDesk:
+    # 是否配置有shadowDesk远程控制工具
+    enabled: false
+    # 代理服务器的地址和端口
+    proxyServer: ""
+    # shadowDesk 桌面。
+    wms: ["xfce"]
+    # api对接请求头参数(根据实际部署更改)
+    appId: ""
+    # api入参加签的秘钥(根据实际部署更改)
+    appSecret: ""
+```
+要配置ShadowDesk控制工具需要在登录节点上部署之后才能配置启用。
+
+`ShadowDesk`支持`gnome/kde/xfce/lxde/lxqt/mate/cinnamon`桌面。在桌面节点安装了对应的桌面后即可配置wms，指定支持启动的桌面。

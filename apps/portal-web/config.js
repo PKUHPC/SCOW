@@ -207,6 +207,10 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
 
+    SHADOW_DESK_ENABLED: portalConfig.loginDesktop?.shadowDesk?.enabled,
+
+    SHADOW_DESK_WMS: portalConfig.loginDesktop?.shadowDesk?.wms,
+
     DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
   };
 

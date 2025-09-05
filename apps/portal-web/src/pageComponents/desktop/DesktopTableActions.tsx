@@ -19,6 +19,11 @@ import type { DesktopItem } from "src/pageComponents/desktop/DesktopTable";
 import { Cluster } from "src/utils/cluster";
 import { openDesktop } from "src/utils/vnc";
 
+enum RemoteControlTool {
+  VNC = 0,
+  SHADOWDESK = 1,
+}
+
 interface Props {
   reload: () => void;
   cluster: Cluster;
@@ -38,32 +43,58 @@ export const DesktopTableActions: React.FC<Props> = ({ cluster, reload, record }
     <div>
       <Space size={8}>
         <Tooltip title={t("button.startButton")}>
-          <StartIcon
-            onClick={async () => {
+          <StartIcon onClick={async () => {
             // launch desktop
-              const resp = await api.launchDesktop({
-                body: {
-                  cluster: cluster.id,
-                  loginNode: record.addr,
-                  displayId: record.desktopId,
-                },
-              });
+            const extraProps = record.remoteControlTool === RemoteControlTool.SHADOWDESK ? {
+              $case: "shadowdesk" as const,
+              shadowdesk: {
+                desktopName: record.desktopName,
+              },
+            } : {
+              $case: "vnc" as const,
+              vnc: {
+                displayId: record.desktopId,
+              },
+            };
+            const resp = await api.launchDesktop({
+              body: {
+                cluster: cluster.id,
+                loginNode: record.addr,
+                displayId: record.desktopId,
+                desktopInfo: { desktop: extraProps },
+              },
+            });
 
-              openDesktop(cluster.id, resp.host, resp.port, resp.password);
-            }}
+            if (resp.vnc) {
+              openDesktop(cluster.id, resp.vnc.host, resp.vnc.port, resp.vnc.password);
+            } else {
+              window.open(resp.shadowdesk?.shadowdeskUrl);
+            }
+          }}
           />
         </Tooltip>
         <Popconfirm
           title={t(p("popConfirmTitle"))}
           open={isPopconfirmVisible}
           onConfirm={async () => {
-
+            const extraProps = record.remoteControlTool === RemoteControlTool.SHADOWDESK ? {
+              $case: "shadowdesk" as const,
+              shadowdesk: {
+                desktopName: record.desktopName,
+              },
+            } : {
+              $case: "vnc" as const,
+              vnc: {
+                displayId: record.desktopId,
+              },
+            };
             // kill desktop
             await api.killDesktop({
               body: {
                 cluster: cluster.id,
                 loginNode: record.addr,
                 displayId: record.desktopId,
+                desktopInfo: { desktop: extraProps },
               },
             });
             setIsPopconfirmVisible(false);

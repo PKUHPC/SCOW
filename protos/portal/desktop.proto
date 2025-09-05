@@ -16,12 +16,19 @@ package scow.portal;
 
 import "google/protobuf/timestamp.proto";
 
+// 定义远程控制工具的枚举类型
+enum RemoteControlTool {
+  VNC = 0;        // 使用 VNC 工具
+  SHADOWDESK = 1; // 使用 ShadowDesk 工具
+}
+
 message CreateDesktopRequest {
   string user_id = 1;
   string cluster = 2;
   string login_node = 3;
   string wm = 4;
   string desktop_name = 5;
+  optional RemoteControlTool remote_control_tool = 6;
 }
 
 // NOT_FOUND: cluster is not found
@@ -31,13 +38,33 @@ message CreateDesktopResponse {
   string host = 1;
   uint32 port = 2;
   string password = 3;
+  optional string shadowdesk_url = 4;
+}
+
+message VncDesktopInstance {
+  uint32 display_id = 1;
+}
+
+// Shadowdesk
+message ShadowdeskDesktopInstance {
+  string desktop_name = 1;
+}
+
+message DesktopInstance {
+  oneof desktop {
+    VncDesktopInstance vnc = 1;
+    ShadowdeskDesktopInstance shadowdesk = 2;
+  }
 }
 
 message KillDesktopRequest {
   string user_id = 1;
   string cluster = 2;
   string login_node = 3;
+  // if desktop_info is not set, this is used as the display_id for vnc desktops
   uint32 display_id = 4;
+  // if set, display_id is ignored
+  optional DesktopInstance desktop_info = 5;
 }
 
 // NOT_FOUND: cluster is not found
@@ -47,7 +74,10 @@ message ConnectToDesktopRequest {
   string user_id = 1;
   string cluster = 2;
   string login_node = 3;
+  // if desktop_info is not set, this is used as the display_id for vnc desktops
   uint32 display_id = 4;
+  // if set, display_id is ignored
+  optional DesktopInstance desktop_info = 5;
 }
 
 // NOT_FOUND: cluster is not found
@@ -55,6 +85,7 @@ message ConnectToDesktopResponse {
   string host = 1;
   uint32 port = 2;
   string password = 3;
+  optional string shadowdesk_url = 4;
 }
 
 message ListUserDesktopsRequest {
@@ -69,6 +100,7 @@ message Desktop {
   string desktop_name = 2;
   string wm = 3;
   google.protobuf.Timestamp create_time = 4;
+  optional RemoteControlTool remote_control_tool = 5;
 }
 
 message UserDesktops {

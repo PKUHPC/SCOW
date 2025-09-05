@@ -2,7 +2,7 @@ import { Static, Type } from "@sinclair/typebox";
 import { MetadataMap } from "src/pages/api/finance/charges";
 
 import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, DisplayedUserState, PlatformRole,
-  TenantRole, UserRole, UserState,UserStateInAccount, UserStatus } from "./User";
+  TenantRole, UserRole, UserState, UserStateInAccount, UserStatus } from "./User";
 
 // 这个Model重新用typebox定义了
 // 定义Schema时无法复用的@scow/protos/build/server中的interface

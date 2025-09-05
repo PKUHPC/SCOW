@@ -16,8 +16,10 @@ import { getClusterConfigs, LoginDeskopConfigSchema } from "@scow/config/build/c
 import { getPortalConfig } from "@scow/config/build/portal";
 import { executeAsUser, getUserHomedir, sftpExists, sftpReadFile, sftpWriteFile } from "@scow/lib-ssh";
 import { Desktop } from "@scow/protos/build/portal/desktop";
+import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { NodeSSH } from "node-ssh";
 import { join } from "path";
+import { getShadowDeskList } from "src/utils/shadowDesk";
 import { sshConnect } from "src/utils/ssh";
 import { getTurboVNCBinPath, parseListOutput } from "src/utils/turbovnc";
 import { Logger } from "ts-log";
@@ -116,6 +118,40 @@ export async function listUserDesktopsFromHost(host: string, cluster: string, us
 
     const desktops = await readDesktopsFile(ssh, desktopFilePath);
 
+    let shadowdeskRunningDesktops: Desktop[] = [];
+    if (getDesktopConfig(cluster).shadowDesk?.enabled) {
+      let shadowdeskDesktops;
+      const response = await getShadowDeskList(cluster);
+
+      if (response.ok) {
+        const resp = await response.json();
+        shadowdeskDesktops = resp?.data?.desktops;
+      } else {
+        return response.json().then((errorData) => {
+          throw new Error(`HTTP error! status: ${response.status}, data: ${JSON.stringify(errorData)}`);
+        });
+      }
+
+      shadowdeskRunningDesktops = (shadowdeskDesktops?.filter(
+        (desktop) => desktop.username === userId && desktop.node === host) ?? [])
+        .map((desktop) => {
+          let desktopType = "";
+          try {
+            const desktopSettings = JSON.parse(desktop.desktop_settings);
+            desktopType = desktopSettings.desktop_type;
+          } catch (error) {
+            logger.error("Error parsing JSON:", error);
+          }
+          return {
+            displayId: desktop.id,
+            desktopName: desktop?.desktop_name || "",
+            wm: desktopType || "",
+            createTime: desktop?.created_at,
+            remoteControlTool: RemoteControlTool.SHADOWDESK,
+          };
+        });
+    }
+
     const runningDesktops: Desktop[] = ids.map((id) => {
       const desktop = desktops.filter((x) => x.host === host).find((x) => x.displayId === id);
       return {
@@ -123,11 +159,12 @@ export async function listUserDesktopsFromHost(host: string, cluster: string, us
         desktopName: desktop ? desktop.desktopName : "",
         wm: desktop ? desktop.wm : "",
         createTime: desktop ? desktop.createTime : undefined,
+        remoteControlTool: RemoteControlTool.VNC,
       };
     });
     return {
       host,
-      desktops: runningDesktops,
+      desktops: [...runningDesktops, ...shadowdeskRunningDesktops],
     };
   });
 }

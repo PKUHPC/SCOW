@@ -78,6 +78,18 @@ message ClusterConfigSchemaProto {
       // wm值
       string wm = 2;
     }
+    message ShadowDesk {
+      // 是否配置有ShadowDesk远程控制工具
+      bool enabled = 1;
+      // shadowdesk 支持的桌面类型
+      repeated string wms = 2;
+      // api对接请求头参数
+      string app_id = 3;
+      // api入参加签的秘钥
+      string app_secret = 4;
+      // 代理服务器的地址和端口
+      string proxy_server = 5;
+    }
     // 是否启动登录节点上的桌面功能
     bool enabled = 1;
     repeated Wm wms = 2;
@@ -85,6 +97,8 @@ message ClusterConfigSchemaProto {
     int32 max_desktops = 3;
     // 将创建的登录节点桌面信息的保存到什么位置。相对于用户的家目录
     string desktops_dir = 4;
+    // shadowDesk远程控制工具
+    optional ShadowDesk shadow_desk = 5;
   }
   message CrossClusterFileTransfer {
     // 是否开启跨集群传输功能

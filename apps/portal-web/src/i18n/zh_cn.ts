@@ -439,14 +439,17 @@ export default {
       },
       newDesktopModal: {
         error: {
-          tooManyTitle: "新建桌面失败",
-          tooManyContent: "该集群桌面数目达到最大限制",
+          creatDesktopError: "新建桌面失败",
+          tooManyShadowDeskContent: "该集群 shadowDesk 桌面数目达到最大限制",
+          tooManyVncContent: "该集群桌面数目达到最大限制",
+          desktopNameAlreadyExists: "桌面名称已存在",
         },
         modal: {
           createNewDesktop: "新建桌面",
           loginNode: "登录节点",
           wm: "桌面类型",
           desktopName: "桌面名称",
+          remoteControlTool: "远程控制工具",
         },
       },
     },

@@ -39,17 +39,34 @@ loginDesktop:
   # 是否启用桌面功能
   enabled: true
 
-  # 桌面
+  # vnc 桌面
   wms: 
     # 桌面名和对应的wm值。见文档
     - name: Xfce
       wm: xfce
 
-  # 单个登录节点最多启动多少个桌面节点
+  # 单个登录节点最多启动多少个桌面。
   maxDesktops: 3
 
-  # 将创建的登录节点桌面信息的保存到什么位置。相对于用户的家目录
+  # 将创建的 vnc 登录节点桌面信息保存到什么位置。相对于用户的家目录
   desktopsDir: scow/desktops
+
+  # 配置ShadowDesk远程控制工具，如果开启，有所参数必填。
+  # shadowDesk:
+    # 是否配置有ShadowDesk远程控制工具
+    # enabled: false
+
+    # 代理服务器的地址和端口(根据实际部署更改)
+    # proxyServer: ""
+
+    # shadowDesk 桌面。
+    # wms: ["xfce"]
+
+    # api对接请求头参数(根据实际部署更改)
+    # appId: ""
+
+    # api入参加签的秘钥(根据实际部署更改)
+    # appSecret: ""
 
 # 是否启用交互式任务功能
 apps: true

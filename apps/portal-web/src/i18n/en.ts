@@ -441,14 +441,17 @@ export default {
       },
       newDesktopModal: {
         error: {
-          tooManyTitle: "Failed to Create Desktop",
-          tooManyContent: "The number of desktops in this cluster has reached its maximum limit.",
+          creatDesktopError: "Failed to Create Desktop",
+          tooManyShadowDeskContent: "The number of shadowDesk desktops in this cluster has reached its maximum limit.",
+          tooManyVncContent: "The number of desktops in this cluster has reached its maximum limit.",
+          desktopNameAlreadyExists: "Desktop name already exists",
         },
         modal: {
           createNewDesktop: "Create New Desktop",
           loginNode: "Login Node",
           wm: "Desktop Type",
           desktopName: "Desktop Name",
+          remoteControlTool: "Remote Control Tool",
         },
       },
     },

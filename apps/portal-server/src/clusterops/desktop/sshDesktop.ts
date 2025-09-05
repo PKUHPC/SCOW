@@ -10,13 +10,11 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { ServiceError, status } from "@grpc/grpc-js";
 import { executeAsUser } from "@scow/lib-ssh";
 import { DesktopOps } from "src/clusterops/api/desktop";
-import { addDesktopToFile, getDesktopConfig, 
-  listUserDesktopsFromHost, removeDesktopFromFile } from "src/utils/desktops";
+import { addDesktopToFile, listUserDesktopsFromHost, removeDesktopFromFile } from "src/utils/desktops";
 import { sshConnect } from "src/utils/ssh";
-import { displayIdToPort, getTurboVNCBinPath, 
+import { displayIdToPort, getTurboVNCBinPath,
   parseDisplayId, parseListOutput, parseOtp, refreshPassword } from "src/utils/turbovnc";
 
 export const sshDesktopServices = (cluster: string): DesktopOps => ({
@@ -24,22 +22,8 @@ export const sshDesktopServices = (cluster: string): DesktopOps => ({
     const { loginNode: host, wm, userId, desktopName } = request;
 
     const vncserverBinPath = getTurboVNCBinPath(cluster, "vncserver");
-    const maxDesktops = getDesktopConfig(cluster).maxDesktops;
-
 
     return await sshConnect(host, "root", logger, async (ssh) => {
-
-      // find if the user has running session
-      let resp = await executeAsUser(ssh, userId, logger, true,
-        vncserverBinPath, ["-list"],
-      );
-
-      const ids = parseListOutput(resp.stdout);
-
-      if (ids.length >= maxDesktops) {
-        throw { code: status.RESOURCE_EXHAUSTED, message: "Too many desktops" } as ServiceError;
-      }
-
       // start a session
 
       // explicitly set securitytypes to avoid requiring setting vnc passwd
@@ -55,7 +39,19 @@ export const sshDesktopServices = (cluster: string): DesktopOps => ({
         params.push(desktopName);
       }
 
-      resp = await executeAsUser(ssh, userId, logger, true, vncserverBinPath, params);
+      const originalListResp = await executeAsUser(ssh, userId, logger, true,
+        vncserverBinPath, ["-list"],
+      );
+
+      const originalListLength = parseListOutput(originalListResp.stdout)?.length;
+
+      const resp = await executeAsUser(ssh, userId, logger, true, vncserverBinPath, params);
+
+      const listResp = await executeAsUser(ssh, userId, logger, true,
+        vncserverBinPath, ["-list"],
+      );
+
+      const listLength = parseListOutput(listResp.stdout)?.length;
 
       // parse the OTP from output. the output was in stderr
       const password = parseOtp(resp.stderr);
@@ -72,7 +68,9 @@ export const sshDesktopServices = (cluster: string): DesktopOps => ({
         createTime: new Date().toISOString(),
       };
 
-      await addDesktopToFile(ssh, cluster, userId, desktopInfo, logger);
+      if (listLength > originalListLength) {
+        await addDesktopToFile(ssh, cluster, userId, desktopInfo, logger);
+      }
 
       return { host, password, port };
 

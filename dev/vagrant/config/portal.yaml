@@ -6,7 +6,7 @@ loginDesktop:
   # 是否启用桌面功能
   enabled: true
 
-  # 桌面
+  # vnc 桌面
   wms:
     - name: KDE
       wm: 1-kde-plasma-standard
@@ -17,9 +17,25 @@ loginDesktop:
     - name: cinnamon
       wm: cinnamon
 
-  # 最多启动多少个桌面节点
+  # 最多启动多少个桌面。
   maxDesktops: 3
 
+  # 配置ShadowDesk远程控制工具，如果开启，有所参数必填。
+  # shadowDesk:
+    # 是否配置有shadowDesk远程控制工具
+    # enabled: false
+
+    # shadowDesk 桌面。
+    # wms: ["xfce"]
+
+    # api对接请求头参数
+    # appId: ""
+
+    # api入参加签的秘钥
+    # appSecret: ""
+
+    # 代理服务器的地址和端口
+    # proxyServer: ""
 # 是否启用交互式任务功能
 apps: true
 

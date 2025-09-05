@@ -2,10 +2,12 @@ import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { Desktop } from "@scow/protos/build/portal/desktop";
+import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { DesktopOps } from "src/clusterops/api/desktop";
 import { getDesktopConfig } from "src/utils/desktops";
 import { scowdClientNotFound } from "src/utils/errors";
 import { certificates, getLoginNodeScowdUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { getShadowDeskList } from "src/utils/shadowDesk";
 import { displayIdToPort, getTurboVNCBinPath } from "src/utils/turbovnc";
 
 export const scowdDesktopServices = (cluster: string): DesktopOps => ({
@@ -141,16 +143,51 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
         };
       });
 
+      let shadowdeskUserDeskTops: Desktop[] = [];
+      if (getDesktopConfig(cluster).shadowDesk?.enabled) {
+        let shadowdeskDesktops;
+        const response = await getShadowDeskList(cluster);
+
+        if (response.ok) {
+          const resp = await response.json();
+          shadowdeskDesktops = resp?.data?.desktops;
+        } else {
+          return response.json().then((errorData) => {
+            throw new Error(`HTTP error! status: ${response.status}, data: ${JSON.stringify(errorData)}`);
+          });
+        }
+
+        shadowdeskUserDeskTops = (shadowdeskDesktops?.filter(
+          (desktop) => desktop.username === userId && desktop.node === host) ?? [])
+          .map((desktop) => {
+            let desktopType = "";
+            try {
+              const desktopSettings = JSON.parse(desktop.desktop_settings);
+              desktopType = desktopSettings.desktop_type;
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
+            }
+            return {
+              displayId: desktop.id,
+              desktopName: desktop?.desktop_name || "",
+              wm: desktopType || "",
+              createTime: desktop?.created_at,
+              remoteControlTool: RemoteControlTool.SHADOWDESK,
+            };
+          });
+      }
+
       return {
         host,
-        desktops: userDeskTops.map((desktop) => {
+        desktops: [...userDeskTops.map((desktop) => {
           return {
             displayId: desktop.displayId,
             desktopName: desktop.desktopName,
             wm: desktop.wm,
             createTime: desktop.createTime,
+            remoteControlTool: RemoteControlTool.VNC,
           };
-        }),
+        }), ...shadowdeskUserDeskTops],
       };
     } catch (err) {
       if (err instanceof ConnectError) {

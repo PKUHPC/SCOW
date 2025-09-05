@@ -10,6 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { Logger } from "ts-log";
 
 export interface CreateDesktopRequest {
@@ -17,18 +18,22 @@ export interface CreateDesktopRequest {
   userId: string;
   wm: string;
   desktopName: string;
+  remoteControlTool?: RemoteControlTool;
 }
 
 export interface CreateDesktopReply {
   host: string;
   port: number;
   password: string;
+  shadowDeskUrl?: string;
 }
 
 export interface KillDesktopRequest {
   loginNode: string;
   userId: string;
   displayId: number;
+  desktopName?: string;
+  desktopType?: string;
 }
 
 export interface KillDesktopReply {}
@@ -55,6 +60,7 @@ export interface Desktop {
   desktopName: string;
   wm: string;
   createTime?: string;
+  type?: RemoteControlTool;
 }
 
 export interface ListUserDesktopsReply {

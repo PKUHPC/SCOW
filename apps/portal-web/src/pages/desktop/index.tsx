@@ -1,4 +1,5 @@
 import { getSortedClusterIds } from "@scow/config/build/cluster";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { GetServerSideProps, NextPage } from "next";
@@ -14,9 +15,13 @@ import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { DesktopTable } from "src/pageComponents/desktop/DesktopTable";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import { Cluster, getLoginDesktopEnabled } from "src/utils/cluster";
+import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { publicConfig, runtimeConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
+
+interface Cluster { id: string; name: I18nStringType;
+  shadowdeskEnabled?: boolean; hasShadowdeskConfig?: boolean; shadowdeskAvailableWms?: string[]; };
+
 type Props = {
   error: AuthResultError;
 } | {
@@ -107,6 +112,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
     .filter((clusterId) => getLoginDesktopEnabled(clusterId, clusterConfigs))
     .map((clusterId) => ({
       id: clusterId,
+      hasShadowdeskConfig: clusterConfigs[clusterId].loginDesktop?.shadowDesk !== undefined,
+      shadowdeskEnabled: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.enabled || false,
+      shadowdeskAvailableWms: clusterConfigs[clusterId].loginDesktop?.shadowDesk?.wms || [],
       name: getI18nConfigCurrentText(clusterConfigs[clusterId].displayName, languageId) } as Cluster));
 
   return {

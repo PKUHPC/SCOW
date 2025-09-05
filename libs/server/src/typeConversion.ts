@@ -91,6 +91,13 @@ export const convertClusterConfigsToServerProtoType = (
           wms: item.loginDesktop.wms.map((wm) => ({ name: wm.name, wm: wm.wm })),
           maxDesktops: item.loginDesktop.maxDesktops,
           desktopsDir: item.loginDesktop.desktopsDir,
+          shadowDesk: item.loginDesktop.shadowDesk ? {
+            enabled: !!item.loginDesktop?.shadowDesk?.enabled,
+            proxyServer: item.loginDesktop.shadowDesk?.proxyServer ?? "",
+            wms: item.loginDesktop.shadowDesk?.wms ?? ["xfce"],
+            appId: item.loginDesktop.shadowDesk?.appId ?? "",
+            appSecret: item.loginDesktop.shadowDesk?.appSecret ?? "",
+          } : undefined,
         } : undefined,
       turboVncPath: item.turboVNCPath ?? undefined,
       crossClusterFileTransfer: item.crossClusterFileTransfer ?

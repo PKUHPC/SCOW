@@ -107,6 +107,10 @@ export interface PublicRuntimeConfig {
 
   ALLOW_APP_AUTHORIZATION?: boolean;
 
+  SHADOW_DESK_ENABLED?: boolean;
+
+  SHADOW_DESK_WMS?: string[]
+
   DASHBOARD_USER_DISPLAY_MODE: "full" | "simplified";
 }
 

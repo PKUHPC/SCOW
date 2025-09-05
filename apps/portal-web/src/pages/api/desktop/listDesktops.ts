@@ -13,6 +13,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
+import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
@@ -33,10 +34,20 @@ export const ListDesktopsSchema = typeboxRouteSchema({
       userDesktops: Type.Array(Type.Object({
         host: Type.String(),
         desktops: Type.Array(Type.Object({
-          displayId: Type.Number(),
-          desktopName: Type.String(),
-          wm: Type.String(),
-          createTime: Type.Optional(Type.String()),
+          type: Type.Union([Type.Literal("vnc"), Type.Literal("shadowdesk")]),
+          vnc: Type.Optional(Type.Object({
+            displayId: Type.Number(),
+            desktopName: Type.String(),
+            wm: Type.String(),
+            createTime: Type.Optional(Type.String()),
+          })),
+          shadowdesk: Type.Optional(
+            Type.Object({
+              displayId: Type.Number(),
+              desktopName: Type.String(),
+              wm: Type.String(),
+              createTime: Type.Optional(Type.String()),
+            })),
         })),
       })),
     }),
@@ -67,10 +78,36 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
 
   return await asyncUnaryCall(client, "listUserDesktops", {
     cluster, loginNode, userId: info.identityId,
-  }).then(async ({ userDesktops }) => ({
-    200: {
-      userDesktops,
-    },
-  }));
+  }).then(async ({ userDesktops }) => {
+    return {
+      200: {
+        userDesktops: [{
+          host: userDesktops[0].host,
+          desktops: userDesktops[0].desktops?.map((desktop) => {
+            if (desktop.remoteControlTool === RemoteControlTool.SHADOWDESK) {
+              return {
+                type: "shadowdesk" as const,
+                shadowdesk: {
+                  displayId: desktop.displayId,
+                  desktopName: desktop.desktopName,
+                  wm: desktop.wm,
+                  createTime: desktop.createTime,
+                },
+              };
+            } else {
+              return {
+                type: "vnc" as const,
+                vnc: {
+                  displayId: desktop.displayId,
+                  desktopName: desktop.desktopName,
+                  wm: desktop.wm,
+                  createTime: desktop.createTime,
+                },
+              };
+            }
+          }),
+        }],
+      } };
+  });
 
 });

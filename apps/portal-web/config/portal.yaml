@@ -20,8 +20,24 @@ loginDesktop:
     - name: cinnamon
       wm: cinnamon
 
-  # 最多启动多少个桌面节点
+  # 最多启动多少个vnc桌面
   maxDesktops: 3
+
+  # shadowDesk:
+    # 是否配置有ShadowDesk远程控制工具
+    # enabled: false
+
+    # shadowDesk 桌面。
+    # wms: ["xfce"]
+
+    # 代理服务器的地址和端口
+    # proxyServer: 10.129.227.58:8765
+
+    # api对接请求头参数
+    # appId: ""
+
+    # api入参加签的秘钥
+    # appSecret: ""
 
 # 是否启用交互式任务功能
 apps: true

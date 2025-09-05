@@ -253,21 +253,22 @@ export const mockApi: MockApi<typeof api> = {
 
   getAccounts: async () => ({ accounts: ["hpc01", "hpc02"]}),
 
-  launchDesktop: async () => ({ host: "login01", password: "123", port: 1234 }),
+  launchDesktop: async () => ({ type: "vnc", host: "login01", password: "123", port: 1234 }),
 
   listDesktops: async () => ({
     userDesktops: [{
       host: "login01",
       desktops: [
-        { displayId: 1, desktopName: "111", wm: "", createTime: "" },
-        { displayId: 222, desktopName: "222", wm: "", createTime: "" },
-        { displayId: 1, desktopName: "333", wm: "", createTime: "" },
+        { type : "vnc", vnc: { displayId: 1, desktopName: "111", wm: "", createTime: "" } },
+        { type : "vnc", vnc: { displayId: 222, desktopName: "222", wm: "", createTime: "" } },
+        { type : "vnc", vnc: { displayId: 1, desktopName: "333", wm: "", createTime: "" } },
       ],
     }],
   }),
 
   createDesktop: async () => (
     {
+      type: "vnc",
       host: "login01",
       password: "123",
       port: 1234,
