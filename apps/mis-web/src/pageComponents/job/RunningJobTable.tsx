@@ -10,6 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -330,153 +331,155 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           </Space>
         </TableTitle>
       ) : undefined}
-      <Table
-        {...(selection ? {
-          rowSelection: {
-            type: "checkbox",
-            selectedRowKeys: selection.selected.map(runningJobId),
-            onChange: (_selectedRowKeys: React.Key[], selectedRows: RunningJobInfo[]) => {
-              selection.setSelected(selectedRows);
+      <TableWrapper>
+        <Table
+          {...(selection ? {
+            rowSelection: {
+              type: "checkbox",
+              selectedRowKeys: selection.selected.map(runningJobId),
+              onChange: (_selectedRowKeys: React.Key[], selectedRows: RunningJobInfo[]) => {
+                selection.setSelected(selectedRows);
+              },
+              getCheckboxProps: (record: RunningJobInfo) => ({
+                name: record.name,
+              }),
             },
-            getCheckboxProps: (record: RunningJobInfo) => ({
-              name: record.name,
-            }),
-          },
-        } : {})}
-        dataSource={data}
-        loading={isLoading}
-        pagination={{
-          showSizeChanger: true,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-        }}
-        rowKey={runningJobId}
-        scroll={{ x: data?.length ? 2000 : true }}
-        tableLayout="fixed"
-      >
-        {
-          showCluster && (
-            <Table.Column<RunningJobInfo>
-              dataIndex="cluster"
-              width="9.5%"
-              title={t(pCommon("cluster"))}
-              render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
-            />
-          )
-        }
-        <Table.Column<RunningJobInfo>
-          dataIndex="jobId"
-          width="5%"
-          title={t(pCommon("workId"))}
-          sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
-            a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="name"
-          ellipsis
-          title={t(pCommon("workName"))}
-          sorter={(a, b) => a.name.localeCompare(b.name)}
-        />
-        {
-          showUser && (
-            <Table.Column<RunningJobInfo>
-              dataIndex="user"
-              width="8%"
-              ellipsis
-              title={t(pCommon("userId"))}
-              sorter={(a, b) => a.user.localeCompare(b.user)}
-            />
-          )
-        }
-        {
-          showAccount && (
-            <Table.Column<RunningJobInfo>
-              dataIndex="account"
-              width="9.5%"
-              ellipsis
-              title={t(pCommon("account"))}
-              sorter={(a, b) => a.account.localeCompare(b.account)}
-            />
-          )
-        }
-        <Table.Column<RunningJobInfo>
-          dataIndex="partition"
-          width="6.3%"
-          ellipsis
-          title={t(pCommon("partition"))}
-          sorter={(a, b) => a.partition.localeCompare(b.partition)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="qos"
-          width="6.3%"
-          ellipsis
-          title="QOS"
-          sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
-            a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="nodes"
-          width="5%"
-          ellipsis
-          title={t(p("nodes"))}
-          sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
-            a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="cores"
-          width="5%"
-          ellipsis
-          title={t(p("cores"))}
-          sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
-            a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="gpus"
-          width="6%"
-          ellipsis
-          title={t(p("gpus"))}
-          sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
-            a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="state"
-          width="6%"
-          title={t(pCommon("status"))}
-          sorter={(a, b) => a.state.localeCompare(b.state)}
-          render={(text: string): React.ReactNode => {
-            const color = statusColors[text.toUpperCase()];
-            return <span style={{ color }}>{text}</span>;
+          } : {})}
+          dataSource={data}
+          loading={isLoading}
+          pagination={{
+            showSizeChanger: true,
+            defaultPageSize: DEFAULT_PAGE_SIZE,
           }}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="runningOrQueueTime"
-          width="8%"
-          ellipsis
-          title={t(p("time"))}
-          sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="nodesOrReason"
-          ellipsis={true}
-          title={t(p("reason"))}
-          render={(d: string) => d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d}
-          sorter={(a, b) => a.nodesOrReason.localeCompare(b.nodesOrReason)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="timeLimit"
-          width="6.5%"
-          title={t(p("limit"))}
-          sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit)}
-        />
+          rowKey={runningJobId}
+          scroll={{ x: data?.length ? 2000 : true }}
+          tableLayout="fixed"
+        >
+          {
+            showCluster && (
+              <Table.Column<RunningJobInfo>
+                dataIndex="cluster"
+                width="9.5%"
+                title={t(pCommon("cluster"))}
+                render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
+              />
+            )
+          }
+          <Table.Column<RunningJobInfo>
+            dataIndex="jobId"
+            width="5%"
+            title={t(pCommon("workId"))}
+            sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
+              a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="name"
+            ellipsis
+            title={t(pCommon("workName"))}
+            sorter={(a, b) => a.name.localeCompare(b.name)}
+          />
+          {
+            showUser && (
+              <Table.Column<RunningJobInfo>
+                dataIndex="user"
+                width="8%"
+                ellipsis
+                title={t(pCommon("userId"))}
+                sorter={(a, b) => a.user.localeCompare(b.user)}
+              />
+            )
+          }
+          {
+            showAccount && (
+              <Table.Column<RunningJobInfo>
+                dataIndex="account"
+                width="9.5%"
+                ellipsis
+                title={t(pCommon("account"))}
+                sorter={(a, b) => a.account.localeCompare(b.account)}
+              />
+            )
+          }
+          <Table.Column<RunningJobInfo>
+            dataIndex="partition"
+            width="6.3%"
+            ellipsis
+            title={t(pCommon("partition"))}
+            sorter={(a, b) => a.partition.localeCompare(b.partition)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="qos"
+            width="6.3%"
+            ellipsis
+            title="QOS"
+            sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
+              a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="nodes"
+            width="5%"
+            ellipsis
+            title={t(p("nodes"))}
+            sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
+              a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="cores"
+            width="5%"
+            ellipsis
+            title={t(p("cores"))}
+            sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
+              a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="gpus"
+            width="6%"
+            ellipsis
+            title={t(p("gpus"))}
+            sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
+              a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="state"
+            width="6%"
+            title={t(pCommon("status"))}
+            sorter={(a, b) => a.state.localeCompare(b.state)}
+            render={(text: string): React.ReactNode => {
+              const color = statusColors[text.toUpperCase()];
+              return <span style={{ color }}>{text}</span>;
+            }}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="runningOrQueueTime"
+            width="8%"
+            ellipsis
+            title={t(p("time"))}
+            sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="nodesOrReason"
+            ellipsis={true}
+            title={t(p("reason"))}
+            render={(d: string) => d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d}
+            sorter={(a, b) => a.nodesOrReason.localeCompare(b.nodesOrReason)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="timeLimit"
+            width="6.5%"
+            title={t(p("limit"))}
+            sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit)}
+          />
 
-        <Table.Column<RunningJobInfo>
-          title={t(pCommon("operation"))}
-          width={router.pathname === "/user/runningJobs" || router.pathname === "/dashboard" ? "8%" : "12%"}
-          fixed="right"
-          render={(_, r) => {
-            return renderOperation(r);
-          }}
-        />
-      </Table>
+          <Table.Column<RunningJobInfo>
+            title={t(pCommon("operation"))}
+            width={router.pathname === "/user/runningJobs" || router.pathname === "/dashboard" ? "8%" : "12%"}
+            fixed="right"
+            render={(_, r) => {
+              return renderOperation(r);
+            }}
+          />
+        </Table>
+      </TableWrapper>
       <RunningJobDrawer
         open={previewItem !== undefined}
         item={previewItem}

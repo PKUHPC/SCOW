@@ -10,6 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Button, Form, InputNumber, Popconfirm, Space, Table, Tooltip } from "antd";
@@ -137,142 +138,144 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
 
   return (
     <>
-      <Table
-        tableLayout="fixed"
-        dataSource={data}
-        loading={isLoading}
-        pagination={{
-          showSizeChanger: true,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-        }}
-        rowKey={runningJobId}
-        scroll={{ x: data?.length ? 1800 : true }}
-      >
-        <Table.Column<RunningJobInfo>
-          dataIndex="jobId"
-          width="5.2%"
-          title={t(p("jobInfoTable.jobId"))}
-          sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
-            a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="name"
-          ellipsis
-          title={t(p("jobInfoTable.name"))}
-          sorter={(a, b) => a.name.localeCompare(b.name)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="account"
-          width="10%"
-          ellipsis
-          title={t(p("jobInfoTable.account"))}
-          sorter={(a, b) => a.account.localeCompare(b.account)}
-        />
-
-        <Table.Column<RunningJobInfo>
-          dataIndex="partition"
-          width="6.7%"
-          ellipsis
-          title={t(p("jobInfoTable.partition"))}
-          sorter={(a, b) => a.partition.localeCompare(b.partition)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="qos"
-          width="6.7%"
-          ellipsis
-          title={t(p("jobInfoTable.qos"))}
-          sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
-            a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="nodes"
-          width="4.5%"
-          title={t(p("jobInfoTable.nodes"))}
-          sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
-            a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="cores"
-          width="4.5%"
-          title={t(p("jobInfoTable.cores"))}
-          sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
-            a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="gpus"
-          width="7%"
-          ellipsis
-          title={t(p("jobInfoTable.gpus"))}
-          sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
-            a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="state"
-          width="6.1%"
-          title={t(p("jobInfoTable.state"))}
-          sorter={(a, b) => a.state.localeCompare(b.state)}
-          render={(text: string): React.ReactNode => {
-            const color = statusColors[text.toUpperCase()];
-            return <span style={{ color }}>{text}</span>;
+      <TableWrapper>
+        <Table
+          tableLayout="fixed"
+          dataSource={data}
+          loading={isLoading}
+          pagination={{
+            showSizeChanger: true,
+            defaultPageSize: DEFAULT_PAGE_SIZE,
           }}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="runningOrQueueTime"
-          width="9%"
-          ellipsis
-          title={t(p("jobInfoTable.runningOrQueueTime"))}
-          sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime, ":")}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="nodesOrReason"
-          ellipsis
-          title={t(p("jobInfoTable.nodesOrReason"))}
-          render={(d: string) => d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d}
-          sorter={(a, b) => a.nodesOrReason.localeCompare(b.nodesOrReason)}
-        />
-        <Table.Column<RunningJobInfo>
-          dataIndex="timeLimit"
-          width="6.7%"
-          title={t(p("jobInfoTable.timeLimit"))}
-          sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit, ":")}
-        />
-        <Table.Column<RunningJobInfo>
-          title={t(p("jobInfoTable.operation"))}
-          width="8%"
-          fixed="right"
-          render={(_, r) => (
-            <Space size={8} style={{ marginLeft: 5 }}>
-              <Tooltip title={t("button.detailButton")}>
-                <DetailIcon
-                  onClick={() => setPreviewItem(r)}
-                />
-              </Tooltip>
-              <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
-                <EnterDirectoryIcon
-                  onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
-                />
-              </Tooltip>
-              <Popconfirm
-                title={t(p("jobInfoTable.popConfirm"))}
-                onConfirm={async () =>
-                  api.cancelJob({ query: {
-                    cluster: r.cluster.id,
-                    jobId: +r.jobId,
-                  } })
-                    .then(() => {
-                      message.success(t(p("jobInfoTable.successMessage")));
-                      reload();
-                    })
-                }
-              >
-                <Tooltip title={t("button.finishButton")}>
-                  <EndIcon />
+          rowKey={runningJobId}
+          scroll={{ x: data?.length ? 1800 : true }}
+        >
+          <Table.Column<RunningJobInfo>
+            dataIndex="jobId"
+            width="5.2%"
+            title={t(p("jobInfoTable.jobId"))}
+            sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
+              a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="name"
+            ellipsis
+            title={t(p("jobInfoTable.name"))}
+            sorter={(a, b) => a.name.localeCompare(b.name)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="account"
+            width="10%"
+            ellipsis
+            title={t(p("jobInfoTable.account"))}
+            sorter={(a, b) => a.account.localeCompare(b.account)}
+          />
+
+          <Table.Column<RunningJobInfo>
+            dataIndex="partition"
+            width="6.7%"
+            ellipsis
+            title={t(p("jobInfoTable.partition"))}
+            sorter={(a, b) => a.partition.localeCompare(b.partition)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="qos"
+            width="6.7%"
+            ellipsis
+            title={t(p("jobInfoTable.qos"))}
+            sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
+              a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="nodes"
+            width="4.5%"
+            title={t(p("jobInfoTable.nodes"))}
+            sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
+              a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="cores"
+            width="4.5%"
+            title={t(p("jobInfoTable.cores"))}
+            sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
+              a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="gpus"
+            width="7%"
+            ellipsis
+            title={t(p("jobInfoTable.gpus"))}
+            sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
+              a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="state"
+            width="6.1%"
+            title={t(p("jobInfoTable.state"))}
+            sorter={(a, b) => a.state.localeCompare(b.state)}
+            render={(text: string): React.ReactNode => {
+              const color = statusColors[text.toUpperCase()];
+              return <span style={{ color }}>{text}</span>;
+            }}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="runningOrQueueTime"
+            width="9%"
+            ellipsis
+            title={t(p("jobInfoTable.runningOrQueueTime"))}
+            sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime, ":")}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="nodesOrReason"
+            ellipsis
+            title={t(p("jobInfoTable.nodesOrReason"))}
+            render={(d: string) => d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d}
+            sorter={(a, b) => a.nodesOrReason.localeCompare(b.nodesOrReason)}
+          />
+          <Table.Column<RunningJobInfo>
+            dataIndex="timeLimit"
+            width="6.7%"
+            title={t(p("jobInfoTable.timeLimit"))}
+            sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit, ":")}
+          />
+          <Table.Column<RunningJobInfo>
+            title={t(p("jobInfoTable.operation"))}
+            width="8%"
+            fixed="right"
+            render={(_, r) => (
+              <Space size={8} style={{ marginLeft: 5 }}>
+                <Tooltip title={t("button.detailButton")}>
+                  <DetailIcon
+                    onClick={() => setPreviewItem(r)}
+                  />
                 </Tooltip>
-              </Popconfirm>
-            </Space>
-          )}
-        />
-      </Table>
+                <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
+                  <EnterDirectoryIcon
+                    onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
+                  />
+                </Tooltip>
+                <Popconfirm
+                  title={t(p("jobInfoTable.popConfirm"))}
+                  onConfirm={async () =>
+                    api.cancelJob({ query: {
+                      cluster: r.cluster.id,
+                      jobId: +r.jobId,
+                    } })
+                      .then(() => {
+                        message.success(t(p("jobInfoTable.successMessage")));
+                        reload();
+                      })
+                  }
+                >
+                  <Tooltip title={t("button.finishButton")}>
+                    <EndIcon />
+                  </Tooltip>
+                </Popconfirm>
+              </Space>
+            )}
+          />
+        </Table>
+      </TableWrapper>
       <RunningJobDrawer
         open={previewItem !== undefined}
         item={previewItem}

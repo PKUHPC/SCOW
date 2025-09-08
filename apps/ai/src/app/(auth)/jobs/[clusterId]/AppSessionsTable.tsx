@@ -1,6 +1,7 @@
 "use client";
 
 import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { App, Button, Form, Input, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -425,18 +426,20 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
           </Form.Item>
         </Form>
       </FilterFormContainer>
-      <Table
-        tableLayout="fixed"
-        dataSource={filteredData}
-        columns={columns}
-        rowKey={(record) => record.sessionId}
-        loading={isLoading || isFetching}
-        scroll={{ x: "max-content" }}
-        pagination={{
-          showSizeChanger: true,
-          defaultPageSize: 50,
-        }}
-      />
+      <TableWrapper>
+        <Table
+          tableLayout="fixed"
+          dataSource={filteredData}
+          columns={columns}
+          rowKey={(record) => record.sessionId}
+          loading={isLoading || isFetching}
+          scroll={{ x: "max-content" }}
+          pagination={{
+            showSizeChanger: true,
+            defaultPageSize: 50,
+          }}
+        />
+      </TableWrapper>
     </>
   );
 };
