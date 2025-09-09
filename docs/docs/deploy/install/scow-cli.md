@@ -10,9 +10,9 @@ scow-cli是SCOW集群安装、配置和管理工具，您可以使用scow-cli高
 
 请通过以下方法下载scow-cli，并将下载的文件解压，将里面的可执行文件存放到您将会存放SCOW配置文件的目录下。
 
-- [GitHub Release](https://github.com/PKUHPC/SCOW/releases): SCOW每次发布新的版本时，将会将此版本的`scow-cli`上传到Release中
+- [GitHub Release](https://github.com/PKUHPC/private-scow/releases): SCOW每次发布新的版本时，将会将此版本的`scow-cli`上传到Release中
 
-想获取最新的scow-cli版本？您可以从GitHub Actions的[`Test, Build and Publish Projects` workflow](https://github.com/PKUHPC/SCOW/actions/workflows/test-build-publish.yaml)中下载到上传到Archive的`scow-cli`。
+想获取最新的scow-cli版本？您可以从GitHub Actions的[`Test, Build and Publish Projects` workflow](https://github.com/PKUHPC/private-scow/actions/workflows/test-build-publish.yaml)中下载到上传到Archive的`scow-cli`。
 
 - 参考命令
 
@@ -21,9 +21,9 @@ scow-cli是SCOW集群安装、配置和管理工具，您可以使用scow-cli高
 yum install wget
 
 # 下载对应的release版本。修改latest、cli-x64可下载指定版本cli
-# 修改latest为v0.4.0即可下载0.4.0版本的cli，如 https://github.com/PKUHPC/SCOW/releases/download/v0.4.0/cli-x64
-# 可修改cli-x64为cli-arm64下载arm64版本，如 https://github.com/PKUHPC/SCOW/releases/download/v0.4.0/cli-arm64
-wget https://github.com/PKUHPC/SCOW/releases/download/latest/cli-x64
+# 修改latest为v0.4.0即可下载0.4.0版本的cli，如 https://github.com/PKUHPC/private-scow/releases/download/v0.4.0/cli-x64
+# 可修改cli-x64为cli-arm64下载arm64版本，如 https://github.com/PKUHPC/private-scow/releases/download/v0.4.0/cli-arm64
+wget https://github.com/PKUHPC/private-scow/releases/download/latest/cli-x64
 
 # 重命名
 mv cli-x64 cli

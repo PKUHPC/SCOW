@@ -27,10 +27,10 @@ proto文件分为`common`, `portal`, `server`, `audit`和`hook`。其中，
 
 ```bash
 # 使用本地buf.gen.yaml生成模板，使用v0.3.0版本的SCOW API(v0.3.0开始可以通过此方式，推荐)
-buf generate --template buf.gen.yaml https://github.com/PKUHPC/SCOW.git#subdir=protos,branch=api-v0.3.0
+buf generate --template buf.gen.yaml https://github.com/PKUHPC/private-scow.git#subdir=protos,branch=api-v0.3.0
 
 # 使用本地buf.gen.yaml生成模板，使用SCOW仓库的master分支的代码对应的SCOW API
-buf generate --template buf.gen.yaml https://github.com/PKUHPC/SCOW.git#subdir=protos,branch=master
+buf generate --template buf.gen.yaml https://github.com/PKUHPC/private-scow.git#subdir=protos,branch=master
 ```
 
 详细的示例请参考：

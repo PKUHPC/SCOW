@@ -1,8 +1,8 @@
 # <img src="apps/portal-web/assets/icons/192.png" height="30px" /> SCOW - Super Computing On Web
 
-![Docs](https://github.com/PKUHPC/SCOW/actions/workflows/docs.yaml/badge.svg)
-![Build](https://github.com/PKUHPC/SCOW/actions/workflows/test-build-publish.yaml/badge.svg)
-[![codecov](https://codecov.io/gh/PKUHPC/SCOW/branch/master/graph/badge.svg?token=S9JCB2DXML)](https://codecov.io/gh/PKUHPC/SCOW)
+![Docs](https://github.com/PKUHPC/private-scow/actions/workflows/docs.yaml/badge.svg)
+![Build](https://github.com/PKUHPC/private-scow/actions/workflows/test-build-publish.yaml/badge.svg)
+[![codecov](https://codecov.io/gh/PKUHPC/private-scow/branch/master/graph/badge.svg?token=S9JCB2DXML)](https://codecov.io/gh/PKUHPC/private-scow)
 
 [中文README](./README.md)
 

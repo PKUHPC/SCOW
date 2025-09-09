@@ -6,7 +6,7 @@
   "main": "index.js",
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/SCOW",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "scripts": {
     "lint": "buf lint",
     "breaking": "buf breaking --against '../.git#subdir=protos'"

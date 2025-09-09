@@ -7,7 +7,7 @@ title: AI 系统简介（Beta）
 
 AI 系统能让您通过 Web 界面管理您在 AI 训练中的数据集、算法、模型，并通过镜像的方式来进行您的 AI 训练任务。
 
-当前 AI 系统仍处于 Beta 版本，使用时如有任何疑问或建议，欢迎在 [Github Issue](https://github.com/PKUHPC/SCOW/issues) 中反馈。
+当前 AI 系统仍处于 Beta 版本，使用时如有任何疑问或建议，欢迎在 [Github Issue](https://github.com/PKUHPC/private-scow/issues) 中反馈。
 
 ## 功能和特点
 

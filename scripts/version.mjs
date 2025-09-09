@@ -99,7 +99,7 @@ console.log("Generate changelog for version %s", rootPackageJson.version);
 
 const getChangesetLine = (line) =>
   `- ${line.content}` +
-  ` ([${line.gitCommit.substring(0, 8)}](https://github.com/PKUHPC/SCOW/commit/${line.gitCommit}))`;
+  ` ([${line.gitCommit.substring(0, 8)}](https://github.com/PKUHPC/private-scow/commit/${line.gitCommit}))`;
 
 /**
  * Generate changelog content for a package

@@ -22,7 +22,7 @@
   ],
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/SCOW",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",

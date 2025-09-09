@@ -15,7 +15,7 @@
   ],
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/SCOW",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@grpc/grpc-js": "1.12.5",

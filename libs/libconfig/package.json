@@ -16,7 +16,7 @@
   ],
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/SCOW",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@sinclair/typebox": "0.34.13",
     "ajv": "8.16.0",

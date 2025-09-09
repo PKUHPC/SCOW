@@ -20,7 +20,7 @@
   "keywords": [],
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/SCOW",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@fastify/error": "4.0.0",
     "@fastify/formbody": "7.4.0",

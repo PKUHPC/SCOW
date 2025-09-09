@@ -15,8 +15,8 @@ description: 如何在已有超算集群上部署SCOW系统
    - 已经部署slurm的[Accounting](https://slurm.schedmd.com/accounting.html#database-configuration)功能
    - 部署slurm集群可参考[slurm集群部署实践](/docs/hpccluster)
 2. **slurm集群各节点实现了LDAP认证**，提供两个基于CentOS7的脚本用来快速搭建和配置LDAP，修改两个文件开头部分的相关配置（`Start Configuratin Part`和`End Configuration Part`之间的变量），运行即可：
-   - [provider.sh](https://github.com/PKUHPC/SCOW/blob/master/dev/ldap/provider.sh): 用于配置LDAP服务器
-   - [client.sh](https://github.com/PKUHPC/SCOW/blob/master/dev/ldap/client.sh): 用于配置LDAP客户端(slurm集群所有节点都需要执行)
+   - [provider.sh](https://github.com/PKUHPC/private-scow/blob/master/dev/ldap/provider.sh): 用于配置LDAP服务器
+   - [client.sh](https://github.com/PKUHPC/private-scow/blob/master/dev/ldap/client.sh): 用于配置LDAP客户端(slurm集群所有节点都需要执行)
 3. **slurm集群挂载了并行文件系统**，例如lustre、gpfs等，提供[NFS的搭建](/docs/hpccluster/nfs)供参考；
 4. 登录节点和计算节点安装TurboVNC，版本3.0以上，[官方安装教程](https://turbovnc.org/Downloads/YUM)；
 5. 登录节点安装桌面，例如Xfce、KDE、MATE等。
@@ -105,12 +105,12 @@ chmod +x scow-cli
 
 | 顺序 | 配置文件        | 功能说明                                           | 是否必须 | 配置DEMO                                                     | 备注                                       |
 | ---- | --------------- | -------------------------------------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------ |
-| 1    | install.yaml    | 安装文件                                           | 必须     | [install.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/install.yaml) | 按照集群需求修改对应参数                   |
-| 2    | `{集群ID}`.yaml | [集群配置文件](/docs/deploy/config/cluster-config) | 必须     | [`{集群ID}`.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/config/clusters/hpc01.yaml) | 支持多集群，一个集群一个配置文件           |
-| 3    | auth.yaml       | [认证系统](../config/auth/intro.md)                | 必须     | [auth.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/config/auth.yml) | 所有集群同一个认证系统                     |
-| 4    | mis.yaml        | [管理系统](../config/mis/intro.md)                 | 可选     | [mis.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/config/mis.yaml) |                                            |
-| 5    | portal.yaml     | [门户系统](../config/portal/intro.md)              | 可选     | [portal.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/config/portal.yaml) | 若登录节点不是安装的xfce，需要对应进行修改 |
-| 6    | audit.yaml      | [审计系统](../config/audit/intro.md)               | 可选     | [audit.yaml](https://github.com/PKUHPC/SCOW/blob/master/apps/cli/assets/init/config/audit.yaml) |                                            |
+| 1    | install.yaml    | 安装文件                                           | 必须     | [install.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/install.yaml) | 按照集群需求修改对应参数                   |
+| 2    | `{集群ID}`.yaml | [集群配置文件](/docs/deploy/config/cluster-config) | 必须     | [`{集群ID}`.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/config/clusters/hpc01.yaml) | 支持多集群，一个集群一个配置文件           |
+| 3    | auth.yaml       | [认证系统](../config/auth/intro.md)                | 必须     | [auth.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/config/auth.yml) | 所有集群同一个认证系统                     |
+| 4    | mis.yaml        | [管理系统](../config/mis/intro.md)                 | 可选     | [mis.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/config/mis.yaml) |                                            |
+| 5    | portal.yaml     | [门户系统](../config/portal/intro.md)              | 可选     | [portal.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/config/portal.yaml) | 若登录节点不是安装的xfce，需要对应进行修改 |
+| 6    | audit.yaml      | [审计系统](../config/audit/intro.md)               | 可选     | [audit.yaml](https://github.com/PKUHPC/private-scow/blob/master/apps/cli/assets/init/config/audit.yaml) |                                            |
 
 ####  3.3 其他配置(可选)
 

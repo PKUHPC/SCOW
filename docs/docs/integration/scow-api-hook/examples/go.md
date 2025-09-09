@@ -52,7 +52,7 @@ plugins:
 #    SCOW的分支（branch=master）
 #    SCOW Tag号（tag=v0.4.0）
 # 不写默认使用SCOW的master分支版本
-buf generate --template buf.gen.yaml https://github.com/PKUHPC/SCOW.git#subdir=protos,branch=api-v0.3.0
+buf generate --template buf.gen.yaml https://github.com/PKUHPC/private-scow.git#subdir=protos,branch=api-v0.3.0
 ```
 
 ## 使用SCOW API
