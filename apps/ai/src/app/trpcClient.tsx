@@ -14,7 +14,7 @@
 
 import { joinWithUrl } from "@scow/utils";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, loggerLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, loggerLink, splitLink, TRPCClientError } from "@trpc/client";
 import { message } from "antd";
 import { join } from "path";
 import { useState } from "react";
@@ -23,6 +23,15 @@ import { trpc } from "src/utils/trpc";
 import superjson from "superjson";
 
 const MAX_RETRIES = 3;
+
+declare module "@trpc/client" {
+  interface TRPCRequestOptions {
+    meta?: {
+      /** 设为 true 时，此请求绕过 httpBatchLink，直接走 httpLink */
+      noBatch?: boolean;
+    };
+  }
+}
 
 export function ClientProvider(props: { baseUrl: string; basePath: string; children: React.ReactNode }) {
 
@@ -85,15 +94,23 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
     }),
   }));
 
+  const apiUrl = {
+    url: typeof window === "undefined" ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
+      : join(props.basePath, "/api/trpc"),
+  };
+
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
         loggerLink({
           enabled: () => process.env.NODE_ENV === "development",
         }),
-        httpBatchLink({
-          url: typeof window === "undefined" ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
-            : join(props.basePath, "/api/trpc"),
+        splitLink({
+          // 条件：如果标了 noBatch，或者是特定路径，就走 httpLink（单发）
+          condition: (op) =>
+            ((op.context as { meta?: { noBatch?: boolean } }).meta?.noBatch === true),
+          true: httpLink(apiUrl), // 单个请求
+          false: httpBatchLink(apiUrl), // 仍然合并其它请求
         }),
       ],
       transformer: superjson,

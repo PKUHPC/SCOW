@@ -418,7 +418,14 @@ export class ScowdJobDriver implements JobDriver {
         }),
         this.logger,
       );
-      const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+
+      let sessionMetadata: SessionMetadata | null = null;
+      try {
+        sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
+      } catch (err) {
+        this.logger.error("Failed to parse session metadata %s: %s", metadataPath, err);
+        return; // 跳过当前 job
+      }
 
       const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
 

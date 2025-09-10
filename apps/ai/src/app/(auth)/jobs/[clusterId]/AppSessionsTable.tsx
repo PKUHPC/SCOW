@@ -69,7 +69,9 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
 
   const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery({
     clusterId: cluster.id, isRunning: parseBooleanParam(unfinished),
-  });
+  },
+  { trpc: { context: { meta: { noBatch: true } } } },
+  );
 
   const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
     onError:(e) => {
