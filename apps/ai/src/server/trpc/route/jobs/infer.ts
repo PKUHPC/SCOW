@@ -1,6 +1,7 @@
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { JobType } from "src/models/Job";
+import { aiConfig } from "src/server/config/ai";
 import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -112,6 +113,13 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
+      if (aiConfig.inferConfig?.enabled === false) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "AI inference function is not enabled.",
+        });
+      }
+
       const { clusterId, InferenceJobName , image, models, account, partition } = input;
 
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);

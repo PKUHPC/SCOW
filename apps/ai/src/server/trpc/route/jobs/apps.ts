@@ -840,7 +840,7 @@ export const getJobDetails =
           const client = getAdapterClient(clusterId);
           const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
           if (connectionInfo?.response?.$case === "appConnectionInfo") {
-            host = aiConfig.inferProxyHost;
+            host = aiConfig.inferConfig?.proxyHost;
             port = connectionInfo.response.appConnectionInfo.port;
           }
         }

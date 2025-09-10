@@ -93,11 +93,11 @@ export const userRoutes: (
               text: t("routes.job.trainJob"),
               path: `/jobs/${cluster.id}/trainJobs`,
             },
-            {
+            ...(publicConfig.INFER_ENABLED ? [{
               Icon: InferIcon,
               text: t("routes.job.infer"),
               path: `/jobs/${cluster.id}/inference`,
-            },
+            }] : []),
             {
               Icon: RunningJobsIcon,
               text: t("routes.job.unfinishedJobs"),

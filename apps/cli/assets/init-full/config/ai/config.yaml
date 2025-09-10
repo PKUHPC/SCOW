@@ -24,5 +24,9 @@ harborConfig:
 # publicMountPoints:
   # - /nfs/public
 
-# 选配作业最大运行时间
-# maxJobRunningTimeHours: 24
+# 选配推理的配置
+# inferConfig:
+  # 选配，是否开启推理功能,默认开启
+  # enabled: true
+  # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
+  # proxyHost: www.example.com

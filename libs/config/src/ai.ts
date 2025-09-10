@@ -63,8 +63,12 @@ export const AiConfigSchema = Type.Object({
     }, { description: "文件编辑功能", default: {} }),
   }, { description: "文件管理" })),
 
-  inferProxyHost:Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
   maxJobRunningTimeHours:Type.Optional(Type.Number({ description: "任务最大运行时间，超过此时间则不能成功提交作业" })),
+
+  inferConfig:Type.Optional(Type.Object({
+    enabled:Type.Boolean({ description: "AI是否开启推理模块", default: true }),
+    proxyHost:Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
+  })),
 });
 
 const AT_CONFIG_NAME = "ai/config";

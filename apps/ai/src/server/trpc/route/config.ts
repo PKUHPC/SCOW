@@ -113,6 +113,7 @@ const PublicConfigSchema = z.object({
     z.literal("full"),
     z.literal("simplified"),
   ]).default("full"),
+  INFER_ENABLED:z.boolean(),
 });
 
 const UiConfigSchema = z.object({
@@ -231,6 +232,8 @@ export const config = router({
         MAX_JOB_RUNNING_TIME_HOURS: aiConfig.maxJobRunningTimeHours,
 
         DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
+
+        INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
       };
     }),
 
