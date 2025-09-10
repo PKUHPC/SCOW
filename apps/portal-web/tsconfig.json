@@ -33,5 +33,5 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
-, "../../libs/web/src/components/head.tsx"  ]
+  ]
 }

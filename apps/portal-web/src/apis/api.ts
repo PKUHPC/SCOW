@@ -3,10 +3,12 @@
 
 import { apiClient } from "src/apis/client";
 import type { GetClusterInfoSchema } from "src/pages/api//cluster";
+import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
 import type { getClusterConfigFilesSchema } from "src/pages/api//getClusterConfigFiles";
 import type { GetClustersRuntimeInfoSchema } from "src/pages/api//getClustersRuntimeInfo";
 import type { GetUserAssociatedClusterIdsSchema } from "src/pages/api//getUserAssociatedClusterIds";
 import type { GetUserAssociatedClusterPartitionsSchema } from "src/pages/api//getUserAssociatedClusterPartitions";
+import type { GetUserAvailableClusterAppsSchema } from "src/pages/api//getUserAvalableClusterApps";
 import type { GetUserInfoSchema } from "src/pages/api//getUserInfo";
 import type { CheckAppConnectivitySchema } from "src/pages/api/app/checkConnectivity";
 import type { CheckShadowDeskConnectivitySchema } from "src/pages/api/app/checkShadowDeskConnectivity";
@@ -119,10 +121,12 @@ export const api = {
   startFileTransfer: apiClient.fromTypeboxRoute<typeof StartFileTransferSchema>("POST", "/api/file/startFileTransfer"),
   terminateFileTransfer: apiClient.fromTypeboxRoute<typeof TerminateFileTransferSchema>("POST", "/api/file/terminateFileTransfer"),
   uploadFile: apiClient.fromTypeboxRoute<typeof UploadFileSchema>("POST", "/api/file/upload"),
+  getAppInitialConfig: apiClient.fromTypeboxRoute<typeof GetAppInitialConfigSchema>("GET", "/api//getAppInitialConfig"),
   getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof getClusterConfigFilesSchema>("GET", "/api//getClusterConfigFiles"),
   getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>("GET", "/api//getClustersRuntimeInfo"),
   getUserAssociatedClusterIds: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterIdsSchema>("GET", "/api//getUserAssociatedClusterIds"),
   getUserAssociatedClusterPartitions: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterPartitionsSchema>("GET", "/api//getUserAssociatedClusterPartitions"),
+  getUserAvailableClusterApps: apiClient.fromTypeboxRoute<typeof GetUserAvailableClusterAppsSchema>("GET", "/api//getUserAvalableClusterApps"),
   getUserInfo: apiClient.fromTypeboxRoute<typeof GetUserInfoSchema>("GET", "/api//getUserInfo"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
@@ -137,8 +141,8 @@ export const api = {
   submitJob: apiClient.fromTypeboxRoute<typeof SubmitJobSchema>("POST", "/api/job/submitJob"),
   getUnreadMessage: apiClient.fromTypeboxRoute<typeof GetUnreadMessageSchema>("GET", "/api/notification/getUnreadMessages"),
   markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
-  changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
+  changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
   getUserStorageInfo: apiClient.fromTypeboxRoute<typeof getUserStorageInfoSchema>("GET", "/api/storage/getUserStorageUsage"),
 };

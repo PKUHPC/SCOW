@@ -3,27 +3,22 @@ import "antd/dist/reset.css";
 import "src/styles/globals.css";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
-import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
-import { PrimaryColor } from "@scow/config/build/ui";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
-import { DarkModeCookie, DarkModeProvider, getDarkModeCookieValue } from "@scow/lib-web/build/layouts/darkMode";
+import { DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
-import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
-import { isServer } from "@scow/lib-web/build/utils/isServer";
-import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
-import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App as AntdApp } from "antd";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { App as AntdApp, Spin } from "antd";
 import type { AppContext, AppProps } from "next/app";
 import App from "next/app";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import { join } from "path";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useAsync } from "react-async";
 import { createStore, StoreProvider, useStore } from "simstate";
 import { api } from "src/apis";
-import { USE_MOCK } from "src/apis/useMock";
-import { getTokenFromCookie } from "src/auth/cookie";
+import { ServerErrorPage } from "src/components/errorPages/ServerErrorPage";
 import { Provider, useI18n, useI18nTranslate } from "src/i18n";
 import en from "src/i18n/en";
 import zh_cn from "src/i18n/zh_cn";
@@ -31,13 +26,11 @@ import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { BaseLayout } from "src/layouts/BaseLayout";
 import { FloatButtons } from "src/layouts/FloatButtons";
 import NotificationLayout from "src/layouts/NotifLayout";
-import { UserState } from "src/models/User";
+import { AppInitialConfig } from "src/pages/api/getAppInitialConfig";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import {
-  User, UserStore,
-} from "src/stores/UserStore";
-import { Cluster, getPublicConfigClusters } from "src/utils/cluster";
-import { publicConfig, runtimeConfig } from "src/utils/config";
+import { UserStore } from "src/stores/UserStore";
+import { Cluster } from "src/utils/cluster";
+import { publicConfig } from "src/utils/config";
 
 const languagesMap = {
   "zh_cn": zh_cn,
@@ -129,39 +122,7 @@ const TopProgressBar = dynamic(
   { ssr: false },
 );
 
-interface ExtraProps {
-  userInfo: User | undefined;
-  primaryColor: PrimaryColor;
-  footerText: string | undefined;
-  darkModeCookieValue: DarkModeCookie | undefined;
-  initialLanguage: string;
-  clusterConfigs: Record<string, ClusterConfigSchema>;
-  initialActivatedClusters: Record<string, Cluster>;
-  initialSimpleClustersInfo: Record<string, SimpleClusterSchema>;
-}
-
-type Props = AppProps & { extra: ExtraProps };
-
-function MyApp({ Component, pageProps, extra }: Props) {
-
-  // remembers extra props from first load
-  const { current: { userInfo, primaryColor, footerText } } = useRef(extra);
-  const userStore = useConstant(() => {
-    const store = createStore(UserStore, userInfo);
-    return store;
-  });
-
-  const clusterInfoStore = useConstant(() => {
-    return createStore(
-      ClusterInfoStore,
-      extra.clusterConfigs,
-      extra.initialActivatedClusters,
-      extra.initialSimpleClustersInfo,
-    );
-  });
-
-  const uiExtensionStore = useConstant(() => createStore(UiExtensionStore, publicConfig.UI_EXTENSION));
-
+function MyAppRoot(appProps: AppProps) {
   return (
     <>
       <Head>
@@ -184,125 +145,89 @@ function MyApp({ Component, pageProps, extra }: Props) {
           }}
         />
       </Head>
-      <Provider initialLanguage={{
-        id: extra.initialLanguage,
-        definitions: languagesMap[extra.initialLanguage],
-      }}
-      >
-        <StoreProvider stores={[userStore, clusterInfoStore, uiExtensionStore]}>
-          <DarkModeProvider initial={extra.darkModeCookieValue}>
-            <AntdConfigProvider
-              primaryColor={primaryColor}
-              locale={ extra.initialLanguage}
-              color={primaryColor.defaultColor}
-            >
-              <FloatButtons languageId={extra.initialLanguage} />
-              <GlobalStyle />
-              <FailEventHandler />
-              <TopProgressBar />
-              <BaseLayout
-                footerText={footerText}
-                versionTag={publicConfig.VERSION_TAG}
-                initialLanguage={extra.initialLanguage}
-              >
-                {publicConfig.NOTIF_ENABLED ? (
-                  <NotificationLayout interval={300000}>
-                    <Component {...pageProps} />
-                  </NotificationLayout>
-                )
-                  : <Component {...pageProps} />}
-              </BaseLayout>
-            </AntdConfigProvider>
-          </DarkModeProvider>
-        </StoreProvider>
-      </Provider>
+      <MyAppLoader {...appProps} />
     </>
   );
 }
 
-MyApp.getInitialProps = async (appContext: AppContext) => {
-  const extra: ExtraProps = {
-    userInfo: undefined,
-    footerText: undefined,
-    primaryColor: { defaultColor:"#94070A" },
-    darkModeCookieValue: getDarkModeCookieValue(appContext.ctx.req),
-    initialLanguage: "",
-    clusterConfigs: {},
-    initialActivatedClusters: {},
-    initialSimpleClustersInfo: {},
-  };
+function MyAppLoader(appProps: AppProps) {
+  const promiseFn = useCallback(async () => {
+    return api.getAppInitialConfig({ });
+  }, []);
 
-  // This is called on server on first load, and on client on every page transition
-  // But we don't need to fetch token info on every page transition
-  // so only execute on server
-  // Also, validateToken relies on redis, which is not available in client bundle
-  if (isServer()) {
+  const { data, isLoading } = useAsync({ promiseFn });
 
-    const token = USE_MOCK ? "123" : getTokenFromCookie(appContext.ctx);
-
-    if (token) {
-      // Why not directly call validateToken but create an api?
-      // Because this method will (in next.js's perspective) be called both in client and server,
-      // so next.js will import validateToken into the client bundle
-      // validateToken depends on ioredis, which cannot be brought into frontend.
-      // dynamic import also doesn't work.
-      const result = await api.validateToken({ query: { token } }).then((x) => x, () => undefined);
-
-      if (result) {
-        extra.userInfo = {
-          ...result,
-          token: token,
-          state: UserState.NORMAL,
-        };
-
-        // get cluster configs from config file
-        const data = await api.getClusterConfigFiles({ query: { token } })
-          .then((x) => x, () => ({ clusterConfigs: {} }));
-
-        const clusterConfigs = data?.clusterConfigs;
-        if (clusterConfigs && Object.keys(clusterConfigs).length > 0) {
-          extra.clusterConfigs = clusterConfigs;
-        }
-      }
-    }
-
-    const clustersRuntimeInfo = await api.getClustersRuntimeInfo({ query: { token } }).then((x) => x, () => undefined);
-
-    // get deployed clusters' simple info (only clusterId, displayName and priority)
-    const simpleClustersInfo
-      = await api.getSimpleClustersInfoFromConfigFiles({}).then((x) => x, () => ({ clustersInfo: {} }));
-
-    extra.initialSimpleClustersInfo = simpleClustersInfo?.clustersInfo ?? {};
-
-    const publicConfigClusters = extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0 ?
-      getPublicConfigClusters(extra.clusterConfigs) : getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {};
-
-    const activatedClusters
-    = formatActivatedClusters({
-      clustersRuntimeInfo: clustersRuntimeInfo?.results ?? [],
-      misConfigClusters: publicConfigClusters });
-
-    extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
-
-    const hostname = getHostname(appContext.ctx.req);
-
-    const defaultColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ?? runtimeConfig.DEFAULT_PRIMARY_COLOR;
-
-    const darkModeColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ?? defaultColor;
-
-    extra.primaryColor = { defaultColor,darkModeColor };
-
-    extra.footerText = (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname])
-    ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
-
-    extra.initialLanguage = getCurrentLanguageId(appContext.ctx.req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+  if (isLoading) {
+    return <Spin />;
   }
 
-  const appProps = await App.getInitialProps(appContext);
-  return { ...appProps, extra } as Props;
+  if (!data) {
+    return <ServerErrorPage />;
+  }
+
+  return <MyApp appProps={appProps} extra={data} />;
+}
+
+function MyApp({ appProps: { pageProps, Component }, extra }: {
+  appProps: AppProps;
+  extra: AppInitialConfig;
+}) {
+  // remembers extra props from first load
+  const { current: { userInfo, primaryColor, footerText } } = useRef(extra);
+  const userStore = useConstant(() => {
+    const store = createStore(UserStore, userInfo);
+    return store;
+  });
+
+  const clusterInfoStore = useConstant(() => {
+    return createStore(
+      ClusterInfoStore,
+      extra.clusterConfigs,
+      extra.initialActivatedClusters,
+      extra.initialSimpleClustersInfo,
+    );
+  });
+
+  const uiExtensionStore = useConstant(() => createStore(UiExtensionStore, publicConfig.UI_EXTENSION));
+
+  return (
+    <Provider initialLanguage={{
+      id: extra.initialLanguage,
+      definitions: languagesMap[extra.initialLanguage],
+    }}
+    >
+      <StoreProvider stores={[userStore, clusterInfoStore, uiExtensionStore]}>
+        <DarkModeProvider initial={extra.darkModeCookieValue}>
+          <AntdConfigProvider
+            primaryColor={primaryColor}
+            locale={ extra.initialLanguage}
+            color={primaryColor.defaultColor}
+          >
+            <FloatButtons languageId={extra.initialLanguage} />
+            <GlobalStyle />
+            <FailEventHandler />
+            <TopProgressBar />
+            <BaseLayout
+              footerText={footerText}
+              versionTag={publicConfig.VERSION_TAG}
+              initialLanguage={extra.initialLanguage}
+            >
+              {publicConfig.NOTIF_ENABLED ? (
+                <NotificationLayout interval={300000}>
+                  <Component {...pageProps} />
+                </NotificationLayout>
+              )
+                : <Component {...pageProps} />}
+            </BaseLayout>
+          </AntdConfigProvider>
+        </DarkModeProvider>
+      </StoreProvider>
+    </Provider>
+  );
+}
+
+MyAppRoot.getInitialProps = async (appContext: AppContext) => {
+  return await App.getInitialProps(appContext);
 };
 
-export default MyApp;
+export default MyAppRoot;

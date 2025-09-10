@@ -43,6 +43,39 @@ export const GetClustersRuntimeInfoSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
+export const getClustersRuntimeInfo = async () => {
+  const client = getClient(ConfigServiceClient);
+  const result = await asyncClientCall(client, "getClustersRuntimeInfo", {});
+  const operatorIds = Array.from(new Set(result.results.map((x) => {
+    const lastActivationOperation = x.lastActivationOperation!;
+    return lastActivationOperation?.operatorId ?? undefined;
+  })));
+
+  const userIds = operatorIds.filter((id) => typeof id === "string" && id !== undefined && id !== null);
+
+  const userClient = getClient(UserServiceClient);
+  const { users } = await asyncClientCall(userClient, "getUsersByIds", {
+    userIds,
+  });
+
+  const userMap = new Map(users.map((x) => [x.userId, x.userName]));
+
+  const clusterConfigs = await getClusterConfigFiles();
+
+  const clustersDatabaseInfo: ClusterRuntimeInfo[] = result.results.map((x) => {
+    const lastActivationOperation = x.lastActivationOperation!;
+    return {
+      ...x,
+      operatorId: lastActivationOperation?.operatorId ?? "",
+      operatorName: lastActivationOperation?.operatorId ? userMap.get(lastActivationOperation?.operatorId) : "",
+      deactivationComment: lastActivationOperation?.deactivationComment ?? "",
+      hpcEnabled: clusterConfigs[x.clusterId]?.hpc?.enabled,
+    };
+  });
+
+  return clustersDatabaseInfo;
+};
+
 export default route(GetClustersRuntimeInfoSchema,
   async (req, res) => {
 
@@ -56,38 +89,9 @@ export default route(GetClustersRuntimeInfoSchema,
       if (!info) { return { 403: null }; }
     }
 
-    const client = getClient(ConfigServiceClient);
-    const result = await asyncClientCall(client, "getClustersRuntimeInfo", {});
-    const operatorIds = Array.from(new Set(result.results.map((x) => {
-      const lastActivationOperation = x.lastActivationOperation!;
-      return lastActivationOperation?.operatorId ?? undefined;
-    })));
-
-    const userIds = operatorIds.filter((id) => typeof id === "string" && id !== undefined && id !== null);
-
-    const userClient = getClient(UserServiceClient);
-    const { users } = await asyncClientCall(userClient, "getUsersByIds", {
-      userIds,
-    });
-
-    const userMap = new Map(users.map((x) => [x.userId, x.userName]));
-
-    const clusterConfigs = await getClusterConfigFiles();
-
-    const clustersDatabaseInfo: ClusterRuntimeInfo[] = result.results.map((x) => {
-      const lastActivationOperation = x.lastActivationOperation!;
-      return {
-        ...x,
-        operatorId: lastActivationOperation?.operatorId ?? "",
-        operatorName: lastActivationOperation?.operatorId ? userMap.get(lastActivationOperation?.operatorId) : "",
-        deactivationComment: lastActivationOperation?.deactivationComment ?? "",
-        hpcEnabled: clusterConfigs[x.clusterId]?.hpc?.enabled,
-      };
-    });
-
     return {
       200: {
-        results: clustersDatabaseInfo,
+        results: await getClustersRuntimeInfo(),
       },
     };
   });

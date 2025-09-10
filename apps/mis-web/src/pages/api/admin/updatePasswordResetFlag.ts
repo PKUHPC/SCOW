@@ -6,7 +6,7 @@ import { PlatformRole } from "src/models/User";
 import { runtimeConfig } from "src/utils/config";
 
 // 此API用于更改用户是否需要重置密码的标识。
-export const updatePasswordFlagSchema = typeboxRouteSchema({
+export const UpdatePasswordResetFlagSchema = typeboxRouteSchema({
 
   method: "PATCH",
 
@@ -30,7 +30,7 @@ export const updatePasswordFlagSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/typeboxRoute(updatePasswordFlagSchema, async (req, res) => {
+export default /* #__PURE__*/typeboxRoute(UpdatePasswordResetFlagSchema, async (req, res) => {
   const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
   if (!ldapCapabilities.updatePasswordResetFlag) {
     return { 501: null };

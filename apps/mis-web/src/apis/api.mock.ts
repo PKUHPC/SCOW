@@ -142,6 +142,10 @@ export const mockApi: MockApi<typeof api> = {
       ],
     }),
 
+  getAppInitialConfig: null,
+
+  updatePasswordResetFlag: async () => null,
+
   getAllUsers: async () => ({
     totalCount: 3,
     platformUsers: [
@@ -698,7 +702,6 @@ export const mockApi: MockApi<typeof api> = {
 
   getLockedUsers: null,
   unlockUser: null,
-  updatePasswordResetFlag: null,
   getTargetAppAuthorizations: async () => ({
     appLists: [
       {

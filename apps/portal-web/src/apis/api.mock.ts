@@ -105,6 +105,9 @@ export const mockApi: MockApi<typeof api> = {
   getClusterRunningInfo: null,
   listAvailableTransferClusters: null,
 
+  getUserAvailableClusterApps: null,
+  getAppInitialConfig: null,
+
   checkAppConnectivity: async () => ({
     ok: Math.random() < 0.5,
   }),

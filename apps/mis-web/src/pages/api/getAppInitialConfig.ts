@@ -1,0 +1,141 @@
+
+import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
+import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
+import { createI18nStringSchema } from "@scow/config/build/i18n";
+import { getDarkModeCookieValue } from "@scow/lib-web/build/layouts/darkMode";
+import { getHostname } from "@scow/lib-web/build/utils/getHostname";
+import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
+import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
+import { Static, Type } from "@sinclair/typebox";
+import { USE_MOCK } from "src/apis/useMock";
+import { getTokenFromCookie } from "src/auth/cookie";
+import { validateToken } from "src/auth/token";
+import { UserState } from "src/models/User";
+import { getClustersRuntimeInfo } from "src/pages/api/admin/getClustersRuntimeInfo";
+import { getClusterConfigFiles } from "src/server/clusterConfig";
+import { User } from "src/stores/UserStore";
+import { getPublicConfigClusters } from "src/utils/cluster";
+import { publicConfig, runtimeConfig } from "src/utils/config";
+import { route } from "src/utils/route";
+
+const ClusterNameI18nSchema = createI18nStringSchema({
+  description: "集群名称，支持国际化",
+});
+
+export const GetAppInitialConfigSchema = typeboxRouteSchema({
+  method: "GET",
+
+  responses: {
+    200: Type.Object({
+      userInfo: Type.Optional(Type.Unsafe<User>()),
+
+      primaryColor: Type.Object({
+        defaultColor: Type.String(),
+        darkModeColor: Type.Optional(Type.String()),
+      }),
+
+      footerText: Type.Optional(Type.String()),
+
+      initialLanguage: Type.String(),
+
+      darkModeCookieValue: Type.Optional(Type.Object({ dark: Type.Boolean(), mode: Type.Union([
+        Type.Literal("system"), Type.Literal("dark"), Type.Literal("light"),
+      ]) })),
+
+
+      clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
+
+      initialActivatedClusters: Type.Record(Type.String(), Type.Object({
+        id: Type.String(), name: ClusterNameI18nSchema })),
+
+      initialSimpleClustersInfo: Type.Record(Type.String(), SimpleClusterSchema),
+    }),
+  },
+});
+
+export type AppInitialConfig = Static<typeof GetAppInitialConfigSchema["responses"]["200"]>;
+
+export default route(GetAppInitialConfigSchema,
+  async (req) => {
+
+    const extra: AppInitialConfig = {
+      userInfo: undefined,
+      footerText: undefined,
+      primaryColor: { defaultColor:"#94070A" },
+      darkModeCookieValue: getDarkModeCookieValue(req),
+      initialLanguage: "",
+      clusterConfigs: {},
+      initialActivatedClusters: {},
+      initialSimpleClustersInfo: {},
+    };
+
+
+    const token = USE_MOCK ? "123" : getTokenFromCookie({ req });
+
+    if (token) {
+      const result = await validateToken(token);
+
+      if (result) {
+        extra.userInfo = {
+          ...result,
+          token,
+          state: UserState.NORMAL,
+        };
+
+      }
+
+      const clustersRuntimeInfo = await getClustersRuntimeInfo();
+      const clusters = await getClusterConfigFiles();
+
+      if (Object.keys(clusters).length > 0) {
+        extra.clusterConfigs = clusters;
+      }
+
+      const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};
+
+      Object.keys(clusters).forEach((key) => {
+        simpleClustersInfo[key] = {
+          clusterId: key,
+          displayName: clusters[key].displayName,
+          priority: clusters[key].priority,
+        };
+      });
+      extra.initialSimpleClustersInfo = simpleClustersInfo;
+
+
+      const publicConfigClusters = extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0
+        ? getPublicConfigClusters(extra.clusterConfigs)
+        : getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {};
+
+      const activatedClusters
+      = formatActivatedClusters({
+        clustersRuntimeInfo: clustersRuntimeInfo,
+        misConfigClusters: publicConfigClusters,
+
+      });
+
+      extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
+    }
+
+    const hostname = getHostname(req);
+
+    const defaultColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
+    ?? runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ?? runtimeConfig.DEFAULT_PRIMARY_COLOR;
+
+    const darkModeColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
+    ?? runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ?? defaultColor;
+
+    extra.primaryColor = { defaultColor,darkModeColor };
+
+    extra.footerText = (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname])
+    ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
+    ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
+
+    extra.initialLanguage = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+
+    return { 200: extra };
+
+  });
+
+
+
