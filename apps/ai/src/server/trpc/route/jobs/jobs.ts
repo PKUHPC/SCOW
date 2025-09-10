@@ -3,6 +3,7 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import type { ServerResponse } from "http";
 import { aiConfig } from "src/server/config/ai";
+import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -10,6 +11,7 @@ import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
+import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
@@ -128,7 +130,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName ,algorithms, image, datasets,models,maxTime } = input;
+      const { clusterId, trainJobName ,algorithms, image, datasets,models,maxTime, account, partition } = input;
 
       const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -153,6 +155,18 @@ procedure
 
       const currentClusterIds = await getCurrentClusters(userId);
       checkClusterAvailable(currentClusterIds, clusterId);
+
+      // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
+      if (config.MIS_DEPLOYED) {
+        await validateSubmitAiJobInfoUnderMis({
+          userId,
+          accountName: account,
+          clusterId,
+          logger,
+          partitionName: partition,
+          checkAccountApp: false,
+        });
+      }
 
       const em = await forkEntityManager();
       const {

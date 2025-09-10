@@ -21,6 +21,7 @@ import { AppCustomAttribute, FixedValueConfig, ReservedAppAttribute,
   SelectOption } from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { UserStore } from "src/stores/UserStore";
 import { formatMinutesToI18nDayHours, formatSize, TransType } from "src/utils/format";
 import { styled, useTheme } from "styled-components";
 
@@ -81,6 +82,7 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const { message, modal } = App.useApp();
   const theme = useTheme();
+  const { user } = useStore(UserStore);
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
@@ -133,9 +135,22 @@ export const LaunchAppForm: React.FC<Props> = ({
           throw e;
         }
       })
+      .httpError(403, (e) => {
+        if (e.code === "USER_ACCOUNT_NOT_AVAILABLE") {
+          createErrorModal(t("pages.common.userAccountNotAvailableWhenSubmit", [user?.identityId, account]));
+        } else if (e.code === "CLUSTER_PARTITION_NOT_AVAILABLE") {
+          const clusterName = getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == clusterId)?.name
+            ?? clusterId, languageId);
+          createErrorModal(t("pages.common.clusterPartitionNotAvailableForAccount", [account, clusterName, partition]));
+        } else if (e.code === "APP_NOT_AVAILABLE") {
+          createErrorModal(t("pages.common.appNotAvailableForAccount", [account, appId]));
+        } else {
+          throw e;
+        }
+      })
       .httpError(404, (e) => {
         if (e.code === "APP_NOT_FOUND") {
-          createErrorModal(e.message);
+          createErrorModal(t("pages.common.appNotFound", [appId]));
         } else {
           throw e;
         }

@@ -730,8 +730,10 @@ export default {
       },
     },
     _app: {
-      textExceedsLength:"终端登录提示信息过多，请减少'~/.bashrc'等文件中不必要的信息输出!",
       sshError:"无法以用户身份连接到登录节点。请确认您的家目录的权限为700、750或者755",
+
+      textExceedsLength:"终端登录提示信息过多，请减少'~/.bashrc'等文件中不必要的信息输出!",
+
       sftpError:"SFTP操作失败，请确认您是否有操作的权限",
       otherError:"服务器出错啦！",
       adapterConnectionError: "{} 集群无法连接，请稍后重试 ",
@@ -746,6 +748,11 @@ export default {
     common: {
       noAvailableClusters: "当前没有可用集群。"
       + "请稍后再试或联系管理员。",
+      clusterNotAvailableForAccount: "账户 {0} 没有该集群 {1} 的授权",
+      clusterPartitionNotAvailableForAccount: "账户 {0} 没有该集群 {1} 与分区 {2} 的授权",
+      userAccountNotAvailableWhenSubmit: "用户 {0} 在账户 {1} 下不可用",
+      appNotAvailableForAccount: "账户 {0} 没有该应用 {1} 的授权",
+      appNotFound: "未找到应用 {} ",
     },
   },
   notifLayout: {

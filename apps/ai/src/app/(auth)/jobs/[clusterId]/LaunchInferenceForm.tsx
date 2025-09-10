@@ -1,6 +1,7 @@
 "use client";
 
 import { MinusCircleOutlined, PlusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Checkbox, Col,
   Divider, Form, Input, InputNumber, Radio,Row, Select, Space, Spin } from "antd";
 import dayjs from "dayjs";
@@ -8,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AccountSelector } from "src/components/AccountSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
@@ -20,6 +21,7 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
+import { usePublicConfig } from "../../context";
 import { validateEnvKeyFormat, validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
 import { DataAttributes,EnvVariable } from "./LaunchAppForm";
@@ -95,6 +97,9 @@ export const LaunchInferenceJobForm = (props: Props) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.launchAppForm.");
   const pInfer = prefix("app.jobs.LaunchInferenceForm.");
+  const i18n = useI18n();
+
+  const { publicConfig } = usePublicConfig();
 
   const { clusterId,InferenceJobInput } = props;
 
@@ -428,7 +433,22 @@ export const LaunchInferenceJobForm = (props: Props) => {
       router.push(`/jobs/${clusterId}/runningJobs`);
     },
     onError(e) {
-      message.error(`${t(pInfer("submitFailed"))}: ${e.message}`);
+      const error = e.data?.detailedError;
+      if (error?.type === "account_user_not_available") {
+        message.error(
+          `${t(pInfer("submitFailed"))}:`
+                + `${t("common.userAccountNotAvailableWhenSubmit",
+                  [error.userId, error.accountName])}`);
+      } else if (error?.type === "cluster_partition_not_available" && error.partitionName) {
+        const clusterName = publicConfig.CLUSTERS.find((x) => x.id === error.clusterId)?.name || clusterId;
+        const i18nClusterName = getI18nConfigCurrentText(clusterName, i18n.currentLanguage.id);
+        message.error(
+          `${t(pInfer("submitFailed"))}:`
+                + `${t("common.clusterPartitionNotAvailableForAccount",
+                  [error.accountName, i18nClusterName, error.partitionName])}`);
+      } else {
+        message.error(`${t(pInfer("submitFailed"))}: ${e.message}`);
+      }
     },
   });
 

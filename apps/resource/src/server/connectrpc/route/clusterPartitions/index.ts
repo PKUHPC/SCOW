@@ -16,11 +16,13 @@ import {
   GetClusterAssignedAccountsResponse,
   GetTenantAssignedClustersAndPartitionsRequest,
   GetTenantAssignedClustersAndPartitionsResponse,
+  IsAccountAuthorizedInClusterPartitionRequest,
+  IsAccountAuthorizedInClusterPartitionResponse,
 } from "@scow/scow-resource-protos/generated/resource/partition_pb";
 import { commonConfig } from "src/server/config/common";
 import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
-import { checkClusterIdAvailable } from "src/utils/auth/utils";
-import { assignCreatedAccount, getAccountAssignedPartitionsInCluster,
+import { checkClusterIdAvailable, checkClusterPartitionAvailable } from "src/utils/auth/utils";
+import { assignCreatedAccount, checkAccountInClusterPartition, getAccountAssignedPartitionsInCluster,
   getAccountsAssignedClusterPartitions,
   getAccountsAssignedClusters,
   getAccountsAssignedPartitionsInCluster,
@@ -171,5 +173,27 @@ export default (router: ConnectRouter) => {
       const result = await getClusterAssignedAccountsData(clusterId, tenantName);
       return new GetClusterAssignedAccountsResponse({ accountNames: result });
     },
+
+    /**
+     * 提交作业/交互式应用时 校验当前账户在 集群 或 集群分区下是否已授权
+     * @param request
+     * @returns
+     */
+    async isAccountAuthorizedInClusterPartition(request: IsAccountAuthorizedInClusterPartitionRequest, ctx):
+    Promise<IsAccountAuthorizedInClusterPartitionResponse> {
+      await checkScowApiToken(ctx, commonConfig.scowApi);
+      const { accountName, clusterId, partitionName } = request;
+
+      // 检查 集群 或 集群分区 是否可用
+      if (partitionName) {
+        await checkClusterPartitionAvailable(clusterId, partitionName, logger);
+      } else {
+        await checkClusterIdAvailable(clusterId);
+      }
+
+      const result = await checkAccountInClusterPartition(accountName, clusterId, partitionName);
+      return new IsAccountAuthorizedInClusterPartitionResponse({ isAuthorized: result });
+    },
+
   });
 };

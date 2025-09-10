@@ -902,5 +902,9 @@ export default {
   },
   common: {
     noSpaceError: "存储空间不足，请清理空间或联系管理员",
+    clusterNotAvailableForAccount: "账户 {0} 没有该集群 {1} 的授权",
+    clusterPartitionNotAvailableForAccount: "账户 {0} 没有该集群 {1} 与分区 {2} 的授权",
+    userAccountNotAvailableWhenSubmit: "用户 {0} 在账户 {1} 下不可用",
+    appNotAvailableForAccount: "账户 {0} 没有该应用 {1} 的授权",
   },
 };

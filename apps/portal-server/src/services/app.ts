@@ -2,7 +2,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
-import { getI18nSeverTypeFormat, libCheckAppIsDisabled, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { getI18nSeverTypeFormat, libGetUserAvailableClusterApps } from "@scow/lib-server";
 import {
   AppCustomAttribute,
   AppCustomAttribute_AttributeType,
@@ -25,6 +25,7 @@ import { camelToSnakeCase, convertAttributesFixedValue,
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
+import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
 const errorInfo = (reason: string) =>
   encodeMessage(ErrorInfo, { domain: "", reason: reason, metadata: {} });
@@ -106,37 +107,31 @@ export const appServiceServer = plugin((server) => {
       const { account, appId, appJobName, cluster, coreCount, nodeCount, gpuCount, memory, maxTime,
         proxyBasePath, partition, qos, userId, customAttributes } = request;
 
+      // 检查在线集群
       await checkActivatedClusters({ clusterIds: cluster });
 
+      // 检查APP是否存在
       const apps = getClusterAppConfigs(cluster);
-
       const app = apps[appId];
       if (!app) {
         throw new DetailedError({
           code: Status.NOT_FOUND,
           message: `app id ${appId} is not found`,
-          details: [errorInfo("NOT FOUND")],
+          details: [errorInfo("APP_NOT_FOUND")],
         });
       }
 
-      // 如果开启了授权应用，提交时再次检查该应用是否已对账户禁用
-      if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization) {
-        const isAppDisabledToAccount = await libCheckAppIsDisabled(
+      // 管理系统存在时，增加用户账户封锁状态，授权应用，授权集群分区等鉴权
+      if (config.MIS_DEPLOYED) {
+        await validateSubmitJobInfoUnderMis({
+          userId,
+          accountName: account,
+          clusterId: cluster,
           logger,
-          cluster,
+          partitionName: partition,
+          checkAccountApp: true,
           appId,
-          account,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
-        );
-
-        if (isAppDisabledToAccount) {
-          throw new DetailedError({
-            code: Status.NOT_FOUND,
-            message: `App ${appId} is disabled to account ${account}`,
-            details: [errorInfo("NOT FOUND")],
-          });
-        }
+        });
       }
 
       const attributesConfig = app.attributes;

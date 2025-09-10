@@ -748,6 +748,11 @@ export default {
     common: {
       noAvailableClusters: "There are currently no available clusters."
       + " Please try again later or contact the administrator.",
+      clusterNotAvailableForAccount: "Account {0} is not authorized for cluster {1}",
+      clusterPartitionNotAvailableForAccount: "Account {0} is not authorized for cluster {1} and partition {2}",
+      userAccountNotAvailableWhenSubmit: "User {0} is not available under account {1}",
+      appNotAvailableForAccount: "Account {0} is not authorized for the application {1}",
+      appNotFound: "Application {} not found",
     },
   },
   notifLayout: {

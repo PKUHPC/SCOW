@@ -2,7 +2,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { jobInfo_PodStatusToJSON } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppType } from "@scow/config/build/appForAi";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { libCheckAppIsDisabled, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
@@ -28,6 +28,7 @@ import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { getClusterLoginNode } from "src/server/utils/ssh";
+import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { formatTime } from "src/utils/datetime";
 import { isPortReachable } from "src/utils/isPortReachable";
@@ -314,7 +315,7 @@ export const createAppSession = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const { clusterId, appId, appJobName,
-      maxTime, algorithms,image, datasets, models, customAttributes, account } = input;
+      maxTime, algorithms,image, datasets, models, customAttributes, account, partition } = input;
 
     const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
     const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -336,30 +337,23 @@ export const createAppSession = procedure
     }
 
     const userId = user.identityId;
-
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
     const apps = getClusterAppConfigs(clusterId);
     const app = checkAppExist(apps, appId);
 
-    // 如果开启了授权应用，提交时再次检查该应用是否已对账户禁用
-    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization) {
-      const isAppDisabledToAccount = await libCheckAppIsDisabled(
-        logger,
+    // 管理系统存在时，增加用户账户封锁状态，授权应用，授权集群分区等鉴权
+    if (config.MIS_DEPLOYED) {
+      await validateSubmitAiJobInfoUnderMis({
+        userId,
+        accountName: account,
         clusterId,
+        logger,
+        partitionName: partition,
+        checkAccountApp: true,
         appId,
-        account,
-        config.MIS_SERVER_URL,
-        commonConfig.scowApi?.auth?.token,
-      );
-
-      if (isAppDisabledToAccount) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `The appId ${appId} is disabled to account ${account}`,
-        });
-      }
+      });
     }
 
     const proxyBasePath = join(BASE_PATH, "/api/proxy", clusterId);

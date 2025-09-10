@@ -1,12 +1,14 @@
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { JobType } from "src/models/Job";
+import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
+import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
@@ -110,7 +112,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, InferenceJobName , image, models } = input;
+      const { clusterId, InferenceJobName , image, models, account, partition } = input;
 
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
 
@@ -124,6 +126,18 @@ procedure
 
       const currentClusterIds = await getCurrentClusters(userId);
       checkClusterAvailable(currentClusterIds, clusterId);
+
+      // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
+      if (config.MIS_DEPLOYED) {
+        await validateSubmitAiJobInfoUnderMis({
+          userId,
+          accountName: account,
+          clusterId,
+          logger,
+          partitionName: partition,
+          checkAccountApp: false,
+        });
+      }
 
       const em = await forkEntityManager();
       const {

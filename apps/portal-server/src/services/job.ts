@@ -10,6 +10,7 @@ import { config } from "src/config/env";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode } from "src/utils/ssh";
+import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
 export const jobServiceServer = plugin((server) => {
 
@@ -252,8 +253,20 @@ export const jobServiceServer = plugin((server) => {
     },
 
     submitJob: async ({ request, logger }) => {
-      const { cluster } = request;
+      const { cluster, userId, account, partition } = request;
       await checkActivatedClusters({ clusterIds: cluster });
+
+      // 管理系统存在时，增加用户账户封锁状态, 授权集群分区等鉴权
+      if (config.MIS_DEPLOYED) {
+        await validateSubmitJobInfoUnderMis({
+          userId,
+          accountName: account,
+          clusterId: cluster,
+          logger,
+          partitionName: partition,
+          checkAccountApp: false,
+        });
+      }
 
       const clusterOps = getClusterOps(cluster);
       if (!clusterOps) { throw clusterNotFound(cluster); }

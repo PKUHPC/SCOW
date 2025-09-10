@@ -148,6 +148,7 @@ export const LaunchAppForm = (props: Props) => {
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.launchAppForm.");
+  const i18n = useI18n();
 
   const { clusterId, appName, isTraining = false,useForCreateApp,
     appId, attributes = [], appImage, createAppParams, trainJobInput,appComment,appStartCommand } = props;
@@ -849,7 +850,25 @@ export const LaunchAppForm = (props: Props) => {
       router.push(`/jobs/${clusterId}/runningJobs`);
     },
     onError(e) {
-      message.error(`${t(p("createFailed"))}: ${e.message}`);
+      const error = e.data?.detailedError;
+      if (error?.type === "account_user_not_available") {
+        message.error(
+          `${t(p("createFailed"))}:`
+          + `${t("common.userAccountNotAvailableWhenSubmit", [error.userId, error.accountName])}`);
+      } else if (error?.type === "cluster_partition_not_available" && error.partitionName) {
+        const clusterName = publicConfig.CLUSTERS.find((x) => x.id === error.clusterId)?.name || clusterId;
+        const i18nClusterName = getI18nConfigCurrentText(clusterName, i18n.currentLanguage.id);
+        message.error(
+          `${t(p("createFailed"))}:`
+          + `${t("common.clusterPartitionNotAvailableForAccount",
+            [error.accountName, i18nClusterName, error.partitionName])}`);
+      } else if (error?.type === "app_not_available" && error.appId) {
+        message.error(
+          `${t(p("createFailed"))}:`
+          + `${t("common.appNotAvailableForAccount", [error.accountName, error.appId])}`);
+      } else {
+        message.error(`${t(p("createFailed"))}: ${e.message}`);
+      }
     },
   });
 
@@ -859,10 +878,23 @@ export const LaunchAppForm = (props: Props) => {
       router.push(`/jobs/${clusterId}/runningJobs`);
     },
     onError(e) {
-      message.error(`${t(p("submitTrainFailed"))}: ${e.message}`);
+      const error = e.data?.detailedError;
+      if (error?.type === "account_user_not_available") {
+        message.error(
+          `${t(p("submitTrainFailed"))}:`
+          + `${t("common.userAccountNotAvailableWhenSubmit", [error.userId, error.accountName])}`);
+      } else if (error?.type === "cluster_partition_not_available" && error.partitionName) {
+        const clusterName = publicConfig.CLUSTERS.find((x) => x.id === error.clusterId)?.name || clusterId;
+        const i18nClusterName = getI18nConfigCurrentText(clusterName, i18n.currentLanguage.id);
+        message.error(
+          `${t(p("submitTrainFailed"))}:`
+          + `${t("common.clusterPartitionNotAvailableForAccount",
+            [error.accountName, i18nClusterName, error.partitionName])}`);
+      } else {
+        message.error(`${t(p("submitTrainFailed"))}: ${e.message}`);
+      }
     },
   });
-
 
   const transformTime = (amount: number) => {
     switch (maxTimeUnitValue) {

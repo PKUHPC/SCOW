@@ -322,3 +322,21 @@ function mapToClusterPartitions(
 }
 
 
+
+/**
+ * 提交作业/交互式应用时 检查账户在集群或分区下的授权情况
+  * @param partitionName 如果不存在只检查账户集群的授权，如果存在检查账户在集群分区下的授权
+ */
+export async function checkAccountInClusterPartition(accountName: string, clusterId: string, partitionName?: string):
+Promise<boolean> {
+  const em = await forkEntityManager();
+
+  if (partitionName) {
+    // 检查账户在集群分区下的授权
+    const found = await em.findOne(AccountPartitionRule,
+      { accountName, clusterId, partition: partitionName });
+    return found !== null;
+  }
+  const found = await em.find(AccountClusterRule, { clusterId, accountName });
+  return found !== null;
+}

@@ -87,6 +87,15 @@ message GetClusterAssignedAccountsResponse {
     repeated string account_names = 1;
 }
 
+message IsAccountAuthorizedInClusterPartitionRequest {
+    string account_name = 1;
+    string cluster_id = 2;
+    optional string partition_name = 3;
+}
+
+message IsAccountAuthorizedInClusterPartitionResponse {
+    bool is_authorized = 1;
+}
 
 service ClusterPartitionService {
    /*
@@ -105,32 +114,40 @@ service ClusterPartitionService {
    /*
    * description: get account assigned parition names queried by clusterId
    */
-    rpc GetAccountAssignedPartitionsForCluster(GetAccountAssignedPartitionsForClusterRequest) 
+    rpc GetAccountAssignedPartitionsForCluster(GetAccountAssignedPartitionsForClusterRequest)
         returns (GetAccountAssignedPartitionsForClusterResponse) {}
 
    /*
    * description: get accounts with tenants assigned parition names queried by clusterId
-   * A batch processing interface prevents excessive concurrent requests during synchronization or other processes. 
+   * A batch processing interface prevents excessive concurrent requests during synchronization or other processes.
    */
-    rpc GetAccountsAssignedPartitionsForCluster(GetAccountsAssignedPartitionsForClusterRequest) 
+    rpc GetAccountsAssignedPartitionsForCluster(GetAccountsAssignedPartitionsForClusterRequest)
         returns (GetAccountsAssignedPartitionsForClusterResponse) {}
 
    /*
    * description: get accounts assigned clusters and partitions
-   */ 
-    rpc GetAccountsAssignedClustersAndPartitions(GetAccountsAssignedClustersAndPartitionsRequest) 
+   */
+    rpc GetAccountsAssignedClustersAndPartitions(GetAccountsAssignedClustersAndPartitionsRequest)
         returns (GetAccountsAssignedClustersAndPartitionsResponse) {}
-    
+
    /*
    * description: get tenant assigned clusters and partitions
    */
-    rpc GetTenantAssignedClustersAndPartitions(GetTenantAssignedClustersAndPartitionsRequest) 
+    rpc GetTenantAssignedClustersAndPartitions(GetTenantAssignedClustersAndPartitionsRequest)
         returns (GetTenantAssignedClustersAndPartitionsResponse) {}
 
-    /*
+  /*
    * description: get assigned accounts queried by tenantName and clusterId
    */
-    rpc GetClusterAssignedAccounts(GetClusterAssignedAccountsRequest) 
+    rpc GetClusterAssignedAccounts(GetClusterAssignedAccountsRequest)
         returns (GetClusterAssignedAccountsResponse) {}
+
+  /*
+   * description:
+   * when the partition value not exist: only check whether the account is authorized to access the cluster
+   * when the partition value exists: check whether the account is authorized to access the cluster and partition
+   */
+    rpc IsAccountAuthorizedInClusterPartition(IsAccountAuthorizedInClusterPartitionRequest)
+        returns (IsAccountAuthorizedInClusterPartitionResponse) {}
 
 }

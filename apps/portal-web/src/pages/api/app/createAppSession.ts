@@ -44,6 +44,15 @@ export const CreateAppSessionSchema = typeboxRouteSchema({
       message: Type.String(),
     }),
 
+    403: Type.Object({
+      code: Type.Union([
+        Type.Literal("APP_NOT_AVAILABLE"),
+        Type.Literal("USER_ACCOUNT_NOT_AVAILABLE"),
+        Type.Literal("CLUSTER_PARTITION_NOT_AVAILABLE"),
+
+      ]),
+      message: Type.String(),
+    }),
     404: Type.Object({
       code: Type.Literal("APP_NOT_FOUND"),
       message: Type.String(),
@@ -122,12 +131,19 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
       switch (errors[0].reason) {
         case "SBATCH_FAILED":
           return { 500: { code: "SBATCH_FAILED" as const, message: ex.details } };
-        case "NOT FOUND":
-          return { 404: { code: "APP_NOT_FOUND" as const, message: ex.details } };
         case "INVALID ARGUMENT":
           return { 400: { code: "INVALID_INPUT" as const, message: ex.details } };
         case "RESOURCE EXHAUSTED":
           return { 429: { code: "NO_SPACE" as const } };
+        case "APP_NOT_FOUND":
+          return { 404: { code: "APP_NOT_FOUND" as const, message: ex.details } };
+        case "APP_NOT_AVAILABLE":
+        case "APP_NOT_PROVIDED":
+          return { 403: { code: "APP_NOT_AVAILABLE" as const, message: ex.details } };
+        case "USER_ACCOUNT_NOT_AVAILABLE":
+          return { 403: { code: "USER_ACCOUNT_NOT_AVAILABLE" as const, message: ex.details } };
+        case "CLUSTER_PARTITION_NOT_AVAILABLE":
+          return { 403: { code: "CLUSTER_PARTITION_NOT_AVAILABLE" as const, message: ex.details } };
         default:
           return e;
       }

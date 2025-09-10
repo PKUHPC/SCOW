@@ -3,6 +3,7 @@ import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
 import { OperationType } from "@scow/lib-operation-log";
 import { JobServiceClient, TimeUnit } from "@scow/protos/build/portal/job";
+import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
@@ -45,6 +46,15 @@ export const SubmitJobSchema = typeboxRouteSchema({
     }),
 
     400: Type.Object({
+      message: Type.String(),
+    }),
+
+    403: Type.Object({
+      code: Type.Union([
+        Type.Literal("USER_ACCOUNT_NOT_AVAILABLE"),
+        Type.Literal("CLUSTER_PARTITION_NOT_AVAILABLE"),
+        Type.Literal("PERMISSION_DENIED"),
+      ]),
       message: Type.String(),
     }),
 
@@ -126,6 +136,20 @@ export default route(SubmitJobSchema, async (req, res) => {
     })
     .catch(handlegRPCError({
       [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED", message: err.details } } as const),
+      [status.PERMISSION_DENIED]: (err) => {
+        const { findDetails } = parseErrorStatus(err.metadata);
+        const errors = findDetails(ErrorInfo);
+        if (errors[0]) {
+          switch (errors[0].reason) {
+            case "USER_ACCOUNT_NOT_AVAILABLE":
+              return { 403: { code: "USER_ACCOUNT_NOT_AVAILABLE" as const, message: err.details } };
+            case "CLUSTER_PARTITION_NOT_AVAILABLE":
+              return { 403: { code: "CLUSTER_PARTITION_NOT_AVAILABLE" as const, message: err.details } };
+            default:
+              return { 403: { code: "PERMISSION_DENIED" as const, message: err.details } };
+          }
+        }
+      },
       [status.NOT_FOUND]: (err) => ({ 404: { code: "NOT_FOUND", message: err.details } } as const),
       [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
     },

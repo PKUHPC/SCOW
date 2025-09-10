@@ -1,4 +1,5 @@
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Checkbox, Col, Form, Input, InputNumber, Row, Select, Space } from "antd";
 import dayjs from "dayjs";
 import Router from "next/router";
@@ -10,11 +11,12 @@ import { api } from "src/apis";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { CodeEditor } from "src/components/CodeEditor";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AccountStatusFilter, TimeUnit } from "src/models/job";
 import { FileSelectModal } from "src/pageComponents/job/FileSelectModal";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 import { formatSize } from "src/utils/format";
 
@@ -82,7 +84,8 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
   const [form] = Form.useForm<JobForm>();
   const [loading, setLoading] = useState(false);
   const t = useI18nTranslateToString();
-
+  const { user } = useStore(UserStore);
+  const languageId = useI18n().currentLanguage.id;
 
   const cluster = Form.useWatch("cluster", form) as Cluster | undefined;
   const submit = async () => {
@@ -116,6 +119,23 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
           modal.error({
             title: t(p("errorMessage")),
             content: e.message,
+          });
+        } else {
+          throw e;
+        }
+      })
+      .httpError(403, (e) => {
+        if (e.code === "USER_ACCOUNT_NOT_AVAILABLE") {
+          modal.error({
+            title: t(p("errorMessage")),
+            content: t("pages.common.userAccountNotAvailableWhenSubmit", [user?.identityId, account]),
+          });
+        } else if (e.code === "CLUSTER_PARTITION_NOT_AVAILABLE") {
+          const clusterName = getI18nConfigCurrentText(currentClusters.find((x) => x.id == cluster.id)?.name
+                    ?? cluster.id, languageId);
+          modal.error({
+            title: t(p("errorMessage")),
+            content: t("pages.common.clusterPartitionNotAvailableForAccount", [account, clusterName, partition]),
           });
         } else {
           throw e;

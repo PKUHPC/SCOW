@@ -106,3 +106,19 @@ export async function getClusterAssignedAccounts(
 
   return result.accountNames;
 };
+
+
+// 获取用户关联账户的已授权集群和分区
+export async function isAccountAuthorizedInClusterPartition(
+  scowResourceConfig: ScowResourceConfigSchema,
+  accountName: string,
+  clusterId: string,
+  partitionName?: string): Promise<boolean> {
+
+  const resourceClient = getScowResourceClient(scowResourceConfig.address);
+
+  const result =
+    await resourceClient.resource.isAccountAuthorizedInClusterPartition({ accountName, clusterId, partitionName });
+  return result.isAuthorized;
+};
+
