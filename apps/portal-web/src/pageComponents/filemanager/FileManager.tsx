@@ -9,7 +9,7 @@ import {
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
-import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
+import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Divider, Dropdown, MenuProps, Select, Space, Switch, Tooltip } from "antd";
 import Link from "next/link";
@@ -430,7 +430,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
     const filePreviewLimitSize = publicConfig.FILE_PREVIEW_SIZE || DEFAULT_FILE_PREVIEW_LIMIT_SIZE;
     if (fileSize > convertToBytes(filePreviewLimitSize)) {
-      message.info(t(p("preview.cantPreview"), [filePreviewLimitSize]));
+      message.info(t(p("preview.fileTooLarge"), [filePreviewLimitSize]));
       return;
     }
 
@@ -441,7 +441,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         src: urlToDownload(currentClusterRef.current.id, join(path, filename), false),
       });
       return;
-    } else if (canPreviewWithEditor(filename)) {
+    } else if (!isNonEditableFilename(filename, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES)) {
       setPreviewFile({
         open: true,
         filename,
@@ -451,7 +451,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       });
       return;
     } else {
-      message.info(t(p("preview.cantPreview"), [filePreviewLimitSize]));
+      message.info(t(p("preview.unsupportedFileType")));
       return;
     }
   };

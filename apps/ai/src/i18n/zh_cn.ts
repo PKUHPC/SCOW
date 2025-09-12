@@ -569,7 +569,8 @@ export default {
         download:"下载",
         rename:"重命名",
         preview: {
-          cantPreview: "文件过大（最大{}）或者格式不支持，请下载后查看",
+          fileTooLarge: "该文件大小超标（最大{}），请下载后查看",
+          unsupportedFileType: "该文件类型不支持预览，请下载后查看",
         },
         storageQuota: "存储配额",
         usage: "使用量",

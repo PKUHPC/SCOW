@@ -183,6 +183,35 @@ inferConfig:
   # proxyHost: www.example.com
 ```
 
+### 编写文件管理配置
+
+在 `config/ai/config.yaml` 文件中，根据备注修改所需要的配置
+
+```yaml
+# 文件管理（可选）
+file:
+  # 文件预览功能（必填）
+  preview:
+    # 大小限制（必填）
+    # 可接受的格式为nginx的client_max_body_size可接受的值，默认为 50m
+    limitSize: "50m"
+  # 文件编辑功能（必填）
+  edit:
+    # 文件编辑大小限制（必填）
+    # 可接受的格式为nginx的client_max_body_size可接受的值，默认为 1m
+    # 建议设置为较大值
+    limitSize: "1m"
+    # 不可编辑的文件后缀数组（可选）
+    # 如果不填则按系统默认列表进行判断，当前系统默认列表请查看下一小节 “系统默认不可编辑文件后缀数组”
+    nonEditableFilenamePostfixes: [".exe", ".ppt"]
+```
+
+#### 系统默认不可编辑文件后缀数组
+
+```
+[".7z", ".aiff", ".apk", ".app", ".avi", ".bat", ".bin", ".bmp", ".bz2", ".cmd", ".com", ".dat", ".dll", ".dmg", ".doc", ".docx", ".exe", ".flac", ".flv", ".gif", ".gz", ".img", ".iso", ".jpeg", ".jpg", ".mkv", ".mov", ".mp3", ".mp4", ".msi", ".odt", ".ott", ".pdf", ".png", ".ppt", ".pptx", ".psd", ".rar", ".tar", ".tgz", ".tiff", ".vcd", ".wav", ".wmv", ".xcf", ".xls", ".xlsx", ".zip"]
+```
+
 ## 启动服务
 
 运行 `./cli compose up -d` 启动 **AI 系统（beta）** 服务。

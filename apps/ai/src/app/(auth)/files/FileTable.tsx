@@ -105,7 +105,6 @@ export const FileTable: React.FC<Props> = (
           ? columns.filter((column) => column.key ? !hiddenColumns.includes(column.key as ColumnKey) : true)
           : columns
       }
-      pagination={false}
       size="small"
     />
   );

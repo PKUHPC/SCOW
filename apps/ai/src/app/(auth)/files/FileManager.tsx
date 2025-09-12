@@ -1,8 +1,9 @@
 import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, ExpandOutlined,
   EyeInvisibleOutlined, EyeOutlined,FileAddOutlined, FolderAddOutlined, HomeOutlined,
   ScissorOutlined, SnippetsOutlined, UploadOutlined,UpOutlined } from "@ant-design/icons";
+import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
-import { canPreviewWithEditor, isImage } from "@scow/lib-web/build/utils/staticFiles";
+import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
 import { App, Button, Divider, Space, Tooltip } from "antd";
@@ -316,7 +317,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
 
     const filePreviewLimitSize = publicConfig.FILE_PREVIEW_SIZE || DEFAULT_FILE_PREVIEW_LIMIT_SIZE;
     if (fileSize > convertToBytes(filePreviewLimitSize)) {
-      message.info(t(p("preview.cantPreview"), [filePreviewLimitSize]));
+      message.info(t(p("preview.fileTooLarge"), [filePreviewLimitSize]));
       return;
     }
 
@@ -327,7 +328,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
         src: urlToDownload(cluster.id, join(path, filename), false, publicConfig.BASE_PATH),
       });
       return;
-    } else if (canPreviewWithEditor(filename)) {
+    } else if (!isNonEditableFilename(filename, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES)) {
       setPreviewFile({
         open: true,
         filename,
@@ -337,7 +338,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       });
       return;
     } else {
-      message.info(t(p("preview.cantPreview"), [filePreviewLimitSize]));
+      message.info(t(p("preview.unsupportedFileType")));
       return;
     }
   };
@@ -537,6 +538,10 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
         files={filesQuery.data ?? []}
         filesFilter={(files) => files.filter((file) => showHiddenFile || !file.name.startsWith("."))}
         loading={filesQuery.isFetching}
+        pagination={{
+          showSizeChanger: true,
+          defaultPageSize: DEFAULT_PAGE_SIZE,
+        }}
         rowSelection={{
           selectedRowKeys: selectedKeys,
           onChange: setSelectedKeys,

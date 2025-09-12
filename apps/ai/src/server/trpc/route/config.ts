@@ -96,6 +96,7 @@ const PublicConfigSchema = z.object({
   BASE_PATH: z.string(),
   CLIENT_MAX_BODY_SIZE: z.string(),
   FILE_EDIT_SIZE: z.string().optional(),
+  NON_EDITABLE_FILENAME_POSTFIXES: z.array(z.string()).optional(),
   FILE_PREVIEW_SIZE: z.string().optional(),
   PUBLIC_PATH: z.string(),
   NAV_LINKS: z.array(NavLinkSchema).optional(),
@@ -226,7 +227,7 @@ export const config = router({
         SCOW_RESOURCE: commonConfig.scowResource,
 
         FILE_EDIT_SIZE: aiConfig.file?.edit.limitSize,
-
+        NON_EDITABLE_FILENAME_POSTFIXES: aiConfig.file?.edit.nonEditableFilenamePostfixes,
         FILE_PREVIEW_SIZE: aiConfig.file?.preview.limitSize,
 
         MAX_JOB_RUNNING_TIME_HOURS: aiConfig.maxJobRunningTimeHours,

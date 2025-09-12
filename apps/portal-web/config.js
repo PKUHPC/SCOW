@@ -179,7 +179,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     CLIENT_MAX_BODY_SIZE: config.CLIENT_MAX_BODY_SIZE,
 
     FILE_EDIT_SIZE: portalConfig.file?.edit.limitSize,
-
+    NON_EDITABLE_FILENAME_POSTFIXES: portalConfig.file?.edit.nonEditableFilenamePostfixes,
     FILE_PREVIEW_SIZE: portalConfig.file?.preview.limitSize,
 
     PUBLIC_PATH: config.PUBLIC_PATH,

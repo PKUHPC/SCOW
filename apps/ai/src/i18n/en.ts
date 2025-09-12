@@ -569,7 +569,8 @@ export default {
         download: "Download",
         rename: "Rename",
         preview: {
-          cantPreview: "File too large (maximum {}) or format not supported, please download to view",
+          fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
+          unsupportedFileType: "Unsupported file type, please download to view",
         },
         storageQuota: "Storage quota",
         usage: "Usage",

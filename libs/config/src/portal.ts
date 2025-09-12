@@ -56,6 +56,8 @@ export const PortalConfigSchema = Type.Object({
     }, { description: "文件预览功能", default: {} }),
     edit: Type.Object({
       limitSize: Type.String({ description: "文件编辑大小限制", default: "1m" }),
+      nonEditableFilenamePostfixes: Type.Optional(Type.Array(Type.String({
+        description: "不可编辑文件后缀数组" }), { default: []})),
     }, { description: "文件编辑功能", default: {} }),
   }, { description: "文件管理" })),
 

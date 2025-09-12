@@ -24,6 +24,25 @@ harborConfig:
 # publicMountPoints:
   # - /nfs/public
 
+# 选配作业最大运行时间
+# maxJobRunningTimeHours: 24
+
+# # 文件管理（可选）
+# file:
+#   # 文件预览功能（必填）
+#   preview:
+#     # 大小限制（必填）
+#     # 可接受的格式为nginx的client_max_body_size可接受的值，默认为 50m
+#     limitSize: "50m"
+#   # 文件编辑功能（必填）
+#   edit:
+#     # 文件编辑大小限制（必填）
+#     # 可接受的格式为nginx的client_max_body_size可接受的值，默认为 1m
+#     # 建议设置为较大值
+#     limitSize: "1m"
+#     # 不可编辑的文件后缀数组（可选）
+#     # nonEditableFilenamePostfixes: [".exe", ".ppt"]
+
 # 选配推理的配置
 # inferConfig:
   # 选配，是否开启推理功能,默认开启

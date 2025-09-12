@@ -297,7 +297,8 @@ export default {
         storageQuota: "Storage Quota",
         usage: "Usage",
         preview: {
-          cantPreview: "File too large (maximum {}) or format not supported, please download to view",
+          fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
+          unsupportedFileType: "Unsupported file type, please download to view",
         },
         moveCopy: {
           copy: "Copy",

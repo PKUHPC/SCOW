@@ -79,7 +79,7 @@ export interface PublicRuntimeConfig {
   CLIENT_MAX_BODY_SIZE: string;
 
   FILE_EDIT_SIZE: string | undefined;
-
+  NON_EDITABLE_FILENAME_POSTFIXES: string[] | undefined;
   FILE_PREVIEW_SIZE: string | undefined;
 
   PUBLIC_PATH: string;
