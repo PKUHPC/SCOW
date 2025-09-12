@@ -60,11 +60,13 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
       }
 
       const workDirectoryName = `${cluster}-${appId}-${dayjs().format("YYYYMMDD-HHmmss")}`;
-      const workingDirectory = join(portalConfig.appJobsDir, workDirectoryName);
 
-      const lastSubmissionDirectory = join(portalConfig.appLastSubmissionDir, appId);
 
       return await sshConnect(host, userId, logger, async (ssh) => {
+        const userHomeDir = await getUserHomedir(ssh, userId, logger);
+        const workingDirectory = join(userHomeDir,portalConfig.appJobsDir, workDirectoryName);
+
+        const lastSubmissionDirectory = join(userHomeDir,portalConfig.appLastSubmissionDir, appId);
 
         // make sure workingDirectory exists.
         await ssh.mkdir(workingDirectory);
