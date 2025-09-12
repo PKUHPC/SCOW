@@ -4,6 +4,7 @@ import {
   DatabaseOutlined,
   DeleteOutlined, DownloadOutlined, DownOutlined, ExpandOutlined, FileAddOutlined,
   HomeOutlined, MacCommandOutlined,
+  QuestionCircleOutlined,
   ScissorOutlined, SnippetsOutlined, UploadOutlined, UpOutlined,
 } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -785,6 +786,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                   <span>
                     {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
                   </span>
+                  {fullClusterConfigs[currentClusterRef.current.id].storage?.replicaExist && (
+                    <Tooltip title={t(p("storageQuotaTooltip"))}>
+                      <QuestionCircleOutlined />
+                    </Tooltip>
+                  )}
                 </Space>
               </span>
             </div>

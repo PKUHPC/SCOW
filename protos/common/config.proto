@@ -140,6 +140,7 @@ message ClusterConfigSchemaProto {
   message Storage {
     bool enabled = 1;
     repeated string paths = 2;
+    bool replica_exist = 3;
   }
 
   // 集群ID

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: storage_manager
+title: 存储管理
 description: 开启集群存储管理的配置
 ---
 
@@ -18,7 +18,9 @@ storage:
   # 必填，字符串数组，代表当前需要被管理的文件系统挂载点
   # 当前 SCOW 仅支持一个挂载点
   paths: ["/data"]
-
+  # 可选，默认未开启副本备份
+  # 文件系统若有冗余备份数据时开启该配置
+  replicaExist: true
 ```
 ## 修改 SCOWD 配置文件
 

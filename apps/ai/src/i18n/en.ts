@@ -574,6 +574,8 @@ export default {
         },
         storageQuota: "Storage quota",
         usage: "Usage",
+        storageQuotaTooltip: "The current file system has backups set up, which will take up additional "
+          + "storage space. Therefore, the storage usage will be higher than your actual file size.",
         compress:"Compress",
         decompress:"Decompress",
         compressing:"Compressing in progress",

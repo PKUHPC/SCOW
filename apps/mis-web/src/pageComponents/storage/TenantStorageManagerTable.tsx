@@ -1,8 +1,9 @@
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Result, Space, Table } from "antd";
+import { App, Button, Divider, Form, Input, Result, Space, Table, Tooltip } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -163,6 +164,7 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
               pageInfo={pageInfo}
               setPageInfo={setPageInfo}
               cluster={query.cluster}
+              replicaExist={query.cluster ? fullClusterConfigs[query.cluster.id].storage?.replicaExist : false}
               path={storageConfig?.paths[0] || ""}
             />
           </div>
@@ -179,12 +181,13 @@ interface StorageInfoTableProps {
   isLoading: boolean;
   reload: () => void;
   cluster: Cluster | undefined;
+  replicaExist: boolean | undefined;
   path: string;
 }
 
 
 const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
-  data, pageInfo, setPageInfo, isLoading, reload, cluster, path,
+  data, pageInfo, setPageInfo, isLoading, reload, cluster, replicaExist, path,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -255,7 +258,17 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
         <Table.Column<UserQuotaInfo>
           dataIndex="quotaBytes"
           ellipsis
-          title={`${t(p("storageQuota"))} (GB)`}
+          title={(
+            <div>
+              {`${t(p("storageQuota"))}`}
+              {replicaExist ? (
+                <Tooltip title={t(p("storageQuotaTooltip"))}>
+                  <QuestionCircleOutlined />
+                </Tooltip>
+              ) : ""}
+              {" (GB)"}
+            </div>
+          )}
           render={(_, r) => `${formatBytesToGB(r.quotaBytes).toFixed(2)}`}
         />
         <Table.Column<UserQuotaInfo>

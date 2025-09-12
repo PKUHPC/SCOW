@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { getClusterConfigs, getLoginNode, getSortedClusterIds, getSortedClusters } from "@scow/config/build/cluster";
 import { getCommonConfig, getSystemLanguageConfig } from "@scow/config/build/common";
@@ -161,8 +149,9 @@ const ClusterConfigSchema = z.object({
 });
 
 const StorageConfigSchema = z.object({
-  enabled:z.boolean(),
-  paths:z.array(z.string()),
+  enabled: z.boolean(),
+  paths: z.array(z.string()),
+  replicaExist: z.boolean(),
 });
 
 export const config = router({
@@ -284,10 +273,14 @@ export const config = router({
           storage:{
             enabled:cluster.storage?.enabled ?? false,
             paths:cluster.storage?.paths ?? [],
+            replicaExist: cluster.storage?.replicaExist ?? false,
           },
         };
         return acc;
-      }, {} as Record<string, { scowdEnabled: boolean, storage: { enabled: boolean,paths: string[] } }>);
+      }, {} as Record<string, {
+        scowdEnabled: boolean,
+        storage: { enabled: boolean,paths: string[], replicaExist: boolean },
+      }>);
 
       return clusterConfigs;
     }),

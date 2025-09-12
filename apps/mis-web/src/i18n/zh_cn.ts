@@ -958,6 +958,7 @@ export default {
         operation: "操作",
         modifyQuota: "修改配额",
         clusterNotEnabledStorageManager: "可用集群暂未开启存储管理",
+        storageQuotaTooltip: "当前文件系统设置了备份会占用额外的存储空间，因此用户实际可使用存储量会小于存储额度",
       },
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "修改默认存储配额",

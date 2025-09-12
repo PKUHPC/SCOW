@@ -106,6 +106,7 @@ export const LoginDeskopConfigSchema = Type.Object({
 export const StorageConfigSchema = Type.Object({
   enabled: Type.Boolean({ description: "是否开启存储配额管理", default: false }),
   paths: Type.Array(Type.String({ description: "集群共享存储挂在路径" }), { default: []}),
+  replicaExist: Type.Boolean({ description: "是否存在备份副本", default: false }),
 });
 
 const TurboVncConfigSchema = Type.String({ description: "TurboVNC的安装路径" });

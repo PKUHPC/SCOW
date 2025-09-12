@@ -1,5 +1,6 @@
 import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, ExpandOutlined,
   EyeInvisibleOutlined, EyeOutlined,FileAddOutlined, FolderAddOutlined, HomeOutlined,
+  QuestionCircleOutlined,
   ScissorOutlined, SnippetsOutlined, UploadOutlined,UpOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
@@ -528,6 +529,11 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
                   <strong>
                     {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
                   </strong>
+                  {scowClusterConfigs[cluster.id].storage.replicaExist && (
+                    <Tooltip title={t(p("storageQuotaTooltip"))}>
+                      <QuestionCircleOutlined />
+                    </Tooltip>
+                  )}
                 </Space>
               </span>
             </div>

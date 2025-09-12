@@ -142,13 +142,8 @@ export default route(GetAppInitialConfigSchema, async (req) => {
             return acc;
           }, {});
         }
-
-
       }
-
-
     }
-
   }
 
   const hostname = getHostname(req);

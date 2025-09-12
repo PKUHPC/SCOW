@@ -726,7 +726,7 @@ export class ScowdJobDriver implements JobDriver {
       tensorBoardDataPath,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
-      modelVersions,existImage } = extraParams;
+      modelVersions, existImage } = extraParams;
 
     const { path:homeDir } = await wrap(
       this.client.file.getHomeDirectory({

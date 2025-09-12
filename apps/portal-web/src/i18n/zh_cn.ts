@@ -294,6 +294,7 @@ export default {
         decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
         storageQuota: "存储配额",
         usage: "使用量",
+        storageQuotaTooltip: "当前文件系统设置了备份会占用额外的存储空间，因此存储使用量会高于您的实际文件大小",
         preview: {
           fileTooLarge: "该文件大小超标（最大{}），请下载后查看",
           unsupportedFileType: "该文件类型不支持预览，请下载后查看",

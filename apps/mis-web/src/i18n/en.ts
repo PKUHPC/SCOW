@@ -964,7 +964,8 @@ export default {
         operation: "Operation",
         modifyQuota: "Modify Quota",
         clusterNotEnabledStorageManager: "Storage management is not enabled for the available cluster yet",
-
+        storageQuotaTooltip: "The current file system has backup settings which will take up additional storage "
+          + "space, so the actual storage available to the user will be less than the storage quota. ",
       },
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "Modify Default Storage Quota",

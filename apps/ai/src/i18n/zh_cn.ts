@@ -574,6 +574,7 @@ export default {
         },
         storageQuota: "存储配额",
         usage: "使用量",
+        storageQuotaTooltip: "当前文件系统设置了备份会占用额外的存储空间，因此存储使用量会高于您的实际文件大小",
         compress:"压缩",
         decompress:"解压缩",
         compressing:"正在压缩",

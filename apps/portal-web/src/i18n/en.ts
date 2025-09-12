@@ -296,6 +296,8 @@ export default {
         + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
         storageQuota: "Storage Quota",
         usage: "Usage",
+        storageQuotaTooltip: "The current file system has backups set up, which will take up additional "
+          + "storage space. Therefore, the storage usage will be higher than your actual file size.",
         preview: {
           fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
           unsupportedFileType: "Unsupported file type, please download to view",
