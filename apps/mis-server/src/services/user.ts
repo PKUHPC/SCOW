@@ -32,7 +32,6 @@ import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account,AccountState } from "src/entities/Account";
 import { Tenant } from "src/entities/Tenant";
-import { TenantStorageQuota } from "src/entities/TenantStorageQuota";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
 import { callHook } from "src/plugins/hookClient";
@@ -40,7 +39,7 @@ import { getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
-import { getScowdClient } from "src/utils/scowd";
+import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 
@@ -488,27 +487,7 @@ export const userServiceServer = plugin((server) => {
         })
         .then(async () => {
           // 设置用户的存储配额
-          for (const [cluster, config] of Object.entries(configClusters)) {
-            if (config.storage?.enabled && config.scowd?.enabled) {
-              const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
-              const scowdClient = getScowdClient(cluster);
-
-              const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
-              if (quotaBytes === undefined) {
-                const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
-                  path: config.storage.paths[0],
-                })).totalStorageBytes;
-
-                await scowdClient.storageQuota.setUserStorageQuota({
-                  userId: identityId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
-                });
-              } else {
-                await scowdClient.storageQuota.setUserStorageQuota({
-                  userId: identityId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
-                });
-              }
-            }
-          }
+          await setNewUserStorageQuota(em, tenantName, identityId);
 
           return true;
         })
@@ -563,6 +542,21 @@ export const userServiceServer = plugin((server) => {
              code: Status.INTERNAL,
              message: `Error creating user with userId ${identityId} in database.` } as ServiceError;
          });
+
+      // 设置用户的存储配额
+      try {
+        await setNewUserStorageQuota(em, tenantName, identityId);
+      } catch (e) {
+        await em.removeAndFlush(user);
+
+        server.logger.error("Failed to set user storage quota.", e);
+
+        throw {
+          code: Status.INTERNAL,
+          message: `Failed to set user ${identityId} storage quota.`,
+        } as ServiceError;
+      }
+
 
       await callHook("userAdded", { tenantName, userId: user.userId }, logger);
 

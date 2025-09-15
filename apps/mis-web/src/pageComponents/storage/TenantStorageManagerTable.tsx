@@ -1,5 +1,4 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
@@ -35,6 +34,10 @@ interface Props {
 
 const p = prefix("pageComp.storage.tenantStorageManangerTable.");
 const pCommon = prefix("common.");
+
+// 由于查询文件系统非常慢，所以默认一次只取 10 个用户数据
+// 不要使用 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
+const STORAGE_DEFAULT_PAGE_SIZE = 10;
 
 export const TenantStorageManagerTable: React.FC<Props> = () => {
 
@@ -84,7 +87,7 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
     setQuery({ ...query, cluster: sortedClusters[0] });
   }, [sortedClusters]);
 
-  const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+  const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: STORAGE_DEFAULT_PAGE_SIZE });
 
   const storageConfig = useMemo(() => {
     if (!query.cluster) return undefined;
@@ -241,7 +244,7 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
         loading={isLoading}
         pagination={setPageInfo ? {
           current: pageInfo.page,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
+          defaultPageSize: STORAGE_DEFAULT_PAGE_SIZE,
           pageSize: pageInfo.pageSize,
           showSizeChanger: true,
           total: data?.totalUserCount,
@@ -253,7 +256,7 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
           dataIndex="userId"
           ellipsis
           title={t(p("user"))}
-          render={(_, r) => `${r.userId} (${r.userName})`}
+          render={(_, r) => `${r.userName} (${r.userId})`}
         />
         <Table.Column<UserQuotaInfo>
           dataIndex="quotaBytes"

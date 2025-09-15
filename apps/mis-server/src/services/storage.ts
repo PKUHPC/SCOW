@@ -74,13 +74,16 @@ export const storageServiceServer = plugin((server) => {
 
         const usersWithQuotaInfo: UserWithQuotaInfo[] = tenantUsers.map((user) => {
           const userStorageQuota = tenantUsersQuota.find((q) => q.user.id === user.id)?.storageQuota;
-          const userUsedStorage = userQuotaInfos.find((info) => info.userId === user.userId)?.usedStorageBytes;
+          const quotaInfo = userQuotaInfos.find((info) => info.userId === user.userId);
 
           return {
             userId: user.userId,
             name: user.name,
-            storageQuota: Number(userStorageQuota || tenantQuota?.userDefaultQuota || totalStorageBytes),
-            usedStorageBytes: Number(userUsedStorage || 0),
+            storageQuota: Number(
+              userStorageQuota || tenantQuota?.userDefaultQuota ||
+              quotaInfo?.blockHardLimitBytes || totalStorageBytes,
+            ),
+            usedStorageBytes: Number(quotaInfo?.usedStorageBytes || 0),
             useDefault: userStorageQuota === undefined ? true : false,
           };
         });
@@ -310,8 +313,10 @@ export const storageServiceServer = plugin((server) => {
           } else {
             return {
               path,
-              quotaBytes: Number(tenantQuotas?.find((quota) => quota.path === path)?.userDefaultQuota ||
-              totalStorageBytes),
+              quotaBytes: Number(
+                tenantQuotas?.find((quota) => quota.path === path)?.userDefaultQuota ||
+                userQuotaInfos[0]?.blockHardLimitBytes || totalStorageBytes,
+              ),
               usedStorageBytes: Number(usedStorageBytes),
             };
           }
