@@ -108,7 +108,7 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
 
             const dataString = data.toString();
             if (dataString.includes(OPEN_FILE) && !dataString.includes("pwd")) {
-              const result = dataString.split("\r\n")[0];
+              const result = dataString.trim().split("\r\n")[0];
               const pathStartIndex = result.search("/");
               const path = result.substring(pathStartIndex);
 
