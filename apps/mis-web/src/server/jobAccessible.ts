@@ -32,11 +32,11 @@ interface Props {
   cluster: string
   info: UserInfo
   limitMinutes?: number
-  allowUser?: boolean
+  allowUserAndAccountAdminChangeJobTimeLimit?: boolean
 }
 
 export async function checkJobAccessible({
-  actionType, jobId, cluster, info, limitMinutes, allowUser = true,
+  actionType, jobId, cluster, info, limitMinutes, allowUserAndAccountAdminChangeJobTimeLimit = true,
 }: Props,
 ): Promise<Result> {
 
@@ -71,14 +71,16 @@ export async function checkJobAccessible({
   }
   // 用户发起了这个作业
   // 如果是取消作业和查询作业时限，返回"OK"
-  // 如果是修改作业时限，需要allowUser 为true时返回"OK"
-  if (job.user === info.identityId && (actionType !== "changeJobLimit" || allowUser)) {
+  // changeJobLimit 时 allowUserAndAccountAdminChangeJobTimeLimit 为true时返回"OK"
+  if (job.user === info.identityId && (actionType !== "changeJobLimit" || allowUserAndAccountAdminChangeJobTimeLimit)) {
     result.jobAccessible = "OK";
     return result;
   }
 
   // 用户是这个作业的账户的管理员或者拥有者
-  if (info.accountAffiliations.some((x) => x.accountName === job.account && x.role !== UserRole.USER)) {
+  // changeJobLimit 时 allowUserAndAccountAdminChangeJobTimeLimit 为true时返回"OK"
+  if (info.accountAffiliations.some((x) => x.accountName === job.account && x.role !== UserRole.USER)
+  && (actionType !== "changeJobLimit" || allowUserAndAccountAdminChangeJobTimeLimit)) {
     result.jobAccessible = "OK";
     return result;
   }

@@ -75,7 +75,8 @@ export default /* #__PURE__*/route(ChangeJobTimeLimitSchema,
       cluster,
       info,
       limitMinutes,
-      allowUser: publicConfig.CHANGE_JOB_LIMIT.allowUser,
+      allowUserAndAccountAdminChangeJobTimeLimit:
+      publicConfig.CHANGE_JOB_LIMIT.allowUserAndAccountAdmin,
     });
 
     if (jobAccessible === "NotAllowed") {

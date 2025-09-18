@@ -176,7 +176,7 @@ export const MisConfigSchema = Type.Object({
   uiExtension: Type.Optional(UiExtensionConfigSchema),
 
   allowUserChangeJobTimeLimit: Type.Boolean({
-    description: "普通用户是否可以修改作业时限",
+    description: "普通用户和账户管理员是否可以修改作业时限",
     default: true,
   }),
 

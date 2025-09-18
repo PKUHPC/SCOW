@@ -14,7 +14,7 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
-import { App, Divider, Popover, Space, Table, Tag } from "antd";
+import { App, Popover, Space, Table, Tag } from "antd";
 import { LinkProps } from "next/link";
 import React from "react";
 import { api } from "src/apis";

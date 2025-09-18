@@ -33,7 +33,7 @@ async function queryCapabilities(authUrl, phase) {
     // @ts-ignore
     return await getCapabilities(authUrl);
   } else {
-    return { changePassword: true, createUser: true, validateName: true, changeEmail:true, deleteUser: true, };
+    return { changePassword: true, createUser: true, validateName: true, changeEmail: true, deleteUser: true, };
   }
 }
 
@@ -161,7 +161,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     AI_URL: config.AI_DEPLOYED ? (config.AI_URL || misConfig.aiUrl || "") : undefined,
 
-    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || misConfig.quantumUrl)  : undefined,
+    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || misConfig.quantumUrl) : undefined,
 
     PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 
@@ -177,7 +177,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     VERSION_TAG: versionTag,
 
-    AUDIT_DEPLOYED:  config.AUDIT_DEPLOYED,
+    AUDIT_DEPLOYED: config.AUDIT_DEPLOYED,
 
     RUNTIME_I18N_CONFIG_TEXTS: {
       accountNamePatternMessage: misConfig.accountNamePattern?.errorMessage,
@@ -211,7 +211,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     UI_EXTENSION: misConfig.uiExtension,
 
     CHANGE_JOB_LIMIT: {
-      allowUser: misConfig.allowUserChangeJobTimeLimit,
+      allowUserAndAccountAdmin: misConfig.allowUserChangeJobTimeLimit // 这个是是否允许用户和账户管理员的
     },
 
     JOB_CHARGE_METADATA: misConfig.jobChargeMetadata,

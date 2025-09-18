@@ -50,6 +50,7 @@ interface Props {
   filterAccountName?: boolean;
   showAccount: boolean;
   showUser: boolean;
+  showChangeTimeLimit?: boolean;
 }
 
 
@@ -57,7 +58,7 @@ const p = prefix("pageComp.job.runningJobTable.");
 const pCommon = prefix("common.");
 
 export const RunningJobQueryTable: React.FC<Props> = ({
-  userId, accountNames, showUser, showAccount, filterAccountName = true,
+  userId, accountNames, showUser, showAccount, filterAccountName = true, showChangeTimeLimit = false,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -206,6 +207,7 @@ export const RunningJobQueryTable: React.FC<Props> = ({
         showAccount={showAccount}
         showUser={showUser}
         showCluster={false}
+        showChangeTimeLimit={showChangeTimeLimit}
         reload={reload}
         selection={{
           selected, setSelected,
@@ -224,6 +226,7 @@ interface JobInfoTableProps {
   showAccount: boolean;
   showCluster: boolean;
   showUser: boolean;
+  showChangeTimeLimit?: boolean;
   reload: () => void;
   selection?: {
     selected: RunningJobInfo[];
@@ -234,13 +237,13 @@ interface JobInfoTableProps {
 const ChangeJobTimeLimitModalLink = ModalLink(ChangeJobTimeLimitModal);
 
 export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, isLoading, reload, showAccount, showUser, showCluster, selection,
+  data, isLoading, reload, showAccount, showUser, showCluster, selection,showChangeTimeLimit = false,
 }) => {
   const router = useRouter();
   const [previewItem, setPreviewItem] = useState<RunningJobInfo | undefined>(undefined);
 
-  // 非用户页面或者用户页面且用户允许修改作业时限
-  const changeJobLimitEnabled = showUser || (!showUser && publicConfig.CHANGE_JOB_LIMIT.allowUser);
+  // 租户页面或者用户账户管理员页面且用户账户管理员允许修改作业时限
+  const changeJobLimitEnabled = showChangeTimeLimit || publicConfig.CHANGE_JOB_LIMIT.allowUserAndAccountAdmin;
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;

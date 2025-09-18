@@ -144,6 +144,9 @@ nodeMigration:
     - group: ["linux", "ai01"]
     - group: ["linux", "ai02", "crane01"]
 
+# 选配是否允许用户和账户管理员修改作业时限，默认为true
+allowUserChangeJobTimeLimit: true
+
 # # 新增导航链接相关配置
 # navLinks:
 #   # 链接名

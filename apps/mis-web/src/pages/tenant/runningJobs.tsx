@@ -30,6 +30,7 @@ export const RunningJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includ
         <RunningJobQueryTable
           showUser={true}
           showAccount={true}
+          showChangeTimeLimit={true}
           accountNames={undefined}
         />
       </div>

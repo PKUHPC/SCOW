@@ -110,7 +110,7 @@ export interface PublicRuntimeConfig {
 
   UI_EXTENSION?: UiExtensionConfigSchema;
 
-  CHANGE_JOB_LIMIT: { allowUser: boolean }
+  CHANGE_JOB_LIMIT: { allowUserAndAccountAdmin: boolean }
 
   JOB_CHARGE_METADATA: jobChargeMetadataType;
 
