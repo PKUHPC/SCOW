@@ -71,7 +71,11 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   const { publicConfig: { BASE_PATH, NOVNC_CLIENT_URL } } = usePublicConfig();
   const { message } = App.useApp();
 
-  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({ clusterId: cluster, jobId: session.jobId }, {
+  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({
+    clusterId: cluster,
+    jobId: session.jobId,
+    sessionId: session.sessionId,
+  }, {
     enabled: !!session.jobId,
   });
 

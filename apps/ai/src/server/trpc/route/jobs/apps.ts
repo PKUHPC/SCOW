@@ -24,6 +24,7 @@ import {
   createHarborImageUrl,
   formatContainerId,
 } from "src/server/utils/image";
+import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
@@ -31,7 +32,6 @@ import { getClusterLoginNode } from "src/server/utils/ssh";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
 import { getIdPrivate } from "src/utils/app";
 import { formatTime } from "src/utils/datetime";
-import { isPortReachable } from "src/utils/isPortReachable";
 import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
@@ -904,12 +904,13 @@ procedure
   .input(z.object({
     clusterId: z.string(),
     jobId: z.number(),
+    sessionId: z.string(),
   })).output(z.object({
     ok: z.boolean(),
   })).query(
-    async ({ input, ctx: { user } }) => {
+    async ({ input, ctx: { req,user } }) => {
 
-      const { jobId, clusterId } = input;
+      const { jobId, clusterId, sessionId } = input;
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
@@ -922,7 +923,25 @@ procedure
         if (connectionInfo?.response?.$case === "appConnectionInfo") {
           const host = connectionInfo.response.appConnectionInfo.host;
           const port = connectionInfo.response.appConnectionInfo.port;
-          const reachable = await isPortReachable(port, host, TIMEOUT_MS);
+          const apps = getClusterAppConfigs(clusterId);
+
+          const reply = await driver.withJobDriver({
+            clusterId, user: user.identityId,
+          }, async (jobDriver) => {
+            return await jobDriver.connectToApp(clusterId, sessionId);
+          }, logger);
+
+          const app = apps[reply.appId];
+
+          if (!app) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: `app id ${reply.appId} is not found`,
+            });
+          }
+
+          const reachable = await isPortReachableThroughUrl(
+            req, TIMEOUT_MS, clusterId, host, port, app.type, app.web?.proxyType);
           return { ok: reachable };
         } else {
           return { ok: false };
