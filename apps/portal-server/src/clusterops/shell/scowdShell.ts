@@ -9,7 +9,7 @@ import { certificates, getLoginNodeScowdUrl } from "src/utils/scowd";
 export const scowdShellServices = (): ShellOps => ({
   shell: async (request, logger) => {
 
-    const { call, cluster, loginNode, userId, rows, cols } = request;
+    const { call, cluster, loginNode, userId, path, rows, cols } = request;
 
     const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode);
 
@@ -40,7 +40,7 @@ export const scowdShellServices = (): ShellOps => ({
 
     try {
       const scowdStream = client.shell.shell((async function* () {
-        yield { message: { case: "connect", value: { cluster, loginNode, userId, rows, cols } } };
+        yield { message: { case: "connect", value: { cluster, loginNode, userId, path, rows, cols } } };
 
         for await (const data of call.iter()) {
           if (clientDisconnected) {
