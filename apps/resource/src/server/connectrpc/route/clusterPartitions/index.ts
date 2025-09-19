@@ -147,6 +147,8 @@ export default (router: ConnectRouter) => {
     Promise<AssignAccountOnCreateResponse> {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountName, tenantName } = request;
+      logger.info("A new account will be created."
+         + " Assign account %s in tenant %s with default assigned clusters and partitions.", accountName, tenantName);
       // 获取当前在线集群分区
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger)
         .catch(() => {

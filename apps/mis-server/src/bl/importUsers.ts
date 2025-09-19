@@ -99,7 +99,7 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
     const account = accountMap[a.accountName];
     accounts.push(account);
 
-    if (existingAccountNamesSet && !existingAccountNamesSet.has(a.accountName)) {
+    if (!existingAccountNamesSet?.has(a.accountName)) {
       newAccountsToCreate.push(account);
     }
 
@@ -131,6 +131,7 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
 
   // 如果已配置资源管理服务，则向数据库写入新创建的账户数据
   if (commonConfig.scowResource?.enabled && newAccountsToCreate.length > 0) {
+    logger.info("Add assignment of clusters and partitions to %s new accounts", newAccountsToCreate.length);
     await Promise.all(newAccountsToCreate.map(async (acc) => {
       // 失败时已写入的数据不回滚, 再次创同名租户账户时会重新写入默认授权分区
       await scowResourcePlugin?.assignAccountOnCreate({
@@ -148,13 +149,14 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
   const accountAppBlacklistsToPersist: AccountAppBlacklist[] = [];
   // 如果开启授权应用功能
   // 新建账户时按照所属租户禁用的默认应用列表来写入账户禁用app
-  if (commonConfig.allowAppAuthorization && accounts.length > 0) {
+  if (commonConfig.allowAppAuthorization && newAccountsToCreate.length > 0) {
     const affiliatedTenantBlackAppList = await em.find(TenantDefaultAppRemovedList, {
       tenant: tenant,
     }, { populate: ["tenant"]});
 
     if (affiliatedTenantBlackAppList.length > 0) {
-      const accountDisabledApps = accounts.flatMap((account) => {
+      logger.info("Add app blacklist to %s new accounts", newAccountsToCreate.length);
+      const accountDisabledApps = newAccountsToCreate.flatMap((account) => {
         return affiliatedTenantBlackAppList.map((t) => {
           return new AccountAppBlacklist({
             account: account,
