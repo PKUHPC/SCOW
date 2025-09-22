@@ -35,13 +35,23 @@ interface Props {
   path: string;
 }
 
-const OPEN_FILE = "This command is only valid for SCOW web shells";
 const OPEN_EXPLORER_PREFIX = "SCOW is opening the file system";
 const DOWNLOAD_FILE_PREFIX = "SCOW is downloading file ";
 const DOWNLOAD_FILE_SUFFIX = " in directory ";
 const EDIT_FILE_PREFIX = "SCOW is redirecting to the editor for the file ";
 const EDIT_FILE_SUFFIX = " in directory ";
 const UPLOAD_FILE_PREFIX = "SCOW is uploading files in directory ";
+
+const processShellOutput = (dataString: string) => {
+
+  const result = dataString.trim().split("\r\n")[0];
+
+  const pathStartIndex = result.search("/");
+  const path = result.substring(pathStartIndex);
+
+  return { result, path };
+};
+
 
 export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
 
@@ -107,26 +117,24 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
             const data = Buffer.from(message.data.data);
 
             const dataString = data.toString();
-            if (dataString.includes(OPEN_FILE) && !dataString.includes("pwd")) {
-              const result = dataString.trim().split("\r\n")[0];
-              const pathStartIndex = result.search("/");
-              const path = result.substring(pathStartIndex);
-
-              if (result.includes(OPEN_EXPLORER_PREFIX)) {
-                window.open(join(publicConfig.BASE_PATH, "/files", cluster, path));
-              } else if (result.includes(DOWNLOAD_FILE_PREFIX)) {
-                const fileStartIndex = result.search(DOWNLOAD_FILE_PREFIX);
-                const fileEndIndex = result.search(DOWNLOAD_FILE_SUFFIX);
-                const file = result.substring(fileStartIndex + DOWNLOAD_FILE_PREFIX.length, fileEndIndex);
-                window.location.href = urlToDownload(cluster, join(path, file), true);
-              } else if (result.includes(EDIT_FILE_PREFIX)) {
-                const fileStartIndex = result.search(EDIT_FILE_PREFIX);
-                const fileEndIndex = result.search(EDIT_FILE_SUFFIX);
-                const file = result.substring(fileStartIndex + EDIT_FILE_PREFIX.length, fileEndIndex);
-                window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?edit=" + file));
-              } else if (result.includes(UPLOAD_FILE_PREFIX)) {
-                window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?uploadModalOpen=true"));
-              }
+            if (dataString.includes(OPEN_EXPLORER_PREFIX)) {
+              const { path } = processShellOutput(dataString);
+              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path));
+            } else if (dataString.includes(DOWNLOAD_FILE_PREFIX)) {
+              const { result, path } = processShellOutput(dataString);
+              const fileStartIndex = result.search(DOWNLOAD_FILE_PREFIX);
+              const fileEndIndex = result.search(DOWNLOAD_FILE_SUFFIX);
+              const file = result.substring(fileStartIndex + DOWNLOAD_FILE_PREFIX.length, fileEndIndex);
+              window.location.href = urlToDownload(cluster, join(path, file), true);
+            } else if (dataString.includes(EDIT_FILE_PREFIX)) {
+              const { result, path } = processShellOutput(dataString);
+              const fileStartIndex = result.search(EDIT_FILE_PREFIX);
+              const fileEndIndex = result.search(EDIT_FILE_SUFFIX);
+              const file = result.substring(fileStartIndex + EDIT_FILE_PREFIX.length, fileEndIndex);
+              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?edit=" + file));
+            } else if (dataString.includes(UPLOAD_FILE_PREFIX)) {
+              const { path } = processShellOutput(dataString);
+              window.open(join(publicConfig.BASE_PATH, "/files", cluster, path + "?uploadModalOpen=true"));
             }
             term.write(Uint8Array.from(data));
 
