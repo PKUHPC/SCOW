@@ -325,6 +325,7 @@ export default {
         availableAccounts:"可用账户",
         roles:"平台角色",
         notExist:"用户不存在",
+        forceChangePasswordFailed: "设置用户强制修改密码失败",
         notAvailable:"本功能在当前配置下不可用",
         success:"修改成功",
         fail:"修改失败",
@@ -755,6 +756,7 @@ export default {
         tenantRole:"租户角色",
         affiliatedAccountName:"关联账户",
         notExist:"用户不存在",
+        forceChangePasswordFailed: "设置用户强制修改密码失败",
         notAvailable:"本功能在当前配置下不可用",
         changeSuccess:"修改成功",
         changeFail:"修改失败",
@@ -1158,17 +1160,14 @@ export default {
           userNotExistAuth: "用户未存在于认证系统",
           unableDetermineUserExistAuth: "无法确定用户是否存在于认证系统",
           userExistAuthMessage: "用户已经在认证系统中存在，您此处输入的密码将会不起作用，新用户的密码将是认证系统中的已有用户的当前密码。点击“确认”将会将此用户直接添加到SCOW数据库。",
-
-
-
           userNotExistAuthMessage: "点击“确认”将会同时在SCOW数据库和认证系统创建此用户",
-
           userExistInSCOWDatabaseMessage: "此用户存在于scow数据库",
           userExistAndAddToSCOWDatabaseMessage: "此用户存在于认证系统中，已成功添加到SCOW数据库",
-
           createUserFail: "创建用户失败",
           addCompleted: "添加完成！",
           crateUser: "创建用户",
+          forceChangePasswordFailed: "设置用户强制修改密码失败",
+          notAvailable:"本功能在当前配置下不可用",
         },
       },
       finance: {

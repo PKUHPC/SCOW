@@ -89,7 +89,11 @@ const CreateUserPageForm: React.FC = () => {
                     userId: identityId,
                     forceFlag: true,
                   },
-                }).catch((e) => { console.log(e); });
+                })
+                  .httpError(500, (e) => {
+                    message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`); })
+                  .httpError(501, () => {
+                    message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`); });
               } else {
                 modal.info({
                   title: t("common.addSuccess"),

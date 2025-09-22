@@ -336,7 +336,11 @@ export const AdminUserTable: React.FC<Props> = ({
                             userId: r.id,
                             forceFlag: true,
                           },
-                        }).catch((e) => { console.log(e, "err"); });
+                        })
+                          .httpError(500, (e) => {
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`); })
+                          .httpError(501, () => {
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`); });
                       })
                       .catch(() => { message.error(t(p("changeFail"))); });
                   }}
