@@ -1,5 +1,32 @@
 # @scow/portal-server
 
+## 1.9.3
+
+### Patch Changes
+
+- 45117e6: 在 AI,HPC 提交作业和交互式应用时增加用户账户，账户集群分区的鉴权
+- 1429cb8: hpc 的 ssh 提交应用的工作路径改为绝对路径
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- b9ebb97: 解决文件管理页面进入 shell 功能无法进入到对应目录的问题
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [45117e6]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/lib-scow-resource@0.2.12
+  - @scow/lib-config@1.0.5
+  - @scow/protos@1.0.28
+  - @scow/lib-server@1.4.3
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.26
+
 ## 1.9.2
 
 ### Patch Changes

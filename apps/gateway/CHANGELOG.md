@@ -1,5 +1,15 @@
 # @scow/gateway
 
+## 1.9.3
+
+### Patch Changes
+
+- 6d9d184: 修复 ai 日志接口不活跃的日志返回慢
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+  - @scow/lib-config@1.0.5
+
 ## 1.9.2
 
 ## 1.9.1

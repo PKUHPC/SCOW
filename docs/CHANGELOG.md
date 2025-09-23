@@ -1,5 +1,17 @@
 # @scow/docs
 
+## 1.4.14
+
+### Patch Changes
+
+- e92c889: 登录时默认开启验证码功能
+- 60709f3: 文件管理新增不可编辑文件后缀数组配置
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- 3ed0aa1: 仪表盘配置，控制对普通用户的显示内容模式
+- 6f5c6ec: 量子 UI 同步其他系统变更以及部分遗漏细节完善、消费类型增加量子作业费用
+- 358a7cb: 文档更新更多文件系统配置详情 /SCOW/docs/deploy/config/mis/storage/storage_manager
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+
 ## 1.4.13
 
 ### Patch Changes

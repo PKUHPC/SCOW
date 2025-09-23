@@ -1,5 +1,45 @@
 # @scow/ai
 
+## 0.4.3
+
+### Patch Changes
+
+- 20caddd: AI 数据分享，删除源文件夹后，无法再取消分享；推理和训练的工作目录修改为绝对路径
+- 45117e6: 在 AI,HPC 提交作业和交互式应用时增加用户账户，账户集群分区的鉴权
+- c790437: 修复了 ai 获取正在运行作业慢
+- 326e3e8: 未结束作业没作业时隐藏滚动条
+- e42b8f2: 删除 ai 文件管理列表 mode 列，将分享相关操作 userId 修改为普通用户
+- 60709f3: 文件管理新增不可编辑文件后缀数组配置
+- 3ed0aa1: 仪表盘配置，控制对普通用户的显示内容模式
+- 3df34c4: 修改 ai 的检测应用是否可访问
+- d1f6f9b: 在作业详情中增加镜像等内容显示
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+- 06c289a: 增加作业状态解释，增加容器 pending 说明展示
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [45117e6]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [326e3e8]
+- Updated dependencies [58e7347]
+- Updated dependencies [60709f3]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [3ede0e1]
+  - @scow/config@1.9.0
+  - @scow/lib-scow-resource@0.2.12
+  - @scow/lib-config@1.0.5
+  - @scow/lib-web@1.5.3
+  - @scow/protos@1.0.28
+  - @scow/lib-server@1.4.3
+  - @scow/lib-operation-log@2.2.3
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.26
+
 ## 0.4.2
 
 ### Patch Changes

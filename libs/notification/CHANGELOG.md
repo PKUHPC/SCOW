@@ -1,5 +1,18 @@
 # @scow/lib-notification
 
+## 1.0.13
+
+### Patch Changes
+
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+
 ## 1.0.12
 
 ### Patch Changes

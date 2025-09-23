@@ -1,5 +1,44 @@
 # @scow/mis-web
 
+## 1.9.3
+
+### Patch Changes
+
+- 358a7cb: 调整存储配额展示逻辑和列表用户列展示
+- 2ea2e6a: 账户管理员不能修改作业时限
+- 9532ecb: 提高 portal/mis-web 首页加载速度，修复大屏条件下第一屏会渲染出侧边栏的问题
+- 326e3e8: 未结束作业没作业时隐藏滚动条
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- 6f5c6ec: 量子 UI 同步其他系统变更以及部分遗漏细节完善、消费类型增加量子作业费用
+- 0af08a4: 修改重复导航项及不准确的国际化 title
+- 358a7cb: 根据业务需要调整存储配额展示逻辑
+- 3ede0e1: 隐藏标签休眠或网络异常时的消息系统请求报错提示
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+- 3a5cf03: 账号属于租户管理员不属于平台管理员时，创建用户多余报错
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [45117e6]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [326e3e8]
+- Updated dependencies [58e7347]
+- Updated dependencies [60709f3]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [3ede0e1]
+  - @scow/config@1.9.0
+  - @scow/lib-scow-resource@0.2.12
+  - @scow/lib-config@1.0.5
+  - @scow/lib-web@1.5.3
+  - @scow/protos@1.0.28
+  - @scow/lib-notification@1.0.13
+  - @scow/lib-operation-log@2.2.3
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.2
 
 ### Patch Changes

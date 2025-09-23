@@ -1,5 +1,11 @@
 # @scow/scow-resource-protos
 
+## 0.3.0
+
+### Minor Changes
+
+- 45117e6: 在资源管理中增加接口 isAccountAuthorizedInClusterPartition 判断账户是否在当前集群分区下已授权
+
 ## 0.2.1
 
 ### Patch Changes

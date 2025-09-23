@@ -1,5 +1,36 @@
 # @scow/resource
 
+## 0.3.3
+
+### Patch Changes
+
+- 45117e6: 在 AI,HPC 提交作业和交互式应用时增加用户账户，账户集群分区的鉴权
+- ca3371e: 修复导入用户时新建账户默认授权集群和分区没有写入，
+  修改导入用户时需要写入禁用授权应用的账户对象列表为全新未创建过的账户
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [326e3e8]
+- Updated dependencies [58e7347]
+- Updated dependencies [45117e6]
+- Updated dependencies [60709f3]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [3ede0e1]
+  - @scow/config@1.9.0
+  - @scow/lib-config@1.0.5
+  - @scow/lib-web@1.5.3
+  - @scow/scow-resource-protos@0.3.0
+  - @scow/protos@1.0.28
+  - @scow/lib-server@1.4.3
+  - @scow/lib-hook@1.0.28
+  - @scow/lib-scheduler-adapter@1.1.26
+
 ## 0.3.2
 
 ### Patch Changes

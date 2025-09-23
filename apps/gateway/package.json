@@ -1,7 +1,7 @@
 {
   "name": "@scow/gateway",
   "private": true,
-  "version": "1.9.2",
+  "version": "1.9.3",
   "main": "build/index.js",
   "files": [
     "build",

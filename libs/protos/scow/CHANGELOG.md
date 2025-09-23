@@ -1,5 +1,14 @@
 # @scow/protos
 
+## 1.0.28
+
+### Patch Changes
+
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- Updated dependencies [58e7347]
+- Updated dependencies [a5f0e1d]
+  - @scow/grpc-api@1.23.2
+
 ## 1.0.27
 
 ### Patch Changes

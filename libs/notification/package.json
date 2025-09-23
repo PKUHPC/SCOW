@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-notification",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "",
   "main": "index.js",
   "private": true,

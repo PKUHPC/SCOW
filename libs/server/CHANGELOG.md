@@ -1,5 +1,23 @@
 # @scow/lib-server
 
+## 1.4.3
+
+### Patch Changes
+
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [58e7347]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/protos@1.0.28
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.26
+
 ## 1.4.2
 
 ### Patch Changes

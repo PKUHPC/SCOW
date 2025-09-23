@@ -1,5 +1,12 @@
 # @scow/grpc-api
 
+## 1.23.2
+
+### Patch Changes
+
+- 58e7347: 在 proto/portal 下对 desktop 的增删改查的 Request/Response 增加可选参数兼容 shadowdesk 控制工具.
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+
 ## 1.23.1
 
 ### Patch Changes

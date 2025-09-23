@@ -1,5 +1,26 @@
 # @scow/config
 
+## 1.9.0
+
+### Minor Changes
+
+- e92c889: **在 auth.yaml 中将验证码功能变更为默认开启**
+  文档: /SCOW/docs/deploy/config/auth/config#验证码功能
+
+### Patch Changes
+
+- a5f0e1d: 新增文件系统是否存在副本备份的配置，/docs/deploy/config/mis/storage/storage_manager
+- 2ea2e6a: allowUserChangeJobTimeLimit 的范围由 限制用户 扩大到 限制用户和账户管理员(docs/deploy/config/mis/intro#编写后端服务配置)
+- 58e7347: 在 portal.yaml 文件 loginDesktop 配置项中增加 shadowDesk 远程控制工具相关的配置
+  文档相对路径/SCOW/docs/deploy/config/portal/intro
+- 9edf6f9: ai 增加是否开启推理的配置。文档位置: /SCOW/docs/docs/deploy/config/ai/intro.md ### 修改安装配置文件
+- 60709f3: 新增 file.edit.nonEditableFilenamePostfixes 不可编辑文件名后缀数组配置, /docs/deploy/config/ai/intro、/docs/deploy/config/portal/intro
+- 3ed0aa1: 仪表盘配置，控制对普通用户的显示内容模式, 文档在/SCOW/docs/deploy/config/customization/custom-dashboard-user-display
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+  - @scow/lib-config@1.0.5
+
 ## 1.8.2
 
 ### Patch Changes

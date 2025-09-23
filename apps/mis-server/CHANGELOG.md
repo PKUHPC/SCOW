@@ -1,5 +1,36 @@
 # @scow/mis-server
 
+## 1.9.3
+
+### Patch Changes
+
+- 358a7cb: 调整存储配额展示逻辑和列表用户列展示
+- ca3371e: 修复导入用户时新建账户默认授权集群和分区没有写入，
+  修改导入用户时需要写入禁用授权应用的账户对象列表为全新未创建过的账户
+- 6f5c6ec: 量子 UI 同步其他系统变更以及部分遗漏细节完善、消费类型增加量子作业费用
+- 358a7cb: 根据业务需要调整存储配额展示逻辑
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [45117e6]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [45117e6]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/lib-scow-resource@0.2.12
+  - @scow/lib-config@1.0.5
+  - @scow/scow-resource-protos@0.3.0
+  - @scow/protos@1.0.28
+  - @scow/lib-server@1.4.3
+  - @scow/lib-hook@1.0.28
+  - @scow/lib-notification@1.0.13
+  - @scow/lib-scheduler-adapter@1.1.26
+
 ## 1.9.2
 
 ### Patch Changes

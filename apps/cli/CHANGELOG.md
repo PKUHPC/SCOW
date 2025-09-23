@@ -1,5 +1,25 @@
 # @scow/cli
 
+## 1.9.3
+
+### Patch Changes
+
+- 60709f3: 文件管理新增不可编辑文件后缀数组配置
+- 6f5c6ec: 量子 UI 同步其他系统变更以及部分遗漏细节完善、消费类型增加量子作业费用
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/lib-config@1.0.5
+
 ## 1.9.2
 
 ### Patch Changes

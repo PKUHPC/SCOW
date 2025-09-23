@@ -1,6 +1,6 @@
 {
   "name": "@scow/auth",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "",
   "main": "build/index.js",
   "private": true,

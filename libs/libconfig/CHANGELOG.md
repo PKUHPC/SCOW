@@ -1,5 +1,13 @@
 # @scow/lib-config
 
+## 1.0.5
+
+### Patch Changes
+
+- 6f5c6ec: 管理系统消费类型增加量子作业费用配置
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- 3ed0aa1: 仪表盘配置，控制对普通用户的显示内容模式
+
 ## 1.0.4
 
 ### Patch Changes

@@ -1,5 +1,44 @@
 # @scow/portal-web
 
+## 1.9.3
+
+### Patch Changes
+
+- 06a1579: 量子系统创建 jupyter 应用后跳转回量子系统
+- 45117e6: 在 AI,HPC 提交作业和交互式应用时增加用户账户，账户集群分区的鉴权
+- 9532ecb: 提高 portal/mis-web 首页加载速度，修复大屏条件下第一屏会渲染出侧边栏的问题
+- 326e3e8: 未结束作业没作业时隐藏滚动条
+- 60709f3: 文件管理新增不可编辑文件后缀数组配置
+- 58e7347: 在登录节点桌面上增加 shadowdesk 远程控制工具
+- 3ed0aa1: 仪表盘配置，控制对普通用户的显示内容模式
+- eb2ec4c: 修复 shell 的 scow 命令（sopen 等）的输出并非在同一个消息里发出时 scow 无法识别的问题
+- 3ede0e1: 隐藏标签休眠或网络异常时的消息系统请求报错提示
+- a5f0e1d: 新增是否存在存储副本的配置，并提供提示
+- 293e42a: shell 中 scow 命令执行概率性失败问题修复
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [45117e6]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [326e3e8]
+- Updated dependencies [58e7347]
+- Updated dependencies [60709f3]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [3ede0e1]
+  - @scow/config@1.9.0
+  - @scow/lib-scow-resource@0.2.12
+  - @scow/lib-config@1.0.5
+  - @scow/lib-web@1.5.3
+  - @scow/protos@1.0.28
+  - @scow/lib-notification@1.0.13
+  - @scow/lib-operation-log@2.2.3
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.2
 
 ### Patch Changes

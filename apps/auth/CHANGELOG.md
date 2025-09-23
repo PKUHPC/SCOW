@@ -1,5 +1,24 @@
 # @scow/auth
 
+## 1.9.3
+
+### Patch Changes
+
+- e92c889: 登录时默认开启验证码功能
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [6f5c6ec]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [58e7347]
+- Updated dependencies [3ed0aa1]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/lib-config@1.0.5
+  - @scow/lib-server@1.4.3
+
 ## 1.9.2
 
 ### Patch Changes

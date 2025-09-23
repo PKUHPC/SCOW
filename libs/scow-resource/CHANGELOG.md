@@ -1,5 +1,21 @@
 # @scow/lib-scow-resource
 
+## 0.2.12
+
+### Patch Changes
+
+- 45117e6: 在 AI,HPC 提交作业和交互式应用时增加用户账户，账户集群分区的鉴权
+- Updated dependencies [a5f0e1d]
+- Updated dependencies [2ea2e6a]
+- Updated dependencies [58e7347]
+- Updated dependencies [45117e6]
+- Updated dependencies [9edf6f9]
+- Updated dependencies [60709f3]
+- Updated dependencies [e92c889]
+- Updated dependencies [3ed0aa1]
+  - @scow/config@1.9.0
+  - @scow/scow-resource-protos@0.3.0
+
 ## 0.2.11
 
 ### Patch Changes
