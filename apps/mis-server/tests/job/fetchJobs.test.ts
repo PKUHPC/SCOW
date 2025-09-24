@@ -138,6 +138,7 @@ it("jobs can be imported when jobs from other clusters already exist in the data
     endTime: "2022-01-13T03:20:26.715Z",
     state: "COMPLETED",
     workingDirectory: "",
+    "gpusReq": 0,
   }, undefined, emptyJobPriceInfo());
 
   const em = server.ext.orm.em.fork();

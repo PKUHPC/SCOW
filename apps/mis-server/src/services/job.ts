@@ -286,7 +286,7 @@ export const jobServiceServer = plugin((server) => {
         async (client) => {
           const fields = [
             "job_id", "partition", "name", "user", "state", "elapsed_seconds",
-            "nodes_alloc", "node_list", "reason", "account", "cpus_alloc", "gpus_alloc",
+            "nodes_req", "node_list", "reason", "account", "cpus_req", "gpus_req",
             "qos", "submit_time", "time_limit_minutes", "working_directory",
           ];
 

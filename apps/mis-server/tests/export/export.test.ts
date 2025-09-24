@@ -104,6 +104,7 @@ const mockOriginalJobData = (
   "timeWait": endTime ? 0 : 132,
   "qos": "normal",
   "recordTime": new Date("2020-04-23T23:49:50.000Z"),
+  "gpusReq": 0,
 } }, data.tenant.name, {
   tenant: { billingItemId: "", price: new Decimal(20) },
   account: { billingItemId: "", price: new Decimal(10) },
