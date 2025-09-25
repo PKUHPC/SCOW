@@ -21,7 +21,7 @@ import { config } from "src/server/config/env";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { AUTH_INTERNAL_URL, USE_MOCK } from "src/utils/processEnv";
 
-import { validateToken } from "./token";
+import { getUserInfoForUserId, validateUserToken } from "./token";
 
 export const mockUserInfo: ClientUserInfo = {
   identityId: "demo_admin",
@@ -30,6 +30,8 @@ export const mockUserInfo: ClientUserInfo = {
 };
 
 type RequestType = IncomingMessage | NextApiRequest | NextRequest | NextPageContext["req"];
+
+const xScowUserIdHeaderKey = "x-scow-user-id";
 
 export async function getUserInfo(req: RequestType, res?: NextApiResponse): Promise<ClientUserInfo | undefined> {
 
@@ -40,15 +42,30 @@ export async function getUserInfo(req: RequestType, res?: NextApiResponse): Prom
     return mockUserInfo;
   }
 
-  const result = await validateToken(token);
+  const commonConfig = getCommonConfig();
 
+  if (req?.headers && commonConfig.scowApi?.auth?.token && commonConfig.scowApi.auth.token === token) {
+    const userIdHeaderValue = (req instanceof Request)
+      ? req.headers.get(xScowUserIdHeaderKey) : req.headers[xScowUserIdHeaderKey];
 
-  if (!result?.identityId) {
+    const userId = Array.isArray(userIdHeaderValue) ? userIdHeaderValue[0] : userIdHeaderValue;
+
+    if (!userId) { return undefined; }
+
+    const info = await getUserInfoForUserId(userId);
+    return { ...info, token };
+  }
+
+  const identityId = await validateUserToken(token);
+
+  if (!identityId) {
     deleteUserToken(res);
     return;
   }
 
-  return { ...result, token };
+  const userInfo = await getUserInfoForUserId(identityId);
+
+  return { ...userInfo, token };
 
 }
 

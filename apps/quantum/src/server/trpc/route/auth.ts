@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { deleteUserToken, getUserToken, setUserTokenCookie } from "src/server/auth/cookie";
 import { getUserInfo } from "src/server/auth/server";
-import { validateToken } from "src/server/auth/token";
+import { validateUserToken } from "src/server/auth/token";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
 import { router } from "src/server/trpc/def";
@@ -66,7 +66,7 @@ export const auth = router({
     .query(async ({ ctx: { res }, input }) => {
       const { token } = input;
 
-      const info = await validateToken(token);
+      const info = await validateUserToken(token);
       if (info) {
         // set token cache
         setUserTokenCookie(token, res);

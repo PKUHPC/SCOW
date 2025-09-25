@@ -25,4 +25,6 @@ passwordPattern:
 # SCOW直接使用此语言，不允许用户再进行语言切换
 # systemLanguage: "zh_cn"
 
-
+scowApi:
+  auth:
+    token: test

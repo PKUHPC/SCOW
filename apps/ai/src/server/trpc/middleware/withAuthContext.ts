@@ -11,8 +11,7 @@
  */
 
 import { TRPCError } from "@trpc/server";
-import { getUserToken } from "src/server/auth/cookie";
-import { validateToken } from "src/server/auth/token";
+import { getUserInfo } from "src/server/auth/server";
 import { middleware } from "src/server/trpc/def";
 
 /**
@@ -20,28 +19,20 @@ import { middleware } from "src/server/trpc/def";
  */
 export const withAuthContext = middleware(async ({ ctx, next }) => {
 
-  const token = getUserToken(ctx.req);
+  const userInfo = await getUserInfo(ctx.req);
 
-  if (!token) {
+  if (!userInfo) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
     });
   }
 
-  const info = await validateToken(token);
-
-  if (!info) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-    });
-  }
 
   return next({
     ctx: {
       ...ctx,
       user: {
-        ...info,
-        token,
+        ...userInfo,
       },
     },
   });

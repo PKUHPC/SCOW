@@ -17,7 +17,7 @@ import { IncomingMessage } from "http";
 import { NextApiRequest } from "next";
 import { join } from "path";
 import { getUserToken } from "src/server/auth/cookie";
-import { validateToken } from "src/server/auth/token";
+import { validateUserToken } from "src/server/auth/token";
 import { clusters } from "src/server/trpc/route/config";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { BASE_PATH } from "src/utils/processEnv";
@@ -91,16 +91,16 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     return;
   }
 
-  const userInfo = await validateToken(token);
+  const identityId = await validateUserToken(token);
 
-  if (!userInfo) {
+  if (!identityId) {
     console.log("[shell] userInfo is not valid");
     ws.close(0, "userInfo is not valid");
     return;
   }
 
   const log = (message: string, ...optionalParams: any[]) => console.log(
-    `[io] [${userInfo.identityId}] ${message}`, optionalParams);
+    `[io] [${identityId}] ${message}`, optionalParams);
 
   log("Connection request received.");
 
@@ -148,7 +148,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
     fields: ["job_id"],
     filter: {
-      users: [userInfo.identityId], accounts: [],
+      users: [identityId], accounts: [],
       states: ["RUNNING"],
     },
   }).then((resp) => resp.jobs);

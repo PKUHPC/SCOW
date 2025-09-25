@@ -17,7 +17,7 @@ import { TRPCError } from "@trpc/server";
 import { join } from "path";
 import { deleteUserToken, getUserToken, setUserTokenCookie } from "src/server/auth/cookie";
 import { changeEmail, getUserInfo } from "src/server/auth/server";
-import { validateToken } from "src/server/auth/token";
+import { validateUserToken } from "src/server/auth/token";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
@@ -104,25 +104,27 @@ export const auth = router({
     .query(async ({ ctx: { req, res }, input }) => {
       const { token, fromAuth = false } = input;
 
-      const info = await validateToken(token);
-      if (info) {
-        if (fromAuth) {
-          const logInfo = {
-            operatorUserId: info.identityId,
-            operatorIp: parseIp(req) ?? "",
-            operationTypeName: OperationType.login,
-          };
-          await callLog(logInfo, OperationResult.SUCCESS);
-        }
-        // set token cache
-        setUserTokenCookie(token, res);
-        res.redirect(BASE_PATH);
-      } else {
+      const identityId = await validateUserToken(token);
+
+      if (!identityId) {
         throw new TRPCError({
-          message: "Token has expired",
+          message: "Token is not valid",
           code: "FORBIDDEN",
         });
       }
+
+      if (fromAuth) {
+        const logInfo = {
+          operatorUserId: identityId,
+          operatorIp: parseIp(req) ?? "",
+          operationTypeName: OperationType.login,
+        };
+        await callLog(logInfo, OperationResult.SUCCESS);
+      }
+      // set token cache
+      setUserTokenCookie(token, res);
+      res.redirect(BASE_PATH);
+
     }),
 
   login: baseProcedure
@@ -162,10 +164,10 @@ export const auth = router({
 
       const token = getUserToken(req) || "";
       if (token) {
-        const info = await validateToken(token);
-        if (info) {
+        const identityId = await validateUserToken(token);
+        if (identityId) {
           const logInfo = {
-            operatorUserId: info.identityId,
+            operatorUserId: identityId,
             operatorIp: parseIp(req) ?? "",
             operationTypeName: OperationType.logout,
           };

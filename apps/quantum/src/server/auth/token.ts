@@ -1,34 +1,37 @@
-import { getUser, validateToken as authValidateToken } from "@scow/lib-auth";
+import { getCommonConfig } from "@scow/config/src/common";
+import { validateToken as authValidateToken } from "@scow/lib-auth";
+import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { UserInfo } from "src/models/User";
 import { config } from "src/server/config/env";
 import { USE_MOCK } from "src/utils/processEnv";
 
 import { mockUserInfo } from "./server";
 
-const AUTH_INTERNAL_URL = config.AUTH_INTERNAL_URL;
-
-
-export async function validateToken(token: string | undefined): Promise<UserInfo | undefined> {
+// 在认证系统中验证token，并获取对应的UserId
+export async function validateUserToken(token: string): Promise<string | undefined> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return mockUserInfo;
+    return mockUserInfo.identityId;
   }
 
   if (!token) { return undefined; }
 
-  const resp = await authValidateToken(AUTH_INTERNAL_URL, token).catch(() => undefined);
+  const resp = await authValidateToken(config.AUTH_INTERNAL_URL, token).catch(() => undefined);
 
-  if (!resp) {
-    return undefined;
-  }
+  return resp?.identityId;
+}
 
-  const userInfo = await getUser(AUTH_INTERNAL_URL, { identityId: resp.identityId })
-    .catch(() => undefined);
+// 通过UserId获取用户信息
+// 不会处理mock情况
+export async function getUserInfoForUserId(identityId: string): Promise<UserInfo> {
+
+  const commonConfig = getCommonConfig();
+
+  const userInfo = await libWebGetUserInfo(identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
   return {
-    identityId: resp.identityId,
-    name: userInfo?.name,
+    identityId,
+    ...userInfo,
   };
-
 }
 

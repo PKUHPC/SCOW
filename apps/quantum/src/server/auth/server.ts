@@ -1,11 +1,17 @@
+import { getCommonConfig } from "@scow/config/src/common";
+import { validateToken as authValidateToken } from "@scow/lib-auth";
+import { libWebChangeEmail } from "@scow/lib-web/build/server/user";
 import { IncomingMessage } from "http";
 import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
 import { NextRequest } from "next/server";
 import { deleteUserToken, getUserToken } from "src/server/auth/cookie";
+import { config } from "src/server/config/env";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { USE_MOCK } from "src/utils/processEnv";
 
-import { validateToken } from "./token";
+const AUTH_INTERNAL_URL = config.AUTH_INTERNAL_URL;
+
+import { getUserInfoForUserId, validateUserToken } from "./token";
 
 export const mockUserInfo: ClientUserInfo = {
   identityId: "demo_admin",
@@ -14,6 +20,8 @@ export const mockUserInfo: ClientUserInfo = {
 };
 
 type RequestType = IncomingMessage | NextApiRequest | NextRequest | NextPageContext["req"];
+
+const xScowUserIdHeaderKey = "x-scow-user-id";
 
 export async function getUserInfo(req: RequestType, res?: NextApiResponse): Promise<ClientUserInfo | undefined> {
 
@@ -24,15 +32,47 @@ export async function getUserInfo(req: RequestType, res?: NextApiResponse): Prom
     return mockUserInfo;
   }
 
-  const result = await validateToken(token);
+  const commonConfig = getCommonConfig();
 
+  if (req?.headers && commonConfig.scowApi?.auth?.token && commonConfig.scowApi.auth.token === token) {
+    const userIdHeaderValue = (req instanceof Request)
+      ? req.headers.get(xScowUserIdHeaderKey) : req.headers[xScowUserIdHeaderKey];
 
-  if (!result?.identityId) {
+    const userId = Array.isArray(userIdHeaderValue) ? userIdHeaderValue[0] : userIdHeaderValue;
+
+    if (!userId) { return undefined; }
+
+    const info = await getUserInfoForUserId(userId);
+    return { ...info, token };
+  }
+
+  const identityId = await validateUserToken(token);
+
+  if (!identityId) {
     deleteUserToken(res);
     return;
   }
 
-  return { ...result, token };
+  const userInfo = await getUserInfoForUserId(identityId);
 
+  return { ...userInfo, token };
+
+}
+
+export async function changeEmail(req: RequestType, newEmail: string) {
+
+  const token = getUserToken(req);
+  if (!token) { return undefined; }
+
+  const resp = await authValidateToken(AUTH_INTERNAL_URL, token).catch(() => undefined);
+
+  if (!resp) {
+    return undefined;
+  }
+
+  const commonConfig = getCommonConfig();
+
+  return await libWebChangeEmail(resp.identityId, newEmail,
+    config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 }
 

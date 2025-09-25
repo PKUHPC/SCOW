@@ -19,26 +19,30 @@ import { AUTH_INTERNAL_URL, USE_MOCK } from "src/utils/processEnv";
 
 import { mockUserInfo } from "./server";
 
-export async function validateToken(token: string | undefined): Promise<UserInfo | undefined> {
+// 验证token，并获取对应的UserId
+export async function validateUserToken(token: string): Promise<string | undefined> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return mockUserInfo;
+    return mockUserInfo.identityId;
   }
 
   if (!token) { return undefined; }
 
   const resp = await authValidateToken(AUTH_INTERNAL_URL, token).catch(() => undefined);
 
-  if (!resp) {
-    return undefined;
-  }
+  return resp?.identityId;
+}
+
+// 通过UserId获取用户信息
+// 不会处理mock情况
+export async function getUserInfoForUserId(identityId: string): Promise<UserInfo> {
 
   const commonConfig = getCommonConfig();
 
-  const userInfo = await libWebGetUserInfo(resp.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userInfo = await libWebGetUserInfo(identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
   return {
-    identityId: resp.identityId,
+    identityId,
     ...userInfo,
   };
 }

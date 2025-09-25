@@ -2,7 +2,6 @@ import { IncomingMessage } from "http";
 import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
 import { NextRequest } from "next/server.js";
 import { destroyCookie, parseCookies, setCookie } from "nookies";
-import { USE_MOCK } from "src/utils/processEnv";
 
 export const SCOW_COOKIE_KEY = "SCOW_USER";
 
@@ -16,19 +15,36 @@ export function deleteUserToken(res?: NextApiResponse) {
 
 type RequestType = NextRequest | IncomingMessage | NextApiRequest | NextPageContext["req"];
 
+// 先找Authorization header，再找cookie
 export function getUserToken(req: RequestType): string | undefined {
-  if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return "test";
+
+  if (!req) { return undefined; }
+
+  // try in header
+  const authHeaderValue = (req instanceof Request)
+    ? req.headers.get("authorization") : req.headers.authorization;
+
+  if (authHeaderValue) {
+
+    const tokenValue = (Array.isArray(authHeaderValue) ? authHeaderValue[0] : authHeaderValue).trim();
+
+    const parts = tokenValue.split(" ");
+    if (parts.length === 2 && parts[0] === "Bearer") {
+      return parts[1];
+    }
   }
 
-  if (req instanceof Request) {
-    return req.cookies.get(SCOW_COOKIE_KEY)?.value;
+  const cookieToken = (req instanceof Request)
+    ? req.cookies.get(SCOW_COOKIE_KEY)?.value
+    : parseCookies({ req })[SCOW_COOKIE_KEY];
+
+  if (cookieToken) {
+    return cookieToken;
   }
 
-  const cookies = parseCookies({ req });
-
-  return cookies[SCOW_COOKIE_KEY];
+  return undefined;
 }
+
 
 export function setUserTokenCookie(token: string, res: NextApiResponse) {
   setCookie({ res }, SCOW_COOKIE_KEY, token, {

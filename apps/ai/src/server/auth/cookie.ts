@@ -27,15 +27,34 @@ export function deleteUserToken(res?: NextApiResponse) {
 
 type RequestType = NextRequest | IncomingMessage | NextApiRequest | NextPageContext["req"];
 
+// 先找Authorization header，再找cookie
 export function getUserToken(req: RequestType): string | undefined {
 
-  if (req instanceof Request) {
-    return req.cookies.get(SCOW_COOKIE_KEY)?.value;
+  if (!req) { return undefined; }
+
+  // try in header
+  const authHeaderValue = (req instanceof Request)
+    ? req.headers.get("authorization") : req.headers.authorization;
+
+  if (authHeaderValue) {
+
+    const tokenValue = (Array.isArray(authHeaderValue) ? authHeaderValue[0] : authHeaderValue).trim();
+
+    const parts = tokenValue.split(" ");
+    if (parts.length === 2 && parts[0] === "Bearer") {
+      return parts[1];
+    }
   }
 
-  const cookies = parseCookies({ req });
+  const cookieToken = (req instanceof Request)
+    ? req.cookies.get(SCOW_COOKIE_KEY)?.value
+    : parseCookies({ req })[SCOW_COOKIE_KEY];
 
-  return cookies[SCOW_COOKIE_KEY];
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  return undefined;
 }
 
 export function setUserTokenCookie(token: string, res: NextApiResponse) {

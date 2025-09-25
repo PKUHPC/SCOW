@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
+import { getUserInfo } from "src/server/auth/server";
 import { quantumConfig } from "src/server/config/quantum";
 import { UserToken } from "src/server/entities/UserToken";
-import { authenticateNextRequest } from "src/server/trpc/middleware/withAuthContext";
 import withOrmContext from "src/server/trpc/middleware/withOrmContext";
 import { baseProcedure } from "src/server/trpc/procedure/base";
 import { USE_MOCK } from "src/utils/processEnv";
@@ -23,31 +23,32 @@ export const backendApiProcedure = baseProcedure
     // 检查authorization token是否存在
     const token = ctx.req.headers.authorization?.replace("Bearer ", "");
 
-    if (!token) {
-      // 如果没有带authorization token，就和其他API一样验证cookie
-
-      const user = await authenticateNextRequest(ctx.req);
-
-      return next({
-        ctx: {
-          ...ctx,
-          user,
-        },
+    // 检查这个token是不是某个用户的token
+    if (token) {
+      const tokenModel = await ctx.orm.em.fork().findOne(UserToken, {
+        token,
       });
+
+      if (tokenModel) {
+        return next({ ctx: { ...ctx, user: { identityId: tokenModel.userId } } });
+      }
     }
 
-    const tokenModel = await ctx.orm.em.fork().findOne(UserToken, {
-      token,
-    });
+    // 否则就和其他的API一样验证
+    const user = await getUserInfo(ctx.req);
 
-    if (!tokenModel) {
+    if (!user) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Invalid authorization bearer token",
       });
     }
 
-    return next({ ctx: { ...ctx, user: { identityId: tokenModel.userId } } });
+    return next({
+      ctx: {
+        ...ctx,
+        user,
+      },
+    });
   });
 
 export async function callBackendApi(path: string, init: RequestInit) {

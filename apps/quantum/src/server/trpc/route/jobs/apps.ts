@@ -53,7 +53,6 @@ export const listAppSessions =
     }))
     .output(z.object({ sessions: z.array(AppSessionSchema) }))
     .query(async ({ input, ctx: { user } }) => {
-
       if (USE_MOCK) {
         return { sessions: [], count: 0 };
       }
