@@ -23,6 +23,10 @@ jobs:
     name: Test and version packages
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
 
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+      (github.event_name == 'pull_request')
+
     permissions:
       contents: write
       pull-requests: write
@@ -127,6 +131,10 @@ jobs:
   scow-cli:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
 
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+      (github.event_name == 'pull_request')
+
     steps:
       - uses: actions/checkout@v4
 
@@ -175,7 +183,7 @@ jobs:
           echo "${{ secrets.FILE_SERVER_PRIVATE_KEY }}" > ~/.ssh/id_rsa_file_server
           chmod 600 ~/.ssh/id_rsa_file_server
           ssh-keyscan "${{ vars.FILE_SERVER_HOST }}" >> ~/.ssh/known_hosts
-          
+
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}" "mkdir -p ${target_dir}"
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server apps/cli/exe/cli-x64 "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-x64
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server apps/cli/exe/cli-arm64 "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-arm64
@@ -187,6 +195,10 @@ jobs:
 
   build-images:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+      (github.event_name == 'pull_request')
 
     permissions:
       contents: read
@@ -255,7 +267,7 @@ jobs:
     needs:
       - scow-cli
       - build-images
-    if: github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
       - name: Install SSH dependencies
