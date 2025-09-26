@@ -32,7 +32,7 @@ export const InitMultipartUploadSchema = typeboxRouteSchema({
     429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     500: Type.Object({ code: Type.Literal("INITIAL_UPLOAD_FAILED") }),
     501: Type.Object({ code: Type.Literal("UNIMPLEMENTED") }),
-    520: Type.Object({ code: Type.Literal("UNKNOWN_ERROR") }),
+    520: Type.Object({ code: Type.Literal("UNKNOWN_ERROR") }), 
   },
 });
 

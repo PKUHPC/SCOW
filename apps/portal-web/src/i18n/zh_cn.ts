@@ -394,7 +394,8 @@ export default {
         multipartUploadError: "文件上传失败: {}",
         calculateHashError: "计算哈希值错误: {}",
         uploadFileListNotExist: "上传文件列表中不存在: {}",
-        mergeFileChunksErrorText: "合并文件 {} 失败，请重试",
+        mergeFileChunksErrorText: "合并文件 {} 失败。{}",
+        isMerging: "正在合并...",
       },
       uploadDirModal: {
         title: "上传文件夹",
@@ -417,7 +418,8 @@ export default {
         multipartUploadError: "文件上传失败: {}",
         calculateHashError: "计算哈希值错误: {}",
         uploadFileListNotExist: "上传文件列表中不存在: {}",
-        mergeFileChunksErrorText: "合并文件 {} 失败，请重试",
+        mergeFileChunksErrorText: "合并文件 {} 失败。{}",
+        isMerging: "正在合并...",
       },
     },
     // desktop

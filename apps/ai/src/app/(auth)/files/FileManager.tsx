@@ -1,15 +1,16 @@
-import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, ExpandOutlined,
+import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, DownOutlined, ExpandOutlined,
   EyeInvisibleOutlined, EyeOutlined,FileAddOutlined, FolderAddOutlined, HomeOutlined,
   QuestionCircleOutlined,
   ScissorOutlined, SnippetsOutlined, UploadOutlined,UpOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
+import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
-import { App, Button, Divider, Space, Tooltip } from "antd";
+import { App, Button, Divider, Dropdown, MenuProps, Space, Tooltip } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
 import React, { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -23,6 +24,7 @@ import { MkdirModal } from "src/components/MkdirModal";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { TitleText } from "src/components/PageTitle";
 import { TableTitle } from "src/components/TableTitle";
+import { UploadDirModal } from "src/components/UploadDirModal";
 import { UploadModal } from "src/components/UploadModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
@@ -80,6 +82,11 @@ export interface Compression {
   completed: string[];
 }
 
+enum UploadType {
+  File = "file",
+  Dir = "dir",
+}
+
 export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.fileManager.");
@@ -93,6 +100,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
   };
   const { message, modal } = App.useApp();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { publicConfig, scowClusterConfigs } = usePublicConfig();
 
   const prevPathRef = useRef<string>(path);
@@ -344,6 +352,51 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
     }
   };
 
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploadDirModalOpen, setIsUploadDirModalOpen] = useState(false);
+
+  useEffect(() => {
+    const uploadModalParam = searchParams?.get("uploadModalOpen");
+    const uploadQuery = queryToString(uploadModalParam);
+    if (uploadQuery === "true") {
+      setIsUploadModalOpen(true);
+    } else {
+      setIsUploadModalOpen(false);
+    }
+  }, []);
+
+  const handleUploadModalClose = () => {
+    setIsUploadModalOpen(false);
+  };
+
+  const handleUploadDirModalClose = () => {
+    setIsUploadDirModalOpen(false);
+  };
+
+  const handleUploadMenuClick: MenuProps["onClick"] = (e) => {
+    if (e.key as UploadType === UploadType.File) {
+      setIsUploadModalOpen(true);
+    } else {
+      setIsUploadDirModalOpen(true);
+    }
+  };
+
+  const uploadMenuItems: MenuProps["items"] = [
+    {
+      label: t(p("uploadFile")),
+      key: UploadType.File,
+    },
+    {
+      label: t(p("uploadDir")),
+      key: UploadType.Dir,
+    },
+  ];
+
+  const uploadMenuProps = {
+    items: uploadMenuItems,
+    onClick: handleUploadMenuClick,
+  };
+
   return (
     <div>
       <TitleText>
@@ -381,13 +434,26 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       </TopBar>
       <OperationBar>
         <Space wrap>
-          <UploadButton
-            clusterId={cluster.id}
-            path={path}
-            reload={reload}
-          >
-            {t(p("upload"))}
-          </UploadButton>
+          { scowClusterConfigs[cluster.id]?.scowdEnabled ? (
+            <Dropdown menu={uploadMenuProps}>
+              <Button icon={<UploadOutlined />}>
+                <Space>
+                  上传
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Dropdown>
+          ) : (
+            <UploadButton
+              externalOpen={isUploadModalOpen}
+              clusterId={cluster.id}
+              path={path}
+              reload={reload}
+              scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
+            >
+              {t(p("upload"))}
+            </UploadButton>
+          )}
           <Divider type="vertical" />
           <Button
             icon={<DeleteOutlined />}
@@ -627,6 +693,22 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       />
       <ImagePreviewer previewImage={previewImage} setPreviewImage={setPreviewImage} />
       <FileEditModal previewFile={previewFile} setPreviewFile={setPreviewFile} />
+      <UploadModal
+        open={isUploadModalOpen}
+        onClose={handleUploadModalClose}
+        clusterId={cluster.id}
+        path={path}
+        reload={reload}
+        scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
+      />
+      <UploadDirModal
+        open={isUploadDirModalOpen}
+        onClose={handleUploadDirModalClose}
+        clusterId={cluster.id}
+        path={path}
+        reload={reload}
+        scowdEnabled={scowClusterConfigs[cluster.id]?.scowdEnabled}
+      />
     </div>
   );
 };

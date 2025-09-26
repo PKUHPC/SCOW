@@ -28,7 +28,10 @@ export const MergeFileChunksSchema = typeboxRouteSchema({
     404: Type.Object({ code: Type.Literal("FILE_NOT_EXISTS") }),
     429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     501: Type.Object({ code: Type.Literal("UNIMPLEMENTED") }),
-    520: Type.Object({ code: Type.Literal("MERGE_CHUNKS_FAILED") }),
+    520: Type.Object({
+      code: Type.Literal("MERGE_CHUNKS_FAILED"),
+      error: Type.Optional(Type.String()),
+    }),
   },
 });
 
@@ -61,7 +64,7 @@ export default route(MergeFileChunksSchema, async (req, res) => {
   }, handlegRPCError({
     [status.NOT_FOUND]: () => ({ 404: { code: "FILE_NOT_EXISTS" as const } }),
     [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
-    [status.UNKNOWN]: () => ({ 520: { code: "MERGE_CHUNKS_FAILED" as const } }),
+    [status.UNKNOWN]: (err) => ({ 520: { code: "MERGE_CHUNKS_FAILED" as const, error: err.details } }),
     [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
     [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
   },

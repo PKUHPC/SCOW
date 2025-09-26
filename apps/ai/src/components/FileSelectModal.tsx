@@ -253,6 +253,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
               <UploadFileButton
                 path={path}
                 clusterId={clusterId}
+                scowdEnabled={scowClusterConfigs[clusterId]?.scowdEnabled}
                 reload={async () => {
                   await refetch();
                   setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent ?? []));

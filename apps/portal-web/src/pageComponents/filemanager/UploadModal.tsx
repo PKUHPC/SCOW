@@ -1,4 +1,6 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
+import { useUploadSpeedTracker } from "@scow/lib-web/src/utils/fileUpload/uploadSpeedHook";
+import { PercentAndSpeedContainer } from "@scow/lib-web/src/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
 import { join } from "path";
 import { useEffect, useRef, useState } from "react";
@@ -27,12 +29,15 @@ const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
+
 export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
   const { message, modal } = App.useApp();
   const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
   const uploadControllers = useRef(new Map<string, AbortController>());
 
   const t = useI18nTranslateToString();
+  // 使用上传文件的速度追踪器，速度更新时间 1000 ms
+  const speedTracker = useUploadSpeedTracker(1000);
 
   useEffect(() => {
     return () => {
@@ -46,6 +51,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     }
 
     uploadControllers.current.clear();
+    speedTracker.cleanupAll();
     onClose();
   };
 
@@ -54,6 +60,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     if (controller) {
       controller.abort();
       uploadControllers.current.delete(file.uid);
+      speedTracker.cleanupFile(file.uid);
     }
 
     return true;
@@ -81,9 +88,30 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       return;
     }
 
+    // 计算已上传字节数
+    const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
+    speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+
     const updateProgress = (count: number) => {
       uploadedCount += count;
-      onProgress?.({ percent: Number(((uploadedCount / totalCount) * 100).toFixed(2)) });
+      const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+
+      // 更新速度
+      const currentTotalLoaded = uploadedCount * chunkSizeByte;
+      speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+
+      // 手动更新 fileList 中的percent
+      setUploadFileList((prevList) => {
+        return prevList.map((uploadFile) => {
+          return uploadFile.name === file.name
+            ? { ...uploadFile,
+              percent: percentage,
+              status: "uploading" as const }
+            : uploadFile;
+        });
+      });
+
+      onProgress?.({ percent: percentage });
     };
 
     const controller = new AbortController();
@@ -139,8 +167,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         await api.mergeFileChunks({ body: { cluster, path, name: file.name, sizeByte: file.size } })
           .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
           .httpError(520, (err) => {
-            message.error(t(p("mergeFileChunksErrorText"), [file.name]));
-            throw err;
+            message.error(t(p("mergeFileChunksErrorText"), [file.name, err?.error]));
           });
       }
 
@@ -149,9 +176,9 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       throw err;
     } finally {
       uploadControllers.current.delete(uploadFile.uid);
+      speedTracker.cleanupFile(uploadFile.uid);
     }
   };
-
 
   return (
     <Modal
@@ -246,6 +273,22 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           });
         }}
         fileList={uploadFileList}
+        itemRender={(originNode, file) => {
+          const speed = speedTracker.getFileSpeed(file.uid);
+          const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+            : speed?.speedText ?? "0 B/s";
+          return (
+            <div>
+              {/* 原始的文件节点（包含进度条等） */}
+              {originNode}
+              <PercentAndSpeedContainer>
+                {file.status === "uploading" && (
+                  <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                )}
+              </PercentAndSpeedContainer>
+            </div>
+          );
+        }}
       >
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -258,4 +301,3 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     </Modal>
   );
 };
-

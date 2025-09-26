@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { NextRequest, NextResponse } from "next/server";
 import { getUserInfo } from "src/server/auth/server";
 import { withFileDriver } from "src/server/trpc/Driver/fileDriver/fileDriver";
@@ -20,6 +8,8 @@ import { z } from "zod";
 const queryZod = z.object({
   clusterId: z.string(),
   path: z.string(),
+  chunk: z.string(),
+  originPath: z.string().optional(),
 });
 
 export type UploadQuery = z.infer<typeof queryZod>;

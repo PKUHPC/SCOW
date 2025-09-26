@@ -1,32 +1,26 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { ConnectError } from "@connectrpc/connect";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { libGetUserQuotaUsage } from "@scow/lib-web/build/server/storage";
 import { TRPCError } from "@trpc/server";
-import path from "path";
+import path, { join } from "path";
 import { commonConfig } from "src/server/config/common";
 import { config as envConfig } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
+import { clusterNotFound } from "src/server/utils/errors";
 import { logger } from "src/server/utils/logger";
+import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
 import { getCurrentClusters } from "../../utils/clusters";
 import { withFileDriver } from "../Driver/fileDriver/fileDriver";
-import { FileMetaSchema, ListDirectorySchema } from "../model/file";
+import { FileMetaSchema, InitMultipartUploadResponseSchema,
+  ListDirectoryOutput, ListDirectorySchema } from "../model/file";
+import { getScowdClient, mapConnectErrorToTRPCError } from "../scowd/scowd";
+import { clusters } from "./config";
 
 
 
@@ -476,4 +470,172 @@ export const file = router({
 
       return quotaUsage;
     }),
+
+  initMultipartUpload: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/file/initMultipartUpload",
+        tags: ["file"],
+        summary: "初始化分片上传",
+      },
+    })
+    .input(z.object({
+      clusterId: z.string(),
+      path: z.string(),
+      name: z.string(),
+    }))
+    .output(InitMultipartUploadResponseSchema)
+    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+      const res = await next({ ctx });
+
+      const { user, req } = ctx;
+      const logInfo = {
+        operatorUserId: user.identityId,
+        operatorIp: parseIp(req) ?? "",
+        operationTypeName: OperationType.uploadFile,
+        operationTypePayload:{
+          clusterId, path: join(path, name),
+        },
+      };
+
+      if (!res.ok) {
+        await callLog(logInfo, OperationResult.FAIL);
+      }
+
+      return res;
+    })
+    .mutation(async ({ input: { clusterId, path, name }, ctx: { user } }) => {
+
+      const userId = user.identityId;
+
+      const currentClusterIds = await getCurrentClusters(userId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      const subLogger = logger.child({ user, clusterId, path, name });
+      subLogger.info("Init multipart upload started");
+
+      const cluster = clusters[clusterId];
+      if (!cluster) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
+      }
+      const host = getClusterLoginNode(clusterId);
+      if (!host) { throw clusterNotFound(clusterId); }
+
+      if (!cluster.scowd?.enabled) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
+      }
+
+      try {
+        const client = getScowdClient(clusterId);
+        const initData = await client.file.initMultipartUpload({
+          userId: user.identityId,
+          path,
+          name,
+        });
+
+        return {
+          ...initData,
+          chunkSizeByte: Number(initData.chunkSizeByte),
+          filesInfo: initData.filesInfo.map((info): ListDirectoryOutput => ({
+            name: info.name,
+            // TODO: 修改
+            type: info.fileType === 0 ? "FILE" : "DIR",
+            mtime: info.modTime,
+            mode: info.mode,
+            size: Number(info.sizeByte),
+          })),
+        };
+
+      } catch (err) {
+        subLogger.error({ error: err }, "Merge file chunks failed");
+        if (err instanceof ConnectError) {
+          throw mapConnectErrorToTRPCError(err);
+        }
+        throw err;
+      }
+    }),
+
+
+  mergeFileChunks: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/file/mergeFileChunks",
+        tags: ["file"],
+        summary: "合并文件分片",
+      },
+    })
+    .input(z.object({
+      clusterId: z.string(),
+      path: z.string(),
+      name: z.string(),
+      sizeByte: z.number(),
+    }))
+    .output(z.object({}))
+    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+      const res = await next({ ctx });
+
+      const { user, req } = ctx;
+      const logInfo = {
+        operatorUserId: user.identityId,
+        operatorIp: parseIp(req) ?? "",
+        operationTypeName: OperationType.uploadFile,
+        operationTypePayload:{
+          clusterId, path: join(path, name),
+        },
+      };
+
+      if (res.ok) {
+        await callLog(logInfo, OperationResult.SUCCESS);
+      }
+
+      if (!res.ok) {
+        await callLog(logInfo, OperationResult.FAIL);
+      }
+
+      return res;
+    })
+    .mutation(async ({ input: { clusterId, path, name, sizeByte }, ctx: { user } }) => {
+
+      const userId = user.identityId;
+
+      const currentClusterIds = await getCurrentClusters(userId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      const subLogger = logger.child({ user, clusterId, path, name });
+      subLogger.info("Merge file chunks started");
+
+      const cluster = clusters[clusterId];
+      if (!cluster) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
+      }
+      const host = getClusterLoginNode(clusterId);
+      if (!host) { throw clusterNotFound(clusterId); }
+
+      if (!cluster.scowd?.enabled) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
+      }
+
+      try {
+        const client = getScowdClient(clusterId);
+        await client.file.mergeFileChunks({
+          userId: user.identityId,
+          path,
+          name,
+          sizeByte: BigInt(sizeByte),
+        });
+
+        subLogger.info("Merge file chunks completed successfully");
+        return {};
+
+      } catch (err) {
+        subLogger.error({ error: err }, "Merge file chunks failed");
+        if (err instanceof ConnectError) {
+          throw mapConnectErrorToTRPCError(err);
+        }
+        throw err;
+      }
+    }),
+
 });
