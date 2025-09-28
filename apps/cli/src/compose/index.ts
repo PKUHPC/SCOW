@@ -1,3 +1,4 @@
+import { getCommonConfig } from "@scow/config/build/common";
 import { chmodSync, mkdirSync } from "fs";
 import path from "path";
 import { LoggingOption, ServiceSpec } from "src/compose/spec";
@@ -23,6 +24,20 @@ function join(...segments: string[]) {
 export const createComposeSpec = (config: InstallConfigSchema) => {
   // 如果install.yaml没有配置image则使用默认image
   const scowImage = `${config.image || IMAGE}:${config.imageTag}`;
+
+  // 检查 scowApi.token 配置 - 如果启用了 notification 或 resource 模块，则必须配置 token
+  if (config.notification || config.resource) {
+    try {
+      const commonConfig = getCommonConfig();
+      if (!commonConfig.scowApi?.auth?.token) {
+        throw new Error("scowApi.auth.token is required when notification or resource is enabled, "
+          + "but not configured in common config");
+      }
+    } catch (error) {
+      logger.error("Failed to check scowApi.token configuration:", error);
+      throw error;
+    }
+  }
 
   const BASE_PATH = config.basePath;
   checkPathFormat("basePath", BASE_PATH);

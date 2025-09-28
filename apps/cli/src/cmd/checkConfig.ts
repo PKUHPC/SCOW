@@ -1,22 +1,12 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getAiConfig } from "@scow/config/build/ai";
 import { getAppConfigs } from "@scow/config/build/app";
 import { getClusterConfigs } from "@scow/config/build/cluster";
 import { getClusterTextsConfig } from "@scow/config/build/clusterTexts";
 import { getCommonConfig } from "@scow/config/build/common";
 import { getMisConfig } from "@scow/config/build/mis";
+import { getNotificationConfig } from "@scow/config/build/notification";
 import { getPortalConfig } from "@scow/config/build/portal";
+import { getResourceConfig } from "@scow/config/build/resource";
 import { getUiConfig } from "@scow/config/build/ui";
 import { Logger } from "pino";
 import { getInstallConfig } from "src/config/install";
@@ -35,19 +25,21 @@ export const checkConfig = ({
 
   const config = getInstallConfig(configPath);
 
-  const tryRead = (readFn: (path: string, logger: Logger) => any) => {
+  const tryRead = <T>(readFn: (path: string, logger: Logger) => T): T | null => {
     try {
-      readFn(scowConfigPath, logger);
+      return readFn(scowConfigPath, logger);
     } catch (e) {
       logger.error(e);
       if (!continueOnError) {
         process.exit(1);
       }
+      return null;
     }
   };
 
+
   logger.debug("Checking common config");
-  tryRead(getCommonConfig);
+  const commonConfig = tryRead(getCommonConfig);
 
   logger.debug("Checking cluster config files");
   tryRead(getClusterConfigs);
@@ -80,5 +72,35 @@ export const checkConfig = ({
     tryRead(getAiConfig);
   } else {
     logger.debug("AI is not deployed. Skip AI config check.");
+  }
+
+  if (config.resource) {
+    logger.debug("Checking resource configuration");
+    tryRead(getResourceConfig);
+
+    // 检查 scowApi.token 配置 - resource 模块需要此配置
+    if (!commonConfig?.scowApi?.auth?.token) {
+      logger.error("scowApi.auth.token is required for resource module but not configured in common config");
+      if (!continueOnError) {
+        process.exit(1);
+      }
+    }
+  } else {
+    logger.debug("Resource is not deployed. Skip resource config check.");
+  }
+
+  if (config.notification) {
+    logger.debug("Checking notification configuration");
+    tryRead(getNotificationConfig);
+
+    // 检查 scowApi.token 配置 - notification 模块需要此配置
+    if (!commonConfig?.scowApi?.auth?.token) {
+      logger.error("scowApi.auth.token is required for notification module but not configured in common config");
+      if (!continueOnError) {
+        process.exit(1);
+      }
+    }
+  } else {
+    logger.debug("Notification is not deployed. Skip notification config check.");
   } // 这里要加quantum吗?
 };
