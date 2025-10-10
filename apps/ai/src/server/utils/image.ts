@@ -53,7 +53,7 @@ export async function createHarborImageUrl(imageName: string, imageTag: string,
       }
       logger.info(`Project created: ${projectName}`);
 
-      return `${harborUrl}/${userId}/${imageName}:${imageTag}`;
+      return `${harborUrl}/${projectName}/${imageName}:${imageTag}`;
     }
 
     throw new TRPCError({
