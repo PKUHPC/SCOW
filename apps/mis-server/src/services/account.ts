@@ -351,6 +351,12 @@ export const accountServiceServer = plugin((server) => {
           async (client) => {
             await asyncClientCall(client.account, "createAccount", {
               accountName, ownerUserId: ownerId,
+            }).catch((e) => {
+              if (e.code === Status.ALREADY_EXISTS) {
+                logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
+              } else {
+                throw e;
+              }
             });
             await asyncClientCall(client.account, "blockAccount", {
               accountName,
