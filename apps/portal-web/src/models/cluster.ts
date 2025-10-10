@@ -28,7 +28,6 @@ export interface ClusterOverview {
   jobCount: number,
   runningJobCount: number,
   pendingJobCount: number,
-  usageRatePercentage: number,
   partitionStatus: number,
 }
 
@@ -48,6 +47,5 @@ export interface PlatformOverview {
   jobCount: number,
   runningJobCount: number,
   pendingJobCount: number,
-  usageRatePercentage: number,
   partitionStatus: number,
 }

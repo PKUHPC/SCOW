@@ -17,6 +17,7 @@ import { DashboardSection } from "./DashboardSection";
 export interface ClusterInfo extends PartitionInfo {
   clusterId: string;
   cpuUsage: string;
+  nodeUsage: string;
   gpuUsage?: string;
 }
 
@@ -36,8 +37,8 @@ interface InfoProps {
   nodeCount: number;
   pendingJobCount: number;
   cpuUsage: string;
+  nodeUsage: string;
   gpuUsage?: string;
-  usageRatePercentage: number;
   partitionStatus: PartitionInfo_PartitionStatus;
 }
 
@@ -141,6 +142,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
         ...x,
         id: index,
         cpuUsage: ((x.runningCpuCount / x.cpuCoreCount) * 100).toFixed(2),
+        nodeUsage: ((x.runningNodeCount / x.nodeCount) * 100).toFixed(2),
         gpuUsage: x.gpuCoreCount === 0 ? undefined : ((x.runningGpuCount / x.gpuCoreCount) * 100).toFixed(2),
       },
     })) as TableProps[]);
@@ -213,16 +215,16 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
               isFullDisplayMode && (
                 <>
                   <Table.Column<TableProps>
-                    dataIndex="usageRatePercentage"
+                    dataIndex="nodeUsage"
                     title={t(p("usageRatePercentage"))}
                     sorter={(a, b, sortOrder) =>
-                      compareWithUndefined(a.info?.usageRatePercentage, b.info?.usageRatePercentage, sortOrder)}
-                    hidden={clusterInfo.every((item) => item.usageRatePercentage === undefined)}
+                      compareWithUndefined(a.info?.nodeUsage, b.info?.nodeUsage, sortOrder)}
+                    hidden={clusterInfo.every((item) => item.nodeUsage === undefined)}
                     render={(_, r) => (
-                      (r.info?.usageRatePercentage !== undefined && !isNaN(r.info.usageRatePercentage)) ? (
+                      (r.info?.nodeUsage !== undefined && !isNaN(parseFloat(r.info.nodeUsage))) ? (
                         <div>
                           <CustomProgress
-                            percent={Math.min(Number(r.info?.usageRatePercentage.toFixed(2) ?? 0), 100)}
+                            percent={Math.min(Number(Number(r.info?.nodeUsage).toFixed(2)), 100)}
                             width="145px"
                             height="20px"
                             bgColor={dark ? "#E3E3E326" : "#43434326"}

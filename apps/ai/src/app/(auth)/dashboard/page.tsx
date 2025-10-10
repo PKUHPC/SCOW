@@ -16,6 +16,7 @@ const DashboardPageContent = styled.div``;
 interface ClusterPartitionInfo extends PartitionInfo {
   clusterId: string;
   cpuUsage: string;
+  nodeUsage: string;
   gpuUsage?: string;
 }
 
@@ -35,7 +36,6 @@ const initialPlatformOverview: PlatformOverview = {
   jobCount: 0,
   runningJobCount: 0,
   pendingJobCount: 0,
-  usageRatePercentage: 0,
   partitionStatus: 0,
 };
 
@@ -191,6 +191,7 @@ export default function Page() {
             clusterId: cluster.clusterId,
             ...partition,
             cpuUsage: ((partition.runningCpuCount / partition.cpuCoreCount) * 100).toFixed(2),
+            nodeUsage: ((partition.runningNodeCount / partition.nodeCount) * 100).toFixed(2),
             gpuUsage: partition.gpuCoreCount
               ? ((partition.runningGpuCount / partition.gpuCoreCount) * 100).toFixed(2)
               : undefined,
@@ -275,17 +276,8 @@ export default function Page() {
         platformOverview.pendingJobCount += aggregatedData.pendingJobCount;
         platformOverview.partitionStatus += aggregatedData.partitionStatus;
 
-        aggregatedData.usageRatePercentage = Number(
-          ((aggregatedData.runningNodeCount / aggregatedData.nodeCount) * 100).toFixed(2),
-        );
-
-
         clustersOverview.push(aggregatedData);
       });
-
-      platformOverview.usageRatePercentage = Number(
-        ((platformOverview.runningNodeCount / platformOverview.nodeCount) * 100).toFixed(2),
-      );
 
       setFailedClusters(failedClusters);
       setSuccessfulClusters(successfulClusters);

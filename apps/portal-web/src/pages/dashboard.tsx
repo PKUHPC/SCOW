@@ -34,7 +34,6 @@ const createEmptyOverview = (): PlatformOverview => ({
   jobCount: 0,
   runningJobCount: 0,
   pendingJobCount: 0,
-  usageRatePercentage: 0,
   partitionStatus: 0,
 });
 
@@ -179,6 +178,8 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
             ((partition.runningCpuCount / partition.cpuCoreCount) * 100).toFixed(2) : "0",
           gpuUsage: partition.gpuCoreCount > 0 ?
             ((partition.runningGpuCount / partition.gpuCoreCount) * 100).toFixed(2) : "0",
+          nodeUsage: partition.nodeCount > 0 ?
+            ((partition.runningNodeCount / partition.nodeCount) * 100).toFixed(2) : "0",
         })),
       );
 
@@ -230,11 +231,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
         clusterData.notAvailableGpuCount = clusterData.gpuCoreCount -
           clusterData.runningGpuCount - clusterData.idleGpuCount;
 
-        // 计算使用率
-        clusterData.usageRatePercentage = clusterData.nodeCount > 0
-          ? Number(((clusterData.runningNodeCount / clusterData.nodeCount) * 100).toFixed(2))
-          : 0;
-
         return clusterData;
       });
 
@@ -256,11 +252,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
         platformOverview.idleGpuCount += cluster.idleGpuCount;
         platformOverview.notAvailableGpuCount += cluster.notAvailableGpuCount;
       });
-
-      // 计算平台使用率
-      platformOverview.usageRatePercentage = platformOverview.nodeCount > 0
-        ? Number(((platformOverview.runningNodeCount / platformOverview.nodeCount) * 100).toFixed(2))
-        : 0;
 
       return {
         clustersInfo,
