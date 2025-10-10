@@ -17,7 +17,7 @@ import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 export interface Props {
@@ -42,6 +42,7 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.createEditDSVersionModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
@@ -155,7 +156,8 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
           name="versionName"
           rules={[
             { required: true },
-            { validator:validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
           <Input allowClear />

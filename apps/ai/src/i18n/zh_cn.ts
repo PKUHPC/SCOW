@@ -424,6 +424,8 @@ export default {
         needFramework:"请选择框架",
         distributedTrain:"分布式训练",
         versionTag: "版本",
+        jobNameTips:"必须是1-43个小写字母、数字或'-'，并且以字母开头和结尾必须是字母或数字",
+        // 占位对齐
       },
       LaunchInferenceForm:{
         submitSuccessfully:"提交推理成功",
@@ -938,5 +940,7 @@ export default {
     clusterPartitionNotAvailableForAccount: "账户 {0} 没有该集群 {1} 与分区 {2} 的授权",
     userAccountNotAvailableWhenSubmit: "用户 {0} 在账户 {1} 下不可用",
     appNotAvailableForAccount: "账户 {0} 没有该应用 {1} 的授权",
+    noChinese:"不能包含中文字符",
+    resourceNameRuleTips:"长度不能超过 50 字节且不能包含 '/' 字符",
   },
 };

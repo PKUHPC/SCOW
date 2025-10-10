@@ -16,7 +16,7 @@ import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 interface EditProps {
@@ -45,6 +45,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.CreateAndEditVersionModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
@@ -162,7 +163,8 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
           name="versionName"
           rules={[
             { required: true },
-            { validator:validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
           initialValue={editData?.versionName}
         >

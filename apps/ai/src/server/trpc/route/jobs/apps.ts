@@ -40,7 +40,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { PartitionSchema } from "../config";
 import { booleanQueryParam } from "../utils";
-import { EnvVariableSchema, EventSchema, IdPrivateSchema } from "./jobs";
+import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -321,10 +321,10 @@ export const createAppSession = procedure
     const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
     const { ids:datasetIds, isPrivates:isDatasetPrivates } = getIdPrivate(datasets);
 
-    if (appJobName.length > 42) {
+    if (appJobName.length > MAX_JOB_NAME_LENGTH) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "The length of appJobName should not exceed 42",
+        message: `The length of appJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
       });
     }
 

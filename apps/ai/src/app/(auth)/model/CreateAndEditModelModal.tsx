@@ -17,7 +17,7 @@ import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 interface EditProps {
@@ -48,6 +48,7 @@ export const CreateAndEditModalModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.createAndEditModelModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const AlgorithmTypeTextTrans = {
@@ -151,7 +152,8 @@ export const CreateAndEditModalModal: React.FC<Props> = (
           name="modelName"
           rules={[
             { required: true },
-            { validator:validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
           initialValue={editData?.modelName}
         >

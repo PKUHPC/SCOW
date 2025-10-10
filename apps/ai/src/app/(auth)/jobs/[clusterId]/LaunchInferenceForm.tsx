@@ -15,7 +15,7 @@ import { ImageSource } from "src/models/Job";
 import { ModelInterface, ModelVersionInterface } from "src/models/Model";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { getIdPrivate, setJobCreationNameVersion } from "src/utils/app";
-import { inputNumberFloorConfig } from "src/utils/form";
+import { createK8sNameValidator, inputNumberFloorConfig } from "src/utils/form";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
@@ -519,7 +519,16 @@ export const LaunchInferenceJobForm = (props: Props) => {
       }
     >
       <Spin spinning={inferenceJobMutation.isLoading} tip="loading">
-        <Form.Item name="appJobName" label={t(p("appJobName"))} rules={[{ required: true }, { max: 42 }]}>
+        <Form.Item
+          name="appJobName"
+          label={t(p("appJobName"))}
+          rules={
+            [
+              { required: true },
+              createK8sNameValidator(t(p("jobNameTips"))),
+            ]
+          }
+        >
           <Input />
         </Form.Item>
         <Divider orientation="left" orientationMargin="0">
@@ -986,13 +995,11 @@ export const LaunchInferenceJobForm = (props: Props) => {
                 {
                   required: true,
                   type: "integer",
-                  // 单机最多8张卡
-                  max: 8,
                   validator:  (_, value) => {
                     const nodeCount = form.getFieldValue("nodeCount") || 0;
                     if (currentPartitionInfo
-    && currentPartitionInfo.gpus > 0
-    && (nodeCount * value > currentPartitionInfo.gpus)) {
+                          && currentPartitionInfo.gpus > 0
+                          && (nodeCount * value > currentPartitionInfo.gpus)) {
                       return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
                     }
                     return Promise.resolve();
@@ -1002,7 +1009,6 @@ export const LaunchInferenceJobForm = (props: Props) => {
             >
               <InputNumber
                 min={1}
-                max={8}
                 {...inputNumberFloorConfig}
               />
             </Form.Item>

@@ -18,7 +18,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DatasetType, getDatasetTexts, SceneType } from "src/models/Dateset";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 import { defaultClusterContext } from "../defaultClusterContext";
@@ -47,6 +47,7 @@ export const CreateEditDatasetModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.createEditDatasetModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const DatasetTypeTextTrans: Record<string, string> = {
@@ -183,7 +184,8 @@ export const CreateEditDatasetModal: React.FC<Props> = (
           name="name"
           rules={[
             { required: true },
-            { validator:validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
           <Input allowClear />

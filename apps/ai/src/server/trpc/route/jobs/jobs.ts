@@ -90,6 +90,8 @@ export const TrainJobInputSchema = z.object({
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;
 
+export const MAX_JOB_NAME_LENGTH = 43;
+
 export const trainJob =
 procedure
   .meta({
@@ -136,10 +138,10 @@ procedure
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
       const { ids:datasetIds, isPrivates:isDatasetPrivates } = getIdPrivate(datasets);
 
-      if (trainJobName.length > 42) {
+      if (trainJobName.length > MAX_JOB_NAME_LENGTH) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "The length of trainJobName should not exceed 42",
+          message: `The length of trainJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
         });
       }
 

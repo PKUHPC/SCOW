@@ -132,7 +132,16 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
   }, [clusters]);
 
   const columns: TableColumnsType<AlgorithmInterface> = [
-    { dataIndex: "name", title: t(p("name")) },
+    { dataIndex: "name", title: t(p("name")),
+      onCell: () => ({
+        style: {
+          maxWidth: 200,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
+      }),
+    },
     { dataIndex: "clusterId", title: t(p("cluster")),
       render: (_, r) =>
         getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
@@ -244,6 +253,7 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
         dataSource={data?.items}
         loading={isFetching}
         columns={columns.filter((x) => Object.keys(x).length)}
+        tableLayout="fixed"
         pagination={{
           current: pageInfo.page,
           defaultPageSize: 10,

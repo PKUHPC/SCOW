@@ -196,8 +196,19 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
         rowKey="id"
         dataSource={data?.items}
         loading={isFetching}
+        tableLayout="fixed"
         columns={[
-          { dataIndex: "name", title: t(p("name")) },
+          { dataIndex: "name",
+            title: t(p("name")),
+            onCell: () => ({
+              style: {
+                maxWidth: 200,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              },
+            }),
+          },
           { dataIndex: "clusterId", title: t(p("cluster")),
             render: (_, r) =>
               getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
@@ -208,8 +219,14 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
             render: (_, r) => SceneTypeText[r.scene] },
           { dataIndex: "versions", title: t(p("versions")),
             render: (_, r) => r.versions.length },
-          isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),
-            render: (_, r) => r.owner } : {},
+          ...(isPublic
+            ? [{
+              dataIndex: "shareUser",
+              title: t(p("shareUser")),
+              // @ts-ignore
+              render: (_, r) => r.owner,
+            } as const]
+            : []),
           { dataIndex: "createTime", title: t(p("createTime")),
             render: (_, r) => r.createTime ? formatDateTime(r.createTime) : "-" },
           ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),

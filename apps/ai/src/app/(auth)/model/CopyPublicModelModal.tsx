@@ -17,7 +17,7 @@ import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ModelVersionInterface } from "src/models/Model";
 import { Cluster } from "src/server/trpc/route/config";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 export interface Props {
@@ -31,7 +31,7 @@ export interface Props {
 }
 
 interface FormFields {
-  targetModalName: string
+  targetModelName: string
   versionName: string,
   versionDescription?: string,
   path: string,
@@ -42,6 +42,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.copyPublicModelModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
@@ -59,7 +60,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
       if (errCode === "CONFLICT" && errMessage.startsWith("A model with the same name")) {
         form.setFields([
           {
-            name: "targetModalName",
+            name: "targetModelName",
             errors: [t(p("alreadyExisted"))],
           },
         ]);
@@ -74,11 +75,11 @@ export const CopyPublicModelModal: React.FC<Props> = (
 
 
   const onOk = async () => {
-    const { targetModalName, versionName, versionDescription, path } = await form.validateFields();
+    const { targetModelName, versionName, versionDescription, path } = await form.validateFields();
     copyMutation.mutate({
       modelId,
       versionId: modelVersionId,
-      modelName: targetModalName,
+      modelName: targetModelName,
       versionName,
       versionDescription: versionDescription ?? "",
       path,
@@ -108,10 +109,11 @@ export const CopyPublicModelModal: React.FC<Props> = (
         </Form.Item>
         <Form.Item
           label={t(p("targetName"))}
-          name="targetModalName"
+          name="targetModelName"
           rules={[
             { required: true },
-            { validator: validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
           <Input allowClear />
@@ -126,7 +128,8 @@ export const CopyPublicModelModal: React.FC<Props> = (
           name="versionName"
           rules={[
             { required: true },
-            { validator: validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
           initialValue={data?.versionName}
         >

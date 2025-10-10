@@ -17,7 +17,7 @@ import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmVersionInterface } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
-import { validateNoChinese } from "src/utils/form";
+import { createNoChineseValidator,createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 export interface Props {
@@ -42,6 +42,7 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.copyPublicAlgorithmModal.");
+  const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
@@ -108,7 +109,8 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
           name="targetAlgorithmName"
           rules={[
             { required: true },
-            { validator: validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
           <Input allowClear />
@@ -123,7 +125,8 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
           name="versionName"
           rules={[
             { required: true },
-            { validator: validateNoChinese },
+            createNoChineseValidator(t(pCommon("noChinese"))),
+            createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
           initialValue={data?.versionName}
         >

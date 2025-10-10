@@ -16,7 +16,7 @@ import { z } from "zod";
 
 import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
-import { EnvVariableSchema, IdPrivateSchema } from "./jobs";
+import { EnvVariableSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
 // 分布式训练框架
 export const Framework = z.union([
@@ -124,10 +124,10 @@ procedure
 
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
 
-      if (InferenceJobName.length > 42) {
+      if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "The length of InferenceJobName should not exceed 42",
+          message: `The length of InferenceJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
         });
       }
       const userId = user.identityId;

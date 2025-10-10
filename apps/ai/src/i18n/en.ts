@@ -424,6 +424,8 @@ export default {
         needFramework:"Please enter framework",
         distributedTrain:"Distributed train",
         versionTag: "Version",
+        jobNameTips:"It must consist of 1-43 lowercase letters, numbers,"
+        + "or '-', and must start and end with a letter or a number",
       },
       LaunchInferenceForm:{
         submitSuccessfully:"Create successfully",
@@ -939,5 +941,7 @@ export default {
     clusterPartitionNotAvailableForAccount: "Account {0} is not authorized for cluster {1} and partition {2}",
     userAccountNotAvailableWhenSubmit: "User {0} is not available under account {}",
     appNotAvailableForAccount: "Account {0} is not authorized for the application {1}",
+    noChinese:"Cannot contain Chinese characters",
+    resourceNameRuleTips:"The length cannot exceed 50 bytes and cannot contain the '/' character",
   },
 };
