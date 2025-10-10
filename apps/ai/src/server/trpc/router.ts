@@ -6,6 +6,7 @@ import { auth } from "./route/auth";
 import { config } from "./route/config";
 import { dashboard } from "./route/dashboard";
 import { dataset } from "./route/dataset";
+import { devHost } from "./route/devHost";
 import { file } from "./route/file";
 import { image } from "./route/image";
 import { jobsRouter } from "./route/jobs";
@@ -26,6 +27,7 @@ export const appRouter = trpc.router({
   account: accountRouter,
   jobs: jobsRouter,
   dashboard,
+  devHost,
 });
 
 export type AppRouter = typeof appRouter;

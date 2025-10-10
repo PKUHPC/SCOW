@@ -1,10 +1,13 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
+import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
 import { JobInfo } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
+import { JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { getEnvVariables } from "@scow/lib-server";
-import { getUserHomedir, sftpExists, sftpLstat, sftpReaddir, sftpReadFile, sftpRealPath,
-  sftpWriteFile } from "@scow/lib-ssh";
+import {
+  getUserHomedir, sftpExists, sftpLstat, sftpReaddir, sftpReadFile, sftpRealPath, sftpWriteFile,
+} from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { join } from "path";
@@ -265,7 +268,7 @@ export class SshJobDriver implements JobDriver {
       const content = await sftpReadFile(sftp)(metadataPath);
       const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
 
-      if (sessionMetadata.jobType !== JobType.APP) {
+      if (sessionMetadata.jobType !== JobType.APP && sessionMetadata.jobType !== JobType.DEV_HOST) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Job type of job ${jobId} is not APP`,
@@ -280,7 +283,7 @@ export class SshJobDriver implements JobDriver {
     });
   }
 
-  async getAiJobs(clusterId: string, isRunning: boolean): Promise<AppSession[]> {
+  async getAiJobs(clusterId: string, isRunning: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const apps = getClusterAppConfigs(clusterId);
       const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
@@ -298,6 +301,7 @@ export class SshJobDriver implements JobDriver {
           users: [this.userId], accounts: [],
           states: isRunning ? runningStates : terminatedStates,
         },
+        jobTypes: jobTypes ?? [],
       }).then((resp) => resp.jobs);
 
       const runningJobInfoMap = runningJobsInfo.reduce((prev, curr) => {
@@ -372,7 +376,7 @@ export class SshJobDriver implements JobDriver {
     });
   }
 
-  async connectToApp(clusterId: string, sessionId: string): Promise<ConnectToAppResponse> {
+  async connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse> {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
 
@@ -390,8 +394,23 @@ export class SshJobDriver implements JobDriver {
       const content = await sftpReadFile(sftp)(metadataPath);
       const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
 
+      const client = getAdapterClient(clusterId);
+
+      if (sessionMetadata.jobType === JobType.DEV_HOST) {
+        const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
+          client, sessionMetadata.jobId, this.logger, appType);
+        if (connectionInfo?.response?.$case === "appConnectionInfo") {
+          const { host, port, password } = connectionInfo.response.appConnectionInfo;
+          return {
+            appId: sessionMetadata.jobId.toString(),
+            host: host,
+            port: port,
+            password: password,
+          };
+        }
+      }
+
       if (sessionMetadata.jobType === JobType.APP && sessionMetadata.appId) {
-        const client = getAdapterClient(clusterId);
         const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, sessionMetadata.jobId, logger);
         if (connectionInfo?.response?.$case === "appConnectionInfo") {
           const { host, port, password } = connectionInfo.response.appConnectionInfo;
@@ -736,6 +755,14 @@ export class SshJobDriver implements JobDriver {
       return await sshFetchJobInputParams<TrainJobInput>(
         inputParamsPath, sftp, TrainJobInputSchema, logger,
       );
+    });
+  }
+
+  // scowd 文件管理提权为 root 后，ssh 方式管理文件不再可用
+  async createDevHost(): Promise<number> {
+    throw new TRPCError({
+      code: "NOT_IMPLEMENTED",
+      message: "Create dev host is not implemented",
     });
   }
 }

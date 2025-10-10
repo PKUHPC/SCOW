@@ -31,6 +31,16 @@ hpc:
 # 集群在AI或是否启用，默认为false
 ai:
   enabled: false
+  # 开发及相关配置，可选
+  # devHost:
+  #   # 是否开启，默认为 false，可选
+  #   enabled: false
+  #   # vscode 相关配置，必填
+  #   vscodeInfo:
+  #     # vscode 二进制路径
+  #     binPath: "/demo_path/vscode/bin/code-server"
+  #   # 最大运行时间，可选，不填写表示不限制运行时间
+  #   # maxRunningTimeHours: 10
 
 # # 可选，默认不开启
 # storage:

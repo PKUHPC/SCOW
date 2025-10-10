@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
@@ -23,7 +11,7 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon } from "src/icons/operationIcon";
-import { getImageTexts, ImageType, Status } from "src/models/Image";
+import { getImageTexts, getImageTypeText, ImageType, Status } from "src/models/Image";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
@@ -67,11 +55,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
     EXTERNAL: getImageTexts(t).EXTERNAL,
   };
 
-  const TypeText = {
-    APP: getImageTexts(t).APP,
-    TRAIN: getImageTexts(t).TRAIN,
-    INFER: getImageTexts(t).INFER,
-  };
+  const TypeText = getImageTypeText(t);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
@@ -202,7 +186,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           { dataIndex: "clusterId", title: t(p("cluster")),
             render: (_, r) =>
               getI18nConfigCurrentText(clusters.find((x) => (x.id === r.clusterId))?.name, languageId) ?? r.clusterId },
-          { dataIndex: "types", title: t(p("type")),render: (_, r) => r.types.map((t) => <Tag>{TypeText[t]}</Tag>) },
+          { dataIndex: "types", title: t(p("type")), render: (_, r) => r.types.map((t) => <Tag>{TypeText[t]}</Tag>) },
           { dataIndex: "source", title: t(p("source")),render: (_, r) => sourceText[r.source] },
           { dataIndex: "description", title: t(p("description")) },
           isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),

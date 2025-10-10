@@ -89,7 +89,10 @@ export default function Layout(
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
     ?? footerConfig?.defaultText;
 
-  const routes = userRoutes(userQuery.data.user, publicConfig, currentClusters, setDefaultCluster, defaultCluster);
+  const routes = userRoutes(
+    userQuery.data.user, publicConfig, scowClusterConfigs,
+    currentClusters, setDefaultCluster, defaultCluster,
+  );
 
   return (
     <PublicConfigContext.Provider value={{

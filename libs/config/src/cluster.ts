@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getDirConfig } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
@@ -142,6 +130,15 @@ export const ClusterConfigSchema = Type.Object({
 
   ai: Type.Object({
     enabled: Type.Boolean({ description: "是否在AI中启用" }),
+    devHost: Type.Optional(Type.Object({
+      enabled: Type.Optional(Type.Boolean({ description: "是否开启开发机功能", default: false })),
+      vscodeInfo: Type.Object({
+        binPath: Type.String({ description: "vscode二进制路径" }),
+      }),
+      maxRunningTimeHours: Type.Optional(Type.Number({
+        description: "开发机最大运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
+      })),
+    }, { description: "开发机功能配置" })),
   }, { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } }),
 
   k8s: Type.Optional(Type.Object({

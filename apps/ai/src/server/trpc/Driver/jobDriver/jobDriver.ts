@@ -1,3 +1,5 @@
+import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
+import { JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
@@ -5,6 +7,7 @@ import { AlgorithmVersion } from "src/server/entities/AlgorithmVersion";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { Image as ImageEntity } from "src/server/entities/Image";
 import { ModelVersion } from "src/server/entities/ModelVersion";
+import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { AppSession, CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput } from "src/server/trpc/route/jobs/jobs";
@@ -50,15 +53,20 @@ export interface SubmitTrainJobExtraParams {
   existImage: ImageEntity | undefined
 }
 
+export interface CreateDevHostExtraParams {
+  existImage: ImageEntity | undefined
+}
+
 export interface JobDriver {
   createApp(inputParams: CreateAppInput,extraParams: CreateAppExtraParams): Promise<number>;
   getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput>;
-  getAiJobs(clusterId: string, isRunning: boolean): Promise<AppSession[]>;
-  connectToApp(clusterId: string, sessionId: string): Promise<ConnectToAppResponse>;
+  getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]>;
+  connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse>;
   submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number>;
   getInferParams(sessionId: string, jobId: number): Promise<InferenceJobInput>;
   submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number>;
   getTrainParams(sessionId: string, jobId: number): Promise<TrainJobInput>;
+  createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number>;
 }
 
 function createJobDriver(opts: {
@@ -102,7 +110,7 @@ export async function withJobDriver<T>(
   try {
     return await handler(driver);
   } catch (err) {
-    logger.error("Error in job operation, executing handler", err);
+    logger.error(`Error in job operation, executing handler ${err as any}`);
     throw err;
   }
 }

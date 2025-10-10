@@ -8,18 +8,25 @@ import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import fs from "fs";
 import { join } from "path";
+import { AppName } from "src/models/App";
+import { ImageType } from "src/models/Image";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { clusters } from "src/server/config/clusters";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
-import { Image as ImageEntity, ImageType, Source, Status } from "src/server/entities/Image";
+import { Image as ImageEntity, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
+import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
 import { allApps, checkAppExist, checkCreateAppEntity,
   checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
+import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { getProtoAppType } from "src/server/utils/getProtoAppType";
+import { getProtoJobTypes } from "src/server/utils/getProtoJobType";
 import {
   createHarborImageUrl,
   formatContainerId,
@@ -36,8 +43,6 @@ import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
-import { getCurrentClusters } from "../../../utils/clusters";
-import { driver } from "../../Driver";
 import { PartitionSchema } from "../config";
 import { booleanQueryParam } from "../utils";
 import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
@@ -328,12 +333,20 @@ export const createAppSession = procedure
       });
     }
 
-    if (aiConfig.maxJobRunningTimeHours && maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
-        ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
-      });
+    if (aiConfig.maxJobRunningTimeHours) {
+      if (maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `The app running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
+          ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
+        });
+      }
+      if (maxTime === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The app running time cannot be 0",
+        });
+      }
     }
 
     const userId = user.identityId;
@@ -494,7 +507,7 @@ export const saveImage =
       imageName: z.string(),
       imageTag: z.string(),
       imageDesc: z.string().optional(),
-      imageTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+      imageTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
       imageInferServicePort:z.string().optional(),
       imageStartCommand:z.string().optional(),
     }))
@@ -633,21 +646,22 @@ export const listAppSessions =
   procedure
     .meta({
       openapi: {
-        method: "GET",
-        path: "/appSessions",
+        method: "POST",
+        path: "/appSessions/list",
         tags: ["appSessions"],
         summary: "List APP Sessions",
       },
     })
     .input(z.object({
       clusterId: z.string(),
-      isRunning: booleanQueryParam(),
+      isRunning: booleanQueryParam().optional(),
+      jobTypes: z.array(z.nativeEnum(JobType)).optional(),
       ...paginationSchema.shape,
     }))
-    .output(z.object({ sessions: z.array(AppSessionSchema) }))
+    .output(z.object({ sessions: z.array(AppSessionSchema), count: z.number() }))
     .query(async ({ input, ctx: { user } }) => {
 
-      const { clusterId, isRunning, page, pageSize } = input;
+      const { clusterId, isRunning, jobTypes, page, pageSize } = input;
 
       const userId = user.identityId;
 
@@ -664,7 +678,8 @@ export const listAppSessions =
         clusterId,
         user:userId,
       }, async (jobDriver) => {
-        return await jobDriver.getAiJobs(clusterId, isRunning);
+        const protoJobTypes = getProtoJobTypes(jobTypes ?? []);
+        return await jobDriver.getAiJobs(clusterId, isRunning, protoJobTypes);
       }, logger);
 
       const { paginatedItems: paginatedSessions, totalCount } = paginate(
@@ -908,7 +923,7 @@ procedure
   })).output(z.object({
     ok: z.boolean(),
   })).query(
-    async ({ input, ctx: { req,user } }) => {
+    async ({ input, ctx: { req, user } }) => {
 
       const { jobId, clusterId, sessionId } = input;
 
@@ -923,6 +938,7 @@ procedure
         if (connectionInfo?.response?.$case === "appConnectionInfo") {
           const host = connectionInfo.response.appConnectionInfo.host;
           const port = connectionInfo.response.appConnectionInfo.port;
+
           const apps = getClusterAppConfigs(clusterId);
 
           const reply = await driver.withJobDriver({
@@ -942,6 +958,82 @@ procedure
 
           const reachable = await isPortReachableThroughUrl(
             req, TIMEOUT_MS, clusterId, host, port, app.type, app.web?.proxyType);
+          return { ok: reachable };
+        } else {
+          return { ok: false };
+        }
+      } catch {
+        return { ok: false };
+      }
+    },
+
+  );
+
+export const checkDevHostAppConnectivity =
+procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/appSessions/{jobId}/checkDevHostConnectivity",
+      tags: ["appSessions"],
+      summary: "Check Dev Host APP Session Connectivity",
+    },
+  })
+  .input(z.object({
+    clusterId: z.string(),
+    jobId: z.number(),
+    sessionId: z.string(),
+    appName: z.nativeEnum(AppName),
+  })).output(z.object({
+    ok: z.boolean(),
+  })).query(
+    async ({ input, ctx: { req, user } }) => {
+      const { jobId, clusterId, sessionId, appName } = input;
+
+      if (!clusters[clusterId]?.ai.devHost) {
+        throw new TRPCError({
+          code: "NOT_IMPLEMENTED",
+          message: "dev host is not implemented",
+        });
+      }
+
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+      const protoAppType = getProtoAppType(appName);
+
+      try {
+        const client = getAdapterClient(clusterId);
+
+        const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger, protoAppType);
+
+        if (connectionInfo?.response?.$case === "appConnectionInfo") {
+          const host = connectionInfo.response.appConnectionInfo.host;
+          const port = connectionInfo.response.appConnectionInfo.port;
+
+          const reply = await driver.withJobDriver({
+            clusterId, user: user.identityId,
+          }, async (jobDriver) => {
+            return await jobDriver.connectToApp(clusterId, sessionId, protoAppType);
+          }, logger);
+
+          let proxyType: "relative" | "absolute";
+          switch (appName) {
+            case AppName.VSCODE:
+              proxyType = "relative";
+              break;
+            case AppName.JUPYTER_LAB:
+              proxyType = "absolute";
+              break;
+            default:
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: `Unknown app name ${appName as string} of app id ${reply.appId}`,
+              });
+          }
+
+          const reachable = await isPortReachableThroughUrl(
+            req, TIMEOUT_MS, clusterId, host, port, "web", proxyType);
+
           return { ok: reachable };
         } else {
           return { ok: false };
@@ -1032,7 +1124,6 @@ procedure
           type: "vnc",
           vnc: {},
         };
-        break;
       case AppType.web:
         return {
           host: reply.host,
@@ -1056,6 +1147,65 @@ procedure
         });
     }
 
+  });
+
+export const connectToDevHostApp =
+procedure
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/appSessions/{sessionId}/connectDevHostApp",
+      tags: ["appSessions"],
+      summary: "Connect to Dev Host APP Session",
+    },
+  })
+  .input(z.object({
+    cluster: z.string(),
+    sessionId: z.string(),
+    appName: z.nativeEnum(AppName),
+  }))
+  .output(ConnectToAppResponseSchema)
+  .mutation(async ({ input, ctx: { user } }) => {
+    const { cluster, sessionId, appName } = input;
+
+    if (!clusters[cluster]?.ai.devHost) {
+      throw new TRPCError({
+        code: "NOT_IMPLEMENTED",
+        message: "dev host is not implemented",
+      });
+    }
+
+    const userId = user.identityId;
+
+    const host = getClusterLoginNode(cluster);
+    if (!host) {
+      throw clusterNotFound(cluster);
+    }
+
+    const reply = await driver.withJobDriver({
+      clusterId:cluster,
+      user:userId,
+    }, async (jobDriver) => {
+      const protoAppType = getProtoAppType(appName);
+      return await jobDriver.connectToApp(cluster, sessionId, protoAppType);
+    }, logger);
+
+    return {
+      host: reply.host,
+      port: reply.port,
+      password: reply.password,
+      type: "web",
+      connect : {
+        method: "POST",
+        formData: {
+          password: "{{ PASSWORD }}",
+        },
+        path: "/login",
+      },
+      proxyType: appName === AppName.JUPYTER_LAB
+        ? "absolute"
+        : "relative",
+    };
   });
 
 
@@ -1172,6 +1322,4 @@ export const listClusters = procedure
       clusterConfigs: configs.map((config,idx) => ({ ...config,clusterId:clusterIds[idx] })),
     };
 
-  })
-  ;
-
+  });

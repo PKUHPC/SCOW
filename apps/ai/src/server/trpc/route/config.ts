@@ -141,6 +141,8 @@ export const PartitionSchema = z.object({
   comment: z.string().optional(),
   gpuType: z.string().optional(),
   vramMb: z.number().optional(),
+  gpuModel: z.string().optional(),
+  acceleratorDescriptions: z.array(z.string()),
 });
 
 const ClusterConfigSchema = z.object({
@@ -152,6 +154,16 @@ const StorageConfigSchema = z.object({
   enabled: z.boolean(),
   paths: z.array(z.string()),
   replicaExist: z.boolean(),
+});
+
+const ClusterAiConfigSchema = z.object({
+  devHost: z.object({
+    enabled: z.boolean(),
+    vscodeInfo: z.object({
+      binPath: z.string(),
+    }),
+    maxRunningTimeHours: z.number().optional(),
+  }),
 });
 
 export const config = router({
@@ -264,6 +276,7 @@ export const config = router({
     .output(z.record(z.string(), z.object({
       scowdEnabled: z.boolean(),
       storage: StorageConfigSchema,
+      ai: ClusterAiConfigSchema,
     })))
     .query(async () => {
       const clusterConfigs = Object.keys(clusters).reduce((acc, clusterId) => {
@@ -275,11 +288,19 @@ export const config = router({
             paths:cluster.storage?.paths ?? [],
             replicaExist: cluster.storage?.replicaExist ?? false,
           },
+          ai: {
+            devHost: {
+              enabled: cluster.ai.devHost?.enabled ?? false,
+              vscodeInfo: cluster.ai?.devHost?.vscodeInfo ?? { binPath: "" },
+              maxRunningTimeHours: cluster.ai?.devHost?.maxRunningTimeHours,
+            },
+          },
         };
         return acc;
       }, {} as Record<string, {
         scowdEnabled: boolean,
         storage: { enabled: boolean,paths: string[], replicaExist: boolean },
+        ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number } },
       }>);
 
       return clusterConfigs;
@@ -305,7 +326,7 @@ export const config = router({
         });
       }
       const { partitions } = await asyncClientCall(client.config, "getAvailablePartitions", {
-        accountName,userId:user.identityId,
+        accountName, userId: user.identityId,
       });
 
       return partitions;

@@ -15,6 +15,7 @@ export enum JobType {
   APP = "app",
   TRAIN = "train",
   INFER = "infer",
+  DEV_HOST = "dev_host",
 }
 
 export enum ImageSource {

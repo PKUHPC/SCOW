@@ -559,9 +559,15 @@ const enterContainerSVG = () => (
 
 export const EnterContainerIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
   (props, ref: Ref<HTMLSpanElement> | undefined) => (
-    <IconContainer>
-      <Icon component={enterContainerSVG} {...props} ref={ref} />
-    </IconContainer>
+    props.disabled ? (
+      <DisableIconContainer>
+        <Icon component={enterContainerSVG} {...props} ref={ref} />
+      </DisableIconContainer>
+    ) : (
+      <IconContainer>
+        <Icon component={enterContainerSVG} {...props} ref={ref} />
+      </IconContainer>
+    )
   ),
 );
 

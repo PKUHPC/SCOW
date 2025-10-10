@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import * as k8sClient from "@kubernetes/client-node";
 import { normalizePathnameWithQuery } from "@scow/utils";
@@ -145,19 +133,26 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   // 根据jobId获取该应用运行在集群的节点和对应的containerId
   const client = getAdapterClient(clusterId);
 
-  const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
-    fields: ["job_id"],
-    filter: {
-      users: [identityId], accounts: [],
-      states: ["RUNNING"],
-    },
-  }).then((resp) => resp.jobs);
+  const { job: jobInfo } = await asyncClientCall(client.job, "getJobById", {
+    jobId: Number(jobId),
+    fields: ["user", "state", "pods"],
+  });
 
-  const currentJobInfo = runningJobsInfo.find((jobInfo) => String(jobInfo.jobId) === jobId);
+  if (!jobInfo) {
+    log(`[shell] Job ${jobId} is not exists`);
+    ws.close(0, `Job ${jobId} is not exists`);
+    return;
+  }
 
-  if (!currentJobInfo) {
-    log(`[shell] Get running job node info failed, can't find job ${jobId}`);
-    ws.close(0, `Get running job node info failed, can't find job ${jobId}`);
+  if (jobInfo.user !== identityId) {
+    log("[shell] Job user not match");
+    ws.close(0, "Job user not match");
+    return;
+  }
+
+  if (jobInfo.state != "RUNNING") {
+    log(`[shell] Job ${jobId} is not running`);
+    ws.close(0, `Job ${jobId} is not running`);
     return;
   }
 
@@ -192,18 +187,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     stdinStream.end(); // 结束stdin流输入
   });
 
-  const { job } = await asyncClientCall(client.job, "getJobById", {
-    fields: ["pods"],
-    jobId: currentJobInfo.jobId,
-  });
-
-  if (!job) {
-    log("[shell] Can not find this running job, please check it.");
-    ws.close(0, "Can not find this running job, please check it.");
-    return;
-  }
-
-  const isValidPod = job.pods.some((p) => p.namespace === namespace && p.podName === podName);
+  const isValidPod = jobInfo.pods.some((p) => p.namespace === namespace && p.podName === podName);
 
   if (!isValidPod) {
     log("[shell] Provided podName/namespace not found in job's pod list");

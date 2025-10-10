@@ -8,6 +8,7 @@ import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
+import { SaveImageModal } from "src/components/SaveImageModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancelIcon, DetailIcon, EndIcon, EnterDirectoryIcon, MoreIcon, NoHoverEndIcon,
   NoHoverSaveImageIcon, NoHoverSubmitAgainIcon, SubmitAgainIcon } from "src/icons/operationIcon";
@@ -22,7 +23,6 @@ import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
 import { ConnectTopAppLink } from "./ConnectToAppLink";
-import { SaveImageModal } from "./SaveImageModal";
 
 interface FilterForm {
   appJobName: string | undefined
@@ -69,6 +69,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
 
   const { data, refetch, isLoading, isFetching } = trpc.jobs.listAppSessions.useQuery({
     clusterId: cluster.id, isRunning: parseBooleanParam(unfinished),
+    jobTypes: [JobType.APP, JobType.TRAIN, JobType.INFER],
   },
   { trpc: { context: { meta: { noBatch: true } } } },
   );
@@ -376,7 +377,6 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
               <span style={{ marginLeft: "8px" }}>{t(p("submitAgain"))}</span>
             </PopIconContainer>,
             <SaveImageModalButton
-              reload={refetch}
               appSession={record}
               clusterId={cluster.id}
             >

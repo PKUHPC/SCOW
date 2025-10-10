@@ -132,7 +132,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName ,algorithms, image, datasets,models,maxTime, account, partition } = input;
+      const { clusterId, trainJobName, algorithms, image, datasets, models, maxTime, account, partition } = input;
 
       const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -145,12 +145,20 @@ procedure
         });
       }
 
-      if (aiConfig.maxJobRunningTimeHours && maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
-          ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
-        });
+      if (aiConfig.maxJobRunningTimeHours) {
+        if (maxTime > (aiConfig.maxJobRunningTimeHours * 60)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `The job running time cannot exceed ${aiConfig.maxJobRunningTimeHours}` +
+            ` hour${aiConfig.maxJobRunningTimeHours > 1 ? "s" : ""}`,
+          });
+        }
+        if (maxTime === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The job running time cannot be 0",
+          });
+        }
       }
 
       const userId = user.identityId;
@@ -374,7 +382,7 @@ procedure
 
     const client = getAdapterClient(cluster);
     const { job } = await asyncClientCall(client.job, "getJobById", {
-      fields: ["pod_info"],
+      fields: ["pods"],
       jobId: jobId,
     });
 
@@ -416,7 +424,7 @@ export const getPodLogs = procedure
 
     try {
       // 调用 gRPC 流式方法
-      const logStream = client.job.getPodLogs({ userId,podId,rowLimit });
+      const logStream = client.job.getPodLogs({ userId,podId, rowLimit });
 
       res.on("close", () => {
         logStream.cancel();

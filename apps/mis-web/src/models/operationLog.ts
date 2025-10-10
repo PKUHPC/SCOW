@@ -85,6 +85,7 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     deleteDesktop: t(pTypes("deleteDesktop")),
     createApp: t(pTypes("createApp")),
     createAiTrain: t(pTypes("createAiTrain")),
+    createDevHost: t(pTypes("createDevHost")),
     cancelAiTrainOrApp: t(pTypes("cancelAiTrainOrApp")),
     saveImage: t(pTypes("saveImage")),
     createFile: t(pTypes("createFile")),
@@ -288,6 +289,12 @@ export const getOperationDetail = (
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createAiTrain"),
           [clusterName, String(operationEvent[logEvent].jobId || "-")]);
+      }
+      case "createDevHost":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("createDevHost"),
+          [clusterName, String(operationEvent[logEvent].devHostId || "-")]);
       }
       case "createAiInferenceJob":{
         const clusterId = operationEvent[logEvent].clusterId;

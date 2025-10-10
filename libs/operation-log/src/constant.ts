@@ -128,4 +128,5 @@ export const OperationType: OperationTypeEnum = {
   activateNode:"activateNode",
   addToDefaultApps: "addToDefaultApps",
   removeFromDefaultApps: "removeFromDefaultApps",
+  createDevHost: "createDevHost",
 };

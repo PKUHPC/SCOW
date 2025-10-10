@@ -1,19 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { getImageTexts, ImageType } from "src/models/Image";
+import { getImageTypeText, ImageType } from "src/models/Image";
 import { imageNameValidation, imageTagValidation, inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
@@ -65,11 +53,7 @@ export const CopyImageModal: React.FC<Props> = (
   const p = prefix("app.image.copyImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
 
-  const TypeText = {
-    APP: getImageTexts(t).APP,
-    TRAIN: getImageTexts(t).TRAIN,
-    INFER: getImageTexts(t).INFER,
-  };
+  const TypeText = getImageTypeText(t);
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();

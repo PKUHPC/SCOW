@@ -27,6 +27,10 @@ export const PartitionSchema = z.object({
   pendingJobCount: z.number(),
   usageRatePercentage: z.number(),
   partitionStatus: z.nativeEnum(PartitionInfo_PartitionStatus),
+  gpuModel: z.string().optional(),
+  acceleratorDescriptions: z.array(z.string()),
+  totalMemMb: z.number().optional(),
+  allocMemMb: z.number().optional(),
 });
 
 // 定义集群信息

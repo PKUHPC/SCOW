@@ -17,3 +17,12 @@ harborConfig:
   user: user
   # Harbor 仓库可登录用户的登录密码
   password: password
+
+# 必填
+devHost:
+  # vscode 相关配置，必填
+  vscodeInfo:
+    # vscode 二进制路径
+    binPath: "/demo_path/vscode/bin/code-server"
+  # 最大运行时间，可选，不填写表示不限制运行时间
+  # maxRunningTimeHours: 10

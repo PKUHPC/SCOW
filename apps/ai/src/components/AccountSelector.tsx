@@ -26,13 +26,12 @@ export const AccountSelector: React.FC<Props> = ({ cluster, onChange, value, use
   });
 
   useEffect(() => {
-
     if (data?.accounts.length) {
       if (!value || !data.accounts.includes(value)) {
         onChange?.(data.accounts[0]);
       }
     }
-  }, [data, value]);
+  }, [data, value, onChange]);
 
   return (
     <Space.Compact style={{ width: "100%" }}>

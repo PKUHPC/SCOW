@@ -129,7 +129,7 @@ export enum AccessibilityType {
 
 // 生成默认应用名称，命名规则为"集群名-当前应用名-年月日-时分秒"
 const genAppJobName = (clusterId: string, appName: string): string => {
-  return `${clusterId}-${appName}-${dayjs().format("YYYYMMDD-HHmmss")}`;
+  return `${clusterId}-${appName}-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase();
 };
 
 const initialValues = {

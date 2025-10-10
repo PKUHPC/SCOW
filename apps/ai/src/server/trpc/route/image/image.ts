@@ -1,20 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getSortedClusterIds } from "@scow/config/build/cluster";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
-import { Image, ImageType, Source, Status } from "src/server/entities/Image";
+import { ImageType } from "src/models/Image";
+import { Image, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
@@ -54,7 +43,7 @@ export const ImageListSchema = z.object({
   isShared: z.boolean(),
   clusterId: z.string().optional(),
   createTime: z.string().optional(),
-  types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+  types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
   inferServicePort:z.string().optional(),
   startCommand:z.string().optional(),
   failedReason:z.string().optional(),
@@ -157,7 +146,7 @@ export const getImageById = procedure
     imageId:z.number(),
   }))
   .output(z.object({
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
     inferServicePort:z.string().optional(),
     startCommand:z.string().optional(),
   }))
@@ -176,7 +165,7 @@ export const getImageById = procedure
     };
 
     return {
-      types:image.types ?? [],
+      types: image.types ?? [],
       inferServicePort:image.inferServicePort,
       startCommand:image.startCommand,
     };
@@ -200,7 +189,7 @@ export const createImage = procedure
     clusterId: z.string(),
     userName:z.string().optional(),
     password:z.string().optional(),
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
     inferServicePort:z.string().optional(),
     startCommand:z.string().optional(),
   }))
@@ -332,7 +321,7 @@ export const updateImage = procedure
   .input(z.object({
     id: z.number(),
     description: z.string().optional(),
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER, ImageType.DEV_HOST])),
     inferServicePort:z.string().optional(),
     startCommand:z.string().optional(),
   }))
@@ -692,7 +681,7 @@ export const copyImage = procedure
       newName: z.string(),
       newTag: z.string(),
       clusterId:z.optional(z.string()),
-      newTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER])),
+      newTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
       newInferServicePort:z.string().optional(),
       newStartCommand:z.string().optional(),
       newDescription:z.string().optional(),

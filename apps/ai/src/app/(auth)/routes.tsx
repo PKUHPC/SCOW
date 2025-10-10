@@ -5,27 +5,32 @@ import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
-import { AlgorithmIcon, ClusterIcon, CreateAppIcon, DashBoardIcon,
-  DatasetIcon, fileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
+import { AlgorithmIcon, ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
+  DatasetIcon, DevHostIcon, fileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
   PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
   PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon,
-  RunningJobsIcon, TrainJobIcon } from "src/icons/menuIcons";
+  RunningJobsIcon, TrainJobIcon, ViewDevHostIcon } from "src/icons/menuIcons";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Cluster, NavLink, PublicConfig } from "src/server/trpc/route/config";
 
+import { ScowClusterConfigs } from "./context";
+
 export const userRoutes: (
   user: ClientUserInfo | undefined,
   publicConfig: PublicConfig,
+  clusterConfigs: ScowClusterConfigs,
   currentClusters: Cluster[],
   setDefaultCluster: (cluster: Cluster | undefined) => void,
   defaultCluster: Cluster | undefined,
-) => NavItemProps[] = (user, publicConfig, currentClusters, setDefaultCluster, defaultCluster) => {
+) => NavItemProps[] = (user, publicConfig, clusterConfigs, currentClusters, setDefaultCluster, defaultCluster) => {
 
   if (!user) { return []; }
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
+
+  const devHostEnabled = Object.values(clusterConfigs).some((c) => c.ai.devHost.enabled);
 
   return [
     {
@@ -163,6 +168,26 @@ export const userRoutes: (
           handleClick: () => { setDefaultCluster(cluster); },
         } as NavItemProps)),
       },
+    ] : []),
+    // 开发机路由
+    ...(currentClusters.length > 0 && devHostEnabled ? [ {
+      Icon: DevHostIcon,
+      text: t("routes.devHost.title"),
+      path: "/devHost",
+      clickToPath: "/devHost/create",
+      children:[
+        {
+          Icon: CreateDevHostIcon,
+          text: t("routes.devHost.create"),
+          path: "/devHost/create",
+        },
+        {
+          Icon: ViewDevHostIcon,
+          text: t("routes.devHost.list"),
+          path: "/devHost/list",
+        },
+      ],
+    },
     ] : []),
     ...(publicConfig.NAV_LINKS && publicConfig.NAV_LINKS.length > 0
       ? publicConfig.NAV_LINKS.map((link) => {

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { RuleObject } from "antd/lib/form/index.js";
 
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
@@ -55,12 +43,12 @@ export const createK8sNameValidator = (message?: string) => () => ({
 
     // - 如果长度=1：必须是字母或数字
     // - 如果长度>=2：开头必须是字母，结尾必须是字母或数字，中间允许字母/数字/-
-    const regex = /^([a-z]|[a-z0-9][a-z0-9-]{0,41}[a-z0-9])$/;
+    const regex = /^([a-z]|[a-z0-9][a-z0-9-]{0,34}[a-z0-9])$/;
 
     if (!regex.test(value)) {
       return Promise.reject(
         message ??
-          "必须是1-43个小写字母、数字或'-'，并且以字母开头和结尾必须是字母或数字",
+          "必须是1-36个小写字母、数字或'-'，并且以字母开头和结尾必须是字母或数字",
       );
     }
 

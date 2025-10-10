@@ -1,6 +1,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
-import { JobInfo } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
+import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
+import { JobInfo, JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { getEnvVariables } from "@scow/lib-server";
@@ -10,10 +11,12 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
+import { clusters } from "src/server/config/clusters";
+import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
   SESSION_METADATA_NAME,SessionMetadata, TENSORBOARD_ENTRY_COMMAND,
   VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
+import { InferenceJobInput,InferenceJobInputSchema, SessionMetadata as InferSessionMetadata }
   from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
@@ -26,8 +29,31 @@ import { isParentOrSameFolder } from "src/utils/file";
 import { BASE_PATH } from "src/utils/processEnv";
 import { Logger } from "ts-log";
 
-import { ConnectToAppResponse, CreateAppExtraParams, JobDriver,
+import { ConnectToAppResponse, CreateAppExtraParams, CreateDevHostExtraParams, JobDriver,
   SubmitInferJobExtraParams, SubmitTrainJobExtraParams } from "./jobDriver";
+
+/**
+ * 解析镜像URL，提取镜像名称和标签
+ * @param imageUrl 完整的镜像URL，可能包含标签
+ * @returns 包含name和tag的对象
+ */
+function parseImageUrl(imageUrl: string): { name: string; tag: string } {
+  const lastColonIndex = imageUrl.lastIndexOf(":");
+  if (lastColonIndex === -1 || lastColonIndex === imageUrl.indexOf("://")) {
+    // 没有找到标签分隔符，或者冒号是协议部分
+    return { name: imageUrl, tag: "latest" };
+  }
+
+  const name = imageUrl.substring(0, lastColonIndex);
+  const tag = imageUrl.substring(lastColonIndex + 1);
+
+  // 检查tag部分是否包含路径分隔符，如果包含则可能不是真正的tag
+  if (tag.includes("/")) {
+    return { name: imageUrl, tag: "latest" };
+  }
+
+  return { name, tag };
+}
 
 export class ScowdJobDriver implements JobDriver {
 
@@ -323,7 +349,7 @@ export class ScowdJobDriver implements JobDriver {
 
     const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
 
-    if (sessionMetadata.jobType !== JobType.APP) {
+    if (sessionMetadata.jobType !== JobType.APP && sessionMetadata.jobType !== JobType.DEV_HOST) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: `Job type of job ${jobId} is not APP`,
@@ -337,7 +363,7 @@ export class ScowdJobDriver implements JobDriver {
     );
   }
 
-  async getAiJobs(clusterId: string, isRunning: boolean): Promise<AppSession[]> {
+  async getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
     const apps = getClusterAppConfigs(clusterId);
     const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
       "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT","CANCELED"];
@@ -346,17 +372,20 @@ export class ScowdJobDriver implements JobDriver {
 
     // If a job is not running, it cannot be ready
     const client = getAdapterClient(clusterId);
-    const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
+    const jobsInfo = await asyncClientCall(client.job, "getJobs", {
       fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason","partition","gpus_alloc",
         "cpus_alloc","mem_alloc_mb","nodes_alloc","gpus_req", "cpus_req","mem_req_mb","nodes_req",
       ],
       filter: {
         users: [this.userId], accounts: [],
-        states: isRunning ? runningStates : terminatedStates,
+        // 如果 isRunning 为 undefined，查询所有类型的会话
+        states: isRunning === undefined ? runningStates.concat(terminatedStates) :
+          isRunning ? runningStates : terminatedStates,
       },
+      jobTypes: jobTypes ?? [],
     }).then((resp) => resp.jobs);
 
-    const runningJobInfoMap = runningJobsInfo.reduce((prev, curr) => {
+    const runningJobInfoMap = jobsInfo.reduce((prev, curr) => {
       prev[curr.jobId] = curr;
       return prev;
     }, {} as Record<number, JobInfo>);
@@ -463,15 +492,36 @@ export class ScowdJobDriver implements JobDriver {
       });
     }));
 
-    const filteredSessions = sessions.filter((session) =>
-      isRunning
-        ? runningStates.includes(session.state)
-        : !runningStates.includes(session.state))
-      .sort((a, b) => b.submitTime.localeCompare(a.submitTime));
+    // 如果 isRunning 为 undefined，返回所有会话
+    let filteredSessions = isRunning === undefined ?
+      sessions :
+      sessions.filter((session) =>
+        isRunning
+          ? runningStates.includes(session.state)
+          : !runningStates.includes(session.state));
+
+    // 对于 DevHost 类型的作业，特殊排序：RUNNING 和 PENDING 状态优先，然后按 submitTime 从新到旧排序
+    if (jobTypes?.length === 1 && jobTypes[0] === ProtoJobType.JOB_TYPE_DEV_HOST) {
+      filteredSessions = filteredSessions.sort((a, b) => {
+        const aIsActive = a.state === "RUNNING" || a.state === "PENDING";
+        const bIsActive = b.state === "RUNNING" || b.state === "PENDING";
+
+        // 如果一个是活跃状态，另一个不是，活跃状态排在前面
+        if (aIsActive && !bIsActive) return -1;
+        if (!aIsActive && bIsActive) return 1;
+
+        // 如果都是活跃状态或都不是活跃状态，按 submitTime 从新到旧排序
+        return b.submitTime.localeCompare(a.submitTime);
+      });
+    } else {
+      // 其他类型的作业按原有逻辑排序
+      filteredSessions = filteredSessions.sort((a, b) => b.submitTime.localeCompare(a.submitTime));
+    }
+
     return filteredSessions;
   }
 
-  async connectToApp(clusterId: string, sessionId: string): Promise<ConnectToAppResponse> {
+  async connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse> {
     const { path:userHomeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
@@ -505,9 +555,24 @@ export class ScowdJobDriver implements JobDriver {
     );
     const sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
 
+    const client = getAdapterClient(clusterId);
+
+    if (sessionMetadata.jobType === JobType.DEV_HOST) {
+      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
+        client, sessionMetadata.jobId, this.logger, appType);
+      if (connectionInfo?.response?.$case === "appConnectionInfo") {
+        const { host, port, password } = connectionInfo.response.appConnectionInfo;
+        return {
+          appId: sessionMetadata.jobId.toString(),
+          host: host,
+          port: port,
+          password: password,
+        };
+      }
+    }
     if (sessionMetadata.jobType === JobType.APP && sessionMetadata.appId) {
-      const client = getAdapterClient(clusterId);
-      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, sessionMetadata.jobId, this.logger);
+      const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
+        client, sessionMetadata.jobId, this.logger, appType);
       if (connectionInfo?.response?.$case === "appConnectionInfo") {
         const { host, port, password } = connectionInfo.response.appConnectionInfo;
         return {
@@ -882,15 +947,16 @@ export class ScowdJobDriver implements JobDriver {
     });
 
     // Save session metadata
+    const imageInfo = remoteImageUrl
+      ? parseImageUrl(remoteImageUrl)
+      : { name: existImage!.name, tag: existImage?.tag || "latest" };
+
     const metadata: SessionMetadata = {
       jobId: reply.jobId,
       jobName:trainJobName,
       sessionId: scowWorkDirectoryName,
       submitTime: new Date().toISOString(),
-      image: {
-        name: remoteImageUrl || existImage!.name,
-        tag: existImage?.tag || "latest",
-      },
+      image: imageInfo,
       jobType: JobType.TRAIN,
     };
 
@@ -962,5 +1028,125 @@ export class ScowdJobDriver implements JobDriver {
     return await scowdFetchJobInputParams<TrainJobInput>(
       this.userId,inputParamsPath, this.client, TrainJobInputSchema, this.logger,
     );
+  }
+
+  async createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number> {
+    const {
+      mountPoints = [], clusterId, devHostName, account, partition, coreCount,
+      gpuCount, memory, maxTimeMinutes, remoteImageUrl, qos,
+    } = inputParams;
+
+    const devHostConfig = clusters[clusterId]?.ai.devHost;
+    if (!devHostConfig) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "devHost is not configured",
+      });
+    }
+
+
+    const { existImage } = extraParams;
+    const { path: homeDir } = await wrap(
+      this.client.file.getHomeDirectory({
+        userId: this.userId,
+      }),
+      this.logger,
+    );
+    mountPoints.forEach((mountPoint) => {
+      if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "mountPoint should be in homeDir",
+        });
+      }
+    });
+
+    const scowWorkDirectoryName = `${clusterId}-devHost-${dayjs().format("YYYYMMDD-HHmmss")}`;
+    const devHostDir = join(aiConfig.appJobsDir, scowWorkDirectoryName);
+
+    // 确保所有映射到容器的路径都不重复
+    validateUniquePaths([devHostDir, ...mountPoints]);
+
+    // 检查挂载点是否为目录，不能是软链接
+    for (const path of mountPoints) {
+      const { isSymlink } = await wrap(
+        this.client.file.getFileMetadata({
+          userId: this.userId,
+          filePath: path,
+        }),
+        this.logger,
+      );
+
+      if (isSymlink) {
+        throw new TRPCError({ code: "FORBIDDEN", message: `${path} is a symbolic link, not a directory` });
+      }
+    }
+
+    // make sure appJobsDirectory exists.
+    await wrap(
+      this.client.file.makeDirectory({
+        userId: this.userId,
+        dirPath: join(homeDir, devHostDir),
+      }),
+      this.logger,
+    );
+
+    const client = getAdapterClient(clusterId);
+    const reply = await asyncClientCall(client.job, "createDevHost", {
+      userId: this.userId, jobName: devHostName,
+      account, partition, qos,
+      coreCount, gpuCount: gpuCount ?? 0, memoryMb: Number(memory),
+      timeLimitMinutes: maxTimeMinutes,
+      workingDirectory: join(homeDir, devHostDir),
+      image: remoteImageUrl || existImage?.path || "",
+      mounts: mountPoints,
+      publicMounts: aiConfig.publicMountPoints || [],
+      vscodeInfo: {
+        vscodeBinPath: devHostConfig.vscodeInfo.binPath,
+      },
+      jupyterLabInfo: {
+        proxyBasePath: join(BASE_PATH, "api/proxy", clusterId, "absolute"),
+      },
+    }).catch((e) => {
+      const ex = e as ServiceError;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Create dev host failed, ${ex.details}`,
+      });
+    });
+
+    // Save session metadata
+    const imageInfo = remoteImageUrl
+      ? parseImageUrl(remoteImageUrl)
+      : { name: existImage!.name, tag: existImage?.tag || "latest" };
+
+    const metadata: SessionMetadata = {
+      jobId: reply.jobId,
+      jobName: devHostName,
+      sessionId: scowWorkDirectoryName,
+      submitTime: new Date().toISOString(),
+      image: imageInfo,
+      jobType: JobType.DEV_HOST,
+    };
+
+    await wrap(
+      this.client.file.writeFile({
+        userId: this.userId,
+        filePath: join(homeDir, devHostDir, SESSION_METADATA_NAME),
+        content: JSON.stringify(metadata),
+      }),
+      this.logger,
+    );
+
+    await wrap(
+      this.client.file.writeFile({
+        userId: this.userId,
+        filePath: join(homeDir, devHostDir, `${reply.jobId}-input.json`),
+        content: JSON.stringify(inputParams),
+      }),
+      this.logger,
+    );
+
+    return reply.jobId;
   }
 }

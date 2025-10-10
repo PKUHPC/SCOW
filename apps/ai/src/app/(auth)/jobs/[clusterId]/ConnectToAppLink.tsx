@@ -72,11 +72,9 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   const { message } = App.useApp();
 
   const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({
-    clusterId: cluster,
-    jobId: session.jobId,
-    sessionId: session.sessionId,
+    clusterId: cluster, jobId: session.jobId, sessionId: session.sessionId,
   }, {
-    enabled: !!session.jobId,
+    enabled: !!session.jobId && session.state === "RUNNING",
   });
 
   const connectMutation = trpc.jobs.connectToApp.useMutation(
@@ -88,8 +86,8 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    refetch();
-  }, [refreshToken]);
+    if (session.state === "RUNNING") refetch();
+  }, [refreshToken, session.state]);
 
 
   const onClick = async () => {

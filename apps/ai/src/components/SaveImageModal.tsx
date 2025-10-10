@@ -1,19 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { getImageTexts, ImageType } from "src/models/Image";
+import { getImageTypeText, ImageType } from "src/models/Image";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
 import { imageNameValidation, imageTagValidation, inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
@@ -21,7 +9,6 @@ import { trpc } from "src/utils/trpc";
 interface Props {
   open: boolean;
   onClose: () => void;
-  reload: () => void;
   appSession: AppSession
   clusterId: string
 }
@@ -36,17 +23,13 @@ interface FormFields {
 }
 
 export const SaveImageModal: React.FC<Props> = (
-  { open, onClose, reload, appSession, clusterId },
+  { open, onClose, appSession, clusterId },
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.saveImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
 
-  const TypeText = {
-    APP: getImageTexts(t).APP,
-    TRAIN: getImageTexts(t).TRAIN,
-    INFER: getImageTexts(t).INFER,
-  };
+  const TypeText = getImageTypeText(t);
 
   const [form] = Form.useForm<FormFields>();
   const types = Form.useWatch("types", form);
@@ -56,7 +39,7 @@ export const SaveImageModal: React.FC<Props> = (
   const { data: jobParams, isLoading: isGetJobParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
     {
       clusterId,
-      jobId:appSession.jobId,
+      jobId: appSession.jobId,
       sessionId: appSession.sessionId,
     },
   );
@@ -85,7 +68,6 @@ export const SaveImageModal: React.FC<Props> = (
       message.success(t(p("saveSuccessfully")));
       onClose();
       form.resetFields();
-      reload();
     },
     onError(e) {
       message.error(`${t(p("saveFailed"))}:${e.message}`);
