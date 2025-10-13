@@ -7,7 +7,7 @@
     "build:libs": "turbo run build --filter \"./libs/**\"",
     "build:images": "docker build -f docker/Dockerfile.scow -t scow .",
     "build:protos": "turbo run build --filter \"./libs/protos/**\"",
-    "prepareDev": "pnpm build:libs && turbo run prepareDev",
+    "prepareDev": "turbo run prepareDev",
     "prune": "pnpm clean --yes && pnpm bootstrap --ci -- --production",
     "dev:libs": "turbo run dev --concurrency 100% --filter \"./libs/**\"",
     "devenv": "docker compose --env-file dev/.env.dev -f dev/docker-compose.dev.yml up -d",

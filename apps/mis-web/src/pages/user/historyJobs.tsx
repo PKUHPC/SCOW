@@ -10,13 +10,18 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { Tabs } from "antd";
 import { NextPage } from "next";
 import { useMemo } from "react";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { JobTable } from "src/pageComponents/job/HistoryJobTable";
+import { QuantumJobTable } from "src/pageComponents/quantumJob/HistoryJobTable";
+import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
+
+const { TabPane } = Tabs;
 
 const p = prefix("page.user.historyJobs.");
 
@@ -33,15 +38,41 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
       <div>
         <Head title={t("common.historyJob")} />
         <PageTitle titleText={t(p("userCompletedJob"))} />
-        <JobTable
-          accountNames={accountNames}
-          userId={userStore.user.identityId}
-          showAccount={true}
-          showUser={false}
-          filterUser={false}
-          showedPrices={["account"]}
-          priceTexts={{ account: t("common.jobBilling") }}
-        />
+
+        {
+          publicConfig.QUANTUM_URL ? (
+            <Tabs defaultActiveKey="HPCAI">
+              <TabPane tab={t("common.HPCAI")} key="HPCAI">
+                <JobTable
+                  accountNames={accountNames}
+                  userId={userStore.user.identityId}
+                  showAccount={true}
+                  showUser={false}
+                  filterUser={false}
+                  showedPrices={["account"]}
+                  priceTexts={{ account: t("common.jobBilling") }}
+                />
+              </TabPane>
+              <TabPane tab={t("common.quantum")} key="quantum">
+                <QuantumJobTable
+                  userId={userStore.user.identityId}
+                  showAccount={true}
+                  showUser={false}
+                  filterUserId={false}
+                />
+              </TabPane>
+            </Tabs>
+          ) : (
+            <JobTable
+              accountNames={accountNames}
+              userId={userStore.user.identityId}
+              showAccount={true}
+              showUser={false}
+              filterUser={false}
+              showedPrices={["account"]}
+              priceTexts={{ account: t("common.jobBilling") }}
+            />
+          )}
       </div>
     );
 

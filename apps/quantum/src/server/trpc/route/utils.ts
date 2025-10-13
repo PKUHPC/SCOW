@@ -190,7 +190,11 @@ export const estimateAccountCanAfford = async (
   }
 
   // 用于存储为 estimate 接口准备的任务列表
-  const estimateTasks = [];
+  const estimateTasks = [] as {
+    qubits: number;
+    shots: number;
+    device: string;
+  }[];
 
   for (const taskInfo of tasks) {
 

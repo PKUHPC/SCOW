@@ -32,6 +32,10 @@ export const config = envConfig({
   DB_NAME: str({ desc: "存放系统数据的数据库名，将会覆写配置文件。用于测试", default: undefined }),
   DB_PASSWORD: str({ desc: "管理系统数据库密码，将会覆写配置文件", default: undefined }),
 
+  QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
+  QUANTUM_PATH: str({ desc: "如果部署了量子系统，量子系统的basePath", default: "" }),
+  QUANTUM_URL: str({ desc: "开发环境中的量子系统url，生产环境中为空字符串", default: "" }),
+
   SCOWD_SSL_ENABLED: bool({ desc: "到 SCOWD 的连接是否启动SSL", default: false }),
   SCOWD_SSL_CA_CERT_PATH: str({ desc: "SCOWD CA根证书路径", default: "./scowd/certs/ca.crt" }),
   SCOWD_SSL_SCOW_CERT_PATH: str({ desc: "SCOWD CA签名的 SCOW 证书路径", default: "./scowd/certs/scow.crt" }),

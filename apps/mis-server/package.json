@@ -48,6 +48,7 @@
     "@scow/lib-ssh": "workspace:*",
     "@scow/notification-protos": "workspace:*",
     "@scow/protos": "workspace:*",
+    "@trpc/client": "10.45.2",
     "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/scow-resource-protos": "workspace:*",
     "@scow/utils": "workspace:*",
@@ -58,12 +59,14 @@
     "pino": "9.6.0",
     "pino-pretty": "13.0.0",
     "uuid": "11.0.5",
-    "wait-on": "8.0.2"
+    "wait-on": "8.0.2",
+    "superjson": "2.2.2"
   },
   "devDependencies": {
     "@types/google-protobuf": "3.15.12",
     "@types/node-cron": "3.0.11",
-    "@types/wait-on": "5.3.4"
+    "@types/wait-on": "5.3.4",
+    "@scow/quantum": "workspace:*"
   },
   "mikro-orm": {
     "useTsNode": true,

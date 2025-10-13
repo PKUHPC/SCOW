@@ -53,7 +53,8 @@ export const listAppSessions =
     }))
     .output(z.object({ sessions: z.array(AppSessionSchema) }))
     .query(async ({ input, ctx: { user } }) => {
-      if (USE_MOCK) {
+
+      if (USE_MOCK || process.env.NODE_ENV === "development") {
         return { sessions: [], count: 0 };
       }
 

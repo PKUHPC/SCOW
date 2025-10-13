@@ -18,52 +18,66 @@ interface Props {
 }
 
 interface FilterForm {
-  jobId: number | undefined,
-  qubits: number | undefined,
-  shots: number | undefined,
-  accountName: string | undefined,
+  jobId: number | undefined;
+  qubits: number | undefined;
+  shots: number | undefined;
+  accountName: string | undefined;
+}
+
+interface QueryState extends FilterForm {
+  page: number;
+  pageSize: number;
 }
 
 export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.quantum.jobsTable.");
 
-  const { data, refetch, isLoading, isFetching } = trpc.backend.task.findTask.useQuery({ accountName: "_" });
+  const [query, setQuery] = useState<QueryState>({
+    jobId: undefined,
+    qubits: undefined,
+    shots: undefined,
+    accountName: undefined,
+    page: 1,
+    pageSize: 50,
+  });
+
+  const { data, refetch, isLoading, isFetching } = trpc.backend.task.findTask.useQuery(
+    {
+      accountName: (query.accountName?.trim() && query.accountName.trim() !== "") ?
+        query.accountName.trim() : "_",
+      page: isDashboard ? 1 : query.page,
+      pageSize: isDashboard ? 10 : query.pageSize,
+      id: query.jobId ?? undefined,
+      qubits: query.qubits ?? undefined,
+      shots: query.shots ?? undefined,
+      querySelf: true,
+    },
+    {
+      keepPreviousData: true,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    },
+  );
 
   const reloadTable = useCallback(() => {
     refetch();
   }, [refetch]);
 
-
   useEffect(() => {
     const interval = setInterval(() => {
-      reloadTable();
+      refetch();
     }, 10000);
     return () => clearInterval(interval);
   }, [refetch]);
 
-  const [query, setQuery] = useState<FilterForm>(() => {
-    return {
-      jobId: undefined,
-      qubits: undefined,
-      shots: undefined,
-      accountName: undefined,
-    };
-  });
-
   const [form] = Form.useForm<FilterForm>();
-
 
   const columns: TableColumnsType<FindTask> = [
     {
       title: t(p("jobId")),
       dataIndex: "jobId",
       width: "50px",
-      ...(isDashboard
-        ? {}
-        : {
-          sorter: (a, b) => a.jobId - b.jobId,
-        }),
     },
     {
       title: t(p("account")),
@@ -78,16 +92,16 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       ellipsis: true,
     },
     {
-      title: "Shots",
-      dataIndex: "shots",
-      width: "20px",
-      ellipsis: true,
-    },
-    {
       title: "Qubits",
       dataIndex: "qubits",
       width: "20px",
       render: (qubits?: number) => qubits ?? EMPTY_STRING,
+    },
+    {
+      title: "Shots",
+      dataIndex: "shots",
+      width: "20px",
+      ellipsis: true,
     },
     {
       title: t(p("submitTime")),
@@ -111,6 +125,12 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       dataIndex: "qits",
       width: "60px",
       render: (qits?: Decimal) => qits?.toString() ?? EMPTY_STRING,
+    },
+    {
+      title: t(p("billing")),
+      dataIndex: "amount",
+      width: "60px",
+      render: (amount?: Decimal) => amount ? (parseFloat(amount.toString()).toFixed(2)) : EMPTY_STRING,
     },
     {
       title: t(p("state")),
@@ -138,33 +158,22 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       ]),
   ];
 
+  const jobsData = useMemo(() => {
+    if (!data) {
+      return [];
+    }
 
-  const filteredData = useMemo(() => {
-    if (!data) { return []; }
-
-    const result = data.tasks.filter((x) => {
-      const dataMatchedJobId = !query.jobId || (Number(x.jobId) === query.jobId);
-      const dataMatchedQubits = !query.qubits || (x.qubits === query.qubits);
-      const dataMatchedShots = !query.shots || (x.shots === query.shots);
-      const dataMatchedAccountName = !query.accountName || (x.account === query.accountName.trim());
-      return dataMatchedJobId && dataMatchedQubits && dataMatchedShots && dataMatchedAccountName;
-    }).map((x) => {
+    return data.tasks.map((x) => {
       const processedX = { ...x };
-
-      // 如果 device 字段存在且包含 "?o=" 后缀，则去掉后缀
       if (processedX.device.includes("?o=")) {
         processedX.device = processedX.device.split("?o=")[0];
       }
-
       return {
         ...processedX,
         submitTime: formatDateTime(processedX.submitTime),
       };
     });
-
-    return isDashboard ? result.slice(0, 10) : result;
-
-  }, [data, query]);
+  }, [data]);
 
   return (
     <>
@@ -174,24 +183,29 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
             <Form<FilterForm>
               layout="inline"
               form={form}
-              initialValues={query}
+              initialValues={{
+                jobId: query.jobId, qubits: query.qubits, shots: query.shots, accountName: query.accountName,
+              }}
               onFinish={async () => {
+                const values = await form.validateFields();
                 setQuery({
-                  ...(await form.validateFields()),
+                  ...values,
+                  page: 1,
+                  pageSize: query.pageSize,
                 });
               }}
             >
               <Form.Item label={t(p("jobId"))} name="jobId">
-                <InputNumber style={{ minWidth: "160px" }} />
+                <InputNumber style={{ minWidth: "160px" }} min={1} />
               </Form.Item>
               <Form.Item label={t(p("account"))} name="accountName">
                 <Input style={{ minWidth: "160px" }} />
               </Form.Item>
               <Form.Item label="Qubits" name="qubits">
-                <InputNumber style={{ minWidth: "160px" }} />
+                <InputNumber style={{ minWidth: "160px" }} min={1} />
               </Form.Item>
               <Form.Item label="Shots" name="shots">
-                <InputNumber style={{ minWidth: "160px" }} />
+                <InputNumber style={{ minWidth: "160px" }} min={1} />
               </Form.Item>
               <Form.Item>
                 <Space>
@@ -209,12 +223,28 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       }
       <Table
         tableLayout="fixed"
-        dataSource={filteredData}
+        dataSource={jobsData}
         columns={columns}
         rowKey={(record) => record.jobId}
         loading={isLoading || isFetching}
         scroll={{ x: "max-content" }}
-        pagination={isDashboard ? false : { defaultPageSize: 50, showSizeChanger: true }}
+        pagination={
+          isDashboard
+            ? false
+            : {
+              total: data?.totalCount ?? 0,
+              current: query.page,
+              pageSize: query.pageSize,
+              showSizeChanger: true,
+              onChange: (page, pageSize) => {
+                setQuery({
+                  ...query,
+                  page,
+                  pageSize,
+                });
+              },
+            }
+        }
       />
     </>
   );

@@ -362,6 +362,8 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       environment: {
         "SCOW_LAUNCH_APP": "mis-server",
         "DB_PASSWORD": config.mis.dbPassword,
+        QUANTUM_PATH: QUANTUM_PATH,
+        QUANTUM_DEPLOYED: config.quantum ? "true" : "false",
         AUTH_URL: config.auth.custom?.external?.url ?? "",
 
         SCOWD_SSL_ENABLED: String(config.scowd?.ssl?.enabled ?? false),

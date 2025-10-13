@@ -24,7 +24,10 @@ dotenv.config({ path: "env/.env.test" });
 module.exports = {
   rootDir: ".",
   preset: "ts-jest",
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: "<rootDir>/" }),
+  moduleNameMapper: {
+    ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: "<rootDir>/" }),
+   "^superjson$": "<rootDir>/tests/mocks/superjson.js",
+  },
   testMatch: [
     "<rootDir>/tests/**/*.test.ts?(x)",
   ],

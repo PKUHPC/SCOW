@@ -103,6 +103,8 @@ export function createJobManager(orm: MikroORM) {
 
                 job.qits = qits;
 
+                job.amount = amountHighPrecision;
+
                 await em.persistAndFlush(job);
 
                 const comment = parsePlaceholder(quantumConfig.taskChargeComment, job);

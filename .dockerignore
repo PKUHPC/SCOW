@@ -4,5 +4,7 @@
 **/generated
 **/.next
 **/api-routes-schemas.json
+**/.docusaurus
+**/.turbo
 internal
 .pnpm-store

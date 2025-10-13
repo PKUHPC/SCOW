@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "es2020",
     "lib": [
       "dom",
@@ -12,7 +13,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
     "esModuleInterop": true,
     "module": "commonjs",
     "moduleResolution": "node",
@@ -20,8 +20,14 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    // "baseUrl": "src",
-    "baseUrl": ".",
+    "outDir": "./dist",
+    "declaration": true,
+    "baseUrl": "./",
+    "paths": {
+      "src/*": [
+        "src/*"
+      ]
+    },
     "plugins": [
       {
         "name": "next"
@@ -31,19 +37,13 @@
   "include": [
     "next-env.d.ts",
     "env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
     "src/**/*.ts",
+    "src/**/*.tsx",
     ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
   ],
-  "paths": {
-    "src/*": [
-      "src/*"
-    ]
-  },
   "ts-node": {
     "require": [
       "tsconfig-paths/register"

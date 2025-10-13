@@ -25,6 +25,8 @@ export class QuantumJob {
 
   qits?: Decimal;
 
+  amount?: Decimal;
+
   constructor(init: {
     jobId: string;
     submitTime: Date;
@@ -35,6 +37,7 @@ export class QuantumJob {
     info: DetailTask;
     lastSyncTime: Date;
     qits?: Decimal;
+    amount?: Decimal;
   }) {
     this.jobId = init.jobId;
     this.submitTime = init.submitTime;
@@ -45,6 +48,7 @@ export class QuantumJob {
     this.state = init.state;
     this.lastSyncTime = init.lastSyncTime;
     this.qits = init.qits;
+    this.amount = init.amount;
   }
 
 }
@@ -62,6 +66,7 @@ export const quantumJobSchema = new EntitySchema<QuantumJob>({
     accountName: { type: "string", nullable: false, index: true },
     lastSyncTime: { type: "datetime", index: true },
     qits: { type: DecimalType, index: true, nullable: true },
+    amount: { type: DecimalType, index: true, nullable: true },
   },
 });
 

@@ -3,13 +3,11 @@
   "compilerOptions": {
     "outDir": "build",
     "noEmit": false,
+    "emitDeclarationOnly": true,
     "paths": {
       "src/*": [
         "src/*"
-      ],
-      "server/*": [
-        "server/*"
       ]
-    },
+    }
   }
 }

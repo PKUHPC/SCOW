@@ -714,6 +714,9 @@ importers:
       '@sinclair/typebox':
         specifier: 0.34.13
         version: 0.34.13
+      '@trpc/client':
+        specifier: 10.45.2
+        version: 10.45.2(@trpc/server@10.45.2)
       dayjs:
         specifier: 1.11.13
         version: 1.11.13
@@ -729,6 +732,9 @@ importers:
       pino-pretty:
         specifier: 13.0.0
         version: 13.0.0
+      superjson:
+        specifier: 2.2.2
+        version: 2.2.2
       uuid:
         specifier: 11.0.5
         version: 11.0.5
@@ -736,6 +742,9 @@ importers:
         specifier: 8.0.2
         version: 8.0.2
     devDependencies:
+      '@scow/quantum':
+        specifier: workspace:*
+        version: link:../quantum
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
@@ -1779,6 +1788,9 @@ importers:
       node-mocks-http:
         specifier: 1.16.2
         version: 1.16.2(@types/express@5.0.0)(@types/node@22.10.6)
+      openapi-types:
+        specifier: 12.1.3
+        version: 12.1.3
       postcss:
         specifier: 8.5.1
         version: 8.5.1

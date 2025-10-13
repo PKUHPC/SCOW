@@ -1,9 +1,10 @@
+import type { OpenAPI } from "openapi-types";
 import { generateOpenApiDocument } from "trpc-openapi";
 
 import { appRouter } from "./router";
 
 // Generate OpenAPI schema document
-export const openApiDocument = generateOpenApiDocument(appRouter, {
+export const openApiDocument: OpenAPI.Document = generateOpenApiDocument(appRouter, {
   title: "SCOW Quantum API",
   description: "HTTP API for SCOW Quantum",
   version: "1.0.0",

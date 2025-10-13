@@ -16,8 +16,9 @@
     "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
     "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
     "serve": "next start",
-    "build": "npm run build:next",
+    "build": "npm run build:next && npm run build:types",
     "build:next": "rimraf .next.backup && cross-env BUILDING=1 next build --no-mangling",
+    "build:types": "rimraf build && tsc -p tsconfig.types.json && tsc-alias -p tsconfig.types.json",
     "orm": "dotenv -e env/.env.dev -- npx mikro-orm",
     "ormCreate": "dotenv -e env/.env.dev -- npx mikro-orm migration:create",
     "ormUp": "dotenv -e env/.env.dev -- npx mikro-orm migration:up",
@@ -132,7 +133,8 @@
     "node-mocks-http": "1.16.2",
     "postcss": "8.5.1",
     "ts-log": "2.2.7",
-    "webpack": "5.97.1"
+    "webpack": "5.97.1",
+    "openapi-types": "12.1.3"
   },
   "volta": {
     "extends": "../../package.json"

@@ -761,6 +761,10 @@ export const mockApi: MockApi<typeof api> = {
       "hpc02": { partitionNames: ["compute", "gpu"]},
     },
   }),
+  getQuantumJobInfo: async () => ({
+    totalCount: 0,
+    jobs: [],
+  }),
 };
 
 export const MOCK_USER_INFO = {

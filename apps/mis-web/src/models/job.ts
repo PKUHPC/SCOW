@@ -144,4 +144,7 @@ export const statusColors: Record<string, string> = {
   CANCELED: "#A1A1A1",
   TIMEOUT: "#5FBDEC",
   ENDED: "#6A6A6A",
+  SCHEDULED: "#5FBDEC",
+  ACTIVE: "#46B600",
+  HOLD: "#6A6A6A",
 };

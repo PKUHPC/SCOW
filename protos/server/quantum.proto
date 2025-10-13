@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package scow.server;
+
+import "common/job.proto";
+import "common/sort_order.proto";
+import "google/protobuf/timestamp.proto";
+
+message QuantumJobFilter {
+  string tenant_name = 1;
+  optional string user_id = 2;
+  optional string account_name = 3;
+  optional uint64 job_id = 4;
+  optional uint32 qubits = 5;
+  optional uint32 shots = 6;
+}
+
+enum QuantumJobState {
+  UNSPECIFIED = 0;
+  SCHEDULED = 1;
+  PENDING = 2;
+  ACTIVE = 3;
+  COMPLETED = 4;
+  FAILED = 5;
+  HOLD = 6;
+}
+
+message QuantumJobInfo {
+  uint64 job_id = 1;
+  string account = 2;
+  string user = 3;
+  string submit_time = 4;
+  google.protobuf.Timestamp last_sync_time = 5;
+  optional string qits = 6;
+  optional string amount = 7;
+  uint32 duration = 8;
+  uint32 shots = 9;
+  string device = 10;
+  optional uint32 qubits = 11;
+  QuantumJobState state = 12;
+}
+
+message GetQuantumJobsRequest {
+  string user_token = 1;
+
+  QuantumJobFilter filter = 2;
+
+  uint32 page = 3;
+
+  // if undefined or 0, page_size is 10
+  optional uint64 page_size = 4;
+
+  enum SortBy {
+  UNKNOWN = 0;
+  JOB_ID = 1;
+  ACCOUNT = 2;
+  USER = 3;
+  SUBMIT_TIME = 4;
+  LAST_SYNC_TIME = 5;
+  QITS = 6;
+  AMOUNT = 7;
+  // DURATION = 8; todo
+  SHOTS = 9;
+  DEVICE = 10;
+  QUBITS = 11;
+  STATE = 12;
+}
+
+  optional SortBy sort_by = 5;
+
+  optional common.SortOrder sort_order = 6;
+}
+
+message GetQuantumJobsResponse {
+  uint64 total_count = 1;
+  repeated QuantumJobInfo jobs = 2;
+}
+
+service QuantumService {
+  rpc GetQuantumJobs(GetQuantumJobsRequest) returns (GetQuantumJobsResponse);
+}

@@ -10,27 +10,47 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { Tabs } from "antd";
 import { NextPage } from "next";
 import { requireAuth } from "src/auth/requireAuth";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { TenantRole } from "src/models/User";
+import { QuantumJobTable } from "src/pageComponents/quantumJob/HistoryJobTable";
 import { AdminJobTable } from "src/pageComponents/tenant/AdminJobTable";
+import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
+
+const { TabPane } = Tabs;
 
 export const AdminJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
   () => {
-
     const t = useI18nTranslateToString();
 
     return (
       <div>
         <Head title={t("common.historyJob")} />
         <PageTitle titleText={t("common.finishedJobs")} />
-        <AdminJobTable />
+        {
+          publicConfig.QUANTUM_URL ? (
+            <Tabs defaultActiveKey="HPCAI">
+              <TabPane tab={t("common.HPCAI")} key="HPCAI">
+                <AdminJobTable />
+              </TabPane>
+              <TabPane tab={t("common.quantum")} key="quantum">
+                <QuantumJobTable
+                  showAccount={true}
+                  showUser={true}
+                />
+              </TabPane>
+            </Tabs>
+          ) : (
+            <AdminJobTable />
+          )}
+
       </div>
     );
-
-  });
+  },
+);
 
 export default AdminJobsPage;

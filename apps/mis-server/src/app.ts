@@ -14,6 +14,7 @@ import { initServiceServer } from "src/services/init";
 import { jobServiceServer } from "src/services/job";
 import { jobChargeLimitServer } from "src/services/jobChargeLimit";
 import { misConfigServiceServer } from "src/services/misConfig";
+import { quantumServiceServer } from "src/services/quantum";
 import { storageServiceServer } from "src/services/storage";
 import { tenantServiceServer } from "src/services/tenant";
 import { userServiceServer } from "src/services/user";
@@ -56,6 +57,7 @@ export async function createServer() {
   await server.register(billServiceServer);
   await server.register(storageServiceServer);
   await server.register(appAuthorizationServiceServer);
+  await server.register(quantumServiceServer);
 
   return server;
 }

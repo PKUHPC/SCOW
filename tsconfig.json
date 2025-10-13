@@ -13,5 +13,9 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-  }
+  },
+  "exclude": [
+    "**/jest.config.js",
+    "apps/mis-server/tests/mocks/superjson.js"
+  ]
 }

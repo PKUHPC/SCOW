@@ -17,6 +17,12 @@
     "tests/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "tests/mocks/superjson.js"
+  ],
+  "references": [
+    {
+      "path": "../quantum"
+    }
   ]
 }

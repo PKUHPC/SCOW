@@ -63,6 +63,7 @@ export default {
         tags: "tags",
         account: "Account",
         qits: "Qits",
+        billing: "Billing",
         priority: "priority",
         submitTime: "Submission Time",
         lastUpdated:"Last Updated",

@@ -103,6 +103,17 @@
           "precision": 19,
           "scale": 4,
           "mappedType": "decimal"
+        },
+        "amount": {
+          "name": "amount",
+          "type": "DECIMAL(19,4)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "precision": 19,
+          "scale": 4,
+          "mappedType": "decimal"
         }
       },
       "name": "quantum_job",
@@ -173,6 +184,16 @@
           ],
           "composite": false,
           "keyName": "quantum_job_qits_index",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "amount"
+          ],
+          "composite": false,
+          "keyName": "quantum_job_amount_index",
           "constraint": false,
           "primary": false,
           "unique": false

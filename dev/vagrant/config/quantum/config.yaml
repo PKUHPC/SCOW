@@ -1,3 +1,4 @@
+# 量子系统数据库的信息。可以不修改
 db:
   host: localhost
   port: 3306
@@ -5,17 +6,22 @@ db:
   password: mysqlrootpassword
   dbName: scow_quantum
 
-
+# 后端代理接口配置，指向代理服务的监听地址
 backend:
   apiBase: http://host.docker.internal:8088
 
+# 带有量子计算库的jupyter配置
 jupyter:
-  cluster: "mock cluster"
-  appId: "quantum jupyter"
+  cluster: "hpc01" # 带有量子计算库的jupyter的交互式应用所在的集群ID
+  appId: "jupyter-tensorcircuit" #带量子计算库的jupyter的交互式应用的appId
 
+# 默认推荐的量子计算设备
 device:
   recommend: ["t59", "t40", "t13"]
 
 # 量子作业默认遵循的比特秒计价
 billing:
   defaultBitSecondPrice: 0.35
+
+# 对量子作业计费时，计费费用的付款类型，请和管理系统的quantumJobChargeType保持一致
+# taskChargeType: "量子作业费用"

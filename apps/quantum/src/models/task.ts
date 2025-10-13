@@ -2,13 +2,13 @@ import { Decimal } from "@scow/lib-decimal";
 import { z } from "zod";
 
 export const TaskStates = {
-  scheduled:  "scheduled",
-  pending:  "pending",
-  active:  "active",
-  completed:  "completed",
-  failed:  "failed",
-  hold:  "hold",
-};
+  scheduled: "scheduled",
+  pending: "pending",
+  active: "active",
+  completed: "completed",
+  failed: "failed",
+  hold: "hold",
+} as const;
 
 export const TaskStateSchema = z.union([
   z.literal("scheduled"),
@@ -106,6 +106,8 @@ export const FindTaskSchema = FoundTaskSchema.extend({
   account: z.string(),
   duration: z.number(),
   qits: z.instanceof(Decimal).optional(),
+  amount: z.instanceof(Decimal).optional(),
+  user: z.string(),
 });
 export type FindTask = z.infer<typeof FindTaskSchema>;
 

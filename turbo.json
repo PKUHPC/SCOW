@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["HTTPS_PROXY"],
+  "globalEnv": [
+    "HTTPS_PROXY"
+  ],
   "tasks": {
     "dev": {
       "persistent": true,
@@ -32,14 +34,14 @@
     },
     "prepareDev": {
       "dependsOn": [
-        "^@scow/protos#build",
-        "^@scow/scheduler-adapter-protos#build"
+        "^build"
       ],
       "outputs": [
-        "src/generated"
+        "src/generated",
+        "build"
       ],
       "inputs": [
-        "src/pages/api/**/*.ts"
+        "src/**"
       ]
     },
     "test": {

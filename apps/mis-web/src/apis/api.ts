@@ -104,6 +104,7 @@ import type { MarkMessageReadSchema } from "src/pages/api/notification/markMessa
 import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
+import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
 import type { GetTenantQuotaSchema } from "src/pages/api/storage/getTenantQuota";
 import type { SetTenantUserDefaultQuotaSchema } from "src/pages/api/storage/setTenantUserDefaultQuota";
 import type { SetTenantUserQuotaSchema } from "src/pages/api/storage/setTenantUserQuota";
@@ -241,6 +242,7 @@ export const api = {
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
+  getQuantumJobInfo: apiClient.fromTypeboxRoute<typeof GetQuantumJobInfoSchema>("GET", "/api/quantum/jobInfo"),
   getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>("GET", "/api//simpleClustersInfo"),
   getTenantQuota: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSchema>("GET", "/api/storage/getTenantQuota"),
   setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>("PUT", "/api/storage/setTenantUserDefaultQuota"),

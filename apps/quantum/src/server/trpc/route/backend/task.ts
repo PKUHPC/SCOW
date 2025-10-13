@@ -1,13 +1,17 @@
 import type { MikroORM } from "@mikro-orm/core";
+import { raw } from "@mikro-orm/core";
 import { TRPCError } from "@trpc/server";
 import {
   EstimateTaskSchema, FindTaskSchema, GetTaskDetailSchema, GetTaskResultSchema,
-  SubmitTaskRequestSchema, SubmitTaskResponse, SubmitTaskResponseSchema, TaskStateSchema } from "src/models/task";
+  SubmitTaskRequestSchema, SubmitTaskResponse, SubmitTaskResponseSchema, TaskStateSchema,
+} from "src/models/task";
 import { QuantumJob } from "src/server/entities/QuantumJob";
 import { router } from "src/server/trpc/def";
 import { backendApiProcedure, callBackendApi } from "src/server/trpc/route/backend/common";
-import { checkDeviceAvailability, checkUserAccountPermission,
-  estimateAccountCanAfford, getAccountInfo } from "src/server/trpc/route/utils";
+import {
+  checkDeviceAvailability, checkUserAccountPermission,
+  estimateAccountCanAfford, getAccountInfo,
+} from "src/server/trpc/route/utils";
 import { logger } from "src/server/utils/logger";
 import { calculateDuration } from "src/server/utils/time";
 import { z } from "zod";
@@ -80,8 +84,8 @@ export const task = router({
         return { tasks, accountName };
       }
 
-      return { tasks:[restOfVal], accountName };
-    } , SubmitTaskRequestSchema))
+      return { tasks: [restOfVal], accountName };
+    }, SubmitTaskRequestSchema))
     .output(SubmitTaskResponseSchema)
     .mutation(async ({ input, ctx: { orm, user } }) => {
 
@@ -136,10 +140,9 @@ export const task = router({
     })
     .input(z.object({
       accountName: z.string(),
-      id: z.array(z.string()).optional(),
-      state: TaskStateSchema.optional(),
+      id: z.number().optional(),
+      states: z.array(TaskStateSchema).optional(),
       device: z.string().optional(),
-      // start, and
       at: z.tuple([z.number(), z.number()]).optional(),
       group: z.string().optional(),
       tags: z.string().optional(),
@@ -147,46 +150,65 @@ export const task = router({
       md5: z.string().optional(),
       qubits: z.number().optional(),
       shots: z.number().optional(),
+      page: z.number().optional(),
+      pageSize: z.number().optional(),
+      tenantName: z.string().optional(),
+      userId: z.string().optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.string().optional(),
+      querySelf: z.boolean().optional(),
     }))
     .output(z.object({
+      totalCount: z.number(),
       tasks: z.array(FindTaskSchema),
     }))
     .query(async ({ input, ctx: { orm, user } }) => {
-
       const em = orm.em.fork();
-
       const qb = em.createQueryBuilder(QuantumJob, "qj");
+      const { accountName } = input;
 
-      qb.where({ "qj.userId": user.identityId });
+      console.log(input, "input", user, "user");
+
+      if (input.querySelf) {
+        qb.where({ "qj.userId": user.identityId });
+      } else if (input.userId) {
+        qb.where({ "qj.userId": input.userId });
+      }
+
+      if (input.tenantName) {
+        qb.andWhere({ "qj.tenantName": input.tenantName });
+      }
 
       if (input.id) {
-        qb.andWhere({ "qj.info.id": { $in: input.id } });
+        qb.andWhere({ "qj.id": input.id });
+      }
+      if (accountName.length !== 0 && accountName !== "_") {
+        qb.andWhere({ "qj.accountName": input.accountName });
       }
       if (input.at) {
-        qb.andWhere({ "qj.info.at": { $gte: input.at[0], $lte: input.at[1] } });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.at') BETWEEN ? AND ?", [input.at[0], input.at[1]]);
       }
-      if (input.state) {
-        qb.andWhere({ "qj.info.state": input.state });
+      if (input.states && input.states.length > 0) {
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.state') IN (?)", [input.states]);
       }
       if (input.group) {
-        qb.andWhere({ "qj.info.group": input.group });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.group') = ?", [input.group]);
       }
       if (input.tags) {
-        qb.andWhere({ "qj.info.tags": input.tags });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.tags') = ?", [input.tags]);
       }
       if (input.name) {
-        qb.andWhere({ "qj.info.name": input.name });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.name') = ?", [input.name]);
       }
       if (input.md5) {
-        qb.andWhere({ "qj.info.md5": input.md5 });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.md5') = ?", [input.md5]);
       }
       if (input.qubits) {
-        qb.andWhere({ "qj.info.qubits": input.qubits });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.qubits') = ?", [input.qubits]);
       }
       if (input.shots) {
-        qb.andWhere({ "qj.info.shots": input.shots });
+        qb.andWhere("JSON_EXTRACT(qj.info, '$.shots') = ?", [input.shots]);
       }
-
       if (input.device) {
         checkDeviceAvailability(input.device);
 
@@ -207,17 +229,67 @@ export const task = router({
         }
       }
 
-      const jobs = await qb.getResultList();
 
-      // 从数据库中返回
+      const page = input.page ?? 1; // 默认页码为 1
+      const pageSize = input.pageSize ?? 50; // 默认每页 50 条记录
+      const offset = (page - 1) * pageSize;
+
+      qb.limit(pageSize).offset(offset);
+
+      if (input.sortBy && input.sortOrder) {
+        const sortOrder = input.sortOrder === "asc" ? "ASC" : "DESC";
+
+        switch (input.sortBy) {
+          case "qubits":
+          case "shots":
+          case "device":
+          case "state":
+            qb.orderBy({
+              [raw(`JSON_EXTRACT(qj.info, '$.${input.sortBy}')`)]: sortOrder,
+            });
+            break;
+          case "amount":
+          case "qits":
+            qb.orderBy({ [`qj.${input.sortBy}`]: sortOrder });
+            break;
+          case "jobId":
+            qb.orderBy({ "qj.id": sortOrder });
+            break;
+          case "submitTime":
+            qb.orderBy({ "qj.submitTime": sortOrder });
+            break;
+          case "lastSyncTime":
+            qb.orderBy({ "qj.lastSyncTime": sortOrder });
+            break;
+          case "userId":
+            qb.orderBy({ "qj.userId": sortOrder });
+            break;
+          case "accountName":
+            qb.orderBy({ "qj.accountName": sortOrder });
+            break;
+          // case "duration": { // TODO后续如果要做考虑新增duration字段
+          //   const durationExpression = `
+          //     COALESCE(
+          //       JSON_EXTRACT(qj.info, '$.ts.completed'),
+          //       JSON_EXTRACT(qj.info, '$.ts.failed')
+          //     ) - JSON_EXTRACT(qj.info, '$.ts.scheduled')
+          //   `;
+          //   qb.orderBy(raw(`${durationExpression} ${sortOrder}`));
+          //   break;
+          // }
+          default:
+            break;
+        }
+      } else {
+        // 如果没有提供排序，使用默认排序
+        qb.orderBy({ "qj.id": "desc" });
+      }
+
+      const [tasks, totalCount] = await qb.getResultAndCount();
+
       return {
-        tasks: jobs.sort((a, b) => {
-          const timeDiff = b.submitTime.getTime() - a.submitTime.getTime();
-          if (timeDiff === 0) {
-            return b.id - a.id;
-          }
-          return timeDiff;
-        }).map((job) => FindTaskSchema.parse({
+        totalCount,
+        tasks: tasks.map((job) => FindTaskSchema.parse({
           ...job.info,
           jobId: job.id,
           submitTime: new Date(job.submitTime.getTime()).toString(),
@@ -225,6 +297,8 @@ export const task = router({
           account: job.accountName,
           duration: calculateDuration(job.info.ts),
           qits: job.qits,
+          amount: job.amount,
+          user: job.userId,
         })),
       };
     }),
@@ -310,7 +384,7 @@ export const task = router({
 
       const accountInfo = await getAccountInfo(accountName);
 
-      const isAccountCanAfford = await estimateAccountCanAfford(accountInfo,[{
+      const isAccountCanAfford = await estimateAccountCanAfford(accountInfo, [{
         source: task.info.source,
         shots: task.info.shots,
         device: task.info.device,

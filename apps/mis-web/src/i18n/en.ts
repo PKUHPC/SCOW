@@ -53,6 +53,7 @@ export default {
     workName: "Job Name",
     timeSubmit: "Submission Time",
     timeEnd: "End Time",
+    lastUpdated:"Last Updated",
     more: "More",
     detail: "Details",
     price: "Fee",
@@ -112,6 +113,8 @@ export default {
     finalError: "Request failed, please try again later",
     edit: "edit",
     idOrName: "User ID/Name",
+    HPCAI: "HPC&AI",
+    quantum: "quantum",
   },
   dashboard: {
     title: "Dashboard",
@@ -998,6 +1001,16 @@ export default {
         tip: "Changes take effect immediately. " +
           "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. " +
           "Please proceed with caution",
+      },
+    },
+    quantumJob:{
+      historyJobTable:{
+        qits: "Qits",
+        billing: "Billing",
+        runDur:"Duration",
+        state:"State",
+        device: "Execution Device",
+        noAuth: "You do not have permission to view this information.",
       },
     },
   },

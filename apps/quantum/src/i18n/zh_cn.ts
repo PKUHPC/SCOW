@@ -63,6 +63,7 @@ export default {
         tags: "标签",
         account:"账户",
         qits: "比特秒",
+        billing: "计费",
         priority: "优先级",
         submitTime:"提交时间",
         lastUpdated:"最后更新时间",

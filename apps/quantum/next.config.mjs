@@ -33,7 +33,10 @@ export default async () => {
   const nextConfig = {
     compiler: {
       styledComponents: true,
+    },
 
+    typescript: {
+      tsconfigPath: "tsconfig.next.json",
     },
     experimental: {
       instrumentationHook: true,

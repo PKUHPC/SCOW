@@ -13,7 +13,8 @@ ENV CONDA_DIR=/opt/conda
 RUN bash setup.sh && rm setup.sh
 ENV PATH="$CONDA_DIR/bin:$PATH"
 
-ENV QOBODY_BASE_URL=http://host.docker.internal:3000/api/tc/
+# ENV QOBODY_BASE_URL=http://host.docker.internal:3000/api/tc/
+ENV QOBODY_BASE_URL=http://host.docker.internal:5007/api/tc/
 
 # # Modify the URL for the tensorcircuit SDK to point to the running quantum server
 # # RUN sed -i 's|https://quantum.tencent.com/cloud/quk/|http://host.docker.internal:3000/api/tc/|g' /opt/conda/envs/tensorcircuit/lib/python3.10/site-packages/tensorcircuit/cloud/config.py

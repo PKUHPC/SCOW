@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { getUserInfo } from "src/server/auth/server";
+import { validateUserToken } from "src/server/auth/token";
 import { quantumConfig } from "src/server/config/quantum";
 import { UserToken } from "src/server/entities/UserToken";
 import withOrmContext from "src/server/trpc/middleware/withOrmContext";
@@ -25,12 +26,20 @@ export const backendApiProcedure = baseProcedure
 
     // 检查这个token是不是某个用户的token
     if (token) {
+      //  这里是执行量子命令的token
       const tokenModel = await ctx.orm.em.fork().findOne(UserToken, {
         token,
       });
 
       if (tokenModel) {
         return next({ ctx: { ...ctx, user: { identityId: tokenModel.userId } } });
+      }
+
+      // 来自其他系统的带token请求
+      const identityId = await validateUserToken(token);
+
+      if (identityId) {
+        return next({ ctx: { ...ctx, user: { identityId } } });
       }
     }
 

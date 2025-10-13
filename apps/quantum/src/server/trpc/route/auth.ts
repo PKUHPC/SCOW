@@ -22,6 +22,7 @@ const ClientUserInfoSchema = z.object({
   token: z.string(),
 });
 
+
 export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
 
 export const auth = router({

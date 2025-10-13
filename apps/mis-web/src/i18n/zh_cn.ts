@@ -53,6 +53,7 @@ export default {
     workName:"作业名",
     timeSubmit:"提交时间",
     timeEnd:"结束时间",
+    lastUpdated:"最后更新时间",
     more:"更多",
     detail:"详情",
     price:"价格",
@@ -112,6 +113,8 @@ export default {
     finalError: "请求失败，请稍后重试",
     edit: "编辑",
     idOrName: "用户ID/姓名",
+    HPCAI: "超智算",
+    quantum: "量子计算",
   },
   dashboard: {
     title: "仪表盘",
@@ -987,6 +990,16 @@ export default {
         useDefaultValue: "使用默认值",
         setStorageQuota: "设置存储配额",
         tip: "修改后立即生效，如果减少配额可能会导致用户存储额度用满，正在运行的作业无法写入数据，请谨慎操作",
+      },
+    },
+    quantumJob:{
+      historyJobTable:{
+        qits: "比特秒",
+        billing: "计费",
+        runDur:"耗时",
+        state:"状态",
+        device: "运行设备",
+        noAuth:"您没有权限查看此信息。",
       },
     },
   },
