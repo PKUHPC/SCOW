@@ -105,6 +105,12 @@ export default {
         platformOverview:"Platform Overview",
         contact:"There are currently no available clusters. Please try again later or contact the administrator.",
       },
+      notificationCard: {
+        message: "Message",
+        check: "Check All >",
+        noMessage: "There are currently no unread messages",
+        fetchNotifError: "Failed to get unread messages",
+      },
     },
     algorithm:{
       private:"My Algorithm",

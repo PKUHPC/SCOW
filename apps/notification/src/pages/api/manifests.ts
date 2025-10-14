@@ -37,6 +37,12 @@ function handler(req: NextApiRequest, res: NextApiResponse) {
         },
         rewriteNavigations: true,
       },
+      ai: {
+        navbarLinks: {
+          "enabled": true,
+        },
+        rewriteNavigations: true,
+      },
     });
   } else {
     res.status(405).json({ message: "Method Not Allowed" });

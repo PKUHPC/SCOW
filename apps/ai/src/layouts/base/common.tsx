@@ -13,9 +13,20 @@
 import { ItemType } from "antd/es/menu/interface";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import React from "react";
 import { match } from "src/layouts/base/matchers";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { arrayContainsElement } from "src/utils/array";
+
+export const iconToNode = (Icon: any) => {
+  return (
+    <span style={{ maxWidth: "18px", maxHeight: "36px" }}>
+      {React.isValidElement(Icon)
+        ? Icon
+        : <Icon style={{ transform: "scale(0.9)" }} />}
+    </span>
+  );
+};
 
 export const EXTERNAL_URL_PREFIX = ["http://", "https://"];
 
@@ -29,7 +40,7 @@ export function createMenuItems(
   function createMenuItem(route: NavItemProps): ItemType {
     if (arrayContainsElement(route.children)) {
       return {
-        icon: <span style={{ maxWidth: "18px", maxHeight: "36px" }}><route.Icon /></span>,
+        icon: iconToNode(route.Icon),
         key: route.path,
         title: route.text,
         label: route.text,
@@ -53,7 +64,7 @@ export function createMenuItems(
     }
 
     return {
-      icon: <span style={{ maxWidth: "18px", maxHeight: "36px" }}><route.Icon /></span>,
+      icon: iconToNode(route.Icon),
       key: route.path,
       label: (
         <Link href={route.clickToPath ?? route.path} {...route.openInNewPage ? { target: "_blank" } : {}}>
@@ -66,8 +77,7 @@ export function createMenuItems(
     } as ItemType;
   }
 
-  const items = routes.map((r) => createMenuItem(r));
-
+  const items = routes.filter((x) => !x.hideIfNotActive).map((r) => createMenuItem(r));
   return items;
 }
 

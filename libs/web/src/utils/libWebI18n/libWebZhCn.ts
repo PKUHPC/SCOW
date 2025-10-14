@@ -79,4 +79,5 @@ export default {
   userId:"用户ID",
   userFullName:"用户姓名",
   accountSecurity: "账号安全",
+  read: "已读",
 };

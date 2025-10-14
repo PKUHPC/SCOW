@@ -30,7 +30,7 @@ export const NavbarLink = z.object({
 
 export type NavbarLink = z.infer<typeof NavbarLink>;
 
-export const navbarLinksRoute = (from: "portal" | "mis") => defineExtensionRoute({
+export const navbarLinksRoute = (from: "portal" | "mis" | "ai") => defineExtensionRoute({
   path: `/${from}/navbarLinks`,
   method: "POST" as const,
   query: ExtensionRouteQuery,

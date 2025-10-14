@@ -32,6 +32,7 @@ export const CommonExtensionManifestsSchema = z.object({
 export const ExtensionManifestsSchema = z.object({
   portal: CommonExtensionManifestsSchema.optional(),
   mis: CommonExtensionManifestsSchema.optional(),
+  ai: CommonExtensionManifestsSchema.optional(),
 });
 
 export type ExtensionManifestsSchema = z.infer<typeof ExtensionManifestsSchema>;

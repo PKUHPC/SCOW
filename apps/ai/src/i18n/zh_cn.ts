@@ -105,6 +105,12 @@ export default {
         platformOverview:"平台概览",
         contact:"当前没有可用集群,请稍后再试或联系管理员。",
       },
+      notificationCard: {
+        message: "消息",
+        check: "查看全部 >",
+        noMessage: "当前没有未读消息",
+        fetchNotifError: "获取未读消息失败",
+      },
     },
     algorithm:{
       private:"我的算法",

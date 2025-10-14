@@ -49,3 +49,9 @@ harborConfig:
   # enabled: true
   # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
   # proxyHost: www.example.com
+
+# uiExtension:
+# 消息系统UI扩展名称
+# - name: notif
+# 消息系统的部署Url，此url需能被外网访问
+#   url: ""

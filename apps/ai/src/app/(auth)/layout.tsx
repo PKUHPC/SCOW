@@ -11,7 +11,8 @@
  */
 
 "use client";
-
+import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
+import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import React from "react";
 import { useUserQuery } from "src/app/auth";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
@@ -39,6 +40,13 @@ const useCurrentClusterIdsQuery = () => {
   return trpc.resource.getCurrentUserAssignedClusters.useQuery();
 };
 
+const useUnreadMessagesQuery = () => {
+  return trpc.notification.getUnreadMessages.useQuery({
+    notifAddress: useConfigQuery().data?.NOTIF_ADDRESS || "",
+    messageType: AdminMessageType.SystemNotification,
+  });
+};
+
 export default function Layout(
   { children }:
   { children: React.ReactNode },
@@ -48,8 +56,11 @@ export default function Layout(
   const configQuery = useConfigQuery();
   const scowClusterConfigsQuery = useScowClusterConfigsQuery();
   const currentClusterIdsQuery = useCurrentClusterIdsQuery();
+  const unreadMessagesQuery = useUnreadMessagesQuery();
 
   const languageId = useI18n().currentLanguage.id;
+
+  const createAppSessionMutation = trpc.notification.markMessageRead.useMutation({});
 
   if (userQuery.isLoading) {
     return (
@@ -124,8 +135,19 @@ export default function Layout(
         versionTag={publicConfig.VERSION_TAG}
         footerText={footerText}
       >
-
-        {children}
+        {publicConfig.NOTIF_ENABLED ? (
+          <NotificationLayout
+            interval={300000}
+            languageId={languageId}
+            unreadMessages={unreadMessagesQuery.data?.results}
+            onMarkMessageRead={async (messageId: number) => {
+              await createAppSessionMutation.mutateAsync({ messageId });
+            }}
+          >
+            {children}
+          </NotificationLayout>
+        )
+          : children}
       </BaseLayout>
     </PublicConfigContext.Provider>
   );

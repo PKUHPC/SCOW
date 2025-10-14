@@ -362,7 +362,7 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   markMessageRead: null,
-  getUnreadMessage: async () => ({
+  getUnreadMessages: async () => ({
     results: {
       totalCount: 2,
       messages: [{

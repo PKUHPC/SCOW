@@ -1,19 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import { AdminMessageType, adminMessageTypesMap, CustomMessageType } from "src/models/notification";
 
-import { JsonValue } from "@bufbuild/protobuf";
-import { AdminMessageType, adminMessageTypesMap, CustomMessageType } from "@scow/lib-web/build/models/notification";
-import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
-import { Message } from "src/pages/api/notification/getUnreadMessages";
+import { formatDateTime } from "./datetime";
 
 export interface RenderContent {
   id: number;
@@ -28,6 +15,26 @@ enum TemplateLang {
   zhCn = "zhCn",
 };
 
+export interface Template {
+  default: string;
+  en: string;
+  zhCn: string;
+}
+
+export interface Message {
+  id: number;
+  messageType?: {
+    type: string;
+    titleTemplate?: Template;
+    contentTemplate?: Template;
+    category: string;
+    categoryTemplate?: Template;
+  };
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const checkAdminMessageTypeExist = (
   type: string,
 ): CustomMessageType | undefined => {
@@ -38,7 +45,7 @@ export const checkAdminMessageTypeExist = (
   return undefined;
 };
 
-export function replaceTemplate(metadata: JsonValue, template: string): string {
+export function replaceTemplate(metadata, template: string): string {
 
   if (!metadata) return "";
 

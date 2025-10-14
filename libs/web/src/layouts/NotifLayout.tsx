@@ -1,29 +1,33 @@
-import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import { Button, notification, Space, Typography } from "antd";
 import { useEffect, useRef } from "react";
-import { api } from "src/apis";
-import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { RenderContent, renderingMessage } from "src/utils/renderingMessage";
+import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
+import { Message, RenderContent, renderingMessage } from "src/utils/renderingMessage";
 
 const { Title } = Typography;
+
+interface UnreadMessage {
+  totalCount: number;
+  messages: Message[];
+}
+
 interface NotificationLayoutProps {
   children: React.ReactNode;
+  languageId: string;
+  onMarkMessageRead: (messageId: number) => Promise<void>;
+  unreadMessages?: UnreadMessage;
   interval?: number; // 定时器的时间间隔，默认60秒
 }
 
-const p = prefix("notifLayout.");
+const NotificationLayout: React.FC<NotificationLayoutProps> = ({
+  children, languageId, unreadMessages, onMarkMessageRead, interval = 60000 }) => {
 
-const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, interval = 60000 }) => {
-
-  const t = useI18nTranslateToString();
   const [notifApi, contextHolder] = notification.useNotification();
   const notifiedIdsRef = useRef<Set<number>>(new Set()); // 用于追踪已通知的ID
-  const currentLanguage = useI18n().currentLanguage;
   const readIdsRef = useRef<Set<number>>(new Set()); // 用于追踪已标记为已读的 ID
 
   const close = async (messageId: number) => {
     if (!readIdsRef.current.has(messageId)) {
-      await api.markMessageRead({ body: { messageId } });
+      await onMarkMessageRead(messageId);
       readIdsRef.current.add(messageId);
     }
     notifApi.destroy(messageId);
@@ -39,7 +43,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
           size="small"
           onClick={() => close(key)}
         >
-          {t(p("read"))}
+          {getCurrentLangLibWebText(languageId, "read")}
         </Button>
       </Space>
     );
@@ -55,13 +59,10 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      const results = await api.getUnreadMessages({
-        query: { messageType: AdminMessageType.SystemNotification },
-      }).httpError(500, () => {}).then((res) => res).catch(() => undefined);
 
-      if (results) {
-        for (const msg of results.results.messages) {
-          const content = renderingMessage(msg, currentLanguage.id);
+      if (unreadMessages) {
+        for (const msg of unreadMessages.messages) {
+          const content = renderingMessage(msg, languageId);
 
           // 使用 ref 来检查已通知的 ID
           if (content && !notifiedIdsRef.current.has(msg.id)) {
@@ -81,7 +82,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({ children, inter
 
     // 清除定时器
     return () => clearInterval(timer);
-  }, [interval, currentLanguage.id]);
+  }, [interval, languageId, unreadMessages]);
 
   return (
     <div>

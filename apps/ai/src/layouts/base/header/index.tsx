@@ -1,24 +1,21 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
+import { LinkOutlined } from "@ant-design/icons";
+import { ExtensionRouteQuery, isUrl } from "@scow/lib-web/build/extensions/common";
+import { NavbarLink, navbarLinksRoute } from "@scow/lib-web/build/extensions/navbarLinks";
+import { callExtensionRoute } from "@scow/lib-web/build/extensions/routes";
+import { ExtensionManifestWithUrl } from "@scow/lib-web/build/extensions/UiExtensionStore";
+import { JumpToAnotherLink } from "@scow/lib-web/build/layouts/base/header/components";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { Space } from "antd";
-import React from "react";
+import { join } from "path";
+import React, { useCallback, useState } from "react";
+import { useAsync } from "react-async";
 import { antdBreakpoints } from "src/layouts/base/constants";
 import { BigScreenMenu } from "src/layouts/base/header/BigScreenMenu";
 import { Logo } from "src/layouts/base/header/Logo";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
+import { NavIcon } from "src/layouts/icon";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { styled } from "styled-components";
 
@@ -50,6 +47,12 @@ const MenuPart = styled.div`
   min-width: 0;
 `;
 
+const LinksPart = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+
 const MenuPartPlaceholder = styled.div`
   flex: 1;
   @media (min-width: ${antdBreakpoints.md}px) {
@@ -71,6 +74,20 @@ const IndicatorPart = styled(HeaderItem)`
   }
 `;
 
+export interface HeaderNavbarLink {
+  icon: React.ReactNode;
+  href: string;
+  text: string | React.ReactNode;
+  crossSystem?: boolean;
+  isActive?: boolean;
+};
+
+interface SourcedHeaderNavbarLink {
+  link: HeaderNavbarLink;
+  extension: ExtensionManifestWithUrl;
+  priority: number;
+};
+
 interface Props {
   routes?: NavItemProps[];
   logout: (() => void) | undefined;
@@ -79,6 +96,8 @@ interface Props {
   pathname: string;
   languageId: string,
   right?: React.ReactNode;
+  extensions: ExtensionManifestWithUrl[];
+  routeQuery: ExtensionRouteQuery;
 }
 
 export const Header: React.FC<Props> = ({
@@ -89,10 +108,65 @@ export const Header: React.FC<Props> = ({
   userLinks,
   languageId,
   right,
+  extensions,
+  routeQuery,
 }) => {
+
+  const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
+
+  const onFetched = (extension: ExtensionManifestWithUrl) => (data: NavbarLink[]) => {
+    setLinks((links) => {
+      // remove all existing links from the same extension
+      links = links.filter((x) => x.extension !== extension);
+      // append newly got links
+      links.push(...data.map((x) => ({ link: {
+        href: x.path,
+        text: x.text,
+        icon: x.icon ? <NavIcon src={x.icon.src} alt={x.icon.alt ?? ""} /> : <LinkOutlined />,
+      }, extension, priority: x.priority })));
+
+      // order by priority and index. sort is stable, index is preserved
+      links.sort((a, b) => {
+        return b.priority - a.priority;
+      });
+      return links;
+    });
+  };
+
+  const navbarLinks = [...links.map((x) => x.link)];
+
+  const hideLinkText = navbarLinks && navbarLinks.length >= 5;
+  const navbarLinkComponents = navbarLinks?.map((x, i) => {
+
+    return (
+      <JumpToAnotherLink
+        key={i}
+        icon={x.icon}
+        href={x.href}
+        text={x.text}
+        crossSystem={x.crossSystem}
+        hideText={hideLinkText}
+      />
+    );
+  }, [navbarLinks]);
 
   return (
     <Container>
+      {extensions.map((extension) => {
+        const navbarLinksConfig = extension.manifests.ai?.navbarLinks;
+        if (navbarLinksConfig === true || (typeof navbarLinksConfig === "object" && navbarLinksConfig?.enabled)) {
+          return (
+            <NavbarLinkFetcher
+              key={extension.name ?? extension.url}
+              extension={extension}
+              routeQuery={routeQuery}
+              onDataFetched={onFetched(extension)}
+            />
+          );
+        } else {
+          return undefined;
+        }
+      })}
       <HeaderItem>
         <Space size="middle">
           <Logo />
@@ -105,6 +179,9 @@ export const Header: React.FC<Props> = ({
         />
         <MenuPartPlaceholder />
       </MenuPart>
+      <LinksPart>
+        {navbarLinkComponents}
+      </LinksPart>
       {right}
       <IndicatorPart>
         <UserIndicator user={user} logout={logout} userLinks={userLinks} languageId={languageId} />
@@ -112,4 +189,51 @@ export const Header: React.FC<Props> = ({
 
     </Container>
   );
+};
+
+interface FetcherProps {
+  extension: ExtensionManifestWithUrl;
+  routeQuery: ExtensionRouteQuery;
+  onDataFetched: (links: NavbarLink[]) => void;
+}
+
+const NavbarLinkFetcher = ({ extension, routeQuery, onDataFetched }: FetcherProps) => {
+
+  const { reload } = useAsync({
+    promiseFn: useCallback(async () => {
+      const resp = await callExtensionRoute(navbarLinksRoute("ai"), routeQuery, {}, extension.url)
+        .catch((e) => {
+          console.warn(`Failed to call navbarLinks of extension ${extension.name ?? extension.url}. Error: `, e);
+          return { 200: { navbarLinks: [] as NavbarLink[] } };
+        });
+
+      const data = resp[200]?.navbarLinks?.map((x) => {
+
+        if (!isUrl(x.path)) {
+          const parts = ["/extensions"];
+
+          if (extension.name) {
+            parts.push(extension.name);
+          }
+
+          parts.push(x.path);
+          x.path = join(...parts);
+        }
+
+        return x;
+      });
+
+      onDataFetched(data ?? []);
+
+      const navbarLinksConfig = extension.manifests.ai?.navbarLinks;
+
+      if (typeof navbarLinksConfig === "object"
+        && navbarLinksConfig?.enabled && navbarLinksConfig.autoRefresh?.enabled) {
+        setTimeout(reload, navbarLinksConfig.autoRefresh.intervalMs);
+      }
+
+    }, [routeQuery, extension]),
+  });
+
+  return <></>;
 };

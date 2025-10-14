@@ -11,13 +11,13 @@
  */
 
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
+import { RenderContent, renderingMessage } from "@scow/lib-web/build/utils/renderingMessage";
 import { App, Card, List, Typography } from "antd";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { api } from "src/apis";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { publicConfig } from "src/utils/config";
-import { RenderContent, renderingMessage } from "src/utils/renderingMessage";
 import { styled } from "styled-components";
 
 const NotifContainer = styled.div`
@@ -49,7 +49,7 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const { results } = await api.getUnreadMessage({ query: {
+        const { results } = await api.getUnreadMessages({ query: {
           page: 1, pageSize: 10,
         } }).httpError(500, () => {});
         setLoading(false);

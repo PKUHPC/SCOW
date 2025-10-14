@@ -2,6 +2,7 @@
 
 import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { PartitionInfo } from "@scow/protos/build/portal/config";
+import { Col, Row } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
@@ -9,6 +10,7 @@ import { Head } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
+import { NotificationCard } from "./NotificationCard";
 import { OverviewTable } from "./OverviewTable";
 
 const DashboardPageContent = styled.div``;
@@ -39,8 +41,21 @@ const initialPlatformOverview: PlatformOverview = {
   partitionStatus: 0,
 };
 
+const NotificationCol = styled(Col)`
+  padding-bottom: 16px;
+
+  /* 默认隐藏消息部分 */
+  display: none;
+
+  /* 在屏幕宽度达到 1200px 时显示消息部分 */
+  @media (min-width: 1200px) {
+    display: block;
+  }
+`;
+
 export default function Page() {
-  const { publicConfig: { CLUSTERS: currentClusters, DASHBOARD_USER_DISPLAY_MODE }, user } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: currentClusters, DASHBOARD_USER_DISPLAY_MODE },
+    publicConfig, user } = usePublicConfig();
 
   // 判断是否展示全部资源
   const isFullDisplayMode = useMemo(() => {
@@ -314,6 +329,15 @@ export default function Page() {
   return (
     <DashboardPageContent>
       <Head title={"dashboard"} />
+      <Row gutter={[16, 16]} wrap={true}>
+        <Col sm={24} xl={24}>
+          {publicConfig.NOTIF_ENABLED && (
+            <NotificationCol xl={7}>
+              <NotificationCard />
+            </NotificationCol>
+          )}
+        </Col>
+      </Row>
       <DisplayModeContext.Provider value={isFullDisplayMode}>
         <OverviewTable
           isLoading={isLoading}

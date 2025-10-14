@@ -118,6 +118,9 @@ importers:
       '@ant-design/icons':
         specifier: 5.5.2
         version: 5.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@bufbuild/protobuf':
+        specifier: 1.10.0
+        version: 1.10.0
       '@connectrpc/connect':
         specifier: 1.6.1
         version: 1.6.1(@bufbuild/protobuf@1.10.0)
@@ -166,6 +169,9 @@ importers:
       '@scow/lib-decimal':
         specifier: workspace:*
         version: link:../../libs/decimal
+      '@scow/lib-notification':
+        specifier: workspace:*
+        version: link:../../libs/notification
       '@scow/lib-operation-log':
         specifier: workspace:*
         version: link:../../libs/operation-log
@@ -187,6 +193,9 @@ importers:
       '@scow/lib-web':
         specifier: workspace:*
         version: link:../../libs/web
+      '@scow/notification-protos':
+        specifier: workspace:*
+        version: link:../../libs/protos/notification
       '@scow/protos':
         specifier: workspace:*
         version: link:../../libs/protos/scow

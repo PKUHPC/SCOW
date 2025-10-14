@@ -17,7 +17,6 @@ import { getAdapterClient } from "src/server/utils/clusters";
 import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
-
 const configPath = USE_MOCK ? join(__dirname, "config") : undefined;
 const clustersInit = getClusterConfigs(configPath, console, ["ai"]);
 Object.keys(clustersInit).map((id) => clustersInit[id].loginNodes = clustersInit[id].loginNodes.map(getLoginNode));
@@ -73,6 +72,14 @@ const ScowResourceConfigSchema = z.object({
   syncBlockStatusWhenStart: z.boolean(),
 });
 
+const UiExtensionConfigSchema = z.union([
+  z.object({ url: z.string() }),
+  z.array(z.object({
+    name: z.string(),
+    url: z.string(),
+  })),
+]);
+
 const PublicConfigSchema = z.object({
   ENABLE_CHANGE_PASSWORD: z.boolean().optional(),
   MIS_URL: z.string().optional(),
@@ -102,6 +109,10 @@ const PublicConfigSchema = z.object({
     z.literal("full"),
     z.literal("simplified"),
   ]).default("full"),
+  NOTIF_ENABLED: z.boolean().optional(),
+  NOTIF_NAME: z.string().optional(),
+  NOTIF_ADDRESS: z.string().optional(),
+  UI_EXTENSION: UiExtensionConfigSchema.optional(),
   INFER_ENABLED:z.boolean(),
 });
 
@@ -233,7 +244,15 @@ export const config = router({
 
         MAX_JOB_RUNNING_TIME_HOURS: aiConfig.maxJobRunningTimeHours,
 
+        UI_EXTENSION: aiConfig.uiExtension,
+
         DASHBOARD_USER_DISPLAY_MODE: commonConfig.dashboard?.userDisplayMode ?? "full",
+
+        NOTIF_ENABLED: commonConfig.notification?.enabled,
+
+        NOTIF_NAME: commonConfig.notification?.name,
+
+        NOTIF_ADDRESS: commonConfig.notification?.address,
 
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
       };

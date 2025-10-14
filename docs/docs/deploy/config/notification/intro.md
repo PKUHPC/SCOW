@@ -23,7 +23,7 @@ notification:
   bashPath: /notif
 ```
 
-在 SCOW v1 版本中的消息系统使用 UI 扩展的方式接入的 SCOW。所以需要在 `config/mis.yaml` 和 `config/portal.yaml` 文件中添加 UI 扩展相关配置，具体如下：
+在 SCOW v1 版本中的消息系统使用 UI 扩展的方式接入的 SCOW。所以需要在 `config/mis.yaml` 和/或 `config/portal.yaml` 和/或 `config/ai.yaml` 文件中添加 UI 扩展相关配置，具体如下：
 
 ```YAML
 uiExtension:

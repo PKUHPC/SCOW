@@ -31,7 +31,7 @@ export const NavItem = BaseNavItem.extend({
   children: z.lazy(() => NavItem as NavItem).array().optional(),
 });
 
-export const rewriteNavigationsRoute = (from: "portal" | "mis") => defineExtensionRoute({
+export const rewriteNavigationsRoute = (from: "portal" | "mis" | "ai") => defineExtensionRoute({
   path: `/${from}/rewriteNavigations`,
   method: "POST" as const,
   query: ExtensionRouteQuery,

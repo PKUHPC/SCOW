@@ -15,7 +15,8 @@ import { useCallback } from "react";
 import { useAsync } from "react-async";
 import { ExtensionManifestsSchema, fetchExtensionManifests } from "src/extensions/manifests";
 
-const fetchManifestsWithErrorHandling = (url: string, name?: string): Promise<ExtensionManifestWithUrl | undefined> =>
+export const fetchManifestsWithErrorHandling =
+(url: string, name?: string): Promise<ExtensionManifestWithUrl | undefined> =>
   fetchExtensionManifests(url)
     .then((x) => ({ url, manifests: x, name }))
     .catch((e) => { console.error(`Error fetching extension manifests. ${e}`); return undefined; });

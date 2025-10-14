@@ -79,4 +79,5 @@ export default {
   userId: "User ID",
   userFullName:"User Name",
   accountSecurity: "Account Security",
+  read: "Read",
 };

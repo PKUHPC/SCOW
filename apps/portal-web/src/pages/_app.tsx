@@ -18,6 +18,8 @@ import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
+import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
+import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App as AntdApp, Spin } from "antd";
@@ -37,7 +39,6 @@ import zh_cn from "src/i18n/zh_cn";
 import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { BaseLayout } from "src/layouts/BaseLayout";
 import { FloatButtons } from "src/layouts/FloatButtons";
-import NotificationLayout from "src/layouts/NotifLayout";
 import { AppInitialConfig } from "src/pages/api/getAppInitialConfig";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
@@ -203,6 +204,13 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     return store;
   });
 
+  const { data } = useAsync({ promiseFn:
+    useCallback(async () => {
+      return api.getUnreadMessages({
+        query: { messageType: AdminMessageType.SystemNotification },
+      }).httpError(500, () => {}).then((res) => res).catch(() => undefined); ;
+    }, []) });
+
   const clusterInfoStore = useConstant(() => {
     return createStore(ClusterInfoStore,
       extra.clusterConfigs,
@@ -243,7 +251,14 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
               initialLanguage={extra.initialLanguage}
             >
               {publicConfig.NOTIF_ENABLED ? (
-                <NotificationLayout interval={300000}>
+                <NotificationLayout
+                  interval={300000}
+                  languageId={extra.initialLanguage}
+                  unreadMessages={data?.results}
+                  onMarkMessageRead={async (messageId: number) => {
+                    await api.markMessageRead({ body: { messageId } });
+                  }}
+                >
                   <Component {...pageProps} />
                 </NotificationLayout>
               )

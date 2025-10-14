@@ -12,6 +12,7 @@ import { image } from "./route/image";
 import { jobsRouter } from "./route/jobs";
 import { logo } from "./route/logo";
 import { model } from "./route/model";
+import { notification } from "./route/notification";
 import { resource } from "./route/resource";
 
 export const appRouter = trpc.router({
@@ -27,6 +28,7 @@ export const appRouter = trpc.router({
   account: accountRouter,
   jobs: jobsRouter,
   dashboard,
+  notification,
   devHost,
 });
 

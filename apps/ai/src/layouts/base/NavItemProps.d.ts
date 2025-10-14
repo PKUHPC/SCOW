@@ -16,10 +16,11 @@ export interface NavItemProps {
   path: string;
   clickToPath?: string;
   text: string;
-  Icon: React.ForwardRefExoticComponent<{}>;
+  Icon: React.ReactNode | React.ForwardRefExoticComponent<{}>;
   match?: (spec: string, pathname: string) => boolean;
   children?: NavItemProps[];
   clickable?: boolean;
   openInNewPage?: boolean;
   handleClick?: () => void;
+  hideIfNotActive?: boolean;
 }
