@@ -37,6 +37,23 @@ passwordPattern:
   # 可选值：full: 完整模式，显示所有资源数据（已用、空闲、不可用）；simplified: 简化模式，只显示节点总数、运行中的作业数等基本信息
   # userDisplayMode: "simplified"
 
+# scow资源管理系统
+# scowResource:
+#   # 是否开启资源管理系统
+#   # 非必填，默认为 false
+#   enabled: true
+#   # 资源管理系统部署的url，在内网能访问即可
+#   # 非必填，默认为 http://resource:3000/resource
+#   address: http://localhost:6003
+
+# scow消息系统
+# notification:
+#   # 消息系统名称，需与 ui 扩展名称保持一致
+#   # 非必填，默认为 notification
+#   enabled: true
+#   # 消息系统部署的url，在内网能访问即可
+#   # 非必填，默认为 http://notification:3000
+#   address: http://localhost:6004
 # SCOW API配置
 # scowApi:
   # 认证配置

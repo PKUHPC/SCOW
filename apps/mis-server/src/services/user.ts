@@ -40,7 +40,7 @@ import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
 import { setNewUserStorageQuota } from "src/utils/storageQuota";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 
 export const userServiceServer = plugin((server) => {
@@ -153,7 +153,7 @@ export const userServiceServer = plugin((server) => {
     addUserToAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "add user to account task");
+      await ensureNoRunningSyncTask(em, logger, "add user to account task");
 
       const { accountName, userId, tenantName,isTenantAdmin } = request;
 
@@ -243,7 +243,7 @@ export const userServiceServer = plugin((server) => {
     removeUserFromAccount: async ({ request, em, logger }) => {
 
       // 判断当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "remove user from account task");
+      await ensureNoRunningSyncTask(em, logger, "remove user from account task");
 
       const { accountName, userId, tenantName } = request;
 
@@ -320,7 +320,7 @@ export const userServiceServer = plugin((server) => {
     blockUserInAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "block user in account task");
+      await ensureNoRunningSyncTask(em, logger, "block user in account task");
 
       const { accountName, userId, tenantName } = request;
 
@@ -355,7 +355,7 @@ export const userServiceServer = plugin((server) => {
     unblockUserInAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的
-      await checkRunningSyncTask(em, logger, "unblock user in account task");
+      await ensureNoRunningSyncTask(em, logger, "unblock user in account task");
 
       const { accountName, userId, tenantName } = request;
 
@@ -601,7 +601,7 @@ export const userServiceServer = plugin((server) => {
 
       // 如果userAccounts存在，则
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "delete user who has affiliated accounts task");
+      await ensureNoRunningSyncTask(em, logger, "delete user who has affiliated accounts task");
 
       // 如果用户为账户拥有者且该用户没有被删除，提示管理员需要先删除拥有的账户再删除用户
       const countAccountOwner = async () => {

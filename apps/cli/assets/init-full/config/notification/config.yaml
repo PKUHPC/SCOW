@@ -1,0 +1,42 @@
+# 必填
+db:
+  host: db
+  port: 3306
+  user: root
+  password: xxxxxxxxxx
+  dbName: scow_notification
+
+# 选填
+redis:
+  enabled: true
+  host: redis
+  port: 6379
+
+# 必填
+scow:
+  misServerUrl: mis-server:5000
+
+# 配置开启的通知方式
+# 通知方式开启后可以进行配置用户接收与否
+noticeType:
+  # 站内消息
+  siteMessage:
+    enabled: true
+  # 以下三项不填则为 false
+  # 短信
+  SMS:
+    enabled: false
+  # 邮件
+  email:
+    enabled: false
+  # 公众号
+  officialAccount:
+    enabled: false
+
+# 可选
+messageBridge:
+  address: http://message-bridage:3000
+
+deleteExpiredMessages:
+  cron: "0 3 * * *"
+

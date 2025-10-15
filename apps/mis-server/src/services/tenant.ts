@@ -23,7 +23,7 @@ import { getAccountStateInfo } from "src/utils/accountUserState";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { getScowdClient } from "src/utils/scowd";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 
 export const tenantServiceServer = plugin((server) => {
@@ -241,7 +241,7 @@ export const tenantServiceServer = plugin((server) => {
     setDefaultAccountBlockThreshold: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "set tenant block threshold task");
+      await ensureNoRunningSyncTask(em, logger, "set tenant block threshold task");
 
       const { tenantName, blockThresholdAmount } = ensureNotUndefined(request, ["blockThresholdAmount"]);
       const tenant = await em.findOne(Tenant, { name: tenantName });

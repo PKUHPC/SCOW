@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -22,7 +10,7 @@ import { setJobCharge } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { UserAccount, UserStatus } from "src/entities/UserAccount";
 import { getUserStateInfo } from "src/utils/accountUserState";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const jobChargeLimitServer = plugin((server) => {
   server.addService<JobChargeLimitServiceServer>(JobChargeLimitServiceService, {
@@ -30,7 +18,7 @@ export const jobChargeLimitServer = plugin((server) => {
       const { accountName, userId, tenantName } = request;
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "cancel job charge limit task");
+      await ensureNoRunningSyncTask(em, logger, "cancel job charge limit task");
 
       await em.transactional(async (em) => {
         const userAccount = await em.findOne(UserAccount, {
@@ -85,7 +73,7 @@ export const jobChargeLimitServer = plugin((server) => {
       const { accountName, limit, userId, tenantName } = ensureNotUndefined(request, ["limit"]);
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "set job charge limit task");
+      await ensureNoRunningSyncTask(em, logger, "set job charge limit task");
 
       await em.transactional(async (em) => {
         const userAccount = await em.findOne(UserAccount, {

@@ -34,6 +34,7 @@ export class AccountUserSyncRecord {
   @Property({ columnType: DATETIME_TYPE, nullable: true, onUpdate: () => new Date() })
   updateTime: Date | undefined;
 
+  @Index({ name: "sync_status" })
   @Enum({ items: () => SyncStatus, default: SyncStatus.RUNNING, comment: Object.values(SyncStatus).join(", ") })
   syncStatus: SyncStatus;
 

@@ -18,8 +18,8 @@ export async function synchronizeAccountUser(
   fetchPlugin?: FetchPlugin,
 ) {
 
-  const sessionId = 
-    await startAccountUserSynchronization(em, clusterPlugin.clusters, logger, 
+  const sessionId =
+    await startAccountUserSynchronization(em, clusterPlugin.clusters, logger,
       scowResourcePlugin?.resource, operatorId, maxSyncDurationMinutes, fetchPlugin?.fetch);
 
   lastSyncTime = new Date();

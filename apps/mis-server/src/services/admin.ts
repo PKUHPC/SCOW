@@ -19,14 +19,14 @@ import { importUsers, ImportUsersData } from "src/bl/importUsers";
 import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { Account } from "src/entities/Account";
-import { AccountUserSyncRecord, SyncStatus } from "src/entities/AccountUserSyncRecord";
+import { AccountUserSyncRecord } from "src/entities/AccountUserSyncRecord";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, User } from "src/entities/User";
 import { UserAccount, UserRole } from "src/entities/UserAccount";
 import { getTotalStatisticsInfoCached } from "src/utils/cache";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { checkRunningSyncTask, ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const adminServiceServer = plugin((server) => {
 
@@ -91,7 +91,7 @@ export const adminServiceServer = plugin((server) => {
     importUsers: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "import users task");
+      await ensureNoRunningSyncTask(em, logger, "import users task");
 
       const { data, whitelist } = request;
 
@@ -219,16 +219,8 @@ export const adminServiceServer = plugin((server) => {
 
     fetchJobs: async ({ em, logger }) => {
 
-      const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, {
-        syncStatus: SyncStatus.RUNNING,
-      });
-      if (isSyncRunningFound) {
-        logger.info("There is a account user synchronization task is running.");
-        throw new ServiceError({
-          code: Status.ALREADY_EXISTS,
-          message: "Account User Sync is running. Please wait for its completion before starting a sync job task.",
-        });
-      }
+      // 检查当前是否有正在执行的同步用户账户操作
+      await ensureNoRunningSyncTask(em, logger, "job synchronization task");
 
       const reply = await server.ext.fetch.fetch();
 
@@ -375,12 +367,8 @@ export const adminServiceServer = plugin((server) => {
 
     // 检查是否有正在运行的同步任务
     checkAccountUserSynchronizationRunning: async ({ em }) => {
-
-      const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, {
-        syncStatus: SyncStatus.RUNNING,
-      });
-
-      return [{ isRunning: !!isSyncRunningFound }];
+      const isRunningSyncFound = await checkRunningSyncTask(em, logger);
+      return [{ isRunning: isRunningSyncFound }];
     },
 
   });

@@ -11,7 +11,7 @@ import { misConfig } from "src/config/mis";
 import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/AccountUserSyncRecord";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { FetchPlugin } from "src/plugins/fetch";
-import { processSynchronization } from "src/utils/synchronizationUtils";
+import { checkRunningSyncTask, processSynchronization } from "src/utils/synchronizationUtils";
 
 import { getActivatedClusters } from "./clustersUtils";
 
@@ -38,11 +38,9 @@ export async function startAccountUserSynchronization(
     return;
   }
 
-  // 确保当前没有正在执行的同步任务
-  const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, {
-    syncStatus: SyncStatus.RUNNING,
-  });
-  if (isSyncRunningFound) {
+  // 检查当前是否有正在执行的同步任务
+  const isSyncRunningExists = await checkRunningSyncTask(em, logger);
+  if (isSyncRunningExists) {
     logger.warn("Account user synchronization task is already running.");
     return;
   }

@@ -46,11 +46,6 @@ scowResource:
   # 非必填，默认为 http://resource:3000/resource
   # 若在install.yaml中配置了最外层的basePath不为"/"，需要在此处的your-server-name后也加上basePath
   address: http://your-server-name/resource
-  # 启动时是否执行状态同步
-  # 必填
-  # 第一次启动资源管理服务时需手动初始化数据，建议此时为false, 
-  # 避免启动时同步封锁状态与数据库未完成时的干扰，数据吸入完成无干扰之后可填写为true
-  syncBlockStatusWhenStart: false
 
 # 开启 SCOW API TOKEN 保证后端间交互安全
 # 若开启资源管理系统服务则必须配置

@@ -1,13 +1,13 @@
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { SyncBlockStatusResponse } from "@scow/protos/build/server/admin";
 import cron from "node-cron";
-import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { lastSyncTime, synchronizeAccountUser } from "src/tasks/syncAccountUser";
 import { synchronizeBlockStatus } from "src/tasks/syncBlockStatus";
+import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export interface SyncBlockStatusPlugin {
-  // Deprecated 
+  // Deprecated
   // 同步封锁状态功能已升级为同步账户用户数据功能
   // 只使用 syncAccountUser
   syncBlockStatus: {
@@ -33,21 +33,18 @@ export interface SyncBlockStatusPlugin {
  */
 export const syncBlockStatusPlugin = plugin(async (f) => {
   const synchronizeCron = misConfig.periodicSyncUserAccountBlockStatus?.cron ?? "0 4 * * *";
-  // 如果配置了资源管理系统服务，则资源管理系统配置项 syncBlockStatusWhenStart 也为 true 时才在启动时满足 synchronizeEnabled
-  let synchronizeEnabled = !!misConfig.periodicSyncUserAccountBlockStatus?.enabled
-   && !(commonConfig.scowResource?.syncBlockStatusWhenStart === false);
+  let synchronizeEnabled = !!misConfig.periodicSyncUserAccountBlockStatus?.enabled;
   let synchronizeIsRunning = false;
 
   const logger = f.logger.child({ plugin: "syncAccountUser" });
   logger.info("misConfig.periodicSyncStatus?.cron: %s", misConfig.periodicSyncUserAccountBlockStatus?.cron);
-
   const maxSyncDurationMinConfigValue = misConfig.syncAccountUser.maxSyncDurationMinutes;
 
   /**
    * Deprecated
    * 同步封锁状态功能已升级为同步账户用户数据功能
    * 使用 syncAccountUserTrigger
-   * @returns 
+   * @returns
    */
   const trigger = async () => {
 
@@ -67,7 +64,7 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
       synchronizeIsRunning = false;
     }
   };
-  
+
   const syncAccountUserTrigger = async (maxSyncDurationMinutes?: number, operatorId?: string) => {
 
     const sublogger = logger.child({ time: new Date() });
@@ -103,8 +100,6 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
       scheduled: synchronizeEnabled,
     },
   );
-
-  logger.info("Account user synchronization started.");
 
   f.addCloseHook(() => {
     task.stop();
@@ -147,10 +142,15 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     run: (maxSyncDurationMinutes, operatorId) => syncAccountUserTrigger(maxSyncDurationMinutes, operatorId),
   } satisfies SyncBlockStatusPlugin["syncAccountUser"]));
 
-  if (synchronizeEnabled) {
-    logger.info("Started a new Account user synchronization");
-    void syncAccountUserTrigger(maxSyncDurationMinConfigValue);
-  } else {
-    logger.info("Account user synchronization is disabled.");
+  // 启动时不更新账户用户信息
+  // 启动时检查数据库中是否有异常停止在RUNNING的同步记录
+  try {
+    const sublogger = logger.child({ time: new Date() });
+    sublogger.info("Checking whether running account user synchronization exists.");
+    await checkRunningSyncTask(f.ext.orm.em.fork(), logger, true);
+  } catch (error) {
+  // 记录错误但不影响系统启动
+    logger.error("Failed to check and fix stuck account user synchronization record during startup: %o", error);
+    logger.warn("System will continue to start. Stuck record will be handled during next synchronization attempt.");
   }
 });

@@ -40,7 +40,6 @@ export const ScowHookConfigSchema = Type.Object({
 export const ScowResourceConfigSchema = Type.Object({
   enabled: Type.Boolean({ description: "是否启用资源管理", default: false }),
   address: Type.String({ description: "资源管理", default: "scow-resource:3000" }),
-  syncBlockStatusWhenStart: Type.Boolean({ description: "启动时是否执行状态同步" }),
 });
 
 export const CommonConfigSchema = Type.Object({

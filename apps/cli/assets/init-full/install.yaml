@@ -175,3 +175,10 @@
 #     # 云平台的token，必填
 #     token: "云平台的token"
 
+# 是否启用消息系统服务
+# notification:
+#   basePath: /notif
+
+# 是否启用资源管理服务
+# resource:
+#   basePath: /resource

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { LockMode, QueryOrder, raw } from "@mikro-orm/core";
@@ -36,7 +24,7 @@ import {
 import { CHARGE_TYPE_OTHERS } from "src/utils/constants";
 import { DEFAULT_PAGE_SIZE } from "src/utils/orm";
 import { mapChargesSortField } from "src/utils/queryOptions";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const chargingServiceServer = plugin((server) => {
 
@@ -67,7 +55,7 @@ export const chargingServiceServer = plugin((server) => {
     pay: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "pay task");
+      await ensureNoRunningSyncTask(em, logger, "pay task");
 
       const {
         accountName, tenantName, type, amount, comment, ipAddress, operatorId,
@@ -129,7 +117,7 @@ export const chargingServiceServer = plugin((server) => {
     charge: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "fee deduction task");
+      await ensureNoRunningSyncTask(em, logger, "fee deduction task");
 
       const { accountName, type, amount, comment, tenantName, userId, metadata }
         = ensureNotUndefined(request, ["amount"]);

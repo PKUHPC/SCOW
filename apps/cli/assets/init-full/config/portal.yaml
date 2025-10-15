@@ -113,3 +113,11 @@ shell: true
 #         allowedRoles: [tenantAdmin, platformAdmin]
 #   - text: "一级导航2"
 #     url: "https://hahahaha2.com"
+
+
+# 是否在HPC开启扩展页面
+# uiExtension:
+#   - # 消息系统UI扩展的名称
+#     name: notif
+#     # 消息系统的部署Url，此url需能被外网访问
+#     url: http://your-server-name1/notif

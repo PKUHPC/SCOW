@@ -256,6 +256,16 @@
           "unique": false
         },
         {
+          "columnNames": [
+            "sync_status"
+          ],
+          "composite": false,
+          "keyName": "sync_status",
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
           "keyName": "PRIMARY",
           "columnNames": [
             "id"

@@ -69,7 +69,6 @@ const UserLinkSchema = z.object({
 const ScowResourceConfigSchema = z.object({
   enabled: z.boolean(),
   address: z.string(),
-  syncBlockStatusWhenStart: z.boolean(),
 });
 
 const UiExtensionConfigSchema = z.union([

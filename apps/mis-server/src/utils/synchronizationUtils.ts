@@ -10,7 +10,6 @@ import { checkSchedulerApiVersion } from "@scow/lib-server";
 import { ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as ClusterTotalSyncResultProto,
   ListAccountUserSynchronizationsResponse_ExceptionDetail,
   ListAccountUserSynchronizationsResponse_SyncDetailsSummary as SyncDetailsSummaryProto,
-  ListAccountUserSynchronizationsResponse_SyncExceptionType,
   ListAccountUserSynchronizationsResponse_SyncExceptionType as SyncExceptionTypeProto,
   ListAccountUserSynchronizationsResponse_SyncResult as SyncResultProto,
   ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatusProto } from "@scow/protos/build/server/admin";
@@ -169,7 +168,7 @@ export async function processSynchronization(
               successfulTotalSyncCount: 0,
               clusterSyncExceptions: [
                 {
-                  exceptionType: ListAccountUserSynchronizationsResponse_SyncExceptionType.MAX_EXECUTION_TIME_EXCEEDED,
+                  exceptionType: SyncExceptionTypeProto.MAX_EXECUTION_TIME_EXCEEDED,
                   exceptionMessage: "Synchronization is not completely executed due to exceeding "
                     + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
                 },
@@ -243,7 +242,7 @@ export async function processSynchronization(
                   clusterId, remainingMillisecondsForCluster / 1000, chunkIndex);
                 clustersShouldContinue[clusterId] = false;
                 timeoutException = {
-                  exceptionType: ListAccountUserSynchronizationsResponse_SyncExceptionType.MAX_EXECUTION_TIME_EXCEEDED,
+                  exceptionType: SyncExceptionTypeProto.MAX_EXECUTION_TIME_EXCEEDED,
                   exceptionMessage: "Synchronization is not completely executed due to exceeding "
                   + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
                 };
@@ -756,31 +755,156 @@ export async function persistAndFlushSyncRecord(
   return originSyncRecord;
 }
 
-
-
 /**
- * 检查是否有正在运行的账户用户同步任务
- * @param em
- * @param logger
+ * 确保没有正在运行的同步任务，防止账户或用户数据冲突
  * @param taskNameForErrorMessage 在抛出错误中显示当前任务处理名称
- * @throws 如果有正在运行的同步任务，则抛出 ServiceError
+ * @throws 如果有正在运行的有效的同步任务，则抛出 ServiceError
  */
-export async function checkRunningSyncTask(
+export async function ensureNoRunningSyncTask(
   em: SqlEntityManager<MySqlDriver>,
   logger: Logger,
   taskNameForErrorMessage: string,
 ): Promise<void> {
 
-  const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, { syncStatus: SyncStatus.RUNNING });
-
-  if (isSyncRunningFound) {
-    logger.info("There is a account user synchronization task is running.");
-
-    throw new ServiceError({
-      code: Status.FAILED_PRECONDITION,
-      details: "Account User Synchronization is running. "
-        + `Please wait for its completion before starting the ${taskNameForErrorMessage}.`,
+  return await em.transactional(async (em) => {
+    // 增加写锁，防止检查异常运行事务存在出现锁竞争
+    const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, { syncStatus: SyncStatus.RUNNING }, {
+      lockMode: LockMode.PESSIMISTIC_WRITE,
     });
+    const validRunningExists = await checkValidRunningSyncRecord(em, logger, isSyncRunningFound);
+
+    if (validRunningExists) {
+      throw new ServiceError({
+        code: Status.FAILED_PRECONDITION,
+        details: "Account User Synchronization is running. "
+        + `Please wait for its completion before starting the ${taskNameForErrorMessage}.`,
+      });
+    }
+  });
+}
+
+/**
+ * 检查当前是否存在正在运行的同步任务
+ * 如果存在返回true,不存在返回false
+ * 如果存在异常的同步任务，会被更新为失败，并返回false
+ * @param isDuringSystemStarting 是否是在系统启动时的检查
+ */
+export async function checkRunningSyncTask(
+  em: SqlEntityManager<MySqlDriver>,
+  logger: Logger,
+  isDuringSystemStarting?: boolean,
+): Promise<boolean> {
+
+  return await em.transactional(async (em) => {
+    // 增加写锁，防止检查异常运行事务存在出现锁竞争
+    const isSyncRunningFound = await em.findOne(AccountUserSyncRecord, { syncStatus: SyncStatus.RUNNING }, {
+      lockMode: LockMode.PESSIMISTIC_WRITE,
+    });
+    const exist = await checkValidRunningSyncRecord(em, logger, isSyncRunningFound, isDuringSystemStarting);
+    return exist;
+  });
+}
+
+/**
+ * 检查当前同步任务是否为正常的同步任务
+ * 1. 如果是已超时的同步任务，会被更新为失败, 并返回false
+ * 2. 如果是系统启动检查中发现的同步任务，会被立即跟新为失败, 并返回false
+ * 3. 如果不是系统启动检查，也没有超时，则返回true
+ *
+ * @param runningSyncRecord 正在运行的同步任务记录
+ * @param isDuringSystemStarting 是否是在系统启动时的检查
+ */
+async function checkValidRunningSyncRecord(
+  em: SqlEntityManager<MySqlDriver>,
+  logger: Logger,
+  runningSyncRecord?: Loaded<AccountUserSyncRecord, never, "*", never> | null,
+  isDuringSystemStarting?: boolean,
+): Promise<boolean> {
+
+  if (!runningSyncRecord) {
+    logger.info("No account user synchronization task is found.");
+    return false;
+  }
+  // 如果是系统启动时的判断，存在running数据即更新记录为已结束
+  if (isDuringSystemStarting) {
+    logger.warn("An abnormal account user synchronization task is found during system start. "
+      + "It will be updated to FAILED.");
+    await UpdateStuckRunningSyncRecord(em, logger, runningSyncRecord);
+    return false;
   }
 
+  logger.info("Checking whether the currently running account user synchronization task is valid.");
+  const maxSyncMinutes = runningSyncRecord.maxSyncDurationMinutes || misConfig.syncAccountUser.maxSyncDurationMinutes;
+  const maxSyncDurationMilliseconds = maxSyncMinutes * 60 * 1000;
+  const runningProcessTime = Date.now() - runningSyncRecord.startTime.getTime();
+  // 判断开始时间是否已超过最大时间
+  // 增加一分钟冗余时间做判断
+  // 如果超过更新数据为超时
+  const TIMEOUT_BUFFER_MILLISECONDS = 60 * 1000;
+  if ((runningProcessTime + TIMEOUT_BUFFER_MILLISECONDS) > maxSyncDurationMilliseconds) {
+    const checkModeMessage = isDuringSystemStarting ? "system error" : "timeout";
+    logger.warn("An abnormal account user synchronization task caused by %s is found. It will be updated to FAILED.",
+      checkModeMessage);
+    await UpdateStuckRunningSyncRecord(em, logger, runningSyncRecord, maxSyncMinutes);
+    return false;
+  }
+  logger.info("The running account user synchronization task is valid.");
+  return true;
+
 }
+
+
+/**
+ * 更新异常的正在运行的同步账户用户信息记录
+ * @param maxSyncMinutes 超时是数据更新，需要传递此数据用于错误记录；不存在则认为是异常原因
+ */
+async function UpdateStuckRunningSyncRecord(
+  em: SqlEntityManager<MySqlDriver>,
+  logger: Logger,
+  runningSyncRecord: Loaded<AccountUserSyncRecord>,
+  maxSyncMinutes?: number,
+): Promise<void> {
+
+  logger.info("Starting update abnormal running account user synchronization record.");
+  const errorModeMessage = maxSyncMinutes ? `exceeding the maximum sync time ${maxSyncMinutes} minutes`
+    : "unknown error";
+  const exceptionType = maxSyncMinutes ?
+    SyncExceptionTypeProto.MAX_EXECUTION_TIME_EXCEEDED
+    : SyncExceptionTypeProto.EXCEPTION_UNKNOWN;
+
+  runningSyncRecord.syncResult = SyncResult.FAILED;
+  if (!runningSyncRecord.syncDetails) {
+    // 更新整个同步结果为未执行
+    runningSyncRecord.syncStatus = SyncStatus.UNEXECUTED;
+    await em.persistAndFlush(runningSyncRecord);
+  } else {
+    // 更新整个同步结果为结束
+    runningSyncRecord.syncStatus = SyncStatus.COMPLETED;
+    // 更新同步的各集群 状态/结果/异常
+    const updatedClusterResults: ClusterTotalSyncResultProto[]
+          = runningSyncRecord.syncDetails?.map((clusterResult) => {
+            return {
+              ...clusterResult,
+              clusterSyncStatus: SyncStatusProto.COMPLETED,
+              clusterSyncResult: SyncResultProto.FAILED,
+              executedChunkCount: 0,
+              isAllChunkExecuted: true,
+              completedTotalSyncCount: 0,
+              successfulTotalSyncCount: 0,
+              clusterSyncExceptions: [
+                {
+                  exceptionType: exceptionType,
+                  exceptionMessage: `Synchronization is not completely executed due to ${errorModeMessage}`,
+                },
+              ],
+            };
+          });
+    await persistAndFlushSyncRecord(em, runningSyncRecord, { syncDetails: updatedClusterResults });
+  }
+
+  logger.info("The abnormal running account user synchronization record is updated to FAILED.");
+
+}
+
+
+

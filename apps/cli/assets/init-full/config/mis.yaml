@@ -208,3 +208,15 @@ bill:
 # jobChargeType: "作业费用"
 # changeJobPriceType: "作业费用更改"
 # quantumJobChargeType: "量子作业费用" // 需和量子配置的taskChargeType保持一致
+
+
+# 是否在MIS开启扩展页面
+# uiExtension:
+#   # 消息系统UI扩展的名称
+#   - name: notif
+#   # 消息系统的部署Url，此url需能被外网访问
+#     url: http://your-server-name1/notif
+#   # 资源管理系统UI扩展的名称
+#   - name: resource
+#   # 资源管理系统的部署Url，此url需能被外网访问
+#     url: http://your-server-name1/resource

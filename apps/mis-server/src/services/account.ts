@@ -35,7 +35,7 @@ import { getAccountOwnerAndAdmin } from "src/utils/getAccountOwnerAndAdmin";
 import { toRef } from "src/utils/orm";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { sendMessage } from "src/utils/sendMessage";
-import { checkRunningSyncTask } from "src/utils/synchronizationUtils";
+import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 function ensureAccountNotDeleted(account: Account) {
   if (account.state === AccountState.DELETED) {
@@ -52,7 +52,7 @@ export const accountServiceServer = plugin((server) => {
     blockAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "block account task");
+      await ensureNoRunningSyncTask(em, logger, "block account task");
 
       const { accountName } = request;
 
@@ -148,9 +148,8 @@ export const accountServiceServer = plugin((server) => {
     },
 
     unblockAccount: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "unblock account task");
+      await ensureNoRunningSyncTask(em, logger, "unblock account task");
 
       const { accountName } = request;
 
@@ -280,7 +279,7 @@ export const accountServiceServer = plugin((server) => {
       }
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "create account task");
+      await ensureNoRunningSyncTask(em, logger, "create account task");
 
       // 新建账户时比较租户默认封锁阈值，如果租户默认封锁阈值小于0则保持账户为在集群中可用状态
       // 如果租户默认封锁阈值大于等于0，则封锁账户
@@ -516,7 +515,7 @@ export const accountServiceServer = plugin((server) => {
     whitelistAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "whitelist account task");
+      await ensureNoRunningSyncTask(em, logger, "whitelist account task");
 
       const { accountName, comment, operatorId, tenantName, expirationTime } = request;
 
@@ -589,7 +588,7 @@ export const accountServiceServer = plugin((server) => {
     dewhitelistAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "dewhitelist account task");
+      await ensureNoRunningSyncTask(em, logger, "dewhitelist account task");
 
       const { accountName, tenantName } = request;
 
@@ -639,7 +638,7 @@ export const accountServiceServer = plugin((server) => {
     setBlockThreshold: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作
-      await checkRunningSyncTask(em, logger, "set account block threshold task");
+      await ensureNoRunningSyncTask(em, logger, "set account block threshold task");
 
       const { accountName, blockThresholdAmount } = request;
 
@@ -718,7 +717,7 @@ export const accountServiceServer = plugin((server) => {
     deleteAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在进行的同步账户用户操作
-      await checkRunningSyncTask(em, logger, "delete account task");
+      await ensureNoRunningSyncTask(em, logger, "delete account task");
 
       const { accountName, tenantName, comment } = ensureNotUndefined(request, ["accountName", "tenantName"]);
 
