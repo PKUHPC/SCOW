@@ -329,7 +329,8 @@ export default function Page() {
   return (
     <DashboardPageContent>
       <Head title={"dashboard"} />
-      <Row gutter={[16, 16]} wrap={true}>
+      {/* 暂时注释 等待快捷入口合入 */}
+      {/* <Row gutter={[16, 16]} wrap={true}>
         <Col sm={24} xl={24}>
           {publicConfig.NOTIF_ENABLED && (
             <NotificationCol xl={7}>
@@ -337,7 +338,7 @@ export default function Page() {
             </NotificationCol>
           )}
         </Col>
-      </Row>
+      </Row> */}
       <DisplayModeContext.Provider value={isFullDisplayMode}>
         <OverviewTable
           isLoading={isLoading}

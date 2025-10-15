@@ -54,13 +54,13 @@ export const AiConfigSchema = Type.Object({
 
   maxJobRunningTimeHours:Type.Optional(Type.Number({ description: "任务最大运行时间，超过此时间则不能成功提交作业" })),
 
-  uiExtension: Type.Union([
+  uiExtension: Type.Optional(Type.Union([
     Type.Object({ url: Type.String({ description: "扩展的URL" }) }),
     Type.Array(Type.Object({
       name: Type.String({ description: "UI扩展名" }),
       url: Type.String({ description: "扩展的URL" }),
     })),
-  ]),
+  ])),
 
   inferConfig:Type.Optional(Type.Object({
     enabled:Type.Boolean({ description: "AI是否开启推理模块", default: true }),
