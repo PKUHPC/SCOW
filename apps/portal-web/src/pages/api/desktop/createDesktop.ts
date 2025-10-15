@@ -70,7 +70,7 @@ export const CreateDesktopSchema = typeboxRouteSchema({
     }),
 
     500: Type.Object({
-      code: Type.Literal("SHADOWDESK_ERROR"),
+      code: Type.Literal("INTERNAL_ERROR"),
       message: Type.String(),
     }),
     // 功能没有启用
@@ -130,7 +130,7 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
       [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
       [status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_WM" as const } }),
       [status.RESOURCE_EXHAUSTED]: () => ({ 409: { code: "TOO_MANY_DESKTOPS" as const } }),
-      [status.INTERNAL]: (e) => ({ 500: { code: "SHADOWDESK_ERROR" as const, message: e.message } }),
+      [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL_ERROR" as const, message: e.message } }),
     },
     async () => await callLog(logInfo, OperationResult.FAIL),
     ));
