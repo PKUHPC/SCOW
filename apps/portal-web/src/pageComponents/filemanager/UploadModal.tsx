@@ -31,6 +31,7 @@ type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => v
 
 
 export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
+
   const { message, modal } = App.useApp();
   const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
   const uploadControllers = useRef(new Map<string, AbortController>());
@@ -281,11 +282,14 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             <div>
               {/* 原始的文件节点（包含进度条等） */}
               {originNode}
-              <PercentAndSpeedContainer>
-                {file.status === "uploading" && (
-                  <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
-                )}
-              </PercentAndSpeedContainer>
+              {/* 只在scowd下展示下载进度及下载速度 */}
+              {scowdEnabled && (
+                <PercentAndSpeedContainer>
+                  {file.status === "uploading" && (
+                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                  )}
+                </PercentAndSpeedContainer>
+              )}
             </div>
           );
         }}

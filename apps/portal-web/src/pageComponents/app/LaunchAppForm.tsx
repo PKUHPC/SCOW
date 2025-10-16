@@ -74,7 +74,7 @@ const pCommon = prefix("common.");
 export const LaunchAppForm: React.FC<Props> = ({
   clusterId, appId, attributes, appName, appComment, reservedAppAttributes }) => {
 
-  const { currentClusters } = useStore(ClusterInfoStore);
+  const { currentClusters, fullClusterConfigs } = useStore(ClusterInfoStore);
   const currentCluster = currentClusters.find((c) => (c.id === clusterId));
   if (!currentCluster) {
     return <ClusterNotAvailablePage />;
@@ -623,6 +623,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                       form.validateFields([item.name]);
                     }}
                     clusterId={clusterId}
+                    scowdEnabled={fullClusterConfigs[clusterId]?.scowd?.enabled}
                   />
                 </div>
 
