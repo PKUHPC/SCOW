@@ -156,7 +156,7 @@ export const accountServiceServer = plugin((server) => {
       const result = await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
           accountName,
-        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: [ "tenant"]});
+        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"]});
 
         if (!account) {
           throw {
@@ -386,6 +386,12 @@ export const accountServiceServer = plugin((server) => {
                 async (client) => {
                   await asyncClientCall(client.account, "createAccount", {
                     accountName, ownerUserId: ownerId,
+                  }).catch((e) => {
+                    if (e.code === Status.ALREADY_EXISTS) {
+                      logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
+                    } else {
+                      throw e;
+                    }
                   });
                 },
               );
@@ -432,6 +438,12 @@ export const accountServiceServer = plugin((server) => {
             async (client) => {
               await asyncClientCall(client.account, "createAccount", {
                 accountName, ownerUserId: ownerId,
+              }).catch((e) => {
+                if (e.code === Status.ALREADY_EXISTS) {
+                  logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
+                } else {
+                  throw e;
+                }
               });
               await asyncClientCall(client.account, "unblockAccount", {
                 accountName,
@@ -504,7 +516,7 @@ export const accountServiceServer = plugin((server) => {
             ownerId: accountOwner.userId + "",
             ownerName: accountOwner.name,
             balance: decimalToMoney(x.account.$.balance),
-            expirationTime:x.expirationTime?.toISOString().includes("2099") ? undefined
+            expirationTime: x.expirationTime?.toISOString().includes("2099") ? undefined
               : x.expirationTime?.toISOString(),
           };
 
@@ -520,7 +532,7 @@ export const accountServiceServer = plugin((server) => {
       const { accountName, comment, operatorId, tenantName, expirationTime } = request;
 
       const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } },
-        { populate: [ "tenant"]});
+        { populate: ["tenant"]});
 
       if (!account) {
         throw {
@@ -540,7 +552,7 @@ export const accountServiceServer = plugin((server) => {
         comment,
         operatorId,
         // expirationTime为undefined时为永久有效
-        expirationTime:expirationTime ? new Date(expirationTime) : undefined,
+        expirationTime: expirationTime ? new Date(expirationTime) : undefined,
       });
       account.whitelist = toRef(whitelist);
 
@@ -805,7 +817,7 @@ export const accountServiceServer = plugin((server) => {
           // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
           // 除此以外，都抛出异常
           if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-                   !== Object.keys(currentActivatedClusters).length) {
+            !== Object.keys(currentActivatedClusters).length) {
             throw e;
           }
         });
@@ -835,7 +847,7 @@ export const accountServiceServer = plugin((server) => {
         // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出账户
         // 除此以外，都抛出异常
         if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-                 !== Object.keys(currentActivatedClusters).length) {
+          !== Object.keys(currentActivatedClusters).length) {
           logger.error(e, "deleteAccount Error occurred.");
           throw e;
         }
@@ -845,7 +857,7 @@ export const accountServiceServer = plugin((server) => {
     },
 
     // 检查账户是否欠费
-    isAccountBelowBlockThreshold:async ({ request, em }) => {
+    isAccountBelowBlockThreshold: async ({ request, em }) => {
       const { accountName } = request;
       const account = await em.findOne(Account, {
         accountName,
@@ -866,9 +878,9 @@ export const accountServiceServer = plugin((server) => {
         .displayedState;
 
       if (state === Account_DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD) {
-        return [{ isBelowBlockThreshold:true }];
+        return [{ isBelowBlockThreshold: true }];
       } else {
-        return [{ isBelowBlockThreshold:false }];
+        return [{ isBelowBlockThreshold: false }];
       }
     },
   });
