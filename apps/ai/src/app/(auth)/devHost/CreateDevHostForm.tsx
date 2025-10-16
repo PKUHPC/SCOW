@@ -374,7 +374,11 @@ export const CreateDevHostForm = () => {
       // 将时间转换为分钟，如果功能未开启则使用默认值
       let maxTimeMinutes: number;
       if (scowClusterConfigs[selectedCluster!]?.ai?.devHost.maxRunningTimeHours && values.maxTimeMinutes) {
-        maxTimeMinutes = convertTimeToMinutes(values.maxTimeMinutes, maxTimeUnitValue);
+        // 确保 values.maxTimeMinutes 是数字类型
+        const timeValue = typeof values.maxTimeMinutes === "string"
+          ? parseFloat(values.maxTimeMinutes)
+          : values.maxTimeMinutes;
+        maxTimeMinutes = convertTimeToMinutes(timeValue, maxTimeUnitValue);
       } else {
         // 不开启默认时限时，maxTimeMinutes 应该为 0，表示不限时
         maxTimeMinutes = 0;
@@ -854,7 +858,11 @@ export const CreateDevHostForm = () => {
                               {
                                 validator: (_, value) => {
                                   if (!value) return Promise.resolve();
-                                  const timeInHours = convertTimeToMinutes(value, maxTimeUnitValue) / 60;
+                                  // 确保 value 是数字类型
+                                  const timeValue = typeof value === "string"
+                                    ? parseFloat(value)
+                                    : value;
+                                  const timeInHours = convertTimeToMinutes(timeValue, maxTimeUnitValue) / 60;
                                   if (timeInHours >
                                     scowClusterConfigs[selectedCluster!].ai.devHost.maxRunningTimeHours!) {
                                     return Promise.reject(
@@ -882,7 +890,11 @@ export const CreateDevHostForm = () => {
                                   form.setFieldsValue({ maxTimeMinutes: value });
                                   // 实时验证最大时限
                                   if (value) {
-                                    const timeInHours = convertTimeToMinutes(value, maxTimeUnitValue) / 60;
+                                    // 确保 value 是数字类型
+                                    const timeValue = typeof value === "string"
+                                      ? parseFloat(value)
+                                      : value;
+                                    const timeInHours = convertTimeToMinutes(timeValue, maxTimeUnitValue) / 60;
                                     if (timeInHours >
                                       scowClusterConfigs[selectedCluster!].ai.devHost.maxRunningTimeHours!) {
                                       form.setFields([{
