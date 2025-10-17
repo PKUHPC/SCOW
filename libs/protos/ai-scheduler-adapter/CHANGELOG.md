@@ -1,5 +1,11 @@
 # @scow/ai-scheduler-adapter-protos
 
+## 1.1.3
+
+### Patch Changes
+
+- f0ecf70: AI 新增申请开发机功能
+
 ## 1.1.2
 
 ### Patch Changes

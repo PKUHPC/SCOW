@@ -1,5 +1,12 @@
 # @scow/lib-config
 
+## 1.0.6
+
+### Patch Changes
+
+- 50f3902: AI 支持 UI 扩展
+- 29f7e38: 修复 ai uiExtension 配置、暂时注释 notification 卡片
+
 ## 1.0.5
 
 ### Patch Changes

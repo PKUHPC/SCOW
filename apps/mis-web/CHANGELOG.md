@@ -1,5 +1,28 @@
 # @scow/mis-web
 
+## 1.9.4
+
+### Patch Changes
+
+- 8d7c549: 管理系统已结束作业中增加量子作业
+- f0ecf70: AI 新增申请开发机功能
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/lib-operation-log@2.2.4
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-notification@1.0.14
+  - @scow/lib-scow-resource@0.2.13
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.3
 
 ### Patch Changes

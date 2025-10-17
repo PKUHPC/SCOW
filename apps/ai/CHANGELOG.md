@@ -1,5 +1,42 @@
 # @scow/ai
 
+## 0.4.4
+
+### Patch Changes
+
+- be97bba: 修复开发机最大运行时限的单位切换为分钟时提交为字符串而非数字的问题
+- 6aba3ed: 实现 AI 上传文件/上传文件夹的分片上传功能，AI 和门户上传组件增加传输进度与传输速度显示
+- 6f35b8a: 修复交互式应用自定义文件组件没有正确传递 scowdEnabled，ssh 下上传文件时不展示上传进度和速度
+- f6b1acf: 仪表盘平台概览和分区节点使用率展示数据不一致。节点使用率数据来源从原本的在适配器获取接口改为前端计算，用以解决适配器传递的节点使用率精度不够的问题
+- 1697522: 修改了"用户第一次创建镜像报错 401 没权限"的问题
+- 9b11653: 量子和 AI 的 API 支持静态秘密字符串认证： /docs/integration/scow-api-hook/api
+- cc28b1b: 修复当系统正在运行同步任务时退出后，再次启动系统后无法执行账户用户相关操作的问题;
+  在 AccountUserSyncRecord 实体中增加 sync_status 索引
+- 50f3902: AI 支持 UI 扩展
+- f53af0f: AI 作业名称要求 1-43 个小写字母、数字、'-'或者'.'，以字母开头，以字母或者数字结尾；模型、算法、数据集的名称及版本要求不允许中文字符，长度不能超过 50 字节且不能包含 '/' 字符
+- f0ecf70: AI 新增申请开发机功能
+- 50f3902: AI 和消息系统集成
+- 29f7e38: 修复 ai uiExtension 配置、暂时注释 notification 卡片
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/ai-scheduler-adapter-protos@1.1.3
+  - @scow/lib-operation-log@2.2.4
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-notification@1.0.14
+  - @scow/lib-scow-resource@0.2.13
+  - @scow/rich-error-model@2.0.2
+
 ## 0.4.3
 
 ### Patch Changes

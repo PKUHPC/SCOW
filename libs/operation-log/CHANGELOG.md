@@ -1,5 +1,12 @@
 # @scow/lib-operation-log
 
+## 2.2.4
+
+### Patch Changes
+
+- f0ecf70: AI 新增申请开发机功能
+  - @scow/protos@1.0.29
+
 ## 2.2.3
 
 ### Patch Changes

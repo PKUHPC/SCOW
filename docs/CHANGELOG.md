@@ -1,5 +1,15 @@
 # @scow/docs
 
+## 1.4.15
+
+### Patch Changes
+
+- 9b11653: 量子和 AI 的 API 支持静态秘密字符串认证： /docs/integration/scow-api-hook/api
+- cc28b1b: 修复当系统正在运行同步任务时退出后，再次启动系统后无法执行账户用户相关操作的问题;
+  在 AccountUserSyncRecord 实体中增加 sync_status 索引
+- 50f3902: AI 支持 UI 扩展
+- f0ecf70: AI 新增申请开发机功能
+
 ## 1.4.14
 
 ### Patch Changes

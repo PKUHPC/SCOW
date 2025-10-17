@@ -1,5 +1,18 @@
 # @scow/lib-web
 
+## 1.5.4
+
+### Patch Changes
+
+- 6aba3ed: 实现 AI 上传文件/上传文件夹的分片上传功能，AI 和门户上传组件增加传输进度与传输速度显示
+- 50f3902: AI 支持 UI 扩展
+- d4da4f5: 菜单图标未限制大小修复、新建桌面修改报错提示
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+
 ## 1.5.3
 
 ### Patch Changes

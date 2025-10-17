@@ -1,5 +1,25 @@
 # @scow/notification
 
+## 0.2.16
+
+### Patch Changes
+
+- 50f3902: AI 和消息系统集成
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-notification@1.0.14
+
 ## 0.2.15
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @scow/config
 
+## 1.10.0
+
+### Minor Changes
+
+- cc28b1b: 删除了资源管理中用于防止数据冲突的 syncBlockStatusWhenStart 配置项；
+  删除了文档中关于此配置项的说明 /SCOW/docs/deploy/config/resource/intro#配置开启资源管理系统；
+  修改了原有文档中关于启动时同步的描述 /SCOW/docs/deploy/config/mis/schedulers/sync#刷新调度器账户/用户信息；
+  在 cli/assets 的 init-full 目录下补充了关于资源管理/消息系统等相关配置项描述。
+
+### Patch Changes
+
+- 50f3902: 在 config/ai.yaml 文件 增加 UI 扩展 uiExtension 配置项
+  文档相对路径 /SCOW/docs/integration/ui-extension
+- f0ecf70: AI 申请开发机配置，/docs/deploy/config/ai/devhost 下
+- Updated dependencies [50f3902]
+- Updated dependencies [29f7e38]
+  - @scow/lib-config@1.0.6
+
 ## 1.9.0
 
 ### Minor Changes

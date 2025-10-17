@@ -1,5 +1,15 @@
 # @scow/grpc-api
 
+## 1.24.0
+
+### Minor Changes
+
+- 8d7c549: 管理系统已结束作业中增加量子作业调用 getQuantumJobInfo 接口
+
+### Patch Changes
+
+- f0ecf70: AI 新增申请开发机功能
+
 ## 1.23.2
 
 ### Patch Changes

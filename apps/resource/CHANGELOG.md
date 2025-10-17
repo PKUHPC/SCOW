@@ -1,5 +1,26 @@
 # @scow/resource
 
+## 0.3.4
+
+### Patch Changes
+
+- cc28b1b: 修复当系统正在运行同步任务时退出后，再次启动系统后无法执行账户用户相关操作的问题;
+  在 AccountUserSyncRecord 实体中增加 sync_status 索引
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-hook@1.0.29
+
 ## 0.3.3
 
 ### Patch Changes

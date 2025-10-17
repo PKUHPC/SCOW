@@ -1,5 +1,13 @@
 # @scow/gateway
 
+## 1.9.4
+
+### Patch Changes
+
+- Updated dependencies [50f3902]
+- Updated dependencies [29f7e38]
+  - @scow/lib-config@1.0.6
+
 ## 1.9.3
 
 ### Patch Changes

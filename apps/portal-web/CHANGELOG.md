@@ -1,5 +1,31 @@
 # @scow/portal-web
 
+## 1.9.4
+
+### Patch Changes
+
+- 6aba3ed: 实现 AI 上传文件/上传文件夹的分片上传功能，AI 和门户上传组件增加传输进度与传输速度显示
+- 6f35b8a: 修复交互式应用自定义文件组件没有正确传递 scowdEnabled，ssh 下上传文件时不展示上传进度和速度
+- f6b1acf: 仪表盘平台概览和分区节点使用率展示数据不一致。节点使用率数据来源从原本的在适配器获取接口改为前端计算，用以解决适配器传递的节点使用率精度不够的问题
+- f0ecf70: AI 新增申请开发机功能
+- d4da4f5: 菜单图标未限制大小修复、新建桌面修改报错提示
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/lib-operation-log@2.2.4
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-notification@1.0.14
+  - @scow/lib-scow-resource@0.2.13
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.3
 
 ### Patch Changes

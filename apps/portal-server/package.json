@@ -1,6 +1,6 @@
 {
   "name": "@scow/portal-server",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "",
   "main": "build/index.js",
   "private": true,

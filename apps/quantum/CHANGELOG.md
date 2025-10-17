@@ -1,5 +1,32 @@
 # @scow/quantum
 
+## 0.1.4
+
+### Patch Changes
+
+- 8d7c549: 管理系统已结束作业中增加量子作业
+- 9b11653: 量子和 AI 的 API 支持静态秘密字符串认证： /docs/integration/scow-api-hook/api
+- Updated dependencies [6aba3ed]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cb4c2e8]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+- Updated dependencies [d4da4f5]
+  - @scow/lib-web@1.5.4
+  - @scow/lib-config@1.0.6
+  - @scow/ai-scheduler-adapter-protos@1.1.3
+  - @scow/lib-operation-log@2.2.4
+  - @scow/scheduler-adapter-protos@1.5.1
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-scow-resource@0.2.13
+  - @scow/rich-error-model@2.0.2
+
 ## 0.1.3
 
 ### Patch Changes

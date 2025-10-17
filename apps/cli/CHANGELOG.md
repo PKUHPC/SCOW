@@ -1,5 +1,21 @@
 # @scow/cli
 
+## 1.9.4
+
+### Patch Changes
+
+- 8d7c549: 管理系统已结束作业中增加量子作业
+- db98376: CLI update 命令不再可用，请去文件服务器 85 上下载最新的 cli
+- c419e18: cli 启动时检查如果配置了消息系统和资源管理系统则必须配置 scowApi.auth.token
+- f0ecf70: AI 新增申请开发机功能
+- Updated dependencies [50f3902]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+  - @scow/lib-config@1.0.6
+  - @scow/config@1.10.0
+
 ## 1.9.3
 
 ### Patch Changes

@@ -1,5 +1,25 @@
 # @scow/portal-server
 
+## 1.9.4
+
+### Patch Changes
+
+- 7a60757: Pending 的作业展示申请的资源数
+- Updated dependencies [50f3902]
+- Updated dependencies [cb4c2e8]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+  - @scow/lib-config@1.0.6
+  - @scow/scheduler-adapter-protos@1.5.1
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-scow-resource@0.2.13
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.3
 
 ### Patch Changes

@@ -1,5 +1,31 @@
 # @scow/mis-server
 
+## 1.9.4
+
+### Patch Changes
+
+- 8d7c549: 管理系统已结束作业中增加量子作业
+- f5d87e6: 开启集群资源管理服务，创建账户时，如果账户已经在集群中存在，不抛出错误，继续进行下一步
+- 5b7ac14: 创建账户时，如果账户已经在集群中，不抛出错误，继续进行下一步
+- cc28b1b: 修复当系统正在运行同步任务时退出后，再次启动系统后无法执行账户用户相关操作的问题;
+  在 AccountUserSyncRecord 实体中增加 sync_status 索引
+- 7a60757: Pending 的作业展示申请的资源数
+- Updated dependencies [50f3902]
+- Updated dependencies [cb4c2e8]
+- Updated dependencies [29f7e38]
+- Updated dependencies [50f3902]
+- Updated dependencies [f0ecf70]
+- Updated dependencies [cc28b1b]
+  - @scow/lib-config@1.0.6
+  - @scow/scheduler-adapter-protos@1.5.1
+  - @scow/config@1.10.0
+  - @scow/protos@1.0.29
+  - @scow/lib-scheduler-adapter@1.1.27
+  - @scow/lib-server@1.4.4
+  - @scow/lib-hook@1.0.29
+  - @scow/lib-notification@1.0.14
+  - @scow/lib-scow-resource@0.2.13
+
 ## 1.9.3
 
 ### Patch Changes
