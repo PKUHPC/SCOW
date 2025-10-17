@@ -344,7 +344,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa_file_server
           ssh-keyscan "${{ vars.FILE_SERVER_HOST }}" >> ~/.ssh/known_hosts
 
-          echo "Downloading CLIs from file-server"
+          echo "Downloading CLIs from file-server to release/"
+
+          mkdir release
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-x64 release/scow-cli-x64
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-arm64 release/scow-cli-arm64
