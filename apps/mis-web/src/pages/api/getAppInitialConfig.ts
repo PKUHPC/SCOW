@@ -83,39 +83,39 @@ export default route(GetAppInitialConfigSchema,
         };
 
       }
-
-      const clustersRuntimeInfo = await getClustersRuntimeInfo();
-      const clusters = await getClusterConfigFiles();
-
-      if (Object.keys(clusters).length > 0) {
-        extra.clusterConfigs = clusters;
-      }
-
-      const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};
-
-      Object.keys(clusters).forEach((key) => {
-        simpleClustersInfo[key] = {
-          clusterId: key,
-          displayName: clusters[key].displayName,
-          priority: clusters[key].priority,
-        };
-      });
-      extra.initialSimpleClustersInfo = simpleClustersInfo;
-
-
-      const publicConfigClusters = extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0
-        ? getPublicConfigClusters(extra.clusterConfigs)
-        : getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {};
-
-      const activatedClusters
-      = formatActivatedClusters({
-        clustersRuntimeInfo: clustersRuntimeInfo,
-        misConfigClusters: publicConfigClusters,
-
-      });
-
-      extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
     }
+
+    const clustersRuntimeInfo = await getClustersRuntimeInfo();
+    const clusters = await getClusterConfigFiles();
+
+    if (Object.keys(clusters).length > 0) {
+      extra.clusterConfigs = clusters;
+    }
+
+    const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};
+
+    Object.keys(clusters).forEach((key) => {
+      simpleClustersInfo[key] = {
+        clusterId: key,
+        displayName: clusters[key].displayName,
+        priority: clusters[key].priority,
+      };
+    });
+    extra.initialSimpleClustersInfo = simpleClustersInfo;
+
+
+    const publicConfigClusters = extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0
+      ? getPublicConfigClusters(extra.clusterConfigs)
+      : getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {};
+
+    const activatedClusters
+    = formatActivatedClusters({
+      clustersRuntimeInfo: clustersRuntimeInfo,
+      misConfigClusters: publicConfigClusters,
+
+    });
+
+    extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
 
     const hostname = getHostname(req);
 
