@@ -12,7 +12,8 @@
 
 import { parseTime } from "@scow/lib-web/build/utils/datetime";
 import { TimeRangePickerProps } from "antd";
-import dayjs from "dayjs";
+import dayjs,{ Dayjs } from "dayjs";
+
 
 export function formatDateTime(str: string): string {
   return dayjs(str)
@@ -80,4 +81,81 @@ export function calculateAppRemainingTime(runningTime: string, timeLimit: string
   }
   const diffMs = parseTime(timeLimit) - parseTime(runningTime);
   return diffMs < 0 ? "00:00" : formatTime(diffMs);
+}
+
+
+
+type TimeLike = number | string | Dayjs | null | undefined;
+
+interface ToGrafanaRelativeOpts {
+  /** 认为“就是现在”的容忍度，默认 2 分钟 */
+  nowToleranceMs?: number;
+  /** 将区间宽度四舍五入到的粒度，默认 1 分钟 */
+  roundGranularityMs?: number;
+}
+
+/**
+ * 把 [start, end] 转成 Grafana 识别的相对时间：{ from: 'now-10m', to: 'now' }
+ * - 若 end ≈ now（在容忍度内），则输出相对；否则保留绝对时间戳（毫秒）
+ * - 传入已是字符串（比如 'now-10m'）会原样返回
+ */
+export function toGrafanaRelative(
+  start: TimeLike,
+  end: TimeLike,
+  opts: ToGrafanaRelativeOpts = {},
+): { from: string; to: string } {
+  const { nowToleranceMs = 2 * 60 * 1000, roundGranularityMs = 60 * 1000 } = opts;
+
+  // 1) 字符串直接透传（如果把预设做成 'now-...'，这里也兼容）
+  if (typeof start === "string" && typeof end === "string") {
+    return { from: start, to: end };
+  }
+
+  // 2) 统一转成毫秒
+  const toMs = (v: TimeLike): number | null => {
+    if (v == null) return null;
+    if (typeof v === "number") return v;
+    if (typeof v === "string") return null; // 上面已处理
+    return (v).valueOf?.() ?? null;
+  };
+
+  const startMs = toMs(start);
+  const endMs = toMs(end);
+
+  // 兜底：如果不是“可相对化”的情况，返回绝对毫秒（Grafana 也支持）
+  if (startMs == null || endMs == null) {
+    return { from: String(start ?? ""), to: String(end ?? "") };
+  }
+
+  const now = Date.now();
+
+  // 3) 如果 end 靠近现在（在容忍度内），把 end 设为 'now'，start 换成 'now-Δ'
+  if (Math.abs(endMs - now) <= nowToleranceMs) {
+    const rawDelta = Math.max(0, now - startMs);
+
+    // 3.1 把区间长度按粒度四舍五入，避免出现奇怪的 now-59997ms
+    const delta = Math.round(rawDelta / roundGranularityMs) * roundGranularityMs;
+
+    // 3.2 选择合适单位（Grafana 支持 s/m/h/d/w/M/y）
+    const s = 1000;
+    const m = 60 * s;
+    const h = 60 * m;
+    const d = 24 * h;
+    const w = 7 * d;
+
+    // 这里用简单规则：优先用 w/d/h/m/s 中能表达的最大整单位
+    const pick = (ms: number): { n: number; u: "w" | "d" | "h" | "m" | "s" } => {
+      if (ms % w === 0) return { n: ms / w, u: "w" };
+      if (ms % d === 0) return { n: ms / d, u: "d" };
+      if (ms % h === 0) return { n: ms / h, u: "h" };
+      if (ms % m === 0) return { n: ms / m, u: "m" };
+      return { n: Math.max(1, Math.round(ms / s)), u: "s" };
+    };
+
+    const { n, u } = pick(delta || m); // 最少给 1m，避免 0s
+    return { from: `now-${n}${u}`, to: "now" };
+  }
+
+  // 4) 否则：不是“以 now 结尾”的滚动窗口，保持绝对值（也可按需改成相对+绝对混合）
+  return { from: String(startMs), to: String(endMs) };
 }

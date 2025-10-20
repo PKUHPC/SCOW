@@ -744,6 +744,7 @@ const SingleAppSessionSchema = z.object({
     port:z.number(),
   }).optional(),
   extraDisplayInputs: ExtraDisplayInputsSchema,
+  uniqueJobName:z.string(),
 });
 
 export const getJobDetails =
@@ -787,7 +788,7 @@ export const getJobDetails =
           "job_id", "name","state", "partition","elapsed_seconds","time_limit_minutes",
           "reason","qos","cpus_req","cpus_alloc","mem_req_mb","mem_alloc_mb","gpus_req","gpus_alloc",
           "nodes_req","nodes_alloc","submit_time","start_time","end_time","partition","account",
-          "pods","events","tensor_board_info",
+          "pods","events","tensor_board_info","unique_job_name",
         ],
         jobId,
       });

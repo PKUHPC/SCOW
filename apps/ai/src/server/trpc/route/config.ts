@@ -10,6 +10,7 @@ import { join } from "path";
 import { aiConfig } from "src/server/config/ai";
 import { commonConfig } from "src/server/config/common";
 import { config as envConfig } from "src/server/config/env";
+import { misConfig } from "src/server/config/mis";
 import { uiConfig } from "src/server/config/ui";
 import { router } from "src/server/trpc/def";
 import { authProcedure, baseProcedure } from "src/server/trpc/procedure/base";
@@ -113,6 +114,21 @@ const PublicConfigSchema = z.object({
   NOTIF_ADDRESS: z.string().optional(),
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   INFER_ENABLED:z.boolean(),
+  GRAFANA_CONFIG:z.object({
+    enabled:z.boolean().optional(),
+    isProxy:z.boolean().optional(),
+    proxyUrl:z.string(),
+    noProxyUrl:z.string(),
+    dashboardId:z.string(),
+    dashboardName:z.string(),
+    panelIds:z.object({
+      gpu: z.number(),
+      gpuMemory: z.number(),
+      cpu: z.number(),
+      memory: z.number(),
+      network: z.number(),
+    }),
+  }),
 });
 
 const UiConfigSchema = z.object({
@@ -254,6 +270,14 @@ export const config = router({
         NOTIF_ADDRESS: commonConfig.notification?.address,
 
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
+
+        GRAFANA_CONFIG:{
+          ...aiConfig.jobMonitor,
+          proxyUrl: join(envConfig.MIS_URL,"/api/admin/monitor/getResourceStatus"),
+          noProxyUrl:misConfig.clusterMonitor?.grafanaUrl ?? "",
+          enabled:misConfig.clusterMonitor?.resourceStatus?.enabled,
+          isProxy:misConfig.clusterMonitor?.resourceStatus?.proxy,
+        },
       };
     }),
 

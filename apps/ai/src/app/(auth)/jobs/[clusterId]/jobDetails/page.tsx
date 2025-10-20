@@ -1,24 +1,28 @@
 "use client";
 
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { DescriptionsProps, TableProps, TabsProps } from "antd";
-import { Descriptions, Divider, Space, Table, Tabs, Typography } from "antd";
+import { Button, DatePicker, Descriptions, Divider, Flex, Select, Space, Table, Tabs, Typography } from "antd";
+import { RangePickerProps } from "antd/es/date-picker";
 import TextArea from "antd/lib/input/TextArea";
+import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { useDarkMode } from "src/layouts/darkMode";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { JobType, statusColors } from "src/models/Job";
-import { formatDateTime } from "src/utils/datetime";
+import { formatDateTime, toGrafanaRelative } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
 import { AppTableStatus } from "../AppSessionsTable";
+import { MonitorGrid } from "./MonitorGrid";
 
 const Container = styled.div`
   padding: 20px;
@@ -57,6 +61,11 @@ interface PodListDataType {
   podReason?: string;
 }
 
+const INVALID_DATE = "1970-01-01T00:00:00.000Z";
+const ALL = "all";
+const CUSTOM = "custom";
+
+
 export default function Page({ params }: { params: { clusterId: string } }) {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.jobDetails.");
@@ -66,6 +75,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
   const { publicConfig,user } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
+  const grafanaConfig = publicConfig.GRAFANA_CONFIG;
 
   if (!cluster) {
     return <NotFoundPage />;
@@ -73,6 +83,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
   const router = useRouter();
   const theme = useTheme();
+  const { dark } = useDarkMode();
 
   const jobId = searchParams?.get("jobId");
   const sessionId = searchParams?.get("sessionId");
@@ -80,7 +91,29 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const appId = searchParams?.get("appId");
   const from = searchParams?.get("from");
 
+  const MONITOR_TIME_OPTIONS = [
+    { label:t(p("last1Hour")),value:"now-1h" },
+    { label:t(p("last6Hours")),value:"now-6h" },
+    { label:t(p("last12Hours")),value:"now-12h" },
+    { label:t(p("last24Hours")),value:"now-24h" },
+    { label:t(p("last2Days")),value:"now-2d" },
+    { label:t(p("last7Days")),value:"now-7d" },
+    { label:t(p("last30Days")),value:"now-30d" },
+    { label:t(p("allData")),value:ALL },
+    { label:t(p("customTime")),value:CUSTOM },
+  ];
+
+  // pod列表中展示那个pod的事件
   const [selectedPodId, setSelectedPodId] = useState<string | null>(null);
+
+  // 下拉选择时间框的值：比如最近1小时，最近30天等等
+  const [monitorTime, setMonitorTime] = useState<string>(MONITOR_TIME_OPTIONS[0].value);
+  // 用户自定义选择监控的精确时间
+  const [monitorAccurateTime, setMonitorAccurateTime] = useState<RangePickerProps["value"]>(null);
+  // 监控信息中选中的pod
+  const [selectedMonitorPodIds, setSelectedMonitorPodIds] = useState<string[]>([]);
+  // 监控的刷新
+  const [reloadFlag, setReloadFlag] = useState(0);
 
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
@@ -94,6 +127,117 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
   const jobEventData = useMemo(() => jobDetails ? jobDetails.jobEvent : [], [jobDetails]);
   const podListData = useMemo(() => jobDetails ? jobDetails.podInfo : [], [jobDetails]);
+
+  // 监控选择自定义时间，选完开始时间和结束时间都有值时才触发更新
+  const lastStableUrlsRef = useRef<string[]>([]);
+  // grafana的url是形如这样的：
+  // "http://localhost:5007/mis/api/admin/monitor/getResourceStatus/d-solo/P17D2FB9C9DA87D76/p17d2fb9c9da87d76
+  // ?from=1757395854652&to=1757397654652&var-job_name=dev-k8s-c-i-20250827-103214-1756262046
+  // &var-pod_name=$__all&refresh=10s&panelId=24&theme=light";
+  const monitorUrlArray = useMemo(() => {
+    if (!jobDetails) return [];
+
+    // 选择需要展示的面板
+    const {
+      gpu: gpuPanelId,
+      gpuMemory:gpuMemoryPanelId,
+      cpu: cpuPanelId,
+      memory: memoryPanelId,
+      network: networkPanelId,
+    } = grafanaConfig.panelIds;
+
+    // 仅当 monitorTime === CUSTOM 且两个时间都有值时，才允许更新
+    const isCustom = monitorTime === CUSTOM;
+    const customReady = !!(monitorAccurateTime?.[0] && monitorAccurateTime?.[1]);
+
+    if (isCustom && !customReady) {
+    // 不更新，返回上一次稳定的 URL 列表
+      return lastStableUrlsRef.current;
+    }
+
+    const displayPanelIds = [cpuPanelId,memoryPanelId,networkPanelId];
+    if (jobDetails.gpusReq) {
+      displayPanelIds.unshift(gpuPanelId,gpuMemoryPanelId);
+    }
+
+    const grafanaUrl = grafanaConfig.isProxy ?
+      // 加上协议和ip(域名)
+      new URL(grafanaConfig.proxyUrl, location.origin).href
+      : grafanaConfig.noProxyUrl;
+    // 正确拼接基准 URL（不要用 path.join）
+    // 支持 grafanaConfig.url 末尾是否带 '/'
+    const base = new URL(grafanaUrl.endsWith("/")
+      ? grafanaUrl
+      : grafanaUrl + "/");
+
+    // 3) 追加仪表盘路径（同样不要用 path.join）
+    const dashboardUrl = new URL(
+      `d-solo/${grafanaConfig.dashboardId}/${grafanaConfig.dashboardName}`,
+      base,
+    );
+
+    // 4) 生成每个面板的完整 URL
+    const urls = displayPanelIds.map((panelId) => {
+      const qs = new URLSearchParams();
+
+      let grafanaFrom = "", grafanaTo = "";
+      if (monitorTime === CUSTOM) {
+        if (monitorAccurateTime?.[0] && monitorAccurateTime?.[1]) {
+        // 不直接用时间戳，要用类似[now-1h,now]的相对时间，grafana的refresh才能生效，数据会慢慢刷新增加
+
+          // 精确时间给grafana绝对时间，不用刷新
+          grafanaFrom = String(monitorAccurateTime[0].valueOf());
+          grafanaTo = String(monitorAccurateTime[1].valueOf());
+        }
+      } else if (monitorTime === ALL) {
+        const startTime = jobDetails.startTime ? dayjs(jobDetails.startTime).valueOf() : dayjs().valueOf();
+        // 结束时间是有效的时间，表示作业已结束，可以给grafana绝对时间，不用刷新
+        if (jobDetails.endTime && jobDetails.endTime !== INVALID_DATE) {
+          grafanaFrom = String(startTime);
+          grafanaTo = String(dayjs(jobDetails.endTime).valueOf());
+        }
+        // 结束时间是无效的时间，表示作业未结束，需要给grafana相对时间，刷新
+        else {
+          const { from, to } = toGrafanaRelative(
+            startTime,
+            dayjs().valueOf(),
+          );
+
+          grafanaFrom = from;
+          grafanaTo = to;
+        }
+      } else {
+        grafanaFrom = monitorTime;
+        // running的作业传now，触发刷新；
+        // 已结束的作业不需要，且不能加否则或触发grafana的bug：获取所有的正在跑的pod信息
+        grafanaTo = jobDetails.state === "RUNNING" ? "now" : String(dayjs().valueOf());
+      }
+
+      // 时间
+      qs.set("from", grafanaFrom);
+      qs.set("to", grafanaTo);
+
+      // 变量
+      qs.set("var-job_name", jobDetails.uniqueJobName);
+      selectedMonitorPodIds.forEach((podId) => qs.append("var-pod_name", podId));
+      qs.set("panelId", String(panelId));
+
+      // 只有running的作业才需要刷新数据
+      if (jobDetails.state === "RUNNING") {
+        qs.set("refresh", "5s");
+      }
+      // 其他参数
+      qs.set("theme", dark ? "dark" : "light");
+
+      // 加入 reloadFlag，手动刷新
+      qs.set("_t", String(reloadFlag));
+
+      return `${dashboardUrl.toString()}?${qs.toString()}`;
+    });
+    // 更新“上一次稳定结果”
+    lastStableUrlsRef.current = urls;
+    return urls;
+  }, [grafanaConfig, monitorTime,monitorAccurateTime, jobDetails, selectedMonitorPodIds, dark,reloadFlag]);
 
   if (!parsedJobId || !jobType) {
     return <NotFoundPage />;
@@ -460,6 +604,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     },
   ];
 
+
   const tabsItems: TabsProps["items"] = [
     {
       key: "1",
@@ -508,6 +653,67 @@ export default function Page({ params }: { params: { clusterId: string } }) {
           }}
           scroll={{ y: 350 }}
         />
+      ),
+    }] : [],
+    ...grafanaConfig.enabled ? [{
+      key: "3",
+      label: t(p("monitor")),
+      children: (
+        <div style={{ maxHeight:"640px" }}>
+          <Flex justify="space-between" style={{ marginBottom:"20px" }}>
+            <Flex justify="space-between" align="center" style={{ width:"600px" }}>
+              <span>Pod: </span>
+              <Select
+                mode="multiple"
+                placeholder={t(p("selectPods"))}
+                defaultValue={[]}
+                style={{ width: "100%", marginLeft:"20px" }}
+                listHeight={200}
+                maxTagCount={1}
+                maxTagPlaceholder={(omittedValues) => `等${omittedValues.length + 1}个`}
+                options={podListData.map((pod) => ({
+                  label:pod.podName,
+                  value:pod.podName,
+                }))}
+                onChange={(value) => {
+                  setSelectedMonitorPodIds(value);
+                }}
+              />
+            </Flex>
+            <Flex justify="space-between" align="center">
+              <Flex justify="space-between" align="center" style={{ width:"300px" }}>
+                <span style={{ minWidth:"70px" }}>{t(p("selectTime"))}:</span>
+                <Select
+                  placeholder={t(p("selectTime"))}
+                  defaultValue={MONITOR_TIME_OPTIONS[0].value}
+                  style={{ width: "100%", marginRight:"20px" }}
+                  listHeight={200}
+                  options={MONITOR_TIME_OPTIONS}
+                  onChange={(v) => {
+                    setMonitorTime(v);
+                    setMonitorAccurateTime(null);
+                  } }
+                />
+              </Flex>
+              <DatePicker.RangePicker
+                disabled={monitorTime !== CUSTOM}
+                value={monitorAccurateTime}
+                showTime
+                placeholder={[t(p("startTime")), t(p("endTime"))]}
+                allowClear={false}
+                onChange={setMonitorAccurateTime}
+              />
+              <Button
+                type="text"
+                icon={<ReloadOutlined />}
+                style={{ marginLeft: "20px" }}
+                onClick={() => setReloadFlag(Date.now())}
+              >
+              </Button>
+            </Flex>
+          </Flex>
+          <MonitorGrid sources={monitorUrlArray}></MonitorGrid>
+        </div>
       ),
     }] : [],
   ];
