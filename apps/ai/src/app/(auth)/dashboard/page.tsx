@@ -12,6 +12,7 @@ import { styled } from "styled-components";
 
 import { NotificationCard } from "./NotificationCard";
 import { OverviewTable } from "./OverviewTable";
+import { QuickEntry } from "./QuickEntry";
 
 const DashboardPageContent = styled.div``;
 
@@ -43,14 +44,6 @@ const initialPlatformOverview: PlatformOverview = {
 
 const NotificationCol = styled(Col)`
   padding-bottom: 16px;
-
-  /* 默认隐藏消息部分 */
-  display: none;
-
-  /* 在屏幕宽度达到 1200px 时显示消息部分 */
-  @media (min-width: 1200px) {
-    display: block;
-  }
 `;
 
 export default function Page() {
@@ -81,6 +74,7 @@ export default function Page() {
     { clusterIds },
     { enabled: clusterIds.length > 0 },
   );
+
 
   // 获取用户关联账户的集群分区信息
   const userAssociatedClusterPartitions = trpc.resource.getUserAssociatedClusterPartitions.useQuery();
@@ -326,19 +320,20 @@ export default function Page() {
     currentClusters,
   ]);
 
+
   return (
     <DashboardPageContent>
       <Head title={"dashboard"} />
-      {/* 暂时注释 等待快捷入口合入 */}
-      {/* <Row gutter={[16, 16]} wrap={true}>
-        <Col sm={24} xl={24}>
-          {publicConfig.NOTIF_ENABLED && (
-            <NotificationCol xl={7}>
-              <NotificationCard />
-            </NotificationCol>
-          )}
+      <Row gutter={[16, 16]} wrap={true}>
+        <Col sm={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
+          <QuickEntry />
         </Col>
-      </Row> */}
+        {publicConfig.NOTIF_ENABLED && (
+          <NotificationCol md={7} xl={7}>
+            <NotificationCard />
+          </NotificationCol>
+        )}
+      </Row>
       <DisplayModeContext.Provider value={isFullDisplayMode}>
         <OverviewTable
           isLoading={isLoading}

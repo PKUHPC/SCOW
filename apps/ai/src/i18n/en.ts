@@ -105,6 +105,10 @@ export default {
         platformOverview:"Platform Overview",
         contact:"There are currently no available clusters. Please try again later or contact the administrator.",
       },
+      quickEntry: {
+        saveFailed:"Save failed",
+        saveSuccessfully:"Save succeeded",
+      },
       notificationCard: {
         message: "Message",
         check: "Check All >",

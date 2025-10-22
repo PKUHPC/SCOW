@@ -23,6 +23,12 @@ const AppEntry = Type.Object({
   appLogoPath: Type.Optional(Type.String()),
 });
 
+const ClusterPageLinkEntry = Type.Object({
+  path: Type.String(),
+  clusterId: Type.String(),
+  icon: Type.String(),
+});
+
 export const Entry = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -38,6 +44,10 @@ export const Entry = Type.Object({
     Type.Object({
       $case: Type.Literal("app"),
       app: AppEntry,
+    }),
+    Type.Object({
+      $case: Type.Literal("clusterPageLink"),
+      clusterPageLink: ClusterPageLinkEntry,
     }),
   ])),
 });

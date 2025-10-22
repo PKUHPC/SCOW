@@ -1,10 +1,15 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { AppConfigSchema } from "@scow/config/build/appForAi";
 import { PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { NodeInfo_NodeState } from "@scow/protos/build/portal/config";
 import { TRPCError } from "@trpc/server";
+import { promises as fsPromises } from "fs";
+import path from "path";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
+import { getClusterAppConfigs } from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
+import { logger } from "src/server/utils/logger";
 import { z } from "zod";
 
 // 定义分区信息
@@ -86,6 +91,66 @@ const AllClustersNodesInfoSchema = z.object({
   })),
 });
 
+export const PageLinkEntrySchema = z.object({
+  path: z.string(),
+  /** antd的图标ID */
+  icon: z.string(),
+});
+
+export const ClusterPageLinkEntrySchema = z.object({
+  clusterId: z.string(),
+  path: z.string(),
+  /** antd的图标ID */
+  icon: z.string(),
+});
+
+export const AppEntrySchema = z.object({
+  appId: z.string(),
+  clusterId: z.string(),
+  /**
+   * 应用图标的路径
+   * 只在getQuickEntriesResponse中使用，获取查询时config下配置的应用图标路径
+   * 前端会根据这个路径加载应用图标
+   */
+  appLogoPath: z.string().optional(),
+});
+
+export const ShellEntrySchema = z.object({
+  clusterId: z.string(),
+  loginNode: z.string(),
+  /** antd的图标ID */
+  icon: z.string(),
+});
+
+const quickEntryPath = "/var/lib/scow/ai/quickEntries";
+
+const EntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  entry: z.union([
+    z.object({
+      $case: z.literal("pageLink"),
+      pageLink: PageLinkEntrySchema,
+    }),
+    z.object({
+      $case: z.literal("clusterPageLink"),
+      clusterPageLink: ClusterPageLinkEntrySchema,
+    }),
+    z.object({
+      $case: z.literal("app"),
+      app: AppEntrySchema,
+    }),
+    z.object({
+      $case: z.literal("shell"),
+      shell: ShellEntrySchema,
+    }),
+    z.undefined(),
+  ]).optional(),
+});
+
+const EntryListSchema = z.array(EntrySchema);
+
+export type EntryListSchema = z.infer<typeof EntryListSchema>;
 
 // tRPC 路由
 export const dashboard = router({
@@ -273,5 +338,125 @@ export const dashboard = router({
         .filter((cluster) => cluster !== null);
 
       return { clusters };
+    }),
+
+  getQuickEntries: authProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/dashboard/quick-entries",
+        tags: ["dashboard"],
+        summary: "Get user's quick entries",
+      },
+    })
+    .input(z.void())
+    .output(z.array(EntrySchema))
+    .query(async ({ ctx: { user } }) => {
+      const filePath = path.join(quickEntryPath, user.identityId, "quickEntries.json");
+
+      let jsonObject: z.infer<typeof EntryListSchema> = [];
+
+      try {
+        const data = await fsPromises.readFile(filePath, "utf8");
+        const result = EntryListSchema.safeParse(JSON.parse(data));
+        if (result.success) {
+          // 成功解析，使用解析后的数据
+          jsonObject = result.data;
+        } else {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "An error occurred while parse quickEntries.json",
+          });
+        }
+      } catch (error) {
+        const err = error as NodeJS.ErrnoException;
+
+        // 文件不存在则返回空数组
+        if (err.code === "ENOENT") {
+          logger.info(`Quick entries file not found for user ${user.identityId}`);
+          return [];
+        }
+
+        // 其他错误则记录日志并抛出
+        logger.error(`Read file failed for user ${user.identityId}: ${err.message}`);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to read quick entries: ${err.message}`,
+        });
+      }
+
+      // 缓存集群应用配置
+      const clusterAppConfigsCache = new Map<string, Record<string, AppConfigSchema>>();
+
+      const getCachedClusterAppConfigs = (clusterId: string) => {
+        if (!clusterAppConfigsCache.has(clusterId)) {
+          const configs = getClusterAppConfigs(clusterId);
+          clusterAppConfigsCache.set(clusterId, configs);
+        }
+        return clusterAppConfigsCache.get(clusterId);
+      };
+
+      // 处理每个条目，添加应用 logo 路径
+      const mappedEntries = jsonObject.map((entry) => {
+        if (entry.entry?.$case === "app") {
+          const { appId, clusterId } = entry.entry.app;
+          const clusterApps = getCachedClusterAppConfigs(clusterId);
+          const currentLogoPath = clusterApps?.[appId]?.logoPath || undefined;
+          return {
+            ...entry,
+            entry:{
+              ...entry.entry,
+              app: {
+                ...entry.entry.app,
+                appLogoPath: currentLogoPath,
+              },
+            },
+          };
+        }
+        return entry;
+      });
+
+      return mappedEntries;
+    }),
+
+  saveQuickEntries: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/dashboard/save-quick-entries",
+        tags: ["dashboard"],
+        summary: "Save user's quick entries",
+      },
+    })
+    .input(z.object({
+      quickEntries: z.array(EntrySchema),
+    }))
+    .output(z.object({}))
+    .mutation(async ({ input, ctx: { user } }) => {
+      const { quickEntries } = input;
+      const jsonContent = JSON.stringify(quickEntries);
+      const filePath = path.join(quickEntryPath, user.identityId, "quickEntries.json");
+      const dirPath = path.dirname(filePath);
+
+      try {
+        // 确保目录存在
+        await fsPromises.mkdir(dirPath, { recursive: true });
+
+        // 将内容写入文件
+        await fsPromises.writeFile(filePath, jsonContent);
+
+        return {};
+      } catch (err) {
+        const errorMessage = err instanceof Error && "message" in err
+          ? `Error saving quick entry for user ${user.identityId}: ${err.message}`
+          : "";
+
+        logger.error("Saving file failed with %o", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: errorMessage || `An error occurred while saving quick entry for user ${user.identityId}`,
+          cause: err,
+        });
+      }
     }),
 });

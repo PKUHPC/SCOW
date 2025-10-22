@@ -156,6 +156,7 @@ export type NavLink = z.infer<typeof NavLinkSchema>;
 
 export type UiConfig = z.infer<typeof UiConfigSchema>;
 
+export type LoginNodeConfig = z.infer<typeof LoginNodeConfigSchema>;
 
 export const PartitionSchema = z.object({
   name: z.string(),
@@ -175,6 +176,14 @@ const ClusterConfigSchema = z.object({
   schedulerName: z.string(),
   partitions: z.array(PartitionSchema),
 });
+
+const LoginNodeConfigSchema = z.union([
+  z.array(z.string()),
+  z.array(z.object({
+    name: I18nStringTypeSchema,
+    address: z.string(),
+  })),
+]);
 
 const StorageConfigSchema = z.object({
   enabled: z.boolean(),
@@ -318,6 +327,7 @@ export const config = router({
     .output(z.record(z.string(), z.object({
       scowdEnabled: z.boolean(),
       storage: StorageConfigSchema,
+      loginNodes: LoginNodeConfigSchema,
       ai: ClusterAiConfigSchema,
     })))
     .query(async () => {
@@ -330,6 +340,7 @@ export const config = router({
             paths:cluster.storage?.paths ?? [],
             replicaExist: cluster.storage?.replicaExist ?? false,
           },
+          loginNodes: cluster?.loginNodes,
           ai: {
             devHost: {
               enabled: cluster.ai.devHost?.enabled ?? false,
@@ -342,6 +353,7 @@ export const config = router({
       }, {} as Record<string, {
         scowdEnabled: boolean,
         storage: { enabled: boolean,paths: string[], replicaExist: boolean },
+        loginNodes: LoginNodeConfig,
         ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number } },
       }>);
 

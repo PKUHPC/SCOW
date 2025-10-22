@@ -1,21 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { PictureOutlined } from "@ant-design/icons";
 import { join } from "path";
-import React, { CSSProperties, useState } from "react";
-import { ColoredIcon, isSupportedIconName } from "src/components/Icon";
-import { publicConfig } from "src/utils/config";
-import { styled, useTheme } from "styled-components"; ;
+import React, { ComponentType, CSSProperties, ReactElement,useState } from "react";
+import { styled, useTheme } from "styled-components";
 
 const ItemContainer = styled.div`
   display: flex;
@@ -31,6 +17,7 @@ const AvatarContainer = styled.div`
   display: flex;
   justify-content: center;
   flex: 1;
+  align-items: center;
 `;
 
 const NameContainer = styled.div`
@@ -42,8 +29,20 @@ const NameContainer = styled.div`
   position: relative;
 `;
 
+interface IconProps {
+  name: string;
+  style: CSSProperties;
+}
+
+interface WithColorProps {
+  color?: string;
+  style?: CSSProperties;
+}
+
 interface Props {
   entryBaseName: string;
+  publicPath: string;
+  iconMap: Record<string, React.ReactElement>;
   entryExtraInfo?: string[];
   icon?: string,
   logoPath?: string;
@@ -52,16 +51,44 @@ interface Props {
 
 type ImageErrorMap = Record<string, boolean>;
 
-export const EntryItem: React.FC<Props> = ({ style,
-  entryBaseName, entryExtraInfo, icon, logoPath }) => {
+export const EntryItem: React.FC<Props> = ({ style, iconMap,
+  entryBaseName, entryExtraInfo, icon, logoPath, publicPath }) => {
 
   const [imageErrorMap, setImageErrorMap] = useState<ImageErrorMap>({});
+
+  const theme = useTheme();
 
   const handleImageError = (appId: string) => {
     setImageErrorMap((prevMap) => ({ ...prevMap, [appId]: true }));
   };
 
-  const theme = useTheme();
+  const isSupportedIconName = (iconName: string): boolean => {
+    return iconName in iconMap;
+  };
+
+  const Icon = (props: IconProps) => {
+    const { name } = props;
+
+    // 确保图标组件接收并应用 style 属性
+    return React.cloneElement(iconMap[name], { style:props.style });
+  };
+
+  const withColor = <P extends IconProps>(
+    WrappedComponent: ComponentType<P & WithColorProps>,
+  ): ComponentType<P & WithColorProps> => {
+    return (props: P & WithColorProps): ReactElement => {
+      const { color, style, ...restProps } = props;
+
+      const modifiedStyle: CSSProperties = {
+        color: color,
+        ...style,
+      };
+
+      return <WrappedComponent {...restProps as P} style={modifiedStyle} />;
+    };
+  };
+
+  const ColoredIcon = withColor(Icon);
 
   return (
     <ItemContainer style={style}>
@@ -69,7 +96,7 @@ export const EntryItem: React.FC<Props> = ({ style,
         {
           (logoPath && imageErrorMap[entryBaseName] !== true) ? (
             <img
-              src={join(publicConfig.PUBLIC_PATH, logoPath)}
+              src={join(publicPath, logoPath)}
               onError={() => handleImageError(entryBaseName)}
               style={{ maxWidth:"70px", objectFit:"contain",
                 position:"relative", top:`${(entryExtraInfo?.length ?? 0 - 0) * 8}px` }}
@@ -81,6 +108,7 @@ export const EntryItem: React.FC<Props> = ({ style,
                 style={{ fontSize:`${60 - (entryExtraInfo?.length ?? 0 - 0) * 4}px`,
                   color:theme.token.colorPrimary,
                   position:"relative", top:`${(entryExtraInfo?.length ?? 0 - 0) * 8}px`,
+                  transform: "scale(3.4)",
                 }}
               />
             )
@@ -89,7 +117,9 @@ export const EntryItem: React.FC<Props> = ({ style,
       </AvatarContainer>
       {
         <>
-          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}` }}>
+          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+            maxWidth: "130px" }}
+          >
             {entryBaseName}
           </NameContainer>
           <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,

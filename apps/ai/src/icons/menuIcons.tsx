@@ -1,6 +1,10 @@
 import Icon from "@ant-design/icons";
 import React, { LegacyRef } from "react";
 
+interface IconProps {
+  style?: React.CSSProperties;
+}
+
 // 仪表盘图标
 const dashBoardSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,9 +27,9 @@ const dashBoardSVG = () => (
 );
 
 
-export const DashBoardIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const DashBoardIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={dashBoardSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={dashBoardSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 开发机图标
@@ -131,9 +135,9 @@ const datasetSVG = () => (
   </svg>
 );
 
-export const DatasetIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const DatasetIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={datasetSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={datasetSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 我的数据集图标
@@ -173,9 +177,9 @@ const privateDatasetSVG = () => (
 
 );
 
-export const PrivateDatasetIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const PrivateDatasetIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={privateDatasetSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={privateDatasetSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 公共数据集图标
@@ -229,9 +233,9 @@ const publicDatasetSVG = () => (
 
 );
 
-export const PublicDatasetIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const PublicDatasetIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={publicDatasetSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={publicDatasetSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 镜像图标
@@ -269,9 +273,9 @@ const privateImageSVG = () => (
   </svg>
 );
 
-export const PrivateImageIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const PrivateImageIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={privateImageSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={privateImageSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 公共镜像图标
@@ -309,9 +313,9 @@ const publicImageSVG = () => (
   </svg>
 );
 
-export const PublicImageIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const PublicImageIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={publicImageSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={publicImageSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 作业图标
@@ -357,7 +361,7 @@ const clusterSVG = () => (
 );
 export const ClusterIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={clusterSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={clusterSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 创建应用图标
@@ -380,7 +384,7 @@ const createAppSVG = () => (
 );
 export const CreateAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={createAppSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={createAppSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 
@@ -409,7 +413,7 @@ const trainJobSVG = () => (
 );
 export const TrainJobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={trainJobSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={trainJobSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 推理图标
@@ -429,7 +433,7 @@ const inferSVG = () => (
 );
 export const InferIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={inferSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={inferSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 正在运行作业图标
@@ -461,7 +465,7 @@ const runningJobsSVG = () => (
 );
 export const RunningJobsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={runningJobsSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={runningJobsSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 已结束作业图标
@@ -485,7 +489,7 @@ const historyJobsSVG = () => (
 );
 export const HistoryJobsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={historyJobsSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={historyJobsSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 算法图标
@@ -508,7 +512,7 @@ const algorithmSVG = () => (
 
 export const AlgorithmIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={algorithmSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={algorithmSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 我的算法图标
@@ -534,7 +538,7 @@ const privateAlgorithmSVG = () => (
 
 export const PrivateAlgorithmIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={privateAlgorithmSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={privateAlgorithmSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 公共算法图标
@@ -572,7 +576,7 @@ const publicAlgorithmSVG = () => (
 );
 export const PublicAlgorithmIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={publicAlgorithmSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={publicAlgorithmSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 模型图标
@@ -593,7 +597,7 @@ const modelSVG = () => (
 );
 export const ModelIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={modelSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={modelSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 
@@ -621,7 +625,7 @@ const privateModelSVG = () => (
 );
 export const PrivateModelIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={privateModelSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={privateModelSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 公共模型图标
@@ -662,7 +666,7 @@ const publicModelSVG = () => (
 );
 export const PublicModelIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={publicModelSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={publicModelSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));
 
 // 文件图标
@@ -685,7 +689,7 @@ const fileSVG = () => (
   </svg>
 
 );
-export const fileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
+export const FileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={fileSVG} {...props} ref={ref} style={{ transform: "scale(0.9)" }} />
+  <Icon component={fileSVG} ref={ref} style={{ transform: "scale(0.9)" }} {...props} />
 ));

@@ -105,6 +105,10 @@ export default {
         platformOverview:"平台概览",
         contact:"当前没有可用集群,请稍后再试或联系管理员。",
       },
+      quickEntry:{
+        saveSuccessfully: "保存成功",
+        saveFailed: "保存失败",
+      },
       notificationCard: {
         message: "消息",
         check: "查看全部 >",

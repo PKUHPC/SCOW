@@ -106,6 +106,11 @@ export const appSchema = z.object({ id: z.string(), name: z.string(), logoPath: 
 
 export type AppSchema = z.infer<typeof appSchema>;
 
+export interface ClusterAppsResultSchema {
+  clusterId: string;
+  apps: AppSchema[];
+};
+
 const I18nStringSchema = z.union([
   z.string(),
   z.object({
@@ -153,37 +158,77 @@ const ClusterConfig = z.object({
   partitions: z.array(PartitionSchema),
 });
 
-
 export const listAvailableApps = procedure
   .meta({
     openapi: {
-      method: "GET",
+      method: "POST",
       path: "/apps",
       tags: ["app"],
       summary: "List all Available Apps",
     },
   })
-  .input(z.object({ clusterId: z.string() }))
-  .output(z.object({ apps: z.array(appSchema) }))
+  .input(z.object({ clusterIds: z.array(z.string()) }))
+  .output(z.array(z.object({
+    clusterId: z.string(),
+    apps: z.array(appSchema),
+  })))
   .query(async ({ input, ctx: { user } }) => {
-    const { clusterId } = input;
+    const { clusterIds } = input;
 
+    // 获取用户可访问的所有集群
     const currentClusterIds = await getCurrentClusters(user.identityId);
-    checkClusterAvailable(currentClusterIds, clusterId);
+    const validClusterIds: string[] = [];
+    // 验证所有请求的集群是否可用
+    clusterIds.forEach((clusterId) => {
+      try {
+        checkClusterAvailable(currentClusterIds, clusterId);
+        validClusterIds.push(clusterId);
+      } catch (error) {
+        logger.error(
+          `failed to get cluster ${clusterId}'s available apps: `,
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      }
+    });
 
-    // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
-    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
-      const availableApps = await libGetUserAvailableClusterApps(
-        logger, clusterId, user.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-      return availableApps;
+    const results = await Promise.allSettled(validClusterIds.map(async (clusterId) => {
+      // 如果开启了管理系统的授权应用功能
+      if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
+        const availableApps = await libGetUserAvailableClusterApps(
+          logger,
+          clusterId,
+          user.identityId,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+
+        return { ...availableApps, clusterId };
+      }
+
+      const appsConfig = getClusterAppConfigs(clusterId);
+
+      return {
+        apps: Object.keys(appsConfig).map((appId) => ({
+          id: appId,
+          name: appsConfig[appId].name,
+          logoPath: appsConfig[appId].logoPath || undefined,
+        })),
+        clusterId,
+      };
+    }));
+
+    // 只返回成功获取到的集群应用信息
+    const successfulResults = [];
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        successfulResults.push(result.value);
+      } else {
+        const errorInfo = result.reason;
+        logger.error(`failed to get cluster ${errorInfo.clusterId}'s available apps: ${errorInfo.error.message}`);
+      }
     }
 
-    const apps = getClusterAppConfigs(clusterId);
-
-    return {
-      apps: Object.keys(apps)
-        .map((x) => ({ id: x, name: apps[x].name, logoPath: apps[x].logoPath || undefined })),
-    };
+    return successfulResults;
   });
 
 export const getAppMetadata = procedure

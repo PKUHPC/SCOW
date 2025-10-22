@@ -13,22 +13,21 @@ import {
   arrayMove,
   rectSortingStrategy,
   SortableContext } from "@dnd-kit/sortable";
-import { Entry } from "@scow/protos/build/portal/dashboard";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { message } from "antd";
 import { join } from "path";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "src/apis";
-import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
-import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/utils/cluster";
 import { formatEntryId, getEntryBaseName,
   getEntryExtraInfo, getEntryIcon,
   getEntryLogoPath } from "src/utils/dashboard";
+import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 import { styled } from "styled-components";
 
+import { AppWithCluster, Entry } from ".";
 import { AddEntryModal } from "./AddEntryModal";
 import { EntryCardItem } from "./CardItem";
-import { AppWithCluster } from "./QuickEntry";
+import { ClusterNotAvailablePage } from "./ClusterNotAvailablePage";
 import { SortableItem } from "./SortableItem";
 
 const ItemsContainer = styled.div`
@@ -45,8 +44,21 @@ interface Props {
   apps: AppWithCluster,
   currentClusters: Cluster[],
   publicConfigClusters: Cluster[],
+  quickEntryType?: "ai" | "portal";
+  languageId: string,
+  iconMap: Record<string, React.ReactElement>;
+  entryItems: {
+    defaultEntries: Entry[];
+    staticEntries: Entry[];
+  }
+  publicPath: string,
+  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
+  onSaveQuickEntries: (newItems: Entry[]) => void
 }
-const p = prefix("pageComp.dashboard.sortable.");
+
+type itemEntry = Entry & {
+  originalId?: string;
+};
 
 const ItemContainer = styled.div`
   position: relative;
@@ -65,13 +77,10 @@ const DeleteIconContainer = styled.div`
 `;
 
 export const Sortable: FC<Props> = ({
-  isEditable, isFinished, quickEntryArray, apps, currentClusters, publicConfigClusters }) => {
-
-  const t = useI18nTranslateToString();
-  const i18n = useI18n();
-
+  isEditable, isFinished, quickEntryArray, apps, currentClusters, publicConfigClusters, quickEntryType,
+  languageId, publicPath, iconMap, loginNodes, entryItems, onSaveQuickEntries }) => {
   // 实际的快捷入口项
-  const [items, setItems] = useState<Entry []>(quickEntryArray);
+  const [items, setItems] = useState<itemEntry []>(quickEntryArray);
   // 编辑时临时的快捷入口项
   // 处理id使其唯一，因为不同集群可以有相同的交互式应用
   const [temItems, setTemItems] = useState([...(items.map((x) => ({ ...x, id:formatEntryId(x) }),
@@ -90,17 +99,22 @@ export const Sortable: FC<Props> = ({
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
   const deleteFn = (id: string) => {
+    if (temItems.length === 1) {
+      message.error(getCurrentLangLibWebText(languageId, "cannotBeEmpty"));
+      return;
+    }
     setTemItems(temItems.filter((x) => x.id !== id));
   };
 
-  const addItem = (item: Entry) => {
-    item = { ...item, id:formatEntryId(item) };
+  const addItem = (item: itemEntry) => {
+    item = { ...item, originalId: item.id, id:formatEntryId(item) };
     if (temItems.find((x) => x.id === item.id)) {
-      message.error(t(p("alreadyExist")));
+      message.error(getCurrentLangLibWebText(languageId, "alreadyExist"));
       return;
     }
+
     if (temItems.length >= 10) {
-      message.error(t(p("exceedMaxSize")));
+      message.error(getCurrentLangLibWebText(languageId, "exceedMaxSize"));
       return;
     }
 
@@ -151,7 +165,21 @@ export const Sortable: FC<Props> = ({
 
           case "app": {
             const savedAppClusterId = item.entry.app.clusterId;
-            window.open(join("/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
+            if (quickEntryType === "ai") {
+              window.open(join("jobs", savedAppClusterId, "/createApps", item.entry.app.appId), "_blank");
+            } else {
+              window.open(join("/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
+            }
+            if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
+              return <ClusterNotAvailablePage />;
+            }
+            break;
+          }
+
+          case "clusterPageLink": {
+            const savedAppClusterId = item.entry.clusterPageLink.clusterId;
+            const path = item.entry.clusterPageLink.path;
+            window.open(path.replace(/\/clusterId\//, `/${savedAppClusterId}/`), "_blank");
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;
             }
@@ -166,32 +194,17 @@ export const Sortable: FC<Props> = ({
     [isEditable],
   );
 
-  const saveItems = useCallback(
-    async (newItems) => {
-      await api.saveQuickEntries({ body:{
-        quickEntries:newItems,
-      } })
-        .httpError(200, () => { message.error(t(p("saveFailed"))); })
-        .then(() => {
-          message.success(t(p("saveSuccessfully")));
-        });
-    },
-    [],
-  );
-
   useEffect(() => {
     if (isFinished) {
-      const newItems = [...(temItems.map((x) => ({ ...x, id:x.id.split("-")[0] })))];
+      const newItems = [...(temItems.map((x) => ({ ...x, id: x.originalId || "" })))];
       setItems(newItems);
-      saveItems(newItems);
-
+      onSaveQuickEntries(newItems);
     }
   }, [isFinished]);
 
   useEffect(() => {
-
     // 处理id使其唯一，因为不同集群可以有相同的交互式应用
-    setTemItems([...(items.map((x) => ({ ...x, id:formatEntryId(x) })))]);
+    setTemItems([...(items.map((x) => ({ ...x, originalId: x.id, id:formatEntryId(x) })))]);
   }, [isEditable, items]);
 
   return (
@@ -220,9 +233,11 @@ export const Sortable: FC<Props> = ({
                 <SortableItem
                   id={x.id}
                   key={x.id}
-                  entryBaseName={getEntryBaseName(x, t)}
-                  entryExtraInfo={getEntryExtraInfo(x, i18n.currentLanguage.id, publicConfigClusters)}
+                  entryBaseName={getEntryBaseName(x, languageId)}
+                  entryExtraInfo={getEntryExtraInfo(x, languageId, publicConfigClusters)}
+                  publicPath={publicPath}
                   draggable={isEditable}
+                  iconMap={iconMap}
                   icon={getEntryIcon(x)}
                   /** 如果是已授权应用图标直接使用，如果不是判断是否为已保存的快捷方式，是否有保存的可以展示的图标路径 */
                   logoPath={
@@ -251,9 +266,11 @@ export const Sortable: FC<Props> = ({
             <EntryCardItem
               isDragging
               id={activeId.toString()}
-              entryBaseName={getEntryBaseName(activeItem, t)}
-              entryExtraInfo={getEntryExtraInfo(activeItem, i18n.currentLanguage.id, publicConfigClusters)}
+              entryBaseName={getEntryBaseName(activeItem, languageId)}
+              entryExtraInfo={getEntryExtraInfo(activeItem, languageId, publicConfigClusters)}
+              publicPath={publicPath}
               draggable={isEditable}
+              iconMap={iconMap}
               icon={getEntryIcon(activeItem)}
               logoPath={getEntryLogoPath(activeItem, apps)}
             />
@@ -266,6 +283,11 @@ export const Sortable: FC<Props> = ({
         apps={apps}
         addItem={addItem}
         clusters={currentClusters}
+        languageId={languageId}
+        publicPath={publicPath}
+        loginNodes={loginNodes}
+        iconMap={iconMap}
+        entryItems={entryItems}
       ></AddEntryModal>
     </div>
   );

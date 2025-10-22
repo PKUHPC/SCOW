@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { forwardRef, HTMLAttributes } from "react";
 import { styled } from "styled-components";
 
@@ -26,12 +14,14 @@ export type EntryCardItemProps = CardItemProps & {
   entryBaseName: string,
   entryExtraInfo?: string[];
   id: string,
+  iconMap: Record<string, React.ReactElement>;
+  publicPath: string,
   icon?: string,
   logoPath?: string;
 };
 
 export const EntryCardItem = forwardRef<HTMLDivElement, EntryCardItemProps>
-(({ entryBaseName, entryExtraInfo, icon, logoPath, children, ...props }, ref) => {
+(({ entryBaseName, entryExtraInfo, publicPath, icon, iconMap, logoPath, children, ...props }, ref) => {
 
   return (
     <CardItem ref={ref} {...props}>
@@ -40,6 +30,8 @@ export const EntryCardItem = forwardRef<HTMLDivElement, EntryCardItemProps>
         icon={icon}
         logoPath={logoPath}
         entryExtraInfo={entryExtraInfo}
+        publicPath={publicPath}
+        iconMap={iconMap}
       />
 
     </CardItem>

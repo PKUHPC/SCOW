@@ -1,36 +1,27 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { Entry } from "@scow/protos/build/portal/dashboard";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { Button, Modal } from "antd";
 import React, { useMemo, useState } from "react";
-import { Localized, prefix, useI18nTranslateToString } from "src/i18n";
-import { SelectClusterModal } from "src/pageComponents/dashboard/SelectClusterModal";
 import { Cluster } from "src/utils/cluster";
 import { getEntryBaseName, getEntryIcon } from "src/utils/dashboard";
+import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 import { styled, useTheme } from "styled-components";
 
+import { AppWithCluster, Entry } from ".";
 import Bullet from "./Bullet";
 import { EntryItem } from "./EntryItem";
-import { AppWithCluster, defaultEntry } from "./QuickEntry";
+import { SelectClusterModal } from "./SelectClusterModal";
 
 export enum EntryCase {
   shell,
   app,
+  clusterPageLink,
 }
 export interface IncompleteEntryInfo {
   id: string;
   name: string;
   case: EntryCase;
+  path?: string;
+  icon?: string;
 }
 export interface Props {
   open: boolean;
@@ -38,6 +29,14 @@ export interface Props {
   addItem: (item: Entry) => void;
   apps: AppWithCluster;
   clusters: Cluster[];
+  languageId: string;
+  iconMap: Record<string, React.ReactElement>;
+  entryItems: {
+    defaultEntries: Entry[];
+    staticEntries: Entry[];
+  }
+  publicPath: string,
+  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
 }
 
 const ItemsContainer = styled.div`
@@ -59,42 +58,26 @@ const ItemContainer = styled.div`
   background-color: ${(p) => p.theme.token.colorBgBlur};
 `;
 
-const p = prefix("pageComp.dashboard.addEntryModal.");
-
 export const AddEntryModal: React.FC<Props> = ({
   open,
   onClose,
   addItem,
   apps,
   clusters,
+  languageId,
+  iconMap,
+  loginNodes,
+  entryItems,
+  publicPath,
 }) => {
-  const t = useI18nTranslateToString();
+  const [selectClusterOpen, setSelectClusterOpen] = useState(false);
+  const [needLoginNode, setNeedLoginNode] = useState(false);
+  // 可以创建该App的集群
+  const [clustersToSelectedApp, setClustersToSelectedApp] = useState<Cluster[]>([]);
+  // 新建快捷方式的部分信息
+  const [incompleteEntryInfo, setIncompleteEntryInfo] = useState<IncompleteEntryInfo | null>(null);
 
-  const staticEntries: Entry[] = defaultEntry.concat([
-    {
-      id:"desktop",
-      name:"desktop",
-      entry:{
-        $case:"pageLink",
-        pageLink:{
-          path: "/desktop",
-          icon:"DesktopOutlined",
-        },
-      },
-    },
-    {
-      id:"shell",
-      name:"shell",
-      entry:{
-        $case:"shell",
-        shell:{
-          clusterId:"",
-          loginNode:"",
-          icon:"MacCommandOutlined",
-        },
-      },
-    },
-  ]);
+  const collectionEntry: Entry[] = [...entryItems.defaultEntries, ...entryItems.staticEntries ];
 
   // 所有可创建的app
   const appInfo = useMemo(() => {
@@ -114,15 +97,7 @@ export const AddEntryModal: React.FC<Props> = ({
     return displayApp;
   }, [apps]);
 
-  const [selectClusterOpen, setSelectClusterOpen] = useState(false);
-  const [needLoginNode, setNeedLoginNode] = useState(false);
-  // 可以创建该App的集群
-  const [clustersToSelectedApp, setClustersToSelectedApp] = useState<Cluster[]>([]);
-  // 新建快捷方式的部分信息
-  const [incompleteEntryInfo, setIncompleteEntryInfo] = useState<IncompleteEntryInfo | null>(null);
-
   const handleClick = (item: Entry | IncompleteEntryInfo) => {
-
     if ((item as Entry).entry?.$case === "shell") {
       setNeedLoginNode(true);
       setClustersToSelectedApp(clusters);
@@ -145,11 +120,23 @@ export const AddEntryModal: React.FC<Props> = ({
       },
       );
     }
+    else if ("entry" in item && item.entry?.$case === "clusterPageLink") {
+      setNeedLoginNode(false);
+      setClustersToSelectedApp(clusters);
+      setSelectClusterOpen(true);
+      setIncompleteEntryInfo({
+        id:item.id,
+        name:item.name,
+        case:EntryCase.clusterPageLink,
+        path:item?.entry.clusterPageLink.path,
+        icon:item?.entry.clusterPageLink.icon,
+      },
+      );
+    }
     else {
       addItem(item);
       onClose();
     }
-
   };
 
   const theme = useTheme();
@@ -166,7 +153,7 @@ export const AddEntryModal: React.FC<Props> = ({
               marginRight:"1em",
             }}
             />
-            <Localized id={p("addQuickEntry")} />
+            <span>{getCurrentLangLibWebText(languageId, "addQuickEntry")}</span>
           </>
         )}
         open={open}
@@ -175,17 +162,19 @@ export const AddEntryModal: React.FC<Props> = ({
         destroyOnClose
         footer={[
           <Button key="back" onClick={onClose}>
-            {t(p("cancel"))}
+            {getCurrentLangLibWebText(languageId, "cancel")}
           </Button>,
         ]}
       >
         <ItemsContainer>
           {
-            staticEntries.map((item, idx) => (
+            collectionEntry.map((item, idx) => (
               <ItemContainer key={idx} onClick={() => { handleClick(item); }}>
                 <EntryItem
-                  entryBaseName={getEntryBaseName(item, t)}
+                  entryBaseName={getEntryBaseName(item, languageId)}
+                  iconMap={iconMap}
                   icon={getEntryIcon(item)}
+                  publicPath={publicPath}
                 />
               </ItemContainer>
             ),
@@ -199,7 +188,9 @@ export const AddEntryModal: React.FC<Props> = ({
               >
                 <EntryItem
                   entryBaseName={item.name}
+                  iconMap={iconMap}
                   logoPath={apps[item.id].app.logoPath}
+                  publicPath={publicPath}
                 />
               </ItemContainer>
             ),
@@ -215,6 +206,8 @@ export const AddEntryModal: React.FC<Props> = ({
         clusters={clustersToSelectedApp}
         addItem={addItem}
         closeAddEntryModal={onClose}
+        languageId={languageId}
+        loginNodes={loginNodes}
       />
     </>
   );

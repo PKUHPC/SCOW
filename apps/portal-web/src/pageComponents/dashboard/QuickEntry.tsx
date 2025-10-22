@@ -1,91 +1,152 @@
+import { QuickEntry as LibQuickEntry } from "@scow/lib-web/build/components/quickEntry";
 import { Entry } from "@scow/protos/build/portal/dashboard";
-import { Button, Spin } from "antd";
-import { useCallback, useState } from "react";
+import { message } from "antd";
+import { useCallback } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
-import { Localized, prefix } from "src/i18n";
-import { EntryEditIcon } from "src/icons/headerIcons/headerIcons";
-import { DashboardSection } from "src/pageComponents/dashboard/DashboardSection";
-import { Sortable } from "src/pageComponents/dashboard/Sortable";
-import { App } from "src/pages/api/app/listAvailableApps";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { AllJobsIcon, AppSessionsIcon, DesktopIcon, FileManagerIcon,RunningJobsIcon,
+  ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { Cluster } from "src/utils/cluster";
-import { styled } from "styled-components";
+import { publicConfig } from "src/utils/config";
 
-const CardsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-`;
-
-const EditButton = styled(Button)`
-`;
-
+interface App { id: string; name: string; logoPath?: string; };
 
 export type AppWithCluster = Record<string, {
   app: App;
   clusters: Cluster[];
 }>;
 
-interface Props {
-  currentClusters: Cluster[];
-  publicConfigClusters: Cluster[];
-}
+export const QuickEntry: React.FC = () => {
 
-export const defaultEntry: Entry[] = [
-  {
-    id:"submitJob",
-    name:"submitJob",
-    entry:{
-      $case:"pageLink",
-      pageLink:{
-        path: "/jobs/submit",
-        icon:"PlusCircleOutlined",
-      },
-    },
-  },
-  {
-    id:"runningJob",
-    name:"runningJobs",
-    entry:{
-      $case:"pageLink",
-      pageLink:{
-        path: "/jobs/runningJobs",
-        icon:"BookOutlined",
-      },
-    },
-  },
-  {
-    id:"allJobs",
-    name:"allJobs",
-    entry:{
-      $case:"pageLink",
-      pageLink:{
-        path: "/jobs/allJobs",
-        icon:"AllJobsOutlined",
-      },
-    },
-  },
-  {
-    id:"savedJobs",
-    name:"savedJobs",
-    entry:{
-      $case:"pageLink",
-      pageLink:{
-        path: "/jobs/savedJobs",
-        icon:"SaveOutlined",
-      },
-    },
-  },
-];
-const p = prefix("pageComp.dashboard.quickEntry.");
+  const p = prefix("pageComp.dashboard.quickEntry.");
+  const t = useI18nTranslateToString();
 
-export const QuickEntry: React.FC<Props> = ({ currentClusters, publicConfigClusters }) => {
+  const languageId = useI18n().currentLanguage.id;
 
-  const { data, isLoading:getQuickEntriesLoading } = useAsync({ promiseFn: useCallback(async () => {
-    return await api.getQuickEntries({});
-  }, []) });
+  const { loginNodes } = useStore(LoginNodeStore);
+  const { publicConfigClusters, currentClusters } = useStore(ClusterInfoStore);
+
+  const iconMap = {
+    "PlusCircleOutlined": <SubmitJobIcon />,
+    "BookOutlined": <RunningJobsIcon />,
+    "SaveOutlined": <TemplateJobIcon />,
+    "DesktopOutlined": <DesktopIcon />,
+    "MacCommandOutlined": <ShellIcon />,
+    "AllJobsOutlined":<AllJobsIcon />,
+    "AppSessionsIcon":<AppSessionsIcon />,
+    "FileManagerIcon":<FileManagerIcon />,
+  };
+
+  const entryItems = {
+    defaultEntries:[
+      {
+        id:"submitJob",
+        name:"submitJob",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/submit",
+            icon:"PlusCircleOutlined",
+          },
+        },
+      },
+      {
+        id:"runningJob",
+        name:"runningJobs",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/runningJobs",
+            icon:"BookOutlined",
+          },
+        },
+      },
+      {
+        id:"allJobs",
+        name:"allJobs",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/allJobs",
+            icon:"AllJobsOutlined",
+          },
+        },
+      },
+      {
+        id:"savedJobs",
+        name:"savedJobs",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/savedJobs",
+            icon:"SaveOutlined",
+          },
+        },
+      },
+    ],
+    staticEntries: [
+      {
+        id:"desktop",
+        name:"desktop",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/desktop",
+            icon:"DesktopOutlined",
+          },
+        },
+      },
+      {
+        id:"shell",
+        name:"shell",
+        entry:{
+          $case:"shell" as const,
+          shell:{
+            clusterId:"",
+            loginNode:"",
+            icon:"MacCommandOutlined",
+          },
+        },
+      },
+      {
+        id:"appSessions",
+        name:"appSessions",
+        entry:{
+          $case:"clusterPageLink" as const,
+          clusterPageLink:{
+            path: "/apps/clusterId/sessions",
+            clusterId:"",
+            icon:"AppSessionsIcon",
+          },
+        },
+      },
+      {
+        id:"fileManage",
+        name:"fileManage",
+        entry:{
+          $case:"clusterPageLink" as const,
+          clusterPageLink:{
+            path: "/files/clusterId/~",
+            clusterId:"",
+            icon:"FileManagerIcon",
+          },
+        },
+      },
+    ],
+  };
+
+  const { data: quickEntriesData, isLoading: getQuickEntriesLoading } =
+    useAsync({ promiseFn: useCallback(async () => {
+      return await api.getQuickEntries({});
+    }, []) });
+
 
   // apps包含在哪些集群上可以创建app
-  const { data:apps, isLoading:getAppsLoading } = useAsync({ promiseFn: useCallback(async () => {
+  const { data: apps } = useAsync({ promiseFn: useCallback(async () => {
     // 检查 currentClusters 是否为空
     if (!currentClusters || currentClusters.length === 0) {
       return {};
@@ -120,47 +181,30 @@ export const QuickEntry: React.FC<Props> = ({ currentClusters, publicConfigClust
     return appWithCluster;
   }, [currentClusters]) });
 
-  const [isEditable, setIsEditable] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const onSaveQuickEntries = async (newItems: Entry[]) => {
+    await api.saveQuickEntries({ body:{
+      quickEntries:newItems,
+    } })
+      .httpError(200, () => { message.error(t(p("saveFailed"))); })
+      .then(() => {
+        message.success(t(p("saveSuccessfully")));
+      });
+  };
 
   return (
-    <DashboardSection
-      style={{ marginBottom: "16px", minHeight: "320px", boxShadow: "#0000000D 0px 4px 4px 0px" }}
-      title={ (
-        <Localized id={p("quickEntry")} />
-      )}
-      extra={
-        isEditable ? (
-          <div>
-            <EditButton
-              style={{ marginRight:"20px" }}
-              onClick={() => { setIsEditable(false); setIsFinished(true); }}
-            >
-              <Localized id={p("finish")} />
-            </EditButton>
-            <EditButton
-              onClick={() => { setIsEditable(false); }}
-            >
-              <Localized id={p("cancel")} />
-            </EditButton>
-          </div>
-        ) : (
-          <EntryEditIcon onClick={() => { setIsEditable(true); setIsFinished(false); }}></EntryEditIcon>
-        )}
-    >
-      <CardsContainer>
-        {getQuickEntriesLoading || getAppsLoading ?
-          <Spin /> : (
-            <Sortable
-              isEditable={isEditable}
-              isFinished={isFinished}
-              quickEntryArray={data?.quickEntries.length ? data?.quickEntries : defaultEntry }
-              apps={apps ?? {}}
-              currentClusters={currentClusters}
-              publicConfigClusters={publicConfigClusters}
-            ></Sortable>
-          )}
-      </CardsContainer>
-    </DashboardSection>
+    <LibQuickEntry
+      isLoading={getQuickEntriesLoading}
+      currentClusters={currentClusters}
+      publicConfigClusters={publicConfigClusters}
+      publicPath={publicConfig.PUBLIC_PATH}
+      languageId={languageId}
+      entryItems={entryItems}
+      iconMap={iconMap}
+      loginNodes={loginNodes}
+      quickEntriesData={quickEntriesData?.quickEntries?.length ?
+        quickEntriesData.quickEntries : entryItems.defaultEntries}
+      availableApps={apps || {}}
+      onSaveQuickEntries={onSaveQuickEntries}
+    />
   );
 };

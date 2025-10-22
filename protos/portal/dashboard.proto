@@ -20,6 +20,13 @@ message PageLinkEntry {
   string icon = 2;
 }
 
+message ClusterPageLinkEntry {
+  string cluster_id = 1;
+  string path = 2;
+  // antd的图标ID
+  string icon = 3;
+}
+
 message ShellEntry {
   string cluster_id = 1;
   string login_node = 2;
@@ -44,6 +51,7 @@ message Entry {
     PageLinkEntry page_link = 3;
     ShellEntry shell = 4;
     AppEntry app = 5;
+    ClusterPageLinkEntry cluster_page_link = 6;
   }
 }
 message GetQuickEntriesRequest {

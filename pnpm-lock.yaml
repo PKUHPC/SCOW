@@ -2517,6 +2517,15 @@ importers:
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.8
         version: 0.17.8(@grpc/grpc-js@1.12.5)
+      '@dnd-kit/core':
+        specifier: 6.3.1
+        version: 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/sortable':
+        specifier: 10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/utilities':
+        specifier: 3.2.2
+        version: 3.2.2(react@18.3.1)
       '@grpc/grpc-js':
         specifier: 1.12.5
         version: 1.12.5
@@ -2538,6 +2547,9 @@ importers:
       react-async:
         specifier: 10.0.1
         version: 10.0.1(react@18.3.1)
+      simstate:
+        specifier: 3.0.1
+        version: 3.0.1(react@18.3.1)
       zod:
         specifier: 3.24.1
         version: 3.24.1

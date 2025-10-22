@@ -582,6 +582,8 @@ export default {
         finish:"完成",
         cancel:"取消",
         edit:"编辑",
+        saveFailed:"保存失败",
+        saveSuccessfully:"保存成功",
       },
       sortable:{
         alreadyExist:"已存在该快捷方式",

@@ -1,24 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Entry } from "@scow/protos/build/portal/dashboard";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { Form, Modal, Select } from "antd";
 import React, { useState } from "react";
-import { useStore } from "simstate";
-import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { Cluster } from "src/utils/cluster";
+import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
+import { getI18nConfigCurrentText } from "src/utils/systemLanguage";
 
+import { Entry } from ".";
 import { EntryCase, IncompleteEntryInfo } from "./AddEntryModal";
 
 export interface Props {
@@ -29,13 +16,14 @@ export interface Props {
   addItem: (item: Entry) => void;
   incompleteEntryInfo: IncompleteEntryInfo | null;
   closeAddEntryModal: () => void;
+  languageId: string;
+  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
 }
 
 interface FormInfo {
   cluster: string;
   loginNode?: string;
 }
-const p = prefix("pageComp.dashboard.changeClusterModal.");
 
 export const SelectClusterModal: React.FC<Props> = ({
   open,
@@ -45,24 +33,28 @@ export const SelectClusterModal: React.FC<Props> = ({
   addItem,
   incompleteEntryInfo,
   closeAddEntryModal,
+  languageId,
+  loginNodes,
 }) => {
-  const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
-
   const [form] = Form.useForm<FormInfo>();
 
   const clustersOptions = clusters.map((x) => ({ value:x.id, label:getI18nConfigCurrentText(x.name, languageId) }));
-  const { loginNodes } = useStore(LoginNodeStore);
   const [loginNodesOptions, setLoginNodesOptions] = useState<{}[]>([]);
 
   const handelClusterChange = (cluster: string) => {
-    const nodes = loginNodes[cluster].map((x) => ({ value:x.address, label:x.name }));
+    let nodes;
+    if (Array.isArray(loginNodes) && typeof loginNodes[0] === "string") {
+      nodes = loginNodes.map((x) => ({ value: x, label: x }));
+    } else {
+      nodes = loginNodes?.[cluster]?.map((x) => ({ value:x.address, label:x.name })) || [];
+    }
     setLoginNodesOptions(nodes);
     form.resetFields(["loginNode"]);
   };
 
   const onFinish = async () => {
     const { cluster, loginNode } = await form.validateFields();
+
     if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.shell) {
       addItem({
         id:incompleteEntryInfo.id,
@@ -88,13 +80,26 @@ export const SelectClusterModal: React.FC<Props> = ({
           },
         } });
     }
+    else if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.clusterPageLink) {
+      addItem({
+        id:incompleteEntryInfo.id,
+        name:incompleteEntryInfo.name,
+        entry:{
+          $case:"clusterPageLink",
+          clusterPageLink:{
+            clusterId:cluster,
+            path: incompleteEntryInfo.path || "",
+            icon: incompleteEntryInfo.icon || "",
+          },
+        } });
+    }
     form.resetFields();
     onClose();
     closeAddEntryModal();
   };
   return (
     <Modal
-      title={t(p("selectCluster"))}
+      title={getCurrentLangLibWebText(languageId, "selectCluster")}
       open={open}
       onOk={onFinish}
       width={400}
@@ -102,7 +107,6 @@ export const SelectClusterModal: React.FC<Props> = ({
       onCancel={onClose}
       destroyOnClose
     >
-
       <Form
         form={form}
         wrapperCol={{ span: 18 }}
@@ -110,7 +114,7 @@ export const SelectClusterModal: React.FC<Props> = ({
       >
         <Form.Item
           rules={[{ required: true }]}
-          label={t(p("cluster"))}
+          label={getCurrentLangLibWebText(languageId, "cluster")}
           name="cluster"
         >
           <Select
@@ -122,7 +126,7 @@ export const SelectClusterModal: React.FC<Props> = ({
         {needLoginNode ? (
           <Form.Item
             rules={[{ required: true }]}
-            label={t(p("loginNode"))}
+            label={getCurrentLangLibWebText(languageId, "loginNode")}
             name="loginNode"
           >
             <Select

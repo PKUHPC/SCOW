@@ -39,14 +39,6 @@ const createEmptyOverview = (): PlatformOverview => ({
 
 const NotificationCol = styled(Col)`
 padding-bottom: 16px;
-
-/* 默认隐藏消息部分 */
-display: none;
-
-/* 在屏幕宽度达到 1200px 时显示消息部分 */
-@media (min-width: 1200px) {
-  display: block;
-}
 `;
 
 const DashboardPageContent = styled.div``;
@@ -61,7 +53,7 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
 
   const t = useI18nTranslateToString();
 
-  const { publicConfigClusters, currentClusters } = useStore(ClusterInfoStore);
+  const { currentClusters } = useStore(ClusterInfoStore);
 
   // 判断是否显示全部资源
   const { user } = useStore(UserStore);
@@ -267,14 +259,11 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
     <DashboardPageContent>
       <Head title={t("pages.dashboard.title")} />
       <Row gutter={[16, 16]} wrap={true}>
-        <Col sm={24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
-          <QuickEntry
-            currentClusters={currentClusters}
-            publicConfigClusters={publicConfigClusters}
-          />
+        <Col sm={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
+          <QuickEntry />
         </Col>
         {publicConfig.NOTIF_ENABLED && (
-          <NotificationCol xl={7}>
+          <NotificationCol md={7} xl={7}>
             <NotificationCard />
           </NotificationCol>
         )}

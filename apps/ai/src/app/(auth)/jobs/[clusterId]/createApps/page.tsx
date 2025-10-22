@@ -15,7 +15,7 @@ interface FilterForm {
 }
 
 const useClusterAppConfigQuery = (clusterId: string) => {
-  return trpc.jobs.listAvailableApps.useQuery({ clusterId });
+  return trpc.jobs.listAvailableApps.useQuery({ clusterIds: [clusterId]});
 };
 
 export default function Page({ params }: { params: { clusterId: string } }) {
@@ -44,14 +44,14 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
 
-    if (!data?.apps || isLoading) return undefined;
+    if (!data?.[0].apps || isLoading) return undefined;
 
     // 确保 query.appName 是有效的字符串
     const searchTerm = query.appName?.trim().toLowerCase() || "";
     if (!searchTerm) {
-      return data;
+      return data?.[0];
     }
-    const filteredValues = data.apps
+    const filteredValues = data?.[0].apps
       .filter((app) => app.name.toLowerCase().includes(searchTerm));
     return { apps: filteredValues };
 

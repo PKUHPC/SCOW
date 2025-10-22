@@ -6,7 +6,7 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { join } from "path";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmIcon, ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
-  DatasetIcon, DevHostIcon, fileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
+  DatasetIcon, DevHostIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
   PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
   PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon,
   RunningJobsIcon, TrainJobIcon, ViewDevHostIcon } from "src/icons/menuIcons";
@@ -156,12 +156,12 @@ export const userRoutes: (
     },
     ...(currentClusters.length > 0 ? [
       {
-        Icon: fileIcon,
+        Icon: FileIcon,
         text: t("routes.file"),
         path: "/files",
         clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
         children: currentClusters.map((cluster) => ({
-          Icon: fileIcon,
+          Icon: FileIcon,
           text: getI18nConfigCurrentText(cluster.name, languageId),
           path: `/files/${cluster.id}`,
           clickToPath: `/files/${cluster.id}/~`,

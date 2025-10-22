@@ -11,6 +11,7 @@
  */
 
 import { Cluster as ClusterWithConfig, ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
+import { I18nStringType } from "@scow/config/build/i18n";
 
 export const getSortedClusterIds = (clusters: Record<string, Partial<SimpleClusterSchema>>): string[] => {
   return Object.keys(clusters)
@@ -41,4 +42,5 @@ export const getSortedClusters = (clusters: Record<string, ClusterConfigSchema>)
     ).map((id) => ({ id, ...clusters[id] }));
 };
 
+export interface Cluster { id: string; name: I18nStringType; };
 

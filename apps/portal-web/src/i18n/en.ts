@@ -550,6 +550,8 @@ export default {
         finish:"Finish",
         cancel:"Cancel",
         edit:"Edit",
+        saveFailed:"Save failed",
+        saveSuccessfully:"Save succeeded",
       },
       sortable:{
         alreadyExist:"Link already exists",
