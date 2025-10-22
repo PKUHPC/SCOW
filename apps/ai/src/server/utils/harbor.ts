@@ -86,7 +86,7 @@ export class HarborClient {
       artifacts = artifacts.concat(data);
       hasMore = data.length === this.pageSize;
       total += data.length;
-      logger.info(`[Harbor] ${repoPath} artifacts p${page}: +${data.length} (total=${total})`);
+      logger.debug(`[Harbor] ${repoPath} artifacts p${page}: +${data.length} (total=${total})`);
       page++;
     }
     return artifacts;

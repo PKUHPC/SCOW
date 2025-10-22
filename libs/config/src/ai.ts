@@ -86,6 +86,12 @@ export const AiConfigSchema = Type.Object({
       },
     }),
   }),
+
+  imageCleanup: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否开启定期清理定期删除harbor里不存在的镜像", default: true }),
+    // 周期：默认每1小时（每小时0点）
+    cron: Type.String({ description: "删除消息的周期的cron表达式", default: "0 * * * *" }),
+  })),
 });
 
 const AT_CONFIG_NAME = "ai/config";

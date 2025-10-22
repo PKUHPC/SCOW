@@ -67,3 +67,10 @@ jobMonitor:
 # - name: notif
 # 消息系统的部署Url，此url需能被外网访问
 #   url: ""
+
+# 选配：清理harbor中不存在的镜像
+imageCleanup:
+  # 选配，默认为开启
+  enabled: true
+  # 选配：默认为 0 * * * *
+  cron: "0 * * * *"

@@ -194,6 +194,13 @@ jobMonitor:
     cpu: 24
     memory: 26
     network: 46
+
+# 选配：清理harbor中不存在的镜像
+imageCleanup:
+  # 选配，默认为开启
+  enabled: true
+  # 选配：默认为 0 * * * *
+  cron: "0 * * * *"
 ```
 
 ### 编写文件管理配置
