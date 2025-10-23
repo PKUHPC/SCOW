@@ -15,6 +15,8 @@ export function deleteUserToken(res?: NextApiResponse) {
 
 type RequestType = NextRequest | IncomingMessage | NextApiRequest | NextPageContext["req"];
 
+const authTokenHeaderKey = "x-scow-api-auth-token";
+
 // 先找Authorization header，再找cookie
 export function getUserToken(req: RequestType): string | undefined {
 
@@ -22,16 +24,17 @@ export function getUserToken(req: RequestType): string | undefined {
 
   // try in header
   const authHeaderValue = (req instanceof Request)
-    ? req.headers.get("authorization") : req.headers.authorization;
+    ? req.headers.get(authTokenHeaderKey)
+    : req.headers[authTokenHeaderKey];
 
   if (authHeaderValue) {
 
     const tokenValue = (Array.isArray(authHeaderValue) ? authHeaderValue[0] : authHeaderValue).trim();
 
-    const parts = tokenValue.split(" ");
-    if (parts.length === 2 && parts[0] === "Bearer") {
-      return parts[1];
+    if (tokenValue) {
+      return tokenValue;
     }
+
   }
 
   const cookieToken = (req instanceof Request)

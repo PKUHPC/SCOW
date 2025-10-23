@@ -10,7 +10,7 @@ SCOW支持使用API调用。由于历史原因，访问不同的组件需要使�
 | 访问系统         | API类型 | API定义  | API认证                          | 如何调用API？ |
 | ---------------- | ------- | -------- | -------------------------------- | ------------- |
 | 门户、管理、审计 | gRPC    | protobuf | 不带有认证，或静态秘密字符串认证 | 通过gRPC      |
-| 量子、AI         | HTTP    | OpenAPI  | SCOW token或静态秘密字符串认证   | 通过HTTP      |
+| 量子、AI         | HTTP    | OpenAPI  | SCOW认证系统产生的token或静态秘密字符串认证   | 通过HTTP      |
 
 # 通过SCOW API调用门户和管理系统
 
@@ -58,10 +58,10 @@ audit:
 
 AI和量子系统使用传统的HTTP API设计，所有API均位于于`/api`下。AI和量子系统的部署路径的`/api/openapi.json`下存在一份[OpenAPI](https://www.openapis.org/)的定义文件。您可以通过访问这个文件来获取系统中所有可用的API。
 
-要调用一个量子或者API系统API，您必须打开[静态秘密字符串认证](#静态秘密字符串认证)，然后在调用API时，传入以下两个`header`
+要调用一个量子或者API系统API，您必须打开[静态秘密字符串认证](#静态秘密字符串认证)，然后在调用API时，传入以下`header`
 
-- `Authorization`：值为`Bearer {静态秘密字符串}`
-- `x-scow-user-id`：值为调用API的用户ID
+- `x-scow-api-auth-token`：`静态秘密字符串` 或者 SCOW认证系统产生的token
+- `x-scow-user-id`：如果`x-scow-api-auith-token`是静态秘密字符串，则必须将调用API的用户ID传入此header；否则无需传递此header
 
 # API认证
 
@@ -89,7 +89,7 @@ scowApi:
     token: <秘密字符串，越长越好>
 ```
 
-当配置好后，任何到服务器的请求都必须带有`authorization` header，其内容为`Bearer <秘密字符串>`。
+当配置好后，任何到gRPC服务器的请求都必须带有`authorization` header，其内容为`Bearer <秘密字符串>`。
 
 门户系统和管理系统前端发送到服务器的请求将会自动带有这个header，无需单独配置。
 

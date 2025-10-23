@@ -36,7 +36,7 @@ export function createQuantumClient(token: string) {
         url: quantumUrl,
         async headers() {
           return {
-            authorization: `Bearer ${token}`,
+            "x-scow-api-auth-token": token,
           };
         },
       }),
