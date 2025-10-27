@@ -148,6 +148,7 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
 
       return () => {
         socket.close();
+        term.dispose();
       };
     }
   }, [container.current]);
