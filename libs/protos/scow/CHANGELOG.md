@@ -1,5 +1,12 @@
 # @scow/protos
 
+## 1.0.30
+
+### Patch Changes
+
+- b645b74: 抽取 hpc 快捷入口为公共组件，ai 增加快捷入口
+- b645b74: 快捷入口优化及 bugs 修复
+
 ## 1.0.29
 
 ### Patch Changes

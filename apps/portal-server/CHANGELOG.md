@@ -1,5 +1,20 @@
 # @scow/portal-server
 
+## 1.9.5
+
+### Patch Changes
+
+- Updated dependencies [477db31]
+- Updated dependencies [b645b74]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [b645b74]
+  - @scow/config@1.11.0
+  - @scow/protos@1.0.30
+  - @scow/lib-scow-resource@0.2.14
+  - @scow/lib-server@1.4.5
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.28
+
 ## 1.9.4
 
 ### Patch Changes

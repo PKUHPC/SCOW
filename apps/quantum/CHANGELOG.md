@@ -1,5 +1,27 @@
 # @scow/quantum
 
+## 0.1.5
+
+### Patch Changes
+
+- f1801d4: AI 和量子 API 获取认证 token 的 header 从 authorization 修改为 x-scow-api-auth-token
+- Updated dependencies [bf8afc6]
+- Updated dependencies [477db31]
+- Updated dependencies [b645b74]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [3d58659]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [b645b74]
+  - @scow/ai-scheduler-adapter-protos@1.1.4
+  - @scow/config@1.11.0
+  - @scow/protos@1.0.30
+  - @scow/lib-web@1.5.5
+  - @scow/lib-operation-log@2.2.5
+  - @scow/lib-scow-resource@0.2.14
+  - @scow/lib-server@1.4.5
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.28
+
 ## 0.1.4
 
 ### Patch Changes

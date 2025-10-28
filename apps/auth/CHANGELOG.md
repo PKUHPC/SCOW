@@ -1,5 +1,14 @@
 # @scow/auth
 
+## 1.9.5
+
+### Patch Changes
+
+- Updated dependencies [477db31]
+- Updated dependencies [bf8afc6]
+  - @scow/config@1.11.0
+  - @scow/lib-server@1.4.5
+
 ## 1.9.4
 
 ### Patch Changes

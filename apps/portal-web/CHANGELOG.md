@@ -1,5 +1,25 @@
 # @scow/portal-web
 
+## 1.9.5
+
+### Patch Changes
+
+- b645b74: 抽取 hpc 快捷入口为公共组件，ai 增加快捷入口
+- b5e4641: 修复 shell 页面多次刷新时前次 shell 组件未被移除的问题
+- b645b74: 快捷入口优化及 bugs 修复
+- Updated dependencies [477db31]
+- Updated dependencies [b645b74]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [b645b74]
+  - @scow/config@1.11.0
+  - @scow/protos@1.0.30
+  - @scow/lib-web@1.5.5
+  - @scow/lib-notification@1.0.15
+  - @scow/lib-operation-log@2.2.5
+  - @scow/lib-scow-resource@0.2.14
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.4
 
 ### Patch Changes

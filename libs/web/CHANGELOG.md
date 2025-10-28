@@ -1,5 +1,19 @@
 # @scow/lib-web
 
+## 1.5.5
+
+### Patch Changes
+
+- b645b74: 抽取 hpc 快捷入口为公共组件，ai 增加快捷入口
+- bf8afc6: ai 作业详情中增加监控 tab
+- b645b74: 快捷入口优化及 bugs 修复
+- Updated dependencies [477db31]
+- Updated dependencies [b645b74]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [b645b74]
+  - @scow/config@1.11.0
+  - @scow/protos@1.0.30
+
 ## 1.5.4
 
 ### Patch Changes

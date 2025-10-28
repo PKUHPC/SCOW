@@ -1,5 +1,13 @@
 # @scow/docs
 
+## 1.4.16
+
+### Patch Changes
+
+- 477db31: AI 定期删除 harbor 里不存在的镜像
+- bf8afc6: 增加 ai 监控的配置(docs/docs/deploy/config/ai/intro.md 中的 config/ai/config.yaml)
+- f1801d4: AI 和量子 API 获取认证 token 的 header 从 authorization 修改为 x-scow-api-auth-token
+
 ## 1.4.15
 
 ### Patch Changes

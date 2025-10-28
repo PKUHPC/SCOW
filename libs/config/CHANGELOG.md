@@ -1,5 +1,15 @@
 # @scow/config
 
+## 1.11.0
+
+### Minor Changes
+
+- bf8afc6: 增加 ai 监控的配置(docs/docs/deploy/config/ai/intro.md 中的 config/ai/config.yaml)
+
+### Patch Changes
+
+- 477db31: 增加 AI 定期删除 harbor 里不存在的镜像的配置(docs/deploy/config/ai/intro.md 中的 config/ai/config.yaml)
+
 ## 1.10.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @scow/lib-scow-resource
 
+## 0.2.14
+
+### Patch Changes
+
+- Updated dependencies [477db31]
+- Updated dependencies [bf8afc6]
+  - @scow/config@1.11.0
+
 ## 0.2.13
 
 ### Patch Changes

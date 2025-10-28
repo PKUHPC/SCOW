@@ -1,5 +1,14 @@
 # @scow/cli
 
+## 1.9.5
+
+### Patch Changes
+
+- 477db31: AI 定期删除 harbor 里不存在的镜像
+- Updated dependencies [477db31]
+- Updated dependencies [bf8afc6]
+  - @scow/config@1.11.0
+
 ## 1.9.4
 
 ### Patch Changes

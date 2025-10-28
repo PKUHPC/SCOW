@@ -1,5 +1,23 @@
 # @scow/mis-web
 
+## 1.9.5
+
+### Patch Changes
+
+- d2fbf16: 修改初始化界面无法获取集群信息的 bug
+- Updated dependencies [477db31]
+- Updated dependencies [b645b74]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [bf8afc6]
+- Updated dependencies [b645b74]
+  - @scow/config@1.11.0
+  - @scow/protos@1.0.30
+  - @scow/lib-web@1.5.5
+  - @scow/lib-notification@1.0.15
+  - @scow/lib-operation-log@2.2.5
+  - @scow/lib-scow-resource@0.2.14
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.4
 
 ### Patch Changes
