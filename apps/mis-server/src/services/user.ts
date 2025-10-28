@@ -751,8 +751,6 @@ export const userServiceServer = plugin((server) => {
       return [{}];
     },
 
-
-
     checkUserNameMatch: async ({ request, em }) => {
       const { userId, name } = request;
 
@@ -781,9 +779,12 @@ export const userServiceServer = plugin((server) => {
     },
 
     getUsers: async ({ request, em }) => {
-      const { tenantName } = request;
+      const { tenantName, userIds } = request;
 
-      const users = await em.find(User, { tenant: { name: tenantName } }, {
+      const users = await em.find(User, {
+        tenant: { name: tenantName },
+        ...userIds.length > 0 ? { userId: { $in: userIds } } : {},
+      }, {
         populate: ["tenant", "accounts", "accounts.account"],
       });
 

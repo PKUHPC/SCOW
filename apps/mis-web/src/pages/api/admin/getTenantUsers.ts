@@ -30,7 +30,7 @@ export default route(GetTenantUsersSchema,
 
     const client = getClient(UserServiceClient);
     const { users } = await asyncClientCall(client, "getUsers", {
-      tenantName: info.tenant,
+      tenantName: info.tenant, userIds: [],
     });
 
     // aggregate the result

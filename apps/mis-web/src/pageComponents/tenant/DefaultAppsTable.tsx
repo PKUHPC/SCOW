@@ -119,13 +119,6 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
 
   return (
     <div>
-      <FilterFormTabs
-        tabs={Object.entries(availableClusters).map(([clusterId, cluster]) => ({
-          title: `${getI18nConfigCurrentText(cluster.name, languageId) || clusterId}`,
-          key: clusterId,
-        }))}
-        onChange={handleClusterChange}
-      />
 
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
@@ -137,24 +130,35 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
             setQuery({ appName: appName === "" ? undefined : appName?.trim() });
           }}
         >
-          <Form.Item
-            label={t(p("appName"))}
-            name="appName"
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("common.search")}</Button>
-          </Form.Item>
-        </Form>
-        <Space>
-          <AddToDefaultAppsButton
-            refresh={reloadTable}
-            defaultAppsData={data}
-            clusterId={selectedClusterId}
-            tenantName={tenantName}
+          <FilterFormTabs
+            tabs={Object.entries(availableClusters).map(([clusterId, cluster]) => ({
+              title: `${getI18nConfigCurrentText(cluster.name, languageId) || clusterId}`,
+              key: clusterId,
+              node: (
+                <>
+                  <Form.Item
+                    label={t(p("appName"))}
+                    name="appName"
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit">{t("common.search")}</Button>
+                  </Form.Item>
+                  <Space>
+                    <AddToDefaultAppsButton
+                      refresh={reloadTable}
+                      defaultAppsData={data}
+                      clusterId={selectedClusterId}
+                      tenantName={tenantName}
+                    />
+                  </Space>
+                </>
+              ),
+            }))}
+            onChange={handleClusterChange}
           />
-        </Space>
+        </Form>
       </FilterFormContainer>
 
       <Table

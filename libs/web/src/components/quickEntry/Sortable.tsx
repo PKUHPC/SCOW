@@ -1,14 +1,8 @@
 import { MinusOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors } from "@dnd-kit/core";
+  closestCenter, DndContext, DragEndEvent, DragOverlay, DragStartEvent,
+  MouseSensor, TouchSensor, useSensor, useSensors,
+} from "@dnd-kit/core";
 import {
   arrayMove,
   rectSortingStrategy,

@@ -121,7 +121,7 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     // 查看该租户下所有用户的操作日志
     const client = getClient(UserServiceClient);
     const { users } = await asyncClientCall(client, "getUsers", {
-      tenantName: info.tenant,
+      tenantName: info.tenant, userIds: [],
     });
 
     // 搜索条件中的userId必须是属于该tenant的

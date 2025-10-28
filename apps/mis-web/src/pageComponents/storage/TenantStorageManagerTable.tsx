@@ -1,4 +1,5 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
@@ -11,6 +12,7 @@ import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormCo
 import { ModalLink } from "src/components/ModalLink";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { QuotaSortFieldType, QuotaSortOrderType } from "src/models/storage";
 import { UserDefaultQuotaChangeModal } from "src/pageComponents/storage/UserDefaultQuotaChangeModal";
 import { UserQuotaChangeModal } from "src/pageComponents/storage/UserQuotaChangeModal";
 import { type GetTenantQuotaSchema, UserQuotaInfo } from "src/pages/api/storage/getTenantQuota";
@@ -26,6 +28,11 @@ interface PageInfo {
 interface FilterForm {
   idOrName: string;
   cluster: Cluster | undefined;
+}
+
+interface SortInfo {
+  field: QuotaSortFieldType | undefined
+  order: QuotaSortOrderType | undefined;
 }
 
 interface Props {
@@ -45,6 +52,10 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
   const languageId = useI18n().currentLanguage.id;
 
   const { message } = App.useApp();
+
+  const [sortInfo, setSortInfo] = useState<SortInfo>({ field: undefined, order: undefined });
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<UserQuotaInfo[]>([]);
 
   const getTenantAssignedClusterIds = useCallback(async () => {
     if (publicConfig.SCOW_RESOURCE_ENABLED) {
@@ -102,14 +113,22 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
     }
     if (!query.cluster || sortedClusters.length <= 0) return;
 
-    return await api.getTenantQuota({ query: {
+    const queryParams: any = {
       ...query,
       cluster: query.cluster.id,
       path: storageConfig.paths[0],
       page: pageInfo.page,
       pageSize: pageInfo.pageSize,
-    } });
-  }, [pageInfo, query]);
+    };
+
+    // 仅在用户主动选择排序时才包含排序字段参数
+    if (sortInfo.field && sortInfo.order) {
+      queryParams.sortField = sortInfo.field;
+      queryParams.sortOrder = sortInfo.order;
+    }
+
+    return await api.getTenantQuota({ query: queryParams });
+  }, [pageInfo, query, sortInfo]);
 
   const { data, isLoading, reload } = useAsync({ promiseFn, skip: !query.cluster });
 
@@ -133,6 +152,7 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
                     idOrName: currentQuery.idOrName,
                   });
                   setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+                  setSortInfo({ field: undefined, order: undefined });
                 } }
               >
                 <FilterFormTabs
@@ -143,10 +163,13 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
                         ...query,
                         cluster,
                       });
+                      setSortInfo({ field: undefined, order: undefined });
                     }
                   } }
                   tabs={sortedClusters.map((cluster) => ({
-                    title: getI18nConfigCurrentText(cluster.name, languageId), key: cluster.id, node: (
+                    title: getI18nConfigCurrentText(cluster.name, languageId),
+                    key: cluster.id,
+                    node: (
                       <>
                         <Space>
                           <Form.Item label={t(pCommon("user"))} name="idOrName">
@@ -169,6 +192,12 @@ export const TenantStorageManagerTable: React.FC<Props> = () => {
               cluster={query.cluster}
               replicaExist={query.cluster ? fullClusterConfigs[query.cluster.id].storage?.replicaExist : false}
               path={storageConfig?.paths[0] || ""}
+              sortInfo={sortInfo}
+              setSortInfo={setSortInfo}
+              selectedRowKeys={selectedRowKeys}
+              setSelectedRowKeys={setSelectedRowKeys}
+              selectedUsers={selectedUsers}
+              setSelectedUsers={setSelectedUsers}
             />
           </div>
         )
@@ -186,55 +215,149 @@ interface StorageInfoTableProps {
   cluster: Cluster | undefined;
   replicaExist: boolean | undefined;
   path: string;
+  sortInfo: SortInfo;
+  setSortInfo: (info: SortInfo) => void;
+  selectedRowKeys: string[];
+  setSelectedRowKeys: (keys: string[]) => void;
+  selectedUsers: UserQuotaInfo[];
+  setSelectedUsers: (users: UserQuotaInfo[]) => void;
 }
 
 
 const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
-  data, pageInfo, setPageInfo, isLoading, reload, cluster, replicaExist, path,
+  data, pageInfo, setPageInfo, isLoading, reload, cluster, replicaExist, path, sortInfo, setSortInfo,
+  selectedRowKeys, setSelectedRowKeys, selectedUsers, setSelectedUsers,
 }) => {
 
   const t = useI18nTranslateToString();
+
+  const { message } = App.useApp();
+
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncInfo, setSyncInfo] = useState<{ lastSyncTime?: string }>({});
+  const [batchQuotaModalOpen, setBatchQuotaModalOpen] = useState(false);
+
+  const handleTableChange = (_, __, sorter) => {
+    // 只有当 sorter 对象存在且有有效的 field 和 order 时才更新排序状态
+    // 避免 Ant Design Table 组件的默认行为导致意外的排序状态设置
+    if (sorter?.field && sorter.order) {
+      setSortInfo({
+        field: sorter.field,
+        order: sorter.order,
+      });
+    } else {
+      // 如果没有有效的排序信息，重置为 undefined
+      setSortInfo({
+        field: undefined,
+        order: undefined,
+      });
+    }
+  };
+
+  // 获取同步信息
+  const fetchSyncInfo = useCallback(async () => {
+    if (!cluster) return;
+    try {
+      const response = await api.getStorageSyncInfo({ query: { cluster: cluster.id, path } });
+      setSyncInfo(response);
+    } catch (error) {
+      console.error("Failed to fetch sync info:", error);
+    }
+  }, [cluster, path]);
+
+  // 同步存储数据
+  const handleSyncStorage = async () => {
+    if (!cluster) return;
+    setSyncLoading(true);
+    try {
+      await api.syncTenantUsersStorageUsage({ body: { cluster: cluster.id, path } });
+      message.success(t(p("syncSuccess")));
+      reload();
+      fetchSyncInfo();
+    } catch {
+      message.error(t(p("syncFailed")));
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // 行选择配置
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys: string[], rows: UserQuotaInfo[]) => {
+      setSelectedRowKeys(keys);
+      setSelectedUsers(rows);
+    },
+  };
+
+  // 初始化时获取同步信息
+  useEffect(() => {
+    fetchSyncInfo();
+  }, [fetchSyncInfo]);
 
   return (
     <>
       <TableTitle justify="space-between">
         {
           data ? (
-            <div>
-              <span>
-                <Space>
-                  {t(p("totalStorage"))}
-                  <span>{formatBytesToString(data.totalStorageBytes)}</span>
-                </Space>
-              </span>
-              <Divider type="vertical" />
-              <span>
-                <Space>
-                  {t(p("remainingStorage"))}
-                  <span>{formatBytesToString(data.remainingStorageBytes)}</span>
-                </Space>
-              </span>
-              <Divider type="vertical" />
-              <Space>
+            <>
+              <div style={{ display: "flex", alignItems: "center" }}>
                 <span>
                   <Space>
-                    {t(p("userDefaultQuota"))}
-                    <span>{formatBytesToGB(data.userDefaultQuotaBytes).toFixed(2) + " GB"}</span>
+                    {t(p("totalStorage"))}
+                    <span>{formatBytesToString(data.totalStorageBytes)}</span>
                   </Space>
                 </span>
-                {
-                  cluster && (
-                    <ChangeDefaultQuotaLink
-                      reload={reload}
-                      cluster={cluster}
-                      path={path}
-                      defaultQuotaBytes={data.userDefaultQuotaBytes}
-                      totalQuotaBytes={data.totalStorageBytes}
-                    >{t(p("edit"))}</ChangeDefaultQuotaLink>
-                  )
-                }
+                <Divider type="vertical" />
+                <span>
+                  <Space>
+                    {t(p("remainingStorage"))}
+                    <span>{formatBytesToString(data.remainingStorageBytes)}</span>
+                  </Space>
+                </span>
+                <Divider type="vertical" />
+                <Space>
+                  <span>
+                    <Space>
+                      {t(p("userDefaultQuota"))}
+                      <span>{formatBytesToGB(data.userDefaultQuotaBytes).toFixed(2) + " GB"}</span>
+                    </Space>
+                  </span>
+                  {
+                    cluster && (
+                      <ChangeDefaultQuotaLink
+                        reload={reload}
+                        cluster={cluster}
+                        path={path}
+                        defaultQuotaBytes={data.userDefaultQuotaBytes}
+                        totalQuotaBytes={data.totalStorageBytes}
+                      >{t(p("edit"))}</ChangeDefaultQuotaLink>
+                    )
+                  }
+                </Space>
+              </div>
+              <Space>
+                <span>
+                  {t(p("lastSyncTime"))}: {syncInfo.lastSyncTime ?
+                    formatDateTime(syncInfo.lastSyncTime) : t(p("notSynced"))}
+                </span>
+                <Button
+                  size="small"
+                  loading={syncLoading}
+                  onClick={handleSyncStorage}
+                  disabled={!cluster}
+                >
+                  {t(p("syncStorage"))}
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => setBatchQuotaModalOpen(true)}
+                  disabled={selectedRowKeys.length === 0}
+                >
+                  {t(p("batchModifyQuota"))}
+                </Button>
               </Space>
-            </div>
+            </>
           ) : undefined
         }
       </TableTitle>
@@ -242,6 +365,7 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
         rowKey={(i) => i.userId}
         dataSource={data?.usersQuotaInfo}
         loading={isLoading}
+        rowSelection={rowSelection}
         pagination={setPageInfo ? {
           current: pageInfo.page,
           defaultPageSize: STORAGE_DEFAULT_PAGE_SIZE,
@@ -251,6 +375,7 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
           onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
         } : false}
         tableLayout="fixed"
+        onChange={handleTableChange}
       >
         <Table.Column<UserQuotaInfo>
           dataIndex="userId"
@@ -273,12 +398,18 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
             </div>
           )}
           render={(_, r) => `${formatBytesToGB(r.quotaBytes).toFixed(2)}`}
+          sorter={true}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={sortInfo.field === "quotaBytes" ? sortInfo.order : undefined}
         />
         <Table.Column<UserQuotaInfo>
-          dataIndex="usedQuotaBytes"
+          dataIndex="usedStorageBytes"
           ellipsis
           title={`${t(p("storageUsed"))} (GB)`}
           render={(_, r) => `${formatBytesToGB(r.usedStorageBytes).toFixed(2)}`}
+          sorter={true}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={sortInfo.field === "usedStorageBytes" ? sortInfo.order : null}
         />
         <Table.Column<UserQuotaInfo>
           title={t(p("operation"))}
@@ -303,6 +434,20 @@ const StorageInfoTable: React.FC<StorageInfoTableProps> = ({
           )}
         />
       </Table>
+      {/* 批量修改配额模态框 */}
+      {batchQuotaModalOpen && cluster && (
+        <UserQuotaChangeModal
+          open={batchQuotaModalOpen}
+          onClose={() => setBatchQuotaModalOpen(false)}
+          reload={reload}
+          cluster={cluster}
+          path={path}
+          selectedUsers={selectedUsers}
+          defaultQuotaBytes={data?.userDefaultQuotaBytes || 0}
+          totalQuotaBytes={data?.totalStorageBytes || 0}
+          isBatch={true}
+        />
+      )}
     </>
   );
 };

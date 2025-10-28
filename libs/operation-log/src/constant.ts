@@ -128,5 +128,7 @@ export const OperationType: OperationTypeEnum = {
   activateNode:"activateNode",
   addToDefaultApps: "addToDefaultApps",
   removeFromDefaultApps: "removeFromDefaultApps",
+  batchSetTenantUsersQuota: "batchSetTenantUsersQuota",
+  syncTenantUsersStorageUsage: "syncTenantUsersStorageUsage",
   createDevHost: "createDevHost",
 };

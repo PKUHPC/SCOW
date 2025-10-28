@@ -112,13 +112,6 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
 
   return (
     <div>
-      <FilterFormTabs
-        tabs={Object.entries(availableClusters).map(([clusterId, cluster]) => ({
-          title: `${getI18nConfigCurrentText(cluster.name, languageId) || clusterId}`,
-          key: clusterId,
-        }))}
-        onChange={handleClusterChange}
-      />
       <FilterFormContainer>
         <Form<FilterForm>
           layout="inline"
@@ -130,15 +123,26 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
-          <Form.Item
-            label={targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}
-            name="filterName"
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("common.search")}</Button>
-          </Form.Item>
+          <FilterFormTabs
+            tabs={Object.entries(availableClusters).map(([clusterId, cluster]) => ({
+              title: `${getI18nConfigCurrentText(cluster.name, languageId) || clusterId}`,
+              key: clusterId,
+              node: (
+                <>
+                  <Form.Item
+                    label={targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}
+                    name="filterName"
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" htmlType="submit">{t("common.search")}</Button>
+                  </Form.Item>
+                </>
+              ),
+            }))}
+            onChange={handleClusterChange}
+          />
         </Form>
       </FilterFormContainer>
 

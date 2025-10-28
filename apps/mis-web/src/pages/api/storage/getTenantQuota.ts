@@ -5,6 +5,9 @@ import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { StorageServiceClient } from "@scow/protos/build/server/storage";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
+import {
+  mapQuotaSortFieldType, mapQuotaSortOrderType, QuotaSortFieldType, QuotaSortOrderType,
+} from "src/models/storage";
 import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
@@ -39,6 +42,8 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
     idOrName: Type.Optional(Type.String()),
     page: Type.Number(),
     pageSize: Type.Optional(Type.Number()),
+    sortField: Type.Optional(QuotaSortFieldType),
+    sortOrder: Type.Optional(QuotaSortOrderType),
   }),
 
   responses: {
@@ -54,7 +59,7 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
 
 export default route(GetTenantQuotaSchema, async (req, res) => {
 
-  const { cluster, path, idOrName, page, pageSize } = req.query;
+  const { cluster, path, idOrName, page, pageSize, sortField, sortOrder } = req.query;
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -80,9 +85,14 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
     }
   }
 
+  const mappedSortField = sortField ? mapQuotaSortFieldType[sortField] : undefined;
+  const mappedSortOrder = sortOrder ? mapQuotaSortOrderType[sortOrder] : undefined;
+
   const client = getClient(StorageServiceClient);
 
   return asyncUnaryCall(client, "getTenantQuota", {
     tenantName: info.tenant, cluster, path, idOrName, page, pageSize,
-  }).then((res) => ({ 200: { ...res } }));
+    sortField: mappedSortField,
+    sortOrder: mappedSortOrder,
+  }).then((res) => ({ 200: { ...res } })).catch((e) => console.log("getTenantQuota error", e));
 });

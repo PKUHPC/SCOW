@@ -761,6 +761,13 @@ export const mockApi: MockApi<typeof api> = {
       "hpc02": { partitionNames: ["compute", "gpu"]},
     },
   }),
+  getStorageSyncInfo: async () => ({
+    syncStarted: false,
+    schedule: "0 * * * *",
+    syncStartTime: "2025-08-22T02:03:38.297Z",
+  }),
+  batchSetTenantUsersQuota: null,
+  syncTenantUsersStorageUsage: null,
   getQuantumJobInfo: async () => ({
     totalCount: 0,
     jobs: [],

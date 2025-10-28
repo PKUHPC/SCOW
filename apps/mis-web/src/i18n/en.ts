@@ -971,12 +971,19 @@ export default {
         clusterNotEnabledStorageManager: "Storage management is not enabled for the available cluster yet",
         storageQuotaTooltip: "The current file system has backup settings which will take up additional storage "
           + "space, so the actual storage available to the user will be less than the storage quota. ",
+        syncStorage: "Update Now",
+        syncSuccess: "Sync Successful",
+        syncFailed: "Sync Failed",
+        notSynced: "Not Synced",
+        lastSyncTime: "Storage usage updated on",
+        batchModifyQuota: "Batch Modify User Quota",
       },
       userDefaultQuotaChangeModal: {
         modifyDefaultQuota: "Modify Default Storage Quota",
         confirm: "Confirm",
         modifyUserDeulatQuotaSuccess: "Successfully modified user default storage quota",
-        modifyPartialSuccess: "System error, modified {} users successfully, failed {} users",
+        modifyPartialSuccess: "Successfully modified the default storage quota; an exception occurred " +
+          "while adjusting the quota for {}, …—{} users in total.",
         cluster: "Cluster",
         tip: "Changes take effect immediately. "
           + "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. "
@@ -984,23 +991,32 @@ export default {
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "Modify Storage Quota",
+        batchModifyStorageQuota: "Batch Modify Storage Quota",
         confirm: "Confirm",
         modifyUserQuotaSuccess: "Successfully modified user storage quota",
         modifyUserQuotaFailed: "Failed to modify user storage quota, please try again later",
+        batchModifyUserQuotaSuccess: "Successfully batch modified user storage quota",
+        batchModifyUserQuotaPartialSuccess: "Batch modification of user storage quotas succeeded for {} items"
+          + " and failed for {} items.",
+        batchModifyUserQuotaFailed: "Failed to batch modify user storage quota",
         cluster: "Cluster",
         user: "User",
+        selectedUsers: "Selected Users",
         defaultStorageQuota: "Default Storage Quota",
         currentUsage: "Current Usage",
         storageQuota: "Storage Quota",
         useDefaultStroageQuota: "Use tenant's default user storage quota",
+        batchUseDefaultStorageQuota: "Batch use tenant's default user storage quota",
         currentDefaultStorageQuota: "Current tenant's default user storage quota",
         confirmUseDefaultStorageQuota: "Confirm using the default user storage quota under the tenant?",
+        confirmBatchUseDefaultStorageQuota: "Confirm batch using the default user storage quota under the tenant?",
         alreadyUsedDefault: "User already uses tenant default value, please do not modify repeatedly",
         useDefaultValue: "Use Default Value",
         setStorageQuota: "Set Storage Quota",
         tip: "Changes take effect immediately. " +
           "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. " +
           "Please proceed with caution",
+        userNotFound: "User {} does not exist",
       },
     },
     quantumJob:{
@@ -1385,7 +1401,6 @@ export default {
           syncSuccess: "Refreshed Successfully",
           syncSchedulerUserAccountNow: "Sync Now",
           maxSyncDurationMinutes: "Maximum Processing Time for a Single Synchronization",
-          maxSyncDurationMinutesModalAlert: "Only effective for the current operation",
           maxSyncDurationMinutesModalLabel: "Maximum Processing Time for a Single Synchronization"
           + " (Only effective for the current operation)",
           minuteUnit: "MINUTE",
@@ -1715,7 +1730,9 @@ export default {
       unlockUser: "Unlock user login",
       updatePasswordResetFlag: "Update mandatory password change identifier",
       setTenantUserDefaultQuota: "Modify the default storage quota for users under a tenant",
-      setTenantUserQuota: "Modify the default storage quota for a user",
+      setTenantUserQuota: "Modify the storage quota for a user",
+      batchSetTenantUsersQuota: "Batch modify the storage quota for users under a tenant",
+      syncTenantUsersStorageUsage: "Sync the storage usage of users under a tenant",
       authorizeApp: "Authorize Application",
       unauthorizeApp: "Revoke Application Authorization",
       migrateNode: "Migrate Node",
@@ -1856,7 +1873,9 @@ export default {
       editUserProfile: "User: {}",
       decompressFile: "Path: {0} , File {1}",
       setTenantUserQuota: "User: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
+      batchSetTenantUsersQuota: "Users: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}, Use Tenant Default: {4}",
       setTenantUserDefaultQuota: "Tenant: {0}, Cluster: {1}, Path: {2}, Storage Quota: {3}",
+      syncTenantUsersStorageUsage: "Tenant: {0}, Cluster: {1}, Path: {2}",
       tenantAppAuthorizationLog: "Cluster: {0}, Application: {1}, Tenant: {2}",
       accountAppAuthorizationLog: "Cluster: {0}, Application: {1}, Account: {2}",
       migrateNode: "Node: {}, Source Cluster: {}, Target cluster: {}",

@@ -29,7 +29,7 @@ export default route(InitGetUsersSchema, async () => {
   const client = getClient(UserServiceClient);
 
   const reply = await asyncClientCall(client, "getUsers", {
-    tenantName: DEFAULT_TENANT_NAME,
+    tenantName: DEFAULT_TENANT_NAME, userIds: [],
   });
 
   return {

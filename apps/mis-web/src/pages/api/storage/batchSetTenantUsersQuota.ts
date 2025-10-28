@@ -5,6 +5,7 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { getScowResourceClient } from "@scow/lib-scow-resource";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { StorageServiceClient } from "@scow/protos/build/server/storage";
+import { GetUsersResponse, UserServiceClient } from "@scow/protos/build/server/user";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
@@ -14,22 +15,23 @@ import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
-export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
+export const BatchSetTenantUsersQuotaSchema = typeboxRouteSchema({
   method: "PUT",
 
   body: Type.Object({
     cluster: Type.String(),
     path: Type.String(),
-    userQuotaBytes: Type.Number(),
+    userIds: Type.Array(Type.String()),
+    userQuotaBytes: Type.Optional(Type.Number()),
+    useTenantDefaultUserQuota: Type.Optional(Type.Boolean()),
   }),
 
   responses: {
     200: Type.Object({
-      successes: Type.Number(),
-      failures: Type.Number(),
       failedUserIds: Type.Array(Type.String()),
     }),
 
+    304: Type.Null(),
 
     400: Type.Null(),
     403: Type.Null(),
@@ -40,8 +42,9 @@ export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, res) => {
-  const { cluster, path, userQuotaBytes } = req.body;
+export default /* #__PURE__*/route(BatchSetTenantUsersQuotaSchema, async (req, res) => {
+  const { cluster, path, userIds, userQuotaBytes, useTenantDefaultUserQuota } = req.body;
+
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -64,30 +67,38 @@ export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, 
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
       return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.` } };
+        message: `Get tenant ${info?.tenant} assigned Clusters and Partitions failed.` } };
     }
+  }
+
+  const userClient = getClient(UserServiceClient);
+  const { users }: GetUsersResponse = await asyncClientCall(userClient, "getUsers", {
+    tenantName: info.tenant, userIds });
+  if (users.length !== userIds.length) {
+    return { 400: null };
   }
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.setTenantUserDefaultQuota,
+    operationTypeName: OperationType.batchSetTenantUsersQuota,
     operationTypePayload:{
-      tenantName: info.tenant, cluster, path, storageQuota: userQuotaBytes,
+      userIds, cluster, path, storageQuota: userQuotaBytes, useTenantDefaultUserQuota,
     },
   };
 
   const client = getClient(StorageServiceClient);
 
-  return await asyncClientCall(client, "setTenantUserDefaultQuota", {
-    tenantName: info.tenant, cluster, path, userQuotaBytes,
+  return await asyncClientCall(client, "batchSetTenantUsersQuota", {
+    cluster, path, userIds, userQuotaBytes, useTenantDefaultUserQuota,
   })
-    .then(async (res) => {
+    .then(async ({ failedUserIds }) => {
       await callLog(logInfo, OperationResult.SUCCESS);
 
-      return { 200: { ...res } };
+      return { 200: { failedUserIds } };
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 400: null }),
+      [Status.ALREADY_EXISTS]: () => ({ 304: null }),
     }, async () => await callLog(logInfo, OperationResult.FAIL)));
 });

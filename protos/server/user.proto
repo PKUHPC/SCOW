@@ -228,6 +228,7 @@ message GetNameResponse {
 
 message GetUsersRequest {
   string tenant_name = 1;
+  repeated string user_ids = 2;
 }
 
 message User {

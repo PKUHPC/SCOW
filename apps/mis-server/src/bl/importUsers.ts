@@ -1,7 +1,7 @@
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { SqlEntityManager } from "@mikro-orm/mysql";
+import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
@@ -17,6 +17,7 @@ import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 import { toRef } from "src/utils/orm";
+import { setNewUserStorageQuota } from "src/utils/storageQuota";
 
 export interface ImportUsersData {
   accounts: {
@@ -27,7 +28,7 @@ export interface ImportUsersData {
   }[];
 }
 
-export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
+export async function importUsers(data: ImportUsersData, em: SqlEntityManager<MySqlDriver>,
   whitelistAll: boolean,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
   clusterPlugin: ClusterPlugin["clusters"],
@@ -176,6 +177,14 @@ export async function importUsers(data: ImportUsersData, em: SqlEntityManager,
     ...finalUserAccounts,
     ...accountAppBlacklistsToPersist,
   ]);
+
+  for (const user of Object.values(usersMap)) {
+    // 只对新创建的用户设置存储配额
+    const existingUser = existingUsers.find((u) => u.userId === user.userId);
+    if (!existingUser) {
+      await setNewUserStorageQuota(em, DEFAULT_TENANT_NAME, user.userId);
+    }
+  }
 
   // 账户信息导入scow完成后，更新slurm的block状态
   const failedUnblockAccounts = [] as string[];

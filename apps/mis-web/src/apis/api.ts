@@ -1,6 +1,5 @@
 /* eslint-disable @stylistic/max-len */
 
-
 import { apiClient } from "src/apis/client";
 import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
 import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
@@ -105,9 +104,12 @@ import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
 import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
+import type { BatchSetTenantUsersQuotaSchema } from "src/pages/api/storage/batchSetTenantUsersQuota";
+import type { GetStorageSyncInfoSchema } from "src/pages/api/storage/getStorageSyncInfo";
 import type { GetTenantQuotaSchema } from "src/pages/api/storage/getTenantQuota";
 import type { SetTenantUserDefaultQuotaSchema } from "src/pages/api/storage/setTenantUserDefaultQuota";
 import type { SetTenantUserQuotaSchema } from "src/pages/api/storage/setTenantUserQuota";
+import type { SyncTenantUsersStorageUsageSchema } from "src/pages/api/storage/syncTenantUsersStorageUsage";
 import type { DewhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/dewhitelistAccount";
 import type { GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
 import type { WhitelistAccountSchema } from "src/pages/api/tenant/accountWhitelist/whitelistAccount";
@@ -244,9 +246,12 @@ export const api = {
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
   getQuantumJobInfo: apiClient.fromTypeboxRoute<typeof GetQuantumJobInfoSchema>("GET", "/api/quantum/jobInfo"),
   getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>("GET", "/api//simpleClustersInfo"),
+  batchSetTenantUsersQuota: apiClient.fromTypeboxRoute<typeof BatchSetTenantUsersQuotaSchema>("PUT", "/api/storage/batchSetTenantUsersQuota"),
+  getStorageSyncInfo: apiClient.fromTypeboxRoute<typeof GetStorageSyncInfoSchema>("GET", "/api/storage/getStorageSyncInfo"),
   getTenantQuota: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSchema>("GET", "/api/storage/getTenantQuota"),
   setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>("PUT", "/api/storage/setTenantUserDefaultQuota"),
   setTenantUserQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserQuotaSchema>("PUT", "/api/storage/setTenantUserQuota"),
+  syncTenantUsersStorageUsage: apiClient.fromTypeboxRoute<typeof SyncTenantUsersStorageUsageSchema>("POST", "/api/storage/syncTenantUsersStorageUsage"),
   dewhitelistAccount: apiClient.fromTypeboxRoute<typeof DewhitelistAccountSchema>("DELETE", "/api/tenant/accountWhitelist/dewhitelistAccount"),
   getWhitelistedAccounts: apiClient.fromTypeboxRoute<typeof GetWhitelistedAccountsSchema>("GET", "/api/tenant/accountWhitelist/getWhitelistedAccounts"),
   whitelistAccount: apiClient.fromTypeboxRoute<typeof WhitelistAccountSchema>("PUT", "/api/tenant/accountWhitelist/whitelistAccount"),

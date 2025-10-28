@@ -3,7 +3,9 @@ import { ExportBill, ExportChargeRecord, ExportJobRecord,ExportOperationLog, Exp
   ExportUserBill } from "@scow/protos/build/audit/operation_log";
 import { Static, Type } from "@sinclair/typebox";
 import { ValueOf } from "next/dist/shared/lib/constants";
+import React from "react";
 import { Lang } from "react-typed-i18n";
+import UserIdsDisplay from "src/components/UserIdsDisplay";
 import { getI18nCurrentText, prefix } from "src/i18n";
 import en from "src/i18n/en";
 import { getClusterName, getClusterNameWithUndefined } from "src/utils/cluster";
@@ -184,12 +186,14 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     unlockUser: t(pTypes("unlockUser")),
     setTenantUserDefaultQuota: t(pTypes("setTenantUserDefaultQuota")),
     setTenantUserQuota: t(pTypes("setTenantUserQuota")),
+    batchSetTenantUsersQuota: t(pTypes("batchSetTenantUsersQuota")),
     authorizeApp: t(pTypes("authorizeApp")),
     unauthorizeApp: t(pTypes("unauthorizeApp")),
     migrateNode: t(pTypes("migrateNode")),
     activateNode: t(pTypes("activateNode")),
     addToDefaultApps: t(pTypes("addToDefaultApps")),
     removeFromDefaultApps: t(pTypes("removeFromDefaultApps")),
+    syncTenantUsersStorageUsage: t(pTypes("syncTenantUsersStorageUsage")),
   };
 
 };
@@ -646,11 +650,19 @@ export const getOperationDetail = (
       case "setTenantUserQuota":
         return t(pDetails("setTenantUserQuota"),
           [operationEvent[logEvent].userId, operationEvent[logEvent].cluster, operationEvent[logEvent].path,
-            operationEvent[logEvent].storageQuota, operationEvent[logEvent].useTenantDefaultUserQuota]);
+            operationEvent[logEvent].storageQuota, operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no"]);
+      case "batchSetTenantUsersQuota":
+        return t(pDetails("setTenantUserQuota"),
+          [React.createElement(UserIdsDisplay, { userIds: operationEvent[logEvent].userIds }),
+            operationEvent[logEvent].cluster, operationEvent[logEvent].path,
+            operationEvent[logEvent].storageQuota, operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no"]);
       case "setTenantUserDefaultQuota":
         return t(pDetails("setTenantUserDefaultQuota"),
           [operationEvent[logEvent].tenantName, operationEvent[logEvent].cluster, operationEvent[logEvent].path,
             operationEvent[logEvent].storageQuota]);
+      case "syncTenantUsersStorageUsage":
+        return t(pDetails("syncTenantUsersStorageUsage"),
+          [operationEvent[logEvent].tenant, operationEvent[logEvent].cluster, operationEvent[logEvent].path]);
       case "authorizeApp":
       case "unauthorizeApp":{
         const clusterId = operationEvent[logEvent].clusterId;

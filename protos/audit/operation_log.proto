@@ -804,6 +804,20 @@ message SetTenantUserQuota {
   optional bool use_tenant_default_user_quota = 5;
 }
 
+message BatchSetTenantUsersQuota {
+  repeated string user_ids = 1;
+  string cluster = 2;
+  string path = 3;
+  optional uint64 storage_quota = 4;
+  optional bool use_tenant_default_user_quota = 5;
+}
+
+message SyncTenantUsersStorageUsage {
+  string cluster = 1;
+  string path = 2;
+  string tenant = 3;
+}
+
 message AuthorizeApp {
   string cluster_id = 1;
   string app_name = 2;
@@ -957,6 +971,8 @@ message CreateOperationLogRequest {
     AddToDefaultApps add_to_default_apps = 118;
     RemoveFromDefaultApps remove_from_default_apps = 119;
     CreateDevHost create_dev_host = 120;
+    BatchSetTenantUsersQuota batch_set_tenant_users_quota = 121;
+    SyncTenantUsersStorageUsage sync_tenant_users_storage_usage = 122;
   }
 }
 
@@ -1085,6 +1101,8 @@ message OperationLog {
     AddToDefaultApps add_to_default_apps = 120;
     RemoveFromDefaultApps remove_from_default_apps = 121;
     CreateDevHost create_dev_host = 122;
+    BatchSetTenantUsersQuota batch_set_tenant_users_quota = 123;
+    SyncTenantUsersStorageUsage sync_tenant_users_storage_usage = 124;
   }
 }
 

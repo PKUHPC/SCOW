@@ -2266,9 +2266,20 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "length": null,
           "comment": "租户下用户的存储配额",
+          "mappedType": "bigint"
+        },
+        "usage": {
+          "name": "usage",
+          "type": "bigint",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "comment": "租户下用户的存储使用量",
           "mappedType": "bigint"
         }
       },
@@ -2303,6 +2314,18 @@
           "constraint": false,
           "primary": false,
           "unique": false
+        },
+        {
+          "keyName": "tenant_user_storage_quota_cluster_user_id_path_unique",
+          "columnNames": [
+            "cluster",
+            "user_id",
+            "path"
+          ],
+          "composite": true,
+          "constraint": true,
+          "primary": false,
+          "unique": true
         },
         {
           "keyName": "PRIMARY",

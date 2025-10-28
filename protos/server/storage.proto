@@ -2,6 +2,14 @@ syntax = "proto3";
 
 package scow.server;
 
+import "google/protobuf/timestamp.proto";
+import "common/sort_order.proto";
+
+enum QuotaSortField {
+  USED_STORAGE_BYTES = 0;
+  STORAGE_QUOTA = 1;
+}
+
 message GetTenantQuotaRequest {
   string tenant_name = 1;
   string cluster = 2;
@@ -11,6 +19,10 @@ message GetTenantQuotaRequest {
 
   // if undefined or 0, page_size is 10
   optional uint64 page_size = 6;
+  // 排序字段: "usedStorageBytes" 或 "storageQuota"
+  optional QuotaSortField sort_field = 7;
+  // ASC 或者 DESC, 默认为 ASC
+  optional common.SortOrder sort_order = 8;
 }
 
 message UserQuotaInfo {
@@ -41,6 +53,19 @@ message SetTenantUserQuotaRequest {
 message SetTenantUserQuotaResponse {
 }
 
+message BatchSetTenantUsersQuotaRequest {
+  string cluster = 1;
+  string path = 2;
+  repeated string user_ids = 3;
+  optional uint64 user_quota_bytes = 4;
+  optional bool use_tenant_default_user_quota = 5;
+}
+
+
+message BatchSetTenantUsersQuotaResponse {
+  repeated string failed_user_ids = 1;
+}
+
 message SetTenantUserDefaultQuotaRequest {
   string tenant_name = 1;
   string cluster = 2;
@@ -51,6 +76,7 @@ message SetTenantUserDefaultQuotaRequest {
 message SetTenantUserDefaultQuotaResponse {
   uint32 successes = 1;
   uint32 failures = 2;
+  repeated string failed_user_ids = 3;
 }
 
 message GetUserStorageUsageRequest {
@@ -71,10 +97,39 @@ message GetUserStorageUsageResponse {
   repeated StorageUsage quota_usage = 1;
 }
 
+message SyncTenantUsersStorageUsageRequest {
+  string cluster = 1;
+  string tenant = 2;
+  string path = 3;
+}
+
+message SyncTenantUsersStorageUsageResponse {
+  repeated string failed_user_ids = 1;
+
+}
+
+message GetSyncInfoRequest {
+  string cluster = 1;
+  string path = 2;
+  string tenant = 3;
+}
+
+message GetSyncInfoResponse {
+  bool sync_started = 1;
+  string schedule = 2;
+  optional google.protobuf.Timestamp last_sync_time = 3;
+}
+
 service StorageService {
   rpc GetTenantQuota(GetTenantQuotaRequest) returns (GetTenantQuotaResponse);
   rpc SetTenantUserQuota(SetTenantUserQuotaRequest) returns (SetTenantUserQuotaResponse);
+  // 批量修改租户下用户的配额
+  rpc BatchSetTenantUsersQuota(BatchSetTenantUsersQuotaRequest) returns (BatchSetTenantUsersQuotaResponse);
+  // 设置租户下用户的默认配额
   rpc SetTenantUserDefaultQuota(SetTenantUserDefaultQuotaRequest) returns (SetTenantUserDefaultQuotaResponse);
 
   rpc GetUserStorageUsage(GetUserStorageUsageRequest) returns (GetUserStorageUsageResponse);
+
+  rpc SyncTenantUsersStorageUsage(SyncTenantUsersStorageUsageRequest) returns (SyncTenantUsersStorageUsageResponse);
+  rpc GetSyncInfo(GetSyncInfoRequest) returns (GetSyncInfoResponse);
 }

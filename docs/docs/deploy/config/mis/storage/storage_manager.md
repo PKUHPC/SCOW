@@ -1,12 +1,14 @@
 ---
 sidebar_position: 1
-title: 存储管理
-description: 配置开启集群存储管理
+title: 存储管理配置
+description: 集群存储管理相关配置
 ---
 
-# 配置开启集群存储管理
+# 存储管理配置
 
-## 修改 SCOW 集群配置文件
+## 开启集群存储管理
+
+### 修改 SCOW 集群配置文件
 
 集群存储管理功能按集群维度进行开启，需要在 `config/clusters` 的集群配置文件下增加如下配置
 
@@ -22,7 +24,7 @@ storage:
   # 文件系统若有冗余备份数据时开启该配置
   replicaExist: true
 ```
-## 修改 SCOWD 配置文件
+### 修改 SCOWD 配置文件
 
 须在 SCOWD `config` 配置目录下新增 `file.yaml` 文件，并添加如下内容
 
@@ -39,8 +41,8 @@ mounts:
 
 当前 SCOWD 已明确支持的 `fs_type` 为 NFS 3.0+、Lustre 2.0+、 GPFS 4.0+、GPFS 5.0+ 和 OceanStor Pacific（华为存储） 8.2.1+。
 
-### 各文件系统配置示例
-#### NFS
+#### 各文件系统配置示例
+##### NFS
 
 目前 NFS 支持 3.0 以上版本
 ```yaml title=config/file.yaml
@@ -53,7 +55,7 @@ mounts:
     version: "3.0"
 ```
 
-#### Lustre
+##### Lustre
 
 目前 Lustre 支持 2.0 以上版本
 
@@ -63,7 +65,7 @@ mounts:
     fs_type: "lfs"
     version: "2.0"
 ```
-#### GPFS
+##### GPFS
 
 目前 GPFS 支持 4.0 以上版本
 
@@ -77,7 +79,7 @@ mounts:
       filesystem: share
 ```
 
-#### OceanStor Pacific（华为存储）
+##### OceanStor Pacific（华为存储）
 
 目前 OceanStor Pacific（华为存储）支持 8.2.1 版本
 
@@ -97,3 +99,16 @@ mounts:
       base_url: http://127.0.0.1:1234
 ```
 
+
+## 配置存储使用量同步
+
+修改管理系统配置文件 mis.yaml 添加如下配置。存储使用量同步默认每小时整点执行一次。
+
+```yaml
+# 可选
+periodicSyncStorageData:
+  # 默认开启
+  enabled: true
+  # 默认每小时整点执行一次
+  cron: "0 * * * *"
+```

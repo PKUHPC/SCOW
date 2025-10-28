@@ -209,6 +209,12 @@ bill:
 # changeJobPriceType: "作业费用更改"
 # quantumJobChargeType: "量子作业费用" // 需和量子配置的taskChargeType保持一致
 
+# 可选，存储管理功能，同步存储使用量定时任务配置
+# periodicSyncStorageData:
+#   # 默认开启
+#   enabled: true
+#   # 默认每小时整点执行一次
+#   cron: "0 * * * *"
 
 # 是否在MIS开启扩展页面
 # uiExtension:

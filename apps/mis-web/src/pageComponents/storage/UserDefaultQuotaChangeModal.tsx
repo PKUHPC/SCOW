@@ -56,7 +56,10 @@ export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
             if (res.failures === 0) {
               message.success(t(p("modifyUserDeulatQuotaSuccess")));
             } else {
-              message.error(t(p("modifyPartialSuccess"), [res.successes, res.failures]));
+              message.error(t(
+                p("modifyPartialSuccess"),
+                [res.failedUserIds.slice(0, 3).join(", "), res.failures],
+              ));
             }
             reload();
             onClose();

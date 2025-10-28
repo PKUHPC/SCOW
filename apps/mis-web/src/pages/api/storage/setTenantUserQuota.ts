@@ -5,6 +5,7 @@ import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { getScowResourceClient } from "@scow/lib-scow-resource";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { StorageServiceClient } from "@scow/protos/build/server/storage";
+import { GetUserInfoResponse, UserServiceClient } from "@scow/protos/build/server/user";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
@@ -21,7 +22,8 @@ export const SetTenantUserQuotaSchema = typeboxRouteSchema({
     cluster: Type.String(),
     path: Type.String(),
     userId: Type.String(),
-    userQuotaBytes: Type.Optional(Type.Number()),
+    // 使用租户默认值时，该值传入租户默认值用于日志记录
+    userQuotaBytes: Type.Number(),
     useTenantDefaultUserQuota: Type.Optional(Type.Boolean()),
   }),
 
@@ -32,6 +34,8 @@ export const SetTenantUserQuotaSchema = typeboxRouteSchema({
 
     400: Type.Null(),
     403: Type.Null(),
+    /** 用户未找到 */
+    404: Type.Null(),
 
     409: Type.Object({
       code: Type.String(),
@@ -48,6 +52,12 @@ export default /* #__PURE__*/route(SetTenantUserQuotaSchema, async (req, res) =>
   });
 
   const info = await auth(req, res);
+
+  const userClient = getClient(UserServiceClient);
+  const userInfo: GetUserInfoResponse = await asyncClientCall(userClient, "getUserInfo", { userId });
+  if (!userInfo) {
+    return { 404: null };
+  }
 
   if (!info) { return; }
 
@@ -73,7 +83,8 @@ export default /* #__PURE__*/route(SetTenantUserQuotaSchema, async (req, res) =>
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setTenantUserQuota,
     operationTypePayload:{
-      userId, cluster, path, storageQuota: userQuotaBytes, useTenantDefaultUserQuota,
+      userId, cluster, path, storageQuota: userQuotaBytes,
+      useTenantDefaultUserQuota: useTenantDefaultUserQuota ?? false,
     },
   };
 
@@ -90,5 +101,5 @@ export default /* #__PURE__*/route(SetTenantUserQuotaSchema, async (req, res) =>
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 400: null }),
       [Status.ALREADY_EXISTS]: () => ({ 304: null }),
-    }, async () => await callLog(logInfo, OperationResult.SUCCESS)));
+    }, async () => await callLog(logInfo, OperationResult.FAIL)));
 });
