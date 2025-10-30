@@ -43,4 +43,7 @@ message JobInfo {
   google.protobuf.Timestamp record_time = 23;
   common.Money account_price = 24;
   common.Money tenant_price = 25;
+  string user_name = 26;
+  string account_owner_id = 27;
+  string account_owner_name = 28;
 }

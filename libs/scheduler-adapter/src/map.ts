@@ -33,6 +33,15 @@ export const jobInfoToRunningjob = (jobInfo: JobInfo) => {
     submissionTime: jobInfo.submitTime!,
     timeLimit: jobInfo.timeLimitMinutes ? formatTime(jobInfo.timeLimitMinutes * 60 * 1000) : "",
     workingDir: jobInfo.workingDirectory,
+    memReq: jobInfo.memReqMb,
+    memAlloc: jobInfo.memReqMb || 0,
+    cpusAlloc: jobInfo.cpusAlloc || 0,
+    nodesAlloc: jobInfo.nodesAlloc || 0,
+    gupsAlloc: jobInfo.gpusAlloc || 0,
+    startTime: jobInfo.startTime,
+    endTime: jobInfo.endTime,
+    nodelist: jobInfo.nodeList,
+    reason: jobInfo.reason,
   } as RunningJob;
 };
 
@@ -51,5 +60,15 @@ export const jobInfoToPortalJobInfo = (jobInfo: JobInfo) => {
     submitTime: jobInfo.submitTime!,
     startTime: jobInfo.startTime,
     endTime: jobInfo.endTime,
+
+    nodes: jobInfo.nodesReq,
+    cores: jobInfo.cpusReq,
+    gpus: jobInfo.gpusReq,
+    memReq: jobInfo.memReqMb,
+    memAlloc: jobInfo.memReqMb || 0,
+    cpusAlloc: jobInfo.cpusAlloc || 0,
+    nodesAlloc: jobInfo.nodesAlloc || 0,
+    gupsAlloc: jobInfo.gpusAlloc || 0,
+    nodelist: jobInfo.nodeList,
   } as PortalJobInfo;
 };

@@ -24,7 +24,7 @@ export default {
       createApp: "应用",
       trainJob: "训练",
       unfinishedJobs: "未结束的作业",
-      historyJobs: "已完成的作业",
+      historyJobs: "已结束的作业",
       infer: "推理",
     },
     algorithm: {
@@ -311,7 +311,7 @@ export default {
         appNotFoundMessage: "没有可以创建的交互式应用",
       },
       historyJobs:{
-        title:"已完成的作业",
+        title:"已结束的作业",
       },
       unfinishedJobs:{
         title:"未结束的作业",

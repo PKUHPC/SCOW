@@ -13,9 +13,10 @@
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Descriptions, Drawer } from "antd";
+import dayjs from "dayjs";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { RunningJobInfo } from "src/models/job";
+import { formatTime, RunningJobInfo } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 
@@ -38,20 +39,29 @@ export const RunningJobDrawer: React.FC<Props> = ({
   const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const drawerItems = [
-    [t(pCommon("cluster")), "cluster", getClusterName],
-    [t(pCommon("workId")), "jobId"],
-    [t(pCommon("account")), "account"],
     [t(pCommon("workName")), "name"],
+    [t(pCommon("workId")), "jobId"],
+    [t(pCommon("status")), "state"],
+    [t(pCommon("userId")), "user"],
+    [t(pCommon("account")), "account"],
+    [t(pCommon("cluster")), "cluster", getClusterName],
     [t(pCommon("partition")), "partition"],
     ["QOS", "qos"],
-    [t(p("nodes")), "nodes"],
-    [t(p("cores")), "cores"],
-    [t(p("gpus")), "gpus"],
-    [t(pCommon("status")), "state"],
-    [t(p("nodesOrReason")), "nodesOrReason"],
-    [t(p("runningOrQueueTime")), "runningOrQueueTime"],
+    [t(pCommon("list")), "nodelist"],
     [t(pCommon("timeSubmit")), "submissionTime", formatDateTime],
+    [t(pCommon("startTime")), "startTime", (t) => (t ? formatDateTime(t) : "-")],
+    [t(p("nodes")), "nodes"],
+    [t(p("nodesAlloc")), "nodesAlloc"],
+    [t(p("cores")), "cores"],
+    [t(p("cpusAlloc")), "cpusAlloc"],
+    [t(p("gpus")), "gpus"],
+    [t(p("gpusAlloc")), "gpusAlloc"],
+    [t(p("memReq")), "memReq"],
+    [t(p("memAlloc")), "memAlloc"],
+    [t(pCommon("reason")), "reason"],
     [t(p("timeLimit")), "timeLimit"],
+    [t(pCommon("timeUsed")), "runningTime"],
+    [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submissionTime))],
   ] as ([string, keyof RunningJobInfo] | [string, keyof JobInfo, (v: any, r: RunningJobInfo) => string])[];
 
   return (

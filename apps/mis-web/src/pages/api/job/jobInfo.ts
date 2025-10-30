@@ -87,6 +87,9 @@ export const JobInfo = Type.Object({
   recordTime: Type.Optional(Type.String()),
   accountPrice: Type.Optional(Money),
   tenantPrice: Type.Optional(Money),
+  userName: Type.String(),
+  accountOwnerId: Type.String(),
+  accountOwnerName: Type.String(),
 });
 export type JobInfo = Static<typeof JobInfo>;
 

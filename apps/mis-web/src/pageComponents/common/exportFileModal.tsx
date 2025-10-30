@@ -17,14 +17,14 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 
 interface Props {
-  options: { label: string, value: string }[]
+  options?: { label: string, value: string }[];
   onClose: () => void;
-  onExport: (columns: string[], encoding: string) => Promise<void>;
+  onExport: (encoding: string, columns?: string[]) => Promise<void>;
   open: boolean;
 }
 
 interface FormProps {
-  columns: string[];
+  columns?: string[];
   encoding: string;
 }
 
@@ -41,7 +41,7 @@ const ExportFileModal: React.FC<Props> = ({ options, onClose, onExport, open }) 
 
     setLoading(true);
 
-    await onExport(columns, encoding).then(() => {
+    await onExport(encoding, columns).then(() => {
       onClose();
       form.resetFields();
     })
@@ -64,15 +64,17 @@ const ExportFileModal: React.FC<Props> = ({ options, onClose, onExport, open }) 
         form={form}
         layout="vertical"
         preserve={false}
-        initialValues={{ columns: options.map((option) => option.value), encoding: Encoding.GB18030 }}
+        initialValues={{ columns: options?.map((option) => option.value), encoding: Encoding.GB18030 }}
       >
-        <Form.Item
-          rules={[{ required: true, message: t(p("errorMsg")) }]}
-          label={t(p("subTitle"))}
-          name="columns"
-        >
-          <Checkbox.Group options={options} />
-        </Form.Item>
+        {options ? (
+          <Form.Item
+            rules={[{ required: true, message: t(p("errorMsg")) }]}
+            label={t(p("subTitle"))}
+            name="columns"
+          >
+            <Checkbox.Group options={options} />
+          </Form.Item>
+        ) : ""}
         <Form.Item
           label={t(p("encoding"))}
           name="encoding"

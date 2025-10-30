@@ -12,9 +12,10 @@
 
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { Descriptions, Drawer } from "antd";
+import dayjs from "dayjs";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { RunningJobInfo } from "src/models/job";
+import { formatTime, RunningJobInfo } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 
@@ -25,7 +26,7 @@ interface Props {
 }
 
 const p = prefix("pageComp.job.runningJobDrawer.");
-
+const pCommon = prefix("common.");
 
 export const RunningJobDrawer: React.FC<Props> = ({
   item, onClose, open,
@@ -36,22 +37,30 @@ export const RunningJobDrawer: React.FC<Props> = ({
   const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const drawerItems = [
-    [t(p("cluster")), "cluster", getClusterName],
-    [t(p("jobId")), "jobId"],
-    [t(p("account")), "account"],
     [t(p("jobName")), "name"],
+    [t(p("jobId")), "jobId"],
+    [t(p("state")), "state"],
+    [t(p("account")), "account"],
+    [t(p("cluster")), "cluster", getClusterName],
     [t(p("partition")), "partition"],
     [t(p("qos")), "qos"],
+    [t(pCommon("list")), "nodelist"],
+    [t(pCommon("timeSubmit")), "submitTime", formatDateTime],
+    [t(pCommon("startTime")), "startTime", (t) => (t ? formatDateTime(t) : "-")],
+    [t(pCommon("endTime")), "endTime", (t) => (t ? formatDateTime(t) : "-")],
     [t(p("nodes")), "nodes"],
+    [t(p("nodesAlloc")), "nodesAlloc"],
     [t(p("cores")), "cores"],
+    [t(p("cpusAlloc")), "cpusAlloc"],
     [t(p("gpus")), "gpus"],
-    [t(p("state")), "state"],
-    [t(p("nodesOrReason")), "nodesOrReason"],
-    [t(p("runningOrQueueTime")), "runningOrQueueTime"],
-    [t(p("submissionTime")), "submissionTime", formatDateTime],
+    [t(p("gpusAlloc")), "gpusAlloc"],
+    [t(p("memReq")), "memReq"],
+    [t(p("memAlloc")), "memAlloc"],
+    [t(pCommon("reason")), "reason"],
     [t(p("timeLimit")), "timeLimit"],
+    [t(pCommon("timeUsed")), "runningTime", (t, r) => t ?? r.elapsed],
+    [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submitTime))],
   ] as ([string, keyof RunningJobInfo] | [string, keyof RunningJobInfo, (v: any, r: RunningJobInfo) => string])[];
-
   return (
     <Drawer
       width={500}

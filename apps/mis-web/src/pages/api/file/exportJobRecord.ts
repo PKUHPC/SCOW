@@ -123,7 +123,7 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
     const t = await getT(languageId);
     const pCommon = prefix("common.");
-
+    const p = prefix("pageComp.job.historyJobDrawer.");
 
     const formatJobRecord = (x: JobInfo) => {
       return {
@@ -131,34 +131,70 @@ export default route(ExportJobRecordSchema, async (req, res) => {
         jobName: x.jobName,
         account: x.account,
         user: x.user,
-        accountPrice: nullableMoneyToString(x.accountPrice),
+        userName: x.userName,
+        accountOwnerId: x.accountOwnerId,
+        accountOwnerName: x.accountOwnerName,
         cluster: getClusterName(x.cluster, languageId, JSON.parse(publicConfigClusters)),
         partition: x.partition,
         qos: x.qos,
+        nodelist: x.nodelist,
         timeSubmit: x.timeSubmit ? new Date(x.timeSubmit).
+          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
+          : "",
+        timeStart: x.timeStart ? new Date(x.timeStart).
           toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
           : "",
         timeEnd: x.timeEnd ? new Date(x.timeEnd).
           toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
           : "",
+        nodesReq: x.nodesReq,
+        nodesAlloc: x.nodesAlloc,
+        cpusReq: x.cpusReq,
+        cpusAlloc: x.cpusAlloc,
+        gpu: x.gpu,
+        memReq: x.memReq,
+        memAlloc: x.memAlloc,
+        timelimit: x.timelimit,
+        timeUsed: x.timeUsed,
+        timeWait: x.timeWait,
         tenantPrice: nullableMoneyToString(x.tenantPrice),
+        accountPrice: nullableMoneyToString(x.accountPrice),
+        recordTime: x.recordTime ? new Date(x.recordTime).
+          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
+          : "",
       };
     };
 
-    const finalPriceTextObj: { tenant?: string; account?: string } = JSON.parse(finalPriceText ? finalPriceText : "");
+    const finalPriceTextObj: { tenant?: string; account?: string; } = JSON.parse(finalPriceText ? finalPriceText : "");
 
     const clusterColumnsName = searchType === SearchType.NORMAL ? t(pCommon("clusterName")) : t(pCommon("cluster"));
 
     const headerColumns = {
-      idJob: t(pCommon("clusterWorkId")),
       jobName: t(pCommon("workName")),
+      idJob: t(pCommon("clusterWorkId")),
+      user: t(pCommon("userId")),
+      userName: t(pCommon("userName")),
       account: t(pCommon("account")),
-      user: t(pCommon("user")),
+      accountOwnerId: t(pCommon("accountOwnerId")),
+      accountOwnerName: t(pCommon("accountOwnerName")),
       cluster: clusterColumnsName,
       partition: t(pCommon("partition")),
       qos: "QOS",
-      timeSubmit: t(pCommon("timeSubmit")),
-      timeEnd: t(pCommon("timeEnd")),
+      nodelist: t(p("list")),
+      timeSubmit: t(p("timeSubmit")),
+      timeStart: t(p("timeStart")),
+      timeEnd: t(p("timeEnd")),
+      nodesReq: t(p("nodesReq")),
+      nodesAlloc: t(p("nodesAlloc")),
+      cpusReq: t(p("cpusReq")),
+      cpusAlloc: t(p("cpusAlloc")),
+      gpu: t(p("gpus")),
+      memReq: t(p("memReq")),
+      memAlloc: t(p("memAlloc")),
+      timelimit: t(p("timeLimit")),
+      timeUsed: t(p("timeUsed")),
+      timeWait: t(p("timeWait")),
+      recordTime: t(p("recordTime")),
     };
 
     for (const price in finalPriceTextObj) {

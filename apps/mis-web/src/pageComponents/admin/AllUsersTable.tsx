@@ -115,7 +115,7 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
     reloadUsersCounts();
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
 
     let total = 0;
     // 获取浏览器时区

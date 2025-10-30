@@ -111,7 +111,7 @@ export const AdminUserTable: React.FC<Props> = ({
     setCurrentSortInfo({ field: null, order: null });
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
     // 获取浏览器时区
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 

@@ -160,7 +160,7 @@ export const AccountTable: React.FC<Props> = ({
     setCurrentSortInfo({ field: null, order: null });
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
 
     const total = filteredData?.length || 0;
     // 获取浏览器时区

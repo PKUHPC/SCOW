@@ -43,6 +43,8 @@ import {
 } from "src/utils/chargesQuery";
 import {
   getJobsTargetSearchParam,
+  getJobUserAndAccountOwnerDetailsMap,
+  JobUserAndAccountOwnerDetailsMap,
 } from "src/utils/job";
 import { mapUsersSortField } from "src/utils/queryOptions";
 
@@ -619,7 +621,8 @@ export const exportServiceServer = plugin((server) => {
         ...clusters.length > 0 ? { cluster: clusters } : {},
       };
 
-      const recordFormat = (x: Loaded<JobInfo, never>) => ({
+      const recordFormat = (x: Loaded<JobInfo, never>
+         & { userName: string; accountOwnerId: string; accountOwnerName: string; }) => ({
         idJob: x.idJob,
         jobName: x.jobName,
         account: x.account,
@@ -645,6 +648,9 @@ export const exportServiceServer = plugin((server) => {
         timeWait:x.timeWait,
         recordTime:x.recordTime.toISOString(),
         tenantPrice:decimalToMoney(x.tenantPrice),
+        userName: x.userName,
+        accountOwnerId: x.accountOwnerId,
+        accountOwnerName: x.accountOwnerName,
       });
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;
@@ -656,8 +662,31 @@ export const exportServiceServer = plugin((server) => {
 
       while (offset < count) {
         const limit = Math.min(batchSize, count - offset);
-        const records = (await em.find(JobInfo, query, { limit, offset }))
-          .map(recordFormat ?? ((x) => x));
+
+        // 先获取基础作业信息
+        const records = await em.find(JobInfo, query, { limit, offset });
+        const jobIds = records.map((job) => job.biJobIndex);
+
+        // 获取用户姓名、账户拥有者ID和姓名的map
+        let jobUserAndAccountOwnerDetailsMap: JobUserAndAccountOwnerDetailsMap = {};
+
+        if (jobIds.length > 0) {
+          jobUserAndAccountOwnerDetailsMap = await getJobUserAndAccountOwnerDetailsMap(em, jobIds);
+        }
+
+
+        // 将详细信息合并到记录中
+        const recordsWithDetails = records.map((job) => {
+          const detail = jobUserAndAccountOwnerDetailsMap[job.biJobIndex];
+          return {
+            ...job,
+            userName: detail?.userName,
+            accountOwnerId: detail?.accountOwnerId,
+            accountOwnerName: detail?.accountOwnerName,
+          };
+        });
+
+        const formattedRecords = recordsWithDetails.map(recordFormat ?? ((x) => x));
 
         if (records.length === 0) {
           break;
@@ -667,10 +696,10 @@ export const exportServiceServer = plugin((server) => {
         // 记录传输的总数量
         let writeTotal = 0;
 
-        for (const row of records) {
+        for (const row of formattedRecords) {
           data.push(row);
           writeTotal += 1;
-          if (data.length === 200 || writeTotal === records.length) {
+          if (data.length === 200 || writeTotal === formattedRecords.length) {
             await new Promise((resolve) => {
               void writeAsync({ jobRecords: data });
               // 清空暂存

@@ -177,7 +177,7 @@ it("returns jobs starting from start_bi_job_index", async () => {
     mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
 
   await em.persistAndFlush(range(20, 40).map((_) =>
-    mockOriginalJobData(data.uaCC, new Decimal(20), new Decimal(10))));
+    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10))));
 
   await em.persistAndFlush(range(40, 60).map((_) =>
     mockOriginalJobData(data.uaAB, new Decimal(20), new Decimal(10))));

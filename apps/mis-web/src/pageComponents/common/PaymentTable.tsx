@@ -112,7 +112,7 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
     setSelectedNames(accountNames);
   }, [accountNames]);
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 

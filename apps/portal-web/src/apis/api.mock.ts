@@ -12,8 +12,6 @@
 
 import { JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterActivationStatus } from "@scow/config/build/type";
-import type { RunningJob } from "@scow/protos/build/common/job";
-import { JobInfo } from "@scow/protos/build/portal/job";
 import { type api } from "src/apis/api";
 import { TimeUnit } from "src/models/job";
 export type MockApi<TApi extends Record<
@@ -28,7 +26,7 @@ export type MockApi<TApi extends Record<
     >)
 };
 
-export const runningJob: RunningJob = {
+export const runningJob = {
   jobId: "123",
   account: "123",
   cores: "123",
@@ -44,9 +42,15 @@ export const runningJob: RunningJob = {
   user: "!23",
   timeLimit: "NOT_SET",
   workingDir: "/home/ddadaal/Code",
+  memReq: 100,
+  cpusAlloc: 1,
+  nodesAlloc: 1,
+  gpusAlloc: 0,
+  memAlloc: 100,
+  submitTime: "2021-12-22T16:16:02",
 };
 
-export const job: JobInfo = {
+export const job = {
   jobId: 123,
   account: "123",
   name: "123",
@@ -60,6 +64,14 @@ export const job: JobInfo = {
   submitTime: "2022-07-07T09:21:42",
   startTime: "2022-07-07T09:21:42",
   endTime: "2022-07-07T09:21:52",
+  nodes: 1,
+  cores: 1,
+  gpus: 0,
+  memReq: 100,
+  cpusAlloc: 1,
+  memAlloc: 100,
+  nodesAlloc: 1,
+  gpusAlloc: 0,
 };
 
 export const mockApi: MockApi<typeof api> = {

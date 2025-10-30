@@ -80,7 +80,7 @@ export const UserBillModal: React.FC<Props> = (
 
 
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
 
     const total = userBills?.length || 0;
 

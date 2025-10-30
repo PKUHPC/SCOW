@@ -20,7 +20,7 @@ import { Static } from "@sinclair/typebox";
 import { App, AutoComplete, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -30,7 +30,7 @@ import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormCo
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { JobSortBy, JobSortOrder, SearchType } from "src/models/job";
+import { exportJobColumns, JobSortBy, JobSortOrder, SearchType } from "src/models/job";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
@@ -167,11 +167,11 @@ export const JobTable: React.FC<Props> = ({
   const { data, isLoading } = useAsync({ promiseFn });
 
   const finalPriceText = {
-    tenant: priceTexts?.tenant ?? t(p(priceText.tenant)),
     account: priceTexts?.account ?? t(p(priceText.account)),
+    tenant: priceTexts?.tenant ?? t(p(priceText.tenant)),
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding) => {
     const totalCount = data?.totalCount ?? 0;
 
     // 获取浏览器时区
@@ -185,7 +185,7 @@ export const JobTable: React.FC<Props> = ({
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportJobRecord",
-        columns,
+        columns: exportJobColumns,
         count: totalCount,
         timeZone, // 将浏览器时区作为参数传递到后端
         query: {
@@ -199,37 +199,6 @@ export const JobTable: React.FC<Props> = ({
     }
   };
 
-  const exportOptions = useMemo(() => {
-    // 生成每列的选项对象
-    const baseOptions = [
-      { label: t(pCommon("clusterWorkId")), value: "idJob" },
-      { label: t(pCommon("workName")), value: "jobName" },
-    ];
-
-    if (showAccount) {
-      baseOptions.push({ label: t(pCommon("account")), value: "account" });
-    }
-
-    if (showUser) {
-      baseOptions.push({ label: t(pCommon("user")), value: "user" });
-    }
-
-    baseOptions.push(
-      { label: t(pCommon("clusterName")), value: "cluster" },
-      { label: t(pCommon("partition")), value: "partition" },
-      { label: "QOS", value: "qos" },
-      { label: t(pCommon("timeSubmit")), value: "timeSubmit" },
-      { label: t(pCommon("timeEnd")), value: "timeEnd" },
-    );
-
-    // 添加价格列选项
-    const priceOptions = showedPrices.map((v) => ({
-      label: finalPriceText[v],
-      value: `${v}Price`,
-    }));
-
-    return [...baseOptions, ...priceOptions];
-  }, [showAccount, showUser, showedPrices, t, finalPriceText]);
 
   return (
     <div>
@@ -248,7 +217,6 @@ export const JobTable: React.FC<Props> = ({
               <Space>
                 <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
                 <ExportFileModaLButton
-                  options={exportOptions} // 定义导出列选项
                   onExport={handleExport}
                 >
                   {t(pCommon("export"))}
@@ -441,10 +409,11 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         {
           showUser ? (
             <Table.Column<JobInfo>
-              dataIndex="user"
+              dataIndex="userName"
               width="12%"
               ellipsis
-              title={t(pCommon("userId"))}
+              title={t(pCommon("user"))}
+              render={(userName,record) => `${userName} (${record.user})`}
               sorter={true}
             />
           ) : undefined

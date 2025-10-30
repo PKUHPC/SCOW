@@ -41,6 +41,16 @@ export const RunningJob = Type.Object({
    */
   timeLimit: Type.String(),
   workingDir: Type.String(),
+  cpusAlloc: Type.Number(),
+  nodesAlloc: Type.Number(),
+  gpusAlloc: Type.Number(),
+  memReq: Type.Number(),
+  memAlloc: Type.Number(),
+  startTime: Type.Optional(Type.String()),
+  endTime: Type.Optional(Type.String()),
+  nodelist: Type.Optional(Type.String()),
+  reason: Type.Optional(Type.String()),
+  submitTime: Type.String(),
 });
 export type RunningJob = Static<typeof RunningJob>;
 
@@ -78,7 +88,15 @@ export const getRunningJobs = async (request: GetRunningJobsRequest) => {
 
   const reply = await asyncClientCall(client, "getRunningJobs", request);
 
-  return reply.jobs;
+  return reply.jobs.map((job) => ({
+    ...job,
+    cpusAlloc: job.cpusAlloc ?? 0,
+    gpusAlloc: job.gpusAlloc ?? 0,
+    nodesAlloc: job.nodesAlloc ?? 0,
+    memReq: job.memReq,
+    memAlloc: job.memAlloc ?? 0,
+    submitTime: job.submissionTime,
+  }));
 };
 
 

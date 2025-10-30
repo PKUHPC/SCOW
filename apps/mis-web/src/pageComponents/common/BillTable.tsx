@@ -185,7 +185,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
   },[data]);
 
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
 
     const total = data?.total ?? 0;
 

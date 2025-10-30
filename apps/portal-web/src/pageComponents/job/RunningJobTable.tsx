@@ -226,11 +226,10 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime, ":")}
           />
           <Table.Column<RunningJobInfo>
-            dataIndex="nodesOrReason"
+            dataIndex="reason"
             ellipsis
-            title={t(p("jobInfoTable.nodesOrReason"))}
-            render={(d: string) => d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d}
-            sorter={(a, b) => a.nodesOrReason.localeCompare(b.nodesOrReason)}
+            title={t(p("jobInfoTable.reason"))}
+            sorter={(a, b) => (a.reason ?? "").localeCompare(b.reason ?? "")}
           />
           <Table.Column<RunningJobInfo>
             dataIndex="timeLimit"

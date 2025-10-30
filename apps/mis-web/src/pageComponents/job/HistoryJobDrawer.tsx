@@ -15,6 +15,7 @@ import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Descriptions, Drawer } from "antd";
 import { useStore } from "simstate";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { formatTime } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 import { moneyToString } from "src/utils/money";
@@ -39,26 +40,30 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
   const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const drawerItems = [
-    [t(pCommon("workId")), "biJobIndex"],
-    [t(pCommon("clusterWorkId")), "idJob"],
-    [t(pCommon("partition")), "partition"],
-    [t(p("list")), "nodelist"],
     [t(pCommon("workName")), "jobName"],
+    [t(pCommon("clusterWorkId")), "idJob"],
+    [t(pCommon("userId")), "user"],
+    [t(pCommon("userName")), "userName"],
+    [t(pCommon("account")), "account"],
+    [t(pCommon("accountOwnerId")), "accountOwnerId"],
+    [t(pCommon("accountOwnerName")), "accountOwnerName"],
     [t(pCommon("clusterName")), "cluster", getClusterName],
+    [t(pCommon("partition")), "partition"],
+    ["QOS", "qos"],
+    [t(p("list")), "nodelist"],
     [t(p("timeSubmit")), "timeSubmit", formatDateTime],
     [t(p("timeStart")), "timeStart", (t) => (t ? formatDateTime(t) : "-")],
     [t(p("timeEnd")), "timeEnd", formatDateTime],
-    [t(p("gpus")), "gpu"],
-    [t(p("cpusReq")), "cpusReq"],
-    [t(p("cpusAlloc")), "cpusAlloc"],
-    [t(p("memReq")), "memReq"],
-    [t(p("memAlloc")), "memAlloc"],
     [t(p("nodesReq")), "nodesReq"],
     [t(p("nodesAlloc")), "nodesAlloc"],
+    [t(p("cpusReq")), "cpusReq"],
+    [t(p("cpusAlloc")), "cpusAlloc"],
+    [t(p("gpus")), "gpu"],
+    [t(p("memReq")), "memReq"],
+    [t(p("memAlloc")), "memAlloc"],
     [t(p("timeLimit")), "timelimit"],
-    [t(p("timeUsed")), "timeUsed"],
-    [t(p("timeWait")), "timeWait"],
-    ["QOS", "qos"],
+    [t(p("timeUsed")), "timeUsed", (t) => (t ? formatTime(t * 1000) : t)],
+    [t(p("timeWait")), "timeWait", (t) => (t ? formatTime(t * 1000) : t)],
     [t(p("recordTime")), "recordTime", formatDateTime],
     [
       (pr) => pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee")), "accountPrice",

@@ -16,13 +16,15 @@ import dayjs from "dayjs";
 import type { Cluster } from "src/utils/cluster";
 
 
-export type RunningJobInfo = RunningJob & { cluster: Cluster; runningOrQueueTime: string };
+export type RunningJobInfo = RunningJob
+& { cluster: Cluster; runningOrQueueTime: string, elapsed?: string; submitTime: string; };
 
 export const RunningJobInfo = {
   fromGrpc: (info: RunningJob, cluster: Cluster): RunningJobInfo => ({
     ...info,
     cluster,
     runningOrQueueTime: calculateRunningOrQueueTime(info),
+    submitTime: info.submissionTime,
   }),
 };
 

@@ -10,11 +10,13 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { JobsOfAccountAndUserTarget, JobsOfAccountTarget, JobsOfJobIdAndAccountTarget, JobsOfJobIdAndUserTarget,
   JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget } from "@scow/protos/build/server/job";
 import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
+import { UserRole } from "src/entities/UserAccount";
 
 export function toGrpc(x: JobInfoEntity) {
   return {
@@ -57,8 +59,6 @@ export const getJobsTargetSearchParam = (target:
 ): { tenant: string, account?: string | { $ne: null },
   user?: string | { $ne: null }, idJob?: number | { $ne: null } } => {
 
-
-
   const { accountName, tenantName, userId, jobId } = target[target.$case];
 
   let searchParam: {
@@ -99,3 +99,49 @@ export const getJobsTargetSearchParam = (target:
   return searchParam;
 };
 
+
+interface JobUserAndAccountOwnerDetails {
+  biJobIndex: number;
+  userName: string;
+  accountOwnerId: string;
+  accountOwnerName: string;
+}
+
+export type JobUserAndAccountOwnerDetailsMap = Record<number, JobUserAndAccountOwnerDetails>;
+/**
+ * 使用knex进行关联查询，获取作业ID对应的用户姓名、账户拥有者ID和姓名
+ *
+ * @param em EntityManager实例
+ * @param jobIds 作业ID列表
+ * @returns 以作业id为key，属性中包含用户名、账户拥有者ID、账户拥有者姓名的对象
+ */
+export async function getJobUserAndAccountOwnerDetailsMap(em: SqlEntityManager<MySqlDriver>, jobIds: number[]):
+Promise< JobUserAndAccountOwnerDetailsMap> {
+  if (jobIds.length === 0) {
+    return {};
+  }
+
+  const knex = em.getConnection().getKnex();
+
+  const jobUserAndAccountOwnerDetails = await knex
+    .from({ j: "job_info" })
+    .select([
+      "j.bi_job_index as biJobIndex",
+      "u.name as userName",
+      "ou.user_id as accountOwnerId",
+      "ou.name as accountOwnerName",
+    ])
+    .leftJoin({ u: "user" }, "u.user_id", "j.user")
+    .leftJoin({ a: "account" }, "a.account_name", "j.account")
+    .leftJoin({ ua: "user_account" }, function() {
+      this.on("ua.account_id", "=", "a.id")
+        .andOn("ua.role", "=", knex.raw("?", [UserRole.OWNER]));
+    })
+    .leftJoin({ ou: "user" }, "ou.id", "ua.user_id")
+    .whereIn("j.bi_job_index", jobIds);
+
+  return jobUserAndAccountOwnerDetails.reduce((map, detail) => {
+    map[detail.biJobIndex] = detail;
+    return map;
+  }, {} as JobUserAndAccountOwnerDetailsMap);
+}

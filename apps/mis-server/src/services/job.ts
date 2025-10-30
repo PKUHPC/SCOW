@@ -24,7 +24,7 @@ import { JobPriceChange } from "src/entities/JobPriceChange";
 import { AmountStrategy, JobPriceItem } from "src/entities/JobPriceItem";
 import { Tenant } from "src/entities/Tenant";
 import { getJobTotalCountCached, queryWithCache } from "src/utils/cache";
-import { toGrpc } from "src/utils/job";
+import { getJobUserAndAccountOwnerDetailsMap, JobUserAndAccountOwnerDetailsMap, toGrpc } from "src/utils/job";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateGetJobsOptions } from "src/utils/queryOptions";
@@ -82,6 +82,15 @@ export const jobServiceServer = plugin((server) => {
         });
       }
 
+      // 获取jobIds用于关联查询
+      const jobIds = jobs.map((job) => job.biJobIndex);
+
+      // 获取用户姓名、账户拥有者ID和姓名的map
+      let jobUserAndAccountOwnerDetailsMap: JobUserAndAccountOwnerDetailsMap = {};
+
+      if (jobIds.length > 0) {
+        jobUserAndAccountOwnerDetailsMap = await getJobUserAndAccountOwnerDetailsMap(em, jobIds);
+      }
 
       const { total_account_price, total_tenant_price }: { total_account_price: string, total_tenant_price: string } =
        await em.createQueryBuilder(JobInfoEntity, "j")
@@ -91,7 +100,15 @@ export const jobServiceServer = plugin((server) => {
 
       const reply = {
         totalCount: count,
-        jobs: jobs.map(toGrpc),
+        jobs: jobs.map((job) => {
+          const detail = jobUserAndAccountOwnerDetailsMap[job.biJobIndex];
+          return {
+            ...toGrpc(job),
+            userName: detail.userName,
+            accountOwnerId: detail.accountOwnerId,
+            accountOwnerName: detail?.accountOwnerName,
+          };
+        }),
         totalAccountPrice: decimalToMoney(new Decimal(total_account_price)),
         totalTenantPrice: decimalToMoney(new Decimal(total_tenant_price)),
       } as GetJobsResponse;
@@ -273,9 +290,10 @@ export const jobServiceServer = plugin((server) => {
         logger,
         async (client) => {
           const fields = [
-            "job_id", "partition", "name", "user", "state", "elapsed_seconds",
-            "nodes_req", "node_list", "reason", "account", "cpus_req", "gpus_req",
-            "qos", "submit_time", "time_limit_minutes", "working_directory",
+            "job_id", "partition", "name", "user", "state", "elapsed_seconds", "nodes_req", "nodes_alloc",
+            "node_list", "reason", "account", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc",
+            "qos", "submit_time", "time_limit_minutes", "working_directory", "mem_req_mb", "mem_alloc_mb",
+            "start_time", "end_time",
           ];
 
           const runningJobs = await asyncClientCall(client.job, "getJobs", {

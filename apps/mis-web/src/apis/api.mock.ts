@@ -52,9 +52,12 @@ const mockJobInfo: JobInfo = {
   "recordTime": "2020-04-23T23:49:50.000Z",
   "accountPrice": numberToMoney(10),
   "tenantPrice": numberToMoney(20),
+  userName: "demo",
+  accountOwnerId: "demo",
+  accountOwnerName: "demo",
 };
 
-export const runningJob: RunningJob = {
+export const runningJob = {
   jobId: "123",
   account: "123",
   cores: "123",
@@ -70,6 +73,12 @@ export const runningJob: RunningJob = {
   user: "!23",
   timeLimit: "NOT_SET",
   workingDir: "/home/ddadaal/Code",
+  memReq: 100,
+  cpusAlloc: 100,
+  memAlloc: 100,
+  nodesAlloc: 1,
+  gpusAlloc: 0,
+  submitTime: "2021-12-22T16:16:02",
 };
 
 const mockAccounts: Required<Account>[] = [

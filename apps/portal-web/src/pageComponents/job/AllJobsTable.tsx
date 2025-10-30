@@ -253,13 +253,11 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           fixed="right"
           render={(_, r) => (
             <Space>
-              {(r.state === "RUNNING" || r.state === "PENDING") && (
-                <Tooltip title={t("button.detailButton")}>
-                  <DetailIcon
-                    onClick={() => setPreviewItem(r)}
-                  />
-                </Tooltip>
-              )}
+              <Tooltip title={t("button.detailButton")}>
+                <DetailIcon
+                  onClick={() => setPreviewItem(r)}
+                />
+              </Tooltip>
               <Tooltip title={t(p("linkToPath"))}>
                 <EnterDirectoryIcon
                   onClick={() => Router.push(join("/files", cluster.id, r.workingDirectory))}

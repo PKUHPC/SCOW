@@ -26,7 +26,7 @@ import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormCo
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { SearchType } from "src/models/job";
+import { exportJobColumns, SearchType } from "src/models/job";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
@@ -80,7 +80,7 @@ const filterFormToQuery = (query: FilterForm, rangeSearch: boolean): GetJobFilte
     accountName: rangeSearch ? (query.accountName || undefined) : undefined,
     jobEndTimeStart: rangeSearch ? (query.jobEndTime[0].toISOString()) : undefined,
     jobEndTimeEnd: rangeSearch ? (query.jobEndTime[1].toISOString()) : undefined,
-    jobId:  !rangeSearch ? (query.jobId || undefined) : undefined,
+    jobId: !rangeSearch ? (query.jobId || undefined) : undefined,
     clusters: query.clusters?.map((x) => x.id),
   };
 };
@@ -117,23 +117,24 @@ export const AdminJobTable: React.FC<Props> = () => {
   const promiseFn = useCallback(async () => {
     const diffQuery = filterFormToQuery(query, rangeSearch.current);
     setCurrentDiffQuery(diffQuery);
-    return await api.getJobInfo({ query: {
-      ...diffQuery,
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-    } });
+    return await api.getJobInfo({
+      query: {
+        ...diffQuery,
+        page: pageInfo.page,
+        pageSize: pageInfo.pageSize,
+      },
+    });
   }, [pageInfo, query]);
 
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
   const finalPriceText = {
-    tenant: t(p("platformPrice")),
     account: t(p("tenantPrice")),
+    tenant: t(p("platformPrice")),
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding) => {
     const totalCount = data?.totalCount ?? 0;
-
     // 获取浏览器时区
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -145,7 +146,7 @@ export const AdminJobTable: React.FC<Props> = () => {
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportJobRecord",
-        columns,
+        columns: [ ...exportJobColumns, "tenantPrice"],
         count: totalCount,
         timeZone, // 将浏览器时区作为参数传递到后端
         query: {
@@ -191,7 +192,7 @@ export const AdminJobTable: React.FC<Props> = () => {
               <Space>
                 <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
                 <ExportFileModaLButton
-                  options={exportOptions} // 定义导出列选项
+                  // options={exportOptions} // 定义导出列选项
                   onExport={handleExport}
                 >
                   {t(pCommon("export"))}
@@ -360,7 +361,8 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         } : false}
         tableLayout="fixed"
         scroll={{ x: data?.jobs?.length ? 1800 : true }}
-        rowSelection={{ type: "checkbox",
+        rowSelection={{
+          type: "checkbox",
           onChange: (_, selectedRows) => {
             setSelectedJobs(selectedRows);
           },
@@ -370,7 +372,12 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
       >
         <Table.Column dataIndex="idJob" width="5.2%" title={t(pCommon("clusterWorkId"))} />
         <Table.Column dataIndex="jobName" ellipsis title={t(pCommon("workName"))} />
-        <Table.Column dataIndex="user" ellipsis title={t(pCommon("userId"))} />
+        <Table.Column<JobInfo>
+          dataIndex="userName"
+          ellipsis
+          title={t(pCommon("user"))}
+          render={(userName, record) => `${userName} (${record.user})`}
+        />
         <Table.Column dataIndex="account" ellipsis title={t(pCommon("account"))} />
         <Table.Column<JobInfo>
           dataIndex="cluster"

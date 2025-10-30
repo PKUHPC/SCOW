@@ -217,9 +217,10 @@ export const jobServiceServer = plugin((server) => {
         logger,
         async (client) => await asyncClientCall(client.job, "getJobs", {
           fields: [
-            "job_id", "partition", "name", "user", "state", "elapsed_seconds",
-            "nodes_req", "node_list", "reason", "account", "cpus_req", "gpus_req",
-            "qos", "submit_time", "time_limit_minutes", "working_directory",
+            "job_id", "partition", "name", "user", "state", "elapsed_seconds", "nodes_req", "nodes_alloc",
+            "node_list", "reason", "account", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc",
+            "qos", "submit_time", "time_limit_minutes", "working_directory", "mem_req_mb", "mem_alloc_mb",
+            "start_time", "end_time",
           ],
           filter: { users: [userId], accounts: [], states: ["PENDING", "RUNNING"]},
         }),
@@ -237,9 +238,9 @@ export const jobServiceServer = plugin((server) => {
         logger,
         async (client) => await asyncClientCall(client.job, "getJobs", {
           fields: [
-            "job_id", "name", "account", "partition", "qos", "state", "working_directory",
-            "reason", "elapsed_seconds", "time_limit_minutes", "submit_time",
-            "start_time", "end_time",
+            "job_id", "name", "account", "partition", "qos", "state", "working_directory", "nodes_req", "nodes_alloc",
+            "node_list", "reason", "elapsed_seconds", "time_limit_minutes", "submit_time",
+            "start_time", "end_time", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc", "mem_req_mb", "mem_alloc_mb",
           ],
           filter: {
             users: [userId], accounts: [], states: [],

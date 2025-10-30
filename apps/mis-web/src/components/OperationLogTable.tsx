@@ -183,7 +183,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
     });
   };
 
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
     const total = data?.totalCount ?? 0;
 
     // 获取浏览器时区

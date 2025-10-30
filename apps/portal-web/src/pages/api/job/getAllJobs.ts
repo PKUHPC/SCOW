@@ -33,6 +33,15 @@ export const JobInfo = Type.Object({
   submitTime: Type.String(),
   startTime: Type.Optional(Type.String()),
   endTime: Type.Optional(Type.String()),
+  nodes: Type.Number(),
+  cores: Type.Number(),
+  gpus: Type.Number(),
+  cpusAlloc: Type.Number(),
+  nodesAlloc: Type.Number(),
+  gpusAlloc: Type.Number(),
+  memReq: Type.Number(),
+  memAlloc: Type.Number(),
+  nodelist: Type.Optional(Type.String()),
 });
 
 export type JobInfo = Static<typeof JobInfo>;
@@ -74,5 +83,12 @@ export default route(GetAllJobsSchema, async (req, res) => {
   return asyncUnaryCall(client, "listAllJobs", {
     userId: info.identityId, cluster,
     startTime, endTime,
-  }).then(({ results }) => ({ 200: { results } }));
+  }).then(({ results }) => ({ 200: { results: results.map((job) => ({
+    ...job,
+    cpusAlloc: job.cpusAlloc ?? 0,
+    gpusAlloc: job.gpusAlloc ?? 0,
+    nodesAlloc: job.nodesAlloc ?? 0,
+    memReq: job.memReq,
+    memAlloc: job.memAlloc ?? 0,
+  })) } }));
 });

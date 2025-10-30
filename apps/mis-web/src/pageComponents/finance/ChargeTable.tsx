@@ -166,7 +166,7 @@ export const ChargeTable: React.FC<Props> = ({
   });
 
   // 处理消费记录导出的函数
-  const handleExport = async (columns: string[], encoding: Encoding) => {
+  const handleExport = async (encoding: Encoding, columns: string[]) => {
     const totalCount = totalResultData?.totalCount ?? 0;
 
     // 时区信息

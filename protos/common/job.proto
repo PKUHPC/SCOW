@@ -37,4 +37,14 @@ message RunningJob {
   string time_limit = 14;
 
   string working_dir = 15;
+
+  int64 mem_req = 16;
+  optional uint32 mem_alloc = 17;
+  optional uint32 cpus_alloc = 18;
+  optional uint32 nodes_alloc = 19;
+  optional uint32 gpus_alloc = 20;
+  optional string nodelist = 21;
+  optional string reason = 22;
+  optional string start_time = 23;
+  optional string end_time = 24;
 }
