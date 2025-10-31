@@ -150,6 +150,7 @@ export const ClusterConfigSchema = Type.Object({
   }, { description: "k8s 集群配置" })),
 
   storage: Type.Optional(StorageConfigSchema),
+  description: Type.Optional(createI18nStringSchema({ description: "集群描述" })),
 });
 
 

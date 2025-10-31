@@ -47,7 +47,7 @@ export const entryNameMap = {
   runningJobs:"runningJobs",
   allJobs:"allJobs",
   savedJobs:"jobTemplates",
-  desktop:"desktop",
+  loginCluster:"loginCluster",
   appSessions: "appSessions",
   fileManage: "fileManage",
 

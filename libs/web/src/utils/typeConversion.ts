@@ -76,6 +76,7 @@ export const getClusterConfigsTypeFormat = (
         k8sRuntime: clusterConfigSchemaProto_K8sRuntimeToJSON(cluster.k8s.runtime).toLowerCase(),
         kubeconfig: cluster.k8s.kubeconfig,
       } : undefined,
+      description: cluster.description ? getI18nTypeFormat(cluster.description) : undefined,
     };
     modifiedClusters[cluster.clusterId] = newCluster as ClusterConfigSchema;
   });

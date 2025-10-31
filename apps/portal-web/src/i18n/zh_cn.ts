@@ -27,9 +27,8 @@ export default {
       submitJob: "提交作业",
       jobTemplates: "作业模板",
     },
-    desktop: "桌面",
     apps: {
-      title: "交互式应用",
+      title: "应用",
       appSessions: "已创建的应用",
       createApp: "创建应用",
     },
@@ -39,6 +38,7 @@ export default {
       clusterFileManager: "集群文件管理",
       transferProgress: "传输进度",
     },
+    loginCluster: "登录集群",
   },
   // button
   button: {
@@ -54,7 +54,6 @@ export default {
     detailButton: "详情",
     submitButton: "提交",
     closeButton: "关闭",
-    startButton: "启动",
   },
   // pageComp
   pageComp: {
@@ -434,41 +433,6 @@ export default {
         isMerging: "正在合并...",
       },
     },
-    // desktop
-    desktop: {
-      desktopTable: {
-        tableItem: {
-          title: "桌面ID",
-          desktopName: "桌面名称",
-          wm: "桌面类型",
-          addr: "地址",
-          createTime: "创建时间",
-        },
-        filterForm: {
-          cluster: "集群",
-          loginNode: "登录节点",
-          createNewDesktop: "新建桌面",
-        },
-      },
-      desktopTableActions: {
-        popConfirmTitle: "删除后不可恢复，你确定要删除吗?",
-      },
-      newDesktopModal: {
-        error: {
-          createDesktopError: "新建桌面失败",
-          tooManyShadowDeskContent: "该集群 shadowDesk 桌面数目达到最大限制",
-          tooManyVncContent: "该集群桌面数目达到最大限制",
-          desktopNameAlreadyExists: "桌面名称已存在",
-        },
-        modal: {
-          createNewDesktop: "新建桌面",
-          loginNode: "登录节点",
-          wm: "桌面类型",
-          desktopName: "桌面名称",
-          remoteControlTool: "远程控制工具",
-        },
-      },
-    },
     // app
     app: {
       appSessionTable: {
@@ -498,11 +462,11 @@ export default {
         connect: "进入",
       },
       createApps: {
-        notFoundMessage: "没有可以创建的交互式应用",
-        loading: "正在加载可创建的交互式应用",
+        notFoundMessage: "没有可以创建的应用",
+        loading: "正在加载可创建的应用",
         create: "创建",
         searchPlaceholder: "请输入应用名",
-        noSearchResult: "未找到与 \"{}\" 相关的交互式应用",
+        noSearchResult: "未找到与 \"{}\" 相关的应用",
       },
       launchAppForm: {
         errorMessage: "创建应用失败",
@@ -620,6 +584,45 @@ export default {
         fetchNotifError: "获取未读消息失败",
       },
     },
+    loginCluster: {
+      shell: "命令行",
+      desktop: "桌面",
+      shellCard: {
+        clusterName: "集群",
+        loginNode: "登录节点",
+        open: "打开",
+      },
+      defaultDescription: "管理员暂未添加描述",
+      desktopCardList: {
+        newDesktop: "新建桌面",
+      },
+      desktopCard:{
+        clusterName: "集群",
+        loginNode: "登录节点",
+        desktopType: "桌面类型",
+        remoteControlTool: "远程控制工具",
+        createTime: "创建时间",
+        connect:"连接",
+        delete: "删除桌面",
+        deleteConfirmContent: "删除后不可恢复，你确定要删除吗?",
+      },
+      newDesktopCardModal: {
+        error: {
+          creatDesktopError: "新建桌面失败",
+          tooManyShadowDeskContent: "该集群 shadowDesk 桌面数目达到最大限制",
+          tooManyVncContent: "该集群桌面数目达到最大限制",
+          desktopNameAlreadyExists: "桌面名称已存在",
+        },
+        modal: {
+          createNewDesktop: "新建桌面",
+          loginNode: "登录节点",
+          wm: "桌面类型",
+          desktopName: "桌面名称",
+          remoteControlTool: "远程控制工具",
+          clusterName: "集群",
+        },
+      },
+    },
   },
   component:{
     errorPages:{
@@ -654,13 +657,9 @@ export default {
       },
       sessions: {
         subTitle: "您所请求的集群不存在",
-        title: "交互式应用",
-        pageTitle: "集群{}交互式应用",
+        title: "应用",
+        pageTitle: "集群{}应用",
       },
-    },
-    desktop: {
-      title: "桌面",
-      pageTitle: "登录节点上的桌面",
     },
     files: {
       path: {
@@ -741,10 +740,6 @@ export default {
         popoverContent13: "，输入该命令后您可以将本地文件上传到当前路径下",
 
         command:"命令",
-      },
-      index: {
-        title: "终端",
-        content: "启动以下集群的终端：",
       },
     },
     _app: {

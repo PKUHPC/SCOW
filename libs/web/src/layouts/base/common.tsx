@@ -13,6 +13,7 @@
 import { arrayContainsElement } from "@scow/utils";
 import { Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/interface";
+import Link from "next/link";
 import Router from "next/router";
 import React from "react";
 import { match } from "src/layouts/base/matchers";
@@ -89,6 +90,35 @@ export function createMenuItems(
     .map((r) => createMenuItem(r));
 
   return items;
+}
+
+// 创建无子元素的a标签菜单项
+export function createLinkMenuItems(routes: NavItemProps[], pathname: string): ItemType[] {
+  return routes.filter((x) => !x.hideIfNotActive || match(x, pathname)).map((route) => {
+    const target = route.clickToPath ?? route.path;
+
+    return {
+      icon: iconToNode(route.Icon),
+      key: route.path,
+      label: (
+        <Link
+          href={target}
+          passHref
+          target={route.openInNewPage ? "_blank" : undefined}
+          rel={route.openInNewPage ? "noopener noreferrer" : undefined}
+          onClick={() => route.handleClick?.()}
+        >
+          <Tooltip
+            title={route.text?.length > 13 ? route.text : null}
+            mouseEnterDelay={0.3}
+            placement="bottomLeft"
+          >
+            {route.text}
+          </Tooltip>
+        </Link>
+      ),
+    } as ItemType;
+  });
 }
 
 export function calcActiveKeys(links: NavItemProps[], pathname: string): Set<string> {

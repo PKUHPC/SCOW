@@ -26,7 +26,7 @@ export const ListAvailableAppsSchema = typeboxRouteSchema({
   responses: {
     200: Type.Object({
       // 公共配置config/apps
-      // 与集群配置下config/clusters/[clusterId]/apps下的交互式应用
+      // 与集群配置下config/clusters/[clusterId]/apps下的应用
       // 如果app.id重复，则按照集群配置下读取
       apps: Type.Array(App),
     }),

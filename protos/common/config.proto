@@ -164,6 +164,7 @@ message ClusterConfigSchemaProto {
   // scowd 配置
   ScowdConfigs scowd = 13;
   optional Storage storage = 14;
+  optional I18nStringProtoType description = 15;
 }
 
 message GetClusterConfigFilesRequest {

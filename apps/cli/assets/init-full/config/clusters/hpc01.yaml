@@ -51,3 +51,7 @@ ai:
 #   paths: ["/data"]
 #   # 可选，默认未开启副本备份
 #   replicaExist: true
+
+# 集群描述, 可选
+# 此文本支持国际化
+description: 集群描述

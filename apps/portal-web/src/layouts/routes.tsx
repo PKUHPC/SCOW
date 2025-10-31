@@ -16,12 +16,10 @@ import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
-import { AllJobsIcon, ApplicationIcon
-  , AppSessionsIcon, ClusterFileManagerIcon
-  , CreateAppIcon, DashBoardIcon, DesktopIcon
-  , FileManagerIcon, FileTransferIcon, FileTransferInfoIcon,JobIcon, RunningJobsIcon
-  , ShellClusterIcon, ShellIcon, ShellLoginIcon,
-  SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
+import { AllJobsIcon, ApplicationIcon, AppSessionsIcon, ClusterFileManagerIcon
+  , CreateAppIcon, DashBoardIcon, FileManagerIcon,
+  FileTransferIcon, FileTransferInfoIcon,JobIcon, LoginClusterIcon,
+  RunningJobsIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
 import { User } from "src/stores/UserStore";
 import { Cluster, LoginNode } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -77,39 +75,12 @@ export const userRoutes: (
         },
       ],
     }] : []),
-    ...(publicConfig.ENABLE_SHELL && currentClusters.length > 0 ?
+    ...((publicConfig.ENABLE_SHELL || enableLoginDesktop) && currentClusters.length > 0 ?
       [{
-        Icon: ShellIcon,
-        text: "Shell",
-        path: "/shell",
-        clickToPath:
-        join(publicConfig.BASE_PATH,
-          "shell",
-          defaultCluster?.id ?? currentClusters[0].id,
-          loginNodes[defaultCluster?.id ?? currentClusters[0].id]?.[0]?.address),
-        openInNewPage: true,
-        clickable: true,
-        children: currentClusters.map(({ name, id }) => ({
-          openInNewPage: true,
-          Icon: ShellClusterIcon,
-          text: getI18nConfigCurrentText(name, languageId),
-          path: `/shell/${id}`,
-          clickToPath: join(publicConfig.BASE_PATH, "shell", id, loginNodes[id]?.[0]?.address),
-          handleClick: () => { setDefaultCluster({ name, id }); },
-          children: loginNodes[id]?.map((loginNode) => ({
-            openInNewPage: true,
-            Icon: ShellLoginIcon,
-            text: loginNode.name,
-            path: `/shell/${id}/${loginNode.address}`,
-            handleClick: () => { setDefaultCluster({ name, id }); },
-          })),
-        } as NavItemProps)),
+        Icon: LoginClusterIcon,
+        text: t("routes.loginCluster"),
+        path: "/loginCluster",
       } as NavItemProps] : []),
-    ...(enableLoginDesktop && currentClusters.length > 0 ? [{
-      Icon: DesktopIcon,
-      text: t("routes.desktop"),
-      path: "/desktop",
-    }] : []),
     ...(publicConfig.ENABLE_APPS && currentClusters.length > 0 ? [{
       Icon: ApplicationIcon,
       text: t("routes.apps.title"),

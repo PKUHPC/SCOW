@@ -58,6 +58,7 @@ slogan:
 | `portal.yaml`        | **submitJobPromptText**                                   |
 | `{cluster}.yaml`     | **displayName**                                           |
 | `{cluster}.yaml`     | `loginNodes:` **name**                                    |
+| `{cluster}.yaml`     | **description**                                           |
 | `{app}.yaml`         | `attributes:` **label**                                    |
 | `{app}.yaml`         | `attributes:` **placeholder**                              |
 | `{app}.yaml`         | `attributes: select:`  **label**                           |

@@ -114,6 +114,7 @@ export const convertClusterConfigsToServerProtoType = (
         } : undefined,
 
       storage: item.storage,
+      description: item.description ? getI18nSeverTypeFormat(item.description) : undefined,
     };
 
     clusterConfigsProto.push(protoItem);

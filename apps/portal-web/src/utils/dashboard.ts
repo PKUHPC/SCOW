@@ -47,7 +47,7 @@ export const entryNameMap = {
   runningJobs:"routes.job.runningJobs",
   allJobs:"routes.job.allJobs",
   savedJobs:"routes.job.jobTemplates",
-  desktop:"routes.desktop",
+  loginCluster:"routes.loginCluster",
 } as const;
 
 export const getEntryBaseName = (item: Entry, t: ReturnType<typeof useI18nTranslateToString>) => {

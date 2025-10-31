@@ -51,7 +51,7 @@ export const VNC_SESSION_INFO = "VNC_SESSION_INFO";
 export const APP_LAST_SUBMISSION_INFO = "last_submission.json";
 export const BIN_BASH_SCRIPT_HEADER = "#!/bin/bash -l\n";
 
-// 已完成的交互式应用作业，保存相关信息到ended_sessions.json
+// 已完成的应用作业，保存相关信息到ended_sessions.json
 export const ENDED_SESSIONS = "ended_sessions.json";
 
 

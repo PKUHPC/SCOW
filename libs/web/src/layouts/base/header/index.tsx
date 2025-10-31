@@ -119,7 +119,7 @@ interface SourcedHeaderNavbarLink {
 };
 
 export const Header: React.FC<Props> = ({
-  routes,pathname, user, logout,
+  routes, pathname, user, logout,
   basePath, userLinks,
   languageId, activeKeys,
   right, staticNavbarLinks,

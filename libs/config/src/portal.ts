@@ -22,7 +22,11 @@ export const PortalConfigSchema = Type.Object({
   loginDesktop: Type.Object({
     enabled: Type.Boolean({ description: "是否启动登录节点上的桌面功能", default: true }),
     wms: Type.Array(
-      Type.Object({ name: Type.String({ description: "名称" }), wm: Type.String({ description: "wm值" }) }),
+      Type.Object({
+        name: Type.String({ description: "名称" }),
+        wm: Type.String({ description: "wm值" }),
+        iconPath: Type.Optional(Type.String({ description: "桌面图标路径" })),
+      }),
       { default: [{ name: "xfce", wm: "xfce" }]}),
     maxDesktops: Type.Integer({ description: "最多创建多少个vnc桌面", default: 3 }),
     desktopsDir: Type.String({ description: "将创建的登录节点桌面信息的保存到什么位置。相对于用户的家目录", default: "scow/desktops" }),

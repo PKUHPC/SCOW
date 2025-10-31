@@ -120,6 +120,7 @@ message ListAvailableWmsRequest {
 message AvailableWm {
   string name = 1;
   string wm = 2;
+  optional string icon_path = 3;
 }
 message ListAvailableWmsResponse {
   repeated AvailableWm wms = 1;

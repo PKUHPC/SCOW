@@ -15,7 +15,7 @@
 import { arrayContainsElement } from "@scow/utils";
 import { Menu } from "antd";
 import React from "react";
-import { createMenuItems } from "src/layouts/base/common";
+import { createLinkMenuItems } from "src/layouts/base/common";
 import { antdBreakpoints } from "src/layouts/base/constants";
 import { NavItemProps } from "src/layouts/base/types";
 import { styled } from "styled-components";
@@ -73,6 +73,7 @@ interface Props {
   activeKeys: string[];
 }
 
+// 当前仅用于顶部菜单
 export const BigScreenMenu: React.FC<Props> = ({
   routes, className, activeKeys, pathname,
 }) => {
@@ -87,7 +88,7 @@ export const BigScreenMenu: React.FC<Props> = ({
               theme="light"
               mode="horizontal"
               selectedKeys={activeKeys}
-              items={createMenuItems(routes, pathname, true)}
+              items={createLinkMenuItems(routes, pathname)}
             />
           ) : undefined
       }

@@ -27,7 +27,6 @@ export default {
       submitJob: "Submit Job",
       jobTemplates: "Job Templates",
     },
-    desktop: "Desktop",
     apps: {
       title: "Applications",
       appSessions: "Created Apps",
@@ -39,6 +38,7 @@ export default {
       clusterFileManager: "Clusters",
       transferProgress: "Transfer Progress",
     },
+    loginCluster: "Login Cluster",
   },
   // button
   button: {
@@ -54,7 +54,6 @@ export default {
     detailButton: "Details",
     submitButton: "Submit",
     closeButton: "Close",
-    startButton: "Start",
   },
   // pageComp
   pageComp: {
@@ -437,41 +436,6 @@ export default {
         isMerging: "Merging in progress...",
       },
     },
-    // desktop
-    desktop: {
-      desktopTable: {
-        tableItem: {
-          title: "Desktop ID",
-          desktopName: "Desktop Name",
-          wm: "Desktop Type",
-          addr: "Address",
-          createTime: "Creation Time",
-        },
-        filterForm: {
-          cluster: "Cluster",
-          loginNode: "Login Node",
-          createNewDesktop: "Create New Desktop",
-        },
-      },
-      desktopTableActions: {
-        popConfirmTitle: "This action is irreversible. Are you sure you want to delete?",
-      },
-      newDesktopModal: {
-        error: {
-          createDesktopError: "Failed to Create Desktop",
-          tooManyShadowDeskContent: "The number of shadowDesk desktops in this cluster has reached its maximum limit.",
-          tooManyVncContent: "The number of desktops in this cluster has reached its maximum limit.",
-          desktopNameAlreadyExists: "Desktop name already exists",
-        },
-        modal: {
-          createNewDesktop: "Create New Desktop",
-          loginNode: "Login Node",
-          wm: "Desktop Type",
-          desktopName: "Desktop Name",
-          remoteControlTool: "Remote Control Tool",
-        },
-      },
-    },
     // app
     app: {
       appSessionTable: {
@@ -501,11 +465,11 @@ export default {
         connect: "Enter",
       },
       createApps: {
-        notFoundMessage: "No interactive application available for creation.",
-        loading: "Loading available interactive applications...",
+        notFoundMessage: "No application available for creation.",
+        loading: "Loading available applications...",
         create: "Create",
         searchPlaceholder: "Enter application name",
-        noSearchResult: "No interactive application related to '{}' was found",
+        noSearchResult: "No application related to '{}' was found",
       },
       launchAppForm: {
         errorMessage: "Failed to create application.",
@@ -623,6 +587,45 @@ export default {
         fetchNotifError: "Failed to get unread messages",
       },
     },
+    loginCluster: {
+      shell: "Shell",
+      desktop: "Desktop",
+      shellCard: {
+        clusterName: "Cluster",
+        loginNode: "Login Node",
+        open: "Open",
+      },
+      defaultDescription: "The administrator has not added a description yet",
+      desktopCardList: {
+        newDesktop: "New Desktop",
+      },
+      desktopCard:{
+        clusterName: "Cluster",
+        loginNode: "Login Node",
+        desktopType: "Desktop Type",
+        remoteControlTool: "Remote Control Tool",
+        createTime: "Creation Time",
+        connect:"Connect",
+        delete: "Delete Desktop",
+        deleteConfirmContent: "This action is irreversible. Are you sure you want to delete?",
+      },
+      newDesktopCardModal: {
+        error: {
+          creatDesktopError: "Failed to Create Desktop",
+          tooManyShadowDeskContent: "The number of shadowDesk desktops in this cluster has reached its maximum limit.",
+          tooManyVncContent: "The number of desktops in this cluster has reached its maximum limit.",
+          desktopNameAlreadyExists: "Desktop name already exists",
+        },
+        modal: {
+          createNewDesktop: "Create New Desktop",
+          loginNode: "Login Node",
+          wm: "Desktop Type",
+          desktopName: "Desktop Name",
+          remoteControlTool: "Remote Control Tool",
+          clusterName: "Cluster",
+        },
+      },
+    },
   },
   component: {
     errorPages: {
@@ -657,13 +660,9 @@ export default {
       },
       sessions: {
         subTitle: "The requested cluster does not exist",
-        title: "Interactive Apps",
-        pageTitle: "{} Interactive Apps",
+        title: "Applications",
+        pageTitle: "{} Applications",
       },
-    },
-    desktop: {
-      title: "Desktop",
-      pageTitle: "Desktop on Login Node",
     },
     files: {
       path: {
@@ -742,10 +741,6 @@ export default {
         popoverContent13: "By entering this command, you can upload local files to the current directory.",
 
         command: "Command",
-      },
-      index: {
-        title: "Terminal",
-        content: "Launch terminal for the following clusters: ",
       },
     },
     _app: {

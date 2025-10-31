@@ -99,7 +99,7 @@ export default {
   allJobs: "All Jobs",
   submitJob: "Submit Job",
   jobTemplates: "Job Templates",
-  desktop: "Desktop",
+  loginCluster: "Login Cluster",
   appSessions: "Created Apps",
   fileManage: "File Management",
 

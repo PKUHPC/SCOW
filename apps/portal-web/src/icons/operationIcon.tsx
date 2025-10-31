@@ -211,29 +211,6 @@ export const RenameIcon: React.ForwardRefExoticComponent<IconProps> =
     </IconContainer>
   ));
 
-// 启动图标
-const startSVG = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M10 0C11.1046 0 12 0.895431 12 2V10C12 11.1046 11.1046 12 10 12H2L1.7959 11.9893C0.787238 11.887
-      1.81226e-05 11.0356 0 10V2C0 0.964354 0.787229 0.113011 1.7959 0.0107422L2 0H10ZM2 1.2002C1.55818
-      1.2002 1.2002 1.55818 1.2002 2V10C1.20021 10.4418 1.55819 10.7998 2 10.7998H10C10.4418 10.7998 10.7998
-      10.4418 10.7998 10V2C10.7998 1.55817 10.4418 1.2002 10 1.2002H2ZM3.5166 4.31836C3.60657 3.64917 4.34392
-      3.24529 4.96777 3.56836L7.94629 5.11133C8.66569 5.48449 8.66579 6.51365 7.94629 6.88672L4.96777
-      8.43066C4.34377 8.75386 3.60632 8.34916 3.5166 7.67969L3.50781 7.54297V4.45605L3.5166 4.31836ZM4.70801
-      7.21387L7.05176 5.99902L4.70801 4.78516V7.21387Z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-export const StartIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
-    <IconContainer>
-      <Icon component={startSVG} {...props} ref={ref} />
-    </IconContainer>
-  ));
-
 // 连接图标
 const connectSVG = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">

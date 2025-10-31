@@ -10,15 +10,15 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import React from "react";
-import { InfoPane } from "src/pageComponents/dashboard/InfoPane";
-import { styled, useTheme } from "styled-components"; ;
 import { Cluster } from "@scow/config/build/type";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Card, Col, Row } from "antd";
+import React from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterOverview, PlatformOverview } from "src/models/cluster";
+import { InfoPane } from "src/pageComponents/dashboard/InfoPane";
 import JobInfo from "src/pageComponents/dashboard/NodeRange";
+import { styled, useTheme } from "styled-components";
 
 interface Props {
   selectItem: ClusterOverview | PlatformOverview | undefined;

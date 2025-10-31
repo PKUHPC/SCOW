@@ -76,7 +76,7 @@ export const Sortable: FC<Props> = ({
   // 实际的快捷入口项
   const [items, setItems] = useState<itemEntry []>(quickEntryArray);
   // 编辑时临时的快捷入口项
-  // 处理id使其唯一，因为不同集群可以有相同的交互式应用
+  // 处理id使其唯一，因为不同集群可以有相同的应用
   const [temItems, setTemItems] = useState([...(items.map((x) => ({ ...x, id:formatEntryId(x) }),
   ))]);
 

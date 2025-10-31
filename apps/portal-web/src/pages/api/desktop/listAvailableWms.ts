@@ -24,6 +24,7 @@ import { route } from "src/utils/route";
 export const AvailableWm = Type.Object({
   name: Type.String(),
   wm: Type.String(),
+  iconPath: Type.Optional(Type.String()),
 });
 export type AvailableWm = Static<typeof AvailableWm>;
 

@@ -137,34 +137,6 @@ export const TemplatejobIcon: React.ForwardRefExoticComponent<{}> = React.forwar
   <Icon component={templateJobSVG} {...props} ref={ref} />
 ));
 
-// 桌面SVG
-const deskTopSVG = () => (
-  <svg width="1em" height="1.1em" viewBox="0 0 80 85" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect
-      opacity="0.2"
-      x="8.5"
-      y="23.5"
-      width="69"
-      height="59"
-      rx="2.5"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="5"
-    />
-    <path d="M14 67H55.5" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-    <path d="M29 55L29 67" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-    <path d="M40.4126 55L40.4126 67" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-    <rect width="70" height="55" rx="5" fill="currentColor" />
-    <path d="M27 5L43 5" stroke="white" strokeWidth="3" strokeLinecap="round" />
-  </svg>
-
-);
-
-export const DeskTopIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={deskTopSVG} {...props} ref={ref} />
-));
-
 // shellSVG
 
 const shellSVG = () => (

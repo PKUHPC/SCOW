@@ -127,13 +127,18 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const hasSidebar = arrayContainsElement(sidebarRoutes);
 
+  const primaryRoutes = (finalRoutes ?? routes).map((route) => {
+    const { children, ...rest } = route;
+    return rest;
+  });
+
   return (
     <Root>
       <Header
         extensions={extensions}
         routeQuery={routeQuery}
         pathname={router.asPath}
-        routes={finalRoutes ?? routes}
+        routes={primaryRoutes}
         user={user}
         logout={logout}
         basePath={basePath}

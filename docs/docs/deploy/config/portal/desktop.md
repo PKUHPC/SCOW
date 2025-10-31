@@ -27,9 +27,10 @@ loginDesktop:
   wms: 
     - name: Xfce
       wm: xfce
+      iconPath: desktop/1.png
 ```
 
-其中，name表示桌面的名称，wm表示TurboVNC中`-wm`选项的值。我们使用[TurboVNC](https://turbovnc.org)的`-wm`选项指定支持启动的桌面。用户选择的桌面对应的wm值将会被传入TurboVNC的`-wm`参数。
+其中，name表示桌面的名称，wm表示TurboVNC中`-wm`选项的值。iconPath相对于scow项目的public目录，为可选的登陆集群页中桌面卡片icon路径。我们使用[TurboVNC](https://turbovnc.org)的`-wm`选项指定支持启动的桌面。用户选择的桌面对应的wm值将会被传入TurboVNC的`-wm`参数。
 
 可以查看[TurboVNC 3.0.x Window Manager Compatibility Report](https://turbovnc.org/Documentation/Compatibility30)来确认桌面和操作系统之间的兼容性。
 

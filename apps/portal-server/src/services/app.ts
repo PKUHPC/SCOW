@@ -320,7 +320,7 @@ export const appServiceServer = plugin((server) => {
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
-      // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
+      // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
       if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
         const availableApps = await libGetUserAvailableClusterApps(
           logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);

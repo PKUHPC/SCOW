@@ -11,6 +11,7 @@ loginDesktop:
     # 桌面名和对应的wm值。见文档
     - name: Xfce
       wm: xfce
+      iconPath: desktop/1.png
 
   # 最多启动多少个桌面。
   maxDesktops: 3

@@ -15,12 +15,12 @@
 import { getExtensionRouteQuery } from "@scow/lib-web/build/extensions/common";
 import { fromNavItemProps, rewriteNavigationsRoute, toNavItemProps } from "@scow/lib-web/build/extensions/navigations";
 import { callExtensionRoute } from "@scow/lib-web/build/extensions/routes";
-import { ExtensionManifestWithUrl,fetchManifestsWithErrorHandling, UiExtensionStoreData }
+import { ExtensionManifestWithUrl, fetchManifestsWithErrorHandling, UiExtensionStoreData }
   from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { Grid, Layout } from "antd";
 import { usePathname } from "next/navigation";
-import React, { PropsWithChildren, useCallback, useEffect,useMemo, useState } from "react";
+import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useUiConfig } from "src/app/uiContext";
 import { useI18n } from "src/i18n";
@@ -51,7 +51,7 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content)<{ isDashboard: boolean }>`
+const Content = styled(Layout.Content) <{ isDashboard: boolean }>`
   margin: ${(props) => props.isDashboard ? "8px 8px 35px" : "8px"};
   padding: 16px;
   flex: 1;
@@ -165,13 +165,18 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const hasSidebar = arrayContainsElement(sidebarRoutes);
 
+  const primaryRoutes = useMemo(() =>
+    (finalRoutes ?? routes).map(({ children, ...rest }) => rest),
+  [finalRoutes, routes],
+  );
+
   return (
     <Root>
       <Header
         extensions={extensions}
         routeQuery={routeQuery}
         pathname={pathname}
-        routes={finalRoutes ?? routes}
+        routes={primaryRoutes}
         user={user}
         logout={() => { useLogoutMutation.mutateAsync().then(() => { location.reload(); }); }}
         userLinks={[]}
@@ -191,8 +196,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <Content isDashboard={pathname === "/dashboard"}>
             {children}
           </Content>
-          { pathname === "/dashboard" ?
-            <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} /> : "" }
+          {pathname === "/dashboard" ?
+            <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} /> : ""}
         </ContentPart>
       </StyledLayout>
     </Root>

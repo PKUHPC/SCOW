@@ -99,7 +99,7 @@ export default {
   allJobs: "所有作业",
   submitJob: "提交作业",
   jobTemplates: "作业模板",
-  desktop: "桌面",
+  loginCluster: "登录集群",
   appSessions: "已创建的应用",
   fileManage: "文件管理",
 

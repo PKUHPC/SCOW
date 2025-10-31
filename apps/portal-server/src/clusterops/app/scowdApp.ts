@@ -355,7 +355,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
         const existingSessionIds = new Set<string>();
 
-        // 如果ended_sessions.json 已存在，将其中的信息作为已结束的交互式应用的session信息
+        // 如果ended_sessions.json 已存在，将其中的信息作为已结束的应用的session信息
         if ((await client.file.exists({ userId, path: endedSessionsFilePath })).exists) {
 
           try {

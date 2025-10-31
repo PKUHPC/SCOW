@@ -6,7 +6,7 @@ import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { AllJobsIcon, AppSessionsIcon, DesktopIcon, FileManagerIcon,RunningJobsIcon,
+import { AllJobsIcon, AppSessionsIcon, FileManagerIcon, LoginClusterIcon, RunningJobsIcon,
   ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
@@ -34,7 +34,7 @@ export const QuickEntry: React.FC = () => {
     "PlusCircleOutlined": <SubmitJobIcon />,
     "BookOutlined": <RunningJobsIcon />,
     "SaveOutlined": <TemplateJobIcon />,
-    "DesktopOutlined": <DesktopIcon />,
+    "LoginClusterOutlined": <LoginClusterIcon />,
     "MacCommandOutlined": <ShellIcon />,
     "AllJobsOutlined":<AllJobsIcon />,
     "AppSessionsIcon":<AppSessionsIcon />,
@@ -90,13 +90,13 @@ export const QuickEntry: React.FC = () => {
     ],
     staticEntries: [
       {
-        id:"desktop",
-        name:"desktop",
+        id:"loginCluster",
+        name:"loginCluster",
         entry:{
           $case:"pageLink" as const,
           pageLink:{
-            path: "/desktop",
-            icon:"DesktopOutlined",
+            path: "/loginCluster",
+            icon:"LoginClusterOutlined",
           },
         },
       },

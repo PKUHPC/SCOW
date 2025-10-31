@@ -1,12 +1,12 @@
 import React, { ComponentType, CSSProperties, ReactElement } from "react";
-import { AllJobsIcon, DesktopIcon, RunningJobsIcon,
+import { AllJobsIcon, LoginClusterIcon, RunningJobsIcon,
   ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
 
 const iconMap = {
   PlusCircleOutlined: <SubmitJobIcon styles={{ transform: "scale(3.4)" }} />,
   BookOutlined: <RunningJobsIcon styles={{ transform: "scale(3.4)" }} />,
   SaveOutlined: <TemplateJobIcon styles={{ transform: "scale(3.4)" }} />,
-  DesktopOutlined: <DesktopIcon styles={{ transform: "scale(3.4)" }} />,
+  LoginClusterOutlined: <LoginClusterIcon styles={{ transform: "scale(3.4)" }} />,
   MacCommandOutlined: <ShellIcon styles={{ transform: "scale(3.4)" }} />,
   AllJobsOutlined:<AllJobsIcon styles={{ transform: "scale(3.4)" }} />,
 };
