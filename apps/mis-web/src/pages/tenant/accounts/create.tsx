@@ -45,7 +45,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       key: "createAccount" });
     await api.createAccount({ body: {
       accountName: accountName.trim(),
-      ownerId,
+      ownerId: ownerId.trim(),
       ownerName: ownerName.trim(),
       comment } })
       .httpError(404, () => { message.error(t(p("tenantNotExistUser"), [tenantName, ownerId])); })
