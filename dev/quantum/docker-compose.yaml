@@ -8,8 +8,8 @@ services:
     ports:
       - "18382:18382"
     environment:
-      # - QOBODY_BASE_URL=http://host.docker.internal:3000/api/tc/a_userone/ #使用本地要测试的账户的账户名
-      - QOBODY_BASE_URL=http://host.docker.internal:5007/api/tc/a_userone/
+      # - QOBODY_BASE_URL=http://localhost:3000/api/tc/a_userone/ #使用本地要测试的账户的账户名
+      - QOBODY_BASE_URL=http://localhost:5007/api/tc/a_userone/
 
 
   qobody:

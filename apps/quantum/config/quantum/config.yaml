@@ -7,7 +7,7 @@ db:
 
 
 backend:
-  apiBase: http://host.docker.internal:8088
+  apiBase: http://localhost:8088
 
 jupyter:
   cluster: "mock cluster"

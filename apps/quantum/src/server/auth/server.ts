@@ -25,12 +25,12 @@ const xScowUserIdHeaderKey = "x-scow-user-id";
 
 export async function getUserInfo(req: RequestType, res?: NextApiResponse): Promise<ClientUserInfo | undefined> {
 
-  const token = getUserToken(req);
-  if (!token) { return undefined; }
-
   if (USE_MOCK) {
     return mockUserInfo;
   }
+
+  const token = getUserToken(req);
+  if (!token) { return undefined; }
 
   const commonConfig = getCommonConfig();
 

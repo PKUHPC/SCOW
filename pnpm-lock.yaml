@@ -6,10 +6,10 @@ settings:
 
 patchedDependencies:
   next@14.2.30:
-    hash: 4oiojzolz5tg77uveeefyslyxu
+    hash: cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2
     path: patches/next@14.2.30.patch
   react-typed-i18n@2.3.0:
-    hash: eybujl4up7xenffji6zpg43f3u
+    hash: 98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f
     path: patches/react-typed-i18n@2.3.0.patch
 
 importers:
@@ -153,7 +153,7 @@ importers:
         version: 6.4.3(@mikro-orm/core@6.4.3)
       '@monaco-editor/react':
         specifier: 4.6.0
-        version: 4.6.0(monaco-editor@0.50.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.6.0(monaco-editor@0.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@scow/ai-scheduler-adapter-protos':
         specifier: workspace:*
         version: link:../../libs/protos/ai-scheduler-adapter
@@ -219,7 +219,7 @@ importers:
         version: 10.45.2(@trpc/server@10.45.2)
       '@trpc/next':
         specifier: 10.45.2
-        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/react-query':
         specifier: 10.45.2
         version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -255,10 +255,10 @@ importers:
         version: 2.1.35
       monaco-editor:
         specifier: 0.44.0
-        version: 0.50.0
+        version: 0.44.0
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -267,7 +267,7 @@ importers:
         version: 1.0.0
       nextjs-cors:
         specifier: 2.2.0
-        version: 2.2.0(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.0(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-cron:
         specifier: 3.0.3
         version: 3.0.3
@@ -542,7 +542,7 @@ importers:
         version: 1.5.3
       react-typed-i18n:
         specifier: 2.3.0
-        version: 2.3.0(patch_hash=eybujl4up7xenffji6zpg43f3u)(react@19.0.0)
+        version: 2.3.0(patch_hash=98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f)(react@19.0.0)
       speakeasy:
         specifier: 2.0.0
         version: 2.0.0
@@ -783,7 +783,7 @@ importers:
         version: 1.10.0
       '@ddadaal/next-typed-api-routes-runtime':
         specifier: 0.8.2
-        version: 0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
+        version: 0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.8
         version: 0.17.8(@grpc/grpc-js@1.12.5)
@@ -861,7 +861,7 @@ importers:
         version: 2.1.35
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -958,7 +958,7 @@ importers:
         version: 1.6.1(@bufbuild/protobuf@1.10.0)
       '@connectrpc/connect-next':
         specifier: 1.6.1
-        version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@connectrpc/connect-node':
         specifier: 1.6.1
         version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
@@ -1045,7 +1045,7 @@ importers:
         version: 5.2.4
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1054,7 +1054,7 @@ importers:
         version: 1.0.0
       nextjs-cors:
         specifier: 2.2.0
-        version: 2.2.0(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.0(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-cron:
         specifier: 3.0.3
         version: 3.0.3
@@ -1100,7 +1100,7 @@ importers:
         version: 15.1.4
       '@tanstack/eslint-plugin-query':
         specifier: 5.51.15
-        version: 5.51.15(eslint@9.18.0(jiti@2.4.2))(typescript@4.5.2)
+        version: 5.51.15(eslint@9.18.0(jiti@2.4.2))(typescript@5.7.3)
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
@@ -1151,7 +1151,7 @@ importers:
         version: 2.2.7
       ts-node:
         specifier: 10.9.2
-        version: 10.9.2(@types/node@22.10.6)(typescript@4.5.2)
+        version: 10.9.2(@types/node@22.10.6)(typescript@5.7.3)
       ts-proto:
         specifier: 1.171.0
         version: 1.171.0
@@ -1290,7 +1290,7 @@ importers:
         version: 6.36.2
       '@ddadaal/next-typed-api-routes-runtime':
         specifier: 0.8.2
-        version: 0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
+        version: 0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.8
         version: 0.17.8(@grpc/grpc-js@1.12.5)
@@ -1395,7 +1395,7 @@ importers:
         version: 0.50.0
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1612,7 +1612,7 @@ importers:
         version: 10.45.2(@trpc/server@10.45.2)
       '@trpc/next':
         specifier: 10.45.2
-        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/react-query':
         specifier: 10.45.2
         version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1657,7 +1657,7 @@ importers:
         version: 2.1.35
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1666,7 +1666,7 @@ importers:
         version: 1.0.0
       nextjs-cors:
         specifier: 2.2.0
-        version: 2.2.0(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.0(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       node-ssh:
         specifier: 13.2.0
         version: 13.2.0
@@ -1832,7 +1832,7 @@ importers:
         version: 1.6.1(@bufbuild/protobuf@1.10.0)
       '@connectrpc/connect-next':
         specifier: 1.6.1
-        version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       '@connectrpc/connect-node':
         specifier: 1.6.1
         version: 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
@@ -1907,7 +1907,7 @@ importers:
         version: 10.45.2(@trpc/server@10.45.2)
       '@trpc/next':
         specifier: 10.45.2
-        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/react-query':
         specifier: 10.45.2
         version: 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1931,7 +1931,7 @@ importers:
         version: 5.2.4
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-compose-plugins:
         specifier: 2.2.1
         version: 2.2.1
@@ -1940,7 +1940,7 @@ importers:
         version: 1.0.0
       nextjs-cors:
         specifier: 2.2.0
-        version: 2.2.0(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 2.2.0(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       nookies:
         specifier: 2.5.2
         version: 2.5.2
@@ -2583,7 +2583,7 @@ importers:
         version: 1.11.13
       next:
         specifier: 14.2.30
-        version: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -9869,6 +9869,9 @@ packages:
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
+  monaco-editor@0.44.0:
+    resolution: {integrity: sha512-5SmjNStN6bSuSE5WPT2ZV+iYn1/yI9sd4Igtk23ChvqB7kDk9lZbB9F5frsuvpB+2njdIeGGFf2G4gbE6rCC9Q==}
+
   monaco-editor@0.50.0:
     resolution: {integrity: sha512-8CclLCmrRRh+sul7C08BmPBP3P8wVWfBHomsTcndxg5NRCEPfu/mc2AGU8k37ajjDVXcXFc12ORAMUkmk+lkFA==}
 
@@ -14791,12 +14794,12 @@ snapshots:
       '@types/conventional-commits-parser': 5.0.1
       chalk: 5.4.1
 
-  '@connectrpc/connect-next@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@connectrpc/connect-next@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0)))(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:
       '@bufbuild/protobuf': 1.10.0
       '@connectrpc/connect': 1.6.1(@bufbuild/protobuf@1.10.0)
       '@connectrpc/connect-node': 1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))
-      next: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@connectrpc/connect-node@1.6.1(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.6.1(@bufbuild/protobuf@1.10.0))':
     dependencies:
@@ -15120,14 +15123,14 @@ snapshots:
       typescript: 4.9.5
       yargs: 17.7.2
 
-  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)':
+  '@ddadaal/next-typed-api-routes-runtime@0.8.2(@sinclair/typebox@0.34.13)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.24.1)':
     dependencies:
       '@sinclair/typebox': 0.34.13
       ajv: 8.17.1
       ajv-formats: 2.1.1(ajv@8.17.1)
       ajv-formats-draft2019: 1.6.1(ajv@8.17.1)
       fast-json-stringify: 5.8.0
-      next: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tslib: 2.6.1
       zod: 3.24.1
 
@@ -15409,7 +15412,7 @@ snapshots:
       '@docusaurus/core': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/mdx-loader': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/types': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/utils': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -15449,48 +15452,6 @@ snapshots:
       - webpack-cli
 
   '@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)':
-    dependencies:
-      '@docusaurus/core': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
-      '@docusaurus/logger': 3.7.0
-      '@docusaurus/mdx-loader': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/module-type-aliases': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/types': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/utils': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/utils-common': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/utils-validation': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/react-router-config': 5.0.11
-      combine-promises: 1.2.0
-      fs-extra: 11.2.0
-      js-yaml: 4.1.0
-      lodash: 4.17.21
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      tslib: 2.8.1
-      utility-types: 3.11.0
-      webpack: 5.97.1
-    transitivePeerDependencies:
-      - '@docusaurus/faster'
-      - '@mdx-js/react'
-      - '@parcel/css'
-      - '@rspack/core'
-      - '@swc/core'
-      - '@swc/css'
-      - acorn
-      - bufferutil
-      - csso
-      - debug
-      - esbuild
-      - eslint
-      - lightningcss
-      - supports-color
-      - typescript
-      - uglify-js
-      - utf-8-validate
-      - vue-template-compiler
-      - webpack-cli
-
-  '@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)':
     dependencies:
       '@docusaurus/core': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/logger': 3.7.0
@@ -15755,7 +15716,7 @@ snapshots:
     dependencies:
       '@docusaurus/core': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/plugin-content-pages': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/plugin-debug': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/plugin-google-analytics': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
@@ -15805,7 +15766,7 @@ snapshots:
       '@docusaurus/mdx-loader': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/module-type-aliases': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/plugin-content-pages': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/theme-translations': 3.7.0
@@ -15849,36 +15810,11 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/theme-common@3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@docusaurus/mdx-loader': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/module-type-aliases': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
-      '@docusaurus/utils': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/utils-common': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/history': 4.7.11
-      '@types/react': 18.3.3
-      '@types/react-router-config': 5.0.11
-      clsx: 2.1.1
-      parse-numeric-range: 1.3.0
-      prism-react-renderer: 2.4.1(react@18.3.1)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      tslib: 2.8.1
-      utility-types: 3.11.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - acorn
-      - esbuild
-      - supports-color
-      - uglify-js
-      - webpack-cli
-
   '@docusaurus/theme-common@3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@docusaurus/mdx-loader': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/module-type-aliases': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/utils': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/utils-common': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/history': 4.7.11
@@ -15904,7 +15840,7 @@ snapshots:
       '@docsearch/react': 3.8.2(@algolia/client-search@5.19.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)
       '@docusaurus/core': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/logger': 3.7.0
-      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
+      '@docusaurus/plugin-content-docs': 3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(debug@4.4.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3)
       '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@mdx-js/react@3.1.0(@types/react@18.3.3)(react@18.3.1))(acorn@8.14.0)(eslint@9.7.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.7.3))(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@docusaurus/theme-translations': 3.7.0
       '@docusaurus/utils': 3.7.0(acorn@8.14.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -16676,10 +16612,22 @@ snapshots:
       fs-extra: 11.2.0
       globby: 11.1.0
 
+  '@monaco-editor/loader@1.4.0(monaco-editor@0.44.0)':
+    dependencies:
+      monaco-editor: 0.44.0
+      state-local: 1.0.7
+
   '@monaco-editor/loader@1.4.0(monaco-editor@0.50.0)':
     dependencies:
       monaco-editor: 0.50.0
       state-local: 1.0.7
+
+  '@monaco-editor/react@4.6.0(monaco-editor@0.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@monaco-editor/loader': 1.4.0(monaco-editor@0.44.0)
+      monaco-editor: 0.44.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@monaco-editor/react@4.6.0(monaco-editor@0.50.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -17804,9 +17752,9 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
-  '@tanstack/eslint-plugin-query@5.51.15(eslint@9.18.0(jiti@2.4.2))(typescript@4.5.2)':
+  '@tanstack/eslint-plugin-query@5.51.15(eslint@9.18.0(jiti@2.4.2))(typescript@5.7.3)':
     dependencies:
-      '@typescript-eslint/utils': 8.0.0-alpha.30(eslint@9.18.0(jiti@2.4.2))(typescript@4.5.2)
+      '@typescript-eslint/utils': 8.0.0-alpha.30(eslint@9.18.0(jiti@2.4.2))(typescript@5.7.3)
       eslint: 9.18.0(jiti@2.4.2)
     transitivePeerDependencies:
       - supports-color
@@ -17876,13 +17824,13 @@ snapshots:
     dependencies:
       '@trpc/server': 10.45.2
 
-  '@trpc/next@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@trpc/next@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/react-query@10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/server@10.45.2)(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tanstack/react-query': 4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/client': 10.45.2(@trpc/server@10.45.2)
       '@trpc/react-query': 10.45.2(@tanstack/react-query@4.36.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/server': 10.45.2
-      next: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -18369,7 +18317,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/typescript-estree@8.0.0-alpha.30(typescript@4.5.2)':
+  '@typescript-eslint/typescript-estree@8.0.0-alpha.30(typescript@5.7.3)':
     dependencies:
       '@typescript-eslint/types': 8.0.0-alpha.30
       '@typescript-eslint/visitor-keys': 8.0.0-alpha.30
@@ -18378,9 +18326,9 @@ snapshots:
       is-glob: 4.0.3
       minimatch: 9.0.5
       semver: 7.6.3
-      ts-api-utils: 1.4.3(typescript@4.5.2)
+      ts-api-utils: 1.4.3(typescript@5.7.3)
     optionalDependencies:
-      typescript: 4.5.2
+      typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
 
@@ -18410,12 +18358,12 @@ snapshots:
       - supports-color
       - typescript
 
-  '@typescript-eslint/utils@8.0.0-alpha.30(eslint@9.18.0(jiti@2.4.2))(typescript@4.5.2)':
+  '@typescript-eslint/utils@8.0.0-alpha.30(eslint@9.18.0(jiti@2.4.2))(typescript@5.7.3)':
     dependencies:
       '@eslint-community/eslint-utils': 4.4.1(eslint@9.18.0(jiti@2.4.2))
       '@typescript-eslint/scope-manager': 8.0.0-alpha.30
       '@typescript-eslint/types': 8.0.0-alpha.30
-      '@typescript-eslint/typescript-estree': 8.0.0-alpha.30(typescript@4.5.2)
+      '@typescript-eslint/typescript-estree': 8.0.0-alpha.30(typescript@5.7.3)
       eslint: 9.18.0(jiti@2.4.2)
     transitivePeerDependencies:
       - supports-color
@@ -23542,6 +23490,8 @@ snapshots:
   moment@2.30.1:
     optional: true
 
+  monaco-editor@0.44.0: {}
+
   monaco-editor@0.50.0: {}
 
   moo@0.5.2: {}
@@ -23645,7 +23595,7 @@ snapshots:
       '@tsconfig/node16': 1.0.4
       regexparam: 2.0.2
 
-  next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@next/env': 14.2.30
       '@swc/helpers': 0.5.5
@@ -23670,10 +23620,10 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextjs-cors@2.2.0(next@14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
+  nextjs-cors@2.2.0(next@14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)):
     dependencies:
       cors: 2.8.5
-      next: 14.2.30(patch_hash=4oiojzolz5tg77uveeefyslyxu)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next: 14.2.30(patch_hash=cb473fa1ecf28d8d56b5f00ffa0cab2684a6c1f212b70f8054df4d5e76a3e9e2)(@babel/core@7.26.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   nextjs-node-loader@1.1.9(webpack@5.97.1):
     dependencies:
@@ -25605,7 +25555,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-typed-i18n@2.3.0(patch_hash=eybujl4up7xenffji6zpg43f3u)(react@19.0.0):
+  react-typed-i18n@2.3.0(patch_hash=98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f)(react@19.0.0):
     dependencies:
       react: 19.0.0
 
@@ -26924,10 +26874,6 @@ snapshots:
       - '@types/express'
       - '@types/node'
 
-  ts-api-utils@1.4.3(typescript@4.5.2):
-    dependencies:
-      typescript: 4.5.2
-
   ts-api-utils@1.4.3(typescript@5.7.3):
     dependencies:
       typescript: 5.7.3
@@ -26964,24 +26910,6 @@ snapshots:
   ts-log@2.2.7: {}
 
   ts-mixer@6.0.4: {}
-
-  ts-node@10.9.2(@types/node@22.10.6)(typescript@4.5.2):
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 22.10.6
-      acorn: 8.14.0
-      acorn-walk: 8.3.4
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 4.5.2
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
 
   ts-node@10.9.2(@types/node@22.10.6)(typescript@5.7.3):
     dependencies:

@@ -22,7 +22,7 @@ jobs:
       - uses: fregante/setup-git-user@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 22.x
 
       - name: Create tag if needed
         run: node scripts/tag.mjs
