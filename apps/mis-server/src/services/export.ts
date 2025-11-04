@@ -332,8 +332,6 @@ export const exportServiceServer = plugin((server) => {
         type: x.type,
       });
 
-      type RecordFormatReturnType = ReturnType<typeof recordFormat>;
-
       const batchSize = 5000;
       let offset = 0;
 
@@ -341,6 +339,7 @@ export const exportServiceServer = plugin((server) => {
 
       while (offset < count) {
         const limit = Math.min(batchSize, count - offset);
+
         const records = (await em.find(ChargeRecord, query, { limit, offset }))
           .map(recordFormat ?? ((x) => x));
 
@@ -348,29 +347,8 @@ export const exportServiceServer = plugin((server) => {
           break;
         }
 
-        let data: RecordFormatReturnType[] = [];
-        // 记录传输的总数量
-        let writeTotal = 0;
+        await writeAsync({ chargeRecords: records });
 
-        for (const row of records) {
-          data.push(row);
-          writeTotal += 1;
-          // 每两百条传一次
-          if (data.length === 200 || writeTotal === records.length) {
-            await new Promise((resolve) => {
-              void writeAsync({ chargeRecords: data });
-              // 清空暂存
-              data = [];
-              resolve("done");
-            }).catch((e) => {
-              throw {
-                code: status.INTERNAL,
-                message: "Error when exporting file",
-                details: e?.message,
-              } as ServiceError;
-            });
-          }
-        }
         offset += limit;
       }
     },

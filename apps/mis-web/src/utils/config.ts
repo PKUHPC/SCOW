@@ -129,6 +129,8 @@ export interface PublicRuntimeConfig {
   SCOW_RESOURCE_ENABLED?: boolean;
 
   ALLOW_APP_AUTHORIZATION?: boolean;
+
+  MAX_EXPORT_COUNT: number;
 }
 
 

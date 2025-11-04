@@ -174,6 +174,9 @@ allowUserChangeJobTimeLimit: true
 #   - text: "一级导航2"
 #     url: "https://hahahaha2.com"
 
+# 文件导出数据数量限制
+maxExportCount: 100000000
+
 ```
 
 ## 启动服务

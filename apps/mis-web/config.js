@@ -231,6 +231,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SCOW_RESOURCE_ENABLED: commonConfig.scowResource?.enabled,
 
     ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
+
+    MAX_EXPORT_COUNT: misConfig.maxExportCount,
   };
 
   if (!building) {

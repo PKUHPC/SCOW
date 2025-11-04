@@ -235,6 +235,10 @@ export const MisConfigSchema = Type.Object({
     }),
   ),
 
+  maxExportCount: Type.Optional(Type.Number({
+    description: "导出数据最大数量限制，默认1000000",
+    default: 1000000,
+  })),
 });
 
 const MIS_CONFIG_NAME = "mis";

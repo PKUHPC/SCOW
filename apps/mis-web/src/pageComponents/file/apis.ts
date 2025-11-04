@@ -3,7 +3,7 @@ import { Encoding } from "src/models/exportFile";
 import { publicConfig } from "src/utils/config";
 
 // 文件允许的最大导出行数
-export const MAX_EXPORT_COUNT = 10000;
+export const MAX_EXPORT_COUNT = publicConfig.MAX_EXPORT_COUNT ?? 10000;
 
 export const urlToExport = ({
   exportApi,
