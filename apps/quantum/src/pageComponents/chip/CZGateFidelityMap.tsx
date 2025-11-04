@@ -18,10 +18,11 @@ interface Props {
   nodeSize: number;
   fontSize: number;
   legendBelowChart: boolean;
+  offsetDegree: number;
 }
 
 export const CZGateFidelityMap: React.FC<Props> =
-  ({ cz, coords, maxX, maxY, isFullWidth, nodeSize, fontSize, legendBelowChart }) => {
+  ({ cz, coords, maxX, maxY, isFullWidth, nodeSize, fontSize, legendBelowChart, offsetDegree }) => {
     if (Object.keys(coords).length === 0) {
       return null;
     }
@@ -39,13 +40,18 @@ export const CZGateFidelityMap: React.FC<Props> =
       .domain([minF, maxF])
       .range(["#8fc2de", "#06316d"]);
 
+    // 检查是否为 45度的奇数倍，确定缩放因子
+    const normalizedDegrees = offsetDegree % 360;
+    const factor = normalizedDegrees / 45;
+    const isOddMultipleOf45 = Math.round(factor) % 2 !== 0 && Math.round(factor) !== 0;
+
     // 使用与单比特图相同的间距和节点大小
     const CZ_SCALE = SZ_NODE_SIZE;
     const CZ_NODE_R = SZ_NODE_SIZE * 0.15;
     // 定义带有直角的六边形的尺寸
-    const HEX_LENGTH = SZ_NODE_SIZE * 0.45;
-    const HEX_WIDTH = SZ_NODE_SIZE * 0.3;
-    const HEX_TIP_WIDTH = SZ_NODE_SIZE * 0.3;
+    const HEX_LENGTH = SZ_NODE_SIZE * (isOddMultipleOf45 ? 0.6 : 0.45);
+    const HEX_WIDTH = SZ_NODE_SIZE * (isOddMultipleOf45 ? 0.35 : 0.3);
+    const HEX_TIP_WIDTH = SZ_NODE_SIZE * (isOddMultipleOf45 ? 0.35 : 0.3);
 
     const width = (maxX + 1) * CZ_SCALE;
     const height = (maxY + 1) * CZ_SCALE;

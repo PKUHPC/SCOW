@@ -5,6 +5,7 @@ import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { readVersionFile } from "@scow/utils/build/version";
 import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
+import { quantumConfig } from "src/server/config/quantum";
 import { uiConfig } from "src/server/config/ui";
 import { router, trpc } from "src/server/trpc/def";
 import { z } from "zod";
@@ -36,8 +37,8 @@ export const configRouter = router({
       const hostname = getHostname(req);
 
       const footerText = (hostname && uiConfig.footer?.hostnameMap?.[hostname])
-      ?? (hostname && uiConfig.footer?.hostnameTextMap?.[hostname])
-      ?? uiConfig.footer?.defaultText;
+        ?? (hostname && uiConfig.footer?.hostnameTextMap?.[hostname])
+        ?? uiConfig.footer?.defaultText;
 
       const capabilities = process.env.NODE_ENV === "development" ? { changePassword: false } :
         await getCapabilities(config.AUTH_INTERNAL_URL);
@@ -63,5 +64,21 @@ export const configRouter = router({
         darkModeCookie: darkModeCookie,
         languageCookie: languageCookie,
       };
+    }),
+
+  getOffsetDegree: trpc.procedure
+    .input(z.object({
+      chipId: z.string(),
+    }))
+    .output(z.object({
+      offsetDegree: z.number(),
+    }))
+    .query(async ({ input }) => {
+
+      const { chipId } = input;
+      const offsetDegree = quantumConfig.offsetDegree?.[chipId] ?? 0;
+
+      return { offsetDegree };
+
     }),
 });

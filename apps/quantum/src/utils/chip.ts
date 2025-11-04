@@ -113,3 +113,89 @@ export const contrastText = (hex: string): string => {
   const yiq = (299 * r + 587 * g + 114 * b) / 1000;
   return yiq >= 128 ? "#111827" : "#FFFFFF";
 };
+
+export type NewLayoutMap = Record<string, { x: number; y: number }>;
+
+/**
+ * 将坐标图围绕其几何中心顺时针旋转指定角度（45度倍数），
+ * 如果角度是 45度的奇数倍 (如 45, 135, 225, 315)，则将相对坐标乘以 sqrt(2)。
+ * 最终，整个布局将被平移，确保最小的 x 和 y 坐标为 0 (归一化)。
+ *
+ * @param coords 原始坐标图 (LayoutMap)
+ * @param degrees 逆时针旋转的角度 (45, 90, 135...)
+ * @returns 旋转、可能缩放、并归一化后的新坐标图 (LayoutMap)，坐标为精确浮点数
+ */
+export const rotateLayoutAndScaleIfOdd45 = (coords: NewLayoutMap, degrees: number): NewLayoutMap => {
+  const points = Object.values(coords);
+  if (points.length === 0) return {};
+
+  // 1. 计算几何中心 (Centroid)
+  let sumX = 0;
+  let sumY = 0;
+  for (const point of points) {
+    sumX += point.x;
+    sumY += point.y;
+  }
+  const centerX = sumX / points.length;
+  const centerY = sumY / points.length;
+
+  // 2. 检查是否为 45度的奇数倍，确定缩放因子
+  const normalizedDegrees = degrees % 360;
+  const factor = normalizedDegrees / 45;
+  const isOddMultipleOf45 = Math.round(factor) % 2 !== 0 && Math.round(factor) !== 0;
+  const scaleFactor = isOddMultipleOf45 ? Math.sqrt(2) : 1;
+
+  // 3. 计算旋转所需的角度 (弧度)
+  const angleRadians = normalizedDegrees * (Math.PI / 180);
+  const cosTheta = Math.cos(angleRadians);
+  const sinTheta = Math.sin(angleRadians);
+
+  const rotatedCoords: NewLayoutMap = {}; // 用于存储旋转和缩放后的临时坐标
+  let minX = Infinity;
+  let minY = Infinity;
+
+  // 4. 遍历、旋转和缩放每个点
+  for (const [key, point] of Object.entries(coords)) {
+    // 4.1. 平移到中心 (Tx, Ty)
+    const translatedX = point.x - centerX;
+    const translatedY = point.y - centerY;
+
+    // 4.2. 旋转
+    const rotatedX = translatedX * cosTheta + translatedY * sinTheta;
+    const rotatedY = translatedX * (-sinTheta) + translatedY * cosTheta;
+
+    // 4.3. 平移回中心
+    let newX = rotatedX + centerX;
+    let newY = rotatedY + centerY;
+
+    // 5. 应用缩放因子 (相对于中心点)
+    if (scaleFactor !== 1) {
+      const xToScale = newX - centerX;
+      const yToScale = newY - centerY;
+
+      newX = xToScale * scaleFactor + centerX;
+      newY = yToScale * scaleFactor + centerY;
+    }
+
+    // 6. 记录旋转后的临时坐标，并查找新的最小 x 和 y
+    rotatedCoords[key] = { x: newX, y: newY };
+
+    if (newX < minX) minX = newX;
+    if (newY < minY) minY = newY;
+  }
+
+  // 7. 【新的归一化步骤】平移整个布局，使最小的 x 和 y 坐标为 0
+  const offsetX = minX; // 需要减去的量
+  const offsetY = minY;
+
+  const finalCoords: NewLayoutMap = {};
+
+  for (const [key, point] of Object.entries(rotatedCoords)) {
+    finalCoords[key] = {
+      x: Math.round(point.x - offsetX),
+      y: Math.round(point.y - offsetY),
+    };
+  }
+
+  return finalCoords;
+};

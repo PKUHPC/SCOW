@@ -3,16 +3,18 @@ import { Col, Divider, Radio, Row, Spin, Typography } from "antd";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { join } from "path";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { EMPTY_STRING } from "src/models/common";
-import { AllowedChipIdType, allowedChipsArr, AveragesState, DeviceDetailInfo,
-  visualizationChipsArr } from "src/models/device";
+import {
+  AllowedChipIdType, allowedChipsArr, AveragesState, DeviceDetailInfo,
+  visualizationChipsArr,
+} from "src/models/device";
 import { GateFidelityTable } from "src/pageComponents/chip/GateFidelityTable";
+import { LayoutVisContainer } from "src/pageComponents/chip/LayoutVisContainer";
 import { VisualizationContainer } from "src/pageComponents/chip/VisualizationContainer";
 import { calculateAverage, getGateFidelities, getReadoutFidelity } from "src/utils/chip";
 import { formatTimestamp } from "src/utils/datetime";
-import { BASE_PATH } from "src/utils/processEnv";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
@@ -34,6 +36,12 @@ const { Text } = Typography;
 export const ChipDetailPage: NextPage = () => {
   const router = useRouter();
   const chipId = queryToString(router.query.chipId);
+
+  const getOffsetDegreeQuery = trpc.config.getOffsetDegree.useQuery({ chipId });
+
+  const offsetDegree = useMemo(() =>
+    getOffsetDegreeQuery.data?.offsetDegree || 0
+  , [getOffsetDegreeQuery.data]);
 
   if (!(allowedChipsArr as readonly string[]).includes(chipId)) {
     return <>Chip not found.</>;
@@ -136,6 +144,12 @@ export const ChipDetailPage: NextPage = () => {
 
   }, [deviceInfo]);
 
+  if (getOffsetDegreeQuery.isLoading) {
+    return (
+      <div>Loading...</div>
+    );
+  }
+
   return (
     <>
       <Container>
@@ -183,13 +197,13 @@ export const ChipDetailPage: NextPage = () => {
 
         <Row gutter={16} style={{ backgroundColor: "#f8f8fa", alignItems: "stretch" }}>
           <Col span={12} style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "12px 0" }}>
-            <img
-              src={join(BASE_PATH, `/device/basicParam/${typedChipId}.png`)}
-              alt="Basic Parameters PHOTO"
-              style={{ backgroundColor: "#f8f8fa", maxWidth: "100%", height: "auto", display: "block" }}
-            />
+            <LayoutVisContainer deviceInfo={deviceInfo} offsetDegree={offsetDegree} />
           </Col>
-          <Col span={7} style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Col
+            span={7}
+            style={{
+              display: "flex", flexDirection: "column", justifyContent: "center", margin: "12px 0" }}
+          >
             <div>
               <Row style={{ marginBottom: 12 }}>
                 <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
@@ -306,7 +320,7 @@ export const ChipDetailPage: NextPage = () => {
         <Row gutter={16}>
           <Col span={24}>
             {activeTabShowType === "chart" ? (
-              <VisualizationContainer deviceInfo={deviceInfo} />
+              <VisualizationContainer deviceInfo={deviceInfo} offsetDegree={offsetDegree} />
             ) : (
               <GateFidelityTable deviceInfo={deviceInfo} averages={averages} />
             )}

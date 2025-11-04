@@ -14,8 +14,15 @@ jupyter:
   appId: "quantum jupyter"
 
 device:
-  recommend: ["t59", "t40", "t13"]
+  recommend: ["t57", "t40", "t12"]
 
 # 量子作业默认遵循的比特秒计价
 billing:
   defaultBitSecondPrice: 0.35
+
+
+# 设备布局旋转角度
+# offsetDegree:
+#  default: 0
+#   t57: -45
+#   t12: -135

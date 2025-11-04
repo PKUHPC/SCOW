@@ -17,7 +17,7 @@ jupyter:
 
 # 默认推荐的量子计算设备
 device:
-  recommend: ["t59", "t40", "t13"]
+  recommend: ["t57", "t40", "t12"]
 
 # 量子作业默认遵循的比特秒计价
 billing:
@@ -25,3 +25,9 @@ billing:
 
 # 对量子作业计费时，计费费用的付款类型，请和管理系统的quantumJobChargeType保持一致
 # taskChargeType: "量子作业费用"
+
+# 设备布局旋转角度
+offsetDegree:
+  default: 0
+  t57: -45
+  t12: -135

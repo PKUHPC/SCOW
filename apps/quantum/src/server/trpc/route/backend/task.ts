@@ -167,8 +167,6 @@ export const task = router({
       const qb = em.createQueryBuilder(QuantumJob, "qj");
       const { accountName } = input;
 
-      console.log(input, "input", user, "user");
-
       if (input.querySelf) {
         qb.where({ "qj.userId": user.identityId });
       } else if (input.userId) {

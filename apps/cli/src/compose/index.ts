@@ -4,6 +4,7 @@ import path from "path";
 import { LoggingOption, ServiceSpec } from "src/compose/spec";
 import { AuthCustomType, InstallConfigSchema } from "src/config/install";
 import { logger } from "src/log";
+import { prepareUchipHostDirAndPragmaFiles } from "src/utils/uchip";
 
 const IMAGE: string = "mirrors.pku.edu.cn/pkuhpc-icode/scow";
 
@@ -96,7 +97,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       image: string,
       environment: string[] | Record<string, string>,
       ports: string[] | Record<string, number>,
-      volumes: string [] | Record<string, string>,
+      volumes: string[] | Record<string, string>,
       depends_on?: string[],
     },
   ) => {
@@ -155,10 +156,15 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   // quantum的芯片映射
   const chipMapping = new URLSearchParams({
     t40: "tianxuan_s2",
-    t13: "tianji_s2",
+    t12: "tianji_s2",
     t60: "tianji_m1",
-    t59: "tianji_m2",
-    "simulator:tc": "simulator:tc",
+    t57: "tianji_m2",
+    t57v15s1: "tianji_m2v16s1",
+    t57v14s2: "tianji_m2v14s2",
+    t57v15s3: "tianji_m2v15s3",
+    t57v13s4: "tianji_m2v14s4",
+    t12v5: "tianji_s2v6",
+    t12v7: "tianji_s2v7",
   });
 
   // GATEWAY
@@ -314,7 +320,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "/etc/hosts": "/etc/hosts",
         "./config": configPath,
         "~/.ssh": "/root/.ssh",
-        "portal_data":"/var/lib/scow/portal",
+        "portal_data": "/var/lib/scow/portal",
       },
     });
 
@@ -557,6 +563,9 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       },
     });
 
+    const hostUChipPath = "./config/quantum/uchip";
+    prepareUchipHostDirAndPragmaFiles(hostUChipPath);
+
     addService("qobody", {
       image: config.quantum.qobody.image,
       ports: {},
@@ -564,7 +573,9 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "QOST_TOKEN": config.quantum.qobody.token,
         "QOST_CHIPS": chipMapping.toString(),
       },
-      volumes: {},
+      volumes: {
+        "./config/quantum/uchip": "/app/uchip",
+      },
     });
   }
 

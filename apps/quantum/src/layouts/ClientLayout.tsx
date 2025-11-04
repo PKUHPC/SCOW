@@ -138,6 +138,17 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
     publicConfigQuery.data.systemLanguageConfig,
   );
 
+  const host = (typeof window === "undefined") ? "" : location.host;
+  const hostname = host?.includes(":") ? host?.split(":")[0] : host;
+  const uiConfig = publicConfigQuery.data.uiConfig;
+  const primaryColor = uiConfig.config?.primaryColor;
+
+  const color = (hostname && primaryColor?.hostnameMap?.[hostname])
+    ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
+
+  const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname])
+  ?? primaryColor?.darkModeColor ?? color;
+
   return (
     <DarkModeProvider initial={dark}>
       <Provider initialLanguage={{
@@ -147,8 +158,8 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
       >
         <AntdConfigProvider
           primaryColor={{
-            defaultColor: publicConfigQuery.data.uiConfig.defaultPrimaryColor,
-            darkModeColor: publicConfigQuery.data.uiConfig.config.primaryColor?.darkModeColor,
+            defaultColor: color,
+            darkModeColor,
           }}
           locale={systemInitialLanguage}
         >

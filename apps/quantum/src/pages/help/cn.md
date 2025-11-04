@@ -51,7 +51,7 @@ apis.list_devices(state = "on")
 ``` python
 t = apis.submit_task(
     provider="qobody", 
-    device="qobody::t13", 
+    device="qobody::t12", 
     circuit=c,
     shots=1024
 )
@@ -87,7 +87,7 @@ c1 = tc.Circuit(2)
 c1.h(0)
 c2 = tc.Circuit(2)
 c2.h(1)
-ts = apis.submit_task(device="t13",
+ts = apis.submit_task(device="t12",
   circuit=[c1, c2],
   shots =1024
 )
@@ -108,7 +108,7 @@ c = tc.Circuit(2)
 c.h(0)
 c.cx(0,1)
 t = apis.submit_task(provider="qobody",
-  device="t13",
+  device="t12",
   circuit=c,
   shots=1024)
 
@@ -124,7 +124,7 @@ tc.results.counts.plot_histogram(counts)
 
 通过将任务结果作为列表传递，多个实验结果(例如批量提交)可以显示在同一图形上。例如，对于三个电路c1, c2, c3:
 ``` python
-ts = apis.submit_task(device="t13",
+ts = apis.submit_task(device="t12",
   circuit=[c1, c2, c3],
   shots=1024)
 

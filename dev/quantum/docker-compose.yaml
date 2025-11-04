@@ -19,4 +19,4 @@ services:
     env_file:
       - ./.env.local
     environment:
-      - QOST_CHIPS=t40=tianxuan_s2&t13=tianji_s2&t60=tianji_m1&simulator:tc=simulator:tc&t59=tianji_m2
+      - QOST_CHIPS=t40=tianxuan_s2&t12=tianji_s2&t60=tianji_m1&t57=tianji_m2&t57v15s1=tianji_m2v16s1&t57v14s2=tianji_m2v14s2&t57v15s3=tianji_m2v15s3&t57v13s4=tianji_m2v14s4&t12v5=tianji_s2v6&t12v7=tianji_s2v7

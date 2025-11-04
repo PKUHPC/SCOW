@@ -36,11 +36,30 @@ export const QuantumConfigSchema = Type.Object({
   }),
   taskChargeType: Type.String({ description: "对量子作业计费时，计费费用的付款类型，请和管理系统的quantumJobChargeType保持一致",
     default: "量子作业费用" }),
+  offsetDegree: Type.Optional(
+    Type.Object(
+      {
+        default: Type.Optional(
+          Type.Number({ description: "默认旋转角度（度），可选，未设置则为0。" }),
+        ),
+      },
+      {
+        additionalProperties: Type.Number({ description: "设备ID对应的旋转角度（度）" }),
+        description:
+        "设备布局旋转角度配置：default为默认角度，其他键为设备ID对应的角度。",
+      },
+    ),
+  ),
 });
 
 const QUANTUM_CONFIG_NAME = "quantum/config";
 
-export type QuantumConfigSchema = Static<typeof QuantumConfigSchema>;
+export type QuantumConfigSchema = Omit<Static<typeof QuantumConfigSchema>, "offsetDegree"> & {
+  offsetDegree?: {
+    default?: number;
+    [key: string]: number | undefined;
+  };
+};
 
 export const getQuantumConfig: GetConfigFn<QuantumConfigSchema> = (baseConfigPath) => {
   const config =

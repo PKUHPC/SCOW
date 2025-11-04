@@ -5,9 +5,11 @@ import { Localized } from "src/i18n";
 import { CZGateData, DeviceDetailInfo, QubitData } from "src/models/device";
 import { CZGateFidelityMap } from "src/pageComponents/chip/CZGateFidelityMap";
 import { SingleQubitFidelityMap } from "src/pageComponents/chip/SingleQubitFidelityMap";
-import { getLayoutMap, swapQubitData } from "src/utils/chip";
+import { getLayoutMap, rotateLayoutAndScaleIfOdd45, swapQubitData } from "src/utils/chip";
 
-export const VisualizationContainer: React.FC<{ deviceInfo?: DeviceDetailInfo }> = ({ deviceInfo }) => {
+export const VisualizationContainer: React.FC<
+  { deviceInfo?: DeviceDetailInfo, offsetDegree: number }
+> = ({ deviceInfo, offsetDegree }) => {
   if (!deviceInfo) {
     return (
       <Spin>
@@ -36,7 +38,9 @@ export const VisualizationContainer: React.FC<{ deviceInfo?: DeviceDetailInfo }>
     return <></>;
   }
 
-  const coords = getLayoutMap(layout);
+  const coords2 = getLayoutMap(layout);
+  const coords = rotateLayoutAndScaleIfOdd45(coords2, offsetDegree);
+
   const xs = Object.values(coords).map((p) => p.x);
   const ys = Object.values(coords).map((p) => p.y);
   const maxX = max(xs) ?? 0;
@@ -115,6 +119,7 @@ export const VisualizationContainer: React.FC<{ deviceInfo?: DeviceDetailInfo }>
         nodeSize={nodeSize}
         fontSize={fontSize}
         legendBelowChart={isActualOverflow}
+        offsetDegree={offsetDegree}
       />
     </div>
   );

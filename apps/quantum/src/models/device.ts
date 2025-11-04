@@ -27,21 +27,21 @@ export const getDisplayedStateI18nTexts = (t: TransType) => {
 export const allowedChipsArr = [
   "t40v20s1",
   "t40",
-  "t13v7",
+  "t12v7",
   "t40v20s2",
-  "t13",
-  "t59v15s3",
-  "t59v14s4",
+  "t12",
+  "t57v15s3",
+  "t57v13s4",
   "t60v15s4",
   "t60v15s2",
-  "t59v14s2",
+  "t57v14s2",
   "t60v15s3",
-  "t59v16s1",
+  "t57v15s1",
   "t60v15s1",
   "t60",
-  "t59",
+  "t57",
   "simulator:tc",
-  "t13v6",
+  "t12v5",
   "testing",
 ] as const;
 
@@ -178,7 +178,7 @@ interface DeviceCard {
 
 export const DeviceCardsData: DeviceCard[] = [
   {
-    id: "t13",
+    id: "t12",
     path: join(BASE_PATH, "/device/1.png"),
   },
   {
@@ -186,7 +186,7 @@ export const DeviceCardsData: DeviceCard[] = [
     path: join(BASE_PATH, "/device/2.png"),
   },
   {
-    id: "t59",
+    id: "t57",
     path: join(BASE_PATH, "/device/3.png"),
   },
   {
@@ -194,11 +194,11 @@ export const DeviceCardsData: DeviceCard[] = [
     path: join(BASE_PATH, "/device/4.png"),
   },
   {
-    id: "t13v6",
+    id: "t12v5",
     path: join(BASE_PATH, "/device/1.png"),
   },
   {
-    id: "t13v7",
+    id: "t12v7",
     path: join(BASE_PATH, "/device/1.png"),
   },
   {
@@ -210,19 +210,19 @@ export const DeviceCardsData: DeviceCard[] = [
     path: join(BASE_PATH, "/device/2.png"),
   },
   {
-    id: "t59v15s3",
+    id: "t57v15s3",
     path: join(BASE_PATH, "/device/3.png"),
   },
   {
-    id: "t59v14s4",
+    id: "t57v13s4",
     path: join(BASE_PATH, "/device/3.png"),
   },
   {
-    id: "t59v14s2",
+    id: "t57v14s2",
     path: join(BASE_PATH, "/device/3.png"),
   },
   {
-    id: "t59v16s1",
+    id: "t57v15s1",
     path: join(BASE_PATH, "/device/3.png"),
   },
   {
@@ -273,6 +273,6 @@ export type LayoutMap = Record<number, { x: number; y: number }>;
 
 export const visualizationChipsArr = [
   "t40",
-  "t13",
-  "t59",
+  "t12",
+  "t57",
 ];
