@@ -461,7 +461,6 @@ export const LaunchAppForm = (props: Props) => {
   };
 
   const isAscend910 = currentPartitionInfo?.gpuType === "huawei.com/Ascend910";
-  const isVgpu = currentPartitionInfo?.gpuType === "volcano.sh/vgpu-number";
 
   useEffect(() => {
     // 特殊处理，如果是华为Ascend910，则增加MindSpore选项
@@ -1862,9 +1861,8 @@ export const LaunchAppForm = (props: Props) => {
             options={currentPartitionInfo ? currentPartitionInfo.qos.map((x) => ({ label: x, value: x })) : []}
           />
         </Form.Item>
-        {/* vgpu只能单机训练 */}
         {
-          isTraining && !isVgpu && (
+          isTraining && (
             <Form.Item label={t(p("distributedTrain"))} rules={[{ required: true }]} style={{ marginBottom:0 }}>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <Form.Item
