@@ -10,6 +10,7 @@ import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { errorInfo, getAppConnectionInfoFromAdapter,getEnvVariables } from "@scow/lib-server";
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { FileInfo, FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import dayjs from "dayjs";
 import { join } from "path";
 import { quote } from "shell-quote";
@@ -337,7 +338,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         if (!(await client.file.exists({ userId, path: userAppJobDir })).exists) { return { sessions: []}; }
 
         // get all job directories
-        let list: { name: string, [key: string]: any }[];
+        let list: FileInfo[];
         try {
           list = (await client.file.readDirectory({ userId, dirPath: userAppJobDir })).filesInfo;
         } catch (error: any) {
@@ -394,10 +395,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           }
         }
 
-        await Promise.all(list.map(async ({ name }) => {
+        await Promise.all(list.map(async ({ name, fileType }) => {
 
-          // 如果name是已存在的 endedSessions 的 sessionId，则跳过
-          if (existingSessionIds.has(name)) {
+          // 如果name是已存在的 endedSessions 的 sessionId 或是一个文件则跳过
+          if (existingSessionIds.has(name) || fileType === FileType.FILE) {
             return;
           }
 
