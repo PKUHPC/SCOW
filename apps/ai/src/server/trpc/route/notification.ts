@@ -63,9 +63,9 @@ export const notification = router({
       page: z.number().optional(),
       pageSize: z.number().optional(),
     }))
-    .output(z.object({
-      results: UnreadMessageSchema,
-    }).optional())
+    .output(
+      z.object({ results: UnreadMessageSchema.optional() }),
+    )
     .query(async ({ input, ctx: { req, res } }) => {
       const { notifAddress, messageType, page, pageSize } = input;
 
@@ -77,14 +77,14 @@ export const notification = router({
       }
 
       if (!commonConfig?.notification?.enabled || !commonConfig?.notification?.address) {
-        return;
+        return {};
       }
 
       try {
         const notifClient = notifAddress ? getNotificationNodeClient(notifAddress) : null;
 
         if (!notifClient) {
-          return;
+          return {};
         }
 
         const response = await notifClient.scowMessage.listMessages({

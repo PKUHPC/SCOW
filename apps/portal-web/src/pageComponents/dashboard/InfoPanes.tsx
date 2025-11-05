@@ -61,7 +61,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
 
   let clusterCardsList;
   // card的每一项
-  if ((successfulClusters?.length ?? 0) > 0) {
+  if ((successfulClusters?.length ?? 0) > 1) {
     clusterCardsList = [
       {
         key:"platformOverview",

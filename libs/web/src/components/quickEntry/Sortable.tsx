@@ -107,11 +107,6 @@ export const Sortable: FC<Props> = ({
       return;
     }
 
-    if (temItems.length >= 10) {
-      message.error(getCurrentLangLibWebText(languageId, "exceedMaxSize"));
-      return;
-    }
-
     setTemItems([...temItems, item]);
   };
 

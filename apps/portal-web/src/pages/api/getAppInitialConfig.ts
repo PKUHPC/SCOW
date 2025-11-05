@@ -6,7 +6,7 @@ import { libGetClustersRuntimeInfo } from "@scow/lib-web/build/server/clustersAc
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
-import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
+import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static, Type } from "@sinclair/typebox";
 import { USE_MOCK } from "src/apis/useMock";
 import { getTokenFromCookie } from "src/auth/cookie";
@@ -137,8 +137,13 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           extra.initialCurrentClusters = initialUserAssociatedClusters ?? [];
 
           const clusterSortedIdList = getSortedClusterIds(clusters);
+
+          const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
           extra.loginNodes = clusterSortedIdList.reduce((acc, cluster) => {
-            acc[cluster] = clusters[cluster].loginNodes;
+            acc[cluster] = clusters[cluster].loginNodes?.map((loginNode) => ({
+              ...loginNode,
+              name: getI18nConfigCurrentText(loginNode.name, languageId),
+            }));
             return acc;
           }, {});
         }

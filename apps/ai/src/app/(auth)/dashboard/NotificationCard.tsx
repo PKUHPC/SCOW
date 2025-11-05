@@ -41,7 +41,7 @@ export const NotificationCard: React.FC = () => {
   const getMsgContents = (): RenderContent[] => {
     try {
       const msgsToRender: RenderContent[] = [];
-      for (const msg of (data?.results.messages || [])) {
+      for (const msg of (data?.results?.messages || [])) {
         const renderMsg = renderingMessage(msg, currentLanguage.id);
         if (renderMsg !== undefined) msgsToRender.push(renderMsg);
 
