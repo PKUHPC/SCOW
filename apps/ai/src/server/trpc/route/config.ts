@@ -168,6 +168,7 @@ export const PartitionSchema = z.object({
   comment: z.string().optional(),
   gpuType: z.string().optional(),
   vramMb: z.number().optional(),
+  maxAcceleratorsPerPod:z.number().optional(),
   gpuModel: z.string().optional(),
   acceleratorDescriptions: z.array(z.string()),
 });

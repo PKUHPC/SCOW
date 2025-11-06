@@ -111,7 +111,7 @@ interface CustomFormFields {
 type FormFields = CustomFormFields & FixedFormFields;
 type TimeUnit = "min" | "hour" | "day";
 
-interface Partition {
+export interface Partition {
   name: string;
   memMb: number;
   cores: number;
@@ -120,6 +120,7 @@ interface Partition {
   qos: string[];
   comment?: string;
   gpuType?: string;
+  maxAcceleratorsPerPod?: number;
 }
 
 export enum AccessibilityType {
@@ -441,6 +442,19 @@ export const LaunchAppForm = (props: Props) => {
   const coreCountSum = currentPartitionInfo?.gpus
     ? totalNodeCount * gpuCount * Math.floor(currentPartitionInfo.cores / currentPartitionInfo.gpus)
     : totalNodeCount * coreCount;
+
+  const maxGpuCountPerPod = useMemo(() => {
+    if (!currentPartitionInfo) {
+      return undefined;
+    }
+
+    const limits = [
+      currentPartitionInfo.maxAcceleratorsPerPod,
+      currentPartitionInfo.gpus,
+    ].filter((value): value is number => typeof value === "number");
+
+    return limits.length > 0 ? Math.min(...limits) : undefined;
+  }, [currentPartitionInfo]);
 
 
   const handlePartitionChange = (partition: string) => {
@@ -1954,10 +1968,14 @@ export const LaunchAppForm = (props: Props) => {
                 {
                   required: true,
                   type: "integer",
-                  validator:  (_, value) => {
-                    if (currentPartitionInfo
-                          && currentPartitionInfo.gpus > 0
-                          && (totalNodeCount * value > currentPartitionInfo.gpus)) {
+                  validator:  () => {
+                    const value = form.getFieldValue("gpuCount");
+                    if (value === 0) {
+                      return Promise.reject(new Error(t(p("gt0"))));
+                    } else if (currentPartitionInfo
+                                && currentPartitionInfo.gpus > 0
+                                && (totalNodeCount * value > currentPartitionInfo.gpus)
+                    ) {
                       return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
                     }
                     return Promise.resolve();
@@ -1967,6 +1985,7 @@ export const LaunchAppForm = (props: Props) => {
             >
               <InputNumber
                 min={1}
+                max={maxGpuCountPerPod}
                 {...inputNumberFloorConfig}
               />
             </Form.Item>

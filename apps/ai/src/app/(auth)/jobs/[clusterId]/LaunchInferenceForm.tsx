@@ -24,7 +24,7 @@ import { styled, useTheme } from "styled-components";
 import { usePublicConfig } from "../../context";
 import { validateEnvKeyFormat, validateMountPoints } from "./common";
 import { setEntityInitData, useDataOptions, useDataVersionOptions } from "./hooks";
-import { DataAttributes,EnvVariable } from "./LaunchAppForm";
+import { DataAttributes,EnvVariable, Partition } from "./LaunchAppForm";
 
 const AfterInputNumber = styled(InputNumber)`
   .ant-select-focused .ant-select-selector{
@@ -62,17 +62,6 @@ interface FixedFormFields {
 
 type FormFields = FixedFormFields;
 type TimeUnit = "min" | "hour" | "day";
-
-interface Partition {
-  name: string;
-  memMb: number;
-  cores: number;
-  gpus: number;
-  nodes: number;
-  qos: string[];
-  comment?: string;
-  gpuType?: string;
-}
 
 export enum AccessibilityType {
   PUBLIC = "PUBLIC",
@@ -997,9 +986,13 @@ export const LaunchInferenceJobForm = (props: Props) => {
                   type: "integer",
                   validator:  (_, value) => {
                     const nodeCount = form.getFieldValue("nodeCount") || 0;
-                    if (currentPartitionInfo
-                          && currentPartitionInfo.gpus > 0
-                          && (nodeCount * value > currentPartitionInfo.gpus)) {
+                    if (value === 0) {
+                      return Promise.reject(new Error(t(p("gt0"))));
+                    }
+                    else if (currentPartitionInfo
+                              && currentPartitionInfo.gpus > 0
+                              && (nodeCount * value > currentPartitionInfo.gpus)
+                    ) {
                       return Promise.reject(new Error("Total GPUs exceed the available GPUs in the partition"));
                     }
                     return Promise.resolve();
@@ -1009,6 +1002,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
             >
               <InputNumber
                 min={1}
+                max={currentPartitionInfo?.maxAcceleratorsPerPod}
                 {...inputNumberFloorConfig}
               />
             </Form.Item>

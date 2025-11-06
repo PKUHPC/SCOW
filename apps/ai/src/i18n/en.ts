@@ -439,6 +439,7 @@ export default {
         needFramework:"Please enter framework",
         distributedTrain:"Distributed train",
         versionTag: "Version",
+        gt0:"The quantity must be greater than 0",
         jobNameTips:"It must consist of 1-36 lowercase letters, numbers,"
         + "or '-', and must start and end with a letter or a number",
       },

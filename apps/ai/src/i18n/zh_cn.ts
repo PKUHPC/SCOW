@@ -439,6 +439,7 @@ export default {
         needFramework:"请选择框架",
         distributedTrain:"分布式训练",
         versionTag: "版本",
+        gt0:"数量必须大于0",
         jobNameTips:"必须是1-36个小写字母、数字或'-'，并且以字母开头和结尾必须是字母或数字",
         // 占位对齐
       },
