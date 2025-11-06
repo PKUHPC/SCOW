@@ -204,7 +204,7 @@ export default route(GetChargesSchema, async (req, res) => {
   const reply = ensureNotUndefined(await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime,
     endTime,
-    types:types ?? [],
+    types: types ?? [],
     userIds: userIds ?? [],
     target: buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords),
     page,

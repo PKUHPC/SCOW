@@ -15,6 +15,7 @@ import { Decimal, decimalToMoney } from "@scow/lib-decimal";
 import { BillListItem, BillType as BillSearchType, billTypeToJSON,
   UserBill as UserBillType } from "@scow/protos/build/server/bill";
 import dayjs from "dayjs";
+import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 import { AccountBill, BillType } from "src/entities/AccountBill";
 import { QueryCache } from "src/entities/QueryCache";
@@ -31,8 +32,11 @@ export const queryBillTypesCache = async (em: SqlEntityManager<MySqlDriver>) => 
     const uniqueKeys = new Set<string>();
     // 预先添加作业费用及作业费用更改两种类型，使其排序在前
     uniqueKeys.add(misConfig.jobChargeType)
-      .add(misConfig.changeJobPriceType)
-      .add(misConfig.quantumJobChargeType);
+      .add(misConfig.changeJobPriceType);
+
+    if (config.QUANTUM_DEPLOYED) {
+      uniqueKeys.add(misConfig.quantumJobChargeType);
+    }
 
     const results = await em.getConnection().execute("SELECT details FROM account_bill WHERE details IS NOT NULL");
 

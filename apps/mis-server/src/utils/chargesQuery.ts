@@ -13,6 +13,7 @@
 import { AccountOfTenantTarget, AccountsOfAllTenantsTarget,
   AccountsOfTenantTarget, AllTenantsTarget,
   TenantTarget } from "@scow/protos/build/server/charging";
+import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 
 import { CHARGE_TYPE_OTHERS } from "./constants";
@@ -75,16 +76,21 @@ export const getChargesTargetSearchParam = (
   return searchParam;
 };
 
+// 获得搜索用的type数组
+export const getTypesToSearch = () => {
+  return [
+    misConfig.jobChargeType,
+    misConfig.changeJobPriceType,
+    ...(config.QUANTUM_DEPLOYED ? [misConfig.quantumJobChargeType] : []),
+    ...(misConfig.customChargeTypes || []),
+  ];
+};
+
 /**
  * generate charge records' search type
  */
 export const getChargesSearchType = (type: string | undefined) => {
-  const typesToSearch = [
-    misConfig.jobChargeType,
-    misConfig.changeJobPriceType,
-    misConfig.quantumJobChargeType,
-    ...(misConfig.customChargeTypes || []),
-  ];
+  const typesToSearch = getTypesToSearch();
 
   let searchType = {};
   if (!type) {
@@ -101,11 +107,39 @@ export const getChargesSearchType = (type: string | undefined) => {
 };
 
 export const getChargesSearchTypes = (types: string[] | undefined) => {
+  // 排除不包含types或者空数组的情况
   if (!types?.length) {
     return { type: { $ne: null } };
   }
 
-  return { type:{ $in:types } };
+  const typesToSearch = getTypesToSearch();
+
+  const includeOthers = types.includes(CHARGE_TYPE_OTHERS);
+
+  // 过滤掉 CHARGE_TYPE_OTHERS，保留需要 $in 查询的实际类型
+  const actualTypes = types.filter((t) => t !== CHARGE_TYPE_OTHERS);
+
+  // 如果不包含 CHARGE_TYPE_OTHERS , actualTypes 中有类型（已排除空数组）
+  if (!includeOthers) {
+    return { type: { $in: actualTypes } };
+  }
+
+  // 如果包含了CHARGE_TYPE_OTHERS
+  const othersCondition = { type: { $nin: typesToSearch } };
+
+  // 检查是否只有 CHARGE_TYPE_OTHERS
+  if (actualTypes.length === 0) {
+    return othersCondition;
+  }
+
+  // 既包含 OTHERS，又包含其他明确的类型，需要用 $or 组合
+  const orConditions: any[] = [];
+
+  orConditions.push({ type: { $in: actualTypes } });
+  orConditions.push(othersCondition);
+
+  // 返回 $or 组合查询
+  return { $or: orConditions };
 };
 
 /**

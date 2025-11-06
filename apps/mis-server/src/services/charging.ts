@@ -8,7 +8,6 @@ import { ChargeRecord as ChargeRecordProto,
   ChargingServiceServer, ChargingServiceService } from "@scow/protos/build/server/charging";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
-import { misConfig } from "src/config/mis";
 import { Account,AccountState } from "src/entities/Account";
 import { ChargeRecord } from "src/entities/ChargeRecord";
 import { PayRecord } from "src/entities/PayRecord";
@@ -20,6 +19,7 @@ import {
   getChargesTargetSearchParam,
   getPaymentsSearchType,
   getPaymentsTargetSearchParam,
+  getTypesToSearch,
 } from "src/utils/chargesQuery";
 import { CHARGE_TYPE_OTHERS } from "src/utils/constants";
 import { DEFAULT_PAGE_SIZE } from "src/utils/orm";
@@ -260,12 +260,7 @@ export const chargingServiceServer = plugin((server) => {
       }
 
       // 可查询的types类型
-      const typesToSearch = [
-        misConfig.jobChargeType,
-        misConfig.changeJobPriceType,
-        misConfig.quantumJobChargeType,
-        ...(misConfig.customChargeTypes || []),
-      ];
+      const typesToSearch = getTypesToSearch();
 
       let searchType = {};
       if (!type) {
