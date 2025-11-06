@@ -200,6 +200,10 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
 
 type OperationTextsArgsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string | React.ReactNode;
 
+// 如果传递的参数不存在返回 "-"
+const safeGetStringProperty = (property: string | undefined) => {
+  return String(property ?? "-");
+};
 export const getOperationDetail = (
   operationEvent: OperationEvent,
   t: OperationTextsTransType,
@@ -315,8 +319,8 @@ export const getOperationDetail = (
       case "saveImage":
         return t(pDetails("saveImage"), [
           String(operationEvent[logEvent].jobId),
-          operationEvent[logEvent].imageName || "-",
-          operationEvent[logEvent].tag || "-",
+          safeGetStringProperty(operationEvent[logEvent].imageName),
+          safeGetStringProperty(operationEvent[logEvent].tag),
         ]);
       case "createFile":
         return t(pDetails("createFile"), [operationEvent[logEvent].path]);
@@ -350,138 +354,150 @@ export const getOperationDetail = (
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createImage"),
           [clusterName,
-            String(operationEvent[logEvent].imageName || "-"), operationEvent[logEvent].tag || "-"]);
+            safeGetStringProperty(operationEvent[logEvent].imageName),
+            safeGetStringProperty(operationEvent[logEvent].tag)]);
       }
       case "updateImage": {
         const clusterId = operationEvent[logEvent].clusterId;
-        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("updateImage"),
           [clusterName,
-            String(operationEvent[logEvent].imageName || "-"), operationEvent[logEvent].tag || "-"]);
+            safeGetStringProperty(operationEvent[logEvent].imageName),
+            safeGetStringProperty(operationEvent[logEvent].tag)]);
       }
       case "shareImage": {
         const clusterId = operationEvent[logEvent].clusterId;
-        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("shareImage"),
           [clusterName,
-            String(operationEvent[logEvent].imageName || "-"), operationEvent[logEvent].tag || "-"]);
+            safeGetStringProperty(operationEvent[logEvent].imageName),
+            safeGetStringProperty(operationEvent[logEvent].tag)]);
       }
       case "deleteImage": {
         const clusterId = operationEvent[logEvent].clusterId;
-        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("deleteImage"),
           [clusterName,
-            String(operationEvent[logEvent].imageName || "-"), operationEvent[logEvent].tag || "-"]);
+            safeGetStringProperty(operationEvent[logEvent].imageName),
+            safeGetStringProperty(operationEvent[logEvent].tag)]);
       }
       case "copyImage": {
         const clusterId = operationEvent[logEvent].clusterId;
-        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
 
         return t(pDetails("copyImage"),
-          [clusterName, String(operationEvent[logEvent].sourceImageName),
-            String(operationEvent[logEvent].sourceImageTag),String(operationEvent[logEvent].targetImageName || "-"),
-            operationEvent[logEvent].targetImageTag || "-"]);
+          [clusterName, safeGetStringProperty(operationEvent[logEvent].sourceImageName),
+            safeGetStringProperty(operationEvent[logEvent].sourceImageTag),
+            safeGetStringProperty(operationEvent[logEvent].targetImageName),
+            safeGetStringProperty(operationEvent[logEvent].targetImageTag)]);
       }
       case "createDataset":{
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createDataset"),
           [clusterName,
-            String(operationEvent[logEvent].datasetName)]);
+            safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       }
       case "updateDataset":
         return t(pDetails("updateDataset"),
-          [String(operationEvent[logEvent].datasetName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       case "deleteDataset":
         return t(pDetails("deleteDataset"),
-          [String(operationEvent[logEvent].datasetName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       case "createDatasetVersion":
         return t(pDetails("createDatasetVersion"),
-          [String(operationEvent[logEvent].datasetName), String(operationEvent[logEvent].datasetVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName),
+            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
       case "updateDatasetVersion":
         return t(pDetails("updateDatasetVersion"),
-          [String(operationEvent[logEvent].datasetName), String(operationEvent[logEvent].datasetVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName),
+            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
       case "shareDatasetVersion":
         return t(pDetails("shareDatasetVersion"),
-          [String(operationEvent[logEvent].datasetName), String(operationEvent[logEvent].datasetVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName),
+            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
       case "copyDatasetVersion":
         return t(pDetails("copyDatasetVersion"),
-          [String(operationEvent[logEvent].sourceDatasetName),
-            String(operationEvent[logEvent].sourceDatasetVersionName),
-            String(operationEvent[logEvent].targetDatasetName),
-            String(operationEvent[logEvent].targetDatasetVersionName),
+          [safeGetStringProperty(operationEvent[logEvent].sourceDatasetName),
+            safeGetStringProperty(operationEvent[logEvent].sourceDatasetVersionName),
+            safeGetStringProperty(operationEvent[logEvent].targetDatasetName),
+            safeGetStringProperty(operationEvent[logEvent].targetDatasetVersionName),
           ]);
       case "deleteDatasetVersion":
         return t(pDetails("deleteDatasetVersion"),
-          [String(operationEvent[logEvent].datasetName), String(operationEvent[logEvent].datasetVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].datasetName),
+            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
       case "createAlgorithm":{
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createAlgorithm"),
-          [clusterName, String(operationEvent[logEvent].algorithmName)]);
+          [clusterName, safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
       }
       case "updateAlgorithm": {
         return t(pDetails("updateAlgorithm"),
-          [String(operationEvent[logEvent].algorithmName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
       }
       case "deleteAlgorithm":
         return t(pDetails("deleteAlgorithm"),
-          [String(operationEvent[logEvent].algorithmName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
       case "createAlgorithmVersion":
         return t(pDetails("createAlgorithmVersion"),
-          [String(operationEvent[logEvent].algorithmName), String(operationEvent[logEvent].algorithmVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
+            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
       case "updateAlgorithmVersion":
         return t(pDetails("updateAlgorithmVersion"),
-          [String(operationEvent[logEvent].algorithmName), String(operationEvent[logEvent].algorithmVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
+            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
       case "shareAlgorithmVersion":
         return t(pDetails("shareAlgorithmVersion"),
-          [String(operationEvent[logEvent].algorithmName), String(operationEvent[logEvent].algorithmVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
+            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
       case "copyAlgorithmVersion":
         return t(pDetails("copyAlgorithmVersion"),
-          [String(operationEvent[logEvent].sourceAlgorithmName),
-            String(operationEvent[logEvent].sourceAlgorithmVersionName),
-            String(operationEvent[logEvent].targetAlgorithmName),
-            String(operationEvent[logEvent].targetAlgorithmVersionName),
+          [safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmName),
+            safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmVersionName),
+            safeGetStringProperty(operationEvent[logEvent].targetAlgorithmName),
+            safeGetStringProperty(operationEvent[logEvent].targetAlgorithmVersionName),
           ]);
       case "deleteAlgorithmVersion":
         return t(pDetails("deleteAlgorithmVersion"),
-          [String(operationEvent[logEvent].algorithmName),
-            String(operationEvent[logEvent].algorithmVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
+            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
       case "createModel":{
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createModel"),
-          [clusterName, String(operationEvent[logEvent].modelName)]);
+          [clusterName, safeGetStringProperty(operationEvent[logEvent].modelName)]);
       }
       case "updateModel":
         return t(pDetails("updateModel"),
-          [String(operationEvent[logEvent].modelName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName)]);
       case "deleteModel":
         return t(pDetails("deleteModel"),
-          [String(operationEvent[logEvent].modelName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName)]);
       case "createModelVersion":
         return t(pDetails("createModelVersion"),
-          [String(operationEvent[logEvent].modelName),
-            String(operationEvent[logEvent].modelVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName),
+            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
       case "updateModelVersion":
         return t(pDetails("updateModelVersion"),
-          [String(operationEvent[logEvent].modelName),
-            String(operationEvent[logEvent].modelVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName),
+            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
       case "shareModelVersion":
         return t(pDetails("shareModelVersion"),
-          [String(operationEvent[logEvent].modelName),
-            String(operationEvent[logEvent].modelVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName),
+            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
       case "copyModelVersion":
         return t(pDetails("copyModelVersion"),
-          [String(operationEvent[logEvent].sourceModelName),
-            String(operationEvent[logEvent].sourceModelVersionName),
-            String(operationEvent[logEvent].targetModelName),
-            String(operationEvent[logEvent].targetModelVersionName),
+          [safeGetStringProperty(operationEvent[logEvent].sourceModelName),
+            safeGetStringProperty(operationEvent[logEvent].sourceModelVersionName),
+            safeGetStringProperty(operationEvent[logEvent].targetModelName),
+            safeGetStringProperty(operationEvent[logEvent].targetModelVersionName),
           ]);
       case "deleteModelVersion":
         return t(pDetails("deleteModelVersion"),
-          [String(operationEvent[logEvent].modelName),
-            String(operationEvent[logEvent].modelVersionName)]);
+          [safeGetStringProperty(operationEvent[logEvent].modelName),
+            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
       case "createUser":
         return t(pDetails("createUser"), [operationEvent[logEvent].userId]);
       case "addUserToAccount":

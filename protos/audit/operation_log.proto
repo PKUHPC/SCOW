@@ -573,82 +573,82 @@ message CreateImage {
   string cluster_id = 1;
   optional string tag = 2;
   optional uint32 image_id = 3;
-  string image_name = 4;
+  optional string image_name = 4;
 }
 
 message UpdateImage {
   uint32 image_id = 1;
-  string cluster_id = 2;
-  string image_name = 3;
-  string tag = 4;
+  optional string cluster_id = 2;
+  optional string image_name = 3;
+  optional string tag = 4;
 }
 
 message ShareImage {
   uint32 image_id = 1;
-  string cluster_id = 2;
-  string image_name = 3;
-  string tag = 4;
+  optional string cluster_id = 2;
+  optional string image_name = 3;
+  optional string tag = 4;
 }
 
 message DeleteImage {
   uint32 image_id = 1;
-  string cluster_id = 2;
-  string image_name = 3;
-  string tag = 4;
+  optional string cluster_id = 2;
+  optional string image_name = 3;
+  optional string tag = 4;
 }
 
 message CopyImage {
   uint32 source_image_id = 1;
   optional uint32 target_image_id = 2;
   optional string target_image_tag = 3;
-  string target_image_name = 4;
-  string cluster_id = 5;
-  string source_image_name = 6;
-  string source_image_tag = 7;
+  optional string target_image_name = 4;
+  optional string cluster_id = 5;
+  optional string source_image_name = 6;
+  optional string source_image_tag = 7;
 }
 
 message CreateDataset {
   string cluster_id = 1;
   optional uint32 dataset_id = 2;
-  string dataset_name = 3;
+  optional string dataset_name = 3;
 }
 
 message UpdateDataset {
   uint32 dataset_id = 1;
-  string dataset_name = 2;
+  optional string dataset_name = 2;
 }
 
 message DeleteDataset {
   uint32 dataset_id = 12;
-  string dataset_name = 2;
+  optional string dataset_name = 2;
 }
 
 message CreateDatasetVersion {
   uint32 dataset_id = 1;
   optional uint32 version_id = 2;
-  string dataset_name = 3;
-  string dataset_version_name = 4;
+  optional string dataset_name = 3;
+  optional string dataset_version_name = 4;
 }
 
 message UpdateDatasetVersion {
   uint32 dataset_id = 1;
   uint32 version_id = 2;
-  string dataset_name = 3;
-  string dataset_version_name = 4;
+  optional string dataset_name = 3;
+  optional string dataset_version_name = 4;
 }
 
 message ShareDatasetVersion {
   uint32 dataset_id = 1;
   uint32 version_id = 2;
-  string dataset_name = 3;
-  string dataset_version_name = 4;
+  optional string dataset_name = 3;
+  optional string dataset_version_name = 4;
 }
 
 message DeleteDatasetVersion {
   uint32 dataset_id = 1;
   uint32 version_id = 2;
-  string dataset_name = 3;
-  string dataset_version_name = 4;
+  optional string dataset_name = 3;
+  optional string dataset_version_name = 4;
 }
 
 message CopyDatasetVersion {
@@ -656,54 +656,54 @@ message CopyDatasetVersion {
   uint32 source_dataset_version_id = 2;
   optional uint32 target_dataset_id = 3;
   optional uint32 target_dataset_version_id = 4;
-  string source_dataset_name = 5;
-  string source_dataset_version_name = 6;
-  string target_dataset_name = 7;
-  string target_dataset_version_name = 8;
+  optional string source_dataset_name = 5;
+  optional string source_dataset_version_name = 6;
+  optional string target_dataset_name = 7;
+  optional string target_dataset_version_name = 8;
 }
 
 message CreateAlgorithm {
   string cluster_id = 1;
   optional uint32 algorithm_id = 2;
-  string algorithm_name = 3;
+  optional string algorithm_name = 3;
 }
 
 message UpdateAlgorithm {
   uint32 algorithm_id = 1;
-  string algorithm_name = 2;
+  optional string algorithm_name = 2;
 }
 
 message DeleteAlgorithm {
   uint32 algorithm_id = 12;
-  string algorithm_name = 2;
+  optional string algorithm_name = 2;
 }
 
 message CreateAlgorithmVersion {
   uint32 algorithm_id = 1;
   optional uint32 version_id = 2;
-  string algorithm_name = 3;
-  string algorithm_version_name = 4;
+  optional string algorithm_name = 3;
+  optional string algorithm_version_name = 4;
 }
 
 message UpdateAlgorithmVersion {
   uint32 algorithm_id = 1;
   uint32 version_id = 2;
-  string algorithm_name = 3;
-  string algorithm_version_name = 4;
+  optional string algorithm_name = 3;
+  optional string algorithm_version_name = 4;
 }
 
 message ShareAlgorithmVersion {
   uint32 algorithm_id = 1;
   uint32 version_id = 2;
-  string algorithm_name = 3;
-  string algorithm_version_name = 4;
+  optional string algorithm_name = 3;
+  optional string algorithm_version_name = 4;
 }
 
 message DeleteAlgorithmVersion {
   uint32 algorithm_id = 1;
   uint32 version_id = 2;
-  string algorithm_name = 3;
-  string algorithm_version_name = 4;
+  optional string algorithm_name = 3;
+  optional string algorithm_version_name = 4;
 }
 
 message CopyAlgorithmVersion {
@@ -711,54 +711,54 @@ message CopyAlgorithmVersion {
   uint32 source_algorithm_version_id = 2;
   optional uint32 target_algorithm_id = 3;
   optional uint32 target_algorithm_version_id = 4;
-  string source_algorithm_name = 5;
-  string source_algorithm_version_name = 6;
-  string target_algorithm_name = 7;
-  string target_algorithm_version_name = 8;
+  optional string source_algorithm_name = 5;
+  optional string source_algorithm_version_name = 6;
+  optional string target_algorithm_name = 7;
+  optional string target_algorithm_version_name = 8;
 }
 
 message CreateModel {
   string cluster_id = 1;
   optional uint32 model_id = 2;
-  string model_name = 3;
+  optional string model_name = 3;
 }
 
 message UpdateModel {
   uint32 model_id = 1;
-  string model_name = 2;
+  optional string model_name = 2;
 }
 
 message DeleteModel {
   uint32 model_id = 12;
-  string model_name = 2;
+  optional string model_name = 2;
 }
 
 message CreateModelVersion {
   uint32 model_id = 1;
   optional uint32 version_id = 2;
-  string model_name = 3;
-  string model_version_name = 4;
+  optional string model_name = 3;
+  optional string model_version_name = 4;
 }
 
 message UpdateModelVersion {
   uint32 model_id = 1;
   uint32 version_id = 2;
-  string model_name = 3;
-  string model_version_name = 4;
+  optional string model_name = 3;
+  optional string model_version_name = 4;
 }
 
 message ShareModelVersion {
   uint32 model_id = 1;
   uint32 version_id = 2;
-  string model_name = 3;
-  string model_version_name = 4;
+  optional string model_name = 3;
+  optional string model_version_name = 4;
 }
 
 message DeleteModelVersion {
   uint32 model_id = 1;
   uint32 version_id = 2;
-  string model_name = 3;
-  string model_version_name = 4;
+  optional string model_name = 3;
+  optional string model_version_name = 4;
 }
 
 message CopyModelVersion {
@@ -766,10 +766,10 @@ message CopyModelVersion {
   uint32 source_model_version_id = 2;
   optional uint32 target_model_id = 3;
   optional uint32 target_model_version_id = 4;
-  string source_model_name = 5;
-  string source_model_version_name = 6;
-  string target_model_name = 7;
-  string target_model_version_name = 8;
+  optional string source_model_name = 5;
+  optional string source_model_version_name = 6;
+  optional string target_model_name = 7;
+  optional string target_model_version_name = 8;
 }
 
 message MarkMessageRead {
