@@ -17,6 +17,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 env:
   INTERNAL_CR: ccimage.pku.edu.cn
+  CCREPO_CR: ccrepo.pku.edu.cn
 
 jobs:
   test-version-packages:
@@ -79,11 +80,18 @@ jobs:
         run: ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -N ""
 
       - name: Log in to the ${{ env.INTERNAL_CR }}
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        uses: docker/login-action@v3.6.0
         with:
           registry: ${{ env.INTERNAL_CR }}
           username: ${{ secrets.CCIMAGE_USERNAME }}
           password: ${{ secrets.CCIMAGE_PASSWORD }}
+
+      - name: Log in to the ${{ env.CCREPO_CR }}
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ${{ env.CCREPO_CR }}
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
 
       - name: Start dev env for db testing
         if: vars.RUN_TESTS == 'true'
@@ -192,6 +200,21 @@ jobs:
           echo "📁 AMD64 Available at: http://${{ vars.FILE_SERVER_HOST }}/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}/scow-cli-x64
           echo "📁 ARM64 Available at: http://${{ vars.FILE_SERVER_HOST }}/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}/scow-cli-arm64
 
+      - name: Upload CLI to ccrepo
+        run: |
+          target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scow-cli/${{ steps.target.outputs.target }}"
+
+          echo "Uploading CLI to target url: ${target_url}"
+
+          for arch in x64 arm64; do
+          curl -f --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" \
+            --upload-file "apps/cli/exe/cli-${arch}" \
+            "${target_url}/scow-cli-${arch}"
+          done
+
+          echo "✅ Files uploaded successfully to ccrepo!"
+          echo "📁 AMD64 Available at: ${target_url}/scow-cli-x64"
+          echo "📁 ARM64 Available at: ${target_url}/scow-cli-arm64"
 
   build-images:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
@@ -219,11 +242,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Log in to the ${{ env.INTERNAL_CR }}
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        uses: docker/login-action@v3.6.0
         with:
           registry: ${{ env.INTERNAL_CR }}
           username: ${{ secrets.CCIMAGE_USERNAME }}
           password: ${{ secrets.CCIMAGE_PASSWORD }}
+
+      - name: Log in to the ${{ env.CCREPO_CR }}
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ${{ env.CCREPO_CR }}
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -244,6 +274,7 @@ jobs:
         with:
           images: |
             ${{ env.INTERNAL_CR }}/scow/${{ matrix.name }}
+            ${{ env.CCREPO_CR }}/scow/${{ matrix.name }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -413,6 +444,18 @@ jobs:
           else
             echo "ℹ️  Directory ${target_dir} does not exist, nothing to clean up"
           fi
+
+      - name: Remove CLI from PR directory
+        run: |
+          target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scow-cli/pr-${{ github.event.number }}"
+
+          echo "Deleting CLI from target url: ${target_url}"
+
+          for arch in x64 arm64; do
+            curl -f -X DELETE --user "${{ secrets.CCREPO_USERNAME }}:${{ secrets.CCREPO_PASSWORD }}" "${target_url}/scow-cli-${arch}"
+          done
+
+          echo "✅ Successfully cleanup CLI"
 
       - name: Summary
         run: |
