@@ -125,7 +125,7 @@ message SaveImage {
   uint32 job_id = 1;
   optional uint32 image_id = 2;
   optional string tag = 3;
-  string image_name = 4;
+  optional string image_name = 4;
 }
 
 message CreateFile {
