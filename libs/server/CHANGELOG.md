@@ -1,5 +1,20 @@
 # @scow/lib-server
 
+## 1.4.6
+
+### Patch Changes
+
+- 6752734: 顶部导航栏只保留一级菜单，HPC 整合 shell 页和桌面页为登录集群页
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/protos@1.0.31
+  - @scow/rich-error-model@2.0.2
+
 ## 1.4.5
 
 ### Patch Changes

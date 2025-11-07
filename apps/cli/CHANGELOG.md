@@ -1,5 +1,18 @@
 # @scow/cli
 
+## 1.9.6
+
+### Patch Changes
+
+- f0f144d: 存储管理新增定时同步使用量和批量修改用户存储配额等功能
+- d556202: 芯片映射布局调整，增加布局大图，各芯片旋转角度可配置
+- 6752734: 顶部导航栏只保留一级菜单，HPC 整合 shell 页和桌面页为登录集群页
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [b326570]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+
 ## 1.9.5
 
 ### Patch Changes

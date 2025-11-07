@@ -1,5 +1,11 @@
 # @scow/ai-scheduler-adapter-protos
 
+## 1.1.5
+
+### Patch Changes
+
+- 9491d98: 修改 ai 适配器的 interface 分支为 feat-ai-release
+
 ## 1.1.4
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @scow/mis-web
 
+## 1.9.6
+
+### Patch Changes
+
+- 7985e57: 管理系统消费记录类型中量子作业在未开启量子部署时不主动开启
+- 8e15ab8: 修改 AI 日志算法/数据集/模型/镜像等名称标签字段不存在时显示 -
+- f0f144d: 存储管理新增定时同步使用量和批量修改用户存储配额等功能
+- b326570: 修改文件最大导出数据数量，改为可配置
+- c101e05: 创建账户时去掉 ownerId 前后空格
+- 4f98a31: 作业列表字段调整以及导出功能优化
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [f0f144d]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/lib-operation-log@2.2.6
+  - @scow/lib-web@1.5.6
+  - @scow/protos@1.0.31
+  - @scow/lib-notification@1.0.16
+  - @scow/lib-scow-resource@0.2.15
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.5
 
 ### Patch Changes

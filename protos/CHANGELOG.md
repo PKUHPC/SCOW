@@ -1,5 +1,18 @@
 # @scow/grpc-api
 
+## 1.25.0
+
+### Minor Changes
+
+- 4f98a31: 增加未结束作业和已结束左右的返回参数
+- 6752734: shell 卡片增加集群描述，桌面增加图标设置
+- 8e15ab8: 将部分 AI 操作日志 protobuf 中后加的参数修改为 optional
+
+### Patch Changes
+
+- 56634b6: 补充修改保存镜像操作日志 protobuf 中后添加的镜像名参数为可选型
+- f0f144d: 存储管理新增定时同步使用量和批量修改用户存储配额等功能
+
 ## 1.24.0
 
 ### Minor Changes

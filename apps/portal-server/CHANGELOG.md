@@ -1,5 +1,25 @@
 # @scow/portal-server
 
+## 1.9.6
+
+### Patch Changes
+
+- 9272a0a: 修复 portal-server 遍历 appData 下的 sessions 时，没有跳过文件，引发日志中的错误
+- 4f98a31: 作业列表字段调整以及导出功能优化
+- 6752734: 顶部导航栏只保留一级菜单，HPC 整合 shell 页和桌面页为登录集群页
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/lib-server@1.4.6
+  - @scow/protos@1.0.31
+  - @scow/lib-scow-resource@0.2.15
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.5
 
 ### Patch Changes

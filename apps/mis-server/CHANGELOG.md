@@ -1,5 +1,26 @@
 # @scow/mis-server
 
+## 1.9.6
+
+### Patch Changes
+
+- 7985e57: 管理系统消费记录类型中量子作业在未开启量子部署时不主动开启
+- f0f144d: 存储管理新增定时同步使用量和批量修改用户存储配额等功能
+- 4f98a31: 作业列表字段调整以及导出功能优化
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/lib-server@1.4.6
+  - @scow/protos@1.0.31
+  - @scow/lib-hook@1.0.31
+  - @scow/lib-notification@1.0.16
+  - @scow/lib-scow-resource@0.2.15
+
 ## 1.9.5
 
 ### Patch Changes

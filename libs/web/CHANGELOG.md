@@ -1,5 +1,17 @@
 # @scow/lib-web
 
+## 1.5.6
+
+### Patch Changes
+
+- 6752734: 顶部导航栏只保留一级菜单，HPC 整合 shell 页和桌面页为登录集群页
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [b326570]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/protos@1.0.31
+
 ## 1.5.5
 
 ### Patch Changes

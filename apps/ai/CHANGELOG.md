@@ -1,5 +1,33 @@
 # @scow/ai
 
+## 0.4.6
+
+### Patch Changes
+
+- 1fb3d62: 虚拟 GPU 支持分布式训练
+- 0821615: ai 队列限制单节点最大加速卡卡数
+- 4f98a31: 作业列表字段调整以及导出功能优化
+- 02cc336: layout 消息获取报错修复、登录节点 name 未处理国际化修复
+- 6752734: 顶部导航栏只保留一级菜单，HPC 整合 shell 页和桌面页为登录集群页
+- Updated dependencies [6752734]
+- Updated dependencies [9491d98]
+- Updated dependencies [f0f144d]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/ai-scheduler-adapter-protos@1.1.5
+  - @scow/lib-operation-log@2.2.6
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/lib-server@1.4.6
+  - @scow/lib-web@1.5.6
+  - @scow/protos@1.0.31
+  - @scow/lib-notification@1.0.16
+  - @scow/lib-scow-resource@0.2.15
+  - @scow/rich-error-model@2.0.2
+
 ## 0.4.5
 
 ### Patch Changes

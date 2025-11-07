@@ -1,5 +1,28 @@
 # @scow/quantum
 
+## 0.1.6
+
+### Patch Changes
+
+- d556202: 芯片映射布局调整，增加布局大图，各芯片旋转角度可配置
+- Updated dependencies [6752734]
+- Updated dependencies [9491d98]
+- Updated dependencies [f0f144d]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/ai-scheduler-adapter-protos@1.1.5
+  - @scow/lib-operation-log@2.2.6
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/lib-server@1.4.6
+  - @scow/lib-web@1.5.6
+  - @scow/protos@1.0.31
+  - @scow/lib-scow-resource@0.2.15
+  - @scow/rich-error-model@2.0.2
+
 ## 0.1.5
 
 ### Patch Changes

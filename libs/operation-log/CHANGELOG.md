@@ -1,5 +1,12 @@
 # @scow/lib-operation-log
 
+## 2.2.6
+
+### Patch Changes
+
+- f0f144d: 存储管理新增定时同步使用量和批量修改用户存储配额等功能
+  - @scow/protos@1.0.31
+
 ## 2.2.5
 
 ### Patch Changes

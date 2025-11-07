@@ -1,5 +1,22 @@
 # @scow/resource
 
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [6752734]
+- Updated dependencies [f0f144d]
+- Updated dependencies [4f98a31]
+- Updated dependencies [b326570]
+- Updated dependencies [6752734]
+- Updated dependencies [d556202]
+  - @scow/config@1.11.1
+  - @scow/lib-scheduler-adapter@1.1.29
+  - @scow/lib-server@1.4.6
+  - @scow/lib-web@1.5.6
+  - @scow/protos@1.0.31
+  - @scow/lib-hook@1.0.31
+
 ## 0.3.5
 
 ### Patch Changes

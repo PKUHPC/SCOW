@@ -1,5 +1,14 @@
 # @scow/config
 
+## 1.11.1
+
+### Patch Changes
+
+- 6752734: shell 卡片增加集群描述/docs/deploy/config/cluster-config，桌面增加图标设置/docs/deploy/config/portal/desktop
+- f0f144d: 新增同步存储使用量定时任务配置: docs/deploy/config/mis/storage/storage_manager
+- b326570: 增加文件最大导出数据数量配置
+- d556202: 各芯片旋转角度可配置/docs/deploy/config/quantum/intro
+
 ## 1.11.0
 
 ### Minor Changes

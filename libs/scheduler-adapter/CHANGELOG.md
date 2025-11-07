@@ -1,5 +1,12 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.29
+
+### Patch Changes
+
+- 4f98a31: 作业列表字段调整以及导出功能优化
+  - @scow/protos@1.0.31
+
 ## 1.1.28
 
 ### Patch Changes
