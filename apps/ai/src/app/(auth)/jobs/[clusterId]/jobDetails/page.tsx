@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
@@ -91,7 +91,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const appId = searchParams?.get("appId");
   const from = searchParams?.get("from");
 
-  const MONITOR_TIME_OPTIONS = [
+  const MONITOR_TIME_OPTIONS = useMemo(() => [
     { label:t(p("last1Hour")),value:"now-1h" },
     { label:t(p("last6Hours")),value:"now-6h" },
     { label:t(p("last12Hours")),value:"now-12h" },
@@ -101,7 +101,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
     { label:t(p("last30Days")),value:"now-30d" },
     { label:t(p("allData")),value:ALL },
     { label:t(p("customTime")),value:CUSTOM },
-  ];
+  ], [t, p]);
 
   // pod列表中展示那个pod的事件
   const [selectedPodId, setSelectedPodId] = useState<string | null>(null);
@@ -114,6 +114,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
   const [selectedMonitorPodIds, setSelectedMonitorPodIds] = useState<string[]>([]);
   // 监控的刷新
   const [reloadFlag, setReloadFlag] = useState(0);
+  const monitorTimeUserTouchedRef = useRef(false);
 
   const parsedJobId = jobId ? parseInt(jobId, 10) : null;
 
@@ -127,6 +128,20 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
   const jobEventData = useMemo(() => jobDetails ? jobDetails.jobEvent : [], [jobDetails]);
   const podListData = useMemo(() => jobDetails ? jobDetails.podInfo : [], [jobDetails]);
+
+  useEffect(() => {
+    if (!jobDetails || monitorTimeUserTouchedRef.current) {
+      return;
+    }
+
+    // 运行中的作业默认展示一小时，其他的展示全部数据
+    const desiredMonitorTime =
+      jobDetails.state === "RUNNING"
+        ? MONITOR_TIME_OPTIONS[0].value
+        : MONITOR_TIME_OPTIONS[7].value;
+
+    setMonitorTime(desiredMonitorTime);
+  }, [jobDetails, MONITOR_TIME_OPTIONS]);
 
   // 监控选择自定义时间，选完开始时间和结束时间都有值时才触发更新
   const lastStableUrlsRef = useRef<string[]>([]);
@@ -160,21 +175,51 @@ export default function Page({ params }: { params: { clusterId: string } }) {
       displayPanelIds.unshift(gpuPanelId,gpuMemoryPanelId);
     }
 
-    const grafanaUrl = grafanaConfig.isProxy ?
-      // 加上协议和ip(域名)
-      new URL(grafanaConfig.proxyUrl, location.origin).href
-      : grafanaConfig.noProxyUrl;
+    const resolveGrafanaUrl = () => {
+      if (grafanaConfig.isProxy) {
+        const proxyUrl = grafanaConfig.proxyUrl;
+        if (!proxyUrl) {
+          return null;
+        }
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        if (!origin) {
+          return null;
+        }
+        try {
+          return new URL(proxyUrl, origin).href;
+        } catch {
+          return null;
+        }
+      }
+      return grafanaConfig.noProxyUrl || null;
+    };
+
+    const grafanaUrl = resolveGrafanaUrl();
+    if (!grafanaUrl) {
+      return [];
+    }
+
     // 正确拼接基准 URL（不要用 path.join）
     // 支持 grafanaConfig.url 末尾是否带 '/'
-    const base = new URL(grafanaUrl.endsWith("/")
-      ? grafanaUrl
-      : grafanaUrl + "/");
+    let base: URL;
+    try {
+      base = new URL(grafanaUrl.endsWith("/")
+        ? grafanaUrl
+        : grafanaUrl + "/");
+    } catch {
+      return [];
+    }
 
-    // 3) 追加仪表盘路径（同样不要用 path.join）
-    const dashboardUrl = new URL(
-      `d-solo/${grafanaConfig.dashboardId}/${grafanaConfig.dashboardName}`,
-      base,
-    );
+    // 追加仪表盘路径（同样不要用 path.join）
+    let dashboardUrl: URL;
+    try {
+      dashboardUrl = new URL(
+        `d-solo/${grafanaConfig.dashboardId}/${grafanaConfig.dashboardName}`,
+        base,
+      );
+    } catch {
+      return [];
+    }
 
     // 4) 生成每个面板的完整 URL
     const urls = displayPanelIds.map((panelId) => {
@@ -685,11 +730,12 @@ export default function Page({ params }: { params: { clusterId: string } }) {
                 <span style={{ minWidth:"70px" }}>{t(p("selectTime"))}:</span>
                 <Select
                   placeholder={t(p("selectTime"))}
-                  defaultValue={MONITOR_TIME_OPTIONS[0].value}
+                  value={monitorTime}
                   style={{ width: "100%", marginRight:"20px" }}
                   listHeight={200}
                   options={MONITOR_TIME_OPTIONS}
                   onChange={(v) => {
+                    monitorTimeUserTouchedRef.current = true;
                     setMonitorTime(v);
                     setMonitorAccurateTime(null);
                   } }
