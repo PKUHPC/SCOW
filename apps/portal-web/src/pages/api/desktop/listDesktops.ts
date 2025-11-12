@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
@@ -81,9 +69,9 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
   }).then(async ({ userDesktops }) => {
     return {
       200: {
-        userDesktops: [{
-          host: userDesktops[0].host,
-          desktops: userDesktops[0].desktops?.map((desktop) => {
+        userDesktops: userDesktops.map((userDesktop) => ({
+          host: userDesktop.host,
+          desktops: userDesktop.desktops?.map((desktop) => {
             if (desktop.remoteControlTool === RemoteControlTool.SHADOWDESK) {
               return {
                 type: "shadowdesk" as const,
@@ -106,7 +94,7 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
               };
             }
           }),
-        }],
+        })),
       } };
   });
 
