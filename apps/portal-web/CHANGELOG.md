@@ -1,5 +1,11 @@
 # @scow/portal-web
 
+## 1.9.7
+
+### Patch Changes
+
+- a589554: 修复集群有多节点时仅返回了第一个节点的桌面数据的问题
+
 ## 1.9.6
 
 ### Patch Changes

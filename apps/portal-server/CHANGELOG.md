@@ -1,5 +1,7 @@
 # @scow/portal-server
 
+## 1.9.7
+
 ## 1.9.6
 
 ### Patch Changes

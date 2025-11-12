@@ -1,5 +1,12 @@
 # @scow/ai
 
+## 0.4.7
+
+### Patch Changes
+
+- ea51140: 修复 ai 仪表盘页面控制台报错（manifest not found 和 svg 报错）
+- 9cd005b: AI 监控的中已结束的作业默认展示全部数据 && 兼容没配置监控的情况,作业详情可以正常显示
+
 ## 0.4.6
 
 ### Patch Changes
