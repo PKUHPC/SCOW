@@ -47,6 +47,7 @@ const NotificationPage = () => {
     noticeType: NoticeType.SITE_MESSAGE,
     ...query,
     ...pageInfo,
+    $typeName: "notification.ListMessagesRequest",
   });
 
   const { mutateAsync: markAllRead, isPending: isMarkAllReadPending } = useMutation(markAllMessagesRead, {

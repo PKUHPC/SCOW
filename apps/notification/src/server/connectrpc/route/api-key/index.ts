@@ -18,7 +18,7 @@
  */
 
 import { Code, ConnectError, type ConnectRouter } from "@connectrpc/connect";
-import { ApiKeyService } from "@scow/notification-protos/build/api_key_connect";
+import { ApiKeyService } from "@scow/notification-protos/build/api_key_pb";
 import { PlatformRole } from "src/models/user";
 import { ApiKey } from "src/server/entities/ApiKey";
 import { checkAuth } from "src/utils/auth/check-auth";
@@ -84,11 +84,7 @@ export default (router: ConnectRouter) => {
 
       await em.persistAndFlush(newApiKey);
 
-      return {
-        ...newApiKey,
-        createdAt: newApiKey.createdAt.toISOString(),
-        updatedAt: newApiKey.updatedAt.toISOString(),
-      };
+      return {};
     },
   });
 };

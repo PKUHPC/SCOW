@@ -1,5 +1,5 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Timestamp } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { TargetType } from "@scow/notification-protos/build/common_pb";
 import { adminSendMessage } from "@scow/notification-protos/build/message-MessageService_connectquery";
@@ -43,7 +43,7 @@ export const MessageForm: React.FC<Props> = ({ lang }) => {
       title, content, noticeTypes,
       messageType: AdminMessageType.SystemNotification,
       targetType: TargetType.FULL_SITE,
-      expiredAt: Timestamp.fromDate(expirationTime.toDate()),
+      expiredAt: timestampFromDate(expirationTime.toDate()),
     });
   };
 

@@ -4,6 +4,7 @@
   "version": "1.9.7",
   "scripts": {
     "build": "turbo run build",
+    "build:scow": "turbo run build --filter=\"!@scow/docs\"",
     "build:libs": "turbo run build --filter \"./libs/**\"",
     "build:images": "docker build -f docker/Dockerfile.scow -t scow .",
     "build:protos": "turbo run build --filter \"./libs/protos/**\"",
@@ -21,14 +22,14 @@
     "api:breaking": "cd protos && pnpm exec buf breaking --against '../.git#subdir=protos'"
   },
   "devDependencies": {
-    "@bufbuild/buf": "1.49.0",
+    "@bufbuild/buf": "1.59.0",
     "@changesets/cli": "2.27.11",
     "@commitlint/config-conventional": "19.6.0",
     "@ddadaal/eslint-config": "2.1.0",
     "@pnpm/lockfile-file": "9.1.3",
     "@pnpm/logger": "5.0.0",
     "@types/jest": "29.5.14",
-    "@types/node": "22.10.6",
+    "@types/node": "24.5.2",
     "concurrently": "9.1.2",
     "cross-env": "7.0.3",
     "cz-conventional-changelog": "3.3.0",
@@ -59,7 +60,7 @@
   "pnpm": {
     "patchedDependencies": {
       "react-typed-i18n@2.3.0": "patches/react-typed-i18n@2.3.0.patch",
-      "next@14.2.30": "patches/next@14.2.30.patch"
+      "next@15.5.6": "patches/next@15.5.6.patch"
     },
     "neverBuiltDependencies": []
   }

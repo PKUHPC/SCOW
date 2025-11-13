@@ -10,17 +10,18 @@
  * See the Mulan PSL v2 for more details.
  */
 
-"use client";
-
+"use client"; ;
 import { LoadingOutlined } from "@ant-design/icons";
 import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { trpc } from "src/utils/trpc";
 
 import { LaunchInferenceJobForm } from "../LaunchInferenceForm";
 
-export default function Page({ params }: { params: { clusterId: string } }) {
+export default function Page(props: { params: Promise<{ clusterId: string }> }) {
+  const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.inference.");
 

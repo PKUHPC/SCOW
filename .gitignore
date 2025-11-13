@@ -12,3 +12,6 @@ dist
 version.json
 .pnpm-store
 .DS_Store
+
+.next.backup
+

@@ -20,7 +20,7 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
     const res = await next(req);
 
     const durationMs = Date.now() - start;
-    const output = JSON.stringify(res.message);
+    const output = JSON.stringify(res.message, (_, v) => typeof v === "bigint" ? v.toString() : v);
     const truncatedOutput = output.length > 300 ? `${output.slice(0, 300)}...` : output;
     const meta = { path: req.url, input: req.message, output: truncatedOutput, durationMs };
 

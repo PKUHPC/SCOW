@@ -20,7 +20,6 @@ const { buildRuntimeConfig } = require("./config.js");
 
 const BASE_PATH = process.env.BASE_PATH || "/";
 
-
 module.exports = async (phase) => {
 
   global.__CONFIG__ = {
@@ -36,31 +35,6 @@ module.exports = async (phase) => {
     ...runtimeConfig,
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
-    webpack(config, options) {
-      config.plugins.forEach((i) => {
-        if (i instanceof options.webpack.DefinePlugin) {
-          if (i.definitions["process.env.__NEXT_ROUTER_BASEPATH"]) {
-            i.definitions["process.env.__NEXT_ROUTER_BASEPATH"] =
-              "(typeof window === \"undefined\" ? global : window).__CONFIG__?.BASE_PATH";
-          }
-        }
-      });
-
-      // // 添加SVG处理规则
-      // config.module.rules.push({
-      //   test: /\.svg$/,
-      //   use: [
-      //     {
-      //       loader: "@svgr/webpack",
-      //       options: {
-      //         icon: true,
-      //       },
-      //     },
-      //   ],
-      // });
-
-      return config;
-    },
     compiler: {
       styledComponents: true,
     },

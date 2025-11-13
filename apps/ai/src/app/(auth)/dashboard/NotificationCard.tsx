@@ -1,4 +1,3 @@
-import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import { App, Card, List, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import React from "react";

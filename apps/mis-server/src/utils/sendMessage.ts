@@ -1,8 +1,6 @@
-import { Struct } from "@bufbuild/protobuf";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import {
-  MessageData,
   SystemBatchSendMessagesRequest,
   SystemSendMessageRequest } from "@scow/notification-protos/build/scow_message_pb";
 import { notifClient } from "src/config/notification";
@@ -90,9 +88,11 @@ export type Message = AccountLocked | AccountOverdue | AccountRechargeSuccess
 export const sendMessage = async (message: Message, logger: Logger) => {
   const { metadata } = message;
 
-  const data: Partial<SystemSendMessageRequest> = {
+  const data: SystemSendMessageRequest = {
     ...message,
-    systemId: "MIS_SERVER", metadata: Struct.fromJson(metadata),
+    $typeName: "scow_notification.SystemSendMessageRequest",
+    systemId: "MIS_SERVER", metadata: metadata,
+    descriptionData: [],
   };
 
   try {
@@ -109,14 +109,19 @@ export const batchSendMessages = async (messages: Message[], logger: Logger, bat
   for (let i = 0; i < messages.length; i += batchSize) {
     const batch = messages.slice(i, i + batchSize); // 获取当前批次的消息
 
-    const data: Partial<SystemBatchSendMessagesRequest> = {
+    const data: SystemBatchSendMessagesRequest = {
+      $typeName: "scow_notification.SystemBatchSendMessagesRequest",
       systemId: "MIS_SERVER",
       messages: batch.map((msg) => {
-        const { metadata } = msg;
+        const { metadata, messageType, targetType } = msg;
         return {
-          ...msg,
-          metadata: Struct.fromJson(metadata),
-        } as MessageData;
+          $typeName: "scow_notification.MessageData",
+          metadata: metadata,
+          targetIds: msg.targetIds,
+          messageType: messageType,
+          targetType: targetType,
+          descriptionData: [],
+        };
       }),
     };
 
@@ -124,7 +129,7 @@ export const batchSendMessages = async (messages: Message[], logger: Logger, bat
       logger.info(`send ${data.messages?.length} messages to notification`);
       await notifClient?.scowMessage.systemBatchSendMessages(data);
     } catch (err) {
-      logger.error(`send message ${JSON.stringify(data)} err: ${err as any}`);
+      logger.error(`send message ${JSON.stringify({})} err: ${err as any}`);
     }
   }
 };

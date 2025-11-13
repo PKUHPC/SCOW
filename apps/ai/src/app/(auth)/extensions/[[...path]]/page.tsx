@@ -3,14 +3,17 @@
 import { ExtensionManifestWithUrl,fetchManifestsWithErrorHandling, UiExtensionStoreData }
   from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { Spin } from "antd";
-import { useCallback, useEffect,useState } from "react";
+import { use,useCallback, useEffect,useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useI18n } from "src/i18n";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 
-import { ExtensionPage as LibExtensionPage } from "../ExtensionPage";
+import { ExtensionPage as LibExtensionPage } from "./ExtensionPage";
 
-export default function Page() {
+export default function Page({ params }: { params: Promise<{ path: string[] }> }) {
+
+  const { path } = use(params);
+
   const { publicConfig } = usePublicConfig();
   const [uiExtensionData, setUiExtensionData] = useState<UiExtensionStoreData | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +61,7 @@ export default function Page() {
 
   return (
     <LibExtensionPage
+      path={path}
       uiExtensionConfigData={uiExtensionData}
       currentLanguageId={i18n.currentLanguage.id}
       NotFoundPageComponent={NotFoundPage}

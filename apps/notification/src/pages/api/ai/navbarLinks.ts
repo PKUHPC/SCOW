@@ -1,9 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import path from "path";
+import { applyMiddleware } from "src/server/middleware/cors";
 import { hasUnreadMessage } from "src/utils/message/has-unread-message";
 import { BASE_PATH } from "src/utils/processEnv";
-
-import { applyMiddleware } from "../middleware/cors";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
 

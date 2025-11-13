@@ -15,7 +15,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { loggerInterceptor } from "src/server/connectrpc/interceptor/loggerInterceptor";
 import routes from "src/server/connectrpc/router";
 
-const { handler, config } = nextJsApiRouter({ routes, interceptors: [loggerInterceptor]});
+const { handler, config: conf } = nextJsApiRouter({ routes, interceptors: [loggerInterceptor]});
 
 const customHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   // 设置 CORS 头信息
@@ -37,5 +37,6 @@ const customHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   await handler(req, res);
 };
 
-export default customHandler;
-export { config };
+const config = conf as any;
+
+export { config, customHandler as default };

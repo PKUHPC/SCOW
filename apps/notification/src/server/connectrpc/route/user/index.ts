@@ -11,7 +11,7 @@
  */
 
 import { type ConnectRouter } from "@connectrpc/connect";
-import { UserService } from "@scow/notification-protos/build/user_connect";
+import { UserService } from "@scow/notification-protos/build/user_pb";
 import { checkAuth } from "src/utils/auth/check-auth";
 
 export default (router: ConnectRouter) => {

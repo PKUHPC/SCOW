@@ -11,7 +11,7 @@
  */
 
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
-import { UserSubscriptionService } from "@scow/notification-protos/build/user_subscription_connect";
+import { UserSubscriptionService } from "@scow/notification-protos/build/user_subscription_pb";
 import { UserSubscription } from "src/server/entities/UserSubscription";
 import { checkAuth } from "src/utils/auth/check-auth";
 import { forkEntityManager } from "src/utils/get-orm";
@@ -93,7 +93,7 @@ export default (router: ConnectRouter) => {
 
       await em.flush();
 
-      return;
+      return {};
     },
 
     async listUserSubscriptions(_, context) {

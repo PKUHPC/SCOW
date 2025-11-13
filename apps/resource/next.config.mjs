@@ -15,7 +15,6 @@ export default () => {
     compiler: {
       styledComponents: true,
     },
-    swcMinify: false,
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     webpack: (config, { isServer }) => {

@@ -1,4 +1,4 @@
-import { RuleObject } from "antd/lib/form/index.js";
+import { RuleObject } from "antd/lib/form/index";
 
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
 

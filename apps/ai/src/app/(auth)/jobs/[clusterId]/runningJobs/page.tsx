@@ -10,8 +10,8 @@
  * See the Mulan PSL v2 for more details.
  */
 
-"use client";
-
+"use client"; ;
+import { use } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -19,7 +19,8 @@ import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 
 import { AppSessionsTable, AppTableStatus } from "../AppSessionsTable";
 
-export default function Page({ params }: { params: { clusterId: string } }) {
+export default function Page(props: { params: Promise<{ clusterId: string }> }) {
+  const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.unfinishedJobs.");
 

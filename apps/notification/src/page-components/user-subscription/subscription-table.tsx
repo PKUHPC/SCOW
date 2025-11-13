@@ -135,7 +135,11 @@ export const UserSubscriptionTable: React.FC = () => {
         };
       });
 
-      await mutateAsync({ configs: parsedValues });
+      await mutateAsync({ configs: parsedValues.map((x) => ({
+        ...x,
+        $typeName: "notification.MessageConfig",
+        noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
+      })) });
 
     } catch {
       message.error(compLang.saveError);

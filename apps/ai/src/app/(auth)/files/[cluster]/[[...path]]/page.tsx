@@ -1,21 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { useRouter } from "next/navigation";
 import { join } from "path";
-import { useEffect, useMemo } from "react";
+import { use,useEffect, useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { FileManager } from "src/app/(auth)/files/FileManager";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -23,13 +11,14 @@ import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { Head } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 
-export default function Page({ params }: { params: { cluster: string; resourceId: string; path: string[] } }) {
+export default function Page({ params }: { params: Promise<{
+  cluster: string; resourceId: string; path: string[] }> }) {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.pages.");
 
   const router = useRouter();
 
-  const { cluster, path: pathParts = []} = params;
+  const { cluster, path: pathParts = []} = use(params);
 
   const decodePathParts = useMemo(() => {
     return pathParts.map((path) => decodeURIComponent(path));

@@ -16,7 +16,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { parseCookies, setCookie } from "nookies";
 import React, { PropsWithChildren, useEffect, useState } from "react";
-import { addBasePathToImage } from "src/utils/image";
 import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 
 const _modes = ["system", "dark", "light"] as const;
@@ -41,7 +40,7 @@ export interface DarkModeButtonProps {
   basePath?: string;
 }
 
-const DarkModeButtonInternal = ({ dark, light, system, languageId, basePath = "" }: DarkModeButtonProps) => {
+const DarkModeButtonInternal = ({ dark, light, system, languageId }: DarkModeButtonProps) => {
   const { mode, setMode } = useDarkMode();
 
   const systemColor = languageId ? getCurrentLangLibWebText(languageId, "darkModeSystem") : "跟随系统";
@@ -59,7 +58,7 @@ const DarkModeButtonInternal = ({ dark, light, system, languageId, basePath = ""
   return (
     <FloatButton
       onClick={() => setMode(mode === "system" ? "dark" : mode === "dark" ? "light" : "system")}
-      icon={<Image src={addBasePathToImage(icon, basePath)} alt={alt} width={20} height={20} />}
+      icon={<Image src={icon} alt={alt} width={20} height={20} />}
       tooltip={label}
       // icon={icon}
     />

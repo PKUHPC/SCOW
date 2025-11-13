@@ -11,7 +11,7 @@
  */
 
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
-import { MessageTypeService } from "@scow/notification-protos/build/message_type_connect";
+import { MessageTypeService } from "@scow/notification-protos/build/message_type_pb";
 import { MessageTypeInfo } from "src/models/message-type";
 import { PlatformRole } from "src/models/user";
 import { CustomMessageType } from "src/server/entities/CustomMessageType";
@@ -93,7 +93,7 @@ export default (router: ConnectRouter) => {
         type, titleTemplate, contentTemplate, category, categoryTemplate });
       await em.persistAndFlush(newMessageType);
 
-      return;
+      return {};
     },
 
     async editCustomMessageType(req, context) {
@@ -137,7 +137,7 @@ export default (router: ConnectRouter) => {
 
       await em.persistAndFlush(messageType);
 
-      return;
+      return {};
     },
   });
 };

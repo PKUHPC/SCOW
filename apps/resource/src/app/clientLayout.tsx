@@ -2,7 +2,6 @@
 import "src/styles/globals.css";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
-import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { AntdConfigProvider } from "src/components/layout/AntdConfigProvider";
@@ -53,6 +52,7 @@ const useReportHeightToScow = () => {
 };
 
 export function ClientLayout(props: {
+  defaultPrimaryColor: string;
   children: React.ReactNode,
 }) {
   const pathname = usePathname();
@@ -94,7 +94,7 @@ export function ClientLayout(props: {
                 {
                   useUiConfig.isLoading || usePublicConfig.isLoading ? (
                     <AntdConfigProvider
-                      color={DEFAULT_PRIMARY_COLOR}
+                      color={props.defaultPrimaryColor}
                       primaryColor={{ defaultColor: color,darkModeColor }}
                     >
                       <Loading />

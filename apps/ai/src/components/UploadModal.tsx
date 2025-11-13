@@ -8,7 +8,7 @@ import { join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { trpc } from "src/utils/trpc.js";
+import { trpc } from "src/utils/trpc";
 
 import { urlToUpload } from "../app/(auth)/files/api";
 

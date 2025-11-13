@@ -12,7 +12,7 @@
 
 import { type ConnectRouter } from "@connectrpc/connect";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
-import { ConfigService } from "@scow/notification-protos/build/config_connect";
+import { ConfigService } from "@scow/notification-protos/build/config_pb";
 import { uiConfig } from "src/server/config/ui";
 import { checkAuth } from "src/utils/auth/check-auth";
 

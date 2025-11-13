@@ -37,7 +37,7 @@ import { styled, useTheme } from "styled-components";
 
 import { urlToDownload } from "./api";
 import { CreateFileModal } from "./CreateFileModal";
-import { FileTable } from "./FileTable.jsx";
+import { FileTable } from "./FileTable";
 import { PathBar } from "./PathBar";
 import { RenameModal } from "./RenameModal";
 

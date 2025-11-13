@@ -56,7 +56,7 @@ message AdminSendMessageResponse {
 }
 
 message ListMessagesRequest {
-  string user_id = 1;
+  optional string user_id = 1;
   optional string message_type = 2;
   optional string category = 3;
   optional NoticeType notice_type = 4;

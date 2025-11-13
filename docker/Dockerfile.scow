@@ -41,7 +41,7 @@ RUN pnpm i --offline --frozen-lockfile
 
 RUN node scripts/createVersionFile.mjs version.json
 
-RUN pnpm build --filter="!@scow/docs"
+RUN pnpm build:scow
 
 RUN node scripts/copyDist.mjs
 

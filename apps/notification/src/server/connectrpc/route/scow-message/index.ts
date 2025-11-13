@@ -1,9 +1,8 @@
-import { Struct } from "@bufbuild/protobuf";
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { Knex } from "@mikro-orm/mysql";
 import { checkScowApiToken } from "@scow/lib-server/build/api";
 import { ReadStatus } from "@scow/notification-protos/build/common_pb";
-import { ScowMessageService } from "@scow/notification-protos/build/scow_message_connect";
+import { ScowMessageService } from "@scow/notification-protos/build/scow_message_pb";
 import { NoticeType } from "src/models/notice-type";
 import { commonConfig } from "src/server/config/common";
 import { notificationConfig } from "src/server/config/notification";
@@ -55,7 +54,7 @@ export default (router: ConnectRouter) => {
         targetType,
         messageType,
         category: messageTypeData.category,
-        metadata: metadata.toJson() as Record<string, string>,
+        metadata: metadata,
         descriptionData,
       });
 
@@ -93,7 +92,7 @@ export default (router: ConnectRouter) => {
         });
       }
 
-      return;
+      return {};
     },
 
     async systemBatchSendMessages(req, ctx) {
@@ -132,7 +131,7 @@ export default (router: ConnectRouter) => {
           targetType,
           messageType,
           category: messageTypeData.category,
-          metadata: metadata.toJson() as Record<string, string>,
+          metadata: metadata,
           descriptionData,
         });
 
@@ -180,7 +179,7 @@ export default (router: ConnectRouter) => {
         systemBatchSendMsgsToBridge(em, bridgeMessages);
       }
 
-      return;
+      return {};
     },
 
     async listMessages(req, context) {
@@ -323,7 +322,7 @@ export default (router: ConnectRouter) => {
         messages: camelCaseMessage.filter((m) => messagesTypeDataMap.has(m.messageType)).map((m) => ({
           ...m,
           id: BigInt(m.id),
-          metadata: Struct.fromJson(m.metadata),
+          metadata: m.metadata,
           messageType: messagesTypeDataMap.get(m.messageType)!,
           isRead: m.umrStatus === ReadStatus.READ ? true : false,
           createdAt: new Date(m.createdAt).toISOString(),
@@ -361,17 +360,11 @@ export default (router: ConnectRouter) => {
         );
       }
 
-      const readRecord = await em.upsert(UserMessageRead, {
+      await em.upsert(UserMessageRead, {
         userId: user.identityId, message, readTime: new Date(), status: EntityReadStatus.READ,
       }, { onConflictFields: ["userId", "message"]});
 
-      return {
-        ...readRecord,
-        messageId: message.id,
-        readTime: readRecord.readTime?.toISOString() ?? new Date().toISOString(),
-        createdAt: readRecord.createdAt.toISOString(),
-        updatedAt: readRecord.updatedAt.toISOString(),
-      };
+      return {};
     },
   });
 };

@@ -1,7 +1,6 @@
-version: v1
+version: v2
 plugins:
-  - name: ts-proto
-    path: node_modules/ts-proto/protoc-gen-ts_proto
+  - local: ["./node_modules/ts-proto/protoc-gen-ts_proto"]
     strategy: all
     out: generated
     opt:

@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
@@ -66,7 +66,8 @@ const ALL = "all";
 const CUSTOM = "custom";
 
 
-export default function Page({ params }: { params: { clusterId: string } }) {
+export default function Page(props: { params: Promise<{ clusterId: string }> }) {
+  const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.jobDetails.");
   const languageId = useI18n().currentLanguage.id;
@@ -684,7 +685,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
 
       ),
     },
-    ...jobType !== JobType.INFER ? [{
+    ...(jobType !== JobType.INFER ? [{
       key: "2",
       label: t(p("jobEventsTab")),
       children:
@@ -699,8 +700,8 @@ export default function Page({ params }: { params: { clusterId: string } }) {
           scroll={{ y: 350 }}
         />
       ),
-    }] : [],
-    ...grafanaConfig.enabled ? [{
+    }] : []),
+    ...(grafanaConfig.enabled ? [{
       key: "3",
       label: t(p("monitor")),
       children: (
@@ -761,7 +762,7 @@ export default function Page({ params }: { params: { clusterId: string } }) {
           <MonitorGrid sources={monitorUrlArray}></MonitorGrid>
         </div>
       ),
-    }] : [],
+    }] : []),
   ];
 
   const podListColumns: TableProps<PodListDataType>["columns"] = [

@@ -42,7 +42,7 @@ export async function sendFile(res: NextApiResponse, filePath: string) {
   });
 
   const readStream = fs.createReadStream(filePath);
-  await new Promise(function(resolve) {
+  await new Promise<void>(function(resolve) {
     readStream.pipe(res);
     readStream.on("end", resolve);
   });

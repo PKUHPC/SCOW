@@ -1,3 +1,4 @@
+import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
 import React from "react";
 
 import { ClientLayout } from "./clientLayout";
@@ -12,7 +13,7 @@ export default function RootLayout({
   return (
     <html>
       <ServerClientProvider>
-        <ClientLayout>
+        <ClientLayout defaultPrimaryColor={DEFAULT_PRIMARY_COLOR}>
           {children}
         </ClientLayout>
       </ServerClientProvider>

@@ -58,14 +58,14 @@ function checkTemplateNotUndefined(message: Message) {
 }
 
 function parseAdminMessage(message: Message): RenderContent | undefined {
-  const fields = message.metadata?.toJson();
+  const fields = message.metadata;
 
   if (!fields) return undefined;
 
   return {
     id: message.id,
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    title: fields["title"],
+    title: fields["title"] as string,
     // eslint-disable-next-line @typescript-eslint/dot-notation
     content: fields["content"] as string,
     createdAt: formatDateTime(message.createdAt),
@@ -95,14 +95,14 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
     return {
       id: message.id,
       title: titleTemplate,
-      content: replaceTemplate(message.metadata.toJson(), contentTemplate),
+      content: replaceTemplate(message.metadata, contentTemplate),
       createdAt: formatDateTime(message.createdAt),
     };
   } else {
     return {
       id: message.id,
       title: message.messageType.type,
-      content: message.metadata?.toJsonString(),
+      content: JSON.stringify(message.metadata),
       createdAt: formatDateTime(message.createdAt),
     };
   }

@@ -4,7 +4,7 @@ import { getExtensionRouteQuery } from "@scow/lib-web/build/extensions/common";
 import { extensionEvents } from "@scow/lib-web/build/extensions/events";
 import { ExtensionManifestWithUrl,UiExtensionStoreData } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { joinWithUrl } from "@scow/utils";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useRef } from "react";
 import { useUserQuery } from "src/app/auth";
 import { Redirect } from "src/components/Redirect";
@@ -27,18 +27,15 @@ const IFrame = styled.iframe`
   min-height: calc(100vh - 123px);
 `;
 
-interface Params {
-  path?: string | string[];
-  [key: string]: string | string[] | undefined;
-}
-
 interface Props {
   uiExtensionConfigData: UiExtensionStoreData;
   currentLanguageId: string;
   NotFoundPageComponent: React.FC;
+  path: string[];
 }
 
 export const ExtensionPage: React.FC<Props> = ({
+  path,
   uiExtensionConfigData,
   currentLanguageId,
   NotFoundPageComponent,
@@ -48,9 +45,7 @@ export const ExtensionPage: React.FC<Props> = ({
 
   const router = useRouter();
 
-  const searchParams = useParams() as Params;
-
-  const { path, ...rest } = searchParams;
+  const rest = useSearchParams();
 
   const pathParts = [...Array.isArray(path) ? path : (path === null || path === undefined) ? [] : [path]];
 
@@ -84,7 +79,7 @@ export const ExtensionPage: React.FC<Props> = ({
   const extensionQuery = getExtensionRouteQuery(dark, currentLanguageId, useInfo.user?.token);
 
   const query = new URLSearchParams({
-    ...Object.fromEntries(Object.entries(rest).filter(([_, val]) => typeof val === "string")),
+    ...rest ? Object.fromEntries(rest.entries()) : {},
     ...extensionQuery,
   });
 

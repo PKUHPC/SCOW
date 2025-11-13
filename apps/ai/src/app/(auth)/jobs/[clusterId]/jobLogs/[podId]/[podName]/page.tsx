@@ -4,7 +4,7 @@ import "@xterm/xterm/css/xterm.css";
 
 import { Button, Select, Space } from "antd";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { use,useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled } from "styled-components";
@@ -51,9 +51,11 @@ const JobLogComponent = dynamic(
     loading: Black,
   });
 
-export default function Page({ params }:
-{ params: { clusterId: string, podId: string, podName: string, } })
-{
+export default function Page(
+  props:
+  { params: Promise<{ clusterId: string, podId: string, podName: string, }> },
+) {
+  const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.jobLogs.");
 

@@ -35,17 +35,6 @@ module.exports = async (phase) => {
     ...runtimeConfig,
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
-    webpack(config, options) {
-      config.plugins.forEach((i) => {
-        if (i instanceof options.webpack.DefinePlugin) {
-          if (i.definitions["process.env.__NEXT_ROUTER_BASEPATH"]) {
-            i.definitions["process.env.__NEXT_ROUTER_BASEPATH"] =
-              "(typeof window === \"undefined\" ? global : window).__CONFIG__?.BASE_PATH";
-          }
-        }
-      });
-      return config;
-    },
     transpilePackages: ["antd", "@ant-design/icons"],
   };
 

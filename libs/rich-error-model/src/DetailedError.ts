@@ -2,7 +2,7 @@ import { Metadata, status, StatusObject } from "@grpc/grpc-js";
 import { Writer } from "protobufjs";
 import { Any } from "src/generated/google/protobuf/any";
 
-import { DeepPartial, Exact, Status } from "./generated/status";
+import { DeepPartial, Status } from "./generated/status";
 
 const headerName = "grpc-status-details-bin";
 
@@ -35,7 +35,7 @@ export const parseErrorStatus = (metadata: Metadata) => {
 
 interface MessageType<T> {
   $type: string;
-  fromPartial<I extends Exact<DeepPartial<T>, I>>(_: I): T;
+  fromPartial(_: DeepPartial<T>): T;
   encode: (message: T, writer?: Writer) => Writer;
   decode: (input: Uint8Array) => T;
 };

@@ -14,7 +14,7 @@
 
 import React, { useState } from "react";
 
-import { Operation, OperationContext } from "./context.jsx";
+import { Operation, OperationContext } from "./context";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 

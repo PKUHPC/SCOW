@@ -1,13 +1,13 @@
-import type { ServiceType } from "@bufbuild/protobuf";
+import { GenService, GenServiceMethods } from "@bufbuild/protobuf/codegenv2";
 import { type Client, createClient } from "@connectrpc/connect";
 import { ConnectTransportOptions, createConnectTransport, Http2SessionOptions } from "@connectrpc/connect-node";
-import { AppService } from "@scow/scowd-protos/build/application/app_connect";
-import { DesktopService } from "@scow/scowd-protos/build/application/desktop_connect";
-import { ImageService } from "@scow/scowd-protos/build/application/image_connect";
-import { ShellService } from "@scow/scowd-protos/build/application/shell_connect";
-import { SystemService } from "@scow/scowd-protos/build/application/system_connect";
-import { FileService } from "@scow/scowd-protos/build/storage/file_connect";
-import { StorageQuotaService } from "@scow/scowd-protos/build/storage/storage_quota_connect";
+import { AppService } from "@scow/scowd-protos/build/application/app_pb";
+import { DesktopService } from "@scow/scowd-protos/build/application/desktop_pb";
+import { ImageService } from "@scow/scowd-protos/build/application/image_pb";
+import { ShellService } from "@scow/scowd-protos/build/application/shell_pb";
+import { SystemService } from "@scow/scowd-protos/build/application/system_pb";
+import { FileService } from "@scow/scowd-protos/build/storage/file_pb";
+import { StorageQuotaService } from "@scow/scowd-protos/build/storage/storage_quota_pb";
 
 import { SslConfig } from "./ssl";
 
@@ -27,12 +27,12 @@ Omit<
 > & Http2SessionOptions
 ;
 
-export function getClient<TService extends ServiceType>(
+export function getClient<TService extends GenServiceMethods>(
   scowdUrl: string,
-  service: TService,
+  service: GenService<TService>,
   certificates?: SslConfig,
   extraConnectTransportOptions?: Partial<SafeConnectTransportOptions>,
-): Client<TService> {
+): Client<GenService<TService>> {
   const transport = createConnectTransport({
     baseUrl: scowdUrl,
     httpVersion: "2",

@@ -23,6 +23,7 @@ module.exports = [
       "**/.turbo/",
       "**/.next",
       "**/.docusaurus/",
+      "**/.next.backup/",
     ]
   },
   ...base,

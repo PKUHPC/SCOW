@@ -1,6 +1,7 @@
 import os from "os";
 import { join } from "path";
 
+
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/";
 
 const building = process.env.BUILDING === "1";
@@ -32,7 +33,14 @@ export default async () => {
       styledComponents: true,
 
     },
-    swcMinify: false,
+    // turbopack: {
+    //   rules: {
+    //     "*.node": {
+    //       loaders: ["nextjs-node-loader"],
+    //       as: "*.js",
+    //     },
+    //   },
+    // },
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     webpack: (config) => {

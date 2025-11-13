@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
     "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
-    "serve": "next start",
+    "serve": "node start.mjs",
+    "serve:next": "next start",
     "build": "npm run build:next",
-    "build:next": "cross-env BUILDING=1 next build",
+    "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build",
     "client": "ntar client",
     "lint": "eslint ."
   },
@@ -18,7 +19,8 @@
     "next.config.js",
     "config.js",
     "api-routes-schemas.json",
-    "!**/*.map"
+    "!**/*.map",
+    "start.mjs"
   ],
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
@@ -26,7 +28,7 @@
   "dependencies": {
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
-    "@bufbuild/protobuf": "1.10.0",
+    "@bufbuild/protobuf": "2.10.0",
     "@ddadaal/next-typed-api-routes-runtime": "0.8.2",
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@ddadaal/tsgrpc-common": "0.2.6",
@@ -53,7 +55,7 @@
     "iconv-lite": "^0.6.3",
     "less": "4.2.1",
     "mime-types": "2.1.35",
-    "next": "14.2.30",
+    "next": "15.5.6",
     "next-compose-plugins": "2.2.1",
     "nookies": "2.5.2",
     "nprogress": "0.2.0",
@@ -66,14 +68,16 @@
     "simstate": "3.0.1",
     "styled-components": "6.1.14",
     "tslib": "2.8.1",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "replace-in-file": "8.3.0",
+    "dotenv": "17.2.2"
   },
   "devDependencies": {
     "@ddadaal/next-typed-api-routes-cli": "0.9.1",
     "@next/bundle-analyzer": "15.1.4",
     "@types/google-protobuf": "3.15.12",
     "@types/mime-types": "2.1.4",
-    "@types/node": "22.10.6",
+    "@types/node": "24.5.2",
     "@types/nprogress": "0.2.3",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

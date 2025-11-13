@@ -10,12 +10,9 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { AnyMessage } from "@bufbuild/protobuf";
-import { HandlerContext, StreamRequest, UnaryRequest } from "@connectrpc/connect";
+import { HandlerContext } from "@connectrpc/connect";
 import { getCookieValue } from "src/utils/cookie";
 export const SCOW_COOKIE_KEY = "SCOW_USER";
-
-export type RequestType = UnaryRequest<AnyMessage, AnyMessage> | StreamRequest<AnyMessage, AnyMessage>;
 
 export function getUserToken(ctx: HandlerContext): string | null {
 

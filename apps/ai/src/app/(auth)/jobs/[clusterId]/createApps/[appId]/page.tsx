@@ -2,6 +2,7 @@
 
 import { LoadingOutlined } from "@ant-design/icons";
 import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { trpc } from "src/utils/trpc";
@@ -9,12 +10,12 @@ import { trpc } from "src/utils/trpc";
 import { LaunchAppForm } from "../../LaunchAppForm";
 
 
-export default function Page({ params }: { params: { clusterId: string, appId: string } }) {
+export default function Page({ params }: { params: Promise<{ clusterId: string, appId: string }> }) {
 
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.createApps.");
 
-  const { appId, clusterId } = params;
+  const { appId, clusterId } = use(params);
   const searchParams = useSearchParams();
 
   const jobId = searchParams?.get("jobId");

@@ -42,7 +42,7 @@ const ClientLayoutLoaded = ({
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
-  const routes = useRoutes(basePath, portalUrl);
+  const routes = useRoutes();
 
   const logoutMutation = trpc.auth.logout.useMutation({});
 

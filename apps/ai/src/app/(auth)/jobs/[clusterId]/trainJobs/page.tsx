@@ -11,16 +11,17 @@
  */
 
 "use client";
-
 import { LoadingOutlined } from "@ant-design/icons";
 import { useSearchParams } from "next/navigation";
+import { use } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { trpc } from "src/utils/trpc";
 
 import { LaunchAppForm } from "../LaunchAppForm";
 
-export default function Page({ params }: { params: { clusterId: string } }) {
+export default function Page(props: { params: Promise<{ clusterId: string }> }) {
+  const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.trainJobs.");
 

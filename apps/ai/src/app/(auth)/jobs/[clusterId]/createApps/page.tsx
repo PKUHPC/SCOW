@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Form, Input, Space } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { use,useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -18,12 +18,11 @@ const useClusterAppConfigQuery = (clusterId: string) => {
   return trpc.jobs.listAvailableApps.useQuery({ clusterIds: [clusterId]});
 };
 
-export default function Page({ params }: { params: { clusterId: string } }) {
+export default function Page({ params }: { params: Promise<{ clusterId: string }> }) {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.createApps.");
 
-  const { clusterId } = params;
-
+  const { clusterId } = use(params);
   const { publicConfig } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
 

@@ -2,7 +2,6 @@ import { HttpError, JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-r
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { numberToMoney } from "@scow/lib-decimal";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
-import type { RunningJob } from "@scow/protos/build/common/job";
 import { type Account } from "@scow/protos/build/server/account";
 import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
 import { type api } from "src/apis/api";

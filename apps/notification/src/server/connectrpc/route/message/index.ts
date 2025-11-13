@@ -1,8 +1,8 @@
-import { Struct } from "@bufbuild/protobuf";
+import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { Knex } from "@mikro-orm/mysql";
 import { ReadStatus } from "@scow/notification-protos/build/common_pb";
-import { MessageService } from "@scow/notification-protos/build/message_connect";
+import { MessageService } from "@scow/notification-protos/build/message_pb";
 import { PlatformRole } from "src/models/user";
 import { notificationConfig } from "src/server/config/notification";
 import { AdminMessageConfig } from "src/server/entities/AdminMessageConfig";
@@ -59,7 +59,7 @@ export default (router: ConnectRouter) => {
         messageType,
         category: messageTypeData.category,
         metadata: { title, content },
-        expiredAt: expiredAt ? expiredAt.toDate() : undefined,
+        expiredAt: expiredAt ? timestampDate(expiredAt) : undefined,
       });
 
       await em.persistAndFlush(message);
@@ -96,7 +96,7 @@ export default (router: ConnectRouter) => {
         });
       }
 
-      return;
+      return {};
     },
 
     async listMessages(req, context) {
@@ -239,7 +239,7 @@ export default (router: ConnectRouter) => {
         messages: camelCaseMessage.filter((m) => messagesTypeDataMap.has(m.messageType)).map((m) => ({
           ...m,
           id: BigInt(m.id),
-          metadata: Struct.fromJson(m.metadata),
+          metadata: m.metadata,
           messageType: messagesTypeDataMap.get(m.messageType)!,
           isRead: m.umrStatus === ReadStatus.READ ? true : false,
           createdAt: new Date(m.createdAt).toISOString(),
@@ -277,16 +277,16 @@ export default (router: ConnectRouter) => {
         );
       }
 
-      const readRecord = await em.upsert(UserMessageRead, {
+      await em.upsert(UserMessageRead, {
         userId: user.identityId, message, readTime: new Date(), status: EntityReadStatus.READ,
       }, { onConflictFields: ["userId", "message"]});
 
       return {
-        ...readRecord,
-        messageId: message.id,
-        readTime: readRecord.readTime?.toISOString() ?? new Date().toISOString(),
-        createdAt: readRecord.createdAt.toISOString(),
-        updatedAt: readRecord.updatedAt.toISOString(),
+        // ...readRecord,
+        // messageId: message.id,
+        // readTime: readRecord.readTime?.toISOString() ?? new Date().toISOString(),
+        // createdAt: readRecord.createdAt.toISOString(),
+        // updatedAt: readRecord.updatedAt.toISOString(),
       };
     },
 
@@ -381,7 +381,7 @@ export default (router: ConnectRouter) => {
       }
       // await deleteKeys([`${unreadMessageCountPrefixKey}${user.identityId}`]);
 
-      return;
+      return {};
     },
 
     async deleteMessages(req, context) {
@@ -427,7 +427,7 @@ export default (router: ConnectRouter) => {
 
       // await deleteKeys([`${unreadMessageCountPrefixKey}${user.identityId}`]);
 
-      return;
+      return {};
     },
 
     async deleteAllReadMessages(req, context) {
@@ -480,7 +480,7 @@ export default (router: ConnectRouter) => {
       }
 
       // await deleteKeys([`${unreadMessageCountPrefixKey}${user.identityId}`]);
-      return;
+      return {};
     },
 
     async changeMessageExpirationTime(req, context) {
@@ -516,7 +516,7 @@ export default (router: ConnectRouter) => {
         }
       }
 
-      return;
+      return {};
     },
     async getMessageExpirationTime(req, context) {
 

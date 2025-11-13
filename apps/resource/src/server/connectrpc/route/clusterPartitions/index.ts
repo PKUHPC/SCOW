@@ -1,23 +1,15 @@
 import { ConnectRouter } from "@connectrpc/connect";
 import { checkScowApiToken } from "@scow/lib-server";
-import { ClusterPartitionService } from "@scow/scow-resource-protos/generated/resource/partition_connect";
 import {
   AssignAccountOnCreateRequest,
-  AssignAccountOnCreateResponse,
+  ClusterPartitionService,
   GetAccountAssignedPartitionsForClusterRequest,
-  GetAccountAssignedPartitionsForClusterResponse,
   GetAccountsAssignedClusterIdsRequest,
-  GetAccountsAssignedClusterIdsResponse,
   GetAccountsAssignedClustersAndPartitionsRequest,
-  GetAccountsAssignedClustersAndPartitionsResponse,
   GetAccountsAssignedPartitionsForClusterRequest,
-  GetAccountsAssignedPartitionsForClusterResponse,
   GetClusterAssignedAccountsRequest,
-  GetClusterAssignedAccountsResponse,
   GetTenantAssignedClustersAndPartitionsRequest,
-  GetTenantAssignedClustersAndPartitionsResponse,
   IsAccountAuthorizedInClusterPartitionRequest,
-  IsAccountAuthorizedInClusterPartitionResponse,
 } from "@scow/scow-resource-protos/generated/resource/partition_pb";
 import { commonConfig } from "src/server/config/common";
 import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
@@ -41,8 +33,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getAccountsAssignedClusterIds(request: GetAccountsAssignedClusterIdsRequest, ctx):
-    Promise<GetAccountsAssignedClusterIdsResponse> {
+    async getAccountsAssignedClusterIds(request: GetAccountsAssignedClusterIdsRequest, ctx) {
 
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const currentClusterIds = await getScowActivatedClusterIds().catch(() => {
@@ -51,7 +42,7 @@ export default (router: ConnectRouter) => {
       });
       const { accountNames, tenantName } = request;
       const data = await getAccountsAssignedClusters(accountNames, tenantName, currentClusterIds);
-      return new GetAccountsAssignedClusterIdsResponse({ assignedClusterIds: data });
+      return { assignedClusterIds: data };
     },
 
     /**
@@ -61,8 +52,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getAccountAssignedPartitionsForCluster(request: GetAccountAssignedPartitionsForClusterRequest, ctx):
-    Promise<GetAccountAssignedPartitionsForClusterResponse> {
+    async getAccountAssignedPartitionsForCluster(request: GetAccountAssignedPartitionsForClusterRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountName, tenantName, clusterId } = request;
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
@@ -71,7 +61,7 @@ export default (router: ConnectRouter) => {
       });
       const data = await getAccountAssignedPartitionsInCluster(
         accountName, tenantName, clusterId, currentClusterPartitions);
-      return new GetAccountAssignedPartitionsForClusterResponse({ assignedPartitionNames: data });
+      return { assignedPartitionNames: data };
     },
 
     /**
@@ -82,8 +72,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getAccountsAssignedPartitionsForCluster(request: GetAccountsAssignedPartitionsForClusterRequest, ctx):
-    Promise<GetAccountsAssignedPartitionsForClusterResponse> {
+    async getAccountsAssignedPartitionsForCluster(request: GetAccountsAssignedPartitionsForClusterRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountsWithTenants, clusterId } = request;
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger)
@@ -96,7 +85,7 @@ export default (router: ConnectRouter) => {
         clusterId,
         currentClusterPartitions,
       );
-      return new GetAccountsAssignedPartitionsForClusterResponse({ assignedAccountPartitions: data });
+      return { assignedAccountPartitions: data };
     },
 
     /**
@@ -105,8 +94,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getAccountsAssignedClustersAndPartitions(request: GetAccountsAssignedClustersAndPartitionsRequest, ctx):
-    Promise<GetAccountsAssignedClustersAndPartitionsResponse> {
+    async getAccountsAssignedClustersAndPartitions(request: GetAccountsAssignedClustersAndPartitionsRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
 
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
@@ -115,7 +103,7 @@ export default (router: ConnectRouter) => {
       });
       const { accountNames, tenantName } = request;
       const data = await getAccountsAssignedClusterPartitions(accountNames, tenantName, currentClusterPartitions);
-      return new GetAccountsAssignedClustersAndPartitionsResponse({ assignedClusterPartitions: data });
+      return { assignedClusterPartitions: data };
     },
 
     /**
@@ -124,8 +112,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getTenantAssignedClustersAndPartitions(request: GetTenantAssignedClustersAndPartitionsRequest, ctx):
-    Promise<GetTenantAssignedClustersAndPartitionsResponse> {
+    async getTenantAssignedClustersAndPartitions(request: GetTenantAssignedClustersAndPartitionsRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { tenantName } = request;
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
@@ -133,8 +120,7 @@ export default (router: ConnectRouter) => {
         return {};
       });
       const data = await getTenantAssignedClusterPartitions(tenantName, currentClusterPartitions);
-      const result = new GetTenantAssignedClustersAndPartitionsResponse({ assignedClusterPartitions: data });
-      return result;
+      return { assignedClusterPartitions: data };
     },
 
     /**
@@ -143,8 +129,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async assignAccountOnCreate(request: AssignAccountOnCreateRequest, ctx):
-    Promise<AssignAccountOnCreateResponse> {
+    async assignAccountOnCreate(request: AssignAccountOnCreateRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountName, tenantName } = request;
       logger.info("A new account will be created."
@@ -156,7 +141,7 @@ export default (router: ConnectRouter) => {
           return {};
         });
       const result = await assignCreatedAccount(accountName, tenantName, currentClusterPartitions);
-      return new AssignAccountOnCreateResponse({ executed: result });
+      return { executed: result };
     },
 
     /**
@@ -164,8 +149,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async getClusterAssignedAccounts(request: GetClusterAssignedAccountsRequest, ctx):
-    Promise<GetClusterAssignedAccountsResponse> {
+    async getClusterAssignedAccounts(request: GetClusterAssignedAccountsRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { clusterId, tenantName } = request;
       await checkClusterIdAvailable(clusterId).catch(() => {
@@ -173,7 +157,7 @@ export default (router: ConnectRouter) => {
         return [];
       });
       const result = await getClusterAssignedAccountsData(clusterId, tenantName);
-      return new GetClusterAssignedAccountsResponse({ accountNames: result });
+      return { accountNames: result };
     },
 
     /**
@@ -181,8 +165,7 @@ export default (router: ConnectRouter) => {
      * @param request
      * @returns
      */
-    async isAccountAuthorizedInClusterPartition(request: IsAccountAuthorizedInClusterPartitionRequest, ctx):
-    Promise<IsAccountAuthorizedInClusterPartitionResponse> {
+    async isAccountAuthorizedInClusterPartition(request: IsAccountAuthorizedInClusterPartitionRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountName, clusterId, partitionName } = request;
 
@@ -194,7 +177,7 @@ export default (router: ConnectRouter) => {
       }
 
       const result = await checkAccountInClusterPartition(accountName, clusterId, partitionName);
-      return new IsAccountAuthorizedInClusterPartitionResponse({ isAuthorized: result });
+      return { isAuthorized: result };
     },
 
   });

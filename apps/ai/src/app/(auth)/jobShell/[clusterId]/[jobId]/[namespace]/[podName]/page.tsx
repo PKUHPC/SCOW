@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import "@xterm/xterm/css/xterm.css";
@@ -17,6 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Space } from "antd";
 import dynamic from "next/dynamic";
+import { use } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Head } from "src/utils/head";
@@ -65,12 +54,12 @@ const JobShellComponent = dynamic(
   });
 
 export default function Page({ params }:
-{ params: { clusterId: string, jobId: string, namespace: string, podName: string } })
+{ params: Promise<{ clusterId: string, jobId: string, namespace: string, podName: string }> })
 {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobShell.");
 
-  const { clusterId, jobId, namespace, podName } = params;
+  const { clusterId, jobId, namespace, podName } = use(params);
   const { publicConfig, user } = usePublicConfig();
 
   const clusterName = publicConfig.CLUSTERS.find((x) => x.id === clusterId)?.name || clusterId;

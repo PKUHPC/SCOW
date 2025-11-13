@@ -1,6 +1,6 @@
 import { IncomingMessage } from "http";
 import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
-import { NextRequest } from "next/server.js";
+import { NextRequest } from "next/server";
 import { destroyCookie, parseCookies, setCookie } from "nookies";
 
 export const SCOW_COOKIE_KEY = "SCOW_USER";

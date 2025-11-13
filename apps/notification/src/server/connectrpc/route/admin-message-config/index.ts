@@ -11,7 +11,7 @@
  */
 
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
-import { MessageConfigService } from "@scow/notification-protos/build/message_config_connect";
+import { MessageConfigService } from "@scow/notification-protos/build/message_config_pb";
 import { NoticeType } from "src/models/notice-type";
 import { PlatformRole } from "src/models/user";
 import { AdminMessageConfig } from "src/server/entities/AdminMessageConfig";
@@ -84,7 +84,7 @@ export default (router: ConnectRouter) => {
 
       await em.persistAndFlush(newConfig);
 
-      return;
+      return {};
     },
 
     async modifyMessageConfigs(req, context) {
@@ -174,7 +174,7 @@ export default (router: ConnectRouter) => {
       }
 
       await em.flush();
-      return;
+      return {};
     },
 
     async listMessageConfigs(req, context) {

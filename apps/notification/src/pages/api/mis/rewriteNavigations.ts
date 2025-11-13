@@ -1,9 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PlatformRole } from "src/models/user";
 import { validateToken } from "src/server/auth/token";
+import { applyMiddleware } from "src/server/middleware/cors";
 import { getLanguage } from "src/utils/i18n";
-
-import { applyMiddleware } from "../middleware/cors";
 
 interface NavItem {
   path: string;

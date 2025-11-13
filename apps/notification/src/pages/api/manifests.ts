@@ -12,7 +12,7 @@
 
 import { NextApiRequest, NextApiResponse } from "next";
 
-import { applyMiddleware } from "./middleware/cors";
+import { applyMiddleware } from "../../server/middleware/cors";
 
 function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {

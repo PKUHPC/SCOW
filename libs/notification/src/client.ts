@@ -1,13 +1,13 @@
-import type { ServiceType } from "@bufbuild/protobuf";
-import { createPromiseClient, Interceptor, PromiseClient } from "@connectrpc/connect";
+import { GenService, GenServiceMethods } from "@bufbuild/protobuf/codegenv2";
+import { Client, createClient, Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-node";
 import { getCommonConfig } from "@scow/config/build/common";
-import { MessageBridgeService } from "@scow/notification-protos/build/message_bridge_connect";
-import { MessageConfigService } from "@scow/notification-protos/build/message_config_connect";
-import { MessageService } from "@scow/notification-protos/build/message_connect";
-import { MessageTypeService } from "@scow/notification-protos/build/message_type_connect";
-import { ScowMessageService } from "@scow/notification-protos/build/scow_message_connect";
-import { UserSubscriptionService } from "@scow/notification-protos/build/user_subscription_connect";
+import { MessageBridgeService } from "@scow/notification-protos/build/message_bridge_pb";
+import { MessageConfigService } from "@scow/notification-protos/build/message_config_pb";
+import { MessageService } from "@scow/notification-protos/build/message_pb";
+import { MessageTypeService } from "@scow/notification-protos/build/message_type_pb";
+import { ScowMessageService } from "@scow/notification-protos/build/scow_message_pb";
+import { UserSubscriptionService } from "@scow/notification-protos/build/user_subscription_pb";
 import { join } from "path";
 
 const setAuthorization: Interceptor = (next) => async (req) => {
@@ -21,23 +21,23 @@ const setAuthorization: Interceptor = (next) => async (req) => {
 };
 
 export interface NotificationClient {
-  scowMessage: PromiseClient<typeof ScowMessageService>;
-  message: PromiseClient<typeof MessageService>;
-  messageConfig: PromiseClient<typeof MessageConfigService>;
-  messageType: PromiseClient<typeof MessageTypeService>;
-  userSubscription: PromiseClient<typeof UserSubscriptionService>;
-  messageBridge: PromiseClient<typeof MessageBridgeService>;
+  scowMessage: Client<typeof ScowMessageService>;
+  message: Client<typeof MessageService>;
+  messageConfig: Client<typeof MessageConfigService>;
+  messageType: Client<typeof MessageTypeService>;
+  userSubscription: Client<typeof UserSubscriptionService>;
+  messageBridge: Client<typeof MessageBridgeService>;
 }
 
-export function getClient<TService extends ServiceType>(
-  notificationUrl: string, service: TService,
-): PromiseClient<TService> {
+export function getClient<TService extends GenServiceMethods>(
+  notificationUrl: string, service: GenService<TService>,
+): Client<GenService<TService>> {
   const transport = createConnectTransport({
     baseUrl: join(notificationUrl, "api"),
     httpVersion: "1.1",
     interceptors: [setAuthorization],
   });
-  return createPromiseClient(service, transport);
+  return createClient(service, transport);
 }
 
 export const getNotificationNodeClient = (notificationUrl: string) => {

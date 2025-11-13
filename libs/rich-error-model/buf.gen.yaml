@@ -1,15 +1,16 @@
-version: v1
+version: v2
 plugins:
-  - name: ts-proto
-    path: node_modules/ts-proto/protoc-gen-ts_proto
-    strategy: all
 
+  - local: ["./node_modules/ts-proto/protoc-gen-ts_proto"]
+    strategy: all
     out: src/generated
     opt:
       - unrecognizedEnum=false
       - useDate=string
+      - useExactTypes=false
       - oneof=unions
       - esModuleInterop=true
       - useOptionals=messages
       - outputServices=grpc-js
       - outputTypeAnnotations=static-only
+
