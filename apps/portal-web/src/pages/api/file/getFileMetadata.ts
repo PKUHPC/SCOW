@@ -8,7 +8,9 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
-export const GetFileTypeSchema = typeboxRouteSchema({
+import { FileType, mapType } from "./list";
+
+export const GetFileMetadataSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
@@ -17,7 +19,13 @@ export const GetFileTypeSchema = typeboxRouteSchema({
   }),
 
   responses: {
-    200: Type.Object({ type: Type.String() }),
+    200: Type.Object({
+      size: Type.Number(),
+      type: Type.String(),
+      isSymlink: Type.Boolean(),
+      linkTargetPath: Type.Optional(Type.String()),
+      linkTargetType: Type.Optional(FileType),
+    }),
     400: Type.Object({
       code: Type.Union([
         Type.Literal("INVALID_CLUSTER"),
@@ -29,7 +37,7 @@ export const GetFileTypeSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default route(GetFileTypeSchema, async (req, res) => {
+export default route(GetFileMetadataSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
@@ -41,7 +49,10 @@ export default route(GetFileTypeSchema, async (req, res) => {
 
   return asyncUnaryCall(client, "getFileMetadata", {
     userId: info.identityId, cluster, path,
-  }).then((results) => ({ 200: { type: results.type } }), handlegRPCError({
+  }).then(({ size, type, isSymlink, linkTargetPath, linkTargetType }) => ({ 200: {
+    size, isSymlink, type, linkTargetPath,
+    linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
+  } }), handlegRPCError({
     [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
     [status.PERMISSION_DENIED]: () => ({ 400: { code: "INVALID_PATH" as const } }),
   }));

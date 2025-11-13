@@ -1,54 +1,49 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+"use client";
 
-import { CloseOutlined, FileOutlined, FolderOutlined } from "@ant-design/icons";
-import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
-import { compareNumber } from "@scow/lib-web/build/utils/math";
+import { CloseOutlined } from "@ant-design/icons";
+import {
+  ArchiveIcon, FolderIcon, ImageIcon, SupportedFileIcon, SymlinkIcon, UnrecognizedFileIcon,
+} from "@scow/lib-web/build/icons/FileIcon";
+import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { Table, TableProps, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import React from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { FileInfo, FileType } from "src/models/File";
+import { FileInfo } from "src/models/File";
+import { FileType } from "src/server/trpc/model/file";
+import { compareDateTime, formatDateTime } from "src/utils/datetime";
+import { isDecompressibleFile } from "src/utils/file";
 import { formatSize } from "src/utils/format";
+import { compareNumber } from "src/utils/math";
 
 type ColumnKey = ("type" | "name" | "mtime" | "size" | "mode" | "action");
-
-const nodeModeToString = (mode: number) => {
-  const numberPermission = (mode & parseInt("777", 8)).toString(8);
-
-  const toStr = (char: string) => {
-    const num = +char;
-    return ((num & 4) !== 0 ? "r" : "-") + ((num & 2) !== 0 ? "w" : "-") + ((num & 1) !== 0 ? "x" : "-");
-  };
-
-  return [0, 1, 2].reduce((prev, curr) => prev + toStr(numberPermission[curr]), "");
-};
 
 interface Props extends TableProps<FileInfo> {
   files: FileInfo[];
   filesFilter?: (files: FileInfo[]) => FileInfo[];
   fileNameRender?: (fileName: string, r: FileInfo) => React.ReactNode;
-  //
   actionRender?: (_: any, r: FileInfo) => React.ReactNode;
   hiddenColumns?: ColumnKey[];
 }
 
-const fileTypeIcons = {
-  "FILE": FileOutlined,
-  "DIR": FolderOutlined,
+export const baseTypeIcons = {
+  "DIR": FolderIcon,
+  "SYMLINK": SymlinkIcon,
   "ERROR": CloseOutlined,
-} as Record<FileType, React.ComponentType>;
+} as Record<Exclude<FileType, "FILE">, React.ComponentType>;
 
-// const p = prefix("pageComp.fileManagerComp.fileTable.");
+const iconFor = (file: FileInfo, nonEditableFilenamePostfixes?: string[]): React.ComponentType => {
+  if (file.type === "FILE") {
+    const name = file.name || "";
+    if (isDecompressibleFile(name)) { return ArchiveIcon; }
+    if (isImage(name)) { return ImageIcon; }
+    const editable = !isNonEditableFilename(name, nonEditableFilenamePostfixes);
+    if (editable) { return SupportedFileIcon; }
+    return UnrecognizedFileIcon;
+  }
+  return baseTypeIcons[file.type] || CloseOutlined;
+};
 
 export const FileTable: React.FC<Props> = (
   {
@@ -60,9 +55,9 @@ export const FileTable: React.FC<Props> = (
     ...otherProps
   },
 ) => {
-
   const t = useI18nTranslateToString();
-  const p = prefix("component.fileTable.");
+  const p = prefix("app.files.fileTable.");
+  const { publicConfig } = usePublicConfig();
 
   const columns: ColumnsType<FileInfo> = [
     {
@@ -70,7 +65,7 @@ export const FileTable: React.FC<Props> = (
       dataIndex: "type",
       title: "",
       width: "32px",
-      render: (_, r) => React.createElement(fileTypeIcons[r.type]),
+      render: (_, r) => React.createElement(iconFor(r, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES)),
     },
     {
       key: "name",
@@ -112,12 +107,6 @@ export const FileTable: React.FC<Props> = (
             : compareNumber(a.size, b.size)
           : a.type.localeCompare(b.type);
       },
-    },
-    {
-      key: "mode",
-      dataIndex: "mode",
-      title: t(p("mode")),
-      render: (mode: number | undefined) => mode === undefined ? "" : nodeModeToString(mode),
     },
     ...(actionRender ? [{
       key: "action",

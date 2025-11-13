@@ -598,6 +598,12 @@ export default {
         newDir:"新目录",
         download:"下载",
         rename:"重命名",
+        tableInfo: {
+          symlinkTooltip: {
+            type: "类型：软链接",
+            targetPathPrefix: "源路径：",
+          },
+        },
         preview: {
           fileTooLarge: "该文件大小超标（最大{}），请下载后查看",
           unsupportedFileType: "该文件类型不支持预览，请下载后查看",
@@ -613,6 +619,7 @@ export default {
         // 占位对齐
         uploadFile: "上传文件",
         uploadDir: "上传文件夹",
+        failedResolveSymlink: "解析软链接失败",
       },
       fileTable:{
         name:"文件名",

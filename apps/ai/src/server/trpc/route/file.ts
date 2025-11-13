@@ -65,7 +65,7 @@ export const file = router({
         summary: "删除指定的文件或目录",
       },
     })
-    .input(z.object({ clusterId: z.string(), target: z.enum(["FILE", "DIR"]), path: z.string() }))
+    .input(z.object({ clusterId: z.string(), target: z.enum(["FILE", "DIR", "SYMLINK"]), path: z.string() }))
     .output(z.void())
     .use(async ({ input:{ target, clusterId, path }, ctx, next }) => {
       const res = await next({ ctx });

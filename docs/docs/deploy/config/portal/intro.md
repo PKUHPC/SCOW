@@ -93,6 +93,11 @@ shell: true
 #     # 不可编辑的文件后缀（可选）
 #     # 如果不填则按系统默认列表进行判断，当前系统默认列表请查看下一小节 “系统默认不可编辑文件后缀数组”
 #     # nonEditableFilenamePostfixes: [".exe", ".ppt"]
+#   # 文件提交功能（可选）
+#   submit:
+#     # 可运行脚本后缀数组（可选）
+#     # 如果不填则按系统默认列表进行判断，当前系统默认列表请查看下一小节 “系统默认可运行脚本后缀数组”
+#     executableFilenamePostfixes: [".sh"]
 
 # 提交作业的默认工作目录。使用{{ name }}代替作业名称。相对于用户的家目录
 # submitJobDefaultPwd: scow/jobs/{{ name }}
@@ -139,6 +144,12 @@ shell: true
 
 ```
 [".7z", ".aiff", ".apk", ".app", ".avi", ".bat", ".bin", ".bmp", ".bz2", ".cmd", ".com", ".dat", ".dll", ".dmg", ".doc", ".docx", ".exe", ".flac", ".flv", ".gif", ".gz", ".img", ".iso", ".jpeg", ".jpg", ".mkv", ".mov", ".mp3", ".mp4", ".msi", ".odt", ".ott", ".pdf", ".png", ".ppt", ".pptx", ".psd", ".rar", ".tar", ".tgz", ".tiff", ".vcd", ".wav", ".wmv", ".xcf", ".xls", ".xlsx", ".zip"]
+```
+
+### 系统默认可运行脚本后缀数组
+
+```
+[".sh", ".bash", ".zsh", ".ksh", ".csh", ".tcsh", ".fish", ".py", ".pl", ".rb", ".run"]
 ```
 
 ## 更多配置

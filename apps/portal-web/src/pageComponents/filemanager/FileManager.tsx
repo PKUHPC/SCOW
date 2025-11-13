@@ -10,12 +10,12 @@ import {
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
-import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
+import { isExecutableScriptFilename, isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Divider, Dropdown, MenuProps, Select, Space, Switch, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { join } from "path";
+import { basename,dirname, join } from "path";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -222,6 +222,8 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const reload = async (signal?: AbortSignal) => {
     setLoading(true);
     await api.listFile({ query: { cluster: currentClusterRef.current.id, path } }, signal)
+      .httpError(403, () => { message.error(t(p("noAccessPermission"))); })
+      .httpError(412, () => { message.error(t(p("noPath"))); })
       .then((d) => {
         setFiles(d.items);
       })
@@ -457,6 +459,63 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     }
   };
 
+  // 递归解析符号链接的最终目标
+  const resolveSymlinkTargetRecursively = async (
+    startPath: string,
+  ): Promise<{ finalPath: string; finalType: "FILE" | "DIR" }> => {
+    let currentPath = startPath;
+    // 防止无限循环，最多解析 20 层
+    for (let i = 0; i < 20; i++) {
+      const meta = await api.getFileMetadata({
+        query: { cluster: currentClusterRef.current.id, path: currentPath },
+      });
+
+      const typeUpper = (meta.type ?? "").toUpperCase();
+      const isSymlink = !!meta.isSymlink || typeUpper === "SYMLINK";
+
+      if (isSymlink && meta.linkTargetPath) {
+        currentPath = meta.linkTargetPath;
+        continue;
+      }
+
+      if (typeUpper === "FILE") {
+        return { finalPath: currentPath, finalType: "FILE" };
+      }
+      if (typeUpper === "DIR") {
+        return { finalPath: currentPath, finalType: "DIR" };
+      }
+
+      // 如果后端返回的 linkTargetType 有值，作为兜底
+      const targetTypeUpper = (meta.linkTargetType ?? "").toUpperCase();
+      if (targetTypeUpper === "FILE" || targetTypeUpper === "DIR") {
+        return { finalPath: currentPath, finalType: targetTypeUpper };
+      }
+
+      throw new Error("Unable to resolve target of symbolic link");
+    }
+
+    throw new Error("Symbolic links are nested too deeply");
+  };
+
+  // 根据解析出的最终目标进行跳转或预览
+  const navigateResolvedSymlinkTarget = async (initialTargetPath: string) => {
+    setLoading(true);
+    try {
+      const { finalPath, finalType } = await resolveSymlinkTargetRecursively(initialTargetPath);
+      if (finalType === "FILE") {
+        const destDir = dirname(finalPath);
+        const fileName = basename(finalPath);
+        router.push(`${fullUrl(destDir)}?edit=${encodeURIComponent(fileName)}`);
+      } else {
+        router.push(fullUrl(finalPath));
+      }
+    } catch (e) {
+      message.error(`${t(p("failedResolveSymlink"))}${e?.message ? ": " + e.message : ""}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const editFile = queryToString(router.query.edit);
 
   useEffect(() => {
@@ -467,6 +526,13 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       }
     }
   }, [editFile, files]);
+
+  // 关闭文件预览时，移除 URL 中的 edit 查询参数，避免再次点击同一文件时不触发预览
+  useEffect(() => {
+    if (!previewFile.open && !previewImage.visible && router.query.edit) {
+      router.replace(fullUrl(path), undefined, { shallow: true });
+    }
+  }, [previewFile.open, previewImage.visible]);
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploadDirModalOpen, setIsUploadDirModalOpen] = useState(false);
@@ -821,24 +887,55 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               router.push(fullUrl(join(path, r.name)));
             } else if (r.type === "FILE") {
               handlePreview(r.name, r.size);
+            } else if (r.type === "SYMLINK") {
+              const targetPath = r.linkTargetPath;
+              if (targetPath) {
+                navigateResolvedSymlinkTarget(targetPath);
+              }
             }
           },
         })}
         fileNameRender={(_, r) => (
           r.type === "DIR" ? (
-            <a onClick={() => {
-              if (!loading) {
-                setLoading(true);
-                router.push(fullUrl(join(path, r.name)));
-              }
-            }}
+            <a
+              onClick={() => {
+                if (!loading) {
+                  setLoading(true);
+                  router.push(fullUrl(join(path, r.name)));
+                }
+              }}
+              style={{ color: "inherit", textDecoration: "none" }}
             >
               {r.name}
             </a>
+          ) : r.type === "SYMLINK" ? (
+            <Tooltip title={(
+              <div>
+                {t(p("tableInfo.symlinkTooltip.type"))}
+                <br />
+                <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
+                {r.linkTargetPath ?? ""}
+              </div>
+            )}
+            >
+              <a
+                onClick={() => {
+                  const targetPath = r.linkTargetPath;
+                  if (targetPath) {
+                    navigateResolvedSymlinkTarget(targetPath);
+                  }
+                }}
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                {r.name}
+              </a>
+            </Tooltip>
           ) : (
-            <a onClick={() => {
-              handlePreview(r.name, r.size);
-            }}
+            <a
+              onClick={() => {
+                handlePreview(r.name, r.size);
+              }}
+              style={{ color: "inherit", textDecoration: "none" }}
             >
               {r.name}
             </a>
@@ -862,17 +959,19 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                 </a>
               )
             } */}
-            <RenameLink
-              cluster={currentClusterRef.current.id}
-              path={join(path, i.name)}
-              reload={reload}
-            >
-              <Tooltip title={t(p("tableInfo.rename"))}>
-                <RenameIcon />
-              </Tooltip>
-            </RenameLink>
+            {(
+              <RenameLink
+                cluster={currentClusterRef.current.id}
+                path={join(path, i.name)}
+                reload={reload}
+              >
+                <Tooltip title={t(p("tableInfo.rename"))}>
+                  <RenameIcon />
+                </Tooltip>
+              </RenameLink>
+            )}
             {
-              i.type === "FILE" ? (
+              i.type === "FILE" && isExecutableScriptFilename(i.name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES) ? (
                 <Tooltip title={t("button.submitButton")}>
                   <SubmitIcon onClick={() => {
                     const fullPath = join(path, i.name);
@@ -939,7 +1038,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                   content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
                   okText: t(p("tableInfo.deleteConfirmOk")),
                   onOk: async () => {
-                    await (i.type === "FILE" ? api.deleteFile : api.deleteDir)({
+                    await (i.type === "DIR" ? api.deleteDir : api.deleteFile)({
                       query: {
                         cluster: currentClusterRef.current.id,
                         path: fullPath,
@@ -989,7 +1088,3 @@ const RenameLink = ModalLink(RenameModal);
 const CreateFileButton = ModalLink(CreateFileModal);
 const MkdirButton = ModalLink(MkdirModal);
 const UploadButton = ModalButton(UploadModal, { icon: <UploadOutlined /> });
-
-// function openPreviewLink(href: string) {
-//   window.open(href, "ViewFile", "location=yes,resizable=yes,scrollbars=yes,status=yes");
-// }

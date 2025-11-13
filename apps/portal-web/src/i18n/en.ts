@@ -309,6 +309,9 @@ export default {
         usage: "Usage",
         storageQuotaTooltip: "The current file system has backups set up, which will take up additional "
           + "storage space. Therefore, the storage usage will be higher than your actual file size.",
+        failedResolveSymlink: "Failed to resolve symbolic link",
+        noAccessPermission: "No access permission",
+        noPath: "Path not found, please check",
         preview: {
           fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
           unsupportedFileType: "Unsupported file type, please download to view",
@@ -366,6 +369,10 @@ export default {
           downloadButtonDisabledTooltip: {
             multipleItems: "Please select a single file to download, or compress multiple files before downloading",
             noSelection: "Please select a file to download",
+          },
+          symlinkTooltip: {
+            type: "Type: Symbolic Link",
+            targetPathPrefix: "Target Path: ",
           },
         },
       },

@@ -1,7 +1,8 @@
-import { CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, DownOutlined, ExpandOutlined,
+import {
+  CompressOutlined, CopyOutlined, DatabaseOutlined, DeleteOutlined, DownOutlined, ExpandOutlined,
   EyeInvisibleOutlined, EyeOutlined,FileAddOutlined, FolderAddOutlined, HomeOutlined,
-  QuestionCircleOutlined,
-  ScissorOutlined, SnippetsOutlined, UploadOutlined,UpOutlined } from "@ant-design/icons";
+  QuestionCircleOutlined, ScissorOutlined, SnippetsOutlined, UploadOutlined, UpOutlined,
+} from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
@@ -11,13 +12,14 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { App, Button, Divider, Dropdown, MenuProps, Space, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { join } from "path";
+import { basename,dirname, join } from "path";
 import React, { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useOperation } from "src/app/(auth)/files/[cluster]/context";
 import { CompressionModal } from "src/components/CompressionModal";
 import { DecompressionModal } from "src/components/DecompressionModal";
 import { FileEditModal } from "src/components/FileEditModal";
+import { FileTable } from "src/components/FileTable";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ImagePreviewer } from "src/components/ImagePreviewer";
 import { MkdirModal } from "src/components/MkdirModal";
@@ -28,6 +30,7 @@ import { UploadDirModal } from "src/components/UploadDirModal";
 import { UploadModal } from "src/components/UploadModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
+import { FileType } from "src/models/File";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { isDecompressibleFile } from "src/utils/file";
@@ -37,7 +40,6 @@ import { styled, useTheme } from "styled-components";
 
 import { urlToDownload } from "./api";
 import { CreateFileModal } from "./CreateFileModal";
-import { FileTable } from "./FileTable";
 import { PathBar } from "./PathBar";
 import { RenameModal } from "./RenameModal";
 
@@ -275,6 +277,8 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
 
   const deleteMutation = trpc.file.deleteItem.useMutation();
 
+  const getFileTypeMutation = trpc.file.getFileType.useMutation();
+
   const onDeleteClick = () => {
     const files = keysToFiles(selectedKeys);
     modal.confirm({
@@ -352,6 +356,49 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
     }
   };
 
+  // 递归解析符号链接的最终目标
+  const resolveSymlinkTargetRecursively = async (
+    initialPath: string, maxDepth = 20,
+  ): Promise<{ finalPath: string; finalType: FileType; finalSize: number; }> => {
+    let currentPath = initialPath;
+    let depth = 0;
+
+    while (depth < maxDepth) {
+      const meta = await getFileTypeMutation.mutateAsync({ clusterId: cluster.id, path: currentPath });
+      const isSymlink = meta.isSymlink ?? meta.type === "SYMLINK";
+      if (!isSymlink) {
+        return { finalPath: currentPath, finalType: meta.type, finalSize: meta.size };
+      }
+      const nextPath = meta.linkTargetPath;
+      const linkTargetType = meta.linkTargetType;
+      if (!nextPath || !linkTargetType) {
+        return { finalPath: currentPath, finalType: linkTargetType ?? "FILE", finalSize: meta.size };
+      }
+      currentPath = nextPath;
+      depth += 1;
+    }
+    return { finalPath: currentPath, finalType: "SYMLINK", finalSize: 0 };
+  };
+
+  // 按解析结果进行跳转或预览
+  const navigateResolvedSymlinkTarget = async (initialTargetPath: string) => {
+    try {
+      const { finalPath, finalType } = await resolveSymlinkTargetRecursively(initialTargetPath);
+      if (finalType === "FILE") {
+        const destDir = dirname(finalPath);
+        const fileName = basename(finalPath);
+        router.push(`${fullUrl(destDir)}?edit=${encodeURIComponent(fileName)}`);
+      } else if (finalType === "DIR") {
+        router.push(fullUrl(finalPath));
+      } else {
+        router.push(fullUrl(finalPath));
+      }
+    } catch (e: any) {
+      message.error(`${t(p("failedResolveSymlink"))}${e?.message ? ": " + e.message : ""}`);
+    }
+  };
+
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploadDirModalOpen, setIsUploadDirModalOpen] = useState(false);
 
@@ -364,6 +411,26 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
       setIsUploadModalOpen(false);
     }
   }, []);
+
+  // Open file when ?edit=<filename> is present
+  useEffect(() => {
+    const editParam = searchParams?.get("edit");
+    const editFileName = queryToString(editParam);
+    if (editFileName) {
+      const foundFile = filesQuery.data?.find((file) => file.name === editFileName);
+      if (foundFile && foundFile.type !== "DIR") {
+        handlePreview(editFileName, foundFile.size);
+      }
+    }
+  }, [searchParams, filesQuery.data]);
+
+  // Clear the ?edit=<filename> query when preview is closed to allow re-triggering
+  useEffect(() => {
+    const hasEditParam = searchParams?.has("edit");
+    if (hasEditParam && !previewFile.open && !previewImage.visible) {
+      router.replace(fullUrl(path));
+    }
+  }, [previewFile.open, previewImage.visible, searchParams, path]);
 
   const handleUploadModalClose = () => {
     setIsUploadModalOpen(false);
@@ -628,18 +695,42 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
               router.push(fullUrl(join(path, r.name)));
             } else if (r.type === "FILE") {
               handlePreview(r.name, r.size);
+            } else if (r.type === "SYMLINK" && r.linkTargetPath) {
+              navigateResolvedSymlinkTarget(r.linkTargetPath);
             }
           },
         })}
         fileNameRender={(_, r) => (
           r.type === "DIR" ? (
-            <Link href={fullUrl(join(path, r.name))} passHref>
+            <Link href={fullUrl(join(path, r.name))} passHref style={{ color: "inherit", textDecoration: "none" }}>
               {r.name}
             </Link>
+          ) : r.type === "SYMLINK" ? (
+            <Tooltip
+              title={(
+                <div>
+                  {t(p("tableInfo.symlinkTooltip.type"))}<br />
+                  <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
+                  {r.linkTargetPath ?? ""}
+                </div>
+              )}
+            >
+              <a
+                onClick={() => {
+                  const initialPath = r.linkTargetPath ?? join(path, r.name);
+                  navigateResolvedSymlinkTarget(initialPath);
+                }}
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                {r.name}
+              </a>
+            </Tooltip>
           ) : (
-            <a onClick={() => {
-              handlePreview(r.name, r.size);
-            }}
+            <a
+              onClick={() => {
+                handlePreview(r.name, r.size);
+              }}
+              style={{ color: "inherit", textDecoration: "none" }}
             >
               {r.name}
             </a>

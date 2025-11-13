@@ -5,7 +5,7 @@ import { NextApiResponse } from "next";
 import { NextResponse } from "next/server";
 import path, { basename, dirname, join } from "path";
 import { config } from "src/server/config/env";
-import { ListDirectoryOutput } from "src/server/trpc/model/file";
+import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
 import { getScowdClient,mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
@@ -121,12 +121,25 @@ export class ScowdFileDriver implements FileDriver {
     );
 
     const results = resp.filesInfo.map((info) => {
+      const type =
+        info.fileType === scowdFileType.DIR ? "DIR" :
+          info.fileType === scowdFileType.SYMLINK ? "SYMLINK" :
+            "FILE";
+
+      const linkTargetType = info.linkTargetType === undefined ? undefined : (
+        info.linkTargetType === scowdFileType.DIR ? "DIR" :
+          info.linkTargetType === scowdFileType.SYMLINK ? "SYMLINK" :
+            "FILE"
+      );
+
       return {
         name: info.name,
-        type: info.fileType === scowdFileType.DIR ? "DIR" : "FILE",
+        type,
         mtime: info.modTime,
         mode: info.mode,
         size: Number(info.sizeByte),
+        linkTargetPath: info.linkTargetPath,
+        linkTargetType,
       } as ListDirectoryOutput;
     });
 
@@ -145,7 +158,7 @@ export class ScowdFileDriver implements FileDriver {
     return resp.exists;
   }
 
-  async getFileMetadata(path: string) {
+  async getFileMetadata(path: string): Promise<FileMeta> {
     const resp = await wrap(
       this.client.file.getFileMetadata({
         userId: this.userId,
@@ -154,9 +167,16 @@ export class ScowdFileDriver implements FileDriver {
       this.logger,
     );
 
+    const type = resp.isSymlink ? "SYMLINK" :
+      resp.type === scowdFileType.DIR ? "DIR" : "FILE";
+
     return {
       size: Number(resp.sizeByte),
-      type: resp.type === scowdFileType.DIR ? "DIR" : "FILE",
+      type: type,
+      isSymlink: resp.isSymlink,
+      linkTargetPath: resp.linkTargetPath,
+      linkTargetType: resp.linkTargetType === scowdFileType.DIR ? "DIR" :
+        resp.linkTargetType === scowdFileType.SYMLINK ? "SYMLINK" : "FILE",
     };
   }
 

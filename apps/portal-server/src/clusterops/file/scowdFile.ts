@@ -1,8 +1,8 @@
 import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { FileInfo, fileInfo_FileTypeFromJSON } from "@scow/protos/build/portal/file";
-import { DownloadResponse, FileType } from "@scow/scowd-protos/build/storage/file_pb";
+import { FileInfo, fileTypeFromJSON } from "@scow/protos/build/portal/file";
+import { DownloadResponse } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
 import { config } from "src/config/env";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
@@ -129,10 +129,13 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       const results: FileInfo[] = res.filesInfo.map((info): FileInfo => {
         return {
           name: info.name,
-          type: fileInfo_FileTypeFromJSON(info.fileType),
+          type: fileTypeFromJSON(info.fileType),
           mtime: info.modTime,
           mode: info.mode,
           size: Number(info.sizeByte),
+          linkTargetPath: info.linkTargetPath,
+          linkTargetType: info.linkTargetType !== undefined ?
+            fileTypeFromJSON(info.linkTargetType) : undefined,
         };
       });
       return { results };
@@ -322,9 +325,13 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     const { userId, path } = request;
 
     try {
-      const res = await client.file.getFileMetadata({ userId, filePath: path });
+      const { sizeByte, type, isSymlink, linkTargetPath, linkTargetType }
+        = await client.file.getFileMetadata({ userId, filePath: path });
 
-      return { size: Number(res.sizeByte), type: res.type === FileType.DIR ? "dir" : "file" };
+      return {
+        size: Number(sizeByte), type: fileTypeFromJSON(type), isSymlink, linkTargetPath,
+        linkTargetType: linkTargetType !== undefined ? fileTypeFromJSON(linkTargetType) : undefined,
+      };
 
     } catch (err) {
       if (err instanceof ConnectError) {

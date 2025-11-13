@@ -306,6 +306,9 @@ export default {
         storageQuota: "存储配额",
         usage: "使用量",
         storageQuotaTooltip: "当前文件系统设置了备份会占用额外的存储空间，因此存储使用量会高于您的实际文件大小",
+        failedResolveSymlink: "解析软链接失败",
+        noAccessPermission: "无访问权限",
+        noPath: "找不到该路径，请检查",
         preview: {
           fileTooLarge: "该文件大小超标（最大{}），请下载后查看",
           unsupportedFileType: "该文件类型不支持预览，请下载后查看",
@@ -363,6 +366,10 @@ export default {
           downloadButtonDisabledTooltip: {
             multipleItems: "请选择单个文件进行下载，或将多个文件压缩后下载",
             noSelection: "请选择要下载的文件",
+          },
+          symlinkTooltip: {
+            type: "类型：软链接",
+            targetPathPrefix: "源路径：",
           },
         },
       },

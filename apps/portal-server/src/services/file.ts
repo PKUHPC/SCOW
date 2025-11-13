@@ -7,11 +7,11 @@ import {
   sftpReadFile, sftpRealPath, sshRmrf,
 } from "@scow/lib-ssh";
 import {
-  FileInfo, fileInfo_FileTypeFromJSON, FileServiceServer, FileServiceService,
-  TransferInfo,
+  FileInfo, FileServiceServer, FileServiceService, fileTypeFromJSON, TransferInfo,
 } from "@scow/protos/build/portal/file";
 import path from "path";
 import { getClusterOps } from "src/clusterops";
+import { FileType } from "src/clusterops/api/file";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
 import { checkActivatedClusters } from "src/utils/clusters";
@@ -412,7 +412,7 @@ export const fileServiceServer = plugin((server) => {
           filesInfo: initData.filesInfo.map((info): FileInfo => {
             return {
               name: info.name,
-              type: fileInfo_FileTypeFromJSON(info.fileType),
+              type: fileTypeFromJSON(info.fileType),
               mtime: info.modTime,
               mode: info.mode,
               size: Number(info.sizeByte),
@@ -473,7 +473,10 @@ export const fileServiceServer = plugin((server) => {
 
       const reply = await clusterops.file.getFileMetadata({ userId, path }, logger);
 
-      return [{ ...reply }];
+      return [{
+        ...reply,
+        type: reply.type === FileType.DIR ? "dir" : reply.type === FileType.SYMLINK ? "symlink" : "file",
+      }];
     },
 
     exists: async ({ request, logger }) => {

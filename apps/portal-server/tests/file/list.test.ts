@@ -1,19 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials, status } from "@grpc/grpc-js";
-import { FileInfo, FileInfo_FileType, FileServiceClient } from "@scow/protos/build/portal/file";
+import { FileInfo, FileServiceClient, FileType } from "@scow/protos/build/portal/file";
 import { createServer } from "src/app";
 import { actualPath, cluster, connectToTestServer,
   createTestItems, expectGrpcThrow, resetTestServer, TestSshServer, userId } from "tests/file/utils";
@@ -44,9 +32,9 @@ it("gets file list", async () => {
   });
 
   expect(reply.results).toIncludeSameMembers([
-    { name: "dir1", type: FileInfo_FileType.DIR,
+    { name: "dir1", type: FileType.DIR,
       mode: expect.any(Number), mtime: expect.any(String), size: expect.any(Number) },
-    { name: "test1", type: FileInfo_FileType.FILE,
+    { name: "test1", type: FileType.FILE,
       mode: expect.any(Number), mtime: expect.any(String), size: expect.any(Number) },
   ] as FileInfo[]);
 

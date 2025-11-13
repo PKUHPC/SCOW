@@ -57,15 +57,18 @@ export interface ReadDirectoryRequest {
 
 export interface FileInfo {
   name: string;
-  type: FileInfo_FileType;
+  type: FileType;
   mtime: string;
   mode: number;
   size: number;
+  linkTargetPath?: string;
+  linkTargetType?: FileType;
 }
 
-export enum FileInfo_FileType {
+export enum FileType {
   FILE = 0,
   DIR = 1,
+  SYMLINK = 2,
 }
 
 export interface ReadDirectoryReply {
@@ -122,7 +125,10 @@ export interface GetFileMetadataRequest {
 
 export interface GetFileMetadataReply {
   size: number;
-  type: string;
+  type: FileType;
+  isSymlink: boolean;
+  linkTargetPath?: string;
+  linkTargetType?: FileType;
 }
 
 export interface DecompressFileRequest {

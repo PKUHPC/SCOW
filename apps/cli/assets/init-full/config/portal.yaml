@@ -75,6 +75,10 @@ shell: true
 #     limitSize: "1m"
 #     # 不可编辑的文件后缀数组（可选）
 #     # nonEditableFilenamePostfixes: [".exe", ".ppt"]
+#   # 文件提交功能（可选）
+#   submit:
+#     # 可运行脚本后缀数组（可选）
+#     executableFilenamePostfixes: [".sh"]
 
 # 提交作业的默认工作目录。使用{{ name }}代替作业名称。相对于用户的家目录
 # submitJobDefaultPwd: scow/jobs/{{ name }}

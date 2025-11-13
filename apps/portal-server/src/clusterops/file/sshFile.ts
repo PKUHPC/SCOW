@@ -1,10 +1,10 @@
 import { createWriterExtensions } from "@ddadaal/tsgrpc-common";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { loggedExec, sftpExists, sftpMkdir, sftpReaddir,
+import { loggedExec, sftpExists, sftpLstat, sftpMkdir, sftpReaddir,
   sftpRealPath, sftpRename, sftpStat, sftpUnlink, sftpWriteFile, sshRmrf } from "@scow/lib-ssh";
-import { FileInfo, FileInfo_FileType } from "@scow/protos/build/portal/file";
+import { FileInfo, FileType as protoFileType } from "@scow/protos/build/portal/file";
 import { join } from "path";
-import { FileOps } from "src/clusterops/api/file";
+import { FileOps, FileType } from "src/clusterops/api/file";
 import { config } from "src/config/env";
 import { pipeline } from "src/utils/pipeline";
 import { sshConnect } from "src/utils/ssh";
@@ -166,7 +166,7 @@ export const sshFileServices = (host: string): FileOps => ({
         const isDir = file.longname.startsWith("d");
 
         list.push({
-          type: isDir ? FileInfo_FileType.DIR : FileInfo_FileType.FILE,
+          type: isDir ? protoFileType.DIR : protoFileType.FILE,
           name: file.filename,
           mtime: new Date(file.attrs.mtime * 1000).toISOString(),
           size: file.attrs.size,
@@ -356,7 +356,32 @@ export const sshFileServices = (host: string): FileOps => ({
         } as ServiceError;
       });
 
-      return { size: stat.size, type: stat.isDirectory() ? "dir" : "file" };
+      const lstat = await sftpLstat(sftp)(path).catch(() => undefined);
+      const isSymlink = !!(lstat && typeof lstat.isSymbolicLink === "function" && lstat.isSymbolicLink());
+
+      const linkTargetPath = isSymlink
+        ? await sftpRealPath(sftp)(path).catch(() => undefined)
+        : undefined;
+
+      const targetLstat = linkTargetPath
+        ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined)
+        : undefined;
+
+      const targetStat = linkTargetPath &&
+        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()) ?
+        await sftpStat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
+
+      const linkTargetType = targetLstat && typeof targetLstat.isSymbolicLink === "function" &&
+      targetLstat.isSymbolicLink() ?
+        FileType.SYMLINK : (targetStat ? (targetStat.isDirectory() ? FileType.DIR : FileType.FILE) : undefined);
+
+      return {
+        size: stat.size,
+        type: isSymlink ? FileType.SYMLINK : (stat.isDirectory() ? FileType.DIR : FileType.FILE),
+        isSymlink,
+        linkTargetPath,
+        linkTargetType,
+      };
     });
   },
 

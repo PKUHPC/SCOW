@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { DatabaseOutlined, EyeInvisibleOutlined, EyeOutlined, HomeOutlined, UpOutlined } from "@ant-design/icons";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber } from "@scow/lib-web/build/utils/math";
@@ -22,7 +10,8 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { SingleCrossClusterTransferSelector } from "src/pageComponents/filemanager/SingleCrossClusterTransferSelector";
 import { FileInfo } from "src/pages/api/file/list";
 import { Cluster } from "src/utils/cluster";
-import { FileInfoKey, fileInfoKey, fileTypeIcons, nodeModeToString, openPreviewLink, TopBar } from "src/utils/file";
+import { FileInfoKey, fileInfoKey, nodeModeToString, openPreviewLink, TopBar } from "src/utils/file";
+import { iconFor } from "src/utils/file";
 import { formatSize } from "src/utils/format";
 import { styled } from "styled-components";
 
@@ -199,7 +188,7 @@ export const ClusterFileTable: React.FC<Props> = ({
           defaultSortOrder={"ascend"}
           sorter={(a, b) => a.type.localeCompare(b.type)}
           render={(_, r) => (
-            React.createElement(fileTypeIcons[r.type])
+            React.createElement(iconFor(r))
           )}
         />
 

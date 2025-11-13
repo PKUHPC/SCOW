@@ -1,23 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { CloseOutlined, FileOutlined, FolderOutlined } from "@ant-design/icons";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber } from "@scow/lib-web/build/utils/math";
 import { Table, TableProps, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { FileInfo, FileType } from "src/pages/api/file/list";
+import { FileInfo } from "src/pages/api/file/list";
+import { iconFor } from "src/utils/file";
 import { formatSize } from "src/utils/format";
 
 type ColumnKey = ("type" | "name" | "mtime" | "size" | "mode" | "action");
@@ -41,12 +29,6 @@ interface Props extends TableProps<FileInfo> {
   hiddenColumns?: ColumnKey[];
 }
 
-const fileTypeIcons = {
-  "FILE": FileOutlined,
-  "DIR": FolderOutlined,
-  "ERROR": CloseOutlined,
-} as Record<FileType, React.ComponentType>;
-
 const p = prefix("pageComp.fileManagerComp.fileTable.");
 
 export const FileTable: React.FC<Props> = (
@@ -68,7 +50,7 @@ export const FileTable: React.FC<Props> = (
       dataIndex: "type",
       title: "",
       width: "32px",
-      render: (_, r) => React.createElement(fileTypeIcons[r.type]),
+      render: (_, r) => React.createElement(iconFor(r)),
     },
     {
       key: "name",

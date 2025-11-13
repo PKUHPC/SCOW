@@ -1,21 +1,17 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { CloseOutlined, FileOutlined, FolderOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
+import {
+  ArchiveIcon, FolderIcon, ImageIcon, SupportedFileIcon, SymlinkIcon,
+  UnrecognizedFileIcon,
+} from "@scow/lib-web/build/icons/FileIcon";
+import { isExecutableScriptFilename, isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import * as crypto from "crypto";
 import { join } from "path";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { FileInfo, FileType } from "src/pages/api/file/list";
+import { isDecompressibleFile } from "src/server/file";
 import { styled } from "styled-components";
+
+import { publicConfig } from "./config";
 
 export type FileInfoKey = React.Key;
 
@@ -30,11 +26,24 @@ export const TopBar = styled(FilterFormContainer)`
   }
 `;
 
-export const fileTypeIcons = {
-  "FILE": FileOutlined,
-  "DIR": FolderOutlined,
+export const baseTypeIcons = {
+  "DIR": FolderIcon,
+  "SYMLINK": SymlinkIcon,
   "ERROR": CloseOutlined,
-} as Record<FileType, React.ComponentType>;
+} as Record<Exclude<FileType, "FILE">, React.ComponentType>;
+
+export const iconFor = (file: FileInfo): React.ComponentType => {
+  if (file.type === "FILE") {
+    const name = file.name || "";
+    if (isDecompressibleFile(name)) { return ArchiveIcon; }
+    if (isImage(name)) { return ImageIcon; }
+    const editable = !isNonEditableFilename(name, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES);
+    const excutable = isExecutableScriptFilename(name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES);
+    if (editable || excutable) { return SupportedFileIcon; }
+    return UnrecognizedFileIcon;
+  }
+  return baseTypeIcons[file.type] || CloseOutlined;
+};
 
 export const nodeModeToString = (mode: number) => {
   const numberPermission = (mode & parseInt("777", 8)).toString(8);

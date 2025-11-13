@@ -22,11 +22,6 @@ interface Props {
   scowdEnabled: boolean;
 }
 
-enum FileType {
-  FILE = "file",
-  DIR = "dir",
-}
-
 interface UploadProgressEvent {
   percent: number;
 }
@@ -288,7 +283,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
                     if (fileType.type) {
                       await deleteFileMutation.mutateAsync({
-                        target: fileType.type === FileType.DIR ? "DIR" : "FILE",
+                        target: fileType.type === "DIR" ? "DIR" : "FILE",
                         clusterId: clusterId,
                         path: join(path, file.name),
                       }).then(() => resolve(file));

@@ -598,6 +598,12 @@ export default {
         newDir: "New Directory",
         download: "Download",
         rename: "Rename",
+        tableInfo: {
+          symlinkTooltip: {
+            type: "Type: Symbolic Link",
+            targetPathPrefix: "Target Path: ",
+          },
+        },
         preview: {
           fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
           unsupportedFileType: "Unsupported file type, please download to view",
@@ -614,6 +620,7 @@ export default {
         + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
         uploadFile: "Upload File",
         uploadDir: "Upload Directory",
+        failedResolveSymlink: "Failed to resolve symbolic link",
       },
       fileTable: {
         name: "File Name",

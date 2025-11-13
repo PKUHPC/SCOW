@@ -43,6 +43,7 @@ import type { DeleteDirSchema } from "src/pages/api/file/deleteDir";
 import type { DeleteFileSchema } from "src/pages/api/file/deleteFile";
 import type { DownloadFileSchema } from "src/pages/api/file/download";
 import type { FileExistSchema } from "src/pages/api/file/fileExist";
+import type { GetFileMetadataSchema } from "src/pages/api/file/getFileMetadata";
 import type { GetFileTypeSchema } from "src/pages/api/file/getFileType";
 import type { GetHomeDirectorySchema } from "src/pages/api/file/getHome";
 import type { InitMultipartUploadSchema } from "src/pages/api/file/initMultipartUpload";
@@ -66,7 +67,7 @@ import type { ListJobTemplatesSchema } from "src/pages/api/job/listJobTemplates"
 import type { RenameJobTemplateSchema } from "src/pages/api/job/renameJobTemplate";
 import type { SubmitFileAsJobSchema } from "src/pages/api/job/submitFileAsJob";
 import type { SubmitJobSchema } from "src/pages/api/job/submitJob";
-import type { GetUnreadMessageSchema } from "src/pages/api/notification/getUnreadMessages";
+import type { GetUnreadMessagesSchema } from "src/pages/api/notification/getUnreadMessages";
 import type { MarkMessageReadSchema } from "src/pages/api/notification/markMessageRead";
 import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
@@ -109,6 +110,7 @@ export const api = {
   deleteFile: apiClient.fromTypeboxRoute<typeof DeleteFileSchema>("DELETE", "/api/file/deleteFile"),
   downloadFile: apiClient.fromTypeboxRoute<typeof DownloadFileSchema>("GET", "/api/file/download"),
   fileExist: apiClient.fromTypeboxRoute<typeof FileExistSchema>("GET", "/api/file/fileExist"),
+  getFileMetadata: apiClient.fromTypeboxRoute<typeof GetFileMetadataSchema>("GET", "/api/file/getFileMetadata"),
   getFileType: apiClient.fromTypeboxRoute<typeof GetFileTypeSchema>("GET", "/api/file/getFileType"),
   getHomeDirectory: apiClient.fromTypeboxRoute<typeof GetHomeDirectorySchema>("GET", "/api/file/getHome"),
   initMultipartUpload: apiClient.fromTypeboxRoute<typeof InitMultipartUploadSchema>("POST", "/api/file/initMultipartUpload"),
@@ -139,7 +141,7 @@ export const api = {
   renameJobTemplate: apiClient.fromTypeboxRoute<typeof RenameJobTemplateSchema>("POST", "/api/job/renameJobTemplate"),
   submitFileAsJob: apiClient.fromTypeboxRoute<typeof SubmitFileAsJobSchema>("POST", "/api/job/submitFileAsJob"),
   submitJob: apiClient.fromTypeboxRoute<typeof SubmitJobSchema>("POST", "/api/job/submitJob"),
-  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessageSchema>("GET", "/api/notification/getUnreadMessages"),
+  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>("GET", "/api/notification/getUnreadMessages"),
   markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),

@@ -1,18 +1,13 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 syntax = "proto3";
 
 package scow.portal;
+
+enum FileType {
+  FILE = 0;
+  DIR = 1;
+  // 软链接（符号链接）
+  SYMLINK = 2;
+}
 
 message CopyRequest {
   string user_id = 1;
@@ -98,17 +93,16 @@ message ReadDirectoryRequest {
 }
 
 message FileInfo {
-
-  enum FileType {
-    FILE = 0;
-    DIR = 1;
-  }
-
   string name = 1;
   FileType type = 2;
   string mtime = 3;
   uint32 mode = 4;
   uint64 size = 5;
+  // 当 type 为 SYMLINK 时，返回软链接解析后的目标路径（绝对路径）
+  optional string link_target_path = 6;
+  // 当 type 为 SYMLINK 时，返回软链接解析后的目标类型（FILE/ DIR / SYMLINK）。
+  // 若无法解析或目标不存在，则该字段为空。
+  optional FileType link_target_type = 7;
 }
 
 // PERMISSION_DENIED: directory is not accessible
@@ -202,6 +196,12 @@ message GetFileMetadataRequest {
 message GetFileMetadataResponse {
   uint64 size = 1;
   string type = 2;
+  bool is_symlink = 3;
+  // 当 is_symlink 为 true 时，返回软链接解析后的目标路径（绝对路径）
+  optional string link_target_path = 4;
+  // 当 is_symlink 为 true 时，返回软链接解析后的目标类型（FILE/ DIR / SYMLINK）。
+  // 若无法解析或目标不存在，则该字段为空。
+  optional FileType link_target_type = 5;
 }
 
 message ExistsRequest {

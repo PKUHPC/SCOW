@@ -42,14 +42,22 @@ export const ImagePreviewer: React.FC<Props> = ({ previewImage, setPreviewImage 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (previewImage.visible) {
-      setLoading(true);
+    if (!previewImage.visible) {
+      setLoading(false);
+      return;
     }
-  }, [previewImage.visible]);
-
-  const handleImageLoad = () => {
-    setLoading(false);
-  };
+    setLoading(true);
+    const img = new window.Image();
+    const done = () => {
+      setLoading(false);
+    };
+    img.onload = done;
+    img.onerror = done;
+    img.src = previewImage.src;
+    if (img.complete) {
+      done();
+    }
+  }, [previewImage.visible, previewImage.src]);
 
   return (
     <>
@@ -75,8 +83,6 @@ export const ImagePreviewer: React.FC<Props> = ({ previewImage, setPreviewImage 
             }
           },
         }}
-        onLoad={handleImageLoad}
-        onError={() => setLoading(false) }
       />
     </>
   );

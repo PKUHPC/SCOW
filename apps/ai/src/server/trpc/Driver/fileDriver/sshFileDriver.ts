@@ -1,5 +1,5 @@
 import {
-  sftpExists,sftpMkdir, sftpReaddir,sftpRealPath, sftpRename, sftpStat, sftpUnlink,
+  sftpExists,sftpLstat,sftpMkdir, sftpReaddir,sftpRealPath, sftpRename, sftpStat, sftpUnlink,
   sftpWriteFile,sshRmrf } from "@scow/lib-ssh";
 import { loggedExec } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
@@ -150,7 +150,32 @@ export class SshFileDriver implements FileDriver {
         throw new TRPCError({ code: "FORBIDDEN", message: `${path} is not accessible` });
       });
 
-      return { size: stat.size, type: stat.isDirectory() ? "dir" : "file" };
+      const lstat = await sftpLstat(sftp)(path).catch(() => undefined);
+      const isSymlink = !!(lstat && typeof lstat.isSymbolicLink === "function" && lstat.isSymbolicLink());
+
+      const linkTargetPath = isSymlink
+        ? await sftpRealPath(sftp)(path).catch(() => undefined)
+        : undefined;
+
+      const targetLstat = linkTargetPath
+        ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined)
+        : undefined;
+
+      const targetStat = linkTargetPath &&
+        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()) ?
+        await sftpStat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
+
+      const linkTargetType = targetLstat && typeof targetLstat.isSymbolicLink === "function" &&
+        targetLstat.isSymbolicLink() ?
+        "SYMLINK" : (targetStat ? (targetStat.isDirectory() ? "DIR" : "FILE") : undefined);
+
+      return {
+        size: stat.size,
+        type: isSymlink ? "SYMLINK" : (stat.isDirectory() ? "DIR" : "FILE"),
+        isSymlink,
+        linkTargetPath,
+        linkTargetType,
+      };
     });
   }
 

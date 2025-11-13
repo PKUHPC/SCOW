@@ -81,6 +81,7 @@ export interface PublicRuntimeConfig {
   FILE_EDIT_SIZE: string | undefined;
   NON_EDITABLE_FILENAME_POSTFIXES: string[] | undefined;
   FILE_PREVIEW_SIZE: string | undefined;
+  EXECUTABLE_FILENAME_POSTFIXES: string[] | undefined;
 
   PUBLIC_PATH: string;
 

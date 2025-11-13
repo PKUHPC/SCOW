@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
@@ -63,6 +51,11 @@ export const PortalConfigSchema = Type.Object({
       nonEditableFilenamePostfixes: Type.Optional(Type.Array(Type.String({
         description: "不可编辑文件后缀数组" }), { default: []})),
     }, { description: "文件编辑功能", default: {} }),
+    submit: Type.Optional(Type.Object({
+      executableFilenamePostfixes: Type.Optional(Type.Array(Type.String({
+        description: "可运行脚本后缀数组", default: [],
+      }))),
+    }, { description: "文件提交功能", default: {} })),
   }, { description: "文件管理" })),
 
 
