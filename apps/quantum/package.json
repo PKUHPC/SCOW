@@ -16,7 +16,8 @@
   "scripts": {
     "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
     "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
-    "serve": "next start",
+    "serve": "node start.mjs",
+    "serve:next": "next start",
     "build": "npm run build:next && npm run build:types",
     "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --no-mangling",
     "build:types": "rimraf build && tsc -p tsconfig.types.json && tsc-alias -p tsconfig.types.json",
