@@ -20,9 +20,11 @@ jobs:
           # https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
           token: ${{ secrets.RELEASE_GITHUB_PAT }}
       - uses: fregante/setup-git-user@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          mirror: https://npmmirror.com/mirrors/node/
+          registry-url: https://registry.npmmirror.com
+          node-version-file: package.json
 
       - name: Create tag if needed
         run: node scripts/tag.mjs

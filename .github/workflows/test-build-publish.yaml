@@ -15,10 +15,6 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
-env:
-  INTERNAL_CR: ccimage.pku.edu.cn
-  CCREPO_CR: ccrepo.pku.edu.cn
-
 jobs:
   test-version-packages:
     name: Test and version packages
@@ -54,15 +50,13 @@ jobs:
           sudo apt update
           sudo apt install -y openssh-client docker-compose-plugin
 
-          export HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
-
-      - uses: pnpm/action-setup@v4.0.0
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.x
-          cache: pnpm
+          node-version-file: package.json
           registry-url: https://registry.npmmirror.com
+          mirror: https://npmmirror.com/mirrors/node/
+
+      - uses: pnpm/action-setup@v4
 
       - name: Install dependencies
         run: |
@@ -79,17 +73,17 @@ jobs:
         if: vars.RUN_TESTS == 'true'
         run: ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -N ""
 
-      - name: Log in to the ${{ env.INTERNAL_CR }}
+      - name: Log in to the ccimage.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
-          registry: ${{ env.INTERNAL_CR }}
+          registry: ccimage.pku.edu.cn
           username: ${{ secrets.CCIMAGE_USERNAME }}
           password: ${{ secrets.CCIMAGE_PASSWORD }}
 
-      - name: Log in to the ${{ env.CCREPO_CR }}
+      - name: Log in to the ccrepo.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
-          registry: ${{ env.CCREPO_CR }}
+          registry: ccrepo.pku.edu.cn
           username: ${{ secrets.CCREPO_USERNAME }}
           password: ${{ secrets.CCREPO_PASSWORD }}
 
@@ -146,16 +140,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4.0.0
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.x
-          cache: pnpm
+          node-version-file: package.json
+          registry-url: https://registry.npmmirror.com
+          mirror: https://npmmirror.com/mirrors/node/
+
+      - uses: pnpm/action-setup@v4
 
       - name: Install dependencies for scow-cli
-        env:
-          HTTPS_PROXY: ${{ vars.HTTPS_PROXY }}
         run: |
           pnpm config set registry https://registry.npmmirror.com
           pnpm i --frozen-lockfile --filter @scow/cli...
@@ -241,24 +234,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to the ${{ env.INTERNAL_CR }}
+      - name: Log in to the ccimage.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
-          registry: ${{ env.INTERNAL_CR }}
+          registry: ccimage.pku.edu.cn
           username: ${{ secrets.CCIMAGE_USERNAME }}
           password: ${{ secrets.CCIMAGE_PASSWORD }}
 
-      - name: Log in to the ${{ env.CCREPO_CR }}
+      - name: Log in to the ccrepo.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
-          registry: ${{ env.CCREPO_CR }}
+          registry: ccrepo.pku.edu.cn
           username: ${{ secrets.CCREPO_USERNAME }}
           password: ${{ secrets.CCREPO_PASSWORD }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          image: ${{ env.INTERNAL_CR }}/mirror/tonistiigi/binfmt:latest
+          image: ccrepo.pku.edu.cn/dockerhub/tonistiigi/binfmt:latest
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -266,15 +259,15 @@ jobs:
           driver-opts: |
             env.http_proxy=${{ vars.HTTPS_PROXY }}
             env.https_proxy=${{ vars.HTTPS_PROXY }}
-            image=ccimage.pku.edu.cn/mirror/moby/buildkit:buildx-stable-1
+            image=ccrepo.pku.edu.cn/dockerhub/moby/buildkit:buildx-stable-1
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.INTERNAL_CR }}/scow/${{ matrix.name }}
-            ${{ env.CCREPO_CR }}/scow/${{ matrix.name }}
+            ccimage.pku.edu.cn/scow/${{ matrix.name }}
+            ccrepo.pku.edu.cn/scow/${{ matrix.name }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -338,14 +331,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4.0.0
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.x
-          cache: pnpm
+          node-version-file: package.json
           registry-url: https://registry.npmmirror.com
+          mirror: https://npmmirror.com/mirrors/node/
 
+      - uses: pnpm/action-setup@v4
 
       - name: Determine target directory
         id: target

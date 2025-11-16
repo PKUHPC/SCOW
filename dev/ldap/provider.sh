@@ -1,14 +1,5 @@
-# Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
-# SCOW is licensed under Mulan PSL v2.
-# You can use this software according to the terms and conditions of the Mulan PSL v2.
-# You may obtain a copy of Mulan PSL v2 at:
-#          http://license.coscl.org.cn/MulanPSL2
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-# See the Mulan PSL v2 for more details.
-
 #!/bin/sh
+set -ex
 
 ### Start Configuration Part
 
@@ -70,7 +61,7 @@ echo "Step 1: Install OpenLDAP Server."
 
 # if is in docker
 
-if [ $1 = 'docker' ]; then
+if [ "$1" = 'docker' ]; then
   IN_DOCKER=1
 fi
 
@@ -81,6 +72,16 @@ if ! [[ -n IN_DOCKER ]]; then
   rm -rf /etc/openldap
   rm -rf /var/lib/ldap/*
 fi
+
+yum install -y epel-release
+
+sed -e 's!^metalink=!#metalink=!g' \
+    -e 's!^#baseurl=!baseurl=!g' \
+    -e 's!https\?://download\.fedoraproject\.org/pub/epel!https://mirrors.pku.edu.cn/epel!g' \
+    -e 's!https\?://download\.example/pub/epel!https://mirrors.pku.edu.cn/epel!g' \
+    -i /etc/yum.repos.d/epel{,-testing}.repo
+
+dnf config-manager --set-enabled powertools
 
 yum install -y openldap-servers openldap-clients nss-pam-ldapd
 
@@ -132,22 +133,22 @@ replace: olcAccess
 olcAccess: {0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth"
   read by dn.base="cn=Manager,$OU,$DN" read by * none
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcSuffix
 olcSuffix: o=pku
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcRootDN
 olcRootDN: cn=Manager,$OU,$DN
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 add: olcRootPW
 olcRootPW: $pw
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 add: olcAccess
 olcAccess: {0}to attrs=userPassword,shadowLastChange by
@@ -183,11 +184,6 @@ ou: Group
 EOF
 ldapadd -x -D cn=Manager,$OU,$DN -w $adminPasswd -f /etc/openldap/basedomain.ldif
 
-#[5]    If Firewalld is running, allow LDAP service. LDAP uses 389/TCP.
-echo "Step 5:If Firewalld is running, allow LDAP service. LDAP uses 389/TCP."
-firewall-cmd --add-service=ldap --permanent
-firewall-cmd --reload
-
 #############################
 #[6] Configure LDAP Provider. Add syncprov module.
 echo "Step 6:Configure LDAP Provider. Add syncprov module."
@@ -201,7 +197,7 @@ EOF
 ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/mod_syncprov.ldif
 
 cat >>/etc/openldap/syncprov.ldif <<EOF
-dn: olcOverlay=syncprov,olcDatabase={2}hdb,cn=config
+dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config
 objectClass: olcOverlayConfig
 objectClass: olcSyncProvConfig
 olcOverlay: syncprov
@@ -221,7 +217,7 @@ EOF
 ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/ppolicy.ldif
 
 cat << EOF | ldapadd -Y EXTERNAL -H ldapi:///
-dn: olcOverlay=ppolicy,olcDatabase={2}hdb,cn=config
+dn: olcOverlay=ppolicy,olcDatabase={2}mdb,cn=config
 changetype: add
 objectClass: olcOverlayConfig
 objectClass: olcPPolicyConfig
@@ -243,6 +239,7 @@ objectClass: person
 pwdAttribute: userPassword
 pwdMaxFailure: 3
 pwdLockoutDuration: 0
+pwdLockout: TRUE
 sn: dummy value
 EOF
 
@@ -263,7 +260,7 @@ echo "Step 8:create SSL certificates"
 openssl req -out /etc/pki/tls/certs/server.csr -new -newkey rsa:2048 -nodes -keyout /etc/pki/tls/certs/server.key \
   -subj "/C=$Country/ST=$Province/L=$Locality/O=$OrganName/CN=$CommonName/emailAddress=$EmailAddr"
 
-mkdir /etc/openldap/certs/
+mkdir -p /etc/openldap/certs/
 
 openssl x509 -in /etc/pki/tls/certs/server.csr -out /etc/pki/tls/certs/server.crt -req -signkey /etc/pki/tls/certs/server.key -days 3650
 
@@ -292,13 +289,10 @@ EOF
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/pki/tls/certs/mod_ssl.ldif
 
-sed -i '/^SLAPD_URLS=.*/d' /etc/sysconfig/slapd
-sed -i '9aSLAPD_URLS="ldapi:/// ldap:/// ldaps:///"' /etc/sysconfig/slapd
-
-if [ -n $IN_DOCKER ]; then
-  kill -INT $(cat /var/run/openldap/slapd.pid)
-else
+if [ -z "$IN_DOCKER" ]; then
   systemctl restart slapd
 fi
+
+
 
 echo "finished!"
