@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
@@ -36,6 +24,7 @@ import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import type { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
+import { getAiExceptionJobI18nReason } from "src/utils/form";
 
 interface FilterForm {
   jobId: number | undefined;
@@ -463,6 +452,10 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             dataIndex="reason"
             ellipsis={true}
             title={t(p("reason"))}
+            render={(d: string) => {
+              const displayedValue = d.startsWith("(") && d.endsWith(")") ? d.substring(1, d.length - 1) : d;
+              return getAiExceptionJobI18nReason(displayedValue, t);
+            }}
             sorter={(a, b) => (a.reason ?? "").localeCompare(b.reason ?? "")}
           />
           <Table.Column<RunningJobInfo>

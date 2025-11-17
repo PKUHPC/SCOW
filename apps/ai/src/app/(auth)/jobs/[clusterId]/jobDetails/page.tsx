@@ -16,6 +16,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { JobType, statusColors } from "src/models/Job";
+import { JobReasonI18nKeyMap } from "src/utils/common";
 import { formatDateTime, toGrafanaRelative } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
 import { trpc } from "src/utils/trpc";
@@ -57,7 +58,7 @@ interface PodListDataType {
   namespace: string;
   podCreatedTime?: string;
   podEndTime?: string;
-  // pod状态的原因说明，当前可返回 pending 和 failed 的原因
+  // pod状态的原因说明，当前适配器可返回 pending 和 部分 failed 的原因
   podReason?: string;
 }
 
@@ -340,6 +341,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
       children: jobDetails.qos,
     },
     // 7.状态
+    // 该详情状态不需要显示颜色
     {
       key: "7",
       label: t(p("state")),
@@ -796,7 +798,13 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     {
       title: t(p("podReason")),
       dataIndex: "podReason",
-      render: (_, record) => record.podReason ?? "",
+      render: (_, record) => {
+        if (!record.podReason) {
+          return "";
+        }
+        const i18nKey = JobReasonI18nKeyMap[record.podReason.toUpperCase()];
+        return i18nKey !== undefined ? t(i18nKey) : record.podReason;
+      },
     },
     {
       title: t(p("action")),

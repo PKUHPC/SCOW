@@ -346,7 +346,6 @@ export default {
         memory:"内存",
         node:"节点",
         details:"详情",
-        stateQuestionMarkLiteral: "详情页可查看更多状态信息",
         more: "更多",
       },
       connectToAppLink:{
@@ -1199,5 +1198,13 @@ export default {
     appNotAvailableForAccount: "账户 {0} 没有该应用 {1} 的授权",
     noChinese:"不能包含中文字符",
     resourceNameRuleTips:"长度不能超过 50 字节且不能包含 '/' 字符",
+    aiJobExceptionReason: {
+      imagePullError: "拉取镜像失败",
+      mountError: "挂载失败",
+      restartError: "重启失败",
+      schedulingError: "调度失败",
+      imagePulling: "正在拉取镜像",
+      insufficientResources: "资源不足",
+    },
   },
 };

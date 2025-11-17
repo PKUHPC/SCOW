@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
@@ -159,22 +147,6 @@ export const AdminJobTable: React.FC<Props> = () => {
     }
   };
 
-  const exportOptions = useMemo(() => {
-    return [
-      { label: t(pCommon("clusterWorkId")), value: "idJob" },
-      { label: t(pCommon("workName")), value: "jobName" },
-      { label: t(pCommon("account")), value: "account" },
-      { label: t(pCommon("user")), value: "user" },
-      { label: t(pCommon("cluster")), value: "cluster" },
-      { label: t(pCommon("partition")), value: "partition" },
-      { label: "QOS", value: "qos" },
-      { label: t(pCommon("timeSubmit")), value: "timeSubmit" },
-      { label: t(pCommon("timeEnd")), value: "timeEnd" },
-      { label: t(p("tenantPrice")), value: "accountPrice" },
-      { label: t(p("platformPrice")), value: "tenantPrice" },
-    ];
-  }, [t]);
-
   return (
     <div>
       <FilterFormContainer>
@@ -192,7 +164,6 @@ export const AdminJobTable: React.FC<Props> = () => {
               <Space>
                 <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
                 <ExportFileModaLButton
-                  // options={exportOptions} // 定义导出列选项
                   onExport={handleExport}
                 >
                   {t(pCommon("export"))}
@@ -417,7 +388,7 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
           width="10%"
           render={(_, r) =>
             (
-              <>
+              <Space size={16}>
                 <a
                   onClick={() => {
                     setOpen(true);
@@ -426,7 +397,7 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
                   style={{ marginRight: 10 }}
                 >{t(pCommon("adjustBill"))}</a>
                 <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
-              </>
+              </Space>
             )
           }
         />

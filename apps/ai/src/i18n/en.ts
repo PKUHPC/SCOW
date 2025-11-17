@@ -346,7 +346,6 @@ export default {
         memory:"memory",
         node:"node",
         details:"Details",
-        stateQuestionMarkLiteral: "The details page provides more status information.",
         more: "More",
       },
       connectToAppLink:{
@@ -1202,5 +1201,13 @@ export default {
     appNotAvailableForAccount: "Account {0} is not authorized for the application {1}",
     noChinese:"Cannot contain Chinese characters",
     resourceNameRuleTips:"The length cannot exceed 50 bytes and cannot contain the '/' character",
+    aiJobExceptionReason: {
+      imagePullError: "Image Pull Error",
+      mountError: "Mount Error",
+      restartError: "Restart Error",
+      schedulingError: "Scheduling Error",
+      imagePulling: "Image Pulling",
+      insufficientResources: "Insufficient Resources",
+    },
   },
 };

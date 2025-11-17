@@ -19,6 +19,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { formatTime, RunningJobInfo } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
+import { getAiExceptionJobI18nReason } from "src/utils/form";
 
 interface Props {
   open: boolean;
@@ -58,7 +59,7 @@ export const RunningJobDrawer: React.FC<Props> = ({
     [t(p("gpusAlloc")), "gpusAlloc"],
     [t(p("memReq")), "memReq"],
     [t(p("memAlloc")), "memAlloc"],
-    [t(pCommon("reason")), "reason"],
+    [t(pCommon("reason")), "reason", getAiExceptionJobI18nReason],
     [t(p("timeLimit")), "timeLimit"],
     [t(pCommon("timeUsed")), "runningTime"],
     [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submissionTime))],
@@ -81,10 +82,14 @@ export const RunningJobDrawer: React.FC<Props> = ({
           >
             {drawerItems.map((([label, key, format]) => (
               <Descriptions.Item key={item.jobId} label={label}>
-                {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
                 {format ?
-                  (key === "cluster" ?
-                    getClusterName(item[key].id, languageId, publicConfigClusters) : format(item[key], item))
+                  // 如果是集群项展示，则根据当前语言id获取集群名称
+                  (key === "cluster"
+                    ? getClusterName(item[key].id, languageId, publicConfigClusters)
+                    // 如果原因展示，则获取可以展示国际化的AI异常状态原因
+                    : key === "reason" && item[key] !== undefined
+                      ? getAiExceptionJobI18nReason(item[key], t)
+                      : format(item[key], item))
                   : item[key]}
               </Descriptions.Item>
             )))}

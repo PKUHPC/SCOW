@@ -124,6 +124,14 @@ export default {
     accountOwnerName: "Account Owner Name",
     HPCAI: "HPC&AI",
     quantum: "quantum",
+    aiJobExceptionReason: {
+      imagePullError: "Image Pull Error",
+      mountError: "Mount Error",
+      restartError: "Restart Error",
+      schedulingError: "Scheduling Error",
+      imagePulling: "Image Pulling",
+      insufficientResources: "Insufficient Resources",
+    },
   },
   dashboard: {
     title: "Dashboard",

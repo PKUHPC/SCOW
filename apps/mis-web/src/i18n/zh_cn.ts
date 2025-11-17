@@ -124,6 +124,14 @@ export default {
     accountOwnerName: "账户拥有者姓名",
     HPCAI: "超智算",
     quantum: "量子计算",
+    aiJobExceptionReason: {
+      imagePullError: "拉取镜像失败",
+      mountError: "挂载失败",
+      restartError: "重启失败",
+      schedulingError: "调度失败",
+      imagePulling: "正在拉取镜像",
+      insufficientResources: "资源不足",
+    },
   },
   dashboard: {
     title: "仪表盘",

@@ -151,6 +151,7 @@ export const statusColors: Record<string, string> = {
   SCHEDULED: "#5FBDEC",
   ACTIVE: "#46B600",
   HOLD: "#6A6A6A",
+  QUEUED: "#F56B2F",
 };
 
 // 默认导出的作业列名

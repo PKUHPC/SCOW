@@ -1,6 +1,6 @@
 "use client";
 
-import { ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { App, Button, Form, Input, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ import { CancelIcon, DetailIcon, EndIcon, EnterDirectoryIcon, MoreIcon, NoHoverE
 import { JobType, statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppSession } from "src/server/trpc/route/jobs/apps";
+import { JobReasonI18nKeyMap } from "src/utils/common";
 import { calculateAppRemainingTime, compareDateTime, formatDateTime } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";
@@ -156,24 +157,22 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       sorter: (a, b) => compareDateTime(a.submitTime, b.submitTime),
     },
     {
-      title: (
-        <Space>
-          {t(p("state"))}
-          <Popover content={t(p("stateQuestionMarkLiteral"))}>
-            <QuestionCircleOutlined />
-          </Popover>
-        </Space>
-      ),
+      title: t(p("state")),
       dataIndex: "state",
       width: "120px",
       render: (_, record) => (
+        // 有 reason 就显示
         record.reason ? (
-          <Tooltip title={record.reason}>
-            <Space>
-              <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
+          <Space>
+            <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
+            <Tooltip title={() => {
+              const i18nKey = record.reason ? JobReasonI18nKeyMap[record.reason.toUpperCase()] : undefined;
+              return i18nKey !== undefined ? t(i18nKey) : record.reason;
+            }}
+            >
               <ExclamationCircleOutlined />
-            </Space>
-          </Tooltip>
+            </Tooltip>
+          </Space>
         ) : (
           <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
         )

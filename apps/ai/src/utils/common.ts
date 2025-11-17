@@ -1,16 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { AIPodReason } from "@scow/lib-web/build/utils/jobExceptionReason";
+import { TextId } from "src/i18n";
 import { SharedStatus } from "src/models/common";
+
 
 export const getSharedStatusText = (status: SharedStatus):
 "share" | "cancelShare" | "cancelSharing" | "sharing" => {
@@ -46,4 +37,14 @@ export const getSharedStatusUpperText = (status: SharedStatus):
     default:
       return "upperShare";
   }
+};
+
+type AIJobExceptionReasonLangKey = TextId & `common.aiJobExceptionReason.${string}`;
+export const JobReasonI18nKeyMap: Record<string, AIJobExceptionReasonLangKey> = {
+  [AIPodReason.IMAGE_PULL_ERROR]: "common.aiJobExceptionReason.imagePullError",
+  [AIPodReason.MOUNT_ERROR]: "common.aiJobExceptionReason.mountError",
+  [AIPodReason.RESTART_ERROR]: "common.aiJobExceptionReason.restartError",
+  [AIPodReason.SCHEDULING_ERROR]: "common.aiJobExceptionReason.schedulingError",
+  [AIPodReason.IMAGE_PULLING]: "common.aiJobExceptionReason.imagePulling",
+  [AIPodReason.INSUFFICIENT_RESOURCES]: "common.aiJobExceptionReason.insufficientResources",
 };
