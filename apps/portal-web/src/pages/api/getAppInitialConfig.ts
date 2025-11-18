@@ -6,7 +6,7 @@ import { libGetClustersRuntimeInfo } from "@scow/lib-web/build/server/clustersAc
 import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
-import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static, Type } from "@sinclair/typebox";
 import { USE_MOCK } from "src/apis/useMock";
 import { getTokenFromCookie } from "src/auth/cookie";
@@ -27,6 +27,9 @@ export const UserSchema = Type.Object({
 const ClusterNameI18nSchema = createI18nStringSchema({
   description: "集群名称，支持国际化",
 });
+const NodeNameI18nSchema = createI18nStringSchema({
+  description: "节点名称，支持国际化",
+});
 
 export const GetAppInitialConfigSchema = typeboxRouteSchema({
   method: "GET",
@@ -40,7 +43,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
       }),
       footerText: Type.Optional(Type.String()),
       loginNodes: Type.Record(Type.String(), Type.Array(Type.Object({
-        name: Type.String(),
+        name: NodeNameI18nSchema,
         address: Type.String(),
       }))), // { clusterId: LoginNode[] }
       darkModeCookieValue: Type.Optional(Type.Object({ dark: Type.Boolean(), mode: Type.Union([
@@ -138,11 +141,10 @@ export default route(GetAppInitialConfigSchema, async (req) => {
 
           const clusterSortedIdList = getSortedClusterIds(clusters);
 
-          const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
           extra.loginNodes = clusterSortedIdList.reduce((acc, cluster) => {
             acc[cluster] = clusters[cluster].loginNodes?.map((loginNode) => ({
               ...loginNode,
-              name: getI18nConfigCurrentText(loginNode.name, languageId),
+              name: loginNode.name,
             }));
             return acc;
           }, {});

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import "dayjs/locale/zh-cn";
 
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
@@ -49,7 +37,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, lo
   const currentPrimaryColor = dark ? darkModeColor : defaultColor;
 
   const currentLangId = useI18n().currentLanguage.id;
-  const localizedLang = locale ? getAntdLocale(locale) : getAntdLocale(currentLangId);
+  const localizedLang = currentLangId ? getAntdLocale(currentLangId) : getAntdLocale(locale);
 
   return (
     <LibAntdConfigProvider color={currentPrimaryColor} locale={locale}>

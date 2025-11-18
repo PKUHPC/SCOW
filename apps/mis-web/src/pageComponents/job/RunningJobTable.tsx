@@ -306,7 +306,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
         </Popconfirm>
       </Space>
     );
-  }, []);
+  }, [t]);
 
   return (
     <>

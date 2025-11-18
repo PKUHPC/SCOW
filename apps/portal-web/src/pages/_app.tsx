@@ -238,7 +238,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
         <DarkModeProvider initial={extra.darkModeCookieValue}>
           <AntdConfigProvider
             primaryColor={primaryColor}
-            locale={ extra.initialLanguage}
+            locale={extra.initialLanguage}
             color={primaryColor.defaultColor}
           >
             <FloatButtons languageId={ extra.initialLanguage } />
