@@ -5,10 +5,8 @@ import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
-import { AlgorithmIcon, ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
-  DatasetIcon, DevHostIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
-  PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
-  PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon,
+import { AlgorithmIcon,ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
+  DataAssetIcon, DatasetIcon,DevHostIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
   RunningJobsIcon, TrainJobIcon, ViewDevHostIcon } from "src/icons/menuIcons";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
@@ -40,38 +38,30 @@ export const userRoutes: (
       clickToPath: "/dashboard",
     },
     {
-      Icon: DatasetIcon,
-      text: t("routes.data.title"),
-      path: "/dataset",
-      clickToPath: "/dataset/private",
+      Icon: DataAssetIcon,
+      text: "数据资产",
+      path: "/asset",
+      clickToPath: "/asset/dataset",
       children: [
         {
-          Icon: PrivateDatasetIcon,
-          text: t("routes.data.private"),
-          path: "/dataset/private",
+          Icon: DatasetIcon,
+          text: t("routes.data.title"),
+          path: "/asset/dataset",
         },
         {
-          Icon: PublicDatasetIcon,
-          text: t("routes.data.public"),
-          path: "/dataset/public",
-        },
-      ],
-    },
-    {
-      Icon: ImageIcon,
-      text: t("routes.image.title"),
-      path: "/image",
-      clickToPath: "/image/private",
-      children: [
-        {
-          Icon: PrivateImageIcon,
-          text: t("routes.image.private"),
-          path: "/image/private",
+          Icon: ImageIcon,
+          text: t("routes.image.title"),
+          path: "/asset/image",
         },
         {
-          Icon: PublicImageIcon,
-          text: t("routes.image.public"),
-          path: "/image/public",
+          Icon: AlgorithmIcon,
+          text: t("routes.algorithm.title"),
+          path: "/asset/algorithm",
+        },
+        {
+          Icon: ModelIcon,
+          text: t("routes.model.title"),
+          path: "/asset/model",
         },
       ],
     },
@@ -118,55 +108,19 @@ export const userRoutes: (
       ],
     },
     ] : []),
-    {
-      Icon: AlgorithmIcon,
-      text: t("routes.algorithm.title"),
-      path: "/algorithm",
-      clickToPath: "/algorithm/private",
-      children: [
-        {
-          Icon: PrivateAlgorithmIcon,
-          text: t("routes.algorithm.private"),
-          path: "/algorithm/private",
-        },
-        {
-          Icon: PublicAlgorithmIcon,
-          text: t("routes.algorithm.public"),
-          path: "/algorithm/public",
-        },
-      ],
-    },
-    {
-      Icon: ModelIcon,
-      text: t("routes.model.title"),
-      path: "/model",
-      clickToPath: "/model/private",
-      children: [
-        {
-          Icon: PrivateModelIcon,
-          text: t("routes.model.private"),
-          path: "/model/private",
-        },
-        {
-          Icon: PublicModelIcon,
-          text: t("routes.model.public"),
-          path: "/model/public",
-        },
-      ],
-    },
     ...(currentClusters.length > 0 ? [
       {
         Icon: FileIcon,
         text: t("routes.file"),
         path: "/files",
-        clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
-        children: currentClusters.map((cluster) => ({
-          Icon: FileIcon,
-          text: getI18nConfigCurrentText(cluster.name, languageId),
-          path: `/files/${cluster.id}`,
-          clickToPath: `/files/${cluster.id}/~`,
-          handleClick: () => { setDefaultCluster(cluster); },
-        } as NavItemProps)),
+        clickToPath: "/files/~",
+        children:[
+          {
+            Icon: FileIcon,
+            text: t("routes.file"),
+            path: "/files/~",
+          },
+        ],
       },
     ] : []),
     // 开发机路由
@@ -224,5 +178,4 @@ export const userRoutes: (
         } as NavItemProps;
       }) : []),
   ];
-
 };

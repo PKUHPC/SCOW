@@ -37,7 +37,7 @@ export default {
       private: "My Models",
       public: "Public Models",
     },
-    file: "File",
+    file: "Files",
     devHost: {
       title: "Dev Host",
       create: "Create Dev Host",
