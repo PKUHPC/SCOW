@@ -244,7 +244,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       <Tooltip title={t(p("enterDir"))}>
         <EnterDirectoryIcon
           onClick={() => {
-            router.push(join("/files", record.dataPath));
+            router.push(join("/files", cluster.id, record.dataPath));
           }}
         />
       </Tooltip>,

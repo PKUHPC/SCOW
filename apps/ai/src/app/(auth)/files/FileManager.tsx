@@ -7,6 +7,7 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
 import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import type { inferRouterOutputs } from "@trpc/server";
 import { App, Button, Divider, Dropdown, MenuProps, Space, Tooltip } from "antd";
 import Link from "next/link";
@@ -14,8 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { basename,dirname, join } from "path";
 import React, { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
-import { useOperation } from "src/app/(auth)/files/context";
-import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { useOperation } from "src/app/(auth)/files/[cluster]/context";
 import { CompressionModal } from "src/components/CompressionModal";
 import { DecompressionModal } from "src/components/DecompressionModal";
 import { FileEditModal } from "src/components/FileEditModal";
@@ -28,7 +28,7 @@ import { TitleText } from "src/components/PageTitle";
 import { TableTitle } from "src/components/TableTitle";
 import { UploadDirModal } from "src/components/UploadDirModal";
 import { UploadModal } from "src/components/UploadModal";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon } from "src/icons/operationIcon";
 import { FileType } from "src/models/File";
 import { Cluster } from "src/server/trpc/route/config";
@@ -48,16 +48,7 @@ interface Props {
   loginNodes: Record<string, string>;
   path: string;
   urlPrefix: string;
-  setClusterId: React.Dispatch<React.SetStateAction<string>>;
 }
-
-const SelectPreFix = styled.span`
-  width: 65px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-`;
-
 
 const TopBar = styled(FilterFormContainer)`
   display: flex;
@@ -98,9 +89,10 @@ enum UploadType {
   Dir = "dir",
 }
 
-export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClusterId }) => {
+export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.fileManager.");
+  const languageId = useI18n().currentLanguage.id;
 
   const theme = useTheme();
 
@@ -145,7 +137,7 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
 
   const reload = filesQuery.refetch;
 
-  const fullUrl = (path: string) => join(urlPrefix, path);
+  const fullUrl = (path: string) => join(urlPrefix, cluster.id, path);
 
   const up = () => {
     const paths = path.split("/");
@@ -476,23 +468,10 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
     <div>
       <TitleText>
         <span>
-          {t(p("fileManage"))}
+          {t(p("cluster"))} {getI18nConfigCurrentText(cluster.name, languageId)} {t(p("fileManage"))}
         </span>
       </TitleText>
       <TopBar>
-        <SelectPreFix>
-          {t(p("cluster"))}:
-        </SelectPreFix>
-        <SingleClusterSelector
-          defaultValue={cluster}
-          onChange={(val) => {
-            setClusterId(val.id);
-            // 重置已复制项和操作
-            resetSelectedAndOperation();
-            // 集群ID被切换时，确保返回家目录
-            toHome();
-          }}
-        />
         <Button onClick={toHome} icon={<HomeOutlined />} shape="circle" />
         <Button onClick={up} icon={<UpOutlined />} shape="circle" />
         <PathBar

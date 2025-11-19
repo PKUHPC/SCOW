@@ -37,7 +37,7 @@ export default {
       private:"我的模型",
       public:"公共模型",
     },
-    file:"文件管理",
+    file:"文件",
     devHost: {
       title: "开发机",
       create: "创建开发机",

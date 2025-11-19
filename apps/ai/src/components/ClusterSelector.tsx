@@ -48,7 +48,7 @@ export const ClusterSelector: React.FC<Props> = ({ value, onChange }) => {
 };
 
 interface SingleSelectionProps {
-  defaultValue?: Cluster;
+  value?: Cluster;
   onChange?: (cluster: Cluster) => void;
   label?: string;
   clusterIds?: string[];
@@ -56,7 +56,7 @@ interface SingleSelectionProps {
 }
 
 export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
-  defaultValue,
+  value,
   onChange,
   label,
   clusterIds,
@@ -72,7 +72,7 @@ export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
   return (
     <Select
       placeholder={t("component.clusterSelector.select")}
-      defaultValue={defaultValue?.id}
+      value={value?.id}
       onChange={(value) => {
         onChange?.({
           id: value,

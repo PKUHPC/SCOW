@@ -5,8 +5,9 @@ import { useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useI18n } from "src/i18n";
-import { AlgorithmIcon, CreateAppIcon, DatasetIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon,
-  ModelIcon, RunningJobsIcon,
+import { CreateAppIcon, FileIcon, HistoryJobsIcon, InferIcon,
+  PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
+  PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon, RunningJobsIcon,
   TrainJobIcon } from "src/icons/menuIcons";
 import { Cluster } from "src/server/trpc/route/config";
 import { EntryListSchema } from "src/server/trpc/route/dashboard";
@@ -33,51 +34,95 @@ export const QuickEntry: React.FC = () => {
   const entryItems = {
     defaultEntries: [
       {
-        id:"dataset",
-        name:"dataset",
+        id:"privateDataset",
+        name:"privateDataset",
         entry:{
           $case:"pageLink" as const,
           pageLink:{
-            path: "asset/dataset",
-            icon:"DatasetIcon",
+            path: "dataset/private",
+            icon:"PrivateDatasetIcon",
           },
         },
       },
       {
-        id:"image",
-        name:"image",
+        id:"privateImage",
+        name:"privateImage",
         entry:{
           $case:"pageLink" as const,
           pageLink:{
-            path: "asset/image",
-            icon:"ImageIcon",
+            path: "image/private",
+            icon:"PrivateImageIcon",
           },
         },
       },
       {
-        id:"algorithm",
-        name:"algorithm",
+        id:"privateAlgorithm",
+        name:"privateAlgorithm",
         entry:{
           $case:"pageLink" as const,
           pageLink:{
-            path: "asset/algorithm",
-            icon:"AlgorithmIcon",
+            path: "algorithm/private",
+            icon:"PrivateAlgorithmIcon",
           },
         },
       },
       {
-        id:"model",
-        name:"model",
+        id:"privateModel",
+        name:"privateModel",
         entry:{
           $case:"pageLink" as const,
           pageLink:{
-            path: "asset/model",
-            icon:"ModelIcon",
+            path: "model/private",
+            icon:"PrivateModelIcon",
           },
         },
       },
     ],
     staticEntries:[
+      {
+        id:"publicDataset",
+        name:"publicDataset",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "dataset/public",
+            icon:"PublicDatasetIcon",
+          },
+        },
+      },
+      {
+        id:"publicImage",
+        name:"publicImage",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "image/public",
+            icon:"PublicImageIcon",
+          },
+        },
+      },
+      {
+        id:"publicAlgorithm",
+        name:"publicAlgorithm",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "algorithm/public",
+            icon:"PublicAlgorithmIcon",
+          },
+        },
+      },
+      {
+        id:"publicModel",
+        name:"publicModel",
+        entry:{
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "model/public",
+            icon:"PublicModelIcon",
+          },
+        },
+      },
       {
         id:"app",
         name:"app",
@@ -154,10 +199,14 @@ export const QuickEntry: React.FC = () => {
   };
 
   const iconMap = {
-    "DatasetIcon": <DatasetIcon />,
-    "ImageIcon": <ImageIcon />,
-    "ModelIcon": <ModelIcon />,
-    "AlgorithmIcon": <AlgorithmIcon />,
+    "PrivateDatasetIcon": <PrivateDatasetIcon />,
+    "PublicDatasetIcon": <PublicDatasetIcon />,
+    "PrivateImageIcon": <PrivateImageIcon />,
+    "PublicImageIcon": <PublicImageIcon />,
+    "PrivateModelIcon": <PrivateModelIcon />,
+    "PublicModelIcon": <PublicModelIcon />,
+    "PrivateAlgorithmIcon": <PrivateAlgorithmIcon />,
+    "PublicAlgorithmIcon": <PublicAlgorithmIcon />,
     "CreateAppIcon": <CreateAppIcon />,
     "TrainJobIcon": <TrainJobIcon />,
     "InferIcon": <InferIcon />,
