@@ -123,7 +123,8 @@ export function convertToOneOfValue(value: string | number):
 
 /**
  * 解析 ended_sessions.json文件内容，返回session metadata数组
- * 每一行增加zod验证，忽略出现错误的行数
+ * 每一行增加zod验证，忽略出现错误的行数，忽略空行
+ * 有可能有因为正在运行的作业信息延迟返回而重复写入的Session信息，对相同JobId的对象去重
  * @param endedSessionsContent
  * @param logger
  * @returns
@@ -132,7 +133,8 @@ function parseAndValidateSessionsFileContent(
   endedSessionsContent: string[],
   logger: Logger,
 ): SessionMetadata[] {
-  return endedSessionsContent
+
+  const validSessions = endedSessionsContent
     .filter((line) => line && line.trim() !== "")
     .map((line) => {
       try {
@@ -150,8 +152,12 @@ function parseAndValidateSessionsFileContent(
         return null;
       }
     })
-  // 将解析失败的行过滤掉
+    // 将解析失败的行过滤掉
     .filter((item): item is SessionMetadata => item !== null);
+
+  // 重复sessionId去重
+  const uniqueMap = new Map(validSessions.map((session) => [session.sessionId, session]));
+  return Array.from(uniqueMap.values());
 }
 
 
@@ -251,6 +257,42 @@ function convertSessionsArrayToFileContent(
     .join("\n");
 }
 
+
+// 创建 ended_sessions.json文件
+async function writeNewEndedSessionsFile(
+  client: ScowdClient,
+  userId: string,
+  endedSessionsFilePath: string,
+  newEndedSessions: SessionMetadata[],
+  logger: Logger,
+): Promise<void> {
+
+  const writeContent = convertSessionsArrayToFileContent(newEndedSessions, logger);
+  const bufferData = Buffer.from(writeContent, "utf8");
+  logger.trace(
+    "The endedSessions file will be created using streaming transmission during its first initialization.");
+  try {
+    await client.file.upload((async function* () {
+      yield { message: { case: "info", value: { path: endedSessionsFilePath, userId } } };
+      yield { message: { case: "chunk", value: new Uint8Array(bufferData) } };
+    })());
+    logger.trace(`Successfully create endedSessions.json in ${endedSessionsFilePath}`);
+
+    // 指定ended_sessions.json文件权限为 0664
+    await client.file.changeMode({ userId, path: endedSessionsFilePath, mode: "0664" });
+
+  } catch (err) {
+    logger.error(`Error writing data in ${endedSessionsFilePath}`);
+    if (err instanceof ConnectError) {
+      throw {
+        code: mapConnectRpcStatusToGrpc(err.code),
+        details: err.message,
+      } as ServiceError;
+    }
+    throw err;
+  }
+}
+
 /**
  * 写入 ended_sessions.json的文件
  * 第一次写入时，默认采用流式传输
@@ -258,7 +300,9 @@ function convertSessionsArrayToFileContent(
  * @param client
  * @param userId
  * @param endedSessionsFilePath
+ * 既存的已结束Session信息列表
  * @param existingEndedSessions
+ * 新追加的已结束Session信息列表
  * @param newEndedSessions
  * @param logger
  */
@@ -271,31 +315,10 @@ export async function writeEndedSessionsFileContent(
   logger: Logger,
 ): Promise<void> {
 
+  // 如果原本不存在EndedSession.json文件，只写入新的数据
   if (existingEndedSessions.length === 0 && newEndedSessions.length > 0) {
-    const writeContent = convertSessionsArrayToFileContent(newEndedSessions, logger);
-    const bufferData = Buffer.from(writeContent, "utf8");
-    logger.trace(
-      "The endedSessions file will be created using streaming transmission during its first initialization.");
-    try {
-      await client.file.upload((async function* () {
-        yield { message: { case: "info", value: { path: endedSessionsFilePath, userId } } };
-        yield { message: { case: "chunk", value: new Uint8Array(bufferData) } };
-      })());
-      logger.trace(`Successfully create endedSessions.json in ${endedSessionsFilePath}`);
-
-      // 指定ended_sessions.json文件权限为 0664
-      await client.file.changeMode({ userId, path: endedSessionsFilePath, mode: "0664" });
-
-    } catch (err) {
-      logger.error(`Error writing data in ${endedSessionsFilePath}`);
-      if (err instanceof ConnectError) {
-        throw {
-          code: mapConnectRpcStatusToGrpc(err.code),
-          details: err.message,
-        } as ServiceError;
-      }
-      throw err;
-    }
+    await writeNewEndedSessionsFile(client, userId, endedSessionsFilePath, newEndedSessions, logger);
+    return;
   }
 
   // 如果已经有写入的ended_sessions.json文件， 只追加新的 endedSessions

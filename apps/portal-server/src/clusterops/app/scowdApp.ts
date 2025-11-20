@@ -354,7 +354,11 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         // 定义用于存储本次需要添加的 endedSessions
         const newEndedSessions: SessionMetadata[] = [];
 
+        const runningJobIds = Object.keys(runningJobInfoMap);
+
         const existingSessionIds = new Set<string>();
+
+        const runningJobIdsInEndedSessions: number[] = [];
 
         // 如果ended_sessions.json 已存在，将其中的信息作为已结束的应用的session信息
         if ((await client.file.exists({ userId, path: endedSessionsFilePath })).exists) {
@@ -370,6 +374,13 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           if (existingEndedSessions.length > 0) {
             logger.trace(`Found ${existingEndedSessions.length} ended sessions in ${ENDED_SESSIONS}`);
             for (const endedSession of existingEndedSessions) {
+
+              // 如果出现保存的信息的作业ID与RunningJobs中返回的作业Id一致的情况，认为该作业为延时返回的正在运行的作业的信息
+              if (runningJobIds.includes(endedSession.jobId.toString())) {
+                runningJobIdsInEndedSessions.push(endedSession.jobId);
+                continue;
+              }
+
               const endedJobDir = join(userAppJobDir, endedSession.sessionId);
               sessions.push({
                 jobId: endedSession.jobId,
@@ -386,13 +397,16 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
                 host: undefined,
                 port: undefined,
               });
-            }
 
-            // 获取已存在的 endedSessions 的 sessionId，对应session的目录名
-            existingEndedSessions.map((session) => {
-              existingSessionIds.add(session.sessionId);
-            });
+              // 获取已存在的 endedSessions 的 sessionId，对应session的目录名
+              existingSessionIds.add(endedSession.sessionId);
+            }
           }
+        }
+
+        if (runningJobIdsInEndedSessions.length > 0) {
+          logger.trace(`Running jobs ${runningJobIdsInEndedSessions.join(",")} found in the ended_sessions file, `
+                  + "possibly written due to delayed returns. They will be ignored in the display of completed jobs.");
         }
 
         await Promise.all(list.map(async ({ name, fileType }) => {
@@ -529,19 +543,23 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
               logger.trace(`Job ${sessionMetadata.jobId} is a pending job,`
                 + " skipping in saving to ended_sessions.json");
             } else {
-              logger.trace(`Job ${sessionMetadata.jobId} is not running, saving to endedSessions.json ...`);
-
-              // write app session (except running jobs) to last endedSessions.json
-              const endedSessionInfo: SessionMetadata = {
-                jobId: sessionMetadata.jobId,
-                jobName: sessionMetadata.jobName,
-                sessionId: sessionMetadata.sessionId,
-                submitTime: sessionMetadata.submitTime,
-                appId: sessionMetadata.appId,
-              };
-
-              newEndedSessions.push(endedSessionInfo);
+              if (runningJobIdsInEndedSessions.includes(sessionMetadata.jobId)) {
+                logger.trace(`Job ${sessionMetadata.jobId} has already been to written into ended_sessions file, `
+                  + "possibly due to delayed return, skipping in saving to ended_sessions.json");
+              } else {
+                logger.trace(`Job ${sessionMetadata.jobId} is not running, saving to ended_sessions file ...`);
+                // write app session (except running jobs) to last endedSessions.json
+                const endedSessionInfo: SessionMetadata = {
+                  jobId: sessionMetadata.jobId,
+                  jobName: sessionMetadata.jobName,
+                  sessionId: sessionMetadata.sessionId,
+                  submitTime: sessionMetadata.submitTime,
+                  appId: sessionMetadata.appId,
+                };
+                newEndedSessions.push(endedSessionInfo);
+              }
             }
+
           }
 
           const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
@@ -574,7 +592,8 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
         try {
           await writeEndedSessionsFileContent(
-            client, userId, endedSessionsFilePath, existingEndedSessions, newEndedSessions, logger,
+            client, userId, endedSessionsFilePath,
+            existingEndedSessions, newEndedSessions, logger,
           );
         } catch (err) {
           logger.warn("Error occurred in writing ended sessions. It will be executed again on the next request.", err);
