@@ -1,5 +1,22 @@
 # @scow/portal-server
 
+## 1.9.8
+
+### Patch Changes
+
+- 3195c7a: HPC 如果有因为延时而不能立即返回的正在运行的应用，再次获取时在 ended_sessions.json 文件中忽略他们
+- 6f77b4e: 文件管理新增软链接处理，并增加不同文件类型的 icon
+- Updated dependencies [6f77b4e]
+- Updated dependencies [6f77b4e]
+  - @scow/config@1.11.2
+  - @scow/scowd-protos@0.3.2
+  - @scow/lib-scow-resource@0.2.16
+  - @scow/lib-server@1.4.7
+  - @scow/protos@1.0.32
+  - @scow/lib-scowd@1.2.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.30
+
 ## 1.9.7
 
 ## 1.9.6

@@ -1,5 +1,11 @@
 # @scow/grpc-api
 
+## 1.26.0
+
+### Minor Changes
+
+- 6f77b4e: FileType 类型新增软链接，并将其从 FileInfo 中移动到外层
+
 ## 1.25.0
 
 ### Minor Changes

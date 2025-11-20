@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.18
+
+### Patch Changes
+
+- 6f77b4e: 文件管理新增软链接处理，并增加不同文件类型的 icon
+
 ## 1.4.17
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-operation-log",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "description": "",
   "private": true,
   "main": "build/index.js",

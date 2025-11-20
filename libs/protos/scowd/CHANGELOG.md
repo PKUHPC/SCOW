@@ -1,5 +1,11 @@
 # @scow/scowd-protos
 
+## 0.3.2
+
+### Patch Changes
+
+- 6f77b4e: 文件管理新增软链接处理，并增加不同文件类型的 icon
+
 ## 0.3.1
 
 ### Patch Changes

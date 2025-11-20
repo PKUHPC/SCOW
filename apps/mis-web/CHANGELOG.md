@@ -1,5 +1,23 @@
 # @scow/mis-web
 
+## 1.9.8
+
+### Patch Changes
+
+- 813777b: 修改部分语言切换时国际化文本不生效的问题
+- 2ff4aed: 删除 AI 作业状态用于提示的 popover, 增加部分状态颜色, AI 异常作业状态增加国际化显示
+- Updated dependencies [6f77b4e]
+- Updated dependencies [2ff4aed]
+- Updated dependencies [6f77b4e]
+- Updated dependencies [6f77b4e]
+  - @scow/config@1.11.2
+  - @scow/lib-web@1.5.7
+  - @scow/lib-notification@1.0.17
+  - @scow/lib-operation-log@2.2.7
+  - @scow/lib-scow-resource@0.2.16
+  - @scow/protos@1.0.32
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.7
 
 ## 1.9.6

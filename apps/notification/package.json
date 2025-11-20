@@ -1,6 +1,6 @@
 {
   "name": "@scow/notification",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "private": true,
   "files": [
     ".next",
@@ -32,7 +32,6 @@
     "@connectrpc/connect-node": "2.1.0",
     "@connectrpc/connect-query": "2.2.0",
     "@connectrpc/connect-web": "2.1.0",
-
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@grpc/grpc-js": "1.12.5",
     "@mikro-orm/cli": "6.4.3",
