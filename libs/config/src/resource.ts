@@ -15,7 +15,7 @@ import { Static, Type } from "@sinclair/typebox";
 
 import { DEFAULT_CONFIG_BASE_PATH } from "./constants";
 
-export const resourceConfigSchema = Type.Object({
+export const ResourceConfigSchema = Type.Object({
   db: Type.Object({
     host: Type.String({ description: "数据库地址" }),
     port: Type.Integer({ description: "数据库端口" }),
@@ -37,11 +37,11 @@ export const resourceConfigSchema = Type.Object({
 
 const RESOURCE_CONFIG_NAME = "resource/config";
 
-export type resourceConfigSchema = Static<typeof resourceConfigSchema>;
+export type ResourceConfigSchema = Static<typeof ResourceConfigSchema>;
 
-export const getResourceConfig: GetConfigFn<resourceConfigSchema> = (baseConfigPath) => {
+export const getResourceConfig: GetConfigFn<ResourceConfigSchema> = (baseConfigPath) => {
   const config =
-    getConfigFromFile(resourceConfigSchema, RESOURCE_CONFIG_NAME, baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH);
+    getConfigFromFile(ResourceConfigSchema, RESOURCE_CONFIG_NAME, baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH);
 
   return config;
 };

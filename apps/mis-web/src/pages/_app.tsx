@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useAsync } from "react-async";
 import { createStore, StoreProvider, useStore } from "simstate";
 import { api } from "src/apis";
-import { ServerErrorPage } from "src/components/errorPages/ServerErrorPage";
+import { SystemInitialErrorPage } from "src/components/errorPages/SystemInitialErrorPage";
 import { Provider, useI18n, useI18nTranslate } from "src/i18n";
 import en from "src/i18n/en";
 import zh_cn from "src/i18n/zh_cn";
@@ -163,7 +163,7 @@ function MyAppLoader(appProps: AppProps) {
   }
 
   if (!data) {
-    return <ServerErrorPage />;
+    return <SystemInitialErrorPage />;
   }
 
   return <MyApp appProps={appProps} extra={data} />;

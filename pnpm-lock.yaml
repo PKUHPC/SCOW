@@ -1845,15 +1845,6 @@ importers:
       '@ddadaal/tsgrpc-client':
         specifier: 0.17.8
         version: 0.17.8(@grpc/grpc-js@1.12.5)
-      '@ddadaal/tsgrpc-common':
-        specifier: 0.2.6
-        version: 0.2.6
-      '@ddadaal/tsgrpc-server':
-        specifier: 0.19.6
-        version: 0.19.6(@grpc/grpc-js@1.12.5)
-      '@grpc/grpc-js':
-        specifier: 1.12.5
-        version: 1.12.5
       '@mikro-orm/core':
         specifier: 6.4.3
         version: 6.4.3
@@ -2406,6 +2397,9 @@ importers:
       '@scow/scow-resource-protos':
         specifier: workspace:*
         version: link:../protos/scow-resource
+      pino:
+        specifier: 9.6.0
+        version: 9.6.0
       ts-log:
         specifier: 2.2.7
         version: 2.2.7

@@ -108,7 +108,8 @@ export async function getScowActivatedClusterPartitions(
 
   if (errors.length > 0) {
     const errorDetails = errors.map((error) => {
-      return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
+      return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.message
+        || error?.reason.details || error?.reason}`;
     }).join("; ");
     logger.warn(`Failed to get cluster partitions for some clusters: ${errorDetails}`);
   }

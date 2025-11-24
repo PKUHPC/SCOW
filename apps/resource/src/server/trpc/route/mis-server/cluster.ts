@@ -167,7 +167,6 @@ export const currentClustersPartitionsInfo = authProcedure
         const currentClusterIds = currentClusters.map((c) => c.id);
 
         const clusterPartitions: ClusterPartition[] = [];
-
         const clustersUtil = await getClusterUtils();
         const results =
           await Promise.allSettled(currentClusterIds.map(async (clusterId) => {
@@ -197,7 +196,8 @@ export const currentClustersPartitionsInfo = authProcedure
 
         if (errors.length > 0) {
           const errorDetails = errors.map((error) => {
-            return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
+            return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.message
+              || error?.reason.details || error?.reason}`;
           }).join("; ");
           logger.warn(`Failed to get cluster partitions for some clusters: ${errorDetails}`);
         }

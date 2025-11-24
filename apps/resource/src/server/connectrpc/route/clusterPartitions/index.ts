@@ -34,7 +34,6 @@ export default (router: ConnectRouter) => {
      * @returns
      */
     async getAccountsAssignedClusterIds(request: GetAccountsAssignedClusterIdsRequest, ctx) {
-
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const currentClusterIds = await getScowActivatedClusterIds().catch(() => {
         logger.warn("No available clusters when querying scow-resource.");
@@ -96,7 +95,6 @@ export default (router: ConnectRouter) => {
      */
     async getAccountsAssignedClustersAndPartitions(request: GetAccountsAssignedClustersAndPartitionsRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
-
       const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
         logger.warn("No available cluster partitions when querying scow-resource.");
         return {};

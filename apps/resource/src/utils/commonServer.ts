@@ -222,61 +222,64 @@ export async function assignCreatedAccount(
   Promise<boolean> {
 
   const em = await forkEntityManager();
+  let foundDefaultClusterIds: string[] = [];
 
-  // 同名租户账户理论上无法重复创建
-  // 确认同名租户下账户是否已存在授权集群和分区，如果存在直接删除重新写入
-  const existedClusters = await em.find(AccountClusterRule, { accountName, tenantName });
-  if (existedClusters.length > 0) {
-    const existedClusterIds = existedClusters.map((item) => (item.clusterId)).join(",");
-    logger.info(`Account ${accountName} in tenant ${tenantName} already assigned to clusters: ${existedClusterIds}.`
+  await em.transactional(async (em) => {
+    // 同名租户账户理论上无法重复创建
+    // 确认同名租户下账户是否已存在授权集群和分区，如果存在直接删除重新写入
+    const existedClusters = await em.find(AccountClusterRule, { accountName, tenantName });
+    if (existedClusters.length > 0) {
+      const existedClusterIds = existedClusters.map((item) => (item.clusterId)).join(",");
+      logger.info(`Account ${accountName} in tenant ${tenantName} already assigned to clusters: ${existedClusterIds}.`
       + "They will be removed during re-assign.");
-    await em.removeAndFlush(existedClusters);
-  }
-  const existedPartitions = await em.find(AccountPartitionRule, { accountName, tenantName });
-  if (existedPartitions.length > 0) {
-    const existedPartitionNames = existedPartitions.map((item) => (item.partition)).join(",");
-    logger.info(
-      `Account ${accountName} in tenant ${tenantName} already assigned to partitions: ${existedPartitionNames}.`
+      await em.removeAndFlush(existedClusters);
+    }
+    const existedPartitions = await em.find(AccountPartitionRule, { accountName, tenantName });
+    if (existedPartitions.length > 0) {
+      const existedPartitionNames = existedPartitions.map((item) => (item.partition)).join(",");
+      logger.info(
+        `Account ${accountName} in tenant ${tenantName} already assigned to partitions: ${existedPartitionNames}.`
       + "They will be removed during re-assign.");
-    await em.removeAndFlush(existedPartitions);
-  }
+      await em.removeAndFlush(existedPartitions);
+    }
 
-  const currentClusterIds = Object.keys(currentClusterPartitions);
+    const currentClusterIds = Object.keys(currentClusterPartitions);
 
-  // 获取租户下设置的账户默认授权的集群和分区
-  const foundDefaultClusters = await em.find(TenantClusterRule,
-    { tenantName,
-      isAccountDefaultCluster: true,
+    // 获取租户下设置的账户默认授权的集群和分区
+    const foundDefaultClusters = await em.find(TenantClusterRule,
+      { tenantName,
+        isAccountDefaultCluster: true,
+        clusterId: { $in: currentClusterIds },
+      });
+    const foundDefaultPartitions = await em.find(TenantPartitionRule, {
+      tenantName,
+      isAccountDefaultPartition: true,
       clusterId: { $in: currentClusterIds },
     });
-  const foundDefaultPartitions = await em.find(TenantPartitionRule, {
-    tenantName,
-    isAccountDefaultPartition: true,
-    clusterId: { $in: currentClusterIds },
-  });
-  const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundDefaultPartitions);
+    const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundDefaultPartitions);
 
-  const foundDefaultClusterIds = foundDefaultClusters.map((item) => (item.clusterId));
-  foundDefaultClusterIds.forEach((clusterId) => {
-    const accountCluster = new AccountClusterRule({
-      accountName,
-      tenantName,
-      clusterId,
+    foundDefaultClusterIds = foundDefaultClusters.map((item) => (item.clusterId));
+    foundDefaultClusterIds.forEach((clusterId) => {
+      const accountCluster = new AccountClusterRule({
+        accountName,
+        tenantName,
+        clusterId,
+      });
+      em.persist(accountCluster);
     });
-    em.persist(accountCluster);
-  });
 
-  filteredPartitionsResult.forEach((item) => {
-    const accountPartition = new AccountPartitionRule({
-      accountName,
-      tenantName,
-      clusterId: item.clusterId,
-      partition: item.partition,
+    filteredPartitionsResult.forEach((item) => {
+      const accountPartition = new AccountPartitionRule({
+        accountName,
+        tenantName,
+        clusterId: item.clusterId,
+        partition: item.partition,
+      });
+      em.persist(accountPartition);
     });
-    em.persist(accountPartition);
-  });
 
-  await em.flush();
+    await em.flush();
+  });
 
   // 通知账户授权集群数据
   await callHook("accountAssignedToClusters",

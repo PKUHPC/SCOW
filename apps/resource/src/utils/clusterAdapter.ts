@@ -1,5 +1,4 @@
-import { ServiceError } from "@ddadaal/tsgrpc-common";
-import { status } from "@grpc/grpc-js";
+import { Code, ConnectError } from "@connectrpc/connect";
 import {
   createAdapterCertificates, getSchedulerAdapterClient, SchedulerAdapterClient,
 } from "@scow/lib-scheduler-adapter";
@@ -36,6 +35,8 @@ export const ADAPTER_CALL_ON_ONE_ERROR = "ADAPTER_CALL_ON_ONE_ERROR";
 
 export const certificates = createAdapterCertificates(config);
 
+// 单独调用某适配器接口，或统一调用所有调度器适配器接口
+// 在资源管理服务中错误将会以Connect Error形式抛出
 export async function getClusterUtils() {
 
   const configClusters = await getScowClusterConfigs();
@@ -77,6 +78,7 @@ export async function getClusterUtils() {
       logger.info("Calling actions on cluster " + cluster);
 
       return await call(client).catch((e) => {
+
         logger.error("Cluster ops fails at %o", e);
 
         const errorDetail = e instanceof Error ? e : JSON.stringify(e);
@@ -87,19 +89,14 @@ export async function getClusterUtils() {
           details: errorDetail,
         }];
 
-        // 统一错误处理
-        if (e instanceof Error) {
-          throw new ServiceError({
-            code: status.INTERNAL,
-            details: reason,
-            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR,
-              { clusterErrors: JSON.stringify(clusterErrorDetails) }),
-          });
-          // 如果是已经封装过的grpc error, 直接抛出错误
-        } else {
-          throw e;
-        }
-
+        // 为兼容TRPC和ConnectRpc调用，扔出ConnectError
+        throw new ConnectError(
+          reason,
+          Code.Internal,
+          scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR, {
+            clusterErrors: JSON.stringify(clusterErrorDetails),
+          }),
+        );
       });
     }) as CallOnOne,
 
@@ -142,11 +139,14 @@ export async function getClusterUtils() {
           details: x.error,
         }));
 
-        throw new ServiceError({
-          code: status.INTERNAL,
-          details: reason,
-          metadata: scowErrorMetadata(CLUSTEROPS_ERROR_CODE, { clusterErrors: JSON.stringify(clusterErrorDetails) }),
-        });
+        // 为兼容TRPC和ConnectRpc调用，扔出ConnectError
+        throw new ConnectError(
+          reason,
+          Code.Internal,
+          scowErrorMetadata(CLUSTEROPS_ERROR_CODE, {
+            clusterErrors: JSON.stringify(clusterErrorDetails),
+          }),
+        );
       }
 
       return results;

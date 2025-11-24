@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
@@ -32,7 +20,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useAsync } from "react-async";
 import { createStore, StoreProvider, useStore } from "simstate";
 import { api } from "src/apis";
-import { ServerErrorPage } from "src/components/errorPages/ServerErrorPage";
+import { SystemInitialErrorPage } from "src/components/errorPages/SystemInitialErrorPage";
 import { Provider, useI18n, useI18nTranslate } from "src/i18n";
 import en from "src/i18n/en";
 import zh_cn from "src/i18n/zh_cn";
@@ -183,7 +171,7 @@ function MyAppLoader(appProps: AppProps) {
   }
 
   if (!data) {
-    return <ServerErrorPage />;
+    return <SystemInitialErrorPage />;
   }
 
   return <MyApp appProps={appProps} extra={data} />;

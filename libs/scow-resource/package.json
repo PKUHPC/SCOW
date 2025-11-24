@@ -27,6 +27,7 @@
     "@grpc/grpc-js": "1.12.5",
     "@scow/config": "workspace:*",
     "@scow/scow-resource-protos": "workspace:*",
+    "pino": "9.6.0",
     "ts-log": "2.2.7"
   },
   "volta": {
