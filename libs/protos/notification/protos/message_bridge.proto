@@ -54,7 +54,7 @@ message SendMessageResponse {
 }
 
 message BatchSendMessagesRequest {
-
+  repeated BridgeMessage messages = 1;
 }
 
 message BatchSendMessagesResponse {

@@ -1,9 +1,11 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { Knex } from "@mikro-orm/mysql";
+import { checkScowApiToken } from "@scow/lib-server";
 import { ReadStatus } from "@scow/notification-protos/build/common_pb";
 import { MessageService } from "@scow/notification-protos/build/message_pb";
 import { PlatformRole } from "src/models/user";
+import { commonConfig } from "src/server/config/common";
 import { notificationConfig } from "src/server/config/notification";
 import { AdminMessageConfig } from "src/server/entities/AdminMessageConfig";
 import { Message, SenderType } from "src/server/entities/Message";
@@ -99,14 +101,16 @@ export default (router: ConnectRouter) => {
       return {};
     },
 
-    async listMessages(req, context) {
+    async listMessages(req, ctx) {
       const { userId, category, noticeType, messageType, readStatus, page, pageSize } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
 
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
       }
+
 
       const em = await forkEntityManager();
       const knex = em.getConnection().getKnex();
@@ -248,10 +252,12 @@ export default (router: ConnectRouter) => {
       };
     },
 
-    async markMessageRead(req, context) {
+    async markMessageRead(req, ctx) {
       const { userId, messageId } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
       }
@@ -290,10 +296,12 @@ export default (router: ConnectRouter) => {
       };
     },
 
-    async markAllMessagesRead(req, context) {
+    async markAllMessagesRead(req, ctx) {
       const { userId } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
 
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
@@ -384,10 +392,12 @@ export default (router: ConnectRouter) => {
       return {};
     },
 
-    async deleteMessages(req, context) {
+    async deleteMessages(req, ctx) {
       const { userId, messageIds } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
 
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
@@ -430,11 +440,13 @@ export default (router: ConnectRouter) => {
       return {};
     },
 
-    async deleteAllReadMessages(req, context) {
+    async deleteAllReadMessages(req, ctx) {
 
       const { userId } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
 
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);

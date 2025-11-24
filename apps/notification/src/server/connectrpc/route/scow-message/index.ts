@@ -182,10 +182,12 @@ export default (router: ConnectRouter) => {
       return {};
     },
 
-    async listMessages(req, context) {
+    async listMessages(req, ctx) {
       const { userId, category, noticeType, messageType, readStatus, page, pageSize } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
 
       if (!user) {
         throw new ConnectError("user does not exists.", Code.InvalidArgument);
@@ -331,10 +333,12 @@ export default (router: ConnectRouter) => {
       };
     },
 
-    async markMessageRead(req, context) {
+    async markMessageRead(req, ctx) {
       const { userId, messageId } = req;
 
-      const user = userId ? await getUser(userId, logger) : await checkAuth(context);
+      if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const user = userId ? await getUser(userId, logger) : await checkAuth(ctx);
       if (!user) {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
       }

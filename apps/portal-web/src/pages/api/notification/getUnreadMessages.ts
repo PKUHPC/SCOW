@@ -61,7 +61,7 @@ export const GetUnreadMessagesSchema = typeboxRouteSchema({
     }),
 
     500: Type.Object({ code: Type.Literal("INTERNAL_ERROR") }),
-
+    503: Type.Object({ code: Type.Literal("SERVICE_TEMPORARILY_UNAVAILABLE") }),
   },
 });
 
@@ -77,7 +77,11 @@ export default route(GetUnreadMessagesSchema, async (req, res) => {
     ? getNotificationNodeClient(publicConfig.NOTIF_ADDRESS) : undefined;
 
   if (!notifClient) {
-    return;
+    console.error("Notification service unavailable", {
+      notifEnabled: publicConfig.NOTIF_ENABLED,
+      notifAddress: publicConfig.NOTIF_ADDRESS,
+    });
+    return { 503: { code: "SERVICE_TEMPORARILY_UNAVAILABLE" as const } };
   }
 
   const { messageType, page, pageSize } = req.query;
@@ -91,7 +95,8 @@ export default route(GetUnreadMessagesSchema, async (req, res) => {
         totalCount: Number(res.totalCount),
         messages: res.messages.map((msg) => ({ ...msg, id: Number(msg.id) })),
       } } };
-    }).catch(() => {
+    }).catch((e) => {
+      console.error("Error fetching unread messages", e);
       return { 500: { code: "INTERNAL_ERROR" as const } };
     });
 });

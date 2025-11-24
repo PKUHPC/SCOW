@@ -29,13 +29,9 @@ export const NotificationCard: React.FC = () => {
 
   const currentLanguage = useI18n().currentLanguage;
 
-  const { data: configData } = trpc.config.publicConfig.useQuery();
-
   const { data, isLoading } = trpc.notification.getUnreadMessages.useQuery({
-    notifAddress: configData?.NOTIF_ADDRESS || "",
     page: 1, pageSize: 10,
   });
-
 
   const getMsgContents = (): RenderContent[] => {
     try {

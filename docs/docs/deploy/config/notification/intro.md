@@ -51,9 +51,8 @@ notification:
   # 非必填，默认为 notification
   name: notif
   # 消息系统部署的url，在内网能访问即可
-  # 非必填，默认为 http://notification:3000
-  # 若在install.yaml中配置了最外层的basePath不为"/"，需要在此处的your-server-name2后也加上basePath
-  address: http://your-server-name2/notif
+  # 必填，需根据 install.yaml 中配置的 scow base path 和 notification 的 base path 进行修改
+  address: http://notification:3000/{scow base path}/{notification base path}
 ```
 
 ## 配置消息系统相关功能

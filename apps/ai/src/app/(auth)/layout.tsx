@@ -42,7 +42,6 @@ const useCurrentClusterIdsQuery = () => {
 
 const useUnreadMessagesQuery = () => {
   return trpc.notification.getUnreadMessages.useQuery({
-    notifAddress: useConfigQuery().data?.NOTIF_ADDRESS || "",
     messageType: AdminMessageType.SystemNotification,
   });
 };

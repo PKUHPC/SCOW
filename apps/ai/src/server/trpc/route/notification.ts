@@ -8,6 +8,7 @@ import { commonConfig } from "src/server/config/common";
 import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
+import { logger } from "src/server/utils/logger";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -58,7 +59,6 @@ export const notification = router({
       },
     })
     .input(z.object({
-      notifAddress: z.string(),
       messageType: z.string().optional(),
       page: z.number().optional(),
       pageSize: z.number().optional(),
@@ -66,8 +66,10 @@ export const notification = router({
     .output(
       z.object({ results: UnreadMessageSchema.optional() }),
     )
-    .query(async ({ input, ctx: { req, res } }) => {
-      const { notifAddress, messageType, page, pageSize } = input;
+    .query(async ({ input, ctx: { user, req, res } }) => {
+      const { messageType, page, pageSize } = input;
+
+      const subLogger = logger.child({ user: user.identityId });
 
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
@@ -76,17 +78,22 @@ export const notification = router({
         });
       }
 
-      if (!commonConfig?.notification?.enabled || !commonConfig?.notification?.address) {
-        return {};
+      const notifClient = commonConfig?.notification?.enabled && commonConfig?.notification?.address
+        ? getNotificationNodeClient(commonConfig.notification.address)
+        : undefined;
+
+      if (!notifClient) {
+        subLogger.error("Notification service unavailable", {
+          notifEnabled: commonConfig?.notification?.enabled,
+          notifAddress: commonConfig?.notification?.address,
+        });
+        throw new TRPCError({
+          code: "NOT_IMPLEMENTED",
+          message: "SERVICE_TEMPORARILY_UNAVAILABLE",
+        });
       }
 
       try {
-        const notifClient = notifAddress ? getNotificationNodeClient(notifAddress) : null;
-
-        if (!notifClient) {
-          return {};
-        }
-
         const response = await notifClient.scowMessage.listMessages({
           messageType,
           page,
@@ -110,6 +117,7 @@ export const notification = router({
           },
         };
       } catch (error) {
+        subLogger.error(error, "Error fetching unread messages");
         const ex = error as ServiceError;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -134,12 +142,22 @@ export const notification = router({
     .mutation(async ({ input: { messageId }, ctx }) => {
       const { user, req } = ctx;
 
-      const notifClient = commonConfig?.notification?.enabled && commonConfig?.notification?.address
-        ? getNotificationNodeClient(commonConfig.notification.address)
+      const subLogger = logger.child({ user: user.identityId });
+
+      const notifConfig = commonConfig?.notification;
+      const notifClient = notifConfig?.enabled && notifConfig?.address
+        ? getNotificationNodeClient(notifConfig.address)
         : undefined;
 
       if (!notifClient) {
-        return;
+        subLogger.error("Notification service unavailable", {
+          notifEnabled: notifConfig?.enabled,
+          notifAddress: notifConfig?.address,
+        });
+        throw new TRPCError({
+          code: "NOT_IMPLEMENTED",
+          message: "SERVICE_TEMPORARILY_UNAVAILABLE",
+        });
       }
 
       const logInfo = {
@@ -155,7 +173,8 @@ export const notification = router({
       }).then(async () => {
         await callLog(logInfo, OperationResult.SUCCESS);
         return;
-      }).catch(async () => {
+      }).catch(async (e) => {
+        subLogger.error(e, "Error marking message %d read", messageId);
         await callLog(logInfo, OperationResult.FAIL);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

@@ -52,7 +52,7 @@ passwordPattern:
 #   # 非必填，默认为 notification
 #   enabled: true
 #   # 消息系统部署的url，在内网能访问即可
-#   # 非必填，默认为 http://notification:3000
+#   # 必填，需根据 install.yaml 中配置的 scow base path 和 notification 的 base path 进行修改
 #   address: http://localhost:6004
 # SCOW API配置
 # scowApi:

@@ -151,8 +151,7 @@ export async function systemBatchSendMsgsToBridge(em: SqlEntityManager, infos: S
 
   // 按批次发送消息
   for (let i = 0; i < messages.length; i += BATCH_SIZE) {
-    // TODO 这个没实现吗？
-    messages.slice(i, i + BATCH_SIZE); // 获取当前批次的消息
-    await client.messageBridge.batchSendMessages({});
+    const batch = messages.slice(i, i + BATCH_SIZE); // 获取当前批次的消息
+    await client.messageBridge.batchSendMessages({ messages: batch });
   }
 }
