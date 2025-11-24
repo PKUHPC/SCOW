@@ -194,6 +194,14 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     addToDefaultApps: t(pTypes("addToDefaultApps")),
     removeFromDefaultApps: t(pTypes("removeFromDefaultApps")),
     syncTenantUsersStorageUsage: t(pTypes("syncTenantUsersStorageUsage")),
+    authorizeCluster: t(pTypes("authorizeCluster")),
+    unauthorizeCluster:  t(pTypes("unauthorizeCluster")),
+    authorizePartition:  t(pTypes("authorizePartition")),
+    unauthorizePartition: t(pTypes("unauthorizePartition")),
+    addToDefaultClusters: t(pTypes("addToDefaultClusters")),
+    removeFromDefaultClusters: t(pTypes("removeFromDefaultClusters")),
+    addToDefaultPartitions: t(pTypes("addToDefaultPartitions")),
+    removeFromDefaultPartitions: t(pTypes("removeFromDefaultPartitions")),
   };
 
 };
@@ -702,6 +710,40 @@ export const getOperationDetail = (
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("updateDefaultApp"),[
           clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].tenantName,
+        ]);
+      }
+      case "authorizeCluster":
+      case "unauthorizeCluster":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return operationEvent[logEvent].target?.$case === "accountName" ? t(pDetails("accountClusterAuthorizationLog"),[
+          clusterName, operationEvent[logEvent].target.accountName,
+        ]) : t(pDetails("tenantClusterAuthorizationLog"), [clusterName, operationEvent[logEvent].target.tenantName]);
+      }
+      case "authorizePartition":
+      case "unauthorizePartition":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return operationEvent[logEvent].target?.$case === "accountName"
+          ? t(pDetails("accountPartitionAuthorizationLog"),[
+            clusterName, operationEvent[logEvent].partitionName, operationEvent[logEvent].target.accountName,
+          ]) : t(pDetails("tenantPartitionAuthorizationLog"), [clusterName, operationEvent[logEvent].partitionName,
+            operationEvent[logEvent].target.tenantName]);
+      }
+      case "addToDefaultClusters":
+      case "removeFromDefaultClusters":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("updateDefaultCluster"),[
+          clusterName, operationEvent[logEvent].tenantName,
+        ]);
+      }
+      case "addToDefaultPartitions":
+      case "removeFromDefaultPartitions":{
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("updateDefaultPartition"),[
+          clusterName, operationEvent[logEvent].partitionName, operationEvent[logEvent].tenantName,
         ]);
       }
       default:

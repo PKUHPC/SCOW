@@ -848,6 +848,66 @@ message RemoveFromDefaultApps {
   string tenant_name = 3;
 }
 
+// Operation Log Message For Resource Management:
+// 1.AuthorizeCluster 2.UnauthorizeCluster 3.AuthorizePartition
+// 4.UnauthorizePartition 5.AddToDefaultClusters 6.RemoveFromDefaultClusters
+// 7.AddToDefaultPartitions 8.RemoveFromDefaultPartitions
+message AuthorizeCluster {
+  string cluster_id = 1;
+  oneof target {
+    string account_name = 2;
+    string tenant_name = 3;
+  }
+}
+
+message UnauthorizeCluster {
+  string cluster_id = 1;
+  oneof target {
+    string account_name = 2;
+    string tenant_name = 3;
+  }
+}
+
+message AuthorizePartition {
+  string cluster_id = 1;
+  string partition_name = 2;
+  oneof target {
+    string account_name = 3;
+    string tenant_name = 4;
+  }
+}
+
+message UnauthorizePartition {
+  string cluster_id = 1;
+  string partition_name = 2;
+  oneof target {
+    string account_name = 3;
+    string tenant_name = 4;
+  }
+}
+
+message AddToDefaultClusters {
+  string cluster_id = 1;
+  string tenant_name = 2;
+}
+
+message RemoveFromDefaultClusters {
+  string cluster_id = 1;
+  string tenant_name = 2;
+}
+
+message AddToDefaultPartitions {
+  string cluster_id = 1;
+  string partition_name = 2;
+  string tenant_name = 3;
+}
+
+message RemoveFromDefaultPartitions {
+  string cluster_id = 1;
+  string partition_name = 2;
+  string tenant_name = 3;
+}
+
 // INVALID_ARGUMENT: Custom event type name not match with exist type name.
 message CreateOperationLogRequest {
   string operator_user_id = 1;
@@ -973,6 +1033,14 @@ message CreateOperationLogRequest {
     CreateDevHost create_dev_host = 120;
     BatchSetTenantUsersQuota batch_set_tenant_users_quota = 121;
     SyncTenantUsersStorageUsage sync_tenant_users_storage_usage = 122;
+    AuthorizeCluster authorize_cluster = 123;
+    UnauthorizeCluster unauthorize_cluster = 124;
+    AuthorizePartition authorize_partition = 125;
+    UnauthorizePartition unauthorize_partition = 126;
+    AddToDefaultClusters add_to_default_clusters = 127;
+    RemoveFromDefaultClusters remove_from_default_clusters = 128;
+    AddToDefaultPartitions add_to_default_partitions = 129;
+    RemoveFromDefaultPartitions remove_from_default_partitions = 130;
   }
 }
 
@@ -1103,6 +1171,14 @@ message OperationLog {
     CreateDevHost create_dev_host = 122;
     BatchSetTenantUsersQuota batch_set_tenant_users_quota = 123;
     SyncTenantUsersStorageUsage sync_tenant_users_storage_usage = 124;
+    AuthorizeCluster authorize_cluster = 125;
+    UnauthorizeCluster unauthorize_cluster = 126;
+    AuthorizePartition authorize_partition = 127;
+    UnauthorizePartition unauthorize_partition = 128;
+    AddToDefaultClusters add_to_default_clusters = 129;
+    RemoveFromDefaultClusters remove_from_default_clusters = 130;
+    AddToDefaultPartitions add_to_default_partitions = 131;
+    RemoveFromDefaultPartitions remove_from_default_partitions = 132;
   }
 }
 

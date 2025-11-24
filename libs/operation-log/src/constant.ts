@@ -131,4 +131,12 @@ export const OperationType: OperationTypeEnum = {
   batchSetTenantUsersQuota: "batchSetTenantUsersQuota",
   syncTenantUsersStorageUsage: "syncTenantUsersStorageUsage",
   createDevHost: "createDevHost",
+  authorizeCluster: "authorizeCluster",
+  unauthorizeCluster: "unauthorizeCluster",
+  authorizePartition: "authorizePartition",
+  unauthorizePartition: "unauthorizePartition",
+  addToDefaultClusters: "addToDefaultClusters",
+  removeFromDefaultClusters: "removeFromDefaultClusters",
+  addToDefaultPartitions: "addToDefaultPartitions",
+  removeFromDefaultPartitions: "removeFromDefaultPartitions",
 };

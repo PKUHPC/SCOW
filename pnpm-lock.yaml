@@ -1869,6 +1869,9 @@ importers:
       '@scow/lib-hook':
         specifier: workspace:*
         version: link:../../libs/hook
+      '@scow/lib-operation-log':
+        specifier: workspace:*
+        version: link:../../libs/operation-log
       '@scow/lib-scheduler-adapter':
         specifier: workspace:*
         version: link:../../libs/scheduler-adapter

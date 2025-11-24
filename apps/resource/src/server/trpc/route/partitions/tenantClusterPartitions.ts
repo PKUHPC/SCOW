@@ -1,3 +1,4 @@
+import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
@@ -13,9 +14,11 @@ import { assignTenantAccountsPartitionThroughCluster,
 import { checkClusterIdAvailable, checkClusterPartitionAvailable, checkSyncRunning } from "src/utils/auth/utils";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
+import { parseIp } from "src/utils/parse";
 import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
+import { callLog } from "../../operationLog";
 import { mock,MOCK_ALL_TEN_ASSIGNED_CLUSTERS,MOCK_ALL_TEN_ASSIGNED_INFO,MOCK_ALL_TEN_ASSIGNED_PARTITIONS,
   MOCK_TENANT_ACCOUNT_DEFAULT_CLUSTERS } from "../mock";
 
@@ -159,6 +162,36 @@ export const assignTenantCluster = adminAuthProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
+  .use(async ({ input:{ clusterId, tenantName }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.authorizeCluster,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        target: { $case: "tenantName", tenantName },
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            target: { $case: "tenantName", tenantName },
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
@@ -203,6 +236,36 @@ export const unAssignTenantCluster = adminAuthProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
+  .use(async ({ input:{ clusterId, tenantName }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.unauthorizeCluster,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        target: { $case: "tenantName", tenantName },
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            target: { $case: "tenantName", tenantName },
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
@@ -337,6 +400,38 @@ export const assignTenantPartition = adminAuthProcedure
     partition: z.string(),
   }))
   .output(z.void())
+  .use(async ({ input:{ clusterId, tenantName, partition }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.authorizePartition,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        partitionName: partition,
+        target: { $case: "tenantName", tenantName },
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "tenantName", tenantName },
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
@@ -385,6 +480,38 @@ export const unAssignTenantPartition = adminAuthProcedure
     partition: z.string(),
   }))
   .output(z.void())
+  .use(async ({ input:{ clusterId, tenantName, partition }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.unauthorizePartition,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        partitionName: partition,
+        target: { $case: "tenantName", tenantName },
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "tenantName", tenantName },
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
@@ -594,6 +721,38 @@ export const addToAccountDefaultPartitions = adminAuthProcedure
   .output(z.object({
     failedAssignedAccounts: z.array(z.string()),
   }))
+  .use(async ({ input:{ clusterId, tenantName, partition }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.addToDefaultPartitions,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        partitionName: partition,
+        tenantName,
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            partitionName: partition,
+            tenantName,
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return { failedAssignedAccounts: []};
@@ -738,6 +897,38 @@ export const removeFromAccountDefaultPartitions = adminAuthProcedure
   .output(z.object({
     failedUnassignedAccounts: z.array(z.string()),
   }))
+  .use(async ({ input:{ clusterId, tenantName, partition }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.removeFromDefaultPartitions,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        partitionName: partition,
+        tenantName,
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            partitionName: partition,
+            tenantName,
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return { failedUnassignedAccounts: []};
@@ -825,6 +1016,36 @@ export const addToAccountDefaultClusters = adminAuthProcedure
     clusterId: z.string(),
   }))
   .output(z.void())
+  .use(async ({ input:{ clusterId, tenantName }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.addToDefaultClusters,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        tenantName,
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            tenantName,
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return;
@@ -911,6 +1132,36 @@ export const removeFromAccountDefaultClusters = adminAuthProcedure
   .output(z.object({
     failedUnassignedAccounts: z.array(z.string()),
   }))
+  .use(async ({ input:{ clusterId, tenantName }, ctx, next }) => {
+    const res = await next({ ctx });
+
+    const { user, req } = ctx;
+    const logInfo = {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.removeFromDefaultClusters,
+    };
+
+    if (res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:{
+        clusterId,
+        tenantName,
+      },
+      },
+      OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({ ...logInfo, operationTypePayload:
+          {
+            clusterId,
+            tenantName,
+          },
+      },
+      OperationResult.FAIL);
+    }
+    return res;
+  })
   .mutation(async ({ input }) => {
 
     if (USE_MOCK) return { failedUnassignedAccounts: []};
