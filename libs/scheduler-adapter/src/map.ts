@@ -16,7 +16,7 @@ import { JobInfo } from "@scow/scheduler-adapter-protos/build/protos/job";
 
 import { formatTime } from "./time";
 
-export const jobInfoToRunningjob = (jobInfo: JobInfo) => {
+export const jobInfoToRunningjob = (jobInfo: JobInfo): RunningJob => {
   return {
     jobId: jobInfo.jobId.toString(),
     partition: jobInfo.partition,
@@ -25,7 +25,7 @@ export const jobInfoToRunningjob = (jobInfo: JobInfo) => {
     state: jobInfo.state,
     runningTime: jobInfo.elapsedSeconds !== undefined ? formatTime(jobInfo.elapsedSeconds * 1000) : "",
     nodes: jobInfo.nodesReq.toString(),
-    nodesOrReason: jobInfo.state === "RUNNING" ? jobInfo.nodeList! : jobInfo.reason,
+    nodesOrReason: (jobInfo.state === "RUNNING" ? jobInfo.nodeList! : jobInfo.reason) ?? "",
     account: jobInfo.account,
     cores: jobInfo.cpusReq.toString(),
     gpus: jobInfo.gpusReq.toString(),
@@ -37,12 +37,12 @@ export const jobInfoToRunningjob = (jobInfo: JobInfo) => {
     memAlloc: jobInfo.memReqMb || 0,
     cpusAlloc: jobInfo.cpusAlloc || 0,
     nodesAlloc: jobInfo.nodesAlloc || 0,
-    gupsAlloc: jobInfo.gpusAlloc || 0,
+    gpusAlloc: jobInfo.gpusAlloc || 0,
     startTime: jobInfo.startTime,
     endTime: jobInfo.endTime,
     nodelist: jobInfo.nodeList,
     reason: jobInfo.reason,
-  } as RunningJob;
+  };
 };
 
 export const jobInfoToPortalJobInfo = (jobInfo: JobInfo) => {
@@ -60,7 +60,6 @@ export const jobInfoToPortalJobInfo = (jobInfo: JobInfo) => {
     submitTime: jobInfo.submitTime!,
     startTime: jobInfo.startTime,
     endTime: jobInfo.endTime,
-
     nodes: jobInfo.nodesReq,
     cores: jobInfo.cpusReq,
     gpus: jobInfo.gpusReq,
@@ -68,7 +67,7 @@ export const jobInfoToPortalJobInfo = (jobInfo: JobInfo) => {
     memAlloc: jobInfo.memReqMb || 0,
     cpusAlloc: jobInfo.cpusAlloc || 0,
     nodesAlloc: jobInfo.nodesAlloc || 0,
-    gupsAlloc: jobInfo.gpusAlloc || 0,
+    gpusAlloc: jobInfo.gpusAlloc || 0,
     nodelist: jobInfo.nodeList,
   } as PortalJobInfo;
 };
