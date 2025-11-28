@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
@@ -17,12 +5,14 @@ import { Static } from "@sinclair/typebox";
 import { App, Popover, Space, Table, Tag } from "antd";
 import { LinkProps } from "next/link";
 import React from "react";
+import { useStore } from "simstate";
 import { api } from "src/apis";
 import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { DisplayedUserState, UserRole, UserStateInAccount } from "src/models/User";
 import { SetJobChargeLimitLink } from "src/pageComponents/users/JobChargeLimitModal";
 import { type GetAccountUsersSchema } from "src/pages/api/users";
+import { UserStore } from "src/stores/UserStore";
 import { moneyToString } from "src/utils/money";
 
 interface Props {
@@ -41,6 +31,7 @@ export const UserTable: React.FC<Props> = ({
   data, isLoading, reload, accountName, canSetAdmin,
 }) => {
 
+  const { setUser } = useStore(UserStore);
   const t = useI18nTranslateToString();
 
   const DisplayedUserStateTexts = {
@@ -49,7 +40,6 @@ export const UserTable: React.FC<Props> = ({
     [DisplayedUserState.DISPLAYED_BLOCKED]: <Tag color="error">{t(p("blocked"))}</Tag>,
   };
 
-
   const roleTags = {
     [UserRole.OWNER]: <Tag color="gold">{t(pCommon("owner"))}</Tag>,
     [UserRole.ADMIN]: <Tag color="blue">{t(p("admin"))}</Tag>,
@@ -57,6 +47,42 @@ export const UserTable: React.FC<Props> = ({
   };
 
   const { message, modal } = App.useApp();
+
+  // 如果移出自己操作成功，更新当前用户的账户关系
+  const handleIfRemoveSelfFromAccount = (userId: string) => {
+    setUser((prev) => {
+      if (!prev || prev.identityId !== userId) return prev;
+      if (!prev.accountAffiliations.some((a) => a.accountName === accountName)) return prev;
+
+      return {
+        ...prev,
+        accountAffiliations: prev.accountAffiliations
+          .filter((a) => a.accountName !== accountName),
+      };
+    });
+  };
+
+  // 如果取消自己的管理员权限成功，更新当前用户的账户关系
+  const handleIfUnsetSelfAccountAdmin = (userId: string) => {
+    setUser((prev) => {
+      if (!prev || prev.identityId !== userId) return prev;
+      if (!prev.accountAffiliations
+        .some((a) => a.accountName === accountName && a.role === UserRole.ADMIN)) return prev;
+
+      const updatedAffiliations = prev.accountAffiliations.map((a) =>
+        a.accountName === accountName
+          ? {
+            ...a,
+            role: UserRole.USER,
+          }
+          : a,
+      );
+      return {
+        ...prev,
+        accountAffiliations: updatedAffiliations,
+      };
+    });
+  };
 
   return (
     <Table
@@ -194,6 +220,7 @@ export const UserTable: React.FC<Props> = ({
                           } })
                             .then(() => {
                               message.success(t(p("operateSuccess")));
+                              handleIfUnsetSelfAccountAdmin(r.userId);
                               reload();
                             });
                         },
@@ -266,6 +293,7 @@ export const UserTable: React.FC<Props> = ({
                       .then(() => {
                         message.destroy("removeUser");
                         message.success(t(p("removeSuccess")));
+                        handleIfRemoveSelfFromAccount(r.userId);
                         reload();
                       });
                   },
