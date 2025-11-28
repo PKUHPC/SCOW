@@ -49,6 +49,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
         id: Type.String(), name: ClusterNameI18nSchema })),
 
       initialSimpleClustersInfo: Type.Record(Type.String(), SimpleClusterSchema),
+      titleTag: Type.Optional(Type.String()),
     }),
   },
 });
@@ -67,6 +68,7 @@ export default route(GetAppInitialConfigSchema,
       clusterConfigs: {},
       initialActivatedClusters: {},
       initialSimpleClustersInfo: {},
+      titleTag: "",
     };
 
 
@@ -132,6 +134,8 @@ export default route(GetAppInitialConfigSchema,
     ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
 
     extra.initialLanguage = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+
+    extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
 
     return { 200: extra };
 

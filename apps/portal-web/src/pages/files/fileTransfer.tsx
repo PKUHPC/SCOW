@@ -24,6 +24,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterFileTable } from "src/pageComponents/filemanager/ClusterFileTable";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
+import { Head } from "src/utils/head";
 
 type FileInfoKey = React.Key;
 
@@ -104,6 +105,7 @@ export const FileTransferPage: NextPage = requireAuth(() => true)(() => {
 
   return (
     <>
+      <Head title={t(p("transferTitle"))} />
       <PageTitle titleText={t(p("transferTitle"))} />
       <Row justify="space-around" align="top">
         <Col span={11}>

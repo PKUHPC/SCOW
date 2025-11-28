@@ -142,6 +142,7 @@ const UiConfigSchema = z.object({
       hostnameMap: z.record(z.string(), z.string()).optional(),
       darkModeColor: z.string().optional(),
     }).optional(),
+    titleTag: z.string().optional(),
   }),
   defaultPrimaryColor: z.string().default(DEFAULT_PRIMARY_COLOR),
 

@@ -34,6 +34,9 @@ export const UiConfigSchema = Type.Object({
       { description: "根据域名(hostname，不包括port)不同，应用的主题色" })),
     darkModeColor: Type.Optional(Type.String({ description: "黑暗模式下主题色" })),
   })),
+
+  titleTag: Type.Optional(Type.String({ description: "网页标题后缀标签" })),
+
 });
 
 const UI_CONFIG_NAME = "ui";

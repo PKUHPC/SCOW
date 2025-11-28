@@ -8,6 +8,7 @@ import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, PieLabelRenderProps, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from "recharts";
+import { Head } from "src/components/head";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { EMPTY_STRING } from "src/models/common";
 import { formatDateTime, formatTime } from "src/utils/datetime";
@@ -285,6 +286,7 @@ export const JobDetailPage: NextPage = () => {
   return (
     <>
       <Container>
+        <Head title={t(p("jobDetail"))} />
         <a
           onClick={() => {
             router.push(join("/quantum/list"));

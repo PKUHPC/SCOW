@@ -8,7 +8,7 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { FileManager } from "src/app/(auth)/files/FileManager";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 
 export default function Page({ params }: { params: Promise<{
@@ -52,9 +52,10 @@ export default function Page({ params }: { params: Promise<{
 
   const i18nClusterName = getI18nConfigCurrentText(clusterObj?.name ?? cluster, i18n.currentLanguage.id);
 
+  useDocumentTitle(`${i18nClusterName} ${t(p("fileManage"))}`);
+
   return (
     <>
-      <Head title={`${i18nClusterName} ${t(p("fileManage"))}`} />
       {
         clusterObj ? (
           <FileManager

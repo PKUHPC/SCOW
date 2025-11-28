@@ -83,7 +83,10 @@ export const Profile: React.FC<Props> = ({
   return (
     <>
       <Container>
-        <Head title={getCurrentLangLibWebText(languageId, "userInfo") || ""} />
+        <Head
+          title={getCurrentLangLibWebText(languageId, "userInfo") || ""}
+          titleTag={publicConfig.UI_CONFIG?.titleTag}
+        />
         <TitleText>{getCurrentLangLibWebText(languageId, "userInfo")}</TitleText>
         <Part title>
           <Descriptions

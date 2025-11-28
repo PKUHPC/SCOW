@@ -19,6 +19,7 @@ import { ShellCardList } from "src/pageComponents/loginCluster/ShellCardList";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getLoginDesktopEnabled } from "src/utils/cluster";
 import { publicConfig, runtimeConfig } from "src/utils/config";
+import { Head } from "src/utils/head";
 import { styled } from "styled-components";
 
 interface Cluster {
@@ -95,6 +96,7 @@ export const LoginClusterPage: NextPage<Props> = requireAuth(() => true)(
 
     return (
       <Container>
+        <Head title={t("routes.loginCluster")} />
         <StyledCard>
           <StyledTabs
             activeKey={activeTab}

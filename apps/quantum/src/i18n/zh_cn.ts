@@ -158,6 +158,7 @@ export default {
   },
   page: {
     dashboard: {
+      title: "仪表盘",
       device: "运行设备",
       recentJob: "最近作业",
       quantum: "量子",

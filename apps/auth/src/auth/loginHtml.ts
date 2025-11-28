@@ -89,6 +89,7 @@ export async function serveLoginHtml(
     footerTextColor: authUiHostnameConfig?.footerTextColor || authUiDefaultConfig?.footerTextColor || "white",
     themeColor: (hostname && uiConfig.primaryColor?.hostnameMap?.[hostname])
       ?? uiConfig.primaryColor?.defaultColor ?? DEFAULT_PRIMARY_COLOR,
+    titleTag: uiConfig.titleTag || "- SCOW",
     errParamrs:errParamrs || {},
     ...captchaInfo,
     verifyCaptchaFail,

@@ -18,6 +18,7 @@ import { useStore } from "simstate";
 import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
 import { useI18n } from "src/i18n";
 import { UserStore } from "src/stores/UserStore";
+import { publicConfig } from "src/utils/config";
 
 export const ExtensionPage: NextPage = () => {
   const userStore = useStore(UserStore);
@@ -44,6 +45,7 @@ export const ExtensionPage: NextPage = () => {
       user={userStore.user}
       currentLanguageId={i18n.currentLanguage.id}
       NotFoundPageComponent={NotFoundPage}
+      titleTag={publicConfig?.UI_CONFIG?.titleTag}
     />
   );
 

@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import { use } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 import { styled } from "styled-components";
 
 const Container = styled.div`
@@ -68,9 +68,10 @@ export default function Page({ params }:
 
   const i18nClusterName = getI18nConfigCurrentText(clusterName, i18n.currentLanguage.id);
 
+  useDocumentTitle(`${clusterId}${t(p("terminal"))}`);
+
   return (
     <Container>
-      <Head title={`${clusterId}${t(p("terminal"))}`} />
       <Header>
         <h2>
           {`${t(p("user"))} ${user.identityId} ${t(p("connect"))} ${i18nClusterName} ${t(p("job"))} ${jobId}`}

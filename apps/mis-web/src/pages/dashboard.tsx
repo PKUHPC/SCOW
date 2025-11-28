@@ -11,7 +11,6 @@
  */
 
 import { moneyToNumber } from "@scow/lib-decimal";
-import { Head } from "@scow/lib-web/build/components/head";
 import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { Money } from "@scow/protos/build/common/money";
 import { AccountStatus } from "@scow/protos/build/server/user";
@@ -31,6 +30,7 @@ import { JobsSection } from "src/pageComponents/dashboard/JobsSection";
 import { getUserStatus, type GetUserStatusSchema } from "src/pages/api/dashboard/status";
 import { UserStore } from "src/stores/UserStore";
 import { ensureNotUndefined } from "src/utils/checkNull";
+import { Head } from "src/utils/head";
 
 export type AccountInfo = Omit<AccountStatus, "balance" | "jobChargeLimit" | "usedJobCharge"
 | "blockThresholdAmount" > & {

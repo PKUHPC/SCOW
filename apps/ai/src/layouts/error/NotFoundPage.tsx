@@ -14,15 +14,15 @@
 
 import { Result } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 
 export const NotFoundPage = () => {
   const t = useI18nTranslateToString();
   const p = prefix("layout.error.notFoundPage.");
 
+  useDocumentTitle(t(p("notFound")));
   return (
     <>
-      <Head title={t(p("notFound"))} />
       <Result
         status="404"
         title={"404"}

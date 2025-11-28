@@ -1,8 +1,8 @@
 import { NextPage } from "next";
+import { Head } from "src/components/head";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { JobsTable } from "src/pageComponents/quantum/JobsTable";
-import { Head } from "src/utils/head";
 
 export const QuantumJobsPage: NextPage = () => {
 

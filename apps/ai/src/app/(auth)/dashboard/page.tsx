@@ -5,8 +5,9 @@ import { PartitionInfo } from "@scow/protos/build/portal/config";
 import { Col, Row } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { useI18nTranslateToString } from "src/i18n";
 import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
@@ -47,6 +48,8 @@ const NotificationCol = styled(Col)`
 `;
 
 export default function Page() {
+  const t = useI18nTranslateToString();
+
   const { publicConfig: { CLUSTERS: currentClusters, DASHBOARD_USER_DISPLAY_MODE },
     publicConfig, user } = usePublicConfig();
 
@@ -320,10 +323,10 @@ export default function Page() {
     currentClusters,
   ]);
 
+  useDocumentTitle(t("routes.dashboard"));
 
   return (
     <DashboardPageContent>
-      <Head title={"dashboard"} />
       <Row gutter={[16, 16]} wrap={true}>
         <Col sm={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
           <QuickEntry />

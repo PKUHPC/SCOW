@@ -803,6 +803,7 @@ export default {
       },
     },
     profile:{
+      title: "个人信息",
       cPSuccessfully:"修改密码成功",
       cPFailed:"修改密码失败",
       originalPwError:"原密码错误",

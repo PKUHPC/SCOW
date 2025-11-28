@@ -9,7 +9,7 @@ import React, { useEffect, useRef } from "react";
 import { useUserQuery } from "src/app/auth";
 import { Redirect } from "src/components/Redirect";
 import { useDarkMode } from "src/layouts/darkMode";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 import { styled } from "styled-components";
 
 const FrameContainer = styled.div`
@@ -88,6 +88,8 @@ export const ExtensionPage: React.FC<Props> = ({
 
   const ref = useRef<HTMLIFrameElement>(null);
 
+  useDocumentTitle(title);
+
   useEffect(() => {
     const messageHandler = (e: MessageEvent<any>) => {
 
@@ -119,7 +121,6 @@ export const ExtensionPage: React.FC<Props> = ({
   }, []);
   return (
     <>
-      <Head title={title} />
       <FrameContainer>
         <IFrame
           ref={ref}

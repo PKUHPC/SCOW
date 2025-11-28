@@ -6,6 +6,7 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
+import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 
 import { SelectAppTable } from "../SelectAppTable";
@@ -33,6 +34,8 @@ export default function Page({ params }: { params: Promise<{ clusterId: string }
   const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
 
   const { data, isLoading, isError } = useClusterAppConfigQuery(clusterId);
+
+  useDocumentTitle(t(p("title")));
 
   if (isError) {
     return (

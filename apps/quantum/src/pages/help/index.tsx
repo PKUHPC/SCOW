@@ -1,7 +1,8 @@
 import { App, Button, Spin, Typography } from "antd";
 import React from "react";
 import Markdown from "react-markdown";
-import { Localized, useI18n } from "src/i18n";
+import { Head } from "src/components/head";
+import { Localized, useI18n, useI18nTranslateToString } from "src/i18n";
 import { BASE_PATH } from "src/utils/processEnv";
 import { trpc } from "src/utils/trpc";
 
@@ -85,8 +86,10 @@ const HelpMarkdownLoader = () => {
 };
 
 const HelpPage = () => {
+  const t = useI18nTranslateToString();
   return (
     <Typography>
+      <Head title={t("help.title")} />
       <Title>
         <Localized id="help.title" />
       </Title>

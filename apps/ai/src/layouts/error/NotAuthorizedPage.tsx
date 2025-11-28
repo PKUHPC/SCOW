@@ -13,16 +13,17 @@
 import { Button, Result } from "antd";
 import Link from "next/link";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 
 
 export const NotAuthorizedPage = () => {
   const t = useI18nTranslateToString();
   const p = prefix("layout.error.notAuthorizedPage.");
 
+  useDocumentTitle(t(p("needLogin")));
+
   return (
     <>
-      <Head title={t(p("needLogin"))} />
       <Result
         status="403"
         title={t(p("needLogin"))}

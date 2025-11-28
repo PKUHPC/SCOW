@@ -1,6 +1,7 @@
 import { Card, Col, Row, Spin, Tabs } from "antd";
 import { NextPage } from "next";
 import React, { useEffect, useState } from "react";
+import { Head } from "src/components/head";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AllowedChipIdType, DeviceCardsData, DevicesMap } from "src/models/device";
 import DeviceCard from "src/pageComponents/dashboard/DeviceCard";
@@ -52,6 +53,7 @@ export const DashboardPage: NextPage = () => {
 
   return (
     <div style={{ minHeight: "100vh" }}>
+      <Head title={t(p("title"))} />
       <Card style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 18, marginBottom: 16, marginTop: -4 }}>{t(p("device"))}</h2>
         <Row gutter={[16, 16]}>

@@ -13,13 +13,14 @@
 "use client";
 
 import { Result } from "antd";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 
 
 export const ClusterNotAvailablePage = () => {
+  useDocumentTitle("Cluster Not Available");
+
   return (
     <>
-      <Head title="Cluster Not Available" />
       <Result
         status="404"
         title={"404"}

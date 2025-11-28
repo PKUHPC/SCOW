@@ -18,6 +18,7 @@ import { Redirect } from "src/components/Redirect";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { TransferInfoTable } from "src/pageComponents/filemanager/TransferInfoTable";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { Head } from "src/utils/head";
 
 const p = prefix("pages.files.currentTransferInfo.");
 
@@ -33,6 +34,7 @@ export const FileTransferPage: NextPage = requireAuth(() => true)(() => {
 
   return (
     <div>
+      <Head title={t(p("checkTransfer"))} />
       <PageTitle titleText={t(p("checkTransfer"))} />
       <TransferInfoTable />
     </div>

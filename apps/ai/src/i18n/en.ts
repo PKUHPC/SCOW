@@ -804,6 +804,7 @@ export default {
       },
     },
     profile: {
+      title: "profile",
       cPSuccessfully: "Password Changed Successfully",
       cPFailed: "Password Change Failed",
       originalPwError: "Incorrect Original Password",

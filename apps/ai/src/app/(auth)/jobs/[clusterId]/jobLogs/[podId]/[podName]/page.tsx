@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { use,useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { useDocumentTitle } from "src/utils/head";
 import { styled } from "styled-components";
 
 const Container = styled.div`
@@ -62,6 +63,8 @@ export default function Page(
   const { clusterId, podId, podName } = params;
   const { user } = usePublicConfig();
   const [rowLimit, setRowLimit] = useState<number | null>(1000);
+
+  useDocumentTitle(t(p("title")));
 
   return (
     <Container>

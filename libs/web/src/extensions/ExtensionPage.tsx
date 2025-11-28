@@ -47,6 +47,7 @@ interface Props {
 
   NotFoundPageComponent: React.FC;
 
+  titleTag?: string;
 }
 
 export const ExtensionPage: React.FC<Props> = ({
@@ -54,6 +55,7 @@ export const ExtensionPage: React.FC<Props> = ({
   uiExtensionStoreConfig,
   currentLanguageId,
   NotFoundPageComponent,
+  titleTag,
 }) => {
 
   const router = useRouter();
@@ -135,7 +137,7 @@ export const ExtensionPage: React.FC<Props> = ({
 
   return (
     <>
-      <Head title={title} />
+      <Head title={title} titleTag={titleTag} />
       <FrameContainer>
         <IFrame
           ref={ref}

@@ -60,6 +60,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
 
       userAssociatedClusterIds: Type.Optional(Type.Array(Type.String())),
 
+      titleTag: Type.Optional(Type.String()),
     }),
   },
 });
@@ -81,6 +82,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     // enabled: Type.Boolean({ description: "是否启动登录节点上的桌面功能", default: true }),
     initialPortalRuntimeDesktopEnabled: runtimeConfig.PORTAL_CONFIG.loginDesktop.enabled,
     userAssociatedClusterIds: undefined,
+    titleTag: "",
   };
 
   const token = USE_MOCK ? "123" : getTokenFromCookie({ req });
@@ -167,6 +169,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
       ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
       ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
 
+  extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
   // 从Cookies或header中获取语言id
   extra.initialLanguage = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
 

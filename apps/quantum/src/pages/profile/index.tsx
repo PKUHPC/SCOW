@@ -1,12 +1,12 @@
 "use client";
 import { Descriptions, Typography } from "antd";
+import { Head } from "src/components/head";
 import { ModalButton } from "src/components/ModalLink";
 import { Section } from "src/components/Section";
 import { usePublicConfig } from "src/context/PublicConfigContext";
 import { Localized, prefix, useI18nTranslateToString } from "src/i18n";
 import { ChangePasswordModal } from "src/pageComponents/profile/ChangePasswordModal";
 import { antdBreakpoints } from "src/styles/constants";
-import { Head } from "src/utils/head";
 import { styled } from "styled-components";
 
 const Container = styled.div`

@@ -19,6 +19,7 @@ import { JobType, statusColors } from "src/models/Job";
 import { JobReasonI18nKeyMap } from "src/utils/common";
 import { formatDateTime, toGrafanaRelative } from "src/utils/datetime";
 import { formatSize } from "src/utils/format";
+import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
@@ -104,6 +105,8 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     { label:t(p("allData")),value:ALL },
     { label:t(p("customTime")),value:CUSTOM },
   ], [t, p]);
+
+  useDocumentTitle(t(p("jobDetailsTab")));
 
   // pod列表中展示那个pod的事件
   const [selectedPodId, setSelectedPodId] = useState<string | null>(null);

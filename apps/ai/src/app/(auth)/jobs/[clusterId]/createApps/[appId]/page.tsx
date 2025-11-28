@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { use } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 
 import { LaunchAppForm } from "../../LaunchAppForm";
@@ -20,6 +21,8 @@ export default function Page({ params }: { params: Promise<{ clusterId: string, 
 
   const jobId = searchParams?.get("jobId");
   const sessionId = searchParams?.get("sessionId");
+
+  useDocumentTitle(t(p("create")));
 
   const { data: appInfo, isLoading: isAppLoading } = trpc.jobs.getAppMetadata.useQuery({ clusterId, appId });
 

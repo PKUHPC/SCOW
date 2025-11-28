@@ -1,8 +1,8 @@
 import { NextPage } from "next";
+import { Head } from "src/components/head";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { AppSessionsTable } from "src/pageComponents/jupyter/AppSessionsTable";
-import { Head } from "src/utils/head";
 
 export const JupyterJobsPage: NextPage = () => {
 

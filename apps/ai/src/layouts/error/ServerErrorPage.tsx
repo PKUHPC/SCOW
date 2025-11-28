@@ -15,15 +15,15 @@
 import { Result } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { Head } from "src/utils/head";
+import { useDocumentTitle } from "src/utils/head";
 
 export const ServerErrorPage: React.FC = () => {
   const t = useI18nTranslateToString();
   const p = prefix("layout.error.serverErrorPage.");
 
+  useDocumentTitle(t(p("error")));
   return (
     <>
-      <Head title={t(p("error"))} />
       <Result
         status="500"
         title="500"

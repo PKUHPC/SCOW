@@ -158,6 +158,7 @@ export default {
   },
   page: {
     dashboard: {
+      title: "Dashboard",
       device: "Execution Device",
       recentJob: "Recent Job",
       quantum: "quantum",
