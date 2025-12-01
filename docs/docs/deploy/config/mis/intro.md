@@ -177,6 +177,14 @@ allowUserChangeJobTimeLimit: true
 # 文件导出数据数量限制
 maxExportCount: 100000000
 
+# 文件导出数据数量限制
+maxExportCount: 100000000
+
+# 登录节点root权限相关配置
+# rootShell:
+  # 是否允许平台管理员以root身份登录登录节点，默认不允许
+  # enabled: true
+
 ```
 
 ## 启动服务

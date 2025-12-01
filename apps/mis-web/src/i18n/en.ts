@@ -190,6 +190,7 @@ export default {
         fistNav: "Platform",
         info: "Platform Information",
         importUsers: "Import Users",
+        shell: "Shell",
         tenantsManagement: "Tenants",
         tenantsList: "Tenants",
         createTenant: "Create Tenant",
@@ -413,6 +414,12 @@ export default {
         userAlreadyExistInThisTenant: "User already exists in this tenant",
         createTenantWarningInfo: "Please ensure that the user has no associated accounts "
         + "and is not the tenant administrator or financial personnel of the original tenant",
+      },
+      shellCard:{
+        defaultDescription: "The administrator has not added a description yet",
+        clusterName: "Cluster",
+        loginNode: "Login Node",
+        open: "Open",
       },
     },
     commonComponent: {
@@ -1606,6 +1613,11 @@ export default {
         yuan: "CNY",
         statisticsDelay1: "The statistics are updated once per day",
         statisticsDelay2: ". Last updated at: {}",
+      },
+      shell: {
+        shell: "Shell",
+        alertInfo: "This page grants ROOT access to the cluster. Please proceed with caution."
+        + " For routine operations, it is still recommended to use the cluster login page within the portal system.",
       },
     },
     accounts: {

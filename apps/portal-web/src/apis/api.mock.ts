@@ -502,6 +502,11 @@ export const mockApi: MockApi<typeof api> = {
       usedStorageBytes: 123123123,
     }],
   }),
+
+  getIsUserEnabledRootShell: async () => ({
+    result: true,
+  }),
+
 };
 
 

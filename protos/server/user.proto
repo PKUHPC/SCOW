@@ -463,6 +463,14 @@ message ChangeTenantResponse {
 
 }
 
+message QueryIsUserEnabledRootShellRequest {
+  string user_id = 1;
+}
+
+message QueryIsUserEnabledRootShellResponse {
+  bool result = 1;
+}
+
 service UserService {
 
   rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
@@ -511,4 +519,6 @@ service UserService {
   rpc GetNewUserCount(GetNewUserCountRequest) returns (GetNewUserCountResponse);
 
   rpc ChangeTenant(ChangeTenantRequest) returns (ChangeTenantResponse);
+
+  rpc QueryIsUserEnabledRootShell(QueryIsUserEnabledRootShellRequest) returns (QueryIsUserEnabledRootShellResponse);
 }

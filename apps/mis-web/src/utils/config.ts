@@ -131,6 +131,8 @@ export interface PublicRuntimeConfig {
   ALLOW_APP_AUTHORIZATION?: boolean;
 
   MAX_EXPORT_COUNT: number;
+
+  ROOT_SHELL_ENABLED?: boolean;
 }
 
 

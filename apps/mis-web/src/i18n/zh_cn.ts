@@ -190,6 +190,7 @@ export default {
         fistNav: "平台管理",
         info: "平台信息",
         importUsers: "导入用户",
+        shell: "命令行",
         tenantsManagement:"租户管理",
         tenantsList: "租户列表",
         createTenant: "创建租户",
@@ -413,6 +414,12 @@ export default {
         userAlreadyExistInThisTenant: "用户已经存在于该租户中",
         createTenantWarningInfo: "请确保该用户没有任何关联账户且不是原租户的租户管理员或财务人员",
 
+      },
+      shellCard:{
+        defaultDescription:"管理员暂未添加描述",
+        clusterName: "集群",
+        loginNode: "登录节点",
+        open: "打开",
       },
     },
     commonComponent:{
@@ -1584,6 +1591,11 @@ export default {
         yuan: "元",
         statisticsDelay1: "统计数据每日更新一次",
         statisticsDelay2: "，最后更新于: {}",
+      },
+      shell: {
+        shell: "命令行",
+        alertInfo: "本页面提供ROOT权限登录集群，请谨慎操作。常规操作建议仍然通过门户系统的登陆集群页面。",
+
       },
     },
     accounts: {

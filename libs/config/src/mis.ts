@@ -239,6 +239,11 @@ export const MisConfigSchema = Type.Object({
     description: "导出数据最大数量限制，默认1000000",
     default: 1000000,
   })),
+
+  rootShell: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否允许平台管理员以root身份登录登录节点", default: false }),
+  })),
+
 });
 
 const MIS_CONFIG_NAME = "mis";

@@ -226,3 +226,8 @@ bill:
 #   - name: resource
 #   # 资源管理系统的部署Url，此url需能被外网访问
 #     url: http://your-server-name1/resource
+
+# 登录节点root权限相关配置
+# rootShell:
+  # 是否允许平台管理员以root身份登录登录节点，默认不允许
+  # enabled: false

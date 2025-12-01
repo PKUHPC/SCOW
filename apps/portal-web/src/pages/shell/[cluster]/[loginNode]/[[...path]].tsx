@@ -1,24 +1,13 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import "@xterm/xterm/css/xterm.css";
 
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, Popover, Space, Typography } from "antd";
+import { Button, Popover, Space, Spin, Typography } from "antd";
 import { NextPage } from "next";
 import dynamic from "next/dynamic";
 import Router, { useRouter } from "next/router";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "simstate";
+import { api } from "src/apis/api";
 import { requireAuth } from "src/auth/requireAuth";
 import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
@@ -104,6 +93,47 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
 
   const t = useI18nTranslateToString();
 
+  // 支持通过 URL 查询参数控制是否以 root 身份登录，仅当平台管理员且明确声明才启用
+  const searchParams = new URLSearchParams(window.location.search);
+  const getUseRoot = searchParams.get("useRoot");
+  const useRoot = getUseRoot === "true"; // 增加调用一个接口问mis是否是平台管理员且有了配置
+  const identityId = userStore.user.identityId;
+
+  // 状态用于保存 API 检查结果：用户是否被授权使用 root shell
+  const [isRootShellEnabled, setIsRootShellEnabled] = useState(false);
+  // 状态用于控制加载中，初始设为 true
+  const [isLoadingRootCheck, setIsLoadingRootCheck] = useState(true);
+
+  useEffect(() => {
+    // 如果 useRoot 为 false，则无需检查 API
+    if (!useRoot) {
+      setIsRootShellEnabled(false);
+      setIsLoadingRootCheck(false);
+      return;
+    }
+
+    const checkRootAccess = async () => {
+      try {
+        const result = await api.getIsUserEnabledRootShell({});
+        setIsRootShellEnabled(result.result === true);
+      } catch (e) {
+        console.error("Failed to check root shell status:", e);
+        setIsRootShellEnabled(false);
+      } finally {
+        setIsLoadingRootCheck(false);
+      }
+    };
+
+    checkRootAccess();
+  }, [identityId, useRoot]);
+
+  if (isLoadingRootCheck) {
+    return <Spin />;
+  }
+
+  const useRootEnabled = useRoot && isRootShellEnabled;
+  const userId = useRootEnabled ? "root" : identityId;
+
   return (
     <Container>
       <Head title={`${cluster}${t("pages.shell.loginNode.title")}`} />
@@ -111,52 +141,56 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
         <h2>
           <Localized
             id="pages.shell.loginNode.content"
-            args={[userStore.user.identityId, clusterName, currentLoginNodeName]}
+            args={[userId, clusterName, currentLoginNodeName]}
           />
         </h2>
         <Space wrap>
           <Button onClick={() => Router.reload()}>
             {t("pages.shell.loginNode.reloadButton")}
           </Button>
-          <Popover
-            title={t("pages.shell.loginNode.popoverTitle")}
-            trigger="hover"
-            placement="bottom"
-            zIndex={2000}
-            getPopupContainer={() => headerRef.current || document.body}
-            content={() => (
-              <div>
-                <p><b>{t("pages.shell.loginNode.popoverContent1")}</b>：
-                  <Text code>sopen</Text>{t("pages.shell.loginNode.popoverContent2")}
-                </p>
-                <p><b>{t("pages.shell.loginNode.popoverContent12")}</b>：
-                  <Text code>sup</Text>{t("pages.shell.loginNode.popoverContent13")}
-                </p>
-                <p><b>{t("pages.shell.loginNode.popoverContent3")}</b>：
-                  <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                  {t("pages.shell.loginNode.popoverContent4")}
-                  <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                  {t("pages.shell.loginNode.popoverContent5")}<br />
-                  {t("pages.shell.loginNode.popoverContent8")}<Text code>sdown hello.txt</Text>
-                </p>
-                <p><b>{t("pages.shell.loginNode.popoverContent9")}</b>：
-                  <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                  {t("pages.shell.loginNode.popoverContent10")}
-                  <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                  {t("pages.shell.loginNode.popoverContent11")}<br />
-                  {t("pages.shell.loginNode.popoverContent8")}<Text code>sedit hello.txt</Text>
-                </p>
-                <p>
-                  {t("pages.shell.loginNode.popoverContent6")}<Text code>sopen</Text>
-                  {t("pages.shell.loginNode.popoverContent7")}
-                </p>
-              </div>
-            )}
-          >
-            <Button>
-              {t("pages.shell.loginNode.command")}
-            </Button>
-          </Popover>
+          {
+            !useRootEnabled && (
+              <Popover
+                title={t("pages.shell.loginNode.popoverTitle")}
+                trigger="hover"
+                placement="bottom"
+                zIndex={2000}
+                getPopupContainer={() => headerRef.current || document.body}
+                content={() => (
+                  <div>
+                    <p><b>{t("pages.shell.loginNode.popoverContent1")}</b>：
+                      <Text code>sopen</Text>{t("pages.shell.loginNode.popoverContent2")}
+                    </p>
+                    <p><b>{t("pages.shell.loginNode.popoverContent12")}</b>：
+                      <Text code>sup</Text>{t("pages.shell.loginNode.popoverContent13")}
+                    </p>
+                    <p><b>{t("pages.shell.loginNode.popoverContent3")}</b>：
+                      <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                      {t("pages.shell.loginNode.popoverContent4")}
+                      <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                      {t("pages.shell.loginNode.popoverContent5")}<br />
+                      {t("pages.shell.loginNode.popoverContent8")}<Text code>sdown hello.txt</Text>
+                    </p>
+                    <p><b>{t("pages.shell.loginNode.popoverContent9")}</b>：
+                      <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                      {t("pages.shell.loginNode.popoverContent10")}
+                      <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                      {t("pages.shell.loginNode.popoverContent11")}<br />
+                      {t("pages.shell.loginNode.popoverContent8")}<Text code>sedit hello.txt</Text>
+                    </p>
+                    <p>
+                      {t("pages.shell.loginNode.popoverContent6")}<Text code>sopen</Text>
+                      {t("pages.shell.loginNode.popoverContent7")}
+                    </p>
+                  </div>
+                )}
+              >
+                <Button>
+                  {t("pages.shell.loginNode.command")}
+                </Button>
+              </Popover>
+            )
+          }
         </Space>
 
 
@@ -164,9 +198,10 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
       <TerminalContainer>
         <DynamicShellComponent
           path={paths ? ("/" + paths.join("/")) : ""}
-          user={userStore.user}
+          userId={userId}
           cluster={cluster}
           loginNode={loginNode}
+          useRootEnabled={useRootEnabled}
         />
       </TerminalContainer>
     </Container>

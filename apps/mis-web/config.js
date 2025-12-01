@@ -233,6 +233,8 @@ const buildRuntimeConfig = async (phase, basePath) => {
     ALLOW_APP_AUTHORIZATION: commonConfig.allowAppAuthorization,
 
     MAX_EXPORT_COUNT: misConfig.maxExportCount,
+
+    ROOT_SHELL_ENABLED: misConfig.rootShell?.enabled,
   };
 
   if (!building) {

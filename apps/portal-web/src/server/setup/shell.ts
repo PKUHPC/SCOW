@@ -13,6 +13,7 @@
 import { asyncDuplexStreamCall } from "@ddadaal/tsgrpc-client";
 import { getLoginNode } from "@scow/config/build/cluster";
 import { OperationType } from "@scow/lib-operation-log";
+import { libQueryIsUserEnabledRootShell } from "@scow/lib-web/build/server/user";
 import { queryToIntOrDefault } from "@scow/lib-web/build/utils/querystring";
 import { ShellResponse, ShellServiceClient } from "@scow/protos/build/portal/shell";
 import { normalizePathnameWithQuery } from "@scow/utils";
@@ -23,6 +24,7 @@ import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
+import { runtimeConfig } from "src/utils/config";
 import { parseIp } from "src/utils/server";
 import { parse } from "url";
 import { WebSocket, WebSocketServer } from "ws";
@@ -42,11 +44,11 @@ export type ShellInputData =
   | { $case: "resize", resize: { cols: number; rows: number } }
   | { $case: "data", data: { data: string } }
   | { $case: "disconnect" }
-;
+  ;
 export type ShellOutputData =
   | { $case: "data", data: { data: string } }
   | { $case: "exit", exit: { code?: number; signal?: string } }
-;
+  ;
 export const config = {
   api: {
     bodyParser: false,
@@ -98,6 +100,15 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   const cluster = query.get("cluster");
   const loginNodeAddress = query.get("loginNode");
+  const useRoot = query.get("useRoot");
+  let isUserUseRoot = false;
+
+  if (useRoot === "true") {
+    const { result: isUserEnabledRoot } = await libQueryIsUserEnabledRootShell(
+      user.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+
+    isUserUseRoot = isUserEnabledRoot;
+  }
 
   const clusterConfigs = await getClusterConfigFiles();
 
@@ -127,12 +138,16 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   const stream = asyncDuplexStreamCall(client, "shell");
 
-  await stream.writeAsync({ message: { $case: "connect", connect: {
-    cluster, loginNode: loginNode.address, userId: user.identityId,
-    cols: queryToIntOrDefault(cols, 80),
-    rows: queryToIntOrDefault(rows, 30),
-    path,
-  } } });
+  await stream.writeAsync({
+    message: {
+      $case: "connect", connect: {
+        cluster, loginNode: loginNode.address, userId: isUserUseRoot ? "root" : user.identityId,
+        cols: queryToIntOrDefault(cols, 80),
+        rows: queryToIntOrDefault(rows, 30),
+        path,
+      },
+    },
+  });
 
   log("Connected to shell");
 
@@ -172,12 +187,16 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
     switch (message.$case) {
       case "data":
-        stream.write({ message:  { $case :"data", data: { data: Uint8Array.from(Buffer.from(message.data.data)) } } });
+        stream.write({ message: { $case: "data", data: { data: Uint8Array.from(Buffer.from(message.data.data)) } } });
         break;
       case "resize":
-        stream.write({ message: { $case: "resize", resize: {
-          cols: message.resize.cols, rows: message.resize.rows,
-        } } });
+        stream.write({
+          message: {
+            $case: "resize", resize: {
+              cols: message.resize.cols, rows: message.resize.rows,
+            },
+          },
+        });
         break;
       case "disconnect":
         stream.write({ message: { $case: "disconnect", disconnect: {} } });

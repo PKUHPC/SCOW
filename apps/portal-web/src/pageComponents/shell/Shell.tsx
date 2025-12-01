@@ -17,7 +17,6 @@ import { join } from "path";
 import { useEffect, useRef } from "react";
 import { urlToDownload } from "src/pageComponents/filemanager/api";
 import { ShellInputData, ShellOutputData } from "src/server/setup/shell";
-import { User } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 import { styled } from "styled-components";
 
@@ -29,10 +28,11 @@ const TerminalContainer = styled.div`
 `;
 
 interface Props {
-  user: User;
+  userId: string;
   cluster: string;
   loginNode: string
   path: string;
+  useRootEnabled: boolean;
 }
 
 const OPEN_EXPLORER_PREFIX = "SCOW is opening the file system";
@@ -53,7 +53,7 @@ const processShellOutput = (dataString: string) => {
 };
 
 
-export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
+export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRootEnabled }) => {
 
   const container = useRef<HTMLDivElement>(null);
 
@@ -73,10 +73,11 @@ export const Shell: React.FC<Props> = ({ user, cluster, loginNode, path }) => {
         path,
         cols: term.cols + "",
         rows: term.rows + "",
+        useRoot: useRootEnabled ? "true" : "false", // 通过http api的权限验证，通知websocket需要验证useRoot。
       };
 
       term.write(
-        `\r\n*** Connecting to cluster ${payload.cluster} as ${user.identityId} to ` +
+        `\r\n*** Connecting to cluster ${payload.cluster} as ${userId} to ` +
         `${path ? "path " + path : "home path"} ***\r\n`,
       );
 

@@ -38,6 +38,7 @@ import { callHook } from "src/plugins/hookClient";
 import { getUserStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
+import { logger } from "src/utils/logger";
 import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
 import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
@@ -1220,6 +1221,33 @@ export const userServiceServer = plugin((server) => {
       await em.persistAndFlush(user);
 
       return [{}];
+
+    },
+
+    queryIsUserEnabledRootShell: async ({ request, em }) => {
+
+      const rootShellEnabled = misConfig?.rootShell?.enabled ?? false;
+
+      if (!rootShellEnabled) {
+        return [{ result: false }];
+      }
+
+      const { userId } = request;
+
+      const user = await em.findOne(User, { userId: userId });
+
+      if (!user || user.state === UserState.DELETED) {
+        throw {
+          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+        } as ServiceError;
+      }
+
+      if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
+        logger.warn(`User ${userId} is not platform admin.`);
+        return [{ result: false }];
+      }
+
+      return [{ result: true }];
 
     },
 

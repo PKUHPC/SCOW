@@ -1,5 +1,6 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ChangeEmailResponse, UserServiceClient } from "@scow/protos/build/server/user";
+import { ChangeEmailResponse, QueryIsUserEnabledRootShellResponse,
+  UserServiceClient } from "@scow/protos/build/server/user";
 import { getClientFn } from "src/utils/api";
 
 export const libWebChangeEmail = async (
@@ -27,5 +28,32 @@ export const libWebChangeEmail = async (
   } catch (e: any) {
     console.error(e.details);
     return undefined;
+  }
+};
+
+export const libQueryIsUserEnabledRootShell = async (
+  userId: string,
+  misServerUrl?: string,
+  scowApiAuthToken?: string,
+): Promise<QueryIsUserEnabledRootShellResponse> => {
+
+  // if mis is Deployed
+  if (!misServerUrl) {
+    console.log("Mis is not deployed, can not get userInfo from mis.");
+    return { result: false };
+  }
+
+  const config = {
+    SERVER_URL: misServerUrl,
+    SCOW_API_AUTH_TOKEN: scowApiAuthToken,
+  };
+  const getMisClient = getClientFn(config);
+  const client = getMisClient(UserServiceClient);
+
+  try {
+    return await asyncClientCall(client, "queryIsUserEnabledRootShell", { userId });
+  } catch (e: any) {
+    console.error(`Error querying root shell enabled? for User ID ${userId}:`, e.details || e.message);
+    return { result: false };
   }
 };

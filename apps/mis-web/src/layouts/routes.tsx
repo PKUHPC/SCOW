@@ -10,7 +10,7 @@ import { AccountAdminIcon, AccountChargeRecordsIcon, AccountCostIcon, AccountInf
   DashBoardIcon, DefaultAuthorizedAppIcon, FetchJobsIcon, FinanceManagementIcon, FinancePayIcon, HistoryJobsIcon,
   ImportUsersIcon, JobBillingIcon, ManageJobPriceIcon, MonitorIcon, NodeMigrationIcon,OperationLogIcon, PartitionsIcon,
   PayAccountIcon, PaymentsIcon, PermissionManagementIcon,PlatformDebugIcon, ResourceManageIcon, RunningJobsIcon,
-  SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
+  ShellIcon, SlurmBlockStatusIcon, StatisticIcon, TenantBillsIcon, TenantInfoIcon, TenantManageIcon,
   TenantPaymentsIcon, TenantsListIcon, TenantStorageQuotaIcon, UnlockLoginIcon,UserListIcon, UserManagementIcon,
   UserSpaceIcon } from "src/assets/headerIcons";
 import { prefix } from "src/i18n";
@@ -149,6 +149,12 @@ export const platformAdminRoutes: (platformRoles: PlatformRole[], t: TransType) 
             text: t(pPlatform("jobSynchronization")),
             path: "/admin/systemDebug/fetchJobs",
           },
+          ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && publicConfig.ROOT_SHELL_ENABLED ?
+            [{
+              Icon: ShellIcon,
+              text: t(pPlatform("shell")),
+              path: "/admin/shell",
+            }] : []),
         ],
       },
       ...(platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ? [{
