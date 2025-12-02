@@ -78,7 +78,14 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
 
   const { publicConfig,user } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
-  const grafanaConfig = publicConfig.GRAFANA_CONFIG;
+
+  // ai配置文件的grafana配置
+  const aiConfigGrafanaConfig = publicConfig.GRAFANA_CONFIG;
+  // 集群配置文件的grafana配置
+  const clusterGrafanaConfig = publicConfig.CLUSTERS_GRAFANA_CONFIG?.[clusterId];
+  // 优先使用集群中的配置
+  const grafanaConfig = clusterGrafanaConfig ?? aiConfigGrafanaConfig;
+  const grafanaEnabled = !!grafanaConfig?.enabled;
 
   if (!cluster) {
     return <NotFoundPage />;
@@ -155,7 +162,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
   // ?from=1757395854652&to=1757397654652&var-job_name=dev-k8s-c-i-20250827-103214-1756262046
   // &var-pod_name=$__all&refresh=10s&panelId=24&theme=light";
   const monitorUrlArray = useMemo(() => {
-    if (!jobDetails) return [];
+    if (!jobDetails || !grafanaConfig) return [];
 
     // 选择需要展示的面板
     const {
@@ -706,7 +713,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
         />
       ),
     }] : []),
-    ...(grafanaConfig.enabled ? [{
+    ...(grafanaEnabled ? [{
       key: "3",
       label: t(p("monitor")),
       children: (

@@ -66,7 +66,7 @@ export const AiConfigSchema = Type.Object({
     enabled:Type.Boolean({ description: "AI是否开启推理模块", default: true }),
     proxyHost:Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
   })),
-  jobMonitor:Type.Object({
+  jobMonitor:Type.Optional(Type.Object({
     dashboardId:Type.String({ description: "grafana的dashboardId" }),
     dashboardName:Type.String({ description: "grafana的dashboardName" }),
     panelIds: Type.Object({
@@ -85,7 +85,7 @@ export const AiConfigSchema = Type.Object({
         network: 46,
       },
     }),
-  }),
+  })),
 
   imageCleanup: Type.Optional(Type.Object({
     enabled: Type.Boolean({ description: "是否开启定期清理定期删除harbor里不存在的镜像", default: true }),

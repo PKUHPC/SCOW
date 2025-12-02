@@ -123,8 +123,31 @@ k8s:
 # 其他配置省略
 # ...
 adapterUrl: localhost:8972
-```
 
+# 选配公共的挂载目录，优先级比ai/config.yaml中高
+publicMountPoints:
+  - /nfs/public
+
+# 选配推理的配置，优先级比ai/config.yaml中高
+inferConfig:
+  # 选配，是否开启推理功能,默认开启
+  enabled: true
+  # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
+  proxyHost: www.example.com
+
+# 选填作业监控配置，优先级比ai/config.yaml中高:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
+jobMonitor:
+  # 必填grafana模版中的 dashboardId 和 dashboardName
+  dashboardId: P17D2FB9C9DA87D76
+  dashboardName: p17d2fb9c9da87d76
+  # 选填作业监控中要展示的panelId,有默认值(值如下所示)，每个字段对应一个面板 ID, 由grafana的规则决定
+  panelIds:
+    gpu: 4
+    gpuMemory: 10
+    cpu: 24
+    memory: 26
+    network: 46
+```
 ### 修改安装配置文件
 
 修改安装配置文件：
@@ -168,21 +191,21 @@ harborConfig:
   # Harbor 仓库可登录用户的登录密码
   password: password
 
-# 选配公共的挂载目录
+# 选配公共的挂载目录，优先使用集群配置文件中的
 # publicMountPoints:
   # - /nfs/public
 
 # 选配作业最大运行时间
 # maxJobRunningTimeHours: 24
 
-# 选配推理的配置
+# 选配推理的配置，优先使用集群配置文件中的
 inferConfig:
   # 选配，是否开启推理功能,默认开启
   # enabled: true
   # 推理服务代理地址，可选配置，不配置时用scow节点地址转发
   # proxyHost: www.example.com
 
-# 必填作业监控配置:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
+# 选填作业监控配置，优先使用集群配置文件中的:注意grafana的 11.3.0 版本不支持单个面板的数据持续刷新, 11.2.2 版本的可以
 jobMonitor:
   # 必填grafana模版中的 dashboardId 和 dashboardName
   dashboardId: P17D2FB9C9DA87D76

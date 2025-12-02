@@ -55,6 +55,9 @@ function parseImageUrl(imageUrl: string): { name: string; tag: string } {
   return { name, tag };
 }
 
+export const getPublicMountPoints = (clusterId: string) =>
+  clusters[clusterId].publicMountPoints ?? aiConfig.publicMountPoints ?? [];
+
 export class ScowdJobDriver implements JobDriver {
 
   private client: ScowdClient;
@@ -270,7 +273,7 @@ export class ScowdJobDriver implements JobDriver {
         ,
         mountPoints.join(","),
         gpuType || "",
-        aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+        getPublicMountPoints(clusterId).join(","),
       ],
     }).catch((e) => {
       const ex = e as ServiceError;
@@ -689,7 +692,7 @@ export class ScowdJobDriver implements JobDriver {
         ,
         mountPoints.join(","),
         gpuType || "",
-        aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+        getPublicMountPoints(clusterId).join(","),
       ],
       containerServicePort,
     }).catch((e) => {
@@ -933,7 +936,7 @@ export class ScowdJobDriver implements JobDriver {
         // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
         // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
         (nodeCount === 1 && !gpuType?.startsWith("huawei.com")) ? "" : framework || "",
-        aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+        getPublicMountPoints(clusterId).join(","),
       ],
       psNodeCount:psNodes,
       workerNodeCount:workerNodes,
@@ -1100,7 +1103,7 @@ export class ScowdJobDriver implements JobDriver {
       workingDirectory: join(homeDir, devHostDir),
       image: remoteImageUrl || existImage?.path || "",
       mounts: mountPoints,
-      publicMounts: aiConfig.publicMountPoints || [],
+      publicMounts: getPublicMountPoints(clusterId),
       vscodeInfo: {
         vscodeBinPath: devHostConfig.vscodeInfo.binPath,
       },

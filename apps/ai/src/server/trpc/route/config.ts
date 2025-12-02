@@ -80,6 +80,22 @@ const UiExtensionConfigSchema = z.union([
   })),
 ]);
 
+const grafanaConfigSchema = z.object({
+  enabled:z.boolean().optional(),
+  isProxy:z.boolean().optional(),
+  proxyUrl:z.string(),
+  noProxyUrl:z.string(),
+  dashboardId:z.string(),
+  dashboardName:z.string(),
+  panelIds:z.object({
+    gpu: z.number(),
+    gpuMemory: z.number(),
+    cpu: z.number(),
+    memory: z.number(),
+    network: z.number(),
+  }),
+});
+
 const PublicConfigSchema = z.object({
   ENABLE_CHANGE_PASSWORD: z.boolean().optional(),
   MIS_URL: z.string().optional(),
@@ -114,21 +130,8 @@ const PublicConfigSchema = z.object({
   NOTIF_ADDRESS: z.string().optional(),
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   INFER_ENABLED:z.boolean(),
-  GRAFANA_CONFIG:z.object({
-    enabled:z.boolean().optional(),
-    isProxy:z.boolean().optional(),
-    proxyUrl:z.string(),
-    noProxyUrl:z.string(),
-    dashboardId:z.string(),
-    dashboardName:z.string(),
-    panelIds:z.object({
-      gpu: z.number(),
-      gpuMemory: z.number(),
-      cpu: z.number(),
-      memory: z.number(),
-      network: z.number(),
-    }),
-  }),
+  GRAFANA_CONFIG:grafanaConfigSchema.optional(),
+  CLUSTERS_GRAFANA_CONFIG:z.record(grafanaConfigSchema).optional(),
 });
 
 const UiConfigSchema = z.object({
@@ -223,6 +226,29 @@ export const config = router({
 
       const systemLanguageConfig = getSystemLanguageConfig(getCommonConfig().systemLanguage);
 
+      const grafanaCommonConfig = {
+        proxyUrl: join(envConfig.MIS_URL,"/api/admin/monitor/getResourceStatus"),
+        noProxyUrl:misConfig.clusterMonitor?.grafanaUrl ?? "",
+        enabled:misConfig.clusterMonitor?.resourceStatus?.enabled,
+        isProxy:misConfig.clusterMonitor?.resourceStatus?.proxy,
+      };
+
+      const buildGrafanaConfig = (jobMonitor?: { dashboardId: string; dashboardName: string; panelIds: {
+        gpu: number; gpuMemory: number; cpu: number; memory: number; network: number
+      } }) =>
+        jobMonitor ? { ...jobMonitor, ...grafanaCommonConfig } : undefined;
+
+      type GrafanaConfig = NonNullable<ReturnType<typeof buildGrafanaConfig>>;
+
+      const clustersGrafanaConfig = Object.entries(clusters)
+        .reduce<Record<string, GrafanaConfig>>((acc, [clusterId, cluster]) => {
+          const grafanaConfig = buildGrafanaConfig(cluster.jobMonitor);
+          if (grafanaConfig) {
+            acc[clusterId] = grafanaConfig;
+          }
+          return acc;
+        }, {});
+
       return {
         ENABLE_CHANGE_PASSWORD: capabilities.changePassword,
 
@@ -282,13 +308,8 @@ export const config = router({
 
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
 
-        GRAFANA_CONFIG:{
-          ...aiConfig.jobMonitor,
-          proxyUrl: join(envConfig.MIS_URL,"/api/admin/monitor/getResourceStatus"),
-          noProxyUrl:misConfig.clusterMonitor?.grafanaUrl ?? "",
-          enabled:misConfig.clusterMonitor?.resourceStatus?.enabled,
-          isProxy:misConfig.clusterMonitor?.resourceStatus?.proxy,
-        },
+        GRAFANA_CONFIG: buildGrafanaConfig(aiConfig.jobMonitor),
+        CLUSTERS_GRAFANA_CONFIG: clustersGrafanaConfig,
       };
     }),
 

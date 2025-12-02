@@ -901,7 +901,7 @@ export const getJobDetails =
           const client = getAdapterClient(clusterId);
           const connectionInfo = await getAppConnectionInfoFromAdapterForAi(client, jobId, logger);
           if (connectionInfo?.response?.$case === "appConnectionInfo") {
-            host = aiConfig.inferConfig?.proxyHost;
+            host = clusters[clusterId].inferConfig?.proxyHost ?? aiConfig.inferConfig?.proxyHost;
             port = connectionInfo.response.appConnectionInfo.port;
           }
         }

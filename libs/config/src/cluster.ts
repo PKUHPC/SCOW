@@ -151,6 +151,34 @@ export const ClusterConfigSchema = Type.Object({
 
   storage: Type.Optional(StorageConfigSchema),
   description: Type.Optional(createI18nStringSchema({ description: "集群描述" })),
+  publicMountPoints:Type.Optional(Type.Array(
+    Type.String({ description: "公共挂载点" }), { description:"公共挂载点数组，全部会被挂载进AI应用和训练" },
+  )),
+
+  inferConfig:Type.Optional(Type.Object({
+    proxyHost:Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
+  })),
+
+  jobMonitor:Type.Optional(Type.Object({
+    dashboardId:Type.String({ description: "grafana的dashboardId" }),
+    dashboardName:Type.String({ description: "grafana的dashboardName" }),
+    panelIds: Type.Object({
+      gpu: Type.Number(),
+      gpuMemory: Type.Number(),
+      cpu: Type.Number(),
+      memory: Type.Number(),
+      network: Type.Number(),
+    }, {
+      description: "作业监控中要展示的panelId, 每个字段对应一个面板 ID, 由grafana的规则决定, 依次是GPU、显存、CPU、内存利用率, 网络使用情况",
+      default: {
+        gpu: 4,
+        gpuMemory: 10,
+        cpu: 24,
+        memory: 26,
+        network: 46,
+      },
+    }),
+  })),
 });
 
 

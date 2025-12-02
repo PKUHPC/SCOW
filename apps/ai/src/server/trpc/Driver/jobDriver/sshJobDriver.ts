@@ -32,6 +32,7 @@ import { Logger } from "ts-log";
 
 import { ConnectToAppResponse, CreateAppExtraParams, JobDriver, SubmitInferJobExtraParams,
   SubmitTrainJobExtraParams } from "./jobDriver";
+import { getPublicMountPoints } from "./scowdJobDriver";
 
 export class SshJobDriver implements JobDriver {
   constructor(
@@ -223,7 +224,8 @@ export class SshJobDriver implements JobDriver {
           ,
           mountPoints.join(","),
           gpuType || "",
-          aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+          getPublicMountPoints(clusterId).join(","),
+
         ],
       }).catch((e) => {
         const ex = e as ServiceError;
@@ -509,7 +511,7 @@ export class SshJobDriver implements JobDriver {
           ,
           mountPoints.join(","),
           gpuType || "",
-          aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+          getPublicMountPoints(clusterId).join(","),
         ],
         containerServicePort,
       }).catch((e) => {
@@ -692,7 +694,7 @@ export class SshJobDriver implements JobDriver {
           // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
           // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
           (nodeCount === 1 && !gpuType?.startsWith("huawei.com")) ? "" : framework || "",
-          aiConfig.publicMountPoints ? aiConfig.publicMountPoints.join(",") : "",
+          getPublicMountPoints(clusterId).join(","),
         ],
         psNodeCount:psNodes,
         workerNodeCount:workerNodes,
