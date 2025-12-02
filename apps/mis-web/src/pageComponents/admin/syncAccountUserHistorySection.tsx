@@ -36,7 +36,7 @@ export const SyncAccountUserHistorySection: React.FC<Props> = ({ reload }) => {
         title={t("page.admin.systemDebug.syncClusterAccountUser.historyTable.title")}
         extra={(
           <div>
-            {t("page.admin.systemDebug.syncClusterAccountUser.historyTable.explanation", 
+            {t("page.admin.systemDebug.syncClusterAccountUser.historyTable.explanation",
               [publicConfig.SYNC_HISTORY_DAY_PERIOD])}
           </div>
         )}

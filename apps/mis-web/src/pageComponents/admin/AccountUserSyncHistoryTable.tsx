@@ -107,7 +107,6 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
           width="30%"
           title={t(p("historyTable.syncDetails"))}
           render={(_, r) => {
-
             let displayedContent: string | undefined = undefined;
             let syncResult: DisplayedSyncDetail[] | undefined = undefined;
 
@@ -115,8 +114,6 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
               displayedContent = t(p("historyTable.isRunning"));
             } else if (r.sessionSyncStatus === SyncAccountUserStatus.UNEXECUTED) {
               displayedContent = t(p("syncDetailsContent.hasExceptionMessage"));
-            } else if (r.sessionSyncResult === SyncAccountUserResult.SUCCESS) {
-              displayedContent = t(p("syncDetailsContent.allSuccessfulMessage"));
             } else {
               displayedContent = undefined;
               syncResult = r.sessionSyncDetails ?
@@ -142,52 +139,79 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
                   <>
                     {
                       Array.isArray(syncResult) ? (
-                        <> 
+                        <>
                           {
                             syncResult.map((cr) => {
                               const clusterName = getClusterName(cr.clusterId, languageId, publicConfigClusters);
                               return (
-                                // 集群内数据同步时发生异常
+                                // 1.集群内数据同步时发生异常的情况
                                 cr.exceptionHappened ? (
                                   <div>
+                                    {/* 显示集群名 */}
                                     {clusterName}
                                     <span style={{ margin: "0 4px" }}>:</span>
+                                    {/*  显示异常总信息提示: 如 "数据部分同步（同步超时）" */}
                                     {cr.i18nExceptionMessage}
-                                  </div> 
+                                    {/* （1）已同步数据成功失败展示: "已同步数据成功 xx 条，失败 xx 条" */}
+                                    {
+                                      cr.totalSuccessfulCount > 0 || cr.totalFailedCount > 0 ?
+                                        (
+                                          <>
+                                            <SyncDetailButton onClick={() => setPreviewItem(cr)}>
+                                              {t(p("syncDetailsContent.hasSyncDataWhenException"))}
+                                              {t(p("syncDetailsContent.syncCountDetailsSucceed"),
+                                                [cr.totalSuccessfulCount])}
+                                              {t(p("syncDetailsContent.syncFailedCount"), [cr.totalFailedCount])}
+                                            </SyncDetailButton>
+                                          </>
+                                        ) : (
+                                          // （2）异常且未发生同步时："已处理部分没有需要同步的数据"
+                                          <>
+                                            {t(p("syncDetailsContent.noSyncDataWhenException"))}
+                                          </>
+                                        )
+                                    }
+                                  </div>
                                 ) : (
-                                  // 集群内数据完全同步时
+                                  // 2.集群内数据完全同步时
                                   cr.totalSyncCount === cr.totalSuccessfulCount ? (
                                     <div>
                                       {clusterName}
                                       <span style={{ margin: "0 4px" }}>:</span>
-                                      { cr.totalSyncCount === 0 ? t(p("syncDetailsContent.noSyncData")) : 
-                                        t(p("syncDetailsContent.syncTotallySucceed"), [cr.totalSyncCount])}
+                                      { cr.totalSyncCount === 0
+                                        // (1) "{集群}：数据一致，无需同步"
+                                        ? t(p("syncDetailsContent.noSyncData"))
+                                        : (
+                                        // (2) 数据同步全部成功: "{集群}：数据已完全同步，共完成 xx 条差异数据同步"
+                                          <>
+                                            {t(p("syncDetailsContent.syncTotallySucceed"))}
+                                            <SyncDetailButton onClick={() => setPreviewItem(cr)}>
+                                              {t(p("syncDetailsContent.syncTotallySucceedCount"),
+                                                [cr.totalSyncCount])}
+                                            </SyncDetailButton>
+                                          </>
+                                        )
+                                      }
                                     </div>
                                   ) : (
-                                    // 集群内数据未完全同步时
+                                    // 3. 集群内数据未完全同步时
+                                    // "{集群}：共有 xx 条差异数据需要同步，成功 xx 条，失败 xx 条"
                                     <div>
                                       {clusterName}
                                       <span style={{ margin: "0 4px" }}>:</span>
-                                      {t(p("syncDetailsContent.syncCountDetails"), 
-                                        [cr.totalSyncCount, cr.totalSuccessfulCount])}
-                                      <Button 
-                                        type="link" 
-                                        style={{ 
-                                          margin: 0, 
-                                          padding: "0 4px",
-                                          textDecoration: "underline",
-                                        }}
-                                        onClick={() => setPreviewItem(cr)}
-                                      >
+                                      {t(p("syncDetailsContent.syncCountDetailsTotal"), [cr.totalSyncCount])}
+                                      <SyncDetailButton onClick={() => setPreviewItem(cr)}>
+                                        {t(p("syncDetailsContent.syncCountDetailsSucceed"),
+                                          [cr.totalSuccessfulCount])}
                                         {t(p("syncDetailsContent.syncFailedCount"), [cr.totalFailedCount])}
-                                      </Button>   
+                                      </SyncDetailButton>
                                     </div>
                                   )
                                 )
                               );
                             })
                           }
-                        </> 
+                        </>
                       // 未获取到集群同步详情时的兜底
                       ) : t(p("syncDetailsContent.noSyncDetailsException"))
                     }
@@ -202,12 +226,37 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
         open={previewItem !== undefined}
         onClose={() => setPreviewItem(undefined)}
         item={previewItem}
-        title={ previewItem?.clusterId ? 
+        t={t}
+        title={ previewItem?.clusterId ?
           `${getClusterName(previewItem?.clusterId, languageId, publicConfigClusters)} `
-          + `${t(p("syncDetailsContent.failedDetailDrawerTitle"))}`
+          + `${t(p("syncDetailsContent.drawerTitle"))}`
           : ""
         }
       />
     </>
   );
 };
+
+interface SyncDetailButtonProps {
+  onClick: () => void;
+  children: React.ReactNode;
+}
+
+const SyncDetailButton: React.FC<SyncDetailButtonProps> = ({ onClick, children }) => (
+  <Button
+    type="link"
+    style={{
+      margin: 0,
+      padding: "0 4px",
+      textDecoration: "underline",
+      fontSize: "13px",
+      height: "auto",
+    }}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+  >
+    {children}
+  </Button>
+);
