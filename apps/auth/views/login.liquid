@@ -8,7 +8,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
-      background-image: url("{{ backgroundImagePath }}");
+      background-image:
+        url("{{ backgroundImagePath }}"),
+        url("{{ backgroundDefaultImagePath }}");
       background-repeat: no-repeat;
       background-color: {{ backgroundFallbackColor }};
       background-size: cover;
@@ -131,15 +133,18 @@
         </div>
       </div>
       <div class="w-1/2 h-screen pl-48 flex justify-center flex-col hidden-xs">
-          <div class="text-4xl font-semibold mb-12"  style="color: {{ sloganColor }}">{{ sloganTitle }}</div>
+          <div class="text-4xl font-semibold mb-12"  style="color: {{ sloganColor }}">{{ sloganTitle | default: authTexts.login.platformSystem}}</div>
           {% for sloganText in sloganTextArr %}
             <div class="text-2xl mb-8"  style="color: {{ sloganColor }}">{{ sloganText }}</div>
           {% endfor %}
       </div>
     </div>
-    <p class="absolute bottom-0 w-full pl-24 my-4 text-white text-xs" style="color: {{ footerTextColor }}">
-      Powered by <a href="https://github.com/PKUHPC/private-scow" target="_blank">SCOW</a>
-    </p>
+
+    {%- if footerText != "" -%}
+      <div class="absolute bottom-0 w-full pl-24 my-4 text-white text-xs" style="color: {{ footerTextColor }}">
+        {{ footerText | default: 'Powered by <a href="https://github.com/PKUHPC/private-scow" target="_blank">SCOW</a>' }}
+      </div>
+    {%- endif -%}
 
     {% if changePasswordPamars.changePasswordFlag %}
       <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50">

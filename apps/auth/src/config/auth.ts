@@ -192,12 +192,13 @@ export const UiConfigSchema = Type.Object({
       customLogoLink: Type.Optional(Type.String({ description: "用户自定义点击 logo 跳转链接" })),
     }, { default: {} }),
     slogan: Type.Object({
-      color: Type.String({ description: "默认标语文字颜色", default: "white" }),
+      color: Type.String({ description: "默认标语文字颜色", default: "#595959" }),
       title: createI18nStringSchema({ description: "默认标语标题", defaultValue: "" }),
       texts: Type.Array(createI18nStringSchema({ description: "默认 slogan 正文", defaultValue: "" })
         , { description: "默认 slogan 正文数组", default: []}),
     }, { default: {} }),
     footerTextColor: Type.String({ description: "默认 footer 文字颜色", default: "white" }),
+    footerText: createI18nStringSchema({ description: "默认 footer 文字", defaultValue: "" }),
   }),
   hostnameMap: Type.Optional(Type.Record(Type.String(), Type.Object({
     backgroundImagePath: Type.Optional(Type.String({ description: "默认背景图片" })),
@@ -214,6 +215,7 @@ export const UiConfigSchema = Type.Object({
         { description: "默认 slogan 正文数组" }),
     })),
     footerTextColor: Type.Optional(Type.String({ description: "默认 footer 文字颜色" })),
+    footerText: createI18nStringSchema({ description: "默认 footer 文字", defaultValue: "" }),
   }))),
 });
 

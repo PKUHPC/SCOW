@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getCommonConfig, getSystemLanguageConfig } from "@scow/config/build/common";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
 import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-server";
@@ -66,12 +54,16 @@ export async function serveLoginHtml(
     return getI18nConfigCurrentText(text, languageId);
   });
 
+  const footerText = getI18nConfigCurrentText(
+    authUiHostnameConfig?.footerText ?? authUiDefaultConfig?.footerText, languageId);
+
   return rep.status(
     verifyCaptchaFail ? 400 : errParamrs.err ? 401 : 200).view("login.liquid", {
     authTexts: authTexts,
     cssUrl: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/tailwind.min.css"),
     eyeImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye.png"),
     eyeCloseImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye-close.png"),
+    backgroundDefaultImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/background.png"),
     backgroundImagePath: join(config.BASE_PATH, config.PUBLIC_PATH,
       authUiHostnameConfig?.backgroundImagePath
       ?? authUiDefaultConfig?.backgroundImagePath ?? "./assets/background.png"),
@@ -83,10 +75,11 @@ export async function serveLoginHtml(
         (authUiHostnameConfig?.logo?.customLogoPath || authUiDefaultConfig?.logo.customLogoPath) ?? ""),
     logoLink: authUiHostnameConfig?.logo?.customLogoLink ?? authUiDefaultConfig?.logo.customLogoLink ?? "",
     callbackUrl,
-    sloganColor: authUiHostnameConfig?.slogan?.color || authUiDefaultConfig?.slogan?.color || "white",
+    sloganColor: authUiHostnameConfig?.slogan?.color || authUiDefaultConfig?.slogan?.color,
     sloganTitle: sloganTitle || "",
     sloganTextArr: sloganTextArr || [],
     footerTextColor: authUiHostnameConfig?.footerTextColor || authUiDefaultConfig?.footerTextColor || "white",
+    footerText,
     themeColor: (hostname && uiConfig.primaryColor?.hostnameMap?.[hostname])
       ?? uiConfig.primaryColor?.defaultColor ?? DEFAULT_PRIMARY_COLOR,
     titleTag: uiConfig.titleTag || "- SCOW",

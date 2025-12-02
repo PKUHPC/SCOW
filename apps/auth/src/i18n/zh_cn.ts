@@ -29,6 +29,7 @@ export default {
     invalidPassword: "密码无效，请重新输入",
     invalidOtp: "OTP验证码无效，请重新输入。",
     bindOtp: "绑定otp",
+    platformSystem : "算力平台系统",
   },
   bindOtp: {
     bindOtp: "绑定OTP",

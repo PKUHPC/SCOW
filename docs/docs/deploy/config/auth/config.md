@@ -63,6 +63,10 @@ ui:
     # 可选配置，默认为白色字体
     footerTextColor: "white"
 
+    # 登录界面底部页脚，默认为 Powered by SCOW
+    # 可选配置，当配置为 "" 时隐藏页脚，文本支持HTML的标签
+    footerText: "Powered by SCOW"
+
   # 根据不域名进行不同的展示，对具体hostname生效的生效，可以不填
   # hostnameMap:
 
@@ -99,6 +103,9 @@ ui:
 
   #     # 登陆界面底部 Power By 字体颜色配置
   #     footerTextColor: "black"
+
+  #     # 登录界面底部页脚
+  #     footerText: "Powered by SCOW"
 ```
 
 ## 允许回调主机名

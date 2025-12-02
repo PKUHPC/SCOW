@@ -29,6 +29,7 @@ export default {
     invalidPassword: "Password is invalid, please re-enter",
     invalidOtp: "Invalid OTP Verification Code, please re-enter.",
     bindOtp: "Bind OTP",
+    platformSystem : "Computing Power Platform System",
   },
   bindOtp: {
     bindOtp: "Bind OTP",
