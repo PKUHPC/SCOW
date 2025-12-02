@@ -1,24 +1,12 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { existsSync } from "fs";
 import { NextApiRequest, NextApiResponse } from "next";
 import { join } from "path";
-import { sendFile, validatePayload } from "src/routes/icon/utils";
+import { sendFile, sendSvgWithCustomColor, validatePayload } from "src/routes/icon/utils";
 import { getHost } from "src/utils/getHostname";
 import { z } from "zod";
 
 const QuerySchema = z.object({
-  type: z.enum(["logo", "banner"]),
+  type: z.enum(["logo", "banner", "login"]),
   preferDark: z.enum(["true", "false"]).default("false"),
 });
 
@@ -26,7 +14,7 @@ const exts = ["svg", "png", "jpg"];
 
 export const serveLogo = async (
   req: NextApiRequest, res: NextApiResponse,
-  builtinLogoPath: string, configBasePath: string,
+  builtinLogoPath: string, configBasePath: string, primaryColor?: string,
 ) => {
 
   const query = validatePayload(QuerySchema, req.query, res);
@@ -52,7 +40,11 @@ export const serveLogo = async (
     for (const ext of exts) {
       const filePath = join(basePath, type + "." + ext);
       if (existsSync(filePath)) {
-        await sendFile(res, filePath);
+        if (ext === "svg" && primaryColor) {
+          await sendSvgWithCustomColor(res, filePath, primaryColor);
+        } else {
+          await sendFile(res, filePath);
+        }
         return true;
       }
     }

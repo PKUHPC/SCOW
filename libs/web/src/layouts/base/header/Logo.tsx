@@ -38,7 +38,7 @@ export const Logo: React.FC<Props> = ({ basePath }) => {
   return (
     <LogoContainer>
       <Link href="/" style={{ display: "inline-flex" }}>
-        <img height="35px" alt="logo" src={join(basePath, "/api/logo?" + query.toString())} />
+        <img height="30px" alt="logo" src={join(basePath, "/api/logo?" + query.toString())} />
       </Link>
     </LogoContainer>
   );

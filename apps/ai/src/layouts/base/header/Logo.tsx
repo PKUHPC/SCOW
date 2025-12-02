@@ -39,7 +39,7 @@ export const Logo = () => {
       <Link href="/">
         {
           data ? (
-            <img src={join(data.BASE_PATH, "/api/logo?" + query.toString())} alt="logo" height={35} />
+            <img src={join(data.BASE_PATH, "/api/logo?" + query.toString())} alt="logo" height={30} />
           ) : undefined
         }
       </Link>

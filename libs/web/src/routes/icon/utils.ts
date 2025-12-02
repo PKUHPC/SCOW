@@ -14,9 +14,8 @@ import fs from "fs";
 import { contentType } from "mime-types";
 import { NextApiResponse } from "next";
 import path from "path";
+import { Readable } from "stream";
 import { ZodObject, ZodRawShape } from "zod";
-
-
 
 export function validatePayload <TSchema extends ZodRawShape>(
   schema: ZodObject<TSchema>, payload: object, res: NextApiResponse,
@@ -45,6 +44,28 @@ export async function sendFile(res: NextApiResponse, filePath: string) {
   await new Promise<void>(function(resolve) {
     readStream.pipe(res);
     readStream.on("end", resolve);
+  });
+
+  res.end();
+}
+
+
+// 动态颜色处理
+export async function sendSvgWithCustomColor(res: NextApiResponse, filePath: string, primaryColor: string) {
+  const svgContent = await fs.promises.readFile(filePath, "utf-8");
+  const transformedSvg = svgContent.replace(/#3470FF/gi, primaryColor);
+
+  const svgStream = Readable.from([transformedSvg]);
+
+  res.writeHead(200, {
+    "Content-Type": "image/svg+xml",
+    "Content-Length": Buffer.byteLength(transformedSvg, "utf8"),
+    "Cache-Control": "public, max-age=86400",
+  });
+
+  await new Promise<void>((resolve) => {
+    svgStream.pipe(res);
+    svgStream.on("end", resolve);
   });
 
   res.end();

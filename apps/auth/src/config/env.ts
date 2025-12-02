@@ -19,7 +19,7 @@ import { AuthType } from "./AuthType";
 
 export const FAVICON_URL = "/api/icon?type=favicon";
 
-export const LOGO_URL = "/api/logo?type=logo&preferDark=";
+export const LOGO_URL = "/api/logo?type=login&preferDark=";
 
 export const config = envConfig({
   HOST: host({ default: "0.0.0.0", desc: "监听地址" }),
