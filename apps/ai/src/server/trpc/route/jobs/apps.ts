@@ -218,13 +218,16 @@ export const listAvailableApps = procedure
     }));
 
     // 只返回成功获取到的集群应用信息
-    const successfulResults = [];
-    for (const result of results) {
+    const successfulResults: ClusterAppsResultSchema[] = [];
+    for (const [index, result] of results.entries()) {
+      const clusterId = validClusterIds[index];
+
       if (result.status === "fulfilled") {
         successfulResults.push(result.value);
       } else {
-        const errorInfo = result.reason;
-        logger.error(`failed to get cluster ${errorInfo.clusterId}'s available apps: ${errorInfo.error.message}`);
+        const reason = result.reason;
+        const errorMessage = reason instanceof Error ? reason.message : String(reason);
+        logger.error(`failed to get cluster ${clusterId}'s available apps: ${errorMessage}`);
       }
     }
 
