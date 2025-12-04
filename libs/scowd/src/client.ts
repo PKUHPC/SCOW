@@ -7,6 +7,7 @@ import { ImageService } from "@scow/scowd-protos/build/application/image_pb";
 import { ShellService } from "@scow/scowd-protos/build/application/shell_pb";
 import { SystemService } from "@scow/scowd-protos/build/application/system_pb";
 import { FileService } from "@scow/scowd-protos/build/storage/file_pb";
+import { FileTransferService } from "@scow/scowd-protos/build/storage/file_transfer_pb";
 import { StorageQuotaService } from "@scow/scowd-protos/build/storage/storage_quota_pb";
 
 import { SslConfig } from "./ssl";
@@ -18,6 +19,7 @@ export interface ScowdClient {
   app: Client<typeof AppService>;
   system: Client<typeof SystemService>;
   shell: Client<typeof ShellService>;
+  fileTransfer: Client<typeof FileTransferService>;
   image: Client<typeof ImageService>;
 }
 export type SafeConnectTransportOptions =
@@ -51,6 +53,7 @@ export const getScowdClient = (
 ) => {
   return {
     file: getClient(scowdUrl, FileService, certificates, extraConnectTransportOptions),
+    fileTransfer: getClient(scowdUrl, FileTransferService, certificates, extraConnectTransportOptions),
     storageQuota: getClient(scowdUrl, StorageQuotaService, certificates, extraConnectTransportOptions),
     desktop: getClient(scowdUrl, DesktopService, certificates, extraConnectTransportOptions),
     app: getClient(scowdUrl, AppService, certificates, extraConnectTransportOptions),

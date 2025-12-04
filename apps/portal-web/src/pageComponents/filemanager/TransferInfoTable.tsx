@@ -1,19 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TransferInfo } from "@scow/protos/build/portal/file";
 import { App, Button, Progress, Table } from "antd";
-import { useCallback, useEffect } from "react";
-import { useAsync } from "react-async";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/utils/cluster";
@@ -29,28 +16,72 @@ export const TransferInfoTable: React.FC = () => {
   const { message, modal } = App.useApp();
   const t = useI18nTranslateToString();
 
-  const { data: transferData, reload } = useAsync({
-    promiseFn: useCallback(async () => {
-      const newTransferData: TransferData[] = [];
-      const listClustersResponse = await api.listAvailableTransferClusters({ query: {} });
-      const clusterList: Cluster[] = listClustersResponse.clusterList;
-      await Promise.all(clusterList.map(async (cluster) => {
-        const response = await api.queryFileTransferProgress({ query: { cluster: cluster.id } });
-        newTransferData.push({
-          cluster: cluster.id,
-          files: response.result,
-        });
-      }));
-      return newTransferData;
-    }, []),
-  });
+  const [transferData, setTransferData] = useState<TransferData[]>();
+  const [clusterList, setClusterList] = useState<Cluster[]>([]);
+
+  const fetchClusterList = useCallback(async () => {
+    const listClustersResponse = await api.listAvailableTransferClusters({ query: {} });
+    return listClustersResponse.clusterList;
+  }, []);
+
+  const fetchTransferData = useCallback(async (clusters: Cluster[]) => {
+    const newTransferData: TransferData[] = [];
+    await Promise.all(clusters.map(async (cluster) => {
+      const response = await api.queryFileTransferProgress({ query: { cluster: cluster.id } });
+      newTransferData.push({
+        cluster: cluster.id,
+        files: response.result,
+      });
+    }));
+    return newTransferData;
+  }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      reload();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [reload]);
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const initializeAndPoll = async () => {
+      try {
+        // 首次获取集群列表
+        const clusters = await fetchClusterList();
+        if (isMounted) {
+          setClusterList(clusters);
+
+          // 开始轮询传输数据
+          const poll = async () => {
+            if (!isMounted) return;
+
+            try {
+              const data = await fetchTransferData(clusters);
+              if (isMounted) {
+                setTransferData(data);
+              }
+            } catch (error) {
+              console.error("Failed to fetch transfer data:", error);
+            }
+
+            // 只有在组件仍然挂载时才设置下一次轮询
+            if (isMounted) {
+              timeoutId = setTimeout(poll, 10000);
+            }
+          };
+
+          poll();
+        }
+      } catch (error) {
+        console.error("Failed to fetch cluster list:", error);
+      }
+    };
+
+    initializeAndPoll();
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [fetchClusterList, fetchTransferData]);
 
   const columns = [
     {
@@ -105,7 +136,7 @@ export const TransferInfoTable: React.FC = () => {
                 } })
                   .then(() => {
                     message.success(t(p("cancelSuccess")));
-                    reload();
+                    fetchTransferData(clusterList).then((data) => setTransferData(data));
                   });
               },
             });

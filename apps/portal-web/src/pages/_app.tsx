@@ -194,6 +194,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
 
   const { data } = useAsync({ promiseFn:
     useCallback(async () => {
+      if (!publicConfig.NOTIF_ENABLED) return undefined;
       return api.getUnreadMessages({
         query: { messageType: AdminMessageType.SystemNotification },
       }).httpError(500, () => {}).then((res) => res).catch(() => undefined); ;

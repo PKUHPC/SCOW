@@ -230,56 +230,6 @@ message DecompressFileRequest {
 
 message DecompressFileResponse {}
 
-
-message TransferInfo {
-  string to_cluster = 1;
-  string file_path = 2;
-  uint64 transfer_size_kb = 3; // 单位为KB，B：Byte
-  uint32 progress = 4;
-  float speed_k_bps = 5;
-  uint64 remaining_time_seconds = 6;
-}
-
-message StartFileTransferRequest {
-  string user_id = 1;
-  string to_transfer_node_host = 2;
-  string to_transfer_node_port = 3;
-  string from_path = 4;
-  string to_path = 5;
-}
-
-message StartFileTransferResponse {
-
-}
-
-message QueryFileTransferRequest {
-  string user_id = 1;
-}
-
-message QueryFileTransferResponse {
-  repeated TransferInfo transfer_infos = 1;
-}
-
-message TerminateFileTransferRequest {
-  string user_id = 1;
-  string to_transfer_node_host = 2;
-  string from_path = 3;
-}
-
-message TerminateFileTransferResponse {
-
-}
-
-message CheckTransferKeyRequest {
-  string user_id = 1;
-  string to_transfer_node_host = 2;
-  string to_transfer_node_port = 3;
-}
-
-message CheckTransferKeyResponse {
-
-}
-
 service FileService {
   rpc Copy(CopyRequest) returns (CopyResponse) {}
   rpc Move(MoveRequest) returns (MoveResponse) {}
@@ -311,9 +261,4 @@ service FileService {
 
   rpc GetFileMetadata(GetFileMetadataRequest) returns (GetFileMetadataResponse);
   rpc GetHomeDirectory(GetHomeDirectoryRequest) returns (GetHomeDirectoryResponse);
-
-  rpc StartFileTransfer(StartFileTransferRequest) returns (StartFileTransferResponse);
-  rpc QueryFileTransfer(QueryFileTransferRequest) returns (QueryFileTransferResponse);
-  rpc TerminateFileTransfer(TerminateFileTransferRequest) returns (TerminateFileTransferResponse);
-  rpc CheckTransferKey(CheckTransferKeyRequest) returns (CheckTransferKeyResponse);
 }

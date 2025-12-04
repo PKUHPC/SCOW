@@ -139,6 +139,104 @@ export interface DecompressFileRequest {
 
 export interface DecompressFileReply {}
 
+export interface StartFileTransferRequest {
+  fromCluster: string;
+  toCluster: string;
+  userId: string;
+  fromPath: string;
+  toPath: string;
+}
+
+export interface StartFileTransferReply {
+}
+
+export interface QueryFileTransferRequest {
+  cluster: string;
+  userId: string;
+}
+
+export interface TransferInfo {
+  toCluster: string;
+  filePath: string;
+  transferSizeKb: number;
+  progress: number;
+  speedKBps: number;
+  remainingTimeSeconds: number;
+}
+
+export interface QueryFileTransferReply {
+  transferInfos: TransferInfo[]
+}
+
+export interface TerminateFileTransferRequest {
+  fromCluster: string;
+  toCluster: string;
+  userId: string;
+  fromPath: string;
+}
+
+export interface TerminateFileTransferReply {
+
+}
+
+// export interface CheckTransferKeyRequest {
+//   fromCluster: string;
+//   toCluster: string;
+//   userId: string;
+// }
+
+// export interface CheckTransferKeyReply {
+// }
+
+export interface StartFileTransferRequest {
+  fromCluster: string;
+  toCluster: string;
+  userId: string;
+  fromPath: string;
+  toPath: string;
+}
+
+export interface StartFileTransferReply {
+}
+
+export interface QueryFileTransferRequest {
+  cluster: string;
+  userId: string;
+}
+
+export interface TransferInfo {
+  toCluster: string;
+  filePath: string;
+  transferSizeKb: number;
+  progress: number;
+  speedKBps: number;
+  remainingTimeSeconds: number;
+}
+
+export interface QueryFileTransferReply {
+  transferInfos: TransferInfo[]
+}
+
+export interface TerminateFileTransferRequest {
+  fromCluster: string;
+  toCluster: string;
+  userId: string;
+  fromPath: string;
+}
+
+export interface TerminateFileTransferReply {
+
+}
+
+// export interface CheckTransferKeyRequest {
+//   fromCluster: string;
+//   toCluster: string;
+//   userId: string;
+// }
+
+// export interface CheckTransferKeyReply {
+// }
+
 export interface FileOps {
   copy(req: CopyRequest, logger: Logger): Promise<CopyReply>;
   move(req: MoveRequest, logger: Logger): Promise<MoveReply>;
@@ -159,8 +257,8 @@ export interface FileOps {
 
   decompressFile(req: DecompressFileRequest, logger: Logger): Promise<DecompressFileReply>;
 
-  // startFileTransfer(req: StartFileTransferRequest, logger: Logger): Promise<StartFileTransferReply>;
-  // queryFileTransfer(req: QueryFileTransferRequest, logger: Logger): Promise<QueryFileTransferReply>;
-  // terminateFileTransfer(req: TerminateFileTransferRequest, logger: Logger): Promise<TerminateFileTransferReply>;
+  startFileTransfer(req: StartFileTransferRequest, logger: Logger): Promise<StartFileTransferReply>;
+  queryFileTransfer(req: QueryFileTransferRequest, logger: Logger): Promise<QueryFileTransferReply>;
+  terminateFileTransfer(req: TerminateFileTransferRequest, logger: Logger): Promise<TerminateFileTransferReply>;
   // checkTransferKey(req: CheckTransferKeyRequest, logger: Logger): Promise<CheckTransferKeyReply>;
 }

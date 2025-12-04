@@ -1,11 +1,14 @@
 import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { ScowdClient } from "@scow/lib-scowd/build/client";
+import { getScowdClient, ScowdClient } from "@scow/lib-scowd/build/client";
 import { FileInfo, fileTypeFromJSON } from "@scow/protos/build/portal/file";
 import { DownloadResponse } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
+import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
+import { certificates, generateScowdUrl } from "src/utils/scowd";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { getClusterTransferNode, tryGetClusterTransferNode } from "src/utils/ssh";
 
 export const scowdFileServices = (client: ScowdClient): FileOps => ({
   copy: async (request) => {
@@ -372,5 +375,93 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
 
     return {};
+  },
+
+  startFileTransfer: async (request) => {
+
+    const { fromCluster, toCluster, userId, fromPath, toPath } = request;
+
+    const { host: fromHost, port: fromPort } = getClusterTransferNode(fromCluster);
+    const toAddress = getClusterTransferNode(toCluster).address;
+
+    const scowdUrl = generateScowdUrl(fromHost, fromPort);
+    const scowdClient = getScowdClient(scowdUrl, certificates);
+    try {
+      await scowdClient.fileTransfer.startFileTransfer({
+        userId, destAddress: toAddress, destPath: toPath, sourcePath: fromPath });
+
+      return {};
+
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
+    }
+  },
+
+  queryFileTransfer: async (request) => {
+
+    const { cluster, userId } = request;
+    try {
+      const { host: fromHost, port: fromPort } = getClusterTransferNode(cluster);
+
+      const scowdUrl = generateScowdUrl(fromHost, fromPort);
+      const scowdClient = getScowdClient(scowdUrl, certificates);
+
+      const { transferInfos } = await scowdClient.fileTransfer.queryFileTransfer({ userId });
+
+      // 根据host确定clusterId
+      const clusters = configClusters;
+      return { transferInfos: transferInfos.map((info) => {
+        let toCluster = info.toCluster;
+        for (const key in clusters) {
+          const transferNode = tryGetClusterTransferNode(key);
+          if (transferNode) {
+            const clusterHost = transferNode.address;
+            if (clusterHost === info.toCluster) {
+              toCluster = key;
+            }
+          }
+          else {
+            continue;
+          }
+        }
+        return {
+          ...info,
+          toCluster,
+          transferSizeKb: Number(info.transferSizeKb),
+          remainingTimeSeconds: Number(info.remainingTimeSeconds),
+        };
+      }) };
+
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
+    }
+  },
+
+  terminateFileTransfer: async (request) => {
+    const { fromCluster, toCluster, userId, fromPath } = request;
+
+    const { host: fromHost, port: fromPort } = getClusterTransferNode(fromCluster);
+    const toAddress = getClusterTransferNode(toCluster).address;
+
+    const scowdUrl = generateScowdUrl(fromHost, fromPort);
+    const scowdClient = getScowdClient(scowdUrl, certificates);
+
+    try {
+      await scowdClient.fileTransfer.terminateFileTransfer({
+        userId, destAddress: toAddress, sourcePath: fromPath });
+
+      return {};
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
+    }
   },
 });

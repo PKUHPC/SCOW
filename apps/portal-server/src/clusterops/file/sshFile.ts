@@ -4,10 +4,11 @@ import { loggedExec, sftpExists, sftpLstat, sftpMkdir, sftpReaddir,
   sftpRealPath, sftpRename, sftpStat, sftpUnlink, sftpWriteFile, sshRmrf } from "@scow/lib-ssh";
 import { FileInfo, FileType as protoFileType } from "@scow/protos/build/portal/file";
 import { join } from "path";
-import { FileOps, FileType } from "src/clusterops/api/file";
+import { FileOps, FileType, TransferInfo } from "src/clusterops/api/file";
+import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
 import { pipeline } from "src/utils/pipeline";
-import { sshConnect } from "src/utils/ssh";
+import { getClusterTransferNode, sshConnect, tryGetClusterTransferNode } from "src/utils/ssh";
 import { once } from "stream";
 
 export const sshFileServices = (host: string): FileOps => ({
@@ -392,6 +393,160 @@ export const sshFileServices = (host: string): FileOps => ({
       const sftp = await ssh.requestSFTP();
       const exists = await sftpExists(sftp, path);
       return { exists };
+    });
+  },
+
+  startFileTransfer: async (request, logger) => {
+
+    const { fromCluster, toCluster, userId, fromPath, toPath } = request;
+
+    const fromTransferNodeAddress = getClusterTransferNode(fromCluster).address;
+    const {
+      host: toTransferNodeHost,
+      port: toTransferNodePort,
+    } = getClusterTransferNode(toCluster);
+
+    // 执行scow-sync-start
+    return await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
+      // 密钥路径
+      const sftp = await ssh.requestSFTP();
+      const homePath = await sftpRealPath(sftp)(".");
+      const privateKeyPath = `${homePath}/scow/.scow-sync-ssh/id_rsa`;
+
+      const cmd = "scow-sync-start";
+      const args = [
+        "-a", toTransferNodeHost,
+        "-u", userId,
+        "-s", fromPath,
+        "-d", toPath,
+        "-m", "2",
+        "-p", toTransferNodePort.toString(),
+        "-k", privateKeyPath,
+      ];
+
+      const resp = await loggedExec(ssh, logger, true, cmd, args);
+      if (resp.code !== 0) {
+        throw {
+          code: status.INTERNAL,
+          message: "scow-sync-start command failed",
+          details: resp.stderr,
+        } as ServiceError;
+      }
+      return [{}];
+    });
+  },
+
+  queryFileTransfer: async (request, logger) => {
+
+    const { cluster, userId } = request;
+
+    const transferNodeAddress = getClusterTransferNode(cluster).address;
+
+    return await sshConnect(transferNodeAddress, userId, logger, async (ssh) => {
+      const cmd = "scow-sync-query";
+
+      const resp = await loggedExec(ssh, logger, true, cmd, []);
+      if (resp.code !== 0) {
+        throw {
+          code: status.INTERNAL,
+          message: "scow-sync-query command failed",
+          details: resp.stderr,
+        } as ServiceError;
+      }
+
+      interface TransferInfosJson {
+        recvAddress: string,
+        filePath: string,
+        transferSize: string,
+        progress: string,
+        speed: string,
+        leftTime: string
+      }
+
+      // 解析scow-sync-query返回的json数组
+      const transferInfosJsons = JSON.parse(resp.stdout) as TransferInfosJson[];
+      const transferInfos: TransferInfo[] = [];
+
+      // 根据host确定clusterId
+      const clusters = configClusters;
+      transferInfosJsons.forEach((info) => {
+        let toCluster = info.recvAddress;
+        for (const key in clusters) {
+          const transferNode = tryGetClusterTransferNode(key);
+          if (transferNode) {
+            const clusterHost = transferNode.host;
+            if (clusterHost === info.recvAddress) {
+              toCluster = key;
+            }
+          }
+          else {
+            continue;
+          }
+        }
+
+        // 将json数组中的string类型解析成protos中定义的格式
+        let speedInKB = 0;
+        const speedMatch = /([\d.]+)([kMGB]?B\/s)/.exec(info.speed);
+        if (speedMatch) {
+          const speed = Number(speedMatch[1]);
+          switch (speedMatch[2]) {
+            case "B/s":
+              speedInKB = speed / 1024;
+              break;
+            case "kB/s":
+              speedInKB = speed;
+              break;
+            case "MB/s":
+              speedInKB = speed * 1024;
+              break;
+            case "GB/s":
+              speedInKB = speed * 1024 * 1024;
+              break;
+          }
+        }
+
+        const [hours, minutes, seconds] = info.leftTime.split(":").map(Number);
+        const leftTimeSeconds = hours * 3600 + minutes * 60 + seconds;
+        transferInfos.push({
+          toCluster: toCluster,
+          filePath: info.filePath,
+          transferSizeKb: Math.floor(Number(info.transferSize.replace(/,/g, "")) / 1024),
+          progress: Number(info.progress.split("%")[0]),
+          speedKBps: speedInKB,
+          remainingTimeSeconds: leftTimeSeconds,
+        });
+      });
+
+      return { transferInfos:transferInfos };
+    });
+  },
+
+  terminateFileTransfer: async (request, logger) => {
+    const { fromCluster, toCluster, userId, fromPath } = request;
+
+    const fromTransferNodeAddress = getClusterTransferNode(fromCluster).address;
+    const toTransferNodeHost = getClusterTransferNode(toCluster).host;
+
+    return await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
+
+      const cmd = "scow-sync-terminate";
+      const args = [
+        "-a", toTransferNodeHost,
+        "-u", userId,
+        "-s", fromPath,
+      ];
+
+      const resp = await loggedExec(ssh, logger, true, cmd, args);
+
+      if (resp.code !== 0) {
+        throw {
+          code: status.INTERNAL,
+          message: "scow-sync-terminate command failed",
+          details: resp.stderr,
+        } as ServiceError;
+      }
+
+      return [{}];
     });
   },
 });

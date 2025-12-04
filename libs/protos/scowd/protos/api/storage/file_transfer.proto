@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package api.storage;
+
+option go_package = "scowd/protos/gen/api/storage;apiv1";
+
+message TransferInfo {
+  string to_cluster = 1;
+  string file_path = 2;
+  uint64 transfer_size_kb = 3; // 单位为KB，B：Byte
+  uint32 progress = 4;
+  float speed_k_bps = 5;
+  uint64 remaining_time_seconds = 6;
+}
+
+message StartFileTransferRequest {
+  string user_id = 1;
+  // 目标服务器 scowd 地址, ip:port
+  string dest_address = 2;
+  string dest_path = 3;
+  string source_path = 4;
+}
+
+message StartFileTransferResponse {
+}
+
+message QueryFileTransferRequest {
+  string user_id = 1;
+}
+
+message QueryFileTransferResponse {
+  repeated TransferInfo transfer_infos = 1;
+}
+
+message TerminateFileTransferRequest {
+  string user_id = 1;
+  string dest_address = 2;
+  string source_path = 3;
+}
+
+message TerminateFileTransferResponse {
+}
+
+
+message FileTransferRequest {
+  oneof request_type {
+    Meta meta = 1;
+    ReuseChunk reuse_chunk = 2;
+    Chunk chunk = 3;
+    TransferComplete transfer_complete= 4;
+    TransferTerminated transfer_terminated = 5;
+  }
+
+  // 元数据请求
+  message Meta {
+    string user_id = 1;
+    string file_path = 2;
+    int64 file_size_bytes = 3;
+  }
+
+  message ReuseChunk {
+    int64 source_start_bytes = 1;
+    int64 target_start_bytes = 2;
+  }
+
+  // 数据块内容
+  message Chunk {
+    bytes data = 1;
+    int64 start_bytes = 2;
+  }
+
+  // 传输完成
+  message TransferComplete {
+  }
+
+  // 传输终止
+  message TransferTerminated {
+  }
+}
+
+message FileTransferResponse {
+  oneof response_type {
+    FullTransferAction full_transfer_action = 1;
+    ChunkAck chunk_ack = 2;
+    ChunkHash chunk_hash = 3;
+    StartDiffTransfer start_diff_transfer = 4;
+    Error error = 5;
+  }
+
+  // 全量传输动作指令
+  message FullTransferAction {
+    uint32 chunk_size_bytes = 1;
+  }
+
+  // 数据块确认
+  message ChunkAck {
+    int64 start_bytes = 1;
+    uint32 chunk_size_bytes = 2;
+  }
+
+  // 开始差异传输信号
+  message StartDiffTransfer {
+    uint32 chunk_size_bytes = 1;
+  }
+
+  // 哈希响应
+  message ChunkHash {
+    int64 start_bytes = 1;
+    uint32 weak_hash = 2;
+    bytes strong_hash = 3;
+  }
+
+  message Error {
+    string message = 1;
+  }
+}
+
+service FileTransferService {
+  rpc StartFileTransfer(StartFileTransferRequest) returns (StartFileTransferResponse);
+  rpc QueryFileTransfer(QueryFileTransferRequest) returns (QueryFileTransferResponse);
+  rpc TerminateFileTransfer(TerminateFileTransferRequest) returns (TerminateFileTransferResponse);
+  rpc FileTransfer(stream FileTransferRequest) returns (stream FileTransferResponse);
+}
