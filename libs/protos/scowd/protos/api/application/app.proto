@@ -36,6 +36,7 @@ message RefreshVncPasswordRequest {
   int32 display_id = 2;
   string host = 3;
   string vnc_passwd_path = 4;
+  uint32 jobId = 5;
 }
 
 message RefreshVncPasswordResponse {

@@ -167,6 +167,7 @@ export const connectToApp =
     .input(z.object({
       cluster: z.string(),
       sessionId: z.string(),
+      jobId: z.number(),
     }))
     .output(z.object({
       host: z.string(),
@@ -186,14 +187,12 @@ export const connectToApp =
       customFormData: z.record(z.string()).optional(),
     }))
     .mutation(async ({ input, ctx: { user } }) => {
-      const { cluster, sessionId } = input;
+      const { cluster, sessionId, jobId } = input;
       const userId = user.identityId;
       const client = getPortalClient(AppServiceClient);
 
       return await asyncUnaryCall(client, "connectToApp", {
-        cluster,
-        userId,
-        sessionId,
+        cluster, userId, sessionId, jobId,
       }).then((reply) => {
         // 处理 web 类型响应
         if (reply.appProps?.$case !== "web") {

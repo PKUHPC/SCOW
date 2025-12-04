@@ -49,7 +49,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
       // 先通过ConnectToApp获取后端返回的host，port，proxyType
       const response = await api.connectToApp({ body:
-        { cluster: cluster.id, sessionId:session.sessionId } }, signal)
+        { cluster: cluster.id, sessionId: session.sessionId, jobId: session.jobId } }, signal)
         .httpError(404, () => {
           return false;
         })
@@ -153,7 +153,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
       // 如果不是web应用需要重新发起 connectToApp的请求
       const res = await api.connectToApp({ body:
-        { cluster: cluster.id, sessionId:session.sessionId } })
+        { cluster: cluster.id, sessionId: session.sessionId, jobId: session.jobId } })
         .httpError(404, () => { message.error(t(p("notFoundMessage"))); })
         .httpError(409, () => { message.error(t(p("notConnectableMessage"))); });
 

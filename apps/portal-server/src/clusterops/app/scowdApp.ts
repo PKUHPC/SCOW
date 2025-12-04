@@ -612,7 +612,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
     connectToApp: async (request, logger) => {
       const apps = getClusterAppConfigs(cluster);
 
-      const { sessionId, userId } = request;
+      const { sessionId, userId, jobId } = request;
 
       try {
         const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -689,11 +689,12 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
                 // scowd 无需考虑代理网关节点，可以直接 ssh 到计算节点
                 const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
-                const { password } = await client.app.refreshVncPassword({ userId, displayId, host, vncPasswdPath }).
-                  catch((err: ConnectError) => {
-                    logger.error(`Refresh vnc password failed ${err.message}`);
-                    throw err;
-                  });
+                const { password } = await client.app.refreshVncPassword({
+                  jobId, userId, displayId, host, vncPasswdPath,
+                }).catch((err: ConnectError) => {
+                  logger.error(`Refresh vnc password failed ${err.message}`);
+                  throw err;
+                });
 
                 return {
                   appId: sessionMetadata.appId,

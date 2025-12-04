@@ -30,6 +30,7 @@ message ConnectToAppRequest {
   string user_id = 1;
   string cluster = 2;
   string session_id = 3;
+  uint32 job_id = 4;
 }
 
 message WebAppProps {

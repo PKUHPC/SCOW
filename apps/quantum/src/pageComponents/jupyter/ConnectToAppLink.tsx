@@ -46,6 +46,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
     const reply = await connectMutation.mutateAsync({
       cluster,
       sessionId:session.sessionId,
+      jobId: session.jobId,
     });
 
     if (reply.type === "web") {

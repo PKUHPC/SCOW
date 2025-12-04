@@ -35,7 +35,7 @@ export const appServiceServer = plugin((server) => {
   server.addService<AppServiceServer>(AppServiceService, {
     connectToApp: async ({ request, logger }) => {
 
-      const { cluster, sessionId, userId } = request;
+      const { cluster, sessionId, userId, jobId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const apps = getClusterAppConfigs(cluster);
@@ -45,7 +45,7 @@ export const appServiceServer = plugin((server) => {
       if (!clusterOps) { throw clusterNotFound(cluster); }
 
       const reply = await clusterOps.app.connectToApp({
-        sessionId, userId,
+        sessionId, userId, jobId,
       }, logger);
 
       const app = apps[reply.appId];

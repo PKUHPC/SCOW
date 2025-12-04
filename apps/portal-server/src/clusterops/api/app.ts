@@ -65,6 +65,7 @@ export interface GetAppSessionsReply {
 export interface ConnectToAppRequest {
   userId: string;
   sessionId: string;
+  jobId: number;
 }
 
 export interface ConnectToAppReply {

@@ -35,6 +35,7 @@ export const ConnectToAppSchema = typeboxRouteSchema({
   body: Type.Object({
     cluster: Type.String(),
     sessionId: Type.String(),
+    jobId: Type.Number(),
   }),
 
   responses: {
@@ -81,12 +82,12 @@ export default /* #__PURE__*/route(ConnectToAppSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { cluster, sessionId } = req.body;
+  const { cluster, sessionId, jobId } = req.body;
 
   const client = getClient(AppServiceClient);
 
   return await asyncUnaryCall(client, "connectToApp", {
-    userId: info.identityId, cluster,sessionId,
+    userId: info.identityId, cluster, sessionId, jobId,
   }).then(async (x) => {
     if (x.appProps?.$case === "web") {
       const connect: AppConnectProps = {
