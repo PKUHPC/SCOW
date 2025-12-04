@@ -68,7 +68,7 @@
     "http-proxy": "1.18.1",
     "less": "4.2.1",
     "mime-types": "2.1.35",
-    "next": "15.5.6",
+    "next": "15.5.7",
     "next-compose-plugins": "2.2.1",
     "nookies": "2.5.2",
     "nprogress": "0.2.0",
