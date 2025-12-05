@@ -10,6 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
+import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
 import { joinWithUrl } from "@scow/utils";
 import { Tabs,Typography } from "antd";
 import { NextPage } from "next";
@@ -60,9 +61,11 @@ export const ResourceStatusPage: NextPage = requireAuth(
   (u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
 
   const t = useI18nTranslateToString();
+  const { dark } = useDarkMode();
 
   const dashboardUid = publicConfig.CLUSTER_MONITOR.resourceStatus.dashboardUid;
   let dashboards = publicConfig.CLUSTER_MONITOR.resourceStatus.dashboards;
+  const themeQuery = `?theme=${dark ? "dark" : "light"}`;
 
   const normalGrafanaUrls: string[] = [];
   const proxyGrafanaUrls: string[] = [];
@@ -73,9 +76,9 @@ export const ResourceStatusPage: NextPage = requireAuth(
 
   dashboards?.map((dashboard) => {
     normalGrafanaUrls.push(joinWithUrl(publicConfig.CLUSTER_MONITOR.grafanaUrl ?? DEFAULT_GRAFANA_URL,
-      `/d/${dashboard.uid}`));
+      `/d/${dashboard.uid}`) + themeQuery);
     proxyGrafanaUrls.push(path.join(publicConfig.BASE_PATH, "/api/admin/monitor/getResourceStatus",
-      `/d/${dashboard.uid}`));
+      `/d/${dashboard.uid}`) + themeQuery);
   });
 
   return (
