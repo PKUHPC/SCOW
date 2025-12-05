@@ -344,10 +344,10 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         <Table.Column dataIndex="idJob" width="5.2%" title={t(pCommon("clusterWorkId"))} />
         <Table.Column dataIndex="jobName" ellipsis title={t(pCommon("workName"))} />
         <Table.Column<JobInfo>
-          dataIndex="userName"
+          dataIndex="user"
           ellipsis
           title={t(pCommon("user"))}
-          render={(userName, record) => `${userName} (${record.user})`}
+          render={(user, record) => `${record.userName} (ID:${user})`}
         />
         <Table.Column dataIndex="account" ellipsis title={t(pCommon("account"))} />
         <Table.Column<JobInfo>

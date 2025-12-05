@@ -409,11 +409,11 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         {
           showUser ? (
             <Table.Column<JobInfo>
-              dataIndex="userName"
+              dataIndex="user"
               width="12%"
               ellipsis
               title={t(pCommon("user"))}
-              render={(userName,record) => `${userName} (${record.user})`}
+              render={(user,record) => `${record.userName} (ID:${user})`}
               sorter={true}
             />
           ) : undefined
