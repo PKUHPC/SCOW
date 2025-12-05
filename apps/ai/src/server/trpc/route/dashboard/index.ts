@@ -34,8 +34,8 @@ export const PartitionSchema = z.object({
   partitionStatus: z.nativeEnum(PartitionInfo_PartitionStatus),
   gpuModel: z.string().optional(),
   acceleratorDescriptions: z.array(z.string()),
-  totalMemMb: z.number().optional(),
-  allocMemMb: z.number().optional(),
+  totalMemMb: z.number(),
+  allocMemMb: z.number(),
 });
 
 // 定义集群信息

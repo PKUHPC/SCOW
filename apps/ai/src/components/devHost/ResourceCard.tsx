@@ -24,8 +24,8 @@ export interface Partition {
   runningJobCount: number;
   pendingJobCount: number;
   usageRatePercentage: number;
-  totalMemMb?: number;
-  allocMemMb?: number;
+  totalMemMb: number;
+  allocMemMb: number;
   gpuModel?: string;
   acceleratorDescriptions: string[];
 }
@@ -70,7 +70,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
     : 0;
 
   // 计算内存使用率
-  const memoryUsagePercent = partition.totalMemMb && partition.allocMemMb
+  const memoryUsagePercent = partition.totalMemMb > 0
     ? Math.round((partition.allocMemMb / partition.totalMemMb) * 100)
     : 0;
 
@@ -140,7 +140,8 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
               <Text strong>{t(p("memory"))}</Text>
               <div>
                 <Text>
-                  {Math.round(partition.allocMemMb / 1024)}GB / {Math.round(partition.totalMemMb / 1024)}GB
+                  {Math.round((partition.totalMemMb - partition.allocMemMb) / 1024)}GB
+                  / {Math.round(partition.totalMemMb / 1024)}GB
                 </Text>
                 <Progress
                   percent={memoryUsagePercent}
