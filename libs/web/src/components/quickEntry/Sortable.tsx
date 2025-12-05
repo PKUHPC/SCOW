@@ -45,6 +45,7 @@ interface Props {
     defaultEntries: Entry[];
     staticEntries: Entry[];
   }
+  basePath: string;
   publicPath: string,
   loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
   onSaveQuickEntries: (newItems: Entry[]) => void
@@ -72,7 +73,7 @@ const DeleteIconContainer = styled.div`
 
 export const Sortable: FC<Props> = ({
   isEditable, isFinished, quickEntryArray, apps, currentClusters, publicConfigClusters, quickEntryType,
-  languageId, publicPath, iconMap, loginNodes, entryItems, onSaveQuickEntries }) => {
+  languageId, publicPath, basePath, iconMap, loginNodes, entryItems, onSaveQuickEntries }) => {
   // 实际的快捷入口项
   const [items, setItems] = useState<itemEntry []>(quickEntryArray);
   // 编辑时临时的快捷入口项
@@ -139,13 +140,13 @@ export const Sortable: FC<Props> = ({
         switch (item.entry?.$case) {
 
           case "pageLink": {
-            window.open(item.entry.pageLink.path, "_blank");
+            window.open(join(basePath, item.entry.pageLink.path), "_blank");
             break;
           }
 
           case "shell": {
             const savedShellClusterId = item.entry.shell.clusterId;
-            window.open(join("/shell", savedShellClusterId, item.entry.shell.loginNode), "_blank");
+            window.open(join(basePath, "/shell", savedShellClusterId, item.entry.shell.loginNode), "_blank");
             if (!currentClusters.some((x) => x.id === savedShellClusterId)) {
               return <ClusterNotAvailablePage />;
             }
@@ -155,9 +156,9 @@ export const Sortable: FC<Props> = ({
           case "app": {
             const savedAppClusterId = item.entry.app.clusterId;
             if (quickEntryType === "ai") {
-              window.open(join("jobs", savedAppClusterId, "/createApps", item.entry.app.appId), "_blank");
+              window.open(join(basePath, "/jobs", savedAppClusterId, "/createApps", item.entry.app.appId), "_blank");
             } else {
-              window.open(join("/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
+              window.open(join(basePath, "/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
             }
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;
@@ -168,7 +169,7 @@ export const Sortable: FC<Props> = ({
           case "clusterPageLink": {
             const savedAppClusterId = item.entry.clusterPageLink.clusterId;
             const path = item.entry.clusterPageLink.path;
-            window.open(path.replace(/\/clusterId\//, `/${savedAppClusterId}/`), "_blank");
+            window.open(join(basePath, path.replace(/\/clusterId\//, `/${savedAppClusterId}/`)), "_blank");
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;
             }

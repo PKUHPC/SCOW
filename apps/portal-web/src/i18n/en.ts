@@ -618,7 +618,7 @@ export default {
       },
       newDesktopCardModal: {
         error: {
-          creatDesktopError: "Failed to Create Desktop",
+          createDesktopError: "Failed to Create Desktop",
           tooManyShadowDeskContent: "The number of shadowDesk desktops in this cluster has reached its maximum limit.",
           tooManyVncContent: "The number of desktops in this cluster has reached its maximum limit.",
           desktopNameAlreadyExists: "Desktop name already exists",

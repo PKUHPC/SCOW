@@ -31,7 +31,7 @@
 </head>
 
 <body style="font-family:Roboto">
-    <div class="fixed top-6 left-24">
+    <div class="fixed top-9 left-12">
       {% if logoLink == "" %}
       <img class="w-40" src="{{ logoUrl }}" alt="logo">
       {% else %}
@@ -42,15 +42,15 @@
     </div>
     <div class="w-full h-screen flex">
       <div class="w-1/2 h-screen ml-20 flex items-center justify-center">
-        <div class="w-80 max-w-md min-w-max bg-white rounded-lg py-12">
+        <div class="w-72 max-w-md min-w-max bg-white rounded-lg pt-12 pb-4">
           <form id="loginForm" method="post" action="">
-            <div class="mb-16 text-2xl font-semibold text-center">{{ authTexts.login.accountPasswordLogin }}</div>
-            <div class="px-14 flex flex-col items-center">
-              <div class="w-80 mb-10">
+            <div class="mb-14 text-2xl font-semibold text-center">{{ authTexts.login.accountPasswordLogin }}</div>
+            <div class="px-10 flex flex-col items-center">
+              <div class="w-72 mb-6">
                 <input type='text' name="username" placeholder="{{ authTexts.login.userId }}" required
                     class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
               </div>
-              <div class="w-80 mb-10">
+              <div class="w-72 mb-6">
                 <div class="password-field relative flex items-center">
                     <input id="password" name="password" placeholder="{{ authTexts.login.password }}" type="password" required
                         class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
@@ -58,7 +58,7 @@
                 </div>
               </div>
               {% if enableTotp %}
-                <div class="w-80 mb-10">
+                <div class="w-72 mb-6">
                   <div class="flex items-center">
                     <input name="otpCode" placeholder="{{ authTexts.login.otpVCode }}" type="text" required
                       class="px-8 w-full py-2 border rounded text-gray-700 focus:outline-none"/>
@@ -66,7 +66,7 @@
                 </div>
               {% endif %}
               {% if enableCaptcha %}
-                <div class="w-80 mb-10">
+                <div class="w-72 mb-6">
                   <div class="flex items-center">
                     <input name="code" placeholder="{{ authTexts.login.inputVCode }}" type="text" required
                         class=" px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
@@ -115,7 +115,7 @@
               {% if verifyOtpFail %}
                 <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidOtp }}</p>
               {% endif %}
-              <button type="submit" class="w-80 py-2 mb-14 rounded button-primary text-gray-100 focus:outline-none">
+              <button type="submit" class="w-72 py-2 mb-14 mt-6 rounded button-primary text-gray-100 focus:outline-none">
                   {{ authTexts.login.login }}
               </button>
             </div>
@@ -132,7 +132,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="w-1/2 h-screen pl-48 flex justify-center flex-col hidden-xs">
+      <div class="w-1/2 h-screen pl-32 flex justify-center flex-col hidden-xs">
           <div class="text-4xl font-semibold mb-12"  style="color: {{ sloganColor }}">{{ sloganTitle | default: authTexts.login.platformSystem}}</div>
           {% for sloganText in sloganTextArr %}
             <div class="text-2xl mb-8"  style="color: {{ sloganColor }}">{{ sloganText }}</div>

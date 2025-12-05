@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { TargetType } from "@scow/notification-protos/build/common_pb";
 import { adminSendMessage } from "@scow/notification-protos/build/message-MessageService_connectquery";
 import { listNoticeTypes } from "@scow/notification-protos/build/notice_type-NoticeTypeService_connectquery";
-import { Button, Checkbox, DatePicker, Form, Input, message, Popover } from "antd";
+import { App, Button, Checkbox, DatePicker, Form, Input, Popover } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import React from "react";
 import { I18nDicType } from "src/models/i18n";
@@ -23,6 +23,7 @@ interface Props {
 }
 
 export const MessageForm: React.FC<Props> = ({ lang }) => {
+  const { message } = App.useApp();
 
   const compLang = lang.sendMessage.messageForm;
   const [form] = Form.useForm<FormValues>();

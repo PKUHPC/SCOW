@@ -615,7 +615,7 @@ export default {
       },
       newDesktopCardModal: {
         error: {
-          creatDesktopError: "新建桌面失败",
+          createDesktopError: "新建桌面失败",
           tooManyShadowDeskContent: "该集群 shadowDesk 桌面数目达到最大限制",
           tooManyVncContent: "该集群桌面数目达到最大限制",
           desktopNameAlreadyExists: "桌面名称已存在",

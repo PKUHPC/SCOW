@@ -27,7 +27,8 @@ export const QuickEntry: React.FC = () => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dashboard.quickEntry.");
 
-  const { publicConfig: { CLUSTERS: currentClusters, PUBLIC_PATH: publicPath } } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: currentClusters,
+    PUBLIC_PATH: publicPath, BASE_PATH: basePath } } = usePublicConfig();
 
   const languageId = useI18n().currentLanguage.id;
 
@@ -283,6 +284,7 @@ export const QuickEntry: React.FC = () => {
       currentClusters={currentClusters}
       publicConfigClusters={currentClusters}
       publicPath={publicPath}
+      basePath={basePath}
       languageId={languageId}
       entryItems={entryItems}
       iconMap={iconMap}

@@ -197,6 +197,7 @@ export const QuickEntry: React.FC = () => {
       currentClusters={currentClusters}
       publicConfigClusters={publicConfigClusters}
       publicPath={publicConfig.PUBLIC_PATH}
+      basePath={publicConfig.BASE_PATH}
       languageId={languageId}
       entryItems={entryItems}
       iconMap={iconMap}

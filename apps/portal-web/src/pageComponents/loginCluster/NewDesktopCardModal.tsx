@@ -90,21 +90,23 @@ export const NewDesktopCardModal: React.FC<Props> = ({
       const { code } = e;
       if (code === "TOO_MANY_DESKTOPS") {
         modal.error({
-          title: t(p("error.creatDesktopError")),
+          title: t(p("error.createDesktopError")),
           content: t(p("error.tooManyVncContent")),
         });
       } else {
         throw e;
       }
     }).httpError(500, (e) => {
-      const { code, message } = e;
-      if (code === "INTERNAL_ERROR" && message.includes("desktop name already exists")) {
+      if (e?.message.includes("desktop name already exists")) {
         modal.error({
-          title: t(p("error.creatDesktopError")),
+          title: t(p("error.createDesktopError")),
           content: `${values.desktopName} ${t(p("error.desktopNameAlreadyExists"))}`,
         });
       } else {
-        throw e;
+        modal.error({
+          title: t(p("error.createDesktopError")),
+          content: t(p("error.createDesktopError")),
+        });
       }
     })
       .then((resp) => {

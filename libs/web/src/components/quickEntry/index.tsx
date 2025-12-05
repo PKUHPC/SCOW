@@ -79,6 +79,7 @@ interface Props {
   isLoading: boolean;
   quickEntriesData: Entry[];
   publicPath: string;
+  basePath: string;
   quickEntryType?: "ai" | "portal";
   loginNodes?: Record<string, { name: I18nStringType; address: string }[]>;
   onSaveQuickEntries: (newItems: Entry[]) => void
@@ -103,7 +104,7 @@ const entryEditSVG = () => (
 
 export const QuickEntry: React.FC<Props> = ({
   currentClusters, publicConfigClusters, iconMap, languageId, quickEntryType,
-  publicPath, loginNodes, entryItems, availableApps, isLoading, quickEntriesData, onSaveQuickEntries }) => {
+  publicPath, basePath, loginNodes, entryItems, availableApps, isLoading, quickEntriesData, onSaveQuickEntries }) => {
 
   const [isEditable, setIsEditable] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -146,6 +147,7 @@ export const QuickEntry: React.FC<Props> = ({
               publicConfigClusters={publicConfigClusters}
               iconMap={iconMap}
               publicPath={publicPath}
+              basePath={basePath}
               languageId={languageId}
               loginNodes={loginNodes}
               quickEntryType={quickEntryType}
