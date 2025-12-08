@@ -29,7 +29,9 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+
+
+      - uses: actions/checkout@v6
         with:
           # changelog generation requires full history
           # to track each changelog file to its submission commit
@@ -54,7 +56,7 @@ jobs:
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node/
+          mirror: https://npmmirror.com/mirrors/node
 
       - uses: pnpm/action-setup@v4
 
@@ -138,13 +140,13 @@ jobs:
       (github.event_name == 'pull_request')
 
     steps:
-      - uses: actions/checkout@v4
 
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node/
+          mirror: https://npmmirror.com/mirrors/node
 
       - uses: pnpm/action-setup@v4
 
@@ -232,8 +234,8 @@ jobs:
             build_args: BASE_PATH=/SCOW/
 
     steps:
-      - uses: actions/checkout@v4
 
+      - uses: actions/checkout@v6
       - name: Log in to the ccimage.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
@@ -284,7 +286,6 @@ jobs:
           # only build arm64 in tag commits or branches with name starting with `arm-`
           platforms: linux/amd64${{ (github.ref_type == 'tag' || startsWith(github.head_ref, 'arm-')) && ',linux/arm64' || '' }}
 
-
   deploy-to-pre-server:
     name: Deploy to Pre Server
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
@@ -329,13 +330,13 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
 
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
           registry-url: https://registry.npmmirror.com
-          mirror: https://npmmirror.com/mirrors/node/
+          mirror: https://npmmirror.com/mirrors/node
 
       - uses: pnpm/action-setup@v4
 
@@ -390,7 +391,6 @@ jobs:
           files: |
             release/scow-cli/cli-x64
             release/scow-cli/cli-arm64
-
 
       - name: Send Notification Request
         run: |

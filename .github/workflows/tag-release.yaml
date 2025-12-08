@@ -12,7 +12,8 @@ jobs:
   tag-if-needed:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     steps:
-      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
           # Must use a PAT instead of GITHUB_TOKEN
@@ -22,7 +23,7 @@ jobs:
       - uses: fregante/setup-git-user@v2
       - uses: actions/setup-node@v6
         with:
-          mirror: https://npmmirror.com/mirrors/node/
+          mirror: https://npmmirror.com/mirrors/node
           registry-url: https://registry.npmmirror.com
           node-version-file: package.json
 

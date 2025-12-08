@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       time:
-        description: 'The deployment time (format: YYYY年MM月DD日)'
+        description: "The deployment time (format: YYYY年MM月DD日)"
         required: true
 
 jobs:
@@ -12,22 +12,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
 
-    - name: Print Notification Details
-      run: |
-        echo "Deployment Time: ${{ github.event.inputs.time }}"
-        echo "Version: ${{ github.event.inputs.version }}"
-        echo "Release Level: ${{ github.event.inputs.level }}"
-        echo "Feature Freeze Period: ${{ github.event.inputs.feature_freeze }}"
+      - name: Check out repository
+        uses: actions/checkout@v6
 
-    - name: Send Notification Request
-      run: |
-        curl -X POST ${{ secrets.RELEASE_SERVICE_ADDRESS }}/version \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer ${{ secrets.RELEASE_API_KEY }}" \
-        -d '{
-          "time": "${{ github.event.inputs.time }}",
-          "repo": "private-scow"
-        }'
+      - name: Print Notification Details
+        run: |
+          echo "Deployment Time: ${{ github.event.inputs.time }}"
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Release Level: ${{ github.event.inputs.level }}"
+          echo "Feature Freeze Period: ${{ github.event.inputs.feature_freeze }}"
+
+      - name: Send Notification Request
+        run: |
+          curl -X POST ${{ secrets.RELEASE_SERVICE_ADDRESS }}/version \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RELEASE_API_KEY }}" \
+          -d '{
+            "time": "${{ github.event.inputs.time }}",
+            "repo": "private-scow"
+          }'

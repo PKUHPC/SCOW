@@ -1,4 +1,0 @@
-dn: uid=demo_admin,ou=People,ou=hpc,o=pku
-changetype: modify
-replace: userPassword
-userPassword: demo_admin

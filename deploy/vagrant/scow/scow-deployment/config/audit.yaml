@@ -1,7 +1,0 @@
-db:
-  host: audit-db
-  port: 3306
-  user: root
-  dbName: scow_audit
-
-
