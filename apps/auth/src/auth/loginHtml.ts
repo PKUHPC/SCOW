@@ -54,8 +54,9 @@ export async function serveLoginHtml(
     return getI18nConfigCurrentText(text, languageId);
   });
 
-  const footerText = getI18nConfigCurrentText(
-    authUiHostnameConfig?.footerText ?? authUiDefaultConfig?.footerText, languageId);
+  const footerText = (authUiHostnameConfig?.footerText === undefined && authUiDefaultConfig?.footerText === undefined) ?
+    undefined : getI18nConfigCurrentText(authUiHostnameConfig?.footerText ??
+    authUiDefaultConfig?.footerText, languageId);
 
   return rep.status(
     verifyCaptchaFail ? 400 : errParamrs.err ? 401 : 200).view("login.liquid", {
