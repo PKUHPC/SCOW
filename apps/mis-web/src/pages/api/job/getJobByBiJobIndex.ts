@@ -7,6 +7,7 @@ import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
 import { JobInfo } from "src/pages/api/job/jobInfo";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
@@ -41,7 +42,15 @@ export default route(GetJobByBiJobIndexSchema,
     return await asyncClientCall(client, "getJobByBiJobIndex", {
       biJobIndex,
     })
-      .then(({ info }) => info ? ({ 200: { info } }) : ({ 404: null }))
+      .then(({ info: jobInfo }) => jobInfo ? ({
+        200: {
+          info: {
+            ...jobInfo,
+            accountOwnerId: safeGetStringProperty(jobInfo.accountOwnerId),
+            accountOwnerName: safeGetStringProperty(jobInfo.accountOwnerName),
+          },
+        },
+      }) : ({ 404: null }))
       .catch(handlegRPCError({
         [Status.NOT_FOUND]: () => ({ 404: null }),
       }));

@@ -7,6 +7,7 @@ import { AccountState, DisplayedAccountState, TenantRole } from "src/models/User
 import { Money } from "src/models/UserSchemaModel";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 
 export const AdminAccountInfo = Type.Object({
@@ -55,5 +56,9 @@ export default route(GetAccountsSchema,
     }
     const results = await getAccounts({ tenantName: info.tenant });
 
-    return { 200: { results } };
+    return { 200: { results: results.map((r) => ({
+      ...r,
+      ownerId: safeGetStringProperty(r.ownerId),
+      ownerName: safeGetStringProperty(r.ownerName),
+    })) } };
   });

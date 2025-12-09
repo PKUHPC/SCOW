@@ -1,7 +1,6 @@
 import { HttpError, JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { numberToMoney } from "@scow/lib-decimal";
-import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { type Account } from "@scow/protos/build/server/account";
 import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
 import { type api } from "src/apis/api";
@@ -9,6 +8,8 @@ import { ClusterConnectionStatus, NodeStatus } from "src/models/cluster";
 import { OperationResult } from "src/models/operationLog";
 import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, PlatformRole,
   TenantRole, UserInfo, UserRole, UserState,UserStatus } from "src/models/User";
+import { JobInfo } from "src/pages/api/job/jobInfo";
+import { RunningJob } from "src/pages/api/job/runningJobs";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 
 export type MockApi<TApi extends Record<
@@ -56,7 +57,7 @@ const mockJobInfo: JobInfo = {
   accountOwnerName: "demo",
 };
 
-export const runningJob = {
+export const runningJob: RunningJob = {
   jobId: "123",
   account: "123",
   cores: "123",

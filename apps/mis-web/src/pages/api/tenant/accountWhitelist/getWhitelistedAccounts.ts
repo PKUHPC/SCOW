@@ -6,6 +6,7 @@ import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
 import { WhitelistedAccount } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 
 export const GetWhitelistedAccountsSchema = typeboxRouteSchema({
@@ -33,6 +34,10 @@ export default route(GetWhitelistedAccountsSchema,
     });
 
     return { 200: {
-      results: reply.accounts.map((x) => ({ ...x })),
+      results: reply.accounts.map((x) => ({
+        ...x,
+        ownerId: safeGetStringProperty(x.ownerId),
+        ownerName: safeGetStringProperty(x.ownerName),
+      })),
     } };
   });

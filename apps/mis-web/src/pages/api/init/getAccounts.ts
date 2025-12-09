@@ -5,6 +5,7 @@ import { Type } from "@sinclair/typebox";
 import { Account } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
+import { safeGetStringProperty } from "src/utils/format";
 import { queryIfInitialized } from "src/utils/init";
 import { route } from "src/utils/route";
 
@@ -34,7 +35,11 @@ export default route(InitGetAccountsSchema, async () => {
 
   return {
     200: {
-      accounts: reply.results,
+      accounts: reply.results.map((x) => ({
+        ...x,
+        ownerId: safeGetStringProperty(x.ownerId),
+        ownerName: safeGetStringProperty(x.ownerName),
+      })),
     },
   };
 

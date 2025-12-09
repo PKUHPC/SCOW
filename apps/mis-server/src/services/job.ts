@@ -9,7 +9,6 @@ import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
 import { ChargeRecord } from "@scow/protos/build/server/charging";
 import {
-  GetJobsResponse,
   JobBillingItem,
   JobFilter,
   JobServiceServer, JobServiceService } from "@scow/protos/build/server/job";
@@ -105,14 +104,13 @@ export const jobServiceServer = plugin((server) => {
           return {
             ...toGrpc(job),
             userName: detail.userName,
-            accountOwnerId: detail.accountOwnerId,
-            accountOwnerName: detail?.accountOwnerName,
+            accountOwnerId: detail.accountOwnerId ?? undefined,
+            accountOwnerName: detail.accountOwnerName ?? undefined,
           };
         }),
         totalAccountPrice: decimalToMoney(new Decimal(total_account_price)),
         totalTenantPrice: decimalToMoney(new Decimal(total_tenant_price)),
-      } as GetJobsResponse;
-
+      };
       return [reply];
     },
 

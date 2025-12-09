@@ -28,8 +28,8 @@
    int64 id = 1;
    string tenant_name = 2;
    string account_name = 3;
-   string account_owner_id = 4;
-   string account_owner_name = 5;
+   optional string account_owner_id = 4;
+   optional string account_owner_name = 5;
    optional string term = 6;
    common.Money amount = 7;
    string type = 8;

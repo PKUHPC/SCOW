@@ -41,7 +41,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "length": 255,
           "comment": "账户拥有者id",
           "mappedType": "string"
@@ -52,7 +52,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "length": 255,
           "comment": "账户拥有者姓名",
           "mappedType": "string"

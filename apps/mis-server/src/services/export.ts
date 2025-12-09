@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { createWriterExtensions, ServiceError } from "@ddadaal/tsgrpc-common";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
@@ -46,6 +34,7 @@ import {
   getJobUserAndAccountOwnerDetailsMap,
   JobUserAndAccountOwnerDetailsMap,
 } from "src/utils/job";
+import { logger } from "src/utils/logger";
 import { mapUsersSortField } from "src/utils/queryOptions";
 
 
@@ -164,6 +153,8 @@ export const exportServiceServer = plugin((server) => {
     },
 
     exportAccount: async (call) => {
+
+      const accountsWithoutOwner: string[] = [];
       const { request, em } = call;
       const {
         tenantName,
@@ -182,12 +173,10 @@ export const exportServiceServer = plugin((server) => {
         const owner = x.users.getItems().find((x) => x.role === UserRole.OWNER);
 
         if (!owner) {
-          throw {
-            code: status.INTERNAL, message: `Account ${x.accountName} does not have an owner`,
-          } as ServiceError;
+          accountsWithoutOwner.push(x.accountName);
         }
 
-        const ownerUser = owner.user.getEntity();
+        const ownerUser = owner?.user.getEntity();
 
         const blockThresholdAmount = x.blockThresholdAmount ?? x.tenant.$.defaultAccountBlockThreshold;
         const exportedState =
@@ -198,8 +187,8 @@ export const exportServiceServer = plugin((server) => {
           tenantName: x.tenant.$.name,
           userCount: x.users.count(),
           displayedState: exportedState,
-          ownerId: ownerUser.userId,
-          ownerName: ownerUser.name,
+          ownerId: ownerUser?.userId ?? "-",
+          ownerName: ownerUser?.name ?? "-",
           comment: x.comment,
           balance: decimalToMoney(x.balance),
           blockThresholdAmount: decimalToMoney(blockThresholdAmount),
@@ -207,6 +196,12 @@ export const exportServiceServer = plugin((server) => {
           state: account_AccountStateFromJSON(x.state),
         };
       };
+
+      if (accountsWithoutOwner.length > 0) {
+        logger.warn(
+          `Found accounts without an owner. Accounts: ${accountsWithoutOwner.join(",")}. `
+            + "The items will be displayed as \"-\" in the exported file.");
+      }
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;
       const batchSize = 5000;
@@ -600,7 +595,7 @@ export const exportServiceServer = plugin((server) => {
       };
 
       const recordFormat = (x: Loaded<JobInfo, never>
-         & { userName: string; accountOwnerId: string; accountOwnerName: string; }) => ({
+         & { userName: string; accountOwnerId?: string; accountOwnerName?: string; }) => ({
         idJob: x.idJob,
         jobName: x.jobName,
         account: x.account,
@@ -627,8 +622,8 @@ export const exportServiceServer = plugin((server) => {
         recordTime:x.recordTime.toISOString(),
         tenantPrice:decimalToMoney(x.tenantPrice),
         userName: x.userName,
-        accountOwnerId: x.accountOwnerId,
-        accountOwnerName: x.accountOwnerName,
+        accountOwnerId: x.accountOwnerId ?? "-",
+        accountOwnerName: x.accountOwnerName ?? "-",
       });
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;
@@ -658,9 +653,9 @@ export const exportServiceServer = plugin((server) => {
           const detail = jobUserAndAccountOwnerDetailsMap[job.biJobIndex];
           return {
             ...job,
-            userName: detail?.userName,
-            accountOwnerId: detail?.accountOwnerId,
-            accountOwnerName: detail?.accountOwnerName,
+            userName: detail?.userName ?? "-",
+            accountOwnerId: detail?.accountOwnerId ?? "-",
+            accountOwnerName: detail?.accountOwnerName ?? "-",
           };
         });
 

@@ -180,7 +180,7 @@ export const adminServiceServer = plugin((server) => {
           }
 
           account.owner = includedUserAccounts
-            .find((x) => x.account.$.accountName === account.accountName && x.role === UserRole.OWNER)!.user.$.userId;
+            .find((x) => x.account.$.accountName === account.accountName && x.role === UserRole.OWNER)?.user.$.userId;
 
           accounts.push({ ...account, importStatus: status });
         }

@@ -12,7 +12,8 @@ import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { checkSchedulerApiVersion } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
-import { account_AccountStateFromJSON, Account_DisplayedAccountState, AccountServiceServer, AccountServiceService,
+import { Account as AccountProto, account_AccountStateFromJSON,
+  Account_DisplayedAccountState, AccountServiceServer, AccountServiceService,
   BlockAccountResponse_Result } from "@scow/protos/build/server/account";
 import { ApiVersion } from "@scow/utils/build/version";
 import { blockAccount, unblockAccount } from "src/bl/block";
@@ -32,6 +33,7 @@ import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { getAccountOwnerAndAdmin } from "src/utils/getAccountOwnerAndAdmin";
+import { logger } from "src/utils/logger";
 import { toRef } from "src/utils/orm";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { sendMessage } from "src/utils/sendMessage";
@@ -223,41 +225,49 @@ export const accountServiceServer = plugin((server) => {
         ...accountName !== undefined ? { accountName } : undefined,
       }, { populate: ["users", "users.user", "tenant"]});
 
-      return [{
-        results: results.map((x) => {
+      const abnormalAccountsWithoutOwner: string[] = [];
+      const finalResult: AccountProto[] = [];
 
-          const owner = x.users.getItems().find((x) => x.role === EntityUserRole.OWNER);
+      for (const x of results) {
+        const owner = x.users.getItems().find((x) => x.role === EntityUserRole.OWNER);
 
-          if (!owner) {
-            throw {
-              code: Status.INTERNAL, message: `Account ${x.accountName} does not have an owner`,
-            } as ServiceError;
-          }
+        if (!owner) {
+          abnormalAccountsWithoutOwner.push(x.accountName);
+        }
 
-          const ownerUser = owner.user.getEntity();
-          const thresholdAmount = x.blockThresholdAmount ?? x.tenant.$.defaultAccountBlockThreshold;
-          const displayedAccountState =
+        const ownerUser = owner?.user.getEntity();
+        const thresholdAmount = x.blockThresholdAmount ?? x.tenant.$.defaultAccountBlockThreshold;
+        const displayedAccountState =
             getAccountStateInfo(x.whitelist?.id, x.state, x.balance, thresholdAmount).displayedState;
 
-          return {
-            accountName: x.accountName,
-            tenantName: x.tenant.$.name,
-            userCount: x.users.count(),
-            blocked: Boolean(x.blockedInCluster),
-            state: account_AccountStateFromJSON(x.state),
-            displayedState: displayedAccountState,
-            isInWhitelist: Boolean(x.whitelist?.id),
-            ownerId: ownerUser.userId,
-            ownerName: ownerUser.name,
-            comment: x.comment,
-            balance: decimalToMoney(x.balance),
-            blockThresholdAmount: x.blockThresholdAmount
-              ? decimalToMoney(x.blockThresholdAmount)
-              : undefined,
-            defaultBlockThresholdAmount: decimalToMoney(x.tenant.$.defaultAccountBlockThreshold),
-          };
-        }),
-      }];
+        const result = {
+          accountName: x.accountName,
+          tenantName: x.tenant.$.name,
+          userCount: x.users.count(),
+          blocked: Boolean(x.blockedInCluster),
+          state: account_AccountStateFromJSON(x.state),
+          displayedState: displayedAccountState,
+          isInWhitelist: Boolean(x.whitelist?.id),
+          ownerId: ownerUser?.userId,
+          ownerName: ownerUser?.name,
+          comment: x.comment,
+          balance: decimalToMoney(x.balance),
+          blockThresholdAmount: x.blockThresholdAmount
+            ? decimalToMoney(x.blockThresholdAmount)
+            : undefined,
+          defaultBlockThresholdAmount: decimalToMoney(x.tenant.$.defaultAccountBlockThreshold),
+        };
+
+        finalResult.push(result);
+      }
+
+      // 对于没有拥有者的数据保留日志
+      if (abnormalAccountsWithoutOwner.length > 0) {
+        logger.warn("Accounts without owner is found: "
+          + `${[abnormalAccountsWithoutOwner].join(",")}`);
+      }
+
+      return [{ results: finalResult }];
     },
 
     createAccount: async ({ request, em, logger }) => {
@@ -507,14 +517,14 @@ export const accountServiceServer = plugin((server) => {
       return [{
         accounts: validResults.map((x) => {
 
-          const accountOwner = owners.find((o) => o.account.id === x.account.id)!.user.$;
+          const accountOwner = owners.find((o) => o.account.id === x.account.id)?.user.$;
           return {
             accountName: x.account.$.accountName,
             comment: x.comment,
             operatorId: x.operatorId,
             addTime: x.time.toISOString(),
-            ownerId: accountOwner.userId + "",
-            ownerName: accountOwner.name,
+            ownerId: (accountOwner?.userId ?? "-") + "",
+            ownerName: accountOwner?.name ?? "-",
             balance: decimalToMoney(x.account.$.balance),
             expirationTime: x.expirationTime?.toISOString().includes("2099") ? undefined
               : x.expirationTime?.toISOString(),

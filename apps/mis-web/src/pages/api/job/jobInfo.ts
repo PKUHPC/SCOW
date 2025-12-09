@@ -11,6 +11,7 @@ import { JobSortBy, JobSortOrder } from "src/models/job";
 import { TenantRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 
 export const mapJobSortByType = {
@@ -184,7 +185,14 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
   });
 
   return {
-    200: result,
+    200: {
+      ...result,
+      jobs: result.jobs.map((x) => ({
+        ...x,
+        accountOwnerId: safeGetStringProperty(x.accountOwnerId),
+        accountOwnerName: safeGetStringProperty(x.accountOwnerName),
+      })),
+    },
   };
 });
 

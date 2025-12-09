@@ -210,13 +210,21 @@ export async function processSynchronization(
                 {
                   exceptionType:
                     SyncExceptionTypeProto.ASSIGNED_PARTITIONS_FETCH_FAILED,
-                  exceptionMessage: "Assigned partitions fetch failed.",
+                  exceptionMessage: syncAccountsResult.partitionsFetchFailedAccounts.join(","),
                 },
               ],
               completedTotalSyncCount: 0,
               successfulTotalSyncCount: 0,
             };
             await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [currentClusterTotalResult]});
+          }
+
+          // 如果有没有拥有者的账户, 只在日志中做出提示
+          if (syncAccountsResult.abnormalAccountsWithoutOwner?.length) {
+            logger.warn(
+              "Abnormal accounts without owner were found: %s, "
+              + "the synchronization will still synchronize them to cluster.",
+              syncAccountsResult.abnormalAccountsWithoutOwner.join(","));
           }
 
           logger.trace("[Cluster %s] ***Start Sync in chunk %s with time limit %s seconds***",
@@ -574,6 +582,8 @@ interface GetSyncExecAccountsResponse {
   syncAccounts: SyncAccountInfo[];
   // 资源管理下获取已授权分区失败的账户无法进行同步操作
   partitionsFetchFailedAccounts?: string[];
+  // 没有拥有者的异常账户
+  abnormalAccountsWithoutOwner?: string[];
 }
 
 /**
@@ -595,6 +605,7 @@ export async function getSyncAccountsWithPartitions(
   scowResourcePlugin?: ScowResourcePlugin["resource"],
 ): Promise<GetSyncExecAccountsResponse> {
   let partitionsFetchFailedAccounts: string[] = [];
+  const abnormalAccountsWithoutOwner: string[] = [];
 
   // 只查询状态为在集群下解封的账户授权分区
   const queryAccounts = accounts.filter((account) => {
@@ -621,7 +632,16 @@ export async function getSyncAccountsWithPartitions(
   logger.trace("[Cluster: %s] Partitions fetched of [%o]", clusterId, reply);
 
   syncAccounts = accounts
-    .filter((account) => (!partitionsFetchFailedAccounts?.includes(account.accountName)))
+    .filter((account) => {
+      const owner = account.users.find((x) => (x.role === UserRole.OWNER))?.user.getProperty("userId");
+
+      // 如果不存在拥有者，保留该账户进行同步，只返回不存在拥有者的数组方便后端留存特殊日志
+      if (!owner) {
+        abnormalAccountsWithoutOwner.push(account.accountName);
+      }
+      // 过滤排除分区获取异常的账户
+      return !partitionsFetchFailedAccounts?.includes(account.accountName);
+    })
     .map((account) => {
       const mappedAccount: SyncAccountInfo = {
         accountName: account.accountName,
@@ -650,6 +670,7 @@ export async function getSyncAccountsWithPartitions(
   return {
     syncAccounts: syncAccounts,
     partitionsFetchFailedAccounts,
+    abnormalAccountsWithoutOwner,
   };
 }
 

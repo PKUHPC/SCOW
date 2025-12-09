@@ -9,6 +9,7 @@ import { Money } from "src/models/UserSchemaModel";
 import { SearchType } from "src/pageComponents/common/BillTable";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 
 export const MetadataMap = Type.Record(
@@ -101,7 +102,14 @@ export default route(GetBillsSchema, async (req, res) => {
 
   return {
     200: {
-      bills: reply.bills.map((i) => ensureNotUndefined(i, ["amount"])),
+      bills: reply.bills.map((i) => {
+        const processed = ensureNotUndefined(i, ["amount"]);
+        return {
+          ...processed,
+          accountOwnerId: safeGetStringProperty(processed.accountOwnerId),
+          accountOwnerName: safeGetStringProperty(processed.accountOwnerName),
+        };
+      }),
       total: reply.total,
     },
   };

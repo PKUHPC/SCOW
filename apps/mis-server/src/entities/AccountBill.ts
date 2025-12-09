@@ -35,11 +35,11 @@ export class AccountBill {
   @Property({ comment: "所属账户" })
   accountName: string;
 
-  @Property({ comment: "账户拥有者id" })
-  accountOwnerId: string;
+  @Property({ nullable: true, comment: "账户拥有者id" })
+  accountOwnerId?: string;
 
-  @Property({ comment: "账户拥有者姓名" })
-  accountOwnerName: string;
+  @Property({ nullable: true, comment: "账户拥有者姓名" })
+  accountOwnerName?: string;
 
   @Property({ comment: "账期，如202407、2024" })
   term: string;
@@ -66,8 +66,8 @@ export class AccountBill {
     id?: number;
     tenantName: string;
     accountName: string;
-    accountOwnerId: string;
-    accountOwnerName: string;
+    accountOwnerId?: string;
+    accountOwnerName?: string;
     term: string;
     amount: Decimal,
     type: BillType;

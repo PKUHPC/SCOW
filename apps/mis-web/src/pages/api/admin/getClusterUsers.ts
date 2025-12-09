@@ -70,11 +70,11 @@ export default /* #__PURE__*/route(GetClusterUsersSchema,
       .catch(handlegRPCError({
         [status.FAILED_PRECONDITION]: () => ({ 409: {
           code: "FAILED_PRECONDITION" as const,
-          message: "The method is not supported with your current scheduler adapter version, " 
+          message: "The method is not supported with your current scheduler adapter version, "
         + "please confirm the adapter version detail" } }),
         [status.UNIMPLEMENTED]: () => ({ 409: {
           code: "UNIMPLEMENTED" as const,
           message: "The scheduler API version can not be confirmed." } }),
       }));
-    
+
   });

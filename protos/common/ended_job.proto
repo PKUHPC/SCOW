@@ -44,6 +44,6 @@ message JobInfo {
   common.Money account_price = 24;
   common.Money tenant_price = 25;
   string user_name = 26;
-  string account_owner_id = 27;
-  string account_owner_name = 28;
+  optional string account_owner_id = 27;
+  optional string account_owner_name = 28;
 }

@@ -1,14 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
 
 import { moneyToNumber } from "@scow/lib-decimal";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
@@ -24,13 +13,14 @@ import { DisplayedAccountState, getDisplayedStateI18nTexts, UserRole } from "src
 import {
   checkQueryAccountNameIsAdmin } from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
 import { getAccounts } from "src/pages/api/tenant/getAccounts";
+import { safeGetStringProperty } from "src/utils/format";
 import { Head } from "src/utils/head";
 import { moneyNumberToString } from "src/utils/money";
 
 type Props = SSRProps<{
   accountName: string;
-  ownerName: string;
-  ownerId: string;
+  ownerName?: string;
+  ownerId?: string;
   balance: number;
   blocked: boolean;
   displayedState: DisplayedAccountState;
@@ -118,8 +108,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   return { props: {
     balance: moneyToNumber(account.balance),
     accountName,
-    ownerId: account.ownerId,
-    ownerName: account.ownerName,
+    ownerId: safeGetStringProperty(account.ownerId),
+    ownerName: safeGetStringProperty(account.ownerName),
     blocked: account.blocked,
     displayedState: account.displayedState,
     blockThresholdAmount: moneyToNumber(account.blockThresholdAmount ?? account.defaultBlockThresholdAmount),

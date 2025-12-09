@@ -7,6 +7,7 @@ import { AccountState, DisplayedAccountState, PlatformRole } from "src/models/Us
 import { Money } from "src/models/UserSchemaModel";
 import { ensureNotUndefined } from "src/utils/checkNull";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 
 export const AdminAccountInfo = Type.Object({
@@ -40,7 +41,14 @@ export async function getAllAccounts(req: GetAccountsRequest) {
 
   const { results } = await asyncClientCall(uaClient, "getAccounts", req);
 
-  return results.map((x) => ensureNotUndefined(x, ["balance", "defaultBlockThresholdAmount"]));
+  return results.map((x) => {
+    const processed = ensureNotUndefined(x, ["balance", "defaultBlockThresholdAmount"]);
+    return {
+      ...processed,
+      ownerId: safeGetStringProperty(processed.ownerId),
+      ownerName: safeGetStringProperty(processed.ownerName),
+    };
+  });
 }
 
 const auth = authenticate((info) =>

@@ -10,6 +10,7 @@ import { getI18nCurrentText, prefix } from "src/i18n";
 import en from "src/i18n/en";
 import { getClusterName, getClusterNameWithUndefined } from "src/utils/cluster";
 import { Cluster } from "src/utils/cluster";
+import { safeGetStringProperty } from "src/utils/format";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
 
 export const OperationResult = {
@@ -208,10 +209,6 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
 
 type OperationTextsArgsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string | React.ReactNode;
 
-// 如果传递的参数不存在返回 "-"
-const safeGetStringProperty = (property: string | undefined) => {
-  return String(property ?? "-");
-};
 export const getOperationDetail = (
   operationEvent: OperationEvent,
   t: OperationTextsTransType,

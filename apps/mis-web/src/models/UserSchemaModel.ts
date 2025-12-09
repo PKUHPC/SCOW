@@ -61,7 +61,7 @@ export const ImportUsersData_AccountInfo = Type.Object({
   users: Type.Array(UserInAccount),
   /** owner is undefined while account has existed */
   // owner: Type.Optional(Type.Union([Type.String(), Type.Undefined()])),
-  woner: Type.Optional(Type.String()),
+  owner: Type.Optional(Type.String()),
   blocked: Type.Boolean(),
 });
 export type ImportUsersData_AccountInfo = Static<typeof ImportUsersData_AccountInfo>;
