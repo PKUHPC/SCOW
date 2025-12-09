@@ -1,5 +1,5 @@
 diff --git a/dist/server/lib/router-server.js b/dist/server/lib/router-server.js
-index 35ea234431bc5171632c986f75dfbe0491de9bc2..80d8d3e8f4b4311d9d4dbb7be0b74cef10419568 100644
+index 35ea234431bc5171632c986f75dfbe0491de9bc2..c725ccb519869161eb709768d0fafec51c7215ec 100644
 --- a/dist/server/lib/router-server.js
 +++ b/dist/server/lib/router-server.js
 @@ -621,9 +621,9 @@ async function initialize(opts) {

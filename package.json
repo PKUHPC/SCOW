@@ -59,7 +59,7 @@
   "engines": {
     "node": "22.21.1"
   },
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.25.0",
   "pnpm": {
     "patchedDependencies": {
       "react-typed-i18n@2.3.0": "patches/react-typed-i18n@2.3.0.patch",

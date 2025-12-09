@@ -23,7 +23,7 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
-    "@connectrpc/connect": "2.1.0",
+    "@connectrpc/connect": "2.1.1",
     "@bufbuild/protobuf": "2.10.0",
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@ddadaal/tsgrpc-common": "0.2.6",

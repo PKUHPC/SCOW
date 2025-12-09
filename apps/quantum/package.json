@@ -37,7 +37,7 @@
     "@ant-design/colors": "7.2.0",
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
-    "@connectrpc/connect": "2.1.0",
+    "@connectrpc/connect": "2.1.1",
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@ddadaal/tsgrpc-common": "0.2.6",
     "@grpc/grpc-js": "1.12.5",

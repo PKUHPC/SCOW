@@ -19,8 +19,8 @@
   "keywords": [],
   "dependencies": {
     "@bufbuild/protobuf": "2.10.0",
-    "@connectrpc/connect": "2.1.0",
-    "@connectrpc/connect-node": "2.1.0",
+    "@connectrpc/connect": "2.1.1",
+    "@connectrpc/connect-node": "2.1.1",
     "@ddadaal/tsgrpc-client": "0.17.8",
     "@ddadaal/tsgrpc-common": "0.2.6",
     "@ddadaal/tsgrpc-server": "0.19.7",
