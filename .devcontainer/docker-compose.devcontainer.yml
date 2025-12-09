@@ -68,9 +68,6 @@ services:
 
   test-adapter-hpc01:
     image: test-adapter
-    build:
-      context: ..
-      dockerfile: dev/test-adapter/Dockerfile
     network_mode: service:scow-dev
     environment:
       CLUSTER_ID: hpc01
@@ -78,9 +75,6 @@ services:
 
   test-adapter-hpc02:
     image: test-adapter
-    build:
-      context: ..
-      dockerfile: dev/test-adapter/Dockerfile
     network_mode: service:scow-dev
     environment:
       CLUSTER_ID: hpc02

@@ -69,11 +69,6 @@ services:
 
   test-adapter-hpc01:
     image: test-adapter
-    build:
-      context: ..
-      dockerfile: dev/test-adapter/Dockerfile
-      args:
-        HTTPS_PROXY: ${HTTPS_PROXY}
     ports:
       - 6001:6001
     environment:
@@ -82,11 +77,6 @@ services:
 
   test-adapter-hpc02:
     image: test-adapter
-    build:
-      context: ..
-      dockerfile: dev/test-adapter/Dockerfile
-      args:
-        HTTPS_PROXY: ${HTTPS_PROXY}
     ports:
       - 6002:6002
     environment:
