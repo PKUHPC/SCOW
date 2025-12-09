@@ -1,5 +1,21 @@
 # @scow/lib-web
 
+## 1.5.8
+
+### Patch Changes
+
+- cc87c57: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- 21340c9: 快捷入口的链接以及登录集群中 shell 的按钮未考虑 SCOW base path 修复
+- ce6fc46: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 7b07e05: 管理系统平台管理员可配置启用 shell 的 root 权限
+- 8b458d0: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- Updated dependencies [5b29d63]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+  - @scow/config@1.12.0
+  - @scow/protos@1.0.33
+
 ## 1.5.7
 
 ### Patch Changes

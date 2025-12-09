@@ -1,5 +1,21 @@
 # @scow/auth
 
+## 1.9.9
+
+### Patch Changes
+
+- ce6fc46: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 5b29d63: 登录页面优化 UI 优化、页脚更改为可配置
+- cae38bf: 修复量子获取 logo 404、登录页页脚展示逻辑同页面中一致
+- Updated dependencies [5b29d63]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [ce6fc46]
+  - @scow/config@1.12.0
+  - @scow/lib-config@1.0.7
+  - @scow/lib-server@1.4.8
+
 ## 1.9.8
 
 ### Patch Changes

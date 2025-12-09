@@ -1,5 +1,30 @@
 # @scow/notification
 
+## 0.2.20
+
+### Patch Changes
+
+- 1298591: 消息系统文档、日志、接口安全优化
+- Updated dependencies [5b29d63]
+- Updated dependencies [cc87c57]
+- Updated dependencies [acd7215]
+- Updated dependencies [21340c9]
+- Updated dependencies [1298591]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [7b07e05]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [8b458d0]
+  - @scow/config@1.12.0
+  - @scow/lib-web@1.5.8
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/notification-protos@0.1.6
+  - @scow/lib-config@1.0.7
+  - @scow/protos@1.0.33
+  - @scow/lib-notification@1.0.18
+  - @scow/lib-server@1.4.8
+
 ## 0.2.19
 
 ### Patch Changes

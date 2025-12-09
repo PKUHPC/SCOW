@@ -1,5 +1,30 @@
 # @scow/resource
 
+## 0.3.8
+
+### Patch Changes
+
+- 4f1da40: 优化资源管理服务的错误信息处理
+- 627aced: 资源管理增加操作日志
+- Updated dependencies [5b29d63]
+- Updated dependencies [cc87c57]
+- Updated dependencies [acd7215]
+- Updated dependencies [21340c9]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [7b07e05]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [8b458d0]
+  - @scow/config@1.12.0
+  - @scow/lib-web@1.5.8
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/lib-config@1.0.7
+  - @scow/protos@1.0.33
+  - @scow/lib-hook@1.0.33
+  - @scow/lib-operation-log@2.2.8
+  - @scow/lib-server@1.4.8
+
 ## 0.3.7
 
 ### Patch Changes

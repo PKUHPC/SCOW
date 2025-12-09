@@ -1,5 +1,21 @@
 # @scow/config
 
+## 1.12.0
+
+### Minor Changes
+
+- 7b07e05: 管理系统平台管理员配置是否启用 shell 的 root 权限，配置文件在 docs/deploy/config/mis/intro
+
+### Patch Changes
+
+- 5b29d63: 在 auth.yaml 配置文件中的 UI 配置项中增加页脚的配置
+  文档相对路径/SCOW/docs/deploy/config/auth/config
+- e5ff94c: 集群配置文件中增加 ai 推理、公共挂载点、监控的配置(/docs/deploy/config/ai/intro#修改安装配置文件)
+- ce6fc46: 在 ui.yaml 配置文件中增加页面标题标签的配置
+  文档相对路径/SCOW/docs/deploy/config/customization/webui
+- Updated dependencies [ce6fc46]
+  - @scow/lib-config@1.0.7
+
 ## 1.11.2
 
 ### Patch Changes

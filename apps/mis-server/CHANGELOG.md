@@ -1,5 +1,30 @@
 # @scow/mis-server
 
+## 1.9.9
+
+### Patch Changes
+
+- 4f1da40: 优化资源管理服务的错误信息处理
+- 7b07e05: 管理系统平台管理员可配置启用 shell 的 root 权限
+- Updated dependencies [5b29d63]
+- Updated dependencies [acd7215]
+- Updated dependencies [1298591]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [64fb141]
+  - @scow/config@1.12.0
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/notification-protos@0.1.6
+  - @scow/lib-config@1.0.7
+  - @scow/lib-scowd@1.2.3
+  - @scow/protos@1.0.33
+  - @scow/lib-hook@1.0.33
+  - @scow/lib-notification@1.0.18
+  - @scow/lib-scow-resource@0.2.17
+  - @scow/lib-server@1.4.8
+
 ## 1.9.8
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-scow-resource",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "scow-resource",
   "main": "build/index.js",
   "private": true,

@@ -1,5 +1,39 @@
 # @scow/mis-web
 
+## 1.9.9
+
+### Patch Changes
+
+- 8d062a9: 账户/用户信息同步结果增加成功数据及失败详情的展示
+- 715fb0a: 集群监控页面 grafana 黑暗模式跟随系统
+- cc87c57: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- 1298591: 消息系统文档、日志、接口安全优化
+- 627aced: 资源管理增加操作日志
+- e4a28d1: 修复用户排序导致查询出错的 bug
+- ce6fc46: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 7b07e05: 管理系统平台管理员可配置启用 shell 的 root 权限
+- e399b0e: 登录用户在管理的账户下移出自己或取消自己的管理员权限时，账户管理导航下不允许再访问该账户相关信息
+- 8b458d0: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- Updated dependencies [5b29d63]
+- Updated dependencies [cc87c57]
+- Updated dependencies [21340c9]
+- Updated dependencies [1298591]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [7b07e05]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [8b458d0]
+  - @scow/config@1.12.0
+  - @scow/lib-web@1.5.8
+  - @scow/notification-protos@0.1.6
+  - @scow/lib-config@1.0.7
+  - @scow/protos@1.0.33
+  - @scow/lib-notification@1.0.18
+  - @scow/lib-operation-log@2.2.8
+  - @scow/lib-scow-resource@0.2.17
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.8
 
 ### Patch Changes

@@ -1,5 +1,44 @@
 # @scow/ai
 
+## 0.4.9
+
+### Patch Changes
+
+- cc87c57: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- e5ff94c: ai 推理、公共挂载点、监控配置支持多集群
+- 21340c9: 快捷入口的链接以及登录集群中 shell 的按钮未考虑 SCOW base path 修复
+- 1298591: 消息系统文档、日志、接口安全优化
+- e4a8fc2: 修复 AI 未配置应用时直接 500 报错
+- ce6fc46: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 8b458d0: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- 8d12e12: 修复开发机修复内存展示 BUG
+- Updated dependencies [4bd522e]
+- Updated dependencies [5b29d63]
+- Updated dependencies [cc87c57]
+- Updated dependencies [acd7215]
+- Updated dependencies [21340c9]
+- Updated dependencies [1298591]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [7b07e05]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [64fb141]
+- Updated dependencies [8b458d0]
+  - @scow/scowd-protos@0.3.3
+  - @scow/config@1.12.0
+  - @scow/lib-web@1.5.8
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/notification-protos@0.1.6
+  - @scow/lib-config@1.0.7
+  - @scow/lib-scowd@1.2.3
+  - @scow/protos@1.0.33
+  - @scow/lib-notification@1.0.18
+  - @scow/lib-operation-log@2.2.8
+  - @scow/lib-scow-resource@0.2.17
+  - @scow/lib-server@1.4.8
+  - @scow/rich-error-model@2.0.2
+
 ## 0.4.8
 
 ### Patch Changes

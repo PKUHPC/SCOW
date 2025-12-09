@@ -1,5 +1,16 @@
 # @scow/grpc-api
 
+## 1.27.0
+
+### Minor Changes
+
+- 7b07e05: 管理系统平台管理员配置是否启用 shell 的 root 权限，增加 getIsUserEnabledRootShell 接口判断用户是否允许使用 shell 的 root 权限
+- 627aced: 在审计系统的 proto 中增加资源管理下与集群/分区授权相关的 message
+
+### Patch Changes
+
+- 4bd522e: connectToApp 接口新增 jobId 参数
+
 ## 1.26.0
 
 ### Minor Changes

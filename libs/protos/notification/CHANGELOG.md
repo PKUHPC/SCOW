@@ -1,5 +1,11 @@
 # @scow/notification-protos
 
+## 0.1.6
+
+### Patch Changes
+
+- 1298591: 消息系统文档、日志、接口安全优化
+
 ## 0.1.5
 
 ### Patch Changes

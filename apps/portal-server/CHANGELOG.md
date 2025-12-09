@@ -1,5 +1,29 @@
 # @scow/portal-server
 
+## 1.9.9
+
+### Patch Changes
+
+- 4bd522e: connectToApp 接口新增 jobId 参数
+- 64fb141: scow 接入 scowd 版跨集群文件传输
+- Updated dependencies [4bd522e]
+- Updated dependencies [5b29d63]
+- Updated dependencies [acd7215]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [64fb141]
+  - @scow/scowd-protos@0.3.3
+  - @scow/config@1.12.0
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/lib-config@1.0.7
+  - @scow/lib-scowd@1.2.3
+  - @scow/protos@1.0.33
+  - @scow/lib-scow-resource@0.2.17
+  - @scow/lib-server@1.4.8
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.8
 
 ### Patch Changes

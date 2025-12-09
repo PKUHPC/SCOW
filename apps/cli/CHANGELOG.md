@@ -1,5 +1,20 @@
 # @scow/cli
 
+## 1.9.9
+
+### Patch Changes
+
+- e5ff94c: ai 推理、公共挂载点、监控配置支持多集群
+- 1298591: 消息系统文档、日志、接口安全优化
+- 7b07e05: 管理系统平台管理员可配置启用 shell 的 root 权限
+- Updated dependencies [5b29d63]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [ce6fc46]
+  - @scow/config@1.12.0
+  - @scow/lib-config@1.0.7
+
 ## 1.9.8
 
 ### Patch Changes

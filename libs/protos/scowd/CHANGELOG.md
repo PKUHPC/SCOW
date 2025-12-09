@@ -1,5 +1,12 @@
 # @scow/scowd-protos
 
+## 0.3.3
+
+### Patch Changes
+
+- 4bd522e: connectToApp 接口新增 jobId 参数
+- 64fb141: scow 接入 scowd 版跨集群文件传输
+
 ## 0.3.2
 
 ### Patch Changes

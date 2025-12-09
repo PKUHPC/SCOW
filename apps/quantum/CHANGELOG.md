@@ -1,5 +1,36 @@
 # @scow/quantum
 
+## 0.1.8
+
+### Patch Changes
+
+- 4bd522e: connectToApp 接口新增 jobId 参数
+- cc87c57: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- ce6fc46: AI 和量子系增加页面标题、页面标题标签改为可配置
+- cae38bf: 修复量子获取 logo 404、登录页页脚展示逻辑同页面中一致
+- 8b458d0: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- Updated dependencies [5b29d63]
+- Updated dependencies [cc87c57]
+- Updated dependencies [acd7215]
+- Updated dependencies [21340c9]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [7b07e05]
+- Updated dependencies [ce6fc46]
+- Updated dependencies [64fb141]
+- Updated dependencies [8b458d0]
+  - @scow/config@1.12.0
+  - @scow/lib-web@1.5.8
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/lib-config@1.0.7
+  - @scow/lib-scowd@1.2.3
+  - @scow/protos@1.0.33
+  - @scow/lib-operation-log@2.2.8
+  - @scow/lib-scow-resource@0.2.17
+  - @scow/lib-server@1.4.8
+  - @scow/rich-error-model@2.0.2
+
 ## 0.1.7
 
 ### Patch Changes

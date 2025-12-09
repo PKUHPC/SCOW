@@ -1,5 +1,19 @@
 # @scow/lib-server
 
+## 1.4.8
+
+### Patch Changes
+
+- Updated dependencies [5b29d63]
+- Updated dependencies [acd7215]
+- Updated dependencies [7b07e05]
+- Updated dependencies [e5ff94c]
+- Updated dependencies [ce6fc46]
+  - @scow/config@1.12.0
+  - @scow/lib-scheduler-adapter@1.1.31
+  - @scow/protos@1.0.33
+  - @scow/rich-error-model@2.0.2
+
 ## 1.4.7
 
 ### Patch Changes

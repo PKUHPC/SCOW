@@ -1,5 +1,12 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.31
+
+### Patch Changes
+
+- acd7215: 修复租户管理的未结束作业分配的加速卡展示错误
+  - @scow/protos@1.0.33
+
 ## 1.1.30
 
 ### Patch Changes

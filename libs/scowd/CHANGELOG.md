@@ -1,5 +1,14 @@
 # @scow/lib-scowd
 
+## 1.2.3
+
+### Patch Changes
+
+- 64fb141: scow 接入 scowd 版跨集群文件传输
+- Updated dependencies [4bd522e]
+- Updated dependencies [64fb141]
+  - @scow/scowd-protos@0.3.3
+
 ## 1.2.2
 
 ### Patch Changes
