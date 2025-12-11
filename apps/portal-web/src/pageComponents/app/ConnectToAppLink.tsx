@@ -41,44 +41,48 @@ export const ConnectTopAppLink: React.FC<Props> = ({
     // 判断是否已经检查为可以连接的状态，如果是，直接返回true不再进行下方检查
     if (isConnected) { return true; }
 
+
     if (session.appType?.toLowerCase() === "shadowdesk") {
-      return api.checkShadowDeskConnectivity({ query: { id: session.user || "",
-        proxyServer: session.proxyServer || "", connectPath: session.connectPath || "" } }, signal)
-        .then((x) => x.ok);
-    } else {
+      // 如果缺少任何必要的信息，直接返回不可连接
+      if (!session.user || !session.proxyServer || !session.connectPath) { return false; }
 
-      // 先通过ConnectToApp获取后端返回的host，port，proxyType
-      const response = await api.connectToApp({ body:
+      return api.checkShadowDeskConnectivity({ query: {
+        id: session.user,
+        proxyServer: session.proxyServer,
+        connectPath: session.connectPath,
+      } }, signal).then((x) => x.ok);
+    }
+
+    // 先通过ConnectToApp获取后端返回的host，port，proxyType
+    const response = await api.connectToApp({ body:
         { cluster: cluster.id, sessionId: session.sessionId, jobId: session.jobId } }, signal)
-        .httpError(404, () => {
-          return false;
-        })
-        .httpError(409, () => {
-          return false;
-        });
+      .httpError(404, () => {
+        return false;
+      })
+      .httpError(409, () => {
+        return false;
+      });
 
-      // 保存获取的 response 信息连接时使用
-      replyRef.current = response;
+    // 保存获取的 response 信息连接时使用
+    replyRef.current = response;
 
-      if (response.type === "web" || response.type === "vnc") {
+    if (response.type === "web" || response.type === "vnc") {
 
-        // 对于 web或vnc 应用，模拟到端口的http请求
-        return await api.checkAppConnectivity({
-          query: {
-            cluster: cluster.id,
-            host: response.host,
-            port: response.port,
-            appType: response.type,
-            proxyType: response.type === "web" ? response.proxyType : undefined,
-          } }, signal)
-          .then((x) => x.ok);
+      // 对于 web或vnc 应用，模拟到端口的http请求
+      return await api.checkAppConnectivity({
+        query: {
+          cluster: cluster.id,
+          host: response.host,
+          port: response.port,
+          appType: response.type,
+          proxyType: response.type === "web" ? response.proxyType : undefined,
+        } }, signal)
+        .then((x) => x.ok);
 
       // 此检验方法不支持 web 和 vnc 以外类型的应用
-      } else {
-        message.error(t(p("notConnectableMessage")));
-        return false;
-      }
-
+    } else {
+      message.error(t(p("notConnectableMessage")));
+      return false;
     }
 
   }, [session.host, session.port, cluster.id, isConnected]);

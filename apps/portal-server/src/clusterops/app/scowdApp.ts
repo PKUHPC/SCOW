@@ -492,7 +492,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
               }
               if (app.type === AppType.shadowDesk) {
                 const shadowDeskFilePath = join(jobDir, SHADOWDESK_SESSION);
-                if (await client.file.exists({ userId, path: shadowDeskFilePath })) {
+                if ((await client.file.exists({ userId, path: shadowDeskFilePath })).exists) {
                   const content = (await client.file.readFile({ userId, filePath: shadowDeskFilePath })).content;
                   try {
                     const sessionInfo = JSON.parse(content.toString()) as ShadowDeskSession;
