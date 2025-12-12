@@ -65,11 +65,11 @@
     "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
-    "@tanstack/react-query": "4.36.1",
-    "@trpc/client": "10.45.2",
-    "@trpc/next": "10.45.2",
-    "@trpc/react-query": "10.45.2",
-    "@trpc/server": "10.45.2",
+    "@tanstack/react-query": "5.90.12",
+    "@trpc/client": "11.7.2",
+    "@trpc/next": "11.7.2",
+    "@trpc/react-query": "11.7.2",
+    "@trpc/server": "11.7.2",
     "@xterm/addon-fit": "0.10.0",
     "@xterm/xterm": "5.5.0",
     "antd": "5.18.3",
@@ -103,9 +103,9 @@
     "styled-components": "6.1.14",
     "superjson": "2.2.2",
     "swagger-ui-react": "5.18.2",
-    "trpc-openapi": "1.2.0",
+    "trpc-to-openapi": "3.1.0",
     "ws": "8.18.0",
-    "zod": "3.24.1"
+    "zod": "4.1.13"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.1.4",

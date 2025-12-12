@@ -72,7 +72,7 @@ export const SaveDevHostModal: React.FC<Props> = ({
       title={t(p("saveImage"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={saveImageMutation.isLoading}
+      confirmLoading={saveImageMutation.isPending}
       onCancel={onClose}
       width={800}
     >

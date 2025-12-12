@@ -68,9 +68,9 @@ export function TrpcClientProvider(props: { baseUrl: string; basePath: string; c
         httpBatchLink({
           url: typeof window === "undefined" ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
             : join(props.basePath, "/api/trpc"),
+          transformer: superjson,
         }),
       ],
-      transformer: superjson,
     }),
   );
   return (

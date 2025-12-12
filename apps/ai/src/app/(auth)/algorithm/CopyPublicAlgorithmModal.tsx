@@ -88,7 +88,7 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
       title={t(p("copy"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={copyMutation.isLoading}
+      confirmLoading={copyMutation.isPending}
       onCancel={onClose}
       width={800}
       destroyOnClose

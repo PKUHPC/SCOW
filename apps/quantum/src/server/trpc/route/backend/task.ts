@@ -22,7 +22,7 @@ interface User {
 
 // 数据库中记录新的提交作业
 async function handleSubmitTaskRecord(
-  b: z.SafeParseSuccess<SubmitTaskResponse>,
+  b: z.ZodSafeParseSuccess<SubmitTaskResponse>,
   orm: MikroORM,
   user: User,
   accountName: string,

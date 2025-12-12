@@ -54,7 +54,6 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       querySelf: true,
     },
     {
-      keepPreviousData: true,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
     },

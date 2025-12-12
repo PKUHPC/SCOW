@@ -57,7 +57,7 @@ export const ChangePasswordModal: React.FC<Props> = ({
       title={t(p("changePassword"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={changePasswordMutation.isLoading}
+      confirmLoading={changePasswordMutation.isPending}
       onCancel={onClose}
       destroyOnClose
     >

@@ -97,6 +97,7 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
   const apiUrl = {
     url: typeof window === "undefined" ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
       : join(props.basePath, "/api/trpc"),
+    transformer: superjson,
   };
 
   const [trpcClient] = useState(() =>
@@ -113,7 +114,6 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
           false: httpBatchLink(apiUrl), // 仍然合并其它请求
         }),
       ],
-      transformer: superjson,
     }),
   );
 

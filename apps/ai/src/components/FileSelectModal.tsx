@@ -136,11 +136,14 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
 
   const { data: homeDir } = trpc.file.getHomeDir.useQuery({ clusterId }, {
     enabled: !!clusterId && path === "~" && visible,
-    onSuccess(data) {
-      setPrevPath(data.path);
-      setPath(data.path);
-    },
   });
+
+  useEffect(() => {
+    if (homeDir) {
+      setPrevPath(homeDir.path);
+      setPath(homeDir.path);
+    }
+  }, [homeDir]);
 
   const { data: curDirContent, refetch, isLoading: isDirContentLoading } = trpc.file.listDirectory.useQuery({
     clusterId: clusterId,

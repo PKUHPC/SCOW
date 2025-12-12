@@ -1,6 +1,6 @@
 import { initTRPC } from "@trpc/server";
 import Superjson from "superjson";
-import { OpenApiMeta } from "trpc-openapi";
+import { OpenApiMeta } from "trpc-to-openapi";
 
 import { DetailedTRPCError } from "../utils/detailedError";
 import type { GlobalContext } from "./context";

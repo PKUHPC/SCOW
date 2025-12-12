@@ -77,7 +77,7 @@ export function ClientLayout(props: {
     );
   }
 
-  if (publicConfig.isError) {
+  if (publicConfig.isError || !publicConfig.isSuccess) {
     return (
       <body>
       </body>

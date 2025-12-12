@@ -122,7 +122,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
       title={editData?.algorithmName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createAlgorithmMutation.isLoading || updateAlgorithmMutation.isLoading}
+      confirmLoading={createAlgorithmMutation.isPending || updateAlgorithmMutation.isPending}
       onCancel={onClose}
       width={800}
     >

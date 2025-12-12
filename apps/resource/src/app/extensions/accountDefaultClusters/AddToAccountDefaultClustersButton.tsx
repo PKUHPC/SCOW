@@ -94,7 +94,7 @@ const NewClusterModal: React.FC<ModalProps> = ({
       open={open}
       onCancel={close}
       onOk={onOk}
-      confirmLoading={isFetching || addToDefaultClustersMutation.isLoading}
+      confirmLoading={isFetching || addToDefaultClustersMutation.isPending}
     >
       <>
         <p style={{ color: "red" }}>

@@ -117,7 +117,7 @@ const PublicConfigSchema = z.object({
     passwordPatternMessage: I18nStringTypeSchema.optional(),
   }),
   SYSTEM_LANGUAGE_CONFIG: SystemLanguageConfigSchema,
-  LOGIN_NODES: z.record(z.string()),
+  LOGIN_NODES: z.record(z.string(), z.string()),
   NOVNC_CLIENT_URL: z.string(),
   SCOW_RESOURCE: ScowResourceConfigSchema.optional(),
   MAX_JOB_RUNNING_TIME_HOURS:z.number().optional(),
@@ -131,7 +131,7 @@ const PublicConfigSchema = z.object({
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   INFER_ENABLED:z.boolean(),
   GRAFANA_CONFIG:grafanaConfigSchema.optional(),
-  CLUSTERS_GRAFANA_CONFIG:z.record(grafanaConfigSchema).optional(),
+  CLUSTERS_GRAFANA_CONFIG:z.record(z.string(), grafanaConfigSchema).optional(),
 });
 
 const UiConfigSchema = z.object({

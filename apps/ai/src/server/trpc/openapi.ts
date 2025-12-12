@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { generateOpenApiDocument } from "trpc-openapi";
+import { generateOpenApiDocument } from "trpc-to-openapi";
 
 import { appRouter } from "./router";
 
@@ -20,6 +20,6 @@ export const openApiDocument = generateOpenApiDocument(appRouter, {
   description: "HTTP API for SCOW AI",
   version: "1.0.0",
   baseUrl: "http://localhost:5006/api",
-  docsUrl: "https://github.com/jlalmes/trpc-openapi",
+  docsUrl: "https://github.com/jlalmes/trpc-to-openapi",
   tags: ["ai"],
 });

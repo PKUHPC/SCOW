@@ -11,7 +11,7 @@ import cn from "./cn.md";
 const { Title, Paragraph } = Typography;
 
 const SdkTokenSection = () => {
-  const { data, isLoading, isError, error } = trpc.backend.token.getUserToken.useQuery();
+  const { data, isLoading, isError, error, isSuccess } = trpc.backend.token.getUserToken.useQuery();
   const { message } = App.useApp();
   const i18n = useI18n();
 
@@ -55,6 +55,8 @@ const SdkTokenSection = () => {
           <Spin><Localized id="help.token.loading" /></Spin>
         ) : isError ? (
           <span><Localized id="help.token.error" />: {error.message}</span>
+        ) : (!isSuccess) ? (
+          <span><Localized id="help.token.error" /></span>
         ) : (
           <Button onClick={() => copyToClipboard(data.token)}>
             <Localized id="help.token.copy" />

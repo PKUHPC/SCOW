@@ -177,14 +177,14 @@ export const connectToApp =
       connect: z.object({
         method: z.string(),
         path: z.string(),
-        query: z.record(z.string()).optional(),
-        formData: z.record(z.string()).optional(),
+        query: z.record(z.string(), z.string()).optional(),
+        formData: z.record(z.string(), z.string()).optional(),
       }),
       proxyType: z.union([
         z.literal("relative"),
         z.literal("absolute"),
       ]),
-      customFormData: z.record(z.string()).optional(),
+      customFormData: z.record(z.string(), z.string()).optional(),
     }))
     .mutation(async ({ input, ctx: { user } }) => {
       const { cluster, sessionId, jobId } = input;

@@ -48,7 +48,7 @@
     "@scow/lib-ssh": "workspace:*",
     "@scow/notification-protos": "workspace:*",
     "@scow/protos": "workspace:*",
-    "@trpc/client": "10.45.2",
+    "@trpc/client": "11.7.2",
     "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/scow-resource-protos": "workspace:*",
     "@scow/utils": "workspace:*",

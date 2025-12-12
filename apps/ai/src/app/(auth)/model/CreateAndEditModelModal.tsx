@@ -137,7 +137,7 @@ export const CreateAndEditModalModal: React.FC<Props> = (
       title={editData?.modelName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createModelMutation.isLoading}
+      confirmLoading={createModelMutation.isPending}
       onCancel={onClose}
       width={800}
     >

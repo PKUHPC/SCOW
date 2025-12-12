@@ -34,12 +34,17 @@ export default function Page({ params }: { params: Promise<{
     clusterId: cluster,
   }, {
     enabled: fullPath === "~",
-    onSuccess: ({ path }) => {
+  });
+
+  useEffect(() => {
+    const path = homeDirPathQuery.data?.path;
+    if (path) {
+
       if (decodePathParts && decodePathParts.length === 1 && decodePathParts[0] === "~") {
         router.push(join("/files", cluster, path));
       }
-    },
-  });
+    }
+  }, [homeDirPathQuery.data]);
 
   // if cluster changes and accesses homedir, find the homedir and go to it
   useEffect(() => {

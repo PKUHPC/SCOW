@@ -130,7 +130,7 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
       title={isEdit ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createMutation.isLoading || editMutation.isLoading}
+      confirmLoading={createMutation.isPending || editMutation.isPending}
       onCancel={onClose}
       width={800}
     >

@@ -50,11 +50,11 @@
     "@scow/lib-operation-log": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
-    "@tanstack/react-query": "4.36.1",
-    "@trpc/client": "10.45.2",
-    "@trpc/next": "10.45.2",
-    "@trpc/react-query": "10.45.2",
-    "@trpc/server": "10.45.2",
+    "@tanstack/react-query": "5.90.12",
+    "@trpc/client": "11.7.2",
+    "@trpc/next": "11.7.2",
+    "@trpc/react-query": "11.7.2",
+    "@trpc/server": "11.7.2",
     "ajv": "8.17.1",
     "ajv-formats": "3.0.1",
     "antd": "5.19.4",
@@ -72,8 +72,8 @@
     "styled-components": "6.1.14",
     "superjson": "2.2.2",
     "swagger-ui-react": "5.18.2",
-    "trpc-openapi": "1.2.0",
-    "zod": "3.24.1"
+    "trpc-to-openapi": "3.1.0",
+    "zod": "4.1.13"
   },
   "devDependencies": {
     "@bufbuild/buf": "1.59.0",

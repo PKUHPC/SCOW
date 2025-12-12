@@ -12,7 +12,7 @@ import { logger } from "src/server/utils/logger";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
-const MetadataMapSchema = z.record(z.union([
+const MetadataMapSchema = z.record(z.string(), z.union([
   z.string(),
   z.number(),
   z.boolean(),

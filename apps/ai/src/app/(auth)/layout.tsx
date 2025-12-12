@@ -55,7 +55,7 @@ export default function Layout(
     );
   }
 
-  if (userQuery.isError || !userQuery.data.user) {
+  if (userQuery.isError || !userQuery.isSuccess || !userQuery.data.user) {
     return;
   }
 
@@ -67,7 +67,8 @@ export default function Layout(
     );
   }
 
-  if (configQuery.isError || scowClusterConfigsQuery.isError) {
+  if (configQuery.isError || scowClusterConfigsQuery.isError ||
+    !configQuery.isSuccess || !scowClusterConfigsQuery.isSuccess) {
     return (
       <BaseLayout>
         <ServerErrorPage />

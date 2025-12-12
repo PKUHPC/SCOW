@@ -395,7 +395,7 @@ export const DevHostList = () => {
         open={cancelModalVisible}
         onOk={handleCancelConfirm}
         onCancel={handleCancelModalCancel}
-        confirmLoading={cancelJobMutation.isLoading}
+        confirmLoading={cancelJobMutation.isPending}
         okText={t(p("confirm"))}
         cancelText={t(p("cancel"))}
       >

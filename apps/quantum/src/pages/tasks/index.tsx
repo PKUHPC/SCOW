@@ -1,11 +1,4 @@
-import { trpc } from "src/utils/trpc";
-
 export default function QuantumTaskListPage() {
-
-  const { data, isLoading } = trpc.backend.task.findTask.useQuery({
-    accountName: "_",
-    querySelf: true,
-  });
 
   return (
     <div>

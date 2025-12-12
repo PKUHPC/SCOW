@@ -21,7 +21,6 @@ export const DashboardPage: NextPage = () => {
     undefined,
     {
       staleTime: 5 * 60 * 1000,
-      cacheTime: 30 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: 2,
     },

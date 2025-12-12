@@ -133,7 +133,7 @@ const NewPartitionModal: React.FC<ModalProps> = ({
       open={open}
       onCancel={close}
       onOk={onOk}
-      confirmLoading={isFetching || addToDefaultPartitionsMutation.isLoading}
+      confirmLoading={isFetching || addToDefaultPartitionsMutation.isPending}
     >
       <>
         <p style={{ color: "red" }}>

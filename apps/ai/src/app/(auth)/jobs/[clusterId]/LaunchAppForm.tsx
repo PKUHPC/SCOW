@@ -1066,7 +1066,7 @@ export const LaunchAppForm = (props: Props) => {
       }
       }
     >
-      <Spin spinning={createAppSessionMutation.isLoading || trainJobMutation.isLoading} tip="loading">
+      <Spin spinning={createAppSessionMutation.isPending || trainJobMutation.isPending} tip="loading">
         <Form.Item
           name="appJobName"
           label={t(p("appJobName"))}
@@ -2129,7 +2129,7 @@ export const LaunchAppForm = (props: Props) => {
         <Button
           type="primary"
           htmlType="submit"
-          loading={createAppSessionMutation.isLoading}
+          loading={createAppSessionMutation.isPending}
         >
           {t("button.submitButton")}
         </Button>

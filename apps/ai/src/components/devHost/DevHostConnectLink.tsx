@@ -183,7 +183,7 @@ export const DevHostConnectLink: React.FC<Props> = ({
         size="small"
         disabled={!isRunning || !data?.ok}
         onClick={handleConnect}
-        loading={connectMutation.isLoading}
+        loading={connectMutation.isPending}
       >
         {appConfig.text}
       </Button>

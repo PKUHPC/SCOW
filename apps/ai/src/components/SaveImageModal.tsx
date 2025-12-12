@@ -95,7 +95,7 @@ export const SaveImageModal: React.FC<Props> = (
       title={t(p("saveImage"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={saveImageMutation.isLoading}
+      confirmLoading={saveImageMutation.isPending}
       onCancel={onClose}
       width={800}
       // 获取作业参数接口loading 或 使用的本地镜像时获取镜像数据接口loading

@@ -1097,8 +1097,8 @@ procedure
 const AppConnectPropsSchema = z.object({
   method: z.string(),
   path: z.string(),
-  query: z.record(z.string()).optional(),
-  formData: z.record(z.string()).optional(),
+  query: z.record(z.string(), z.string()).optional(),
+  formData: z.record(z.string(), z.string()).optional(),
 });
 
 const ConnectToAppResponseSchema = z.intersection(
@@ -1115,7 +1115,7 @@ const ConnectToAppResponseSchema = z.intersection(
         z.literal("relative"),
         z.literal("absolute"),
       ]),
-      customFormData: z.record(z.string()).optional(),
+      customFormData: z.record(z.string(), z.string()).optional(),
     }),
     z.object({ type: z.literal("vnc") }),
   ]),

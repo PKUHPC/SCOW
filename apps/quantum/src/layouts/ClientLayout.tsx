@@ -124,7 +124,7 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
     );
   }
 
-  if (userQuery.isError || publicConfigQuery.isError) {
+  if (userQuery.isError || publicConfigQuery.isError || !userQuery.isSuccess || !publicConfigQuery.isSuccess) {
     return (
       <body>
         <div>Error loading user or configuration.</div>

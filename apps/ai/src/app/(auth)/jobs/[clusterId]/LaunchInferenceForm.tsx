@@ -507,7 +507,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
       }
       }
     >
-      <Spin spinning={inferenceJobMutation.isLoading} tip="loading">
+      <Spin spinning={inferenceJobMutation.isPending} tip="loading">
         <Form.Item
           name="appJobName"
           label={t(p("appJobName"))}
@@ -1106,7 +1106,7 @@ export const LaunchInferenceJobForm = (props: Props) => {
         <Button
           type="primary"
           htmlType="submit"
-          loading={inferenceJobMutation.isLoading}
+          loading={inferenceJobMutation.isPending}
         >
           {t("button.submitButton")}
         </Button>

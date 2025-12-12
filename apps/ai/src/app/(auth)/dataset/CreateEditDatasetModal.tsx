@@ -168,7 +168,7 @@ export const CreateEditDatasetModal: React.FC<Props> = (
       title={isEdit ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={isEdit ? editMutation.isLoading : createMutation.isLoading}
+      confirmLoading={isEdit ? editMutation.isPending : createMutation.isPending}
       onCancel={onClose}
       width={800}
     >

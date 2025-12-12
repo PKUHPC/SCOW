@@ -72,7 +72,7 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
       okText={t("button.confirmButton")}
       cancelText={t("button.cancelButton")}
       onCancel={onClose}
-      confirmLoading={mutation.isLoading}
+      confirmLoading={mutation.isPending}
       destroyOnClose
       onOk={form.submit}
     >

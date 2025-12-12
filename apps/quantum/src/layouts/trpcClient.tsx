@@ -75,9 +75,9 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
         }),
         httpBatchLink({
           url: join(props.basePath, "/api/trpc"),
+          transformer: superjson,
         }),
       ],
-      transformer: superjson,
     }),
   );
 

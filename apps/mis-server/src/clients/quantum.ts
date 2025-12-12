@@ -30,7 +30,6 @@ export function createQuantumClient(token: string) {
   const quantumUrl = getQuantumUrl();
 
   return createTRPCProxyClient<AppRouter>({
-    transformer: superjson,
     links: [
       httpBatchLink({
         url: quantumUrl,
@@ -39,6 +38,7 @@ export function createQuantumClient(token: string) {
             "x-scow-api-auth-token": token,
           };
         },
+        transformer: superjson,
       }),
     ],
   });

@@ -29,13 +29,13 @@ export default function Home() {
   }
 
   // 4. 处理错误状态
-  if (publicConfigQuery.isError) {
+  if (publicConfigQuery.isError || !publicConfigQuery.isSuccess) {
     return (
       <div>Error loading user or configuration.</div>
     );
   }
 
-  if (quantumConfigQuery.isError) {
+  if (quantumConfigQuery.isError || !quantumConfigQuery.isSuccess) {
     return (
       <div>Error loading quantum configuration.</div>
     );

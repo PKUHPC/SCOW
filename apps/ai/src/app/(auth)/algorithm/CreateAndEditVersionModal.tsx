@@ -137,7 +137,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
       title={editData?.versionName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createAlgorithmVersionMutation.isLoading || updateAlgorithmVersionMutation.isLoading}
+      confirmLoading={createAlgorithmVersionMutation.isPending || updateAlgorithmVersionMutation.isPending}
       onCancel={onClose}
       destroyOnClose
       width={800}
