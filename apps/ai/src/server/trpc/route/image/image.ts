@@ -514,7 +514,10 @@ export const deleteImage = procedure
     const referenceRes = await getReferenceRes.json();
 
     let reference = "";
+    let targetArtifactTagCount = 0;
 
+    const allTagsCount = referenceRes.reduce((sum: number, item: { tags?: { name: string }[] }) =>
+      sum + (item.tags?.length ?? 0), 0);
     // 判断是否是唯一的标签，如果是需要删除上级的特定Artifact
     let needDeleteRepository: boolean = false;
 
@@ -522,7 +525,9 @@ export const deleteImage = procedure
       if (item.tags?.length > 0 && item.tags.find((i: { name: string }) =>
         i.name === image.tag + (image.tagPostfix ?? ""))) {
         reference = item.digest;
-        needDeleteRepository = (item.tags.length === 1);
+        targetArtifactTagCount = item.tags?.length ?? 0;
+        needDeleteRepository = (allTagsCount === 1);
+        break;
       }
     }
 
@@ -570,6 +575,21 @@ export const deleteImage = procedure
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete image tag: " + errorMessage,
         });
+      }
+
+      // 删除 tag 后如果该 artifact 不再被其它 tag 引用，则删除 artifact
+      if (targetArtifactTagCount <= 1) {
+        const deleteArtifactRes = await harbor.deleteArtifact({
+          userId:user.identityId,
+          imageName:image.name,
+          reference,
+        });
+
+        if (!deleteArtifactRes.ok) {
+          const errorBody = await deleteArtifactRes.json();
+          const errorMessage = errorBody.errors.map((i: { message?: string }) => i.message).join();
+          logger.error("Failed to delete image artifact: " + errorMessage);
+        }
       }
     }
 

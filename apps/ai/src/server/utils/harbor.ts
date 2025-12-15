@@ -172,6 +172,18 @@ export class HarborClient {
     return await this.harborFetch(url, { method: "DELETE" });
   }
 
+  async deleteArtifact(p: {
+    userId: string,
+    imageName: string,
+    reference: string,
+  }) {
+    const url = `${this.base}/projects`
+        + `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}`
+        + `/artifacts/${p.reference}`;
+
+    return await this.harborFetch(url, { method: "DELETE" });
+  }
+
   async getHarborConfig() {
     const url = `${this.base}/configurations`;
 
