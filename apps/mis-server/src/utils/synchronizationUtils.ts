@@ -27,8 +27,6 @@ import { UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { ClusterPlugin } from "src/plugins/clusters";
 
-import { logger } from "./logger";
-
 export async function processSynchronization(
   sessionId: string,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
@@ -39,13 +37,24 @@ export async function processSynchronization(
   maxSyncDurationMinutes?: number,
 ) {
 
-  return await em.transactional(async (em) => {
+  const subLogger = logger.child({ name: "processSynchronization" });
+  // 如果一个在线集群都没有，抛出错误
+  const currentActivatedClusterIds = Object.keys(currentActivatedClusters);
+  subLogger.trace("Current activated clusters for synchronization, %s", currentActivatedClusterIds.join(","));
+  if (currentActivatedClusterIds.length === 0) {
+    throw {
+      code: Status.NOT_FOUND,
+      message: "There is no activated clusters for synchronization.",
+    } as ServiceError;
+  }
 
+  // 使用一个长事务维持事务中账户和账户用户的读锁
+  return await em.transactional(async (em) => {
     // 如果没找到当前 Session ID 下需要同步的数据, 抛出错误
     const syncRecord = await em.findOne(AccountUserSyncRecord, {
       sessionId,
     });
-    logger.trace("Account user Synchronization record is found, %o", syncRecord);
+    subLogger.trace("Account user Synchronization record is found, %o", syncRecord);
 
     if (!syncRecord || syncRecord.syncStatus !== SyncStatus.RUNNING) {
       throw {
@@ -54,35 +63,25 @@ export async function processSynchronization(
       } as ServiceError;
     }
 
-    // 如果一个在线集群都没有，抛出错误
-    const currentActivatedClusterIds = Object.keys(currentActivatedClusters);
-    logger.trace("Current activated clusters for synchronization, %s", currentActivatedClusterIds.join(","));
-
-    if (currentActivatedClusterIds.length === 0) {
-      throw {
-        code: Status.NOT_FOUND,
-        message: "There is no activated clusters for synchronization.",
-      } as ServiceError;
-    }
-
     // 获取当前账户用户信息
-    const accounts = await getSyncTotalAccountUsersWithReadLock(em, logger);
+    const accounts = await getSyncTotalAccountUsersWithReadLock(em, subLogger);
 
-    logger.trace("Accounts with userAccount data (length: %s) "
+    subLogger.info("Accounts with userAccount data (length: %s) "
       + "will be with a read lock during the whole synchronization", accounts.length);
+
 
     // 避免切片处理中重复创建，提前获取各集群适配器连接
     // 对没有成功建立适配器连接的在线集群，保存集群同步失败信息
-    const adapterClientPool = await getActivatedClusterSchedulerClients(currentActivatedClusters, logger);
+    const adapterClientPool = await getActivatedClusterSchedulerClients(currentActivatedClusters, subLogger);
     const clientClusterIds = Object.keys(adapterClientPool);
 
-    logger.trace("Current available scheduler adapter client clusters: %s", clientClusterIds.join(","));
+    subLogger.trace("Current available scheduler adapter client clusters: %s", clientClusterIds.join(","));
     const clustersSyncResults: ClusterTotalSyncResultProto[] = [];
     currentActivatedClusterIds.forEach((clusterId) => {
 
       if (!clientClusterIds.includes(clusterId)) {
-        logger.trace("Some cluster account user synchronization is failed. "
-          + "Can not find client of cluster: %s", clusterId);
+        subLogger.info(
+          "Can not find client of cluster: %s, the synchronization will be updated to unexecuted", clusterId);
         const clusterResult: ClusterTotalSyncResultProto = {
           clusterId,
           clusterSyncStatus: SyncStatusProto.UNEXECUTED,
@@ -92,7 +91,7 @@ export async function processSynchronization(
           clusterSyncExceptions: [{
             exceptionType: SyncExceptionTypeProto.CLUSTER_UNEXECUTED,
             exceptionMessage:
-              "Calling actions on non-existing cluster or incompatible scheduler adapter version.",
+            "Calling actions on non-existing cluster or incompatible scheduler adapter version.",
           }],
           completedTotalSyncCount: 0,
           successfulTotalSyncCount: 0,
@@ -100,20 +99,24 @@ export async function processSynchronization(
         clustersSyncResults.push(clusterResult);
       }
     });
-    // 如果有错误数据，更新错误数据
-    await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: clustersSyncResults });
+
+    if (clustersSyncResults.length > 0) {
+      // 如果有错误数据，标记错误记录待保存
+      persistSyncRecord(em, syncRecord, { syncDetails: clustersSyncResults }, subLogger);
+    }
+
 
     // ************************************* 对数据进行切片处理 ***********************************************
     const FIXED_CHUNK_SIZE = 20;
     const maxSyncDurationMilliseconds =
-      (maxSyncDurationMinutes || misConfig.syncAccountUser.maxSyncDurationMinutes) * 60 * 1000;
+    (maxSyncDurationMinutes || misConfig.syncAccountUser.maxSyncDurationMinutes) * 60 * 1000;
 
     let startIndex: number = 0;
     const chunkSize: number = FIXED_CHUNK_SIZE;
     let chunkIndex: number = 1;
     const isResourceDeployed = !!commonConfig.scowResource?.enabled;
 
-    logger.info(
+    subLogger.info(
       "Start an account user synchronization with maxSyncDurationMinutes : %s", maxSyncDurationMinutes);
 
     const clustersTimeUsed: Record<string, number> = {};
@@ -127,8 +130,9 @@ export async function processSynchronization(
       const isLastChunk = startIndex + FIXED_CHUNK_SIZE >= accounts.length;
       // 获取当前分片的数据
       const chunkAccounts =
-      accounts.length < FIXED_CHUNK_SIZE ? accounts : accounts.slice(startIndex, startIndex + FIXED_CHUNK_SIZE);
+        accounts.length < FIXED_CHUNK_SIZE ? accounts : accounts.slice(startIndex, startIndex + FIXED_CHUNK_SIZE);
 
+      const chunkResultsToPersist: ClusterTotalSyncResultProto[] = [];
       // 多集群并发
       await Promise.allSettled(
         Object.entries(adapterClientPool).map(async ([clusterId, clusterClient]) => {
@@ -141,21 +145,21 @@ export async function processSynchronization(
             const clusterChunkElapsedTime = Date.now() - clusterLastChunkEndTime[clusterId];
             clustersTimeUsed[clusterId] += clusterChunkElapsedTime;
 
-            logger.trace("[Cluster: %s] Max sync duration time: %s minutes, [ Chunk %s ] execution time %s seconds, "
-              + "total used %s seconds, remaining %s seconds", clusterId, maxSyncDurationMinutes, chunkIndex - 1,
+            subLogger.trace("[Cluster: %s] Max sync duration time: %s minutes, [ Chunk %s ] execution time %s seconds, "
+            + "total used %s seconds, remaining %s seconds", clusterId, maxSyncDurationMinutes, chunkIndex - 1,
             clusterChunkElapsedTime / 1000, clustersTimeUsed[clusterId] / 1000,
             (maxSyncDurationMilliseconds - clustersTimeUsed[clusterId]) / 1000);
 
           }
 
           const remainingMillisecondsForCluster = maxSyncDurationMilliseconds - clustersTimeUsed[clusterId];
-          // 如果当前集群已不能继续则不再请求
+          // 1.如果当前集群已不能继续则不再请求
+          // 保存这个结果到待写入数据库，增加超时异常记录
           if (!clustersShouldContinue[clusterId] || remainingMillisecondsForCluster <= 0) {
-            logger.warn(
+            subLogger.warn(
               "[Cluster %s] Skipping further synchronization due to maxSyncDurationMinutes %s minutes are exceeded",
               clusterId, maxSyncDurationMinutes);
 
-            // 更新数据库，增加超时异常记录
             const clusterResult: ClusterTotalSyncResultProto = {
               clusterId,
               clusterSyncStatus: isLastChunk ?
@@ -170,11 +174,12 @@ export async function processSynchronization(
                 {
                   exceptionType: SyncExceptionTypeProto.MAX_EXECUTION_TIME_EXCEEDED,
                   exceptionMessage: "Synchronization is not completely executed due to exceeding "
-                    + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
+                  + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
                 },
               ],
             };
-            await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [clusterResult]});
+            chunkResultsToPersist.push(clusterResult);
+            // 已发生异常不再请求, 数据缓存一次结束
             return;
           }
 
@@ -186,54 +191,44 @@ export async function processSynchronization(
             currentActivatedClusters,
             chunkAccounts,
             isResourceDeployed,
-            logger,
+            subLogger,
             scowResourcePlugin,
           );
           const syncAccountsData = syncAccountsResult.syncAccounts;
-          logger.trace("[Cluster %s] Accounts to execute synchronization in chunk %s: %o",
+          subLogger.trace("[Cluster %s] Accounts to execute synchronization in chunk %s: %o",
             clusterId, chunkIndex, syncAccountsData);
 
-          // 如果有授权分区获取失败的账户
-          // 更新数据库到对应失败结果
+          // 2.如果有授权分区获取失败的账户, 更新数据库到对应失败结果
+          // 累积异常数组
+          const exceptions: ListAccountUserSynchronizationsResponse_ExceptionDetail[] = [];
           if (syncAccountsResult.partitionsFetchFailedAccounts?.length) {
-            logger.info(
+            subLogger.warn(
               "[Cluster %s] Assigned partitions fetch failed in the accounts: %s , "
-              + "the synchronization will skip in them.",
+            + "the synchronization will skip in them.",
               clusterId, syncAccountsResult.partitionsFetchFailedAccounts.join(","));
-            const currentClusterTotalResult: ClusterTotalSyncResultProto = {
-              clusterId,
-              clusterSyncStatus: SyncStatusProto.RUNNING,
-              clusterSyncResult: SyncResultProto.FAILED,
-              executedChunkCount: chunkIndex,
-              isAllChunkExecuted: isLastChunk,
-              clusterSyncExceptions: [
-                {
-                  exceptionType:
-                    SyncExceptionTypeProto.ASSIGNED_PARTITIONS_FETCH_FAILED,
-                  exceptionMessage: syncAccountsResult.partitionsFetchFailedAccounts.join(","),
-                },
-              ],
-              completedTotalSyncCount: 0,
-              successfulTotalSyncCount: 0,
+            const accountsPartitionsException = {
+              exceptionType:
+              SyncExceptionTypeProto.ASSIGNED_PARTITIONS_FETCH_FAILED,
+              exceptionMessage: syncAccountsResult.partitionsFetchFailedAccounts.join(","),
             };
-            await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [currentClusterTotalResult]});
+            exceptions.push(accountsPartitionsException);
           }
 
           // 如果有没有拥有者的账户, 只在日志中做出提示
           if (syncAccountsResult.abnormalAccountsWithoutOwner?.length) {
-            logger.warn(
+            subLogger.warn(
               "Abnormal accounts without owner were found: %s, "
-              + "the synchronization will still synchronize them to cluster.",
+            + "the synchronization will still synchronize them to cluster.",
               syncAccountsResult.abnormalAccountsWithoutOwner.join(","));
           }
 
-          logger.trace("[Cluster %s] ***Start Sync in chunk %s with time limit %s seconds***",
+          subLogger.trace("[Cluster %s] ***Start Sync in chunk %s with time limit %s seconds***",
             clusterId, chunkIndex, remainingMillisecondsForCluster / 1000,
           );
 
           await clusterPlugin.callOnOneClient(
             clusterId,
-            logger,
+            subLogger,
             clusterClient,
             async (client) => {
               const clusterChunkResult = await asyncClientCall(client.account, "syncAccountUserInfo", {
@@ -245,21 +240,22 @@ export async function processSynchronization(
               let timeoutException: ListAccountUserSynchronizationsResponse_ExceptionDetail | undefined = undefined;
               // 检查本次chunk内是否在限制时间内已全部执行
               if (clusterChunkResult.completelyExecuted === false) {
-                logger.warn(
+                subLogger.warn(
                   "[Cluster %s] Synchronization not completely executed within time limit %s seconds in chunk %s",
                   clusterId, remainingMillisecondsForCluster / 1000, chunkIndex);
                 clustersShouldContinue[clusterId] = false;
                 timeoutException = {
                   exceptionType: SyncExceptionTypeProto.MAX_EXECUTION_TIME_EXCEEDED,
                   exceptionMessage: "Synchronization is not completely executed due to exceeding "
-                  + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
+                + `the maximum sync time ${maxSyncDurationMinutes} minutes`,
                 };
+                exceptions.push(timeoutException);
               }
 
-              // 如果本次Chunk内在正常执行，但是没有返回值则没有需要同步的数据
-              // 更新这个结果到数据库
+              // 3.如果本次Chunk内在正常执行，但是没有返回值则没有需要同步的数据
+              // 保存这个结果到待写入数据库
               if (clusterChunkResult.syncResults.length === 0) {
-                logger.trace(
+                subLogger.trace(
                   "[Cluster: %s] No data need to be synchronized in this chunk: %s.",
                   clusterId, chunkIndex);
                 const clusterResult: ClusterTotalSyncResultProto = {
@@ -271,14 +267,14 @@ export async function processSynchronization(
                   isAllChunkExecuted: isLastChunk,
                   completedTotalSyncCount: 0,
                   successfulTotalSyncCount: 0,
-                  clusterSyncExceptions: timeoutException ? [timeoutException] : [],
+                  clusterSyncExceptions: exceptions.length > 0 ? exceptions : [],
                 };
-                await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [clusterResult]});
+                chunkResultsToPersist.push(clusterResult);
               }
-              // 如果本次Chunk内在正常执行，有同步结果的返回数据
-              // 更新这个结果到数据库
+              // 4.如果本次Chunk内在正常执行，有同步结果的返回数据
+              // 保存这个结果到待写入数据库
               if (clusterChunkResult.syncResults.length > 0) {
-                logger.trace(
+                subLogger.trace(
                   "[Cluster: %s] Chunk (index: %s) sync result: %o, completelyExecuted is %s",
                   clusterId, chunkIndex, clusterChunkResult.syncResults, clusterChunkResult.completelyExecuted);
 
@@ -291,17 +287,17 @@ export async function processSynchronization(
                   isAllChunkExecuted: isLastChunk,
                   completedTotalSyncCount: clusterChunkResult.syncResults.length,
                   successfulTotalSyncCount: clusterChunkResult.syncResults.filter((x) => x.success)?.length,
-                  clusterSyncExceptions: timeoutException ? [timeoutException] : [],
-                  clusterSyncDetails: transformToUpdatedSummaryMap(clusterChunkResult.syncResults),
+                  clusterSyncExceptions: exceptions.length > 0 ? exceptions : [],
+                  clusterSyncDetails: transformToUpdatedSummaryMap(clusterChunkResult.syncResults, subLogger),
                 };
-                await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [currentClusterTotalResult]});
+                chunkResultsToPersist.push(currentClusterTotalResult);
               }
             },
 
-          // 如果本次Chunk发生错误，记录异常信息
-          // 更新这个结果到数据库
+          // 5.如果本次Chunk发生错误，记录异常信息
+          // 保存这个结果到待写入数据库
           ).catch(async (e) => {
-            logger.error("[Cluster: %s] Error occurred during account user synchronization in synchronization "
+            subLogger.error("[Cluster: %s] Error occurred during account user synchronization in synchronization "
               + "chunk: %s, details: %o", clusterId, chunkIndex, e);
 
             const currentClusterTotalResult: ClusterTotalSyncResultProto = {
@@ -321,12 +317,17 @@ export async function processSynchronization(
               successfulTotalSyncCount: 0,
               completedTotalSyncCount: 0,
             };
-
-            await persistAndFlushSyncRecord(em, syncRecord, { syncDetails: [currentClusterTotalResult]});
+            chunkResultsToPersist.push(currentClusterTotalResult);
           });
         }),
 
       );
+
+      // 一个chunk内记录一次各集群同步情况
+      subLogger.info("Current synchronization in chunk %s, %o", chunkIndex, chunkResultsToPersist);
+
+      // 一个chunk内标记一次待保存数据
+      persistSyncRecord(em, syncRecord, { syncDetails: chunkResultsToPersist }, subLogger);
 
       // 更新分片索引
       startIndex += chunkSize;
@@ -340,7 +341,10 @@ export async function processSynchronization(
       syncStatus: SyncStatus.COMPLETED,
     };
 
-    await persistAndFlushSyncRecord(em, syncRecord, newRecordItems);
+    // 长事务结束前标记待保存数据
+    persistSyncRecord(em, syncRecord, newRecordItems, subLogger);
+    // 长事务结束前生成并执行SQL
+    await em.flush();
   });
 }
 
@@ -351,6 +355,7 @@ export async function processSynchronization(
  */
 export function transformToUpdatedSummaryMap(
   syncResults: SyncAccountUserInfoResponse_SyncOperationResult[],
+  logger: Logger,
 ): SyncDetailsSummaryProto {
 
   const summary: SyncDetailsSummaryProto = {};
@@ -681,30 +686,31 @@ export async function getSyncAccountsWithPartitions(
  * 如果newUpdateItems的SyncStatus === COMPLETED时，
  * 判断异常及成功操作条数，更新这条记录的 SyncResult 为 SUCCESS 还是 FAILED
  * @param em
- * @param originSyncRecord 已经保存在数据库中的同步记录
+ * @param sessionId 已经保存在数据库中的同步记录
  * @param newUpdateItems 现在想要更新的同步记录
- * @param needFlush 是否需要持久化
- * @returns 更新过的账户用户同步操作记录
+ * @returns persist后的账户用户同步操作记录
  */
-export async function persistAndFlushSyncRecord(
+export function persistSyncRecord(
   em: SqlEntityManager<MySqlDriver>,
   originSyncRecord: Loaded<AccountUserSyncRecord>,
   newUpdateItems: Partial<AccountUserSyncRecord>,
-): Promise<Loaded<AccountUserSyncRecord>> {
+  logger: Logger,
+): Loaded<AccountUserSyncRecord> {
 
   logger.trace("Update account user sync record from current record %o to new record with items %o",
     originSyncRecord, newUpdateItems);
 
   const getClusterFinalSyncResult =
-    (recordSyncResult: ClusterTotalSyncResultProto):
-    SyncResultProto => {
-      const hasException = recordSyncResult.clusterSyncExceptions && recordSyncResult.clusterSyncExceptions.length > 0;
-      const hasFailedResult = recordSyncResult.successfulTotalSyncCount < recordSyncResult.completedTotalSyncCount;
-      const isFailed = hasException || hasFailedResult;
-      return isFailed ?
-        SyncResultProto.FAILED :
-        SyncResultProto.SUCCESS;
-    };
+      (recordSyncResult: ClusterTotalSyncResultProto):
+      SyncResultProto => {
+        const hasException = recordSyncResult.clusterSyncExceptions
+          && recordSyncResult.clusterSyncExceptions.length > 0;
+        const hasFailedResult = recordSyncResult.successfulTotalSyncCount < recordSyncResult.completedTotalSyncCount;
+        const isFailed = hasException || hasFailedResult;
+        return isFailed ?
+          SyncResultProto.FAILED :
+          SyncResultProto.SUCCESS;
+      };
 
   // 合并 syncDetails
   const newSyncDetails: ClusterTotalSyncResultProto[] = newUpdateItems.syncDetails || [];
@@ -724,7 +730,7 @@ export async function persistAndFlushSyncRecord(
     } else {
       // 存在相同的clusterId，进行累加
       const originClusterResult =
-        originSyncDetails.find((s) => (s.clusterId === newResult.clusterId)) ?? {} as ClusterTotalSyncResultProto;
+          originSyncDetails.find((s) => (s.clusterId === newResult.clusterId)) ?? {} as ClusterTotalSyncResultProto;
 
       originClusterResult.completedTotalSyncCount += newResult.completedTotalSyncCount;
       originClusterResult.successfulTotalSyncCount += newResult.successfulTotalSyncCount;
@@ -735,7 +741,7 @@ export async function persistAndFlushSyncRecord(
       }
       if (newResult.clusterSyncDetails) {
         originClusterResult.clusterSyncDetails =
-          updateSyncDetails(originClusterResult.clusterSyncDetails || {}, newResult.clusterSyncDetails);
+            updateSyncDetails(originClusterResult.clusterSyncDetails || {}, newResult.clusterSyncDetails);
       }
 
       // 更新 executedChunk, isAllChunkExecuted 及 clusterSyncStatus
@@ -768,12 +774,12 @@ export async function persistAndFlushSyncRecord(
     logger.trace("The synchronization result is updated to %o.", originSyncRecord.syncResult);
   }
 
-  await em.persistAndFlush(originSyncRecord);
+  em.persist(originSyncRecord);
 
-  logger.trace("Account user synchronization record is updated, the new record is %o",
-    originSyncRecord);
+  logger.trace("the new record is %o", originSyncRecord);
 
   return originSyncRecord;
+
 }
 
 /**
@@ -902,25 +908,27 @@ async function UpdateStuckRunningSyncRecord(
     // 更新整个同步结果为结束
     runningSyncRecord.syncStatus = SyncStatus.COMPLETED;
     // 更新同步的各集群 状态/结果/异常
-    const updatedClusterResults: ClusterTotalSyncResultProto[]
-          = runningSyncRecord.syncDetails?.map((clusterResult) => {
-            return {
-              ...clusterResult,
-              clusterSyncStatus: SyncStatusProto.COMPLETED,
-              clusterSyncResult: SyncResultProto.FAILED,
-              executedChunkCount: 0,
-              isAllChunkExecuted: true,
-              completedTotalSyncCount: 0,
-              successfulTotalSyncCount: 0,
-              clusterSyncExceptions: [
-                {
-                  exceptionType: exceptionType,
-                  exceptionMessage: `Synchronization is not completely executed due to ${errorModeMessage}`,
-                },
-              ],
-            };
-          });
-    await persistAndFlushSyncRecord(em, runningSyncRecord, { syncDetails: updatedClusterResults });
+    const updatedClusterResults: ClusterTotalSyncResultProto[] =
+      runningSyncRecord.syncDetails?.map((clusterResult) => {
+        return {
+          ...clusterResult,
+          clusterSyncStatus: SyncStatusProto.COMPLETED,
+          clusterSyncResult: SyncResultProto.FAILED,
+          executedChunkCount: 0,
+          isAllChunkExecuted: true,
+          completedTotalSyncCount: 0,
+          successfulTotalSyncCount: 0,
+          clusterSyncExceptions: [
+            {
+              exceptionType: exceptionType,
+              exceptionMessage: `Synchronization is not completely executed due to ${errorModeMessage}`,
+            },
+          ],
+        };
+      });
+
+    persistSyncRecord(em, runningSyncRecord, { syncDetails: updatedClusterResults }, logger);
+    await em.flush();
   }
 
   logger.info("The abnormal running account user synchronization record is updated to FAILED.");
