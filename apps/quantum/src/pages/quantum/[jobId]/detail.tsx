@@ -257,7 +257,7 @@ export const JobDetailPage: NextPage = () => {
       key: "9",
       label: t(p("qits")),
       span: 2,
-      children: data?.task.qits?.toString() ?? EMPTY_STRING,
+      children: data?.task.qits ?? EMPTY_STRING,
     },
     {
       key: "10",

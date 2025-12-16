@@ -123,13 +123,15 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       title: t(p("qits")),
       dataIndex: "qits",
       width: "60px",
-      render: (qits?: Decimal) => qits?.toString() ?? EMPTY_STRING,
+      render: (qits?: number) => qits ?? EMPTY_STRING,
     },
     {
       title: t(p("billing")),
       dataIndex: "amount",
       width: "60px",
-      render: (amount?: Decimal) => amount ? (parseFloat(amount.toString()).toFixed(2)) : EMPTY_STRING,
+      render: (amount?: number) => amount !== undefined
+        ? amount.toFixed(2)
+        : EMPTY_STRING,
     },
     {
       title: t(p("state")),
