@@ -1,5 +1,11 @@
 # @scow/scowd-protos
 
+## 0.3.4
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+
 ## 0.3.3
 
 ### Patch Changes

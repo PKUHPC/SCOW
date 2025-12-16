@@ -1,5 +1,19 @@
 # @scow/portal-web
 
+## 1.9.10
+
+### Patch Changes
+
+- 045b819: 修复 openapi 无法使用的问题
+- Updated dependencies [3a16099]
+  - @scow/notification-protos@0.1.7
+  - @scow/lib-scow-resource@0.2.18
+  - @scow/lib-notification@1.0.19
+  - @scow/protos@1.0.34
+  - @scow/lib-operation-log@2.2.9
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-web@1.5.9
+
 ## 1.9.9
 
 ### Patch Changes

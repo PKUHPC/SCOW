@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.20
+
+### Patch Changes
+
+- 045b819: 修复 openapi 无法使用的问题
+
 ## 1.4.19
 
 ### Patch Changes

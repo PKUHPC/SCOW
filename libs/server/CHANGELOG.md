@@ -1,5 +1,14 @@
 # @scow/lib-server
 
+## 1.4.9
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+  - @scow/protos@1.0.34
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.32
+
 ## 1.4.8
 
 ### Patch Changes

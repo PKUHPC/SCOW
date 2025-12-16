@@ -1,5 +1,20 @@
 # @scow/resource
 
+## 0.3.9
+
+### Patch Changes
+
+- 045b819: 修复 openapi 无法使用的问题
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/scow-resource-protos@0.3.1
+  - @scow/lib-server@1.4.9
+  - @scow/protos@1.0.34
+  - @scow/lib-hook@1.0.34
+  - @scow/lib-operation-log@2.2.9
+  - @scow/lib-scheduler-adapter@1.1.32
+  - @scow/lib-web@1.5.9
+
 ## 0.3.8
 
 ### Patch Changes

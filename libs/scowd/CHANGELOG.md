@@ -1,5 +1,13 @@
 # @scow/lib-scowd
 
+## 1.2.4
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/scowd-protos@0.3.4
+
 ## 1.2.3
 
 ### Patch Changes

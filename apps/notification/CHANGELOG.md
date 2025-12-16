@@ -1,5 +1,18 @@
 # @scow/notification
 
+## 0.2.21
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/notification-protos@0.1.7
+  - @scow/lib-notification@1.0.19
+  - @scow/lib-server@1.4.9
+  - @scow/protos@1.0.34
+  - @scow/lib-scheduler-adapter@1.1.32
+  - @scow/lib-web@1.5.9
+
 ## 0.2.20
 
 ### Patch Changes

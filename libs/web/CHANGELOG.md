@@ -1,5 +1,11 @@
 # @scow/lib-web
 
+## 1.5.9
+
+### Patch Changes
+
+- @scow/protos@1.0.34
+
 ## 1.5.8
 
 ### Patch Changes

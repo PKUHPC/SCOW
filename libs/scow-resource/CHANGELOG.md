@@ -1,5 +1,13 @@
 # @scow/lib-scow-resource
 
+## 0.2.18
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/scow-resource-protos@0.3.1
+
 ## 0.2.17
 
 ### Patch Changes

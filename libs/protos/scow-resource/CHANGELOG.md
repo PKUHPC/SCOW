@@ -1,5 +1,11 @@
 # @scow/scow-resource-protos
 
+## 0.3.1
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+
 ## 0.3.0
 
 ### Minor Changes

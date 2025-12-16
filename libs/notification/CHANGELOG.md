@@ -1,5 +1,13 @@
 # @scow/lib-notification
 
+## 1.0.19
+
+### Patch Changes
+
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/notification-protos@0.1.7
+
 ## 1.0.18
 
 ### Patch Changes

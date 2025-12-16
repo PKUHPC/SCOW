@@ -1,5 +1,25 @@
 # @scow/mis-server
 
+## 1.9.10
+
+### Patch Changes
+
+- 045b819: 修复 openapi 无法使用的问题
+- 3f82bfc: 修改同步结果数据库更新逻辑，解决结果数据写入冲突问题
+- 00c1241: 发现没有拥有者的账户时在页面不抛出错误，需要显示拥有者时兼容显示为 -
+  修改 AccountBill 实体，让拥有者 ID 及姓名可以为空
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/scow-resource-protos@0.3.1
+  - @scow/notification-protos@0.1.7
+  - @scow/lib-scow-resource@0.2.18
+  - @scow/lib-notification@1.0.19
+  - @scow/lib-server@1.4.9
+  - @scow/lib-scowd@1.2.4
+  - @scow/protos@1.0.34
+  - @scow/lib-hook@1.0.34
+  - @scow/lib-scheduler-adapter@1.1.32
+
 ## 1.9.9
 
 ### Patch Changes

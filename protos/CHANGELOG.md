@@ -1,5 +1,16 @@
 # @scow/grpc-api
 
+## 1.28.0
+
+### Minor Changes
+
+- 00c1241: **修改以下 proto 接口中 ownerId 及 ownerName 相关项为可选**:
+  GetWhitelistedAccountsResponse, GetAccountsResponse, GetBillsResponse
+  **修改以下返回值带有 JobInfo 的 proto 接口中 ownerId 及 ownerName 相关项为可选**:
+  ExportJobRecordResponse, GetJobsResponse, GetJobByBiJobIndexResponse
+  **修改以下 HOOK 的 proto 接口中 ownerId 及 ownerName 相关项为可选**:
+  JobsSaved, AccountDeleted
+
 ## 1.27.0
 
 ### Minor Changes

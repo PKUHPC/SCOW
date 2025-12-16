@@ -1,5 +1,22 @@
 # @scow/quantum
 
+## 0.1.9
+
+### Patch Changes
+
+- 045b819: 修复 openapi 无法使用的问题
+- 8ec4097: 修复量子系统 openapi 文档报错
+- 3a16099: 升级 next 和相关依赖版本
+- Updated dependencies [3a16099]
+  - @scow/lib-scow-resource@0.2.18
+  - @scow/lib-server@1.4.9
+  - @scow/lib-scowd@1.2.4
+  - @scow/protos@1.0.34
+  - @scow/lib-operation-log@2.2.9
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.32
+  - @scow/lib-web@1.5.9
+
 ## 0.1.8
 
 ### Patch Changes
