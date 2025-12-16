@@ -1,85 +1,295 @@
-import { queryToString, useQuerystring } from "@scow/lib-web/build/utils/querystring";
-import { Button, Form, message, Space } from "antd";
+import { Button, Form, message, Select, Space, Tabs } from "antd";
 import { NextPage } from "next";
-import Router from "next/router";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { requireAuth } from "src/auth/requireAuth";
+import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
+import { Partition } from "src/models/cluster";
 import { PlatformRole } from "src/models/User";
 import { ManageJobBillingTable } from "src/pageComponents/job/ManageJobBillingTable";
-import { PlatformOrTenantRadio } from "src/pageComponents/job/PlatformOrTenantRadio";
+import { TenantSelector } from "src/pageComponents/tenant/TenantSelector";
+import { BillingItemType } from "src/pages/api/job/getBillingItems";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { Cluster } from "src/utils/cluster";
 import { Head } from "src/utils/head";
 
 const p = prefix("page.admin.jobBilling.");
+const pCommon = prefix("common.");
 
 export const AdminJobBillingTablePage: NextPage =
   requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
     () => {
-      const query = useQuerystring();
       const t = useI18nTranslateToString();
-
-      const tenant = queryToString(query.tenant) || undefined;
 
       return (
         <div>
           <Head title={t(p("jobBillingPriceTable"))} />
           <PageTitle titleText={t(p("jobBillingPriceTable"))} />
-          <AdminJobBillingTable tenant={tenant} />
+          <AdminJobBillingTable />
         </div>
       );
     },
   );
 
-export const AdminJobBillingTable: React.FC<{ tenant?: string }> = ({ tenant }) => {
+export const AdminJobBillingTable: React.FC = () => {
 
   const t = useI18nTranslateToString();
 
+  const [activeKey, setActiveKey] = useState<"platform" | "tenant">("platform");
+
+  // 当前选择的筛选条件
+  const [selectedTenant, setSelectedTenant] = useState<string | undefined>(undefined);
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | undefined>(undefined);
+  const [selectedPartitionId, setSelectedPartitionId] = useState<string | undefined>(undefined);
+  const [selectedQos, setSelectedQos] = useState<string | undefined>(undefined);
+
+  // 用于实际查的筛选条件
+  const [submittedTenant, setSubmittedTenant] = useState<string | undefined>(undefined);
+  const [submittedCluster, setSubmittedCluster] = useState<Cluster | undefined>(undefined);
+  const [submittedPartitionId, setSubmittedPartitionId] = useState<string | undefined>(undefined);
+  const [submittedQos, setSubmittedQos] = useState<string | undefined>(undefined);
+
+  const [fetchedPartitions, setFetchedPartitions] = useState<Partition[] | undefined>(undefined);
+
+  const currentTenant = useMemo(() => {
+    return activeKey === "tenant" ? submittedTenant : undefined;
+  }, [activeKey, submittedTenant]);
+
   const { clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
 
-  const currentActivatedClusterIds = Object.keys(activatedClusters);
-  const { data, isLoading, reload } = useAsync({ promiseFn: useCallback(async () => {
-    return await api.getBillingItems({
-      query: { tenant, activeOnly: false, currentActivatedClusterIds, clusterSortedIdList },
-    }).httpError(409, () => {
-      message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
-      return undefined;
-    }).then((result) => {
-      return result;
-    });
-  }, [tenant]) });
+  const currentActivatedClusterIds = useMemo(() => {
+    return Object.keys(activatedClusters);
+  }, [activatedClusters]);
+
+  // 用 ref 记录上一次的 cluster id，避免重复请求
+  const prevClusterIdRef = useRef<string | undefined>();
+  const [isPartitionLoading, setIsPartitionLoading] = useState(false);
+
+  // 加载集群分区
+  const loadPartitions = useCallback(async (clusterId: string) => {
+    setIsPartitionLoading(true);
+    try {
+      const result = await api.getClusterConfig({
+        query: {
+          cluster: clusterId,
+        },
+      });
+      setFetchedPartitions(result.partitions);
+    } catch {
+      message.error(t(p("getClusterErrorMessage")));
+      setFetchedPartitions([]);
+    } finally {
+      setIsPartitionLoading(false);
+    }
+  }, []);
+
+  // 只在 selectedCluster.id 真正变化时才请求
+  useEffect(() => {
+    const currentClusterId = selectedCluster?.id;
+
+    if (currentClusterId && currentClusterId !== prevClusterIdRef.current) {
+      prevClusterIdRef.current = currentClusterId;
+      loadPartitions(currentClusterId);
+    } else if (!currentClusterId && prevClusterIdRef.current) {
+      prevClusterIdRef.current = undefined;
+      setFetchedPartitions(undefined);
+    }
+  }, [selectedCluster?.id, loadPartitions]);
+
+  // 加载计费项 - 只依赖已提交的筛选条件
+  const { data, isLoading, reload } = useAsync({
+    promiseFn: useCallback(async () => {
+      return await api.getBillingItems({
+        query: {
+          tenant: currentTenant,
+          activeOnly: false,
+          currentActivatedClusterIds,
+          clusterSortedIdList: clusterSortedIdList,
+        },
+      }).httpError(409, () => {
+        message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
+        return undefined;
+      }).then((result) => {
+        return result;
+      });
+    }, [currentTenant, currentActivatedClusterIds, clusterSortedIdList]),
+    defer: true,
+  });
+
+  // 找到当前选中的分区对象
+  const currentPartition = useMemo(() => {
+    return fetchedPartitions?.find((p) => p.name === selectedPartitionId);
+  }, [selectedPartitionId, fetchedPartitions]);
+
+  // QoS 选项列表 (依赖于选中的分区)
+  const qosOptions = useMemo(() => {
+    return currentPartition?.qos?.map((q) => ({ value: q, label: q })) || [];
+  }, [currentPartition]);
+
+  // 分区选项列表 (依赖于获取到的分区数据)
+  const partitionOptions = useMemo(() => {
+    return fetchedPartitions?.map((p) => ({ value: p.name, label: p.name })) || [];
+  }, [fetchedPartitions]);
+
+  // 前端筛选逻辑 - 使用已提交的筛选条件
+  const filterBillingItem = useCallback((item: BillingItemType) => {
+    let passesCluster = true;
+    let passesPartition = true;
+    let passesQos = true;
+
+    // 1. 集群筛选
+    if (submittedCluster) {
+      passesCluster = item.cluster === submittedCluster.id;
+    }
+
+    // 2. 分区筛选
+    if (submittedPartitionId) {
+      passesPartition = item.partition === submittedPartitionId;
+    }
+
+    // 3. QoS 筛选
+    if (submittedQos) {
+      passesQos = item.qos === submittedQos;
+    }
+
+    return passesCluster && passesPartition && passesQos;
+  }, [submittedCluster, submittedPartitionId, submittedQos]);
+
+  const filteredData = useMemo(() => {
+    if (!data) return undefined;
+
+    const shouldFilter = Boolean(submittedCluster || submittedPartitionId || submittedQos);
+    if (!shouldFilter) return data;
+
+    return {
+      ...data,
+      activeItems: data.activeItems.filter(filterBillingItem),
+      historyItems: data.historyItems.filter(filterBillingItem),
+    };
+  }, [data, submittedCluster, submittedPartitionId, submittedQos, filterBillingItem]);
+
+  // 处理搜索按钮点击
+  const handleSearch = useCallback(() => {
+    // 提交当前选择的筛选条件
+    setSubmittedTenant(selectedTenant);
+    setSubmittedCluster(selectedCluster);
+    setSubmittedPartitionId(selectedPartitionId);
+    setSubmittedQos(selectedQos);
+
+    // 触发数据加载
+    reload();
+  }, [selectedTenant, selectedCluster, selectedPartitionId, selectedQos, reload]);
+
+  const handleReload = useCallback(() => {
+    // 如果选中了集群，重新加载分区配置
+    if (selectedCluster) {
+      loadPartitions(selectedCluster.id);
+    }
+
+    // 重新加载价格表数据
+    reload();
+  }, [selectedCluster, loadPartitions, reload]);
 
   return (
     <div>
-      { currentActivatedClusterIds.length === 0 &&
+      {currentActivatedClusterIds.length === 0 &&
         <div style={{ marginBottom: 20 }}>{t("common.noAvailableClusters")}</div>
       }
       <FilterFormContainer>
-        <Form layout="inline">
-          <Form.Item label={t(p("managementObject"))}>
-            <PlatformOrTenantRadio
-              value={tenant || null}
-              onChange={(tenant) => Router.push({
-                pathname: "/admin/jobBilling", query:  tenant ? { tenant } : undefined })}
+        <Tabs
+          activeKey={activeKey}
+          onChange={(key) => {
+            setActiveKey(key as "platform" | "tenant");
+          }}
+          items={[
+            {
+              key: "platform",
+              label: t(pCommon("platform")),
+            },
+            {
+              key: "tenant",
+              label: t(pCommon("tenant")),
+            },
+          ]}
+        />
+        <Form layout="inline" style={{ marginTop: 8 }}>
+          {activeKey === "tenant" && (
+            <Form.Item label={t(pCommon("tenant"))}>
+              <TenantSelector
+                autoSelect
+                value={selectedTenant}
+                onChange={(tenant) => {
+                  setSelectedTenant(tenant);
+                }}
+                allowClear={false}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item label={t(pCommon("cluster"))}>
+            <SingleClusterSelector
+              value={selectedCluster}
+              onChange={(newCluster) => {
+                setSelectedCluster(newCluster);
+                setSelectedPartitionId(undefined);
+                setSelectedQos(undefined);
+              }}
+              allowClear={true}
+              showSearch={true}
             />
           </Form.Item>
+
+          <Form.Item label={t(pCommon("partition"))}>
+            <Select
+              showSearch
+              key={selectedCluster?.id || "no-cluster"}
+              placeholder={selectedCluster ? t(p("selectPartition")) : t(p("selectClusterFirst"))}
+              value={selectedPartitionId}
+              onChange={(value: string | undefined) => {
+                setSelectedPartitionId(value);
+                setSelectedQos(undefined);
+              }}
+              options={partitionOptions}
+              style={{ minWidth: 120 }}
+              loading={isPartitionLoading}
+              disabled={!selectedCluster}
+              allowClear={true}
+            />
+          </Form.Item>
+
+          <Form.Item label={t(p("qos"))}>
+            <Select
+              showSearch
+              key={selectedPartitionId ?? "no-partition"}
+              placeholder={selectedPartitionId ? t(p("selectQos")) : t(p("selectPartitionFirst"))}
+              value={selectedQos}
+              onChange={setSelectedQos}
+              options={qosOptions}
+              style={{ minWidth: 120 }}
+              disabled={!selectedPartitionId || qosOptions.length === 0}
+              allowClear={true}
+            />
+          </Form.Item>
+
           <Form.Item>
             <Space>
-              <Button loading={isLoading} onClick={reload}>{t("common.fresh")}</Button>
+              <Button type="primary" loading={isLoading} onClick={handleSearch}>
+                {t("common.search")}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
       </FilterFormContainer>
       <ManageJobBillingTable
-        data={data}
+        data={filteredData}
         loading={isLoading}
-        tenant={tenant}
-        reload={reload}
+        tenant={currentTenant}
+        reload={handleReload}
         isFromPlatformAdmin={true}
       />
     </div>

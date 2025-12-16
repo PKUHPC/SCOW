@@ -34,11 +34,12 @@ interface Props {
    * @param tenants all tenants
    */
   onTenantsFetched?: (tenants: string[]) => void;
+  allowClear?: boolean;
 };
 const p = prefix("pageComp.tenant.tenantSelector.");
 
 export const TenantSelector: React.FC<Props> = ({
-  onChange, value, placeholder, disabled, autoSelect, onTenantsFetched,
+  onChange, value, placeholder, disabled, autoSelect, onTenantsFetched, allowClear = true,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -70,7 +71,7 @@ export const TenantSelector: React.FC<Props> = ({
         disabled={disabled}
         style={{ width: "calc(100% - 32px)", minWidth: "200px" }}
         onChange={(v) => onChange?.(v)}
-        allowClear
+        allowClear={allowClear}
       />
       <Tooltip title={t(p("fresh"))}>
         <Button icon={<ReloadOutlined spin={isLoading} />} disabled={disabled} onClick={reload} loading={isLoading} />

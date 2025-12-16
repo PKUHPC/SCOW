@@ -1190,6 +1190,13 @@ export default {
       },
       jobBillingTable: {
         manageTenantJobPriceTable: "管理本租户作业价格表",
+        selectCluster: "请选择集群",
+        selectClusterFirst: "请先选择集群",
+        selectPartition: "请选择分区",
+        selectPartitionFirst: "请先选择分区",
+        selectQos: "请选择QOS",
+        qos: "QOS",
+        getClusterErrorMessage: "获取集群信息失败，请稍后重试。",
       },
       storage: {
         increase: "增加",
@@ -1315,7 +1322,13 @@ export default {
       },
       jobBilling: {
         jobBillingPriceTable: "作业价格表",
-        managementObject: "管理对象",
+        selectCluster: "请选择集群",
+        selectClusterFirst: "请先选择集群",
+        selectPartition: "请选择分区",
+        selectPartitionFirst: "请先选择分区",
+        selectQos: "请选择QOS",
+        qos: "QOS",
+        getClusterErrorMessage: "获取集群信息失败，请稍后重试。",
       },
       importUsers: {
         importUserInfo: "导入用户",

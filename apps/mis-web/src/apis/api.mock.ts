@@ -781,6 +781,9 @@ export const mockApi: MockApi<typeof api> = {
     totalCount: 0,
     jobs: [],
   }),
+  getClusterConfig: async () => ({
+    partitions:[],
+  }),
 };
 
 export const MOCK_USER_INFO = {

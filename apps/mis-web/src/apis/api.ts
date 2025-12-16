@@ -3,6 +3,7 @@
 import { apiClient } from "src/apis/client";
 import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
 import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
+import type { GetClusterConfigSchema } from "src/pages/api//getClusterConfig";
 import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
 import type { ActivateClusterSchema } from "src/pages/api/admin/activateCluster";
 import type { ActivateNodeSchema } from "src/pages/api/admin/activateNode";
@@ -220,6 +221,7 @@ export const api = {
   getPayments: apiClient.fromTypeboxRoute<typeof GetPaymentsSchema>("GET", "/api/finance/payments"),
   getUserBills: apiClient.fromTypeboxRoute<typeof GetUserBillsSchema>("GET", "/api/finance/userBill"),
   getAppInitialConfig: apiClient.fromTypeboxRoute<typeof GetAppInitialConfigSchema>("GET", "/api//getAppInitialConfig"),
+  getClusterConfig: apiClient.fromTypeboxRoute<typeof GetClusterConfigSchema>("GET", "/api//getClusterConfig"),
   completeInit: apiClient.fromTypeboxRoute<typeof CompleteInitSchema>("POST", "/api/init/completeInit"),
   createInitAdmin: apiClient.fromTypeboxRoute<typeof CreateInitAdminSchema>("POST", "/api/init/createInitAdmin"),
   initGetAccounts: apiClient.fromTypeboxRoute<typeof InitGetAccountsSchema>("GET", "/api/init/getAccounts"),

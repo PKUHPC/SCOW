@@ -1202,6 +1202,13 @@ export default {
       },
       jobBillingTable: {
         manageTenantJobPriceTable: "Manage Tenant Job Price Table",
+        selectCluster: "Please Select a Cluster",
+        selectClusterFirst: "Please Select a Cluster First",
+        selectPartition: "Please Select a Partition",
+        selectPartitionFirst: "Please Select a Partition First",
+        selectQos: "Please Select a QOS",
+        qos: "QOS",
+        getClusterErrorMessage: "Failed to get cluster info. Please try again.",
       },
       storage: {
         increase: "Increase",
@@ -1334,7 +1341,13 @@ export default {
       },
       jobBilling: {
         jobBillingPriceTable: "Job Billing Price Table",
-        managementObject: "For ",
+        selectCluster: "Please Select a Cluster",
+        selectClusterFirst: "Please Select a Cluster First",
+        selectPartition: "Please Select a Partition",
+        selectPartitionFirst: "Please Select a Partition First",
+        selectQos: "Please Select a QOS",
+        qos: "QOS",
+        getClusterErrorMessage: "Failed to get cluster info. Please try again.",
       },
       importUsers: {
         importUserInfo: "Import User",
