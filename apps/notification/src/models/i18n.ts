@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 export type I18nStringType = string | {
   i18n: {
     default: string,
@@ -27,7 +15,7 @@ export const languageDic = {
       msgSub: "消息订阅",
       msgConfig: "消息设置",
       sendMsg: "发送消息",
-      createType: "创建自定义消息类型",
+      createType: "新建自定义消息类型",
     },
     common: {
       default: "默认",
@@ -41,6 +29,17 @@ export const languageDic = {
       title: "标题",
       finalError: "请求失败，请稍后再试",
     },
+    noticeType: {
+      siteMessage: "站内消息",
+      sms: "短信",
+      email: "邮箱",
+      officialAccount: "公众号",
+      weCom: "企业微信",
+      dingTalk: "钉钉",
+      lark: "飞书",
+      noticeMethod: "通知方式",
+      noNoticeMethod: "无通知方式",
+    },
     expirationTimeSelect: {
       oneWeek: "一周",
       halfAMonth: "半个月",
@@ -51,7 +50,7 @@ export const languageDic = {
       neverExpires: "永不过期",
       selectExpirationTime: "请选择过期时间",
     },
-    createCustomMessageType : {
+    createCustomMessageType: {
       pageTitle: "新建自定义消息类型",
       create: {
         messageType: "消息类型",
@@ -118,9 +117,9 @@ export const languageDic = {
         sendSuccessInfo: "消息发送成功",
         checkboxSelectInfo: "请选择至少一个发送方式",
         inputTitle: "请输入标题",
-        titleLengthTip: "标题长度应小于20字符",
+        titleLengthTip: "标题长度应小于50字符",
         content: "正文",
-        contentLengthTip: "内容长度应小于150字符",
+        contentLengthTip: "内容长度应小于500字符",
         inputContent: "请输入正文",
         sendType: "发送方式",
         selectSentType: "请选择发送方式",
@@ -128,6 +127,30 @@ export const languageDic = {
         msgExpirationTime: "消息过期时间",
         msgExpirationTimeTip: "达到消息过期时间后，消息将被自动删除",
         expirationTimeSelectRule: "请选择消息过期时间",
+      },
+      adminMessagesTable: {
+        tableTitle: "历史消息",
+        serialNumber: "序号",
+        time: "时间",
+        title: "标题",
+        messageType: "消息类型",
+        category: "分类",
+        operation: "操作",
+        viewDetails: "查看详情",
+        messageDetails: "消息详情",
+        content: "内容",
+        close: "关闭",
+        noData: "暂无数据",
+        loadingError: "加载失败",
+        expirationTime: "过期时间",
+        noTitle: "无标题",
+        noContent: "无内容",
+        unknown: "未知",
+        adminMessages: "管理员发送的消息",
+        loadFailed: "加载消息列表失败",
+        keywordLabel: "关键词",
+        keywordPlaceholder: "请输入关键词，搜索标题或内容",
+        search: "搜索",
       },
     },
     notification: {
@@ -187,6 +210,17 @@ export const languageDic = {
       serialNumber: "Serial Num",
       title: "Title",
       finalError: "Request failed, please try again later",
+    },
+    noticeType: {
+      siteMessage: "Site Message",
+      sms: "SMS",
+      email: "Email",
+      officialAccount: "Official Account",
+      weCom: "WeCom",
+      dingTalk: "DingTalk",
+      lark: "Lark",
+      noticeMethod: "Notice Method",
+      noNoticeMethod: "No Notice Method",
     },
     expirationTimeSelect: {
       oneWeek: "one week",
@@ -268,9 +302,9 @@ export const languageDic = {
         sendSuccessInfo: "Message sent successfully",
         checkboxSelectInfo: "Please select at least one delivery method",
         inputTitle: "Please enter a title",
-        titleLengthTip: "Title length should be less than 20 characters",
-        content: "content",
-        contentLengthTip: "Content length should be less than 150 characters",
+        titleLengthTip: "Title length should be less than 50 characters",
+        content: "Content",
+        contentLengthTip: "Content length should be less than 500 characters",
         inputContent: "Please enter a content",
         sendType: "Sending method",
         selectSentType: "Please select the delivery method",
@@ -279,6 +313,30 @@ export const languageDic = {
         msgExpirationTimeTip: "After the message expiration time is reached, "
           + "the message will be automatically deleted.",
         expirationTimeSelectRule: "Please select the message expiration time",
+      },
+      adminMessagesTable: {
+        tableTitle: "Message History",
+        serialNumber: "Serial Number",
+        time: "Time",
+        title: "Title",
+        messageType: "Message Type",
+        category: "Category",
+        operation: "Operation",
+        viewDetails: "View Details",
+        messageDetails: "Message Details",
+        content: "Content",
+        close: "Close",
+        noData: "No Data",
+        loadingError: "Loading Failed",
+        expirationTime: "Expiration Time",
+        noTitle: "No Title",
+        noContent: "No Content",
+        unknown: "Unknown",
+        adminMessages: "Messages Sent by Administrator",
+        loadFailed: "Failed to load message list",
+        keywordLabel: "Keyword",
+        keywordPlaceholder: "Enter keyword to search title or content",
+        search: "Search",
       },
     },
     notification: {

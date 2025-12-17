@@ -1,9 +1,10 @@
-import { timestampDate } from "@bufbuild/protobuf/wkt";
+import { timestampDate, timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { Knex } from "@mikro-orm/mysql";
 import { checkScowApiToken } from "@scow/lib-server";
-import { ReadStatus } from "@scow/notification-protos/build/common_pb";
+import { NoticeType, ReadStatus } from "@scow/notification-protos/build/common_pb";
 import { MessageService } from "@scow/notification-protos/build/message_pb";
+import { adminMessageTypesMap } from "src/models/message-type";
 import { PlatformRole } from "src/models/user";
 import { commonConfig } from "src/server/config/common";
 import { notificationConfig } from "src/server/config/notification";
@@ -46,10 +47,10 @@ export default (router: ConnectRouter) => {
         );
       }
 
-      if (title.length > 20 || content.length > 150) {
+      if (title.length > 50 || content.length > 500) {
         throw new ConnectError(
-          "The title length should be less than 20 characters, "
-            + "and the content length should be less than 150 characters.",
+          "The title length should be less than 50 characters, "
+            + "and the content length should be less than 500 characters.",
           Code.InvalidArgument,
         );
       }
@@ -99,6 +100,153 @@ export default (router: ConnectRouter) => {
       }
 
       return {};
+    },
+
+    async adminListMessages(req, context) {
+      const { messageTypes, categories, page, pageSize, keyword } = req;
+
+      const user = await checkAuth(context);
+
+      if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
+        logger.info(
+          "User %s is not a platform admin and cannot display messages sent by the administrator.",
+          user.identityId,
+        );
+        throw new ConnectError(
+          `User ${user.identityId} unable to list admin messages.`,
+          Code.PermissionDenied,
+        );
+      }
+
+      const em = await forkEntityManager();
+
+      // 设置默认分页参数
+      const DEFAULT_PAGE_SIZE = 10;
+      const effectivePageSize = pageSize ?? DEFAULT_PAGE_SIZE;
+      const effectivePage = page ?? 1;
+
+      try {
+        // 验证传入的messageTypes是否属于管理员消息类型
+        if (messageTypes && messageTypes.length > 0) {
+          for (const messageType of messageTypes) {
+            const messageTypeData = checkAdminMessageTypeExist(messageType);
+            if (!messageTypeData) {
+              logger.error("Invalid admin message type: %s", messageType);
+              throw new ConnectError(
+                `Invalid admin message type: ${messageType}`,
+                Code.InvalidArgument,
+              );
+            }
+          }
+        }
+
+        // 验证传入的categories是否属于管理员消息分类
+        if (categories && categories.length > 0) {
+          const validAdminCategories = new Set(
+            Array.from(adminMessageTypesMap.values()).map((info) => info.category),
+          );
+
+          for (const category of categories) {
+            if (!validAdminCategories.has(category)) {
+              logger.error("Invalid admin message category: %s", category);
+              throw new ConnectError(
+                `Invalid admin message category: ${category}`,
+                Code.InvalidArgument,
+              );
+            }
+          }
+        }
+
+        // 使用 EntityManager 的 QueryBuilder 构建查询，支持对 metadata.title 与 metadata.content 的关键词模糊搜索
+        const qb = em.createQueryBuilder(Message, "m");
+        qb.where({ senderType: SenderType.PLATFORM_ADMIN });
+
+        if (!messageTypes || messageTypes.length === 0) {
+          const allAdminMessageTypes = Array.from(adminMessageTypesMap.keys());
+          qb.andWhere({ messageType: { $in: allAdminMessageTypes } });
+        } else {
+          qb.andWhere({ messageType: { $in: messageTypes } });
+        }
+
+        if (categories && categories.length > 0) {
+          qb.andWhere({ category: { $in: categories } });
+        }
+
+        if (keyword) {
+          const likeValue = `%${keyword.trim()}%`;
+          qb.andWhere(
+            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR "
+            + "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
+            [likeValue, likeValue],
+          );
+        }
+
+        qb.orderBy({ createdAt: "desc" })
+          .limit(effectivePageSize)
+          .offset((effectivePage - 1) * effectivePageSize);
+
+        const messages = await qb.getResultList();
+
+        const qbCount = em.createQueryBuilder(Message, "m");
+        qbCount.where({ senderType: SenderType.PLATFORM_ADMIN });
+        if (!messageTypes || messageTypes.length === 0) {
+          const allAdminMessageTypes = Array.from(adminMessageTypesMap.keys());
+          qbCount.andWhere({ messageType: { $in: allAdminMessageTypes } });
+        } else {
+          qbCount.andWhere({ messageType: { $in: messageTypes } });
+        }
+        if (categories && categories.length > 0) {
+          qbCount.andWhere({ category: { $in: categories } });
+        }
+        if (keyword) {
+          const likeValue = `%${keyword.trim()}%`;
+          qbCount.andWhere(
+            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR "
+            + "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
+            [likeValue, likeValue],
+          );
+        }
+        const totalCount = await qbCount.getCount();
+
+        const messagesTypeDataMap = await getMessagesTypeData(em, messages);
+
+        // 关联查询 messageTarget，获取每条消息的通知方式（取一条即可）
+        const messageTargets = await em.find(MessageTarget, { message: { $in: messages.map((mm) => mm.id) } }, {
+          orderBy: { id: "ASC" },
+          populate: ["message"],
+        });
+        const noticeTypesByMessageId = new Map<bigint, NoticeType[]>();
+        for (const mt of messageTargets) {
+          const msgId = mt.message.id;
+          if (!noticeTypesByMessageId.has(msgId)) {
+            noticeTypesByMessageId.set(msgId, mt.noticeTypes.map((nt) => Number(nt)) ?? []);
+          }
+        }
+
+        return {
+          totalCount: BigInt(totalCount),
+          messages: messages
+            .filter((m) => messagesTypeDataMap.has(m.messageType))
+            .map((m) => ({
+              id: BigInt(m.id),
+              metadata: m.metadata,
+              messageType: messagesTypeDataMap.get(m.messageType)!,
+              descriptions: m.descriptionData ?? [],
+              createdAt: new Date(m.createdAt).toISOString(),
+              updatedAt: new Date(m.updatedAt).toISOString(),
+              expiredAt: m.expiredAt ? timestampFromDate(m.expiredAt) : undefined,
+              noticeTypes: noticeTypesByMessageId.get(BigInt(m.id)) ?? [],
+            })),
+        };
+
+      } catch (error) {
+        if (error instanceof ConnectError) {
+          logger.error("Error in adminListMessages %s, user %s", error.message, user.identityId);
+          throw error;
+        }
+        logger.error("Error in adminListMessages %o, user %s", error, user.identityId);
+        throw new ConnectError("Failed to retrieve messages", Code.Internal);
+      }
     },
 
     async listMessages(req, ctx) {
@@ -238,6 +386,19 @@ export default (router: ConnectRouter) => {
       const camelCaseMessage = toCamelCaseArray<(Message & { umrStatus: ReadStatus })[]>(messages);
       const messagesTypeDataMap = await getMessagesTypeData(em, camelCaseMessage);
 
+      // 查询每条消息的通知方式（取第一条 message_target 的 notice_types）
+      const messageIds = camelCaseMessage.map((m) => BigInt(m.id));
+      const messageTargets = await em.find(MessageTarget, { message: { $in: messageIds } }, {
+        populate: ["message"],
+      });
+      const noticeTypesByMessageId = new Map<bigint, NoticeType[]>();
+      for (const mt of messageTargets) {
+        const msgId = mt.message.id as unknown as bigint;
+        if (!noticeTypesByMessageId.has(msgId)) {
+          noticeTypesByMessageId.set(msgId, mt.noticeTypes.map((nt) => Number(nt)) ?? []);
+        }
+      }
+
       return {
         totalCount: BigInt(total),
         messages: camelCaseMessage.filter((m) => messagesTypeDataMap.has(m.messageType)).map((m) => ({
@@ -248,6 +409,8 @@ export default (router: ConnectRouter) => {
           isRead: m.umrStatus === ReadStatus.READ ? true : false,
           createdAt: new Date(m.createdAt).toISOString(),
           updatedAt: new Date(m.updatedAt).toISOString(),
+          expiredAt: m.expiredAt ? timestampFromDate(new Date(m.expiredAt)) : undefined,
+          noticeTypes: noticeTypesByMessageId.get(BigInt(m.id)) ?? [],
         })),
       };
     },

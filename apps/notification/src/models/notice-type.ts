@@ -1,14 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import { getLanguage } from "src/utils/i18n";
 
 export enum NoticeType {
   SITE_MESSAGE = 0,
@@ -20,12 +10,25 @@ export enum NoticeType {
   LARK,
 }
 
-export const noticeTypeNameMap = new Map<NoticeType, string>([
-  [NoticeType.SITE_MESSAGE, "站内消息"],
-  [NoticeType.SMS, "短信"],
-  [NoticeType.EMAIL, "邮箱"],
-  [NoticeType.OFFICIAL_ACCOUNT, "公众号"],
-  [NoticeType.WE_COM, "企业微信"],
-  [NoticeType.DING_TALK, "钉钉"],
-  [NoticeType.LARK, "飞书"],
-]);
+export const getNoticeTypeName = (noticeType: NoticeType, languageId?: string): string => {
+  const language = getLanguage(languageId);
+
+  switch (noticeType) {
+    case NoticeType.SITE_MESSAGE:
+      return language.noticeType.siteMessage;
+    case NoticeType.SMS:
+      return language.noticeType.sms;
+    case NoticeType.EMAIL:
+      return language.noticeType.email;
+    case NoticeType.OFFICIAL_ACCOUNT:
+      return language.noticeType.officialAccount;
+    case NoticeType.WE_COM:
+      return language.noticeType.weCom;
+    case NoticeType.DING_TALK:
+      return language.noticeType.dingTalk;
+    case NoticeType.LARK:
+      return language.noticeType.lark;
+    default:
+      return "unknown";
+  }
+};

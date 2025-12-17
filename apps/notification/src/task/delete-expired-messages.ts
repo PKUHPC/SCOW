@@ -9,7 +9,7 @@ import { logger } from "src/utils/logger";
 let deleteIsRunning = false;
 
 export async function deleteExpiredMessages() {
-  logger.info("Starting delete expired messages");
+  logger.info("Starting delete expired messages at %s", dayjs().toISOString());
 
   const em = await forkEntityManager();
   let deletedNum = 0;
@@ -20,8 +20,8 @@ export async function deleteExpiredMessages() {
   while (true) {
     const messages = await em.find(
       Message,
-      { id: { $gt: lastId }, expiredAt: { $lte: new Date() } },
-      { limit: batchSize, orderBy: { id: "asc" } },
+      { id: { $gt: lastId }, expiredAt: { $lte: new Date() }, category: { $ne: "Admin" } },
+      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"]},
     );
 
     if (messages.length === 0) {
@@ -44,10 +44,13 @@ export async function deleteExpiredMessages() {
   // 若改为不一致则按消息类型进行删除即可
   while (true) {
     const messages = await em.find(Message,
-      { id: { $gt: lastId }, createdAt: {
-        $lte: dayjs(new Date()).subtract(Number(messageConfigs[0]?.expiredAfterSeconds), "seconds").toDate(),
-      } },
-      { limit: batchSize, orderBy: { id: "asc" } },
+      {
+        id: { $gt: lastId },
+        category: { $ne: "Admin" },
+        createdAt: {
+          $lte: dayjs(new Date()).subtract(Number(messageConfigs[0]?.expiredAfterSeconds), "seconds").toDate(),
+        } },
+      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"]},
     );
 
     if (messages.length === 0) {
@@ -59,7 +62,11 @@ export async function deleteExpiredMessages() {
     deletedNum += messages.length;
   }
 
-  logger.info(`This round of deleting expired messages is completed, deleted ${deletedNum} messages.`);
+  logger.info(
+    "This round of deleting expired messages is completed at %s, deleted %d messages.",
+    dayjs().toISOString(),
+    deletedNum,
+  );
   return;
 }
 

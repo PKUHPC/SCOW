@@ -9,7 +9,7 @@ import dayjs, { Dayjs } from "dayjs";
 import React from "react";
 import { I18nDicType } from "src/models/i18n";
 import { AdminMessageType } from "src/models/message-type";
-import { NoticeType, noticeTypeNameMap } from "src/models/notice-type";
+import { getNoticeTypeName, NoticeType } from "src/models/notice-type";
 
 interface FormValues {
   title: string;
@@ -20,9 +20,10 @@ interface FormValues {
 
 interface Props {
   lang: I18nDicType;
+  onSendSuccess: () => void;
 }
 
-export const MessageForm: React.FC<Props> = ({ lang }) => {
+export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
   const { message } = App.useApp();
 
   const compLang = lang.sendMessage.messageForm;
@@ -34,6 +35,7 @@ export const MessageForm: React.FC<Props> = ({ lang }) => {
     },
     onSuccess: () => {
       message.success(compLang.sendSuccessInfo);
+      onSendSuccess();
     },
   });
 
@@ -114,7 +116,7 @@ export const MessageForm: React.FC<Props> = ({ lang }) => {
           message: compLang.inputTitle,
         }, {
           type: "string",
-          max: 20,
+          max: 50,
           message: compLang.titleLengthTip,
         }]}
       >
@@ -129,7 +131,7 @@ export const MessageForm: React.FC<Props> = ({ lang }) => {
           message: compLang.inputContent,
         }, {
           type: "string",
-          max: 150,
+          max: 500,
           message: compLang.contentLengthTip,
         }]}
       >
@@ -149,7 +151,7 @@ export const MessageForm: React.FC<Props> = ({ lang }) => {
                 value={noticeType}
                 disabled={NoticeType.SITE_MESSAGE === noticeType}
               >
-                {noticeTypeNameMap.get(noticeType)}
+                {getNoticeTypeName(noticeType)}
               </Checkbox>
             ))
           }

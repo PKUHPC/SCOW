@@ -100,7 +100,7 @@ export const SendMessageIcon: React.ForwardRefExoticComponent<{}> = React.forwar
   (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={sendMessageSVG} {...props} ref={ref} />,
 );
 
-// 创建自定义消息类型图标
+// 新建自定义消息类型图标
 const customMessageSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path

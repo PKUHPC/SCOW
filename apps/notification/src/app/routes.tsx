@@ -48,7 +48,7 @@ export const userRoutes:
       },
       // {
       //   Icon: CustomMessageIcon,
-      //   text: "创建自定义消息类型",
+      //   text: "新建自定义消息类型",
       //   path: "/create-custom-message-type",
       //   clickToPath: `/create-custom-message-type?${scowParams}`,
       // },

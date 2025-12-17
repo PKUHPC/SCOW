@@ -18,7 +18,7 @@ import {
 import { Checkbox, Form, message, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import { I18nDicType } from "src/models/i18n";
-import { NoticeType, noticeTypeNameMap } from "src/models/notice-type";
+import { getNoticeTypeName,NoticeType } from "src/models/notice-type";
 
 interface FormValues {
   userModifyConfigs: NoticeType[];
@@ -121,7 +121,7 @@ export const MessageConfigModal: React.FC<Props> = ({
                       disabled={disabled}
                       value={noticeType}
                     >
-                      {noticeTypeNameMap.get(noticeType)}
+                      {getNoticeTypeName(noticeType)}
                     </Checkbox>
                   );
                 })

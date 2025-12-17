@@ -161,7 +161,6 @@ export function useSubscriptionColumns({
       {
         title: compLang.noticeType,
         children: noticeTypesData?.noticeTypes.map((type) => ({
-          // title: noticeTypeNameMap.get(type),
           title: (
             <CheckAllSpecifiedNoticeType
               disabled={checkAllDisabled[type] ?? true}

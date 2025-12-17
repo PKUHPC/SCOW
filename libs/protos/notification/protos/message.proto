@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 syntax = "proto3";
 
 package notification;
@@ -27,6 +15,8 @@ message Message {
   optional bool is_read = 5;
   string created_at = 6;
   string updated_at = 7;
+  optional google.protobuf.Timestamp expired_at = 8;
+  repeated NoticeType notice_types = 9;
 }
 
 message SystemSendMessageRequest {
@@ -118,8 +108,23 @@ message ChangeMessageExpirationTimeRequest {
 message ChangeMessageExpirationTimeResponse {
 }
 
+message AdminListMessagesRequest {
+  repeated string message_types = 1;
+  repeated string categories = 2;
+  optional uint32 page = 3;
+  optional uint32 page_size = 4;
+  // 搜索关键词, 搜索消息标题和内容中包含关键词的消息
+  optional string keyword = 5;
+}
+
+message AdminListMessagesResponse {
+  optional uint64 total_count = 1;
+  repeated Message messages = 2;
+}
+
 service MessageService {
   rpc AdminSendMessage(AdminSendMessageRequest) returns (AdminSendMessageResponse);
+  rpc AdminListMessages(AdminListMessagesRequest) returns (AdminListMessagesResponse);
 
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
 
