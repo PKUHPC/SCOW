@@ -97,7 +97,7 @@ export async function systemSendMsgToBridge(em: SqlEntityManager, info: SystemSe
       messageInfo: {
         title: messageTypeData.titleTemplate.default ?? "",
         content: messageTypeData.contentTemplate
-          ? replaceTemplate(metadata.toJson(), messageTypeData.contentTemplate.default) : "",
+          ? replaceTemplate(metadata, messageTypeData.contentTemplate.default) : "",
         metadata,
       },
       messageTypeInfo: { type: messageType, category },
@@ -136,7 +136,7 @@ export async function systemBatchSendMsgsToBridge(em: SqlEntityManager, infos: S
         messageInfo: {
           title: messageTypeData.titleTemplate.default ?? "",
           content: messageTypeData.contentTemplate
-            ? replaceTemplate(metadata.toJson(), messageTypeData.contentTemplate.default) : "",
+            ? replaceTemplate(metadata, messageTypeData.contentTemplate.default) : "",
           metadata,
         },
         messageTypeInfo: { type: messageType, category },
