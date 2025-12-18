@@ -3,8 +3,8 @@
     "bufbuild.vscode-buf",
     "dbaeumer.vscode-eslint",
     "editorconfig.editorconfig",
-    "zxh404.vscode-proto3",
     "ms-playwright.playwright",
-    "hediet.vscode-drawio"
+    "hediet.vscode-drawio",
+    "drblury.protobuf-vsc"
   ]
 }

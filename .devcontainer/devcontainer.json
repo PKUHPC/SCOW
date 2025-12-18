@@ -19,8 +19,8 @@
         "GitHub.copilot",
         "bufbuild.vscode-buf",
         "EditorConfig.EditorConfig",
-        "zxh404.vscode-proto3",
-        "hediet.vscode-drawio"
+        "hediet.vscode-drawio",
+        "DrBlury.protobuf-vsc"
       ]
     }
   }
