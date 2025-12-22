@@ -5,7 +5,7 @@ import React from "react";
 import { useUserQuery } from "src/app/auth";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
 import { Loading } from "src/components/Loading";
-import { useI18n } from "src/i18n";
+import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { BaseLayout } from "src/layouts/base/BaseLayout";
 import { SystemSelect } from "src/layouts/base/header/SystemSelect";
 import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
@@ -44,6 +44,8 @@ export default function Layout(
   });
 
   const languageId = useI18n().currentLanguage.id;
+  const t = useI18nTranslateToString();
+  const { hostname, uiConfig } = useUiConfig();
 
   const createAppSessionMutation = trpc.notification.markMessageRead.useMutation({});
 
@@ -81,14 +83,13 @@ export default function Layout(
   const { setDefaultCluster, defaultCluster, currentClusters }
    = defaultClusterContext(publicConfig.CLUSTERS, currentClusterIdsQuery?.data?.clusterIds ?? []);
 
-  const { hostname, uiConfig } = useUiConfig();
   const footerConfig = uiConfig.config?.footer;
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
     ?? footerConfig?.defaultText;
 
   const routes = userRoutes(
     userQuery.data.user, publicConfig, scowClusterConfigs,
-    currentClusters, setDefaultCluster, defaultCluster,
+    currentClusters, setDefaultCluster, defaultCluster, t, languageId,
   );
 
   return (

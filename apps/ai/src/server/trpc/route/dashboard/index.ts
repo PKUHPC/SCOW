@@ -31,7 +31,7 @@ export const PartitionSchema = z.object({
   runningJobCount: z.number(),
   pendingJobCount: z.number(),
   usageRatePercentage: z.number(),
-  partitionStatus: z.nativeEnum(PartitionInfo_PartitionStatus),
+  partitionStatus: z.enum(PartitionInfo_PartitionStatus),
   gpuModel: z.string().optional(),
   acceleratorDescriptions: z.array(z.string()),
   totalMemMb: z.number(),
@@ -46,7 +46,7 @@ const ClusterInfoSchema = z.object({
 export const NodeInfoSchema = z.object({
   nodeName: z.string(),
   partitions: z.array(z.string()),
-  state: z.nativeEnum(NodeInfo_NodeState),
+  state: z.enum(NodeInfo_NodeState),
   cpuCoreCount: z.number(),
   allocCpuCoreCount: z.number(),
   idleCpuCoreCount: z.number(),

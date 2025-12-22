@@ -54,4 +54,4 @@ export function useI18nTranslateToString() {
   return t;
 }
 
-export type TransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string;
+export type TransType = ReturnType<typeof useI18nTranslateToString>;

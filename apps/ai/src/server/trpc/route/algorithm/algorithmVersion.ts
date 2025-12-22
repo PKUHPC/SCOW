@@ -52,7 +52,7 @@ export const getAlgorithmVersions = procedure
     versionDescription:z.string().optional(),
     path:z.string(),
     privatePath: z.string(),
-    sharedStatus:z.nativeEnum(SharedStatus),
+    sharedStatus:z.enum(SharedStatus),
     createTime:z.string().optional(),
   })), count: z.number() }))
   .query(async ({ input:{ algorithmId, page, pageSize, isPublic } }) => {
@@ -103,7 +103,7 @@ export const getMultipleAlgorithmVersions = procedure
         versionDescription:z.string().optional(),
         path:z.string(),
         privatePath: z.string(),
-        sharedStatus:z.nativeEnum(SharedStatus),
+        sharedStatus:z.enum(SharedStatus),
         createTime:z.string().optional(),
       })), count: z.number() }),
     ),

@@ -38,7 +38,7 @@ export const ModelListSchema = z.object({
   name: z.string(),
   description: z.union([z.string(), z.undefined()]),
   algorithmName: z.string().optional(),
-  algorithmFramework: z.nativeEnum(Framework).optional(),
+  algorithmFramework: z.enum(Framework).optional(),
   isShared: z.boolean(),
   versions: z.array(z.object({
     id: z.number(),
@@ -122,7 +122,7 @@ export const createModel = procedure
   .input(z.object({
     name: z.string(),
     algorithmName: z.string().optional(),
-    algorithmFramework: z.nativeEnum(Framework).optional(),
+    algorithmFramework: z.enum(Framework).optional(),
     description: z.string().optional(),
     clusterId: z.string(),
   }))
@@ -195,7 +195,7 @@ export const updateModel = procedure
     id: z.number(),
     name: z.string(),
     algorithmName: z.string().optional(),
-    algorithmFramework: z.nativeEnum(Framework).optional(),
+    algorithmFramework: z.enum(Framework).optional(),
     description: z.string().optional(),
   }))
   .output(z.number())

@@ -96,7 +96,7 @@ export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<H
 const collapseMenuSVG = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="18" height="18" rx="4" fill="black" />
-    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke="white" stroke-width="1.2" stroke-linecap="round" />
+    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
   </svg>
 
 );

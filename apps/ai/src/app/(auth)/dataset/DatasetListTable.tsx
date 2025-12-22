@@ -167,7 +167,6 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                 setQuery({ ...query, type: value === "ALL" ? undefined : value });
               }}
               placeholder={t(p("selectType"))}
-              defaultValue={FilterType.ALL}
               options={
                 Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))}
             />
@@ -175,9 +174,9 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDesc"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {t("button.searchButton")}
+          </Button>
         </Form>
         {!isPublic && (
           <Space>
@@ -296,4 +295,3 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
     </div>
   );
 };
-

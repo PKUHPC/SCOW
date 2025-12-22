@@ -18,7 +18,7 @@ interface Props {
   onClick: () => void;
 }
 
-type MaskProps = Pick<Props, "sidebarShown" | "breakpoint">;
+type MaskProps = Pick<Props, "breakpoint"> & { $sidebarShown: boolean };
 
 const Mask = styled.div<MaskProps>`
   position: absolute;
@@ -32,7 +32,7 @@ const Mask = styled.div<MaskProps>`
   display: none;
 
   @media (max-width: ${(props: MaskProps) => props.breakpoint}px) {
-    display: ${(props: MaskProps) => props.sidebarShown ? "initial" : "none"};
+    display: ${(props: MaskProps) => props.$sidebarShown ? "initial" : "none"};
   }
 `;
 
@@ -42,7 +42,7 @@ export default function BodyMask(props: Props) {
     <Mask
       onClick={props.onClick}
       breakpoint={props.breakpoint}
-      sidebarShown={props.sidebarShown}
+      $sidebarShown={props.sidebarShown}
     />
   );
 }

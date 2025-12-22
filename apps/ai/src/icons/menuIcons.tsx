@@ -243,7 +243,7 @@ const imageSVG = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect y="3" width="7" height="13" rx="1.44444" fill="currentColor" />
     <rect x="11" y="3" width="7" height="13" rx="1.44444" fill="currentColor" />
-    <path d="M9 1L9 17" stroke="currentColor" stroke-linecap="round" />
+    <path d="M9 1L9 17" stroke="currentColor" strokeLinecap="round" />
   </svg>
 );
 

@@ -79,9 +79,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
         popupClassName="head-language-select"
       >
         {Object.entries(languageInfo).map(([id, { name }]) => (
-          <option key={id} value={id}>
+          <Select.Option key={id} value={id}>
             {name}
-          </option>
+          </Select.Option>
         ))}
       </Select>
     </Container>

@@ -36,7 +36,7 @@ import { booleanQueryParam } from "../utils";
 export const DatasetVersionListSchema = z.object({
   id: z.number(),
   versionName: z.string(),
-  sharedStatus: z.nativeEnum(SharedStatus),
+  sharedStatus: z.enum(SharedStatus),
   versionDescription: z.string().optional(),
   path: z.string(),
   privatePath: z.string(),

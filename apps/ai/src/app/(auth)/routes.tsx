@@ -4,7 +4,7 @@ import { LinkOutlined } from "@ant-design/icons";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
-import { useI18n, useI18nTranslateToString } from "src/i18n";
+import { TransType } from "src/i18n";
 import { AlgorithmIcon, ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
   DatasetIcon, DevHostIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
   PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
@@ -23,12 +23,20 @@ export const userRoutes: (
   currentClusters: Cluster[],
   setDefaultCluster: (cluster: Cluster | undefined) => void,
   defaultCluster: Cluster | undefined,
-) => NavItemProps[] = (user, publicConfig, clusterConfigs, currentClusters, setDefaultCluster, defaultCluster) => {
+  t: TransType,
+  languageId: string,
+) => NavItemProps[] = (
+  user,
+  publicConfig,
+  clusterConfigs,
+  currentClusters,
+  setDefaultCluster,
+  defaultCluster,
+  t,
+  languageId,
+) => {
 
   if (!user) { return []; }
-
-  const t = useI18nTranslateToString();
-  const languageId = useI18n().currentLanguage.id;
 
   const devHostEnabled = Object.values(clusterConfigs).some((c) => c.ai.devHost.enabled);
 

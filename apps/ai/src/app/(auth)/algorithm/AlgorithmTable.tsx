@@ -228,7 +228,6 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 setQuery({ ...query, framework:val });
               }}
               placeholder={t(p("selectFramework"))}
-              defaultValue={"ALL"}
               options={
                 Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))
               }
@@ -238,9 +237,7 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDesc"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit"> {t("button.searchButton")} </Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit"> {t("button.searchButton")} </Button>
         </Form>
         {!isPublic && (
           <Space>

@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import { styled, useTheme } from "styled-components";
 
 import { InfoPane } from "./InfoPane"; ;
@@ -93,10 +93,16 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
         key:x.id,
         tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
       })) ?? [];
-    if (clusterCardsList?.[0]?.key) {
-      onTabChange(clusterCardsList[0].key);
-    }
   }
+
+  // 初始化单集群默认选中项，避免 render 阶段 setState
+  useEffect(() => {
+    const firstKey = clusterCardsList?.[0]?.key;
+    const isSingleCluster = (successfulClusters?.length ?? 0) === 1;
+    if (isSingleCluster && firstKey) {
+      onTabChange(firstKey);
+    }
+  }, [clusterCardsList, onTabChange, successfulClusters?.length]);
 
   const { nodeCount, runningNodeCount, idleNodeCount, notAvailableNodeCount,
     cpuCoreCount, runningCpuCount, idleCpuCount, notAvailableCpuCount,

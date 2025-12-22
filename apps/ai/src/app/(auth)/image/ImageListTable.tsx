@@ -152,9 +152,9 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           <Form.Item name="nameOrTagOrDesc">
             <Input allowClear placeholder={t(p("nameOrTagOrDesc"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {t("button.searchButton")}
+          </Button>
         </Form>
         {!isPublic && (
           <Space>
@@ -186,7 +186,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           { dataIndex: "clusterId", title: t(p("cluster")),
             render: (_, r) =>
               getI18nConfigCurrentText(clusters.find((x) => (x.id === r.clusterId))?.name, languageId) ?? r.clusterId },
-          { dataIndex: "types", title: t(p("type")), render: (_, r) => r.types.map((t) => <Tag>{TypeText[t]}</Tag>) },
+          { dataIndex: "types", title: t(p("type")),
+            render: (_, r) => r.types.map((t) => <Tag key={t}>{TypeText[t]}</Tag>) },
           { dataIndex: "source", title: t(p("source")),render: (_, r) => sourceText[r.source] },
           { dataIndex: "description", title: t(p("description")) },
           isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),
@@ -330,4 +331,3 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
     </div>
   );
 };
-

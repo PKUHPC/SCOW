@@ -40,7 +40,7 @@ export const VersionListSchema = z.object({
   id: z.number(),
   modelId: z.number(),
   versionName: z.string(),
-  sharedStatus: z.nativeEnum(SharedStatus),
+  sharedStatus: z.enum(SharedStatus),
   versionDescription: z.string().optional(),
   algorithmVersion: z.string().optional(),
   path: z.string(),

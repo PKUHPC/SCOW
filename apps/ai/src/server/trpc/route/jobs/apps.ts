@@ -54,7 +54,7 @@ const ImageSchema = z.object({
 
 export type Image = z.infer<typeof ImageSchema>;
 
-const JobTypeSchema = z.nativeEnum(JobType);
+const JobTypeSchema = z.enum(JobType);
 
 const AppSessionSchema = z.object({
   sessionId: z.string(),
@@ -703,7 +703,7 @@ export const listAppSessions =
     .input(z.object({
       clusterId: z.string(),
       isRunning: booleanQueryParam().optional(),
-      jobTypes: z.array(z.nativeEnum(JobType)).optional(),
+      jobTypes: z.array(z.enum(JobType)).optional(),
       ...paginationSchema.shape,
     }))
     .output(z.object({ sessions: z.array(AppSessionSchema), count: z.number() }))
@@ -1032,7 +1032,7 @@ procedure
     clusterId: z.string(),
     jobId: z.number(),
     sessionId: z.string(),
-    appName: z.nativeEnum(AppName),
+    appName: z.enum(AppName),
   })).output(z.object({
     ok: z.boolean(),
   })).query(
@@ -1211,7 +1211,7 @@ procedure
   .input(z.object({
     cluster: z.string(),
     sessionId: z.string(),
-    appName: z.nativeEnum(AppName),
+    appName: z.enum(AppName),
   }))
   .output(ConnectToAppResponseSchema)
   .mutation(async ({ input, ctx: { user } }) => {

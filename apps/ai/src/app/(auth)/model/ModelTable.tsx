@@ -183,9 +183,9 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDes"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {t("button.searchButton")}
+          </Button>
         </Form>
         {!isPublic && (
           <Space>
@@ -230,4 +230,3 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     </div>
   );
 };
-

@@ -43,7 +43,7 @@ export const getAlgorithms = procedure
   })
   .input(z.object({
     ...paginationSchema.shape,
-    framework: z.nativeEnum(Framework).optional(),
+    framework: z.enum(Framework).optional(),
     nameOrDesc: z.string().optional(),
     clusterId: z.string().optional(),
     isPublic: booleanQueryParam().optional(),
@@ -52,7 +52,7 @@ export const getAlgorithms = procedure
     id:z.number(),
     name:z.string(),
     owner:z.string(),
-    framework:z.nativeEnum(Framework),
+    framework:z.enum(Framework),
     isShared:z.boolean(),
     description:z.string().optional(),
     clusterId:z.string(),
@@ -114,7 +114,7 @@ export const createAlgorithm = procedure
   })
   .input(z.object({
     name: z.string(),
-    framework: z.nativeEnum(Framework),
+    framework: z.enum(Framework),
     clusterId: z.string(),
     description: z.string().optional(),
   }))
@@ -188,7 +188,7 @@ export const updateAlgorithm = procedure
   .input(z.object({
     id:z.number(),
     name: z.string(),
-    framework: z.nativeEnum(Framework),
+    framework: z.enum(Framework),
     description: z.string().optional(),
   }))
   .output(z.void())

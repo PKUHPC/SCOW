@@ -51,12 +51,12 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content) <{ isDashboard: boolean }>`
-  margin: ${(props) => props.isDashboard ? "8px 8px 35px" : "8px"};
+const Content = styled(Layout.Content) <{ $isDashboard: boolean }>`
+  margin: ${(props) => props.$isDashboard ? "8px 8px 35px" : "8px"};
   padding: 16px;
   flex: 1;
   background: ${({ theme }) => theme.token.colorBgLayout};
-  max-height: ${(props) => props.isDashboard ? "" : "calc(100vh - 78px)"};
+  max-height: ${(props) => props.$isDashboard ? "" : "calc(100vh - 78px)"};
   overflow-y: auto;
   .ant-table-wrapper .ant-table {
     scrollbar-color: auto !important;
@@ -193,7 +193,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           ) : undefined
         }
         <ContentPart>
-          <Content isDashboard={pathname === "/dashboard"}>
+          <Content $isDashboard={pathname === "/dashboard"}>
             {children}
           </Content>
           {pathname === "/dashboard" ?
@@ -203,4 +203,3 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     </Root>
   );
 };
-
