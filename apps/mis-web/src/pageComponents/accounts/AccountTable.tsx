@@ -1,17 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
@@ -289,11 +278,17 @@ export const AccountTable: React.FC<Props> = ({
           width="20%"
           title={t(p("owner"))}
           render={(_, r) => `${r.ownerName}（ID: ${r.ownerId}）`}
+          sorter={(a, b) => compareNullableString(a.ownerName, b.ownerName) }
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "ownerName" ? currentSortInfo.order : null}
         />
         <Table.Column<AdminAccountInfo>
           dataIndex="userCount"
           width="8%"
           title={t(pCommon("userCount"))}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "userCount" ? currentSortInfo.order : null}
+          sorter={(a, b) => compareNullableNumber(a.userCount, b.userCount)}
         />
         {/* 只在平台管理下的账户列表中显示 */}
         {showedTab === "PLATFORM" && (
@@ -301,6 +296,9 @@ export const AccountTable: React.FC<Props> = ({
             dataIndex="tenantName"
             width="10%"
             title={t(p("tenant"))}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "tenantName" ? currentSortInfo.order : null}
+            sorter={(a, b) => compareNullableString(a.tenantName, b.tenantName)}
           />
         )}
         <Table.Column<AdminAccountInfo>
@@ -323,6 +321,11 @@ export const AccountTable: React.FC<Props> = ({
             </Space>
           )}
           render={(_, r) => `${moneyToString(r.blockThresholdAmount ?? r.defaultBlockThresholdAmount)} ${t(p("unit"))}`}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "blockThresholdAmount" ? currentSortInfo.order : null}
+          sorter={(a, b) => compareNullableNumber(
+            (moneyToNumber(a.blockThresholdAmount ?? a.defaultBlockThresholdAmount)),
+            (moneyToNumber(b.blockThresholdAmount ?? b.defaultBlockThresholdAmount)))}
         />
         <Table.Column<AdminAccountInfo>
           dataIndex="displayedState"
@@ -356,13 +359,18 @@ export const AccountTable: React.FC<Props> = ({
                 {DisplayedStateI18nTexts[s]}
               </Tag>
             );
-          }
-          }
+          }}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "displayedState" ? currentSortInfo.order : null}
+          sorter={(a, b) => compareNullableNumber(a.displayedState, b.displayedState)}
         />
         <Table.Column<AdminAccountInfo>
           dataIndex="comment"
           ellipsis
           title={t(p("comment"))}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "comment" ? currentSortInfo.order : null}
+          sorter={(a, b) => compareNullableString(a.comment, b.comment)}
         />
         <Table.Column<AdminAccountInfo>
           title={t(pCommon("operation"))}

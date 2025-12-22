@@ -1,4 +1,6 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Input, Space, Table } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -166,10 +168,15 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
         dataSource={filteredData}
         loading={isLoading || loading}
         scroll={{ x: true }}
+        pagination={{
+          showSizeChanger: true,
+          defaultPageSize: DEFAULT_PAGE_SIZE,
+        }}
       >
         <Table.Column<TenantAppInfo>
           dataIndex="name"
           title={t(p("appName"))}
+          sorter={(a,b) => compareNullableString(a.name, b.name)}
         />
         <Table.Column<TenantAppInfo>
           dataIndex="operation"

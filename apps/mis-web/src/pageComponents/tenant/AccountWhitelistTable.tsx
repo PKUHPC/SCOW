@@ -1,18 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { FilterFormContainer } from "@scow/lib-web/build/components/FilterFormContainer";
+import { compareNullableDateTime, compareNullableDateTimeAsMax,
+  compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { WhitelistedAccount } from "@scow/protos/build/server/account";
@@ -166,6 +156,9 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             dataIndex="ownerId"
             title={t(pCommon("owner"))}
             render={(_, r) => `${r.ownerName} (ID: ${r.ownerId})`}
+            sorter={(a, b) => compareNullableString(a.ownerName, b.ownerName)}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "ownerId" ? currentSortInfo.order : null}
           />
           <Table.Column<WhitelistedAccount>
             dataIndex="balance"
@@ -175,18 +168,37 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             sortOrder={currentSortInfo.field === "balance" ? currentSortInfo.order : null}
             render={(b: Money) => moneyToString(b) + " " + t(pCommon("unit")) }
           />
-          <Table.Column
+          <Table.Column<WhitelistedAccount>
             dataIndex="addTime"
             title={t(p("joinTime"))}
             render={(time: string) => formatDateTime(time) }
+            sorter={(a, b) => compareNullableDateTime(a.addTime, b.addTime)}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "addTime" ? currentSortInfo.order : null}
           />
           <Table.Column<WhitelistedAccount>
             dataIndex="expirationTime"
             title={t(p("expirationTime"))}
             render={(time: string | undefined) => time ? formatDateTime(time) : "永久有效"}
+            sorter={(a, b) => compareNullableDateTimeAsMax(a.expirationTime, b.expirationTime)}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "expirationTime" ? currentSortInfo.order : null}
           />
-          <Table.Column dataIndex="comment" title={t(pCommon("comment"))} />
-          <Table.Column dataIndex="operatorId" title={t(p("operatorId"))} />
+          <Table.Column<WhitelistedAccount>
+            dataIndex="comment"
+            title={t(pCommon("comment"))}
+            sorter={(a, b) => compareNullableString(a.comment, b.comment)}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "comment" ? currentSortInfo.order : null}
+          />
+          <Table.Column<WhitelistedAccount>
+            dataIndex="operatorId"
+            title={t(p("operatorId"))}
+            sorter={(a, b) => compareNullableString(a.operatorId, b.operatorId)}
+            sortDirections={["ascend", "descend"]}
+            sortOrder={currentSortInfo.field === "operatorId" ? currentSortInfo.order : null}
+
+          />
           <Table.Column<WhitelistedAccount>
             title={t(pCommon("operation"))}
             render={(_, r) => (

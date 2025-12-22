@@ -1,4 +1,5 @@
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
+import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -354,6 +355,11 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
                 width="9.5%"
                 title={t(pCommon("cluster"))}
                 render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
+                sorter={(a, b) => {
+                  const clusterA = getI18nConfigCurrentText(a.cluster.name, languageId);
+                  const clusterB = getI18nConfigCurrentText(b.cluster.name, languageId);
+                  return compareNullableString(clusterA, clusterB);
+                }}
               />
             )
           }

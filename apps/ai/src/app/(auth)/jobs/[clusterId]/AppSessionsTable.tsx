@@ -2,6 +2,7 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
+import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { App, Button, Form, Input, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -84,7 +85,23 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
     },
   });
 
-  const columns: TableColumnsType<AppSession> = [
+  const getCpu = (record: AppSession) => {
+    return record.state === "PENDING" ? record.cpusReq : record.cpusAlloc;
+  };
+  const getGpu = (record: AppSession) => {
+    return record.state === "PENDING" ? record.gpusReq : record.gpusAlloc;
+  };
+
+  const getMemory = (record: AppSession) => {
+    return record.state === "PENDING" ? record.memReq : record.memAlloc;
+  };
+
+  const getNode = (record: AppSession) => {
+    return record.state === "PENDING" ? record.nodesReq : record.nodesAlloc;
+  };
+
+  type AppSessionColumn = AppSession & { remainingTime: string };
+  const columns: TableColumnsType<AppSessionColumn> = [
     {
       title: t(p("jobId")),
       dataIndex: "jobId",
@@ -97,37 +114,42 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
       dataIndex: "jobName",
       width: "200px",
       ellipsis: true,
+      sorter: (a, b) => a.jobName.localeCompare(b.jobName),
     },
     {
       title: t(p("partition")),
       dataIndex: "partition",
       width: "80px",
       ellipsis: true,
+      sorter: (a, b) => a.partition.localeCompare(b.partition),
     },
     {
       title: "CPU",
-      render: (_, record) => record.state === "PENDING" ? record.cpusReq : record.cpusAlloc,
+      render: (_, record) => getCpu(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getCpu(a), getCpu(b)),
     },
     {
       title: "GPU",
-      render: (_, record) => record.state === "PENDING" ? record.gpusReq : record.gpusAlloc,
+      render: (_, record) => getGpu(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getGpu(a), getGpu(b)),
     },
     {
       title: t(p("memory")),
       width: "50px",
       ellipsis: true,
-      render: (_, record) => formatSize(record.state === "PENDING" ? record.memReq : record.memAlloc ,
-        ["MB", "GB", "TB"]),
+      render: (_, record) => formatSize(getMemory(record), ["MB", "GB", "TB"]),
+      sorter: (a, b) => compareNumber(getMemory(a), getMemory(b)),
     },
     {
       title: t(p("node")),
-      render: (_, record) => record.state === "PENDING" ? record.nodesReq : record.nodesAlloc,
+      render: (_, record) => getNode(record),
       width: "20px",
       ellipsis: true,
+      sorter: (a, b) => compareNumber(getNode(a), getNode(b)),
     },
     {
       title: t(p("jobType")),
@@ -142,12 +164,18 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
         }
         return t(p("infer"));
       },
+      sorter: (a, b) => a.jobType.localeCompare(b.jobType),
     },
     {
       title: t(p("app")),
       dataIndex: "appId",
       width: "40px",
       render: (appId: string, record) => record.appName ?? appId,
+      sorter: (a, b) => {
+        const aName = a.appName ?? a.appId ?? "";
+        const bName = b.appName ?? b.appId ?? "";
+        return aName.localeCompare(bName);
+      },
     },
     {
       title: t(p("submitTime")),
@@ -178,14 +206,15 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster, status }) => {
         )
       ),
       sorter: (a, b) => a.state.localeCompare(b.state),
-      defaultSortOrder: "descend",
     },
     ...(unfinished ? [{
       title: t(p("remainingTime")),
       width: "120px",
       dataIndex: "remainingTime",
-    },
-    ] : []),
+      sorter: (a: AppSessionColumn, b: AppSessionColumn) => {
+        return compareTimeAsSeconds(a.remainingTime, b.remainingTime);
+      },
+    }] : []),
     {
       title: t(p("action")),
       key: "action",

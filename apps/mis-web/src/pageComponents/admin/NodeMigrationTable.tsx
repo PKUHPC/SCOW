@@ -1,18 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { debounce } from "@scow/lib-web/build/utils/debounce";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
 import { App, Button, Divider,Form, Input, Space, Table } from "antd";
 import { Popover,Tag } from "antd";
@@ -68,22 +56,6 @@ export const NodeMigrationTable: React.FC = () => {
     nodeNames: [],
     cluster: defaultCluster ?? Object.values(activatedClusters)[0],
   }));
-
-  // 前端分页
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-  });
-
-  const getPaginatedData = () => {
-    const start = (pagination.current - 1) * pagination.pageSize;
-    const end = start + pagination.pageSize;
-    return data?.slice(start, end) || [];
-  };
-
-  const handlePageChange = debounce((page, pageSize) => {
-    setPagination({ current: page, pageSize });
-  });
 
   const promiseFn = useCallback(async () => {
 
@@ -177,26 +149,28 @@ export const NodeMigrationTable: React.FC = () => {
 
       <Table
         tableLayout="fixed"
-        dataSource={getPaginatedData()} // 使用分页后的数据
+        dataSource={data ?? []}
         loading={isLoading}
         pagination={{
-          ...pagination,
-          total: data?.length || 0, // 总数据量
           showSizeChanger: true,
-          onChange: (page, pageSize) => {
-            handlePageChange(page, pageSize);
-          },
+          pageSize: DEFAULT_PAGE_SIZE,
         }}
         rowKey="clusterId"
       >
         <Table.Column<MigrateNodeInfo>
           dataIndex="nodeName"
           title={tArgs(pTable("node"))}
+          sorter={(a, b) => compareNullableString(a.nodeName, b.nodeName)}
         />
         <Table.Column<MigrateNodeInfo>
           dataIndex="partitions"
           title={tArgs(pTable("partition"))}
           render={(_, r) => r.partitions.map((item) => item).join(", ")}
+          sorter={(a, b) => {
+            const aPartitions = a.partitions.length === 0 ? undefined : a.partitions.join(", ");
+            const bPartitions = b.partitions.length === 0 ? undefined : b.partitions.join(", ");
+            return compareNullableString(aPartitions, bPartitions);
+          }}
         />
         <Table.Column<MigrateNodeInfo>
           dataIndex="nodeStatus"
@@ -227,6 +201,7 @@ export const NodeMigrationTable: React.FC = () => {
               {DisplayedStatusI18nTexts[r.nodeStatus]}
             </Tag>
           )}
+          sorter={(a, b) => compareNullableNumber(a.nodeStatus, b.nodeStatus)}
         />
         <Table.Column<MigrateNodeInfo>
           title={tArgs(pTable("operation"))}

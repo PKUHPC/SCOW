@@ -1,16 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import { compareDateTime, formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Button, DatePicker, Form, Input, Table } from "antd";
@@ -168,7 +157,6 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
     return [...account, ...tenant, ...common, ...ipAndOperator, ...comment];
   }, [searchType, t]);
 
-
   return (
     <div>
       <FilterFormContainer>
@@ -257,38 +245,67 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
       >
         {
           searchType === SearchType.account
-            ? <Table.Column dataIndex="accountName" title={t(pCommon("account"))} />
+            ? (
+              <Table.Column<TableProps>
+                dataIndex="accountName"
+                title={t(pCommon("account"))}
+                sorter={(a, b) => compareNullableString(a.accountName, b.accountName)}
+              />
+            )
             : undefined
         }
         {
           searchType === SearchType.tenant
-            ? <Table.Column dataIndex="tenantName" title={t(pCommon("tenant"))} />
+            ? (
+              <Table.Column<TableProps>
+                dataIndex="tenantName"
+                title={t(pCommon("tenant"))}
+                sorter={(a, b) => compareNullableString(a.tenantName, b.tenantName)}
+              />
+            )
             : undefined
         }
-        <Table.Column dataIndex="time" title={t(p("paymentDate"))} width="13.5%" render={(v) => formatDateTime(v)} />
-        <Table.Column
+        <Table.Column<TableProps>
+          dataIndex="time"
+          title={t(p("paymentDate"))}
+          width="13.5%"
+          render={(v) => formatDateTime(v)}
+          sorter={(a, b) => compareDateTime(a.time, b.time)}
+        />
+        <Table.Column<TableProps>
           dataIndex="amount"
           title={t(p("paymentAmount"))}
           width="10%"
-          render={(v) => moneyNumberToString(v) }
+          render={(v) => moneyNumberToString(v)}
+          sorter={(a, b) => compareNullableNumber(a.amount, b.amount)}
         />
-        <Table.Column
+        <Table.Column<TableProps>
           dataIndex="type"
           title={t(pCommon("type"))}
           width="15%"
+          sorter={(a, b) => a.type.localeCompare(b.type)}
         />
         {
           searchType !== SearchType.selfAccount ? (
             <>
-              <Table.Column dataIndex="ipAddress" title={t(p("ipAddress"))} />
-              <Table.Column dataIndex="operatorId" title={t(p("operatorId"))} />
+              <Table.Column<TableProps>
+                dataIndex="ipAddress"
+                title={t(p("ipAddress"))}
+                sorter={(a, b) => compareNullableString(a.ipAddress, b.ipAddress)}
+              />
+              <Table.Column<TableProps>
+                dataIndex="operatorId"
+                title={t(p("operatorId"))}
+                sorter={(a, b) => compareNullableString(a.operatorId, b.operatorId)}
+              />
             </>
           ) : undefined
         }
-        <Table.Column
+        <Table.Column<TableProps>
           dataIndex="comment"
           title={t(pCommon("comment"))}
           width="20%"
+          sorter={(a, b) => compareNullableString(a.comment, b.comment)}
         />
       </Table>
     </div>

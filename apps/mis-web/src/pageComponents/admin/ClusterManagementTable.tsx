@@ -1,18 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { ClusterActivationStatus } from "@scow/config/build/type";
-import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
+import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Table, Tag } from "antd";
 import React, { useMemo, useState } from "react";
@@ -75,6 +65,19 @@ export const ClusterManagementTable: React.FC<Props> = ({
 
   }, [data, query]);
 
+  const getStatusWeight = (r: CombinedClusterInfo): number => {
+  // 连接错误
+    if (r.connectionStatus === ClusterConnectionStatus.ERROR) {
+      return 0;
+    }
+    // 已停用
+    if (r.activationStatus === ClusterActivationStatus.DEACTIVATED) {
+      return 1;
+    }
+    // 正常
+    return 2;
+  };
+
 
   return (
     <div>
@@ -102,7 +105,10 @@ export const ClusterManagementTable: React.FC<Props> = ({
         tableLayout="fixed"
         dataSource={filteredData}
         loading={isLoading}
-        pagination={false}
+        pagination={{
+          showSizeChanger: true,
+          defaultPageSize: DEFAULT_PAGE_SIZE,
+        }}
         rowKey="clusterId"
         scroll={{ x: true }}
       >
@@ -114,19 +120,29 @@ export const ClusterManagementTable: React.FC<Props> = ({
             const clusterName = publicConfigClusters[r.clusterId].name;
             return getI18nConfigCurrentText(clusterName ?? r.clusterId, languageId);
           }}
+          sorter={(a, b) => {
+            const clusterA =
+              getI18nConfigCurrentText(publicConfigClusters[a.clusterId].name ?? a.clusterId, languageId);
+            const clusterB =
+              getI18nConfigCurrentText(publicConfigClusters[b.clusterId].name ?? b.clusterId, languageId);
+            return compareNullableString(clusterA, clusterB);
+          }}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalNodeCount"
           title={tArgs(p("table.nodesCount"))}
+          sorter={(a, b) => compareNullableNumber(a.totalNodeCount, b.totalNodeCount)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalCpuCoreCount"
           title={tArgs(p("table.cpusCount"))}
+          sorter={(a, b) => compareNullableNumber(a.totalCpuCoreCount, b.totalCpuCoreCount)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalGpuCount"
           width="10%"
           title={tArgs(p("table.gpusCount"))}
+          sorter={(a, b) => compareNullableNumber(a.totalGpuCount, b.totalGpuCount)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalMemMb"
@@ -135,6 +151,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
           render={(_, r) => {
             return `${r.totalMemMb} MB`;
           }}
+          sorter={(a, b) => compareNullableNumber(a.totalMemMb, b.totalMemMb)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="connectionStatus"
@@ -148,6 +165,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
                 <Tag color="green">{tArgs(p("table.normalState"))}</Tag>
             )
           )}
+          sorter={(a, b) => compareNullableNumber(getStatusWeight(a), getStatusWeight(b))}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="operatorId"
@@ -156,17 +174,20 @@ export const ClusterManagementTable: React.FC<Props> = ({
           render={(_, r) => {
             return r.operatorId ? `${r.operatorName}（ID: ${r.operatorId}）` : "";
           }}
+          sorter={(a, b) => compareNullableString(a.operatorId, b.operatorId)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="updateTime"
           title={tArgs(p("table.lastOperatedTime"))}
           width="15%"
           render={(_, r) => formatDateTime(r.updateTime)}
+          sorter={(a, b) => compareDateTime(a.updateTime, b.updateTime)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="deactivationComment"
           ellipsis
           title={tArgs(p("table.comment"))}
+          sorter={(a, b) => compareNullableString(a.deactivationComment, b.deactivationComment)}
         />
         <Table.Column<CombinedClusterInfo>
           title={tArgs(p("table.operation"))}

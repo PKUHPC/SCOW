@@ -128,6 +128,7 @@ export const getEntryLogoPath = (item: Entry, apps: AppWithCluster) => {
   return undefined;
 };
 
+// 升序或降序时，undefined始终排在后面
 export const compareWithUndefined = <T extends number | string | undefined>
 (a: T, b: T, sortOrder?: SortOrder): number => {
   if (a === undefined && b === undefined) {

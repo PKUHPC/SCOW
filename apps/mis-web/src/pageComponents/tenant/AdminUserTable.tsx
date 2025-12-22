@@ -1,4 +1,5 @@
 
+import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Static } from "@sinclair/typebox";
 import { App, Button, Divider, Form, Input, Space, Table } from "antd";
@@ -244,11 +245,17 @@ export const AdminUserTable: React.FC<Props> = ({
           title={t(pCommon("phone"))}
           width={200}
           render={(_, r) => r.phone ?? ""}
+          sorter={(a, b) => compareNullableString(a.phone, b.phone)}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "phone" ? currentSortInfo.order : null}
         />
         <Table.Column<FullUserInfo>
           dataIndex="organization"
           title={t(pCommon("organization"))}
           render={(_, r) => r.organization ?? ""}
+          sorter={(a, b) => compareNullableString(a.organization, b.organization)}
+          sortDirections={["ascend", "descend"]}
+          sortOrder={currentSortInfo.field === "organization" ? currentSortInfo.order : null}
         />
         <Table.Column<FullUserInfo>
           dataIndex="tenantRoles"

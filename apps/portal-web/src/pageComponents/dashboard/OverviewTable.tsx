@@ -1,5 +1,6 @@
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
 import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
+import { compareWithUndefined } from "@scow/lib-web/build/utils/dashboard";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { PartitionInfo, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
@@ -8,7 +9,6 @@ import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterOverview, PlatformOverview } from "src/models/cluster";
 import { InfoPanes } from "src/pageComponents/dashboard/InfoPanes";
 import { Cluster } from "src/utils/cluster";
-import { compareWithUndefined } from "src/utils/dashboard";
 import { styled } from "styled-components";
 
 import { CustomProgress } from "./CustomProgress";

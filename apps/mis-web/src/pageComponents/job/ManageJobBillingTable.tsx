@@ -1,5 +1,6 @@
 import { MinusCircleOutlined, PlusCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { numberToMoney } from "@scow/lib-decimal";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
 import { App, Button, Form, Input, InputNumber, Modal, Popover, Select, Space, Table, Tooltip } from "antd";
@@ -91,8 +92,12 @@ export const ManageJobBillingTable: React.FC<Props> = ({
               hideOnSinglePage: true,
             }}
           >
-            <Table.Column title={t(p("itemId"))} dataIndex={["priceItem", "itemId"]} />
-            <Table.Column
+            <Table.Column<BillingItemType>
+              title={t(p("itemId"))}
+              dataIndex={["priceItem", "itemId"]}
+              sorter={(a, b) => compareNullableString(a.priceItem?.itemId, b.priceItem?.itemId)}
+            />
+            <Table.Column<BillingItemType>
               title={AmountStrategyText}
               dataIndex={["priceItem", "amountStrategy"]}
               render={(value) => {
@@ -100,11 +105,17 @@ export const ManageJobBillingTable: React.FC<Props> = ({
                   <AmountStrategyDescriptionsItem isColContent={true} amount={value} />
                 );
               }}
+              sorter={(a, b) => compareNullableString(a.priceItem?.amountStrategy, b.priceItem?.amountStrategy)}
             />
-            <Table.Column
+            <Table.Column<BillingItemType>
               title={t(p("price"))}
               dataIndex={["priceItem", "price"]}
               render={(value) => moneyToString(value)}
+              sorter={(a, b) => {
+                const priceA = a.priceItem?.price ? moneyToString(a.priceItem?.price) : undefined;
+                const priceB = b.priceItem?.price ? moneyToString(b.priceItem?.price) : undefined;
+                return compareNullableNumber(priceA, priceB);
+              }}
             />
             <Table.Column title={t(pCommon("status"))} render={(_) => t(p("abandon"))} />
           </Table>
@@ -132,16 +143,33 @@ export const ManageJobBillingTable: React.FC<Props> = ({
         </Space>
       )}
       >
-        <Table.Column
+        <Table.Column<BillingItemType>
           title={t(pCommon("cluster"))}
           dataIndex={"cluster"}
           render={(cluster) => getClusterName(cluster, languageId, publicConfigClusters)}
+          sorter={(a, b) => {
+            const clusterA = getClusterName(a.cluster, languageId, publicConfigClusters);
+            const clusterB = getClusterName(b.cluster, languageId, publicConfigClusters);
+            return compareNullableString(clusterA, clusterB);
+          }}
         />
-        <Table.Column title={t(pCommon("partition"))} dataIndex={"partition"} />
-        <Table.Column title="QOS" dataIndex={"qos"} />
+        <Table.Column<BillingItemType>
+          title={t(pCommon("partition"))}
+          dataIndex={"partition"}
+          sorter={(a, b) => compareNullableString(a.partition, b.partition)}
+        />
+        <Table.Column<BillingItemType>
+          title="QOS"
+          dataIndex={"qos"}
+          sorter={(a, b) => compareNullableString(a.qos, b.qos)}
+        />
       </Table.ColumnGroup>
-      <Table.Column title={t(p("itemId"))} dataIndex={["priceItem", "itemId"]} />
-      <Table.Column
+      <Table.Column<BillingItemType>
+        title={t(p("itemId"))}
+        dataIndex={["priceItem", "itemId"]}
+        sorter={(a, b) => compareNullableString(a.priceItem?.itemId, b.priceItem?.itemId)}
+      />
+      <Table.Column<BillingItemType>
         title={(
           <AmountStrategyDescriptionsItem isColTitle={true} />
         )}
@@ -154,16 +182,27 @@ export const ManageJobBillingTable: React.FC<Props> = ({
               ) : undefined
           );
         }}
+        sorter={(a, b) => compareNullableString(a.priceItem?.amountStrategy, b.priceItem?.amountStrategy)}
       />
-      <Table.Column
+      <Table.Column<BillingItemType>
         title={t(p("price"))}
         dataIndex={["priceItem", "price"]}
         render={(value) => value ? moneyToString(value) : undefined}
+        sorter={(a, b) => {
+          const priceA = a.priceItem?.price ? moneyToString(a.priceItem?.price) : undefined;
+          const priceB = b.priceItem?.price ? moneyToString(b.priceItem?.price) : undefined;
+          return compareNullableNumber(priceA, priceB);
+        }}
       />
-      <Table.Column
+      <Table.Column<BillingItemType>
         title={t(pCommon("status"))}
         render={(record) =>
           record.priceItem ? t(p("executing")) : t(p("unset"))}
+        sorter={(a, b) => {
+          const statusA = a.priceItem ? t(p("executing")) : t(p("unset"));
+          const statusB = b.priceItem ? t(p("executing")) : t(p("unset"));
+          return compareNullableString(statusA, statusB);
+        }}
       />
       <Table.Column<BillingItemType>
         title={t(pCommon("set"))}

@@ -1,3 +1,4 @@
+import { compareNullableFileMode } from "@scow/lib-web/build/utils/compareNullableValue";
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber } from "@scow/lib-web/build/utils/math";
 import { Table, TableProps, Tooltip } from "antd";
@@ -98,6 +99,8 @@ export const FileTable: React.FC<Props> = (
       dataIndex: "mode",
       title: t(p("mode")),
       render: (mode: number | undefined) => mode === undefined ? "" : nodeModeToString(mode),
+      // 对权限进行排序
+      sorter: (a, b) => compareNullableFileMode(a.mode, b.mode),
     },
     ...(actionRender ? [{
       key: "action",

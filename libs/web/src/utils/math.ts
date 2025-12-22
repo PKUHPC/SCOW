@@ -30,14 +30,25 @@ export function compareTimeAsSeconds(time1: string,
   // 将时间字符串转换为秒数
   function timeToSeconds(time: string): number {
     let days = 0;
+    const timePart = time?.trim();
+    if (!timePart) {
+      return Number.NEGATIVE_INFINITY;
+    }
     let hours = 0, minutes = 0, seconds = 0;
     // 检查是否有天数部分
     if (time.includes("-")) {
-      const parts = time.split("-");
+      const parts = timePart.split("-");
       days = parseInt(parts[0]);
       [hours, minutes, seconds ] = parts[1].split(separatorDays).map(Number);
     } else {
-      [hours, minutes, seconds] = time.split(separatorHours).map(Number);
+      const segments = timePart.split(separatorHours).map(Number);
+      if (segments.length === 3) {
+        [ hours, minutes, seconds ] = segments;
+      } else if (segments.length === 2) {
+        [ minutes, seconds ] = segments;
+      } else {
+        seconds = segments[0];
+      }
     }
     return (days * 86400) + (hours * 3600) + (minutes * 60) + seconds;
   }

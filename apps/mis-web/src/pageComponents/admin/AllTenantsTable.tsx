@@ -1,15 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { moneyToNumber } from "@scow/lib-decimal";
+import { compareNullableDateTime, compareNullableNumber,
+  compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
@@ -63,25 +54,31 @@ const TenantInfoTable: React.FC<TenantInfoTableProps> = ({
       dataIndex: "tenantName",
       title: t(p("tenantName")),
       width: "35%",
+      sorter: (a, b) => compareNullableString(a.tenantName, b.tenantName),
     },
     {
       dataIndex: "userCount",
       title: t(pCommon("userCount")),
+      sorter: (a, b) => compareNullableNumber(a.userCount, b.userCount),
     },
     {
       dataIndex: "accountCount",
       title: t(p("accountCount")),
+      sorter: (a, b) => compareNullableNumber(a.accountCount, b.accountCount),
     },
     {
       dataIndex: "balance",
       title: t(pCommon("balance")),
       render: (balance: Money) => moneyToString(balance),
+      sorter: (a, b) => compareNullableNumber(a.balance ? moneyToNumber(a.balance) : undefined,
+        b.balance ? moneyToNumber(b.balance) : undefined),
 
     },
     {
       dataIndex: "createTime",
       title: t(pCommon("createTime")),
       render: (time: string) => formatDateTime(time),
+      sorter: (a, b) => compareNullableDateTime(a.createTime, b.createTime),
     },
   ];
 

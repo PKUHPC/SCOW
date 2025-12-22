@@ -1,15 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString, useQuerystring } from "@scow/lib-web/build/utils/querystring";
 import { ClusterAccountInfo, ImportUsersData, UserInAccount } from "@scow/protos/build/server/admin";
@@ -198,7 +187,11 @@ export const ImportUsersTable: React.FC = () => {
           rowKey="accountName"
           bordered
         >
-          <Table.Column dataIndex="accountName" title={t(pCommon("accountName"))} />
+          <Table.Column<ClusterAccountInfo>
+            dataIndex="accountName"
+            title={t(pCommon("accountName"))}
+            sorter={(a, b) => compareNullableString(a.accountName, b.accountName)}
+          />
           <Table.Column<ClusterAccountInfo>
             dataIndex="owner"
             title={t(pCommon("owner"))}
@@ -221,7 +214,6 @@ export const ImportUsersTable: React.FC = () => {
                 : r.owner;
             }
             }
-
           />
           <Table.Column<ClusterAccountInfo>
             dataIndex="importStatus"
@@ -235,6 +227,7 @@ export const ImportUsersTable: React.FC = () => {
                 return t(p("notImport"));
               }
             }}
+            sorter={(a, b) => compareNullableNumber(a.importStatus, b.importStatus)}
           />
           <Table.Column<ClusterAccountInfo>
             dataIndex="users"

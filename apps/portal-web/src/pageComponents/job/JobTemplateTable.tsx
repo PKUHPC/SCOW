@@ -1,3 +1,4 @@
+import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobTemplateInfo } from "@scow/protos/build/portal/job";
 import { App, Button, Form, Input, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
@@ -167,11 +168,13 @@ const InfoTable: React.FC<InfoTableProps> = ({
     {
       dataIndex: "jobName",
       title: t(p("templateName")),
+      sorter: (a, b) => compareNullableString(a.jobName, b.jobName),
     },
     {
       dataIndex: "comment",
       title: t(p("comment")),
       width:"40%",
+      sorter: (a, b) => compareNullableString(a.comment, b.comment),
     },
     {
       dataIndex: "action",

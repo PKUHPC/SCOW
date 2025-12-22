@@ -1,4 +1,6 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import { compareNumber } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
@@ -95,12 +97,21 @@ export const UserTable: React.FC<Props> = ({
         defaultPageSize: DEFAULT_PAGE_SIZE,
       }}
     >
-      <Table.Column dataIndex="userId" title={t(pCommon("userId"))} />
-      <Table.Column dataIndex="name" title={t(pCommon("name"))} />
+      <Table.Column<AccountUserInfo>
+        dataIndex="userId"
+        title={t(pCommon("userId"))}
+        sorter={(a, b) => compareNullableString(a.userId, b.userId)}
+      />
+      <Table.Column<AccountUserInfo>
+        dataIndex="name"
+        title={t(pCommon("name"))}
+        sorter={(a, b) => compareNullableString(a.name, b.name)}
+      />
       <Table.Column<AccountUserInfo>
         dataIndex="role"
         title={t(p("role"))}
         render={(r: UserRole) => roleTags[r]}
+        sorter={(a, b) => compareNumber(a.role, b.role)}
       />
       <Table.Column<AccountUserInfo>
         dataIndex="displayedUserState"
@@ -124,6 +135,7 @@ export const UserTable: React.FC<Props> = ({
           </Space>
         )}
         render={(s) => DisplayedUserStateTexts[s]}
+        sorter={(a, b) => compareNullableNumber(a.status, b.status)}
       />
       <Table.Column<AccountUserInfo>
         dataIndex="jobChargeLimit"
