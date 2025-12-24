@@ -18,15 +18,16 @@ import { Cluster } from "@scow/config/build/type";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Card, Col, Row } from "antd";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
+import { PlatformOverview,SummaryClusterInfo } from "src/models/Cluster";
 
 import JobInfo from "./NodeRange";
 
 interface Props {
-  selectItem: ClusterOverview | PlatformOverview | undefined;
+  selectItem: SummaryClusterInfo | PlatformOverview | undefined;
   loading: boolean;
   activeTabKey: string;
   onTabChange: (key: string) => void;
+  currentClusters: Cluster[];
   successfulClusters?: Cluster[] | undefined
 }
 
@@ -54,7 +55,8 @@ const colors = {
   queuing:"#A58E74",
 };
 
-export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, onTabChange, successfulClusters }) => {
+export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
+  onTabChange, currentClusters, successfulClusters }) => {
 
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
@@ -64,7 +66,15 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
 
   let clusterCardsList;
   // card的每一项
-  if ((successfulClusters?.length ?? 0) > 1) {
+  if (successfulClusters?.length === 1) {
+    clusterCardsList = successfulClusters?.map((x) => ({
+      key:x.id,
+      tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
+    })) ?? [];
+    if (clusterCardsList?.[0]?.key) {
+      onTabChange(clusterCardsList[0].key);
+    }
+  } else {
     clusterCardsList = [
       {
         key:"platformOverview",
@@ -82,17 +92,11 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
           {t(p("platformOverview"))}
         </div>,
       },
-      ...successfulClusters?.map((x) => ({
+      ...((successfulClusters?.length ?? 0) > 1 ? successfulClusters : currentClusters)?.map((x) => ({
         key:x.id,
         tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
       })) ?? [],
     ];
-  } else {
-    clusterCardsList =
-      successfulClusters?.map((x) => ({
-        key:x.id,
-        tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
-      })) ?? [];
   }
 
   // 初始化单集群默认选中项，避免 render 阶段 setState
@@ -120,7 +124,6 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
     runningGpuCount: 0,
     idleGpuCount: 0,
     notAvailableGpuCount: 0,
-    jobCount: 0,
     runningJobCount: 0,
     pendingJobCount: 0,
   };
@@ -140,7 +143,8 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
               tag={{ itemName:t(p("nodeCount")), num:nodeCount, subName:t(p("total")) }}
               paneData={ [{ itemName:t(p("running")), num:runningNodeCount, color:colors.nodeUtilizationRunning },
                 { itemName:t(p("idle")), num:idleNodeCount, color:colors.nodeUtilizationAvailable },
-                { itemName:t(p("notAvailable")), num:notAvailableNodeCount, color:colors.nodeUtilizationNotavailable }]}
+                { itemName:t(p("notAvailable")), num:notAvailableNodeCount || 0,
+                  color:colors.nodeUtilizationNotavailable }]}
             ></InfoPane>
           </InfoPaneContainer>
         </Col>
@@ -152,7 +156,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
               paneData={[
                 { itemName:t(p("running")), num:runningCpuCount, color:colors.cpuRunning },
                 { itemName:t(p("idle")), num:idleCpuCount, color:colors.cpuAvailable },
-                { itemName:t(p("notAvailable")), num:notAvailableCpuCount, color:colors.cpunotAvailable },
+                { itemName:t(p("notAvailable")), num:notAvailableCpuCount || 0, color:colors.cpunotAvailable },
               ]}
             ></InfoPane>
           </InfoPaneContainer>
@@ -166,7 +170,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, 
                 paneData={[
                   { itemName: t(p("running")), num: runningGpuCount, color: colors.gpuRunning },
                   { itemName: t(p("idle")), num: idleGpuCount, color: colors.gpuAvailable },
-                  { itemName: t(p("notAvailable")), num: notAvailableGpuCount, color: colors.gpunotAvailable },
+                  { itemName: t(p("notAvailable")), num: notAvailableGpuCount || 0, color: colors.gpunotAvailable },
                 ]}
               ></InfoPane>
             </InfoPaneContainer>

@@ -441,6 +441,46 @@ export const mockApi: MockApi<typeof api> = {
       },
     }],
   }),
+
+  getAllSummaryClustersInfo: async () => ({
+    results: [
+      {
+        clusterId: "dev-k8s-c",
+        nodeCount: 3,
+        runningNodeCount: 2,
+        idleNodeCount: 1,
+        notAvailableNodeCount: 0,
+        cpuCoreCount: 24,
+        runningCpuCount: 0,
+        idleCpuCount: 24,
+        notAvailableCpuCount: 0,
+        gpuCoreCount: 1,
+        runningGpuCount: 0,
+        idleGpuCount: 1,
+        notAvailableGpuCount: 0,
+        jobCount: 0,
+        runningJobCount: 2,
+        pendingJobCount: 0,
+        nodeUsage: 10.00,
+        cpuUsage: 10.00,
+        gpuUsage: 10.00,
+        partitions: [
+          {
+            partitionName: "CPU8C14G",
+            nodeCount: 2,
+            nodeUsage: 20.00,
+            cpuCoreCount: 2,
+            cpuUsage: 20.00,
+            gpuCoreCount: 2,
+            gpuUsage: 20.00,
+            pendingJobCount: 0,
+            partitionStatus: 1,
+          },
+        ],
+      },
+    ],
+  }),
+
   getClustersRuntimeInfo: async () => ({
     results: [{
       clusterId: "hpc01",

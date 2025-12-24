@@ -1,12 +1,12 @@
 import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { compareWithUndefined } from "@scow/lib-web/build/utils/dashboard";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { PartitionInfo, PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
+import { SummaryPartitionInfo,SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
-import { ClusterOverview, PlatformOverview } from "src/models/Cluster";
+import { PlatformOverview, SummaryClusterInfo } from "src/models/Cluster";
 import { Cluster } from "src/utils/cluster";
 import { styled } from "styled-components";
 
@@ -14,11 +14,8 @@ import { CustomProgress } from "./CustomProgress";
 import { DashboardSection } from "./DashboardSection";
 import { InfoPanes } from "./InfoPanes";
 
-export interface ClusterInfo extends PartitionInfo {
+export interface ClusterInfo extends SummaryPartitionInfo {
   clusterId: string;
-  cpuUsage: string;
-  nodeUsage: string;
-  gpuUsage?: string;
 }
 
 interface Props {
@@ -26,20 +23,22 @@ interface Props {
   failedClusters: Cluster[];
   currentClusters: Cluster[];
   isLoading: boolean;
-  clustersOverview: ClusterOverview[];
+  summaryClusterInfo: SummaryClusterInfo[];
   platformOverview?: PlatformOverview | undefined;
-  successfulClusters?: Cluster[] | undefined
+  successfulClusters?: Cluster[] | undefined;
 }
 
 interface InfoProps {
   id: number;
-  partitionName: string;
+  partitionName?: string;
   nodeCount: number;
+  cpuCoreCount: number,
+  gpuCoreCount: number,
   pendingJobCount: number;
-  cpuUsage: string;
-  gpuUsage?: string;
-  nodeUsage: string;
-  partitionStatus: PartitionInfo_PartitionStatus;
+  cpuUsage: number;
+  gpuUsage?: number;
+  nodeUsage: number;
+  partitionStatus?: SummaryPartitionInfo_PartitionStatus;
 }
 
 interface TableProps {
@@ -82,7 +81,7 @@ const Container = styled.div`
 `;
 
 export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
-  currentClusters, isLoading, clustersOverview, platformOverview, successfulClusters }) => {
+  currentClusters, isLoading, summaryClusterInfo, platformOverview, successfulClusters }) => {
 
   const { dark } = useDarkMode();
   const languageId = useI18n().currentLanguage.id;
@@ -104,18 +103,18 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
     if (activeTabKey === "platformOverview" || !selectItem?.clusterId) {
       return undefined;
     };
-    const view = clustersOverview.find(
-      (overview) =>
-        overview.clusterId === activeTabKey,
+    const view = summaryClusterInfo.find(
+      (clusterInfo) =>
+        clusterInfo.clusterId === activeTabKey,
     );
     return view;
-  }, [activeTabKey, clustersOverview, languageId, selectItem]);
+  }, [activeTabKey, summaryClusterInfo, languageId, selectItem]);
 
   // 当activekey改变时表格数据显示的逻辑
   const filteredClusterInfo = useMemo(() => {
     if (activeTabKey === "platformOverview") {
       setSelectId(undefined);
-      return clustersOverview;
+      return summaryClusterInfo;
     }
     const info = clusterInfo.filter((info) => info.clusterId === activeTabKey);
     return info;
@@ -123,22 +122,19 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
 
   useEffect(() => {
     if (activeTabKey !== "platformOverview") {
-      const selectedInfo = clusterInfo.find((info) => info.clusterId === activeTabKey);
+      const selectedInfo = summaryClusterInfo.find((info) => info.clusterId === activeTabKey);
       if (selectedInfo) {
         setSelectId(selectedInfo.clusterId);
       }
     }
-  }, [activeTabKey, clusterInfo]);
+  }, [activeTabKey, summaryClusterInfo]);
 
-  const dataSource = (filteredClusterInfo.map((x, index) =>
+  const dataSource = (filteredClusterInfo?.map((x, index) =>
     ({
       clusterId: x.clusterId,
       info: {
         ...x,
         id: index,
-        cpuUsage: ((x.runningCpuCount / x.cpuCoreCount) * 100).toFixed(2),
-        nodeUsage: ((x.runningNodeCount / x.nodeCount) * 100).toFixed(2),
-        gpuUsage: x.gpuCoreCount === 0 ? undefined : ((x.runningGpuCount / x.gpuCoreCount) * 100).toFixed(2),
       },
     })) as TableProps[]);
 
@@ -155,6 +151,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           loading={isLoading}
           activeTabKey={activeTabKey}
           onTabChange={setActiveTabKey}
+          currentClusters={currentClusters}
           successfulClusters={successfulClusters}
         />
         <Table
@@ -214,7 +211,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                     compareWithUndefined(a.info?.nodeUsage, b.info?.nodeUsage, sortOrder)}
                   hidden={clusterInfo.every((item) => item.nodeUsage === undefined)}
                   render={(_, r) => (
-                    (r.info?.nodeUsage !== undefined && !isNaN(parseFloat(r.info.nodeUsage))) ? (
+                    (r.info?.nodeCount && r.info?.nodeUsage !== undefined && !isNaN(r.info.nodeUsage)) ? (
                       <div>
                         <CustomProgress
                           percent={Math.min(Number(Number(r.info?.nodeUsage).toFixed(2) ?? 0), 100)}
@@ -232,7 +229,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                   title={t(p("cpuUsage"))}
                   sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.cpuUsage, b.info?.cpuUsage, sortOrder)}
                   render={(_, r) => (
-                    (r.info?.cpuUsage !== undefined && !isNaN(parseFloat(r.info?.cpuUsage))) ? (
+                    (r.info?.cpuCoreCount && r.info?.cpuUsage !== undefined && !isNaN(r.info?.cpuUsage)) ? (
                       <div>
                         <CustomProgress
                           percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
@@ -250,7 +247,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
                   title={t(p("gpuUsage"))}
                   sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.gpuUsage, b.info?.gpuUsage, sortOrder) }
                   render={(_, r) => (
-                    (r.info?.gpuUsage !== undefined && !isNaN(parseFloat(r.info?.gpuUsage))) ? (
+                    (r.info?.gpuCoreCount && r.info?.gpuUsage !== undefined && !isNaN(r.info?.gpuUsage)) ? (
                       <div>
                         <CustomProgress
                           percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
@@ -279,8 +276,8 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             hidden={activeTabKey === "platformOverview"}
             sorter={(a, b, sortOrder) =>
               compareWithUndefined(a.info?.partitionStatus, b.info?.partitionStatus, sortOrder)}
-            render={(_, r) => r.info?.partitionStatus === 0 ?
-              <Tag color="red">{t(p("notAvailable"))}</Tag> : <Tag color="green">{t(p("available"))}</Tag>
+            render={(_, r) => r.info?.partitionStatus === 2 ?
+              <Tag color="green">{t(p("available"))}</Tag> : <Tag color="red">{t(p("notAvailable"))}</Tag>
             }
           />
         </Table>

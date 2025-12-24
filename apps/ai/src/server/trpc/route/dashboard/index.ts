@@ -1,10 +1,14 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
-import { PartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
+import { getCommonConfig } from "@scow/config/src/common";
+import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
+import { PartitionInfo_PartitionStatus, SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { NodeInfo_NodeState } from "@scow/protos/build/portal/config";
+import { AccountState } from "@scow/protos/build/server/user";
 import { TRPCError } from "@trpc/server";
 import { promises as fsPromises } from "fs";
 import path from "path";
+import { config } from "src/server/config/env";
 import { router } from "src/server/trpc/def";
 import { authProcedure } from "src/server/trpc/procedure/base";
 import { getClusterAppConfigs } from "src/server/utils/app";
@@ -43,6 +47,42 @@ const ClusterInfoSchema = z.object({
   partitions: z.array(PartitionSchema), // 分区列表
 });
 
+// 定义汇总分区信息
+export const SummaryPartitionSchema = z.object({
+  partitionName: z.string(),
+  nodeCount: z.number(),
+  nodeUsage: z.number(),
+  cpuCoreCount: z.optional(z.number()),
+  cpuUsage: z.number(),
+  gpuCoreCount: z.optional(z.number()),
+  gpuUsage: z.number(),
+  pendingJobCount: z.number(),
+  partitionStatus: z.nativeEnum(SummaryPartitionInfo_PartitionStatus),
+});
+
+// 定义汇总集群信息
+const SummaryClusterInfoSchema = z.array(z.object({
+  clusterId: z.string(),
+  nodeCount: z.number(),
+  runningNodeCount: z.number(),
+  idleNodeCount: z.number(),
+  notAvailableNodeCount: z.optional(z.number()),
+  cpuCoreCount: z.number(),
+  runningCpuCount: z.number(),
+  idleCpuCount: z.number(),
+  notAvailableCpuCount: z.optional(z.number()),
+  gpuCoreCount: z.number(),
+  runningGpuCount: z.number(),
+  idleGpuCount: z.number(),
+  notAvailableGpuCount: z.optional(z.number()),
+  runningJobCount: z.number(),
+  pendingJobCount: z.number(),
+  nodeUsage: z.number(),
+  cpuUsage: z.number(),
+  gpuUsage: z.number(),
+  partitions: z.array(SummaryPartitionSchema),
+}));
+
 export const NodeInfoSchema = z.object({
   nodeName: z.string(),
   partitions: z.array(z.string()),
@@ -72,6 +112,10 @@ const ClusterNodesInfoInput = z.object({
 const AllClustersInfoInput = z.object({
   clusterIds: z.array(z.string()),
   isFullDisplayMode: z.boolean().optional(),
+});
+
+const AllSummaryClustersInfoInput = AllClustersInfoInput.extend({
+  userId: z.string(),
 });
 
 const AllClustersInfoSchema = z.object({
@@ -291,6 +335,78 @@ export const dashboard = router({
         .filter((cluster) => cluster !== null);
 
       return { clusters };
+    }),
+
+  // 批量获取多个集群的整合信息
+  getAllSummaryClustersInfo: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/dashboard/summaryClusters",
+        tags: ["dashboard"],
+        summary: "Get all clusters summary info",
+      },
+    })
+    .input(AllSummaryClustersInfoInput)
+    .output(SummaryClusterInfoSchema)
+    .query(async ({ input }) => {
+      const { clusterIds, isFullDisplayMode, userId } = input;
+
+      const commonConfig = getCommonConfig();
+
+      // 如果没有部署管理系统或者资源管理系统为不可用，返回空
+      if (!config.MIS_SERVER_URL || !commonConfig.scowResource?.enabled) {
+        return [];
+      }
+
+      const userAffliction
+             = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+
+      const accountNames = userAffliction?.affiliations.filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
+        .map((a) => (a.accountName)) || [];
+
+      const results = await Promise.allSettled(
+        clusterIds.map(async (clusterId) => {
+          const client = getAdapterClient(clusterId);
+          if (!client) {
+            throw new Error(`Cluster ${clusterId} is not found`);
+          }
+
+          const reply = await asyncClientCall(client.config, "getSummaryClusterInfo", {
+            accountNames,
+          });
+
+          if (isFullDisplayMode || isFullDisplayMode === undefined) {
+            return { ...reply, clusterId };
+          } else {
+            return {
+              ...reply,
+              clusterId,
+              notAvailableNodeCount: undefined,
+              notAvailableCpuCount: undefined,
+              notAvailableGpuCount: undefined,
+              partitions: reply.partitions.map((partition) => ({
+                ...partition,
+              })),
+            };
+          }
+        }),
+      );
+
+      const clusters = results
+        .map((result, index) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          } else {
+            const clusterId = clusterIds[index];
+            const errorMessage = result.reason?.message || "Unknown error";
+            console.error(`Failed to get cluster info for ${clusterId}: ${errorMessage}`);
+            return null;
+          }
+        })
+        .filter((cluster) => cluster !== null);
+
+      return clusters;
     }),
 
   // 批量获取多个集群的节点信息

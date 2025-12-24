@@ -57,6 +57,54 @@ message GetClusterInfoResponse {
   uint32 pending_job_count = 17;
 }
 
+message SummaryPartitionInfo {
+  enum PartitionStatus {
+    UNKNOWN = 0;
+    NOT_AVAILABLE = 1;
+    AVAILABLE = 2;
+  }
+
+  string partition_name = 1;
+  uint32 node_count = 2;
+  float node_usage = 3;
+  uint32 cpu_core_count =4;
+  float cpu_usage = 5;
+  uint32 gpu_core_count = 6;
+  float gpu_usage = 7;
+  uint32 pending_job_count = 8;
+  PartitionStatus partition_status = 9;
+}
+
+message GetSummaryClusterInfoRequest {
+  string cluster = 1;
+  repeated string account_names = 2;
+}
+
+message GetSummaryClusterInfoResponse {
+  string cluster_name = 1;
+  repeated SummaryPartitionInfo partitions = 2;
+  // 3-17 Newly added parameters
+  // only returns in version later than 1.7.0
+  uint32 node_count = 3;
+  uint32 running_node_count = 4;
+  uint32 idle_node_count = 5;
+  uint32 not_available_node_count = 6;
+  uint32 cpu_core_count =7;
+  uint32 running_cpu_count = 8;
+  uint32 idle_cpu_count = 9;
+  uint32 not_available_cpu_count = 10;
+  uint32 gpu_core_count = 11;
+  uint32 running_gpu_count = 12;
+  uint32 idle_gpu_count = 13;
+  uint32 not_available_gpu_count = 14;
+  uint32 running_job_count = 15;
+  uint32 pending_job_count = 16;
+
+  float node_usage = 17;
+  float cpu_usage = 18;
+  float gpu_usage = 19;
+}
+
 message NodeInfo {
   // deprecated message
   // use message NodeInfo from porots/common/config instead
@@ -102,6 +150,8 @@ message GetClusterNodesInfoResponse {
 service ConfigService {
 
   rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
+
+  rpc GetSummaryClusterInfo(GetSummaryClusterInfoRequest) returns (GetSummaryClusterInfoResponse);
 
   /**
    * Depracated Notice

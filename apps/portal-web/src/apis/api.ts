@@ -24,6 +24,7 @@ import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
 import type { GetAllClusterNodesInfoSchema } from "src/pages/api/dashboard/getAllClusterNodesInfo";
 import type { GetAllClustersInfoSchema } from "src/pages/api/dashboard/getAllClustersInfo";
+import type { GetAllSummaryClustersInfoSchema } from "src/pages/api/dashboard/getAllSummaryClustersInfo";
 import type { GetClusterRunningInfoSchema } from "src/pages/api/dashboard/getClusterInfo";
 import type { GetClusterNodesInfoSchema } from "src/pages/api/dashboard/getClusterNodesInfo";
 import type { GetQuickEntriesSchema } from "src/pages/api/dashboard/getQuickEntries";
@@ -90,6 +91,7 @@ export const api = {
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
   getClusterInfo: apiClient.fromTypeboxRoute<typeof GetClusterInfoSchema>("GET", "/api//cluster"),
   getAllClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetAllClusterNodesInfoSchema>("GET", "/api/dashboard/getAllClusterNodesInfo"),
+  getAllSummaryClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllSummaryClustersInfoSchema>("GET", "/api/dashboard/getAllSummaryClustersInfo"),
   getAllClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllClustersInfoSchema>("GET", "/api/dashboard/getAllClustersInfo"),
   getClusterRunningInfo: apiClient.fromTypeboxRoute<typeof GetClusterRunningInfoSchema>("GET", "/api/dashboard/getClusterInfo"),
   getClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterNodesInfoSchema>("GET", "/api/dashboard/getClusterNodesInfo"),

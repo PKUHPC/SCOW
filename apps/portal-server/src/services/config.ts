@@ -124,6 +124,27 @@ export const runtimeConfigServiceServer = plugin((server) => {
       return [reply];
     },
 
+    getSummaryClusterInfo: async ({ request, logger }) => {
+
+      const { accountNames, cluster } = request;
+
+      const reply = await callOnOne(
+        cluster,
+        logger,
+        async (client) => {
+          // 当前接口要求的最低调度器接口版本
+          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 4, patch: 0 };
+          // 检验调度器的API版本是否符合要求，不符合要求报错
+          await checkSchedulerApiVersion(client, minRequiredApiVersion);
+          return await asyncClientCall(client.config, "getSummaryClusterInfo", {
+            accountNames: accountNames || [],
+          });
+        },
+      );
+
+      return [reply];
+    },
+
     /**
     * Deprecated Notice
     * This API function getClusterNodesInfo has been deprecated.
