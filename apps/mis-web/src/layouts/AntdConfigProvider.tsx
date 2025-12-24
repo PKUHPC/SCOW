@@ -1,14 +1,16 @@
 import "dayjs/locale/zh-cn";
 
+import { generate } from "@ant-design/colors";
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
 import { PrimaryColor } from "@scow/config/build/ui";
 import { AntdConfigProvider as LibAntdConfigProvider } from "@scow/lib-web/build/layouts/AntdConfigProvider";
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
+import { darkGray,lightGray } from "@scow/lib-web/build/styles/constants";
 import { App, ConfigProvider, theme } from "antd";
 import { Locale } from "antd/lib/locale";
 import enUSlocale from "antd/locale/en_US";
 import zhCNlocale from "antd/locale/zh_CN";
-import React from "react";
+import React, { useMemo } from "react";
 import { useI18n } from "src/i18n";
 import { ThemeProvider } from "styled-components";
 
@@ -18,11 +20,28 @@ type Props = React.PropsWithChildren<{
   primaryColor: PrimaryColor;
 }>;
 
-const StyledComponentsThemeProvider: React.FC<Props> = ({ children }) => {
+type StyledThemeProviderProps = React.PropsWithChildren<{
+  color: string;
+  grayPalette: string[];
+}>;
+
+const StyledComponentsThemeProvider: React.FC<StyledThemeProviderProps> = ({ children, color, grayPalette }) => {
   const { token } = theme.useToken();
 
+  const primaryPalette = useMemo(
+    () => generate(color ?? token.colorPrimary),
+    [color, token.colorPrimary],
+  );
+  const styledTheme = useMemo(() => ({
+    token,
+    palette: {
+      primary: primaryPalette,
+      gray: grayPalette,
+    },
+  }), [grayPalette, primaryPalette, token]);
+
   return (
-    <ThemeProvider theme={{ token }}>
+    <ThemeProvider theme={styledTheme}>
       {children}
     </ThemeProvider>
   );
@@ -35,6 +54,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, lo
   const { dark } = useDarkMode();
   const { defaultColor, darkModeColor = defaultColor } = primaryColor; // 解构时设置默认值
   const currentPrimaryColor = dark ? darkModeColor : defaultColor;
+  const grayPalette = useMemo(() => (dark ? darkGray : lightGray), [dark]);
 
   const currentLangId = useI18n().currentLanguage.id;
   const localizedLang = currentLangId ? getAntdLocale(currentLangId) : getAntdLocale(locale);
@@ -46,7 +66,10 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, lo
         theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor },
           algorithm: dark ? theme.darkAlgorithm : undefined }}
       >
-        <StyledComponentsThemeProvider color={currentPrimaryColor} locale={locale} primaryColor={primaryColor}>
+        <StyledComponentsThemeProvider
+          color={currentPrimaryColor}
+          grayPalette={grayPalette}
+        >
           <App>
             {children}
           </App>
@@ -65,4 +88,3 @@ function getAntdLocale(langId: string): Locale {
       return enUSlocale;
   }
 }
-

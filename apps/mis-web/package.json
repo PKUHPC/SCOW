@@ -26,6 +26,7 @@
   "license": "Mulan PSL v2",
   "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
+    "@ant-design/colors": "7.2.0",
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
     "@bufbuild/protobuf": "2.10.0",
@@ -50,6 +51,7 @@
     "csv-stringify": "6.5.2",
     "d3-scale": "4.0.2",
     "dayjs": "1.11.13",
+    "dotenv": "17.2.2",
     "google-protobuf": "3.21.4",
     "http-proxy": "1.18.1",
     "iconv-lite": "^0.6.3",
@@ -65,11 +67,10 @@
     "react-is": "19.0.0",
     "react-typed-i18n": "2.4.1",
     "recharts": "^2.15.0",
+    "replace-in-file": "8.3.0",
     "simstate": "3.0.1",
     "styled-components": "6.1.14",
-    "tslib": "2.8.1",
-    "replace-in-file": "8.3.0",
-    "dotenv": "17.2.2"
+    "tslib": "2.8.1"
   },
   "devDependencies": {
     "@ddadaal/next-typed-api-routes-cli": "0.9.1",
