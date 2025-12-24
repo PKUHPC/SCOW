@@ -1,24 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { numberToMoney } from "@scow/lib-decimal";
+import { OperationType } from "@scow/lib-operation-log";
 import { JobServiceClient } from "@scow/protos/build/server/job";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
+import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { GetJobFilter } from "src/pages/api/job/jobInfo";
+import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
@@ -32,6 +23,7 @@ export const ChangeJobPriceSchema = typeboxRouteSchema({
     reason: Type.String(),
     jobIds: Type.Array(Type.Number()),
     biJobIndexs: Type.Array(Type.Number()),
+    clusters: Type.Array(Type.String()),
     /**
      * @minimum 0
      */
@@ -77,6 +69,27 @@ export default route(ChangeJobPriceSchema,
 
     const money = numberToMoney(price);
 
+    const baseLogInfo = {
+      operatorUserId: info.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.changeJobPrice,
+    };
+
+    const logs = (jobIds ?? []).map((jid, i) => ({
+      ...baseLogInfo,
+      operationTypePayload: {
+        jobId: jid,
+        cluster: clusters?.[i] ?? "-", // 除非直接url调用，否则不会没有cluster
+        price: money,
+      },
+    }));
+
+    const writeLogs = async (result: OperationResult) => {
+      for (const log of logs) {
+        await callLog(log, result);
+      }
+    };
+
     return await asyncClientCall(client, "changeJobPrice", {
       filter: {
         tenantName: info.tenant,
@@ -94,9 +107,15 @@ export default route(ChangeJobPriceSchema,
       operatorId: info.identityId,
       reason,
     })
-      .then((x) => ({ 200: x }))
-      .catch(handlegRPCError({
-        [Status.NOT_FOUND]: (e) => ({ 404: { message: e.message } }),
-        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-      }));
+      .then(async (x) => {
+        await writeLogs(OperationResult.SUCCESS);
+        return { 200: x };
+      })
+      .catch(
+        handlegRPCError({
+          [Status.NOT_FOUND]: (e) => ({ 404: { message: e.message } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+        },
+        async () => await writeLogs(OperationResult.FAIL),
+        ));
   });

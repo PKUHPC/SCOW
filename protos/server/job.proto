@@ -255,11 +255,16 @@ message JobsOfJobIdTarget {
   uint64 job_id = 1;
   string tenant_name = 2;
 }
+message JobsOfJobIdsTarget {
+  repeated uint64 job_ids = 1;
+  string tenant_name = 2;
+}
 message JobsOfJobIdAndUserTarget {
   uint64 job_id = 1;
   string tenant_name = 2;
   string user_id = 3;
 }
+
 message JobsOfJobIdAndAccountTarget {
   uint64 job_id = 1;
   string tenant_name = 2;

@@ -11,7 +11,8 @@ import { ChargeRecord } from "@scow/protos/build/server/charging";
 import {
   JobBillingItem,
   JobFilter,
-  JobServiceServer, JobServiceService } from "@scow/protos/build/server/job";
+  JobServiceServer, JobServiceService,
+} from "@scow/protos/build/server/job";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { createPriceMap, getActiveBillingItems } from "src/bl/PriceMap";
@@ -31,7 +32,7 @@ import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 function filterJobs({
   clusters, accountName, jobEndTimeEnd, tenantName,
-  jobEndTimeStart, jobId, userId, startBiJobIndex, biJobIndexs,
+  jobEndTimeStart, jobId, userId, startBiJobIndex, biJobIndexs, jobIds,
 }: JobFilter) {
 
   return {
@@ -39,19 +40,27 @@ function filterJobs({
     ...userId ? { user: userId } : {},
     ...clusters.length > 0 ? { cluster: { $in: clusters } } : {},
     ...biJobIndexs?.length > 0 ? { biJobIndex: { $in: biJobIndexs } } : {},
-    ...jobId
+    // 优先使用 jobIds
+    ...jobIds.length > 0
       ? {
-        idJob: jobId,
-        ...accountName === undefined ? {} : { account: accountName },
-      } : {
-        ...accountName === undefined ? {} : { account: accountName },
-        ...(jobEndTimeEnd || jobEndTimeStart) ? {
-          timeEnd: {
-            ...jobEndTimeStart ? { $gte: jobEndTimeStart } : {},
-            ...jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {},
-          },
-        } : {},
-      },
+        idJob: { $in: jobIds },
+        ...accountName ? { account: accountName } : {},
+      }
+      // 其次使用 jobId
+      : jobId
+        ? {
+          idJob: jobId,
+          ...accountName ? { account: accountName } : {},
+        }
+        : {
+          ...accountName ? { account: accountName } : {},
+          ...(jobEndTimeEnd || jobEndTimeStart) ? {
+            timeEnd: {
+              ...jobEndTimeStart ? { $gte: jobEndTimeStart } : {},
+              ...jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {},
+            },
+          } : {},
+        },
     tenant: tenantName,
   } as FilterQuery<JobInfoEntity>;
 }
@@ -63,7 +72,7 @@ export const jobServiceServer = plugin((server) => {
     getJobs: async ({ request, em, logger }) => {
 
       const { filter, page, pageSize, sortBy, sortOrder } =
-      ensureNotUndefined(request, ["filter"]);
+        ensureNotUndefined(request, ["filter"]);
 
       const sqlFilter = filterJobs(filter);
 
@@ -478,7 +487,7 @@ export const jobServiceServer = plugin((server) => {
 
       // 控制topNUsers的数量
       if (typeof topNUsers == "number" && (topNUsers > 10 || topNUsers < 0)) {
-        throw { code: status.INVALID_ARGUMENT, message:"topNUsers must be between 0 and 10" } as ServiceError;
+        throw { code: status.INVALID_ARGUMENT, message: "topNUsers must be between 0 and 10" } as ServiceError;
       }
       // 直接使用Knex查询构建器
       const knex = em.getKnex();
@@ -540,10 +549,10 @@ export const jobServiceServer = plugin((server) => {
 
     getJobTotalCount: async ({ em }) => {
 
-      const { result , refreshTime }
-      = await getJobTotalCountCached(em);
+      const { result, refreshTime }
+        = await getJobTotalCountCached(em);
 
-      return [{ ...result , refreshTime: refreshTime.toISOString() }];
+      return [{ ...result, refreshTime: refreshTime.toISOString() }];
     },
 
     cancelJob: async ({ request, em, logger }) => {

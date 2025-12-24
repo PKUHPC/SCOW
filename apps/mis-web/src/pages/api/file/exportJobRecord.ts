@@ -31,13 +31,15 @@ import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { getClusterName } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
+import { parseJobIds } from "src/utils/jobIds";
 import { nullableMoneyToString } from "src/utils/money";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 import { pipeline } from "stream";
-
 
 export const ExportJobRecordSchema = typeboxRouteSchema({
   method: "GET",
@@ -53,12 +55,13 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
     encoding: Type.Enum(Encoding),
     timeZone: Type.Optional(Type.String()),
     jobId: Type.Optional(Type.Number()),
+    jobIds: Type.Optional(Type.String()),
     finalPriceText: Type.String(),
     searchType: Type.Enum(SearchType),
     publicConfigClusters: Type.String(),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
@@ -79,18 +82,20 @@ export default route(ExportJobRecordSchema, async (req, res) => {
   const { query } = req;
 
   const { columns, jobEndTimeStart, jobEndTimeEnd, accountName, count,
-    userId, encoding,timeZone, jobId, finalPriceText, searchType, publicConfigClusters } = query;
+    userId, encoding, timeZone, jobId, jobIds, finalPriceText, searchType, publicConfigClusters } = query;
   let { clusters } = query;
+
+  const trimmedIds = parseJobIds(jobIds);
 
   clusters = clusters ?? [];
   clusters = clusters.filter((i) => i !== "");
-  const target = buildJobsRequestTarget(info.tenant, jobId, accountName, userId);
+  const target = buildJobsRequestTarget(info.tenant, jobId, accountName, userId, trimmedIds);
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.exportJobRecord,
-    operationTypePayload:{
+    operationTypePayload: {
       target,
     },
   };
@@ -108,7 +113,7 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 

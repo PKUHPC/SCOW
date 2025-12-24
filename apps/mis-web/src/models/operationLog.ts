@@ -1,6 +1,8 @@
 import { OperationEvent, OperationType as LibOperationType } from "@scow/lib-operation-log";
-import { ExportBill, ExportChargeRecord, ExportJobRecord,ExportOperationLog, ExportPayRecord,
-  ExportUserBill } from "@scow/protos/build/audit/operation_log";
+import {
+  ExportBill, ExportChargeRecord, ExportJobRecord, ExportOperationLog, ExportPayRecord,
+  ExportUserBill,
+} from "@scow/protos/build/audit/operation_log";
 import { Static, Type } from "@sinclair/typebox";
 import { ValueOf } from "next/dist/shared/lib/constants";
 import React from "react";
@@ -42,7 +44,7 @@ export enum OperationLogQueryType {
 
 
 export const OperationSortBy = Type.Union(
-  [ Type.Literal("id"),
+  [Type.Literal("id"),
     Type.Literal("operationResult"),
     Type.Literal("operationTime"),
     Type.Literal("operatorIp"),
@@ -100,35 +102,35 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     copyFileItem: t(pTypes("copyFileItem")),
     compressFiles: t(pTypes("compressFiles")),
     setJobTimeLimit: t(pTypes("setJobTimeLimit")),
-    createImage:t(pTypes("createImage")),
-    updateImage:t(pTypes("updateImage")),
-    shareImage:t(pTypes("shareImage")),
-    deleteImage:t(pTypes("deleteImage")),
-    copyImage:t(pTypes("copyImage")),
-    createDataset:t(pTypes("createDataset")),
-    updateDataset:t(pTypes("updateDataset")),
-    deleteDataset:t(pTypes("deleteDataset")),
-    createDatasetVersion:t(pTypes("createDatasetVersion")),
-    updateDatasetVersion:t(pTypes("updateDatasetVersion")),
-    shareDatasetVersion:t(pTypes("shareDatasetVersion")),
-    copyDatasetVersion:t(pTypes("copyDatasetVersion")),
-    deleteDatasetVersion:t(pTypes("deleteDatasetVersion")),
-    createAlgorithm:t(pTypes("createAlgorithm")),
-    updateAlgorithm:t(pTypes("updateAlgorithm")),
-    deleteAlgorithm:t(pTypes("deleteAlgorithm")),
-    createAlgorithmVersion:t(pTypes("createAlgorithmVersion")),
-    updateAlgorithmVersion:t(pTypes("updateAlgorithmVersion")),
-    shareAlgorithmVersion:t(pTypes("shareAlgorithmVersion")),
-    deleteAlgorithmVersion:t(pTypes("deleteAlgorithmVersion")),
-    copyAlgorithmVersion:t(pTypes("copyAlgorithmVersion")),
-    createModel:t(pTypes("createModel")),
-    updateModel:t(pTypes("updateModel")),
-    deleteModel:t(pTypes("deleteModel")),
-    createModelVersion:t(pTypes("createModelVersion")),
-    updateModelVersion:t(pTypes("updateModelVersion")),
-    shareModelVersion:t(pTypes("shareModelVersion")),
-    deleteModelVersion:t(pTypes("deleteModelVersion")),
-    copyModelVersion:t(pTypes("copyModelVersion")),
+    createImage: t(pTypes("createImage")),
+    updateImage: t(pTypes("updateImage")),
+    shareImage: t(pTypes("shareImage")),
+    deleteImage: t(pTypes("deleteImage")),
+    copyImage: t(pTypes("copyImage")),
+    createDataset: t(pTypes("createDataset")),
+    updateDataset: t(pTypes("updateDataset")),
+    deleteDataset: t(pTypes("deleteDataset")),
+    createDatasetVersion: t(pTypes("createDatasetVersion")),
+    updateDatasetVersion: t(pTypes("updateDatasetVersion")),
+    shareDatasetVersion: t(pTypes("shareDatasetVersion")),
+    copyDatasetVersion: t(pTypes("copyDatasetVersion")),
+    deleteDatasetVersion: t(pTypes("deleteDatasetVersion")),
+    createAlgorithm: t(pTypes("createAlgorithm")),
+    updateAlgorithm: t(pTypes("updateAlgorithm")),
+    deleteAlgorithm: t(pTypes("deleteAlgorithm")),
+    createAlgorithmVersion: t(pTypes("createAlgorithmVersion")),
+    updateAlgorithmVersion: t(pTypes("updateAlgorithmVersion")),
+    shareAlgorithmVersion: t(pTypes("shareAlgorithmVersion")),
+    deleteAlgorithmVersion: t(pTypes("deleteAlgorithmVersion")),
+    copyAlgorithmVersion: t(pTypes("copyAlgorithmVersion")),
+    createModel: t(pTypes("createModel")),
+    updateModel: t(pTypes("updateModel")),
+    deleteModel: t(pTypes("deleteModel")),
+    createModelVersion: t(pTypes("createModelVersion")),
+    updateModelVersion: t(pTypes("updateModelVersion")),
+    shareModelVersion: t(pTypes("shareModelVersion")),
+    deleteModelVersion: t(pTypes("deleteModelVersion")),
+    copyModelVersion: t(pTypes("copyModelVersion")),
     createUser: t(pTypes("createUser")),
     addUserToAccount: t(pTypes("addUserToAccount")),
     removeUserFromAccount: t(pTypes("removeUserFromAccount")),
@@ -203,6 +205,7 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     removeFromDefaultClusters: t(pTypes("removeFromDefaultClusters")),
     addToDefaultPartitions: t(pTypes("addToDefaultPartitions")),
     removeFromDefaultPartitions: t(pTypes("removeFromDefaultPartitions")),
+    changeJobPrice: t(pTypes("changeJobPrice")),
   };
 
 };
@@ -229,31 +232,31 @@ export const getOperationDetail = (
         return "-";
       case "logout":
         return "-";
-      case "submitJob":{
+      case "submitJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("submitJob"),
           [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
-      case "endJob":{
+      case "endJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("endJob"),
           [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
-      case "addJobTemplate":{
+      case "addJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("addJobTemplate"),
           [clusterName, operationEvent[logEvent].jobTemplateId]);
       }
-      case "deleteJobTemplate":{
+      case "deleteJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("deleteJobTemplate"),
           [clusterName, operationEvent[logEvent].jobTemplateId]);
       }
-      case "updateJobTemplate":{
+      case "updateJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("updateJobTemplate"),
@@ -263,13 +266,13 @@ export const getOperationDetail = (
             operationEvent[logEvent].newJobTemplateId,
           ]);
       }
-      case "shellLogin":{
+      case "shellLogin": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("shellLogin"),
           [clusterName, operationEvent[logEvent].loginNode]);
       }
-      case "createDesktop":{
+      case "createDesktop": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createDesktop"), [
@@ -279,7 +282,7 @@ export const getOperationDetail = (
           operationEvent[logEvent].wm,
         ]);
       }
-      case "deleteDesktop":{
+      case "deleteDesktop": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("deleteDesktop"),
@@ -289,33 +292,33 @@ export const getOperationDetail = (
             String(operationEvent[logEvent].desktopId),
           ]);
       }
-      case "createApp":{
+      case "createApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createApp"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-") ,
+          [clusterName, String(operationEvent[logEvent].jobId || "-"),
             operationEvent[logEvent].appName || "-",
           ]);
       }
-      case "createAiTrain":{
+      case "createAiTrain": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createAiTrain"),
           [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
-      case "createDevHost":{
+      case "createDevHost": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createDevHost"),
           [clusterName, String(operationEvent[logEvent].devHostId || "-")]);
       }
-      case "createAiInferenceJob":{
+      case "createAiInferenceJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createAiInferenceJob"),
           [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
-      case "cancelAiTrainOrApp":{
+      case "cancelAiTrainOrApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("cancelAiTrainOrApp"),
@@ -346,7 +349,7 @@ export const getOperationDetail = (
         return t(pDetails("copyFileItem"), [operationEvent[logEvent].fromPath, operationEvent[logEvent].toPath]);
       case "compressFiles":
         return t(pDetails("compressFiles"), [operationEvent[logEvent].paths, operationEvent[logEvent].archivePath]);
-      case "setJobTimeLimit":{
+      case "setJobTimeLimit": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
         return t(pDetails("setJobTimeLimit"),
@@ -354,7 +357,7 @@ export const getOperationDetail = (
             String(operationEvent[logEvent].jobId),
             String(Math.abs(operationEvent[logEvent].limitMinutes))]);
       }
-      case "createImage":{
+      case "createImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createImage"),
@@ -396,7 +399,7 @@ export const getOperationDetail = (
             safeGetStringProperty(operationEvent[logEvent].targetImageName),
             safeGetStringProperty(operationEvent[logEvent].targetImageTag)]);
       }
-      case "createDataset":{
+      case "createDataset": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createDataset"),
@@ -432,7 +435,7 @@ export const getOperationDetail = (
         return t(pDetails("deleteDatasetVersion"),
           [safeGetStringProperty(operationEvent[logEvent].datasetName),
             safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
-      case "createAlgorithm":{
+      case "createAlgorithm": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createAlgorithm"),
@@ -468,7 +471,7 @@ export const getOperationDetail = (
         return t(pDetails("deleteAlgorithmVersion"),
           [safeGetStringProperty(operationEvent[logEvent].algorithmName),
             safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
-      case "createModel":{
+      case "createModel": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("createModel"),
@@ -558,7 +561,7 @@ export const getOperationDetail = (
           [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner]);
       case "deleteAccount":
         return t(pDetails("deleteAccount"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner || "-" ]);
+          [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner || "-"]);
       case "addAccountToWhitelist":
         return t(pDetails("addAccountToWhitelist"),
           [operationEvent[logEvent].accountName, operationEvent[logEvent].tenantName]);
@@ -603,7 +606,7 @@ export const getOperationDetail = (
         return t(pDetails("setPlatformBilling"),
           [path, nullableMoneyToString(operationEvent[logEvent].price)]);
       }
-      case "submitFileItemAsJob":{
+      case "submitFileItemAsJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("submitFileItemAsJob"),
@@ -628,7 +631,7 @@ export const getOperationDetail = (
       case "setAccountBlockThreshold":
         return operationEvent[logEvent].thresholdAmount
           ? t(pDetails("setAccountBlockThreshold"),
-            [operationEvent[logEvent].accountName, moneyToString(operationEvent[logEvent].thresholdAmount) ])
+            [operationEvent[logEvent].accountName, moneyToString(operationEvent[logEvent].thresholdAmount)])
           : t(pDetails("unsetAccountBlockThreshold"), [operationEvent[logEvent].accountName]);
       case "setAccountDefaultBlockThreshold":
         return t(pDetails("setAccountDefaultBlockThreshold"),
@@ -639,12 +642,12 @@ export const getOperationDetail = (
           [operationEvent[logEvent].userId,
             operationEvent[logEvent].previousTenantName,
             operationEvent[logEvent].newTenantName]);
-      case "activateCluster":{
+      case "activateCluster": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("activateCluster"), [clusterName]);
       }
-      case "deactivateCluster":{
+      case "deactivateCluster": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("deactivateCluster"), [clusterName]);
@@ -685,10 +688,10 @@ export const getOperationDetail = (
         return t(pDetails("syncTenantUsersStorageUsage"),
           [operationEvent[logEvent].tenant, operationEvent[logEvent].cluster, operationEvent[logEvent].path]);
       case "authorizeApp":
-      case "unauthorizeApp":{
+      case "unauthorizeApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return operationEvent[logEvent].target?.$case === "accountName" ? t(pDetails("accountAppAuthorizationLog"),[
+        return operationEvent[logEvent].target?.$case === "accountName" ? t(pDetails("accountAppAuthorizationLog"), [
           clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].target.accountName,
         ]) : t(pDetails("tenantAppAuthorizationLog"), [clusterName, operationEvent[logEvent].appName,
           operationEvent[logEvent].target.tenantName]);
@@ -696,16 +699,16 @@ export const getOperationDetail = (
       case "migrateNode":
         return t(pDetails("migrateNode"),
           [operationEvent[logEvent].nodeName,
-            operationEvent[logEvent].originCluster ,
+            operationEvent[logEvent].originCluster,
             operationEvent[logEvent].destinationCluster]);
       case "activateNode":
         return t(pDetails("activateNode"),
           [operationEvent[logEvent].nodeName, operationEvent[logEvent].destinationCluster]);
       case "addToDefaultApps":
-      case "removeFromDefaultApps":{
+      case "removeFromDefaultApps": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateDefaultApp"),[
+        return t(pDetails("updateDefaultApp"), [
           clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].tenantName,
         ]);
       }
@@ -742,6 +745,15 @@ export const getOperationDetail = (
         return t(pDetails("updateDefaultPartition"),[
           clusterName, operationEvent[logEvent].partitionName, operationEvent[logEvent].tenantName,
         ]);
+      }
+      case "changeJobPrice":{
+        const clusterId = operationEvent[logEvent].cluster;
+        const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
+        return t(pDetails("changeJobPrice"),
+          [clusterName,
+            operationEvent[logEvent].jobId,
+            nullableMoneyToString(operationEvent[logEvent].price),
+          ]);
       }
       default:
         return "-";
@@ -855,17 +867,40 @@ const getExportJobRecordDetail = (exportJobRecord: ExportJobRecord, t: Operation
     case "jobsOfJobId": {
       const jobsOfJobId = exportJobTarget[exportJobCase];
       return t(pDetails("exportJobsOfJobId"),
-        [jobsOfJobId.tenantName, String(jobsOfJobId.jobId)]);
+        [
+          jobsOfJobId.tenantName,
+          String(jobsOfJobId.jobId),
+        ]);
+    }
+    case "jobsOfJobIds": {
+      const jobsOfJobIds = exportJobTarget[exportJobCase];
+      const jobIdsLength = jobsOfJobIds.jobIds.length;
+      const showJobIds = jobsOfJobIds.jobIds.slice(0,3);
+      const jobIdsStr = showJobIds.join(",") + (jobIdsLength > 3 ? "…" : "");
+
+      return t(pDetails("exportJobsOfJobId"),
+        [
+          jobsOfJobIds.tenantName,
+          jobIdsStr,
+        ]);
     }
     case "jobsOfJobIdAndUser": {
       const jobsOfJobIdAndUser = exportJobTarget[exportJobCase];
       return t(pDetails("exportJobsOfJobIdAndUser"),
-        [jobsOfJobIdAndUser.tenantName, jobsOfJobIdAndUser.userId, String(jobsOfJobIdAndUser.jobId)]);
+        [
+          jobsOfJobIdAndUser.tenantName,
+          jobsOfJobIdAndUser.userId,
+          String(jobsOfJobIdAndUser.jobId),
+        ]);
     }
     case "jobsOfJobIdAndAccount": {
       const jobsOfJobIdAndAccount = exportJobTarget[exportJobCase];
       return t(pDetails("exportJobsOfJobIdAndAccount"),
-        [jobsOfJobIdAndAccount.tenantName, jobsOfJobIdAndAccount.accountName, String(jobsOfJobIdAndAccount.jobId)]);
+        [
+          jobsOfJobIdAndAccount.tenantName,
+          jobsOfJobIdAndAccount.accountName,
+          String(jobsOfJobIdAndAccount.jobId),
+        ]);
     }
     case "jobsOfAccountAndUser": {
       const jobsOfAccountAndUser = exportJobTarget[exportJobCase];
@@ -922,7 +957,7 @@ const getExportBillDetail = (exportBill: ExportBill, t: OperationTextsTransType)
     if (exportBill.accountNames.length) {
       return t(pDetails("exportBillFromAccount"), [exportBill.tenantName, exportBill.accountNames.join(",")]);
     }
-    return t(pDetails("exportBillFromTenant"),[exportBill.tenantName]);
+    return t(pDetails("exportBillFromTenant"), [exportBill.tenantName]);
   }
   if (exportBill.accountNames.length) {
     return t(pDetails("exportBillFromAdminAccount"), [exportBill.accountNames.join(",")]);
@@ -931,5 +966,5 @@ const getExportBillDetail = (exportBill: ExportBill, t: OperationTextsTransType)
 };
 
 const getExportUserBillDetail = (exportUserBill: ExportUserBill, t: OperationTextsTransType) => {
-  return t(pDetails("exportUserBillFromAccount"),[exportUserBill.accountName]);
+  return t(pDetails("exportUserBillFromAccount"), [exportUserBill.accountName]);
 };

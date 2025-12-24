@@ -139,4 +139,5 @@ export const OperationType: OperationTypeEnum = {
   removeFromDefaultClusters: "removeFromDefaultClusters",
   addToDefaultPartitions: "addToDefaultPartitions",
   removeFromDefaultPartitions: "removeFromDefaultPartitions",
+  changeJobPrice: "changeJobPrice",
 };

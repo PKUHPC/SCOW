@@ -3,7 +3,7 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table } from "antd";
+import { App, Button, DatePicker, Divider, Form, Input, Space, Table } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
@@ -21,21 +21,14 @@ import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
 import { JobPriceChangeModal } from "src/pageComponents/tenant/JobPriceChangeModal";
 import type { GetJobFilter, GetJobInfoSchema } from "src/pages/api/job/jobInfo";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import type { Cluster } from "src/utils/cluster";
 import { getClusterName, getSortedClusterValues } from "src/utils/cluster";
+import type { FilterForm } from "src/utils/jobIds";
+import { useJobIdsInput, validateJobIds } from "src/utils/jobIds";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
 
 interface PageInfo {
   page: number;
   pageSize?: number;
-}
-
-interface FilterForm {
-  jobEndTime: [dayjs.Dayjs, dayjs.Dayjs];
-  jobId: number | undefined;
-  accountName: string;
-  userId: string;
-  clusters: Cluster[];
 }
 
 interface Props {
@@ -45,7 +38,7 @@ interface Props {
 interface DiffQuery {
   userId?: string | undefined;
   accountName?: string | undefined;
-  jobId?: number | undefined;
+  jobIds?: string | undefined;
   jobEndTimeStart?: string | undefined;
   jobEndTimeEnd?: string | undefined;
   clusters?: string[] | undefined;
@@ -56,6 +49,7 @@ interface JobItem {
   biJobIndex: number;
   jobName: string;
   accountPrice?: Money
+  cluster: string;
   [key: string]: any
 }
 
@@ -68,10 +62,12 @@ const filterFormToQuery = (query: FilterForm, rangeSearch: boolean): GetJobFilte
     accountName: rangeSearch ? (query.accountName || undefined) : undefined,
     jobEndTimeStart: rangeSearch ? (query.jobEndTime[0].toISOString()) : undefined,
     jobEndTimeEnd: rangeSearch ? (query.jobEndTime[1].toISOString()) : undefined,
-    jobId: !rangeSearch ? (query.jobId || undefined) : undefined,
+    jobIds: !rangeSearch ? (query.jobIds || undefined) : undefined,
     clusters: query.clusters?.map((x) => x.id),
   };
 };
+
+
 
 export const AdminJobTable: React.FC<Props> = () => {
 
@@ -91,7 +87,7 @@ export const AdminJobTable: React.FC<Props> = () => {
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
-      jobId: undefined,
+      jobIds: undefined,
       userId: "",
       accountName: "",
       jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
@@ -123,7 +119,6 @@ export const AdminJobTable: React.FC<Props> = () => {
 
   const handleExport = async (encoding: Encoding) => {
     const totalCount = data?.totalCount ?? 0;
-    // 获取浏览器时区
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     if (totalCount > MAX_EXPORT_COUNT) {
@@ -134,9 +129,9 @@ export const AdminJobTable: React.FC<Props> = () => {
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportJobRecord",
-        columns: [ ...exportJobColumns, "tenantPrice"],
+        columns: [...exportJobColumns, "tenantPrice"],
         count: totalCount,
-        timeZone, // 将浏览器时区作为参数传递到后端
+        timeZone,
         query: {
           ...currentDiffQuery,
           searchType: SearchType.TENANT,
@@ -146,6 +141,12 @@ export const AdminJobTable: React.FC<Props> = () => {
       });
     }
   };
+
+  // 创建作业ID输入处理器
+  const jobIdsHandlers = useJobIdsInput(
+    form,
+    t(p("onlyNumbersAndCommas")),
+  );
 
   return (
     <div>
@@ -196,8 +197,23 @@ export const AdminJobTable: React.FC<Props> = () => {
                     <Form.Item label={t(pCommon("cluster"))} name="clusters">
                       <ClusterSelector />
                     </Form.Item>
-                    <Form.Item label={t(pCommon("clusterWorkId"))} name="jobId">
-                      <InputNumber min={1} style={{ minWidth: "160px" }} />
+                    <Form.Item
+                      label={t(pCommon("clusterWorkId"))}
+                      name="jobIds"
+                      validateTrigger={["onChange", "onBlur"]}
+                      rules={[
+                        {
+                          validator: (_, value) => validateJobIds(value)
+                            .catch(() => Promise.reject(new Error(t(p("onlyNumbersAndCommas"))))),
+                        },
+                      ]}
+                    >
+                      <Input
+                        style={{ minWidth: "160px" }}
+                        placeholder={t(p("searchTypePlaceholder"))}
+                        onCompositionEnd={jobIdsHandlers.handleCompositionEnd}
+                        onChange={jobIdsHandlers.handleChange}
+                      />
                     </Form.Item>
                   </>
                 ),
@@ -207,7 +223,6 @@ export const AdminJobTable: React.FC<Props> = () => {
         </Form>
       </FilterFormContainer>
       <JobInfoTable
-        target="account"
         reload={reload}
         data={data}
         isLoading={isLoading}
@@ -220,30 +235,25 @@ export const AdminJobTable: React.FC<Props> = () => {
   );
 };
 
-
-
-
 const ChangePriceButton: React.FC<{
   filter: GetJobFilter;
   count: number;
-  target: "account" | "tenant";
   selectedJobs: JobItem[];
   reload: () => void;
   setOpen: (openFlag: boolean) => void;
   setSelectedJobs: (selectJobs: JobItem[]) => void,
   open: boolean;
-}> = ({ filter, count, target, selectedJobs, open, reload, setOpen, setSelectedJobs }) => {
+}> = ({ filter, count, selectedJobs, open, reload, setOpen, setSelectedJobs }) => {
 
   const t = useI18nTranslateToString();
 
   return (
     <>
       <Button onClick={() => setOpen(true)} disabled={!(selectedJobs?.length > 0)}>
-        {t(p("adjust"))}{target === "account" ? t(p("tenantPrice")) : t(p("platformPrice"))}
+        {t(p("adjustTenantPrice"))}
       </Button>
       <JobPriceChangeModal
         jobs={selectedJobs}
-        target={target}
         reload={reload}
         onClose={() => setOpen(false)}
         open={open}
@@ -263,15 +273,11 @@ interface JobInfoTableProps {
   isLoading: boolean;
   filter: FilterForm;
   reload: () => void;
-  target: "account" | "tenant";
   rangeSearch: boolean;
 }
 
-
-
-
 const JobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, pageInfo, setPageInfo, isLoading, filter, reload, target,
+  data, pageInfo, setPageInfo, isLoading, filter, reload,
   rangeSearch,
 }) => {
 
@@ -310,7 +316,6 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
             reload={reload}
             filter={useMemo(() => filterFormToQuery(filter, rangeSearch), [filter, rangeSearch])}
             count={data ? data.totalCount : 0}
-            target={target}
             selectedJobs={selectedJobs}
             setSelectedJobs={setSelectedJobs}
             setOpen={setOpen}

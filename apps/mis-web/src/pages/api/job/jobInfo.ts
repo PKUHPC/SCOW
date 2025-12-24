@@ -1,9 +1,10 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
-import { GetJobsRequest, GetJobsRequest_SortBy as SortBy, JobFilter, JobServiceClient, JobsOfAccountAndUserTarget,
-  JobsOfAccountTarget, JobsOfJobIdAndAccountTarget,
-  JobsOfJobIdAndUserTarget, JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget,
+import {
+  GetJobsRequest, GetJobsRequest_SortBy as SortBy, JobFilter, JobServiceClient, JobsOfAccountAndUserTarget,
+  JobsOfAccountTarget, JobsOfJobIdAndAccountTarget, JobsOfJobIdAndUserTarget, JobsOfJobIdsTarget,
+  JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget,
 } from "@scow/protos/build/server/job";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
@@ -12,24 +13,25 @@ import { TenantRole } from "src/models/User";
 import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { safeGetStringProperty } from "src/utils/format";
+import { parseJobIds } from "src/utils/jobIds";
 import { route } from "src/utils/route";
 
 export const mapJobSortByType = {
-  "idJob":SortBy.ID_JOB,
-  "account":SortBy.ACCOUNT,
-  "cluster":SortBy.CLUSTER,
-  "jobName":SortBy.JOB_NAME,
-  "partition":SortBy.PARTITION,
-  "price":SortBy.PRICE,
-  "qos":SortBy.QOS,
-  "timeEnd":SortBy.TIME_END,
-  "timeSubmit":SortBy.TIME_SUBMIT,
-  "user":SortBy.USER,
+  "idJob": SortBy.ID_JOB,
+  "account": SortBy.ACCOUNT,
+  "cluster": SortBy.CLUSTER,
+  "jobName": SortBy.JOB_NAME,
+  "partition": SortBy.PARTITION,
+  "price": SortBy.PRICE,
+  "qos": SortBy.QOS,
+  "timeEnd": SortBy.TIME_END,
+  "timeSubmit": SortBy.TIME_SUBMIT,
+  "user": SortBy.USER,
 } as Record<string, SortBy>;
 
 export const mapJobSortOrderType = {
-  "descend":SortOrder.DESCEND,
-  "ascend":SortOrder.ASCEND,
+  "descend": SortOrder.DESCEND,
+  "ascend": SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const GetJobFilter = Type.Object({
@@ -58,6 +60,9 @@ export const GetJobFilter = Type.Object({
   accountName: Type.Optional(Type.String()),
 
   clusters: Type.Optional(Type.Array(Type.String())),
+
+  // 复数查询jobId，和jobId同时只启用一个，当前只有租户管理下查询已结束作业使用
+  jobIds: Type.Optional(Type.String()),
 });
 export type GetJobFilter = Static<typeof GetJobFilter>;
 
@@ -75,7 +80,7 @@ export const JobInfo = Type.Object({
   timeStart: Type.Optional(Type.String()),
   timeEnd: Type.Optional(Type.String()),
   gpu: Type.Number(),
-  cpusReq:Type.Number(),
+  cpusReq: Type.Number(),
   memReq: Type.Number(),
   nodesReq: Type.Number(),
   cpusAlloc: Type.Number(),
@@ -138,8 +143,8 @@ export const getJobInfo = async (request: GetJobsRequest) => {
   return await asyncClientCall(client, "getJobs", request);
 };
 
-
 export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
+
   const auth = authenticate((u) =>
     u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
 
@@ -147,16 +152,18 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { page = 1, accountName, userId, jobEndTimeEnd, jobEndTimeStart, jobId, clusters, pageSize, sortBy, sortOrder }
-  = req.query;
+  const { page = 1, accountName, userId, jobEndTimeEnd, jobEndTimeStart, jobId, clusters, pageSize, sortBy, sortOrder,
+    jobIds } = req.query;
+
+  const trimmedIds = parseJobIds(jobIds);
 
   const filter: JobFilter = {
     tenantName: info.tenant,
     accountName,
     jobEndTimeEnd,
     jobEndTimeStart,
-    jobId,
-    jobIds: [],
+    jobId: trimmedIds.length > 0 ? undefined : jobId, // 如果已有jobIds，则jobId不生效
+    jobIds: trimmedIds,
     biJobIndexs: [],
     clusters: clusters ?? [],
   };
@@ -180,8 +187,8 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
     filter,
     page,
     pageSize,
-    sortBy:mapJobSortBy,
-    sortOrder:mapJobSortOrder,
+    sortBy: mapJobSortBy,
+    sortOrder: mapJobSortOrder,
   });
 
   return {
@@ -201,27 +208,94 @@ export const buildJobsRequestTarget = (
   jobId?: number,
   accountName?: string,
   userId?: string,
+  jobIds?: number[],
 ):
   | { $case: "jobsOfAccount"; jobsOfAccount: JobsOfAccountTarget }
   | { $case: "jobsOfUser"; jobsOfUser: JobsOfUserTarget }
   | { $case: "jobsOfAccountAndUser"; jobsOfAccountAndUser: JobsOfAccountAndUserTarget }
   | { $case: "jobsOfTenant"; jobsOfTenant: JobsOfTenantTarget }
   | { $case: "jobsOfJobId"; jobsOfJobId: JobsOfJobIdTarget }
+  | { $case: "jobsOfJobIds"; jobsOfJobIds: JobsOfJobIdsTarget }
   | { $case: "jobsOfJobIdAndUser"; jobsOfJobIdAndUser: JobsOfJobIdAndUserTarget }
   | { $case: "jobsOfJobIdAndAccount"; jobsOfJobIdAndAccount: JobsOfJobIdAndAccountTarget } => {
 
-  return jobId && userId
-    ? { $case: "jobsOfJobIdAndUser", jobsOfJobIdAndUser: { jobId, userId, tenantName } }
-    : jobId && accountName
-      ? { $case: "jobsOfJobIdAndAccount", jobsOfJobIdAndAccount: { jobId, accountName, tenantName } }
-      : jobId
-        ? { $case: "jobsOfJobId", jobsOfJobId: { jobId, tenantName } }
-        : accountName && userId
-          ? { $case: "jobsOfAccountAndUser", jobsOfAccountAndUser: { accountName, userId, tenantName } }
-          : accountName
-            ? { $case: "jobsOfAccount", jobsOfAccount: { accountName, tenantName } }
-            : userId
-              ? { $case: "jobsOfUser", jobsOfUser: { userId, tenantName } }
-              : { $case: "jobsOfTenant", jobsOfTenant: { tenantName } };
-};
+  if (jobIds && jobIds.length > 0) {
+    return {
+      $case: "jobsOfJobIds",
+      jobsOfJobIds: {
+        jobIds,
+        tenantName,
+      },
+    };
+  }
 
+  if (jobId) {
+    if (userId) {
+      return {
+        $case: "jobsOfJobIdAndUser",
+        jobsOfJobIdAndUser: {
+          jobId,
+          userId,
+          tenantName,
+        },
+      };
+    }
+
+    if (accountName) {
+      return {
+        $case: "jobsOfJobIdAndAccount",
+        jobsOfJobIdAndAccount: {
+          jobId,
+          accountName,
+          tenantName,
+        },
+      };
+    }
+
+    return {
+      $case: "jobsOfJobId",
+      jobsOfJobId: {
+        jobId,
+        tenantName,
+      },
+    };
+  }
+
+  if (accountName && userId) {
+    return {
+      $case: "jobsOfAccountAndUser",
+      jobsOfAccountAndUser: {
+        accountName,
+        userId,
+        tenantName,
+      },
+    };
+  }
+
+  if (accountName) {
+    return {
+      $case: "jobsOfAccount",
+      jobsOfAccount: {
+        accountName,
+        tenantName,
+      },
+    };
+  }
+
+  if (userId) {
+    return {
+      $case: "jobsOfUser",
+      jobsOfUser: {
+        userId,
+        tenantName,
+      },
+    };
+  }
+
+  return {
+    $case: "jobsOfTenant",
+    jobsOfTenant: {
+      tenantName,
+    },
+  };
+};

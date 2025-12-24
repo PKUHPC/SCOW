@@ -159,6 +159,8 @@ message ExportJobRecordRequest {
     JobsOfJobIdTarget jobs_of_job_id = 9;
     JobsOfJobIdAndUserTarget jobs_of_job_id_and_user = 10;
     JobsOfJobIdAndAccountTarget jobs_of_job_id_and_account = 11;
+    // 导出租户内执行过的多个ID的作业列表
+    JobsOfJobIdsTarget jobs_of_job_ids = 12;
   }
 }
 

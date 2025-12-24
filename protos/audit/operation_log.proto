@@ -481,11 +481,16 @@ message JobsOfJobIdTarget {
   uint32 job_id = 1;
   string tenant_name = 2;
 }
+message JobsOfJobIdsTarget {
+  repeated uint64 job_ids = 1;
+  string tenant_name = 2;
+}
 message JobsOfJobIdAndUserTarget {
   uint64 job_id = 1;
   string tenant_name = 2;
   string user_id = 3;
 }
+
 message JobsOfJobIdAndAccountTarget {
   uint64 job_id = 1;
   string tenant_name = 2;
@@ -508,7 +513,15 @@ message ExportJobRecord {
     JobsOfJobIdAndUserTarget jobs_of_job_id_and_user = 6;
      // 导出租户内某账户执行过的特定ID的作业列表
     JobsOfJobIdAndAccountTarget jobs_of_job_id_and_account = 7;
+     // 导出租户内执行过的多个ID的作业列表
+    JobsOfJobIdsTarget jobs_of_job_ids = 8;
   }
+}
+
+message ChangeJobPrice {
+  uint64 job_id = 1;
+  string cluster = 2;
+  common.Money price = 3;
 }
 
 message ExportOperationLog {
@@ -1041,6 +1054,7 @@ message CreateOperationLogRequest {
     RemoveFromDefaultClusters remove_from_default_clusters = 128;
     AddToDefaultPartitions add_to_default_partitions = 129;
     RemoveFromDefaultPartitions remove_from_default_partitions = 130;
+    ChangeJobPrice change_job_price = 131;
   }
 }
 
@@ -1179,6 +1193,7 @@ message OperationLog {
     RemoveFromDefaultClusters remove_from_default_clusters = 130;
     AddToDefaultPartitions add_to_default_partitions = 131;
     RemoveFromDefaultPartitions remove_from_default_partitions = 132;
+    ChangeJobPrice change_job_price = 133;
   }
 }
 

@@ -113,7 +113,7 @@ export default {
     serialNumber: "Serial Number",
     phone: "Phone",
     organization: "Organization",
-    adjustBill: "Adjust Tenant Billing",
+    adjustBill: "Adjust Job Billing",
     failedGetTenantAssignedClustersAndPartitions: "Failed to retrieve authorized cluster partition information",
     accountUserSyncRunning: "Account/User information is currently being synchronized. Please wait for the "
     + "synchronization to complete before trying again.",
@@ -662,7 +662,7 @@ export default {
         timeWait: "Job Wait Time",
         recordTime: "Record Time",
         workFee: "Job Billing (CNY)",
-        tenantFee: "Tenant Billing (CNY)",
+        tenantFee: "Job Billing (CNY)",
         platformFee: "Platform Billing",
         detail: "Job Details",
       },
@@ -773,12 +773,14 @@ export default {
         batch: "Batch Search",
         precise: "Precision Search",
         jobEndTime: "Job End Time",
-        adjust: "Adjust the billing for the selected job",
-        tenantPrice: "Tenant Billing",
-        platformPrice: "Platform Billing",
+        adjustTenantPrice: "Bulk adjust job billing",
+        tenantPrice: "Job Billing (CNY)",
+        platformPrice: "Platform Billing (CNY)",
         jobNumber: "Number of Jobs: ",
-        tenantPriceSum: "Total Tenant Billing: ",
+        tenantPriceSum: "Total Job Billing: ",
         platformPriceSum: "Total Platform Billing: ",
+        searchTypePlaceholder:"Multiple, please separate with commas",
+        onlyNumbersAndCommas: "Only numbers and commas are allowed",
       },
       adminUserTable: {
         allUsers: "All Users",
@@ -804,15 +806,16 @@ export default {
         editUserProfileSuccess: "Successfully Edited User Information",
       },
       jobPriceChangeModal: {
-        tenantPrice: "Tenant Billing",
         platformPrice: "Platform Billing",
-        changeJob: "Change Job ",
+        adjustBill: "Adjust Job Billing",
         jobNumber: "Job Number",
-        newJob: "New Job ",
+        setBill: "Set Job Billing",
         reason: "Reason for Modification",
         modifyButton: "Modify ",
-        currentPrice: "Current tenant billing for job",
+        currentPrice: "Current billing for job",
         job: "Jobs",
+        jobSummaryEllipsis: " etc. ({} jobs in total)",
+        priceSummaryEllipsis: " etc. ({} values in total)",
         annotation:"When the new billing amount exceeds the current billing amount, "
         + "the difference will be deducted and can be viewed in the account's consumption records;"
         + "when the new billing amount is less than the current billing amount, "
@@ -1813,6 +1816,7 @@ export default {
       removeFromDefaultClusters: "Remove from Default Authorized Clusters",
       addToDefaultPartitions: "Add to Default Authorized Partitions",
       removeFromDefaultPartitions: "Remove from Default Authorized Partitions",
+      changeJobPrice: "Adjust Job Billing",
     },
     operationDetails: {
       submitJob: "Cluster: {}, Job ID: {}",
@@ -1961,6 +1965,7 @@ export default {
       accountPartitionAuthorizationLog: "Cluster: {0}, Partition: {1}, Account: {2}",
       updateDefaultCluster: "Cluster: {0}, Tenant: {1}",
       updateDefaultPartition: "Cluster: {0}, Partition: {1}, Tenant: {2}",
+      changeJobPrice: "Cluster: {}, Job ID: {}, Price (CNY): {}",
     },
   },
   userRoles: {

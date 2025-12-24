@@ -136,6 +136,7 @@ export const statisticServiceServer = plugin((server) => {
         "setAccountDefaultBlockThreshold",
         "migrateNode",
         "activateNode",
+        "changeJobPrice",
       ];
 
       const qb = em.createQueryBuilder(OperationLog, "o");

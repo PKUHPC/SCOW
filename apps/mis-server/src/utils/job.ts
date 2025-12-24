@@ -2,7 +2,7 @@ import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { JobsOfAccountAndUserTarget, JobsOfAccountTarget, JobsOfJobIdAndAccountTarget, JobsOfJobIdAndUserTarget,
-  JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget } from "@scow/protos/build/server/job";
+  JobsOfJobIdsTarget, JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget } from "@scow/protos/build/server/job";
 import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
 import { UserRole } from "src/entities/UserAccount";
 
@@ -38,6 +38,7 @@ export function toGrpc(x: JobInfoEntity) {
 
 export const getJobsTargetSearchParam = (target:
 | { $case: "jobsOfJobId";jobsOfJobId: JobsOfJobIdTarget; }
+| { $case: "jobsOfJobIds";jobsOfJobIds: JobsOfJobIdsTarget; }
 | { $case: "jobsOfJobIdAndUser";jobsOfJobIdAndUser: JobsOfJobIdAndUserTarget; }
 | { $case: "jobsOfJobIdAndAccount";jobsOfJobIdAndAccount: JobsOfJobIdAndAccountTarget; }
 | { $case: "jobsOfAccountAndUser"; jobsOfAccountAndUser: JobsOfAccountAndUserTarget }
@@ -45,27 +46,37 @@ export const getJobsTargetSearchParam = (target:
 | { $case: "jobsOfUser"; jobsOfUser: JobsOfUserTarget }
 | { $case: "jobsOfTenant"; jobsOfTenant: JobsOfTenantTarget },
 ): { tenant: string, account?: string | { $ne: null },
-  user?: string | { $ne: null }, idJob?: number | { $ne: null } } => {
+  user?: string | { $ne: null }, idJob?: number | number[] | { $ne: null } } => {
 
-  const { accountName, tenantName, userId, jobId } = target[target.$case];
+  const { accountName, tenantName, userId, jobId, jobIds } = target[target.$case];
 
   let searchParam: {
     tenant: string,
     account?: string | { $ne: null },
     user?: string | { $ne: null },
-    idJob?: number | { $ne: null },
+    idJob?: number | number[] | { $ne: null };
   } = { tenant: tenantName };
+
+  let jobIdQueryValue: number | number[] | { $ne: null } | undefined;
+  if (jobIds && jobIds.length > 0) {
+    jobIdQueryValue = jobIds; // 批量查询使用数组
+  } else if (jobId) {
+    jobIdQueryValue = jobId; // 单个查询使用 number
+  }
 
   switch (target?.$case)
   {
     case "jobsOfJobId":
-      searchParam = { tenant: tenantName, idJob: jobId };
+      searchParam = { tenant: tenantName, idJob: jobIdQueryValue };
+      break;
+    case "jobsOfJobIds":
+      searchParam = { tenant: tenantName, idJob: jobIdQueryValue };
       break;
     case "jobsOfJobIdAndUser":
-      searchParam = { tenant: tenantName, idJob: jobId, user: userId };
+      searchParam = { tenant: tenantName, idJob: jobIdQueryValue, user: userId };
       break;
     case "jobsOfJobIdAndAccount":
-      searchParam = { tenant: tenantName, idJob: jobId, account: accountName };
+      searchParam = { tenant: tenantName, idJob: jobIdQueryValue, account: accountName };
       break;
     case "jobsOfAccountAndUser":
       searchParam = { tenant: tenantName, account: accountName, user: userId };
