@@ -856,7 +856,7 @@ async function checkValidRunningSyncRecord(
   if (isDuringSystemStarting) {
     logger.warn("An abnormal account user synchronization task is found during system start. "
       + "It will be updated to FAILED.");
-    await UpdateStuckRunningSyncRecord(em, logger, runningSyncRecord);
+    await updateStuckRunningSync(em, logger, runningSyncRecord);
     return false;
   }
 
@@ -872,7 +872,7 @@ async function checkValidRunningSyncRecord(
     const checkModeMessage = isDuringSystemStarting ? "system error" : "timeout";
     logger.warn("An abnormal account user synchronization task caused by %s is found. It will be updated to FAILED.",
       checkModeMessage);
-    await UpdateStuckRunningSyncRecord(em, logger, runningSyncRecord, maxSyncMinutes);
+    await updateStuckRunningSync(em, logger, runningSyncRecord, maxSyncMinutes);
     return false;
   }
   logger.info("The running account user synchronization task is valid.");
@@ -885,7 +885,7 @@ async function checkValidRunningSyncRecord(
  * 更新异常的正在运行的同步账户用户信息记录
  * @param maxSyncMinutes 超时是数据更新，需要传递此数据用于错误记录；不存在则认为是异常原因
  */
-async function UpdateStuckRunningSyncRecord(
+export async function updateStuckRunningSync(
   em: SqlEntityManager<MySqlDriver>,
   logger: Logger,
   runningSyncRecord: Loaded<AccountUserSyncRecord>,

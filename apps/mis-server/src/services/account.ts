@@ -12,9 +12,9 @@ import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { checkSchedulerApiVersion } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
-import { Account as AccountProto, account_AccountStateFromJSON,
-  Account_DisplayedAccountState, AccountServiceServer, AccountServiceService,
-  BlockAccountResponse_Result } from "@scow/protos/build/server/account";
+import { Account as AccountProto, account_AccountStateFromJSON, Account_DisplayedAccountState,
+  AccountServiceServer, AccountServiceService, BlockAccountResponse_Result,
+} from "@scow/protos/build/server/account";
 import { ApiVersion } from "@scow/utils/build/version";
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
@@ -33,7 +33,6 @@ import { callHook } from "src/plugins/hookClient";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { countSubstringOccurrences } from "src/utils/countSubstringOccurrences";
 import { getAccountOwnerAndAdmin } from "src/utils/getAccountOwnerAndAdmin";
-import { logger } from "src/utils/logger";
 import { toRef } from "src/utils/orm";
 import { unblockAccountAssignedPartitionsInCluster } from "src/utils/resourceManagement";
 import { sendMessage } from "src/utils/sendMessage";
@@ -52,11 +51,11 @@ export const accountServiceServer = plugin((server) => {
 
   server.addService<AccountServiceServer>(AccountServiceService, {
     blockAccount: async ({ request, em, logger }) => {
+      const { accountName } = request;
+      logger.info("Received blockAccount request for account %s", accountName);
 
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "block account task");
-
-      const { accountName } = request;
 
       const result = await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
@@ -64,10 +63,13 @@ export const accountServiceServer = plugin((server) => {
         }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"]});
 
         if (!account) {
+          logger.warn("Account %s not found during blockAccount", accountName);
           throw {
             code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
           } as ServiceError;
         }
+
+        logger.debug("Account %s found, checking status and running jobs", accountName);
 
         // 检查账户是否已删除
         ensureAccountNotDeleted(account);
@@ -89,6 +91,7 @@ export const accountServiceServer = plugin((server) => {
         );
 
         if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
+          logger.warn("Account %s has running jobs, cannot be blocked", accountName);
           throw {
             code: Status.FAILED_PRECONDITION,
             message: `Account ${accountName}  has jobs running and cannot be blocked. `,
@@ -103,6 +106,7 @@ export const accountServiceServer = plugin((server) => {
           server.ext.clusters, logger);
 
         if (result === "AlreadyBlocked") {
+          logger.info("Account %s is already blocked", accountName);
 
           // 如果账户已被手动冻结，提示账户已被冻结
           // 当前scow暂未使用AccountState.FROZEN
@@ -123,6 +127,7 @@ export const accountServiceServer = plugin((server) => {
         }
 
         if (result === "Whitelisted") {
+          logger.warn("Account %s is whitelisted, cannot be blocked", accountName);
           throw {
             code: Status.FAILED_PRECONDITION,
             message: `The account ${accountName} has been added to the whitelist. `,
@@ -132,6 +137,7 @@ export const accountServiceServer = plugin((server) => {
         // 更改数据库中状态值
         account.state = AccountState.BLOCKED_BY_ADMIN;
 
+        logger.info("Account %s blocked successfully", accountName);
         return { result: BlockAccountResponse_Result.OK };
       });
 
@@ -150,10 +156,11 @@ export const accountServiceServer = plugin((server) => {
     },
 
     unblockAccount: async ({ request, em, logger }) => {
+      const { accountName } = request;
+      logger.info("Received unblockAccount request for account %s", accountName);
+
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "unblock account task");
-
-      const { accountName } = request;
 
       const result = await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
@@ -161,6 +168,7 @@ export const accountServiceServer = plugin((server) => {
         }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"]});
 
         if (!account) {
+          logger.warn("Account %s not found during unblockAccount", accountName);
           throw {
             code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
           } as ServiceError;
@@ -169,6 +177,7 @@ export const accountServiceServer = plugin((server) => {
         ensureAccountNotDeleted(account);
 
         if (!account.blockedInCluster) {
+          logger.info("Account %s is already unblocked", accountName);
           throw {
             code: Status.FAILED_PRECONDITION, message: `Account ${accountName} is unblocked`,
           } as ServiceError;
@@ -199,6 +208,7 @@ export const accountServiceServer = plugin((server) => {
         const currentActivatedClusters = await getActivatedClusters(em, logger);
         await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
 
+        logger.info("Account %s unblocked successfully", accountName);
         return { executed: true };
       });
 
@@ -216,7 +226,7 @@ export const accountServiceServer = plugin((server) => {
       return [result];
     },
 
-    getAccounts: async ({ request, em }) => {
+    getAccounts: async ({ request, em, logger }) => {
 
       const { accountName, tenantName } = request;
 
@@ -272,9 +282,12 @@ export const accountServiceServer = plugin((server) => {
 
     createAccount: async ({ request, em, logger }) => {
       const { accountName, tenantName, ownerId, comment } = request;
+      logger.info("Received createAccount request for account %s under tenant %s", accountName, tenantName);
+
       const user = await em.findOne(User, { userId: ownerId, tenant: { name: tenantName } });
 
       if (!user || user.state === UserState.DELETED) {
+        logger.warn("User %s under tenant %s not found or deleted", ownerId, tenantName);
         throw {
           code: Status.NOT_FOUND,
           message: `User ${ownerId} under tenant ${tenantName} does not exist or has been deleted`,
@@ -283,6 +296,7 @@ export const accountServiceServer = plugin((server) => {
 
       const tenant = await em.findOne(Tenant, { name: tenantName });
       if (!tenant) {
+        logger.warn("Tenant %s not found", tenantName);
         throw {
           code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found`,
         } as ServiceError;
@@ -294,6 +308,7 @@ export const accountServiceServer = plugin((server) => {
       // 新建账户时比较租户默认封锁阈值，如果租户默认封锁阈值小于0则保持账户为在集群中可用状态
       // 如果租户默认封锁阈值大于等于0，则封锁账户
       const shouldBlockInCluster: boolean = tenant.defaultAccountBlockThreshold.gte(0);
+      logger.debug("Should block account %s in cluster: %s", accountName, shouldBlockInCluster);
 
       // insert the account now to avoid future conflict
       const account = new Account({ accountName, comment, tenant, blockedInCluster: shouldBlockInCluster });
@@ -326,6 +341,7 @@ export const accountServiceServer = plugin((server) => {
         await em.persistAndFlush(entitiesToPersist);
       } catch (e) {
         if (e instanceof UniqueConstraintViolationException) {
+          logger.warn("Account %s already exists", accountName);
           throw {
             code: Status.ALREADY_EXISTS, message: `Account ${accountName} already exists.`,
           } as ServiceError;
@@ -343,11 +359,13 @@ export const accountServiceServer = plugin((server) => {
       // 如果已配置资源管理扩展功能，向资源管理数据库写入账户的默认授权集群与分区
       // 创建账户失败时写入的默认授权集群分区不会回滚，下次写入同名租户下同名账户默认集群分区时会覆盖
       if (commonConfig.scowResource?.enabled) {
+        logger.debug("Assigning account %s to resource management", accountName);
         await server.ext.resource.assignAccountOnCreate({
           accountName,
           tenantName: tenant.name,
         }).catch(async (e) => {
           const error = mapTRPCExceptionToGRPC(e);
+          logger.error("Failed to assign account %s to resource management: %s", accountName, error);
           await rollback(error);
         });
       }
@@ -380,11 +398,11 @@ export const accountServiceServer = plugin((server) => {
             });
           },
         ).catch(async (e) => {
+          logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
           await rollback(e);
         });
       // 如果判断为要在集群中解封时
       } else {
-
         // 条件1：如果配置了资源管理服务，则调用适配器的 unblockAccountWithPartitions 接口
         if (commonConfig.scowResource?.enabled) {
 
@@ -429,6 +447,8 @@ export const accountServiceServer = plugin((server) => {
               return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
             }).join("; ");
 
+            logger.error("Failed to unblock account %s in some clusters: %s", accountName, errorDetails);
+
             const error = new GrpcServiceError({
               code: status.INTERNAL,
               message: `Account ${accountName} hasn't been created. Unblock failed.`,
@@ -468,12 +488,13 @@ export const accountServiceServer = plugin((server) => {
               });
             },
           ).catch(async (e) => {
+            logger.error("Failed to create/unblock account %s in clusters: %s", accountName, e);
             await rollback(e);
           });
         }
       }
 
-      logger.info("Account has been created in cluster.");
+      logger.info("Account %s created successfully", accountName);
 
       await callHook("accountCreated", { accountName, comment, ownerId, tenantName }, logger);
 
@@ -488,10 +509,7 @@ export const accountServiceServer = plugin((server) => {
 
       const { tenantName } = request;
 
-      // 删除过期的白名单账户
-      const today = new Date();
-
-      // 查询所有相关信息，并删除过期的白名单账户
+      // 查询所有相关信息
       const results = await em.find(AccountWhitelist, {
         $and: [
           { account: { tenant: { name: tenantName } } },
@@ -500,22 +518,13 @@ export const accountServiceServer = plugin((server) => {
         populate: ["account"],
       });
 
-      // 删除过期的白名单账户
-      const expiredWhitelists = results.filter((x) => x.expirationTime && x.expirationTime < today);
-      if (expiredWhitelists.length > 0) {
-        await em.removeAndFlush(expiredWhitelists);
-      }
-
       const owners = await em.find(UserAccount, {
         account: { accountName: results.map((x) => x.account.$.accountName), tenant: { name: tenantName } },
         role: EntityUserRole.OWNER,
       }, { populate: ["user"]});
 
-      // 过滤结果，排除已删除的白名单账户
-      const validResults = results.filter((x) => !expiredWhitelists.includes(x));
-
       return [{
-        accounts: validResults.map((x) => {
+        accounts: results.map((x) => {
 
           const accountOwner = owners.find((o) => o.account.id === x.account.id)?.user.$;
           return {
@@ -535,16 +544,17 @@ export const accountServiceServer = plugin((server) => {
     },
 
     whitelistAccount: async ({ request, em, logger }) => {
+      const { accountName, comment, operatorId, tenantName, expirationTime } = request;
+      logger.info("Received whitelistAccount request for account %s by %s", accountName, operatorId);
 
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "whitelist account task");
-
-      const { accountName, comment, operatorId, tenantName, expirationTime } = request;
 
       const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } },
         { populate: ["tenant"]});
 
       if (!account) {
+        logger.warn("Account %s not found during whitelistAccount", accountName);
         throw {
           code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
         } as ServiceError;
@@ -553,6 +563,7 @@ export const accountServiceServer = plugin((server) => {
       ensureAccountNotDeleted(account);
 
       if (account.whitelist) {
+        logger.info("Account %s is already whitelisted", accountName);
         return [{ executed: false }];
       }
 
@@ -608,53 +619,60 @@ export const accountServiceServer = plugin((server) => {
     },
 
     dewhitelistAccount: async ({ request, em, logger }) => {
+      const { accountName, tenantName } = request;
 
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "dewhitelist account task");
 
-      const { accountName, tenantName } = request;
+      const result = await em.transactional(async (em) => {
+        const account = await em.findOne(Account, {
+          accountName,
+          tenant: { name: tenantName },
+        }, {
+          populate: ["tenant"],
+          lockMode: LockMode.PESSIMISTIC_WRITE,
+        });
 
-      const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } }, { populate: ["tenant"]});
+        if (!account) {
+          throw {
+            code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+          } as ServiceError;
+        }
 
-      if (!account) {
-        throw {
-          code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
-        } as ServiceError;
-      }
+        ensureAccountNotDeleted(account);
 
-      ensureAccountNotDeleted(account);
+        if (!account.whitelist) {
+          return { executed: false };
+        }
 
-      if (!account.whitelist) {
-        return [{ executed: false }];
-      }
+        em.remove(account.whitelist);
+        account.whitelist = undefined;
 
-      em.remove(account.whitelist);
-      account.whitelist = undefined;
+        logger.info("Remove account %s from whitelist",
+          accountName,
+        );
 
-      logger.info("Remove account %s from whitelist",
-        accountName,
-      );
+        const blockThresholdAmount =
+        account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
-      const blockThresholdAmount =
-      account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+        // 判断移出白名单后是否应在集群中封锁
+        const shouldBlockInCluster = getAccountStateInfo(
+          undefined,
+          account.state,
+          account.balance,
+          blockThresholdAmount,
+        ).shouldBlockInCluster;
 
-      // 判断移出白名单后是否应在集群中封锁
-      const shouldBlockInCluster = getAccountStateInfo(
-        undefined,
-        account.state,
-        account.balance,
-        blockThresholdAmount,
-      ).shouldBlockInCluster;
+        if (shouldBlockInCluster) {
+          logger.info("Account %s is out of balance and not whitelisted. Block the account.", account.accountName);
+          const currentActivatedClusters = await getActivatedClusters(em, logger);
+          await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
+        }
 
-      if (shouldBlockInCluster) {
-        logger.info("Account %s is out of balance and not whitelisted. Block the account.", account.accountName);
-        const currentActivatedClusters = await getActivatedClusters(em, logger);
-        await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
-      }
+        return { executed: true };
+      });
 
-      await em.flush();
-
-      return [{ executed: true }];
+      return [result];
     },
 
     setBlockThreshold: async ({ request, em, logger }) => {

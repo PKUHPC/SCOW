@@ -3,7 +3,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { QueryOrder, raw } from "@mikro-orm/core";
+import { Loaded, QueryOrder, raw } from "@mikro-orm/core";
 import { addUserToAccount, changeEmail as libChangeEmail, createUser, deleteUser,
   getCapabilities, getUser, HttpError,
   removeUserFromAccount,
@@ -27,10 +27,12 @@ import {
 import { ApiVersion } from "@scow/utils/build/version";
 import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
+import { processExpiredWhitelist } from "src/bl/whitelist";
 import { authUrl } from "src/config";
 import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account,AccountState } from "src/entities/Account";
+import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, TenantRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStateInAccount, UserStatus } from "src/entities/UserAccount";
@@ -91,15 +93,47 @@ export const userServiceServer = plugin((server) => {
     },
 
     getUserStatus: async ({ request, em }) => {
-      const { userId, tenantName } = request;
+      const { userId, tenantName, accountNames } = request;
 
-      const user = await em.findOne(User, { userId, tenant: { name: tenantName } }, {
-        populate: ["storageQuotas", "accounts", "accounts.account"],
+      const user = await em.findOne(User, {
+        userId, tenant: { name: tenantName },
+        ...accountNames.length > 0 ? { accounts: { account: { accountName: { $in: accountNames } } } } : {},
+      }, {
+        populate: [
+          "storageQuotas", "accounts", "accounts.account",
+          "accounts.account.whitelist", "accounts.account.tenant",
+        ],
       });
 
       if (!user) {
         throw {
           code: Status.NOT_FOUND, message: `User ${userId}, tenant ${tenantName} is not found`,
+        } as ServiceError;
+      }
+
+      // Check and remove expired whitelists
+      const today = new Date();
+      const hasErrorAccounts: string[] = [];
+      for (const userAccount of user.accounts) {
+        const account = userAccount.account.getEntity();
+        if (account.whitelist) {
+          const whitelist = account.whitelist.getEntity();
+          if (whitelist && whitelist.expirationTime && whitelist.expirationTime <= today) {
+            try {
+              await processExpiredWhitelist(
+                whitelist as Loaded<AccountWhitelist, "account">, em, logger, server.ext.clusters);
+            } catch (error) {
+              hasErrorAccounts.push(account.accountName);
+              logger.error("Failed to process expired whitelist for account %s: %s", account.accountName, error);
+            }
+          }
+        }
+      }
+
+      if (hasErrorAccounts.length > 0) {
+        throw {
+          code: Status.INTERNAL,
+          message: `Failed to process expired whitelist for accounts: ${hasErrorAccounts.join(", ")}`,
         } as ServiceError;
       }
 

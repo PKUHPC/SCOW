@@ -13,6 +13,7 @@ import { misConfig } from "src/config/mis";
 import { authServicePlugin } from "src/plugins/authService";
 import { billPlugin } from "src/plugins/bill";
 import { ClearCachePlugin, clearCachePlugin } from "src/plugins/cachePlugin";
+import { CleanExpiredWhitelistsPlugin } from "src/plugins/cleanExpiredWhitelists";
 import { ClusterPlugin, clustersPlugin } from "src/plugins/clusters";
 import { FetchPlugin, fetchPlugin } from "src/plugins/fetch";
 import { ormPlugin } from "src/plugins/orm";
@@ -42,6 +43,7 @@ export const plugins = [
   authServicePlugin,
   clearCachePlugin,
   SyncStorageDataPlugin,
+  CleanExpiredWhitelistsPlugin,
 ];
 
 if (commonConfig.scowResource?.enabled) {

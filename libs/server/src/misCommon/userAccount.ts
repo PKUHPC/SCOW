@@ -61,7 +61,8 @@ export const libGetAccounts = async (
   const userClient = getMisClient(UserServiceClient);
   const userInfo = await asyncClientCall(userClient, "getUserInfo", { userId });
   const tenantName = userInfo.tenantName;
-  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus", { userId, tenantName });
+  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus",
+    { userId, tenantName, accountNames: allAccounts });
 
   const unblockedAccounts: string[] = [];
   const blockedAccounts: string[] = [];
@@ -133,7 +134,8 @@ export const libCheckUserAccountPermission = async (
   const userClient = getMisClient(UserServiceClient);
   const userInfo = await asyncClientCall(userClient, "getUserInfo", { userId });
   const tenantName = userInfo.tenantName;
-  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus", { userId, tenantName });
+  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus",
+    { userId, tenantName, accountNames: [accountName]});
 
   let unblockedCount = 0;
   let blockedCount = 0;

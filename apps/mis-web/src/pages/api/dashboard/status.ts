@@ -31,7 +31,7 @@ export const getUserStatus = async (userId: string, tenant: string) => {
 
   return await asyncClientCall(client, "getUserStatus", {
     tenantName: tenant,
-    userId,
+    userId, accountNames: [],
   });
 };
 

@@ -1,0 +1,8 @@
+{
+  "label": "账户白名单",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "账户白名单相关说明及配置"
+  }
+}

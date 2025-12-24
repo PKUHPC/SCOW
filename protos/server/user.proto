@@ -16,6 +16,8 @@ enum UserStatus {
 message GetUserStatusRequest {
   string tenant_name = 1;
   string user_id = 2;
+  // 传递需要查询的账户名列表, 若为空, 则查询所有账户
+  repeated string account_names = 3;
 }
 
 enum AccountState {

@@ -98,6 +98,11 @@ export const MisConfigSchema = Type.Object({
     cron: Type.String({ description: "获取信息的周期的cron表达式，默认每小时整点执行一次", default: "0 * * * *" }),
   }, { default: {}, description: "存储使用量同步" })),
 
+  cleanExpiredWhitelists: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description:"是否默认打开", default: true }),
+    cron: Type.String({ description: "清理过期白名单的周期的cron表达式，默认每天0点执行一次", default: "0 0 * * *" }),
+  }, { default: {}, description: "清理过期白名单" })),
+
   syncAccountUser: Type.Object({
     maxSyncDurationMinutes:  (Type.Number({
       description: "单次同步最长处理时间，单位分钟，如不配置默认为5分钟。此配置会作为周期性账户用户同步"
