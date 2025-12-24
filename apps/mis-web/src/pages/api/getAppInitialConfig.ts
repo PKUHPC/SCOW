@@ -36,7 +36,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
 
       footerText: Type.Optional(Type.String()),
 
-      initialLanguage: Type.String(),
+      initialLanguageId: Type.String(),
 
       darkModeCookieValue: Type.Optional(Type.Object({ dark: Type.Boolean(), mode: Type.Union([
         Type.Literal("system"), Type.Literal("dark"), Type.Literal("light"),
@@ -64,7 +64,7 @@ export default route(GetAppInitialConfigSchema,
       footerText: undefined,
       primaryColor: { defaultColor:"#94070A" },
       darkModeCookieValue: getDarkModeCookieValue(req),
-      initialLanguage: "",
+      initialLanguageId: "",
       clusterConfigs: {},
       initialActivatedClusters: {},
       initialSimpleClustersInfo: {},
@@ -133,7 +133,7 @@ export default route(GetAppInitialConfigSchema,
     ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
     ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
 
-    extra.initialLanguage = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+    extra.initialLanguageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
 
     extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
 

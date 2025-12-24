@@ -78,7 +78,7 @@
     "react-async": "10.0.1",
     "react-dom": "18.3.1",
     "react-is": "19.0.0",
-    "react-typed-i18n": "2.4.1",
+    "react-typed-i18n": "2.6.1",
     "recharts": "2.15.0",
     "simstate": "3.0.1",
     "uuid": "10.0.0",

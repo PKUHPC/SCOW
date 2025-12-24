@@ -2,6 +2,7 @@ import { Select } from "antd";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { setCookie } from "nookies";
 import { useEffect, useState } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { languageInfo, useI18n } from "src/i18n";
 import { styled } from "styled-components";
 
@@ -36,6 +37,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const searchParams = useSearchParams();
+  const { publicConfig } = usePublicConfig();
 
   useEffect(() => {
     const init = i18n.currentLanguage.id;
@@ -66,6 +68,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
     router.replace(url);
   };
 
+  const enabledLanguages = publicConfig.SYSTEM_LANGUAGE_CONFIG.enabledLanguages;
+
+
   return (
     <Container>
       <Select
@@ -78,11 +83,13 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
         popupMatchSelectWidth={false}
         popupClassName="head-language-select"
       >
-        {Object.entries(languageInfo).map(([id, { name }]) => (
-          <Select.Option key={id} value={id}>
-            {name}
-          </Select.Option>
-        ))}
+        {Object.entries(languageInfo)
+          .filter(([id]) => enabledLanguages.includes(id))
+          .map(([id, { name }]) => (
+            <Select.Option key={id} value={id}>
+              {name}
+            </Select.Option>
+          ))}
       </Select>
     </Container>
   );

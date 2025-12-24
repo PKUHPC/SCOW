@@ -1,29 +1,17 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
+import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "src/components/ErrorBoundary";
 import { Loading } from "src/components/Loading";
 import { TopProgressBar } from "src/components/TopProgressBar";
-import { Provider as I18nProvider } from "src/i18n";
-import en from "src/i18n/en";
-import zh_cn from "src/i18n/zh_cn";
+import { loadLanguageDefinitions,Provider as I18nProvider } from "src/i18n";
 import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { DarkModeCookie, DarkModeProvider } from "src/layouts/darkMode";
 import { RootErrorContent } from "src/layouts/error/RootErrorContent";
+import { ServerErrorPage } from "src/layouts/error/ServerErrorPage";
 import { AntdStyleRegistry } from "src/layouts/styleRegistry/AntdRegistry";
 import StyledComponentsRegistry from "src/layouts/styleRegistry/StyledComponentsRegistry";
 import { UiConfig } from "src/server/trpc/route/config";
@@ -31,11 +19,6 @@ import { getAiCurrentLanguageId } from "src/utils/systemLanguage";
 import { trpc } from "src/utils/trpc";
 
 import { UiConfigContext } from "./uiContext";
-
-const languagesMap = {
-  "zh_cn": zh_cn,
-  "en": en,
-};
 
 export function ClientLayout(props: {
   children: React.ReactNode,
@@ -69,6 +52,17 @@ export function ClientLayout(props: {
 
   const publicConfig = usePublicConfigQuery();
 
+  const initialLanguageId = publicConfig.data
+    ? getAiCurrentLanguageId(languageCookie,acceptLanguageHeader, publicConfig.data.SYSTEM_LANGUAGE_CONFIG)
+    : undefined;
+
+  const initialLanguageDefinitionQuery = useQuery({
+    enabled: !!initialLanguageId,
+    queryKey: ["languageId", initialLanguageId],
+    queryFn: () =>
+      initialLanguageId ? loadLanguageDefinitions(initialLanguageId) : undefined,
+  });
+
   if (publicConfig.isLoading) {
     return (
       <body>
@@ -80,12 +74,22 @@ export function ClientLayout(props: {
   if (publicConfig.isError || !publicConfig.isSuccess) {
     return (
       <body>
+        <ServerErrorPage />
       </body>
     );
   }
 
-  const initialLanguage =
-  getAiCurrentLanguageId(languageCookie,acceptLanguageHeader,publicConfig.data.SYSTEM_LANGUAGE_CONFIG);
+  if (initialLanguageDefinitionQuery.isLoading || !initialLanguageDefinitionQuery.data) {
+    return <body><Loading /></body>;
+  }
+
+  if (initialLanguageDefinitionQuery.isError || !initialLanguageDefinitionQuery.isSuccess) {
+    return (
+      <body>
+        <ServerErrorPage />
+      </body>
+    );
+  }
 
   return (
     <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
@@ -97,13 +101,13 @@ export function ClientLayout(props: {
               : (
                 <DarkModeProvider initial={initialDark}>
                   <I18nProvider initialLanguage={{
-                    id: initialLanguage,
-                    definitions: languagesMap[initialLanguage as keyof typeof languagesMap],
+                    id: initialLanguageId!,
+                    definitions: initialLanguageDefinitionQuery.data,
                   }}
                   >
                     <AntdConfigProvider
                       color={color}
-                      locale={initialLanguage}
+                      locale={initialLanguageId}
                       primaryColor={{ defaultColor: color,darkModeColor }}
                     >
                       <GlobalStyle />

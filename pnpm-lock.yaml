@@ -8,9 +8,6 @@ patchedDependencies:
   next@15.5.7:
     hash: b4eab7eb6afb872b3376e0f0a9b9e6c122b764f2a3c3ce94f9b10c5ed97f1791
     path: patches/next@15.5.7.patch
-  react-typed-i18n@2.3.0:
-    hash: 98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f
-    path: patches/react-typed-i18n@2.3.0.patch
 
 importers:
 
@@ -299,8 +296,8 @@ importers:
         specifier: 19.0.0
         version: 19.0.0
       react-typed-i18n:
-        specifier: 2.4.1
-        version: 2.4.1(react@18.3.1)
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       recharts:
         specifier: 2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -538,8 +535,8 @@ importers:
         specifier: 1.5.3
         version: 1.5.3
       react-typed-i18n:
-        specifier: 2.3.0
-        version: 2.3.0(patch_hash=98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f)(react@18.3.1)
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       speakeasy:
         specifier: 2.0.0
         version: 2.0.0
@@ -887,8 +884,8 @@ importers:
         specifier: 19.0.0
         version: 19.0.0
       react-typed-i18n:
-        specifier: 2.4.1
-        version: 2.4.1(react@18.3.1)
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       recharts:
         specifier: ^2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1070,6 +1067,9 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      react-typed-i18n:
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       replace-in-file:
         specifier: 8.3.0
         version: 8.3.0
@@ -1421,8 +1421,8 @@ importers:
         specifier: 19.0.0
         version: 19.0.0
       react-typed-i18n:
-        specifier: 2.4.1
-        version: 2.4.1(react@18.3.1)
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       recharts:
         specifier: 2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1695,8 +1695,8 @@ importers:
         specifier: 10.1.0
         version: 10.1.0(@types/react@18.3.3)(react@18.3.1)
       react-typed-i18n:
-        specifier: 2.4.1
-        version: 2.4.1(react@18.3.1)
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       recharts:
         specifier: 2.15.0
         version: 2.15.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1953,6 +1953,9 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      react-typed-i18n:
+        specifier: 2.6.1
+        version: 2.6.1(react@18.3.1)
       replace-in-file:
         specifier: 8.3.0
         version: 8.3.0
@@ -12088,13 +12091,8 @@ packages:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
 
-  react-typed-i18n@2.3.0:
-    resolution: {integrity: sha512-ap0/WlMz4iFwxha2nLPn3mWiUNO/f4PagXIbTznnpCzSTWOk4ifkWyI/iC4LiA7rF49aBsMqAUAmk65mzfWPkA==}
-    peerDependencies:
-      react: '>=16.8.0'
-
-  react-typed-i18n@2.4.1:
-    resolution: {integrity: sha512-Aztc3t8r0Evm08JSfGF3TvT83b/jMeIzn1fAwT/dEZ4TavYx1NyNpQqoND39JUpNRwfqNioPuqtwVXRJLq0tWQ==}
+  react-typed-i18n@2.6.1:
+    resolution: {integrity: sha512-X9VBA7Muh+55Ns1NUYjfMc+pkCEaEYf23NAqmJEqkhhI/hSeu4th69BH6CINxEp78EL679T6CxHXFWtfHVAahQ==}
     peerDependencies:
       react: '>=16.8.0'
 
@@ -27643,11 +27641,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-typed-i18n@2.3.0(patch_hash=98cdd30d99894e474368939223c9bbd47df98c0e1d1537d7daa53c2f88bdde2f)(react@18.3.1):
-    dependencies:
-      react: 18.3.1
-
-  react-typed-i18n@2.4.1(react@18.3.1):
+  react-typed-i18n@2.6.1(react@18.3.1):
     dependencies:
       react: 18.3.1
 

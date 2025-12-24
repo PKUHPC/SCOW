@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Type } from "@sinclair/typebox";
 
 import { CommonConfigSchema } from "./common";
@@ -25,6 +13,13 @@ export const createI18nStringSchema = ({ description, defaultValue }: {
         default: Type.String({ description: "国际化类型默认值" }),
         en: Type.Optional(Type.String({ description: "国际化类型英文值" })),
         zh_cn: Type.Optional(Type.String({ description: "国际化类型简体中文值" })),
+        ja: Type.Optional(Type.String({ description: "国际化类型日文值" })),
+        ko: Type.Optional(Type.String({ description: "国际化类型韩文值" })),
+        fr: Type.Optional(Type.String({ description: "国际化类型法文值" })),
+        de: Type.Optional(Type.String({ description: "国际化类型德文值" })),
+        es: Type.Optional(Type.String({ description: "国际化类型西班牙文值" })),
+        pt: Type.Optional(Type.String({ description: "国际化类型葡萄牙文值" })),
+        ru: Type.Optional(Type.String({ description: "国际化类型俄文值" })),
       }),
     }),
   ], { description, default: defaultValue });
@@ -36,18 +31,46 @@ export const HEADER_ACCEPT_VALID_LANGUAGES = {
   ZH_CN: "zh-CN",
   EN: "en",
   EN_US: "en-US",
+  JA: "ja",
+  JA_JP: "ja-JP",
+  KO: "ko",
+  KO_KR: "ko-KR",
+  FR: "fr",
+  FR_FR: "fr-FR",
+  DE: "de",
+  DE_DE: "de-DE",
+  ES: "es",
+  ES_ES: "es-ES",
+  PT: "pt",
+  PT_PT: "pt-PT",
+  RU: "ru",
+  RU_RU: "ru-RU",
 };
 
 // 系统支持语言列表
 export const SYSTEM_VALID_LANGUAGES = {
   ZH_CN: "zh_cn",
   EN: "en",
+  JA: "ja",
+  KO: "ko",
+  FR: "fr",
+  DE: "de",
+  ES: "es",
+  PT: "pt",
+  RU: "ru",
 };
 
 // 系统合法语言枚举值
 export enum SYSTEM_VALID_LANGUAGE_ENUM {
   "zh_cn" = "zh_cn",
   "en" = "en",
+  "ja" = "ja",
+  "ko" = "ko",
+  "fr" = "fr",
+  "de" = "de",
+  "es" = "es",
+  "pt" = "pt",
+  "ru" = "ru",
 }
 
 export type SystemLanguage = CommonConfigSchema["systemLanguage"];
@@ -55,7 +78,8 @@ export type SystemLanguage = CommonConfigSchema["systemLanguage"];
 export interface SystemLanguageConfig {
   defaultLanguage: string,
   isUsingI18n: boolean,
-  autoDetectWhenUserNotSet?: boolean
+  autoDetectWhenUserNotSet: boolean,
+  enabledLanguages: string[],
 };
 
 
@@ -65,6 +89,13 @@ export type I18nStringType = string | {
     default: string,
     en?: string,
     zh_cn?: string,
+    ja?: string,
+    ko?: string,
+    fr?: string,
+    de?: string,
+    es?: string,
+    pt?: string,
+    ru?: string,
   }
 };
 
@@ -76,4 +107,11 @@ export interface I18nObject_I18n {
   default: string;
   en?: string | undefined;
   zhCn?: string | undefined;
+  ja?: string | undefined;
+  ko?: string | undefined;
+  fr?: string | undefined;
+  de?: string | undefined;
+  es?: string | undefined;
+  pt?: string | undefined;
+  ru?: string | undefined;
 }

@@ -73,7 +73,8 @@
     "superjson": "2.2.2",
     "swagger-ui-react": "5.18.2",
     "trpc-to-openapi": "3.1.0",
-    "zod": "4.1.13"
+    "zod": "4.1.13",
+    "react-typed-i18n": "2.6.1"
   },
   "devDependencies": {
     "@bufbuild/buf": "1.59.0",

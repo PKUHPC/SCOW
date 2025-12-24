@@ -7,7 +7,7 @@ import { createCaptcha } from "src/auth/captcha";
 import { authConfig, OtpStatusOptions, ScowLogoType } from "src/config/auth";
 import { config, FAVICON_URL, LOGO_URL } from "src/config/env";
 import { uiConfig } from "src/config/ui";
-import { AuthTextsType, languages } from "src/i18n";
+import { AuthTextsType, loadLanguageDefinitions } from "src/i18n";
 import { getHostname } from "src/utils/getHostname";
 
 export async function serveLoginHtml(
@@ -45,7 +45,7 @@ export async function serveLoginHtml(
 
   // 获取当前语言ID及对应的登录页面文本
   const languageId = getCurrentLanguageId(req.raw, getSystemLanguageConfig(getCommonConfig().systemLanguage));
-  const authTexts: AuthTextsType = languages[languageId];
+  const authTexts: AuthTextsType = await loadLanguageDefinitions(languageId);
 
   // 获取sloganI18nText
   const sloganTitle = getI18nConfigCurrentText(

@@ -23,6 +23,13 @@ const TemplateSchema = z.object({
   default: z.string(),
   en: z.string(),
   zhCn: z.string(),
+  de: z.string(),
+  es: z.string(),
+  ja: z.string(),
+  ko: z.string(),
+  fr: z.string(),
+  pt: z.string(),
+  ru: z.string(),
 });
 
 const MessageTypeSchema = z.object({

@@ -20,10 +20,9 @@ import { useCallback, useEffect, useRef } from "react";
 import { useAsync } from "react-async";
 import { createStore, StoreProvider, useStore } from "simstate";
 import { api } from "src/apis";
+import { ServerErrorPage } from "src/components/errorPages/ServerErrorPage";
 import { SystemInitialErrorPage } from "src/components/errorPages/SystemInitialErrorPage";
-import { Provider, useI18n, useI18nTranslate } from "src/i18n";
-import en from "src/i18n/en";
-import zh_cn from "src/i18n/zh_cn";
+import { loadLanguageDefinitions, Provider, useI18n, useI18nTranslate } from "src/i18n";
 import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { BaseLayout } from "src/layouts/BaseLayout";
 import { FloatButtons } from "src/layouts/FloatButtons";
@@ -32,12 +31,6 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
-
-const languagesMap = {
-  "zh_cn": zh_cn,
-  "en": en,
-};
-
 
 const FailEventHandler: React.FC = () => {
   const { message, modal } = AntdApp.useApp();
@@ -199,32 +192,50 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
 
   const uiExtensionStore = useConstant(() => createStore(UiExtensionStore, publicConfig.UI_EXTENSION));
 
+  const initialLanguageDefinitionQuery = useAsync({
+    promiseFn: useCallback(() => {
+      return loadLanguageDefinitions(extra.initialLanguageId);
+    }, []),
+  });
+
+  if (initialLanguageDefinitionQuery.isLoading) {
+    return <body><Spin /></body>;
+  }
+
+  if (!initialLanguageDefinitionQuery.data) {
+    return (
+      <body>
+        <ServerErrorPage />
+      </body>
+    );
+  }
+
   return (
     <Provider initialLanguage={{
-      id: extra.initialLanguage,
-      definitions: languagesMap[extra.initialLanguage],
+      id: extra.initialLanguageId,
+      definitions: initialLanguageDefinitionQuery.data,
     }}
     >
       <StoreProvider stores={[userStore, clusterInfoStore, uiExtensionStore]}>
         <DarkModeProvider initial={extra.darkModeCookieValue}>
           <AntdConfigProvider
             primaryColor={primaryColor}
-            locale={extra.initialLanguage}
+            locale={extra.initialLanguageId}
             color={primaryColor.defaultColor}
           >
-            <FloatButtons languageId={extra.initialLanguage} />
+            <FloatButtons languageId={extra.initialLanguageId} />
             <GlobalStyle />
             <FailEventHandler />
             <TopProgressBar />
             <BaseLayout
               footerText={footerText}
               versionTag={publicConfig.VERSION_TAG}
-              initialLanguage={extra.initialLanguage}
+              initialLanguage={extra.initialLanguageId}
             >
               {publicConfig.NOTIF_ENABLED ? (
                 <NotificationLayout
                   interval={300000}
-                  languageId={extra.initialLanguage}
+                  languageId={extra.initialLanguageId}
                   unreadMessages={data?.results}
                   onMarkMessageRead={async (messageId: number) => {
                     await api.markMessageRead({ body: { messageId } });

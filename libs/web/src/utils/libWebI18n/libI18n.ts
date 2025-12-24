@@ -1,16 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import libWebDe from "./libWebDe";
 import libWebEn from "./libWebEn";
+import libWebEs from "./libWebEs";
+import libWebFr from "./libWebFr";
+import libWebJa from "./libWebJa";
+import libWebKo from "./libWebKo";
+import libWebPt from "./libWebPt";
+import libWebRu from "./libWebRu";
 import libWebZhCn from "./libWebZhCn";
 
 export type LibWebTextsType = typeof libWebEn;
@@ -19,6 +14,13 @@ export type LibWebTextsKeys = keyof LibWebTextsType;
 export const libWebLanguages: Record<string, LibWebTextsType> = {
   en: libWebEn,
   zh_cn: libWebZhCn,
+  es: libWebEs,
+  fr: libWebFr,
+  ja: libWebJa,
+  ko: libWebKo,
+  ru: libWebRu,
+  pt: libWebPt,
+  de: libWebDe,
 };
 
 export const getCurrentLangLibWebText = (

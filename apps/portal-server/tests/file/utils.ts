@@ -1,22 +1,11 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ServiceError } from "@grpc/grpc-js";
 import { LoginNode } from "@scow/config/build/cluster";
-import { I18nStringType } from "@scow/config/build/i18n";
+import { I18nObject_I18n, I18nStringType } from "@scow/config/build/i18n";
 import { sftpWriteFile, sshRawConnect, sshRmrf } from "@scow/lib-ssh";
 import { ClusterConfigSchemaProto_LoginNodesProtoType } from "@scow/protos/build/common/config";
 import { I18nStringProtoType } from "@scow/protos/build/common/i18n";
 import { SubmissionInfo } from "@scow/protos/build/portal/app";
+import { camelToUnderscore } from "@scow/utils/build/i18n";
 import { randomBytes } from "crypto";
 import FormData from "form-data";
 import { NodeSSH } from "node-ssh";
@@ -166,26 +155,8 @@ export async function createDesktopsFile({ sftp, ssh }: TestSshServer) {
   await sftpWriteFile(sftp)(testDesktopsFilePath, JSON.stringify([testDesktopInfo, anotherHostDesktopInfo]));
 }
 
-// protobuf中定义的grpc返回值的类型映射到前端I18nStringType
-export const getI18nTypeFormat = (i18nProtoType: I18nStringProtoType | undefined): I18nStringType => {
-
-  if (!i18nProtoType?.value) return "";
-
-  if (i18nProtoType.value.$case === "directString") {
-    return i18nProtoType.value.directString;
-  } else {
-    const i18nObj = i18nProtoType.value.i18nObject.i18n;
-    if (!i18nObj) return "";
-    return {
-      i18n: {
-        default: i18nObj.default,
-        en: i18nObj.en,
-        zh_cn: i18nObj.zhCn,
-      },
-    };
-  }
-
-};
+// 和libs/web/src/utils/typeConversion.ts中的函数一致
+// portal-server不可以引用libs/web
 
 
 // protobuf中定义的grpc返回值的loginNodes类型映射到前端loginNode
@@ -209,3 +180,26 @@ export const getLoginNodesTypeFormat = (
   }
 
 };
+
+// protobuf中定义的grpc返回值的类型映射到前端I18nStringType
+export const getI18nTypeFormat = (i18nProtoType: I18nStringProtoType | undefined): I18nStringType => {
+
+  if (!i18nProtoType?.value) return "";
+
+  if (i18nProtoType.value.$case === "directString") {
+    return i18nProtoType.value.directString;
+  }
+
+  const i18nObj = i18nProtoType.value.i18nObject.i18n;
+  if (!i18nObj) return "";
+
+  return {
+    i18n: {
+      ...Object.entries(i18nObj).reduce((acc, [key, value]) => {
+        acc[camelToUnderscore(key)] = value;
+        return acc;
+      }, {} as I18nObject_I18n),
+    },
+  };
+};
+

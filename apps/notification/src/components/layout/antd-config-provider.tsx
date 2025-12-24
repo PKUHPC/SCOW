@@ -13,7 +13,14 @@
 "use client";
 import { PrimaryColor } from "@scow/config/build/ui";
 import { App, ConfigProvider, theme } from "antd";
+import deDElocale from "antd/locale/de_DE";
 import enUSlocale from "antd/locale/en_US";
+import esESlocale from "antd/locale/es_ES";
+import frFRlocale from "antd/locale/fr_FR";
+import jaJPlocale from "antd/locale/ja_JP";
+import koKRlocale from "antd/locale/ko_KR";
+import ptPTlocale from "antd/locale/pt_PT";
+import ruRUlocale from "antd/locale/ru_RU";
 import zhCNlocale from "antd/locale/zh_CN";
 import { useContext } from "react";
 import { ThemeProvider } from "styled-components";
@@ -44,7 +51,19 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, co
 
   return (
     <ConfigProvider
-      locale={ scowLangId === "zh_cn" ? zhCNlocale : enUSlocale}
+      locale={
+        ({
+          zh_cn: zhCNlocale,
+          en: enUSlocale,
+          de: deDElocale,
+          es: esESlocale,
+          fr: frFRlocale,
+          ru: ruRUlocale,
+          ko: koKRlocale,
+          ja: jaJPlocale,
+          pt: ptPTlocale,
+        } as Record<string, any>)[scowLangId] ?? enUSlocale
+      }
       theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
         colorText: scowDark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif" },
       algorithm: scowDark ? theme.darkAlgorithm : undefined }}

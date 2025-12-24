@@ -50,7 +50,7 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
         Type.Literal("system"), Type.Literal("dark"), Type.Literal("light"),
       ]) })),
 
-      initialLanguage: Type.String(),
+      initialLanguageId: Type.String(),
       clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
 
       initialCurrentClusters: Type.Optional(Type.Array(Type.Object({
@@ -75,7 +75,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     primaryColor: { defaultColor:"#94070A" },
     darkModeCookieValue: getDarkModeCookieValue(req),
     loginNodes: {},
-    initialLanguage: "",
+    initialLanguageId: "",
     clusterConfigs: {},
     initialCurrentClusters: [],
     // 通过SSR获取门户系统配置文件中是否可用桌面功能
@@ -171,7 +171,7 @@ export default route(GetAppInitialConfigSchema, async (req) => {
 
   extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
   // 从Cookies或header中获取语言id
-  extra.initialLanguage = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+  extra.initialLanguageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
 
   return { 200: extra };
 });

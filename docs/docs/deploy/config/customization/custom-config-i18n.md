@@ -12,7 +12,7 @@ title: 自定义可配置项的国际化文本
 ## 配置示例
 
 系统兼容上一版本的文本配置的**string类型**，同时支持可以随着语言切换而变换的**i18n国际化类型**。
-下方是在`auth.yaml`中配置首页标题信息文本的国际化配置示例。
+下方是在`auth.yaml`中配置首页标题信息文本的国际化配置示例。其中，[自定义系统语言](./custom-system-language.md)中包含的所有语言代码均可在此处配置。
 
 ```yaml title="config/auth.yaml"
 
@@ -31,6 +31,8 @@ slogan:
       en: "Open-source Compute Center Portal and Management Platform"
       # 简体中文文本，可选填，类型要求为string。切换语言为简体中文时显示配置的简体中文文本信息
       zh_cn: "开源算力中心门户和管理平台"
+      # 自定义系统语言文档中的所有语言代码均可在此处配置，均为可选
+
 
 ```
 

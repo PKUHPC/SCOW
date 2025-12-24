@@ -46,7 +46,7 @@
     "nodemailer": "6.9.14",
     "qrcode": "1.5.3",
     "speakeasy": "2.0.0",
-    "react-typed-i18n": "2.3.0"
+    "react-typed-i18n": "2.6.1"
   },
   "devDependencies": {
     "@types/asn1": "0.2.4",

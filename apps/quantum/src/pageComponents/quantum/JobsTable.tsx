@@ -1,6 +1,5 @@
 "use client";
 
-import { Decimal } from "@scow/lib-decimal";
 import { Button, Form, Input, InputNumber, Space, Table, TableColumnsType, Tooltip } from "antd";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";

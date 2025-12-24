@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { HEADER_ACCEPT_VALID_LANGUAGES,
   I18nStringType, SYSTEM_VALID_LANGUAGES, SystemLanguageConfig } from "@scow/config/build/i18n";
 import { IncomingMessage } from "http";
@@ -33,6 +21,20 @@ export function getI18nConfigCurrentText(
         return i18nConfigText.i18n.en || i18nConfigText.i18n.default;
       case SYSTEM_VALID_LANGUAGES.ZH_CN:
         return i18nConfigText.i18n.zh_cn || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.JA:
+        return i18nConfigText.i18n.ja || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.KO:
+        return i18nConfigText.i18n.ko || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.FR:
+        return i18nConfigText.i18n.fr || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.DE:
+        return i18nConfigText.i18n.de || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.ES:
+        return i18nConfigText.i18n.es || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.PT:
+        return i18nConfigText.i18n.pt || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
+      case SYSTEM_VALID_LANGUAGES.RU:
+        return i18nConfigText.i18n.ru || i18nConfigText.i18n.en || i18nConfigText.i18n.default;
       default:
         return i18nConfigText.i18n.default;
     }
@@ -79,6 +81,27 @@ export function getCurrentLanguageId(req: IncomingMessage | undefined,
               case HEADER_ACCEPT_VALID_LANGUAGES.EN_US:
               case HEADER_ACCEPT_VALID_LANGUAGES.EN:
                 return SYSTEM_VALID_LANGUAGES.EN;
+              case HEADER_ACCEPT_VALID_LANGUAGES.JA_JP:
+              case HEADER_ACCEPT_VALID_LANGUAGES.JA:
+                return SYSTEM_VALID_LANGUAGES.JA;
+              case HEADER_ACCEPT_VALID_LANGUAGES.KO_KR:
+              case HEADER_ACCEPT_VALID_LANGUAGES.KO:
+                return SYSTEM_VALID_LANGUAGES.KO;
+              case HEADER_ACCEPT_VALID_LANGUAGES.FR_FR:
+              case HEADER_ACCEPT_VALID_LANGUAGES.FR:
+                return SYSTEM_VALID_LANGUAGES.FR;
+              case HEADER_ACCEPT_VALID_LANGUAGES.DE_DE:
+              case HEADER_ACCEPT_VALID_LANGUAGES.DE:
+                return SYSTEM_VALID_LANGUAGES.DE;
+              case HEADER_ACCEPT_VALID_LANGUAGES.ES_ES:
+              case HEADER_ACCEPT_VALID_LANGUAGES.ES:
+                return SYSTEM_VALID_LANGUAGES.ES;
+              case HEADER_ACCEPT_VALID_LANGUAGES.PT_PT:
+              case HEADER_ACCEPT_VALID_LANGUAGES.PT:
+                return SYSTEM_VALID_LANGUAGES.PT;
+              case HEADER_ACCEPT_VALID_LANGUAGES.RU_RU:
+              case HEADER_ACCEPT_VALID_LANGUAGES.RU:
+                return SYSTEM_VALID_LANGUAGES.RU;
               default:
                 break;
             }

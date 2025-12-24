@@ -30,5 +30,5 @@
     "**/*.tsx",
     "scripts/generateSchemas.ts",
     "scripts/generateClients.ts"
-, "../../libs/config/src/appConfig/clusterTexts.ts", "src/pages/api/init/createInitAdmin.ts", "../../libs/web/src/utils/compareBreakpoints.ts", "../../libs/web/src/utils/refreshToken.tsx"  ]
+  ]
 }

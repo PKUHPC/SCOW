@@ -1,20 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ClusterConfigSchema, LoginNodeConfigSchema } from "@scow/config/build/cluster";
 import { I18nStringType } from "@scow/config/build/i18n";
 import { ClusterConfigSchemaProto, clusterConfigSchemaProto_K8sRuntimeFromJSON,
   ClusterConfigSchemaProto_LoginNodesProtoType } from "@scow/protos/build/common/config";
-import { I18nStringProtoType } from "@scow/protos/build/common/i18n";
+import { I18nObject_I18n, I18nStringProtoType } from "@scow/protos/build/common/i18n";
+import { underscoreNamingToCamelCase } from "@scow/utils/build/i18n";
 
 export function isStringArray(arr: any[]): arr is string[] {
   return arr.every((item) => typeof item === "string");
@@ -24,7 +13,6 @@ export function isObjectArray(arr: any[]): arr is object[] {
   return arr.every((item) => typeof item === "object" && item !== null);
 }
 
-
 export const getI18nSeverTypeFormat = (i18nConfig: I18nStringType): I18nStringProtoType | undefined => {
 
   if (!i18nConfig) return undefined;
@@ -33,11 +21,8 @@ export const getI18nSeverTypeFormat = (i18nConfig: I18nStringType): I18nStringPr
     return { value: { $case: "directString", directString: i18nConfig } };
   } else {
     return { value: { $case: "i18nObject", i18nObject: {
-      i18n: {
-        default: i18nConfig.i18n.default,
-        en: i18nConfig.i18n.en,
-        zhCn: i18nConfig.i18n.zh_cn,
-      },
+      i18n: Object.entries(i18nConfig.i18n).reduce((acc, [key, value]) =>
+        ({ ...acc, [underscoreNamingToCamelCase(key)]: value }), {} as I18nObject_I18n),
     } } };
   }
 };

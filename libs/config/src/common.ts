@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 
@@ -68,12 +56,17 @@ export const CommonConfigSchema = Type.Object({
   systemLanguage: Type.Optional(Type.Union([
     Type.Object({
       autoDetectWhenUserNotSet: Type.Optional(Type.Boolean({ description: "是否跟随系统进行语言选择" })),
-      default: Type.Optional(Type.Enum(SYSTEM_VALID_LANGUAGE_ENUM,
-        { description: "系统默认语言" })),
+      default: Type.Optional(Type.Enum(SYSTEM_VALID_LANGUAGE_ENUM, { description: "系统默认语言" })),
+      enabledLanguages: Type.Optional(Type.Array(Type.Enum(SYSTEM_VALID_LANGUAGE_ENUM), {
+        description: "系统可切换的语言列表",
+      })),
     }, {
       description: "允许手动切换SCOW支持的合法语言，可以指定系统默认语言" }),
     Type.Enum(SYSTEM_VALID_LANGUAGE_ENUM, { description: "SCOW使用的文本语言，不再允许手动切换" }),
-  ], { description: "", default: { autoDetectWhenUserNotSet: true, default: SYSTEM_VALID_LANGUAGE_ENUM.zh_cn } })),
+  ], { description: "", default: {
+    autoDetectWhenUserNotSet: true,
+    default: SYSTEM_VALID_LANGUAGE_ENUM.zh_cn,
+  } })),
 
   scowResource: Type.Optional(ScowResourceConfigSchema),
 
@@ -98,10 +91,19 @@ export const CommonConfigSchema = Type.Object({
 export const getSystemLanguageConfig = (systemLanguage: SystemLanguage): SystemLanguageConfig => {
 
   if (typeof systemLanguage === "string") {
-    return { defaultLanguage: systemLanguage, isUsingI18n: false };
+    return {
+      defaultLanguage: systemLanguage,
+      isUsingI18n: false,
+      autoDetectWhenUserNotSet: false,
+      enabledLanguages: [systemLanguage],
+    };
   }
-  return { defaultLanguage: systemLanguage?.default ?? SYSTEM_VALID_LANGUAGE_ENUM.zh_cn,
-    isUsingI18n: true, autoDetectWhenUserNotSet: systemLanguage?.autoDetectWhenUserNotSet ?? true };
+  return {
+    defaultLanguage: systemLanguage?.default ?? SYSTEM_VALID_LANGUAGE_ENUM.zh_cn,
+    isUsingI18n: true,
+    autoDetectWhenUserNotSet: systemLanguage?.autoDetectWhenUserNotSet ?? true,
+    enabledLanguages: systemLanguage?.enabledLanguages ?? ["zh_cn", "en"],
+  };
 };
 
 

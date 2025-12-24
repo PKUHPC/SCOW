@@ -35,6 +35,13 @@ message Template {
   string default = 1;
   string en = 2;
   string zh_cn = 3;
+  string de = 4;
+  string es = 5;
+  string fr = 6;
+  string ja = 7;
+  string ko = 8;
+  string pt = 9;
+  string ru = 10;
 }
 
 message MessageNoticeTypeConfig {

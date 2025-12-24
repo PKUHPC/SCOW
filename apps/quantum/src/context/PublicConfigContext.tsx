@@ -1,13 +1,10 @@
+import { inferRouterOutputs } from "@trpc/server";
 import React, { createContext, useContext } from "react";
+import { AppRouter } from "src/server/trpc/router";
 import { trpc } from "src/utils/trpc";
 
 // 定义 publicConfig 类型
-export interface PublicConfig {
-  portalUrl: string;
-  basePath: string;
-  ENABLE_CHANGE_PASSWORD: boolean;
-  PASSWORD_PATTERN?: string;
-}
+export type PublicConfig = inferRouterOutputs<AppRouter>["config"]["publicConfig"];
 
 export interface ClientUserInfo {
   identityId: string;

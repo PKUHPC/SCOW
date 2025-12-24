@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 syntax = "proto3";
 
 package scow.common;
@@ -19,6 +7,13 @@ message I18nObject {
     string default = 1;
     optional string en = 2;
     optional string zh_cn = 3;
+    optional string ja = 4;
+    optional string ko = 5;
+    optional string fr = 6;
+    optional string de = 7;
+    optional string es = 8;
+    optional string pt = 9;
+    optional string ru = 10;
   }
   I18n i18n = 1;
 }

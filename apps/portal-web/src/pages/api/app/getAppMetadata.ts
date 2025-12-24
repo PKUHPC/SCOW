@@ -1,7 +1,8 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
-import { getI18nTypeFormat } from "@scow/lib-web/src/utils/typeConversion";
+import { createI18nStringSchema } from "@scow/config/build/i18n";
+import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
 import { appCustomAttribute_AttributeTypeToJSON, AppServiceClient,
   FixedValue as FixedValueProto,
   getAppMetadataResponse_ReservedAppAttributeNameToJSON } from "@scow/protos/build/portal/app";
@@ -13,16 +14,10 @@ import { extractOneOfValue } from "src/utils/convertValue";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
-export const I18nStringSchemaType = Type.Union([
-  Type.String(),
-  Type.Object({
-    i18n: Type.Object({
-      default: Type.String(),
-      en: Type.Optional(Type.String()),
-      zh_cn: Type.Optional(Type.String()),
-    }),
-  }),
-]);
+export const I18nStringSchemaType = createI18nStringSchema({
+  description: "I18nStringSchemaType",
+});
+
 export type I18nStringSchemaType = Static<typeof I18nStringSchemaType>;
 
 export const SelectOption = Type.Object({
@@ -174,20 +169,20 @@ export default /* #__PURE__*/route(GetAppMetadataSchema, async (req, res) => {
         return { value: "" };
       }
       return {
-        value: fixedValueProto.value.$case === "text" ? 
+        value: fixedValueProto.value.$case === "text" ?
           fixedValueProto.value.text :
           fixedValueProto.value.number,
         hidden: fixedValueProto.hidden,
       };
     };
-    
+
     const reservedAppAttributes: ReservedAppAttribute[] = reply.reservedAppAttributes.map((item) => {
 
       const attribute = {
         name: getAppMetadataResponse_ReservedAppAttributeNameToJSON(item.name) as ReservedAppAttributeName,
       } as ReservedAppAttribute;
 
-      if (item.config?.$case === "fixedValueConfig" && 
+      if (item.config?.$case === "fixedValueConfig" &&
           item.config.fixedValueConfig.fixedValue) {
         attribute.reservedConfig = {
           type: "fixedValue",
@@ -196,7 +191,7 @@ export default /* #__PURE__*/route(GetAppMetadataSchema, async (req, res) => {
       } else if (item.config?.$case === "selectConfig") {
         attribute.reservedConfig = {
           type: "select",
-          defaultValue: item.config?.selectConfig.defaultInput ? 
+          defaultValue: item.config?.selectConfig.defaultInput ?
             extractOneOfValue(item.config?.selectConfig.defaultInput) : undefined,
           select: item.config?.selectConfig.options?.map((option) => {
             return {

@@ -10,9 +10,16 @@ export interface RenderContent {
 }
 
 enum TemplateLang {
-  Default = "default",
-  EN = "en",
+  default = "default",
+  en = "en",
   zhCn = "zhCn",
+  de = "de",
+  es = "es",
+  ja = "ja",
+  ko = "ko",
+  fr = "fr",
+  pt = "pt",
+  ru = "ru",
 };
 
 export interface Template {
@@ -86,12 +93,20 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
     return parseAdminMessage(message);
   } else if (checkTemplateNotUndefined(message)) {
 
-    let templateLang: TemplateLang = TemplateLang.Default;
-    if (languageId === "en") {
-      templateLang = TemplateLang.EN;
-    } else if (languageId === "zh_cn") {
-      templateLang = TemplateLang.zhCn;
-    }
+    let templateLang: TemplateLang = TemplateLang.default;
+    const map: Record<string, TemplateLang> = {
+      en: TemplateLang.en,
+      zh_cn: TemplateLang.zhCn,
+      de: TemplateLang.de,
+      es: TemplateLang.es,
+      fr: TemplateLang.fr,
+      ja: TemplateLang.ja,
+      ko: TemplateLang.ko,
+      pt: TemplateLang.pt,
+      ru: TemplateLang.ru,
+    };
+    templateLang = map[languageId] ?? TemplateLang.default;
+
     // 对应语言模板没有设置时采用默认模板
     const messageType = message.messageType;
     const titleTemplate =

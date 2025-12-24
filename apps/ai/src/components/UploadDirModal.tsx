@@ -1,6 +1,6 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
-import { useUploadSpeedTracker } from "@scow/lib-web/src/utils/fileUpload/uploadSpeedHook";
-import { calculateBlobSHA256, PercentAndSpeedContainer } from "@scow/lib-web/src/utils/fileUpload/uploadUtils";
+import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
+import { calculateBlobSHA256, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile, UploadProps } from "antd";
 import { RcFile } from "antd/lib/upload";
 import { dirname, join } from "path";

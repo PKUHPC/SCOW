@@ -1,12 +1,3 @@
-
-export type I18nStringType = string | {
-  i18n: {
-    default: string,
-    en?: string,
-    zh_cn?: string,
-  }
-};
-
 // languageDic for partitionsManagement
 export const languageDic = {
   zh_cn: {
@@ -290,3 +281,7 @@ export const languageDic = {
 };
 
 export type I18nDicType = typeof languageDic.zh_cn;
+
+export const optionalLanguageDic: Record<string, I18nDicType> = {};
+
+

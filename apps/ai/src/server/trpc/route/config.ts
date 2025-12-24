@@ -38,7 +38,8 @@ const I18nStringTypeSchema = z.union([
 const SystemLanguageConfigSchema = z.object({
   defaultLanguage: z.string(),
   isUsingI18n: z.boolean(),
-  autoDetectWhenUserNotSet: z.boolean().optional(),
+  autoDetectWhenUserNotSet: z.boolean(),
+  enabledLanguages: z.array(z.string()),
 });
 
 const ClusterSchema = z.object({

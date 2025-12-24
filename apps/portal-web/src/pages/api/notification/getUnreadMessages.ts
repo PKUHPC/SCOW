@@ -21,6 +21,13 @@ export const Template = Type.Object({
   default: Type.String(),
   en: Type.String(),
   zhCn: Type.String(),
+  de: Type.String(),
+  es: Type.String(),
+  ja: Type.String(),
+  ko: Type.String(),
+  fr: Type.String(),
+  pt: Type.String(),
+  ru: Type.String(),
 });
 
 export const Message = Type.Object({

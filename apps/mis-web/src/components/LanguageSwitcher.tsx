@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { setCookie } from "nookies";
 import { useEffect, useState } from "react";
 import { languageInfo, useI18n } from "src/i18n";
+import { publicConfig } from "src/utils/config";
 import { styled } from "styled-components";
 
 const Container = styled.div`
@@ -62,6 +63,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
     router.replace(router.asPath);
   };
 
+  const enabledLanguages = publicConfig.SYSTEM_LANGUAGE_CONFIG.enabledLanguages;
+
   return (
     <Container>
       <Select
@@ -74,11 +77,13 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
         popupMatchSelectWidth={false}
         popupClassName="head-language-select"
       >
-        {Object.entries(languageInfo).map(([id, { name }]) => (
-          <option key={id} value={id}>
-            {name}
-          </option>
-        ))}
+        {Object.entries(languageInfo)
+          .filter(([id]) => enabledLanguages.includes(id))
+          .map(([id, { name }]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
       </Select>
     </Container>
   );
