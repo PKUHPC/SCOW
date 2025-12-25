@@ -2,8 +2,8 @@ import { FormInstance } from "antd";
 import { TextsTransType } from "src/models/Algorithm";
 import { IdPrivate } from "src/server/trpc/route/jobs/jobs";
 
-export const getIdPrivate = (array: IdPrivate[]) =>
-  array.reduce<{
+export const getIdPrivate = (array?: IdPrivate[]) =>
+  (array ?? []).reduce<{
     ids: number[];
     isPrivates: boolean[];
   }>(

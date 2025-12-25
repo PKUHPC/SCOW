@@ -367,9 +367,11 @@ export function formatJobDetailsExtraInputs(
     isDefaultImage: (!inputParams.remoteImageUrl && !inputParams.image),
     imageNameOrUrl: inputParams.image ? inputParams.localImageName : inputParams.remoteImageUrl,
     modelNames:
+    inputParams.models ?
       inputParams.models
         .filter((x) => x.currentNameVersion !== undefined)
-        .map((m) => m.currentNameVersion) ?? [],
+        .map((m) => m.currentNameVersion)
+      : [],
     startCommand: "startCommand" in inputParams
       ? inputParams.startCommand
       : "command" in inputParams
@@ -381,13 +383,17 @@ export function formatJobDetailsExtraInputs(
     return {
       ... result,
       datasetNames:
+      inputParams.datasets ?
         inputParams.datasets
           .filter((x) => x.currentNameVersion !== undefined)
-          .map((d) => d.currentNameVersion) ?? [],
+          .map((d) => d.currentNameVersion)
+        : [],
       algorithmNames:
-        inputParams.algorithms
-          .filter((x) => x.currentNameVersion !== undefined)
-          .map((a) => a.currentNameVersion) ?? [],
+        inputParams.algorithms ?
+          inputParams.algorithms
+            .filter((x) => x.currentNameVersion !== undefined)
+            .map((a) => a.currentNameVersion)
+          : [],
     };
   }
 

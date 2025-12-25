@@ -61,15 +61,15 @@ export type EnvVariable = z.infer<typeof EnvVariableSchema>;
 export const TrainJobInputSchema = z.object({
   clusterId: z.string(),
   trainJobName: z.string(),
-  algorithms: z.array(IdPrivateSchema),
+  algorithms: z.array(IdPrivateSchema).optional(),
   image: z.number().optional(),
   isImagePrivate: z.boolean().optional(),
   // 提交时选择的本地镜像的名称,用于详情展示
   localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
   framework: Framework.optional(),
-  datasets: z.array(IdPrivateSchema),
-  models: z.array(IdPrivateSchema),
+  datasets: z.array(IdPrivateSchema).optional(),
+  models: z.array(IdPrivateSchema).optional(),
   mountPoints: z.array(z.string()).optional(),
   account: z.string(),
   partition: z.string().optional(),

@@ -54,7 +54,7 @@ export const InferenceJobInputSchema = z.object({
   // 提交时选择的本地镜像的名称,用于详情展示
   localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
-  models: z.array(IdPrivateSchema),
+  models: z.array(IdPrivateSchema).optional(),
   mountPoints: z.array(z.string()).optional(),
   account: z.string(),
   partition: z.string().optional(),
