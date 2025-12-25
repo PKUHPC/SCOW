@@ -81,6 +81,9 @@ const mockOriginalJobData = (
   cluster?: string,
   endTime?: Date,
 ) => new JobInfo({ cluster: cluster ?? "pkuhpc", ...{
+  pods: [],
+  events: [],
+  uniqueJobName: "",
   "jobId": jobId ?? 5119061,
   "account": account,
   "user": user,

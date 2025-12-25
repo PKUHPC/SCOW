@@ -15,7 +15,7 @@ import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { SchedulerAdapterClient } from "@scow/lib-scheduler-adapter";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { OptionalFeatures } from "@scow/scheduler-adapter-protos/build/protos/config";
+import { OptionalFeatures } from "@scow/scheduler-adapter-protos/build/config";
 import { ApiVersion } from "@scow/utils/build/version";
 import { Logger } from "ts-log";
 

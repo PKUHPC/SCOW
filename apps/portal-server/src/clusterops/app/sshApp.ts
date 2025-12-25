@@ -8,7 +8,7 @@ import { errorInfo, getAppConnectionInfoFromAdapter,getEnvVariables } from "@sco
 import { getUserHomedir,
   sftpChmod, sftpExists, sftpReaddir, sftpReadFile, sftpRealPath, sftpWriteFile } from "@scow/lib-ssh";
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/job";
 import dayjs from "dayjs";
 import { join } from "path";
 import { quote } from "shell-quote";
@@ -194,6 +194,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + SERVER_ENTRY_COMMAND,
             workingDirectory, extraOptions,
+            envVariables: [],
           });
         } else if (appConfig.type === AppType.shadowDesk) {
           let customForm = String.raw`\"HOST\":\"$HOST\",\"PORT\":$PORT`;
@@ -227,6 +228,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + SERVER_ENTRY_COMMAND,
             workingDirectory, extraOptions,
+            envVariables: [],
           });
         }
         else {
@@ -251,6 +253,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + VNC_ENTRY_COMMAND,
             workingDirectory, stdout: VNC_OUTPUT_FILE, extraOptions,
+            envVariables: [],
           });
 
         }
@@ -298,6 +301,7 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
               users: [userId], accounts: [],
               states: ["RUNNING", "PENDING"],
             },
+            jobTypes: [],
           }),
         ).then((resp) => resp.jobs);
 

@@ -54,6 +54,9 @@ const mockOriginalJobData = (
   ua: UserAccount,
   tenantPrice: Decimal, accountPrice: Decimal, submitTime?: Date,
 ) => new JobInfo({ cluster: "pkuhpc", ...{
+  events: [],
+  pods: [],
+  uniqueJobName: "",
   "jobId": 5119061,
   "account": ua.account.getProperty("accountName"),
   user: ua.user.getProperty("userId"),

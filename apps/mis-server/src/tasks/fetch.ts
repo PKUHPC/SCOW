@@ -5,7 +5,7 @@ import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { parsePlaceholder } from "@scow/lib-config";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import { ChargeRecord } from "@scow/protos/build/server/charging";
-import { GetJobsResponse, JobInfo as ClusterJobInfo } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { GetJobsResponse, JobInfo as ClusterJobInfo } from "@scow/scheduler-adapter-protos/build/job";
 import { addJobCharge, charge } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { emptyJobPriceInfo } from "src/bl/jobPrice";
@@ -231,21 +231,23 @@ export async function fetchJobs(
       const fetchWithinTimeRange = async (startDate: Date, endDate: Date, batchSize: number) => {
 
         // calculate totalCount between startDate and endDate
-        const totalCount = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
-          await asyncClientCall(client.job, "getJobs", {
+        const totalCount = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) => {
+          return await asyncClientCall(client.job, "getJobs", {
             fields,
+            jobTypes: [],
             filter: {
               users: [], accounts: [], states: [],
               endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
             },
             pageInfo: { page: 1, pageSize: 1 },
-          }),
-        ).then((result) => result.totalCount!);
+          });
+        }).then((result) => result.totalCount!);
 
         if (totalCount <= batchSize) {
           const jobsInfo = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
             await asyncClientCall(client.job, "getJobs", {
               fields,
+              jobTypes: [],
               filter: {
                 users: [], accounts: [], states: [],
                 endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },

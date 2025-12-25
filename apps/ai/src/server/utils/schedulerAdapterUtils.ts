@@ -1,8 +1,8 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { AppType, GetAppConnectionInfoResponse } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model/build";
+import { AppType, GetAppConnectionInfoResponse } from "@scow/scheduler-adapter-protos/build/app";
 import { ApiVersion } from "@scow/utils/build/version";
 import { Logger } from "ts-log";
 

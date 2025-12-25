@@ -1,5 +1,5 @@
 import { plugin } from "@ddadaal/tsgrpc-server";
-import { AccountServiceServer, AccountServiceService } from "@scow/scheduler-adapter-protos/build/protos/account";
+import { AccountServiceServer, AccountServiceService } from "@scow/scheduler-adapter-protos/build/account";
 
 export const accountServiceServer = plugin((server) => {
   server.addService<AccountServiceServer>(AccountServiceService, {
@@ -108,7 +108,7 @@ export const accountServiceServer = plugin((server) => {
     },
 
     syncAccountUserInfo: async () => {
-      return [{ 
+      return [{
         completelyExecuted: true,
         syncResults: [
           {

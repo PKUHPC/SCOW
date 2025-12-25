@@ -11,13 +11,13 @@
  */
 
 import { ChannelCredentials } from "@grpc/grpc-js";
-import { AccountServiceClient } from "@scow/scheduler-adapter-protos/build/protos/account";
-import { AppServiceClient } from "@scow/scheduler-adapter-protos/build/protos/app";
-import { ConfigServiceClient } from "@scow/scheduler-adapter-protos/build/protos/config";
-import { JobServiceClient } from "@scow/scheduler-adapter-protos/build/protos/job";
-import { NodeServiceClient } from "@scow/scheduler-adapter-protos/build/protos/node";
-import { UserServiceClient } from "@scow/scheduler-adapter-protos/build/protos/user";
-import { VersionServiceClient } from "@scow/scheduler-adapter-protos/build/protos/version";
+import { AccountServiceClient } from "@scow/scheduler-adapter-protos/build/account";
+import { AppServiceClient } from "@scow/scheduler-adapter-protos/build/app";
+import { ConfigServiceClient } from "@scow/scheduler-adapter-protos/build/config";
+import { JobServiceClient } from "@scow/scheduler-adapter-protos/build/job";
+import { NodeServiceClient } from "@scow/scheduler-adapter-protos/build/node";
+import { UserServiceClient } from "@scow/scheduler-adapter-protos/build/user";
+import { VersionServiceClient } from "@scow/scheduler-adapter-protos/build/version";
 
 import { SslConfig } from "./ssl";
 

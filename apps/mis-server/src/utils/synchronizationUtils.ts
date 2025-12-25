@@ -14,7 +14,7 @@ import { ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as Clust
   ListAccountUserSynchronizationsResponse_SyncResult as SyncResultProto,
   ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatusProto } from "@scow/protos/build/server/admin";
 import { SyncAccountInfo, SyncAccountUserInfoResponse_SyncOperationResult }
-  from "@scow/scheduler-adapter-protos/build/protos/account";
+  from "@scow/scheduler-adapter-protos/build/account";
 import { PartitionNames } from "@scow/scow-resource-protos/build/partition_pb";
 import { ApiVersion } from "@scow/utils/build/version";
 import { Logger } from "pino";

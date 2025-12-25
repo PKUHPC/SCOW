@@ -222,6 +222,7 @@ export const jobServiceServer = plugin((server) => {
             "qos", "submit_time", "time_limit_minutes", "working_directory", "mem_req_mb", "mem_alloc_mb",
             "start_time", "end_time",
           ],
+          jobTypes: [],
           filter: { users: [userId], accounts: [], states: ["PENDING", "RUNNING"]},
         }),
       );
@@ -242,6 +243,7 @@ export const jobServiceServer = plugin((server) => {
             "node_list", "reason", "elapsed_seconds", "time_limit_minutes", "submit_time",
             "start_time", "end_time", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc", "mem_req_mb", "mem_alloc_mb",
           ],
+          jobTypes: [],
           filter: {
             users: [userId], accounts: [], states: [],
             submitTime: { startTime, endTime },

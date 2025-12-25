@@ -1,4 +1,4 @@
-import { JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
+import { JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { JobType } from "src/models/Job";
 
 

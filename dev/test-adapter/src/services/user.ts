@@ -11,7 +11,7 @@
  */
 
 import { plugin } from "@ddadaal/tsgrpc-server";
-import { UserServiceServer, UserServiceService } from "@scow/scheduler-adapter-protos/build/protos/user";
+import { UserServiceServer, UserServiceService } from "@scow/scheduler-adapter-protos/build/user";
 
 export const userServiceServer = plugin((server) => {
   server.addService<UserServiceServer>(UserServiceService, {

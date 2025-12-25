@@ -11,7 +11,7 @@
  */
 
 import { plugin } from "@ddadaal/tsgrpc-server";
-import { JobServiceServer, JobServiceService } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { JobServiceServer, JobServiceService } from "@scow/scheduler-adapter-protos/build/job";
 import { clusterId } from "src/config/cluster";
 import testData from "src/testData.json";
 
@@ -49,6 +49,9 @@ export const jobServiceServer = plugin((server) => {
             ...rest,
             state: "COMPLETED",
             workingDirectory: "",
+            pods: [],
+            events: [],
+            uniqueJobName: `${cluster}-${rest.jobId}`,
           };
         });
 
@@ -81,6 +84,22 @@ export const jobServiceServer = plugin((server) => {
     cancelJob: async () => {
       return [{}];
     },
+
+    getPodLogs: async () => {
+    },
+
+    createDevHost: async () => {
+      return [{ jobId: 1 }];
+    },
+
+    submitInferJob: async () => {
+      return [{ jobId: 1 }];
+    },
+
+    getPodMonitorInfo: async () => {
+      return [{ monitorData: []}];
+    },
+
 
   });
 

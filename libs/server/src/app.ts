@@ -13,7 +13,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { SchedulerAdapterClient } from "@scow/lib-scheduler-adapter";
-import { GetAppConnectionInfoResponse } from "@scow/scheduler-adapter-protos/build/protos/app";
+import { GetAppConnectionInfoResponse } from "@scow/scheduler-adapter-protos/build/app";
 import { ApiVersion } from "@scow/utils/build/version";
 import { quote } from "shell-quote";
 import { Logger } from "ts-log";

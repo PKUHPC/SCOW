@@ -9,7 +9,7 @@ import { formatTime } from "@scow/lib-scheduler-adapter";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { errorInfo, getAppConnectionInfoFromAdapter,getEnvVariables } from "@scow/lib-server";
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/job";
 import { FileInfo, FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import dayjs from "dayjs";
 import { join } from "path";
@@ -215,6 +215,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + SERVER_ENTRY_COMMAND,
             workingDirectory, extraOptions,
+            envVariables: [],
           });
         } else if (appConfig.type === AppType.shadowDesk) {
           let customForm = String.raw`\"HOST\":\"$HOST\",\"PORT\":$PORT`;
@@ -249,6 +250,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + SERVER_ENTRY_COMMAND,
             workingDirectory, extraOptions,
+            envVariables: [],
           });
         } else {
           // vnc app
@@ -273,6 +275,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
             userId, jobName, account, partition: partition!, qos, nodeCount, gpuCount: gpuCount ?? 0, memoryMb,
             coreCount, timeLimitMinutes: maxTime, script: envVariables + VNC_ENTRY_COMMAND,
             workingDirectory, stdout: VNC_OUTPUT_FILE, extraOptions,
+            envVariables: [],
           });
         }
       } catch (err) {
@@ -319,6 +322,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         logger,
         async (client) => await asyncClientCall(client.job, "getJobs", {
           fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason"],
+          jobTypes: [],
           filter: {
             users: [userId], accounts: [],
             states: ["RUNNING", "PENDING"],
@@ -565,7 +569,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
             "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT"];
           const isPendingOrTerminated = runningJobInfo?.state === "PENDING"
-              || terminatedStates.includes(runningJobInfo?.state);
+              || terminatedStates.includes(runningJobInfo.state);
 
           sessions.push({
             jobId: sessionMetadata.jobId,

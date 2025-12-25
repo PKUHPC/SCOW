@@ -1,6 +1,6 @@
-import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
-import { JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppConfigSchema } from "@scow/config/build/appForAi";
+import { AppType } from "@scow/scheduler-adapter-protos/build/app";
+import { JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
 import { AlgorithmVersion } from "src/server/entities/AlgorithmVersion";

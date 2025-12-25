@@ -116,6 +116,9 @@ it("fetches the data", async () => {
 
 it("jobs can be imported when jobs from other clusters already exist in the database", async () => {
   const existedJob = new JobInfo({
+    events: [],
+    pods: [],
+    uniqueJobName: "",
     cluster: "hpc02",
     jobId: 1,
     account: "",

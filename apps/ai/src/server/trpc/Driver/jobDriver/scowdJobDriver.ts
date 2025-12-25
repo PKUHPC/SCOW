@@ -1,10 +1,10 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
-import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
-import { JobInfo, JobType as ProtoJobType } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { getEnvVariables } from "@scow/lib-server";
+import { AppType } from "@scow/scheduler-adapter-protos/build/app";
+import { JobInfo, JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { join } from "path";

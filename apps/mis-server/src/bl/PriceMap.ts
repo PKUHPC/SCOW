@@ -13,7 +13,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
-import { Partition } from "@scow/scheduler-adapter-protos/build/protos/config";
+import { Partition } from "@scow/scheduler-adapter-protos/build/config";
 import { calculateJobPrice } from "src/bl/jobPrice";
 import { misConfig } from "src/config/mis";
 import { JobPriceInfo } from "src/entities/JobInfo";

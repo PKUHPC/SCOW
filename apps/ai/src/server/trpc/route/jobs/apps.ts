@@ -1,9 +1,9 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { jobInfo_PodStatusToJSON } from "@scow/ai-scheduler-adapter-protos/build/protos/job";
 import { AppType } from "@scow/config/build/appForAi";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { libGetUserAvailableClusterApps } from "@scow/lib-server";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { jobInfo_PodStatusToJSON } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import fs from "fs";

@@ -12,7 +12,7 @@
 
 import { Entity, Index, PrimaryKey, Property } from "@mikro-orm/core";
 import { Decimal } from "@scow/lib-decimal";
-import { JobInfo as ClusterJobInfo } from "@scow/scheduler-adapter-protos/build/protos/job";
+import { JobInfo as ClusterJobInfo } from "@scow/scheduler-adapter-protos/build/job";
 import { DECIMAL_DEFAULT_RAW, DecimalType } from "src/utils/decimal";
 
 const UNKNOWN_PRICE_ITEM = "UNKNOWN";

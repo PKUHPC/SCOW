@@ -316,6 +316,7 @@ export const userServiceServer = plugin((server) => {
           const fields = ["job_id", "user", "state", "account"];
 
           return await asyncClientCall(client.job, "getJobs", {
+            jobTypes: [],
             fields,
             filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"]},
           });
@@ -678,6 +679,7 @@ export const userServiceServer = plugin((server) => {
           const fields = ["job_id", "user", "state", "account"];
 
           return await asyncClientCall(client.job, "getJobs", {
+            jobTypes: [],
             fields,
             filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"]},
           });

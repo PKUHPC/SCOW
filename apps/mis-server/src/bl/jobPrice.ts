@@ -13,7 +13,7 @@
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { Decimal } from "@scow/lib-decimal";
-import { Partition } from "@scow/scheduler-adapter-protos/build/protos/config";
+import { Partition } from "@scow/scheduler-adapter-protos/build/config";
 import { join } from "path";
 import { JobInfo, PriceMap } from "src/bl/PriceMap";
 import { configClusters } from "src/config/clusters";

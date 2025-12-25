@@ -48,7 +48,6 @@
     "@mikro-orm/mysql": "6.4.3",
     "@mikro-orm/seeder": "6.4.3",
     "@monaco-editor/react": "4.6.0",
-    "@scow/ai-scheduler-adapter-protos": "workspace:*",
     "@scow/config": "workspace:*",
     "@scow/lib-auth": "workspace:*",
     "@scow/lib-config": "workspace:*",

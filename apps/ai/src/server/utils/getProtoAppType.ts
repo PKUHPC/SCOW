@@ -1,4 +1,4 @@
-import { AppType } from "@scow/ai-scheduler-adapter-protos/build/protos/app";
+import { AppType } from "@scow/scheduler-adapter-protos/build/app";
 import { AppName } from "src/models/App";
 
 

@@ -173,6 +173,7 @@ export const sshJobServices = (host: string): JobOps => ({
         userId, jobName, account, partition: partition, qos, nodeCount, gpuCount: gpuCount ?? 0,
         memoryMb: Number(memory?.split("M")[0]), coreCount, timeLimitMinutes: maxTimeConversion,
         script: command, workingDirectory, stdout: output, stderr: errorOutput, extraOptions: [],
+        envVariables: [],
       }).catch((e) => {
         const ex = e as ServiceError;
 

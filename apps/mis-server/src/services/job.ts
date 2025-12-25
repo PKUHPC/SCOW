@@ -305,6 +305,7 @@ export const jobServiceServer = plugin((server) => {
 
           const runningJobs = await asyncClientCall(client.job, "getJobs", {
             fields,
+            jobTypes: [],
             filter: { users: userId ? [userId] : [], accounts: accountNames,
               // ai集群中才有 QUEUED 状态的作业
               states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])]},
