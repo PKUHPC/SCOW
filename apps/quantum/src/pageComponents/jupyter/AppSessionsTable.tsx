@@ -16,7 +16,6 @@ import { CancelIcon, EndIcon } from "src/icons/headerIcons/headerIcons";
 import { calculateAppRemainingTime, compareState, statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/jupyter/ConnectToAppLink";
 import { trimPathSlashes } from "src/utils/path";
-import { BASE_PATH } from "src/utils/processEnv";
 import { trpc } from "src/utils/trpc";
 
 interface Props {
@@ -108,11 +107,9 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
   const { basePath, portalUrl } = publicConfig.publicConfig;
 
   const formattedBasePath = trimPathSlashes(basePath);
-  const formattedAppBasePath = trimPathSlashes(BASE_PATH);
 
   const pathSegments = [
     formattedBasePath,
-    formattedAppBasePath,
     "jupyter",
     "list",
   ].filter((segment) => segment !== "");

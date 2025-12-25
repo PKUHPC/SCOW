@@ -569,7 +569,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
           const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
             "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT"];
           const isPendingOrTerminated = runningJobInfo?.state === "PENDING"
-              || terminatedStates.includes(runningJobInfo.state);
+              || terminatedStates.includes(runningJobInfo?.state);
 
           sessions.push({
             jobId: sessionMetadata.jobId,
