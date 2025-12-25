@@ -35,6 +35,7 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
     },
     onSuccess: () => {
       message.success(compLang.sendSuccessInfo);
+      form.resetFields();
       onSendSuccess();
     },
   });

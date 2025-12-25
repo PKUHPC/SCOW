@@ -19,7 +19,7 @@ const { Text } = Typography;
 
 interface AdminMessagesTableProps {
   lang: I18nDicType;
-  refreshFlag?: number;
+  refreshFlag: number;
 }
 
 interface MessageDetailDrawerProps {
@@ -126,19 +126,14 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
   const { data, isLoading, error, refetch } = useQuery(adminListMessages, {
     page: currentPage,
     pageSize: pageSize,
-    keyword: form.getFieldValue("keyword"),
+    keyword,
   });
 
   useEffect(() => {
-    if (refreshFlag !== undefined) {
+    if (refreshFlag > 0) {
       refetch();
     }
   }, [refreshFlag]);
-
-  useEffect(() => {
-    // 关键词变更时手动触发刷新
-    refetch();
-  }, [keyword]);
 
   const handleViewDetail = (message: Message) => {
     setSelectedMessage(message);
