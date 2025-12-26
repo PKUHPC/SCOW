@@ -1,5 +1,11 @@
 # @scow/utils
 
+## 1.1.2
+
+### Patch Changes
+
+- 36880eb: 新增多个系统语言
+
 ## 1.1.1
 
 ### Patch Changes

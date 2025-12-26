@@ -1,5 +1,16 @@
 # @scow/grpc-api
 
+## 1.29.0
+
+### Minor Changes
+
+- c495538: 已结束作业查询和导出新增 jobsOfJobIds 的 target，增加 changeJobPrice 操作日志
+- 0cb903e: getUserStatus 接口新增 accountNames 参数用于缩小查询范围
+
+### Patch Changes
+
+- 36880eb: 新增多个系统语言
+
 ## 1.28.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # @scow/config
 
+## 1.12.1
+
+### Patch Changes
+
+- 0cb903e: 新增过期白名单定时清理任务的 cron 配置。SCOW/docs/deploy/config/mis/whitelist/clean-expired-whitelists
+- 36880eb: 新增多个系统语言
+
 ## 1.12.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @scow/test-adapter
 
+## 1.1.17
+
+### Patch Changes
+
+- 963a2b8: 使用统一的适配器接口
+- Updated dependencies [963a2b8]
+  - @scow/scheduler-adapter-protos@1.5.2
+
 ## 1.1.16
 
 ### Patch Changes

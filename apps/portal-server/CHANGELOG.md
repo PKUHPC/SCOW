@@ -1,5 +1,27 @@
 # @scow/portal-server
 
+## 1.9.11
+
+### Patch Changes
+
+- a5eedd1: portal、ai 仪表盘集群接口合并重构，新增 getAllSummaryClustersInfo 集群数据汇总接口
+- 963a2b8: 使用统一的适配器接口
+- 72601c2: 修复门户与量子作业相关 state 属性报错，以及量子 jupyter 回跳路径错误
+- 36880eb: 新增多个系统语言
+- Updated dependencies [a5eedd1]
+- Updated dependencies [963a2b8]
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+  - @scow/protos@1.0.35
+  - @scow/scheduler-adapter-protos@1.5.2
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/utils@1.1.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.33
+  - @scow/lib-scow-resource@0.2.19
+
 ## 1.9.10
 
 ### Patch Changes

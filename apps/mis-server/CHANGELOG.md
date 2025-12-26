@@ -1,5 +1,29 @@
 # @scow/mis-server
 
+## 1.9.11
+
+### Patch Changes
+
+- c495538: 批量更新租户管理下已结束的作业价格，并增加操作日志
+- 963a2b8: 使用统一的适配器接口
+- 0cb903e: 修复过期白名单账户需要查看时才会删除的 bug
+- Updated dependencies [a5eedd1]
+- Updated dependencies [963a2b8]
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [5686520]
+- Updated dependencies [36880eb]
+  - @scow/protos@1.0.35
+  - @scow/scheduler-adapter-protos@1.5.2
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/notification-protos@0.1.8
+  - @scow/utils@1.1.2
+  - @scow/lib-hook@1.0.35
+  - @scow/lib-scheduler-adapter@1.1.33
+  - @scow/lib-notification@1.0.20
+  - @scow/lib-scow-resource@0.2.19
+
 ## 1.9.10
 
 ### Patch Changes

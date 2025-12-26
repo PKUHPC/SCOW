@@ -1,5 +1,17 @@
 # @scow/docs
 
+## 1.4.21
+
+### Patch Changes
+
+- 36880eb: 新增多个支持的语言，文档链接：
+
+  1. 系统语言配置：docs/deploy/config/customization/custom-system-language.md
+  2. 国际化文本字段配置：docs/deploy/config/customization/custom-config-i18n.md
+
+- 0cb903e: 修复过期白名单账户需要查看时才会删除的 bug
+- 36880eb: 新增多个系统语言
+
 ## 1.4.20
 
 ### Patch Changes

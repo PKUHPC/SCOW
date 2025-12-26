@@ -1,5 +1,22 @@
 # @scow/lib-server
 
+## 1.4.10
+
+### Patch Changes
+
+- 0cb903e: 修复过期白名单账户需要查看时才会删除的 bug
+- 36880eb: 新增多个系统语言
+- Updated dependencies [a5eedd1]
+- Updated dependencies [963a2b8]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+  - @scow/protos@1.0.35
+  - @scow/scheduler-adapter-protos@1.5.2
+  - @scow/config@1.12.1
+  - @scow/utils@1.1.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.33
+
 ## 1.4.9
 
 ### Patch Changes

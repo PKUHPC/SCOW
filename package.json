@@ -1,7 +1,7 @@
 {
   "name": "scow",
   "private": true,
-  "version": "1.9.10",
+  "version": "1.9.11",
   "scripts": {
     "build": "turbo run build",
     "build:scow": "turbo run build --filter=\"!@scow/docs\"",

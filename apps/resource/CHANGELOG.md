@@ -1,5 +1,27 @@
 # @scow/resource
 
+## 0.3.10
+
+### Patch Changes
+
+- 36880eb: 新增多个系统语言
+- Updated dependencies [7281dc1]
+- Updated dependencies [a5eedd1]
+- Updated dependencies [c495538]
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+- Updated dependencies [be398ab]
+- Updated dependencies [3b6cea7]
+  - @scow/lib-web@1.5.10
+  - @scow/protos@1.0.35
+  - @scow/lib-operation-log@2.2.10
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/utils@1.1.2
+  - @scow/lib-hook@1.0.35
+  - @scow/lib-scheduler-adapter@1.1.33
+
 ## 0.3.9
 
 ### Patch Changes

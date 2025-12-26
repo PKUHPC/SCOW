@@ -1,5 +1,11 @@
 # @scow/scheduler-adapter-protos
 
+## 1.5.2
+
+### Patch Changes
+
+- 963a2b8: 使用统一的适配器接口
+
 ## 1.5.1
 
 ### Patch Changes

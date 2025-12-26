@@ -1,5 +1,13 @@
 # @scow/lib-operation-log
 
+## 2.2.10
+
+### Patch Changes
+
+- c495538: 批量更新租户管理下已结束的作业价格，并增加操作日志
+- Updated dependencies [a5eedd1]
+  - @scow/protos@1.0.35
+
 ## 2.2.9
 
 ### Patch Changes

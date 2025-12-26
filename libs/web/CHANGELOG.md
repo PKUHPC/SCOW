@@ -1,5 +1,20 @@
 # @scow/lib-web
 
+## 1.5.10
+
+### Patch Changes
+
+- 7281dc1: 在一些页面中增加部分表格字段的排序
+- 36880eb: 新增多个系统语言
+- be398ab: 增加中性灰阶颜色
+- 3b6cea7: 修复当应用的 URL 的 querystring 和 scow 代理地址的参数相同时，这些参数无法被传递到应用中的问题
+- Updated dependencies [a5eedd1]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+  - @scow/protos@1.0.35
+  - @scow/config@1.12.1
+  - @scow/utils@1.1.2
+
 ## 1.5.9
 
 ### Patch Changes

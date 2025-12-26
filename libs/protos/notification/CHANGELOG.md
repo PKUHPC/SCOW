@@ -1,5 +1,12 @@
 # @scow/notification-protos
 
+## 0.1.8
+
+### Patch Changes
+
+- 5686520: 管理员发送消息页面新增管理员历史发送消息列表
+- 36880eb: 新增多个系统语言
+
 ## 0.1.7
 
 ### Patch Changes

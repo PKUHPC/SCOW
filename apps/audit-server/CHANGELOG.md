@@ -1,5 +1,21 @@
 # @scow/audit-server
 
+## 2.3.28
+
+### Patch Changes
+
+- c495538: 批量更新租户管理下已结束的作业价格，并增加操作日志
+- Updated dependencies [a5eedd1]
+- Updated dependencies [c495538]
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+  - @scow/protos@1.0.35
+  - @scow/lib-operation-log@2.2.10
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/utils@1.1.2
+
 ## 2.3.27
 
 ### Patch Changes

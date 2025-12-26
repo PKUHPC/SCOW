@@ -1,6 +1,6 @@
 {
   "name": "@scow/utils",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "",
   "main": "build/index.js",
   "private": true,

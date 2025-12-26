@@ -1,5 +1,34 @@
 # @scow/mis-web
 
+## 1.9.11
+
+### Patch Changes
+
+- 7281dc1: 在一些页面中增加部分表格字段的排序
+- be398ab: 增加主题色和灰色的色阶
+- c495538: 批量更新租户管理下已结束的作业价格，并增加操作日志
+- 0cb903e: 修复过期白名单账户需要查看时才会删除的 bug
+- 36880eb: 新增多个系统语言
+- 3b6cea7: 修复当应用的 URL 的 querystring 和 scow 代理地址的参数相同时，这些参数无法被传递到应用中的问题
+- 2f51ebf: 平台、租户作业价格表中，租户、集群、分区、QOS 筛选体验优化
+- Updated dependencies [7281dc1]
+- Updated dependencies [a5eedd1]
+- Updated dependencies [c495538]
+- Updated dependencies [0cb903e]
+- Updated dependencies [5686520]
+- Updated dependencies [36880eb]
+- Updated dependencies [be398ab]
+- Updated dependencies [3b6cea7]
+  - @scow/lib-web@1.5.10
+  - @scow/protos@1.0.35
+  - @scow/lib-operation-log@2.2.10
+  - @scow/config@1.12.1
+  - @scow/notification-protos@0.1.8
+  - @scow/utils@1.1.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-notification@1.0.20
+  - @scow/lib-scow-resource@0.2.19
+
 ## 1.9.10
 
 ### Patch Changes

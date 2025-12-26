@@ -1,5 +1,15 @@
 # @scow/protos
 
+## 1.0.35
+
+### Patch Changes
+
+- a5eedd1: portal、ai 仪表盘集群接口合并重构，新增 getAllSummaryClustersInfo 集群数据汇总接口
+- Updated dependencies [c495538]
+- Updated dependencies [36880eb]
+- Updated dependencies [0cb903e]
+  - @scow/grpc-api@1.29.0
+
 ## 1.0.34
 
 ### Patch Changes

@@ -1,5 +1,40 @@
 # @scow/ai
 
+## 0.4.11
+
+### Patch Changes
+
+- 7281dc1: 在一些页面中增加部分表格字段的排序
+- be398ab: 增加主题色和灰色的色阶
+- a5eedd1: portal、ai 仪表盘集群接口合并重构，新增 getAllSummaryClustersInfo 集群数据汇总接口
+- 963a2b8: 使用统一的适配器接口
+- 26c26a9: 修复 ai 旧作业的作业详情无法打开
+- a3f3421: 处理 AI 开发时 NEXT 的警告、报错和 zod 废弃的 api
+- 36880eb: 新增多个系统语言
+- 3b6cea7: 修复当应用的 URL 的 querystring 和 scow 代理地址的参数相同时，这些参数无法被传递到应用中的问题
+- Updated dependencies [7281dc1]
+- Updated dependencies [a5eedd1]
+- Updated dependencies [c495538]
+- Updated dependencies [963a2b8]
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [5686520]
+- Updated dependencies [36880eb]
+- Updated dependencies [be398ab]
+- Updated dependencies [3b6cea7]
+  - @scow/lib-web@1.5.10
+  - @scow/protos@1.0.35
+  - @scow/lib-operation-log@2.2.10
+  - @scow/scheduler-adapter-protos@1.5.2
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/notification-protos@0.1.8
+  - @scow/utils@1.1.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.33
+  - @scow/lib-notification@1.0.20
+  - @scow/lib-scow-resource@0.2.19
+
 ## 0.4.10
 
 ### Patch Changes

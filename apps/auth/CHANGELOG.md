@@ -1,5 +1,17 @@
 # @scow/auth
 
+## 1.9.11
+
+### Patch Changes
+
+- 36880eb: 新增多个系统语言
+- Updated dependencies [0cb903e]
+- Updated dependencies [0cb903e]
+- Updated dependencies [36880eb]
+  - @scow/config@1.12.1
+  - @scow/lib-server@1.4.10
+  - @scow/utils@1.1.2
+
 ## 1.9.10
 
 ### Patch Changes
