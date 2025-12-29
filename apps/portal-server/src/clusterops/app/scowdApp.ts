@@ -16,19 +16,14 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
 import { portalConfig } from "src/config/portal";
-import { APP_LAST_SUBMISSION_INFO, BIN_BASH_SCRIPT_HEADER, ENDED_SESSIONS, getClusterAppConfigs, readEndedSessionsFile,
-  SERVER_ENTRY_COMMAND,
-  SERVER_SESSION_INFO,
-  ServerSessionInfoData,
-  SESSION_METADATA_NAME,
-  SessionMetadata,
-  SHADOWDESK_SESSION,
-  ShadowDeskSession,
-  splitSbatchArgs, VNC_ENTRY_COMMAND, VNC_OUTPUT_FILE, VNC_SESSION_INFO,
-  writeEndedSessionsFileContent } from "src/utils/app";
-import { callOnOne } from "src/utils/clusters";
+import { APP_LAST_SUBMISSION_INFO, BIN_BASH_SCRIPT_HEADER, ENDED_SESSIONS, getClusterAppConfigs,
+  readEndedSessionsFile, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO, ServerSessionInfoData, SESSION_METADATA_NAME,
+  SessionMetadata, SHADOWDESK_SESSION, ShadowDeskSession, splitSbatchArgs, VNC_ENTRY_COMMAND,
+  VNC_OUTPUT_FILE, VNC_SESSION_INFO, writeEndedSessionsFileContent,
+} from "src/utils/app";
+import { callOnOne, getAdapterClient } from "src/utils/clusters";
 import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
-import { displayIdToPort, getTurboVNCBinPath, parseDisplayId } from "src/utils/turbovnc";
+import { displayIdToPort, getTurboVNCBinPath, parseDisplayId, parseOtp } from "src/utils/turbovnc";
 
 
 export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps => {
@@ -693,12 +688,31 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
                 // scowd 无需考虑代理网关节点，可以直接 ssh 到计算节点
                 const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
-                const { password } = await client.app.refreshVncPassword({
-                  jobId, userId, displayId, host, vncPasswdPath,
-                }).catch((err: ConnectError) => {
-                  logger.error(`Refresh vnc password failed ${err.message}`);
-                  throw err;
-                });
+                const adapterClient = getAdapterClient(cluster);
+
+                let password = "";
+                try {
+                  const { stdout, stderr } = await asyncClientCall(adapterClient.job, "runCommandOnJobNodes", {
+                    jobId, nodes: [host], command: `${vncPasswdPath} -o -display :${displayId}`, timeoutSeconds: 10,
+                  });
+
+                  // slurm 适配器 srun 执行刷新密码命令输出到 stderr，但是 crane 输出到 stdout
+                  try {
+                    password = parseOtp(stderr);
+                  } catch {
+                    password = parseOtp(stdout);
+                  }
+                } catch (e) {
+                  logger.warn("Refresh vnc password via runCommandOnJobNodes failed, try to use scowd: %s", e);
+                  // 保留传统 ssh 刷新方式作为 backup
+                  const { password: p } = await client.app.refreshVncPassword({
+                    jobId, userId, displayId, host, vncPasswdPath,
+                  }).catch((err: ConnectError) => {
+                    logger.error(`Refresh vnc password failed ${err.message}`);
+                    throw err;
+                  });
+                  password = p;
+                }
 
                 return {
                   appId: sessionMetadata.appId,
