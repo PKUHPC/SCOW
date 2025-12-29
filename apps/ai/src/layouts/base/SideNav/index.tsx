@@ -144,7 +144,7 @@ export const SideNav: React.FC<Props> = ({
     return null;
   }
   return (
-    <Container $width={sidebarCollapsed ? 72 : 225}>
+    <Container $width={sidebarCollapsed ? 72 : 208}>
       <BodyMask
         onClick={() => setSidebarCollapsed(true)}
         sidebarShown={!sidebarCollapsed}
