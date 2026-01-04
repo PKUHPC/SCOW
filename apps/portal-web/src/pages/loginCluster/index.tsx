@@ -4,7 +4,7 @@ import { getCurrentLanguageId, getI18nConfigCurrentText } from "@scow/lib-web/bu
 import { Tabs } from "antd";
 import { Card } from "antd";
 import { GetServerSideProps, NextPage } from "next";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { USE_MOCK } from "src/apis/useMock";
@@ -35,6 +35,7 @@ type Props = {
   error: AuthResultError;
 } | {
   loginDesktopEnabledClusters: Cluster[];
+  shellClusters: Cluster[];
 };
 
 const Container = styled.div`
@@ -65,33 +66,53 @@ export const LoginClusterPage: NextPage<Props> = requireAuth(() => true)(
       return <UnifiedErrorPage code={props.error} />;
     }
 
-    const { loginDesktopEnabledClusters } = props;
+    const { loginDesktopEnabledClusters, shellClusters } = props;
 
     const { enableLoginDesktop } = useStore(ClusterInfoStore);
 
-    if ((!enableLoginDesktop && !publicConfig.ENABLE_SHELL) || loginDesktopEnabledClusters.length === 0) {
+    const shellAvailable = publicConfig.ENABLE_SHELL && shellClusters.length > 0;
+    const desktopAvailable = enableLoginDesktop && loginDesktopEnabledClusters.length > 0;
+
+    if (!shellAvailable && !desktopAvailable) {
       return <ClusterNotAvailablePage />;
     }
 
     const t = useI18nTranslateToString();
 
-    const [activeTab, setActiveTab] = useState("shell");
+    const availableTabs = useMemo(() => {
+      const items: string[] = [];
+      if (shellAvailable) {
+        items.push("shell");
+      }
+      if (desktopAvailable) {
+        items.push("desktop");
+      }
+      return items;
+    }, [shellAvailable, desktopAvailable]);
+
+    const [activeTab, setActiveTab] = useState(() => (shellAvailable ? "shell" : "desktop"));
+
+    useEffect(() => {
+      if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
+        setActiveTab(availableTabs[0]);
+      }
+    }, [activeTab, availableTabs]);
 
     const onTabChange = (key: string) => {
       setActiveTab(key);
     };
 
     const tabsItems = [
-      {
+      ...(shellAvailable ? [{
         label: t("pageComp.loginCluster.shell"),
         key: "shell",
-        children: <ShellCardList clusters={loginDesktopEnabledClusters} />,
-      },
-      {
+        children: <ShellCardList clusters={shellClusters} />,
+      }] : []),
+      ...(desktopAvailable ? [{
         label: t("pageComp.loginCluster.desktop"),
         key: "desktop",
         children: <DesktopCardList clusters={loginDesktopEnabledClusters} />,
-      },
+      }] : []),
     ];
 
     return (
@@ -119,6 +140,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
     return {
       props: {
         loginDesktopEnabledClusters: [{ id: "hpc01", name: "hpc01Name" }],
+        shellClusters: [{ id: "hpc01", name: "hpc01Name" }],
       },
     };
   }
@@ -167,6 +189,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
     sortedClusterIdList = clusterSortedIdList;
   }
 
+  const shellClusters = sortedClusterIdList
+    .map((clusterId) => ({
+      id: clusterId,
+      name: getI18nConfigCurrentText(clusterConfigs[clusterId].displayName, languageId),
+      description: getI18nConfigCurrentText(clusterConfigs[clusterId].description, languageId),
+    } as Cluster));
+
   const loginDesktopEnabledClusters = sortedClusterIdList
     .filter((clusterId) => getLoginDesktopEnabled(clusterId, clusterConfigs))
     .map((clusterId) => ({
@@ -181,6 +210,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
   return {
     props: {
       loginDesktopEnabledClusters,
+      shellClusters,
     },
   };
 };
