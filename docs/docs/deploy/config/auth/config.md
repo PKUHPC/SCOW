@@ -5,6 +5,16 @@ title: 内置认证系统配置
 
 # 内置认证系统配置
 
+## token过期时间
+
+```yaml title="config/auth.yml"
+# token 过期时间，单位为秒，默认为 3600 秒
+tokenTimeoutSecond: 3600 
+```
+注意：
+- 完全关闭浏览器访问SCOW的所有同类型窗口（常规或者无痕）会立刻登出SCOW。
+- 在没有关闭所有同类型窗口的情况下，用户不操作SCOW一段时间后将会被退出登录，这个时间由tokenTimeoutSeconds配置定义。在有效时间内操作会重置登录有效期。
+
 ## UI 配置
 认证系统支持对登录界面部分 UI 进行修改
 
