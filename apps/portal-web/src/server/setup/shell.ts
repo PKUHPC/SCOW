@@ -1,17 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
 
 import { asyncDuplexStreamCall } from "@ddadaal/tsgrpc-client";
 import { getLoginNode } from "@scow/config/build/cluster";
+import { validateToken as authValidateToken } from "@scow/lib-auth";
 import { OperationType } from "@scow/lib-operation-log";
 import { libQueryIsUserEnabledRootShell } from "@scow/lib-web/build/server/user";
 import { queryToIntOrDefault } from "@scow/lib-web/build/utils/querystring";
@@ -19,6 +9,8 @@ import { ShellResponse, ShellServiceClient } from "@scow/protos/build/portal/she
 import { normalizePathnameWithQuery } from "@scow/utils";
 import { NextApiRequest } from "next";
 import { join } from "path";
+import { USE_MOCK } from "src/apis/useMock";
+import { getTokenFromCookie } from "src/auth/cookie";
 import { checkCookie } from "src/auth/server";
 import { OperationResult } from "src/models/operationLog";
 import { callLog } from "src/server/operationLog";
@@ -58,7 +50,6 @@ export const config = {
 
 const wss = new WebSocketServer({ noServer: true });
 
-// https://github.com/websockets/ws#how-to-detect-and-close-broken-connections
 type AliveCheckedWebSocket = WebSocket & { isAlive: boolean };
 
 function heartbeat(this: AliveCheckedWebSocket) {
@@ -93,6 +84,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   const log = (message: string, ...optionalParams: any[]) => console.log(
     `[io] [${user.identityId}] ${message}`, optionalParams);
+
+  const token = getTokenFromCookie({ req });
+  let closed = false;
 
   log("Connection request received.");
 
@@ -164,9 +158,63 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     ws.send(JSON.stringify(data));
   };
 
+  let cleanedUp = false;
+  let authChecking = false;
+  let authCheckInterval: NodeJS.Timeout | undefined;
+
+  const cleanup = () => {
+    if (cleanedUp) { return; }
+    cleanedUp = true;
+    if (authCheckInterval) {
+      clearInterval(authCheckInterval);
+      authCheckInterval = undefined;
+    }
+    try {
+      stream.write({ message: { $case: "disconnect", disconnect: {} } });
+    } catch (e) { void e; }
+    try {
+      stream.end();
+    } catch (e) { void e; }
+    try {
+      stream.removeAllListeners();
+    } catch (e) { void e; }
+  };
+
+  if (process.env.NODE_ENV !== "test" && !USE_MOCK && token) {
+    authCheckInterval = setInterval(async () => {
+      if (closed || cleanedUp || authChecking) { return; }
+      authChecking = true;
+      const authResult = await authValidateToken(runtimeConfig.AUTH_INTERNAL_URL, token).catch(() => undefined);
+      authChecking = false;
+
+      if (!authResult || authResult.identityId !== user.identityId) {
+        log("token is not valid when connection alive");
+        closed = true;
+        cleanup();
+        try {
+          send({ $case: "exit", exit: { code: 401 } });
+        } catch (e) {
+          log("Error occurred when sending exit message", e);
+        }
+        ws.close(4001, "token is not valid");
+      }
+    }, 300000);
+  }
+
   stream.on("error", (err) => {
     log("Error occurred from server. Disconnect.", err);
-    send({ $case: "exit", exit: { code: 1 } });
+    closed = true;
+    try {
+      send({ $case: "exit", exit: { code: 1 } });
+    } catch (e) {
+      void e;
+    }
+    cleanup();
+    try {
+      ws.close(1011, "server error");
+    } catch (e) {
+      void e;
+    }
   });
 
 
@@ -199,20 +247,20 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         });
         break;
       case "disconnect":
-        stream.write({ message: { $case: "disconnect", disconnect: {} } });
-        stream.end();
+        closed = true;
+        cleanup();
         break;
     }
 
   });
 
   ws.on("close", async () => {
-    stream.write({ message: { $case: "disconnect", disconnect: {} } });
-    stream.end();
-    stream.removeAllListeners();
+    closed = true;
+    cleanup();
   });
 
   ws.on("error", async (err) => {
+    closed = true;
     log("Error occurred from client. Disconnect.", err);
     await callLog({
       operatorUserId: user.identityId,
@@ -222,9 +270,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         clusterId: cluster, loginNode: loginNode.address,
       },
     }, OperationResult.FAIL);
-    stream.write({ message: { $case: "disconnect", disconnect: {} } });
-    stream.end();
-    stream.removeAllListeners();
+    cleanup();
   });
 });
 
@@ -242,4 +288,3 @@ export const setupShellServer = (req: NextApiRequest) => {
 
   });
 };
-
