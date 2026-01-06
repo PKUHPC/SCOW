@@ -16,8 +16,9 @@ import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/c
 import { App, ConfigProvider, theme } from "antd";
 import enUSlocale from "antd/locale/en_US";
 import zhCNlocale from "antd/locale/zh_CN";
-import React from "react";
+import React, { useMemo } from "react";
 import { useDarkMode } from "src/layouts/darkMode";
+import { darkGray, lightGray } from "src/styles/constants";
 import { ThemeProvider } from "styled-components";
 
 
@@ -26,11 +27,27 @@ type Props = React.PropsWithChildren<{
   locale: string;
 }>;
 
-const StyledComponentsThemeProvider: React.FC<Props> = ({ children }) => {
+type StyledThemeProviderProps = React.PropsWithChildren<{
+  color: string;
+  grayPalette: string[];
+}>;
+
+const StyledComponentsThemeProvider: React.FC<StyledThemeProviderProps> = ({ children, color, grayPalette }) => {
   const { token } = theme.useToken();
+  const primaryPalette = useMemo(() => {
+    const primary = color || token.colorPrimary;
+    return Array.from({ length: 10 }, () => primary);
+  }, [color, token.colorPrimary]);
+  const styledTheme = useMemo(() => ({
+    token,
+    palette: {
+      primary: primaryPalette,
+      gray: grayPalette,
+    },
+  }), [grayPalette, primaryPalette, token]);
 
   return (
-    <ThemeProvider theme={{ token }}>
+    <ThemeProvider theme={styledTheme}>
       {children}
     </ThemeProvider>
   );
@@ -39,6 +56,7 @@ const StyledComponentsThemeProvider: React.FC<Props> = ({ children }) => {
 export const AntdConfigProvider: React.FC<Props> = ({ children, color, locale }) => {
 
   const { dark } = useDarkMode();
+  const grayPalette = useMemo(() => (dark ? darkGray : lightGray), [dark]);
 
   return (
     <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
@@ -55,7 +73,7 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, color, locale })
         },
         algorithm: dark ? theme.darkAlgorithm : undefined }}
       >
-        <StyledComponentsThemeProvider color={color} locale={locale}>
+        <StyledComponentsThemeProvider color={color} grayPalette={grayPalette}>
           <App>
             {children}
           </App>

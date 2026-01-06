@@ -18,5 +18,9 @@ import { GlobalToken } from "antd/es/theme/interface";
 declare module "styled-components" {
   export interface DefaultTheme {
     token: GlobalToken;
+    palette: {
+      primary: string[];
+      gray: string[];
+    };
   }
 }
