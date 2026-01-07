@@ -98,6 +98,7 @@ export const VNC_ENTRY_COMMAND = fs.readFileSync("assets/app/vnc_entry.sh", { en
 export const TENSORBOARD_ENTRY_COMMAND = fs.readFileSync("assets/app/tensorboard_entry.sh", { encoding: "utf-8" });
 
 export const SESSION_METADATA_NAME = "session.json";
+export const TOTAL_SESSIONS = "total_sessions.json";
 
 // 适配器将该文件写在了/tmp目录下
 export const SERVER_SESSION_INFO = "/tmp/server_session_info.json";

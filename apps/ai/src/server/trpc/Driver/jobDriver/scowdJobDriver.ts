@@ -2,9 +2,11 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { getEnvVariables } from "@scow/lib-server";
+import { getClusterIdFromSessionId, getEnvVariables, isCurrentClusterSession as isCurrentClusterSessionUtil }
+  from "@scow/lib-server";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
 import { JobInfo, JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
+import { FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { join } from "path";
@@ -12,11 +14,13 @@ import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
+import { config } from "src/server/config/env";
 import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
 import { AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
   SESSION_METADATA_NAME,SessionMetadata, TENSORBOARD_ENTRY_COMMAND,
+  TOTAL_SESSIONS,
   VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema, SessionMetadata as InferSessionMetadata }
+import { InferenceJobInput,InferenceJobInputSchema }
   from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
@@ -28,9 +32,50 @@ import { formatTime } from "src/utils/datetime";
 import { isParentOrSameFolder } from "src/utils/file";
 import { BASE_PATH } from "src/utils/processEnv";
 import { Logger } from "ts-log";
+import { z } from "zod";
 
 import { ConnectToAppResponse, CreateAppExtraParams, CreateDevHostExtraParams, JobDriver,
   SubmitInferJobExtraParams, SubmitTrainJobExtraParams } from "./jobDriver";
+
+const ImageSchema = z.object({
+  name: z.string(),
+  tag: z.string().optional(),
+});
+
+const BaseSessionMetadataSchema = z.object({
+  sessionId: z.string(),
+  jobName: z.string().default(""),
+  jobId: z.number(),
+  submitTime: z.string(),
+  image: ImageSchema,
+});
+
+const AppSessionMetadataSchema = BaseSessionMetadataSchema.extend({
+  jobType: z.literal(JobType.APP),
+  appId: z.string().optional(),
+});
+
+const TrainSessionMetadataSchema = BaseSessionMetadataSchema.extend({
+  jobType: z.literal(JobType.TRAIN),
+});
+
+const DevHostSessionMetadataSchema = BaseSessionMetadataSchema.extend({
+  jobType: z.literal(JobType.DEV_HOST),
+});
+
+const InferSessionMetadataSchema = BaseSessionMetadataSchema.extend({
+  jobType: z.literal(JobType.INFER),
+  containerServicePort: z.number(),
+});
+
+const TotalSessionMetadataSchema = z.discriminatedUnion("jobType", [
+  AppSessionMetadataSchema,
+  TrainSessionMetadataSchema,
+  DevHostSessionMetadataSchema,
+  InferSessionMetadataSchema,
+]);
+
+type TotalSessionMetadata = z.infer<typeof TotalSessionMetadataSchema>;
 
 /**
  * 解析镜像URL，提取镜像名称和标签
@@ -68,6 +113,305 @@ export class ScowdJobDriver implements JobDriver {
     private logger: Logger,
   ) {
     this.client = getScowdClient(this.clusterId);
+  }
+
+  private getTotalSessionsPath(homeDir: string) {
+    return join(homeDir, aiConfig.appJobsDir, `${this.clusterId}-${TOTAL_SESSIONS}`);
+  }
+
+  // sessionId 以集群 ID 为前缀（如 dev-k8s-c-xxx），匹配到当前集群或无法识别集群时视为当前集群
+  private isCurrentClusterSession(sessionId?: string) {
+    return isCurrentClusterSessionUtil(sessionId, this.clusterId, clusters);
+  }
+
+  private isStrictCurrentClusterSession(sessionId?: string) {
+    return getClusterIdFromSessionId(sessionId, clusters) === this.clusterId;
+  }
+
+  // 只有当这个 jobId 也有匹配当前集群的记录时，才要求 sessionId 必须严格匹配当前集群；否则不过滤
+  private filterSessionsByJobIdClusterPreference(sessions: TotalSessionMetadata[]): TotalSessionMetadata[] {
+    const jobIdsWithCurrentCluster = new Set<number>();
+    sessions.forEach((session) => {
+      if (this.isStrictCurrentClusterSession(session.sessionId)) {
+        jobIdsWithCurrentCluster.add(session.jobId);
+      }
+    });
+
+    if (jobIdsWithCurrentCluster.size === 0) {
+      return sessions;
+    }
+    // 如果某个 jobId 没有严格匹配当前集群的记录（不在集合里），就全部保留（避免误删无法识别集群的旧数据）。
+    // 如果某个 jobId 有严格匹配当前集群的记录（在集合里），就只保留这些严格匹配的记录。
+    return sessions.filter((session) =>
+      !jobIdsWithCurrentCluster.has(session.jobId)
+      || this.isStrictCurrentClusterSession(session.sessionId),
+    );
+  }
+
+  // 去重同一集群下的 session 记录，后写覆盖先写
+  private dedupeSessions(sessions: TotalSessionMetadata[]): TotalSessionMetadata[] {
+    const sessionMap = new Map<string, TotalSessionMetadata>();
+    sessions.forEach((session) => {
+      console.log("out",session.sessionId);
+      if (this.isCurrentClusterSession(session?.sessionId)) {
+        console.log("in ",session.sessionId);
+        sessionMap.set(session.sessionId, session);
+      }
+    });
+
+    return Array.from(sessionMap.values());
+  }
+
+  private parseTotalSessionMetadata(raw: unknown, logger: Logger, source: string): TotalSessionMetadata | null {
+    const parsed = TotalSessionMetadataSchema.safeParse(raw);
+
+    if (!parsed.success) {
+      logger.error("Invalid session metadata from %s: %s", source, parsed.error.message);
+      return null;
+    }
+
+    return parsed.data;
+  }
+
+  /**
+ * 由于 grpc-proto 的 4M 限制（大约估计可以支持 30000 多条session数据）
+ * 根据文件大小判断使用直接读取还是流式传输
+ * 如果文件小于 2M 使用直接读取的 readFile 接口
+ * 如果文件大于 2M 使用流式传输的 download 接口
+ */
+  private async readTotalSessionsFile(homeDir: string): Promise<TotalSessionMetadata[] | null> {
+    const totalSessionsPath = this.getTotalSessionsPath(homeDir);
+    const subLogger = this.logger.child({ homeDir, totalSessionsPath });
+    try {
+      // 不存在或空文件直接返回 null，让调用方决定是否重建
+      const totalSessionsFileExists = await wrap(
+        this.client.file.exists({
+          userId: this.userId,
+          path: totalSessionsPath,
+        }),
+        subLogger,
+      );
+
+      if (!totalSessionsFileExists.exists) {
+        return null;
+      }
+
+      const fileMeta = await wrap(
+        this.client.file.getFileMetadata({
+          userId: this.userId,
+          filePath: totalSessionsPath,
+        }),
+        subLogger,
+      );
+
+      let contentStr = "";
+      const fileSize = Number(fileMeta.sizeByte);
+
+      // 小文件直接 readFile，大文件用 download 流式读取
+      if (fileSize <= 2 * 1024 * 1024) {
+        subLogger.trace("total sessions file size %d bytes, using readFile", fileSize);
+        const totalSessionsContent = await wrap(
+          this.client.file.readFile({
+            userId: this.userId,
+            filePath: totalSessionsPath,
+          }),
+          subLogger,
+        );
+        contentStr = totalSessionsContent.content.toString();
+      } else {
+        subLogger.trace("total sessions file size %d bytes, using download stream", fileSize);
+        const buffers: Buffer[] = [];
+        const abortController = new AbortController();
+        try {
+          const stream = this.client.file.download({
+            userId: this.userId,
+            path: totalSessionsPath,
+            chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+          }, {
+            signal: abortController.signal,
+          });
+
+          for await (const { chunk } of stream) {
+            if (chunk) {
+              buffers.push(Buffer.from(chunk));
+            }
+          }
+
+          contentStr = Buffer.concat(buffers).toString();
+        } catch (err) {
+          abortController.abort();
+          subLogger.error("Failed to download total sessions file %s: %s", totalSessionsPath, err);
+          return null;
+        }
+      }
+
+      const trimmedContent = contentStr.trim();
+      if (!trimmedContent) {
+        return null;
+      }
+
+      const sessions: TotalSessionMetadata[] = [];
+
+      try {
+        const parsedContent = JSON.parse(trimmedContent);
+        if (Array.isArray(parsedContent)) {
+          parsedContent.forEach((item, index) => {
+            const parsed = this.parseTotalSessionMetadata(item, subLogger, `${totalSessionsPath}[${index}]`);
+            if (parsed) {
+              sessions.push(parsed);
+            }
+          });
+        } else if (parsedContent && typeof parsedContent === "object") {
+          const parsed = this.parseTotalSessionMetadata(parsedContent, subLogger, totalSessionsPath);
+          if (parsed) {
+            sessions.push(parsed);
+          }
+        } else {
+          subLogger.error("Unexpected total sessions data type in %s: %s", totalSessionsPath, typeof parsedContent);
+        }
+      } catch (parseErr) {
+        // fallback 到 NDJSON 逐行解析
+        subLogger.debug?.("Total sessions is not array json, fallback to NDJSON parse: %s", parseErr);
+        contentStr.split(/\r?\n/).forEach((line, index) => {
+          const trimmed = line.trim();
+          if (!trimmed) { return; }
+          try {
+            const parsedLine = JSON.parse(trimmed);
+            const parsed = this.parseTotalSessionMetadata(
+              parsedLine,
+              subLogger,
+              `${totalSessionsPath}:${index + 1}`,
+            );
+            if (parsed) {
+              sessions.push(parsed);
+            }
+          } catch (err) {
+            subLogger.error("Failed to parse session line in %s: %s", totalSessionsPath, err);
+          }
+        });
+      }
+
+      const deduped = this.dedupeSessions(sessions);
+      return deduped.length > 0 ? deduped : null;
+    } catch (err) {
+      subLogger.error("Failed to read total sessions file %s: %s", totalSessionsPath, err);
+      return null;
+    }
+  }
+
+  private async writeTotalSessionsFile(homeDir: string, sessions: TotalSessionMetadata[],
+    options?: { append?: boolean }) {
+    const totalSessionsPath = this.getTotalSessionsPath(homeDir);
+    const append = options?.append ?? false;
+    // 只写当前集群的记录，避免污染其他集群数据
+    const filteredSessions = sessions.filter((session) => this.isCurrentClusterSession(session.sessionId));
+
+    if (filteredSessions.length === 0) {
+      return;
+    }
+
+    let content = filteredSessions.map((session) => JSON.stringify(session)).join("\n");
+    if (content) {
+      content += "\n";
+    }
+
+    try {
+      await wrap(
+        this.client.file.writeFile({
+          userId: this.userId,
+          filePath: totalSessionsPath,
+          content,
+          append,
+        }),
+        this.logger,
+      );
+    } catch (err) {
+      this.logger.error("Failed to write total sessions file %s: %s", totalSessionsPath, err);
+    }
+  }
+
+  private async upsertTotalSessionsFile(homeDir: string, metadata: TotalSessionMetadata) {
+    if (!this.isCurrentClusterSession(metadata.sessionId)) {
+      return;
+    }
+
+    const totalSessions = await this.readTotalSessionsFile(homeDir);
+
+    if (!totalSessions || totalSessions.length === 0) {
+      // 文件缺失/空：先扫描原有 session.json 重建，再写入新记录，避免丢失历史数据
+      const existingSessions = await this.readSessionsFromDirectories(homeDir);
+      const dedupedSessions = this.dedupeSessions([...existingSessions, metadata]);
+      await this.writeTotalSessionsFile(homeDir, dedupedSessions, { append: false });
+      return;
+    }
+
+    const index = totalSessions.findIndex((item) => item.sessionId === metadata.sessionId);
+
+    if (index !== -1) {
+      totalSessions[index] = metadata;
+      const dedupedSessions = this.dedupeSessions(totalSessions);
+      await this.writeTotalSessionsFile(homeDir, dedupedSessions, { append: false });
+      return;
+    }
+
+    await this.writeTotalSessionsFile(homeDir, [metadata], { append: true });
+  }
+
+  private async readSessionsFromDirectories(homeDir: string): Promise<TotalSessionMetadata[]> {
+    const appJobsDirectory = join(homeDir, aiConfig.appJobsDir);
+    const subLogger = this.logger.child({ appJobsDirectory });
+
+    const appJobsDirectoryResp = await wrap(
+      this.client.file.readDirectory({
+        userId: this.userId,
+        dirPath: appJobsDirectory,
+      }),
+      subLogger,
+    );
+
+    const sessionMetadatas = [] as TotalSessionMetadata[];
+
+    await Promise.all(appJobsDirectoryResp.filesInfo.map(async ({ name:filename,fileType }) => {
+      // 跳过是文件的目录
+      if (fileType === FileType.FILE) {
+        return;
+      }
+
+      const metadataPath = join(appJobsDirectory, filename, SESSION_METADATA_NAME);
+
+      const metadataPathExists = await wrap(
+        this.client.file.exists({
+          userId: this.userId,
+          path: metadataPath,
+        }),
+        subLogger,
+      );
+
+      if (!metadataPathExists.exists) {
+        subLogger.error("metadataPath %s not exists", metadataPath);
+        return;
+      }
+
+      const contentRes = await wrap(
+        this.client.file.readFile({
+          userId: this.userId,
+          filePath: metadataPath,
+        }),
+        subLogger,
+      );
+
+      try {
+        const parsedContent = JSON.parse(contentRes.content.toString());
+        const sessionMetadata = this.parseTotalSessionMetadata(parsedContent, subLogger, metadataPath);
+        if (sessionMetadata && this.isCurrentClusterSession(sessionMetadata.sessionId)) {
+          sessionMetadatas.push(sessionMetadata);
+        }
+      } catch (err) {
+        subLogger.error("Failed to parse session metadata %s: %s", metadataPath, err);
+      }
+    }));
+
+    return sessionMetadatas;
   }
 
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
@@ -283,7 +627,7 @@ export class ScowdJobDriver implements JobDriver {
       });
     });
 
-    const metadata: SessionMetadata = {
+    const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
       jobName: appJobName,
       sessionId: scowWorkDirectoryName,
@@ -301,6 +645,7 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
+    await this.upsertTotalSessionsFile(homeDir, metadata);
 
     await wrap(
       this.client.file.writeFile({
@@ -414,51 +759,18 @@ export class ScowdJobDriver implements JobDriver {
       return [];
     }
 
-    const appJobsDirectoryResp = await wrap(
-      this.client.file.readDirectory({
-        userId: this.userId,
-        dirPath: appJobsDirectory,
-      }),
-      this.logger,
-    );
-    const list = appJobsDirectoryResp.filesInfo;
+    let totalSessions = await this.readTotalSessionsFile(homeDir);
+
+    if (!totalSessions || totalSessions.length === 0) {
+      totalSessions = await this.readSessionsFromDirectories(homeDir);
+      await this.writeTotalSessionsFile(homeDir, totalSessions);
+    }
+
+    totalSessions = this.filterSessionsByJobIdClusterPreference(totalSessions);
+
     const sessions = [] as AppSession[];
 
-
-    await Promise.all(list.map(async ({ name:filename }) => {
-      const jobDir = join(appJobsDirectory, filename);
-      const metadataPath = join(jobDir, SESSION_METADATA_NAME);
-
-      const metadataPathExists = await wrap(
-        this.client.file.exists({
-          userId: this.userId,
-          path: metadataPath,
-        }),
-        this.logger,
-      );
-
-      if (!metadataPathExists.exists) {
-        this.logger.error("metadataPath %s not exists", metadataPath);
-        return;
-      }
-
-
-      const contentRes = await wrap(
-        this.client.file.readFile({
-          userId: this.userId,
-          filePath: metadataPath,
-        }),
-        this.logger,
-      );
-
-      let sessionMetadata: SessionMetadata | null = null;
-      try {
-        sessionMetadata = JSON.parse(contentRes.content.toString()) as SessionMetadata;
-      } catch (err) {
-        this.logger.error("Failed to parse session metadata %s: %s", metadataPath, err);
-        return; // 跳过当前 job
-      }
-
+    totalSessions.forEach((sessionMetadata) => {
       const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
 
       if (!runningJobInfo) {
@@ -467,11 +779,14 @@ export class ScowdJobDriver implements JobDriver {
 
       const statesNeedReason = new Set(["PENDING", "QUEUED",...terminatedStates]);
       const needReason = statesNeedReason.has(runningJobInfo.state);
+      const jobDir = join(appJobsDirectory, sessionMetadata.sessionId);
+      const appId = "appId" in sessionMetadata ? sessionMetadata.appId : undefined;
+      const appName = appId ? apps[appId]?.name : undefined;
 
       sessions.push({
         jobId: sessionMetadata.jobId,
-        appId: sessionMetadata.appId,
-        appName: sessionMetadata?.appId ? apps[sessionMetadata?.appId]?.name : undefined,
+        appId: appId,
+        appName,
         sessionId: sessionMetadata.sessionId,
         jobName: sessionMetadata.jobName ?? "",
         submitTime: sessionMetadata.submitTime,
@@ -493,7 +808,7 @@ export class ScowdJobDriver implements JobDriver {
         memReq:runningJobInfo.memReqMb,
         nodesReq:runningJobInfo.nodesReq,
       });
-    }));
+    });
 
     // 如果 isRunning 为 undefined，返回所有会话
     let filteredSessions = isRunning === undefined ?
@@ -704,7 +1019,7 @@ export class ScowdJobDriver implements JobDriver {
     });
 
     // Save session metadata
-    const metadata: InferSessionMetadata = {
+    const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
       jobName:InferenceJobName,
       sessionId: scowWorkDirectoryName,
@@ -725,6 +1040,7 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
+    await this.upsertTotalSessionsFile(homeDir, metadata);
 
     await wrap(
       this.client.file.writeFile({
@@ -954,7 +1270,7 @@ export class ScowdJobDriver implements JobDriver {
       ? parseImageUrl(remoteImageUrl)
       : { name: existImage!.name, tag: existImage?.tag || "latest" };
 
-    const metadata: SessionMetadata = {
+    const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
       jobName:trainJobName,
       sessionId: scowWorkDirectoryName,
@@ -971,6 +1287,7 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
+    await this.upsertTotalSessionsFile(homeDir, metadata);
 
     await wrap(
       this.client.file.writeFile({
@@ -1123,7 +1440,7 @@ export class ScowdJobDriver implements JobDriver {
       ? parseImageUrl(remoteImageUrl)
       : { name: existImage!.name, tag: existImage?.tag || "latest" };
 
-    const metadata: SessionMetadata = {
+    const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
       jobName: devHostName,
       sessionId: scowWorkDirectoryName,
@@ -1140,6 +1457,7 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
+    await this.upsertTotalSessionsFile(homeDir, metadata);
 
     await wrap(
       this.client.file.writeFile({

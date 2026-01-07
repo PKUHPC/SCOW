@@ -7,7 +7,8 @@ import { AppType, AttributeType } from "@scow/config/build/app";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { formatTime } from "@scow/lib-scheduler-adapter";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { errorInfo, getAppConnectionInfoFromAdapter,getEnvVariables } from "@scow/lib-server";
+import { errorInfo, getAppConnectionInfoFromAdapter,
+  getEnvVariables, isCurrentClusterSession } from "@scow/lib-server";
 import { DetailedError, ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
 import { JobInfo, SubmitJobRequest } from "@scow/scheduler-adapter-protos/build/job";
 import { FileInfo, FileType } from "@scow/scowd-protos/build/storage/file_pb";
@@ -15,6 +16,7 @@ import dayjs from "dayjs";
 import { join } from "path";
 import { quote } from "shell-quote";
 import { AppOps, AppSession, SubmissionInfo } from "src/clusterops/api/app";
+import { configClusters } from "src/config/clusters";
 import { portalConfig } from "src/config/portal";
 import { APP_LAST_SUBMISSION_INFO, BIN_BASH_SCRIPT_HEADER, ENDED_SESSIONS, getClusterAppConfigs,
   readEndedSessionsFile, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO, ServerSessionInfoData, SESSION_METADATA_NAME,
@@ -347,7 +349,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         }
         const sessions = [] as AppSession[];
 
-        const endedSessionsFilePath = join(userAppJobDir, ENDED_SESSIONS);
+        const endedSessionsFilePath = join(userAppJobDir, `${cluster}-${ENDED_SESSIONS}`);
         // 定义用于存储已存在的 endedSessions 的 session 信息
         const existingEndedSessions: SessionMetadata[] = [];
         // 定义用于存储本次需要添加的 endedSessions
@@ -410,7 +412,11 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
         await Promise.all(list.map(async ({ name, fileType }) => {
 
-          // 如果name是已存在的 endedSessions 的 sessionId 或是一个文件则跳过
+          /**
+           * 跳过的情况有：
+           * 1. name是已存在的 endedSessions
+           * 2. 是一个文件而不是目录
+           */
           if (existingSessionIds.has(name) || fileType === FileType.FILE) {
             return;
           }
@@ -555,7 +561,9 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
                   submitTime: sessionMetadata.submitTime,
                   appId: sessionMetadata.appId,
                 };
-                newEndedSessions.push(endedSessionInfo);
+                if (isCurrentClusterSession(sessionMetadata.sessionId, cluster, configClusters)) {
+                  newEndedSessions.push(endedSessionInfo);
+                }
               }
             }
 
@@ -738,4 +746,3 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
     },
   };
 };
-
