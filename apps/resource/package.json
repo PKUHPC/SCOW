@@ -12,12 +12,12 @@
     "start.mjs"
   ],
   "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
-    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
+    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev --turbopack",
+    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev --turbopack",
     "serve": "node start.mjs",
     "serve:next": "next start",
     "build": "npm run build:next",
-    "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --no-mangling",
+    "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --no-mangling --turbopack",
     "build:ts": "rimraf build && tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "test": "jest --passWithNoTests",
     "lint": "eslint ."
@@ -60,7 +60,7 @@
     "antd": "5.19.4",
     "js-yaml": "4.1.0",
     "long": "5.2.4",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "next-compose-plugins": "2.2.1",
     "nextjs-cors": "2.2.1",
     "nookies": "2.5.2",

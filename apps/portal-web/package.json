@@ -3,12 +3,12 @@
   "version": "1.9.11",
   "private": true,
   "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
-    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
+    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev --turbopack",
+    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev --turbopack",
     "serve": "node start.mjs",
     "serve:next": "next start",
     "build": "node scripts/copyMonacoToPublic.js && npm run build:next",
-    "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build",
+    "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build --turbopack",
     "test": "jest --passWithNoTests",
     "client": "ntar client",
     "prepareDev": "node scripts/copyMonacoToPublic.js",
@@ -68,7 +68,7 @@
     "http-proxy": "1.18.1",
     "less": "4.2.1",
     "mime-types": "2.1.35",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "next-compose-plugins": "2.2.1",
     "nookies": "2.5.2",
     "nprogress": "0.2.0",
@@ -107,23 +107,10 @@
     "jest-environment-jsdom": "29.7.0",
     "node-mocks-http": "1.16.2",
     "postcss": "8.5.1",
-    "ts-log": "2.2.7",
-    "webpack": "5.97.1"
+    "ts-log": "2.2.7"
   },
   "peerDependencies": {
     "monaco-editor": "0.50.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "volta": {
     "extends": "../../package.json"

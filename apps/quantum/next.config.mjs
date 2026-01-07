@@ -1,5 +1,4 @@
 import { readVersionFile } from "@scow/utils/build/version.js";
-import os from "os";
 import path from "path";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/";
@@ -49,31 +48,6 @@ export default async () => {
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     publicRuntimeConfig: {
       BASE_PATH: BASE_PATH,
-    },
-
-    webpack: (config) => {
-      config.resolve.extensionAlias = {
-        ".js": [".ts", ".tsx", ".js"],
-        ".jsx": [".ts", ".tsx", ".js"],
-      };
-      config.module.rules.push({
-        test: /\.node$/,
-        use: [
-          {
-            loader: "nextjs-node-loader",
-            options: {
-              flags: os.constants.dlopen.RTLD_NOW,
-              outputPath: config.output.path,
-            },
-          },
-        ],
-      });
-      config.module.rules.push({
-        test: /\.md$/,
-        // This is the asset module.
-        type: 'asset/source',
-      });
-      return config;
     },
     skipTrailingSlashRedirect: true,
     transpilePackages: ["antd", "@ant-design/icons"],

@@ -1,5 +1,4 @@
 
-import os from "os";
 import { join } from "path";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/";
@@ -36,26 +35,6 @@ export default async () => {
     },
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
-    webpack: (config) => {
-      config.resolve.extensionAlias = {
-        ".js": [".ts", ".tsx", ".js"],
-        ".jsx": [".ts", ".tsx", ".js"],
-      };
-      config.module.rules.push({
-        test: /\.node$/,
-        use: [
-          {
-            loader: "nextjs-node-loader",
-            options: {
-              flags: os.constants.dlopen.RTLD_NOW,
-              outputPath: config.output.path,
-            },
-          },
-        ],
-      });
-
-      return config;
-    },
     skipTrailingSlashRedirect: true,
     transpilePackages: ["antd", "@ant-design/icons"],
   };

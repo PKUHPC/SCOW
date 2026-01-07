@@ -4,7 +4,8 @@
   "version": "1.9.11",
   "scripts": {
     "build": "turbo run build",
-    "build:scow": "turbo run build --filter=\"!@scow/docs\"",
+    "build:cli": "turbo run build --filter \"@scow/cli\"",
+    "build:scow": "turbo run build --filter=\"!@scow/docs\" --filter=\"!@scow/cli\" --filter=\"!./dev/**\"",
     "build:libs": "turbo run build --filter \"./libs/**\"",
     "build:images": "docker build -f docker/Dockerfile.scow -t scow .",
     "build:protos": "turbo run build --filter \"./libs/protos/**\"",
@@ -62,7 +63,7 @@
   "packageManager": "pnpm@10.25.0",
   "pnpm": {
     "patchedDependencies": {
-      "next@15.5.7": "patches/next@15.5.7.patch"
+      "next@15.5.9": "patches/next@15.5.9.patch"
     },
     "neverBuiltDependencies": []
   }

@@ -33,6 +33,9 @@ module.exports = async (phase) => {
    */
   const config = {
     ...runtimeConfig,
+    compiler: {
+      styledComponents: true,
+    },
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
     transpilePackages: ["antd", "@ant-design/icons"],

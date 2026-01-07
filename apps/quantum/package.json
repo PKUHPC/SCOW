@@ -14,12 +14,12 @@
     "start.mjs"
   ],
   "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev",
-    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev",
+    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev --turbopack",
+    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev --turbopack",
     "serve": "node start.mjs",
     "serve:next": "next start",
     "build": "npm run build:next && npm run build:types",
-    "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --no-mangling",
+    "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --turbopack --no-mangling",
     "build:types": "rimraf build && tsc -p tsconfig.types.json && tsc-alias -p tsconfig.types.json",
     "orm": "dotenv -e env/.env.dev -- npx mikro-orm",
     "ormCreate": "dotenv -e env/.env.dev -- npx mikro-orm migration:create",
@@ -81,7 +81,7 @@
     "lodash": "4.17.21",
     "long": "5.2.4",
     "mime-types": "2.1.35",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "next-compose-plugins": "2.2.1",
     "nextjs-cors": "2.2.1",
     "node-ssh": "13.2.0",
@@ -133,7 +133,6 @@
     "node-mocks-http": "1.16.2",
     "postcss": "8.5.1",
     "ts-log": "2.2.7",
-    "webpack": "5.97.1",
     "raw-loader": "4.0.2",
     "openapi-types": "12.1.3"
   },

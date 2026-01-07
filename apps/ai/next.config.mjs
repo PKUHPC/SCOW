@@ -1,4 +1,3 @@
-import os from "os";
 import { join } from "path";
 
 
@@ -33,44 +32,8 @@ export default async () => {
       styledComponents: true,
 
     },
-    // turbopack: {
-    //   rules: {
-    //     "*.node": {
-    //       loaders: ["nextjs-node-loader"],
-    //       as: "*.js",
-    //     },
-    //   },
-    // },
     basePath: BASE_PATH === "/" ? undefined : BASE_PATH,
     assetPrefix: BASE_PATH === "/" ? undefined : BASE_PATH,
-    webpack: (config) => {
-      config.resolve.extensionAlias = {
-        ".js": [".ts", ".tsx", ".js"],
-        ".jsx": [".ts", ".tsx", ".js"],
-      };
-      config.module.rules.push({
-        test: /\.node$/,
-        use: [
-          {
-            loader: "nextjs-node-loader",
-            options: {
-              flags: os.constants.dlopen.RTLD_NOW,
-              outputPath: config.output.path,
-            },
-          },
-        ],
-      });
-
-      // config.plugins.forEach((i) => {
-      //   if (i instanceof webpack.DefinePlugin) {
-      //     if (i.definitions["process.env.__NEXT_ROUTER_BASEPATH"]) {
-      //       i.definitions["process.env.__NEXT_ROUTER_BASEPATH"] =
-      //         "(typeof window === \"undefined\" ? global : window).__CONFIG__?.BASE_PATH";
-      //     }
-      //   }
-      // });
-      return config;
-    },
     skipTrailingSlashRedirect: true,
     transpilePackages: ["antd", "@ant-design/icons"],
   };
