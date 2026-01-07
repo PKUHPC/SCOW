@@ -1,6 +1,6 @@
 import { router } from "src/server/trpc/def";
 
-import { copyImage, createImage, deleteImage, getImageById, getImageQuota, list,
+import { copyImage, createImage, deleteImage, getImageById, getImageCreationLog, getImageQuota, list,
   shareOrUnshareImage, updateImage } from "./image";
 
 export const image = router({
@@ -12,4 +12,5 @@ export const image = router({
   shareOrUnshareImage,
   copyImage,
   getImageQuota,
+  getImageCreationLog,
 });

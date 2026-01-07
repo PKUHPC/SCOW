@@ -83,7 +83,6 @@ export class Image {
     if (init.updateTime) {
       this.updateTime = init.updateTime;
     }
-
   }
 }
 
@@ -111,7 +110,7 @@ imageEntitySchema.addEnum("types", String, {
   columnType: "varchar(255)",
   items: () => ImageType,
   array: true,
-  default:[ImageType.APP, ImageType.TRAIN, ImageType.INFER],
+  default:[ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST],
 });
 imageEntitySchema.addProperty("inferServicePort", String, { nullable: true });
 imageEntitySchema.addProperty("startCommand", String, { columnType: "TEXT",nullable: true });

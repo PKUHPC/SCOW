@@ -1,6 +1,6 @@
 "use client";
 
-import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Input, Select, Space, Table, Tag, Tooltip } from "antd";
@@ -12,6 +12,7 @@ import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon } from "src/icons/operationIcon";
 import { getImageTexts, getImageTypeText, ImageType, Status } from "src/models/Image";
+import { statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
@@ -20,8 +21,8 @@ import { trpc } from "src/utils/trpc";
 
 import { CopyImageModal } from "./CopyImageModal";
 import { CreateEditImageModal } from "./CreateEditImageModal";
+import { ImageCreationLogModal } from "./ImageCreationLogModal";
 import { ImageQuota } from "./ImageQuota";
-
 
 interface Props {
   isPublic: boolean;
@@ -68,6 +69,22 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
 
   const [form] = Form.useForm<FilterForm>();
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
+
+
+  const [showLogModal, setShowLogModal] = useState(false);
+  // 存储选中的镜像
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+
+  const handleOpenModal = (image: any) => {
+    setSelectedImage(image);
+    setShowLogModal(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedImage(null);
+    setShowLogModal(false);
+    refetch();
+    refetchImageQuota();
+  };
 
   const cluster = Form.useWatch("cluster", form);
 
@@ -196,21 +213,23 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
             render: (_, r) => {
               switch (r.status) {
                 case Status.CREATING:
-                  return <Tag color="processing">{t(p("processing"))}</Tag>;
-                case Status.CREATED:
-                  return <Tag color="success">{t(p("success"))}</Tag>;
-                default:
-                  return r.failedReason ? (
-                    <Tooltip title={r.failedReason}>
-                      <Space>
-                        <Tag color="error">{t(p("error"))}</Tag>
-                        <ExclamationCircleOutlined />
-                      </Space>
-                    </Tooltip>
-                  ) : (
-                    <Tag color="error">{t(p("error"))}</Tag>
+                  return (
+                    <>
+                      <a style={{ color: statusColors.RUNNING }} onClick={() => handleOpenModal(r)}>
+                        {t(p("processing"))}
+                      </a>
+                    </>
                   );
-
+                case Status.CREATED:
+                  return <a style={{ color: statusColors.COMPLETED }}>{t(p("success"))}</a>;
+                default:
+                  return (
+                    <>
+                      <a style={{ color: statusColors.FAILED }} onClick={() => handleOpenModal(r)}>
+                        {t(p("error"))}
+                      </a>
+                    </>
+                  );
               }
             },
           },
@@ -327,6 +346,15 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
           onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
         } : false}
         scroll={{ x: true }}
+      />
+
+      <ImageCreationLogModal
+        imageId={selectedImage?.id}
+        status={selectedImage?.status}
+        open={showLogModal}
+        onClose={() => handleCloseModal()}
+        failedReason={
+          selectedImage?.status === Status.FAILURE ? (selectedImage?.failedReason ?? "创建失败") : undefined}
       />
     </div>
   );

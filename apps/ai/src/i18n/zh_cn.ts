@@ -711,6 +711,18 @@ export default {
         delText2:"如该镜像已分享，则分享的镜像也会被删除。",
         type:"类型",
       },
+      imageLogModal: {
+        creating: "创建中",
+        logFoundError: "查询日志失败",
+        loadTitle: "创建中-加载镜像",
+        commitTitle: "创建中-提交镜像",
+        pullTitle: "创建中-拉取镜像",
+        pushTitle: "创建中-推送镜像",
+        failedTitle: "创建失败",
+        unknownFailure: "未知错误",
+        fetchingLog: "正在获取日志",
+        noLog: "暂无日志输出",
+      },
       imageQuota:{
         quota:"镜像总配额",
         usedQuota:"使用量",

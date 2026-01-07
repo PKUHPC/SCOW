@@ -654,6 +654,7 @@ export const saveImage =
                 formattedContainerId,
                 localImageUrl,
                 harborImageUrl,
+                imageId: image.id,
               });
             },
             logger);

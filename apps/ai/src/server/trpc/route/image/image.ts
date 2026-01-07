@@ -10,6 +10,8 @@ import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
 import { bytesToGB, createHarborImageUrl, getUserHarborProjectName, isValidImageAddress } from "src/server/utils/image";
+import { imageCreationAbortOperation } from "src/server/utils/imageCreationAbortController";
+import { CreationOperation, getCurrentImageCreationLog } from "src/server/utils/imageCreationManager";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
@@ -249,7 +251,7 @@ export const createImage = procedure
       const image = await em.findOne(Image, { name, tag, owner: user.identityId });
 
       if (!image) {
-        throw new Error(`copyImage error: image ${name}:${tag} not found`);
+        throw new Error(`Image creation error: image ${name}:${tag} not found`);
       }
 
       const logInfo = {
@@ -270,6 +272,7 @@ export const createImage = procedure
             tag,
             loginInfo:{ userName,password },
             harborImageUrl,
+            imageId: image.id,
           });
         },logger);
 
@@ -468,6 +471,7 @@ export const deleteImage = procedure
       });
     }
 
+    // 不允许强制删除时报错
     if (!input.force && image.status === Status.CREATING) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -480,6 +484,17 @@ export const deleteImage = procedure
         code: "FORBIDDEN",
         message: `Image ${image.name}:${image.tag} not accessible`,
       });
+    }
+
+    let creationAbort = false;
+    // 允许强制删除时打断创建过程
+    if (input.force && image.status === Status.CREATING) {
+      creationAbort = imageCreationAbortOperation(image.id);
+      if (creationAbort) {
+        logger.info(`Successfully aborted image creation for image ${input.id}`);
+        // 等待中断生效
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
 
     const harborConfig = getHarborConfig();
@@ -839,6 +854,7 @@ export const copyImage = procedure
             newName,
             newTag,
             harborImageUrl,
+            newImageId: image.id,
           });
         },
         logger);
@@ -938,4 +954,60 @@ export const getImageQuota = procedure
       // 兜底默认配额，避免接口直接失败
       return await fetchDefaultProjectQuota();
     }
+  });
+
+export const ImageCreationLogReqSchema = z.object({
+  id: z.number(),
+  skip: z.number(),
+  lastQueriedOperation: z.nativeEnum(CreationOperation).optional(),
+  limit: z.number().optional(),
+});
+
+export const ImageCreationLogResSchema = z.object({
+  currentOperation: z.nativeEnum(CreationOperation),
+  logChunk: z.string().optional(),
+  totalResChunkSizeForCurrentOperation: z.number().optional(),
+  isCompleted: z.boolean().optional(),
+  isPushedCompleted: z.boolean().optional(),
+});
+export type ImageCreationLogRes = z.infer<typeof ImageCreationLogResSchema>;
+
+const DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024;
+
+export const getImageCreationLog = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/image/{id}/creationLog",
+      tags: ["image"],
+      summary: "Get image creation log by id",
+    },
+  })
+  .input(ImageCreationLogReqSchema)
+  .output(ImageCreationLogResSchema)
+  .query(async ({ input }) => {
+
+    const { id, skip, limit, lastQueriedOperation } = input;
+    const limitSkipSize = limit ? limit : DEFAULT_CHUNK_SIZE;
+
+    const em = await forkEntityManager();
+    // 不限制状态，因为日志展示过程中可能状态已变化
+    const image = await em.findOne(Image, { id });
+
+    if (!image) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Creating image ${id} not found`,
+      });
+    };
+
+    const result = getCurrentImageCreationLog(
+      id,
+      skip,
+      limitSkipSize,
+      logger,
+      lastQueriedOperation,
+    );
+
+    return result;
   });

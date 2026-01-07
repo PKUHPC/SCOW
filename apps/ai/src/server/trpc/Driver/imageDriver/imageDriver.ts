@@ -16,19 +16,24 @@ export interface CreateImageParams {
   tag: string;
   loginInfo: LoginInfo;
   harborImageUrl: string;
+  imageId: number;
 }
 export interface copyImageParams {
+  // 复制的镜像源ID
   imageId: number;
   sourcePath: string | undefined;
   newName: string;
   newTag: string;
   harborImageUrl: string;
+  // 复制后新生成的镜像ID
+  newImageId: number;
 }
 export interface saveImageParams {
   node: string;
   formattedContainerId: string;
   localImageUrl: string;
   harborImageUrl: string;
+  imageId: number;
 }
 export interface ImageDriver {
   createImage(params: CreateImageParams): Promise<void>;
@@ -77,7 +82,8 @@ export async function withImageDriver<T>(
   try {
     return await handler(driver);
   } catch (err: any) {
-    logger.error(`Error in image operation, executing handler,err:${err}`);
+    logger.error(`Error in image operation by user ${params.user} in cluster ${params.clusterId}, `
+      + `executing handler, err:${err}`);
     throw err;
   }
 }

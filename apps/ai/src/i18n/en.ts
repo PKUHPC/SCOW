@@ -712,6 +712,18 @@ export default {
         delText2: "If this image has been shared, the shared image will also be deleted.",
         type:"Type",
       },
+      imageLogModal: {
+        creating: "Creating",
+        logFoundError: "Failed to query logs",
+        loadTitle: "Creating - Loading image",
+        commitTitle: "Creating - Committing image",
+        pullTitle: "Creating - Pulling image",
+        pushTitle: "Creating - Pushing image",
+        failedTitle: "Creation failed",
+        unknownFailure: "Unknown error",
+        fetchingLog: "Fetching logs",
+        noLog: "No log output yet",
+      },
       imageQuota:{
         quota:"Image Quota",
         usedQuota:"Usage Quota",

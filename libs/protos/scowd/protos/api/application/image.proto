@@ -3,14 +3,15 @@ syntax = "proto3";
 package api.application;
 
 option go_package = "scowd/protos/gen/api/application;apiv1";
+import "google/protobuf/timestamp.proto";
 
-message LoadedImageRequest {
+message LoadImageRequest {
   string user_id = 1;
   string command = 2;
   string source_path = 3;
 }
 
-message LoadedImageResponse {
+message LoadImageResponse {
   string image_url = 1;
 }
 
@@ -18,15 +19,29 @@ message LoginInfo {
   string user_name = 1;
   string password = 2;
 }
-message PulledImageRequest {
+
+message PullImageRequest {
   string user_id = 1;
   string command = 2;
   string source_path = 3;
   LoginInfo login_info = 4;
 }
 
-message PulledImageResponse {
-  string image_url = 1;
+message OutputLine {
+  string stdout_content = 1;
+  optional string stderr_content = 2;
+}
+
+// scowd 下增加流式响应的返回
+message PullImageResponse {
+  message CompletedPull {
+    optional string image_url = 1;
+    int32 exit_code = 2;
+  }
+  oneof message {
+    OutputLine output = 1;
+    CompletedPull completed = 2;
+  }
 }
 
 message Harbor {
@@ -44,7 +59,15 @@ message PushImageToHarborRequest {
   string node = 6;
 }
 
+// scowd 下增加流式响应的返回
 message PushImageToHarborResponse {
+  message CompletedPush {
+    int32 exit_code = 1;
+  }
+  oneof message {
+    OutputLine output = 1;
+    CompletedPush completed = 2;
+  }
 }
 
 message CommitContainerImageRequest {
@@ -59,8 +82,8 @@ message CommitContainerImageResponse {
 }
 
 service ImageService {
-  rpc LoadedImage(LoadedImageRequest) returns (LoadedImageResponse) {}
-  rpc PulledImage(PulledImageRequest) returns (PulledImageResponse) {}
-  rpc PushImageToHarbor(PushImageToHarborRequest) returns (PushImageToHarborResponse) {}
+  rpc LoadImage(LoadImageRequest) returns (LoadImageResponse) {}
+  rpc PullImage(PullImageRequest) returns (stream PullImageResponse) {}
+  rpc PushImageToHarbor(PushImageToHarborRequest) returns (stream PushImageToHarborResponse) {}
   rpc CommitContainerImage(CommitContainerImageRequest) returns (CommitContainerImageResponse) {}
 }
