@@ -1,9 +1,9 @@
 ---
-sidebar_position: 5
-title: Shell终端文件传输功能
+sidebar_position: 2
+title: 终端文件管理功能
 ---
 
-# Shell终端文件传输功能
+# Shell终端文件管理功能
 
 Shell终端支持输入命令跳转到文件系统，进行文件的上传和下载；支持下载指定文件。
 

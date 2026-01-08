@@ -1,0 +1,8 @@
+{
+  "label": "Shell 终端",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Shell 终端相关配置"
+  }
+}
