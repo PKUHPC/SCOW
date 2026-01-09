@@ -67,7 +67,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
   };
 
   const composeSpec = {
-    version: "3",
     services: {} as Record<string, ServiceSpec>,
     volumes: {} as Record<string, object>,
   };
@@ -95,10 +94,10 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     name: string,
     options: {
       image: string,
+      healthcheck?: ServiceSpec["healthcheck"],
       environment: string[] | Record<string, string>,
       ports: string[] | Record<string, number>,
       volumes: string[] | Record<string, string>,
-      depends_on?: string[],
     },
   ) => {
 
@@ -118,12 +117,13 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
 
     composeSpec.services[name] = {
       restart: "unless-stopped",
+      healthcheck: options.healthcheck,
       environment: Array.isArray(options.environment) ? options.environment : toStringArray(options.environment, "="),
       ports: Array.isArray(options.ports) ? options.ports : toStringArray(options.ports, ":"),
       image: options.image,
       volumes: Array.isArray(options.volumes) ? options.volumes : toStringArray(options.volumes, ":"),
-      depends_on: ((logging && name !== "log") ? ["log"] : []).concat(options.depends_on ?? []),
-      logging,
+      depends_on: ((logging && name !== "log") ? { log: { condition: "service_healthy" } } : undefined),
+      logging: ((logging && name !== "log") ? logging : undefined),
     };
   };
 
@@ -136,6 +136,12 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
 
     addService("log", {
       image: config.log.fluentd.image,
+      healthcheck: {
+        test: "nc -z 0.0.0.0 24224",
+        interval: "5s",
+        timeout: "5s",
+        retries: 3,
+      },
       environment: {},
       ports: ["24224:24224", "24224:24224/udp"],
       volumes: {
