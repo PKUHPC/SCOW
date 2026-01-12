@@ -98,8 +98,20 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   const createErrorModal = (message: string) => modal.error({
     title: t(p("errorMessage")),
-    content: message,
+    okText: t("button.confirmButton"),
+    content: formatErrorMsg(message),
   });
+
+
+  function formatErrorMsg(logText: string) {
+    const detailsRegex = /Details\s*:\s*([\s\S]*)$/i;
+    const match = detailsRegex.exec(logText);
+
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+    return logText;
+  }
 
   const onSubmit = async () => {
     const allFormFields = await form.validateFields();

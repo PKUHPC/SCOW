@@ -354,11 +354,6 @@ export const dashboard = router({
 
       const commonConfig = getCommonConfig();
 
-      // 如果没有部署管理系统或者资源管理系统为不可用，返回空
-      if (!config.MIS_SERVER_URL || !commonConfig.scowResource?.enabled) {
-        return [];
-      }
-
       const userAffliction
              = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 

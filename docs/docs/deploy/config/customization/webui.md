@@ -38,6 +38,7 @@ LOGO图片的文件名应为`logo`，后缀应为`svg`, `png`或者`jpg`，如�
 footer:
     # 对所有域名生效的footer文本，当配置defaultText为""时隐藏页脚
     # 文本支持HTML的标签，将会被放在一个div中
+    # 不填写该项时将展示 SCOW 版本号，配置后将显示配置的内容且不展示 SCOW 版本号
     defaultText: ""
     # 对某特定来访域名生效的footer文本，可以不填
     hostnameMap: 
