@@ -1,4 +1,4 @@
-import { JsonValue } from "@bufbuild/protobuf";
+import { replaceTemplate } from "@scow/lib-web/build/utils/renderingMessage";
 import { Message } from "@scow/notification-protos/build/message_pb";
 import { AdminMessageType, adminMessageTypesMap } from "src/models/message-type";
 import { CustomMessageType } from "src/server/entities/CustomMessageType";
@@ -32,17 +32,6 @@ export const checkAdminMessageTypeExist = (type: string): CustomMessageType | nu
 
   return null;
 };
-
-export function replaceTemplate(metadata: JsonValue, template: string): string {
-
-  if (!metadata) return "";
-
-  return template.replace(/\{__(.*?)__\}/g, (match, p1) => {
-    const value = p1 === "time" ? formatDateTime(metadata[p1] as string) : metadata[p1] as string;
-    return value !== undefined ? value : match;
-  });
-}
-
 
 function checkTemplateNotUndefined(message: Message) {
   if (message.messageType?.titleTemplate === undefined) return false;
@@ -97,7 +86,7 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
     return {
       id: message.id,
       title: titleTemplate,
-      content: replaceTemplate(message.metadata, contentTemplate),
+      content: replaceTemplate(message.metadata, contentTemplate, templateLang),
       createdAt: formatDateTime(message.createdAt),
     };
   } else {

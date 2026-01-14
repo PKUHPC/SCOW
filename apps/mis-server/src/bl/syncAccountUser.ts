@@ -9,9 +9,11 @@ import { Logger } from "pino";
 import { commonConfig } from "src/config/common";
 import { misConfig } from "src/config/mis";
 import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/AccountUserSyncRecord";
+import { MessageStatus } from "src/models/messageType";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { FetchPlugin } from "src/plugins/fetch";
-import { checkRunningSyncTask, processSynchronization } from "src/utils/synchronizationUtils";
+import { checkRunningSyncTask, processSynchronization,
+  sendAccountUserSyncMessage } from "src/utils/synchronizationUtils";
 
 import { getActivatedClusters } from "./clustersUtils";
 
@@ -105,6 +107,10 @@ export async function startAccountUserSynchronization(
     newAccountUserSync.syncStatus = SyncStatus.UNEXECUTED;
     newAccountUserSync.syncResult = SyncResult.FAILED;
     await em.persistAndFlush(newAccountUserSync);
+
+    // 发送结果异常通知
+    await sendAccountUserSyncMessage(em, MessageStatus.EXCEPTION, 0, 0,
+      Object.keys(currentActivatedClusters), logger);
 
   });
 

@@ -107,3 +107,45 @@ export const convertClusterConfigsToServerProtoType = (
 
   return clusterConfigsProto;
 };
+
+
+// 合并多个I18n字符，用于I18n类型后端传递
+export function mergeI18nStrings(
+  i18nStrings: I18nStringType[],
+): I18nStringType {
+  if (i18nStrings.length === 0) {
+    return "";
+  }
+
+  if (i18nStrings.length === 1) {
+    return i18nStrings[0];
+  }
+
+  // 提取所有语言的文本
+  const defaultTexts: string[] = [];
+  const enTexts: string[] = [];
+  const zhCnTexts: string[] = [];
+
+  i18nStrings.forEach((str) => {
+    if (typeof str === "string") {
+      // 如果是普通字符串，所有语言都用这个值
+      defaultTexts.push(str);
+      enTexts.push(str);
+      zhCnTexts.push(str);
+    } else {
+      // 如果是 i18n 对象，分别提取
+      defaultTexts.push(str.i18n.default);
+      enTexts.push(str.i18n.en ?? str.i18n.default);
+      zhCnTexts.push(str.i18n.zh_cn ?? str.i18n.default);
+    }
+  });
+
+  // 合并为一个 i18n 对象
+  return {
+    i18n: {
+      default: zhCnTexts.join("，"),
+      en: enTexts.join(", "),
+      zh_cn: zhCnTexts.join("，"),
+    },
+  };
+}

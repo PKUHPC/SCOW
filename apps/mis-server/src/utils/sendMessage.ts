@@ -1,10 +1,11 @@
 import { Logger } from "@ddadaal/tsgrpc-server";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import {
   SystemBatchSendMessagesRequest,
   SystemSendMessageRequest } from "@scow/notification-protos/build/scow_message_pb";
 import { notifClient } from "src/config/notification";
-import { InternalMessageType } from "src/models/messageType";
+import { InternalMessageType, MessageStatus } from "src/models/messageType";
 
 interface BaseMessage {
   targetIds: string[];
@@ -81,9 +82,21 @@ interface JobFinished extends BaseMessage {
   };
 }
 
+interface AccountUserSyncResult extends BaseMessage {
+  messageType: InternalMessageType.AccountUserSyncResult;
+  targetType: TargetType.USER,
+  metadata: {
+    time: string;
+    messageStatus: MessageStatus,
+    totalSucceedCount: number;
+    totalFailedCount: number;
+    syncI18nClusterNames: I18nStringType;
+  };
+}
+
 export type Message = AccountLocked | AccountOverdue | AccountRechargeSuccess
   | AccountLowBalance | AccountBalance | AccountUnblocked
-  | JobFinished;
+  | JobFinished | AccountUserSyncResult;
 
 export const sendMessage = async (message: Message, logger: Logger) => {
   const { metadata } = message;

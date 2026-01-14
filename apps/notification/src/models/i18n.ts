@@ -191,6 +191,10 @@ export const languageDic = {
         unableToOpenPrompt: "系统未开启对应通知",
       },
     },
+    specifiedMessageContent: {
+      success: "成功",
+      failure: "失败",
+    },
   },
   en: {
     api: {
@@ -376,6 +380,10 @@ export const languageDic = {
         unableToCancelPrompt: "System settings, must receive",
         unableToOpenPrompt: "The system does not enable the corresponding notification",
       },
+    },
+    specifiedMessageContent: {
+      success: "SUCCESS",
+      failure: "FAILURE",
     },
   },
 };

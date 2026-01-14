@@ -1,5 +1,6 @@
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { getNotificationNodeClient } from "@scow/lib-notification/build/index";
+import { replaceTemplate } from "@scow/lib-web/build/utils/renderingMessage";
 import { NoticeType,SenderType, TargetType } from "@scow/notification-protos/build/common_pb";
 import { BridgeMessage } from "@scow/notification-protos/build/message_bridge_pb";
 import { notificationConfig } from "src/server/config/notification";
@@ -8,7 +9,6 @@ import { fetchAllUsers } from "./auth/get-user";
 import { logger } from "./logger";
 import { getMessageTypeData } from "./message-type";
 import { getUserNotificationPreferences } from "./notice-type";
-import { replaceTemplate } from "./rendering-message";
 
 const BATCH_SIZE = 100;
 

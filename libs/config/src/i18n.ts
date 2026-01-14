@@ -99,6 +99,8 @@ export type I18nStringType = string | {
   }
 };
 
+export type I18nObjectType = Exclude<I18nStringType, string>;
+
 export interface I18nObject {
   i18n?: I18nObject_I18n | undefined;
 }

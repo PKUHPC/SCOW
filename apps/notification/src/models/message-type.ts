@@ -29,6 +29,7 @@ export enum InternalMessageType {
   JobStarted = "JobStarted",
   JobFinished = "JobFinished",
   JobAbnormalTermination = "JobAbnormalTermination",
+  AccountUserSyncResult = "AccountUserSyncResult",
 }
 
 export enum AdminMessageType {
@@ -419,5 +420,29 @@ export const internalMessageTypesMap = new Map<InternalMessageType, MessageTypeI
   //     default: "",
   //   },
   // }],
+  [InternalMessageType.AccountUserSyncResult, {
+    type: "AccountUserSyncResult",
+    titleTemplate: {
+      default: "账户/用户信息同步通知",
+      en: "Account/User Information Synchronization Notification",
+      zhCn: "账户/用户信息同步通知",
+    },
+    // 系统消息
+    category: "Admin",
+    categoryTemplate: {
+      default: "系统消息",
+      en: "System Messages",
+      zhCn: "系统消息",
+    },
+    contentTemplate: {
+      default: "{__time__}，{__syncI18nClusterNames__}同步【{__messageStatus__}】。"
+      + "共成功 {__totalSucceedCount__} 条，失败 {__totalFailedCount__} 条。",
+      en: "Account User Synchronization completed at {__time__}. The synchronization status "
+      + "of {__syncI18nClusterNames__} is【{__messageStatus__}】. "
+      + "Successfully processed {__totalSucceedCount__} records, failed {__totalFailedCount__} records.",
+      zhCn:  "{__time__}，{__syncI18nClusterNames__}同步【{__messageStatus__}】。"
+      + "共成功 {__totalSucceedCount__} 条，失败 {__totalFailedCount__} 条。",
+    },
+  }],
   // 其他默认数据...
 ]);

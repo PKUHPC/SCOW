@@ -1,10 +1,10 @@
+import { RenderContent, renderingMessage } from "@scow/lib-web/build/utils/renderingMessage";
 import { App, Card, List, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
-import { RenderContent, renderingMessage } from "src/utils/renderingMessage";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 

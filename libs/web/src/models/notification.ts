@@ -56,3 +56,26 @@ export const adminMessageTypesMap = new Map<AdminMessageType, MessageTypeInfo>([
     },
   }],
 ]);
+
+
+export enum MessageStatus {
+  // 异常
+  EXCEPTION = "Exception",
+  // 完成
+  COMPLETED = "Completed",
+  // 其他
+}
+export const CONTENT_FIELD_I18N_MAP: Record<string, Record<string, Template>> = {
+  messageStatus: {
+    [MessageStatus.COMPLETED]: {
+      default: "完成",
+      en: "COMPLETED",
+      zhCn: "完成",
+    },
+    [MessageStatus.EXCEPTION]: {
+      default: "异常",
+      en: "EXCEPTION",
+      zhCn: "异常",
+    },
+  },
+};

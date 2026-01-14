@@ -3,10 +3,12 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded, LockMode, MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
+import { I18nStringType } from "@scow/config/build/i18n";
 import { createAdapterCertificates, getSchedulerAdapterClient,
   SchedulerAdapterClient } from "@scow/lib-scheduler-adapter";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
-import { checkSchedulerApiVersion } from "@scow/lib-server";
+import { checkSchedulerApiVersion, mergeI18nStrings } from "@scow/lib-server";
+import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import { ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as ClusterTotalSyncResultProto,
   ListAccountUserSynchronizationsResponse_ExceptionDetail,
   ListAccountUserSynchronizationsResponse_SyncDetailsSummary as SyncDetailsSummaryProto,
@@ -18,14 +20,19 @@ import { SyncAccountInfo, SyncAccountUserInfoResponse_SyncOperationResult }
 import { PartitionNames } from "@scow/scow-resource-protos/build/partition_pb";
 import { ApiVersion } from "@scow/utils/build/version";
 import { Logger } from "pino";
+import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/AccountUserSyncRecord";
-import { UserState } from "src/entities/User";
+import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
+import { PlatformRole, User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
+import { InternalMessageType, MessageStatus } from "src/models/messageType";
 import { ClusterPlugin } from "src/plugins/clusters";
+
+import { sendMessage } from "./sendMessage";
 
 export async function processSynchronization(
   sessionId: string,
@@ -102,7 +109,7 @@ export async function processSynchronization(
 
     if (clustersSyncResults.length > 0) {
       // 如果有错误数据，标记错误记录待保存
-      persistSyncRecord(em, syncRecord, { syncDetails: clustersSyncResults }, subLogger);
+      await persistSyncRecord(em, syncRecord, { syncDetails: clustersSyncResults }, subLogger);
     }
 
 
@@ -327,7 +334,7 @@ export async function processSynchronization(
       subLogger.info("Current synchronization in chunk %s, %o", chunkIndex, chunkResultsToPersist);
 
       // 一个chunk内标记一次待保存数据
-      persistSyncRecord(em, syncRecord, { syncDetails: chunkResultsToPersist }, subLogger);
+      await persistSyncRecord(em, syncRecord, { syncDetails: chunkResultsToPersist }, subLogger);
 
       // 更新分片索引
       startIndex += chunkSize;
@@ -342,7 +349,7 @@ export async function processSynchronization(
     };
 
     // 长事务结束前标记待保存数据
-    persistSyncRecord(em, syncRecord, newRecordItems, subLogger);
+    await persistSyncRecord(em, syncRecord, newRecordItems, subLogger);
     // 长事务结束前生成并执行SQL
     await em.flush();
   });
@@ -690,12 +697,12 @@ export async function getSyncAccountsWithPartitions(
  * @param newUpdateItems 现在想要更新的同步记录
  * @returns persist后的账户用户同步操作记录
  */
-export function persistSyncRecord(
+export async function persistSyncRecord(
   em: SqlEntityManager<MySqlDriver>,
   originSyncRecord: Loaded<AccountUserSyncRecord>,
   newUpdateItems: Partial<AccountUserSyncRecord>,
   logger: Logger,
-): Loaded<AccountUserSyncRecord> {
+): Promise<Loaded<AccountUserSyncRecord>> {
 
   logger.trace("Update account user sync record from current record %o to new record with items %o",
     originSyncRecord, newUpdateItems);
@@ -777,6 +784,32 @@ export function persistSyncRecord(
   em.persist(originSyncRecord);
 
   logger.trace("the new record is %o", originSyncRecord);
+
+  // 如果已经同步结束则发送通知
+  if (originSyncRecord.syncStatus === SyncStatus.COMPLETED && originSyncRecord.syncResult) {
+    let syncClusterIds: string[] = [];
+    let hasException: boolean = false;
+    let totalSucceedCount: number = 0;
+    let totalFailedCount: number = 0;
+    // 如果没有集群同步结果，则发送当前在线集群的异常结果通知
+    if (!originSyncRecord.syncDetails?.length) {
+      const activatedClusters = await em.find(Cluster, { activationStatus: ClusterActivationStatus.ACTIVATED });
+      syncClusterIds = activatedClusters.map((c) => c.clusterId);
+      hasException = true;
+    } else {
+      originSyncRecord.syncDetails.map((clusterResult) => {
+        if (clusterResult.clusterSyncExceptions.length > 0) {
+          hasException = true;
+        }
+        syncClusterIds.push(clusterResult.clusterId);
+        totalSucceedCount += clusterResult.successfulTotalSyncCount;
+        totalFailedCount += (clusterResult.completedTotalSyncCount - clusterResult.successfulTotalSyncCount);
+      });
+    }
+
+    await sendAccountUserSyncMessage(em, hasException ? MessageStatus.EXCEPTION : MessageStatus.COMPLETED,
+      totalSucceedCount, totalFailedCount, syncClusterIds, logger);
+  }
 
   return originSyncRecord;
 
@@ -883,7 +916,7 @@ async function checkValidRunningSyncRecord(
 
 /**
  * 更新异常的正在运行的同步账户用户信息记录
- * @param maxSyncMinutes 超时是数据更新，需要传递此数据用于错误记录；不存在则认为是异常原因
+ * @param maxSyncMinutes 用于超时时数据更新，需要传递此数据用于错误记录；不存在则认为是异常原因
  */
 export async function updateStuckRunningSync(
   em: SqlEntityManager<MySqlDriver>,
@@ -900,39 +933,81 @@ export async function updateStuckRunningSync(
     : SyncExceptionTypeProto.EXCEPTION_UNKNOWN;
 
   runningSyncRecord.syncResult = SyncResult.FAILED;
+
+  let syncClusterIds: string[] = [];
+  let totalSucceedCount: number = 0;
+  let totalFailedCount: number = 0;
+
   if (!runningSyncRecord.syncDetails) {
     // 更新整个同步结果为未执行
     runningSyncRecord.syncStatus = SyncStatus.UNEXECUTED;
     await em.persistAndFlush(runningSyncRecord);
+
+    const activatedClusters = await em.find(Cluster, { activationStatus: ClusterActivationStatus.ACTIVATED });
+    syncClusterIds = activatedClusters.map((c) => c.clusterId);
   } else {
     // 更新整个同步结果为结束
     runningSyncRecord.syncStatus = SyncStatus.COMPLETED;
     // 更新同步的各集群 状态/结果/异常
-    const updatedClusterResults: ClusterTotalSyncResultProto[] =
-      runningSyncRecord.syncDetails?.map((clusterResult) => {
-        return {
-          ...clusterResult,
-          clusterSyncStatus: SyncStatusProto.COMPLETED,
-          clusterSyncResult: SyncResultProto.FAILED,
-          executedChunkCount: 0,
-          isAllChunkExecuted: true,
-          completedTotalSyncCount: 0,
-          successfulTotalSyncCount: 0,
-          clusterSyncExceptions: [
-            {
-              exceptionType: exceptionType,
-              exceptionMessage: `Synchronization is not completely executed due to ${errorModeMessage}`,
-            },
-          ],
-        };
-      });
+    const updatedClusterResults: ClusterTotalSyncResultProto[]
+          = runningSyncRecord.syncDetails?.map((clusterResult) => {
+            syncClusterIds.push(clusterResult.clusterId);
+            totalSucceedCount += clusterResult.successfulTotalSyncCount;
+            totalFailedCount += (clusterResult.completedTotalSyncCount - clusterResult.successfulTotalSyncCount);
+            return {
+              ...clusterResult,
+              clusterSyncStatus: SyncStatusProto.COMPLETED,
+              clusterSyncResult: SyncResultProto.FAILED,
+              isAllChunkExecuted: true,
+              clusterSyncExceptions: [
+                {
+                  exceptionType: exceptionType,
+                  exceptionMessage: `Synchronization is not completely executed due to ${errorModeMessage}`,
+                },
+              ],
+            };
+          });
 
-    persistSyncRecord(em, runningSyncRecord, { syncDetails: updatedClusterResults }, logger);
+    await persistSyncRecord(em, runningSyncRecord, { syncDetails: updatedClusterResults }, logger);
     await em.flush();
   }
 
   logger.info("The abnormal running account user synchronization record is updated to FAILED.");
+  // 发送结果异常通知
+  await sendAccountUserSyncMessage(em, MessageStatus.EXCEPTION,
+    totalSucceedCount, totalFailedCount, syncClusterIds, logger);
 
+}
+
+
+export async function sendAccountUserSyncMessage(
+  em: SqlEntityManager<MySqlDriver>,
+  syncMessageStatus: MessageStatus,
+  totalSucceedCount: number,
+  totalFailedCount: number,
+  syncClusterIds: string[],
+  logger: Logger,
+): Promise<void> {
+  const platformAdminUsers = await em.find(User, { platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` } });
+
+  const i18nClusterNameArray: I18nStringType[] = [];
+  syncClusterIds.map((clusterId) => {
+    const clusterDetails = configClusters[clusterId];
+    i18nClusterNameArray.push(clusterDetails.displayName ?? clusterId);
+  });
+  const syncI18nClusterNames = mergeI18nStrings(i18nClusterNameArray);
+
+  await sendMessage({
+    messageType: InternalMessageType.AccountUserSyncResult,
+    targetType: TargetType.USER, targetIds: platformAdminUsers.map((u) => u.userId),
+    metadata: {
+      time: (new Date()).toISOString(),
+      messageStatus: syncMessageStatus,
+      totalSucceedCount,
+      totalFailedCount,
+      syncI18nClusterNames,
+    },
+  }, logger);
 }
 
 
