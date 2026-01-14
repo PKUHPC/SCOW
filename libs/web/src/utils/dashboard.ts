@@ -18,7 +18,7 @@ export const formatEntryId = (item: Entry) => {
   }
 
   else if (item.entry?.$case === "shell") {
-    return `${item.id}-${item.entry.shell.clusterId}`;
+    return `${item.id}-${item.entry.shell.clusterId}-${item.entry.shell.loginNode}`;
   }
   else if (item.entry?.$case === "clusterPageLink") {
     return `${item.id}-${item.entry.clusterPageLink.clusterId}`;

@@ -1,6 +1,7 @@
 import { PictureOutlined } from "@ant-design/icons";
+import { Typography } from "antd";
 import { join } from "path";
-import React, { ComponentType, CSSProperties, ReactElement,useState } from "react";
+import React, { ComponentType, CSSProperties, ReactElement, useState } from "react";
 import { styled, useTheme } from "styled-components";
 
 const ItemContainer = styled.div`
@@ -18,15 +19,6 @@ const AvatarContainer = styled.div`
   justify-content: center;
   flex: 1;
   align-items: center;
-`;
-
-const NameContainer = styled.div`
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  user-select: none;
-  position: relative;
 `;
 
 interface IconProps {
@@ -55,8 +47,8 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
   entryBaseName, entryExtraInfo, icon, logoPath, publicPath }) => {
 
   const [imageErrorMap, setImageErrorMap] = useState<ImageErrorMap>({});
-
   const theme = useTheme();
+  const { Text } = Typography;
 
   const handleImageError = (appId: string) => {
     setImageErrorMap((prevMap) => ({ ...prevMap, [appId]: true }));
@@ -117,16 +109,30 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
       </AvatarContainer>
       {
         <>
-          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
-            maxWidth: "130px" }}
+          <Text
+            style={{
+              bottom: `${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+              maxWidth: "130px",
+              textAlign: "center",
+              position: "relative",
+            }}
+            ellipsis={{ tooltip: entryBaseName }}
           >
             {entryBaseName}
-          </NameContainer>
-          <NameContainer style={{ bottom:`${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
-            fontSize: "12px", maxWidth: "130px" }}
+          </Text>
+          <Text
+            style={{
+              bottom: `${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+              maxWidth: "130px",
+              textAlign: "center",
+              fontSize: "12px",
+              position: "relative",
+
+            }}
+            ellipsis={{ tooltip: [...entryExtraInfo ?? []].join(" / ") }}
           >
             {[...entryExtraInfo ?? []].join(" / ")}
-          </NameContainer>
+          </Text>
         </>
       }
     </ItemContainer>
