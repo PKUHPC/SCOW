@@ -41,7 +41,7 @@ const StyledButton = styled(Button)`
 `;
 
 interface APIDerivedDesktop {
-  id: string;
+  id?: number;
   desktopId: number;
   desktopName: string;
   wm: string;
@@ -49,9 +49,12 @@ interface APIDerivedDesktop {
   addr: string;
   remoteControlTool: RemoteControlTool;
   clusterId: string;
+  isActive?: boolean;
 }
 
 export interface DesktopItem extends APIDerivedDesktop {
+  id: number;
+  isActive?: boolean;
   wmName: string;
   iconPath?: string;
   clusterName: string;
@@ -104,7 +107,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
     promiseFn: useCallback(async () => {
       const desktopsPromises = clusters.map(async (cluster) => {
         try {
-          // 不遍历loginNode，传空字符串
+          // login 传空，返回所有loginNode的desktop
           const desktopData = await api.listDesktops({
             query: { cluster: cluster.id },
           });
@@ -113,10 +116,11 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
           const desktopItems = desktopData.userDesktops.map(
             (userDesktop) => userDesktop.desktops.map(
               (x) => {
-                const dataSource = x.type === "vnc" ? x.vnc : x.shadowdesk;
+                const dataSource = x.data;
 
                 const item: APIDerivedDesktop = {
-                  id: `${cluster.id}-${dataSource?.displayId}`,
+                  id: dataSource?.id,
+                  isActive: dataSource?.isActive,
                   desktopId: dataSource?.displayId || 0,
                   desktopName: dataSource?.desktopName || "",
                   createTime: dataSource?.createTime,
@@ -210,7 +214,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
       <CardContainer>
         {desktopData.map((item) => (
           <DesktopCard
-            key={item.id}
+            key={item.id || `${item.clusterId}-${item.desktopId}`}
             data={item}
             reload={handleReload}
           />

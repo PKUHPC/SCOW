@@ -615,6 +615,10 @@ export default {
         connect:"Connect",
         delete: "Delete Desktop",
         deleteConfirmContent: "This action is irreversible. Are you sure you want to delete?",
+        expiredTitle: "Desktop expired",
+        expiredContent: "The desktop has expired and cannot connect. Delete this desktop?",
+        expiredDeleteOk: "Yes",
+        expiredCancel: "No",
       },
       newDesktopCardModal: {
         error: {

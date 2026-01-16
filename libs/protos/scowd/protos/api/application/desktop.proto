@@ -27,6 +27,7 @@ message KillDesktopRequest {
     uint32 display_id = 3;
     string login_node = 4;
     string desktop_dir = 5;
+    uint32 id = 6;
 }
 
 message KillDesktopResponse {
@@ -36,6 +37,7 @@ message ConnectToDesktopRequest {
     string user_id = 1;
     uint32 display_id = 2;
     string vnc_passwd_path = 3;
+    uint32 id = 4;
 }
 
 message ConnectToDesktopResponse {
@@ -54,6 +56,8 @@ message Desktop {
     string desktop_name = 2;
     string wm = 3;
     google.protobuf.Timestamp create_time = 4;
+    uint32 id = 5;
+    bool is_active = 6;
 }
 
 // NOT_FOUND: cluster is not found

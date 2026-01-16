@@ -56,7 +56,22 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
     setImageError(true);
   };
 
+  const showExpiredConfirm = () => {
+    modal.confirm({
+      title: t(p("expiredTitle")),
+      content: t(p("expiredContent")),
+      okText: t(p("expiredDeleteOk")),
+      cancelText: t(p("expiredCancel")),
+      onOk: handleKillDesktop,
+    });
+  };
+
   const handleLaunchDesktop = async () => {
+
+    if (data.isActive !== true) {
+      showExpiredConfirm();
+      return;
+    }
 
     const extraProps = data.remoteControlTool === RemoteControlTool.SHADOWDESK ? {
       $case: "shadowdesk" as const,
@@ -70,20 +85,24 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
       },
     };
 
-    const resp = await api.launchDesktop({
+    await api.launchDesktop({
       body: {
+        id: data.id,
         cluster: data.clusterId,
         loginNode: data.addr,
         displayId: data.desktopId,
         desktopInfo: { desktop: extraProps },
       },
-    });
-
-    if (resp.vnc) {
-      openDesktop(data.clusterId, resp.vnc.host, resp.vnc.port, resp.vnc.password);
-    } else {
-      window.open(resp.shadowdesk?.shadowdeskUrl);
-    }
+    })
+      .httpError(404, () => { showExpiredConfirm(); })
+      .httpError(503, () => { showExpiredConfirm(); })
+      .then((resp) => {
+        if (resp.vnc) {
+          openDesktop(data.clusterId, resp.vnc.host, resp.vnc.port, resp.vnc.password);
+        } else {
+          window.open(resp.shadowdesk?.shadowdeskUrl);
+        }
+      });
 
   };
 
@@ -102,6 +121,7 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
 
     await api.killDesktop({
       body: {
+        id: data.id,
         cluster: data.clusterId,
         loginNode: data.addr,
         displayId: data.desktopId,

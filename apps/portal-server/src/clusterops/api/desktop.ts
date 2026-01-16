@@ -34,6 +34,7 @@ export interface KillDesktopRequest {
   displayId: number;
   desktopName?: string;
   desktopType?: string;
+  id: number;
 }
 
 export interface KillDesktopReply {}
@@ -42,6 +43,7 @@ export interface ConnectToDesktopRequest {
   loginNode: string;
   userId: string;
   displayId: number;
+  id: number;
 }
 
 export interface ConnectToDesktopReply {
@@ -56,9 +58,11 @@ export interface ListUserDesktopsRequest {
 }
 
 export interface Desktop {
+  id?: number;
   displayId: number;
   desktopName: string;
   wm: string;
+  isActive?: boolean;
   createTime?: string;
   type?: RemoteControlTool;
 }

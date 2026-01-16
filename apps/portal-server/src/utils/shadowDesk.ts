@@ -96,7 +96,7 @@ export async function deleteShadowDesk(cluster: string, desktopName: string): Pr
 }
 
 /**
- * creat shadowDesk
+ * create shadowDesk
  * @param node 创建的远程桌面的节点IP
  * @param username 创建的桌面系统用户名
  * @param desktopName 创建的远程桌面名称（需要保证全局唯一）
@@ -104,7 +104,7 @@ export async function deleteShadowDesk(cluster: string, desktopName: string): Pr
  * desktop_type支持：gnome/kde/xfce/lxde/lxqt/mate/cinnamon
  */
 
-export async function creatShadowDesk(
+export async function createShadowDesk(
   cluster: string,
   node: string,
   username: string,

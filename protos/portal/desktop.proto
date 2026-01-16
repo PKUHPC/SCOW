@@ -1,15 +1,3 @@
-/**
-   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
-   * SCOW is licensed under Mulan PSL v2.
-   * You can use this software according to the terms and conditions of the Mulan PSL v2.
-   * You may obtain a copy of Mulan PSL v2 at:
-   *          http://license.coscl.org.cn/MulanPSL2
-   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-   * See the Mulan PSL v2 for more details.
-*/
-
 syntax = "proto3";
 
 package scow.portal;
@@ -65,6 +53,7 @@ message KillDesktopRequest {
   uint32 display_id = 4;
   // if set, display_id is ignored
   optional DesktopInstance desktop_info = 5;
+  uint32 id = 6;
 }
 
 // NOT_FOUND: cluster is not found
@@ -78,6 +67,7 @@ message ConnectToDesktopRequest {
   uint32 display_id = 4;
   // if set, display_id is ignored
   optional DesktopInstance desktop_info = 5;
+  uint32 id = 6;
 }
 
 // NOT_FOUND: cluster is not found
@@ -101,6 +91,8 @@ message Desktop {
   string wm = 3;
   google.protobuf.Timestamp create_time = 4;
   optional RemoteControlTool remote_control_tool = 5;
+  optional bool is_active = 6;
+  optional uint64 id = 7;
 }
 
 message UserDesktops {

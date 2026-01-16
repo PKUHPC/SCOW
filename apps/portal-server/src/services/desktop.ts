@@ -8,7 +8,7 @@ import { configClusters } from "src/config/clusters";
 import { checkActivatedClusters, checkLoginNodeInCluster } from "src/utils/clusters";
 import { ensureEnabled, getDesktopConfig } from "src/utils/desktops";
 import { clusterNotFound } from "src/utils/errors";
-import { connectToShadowDesk, creatShadowDesk, deleteShadowDesk } from "src/utils/shadowDesk";
+import { connectToShadowDesk, createShadowDesk, deleteShadowDesk } from "src/utils/shadowDesk";
 
 export const desktopServiceServer = plugin((server) => {
 
@@ -35,16 +35,16 @@ export const desktopServiceServer = plugin((server) => {
       // find if the user has running session 确定现有的桌面是否超过了maxDesktops
       if (desktopCount < maxDesktops) {
         if (remoteControlTool === RemoteControlTool.SHADOWDESK) {
-          const creatResp = await creatShadowDesk(cluster, host, userId, desktopName || "", wm);
+          const createResp = await createShadowDesk(cluster, host, userId, desktopName || "", wm);
 
           let shadowdeskUrl: string = "";
 
-          if (creatResp.ok) {
-            const resp = await creatResp.json();
+          if (createResp.ok) {
+            const resp = await createResp.json();
             shadowdeskUrl = String(resp?.data?.url);
           } else {
-            return creatResp.json().then((errorData) => {
-              logger.error(`creat shadowdesk desktop error: ${errorData}`);
+            return createResp.json().then((errorData) => {
+              logger.error(`create shadowdesk desktop error: ${errorData}`);
               throw { code: Status.INTERNAL, message: `${JSON.stringify(errorData)}` } as ServiceError;
             });
           }
@@ -77,7 +77,7 @@ export const desktopServiceServer = plugin((server) => {
 
     killDesktop: async ({ request, logger }) => {
 
-      const { cluster, loginNode: host, displayId, userId, desktopInfo } = request;
+      const { cluster, loginNode: host, displayId, userId, desktopInfo, id } = request;
       if (desktopInfo?.desktop?.$case === "shadowdesk") {
         const desktopName = desktopInfo.desktop.shadowdesk.desktopName;
         const response = await deleteShadowDesk(cluster, desktopName || "");
@@ -98,14 +98,14 @@ export const desktopServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      await clusterops.desktop.killDesktop({ loginNode: host, userId,
+      await clusterops.desktop.killDesktop({ loginNode: host, userId, id,
         displayId: desktopInfo?.desktop?.vnc.displayId || displayId }, logger);
 
       return [{}];
     },
 
     connectToDesktop: async ({ request, logger }) => {
-      const { cluster, loginNode: host, displayId, userId, desktopInfo } = request;
+      const { cluster, loginNode: host, displayId, userId, desktopInfo, id } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       ensureEnabled(cluster);
@@ -136,7 +136,7 @@ export const desktopServiceServer = plugin((server) => {
       } else {
         const clusterops = getClusterOps(cluster);
 
-        const reply = await clusterops.desktop.connectToDesktop({ loginNode: host, userId, displayId }, logger);
+        const reply = await clusterops.desktop.connectToDesktop({ loginNode: host, userId, displayId, id }, logger);
 
         return [{ ...reply }];
       };

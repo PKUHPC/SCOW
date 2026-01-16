@@ -46,7 +46,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
 
   killDesktop: async (request) => {
 
-    const { loginNode: host, displayId, userId } = request;
+    const { loginNode: host, displayId, userId, id } = request;
 
     const vncserverBinPath = getTurboVNCBinPath(cluster, "vncserver");
 
@@ -63,7 +63,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
 
     try {
       await client.desktop.killDesktop({
-        userId, vncServerBinPath: vncserverBinPath,
+        id, userId, vncServerBinPath: vncserverBinPath,
         displayId, desktopDir: desktopsDir, loginNode: host,
       });
 
@@ -79,7 +79,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
 
   connectToDesktop: async (request) => {
 
-    const { loginNode: host, displayId, userId } = request;
+    const { loginNode: host, displayId, userId, id } = request;
 
     const scowdUrl = getLoginNodeScowdUrl(cluster, host);
 
@@ -93,7 +93,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
     try {
-      const res = await client.desktop.connectToDesktop({ userId, vncPasswdPath: vncPasswdPath, displayId });
+      const res = await client.desktop.connectToDesktop({ userId, vncPasswdPath: vncPasswdPath, displayId, id });
 
       return { host, port: displayIdToPort(displayId), password: res.password };
 
@@ -122,39 +122,44 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
     try {
-      const res = await client.desktop.listUserDesktops({
+      const vncPromise = client.desktop.listUserDesktops({
         userId,
         vncServerBinPath: vncserverBinPath,
         loginNode: host,
         desktopDir: desktopsDir,
       });
 
-      const userDeskTops: Desktop[] = res.userDesktops.map((desktop) => {
+      const shadowDeskEnabled = getDesktopConfig(cluster).shadowDesk?.enabled;
+      const shadowDeskPromise = shadowDeskEnabled ? getShadowDeskList(cluster) : Promise.resolve(undefined);
+
+      const [vncRes, shadowRes] = await Promise.all([vncPromise, shadowDeskPromise]);
+
+      const userDeskTops: Desktop[] = vncRes.userDesktops.map((desktop) => {
 
         const createTime = !desktop.createTime ? undefined
           : new Date(Number((desktop.createTime.seconds * BigInt(1000))
-            + BigInt(desktop.createTime.nanos / 1000000)));
+            + BigInt(Math.floor(desktop.createTime.nanos / 1000000))));
 
         return {
+          id: desktop.id,
           desktopName: desktop.desktopName,
           displayId: desktop.displayId,
           wm: desktop.wm,
           createTime: createTime?.toISOString(),
+          isActive: desktop.isActive,
+          remoteControlTool: RemoteControlTool.VNC,
         };
       });
 
       let shadowdeskUserDeskTops: Desktop[] = [];
-      if (getDesktopConfig(cluster).shadowDesk?.enabled) {
+      if (shadowDeskEnabled && shadowRes) {
         let shadowdeskDesktops;
-        const response = await getShadowDeskList(cluster);
-
-        if (response.ok) {
-          const resp = await response.json();
+        if (shadowRes.ok) {
+          const resp = await shadowRes.json();
           shadowdeskDesktops = resp?.data?.desktops;
         } else {
-          return response.json().then((errorData) => {
-            throw new Error(`HTTP error! status: ${response.status}, data: ${JSON.stringify(errorData)}`);
-          });
+          const errorData = await shadowRes.json();
+          throw new Error(`HTTP error! status: ${shadowRes.status}, data: ${JSON.stringify(errorData)}`);
         }
 
         shadowdeskUserDeskTops = (shadowdeskDesktops?.filter(
@@ -168,9 +173,11 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
               console.error("Error parsing JSON:", error);
             }
             return {
+              id: desktop.id,
               displayId: desktop.id,
               desktopName: desktop?.desktop_name || "",
               wm: desktopType || "",
+              isActive: true,
               createTime: desktop?.created_at,
               remoteControlTool: RemoteControlTool.SHADOWDESK,
             };
@@ -179,15 +186,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
 
       return {
         host,
-        desktops: [...userDeskTops.map((desktop) => {
-          return {
-            displayId: desktop.displayId,
-            desktopName: desktop.desktopName,
-            wm: desktop.wm,
-            createTime: desktop.createTime,
-            remoteControlTool: RemoteControlTool.VNC,
-          };
-        }), ...shadowdeskUserDeskTops],
+        desktops: [...userDeskTops, ...shadowdeskUserDeskTops],
       };
     } catch (err) {
       if (err instanceof ConnectError) {

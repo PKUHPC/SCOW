@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -27,6 +15,7 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
   method: "POST",
 
   body:  Type.Object({
+    id: Type.Number(),
     displayId: Type.Number(),
     cluster: Type.String(),
     loginNode: Type.String(),
@@ -58,10 +47,11 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
     }),
     // 功能没有启用
     501: Type.Object({ code: Type.Literal("CLUSTER_LOGIN_DESKTOP_NOT_ENABLED") }),
+    503: Type.Object({ code: Type.Literal("DESKTOP_NOT_AVAILABLE") }),
     // 无效集群
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
     // 无效桌面名
-    401: Type.Object({ code: Type.Literal("INVALID_DESKTOP_NAME") }),
+    404: Type.Object({ code: Type.Literal("INVALID_DESKTOP_NAME") }),
   },
 });
 
@@ -69,7 +59,7 @@ export const LaunchDesktopSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default /* #__PURE__*/route(LaunchDesktopSchema, async (req, res) => {
-  const { cluster, loginNode, displayId, desktopInfo } = req.body;
+  const { id, cluster, loginNode, displayId, desktopInfo } = req.body;
 
   const clusterConfigs = await getClusterConfigFiles();
   const loginDesktopEnabled = getLoginDesktopEnabled(cluster, clusterConfigs);
@@ -91,7 +81,7 @@ export default /* #__PURE__*/route(LaunchDesktopSchema, async (req, res) => {
   const client = getClient(DesktopServiceClient);
 
   return await asyncUnaryCall(client, "connectToDesktop", {
-    cluster, loginNode, displayId, userId: info.identityId, desktopInfo,
+    id, cluster, loginNode, displayId, userId: info.identityId, desktopInfo,
   }).then(async ({ host, password, port, shadowdeskUrl }) => ({ 200: {
     type: desktopInfo?.desktop.$case || "vnc",
     ...(desktopInfo?.desktop.$case === "vnc" ? {
@@ -100,6 +90,7 @@ export default /* #__PURE__*/route(LaunchDesktopSchema, async (req, res) => {
       shadowdesk: { shadowdeskUrl: shadowdeskUrl || "" },
     }),
   } }), handlegRPCError({
-    [status.NOT_FOUND]: (e) => ({ 401: { code: "INVALID_DESKTOP_NAME" as const, message: e.message } }),
+    [status.NOT_FOUND]: (e) => ({ 404: { code: "INVALID_DESKTOP_NAME" as const, message: e.message } }),
+    [status.FAILED_PRECONDITION]: (e) => ({ 503: { code: "DESKTOP_NOT_AVAILABLE" as const, message: e.message } }),
   }));
 });

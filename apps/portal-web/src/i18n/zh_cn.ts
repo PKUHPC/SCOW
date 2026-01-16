@@ -612,6 +612,10 @@ export default {
         connect:"连接",
         delete: "删除桌面",
         deleteConfirmContent: "删除后不可恢复，你确定要删除吗?",
+        expiredTitle: "桌面已失效",
+        expiredContent: "桌面已失效，无法连接，是否删除该桌面？",
+        expiredDeleteOk: "是",
+        expiredCancel: "否",
       },
       newDesktopCardModal: {
         error: {

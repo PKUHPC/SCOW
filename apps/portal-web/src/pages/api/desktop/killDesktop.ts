@@ -28,6 +28,7 @@ export const KillDesktopSchema = typeboxRouteSchema({
   method: "POST",
 
   body: Type.Object({
+    id: Type.Number(),
     displayId: Type.Number(),
     cluster: Type.String(),
     loginNode: Type.String(),
@@ -57,7 +58,7 @@ const auth = authenticate(() => true);
 
 export default /* #__PURE__*/route(KillDesktopSchema, async (req, res) => {
 
-  const { cluster, loginNode, displayId, desktopInfo } = req.body;
+  const { id, cluster, loginNode, displayId, desktopInfo } = req.body;
 
   const clusterConfigs = await getClusterConfigFiles();
   const loginDesktopEnabled = getLoginDesktopEnabled(cluster, clusterConfigs);
@@ -84,7 +85,7 @@ export default /* #__PURE__*/route(KillDesktopSchema, async (req, res) => {
   };
 
   return await asyncUnaryCall(client, "killDesktop", {
-    cluster, loginNode, displayId, userId: info.identityId, desktopInfo,
+    id, cluster, loginNode, displayId, userId: info.identityId, desktopInfo,
   }).then(async () => {
     await callLog(logInfo, OperationResult.SUCCESS);
     return { 204: null };

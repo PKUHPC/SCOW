@@ -23,19 +23,14 @@ export const ListDesktopsSchema = typeboxRouteSchema({
         host: Type.String(),
         desktops: Type.Array(Type.Object({
           type: Type.Union([Type.Literal("vnc"), Type.Literal("shadowdesk")]),
-          vnc: Type.Optional(Type.Object({
+          data: Type.Optional(Type.Object({
+            id: Type.Number(),
             displayId: Type.Number(),
             desktopName: Type.String(),
             wm: Type.String(),
             createTime: Type.Optional(Type.String()),
+            isActive: Type.Optional(Type.Boolean()),
           })),
-          shadowdesk: Type.Optional(
-            Type.Object({
-              displayId: Type.Number(),
-              desktopName: Type.String(),
-              wm: Type.String(),
-              createTime: Type.Optional(Type.String()),
-            })),
         })),
       })),
     }),
@@ -72,27 +67,19 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
         userDesktops: userDesktops.map((userDesktop) => ({
           host: userDesktop.host,
           desktops: userDesktop.desktops?.map((desktop) => {
-            if (desktop.remoteControlTool === RemoteControlTool.SHADOWDESK) {
-              return {
-                type: "shadowdesk" as const,
-                shadowdesk: {
-                  displayId: desktop.displayId,
-                  desktopName: desktop.desktopName,
-                  wm: desktop.wm,
-                  createTime: desktop.createTime,
-                },
-              };
-            } else {
-              return {
-                type: "vnc" as const,
-                vnc: {
-                  displayId: desktop.displayId,
-                  desktopName: desktop.desktopName,
-                  wm: desktop.wm,
-                  createTime: desktop.createTime,
-                },
-              };
-            }
+            return {
+              type: desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
+                ? "shadowdesk" as const : "vnc" as const,
+              data: {
+                // scowd 模式下返回的数据一定包含 id
+                id: desktop.id || desktop.displayId,
+                displayId: desktop.displayId,
+                desktopName: desktop.desktopName,
+                wm: desktop.wm,
+                isActive: desktop.isActive,
+                createTime: desktop.createTime,
+              },
+            };
           }),
         })),
       } };
