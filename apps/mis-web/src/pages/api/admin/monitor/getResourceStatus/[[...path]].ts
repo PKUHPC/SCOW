@@ -1,15 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { getClusterConfigs } from "@scow/config/build/cluster";
 import { PlatformRole } from "@scow/protos/build/server/user";
 import { joinWithUrl } from "@scow/utils";
 import httpProxy from "http-proxy";
@@ -36,20 +25,72 @@ proxy.on("proxyReq", function(proxyReq, req) {
   }
 });
 
-const auth = authenticate((info) =>
-  info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
-
 export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (!publicConfig.CLUSTER_MONITOR.resourceStatus.enabled) {
     return res.status(404).send("Resource status is not enabled");
   }
 
-  const info = await auth(req, res);
+  const { path, cluster, ...rest } = req.query;
+  const pathSegments = path ? (Array.isArray(path) ? path : [path]) : [];
+  const panelId = Array.isArray(rest.panelId) ? rest.panelId[0] : rest.panelId;
+  const varJobName = Array.isArray(rest["var-job_name"]) ? rest["var-job_name"][0] : rest["var-job_name"];
+  const acceptHeader = Array.isArray(req.headers.accept) ? req.headers.accept[0] : req.headers.accept;
+  const acceptsHtml = typeof acceptHeader === "string" && acceptHeader.includes("text/html");
+  const isSoloDashboard = pathSegments[0] === "d-solo";
+  const isFullDashboard = pathSegments[0] === "d";
+  const isHtmlRequest = acceptsHtml || isSoloDashboard || isFullDashboard || pathSegments.length === 0;
 
-  if (!info) { return; }
+  /**
+   * 普通用户：
+   * 1. 仅允许 d-solo
+   * 2. dashboard和panel 匹配（dashboardId/dashboardName/panelId）
+   * 3. varJobName必传
+   * 管理员：允许 d（并且也能访问 d-solo）。
+   */
+  if (isHtmlRequest) {
+    const configClusters = isSoloDashboard ? getClusterConfigs(undefined, console) : {};
+    const clusterId = Array.isArray(cluster) ? cluster[0] : cluster;
 
-  const { path, ...rest } = req.query;
+    const matchJobMonitor = (
+      jobMonitor: { dashboardId: string; dashboardName: string; panelIds: Record<string, number> } | undefined,
+      segments: string[],
+      targetPanelId: string | undefined,
+      targetVarJobName: string | undefined,
+    ) => {
+      if (!jobMonitor || !targetPanelId || !targetVarJobName) {
+        return false;
+      }
+
+      const [first, second, third] = segments;
+      if (
+        first !== "d-solo" ||
+        second !== jobMonitor.dashboardId ||
+        third !== jobMonitor.dashboardName
+      ) {
+        return false;
+      }
+
+      const allowedPanelIds = Object.values(jobMonitor.panelIds).map(String);
+      return allowedPanelIds.includes(String(targetPanelId));
+    };
+
+    const aiMonitorMatched = isSoloDashboard && clusterId
+      ? matchJobMonitor(configClusters[clusterId]?.jobMonitor, pathSegments, panelId,varJobName)
+      : false;
+
+    const auth = authenticate((info) =>
+      info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || aiMonitorMatched);
+    const info = await auth(req, res);
+    if (!info) { return; }
+  }
+  // 其它请求（/api/、/public/ 等静态资源）只验证是否登录
+  else {
+    const auth = authenticate(() => true);
+    const info = await auth(req, res);
+
+    if (!info) { return; }
+  }
 
   const grafanaPath = path ? (Array.isArray(path) ? path.join("/") : path) : "/";
 

@@ -278,6 +278,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
       qs.set("var-job_name", jobDetails.uniqueJobName);
       selectedMonitorPodIds.forEach((podId) => qs.append("var-pod_name", podId));
       qs.set("panelId", String(panelId));
+      qs.set("cluster", clusterId);
 
       // 只有running的作业才需要刷新数据
       if (jobDetails.state === "RUNNING") {
