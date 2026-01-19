@@ -346,10 +346,6 @@ export default {
           submitFailedMessage: "送信に失敗しました",
           downloadSelected: "ダウンロード",
           showHiddenFiles: "隠しファイルを表示: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "単一ファイルを選択してダウンロードするか、複数ファイルを圧縮してからダウンロードしてください",
-            noSelection: "ダウンロードするファイルを選択してください",
-          },
           symlinkTooltip: {
             type: "種別: シンボリックリンク",
             targetPathPrefix: "ターゲットパス: ",

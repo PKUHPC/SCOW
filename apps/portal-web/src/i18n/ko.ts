@@ -346,10 +346,6 @@ export default {
           submitFailedMessage: "제출 실패",
           downloadSelected: "다운로드",
           showHiddenFiles: "숨김 파일 표시: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "단일 파일을 선택하여 다운로드하거나, 여러 파일을 압축하여 다운로드하세요",
-            noSelection: "다운로드할 파일을 선택하세요",
-          },
           symlinkTooltip: {
             type: "유형: 심볼릭 링크",
             targetPathPrefix: "대상 경로: ",

@@ -2,6 +2,7 @@ import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
 import { PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
+import pLimit from "p-limit";
 import { join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
@@ -34,11 +35,17 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
   const { message, modal } = App.useApp();
   const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
+  const uploadFileListRef = useRef<UploadFile[]>([]);
   const uploadControllers = useRef(new Map<string, AbortController>());
+  const limit = useRef(pLimit(2));
 
   const t = useI18nTranslateToString();
   // 使用上传文件的速度追踪器，速度更新时间 1000 ms
   const speedTracker = useUploadSpeedTracker(1000);
+
+  useEffect(() => {
+    uploadFileListRef.current = uploadFileList;
+  }, [uploadFileList]);
 
   useEffect(() => {
     return () => {
@@ -47,6 +54,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   }, [open]);
 
   const onModalClose = () => {
+    limit.current.clearQueue();
     for (const controller of Array.from(uploadControllers.current.values())) {
       controller.abort();
     }
@@ -81,25 +89,31 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     );
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
-    let uploadedCount = uploadedChunkIndices.size;
 
-    const uploadFile = uploadFileList.find((uploadFile) => uploadFile.name === file.name);
+    // 计算已上传字节数
+    let loadedBytes = 0;
+    uploadedChunkIndices.forEach((index) => {
+      if (index === totalCount) {
+        loadedBytes += (file.size - (totalCount - 1) * chunkSizeByte);
+      } else {
+        loadedBytes += chunkSizeByte;
+      }
+    });
+
+    const uploadFile = uploadFileListRef.current.find((uploadFile) => uploadFile.name === file.name);
     if (!uploadFile) {
       message.error(t(p("uploadFileListNotExist"), [file.name]));
       return;
     }
 
-    // 计算已上传字节数
-    const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
-    speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+    speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
 
-    const updateProgress = (count: number) => {
-      uploadedCount += count;
-      const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+    const updateProgress = (chunkSize: number) => {
+      loadedBytes += chunkSize;
+      const percentage = Number(((loadedBytes / file.size) * 100).toFixed(2));
 
       // 更新速度
-      const currentTotalLoaded = uploadedCount * chunkSizeByte;
-      speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+      speedTracker.updateFileBytes(uploadFile.uid, loadedBytes);
 
       // 手动更新 fileList 中的percent
       setUploadFileList((prevList) => {
@@ -145,12 +159,14 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         throw new Error(response.statusText);
       }
 
-      updateProgress(1);
+      updateProgress(chunk.size);
 
     };
 
     try {
-      // 顺序上传分片，失败时立即终止
+      const chunkLimit = pLimit(2);
+      const tasks: Promise<void>[] = [];
+
       for (let i = 0; i < totalCount; i++) {
         if (controller.signal.aborted) {
           break;
@@ -161,8 +177,10 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           continue;
         }
 
-        await uploadChunk(i);
+        tasks.push(chunkLimit(() => uploadChunk(i)));
       }
+
+      await Promise.all(tasks);
 
       if (!controller.signal.aborted) {
         await api.mergeFileChunks({ body: { cluster, path, name: file.name, sizeByte: file.size } })
@@ -173,6 +191,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       }
 
     } catch (err) {
+      controller.abort();
       message.error(t(p("multipartUploadError"), [err.message]));
       throw err;
     } finally {
@@ -207,7 +226,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         multiple
         {...(scowdEnabled ? {
           customRequest: ({ file, onSuccess, onError, onProgress }) => {
-            startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError);
+            limit.current(() => startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError));
           },
         } : {
           action: async (file) => urlToUpload(cluster, join(path, file.name)),

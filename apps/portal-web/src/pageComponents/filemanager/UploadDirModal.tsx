@@ -4,6 +4,7 @@ import { PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/u
 import { App, Button, Modal, Upload } from "antd";
 import type { RcFile } from "antd/es/upload";
 import type { UploadFile, UploadProps } from "antd/es/upload/interface";
+import pLimit from "p-limit";
 import { dirname, join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { api } from "src/apis";
@@ -34,7 +35,10 @@ type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => v
 export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
   const { message, modal } = App.useApp();
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
+  const uploadFileListRef = useRef<UploadFile[]>([]);
   const uploadControllers = useRef(new Map<string, AbortController>());
+  const limit = useRef(pLimit(2));
+  const uploadSessionRef = useRef(0);
 
   // 使用 ref 来追踪每个文件夹的覆盖确认状态
   const folderOverwriteSetRef = useRef<Set<string>>(new Set());
@@ -55,7 +59,13 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const t = useI18nTranslateToString();
 
   useEffect(() => {
+    uploadFileListRef.current = uploadFileList;
+  }, [uploadFileList]);
+
+  useEffect(() => {
     if (open) {
+      uploadSessionRef.current += 1;
+      limit.current.clearQueue();
       setUploadFileList([]);
     }
     return () => {
@@ -242,6 +252,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   };
 
   const onModalClose = () => {
+    uploadSessionRef.current += 1;
+    limit.current.clearQueue();
     for (const controller of Array.from(uploadControllers.current.values())) {
       controller.abort();
     }
@@ -289,26 +301,30 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     );
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
-    let uploadedCount = uploadedChunkIndices.size;
 
-    const uploadFile = uploadFileList.find((uploadFile) => uploadFile.uid === file.uid);
-    if (!uploadFile) {
-      message.error(t(p("uploadFileListNotExist"), [file.webkitRelativePath]));
-      return;
-    }
-    const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
-    speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+    let loadedBytes = 0;
+    uploadedChunkIndices.forEach((index) => {
+      if (index === totalCount) {
+        loadedBytes += (file.size - (totalCount - 1) * chunkSizeByte);
+      } else {
+        loadedBytes += chunkSizeByte;
+      }
+    });
 
-    const updateProgress = (count: number) => {
-      uploadedCount += count;
-      const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+    const uploadFile = uploadFileListRef.current.find((uploadFile) => uploadFile.uid === file.uid);
+    if (!uploadFile) { return; }
 
-      const currentTotalLoaded = uploadedCount * chunkSizeByte;
-      speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+    speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
+
+    const updateProgress = (chunkSize: number) => {
+      loadedBytes += chunkSize;
+      const percentage = Number(((loadedBytes / file.size) * 100).toFixed(2));
+
+      speedTracker.updateFileBytes(uploadFile.uid, loadedBytes);
 
       setUploadFileList((prevList) => {
         return prevList.map((uploadFile) => {
-          return uploadFile.name === file.name
+          return uploadFile.uid === file.uid
             ? { ...uploadFile,
               percent: percentage,
               status: "uploading" as const }
@@ -349,11 +365,13 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         throw new Error(response.statusText);
       }
 
-      updateProgress(1);
+      updateProgress(chunk.size);
     };
 
     try {
-      // 顺序上传分片，失败时立即终止
+      const chunkLimit = pLimit(2);
+      const tasks: Promise<void>[] = [];
+
       for (let i = 0; i < totalCount; i++) {
         if (controller.signal.aborted) {
           break;
@@ -364,8 +382,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           continue;
         }
 
-        await uploadChunk(i);
+        tasks.push(chunkLimit(() => uploadChunk(i)));
       }
+
+      await Promise.all(tasks);
 
       if (!controller.signal.aborted) {
         await api
@@ -375,6 +395,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           });
       }
     } catch (err: any) {
+      controller.abort();
       message.error(t(p("multipartUploadError"), [err.message]));
       throw err;
     } finally {
@@ -414,7 +435,11 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         withCredentials
         {...(scowdEnabled ? {
           customRequest: ({ file, onSuccess, onError, onProgress }) => {
-            startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError);
+            const session = uploadSessionRef.current;
+            limit.current(async () => {
+              if (session !== uploadSessionRef.current) { return; }
+              await startMultipartUpload(file as RcFile, onProgress);
+            }).then(onSuccess).catch(onError);
           },
         } : {
           action: async (file) => urlToUpload(cluster, join(path, file.webkitRelativePath)),

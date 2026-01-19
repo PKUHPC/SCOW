@@ -363,10 +363,6 @@ export default {
           submitFailedMessage: "提交失败",
           downloadSelected: "下载",
           showHiddenFiles: "显示隐藏文件: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "请选择单个文件进行下载，或将多个文件压缩后下载",
-            noSelection: "请选择要下载的文件",
-          },
           symlinkTooltip: {
             type: "类型：软链接",
             targetPathPrefix: "源路径：",

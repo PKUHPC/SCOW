@@ -26,7 +26,7 @@ import { TitleText } from "src/components/PageTitle";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DeleteIcon, DownloadIcon, RenameIcon, SubmitIcon } from "src/icons/operationIcon";
-import { urlToDownload } from "src/pageComponents/filemanager/api";
+import { urlToCompressAndDownload, urlToDownload } from "src/pageComponents/filemanager/api";
 import { CompressFilesModal } from "src/pageComponents/filemanager/CompressFilesModal";
 import { CreateFileModal } from "src/pageComponents/filemanager/CreateFileModal";
 import { FileEditModal } from "src/pageComponents/filemanager/FileEditModal";
@@ -205,20 +205,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     return "";
   };
 
-  const getDownloadButtonDisabledReason = () => {
-    const selectedFiles = keysToFiles(selectedKeys);
-    if (selectedKeys.length === 0) {
-      return "";
-    }
-    if (selectedKeys.length > 1) {
-      return t(p("tableInfo.downloadButtonDisabledTooltip.multipleItems"));
-    }
-    if (selectedFiles.length > 0 && selectedFiles[0].type === "DIR") {
-      return t(p("tableInfo.downloadButtonDisabledTooltip.multipleItems"));
-    }
-    return "";
-  };
-
   const reload = async (signal?: AbortSignal) => {
     setLoading(true);
     await api.listFile({ query: { cluster: currentClusterRef.current.id, path } }, signal)
@@ -375,10 +361,8 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
   const onDownloadClick = () => {
     const files = keysToFiles(selectedKeys);
-    // 压缩下载功能暂时关闭
-    window.open(urlToDownload(currentClusterRef.current.id, join(path, files[0].name), true), "_blank");
-    // window.open(
-    // urlToCompressAndDownload(currentClusterRef.current.id, files.map((x) => join(path, x.name)), true), "_blank");
+    window.open(
+      urlToCompressAndDownload(currentClusterRef.current.id, files.map((x) => join(path, x.name)), true), "_blank");
   };
 
   const onDeleteClick = () => {
@@ -770,20 +754,13 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           )}
           {
             scowdEnabled && (
-              <Tooltip title={getDownloadButtonDisabledReason()}>
-                <span>
-                  <Button
-                    icon={<DownloadOutlined />}
-                    onClick={onDownloadClick}
-                    disabled={
-                      selectedKeys.length === 0 || selectedKeys.length > 1 ||
-                      (keysToFiles(selectedKeys).length > 0 && keysToFiles(selectedKeys)[0].type === "DIR")
-                    }
-                  >
-                    {t(p("tableInfo.downloadSelected"))}
-                  </Button>
-                </span>
-              </Tooltip>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={onDownloadClick}
+                disabled={selectedKeys.length === 0}
+              >
+                {t(p("tableInfo.downloadSelected"))}
+              </Button>
             )
           }
           <Button
@@ -952,13 +929,13 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                 </Tooltip>
               )
             }
-            {/* {
+            {
               (i.type === "DIR" && scowdEnabled) && (
                 <a href={urlToCompressAndDownload(currentClusterRef.current.id, [join(path, i.name)], true)}>
-                  {t(p("tableInfo.download"))}
+                  <DownloadIcon />
                 </a>
               )
-            } */}
+            }
             {(
               <RenameLink
                 cluster={currentClusterRef.current.id}

@@ -355,11 +355,6 @@ export default {
           submitFailedMessage: "Soumission échouée",
           downloadSelected: "Télécharger",
           showHiddenFiles: "Afficher les fichiers cachés : ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "Veuillez sélectionner un seul fichier à télécharger ou"
-            + " compresser plusieurs fichiers avant de télécharger",
-            noSelection: "Veuillez sélectionner un fichier à télécharger",
-          },
           symlinkTooltip: {
             type: "Type : Lien symbolique",
             targetPathPrefix: "Chemin cible : ",

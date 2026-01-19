@@ -352,10 +352,6 @@ export default {
           submitFailedMessage: "Falha na submissão",
           downloadSelected: "Transferir",
           showHiddenFiles: "Mostrar ficheiros ocultos: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "Selecione um único ficheiro ou comprima múltiplos antes de transferir",
-            noSelection: "Selecione um ficheiro para transferir",
-          },
           symlinkTooltip: {
             type: "Tipo: Link simbólico",
             targetPathPrefix: "Caminho alvo: ",

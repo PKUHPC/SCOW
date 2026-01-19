@@ -352,10 +352,6 @@ export default {
           submitFailedMessage: "Envío fallido",
           downloadSelected: "Descargar",
           showHiddenFiles: "Mostrar archivos ocultos: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "Selecciona un solo archivo para descargar, o comprime varios antes de descargar",
-            noSelection: "Selecciona un archivo para descargar",
-          },
           symlinkTooltip: {
             type: "Tipo: Enlace simbólico",
             targetPathPrefix: "Ruta destino: ",

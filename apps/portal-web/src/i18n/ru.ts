@@ -353,10 +353,6 @@ export default {
           submitFailedMessage: "Ошибка отправки",
           downloadSelected: "Скачать",
           showHiddenFiles: "Показывать скрытые файлы: ",
-          downloadButtonDisabledTooltip: {
-            multipleItems: "Выберите один файл для скачивания, либо сначала упакуйте несколько файлов",
-            noSelection: "Выберите файл для скачивания",
-          },
           symlinkTooltip: {
             type: "Тип: символическая ссылка",
             targetPathPrefix: "Целевой путь: ",

@@ -173,84 +173,55 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     call.on("error", onCallError);
 
     try {
-      const { sizeByte } = await client.file.getFileMetadata({ userId, filePath: path });
+      readStream = client.file.download({
+        userId, path, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+      }, {
+        signal: abortController.signal,
+      });
 
-      // 分段下载，每段 300MB
-      const segmentSize = BigInt(300 * 1024 * 1024); // 300MB
-      let currentOffset = BigInt(0);
-
-      while (currentOffset < sizeByte) {
+      for await (const response of readStream) {
         if (clientDisconnected || call.destroyed) {
           logger.info(`Download of ${path} aborted due to client disconnection or stream destruction.`);
           break;
         }
 
-        const remainingBytes = sizeByte - currentOffset;
-        const currentLimit = remainingBytes < segmentSize ? remainingBytes : segmentSize;
-
-        logger.info(`Downloading segment of ${path}: offset=${currentOffset}, limit=${currentLimit}`);
-
-        readStream = client.file.download({
-          userId,
-          path,
-          chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
-          offsetBytes: currentOffset,
-          limitBytes: Number(currentLimit),
-        }, {
-          signal: abortController.signal,
-        });
-
-        for await (const response of readStream) {
+        if (!call.write(response)) {
           if (clientDisconnected || call.destroyed) {
-            logger.info(`Download of ${path} aborted due to client disconnection or stream destruction.`);
+            logger.info(`Download of ${path} aborted while write buffer full.`);
             break;
           }
-
-          if (!call.write(response)) {
-            if (clientDisconnected || call.destroyed) {
-              logger.info(`Download of ${path} aborted while write buffer full.`);
-              break;
-            }
-            try {
-              await new Promise<void>((resolve, reject) => {
-                const onDrain = () => {
-                  call.removeListener("close", onEarlyCloseOrError);
-                  call.removeListener("error", onEarlyCloseOrError);
+          try {
+            await new Promise<void>((resolve, reject) => {
+              const onDrain = () => {
+                call.removeListener("close", onEarlyCloseOrError);
+                call.removeListener("error", onEarlyCloseOrError);
+                resolve();
+              };
+              const onEarlyCloseOrError = (err?: Error) => {
+                call.removeListener("drain", onDrain);
+                clientDisconnected = true;
+                if (err) {
+                  logger.error(`Error (${err.message}) occurred while waiting for drain for ${path}.`);
+                  reject(err);
+                } else {
+                  logger.info(`Client closed connection while waiting for drain for ${path}.`);
                   resolve();
-                };
-                const onEarlyCloseOrError = (err?: Error) => {
-                  call.removeListener("drain", onDrain);
-                  clientDisconnected = true;
-                  if (err) {
-                    logger.error(`Error (${err.message}) occurred while waiting for drain for ${path}.`);
-                    reject(err);
-                  } else {
-                    logger.info(`Client closed connection while waiting for drain for ${path}.`);
-                    resolve();
-                  }
-                };
-                call.once("drain", onDrain);
-                call.once("close", onEarlyCloseOrError);
-                call.once("error", onEarlyCloseOrError);
-              });
-            } catch (drainError) {
-              logger.error(`Error while waiting for drain for ${path}:`, drainError);
-              break;
-            }
-          }
-
-          if (clientDisconnected || call.destroyed) {
-            logger.info(`Download of ${path} aborted post-write/drain.`);
+                }
+              };
+              call.once("drain", onDrain);
+              call.once("close", onEarlyCloseOrError);
+              call.once("error", onEarlyCloseOrError);
+            });
+          } catch (drainError) {
+            logger.error(`Error while waiting for drain for ${path}:`, drainError);
             break;
           }
         }
 
         if (clientDisconnected || call.destroyed) {
+          logger.info(`Download of ${path} aborted post-write/drain.`);
           break;
         }
-
-        currentOffset += currentLimit;
-        logger.info(`Completed segment download for ${path}: offset=${currentOffset}/${sizeByte}`);
       }
 
       if (!clientDisconnected && !call.writableEnded && !call.destroyed) {
