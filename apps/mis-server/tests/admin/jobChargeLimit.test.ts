@@ -54,6 +54,7 @@ const params = (ua: UserAccount) => ({
   accountName: ua.account.getEntity().accountName,
   userId: ua.user.getEntity().userId,
   tenantName: data.tenant.name,
+  userIds: [],
 });
 
 function expectDecimalEqual(decimal1?: Decimal, decimal2?: Decimal) {

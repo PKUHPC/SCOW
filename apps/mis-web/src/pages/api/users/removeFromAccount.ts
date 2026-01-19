@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -29,11 +17,19 @@ export const RemoveUserFromAccountSchema = typeboxRouteSchema({
 
   query: Type.Object({
     accountName: Type.String(),
-    identityId: Type.String(),
+    userIds: Type.Array(Type.String()),
   }),
 
   responses: {
-    204: Type.Null(),
+    200: Type.Object({
+      success: Type.Boolean(),
+      results: Type.Optional(Type.Array(
+        Type.Object({
+          success: Type.Boolean(),
+          userId: Type.String(),
+        }),
+      )),
+    }),
     // 用户不存在
     404: Type.Null(),
 
@@ -45,11 +41,12 @@ export const RemoveUserFromAccountSchema = typeboxRouteSchema({
 
     // 不能移出有正在运行作业的用户，只能先封锁
     409: Type.Null(),
+    500: Type.Object({ message: Type.String() }),
   },
 });
 
 export default /* #__PURE__*/route(RemoveUserFromAccountSchema, async (req, res) => {
-  const { identityId, accountName } = req.query;
+  const { userIds, accountName } = req.query;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
@@ -66,30 +63,47 @@ export default /* #__PURE__*/route(RemoveUserFromAccountSchema, async (req, res)
   // call ua service to add user
   const client = getClient(UserServiceClient);
 
-  const logInfo = {
-    operatorUserId: info.identityId,
-    operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.removeUserFromAccount,
-    operationTypePayload:{
-      accountName, userId: identityId,
-    },
-  };
+  const logInfos = userIds.map((userId) => {
+    return {
+      operatorUserId: info.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.removeUserFromAccount,
+      operationTypePayload:{
+        accountName, userId,
+      },
+    };
+  });
 
   return await asyncClientCall(client, "removeUserFromAccount", {
     tenantName: info.tenant,
     accountName,
-    userId: identityId,
+    userIds,
   })
-    .then(async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 204: null };
+    .then(async (res) => {
+      if (res.success) {
+        logInfos.forEach(async (logInfo) => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+        });
+      } else {
+        logInfos.forEach(async (logInfo) => {
+          if (res.results?.find((f) => f.success)) {
+            await callLog(logInfo, OperationResult.SUCCESS);
+          } else {
+            await callLog(logInfo, OperationResult.FAIL);
+          }
+        });
+      }
+      return { 200: res };
     })
     .catch(handlegRPCError({
-      [Status.INTERNAL]: (e) => ({ 400: { message: e.details } }),
+      [Status.UNAVAILABLE]: (e) => ({ 400: { message: e.details } }),
       [Status.NOT_FOUND]: () => ({ 404: null }),
       [Status.OUT_OF_RANGE]: () => ({ 406: null }),
       [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
     },
-    async () => await callLog(logInfo, OperationResult.FAIL),
+    async () => logInfos.forEach(async (logInfo) => {
+      await callLog(logInfo, OperationResult.FAIL);
+    }),
     ));
 });

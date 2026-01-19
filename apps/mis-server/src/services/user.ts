@@ -4,6 +4,7 @@ import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded, QueryOrder, raw } from "@mikro-orm/core";
+import { LockMode } from "@mikro-orm/core";
 import { addUserToAccount, changeEmail as libChangeEmail, createUser, deleteUser,
   getCapabilities, getUser, HttpError,
   removeUserFromAccount,
@@ -24,6 +25,7 @@ import {
   UserServiceService,
   userStateFromJSON,
   UserStatus as PFUserStatus } from "@scow/protos/build/server/user";
+import { UserOperationResult } from "@scow/protos/build/server/user";
 import { ApiVersion } from "@scow/utils/build/version";
 import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
@@ -45,6 +47,10 @@ import { generateAllUsersQueryOptions } from "src/utils/queryOptions";
 import { setNewUserStorageQuota } from "src/utils/storageQuota";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
+interface ResultInfo extends UserOperationResult {
+  code?: number;
+  reason?: string;
+}
 
 export const userServiceServer = plugin((server) => {
 
@@ -280,76 +286,170 @@ export const userServiceServer = plugin((server) => {
       // 判断当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "remove user from account task");
 
-      const { accountName, userId, tenantName } = request;
+      const { accountName, tenantName } = request;
 
-      const userAccount = await em.findOne(UserAccount, {
-        user: { userId, tenant: { name: tenantName } },
-        account: { accountName, tenant: { name: tenantName } },
-      }, { populate: ["user", "account"]});
-
-      if (!userAccount) {
-        throw {
-          code: Status.NOT_FOUND, message:`User ${userId} or account ${accountName}  is not found.`,
-        } as ServiceError;
-      }
-
-      if (userAccount.role === UserRole.OWNER) {
-        throw {
-          code: Status.OUT_OF_RANGE,
-          message: `User ${userId} is the owner of the account ${accountName}。`,
-        } as ServiceError;
-      }
-
+      const results: ResultInfo[] = [];
+      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
       const currentActivatedClusters = await getActivatedClusters(em, logger);
-      // 如果要从账户中移出用户，先封锁，先将用户封锁，保证用户无法提交作业
-      if (userAccount.blockedInCluster === UserStatus.UNBLOCKED) {
-        userAccount.state = UserStateInAccount.BLOCKED_BY_ADMIN;
-        await blockUserInAccount(userAccount, currentActivatedClusters, server.ext, logger);
-        await em.flush();
-      }
 
-      // 查询用户是否有RUNNING、PENDING的作业，如果有，抛出异常
-      const jobs = await server.ext.clusters.callOnAll(
-        currentActivatedClusters,
-        logger,
-        async (client) => {
-          const fields = ["job_id", "user", "state", "account"];
-
-          return await asyncClientCall(client.job, "getJobs", {
-            jobTypes: [],
-            fields,
-            filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"]},
-          });
-        },
-      );
-
-      if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
+      if (userIds.length === 0) {
         throw {
-          code: Status.FAILED_PRECONDITION,
-          message: `User ${userId} has jobs running or pending and cannot remove.
-          Please wait for the job to end or end the job manually before moving out.`,
+          code: Status.INVALID_ARGUMENT,
+          message: "Either userId or userIds must be provided",
         } as ServiceError;
       }
 
+      for (const userId of userIds) {
+        try {
+          let userAccount: UserAccount | null;
+          try {
+            userAccount = await em.transactional(async (transactionalEm) => {
+              const userAcc = await transactionalEm.findOne(UserAccount, {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              }, {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              });
 
-      await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
-      }).catch(async (e) => {
-        // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
-        // 除此以外，都抛出异常
-        if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-           !== Object.keys(currentActivatedClusters).length) {
-          throw e;
+              if (!userAcc) {
+                results.push({
+                  userId,
+                  success: false,
+                  code: Status.NOT_FOUND,
+                  reason: `User ${userId} or account ${accountName} is not found.`,
+                });
+                return null;
+              }
+
+              if (userAcc.role === UserRole.OWNER) {
+                results.push({
+                  userId,
+                  success: false,
+                  code: Status.OUT_OF_RANGE,
+                  reason: `User ${userId} is the owner of the account ${accountName}。`,
+                });
+                return null;
+              }
+
+              // 如果要从账户中移出用户，先封锁，先将用户封锁，保证用户无法提交作业
+              if (userAcc.blockedInCluster === UserStatus.UNBLOCKED) {
+                userAcc.state = UserStateInAccount.BLOCKED_BY_ADMIN;
+                await blockUserInAccount(userAcc, currentActivatedClusters, server.ext, logger);
+              }
+
+              return userAcc;
+            });
+          } catch (error) {
+            results.push({
+              userId,
+              success: false,
+              code: Status.INTERNAL,
+              reason: `Failed to block user: ${JSON.stringify(error)}`,
+            });
+            return;
+          }
+
+          if (!userAccount) continue;
+
+          // 查询用户是否有RUNNING、PENDING的作业，如果有，抛出异常
+          const jobs = await server.ext.clusters.callOnAll(
+            currentActivatedClusters,
+            logger,
+            async (client) => {
+              const fields = ["job_id", "user", "state", "account"];
+
+              return await asyncClientCall(client.job, "getJobs", {
+                jobTypes: [],
+                fields,
+                filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"]},
+              });
+            },
+          );
+
+          if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
+            results.push({
+              userId,
+              success: false,
+              code: Status.FAILED_PRECONDITION,
+              reason: `User ${userId} has jobs running or pending and cannot remove.
+          Please wait for the job to end or end the job manually before moving out.`,
+            });
+            continue;
+          }
+
+          let shouldContinue: boolean = false;
+          await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+            return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
+          }).catch(async (e) => {
+            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 除此以外，都抛出异常
+            if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
+              Object.keys(currentActivatedClusters).length) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.UNAVAILABLE,
+                reason: JSON.stringify(e),
+              });
+            }
+            shouldContinue = true;
+          });
+
+          if (shouldContinue) {
+            continue;
+          }
+
+          const userAccReference = em.getReference(UserAccount, userAccount.id);
+          await em.removeAndFlush(userAccReference);
+
+          if (server.ext.capabilities.accountUserRelation) {
+            await removeUserFromAccount(authUrl, { accountName, userId }, logger);
+          }
+
+          results.push({
+            userId,
+            success: true,
+          });
+
+        } catch (error) {
+          results.push({
+            userId,
+            success: false,
+            code: Status.INTERNAL,
+            reason: JSON.stringify(error),
+          });
         }
-      });
-
-      await em.removeAndFlush(userAccount);
-
-      if (server.ext.capabilities.accountUserRelation) {
-        await removeUserFromAccount(authUrl, { accountName, userId }, logger);
       }
 
-      return [{}];
+      const failedInfos = results
+        .filter((res) => !res.success);
+
+      if (failedInfos.length > 0) {
+        logger.warn(failedInfos.map((info) => `Failed to remove user ${info.userId}: ${info.reason}`));
+      }
+      // 如果所有用户都失败了，抛出异常
+      if (failedInfos.length === userIds.length) {
+        if (userIds.length === 1) {
+          throw {
+            code: failedInfos[0].code,
+            details: failedInfos[0].reason,
+          } as ServiceError;
+        }
+
+        const errorDetails = failedInfos.map((info) => `${info.userId}: ${info.reason}`).join(",");
+
+        throw {
+          code: Status.INTERNAL,
+          message: "Failed to remove user in account for all users",
+          details: errorDetails,
+        } as ServiceError;
+      }
+
+      return [{
+        success: failedInfos.length === 0,
+        results,
+      }];
 
     },
 
@@ -358,34 +458,102 @@ export const userServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "block user in account task");
 
-      const { accountName, userId, tenantName } = request;
+      const { accountName, tenantName } = request;
 
-      const user = await em.findOne(UserAccount, {
-        user: { userId, tenant: { name: tenantName } },
-        account: { accountName, tenant: { name: tenantName } },
-      }, { populate: ["user", "account"]});
-
-      if (!user) {
-        throw {
-          code: Status.NOT_FOUND, message: `User ${userId} or account ${accountName} is not found.`,
-        } as ServiceError;
-      }
-
-      // 如果已经在集群下为封锁，且状态值为被账户管理员或拥有者手动封锁
-      if (user.blockedInCluster === UserStatus.BLOCKED && user.state === UserStateInAccount.BLOCKED_BY_ADMIN) {
-        throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId}  is already blocked.`,
-        } as ServiceError;
-      }
-
+      const results: ResultInfo[] = [];
+      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
       const currentActivatedClusters = await getActivatedClusters(em, logger);
-      await blockUserInAccount(user, currentActivatedClusters, server.ext, logger);
-      user.state = UserStateInAccount.BLOCKED_BY_ADMIN;
-      user.blockedInCluster = UserStatus.BLOCKED;
 
-      await em.flush();
+      if (userIds.length === 0) {
+        throw {
+          code: Status.INVALID_ARGUMENT,
+          message: "Either userId or userIds must be provided",
+        } as ServiceError;
+      }
 
-      return [{}];
+      for (const userId of userIds) {
+        await em.transactional(async (em) => {
+          try {
+            const user = await em.findOne(UserAccount, {
+              user: { userId, tenant: { name: tenantName } },
+              account: { accountName, tenant: { name: tenantName } },
+            }, {
+              populate: ["user", "account"],
+              lockMode: LockMode.PESSIMISTIC_WRITE,
+            });
+
+            if (!user) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.NOT_FOUND,
+                reason: `User ${userId} or account ${accountName} is not found.`,
+              });
+              return;
+            }
+
+            // 如果已经在集群下为封锁，且状态值为被账户管理员或拥有者手动封锁
+            if (user.blockedInCluster === UserStatus.BLOCKED && user.state === UserStateInAccount.BLOCKED_BY_ADMIN) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.FAILED_PRECONDITION,
+                reason: `User ${userId} is already blocked.`,
+              });
+              return;
+            }
+
+            await blockUserInAccount(user, currentActivatedClusters, server.ext, logger);
+            user.state = UserStateInAccount.BLOCKED_BY_ADMIN;
+            user.blockedInCluster = UserStatus.BLOCKED;
+
+            results.push({
+              userId,
+              success: true,
+            });
+          } catch (error) {
+            results.push({
+              userId,
+              success: false,
+              code: Status.INTERNAL,
+              reason: JSON.stringify(error),
+            });
+
+            // 重新抛出错误，使当前用户的事务被回滚
+            throw error;
+          }
+        });
+      }
+
+      const failedInfos = results
+        .filter((res) => !res.success);
+
+      if (failedInfos.length > 0) {
+        logger.warn(failedInfos.map((info) => `Failed to block user ${info.userId}: ${info.reason}`));
+      }
+
+      // 如果所有用户都失败了，抛出异常
+      if (failedInfos.length === userIds.length) {
+        if (userIds.length === 1) {
+          throw {
+            code: failedInfos[0].code,
+            details: failedInfos[0].reason,
+          } as ServiceError;
+        }
+
+        const errorDetails = failedInfos.map((info) => `${info.userId}: ${info.reason}`).join(",");
+
+        throw {
+          code: Status.INTERNAL,
+          message: "Failed to block user in account for all users",
+          details: errorDetails,
+        } as ServiceError;
+      }
+
+      return [{
+        success: failedInfos.length === 0,
+        results,
+      }];
     },
 
     unblockUserInAccount: async ({ request, em, logger }) => {
@@ -393,42 +561,109 @@ export const userServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的
       await ensureNoRunningSyncTask(em, logger, "unblock user in account task");
 
-      const { accountName, userId, tenantName } = request;
+      const { accountName, tenantName } = request;
 
-      const user = await em.findOne(UserAccount, {
-        user: { userId, tenant: { name: tenantName } },
-        account: { accountName, tenant: { name: tenantName } },
-      }, { populate: ["user", "account"]});
-
-      if (!user) {
-        throw {
-          code: Status.NOT_FOUND, message:`User ${userId} or account ${accountName}  is not found.`,
-        } as ServiceError;
-      }
-
-      if (user.blockedInCluster === UserStatus.UNBLOCKED) {
-        throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId}  is already unblocked.`,
-        } as ServiceError;
-      }
-
-      // 判断如果限额和已用额度存在的情况是否可以解封
-      const stillBlockUserInCluster = getUserStateInfo(
-        UserStateInAccount.NORMAL,
-        user.jobChargeLimit,
-        user.usedJobCharge,
-      ).shouldBlockInCluster;
-
+      const results: ResultInfo[] = [];
+      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
       const currentActivatedClusters = await getActivatedClusters(em, logger);
-      if (!stillBlockUserInCluster) {
-        await unblockUserInAccount(user, currentActivatedClusters, server.ext, logger);
-        user.blockedInCluster = UserStatus.UNBLOCKED;
+
+      if (userIds.length === 0) {
+        throw {
+          code: Status.INVALID_ARGUMENT,
+          message: "Either userId or userIds must be provided",
+        } as ServiceError;
       }
-      user.state = UserStateInAccount.NORMAL;
 
-      await em.flush();
+      for (const userId of userIds) {
+        await em.transactional(async (em) => {
+          try {
+            const user = await em.findOne(UserAccount, {
+              user: { userId, tenant: { name: tenantName } },
+              account: { accountName, tenant: { name: tenantName } },
+            }, {
+              populate: ["user", "account"],
+              lockMode: LockMode.PESSIMISTIC_WRITE,
+            });
 
-      return [{}];
+            if (!user) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.NOT_FOUND,
+                reason: `User ${userId} or account ${accountName}  is not found.`,
+              });
+              return;
+            }
+
+            if (user.blockedInCluster === UserStatus.UNBLOCKED) {
+              results.push({
+                userId,
+                success: false,
+                code: Status.FAILED_PRECONDITION,
+                reason: `User ${userId}  is already unblocked.`,
+              });
+              return;
+            }
+
+            // 判断如果限额和已用额度存在的情况是否可以解封
+            const stillBlockUserInCluster = getUserStateInfo(
+              UserStateInAccount.NORMAL,
+              user.jobChargeLimit,
+              user.usedJobCharge,
+            ).shouldBlockInCluster;
+
+            if (!stillBlockUserInCluster) {
+              await unblockUserInAccount(user, currentActivatedClusters, server.ext, logger);
+              user.blockedInCluster = UserStatus.UNBLOCKED;
+            }
+            user.state = UserStateInAccount.NORMAL;
+
+            results.push({
+              userId,
+              success: true,
+            });
+          } catch (error) {
+            results.push({
+              userId,
+              success: false,
+              code: Status.INTERNAL,
+              reason: JSON.stringify(error),
+            });
+
+            // 重新抛出错误，使当前用户的事务被回滚
+            throw error;
+          }
+        });
+      }
+
+      const failedInfos = results
+        .filter((res) => !res.success);
+
+      if (failedInfos.length > 0) {
+        logger.warn(failedInfos.map((info) => `Failed to unblock user ${info.userId}: ${info.reason}`));
+      }
+      // 如果所有用户都失败了，抛出异常
+      if (failedInfos.length === userIds.length) {
+        if (userIds.length === 1) {
+          throw {
+            code: failedInfos[0].code,
+            details: failedInfos[0].reason,
+          } as ServiceError;
+        }
+
+        const errorDetails = failedInfos.map((info) => `${info.userId}: ${info.reason}`).join(", ");
+
+        throw {
+          code: Status.INTERNAL,
+          message: "Failed to unblock user in account for all users",
+          details: errorDetails,
+        } as ServiceError;
+      }
+
+      return [{
+        success: failedInfos.length === 0,
+        results,
+      }];
     },
 
     setAsAdmin: async ({ request, em }) => {

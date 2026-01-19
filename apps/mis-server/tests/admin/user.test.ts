@@ -131,6 +131,7 @@ it("cannot remove owner from account", async () => {
     tenantName: data.tenant.name,
     accountName: data.accountA.accountName,
     userId: data.userA.userId,
+    userIds: [],
   }).catch((e) => e);
 
   expect(reply.code).toBe(Status.OUT_OF_RANGE);
@@ -143,6 +144,7 @@ it("cannot remove a user from account,when user has jobs running or pending", as
     tenantName: data.anotherTenant.name,
     accountName: data.accountC.accountName,
     userId: data.userC.userId,
+    userIds: [],
   }).catch((e) => e);
 
   expect(reply.code).toBe(Status.FAILED_PRECONDITION);
@@ -179,6 +181,7 @@ it("when removing a user from an account, the account and user cannot be deleted
     tenantName: data.tenant.name,
     accountName: account.accountName,
     userId: data.userB.userId,
+    userIds: [],
   });
 
   const accountA = await em.findOneOrFail(Account, { id:account.id });

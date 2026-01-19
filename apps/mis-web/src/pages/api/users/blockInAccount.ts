@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -29,21 +17,30 @@ export const BlockUserInAccountSchema = typeboxRouteSchema({
 
   body: Type.Object({
     accountName: Type.String(),
-    identityId: Type.String(),
+    userIds: Type.Array(Type.String()),
   }),
 
   responses: {
-    // 如果用户已经block，那么executed为false
-    200: Type.Object({ executed: Type.Boolean(),
+    200: Type.Object({
       reason: Type.Optional(Type.String()),
+      success: Type.Boolean(),
+      results: Type.Optional(Type.Array(
+        Type.Object({
+          success: Type.Boolean(),
+          userId: Type.String(),
+        }),
+      )),
     }),
     // 用户不存在
     404: Type.Null(),
+    // userIds 或 userId 不能为空
+    400: Type.Null(),
+    500: Type.Object({ message: Type.String() }),
   },
 });
 
 export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) => {
-  const { identityId, accountName } = req.body;
+  const { userIds, accountName } = req.body;
 
 
   const auth = authenticate((u) => {
@@ -57,35 +54,52 @@ export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) =>
   const info = await auth(req, res);
 
   // 检查操作者是否已经被Block，若果是直接返回
-  
 
   if (!info) { return; }
 
 
   const client = getClient(UserServiceClient);
 
-  const logInfo = {
-    operatorUserId: info.identityId,
-    operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.blockUser,
-    operationTypePayload:{
-      accountName, userId: identityId,
-    },
-  };
+  const logInfos = userIds.map((userId) => {
+    return {
+      operatorUserId: info.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.blockUser,
+      operationTypePayload:{
+        accountName, userId,
+      },
+    };
+  });
 
   return await asyncClientCall(client, "blockUserInAccount", {
     tenantName: info.tenant,
     accountName,
-    userId: identityId,
+    userIds,
   })
-    .then(async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 200: { executed: true } };
+    .then(async (res) => {
+      if (res.success) {
+        logInfos.forEach(async (logInfo) => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+        });
+      } else {
+        logInfos.forEach(async (logInfo) => {
+          if (res.results?.find((f) => f.success)) {
+            await callLog(logInfo, OperationResult.SUCCESS);
+          } else {
+            await callLog(logInfo, OperationResult.FAIL);
+          }
+        });
+      }
+      return { 200: res };
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
+      [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
+      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { success: false, reason: e.details } }),
+      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
     },
-    async () => await callLog(logInfo, OperationResult.FAIL),
+    async () => logInfos.forEach(async (logInfo) => {
+      await callLog(logInfo, OperationResult.FAIL);
+    }),
     ));
 });

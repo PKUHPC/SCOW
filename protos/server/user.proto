@@ -110,37 +110,55 @@ message QueryIsUserInAccountResponse {
   bool result = 1;
 }
 
+
+message UserOperationResult{
+  bool success = 1;
+  string user_id = 2;
+}
+
+// if both exist user_id and user_ids, user_ids will overwrite user_id
 message UnblockUserInAccountRequest {
   string tenant_name = 1;
-  string user_id = 2;
+  optional string user_id = 2;
   string account_name = 3;
+  repeated string user_ids = 4;
 }
 
 // NOT_FOUND: user_id or account_name is not found.
 // FAILED_PRECONDITION: user is already unblocked
 message UnblockUserInAccountResponse {
+  bool success = 1;
+  repeated UserOperationResult results = 2;
 }
 
+// if both exist user_id and user_ids, user_ids will overwrite user_id
 message BlockUserInAccountRequest {
   string tenant_name = 1;
-  string user_id = 2;
+  optional string user_id = 2;
   string account_name = 3;
+  repeated string user_ids = 4;
 }
 
 // NOT_FOUND: user_id or account_name is not found.
 // FAILED_PRECONDITION: user is already blocked
 message BlockUserInAccountResponse {
+  bool success = 1;
+  repeated UserOperationResult results = 2;
 }
 
+// if both exist user_id and user_ids, user_ids will overwrite user_id
 message RemoveUserFromAccountRequest {
   string tenant_name = 1;
-  string user_id = 2;
+  optional string user_id = 2;
   string account_name = 3;
+  repeated string user_ids = 4;
 }
 
 // NOT_FOUND: user_id is not found.
 // OUT_OF_RANGE: user is the owner of the account
 message RemoveUserFromAccountResponse {
+  bool success = 1;
+  repeated UserOperationResult results = 2;
 }
 
 message AddUserToAccountRequest {

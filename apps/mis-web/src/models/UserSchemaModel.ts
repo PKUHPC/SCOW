@@ -146,8 +146,8 @@ export const AccountUserInfo = Type.Object({
   storageQuotas: Type.Record(Type.String(), Type.Number()),
   jobChargeLimit:Type.Optional(Money),
   usedJobChargeLimit: Type.Optional(Money),
-  userStateInAccount: Type.Optional(Type.Enum(UserStateInAccount)),
-  displayedUserState: Type.Optional(Type.Enum(DisplayedUserState)),
+  userStateInAccount: Type.Enum(UserStateInAccount),
+  displayedUserState: Type.Enum(DisplayedUserState),
 });
 export type AccountUserInfo = Static<typeof AccountUserInfo>;
 

@@ -328,8 +328,9 @@ export const mockApi: MockApi<typeof api> = {
   setFetchState: async () => null,
   fetchJobs: async () => ({ newJobsCount: 200 }),
 
-  cancelJobChargeLimit: async () => null,
-  setJobChargeLimit: async () => null,
+  cancelJobChargeLimit: async () => ({ success: true, results: []}),
+
+  setJobChargeLimit: async () => ({ success: true, results: []}),
 
   getRunningJobs: async () => ({ results: [runningJob]}),
 
@@ -434,8 +435,8 @@ export const mockApi: MockApi<typeof api> = {
       return null;
     }
   },
-  blockUserInAccount: async () => ({ executed: true }),
-  unblockUserInAccount: async () => ({ executed: true }),
+  blockUserInAccount: async () => ({ success: true }),
+  unblockUserInAccount: async () => ({ success: true }),
   blockAccount: async () => ({ executed: true }),
   unblockAccount: async () => ({ executed: true }),
   setBlockThreshold: async () => ({ executed: true }),
@@ -469,7 +470,7 @@ export const mockApi: MockApi<typeof api> = {
     schedule: "0 4 * * *",
   }),
   setSyncBlockStatusState: async () => null,
-  removeUserFromAccount: async () => null,
+  removeUserFromAccount: async () => ({ success: true, results: []}),
   setAdmin: async () => ({ executed: true }),
   unsetAdmin: async () => ({ executed: false }),
   queryStorageUsage: async () => ({ result: 10 }),

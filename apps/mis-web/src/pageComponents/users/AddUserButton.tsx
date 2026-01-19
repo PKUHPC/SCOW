@@ -113,12 +113,13 @@ interface Props {
   accountName: string;
   refresh: () => void;
   token: string;
+  disabled?: boolean;
   // 添加用户不存在时是否可以创建用户
   canCreateUserIfNotExist?: boolean;
 }
 
-export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token, canCreateUserIfNotExist = true }) => {
-
+export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
+  disabled, canCreateUserIfNotExist = true }) => {
 
   const t = useI18nTranslateToString();
 
@@ -271,7 +272,12 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token, ca
           setNewUserInfo(undefined);
         }}
       />
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalShow(true)} disabled={isButtonDisabled()}>
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => setModalShow(true)}
+        disabled={disabled || isButtonDisabled()}
+      >
         {t(p("addUser"))}
       </Button>
     </>

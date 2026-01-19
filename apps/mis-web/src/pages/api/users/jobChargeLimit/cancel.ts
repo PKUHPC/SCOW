@@ -17,22 +17,33 @@ export const CancelJobChargeLimitSchema = typeboxRouteSchema({
 
   query: Type.Object({
     accountName: Type.String(),
-    userId: Type.String(),
+    userIds: Type.Array(Type.String()),
     unblock: Type.Optional(Type.Boolean()),
   }),
 
   responses: {
-    204: Type.Null(),
+    200: Type.Object({
+      success: Type.Boolean(),
+      results: Type.Array(
+        Type.Object({
+          success: Type.Boolean(),
+          userId: Type.String(),
+        }),
+      ),
+    }),
     // 用户不存在，或者用户没有设置限制
     404: Type.Null(),
+    // userIds 或 userId 不能为空
+    400: Type.Null(),
     // 有正在进行的同步账户用户时，防止与因限额取消可能发生解封用户的冲突
     409: Type.Null(),
+    500: Type.Object({ message: Type.String() }),
   },
 });
 
 export default route(CancelJobChargeLimitSchema, async (req, res) => {
 
-  const { accountName, userId, unblock } = req.query;
+  const { accountName, userIds, unblock } = req.query;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
@@ -47,28 +58,46 @@ export default route(CancelJobChargeLimitSchema, async (req, res) => {
 
   const client = getClient(JobChargeLimitServiceClient);
 
-  const logInfo = {
-    operatorUserId: info.identityId,
-    operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.accountUnsetChargeLimit,
-    operationTypePayload:{
-      accountName, userId,
-    },
-  };
+  const logInfos = userIds.map((userId) => {
+    return {
+      operatorUserId: info.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.accountUnsetChargeLimit,
+      operationTypePayload:{
+        accountName, userId,
+      },
+    };
+  });
 
   return await asyncClientCall(client, "cancelJobChargeLimit", {
     tenantName: info.tenant,
-    accountName, userId,
+    accountName, userIds,
     unblock,
   })
-    .then(async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 204: null };
+    .then(async (res) => {
+      if (res.success) {
+        logInfos.forEach(async (logInfo) => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+        });
+      } else {
+        logInfos.forEach(async (logInfo) => {
+          if (res.results?.find((f) => f.success)) {
+            await callLog(logInfo, OperationResult.SUCCESS);
+          } else {
+            await callLog(logInfo, OperationResult.FAIL);
+          }
+        });
+      }
+      return { 200: res };
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
+      [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
       [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
     },
-    async () => await callLog(logInfo, OperationResult.FAIL),
+    async () => logInfos.forEach(async (logInfo) => {
+      await callLog(logInfo, OperationResult.FAIL);
+    }),
     ));
 });

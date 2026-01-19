@@ -18,23 +18,32 @@ export const SetJobChargeLimitSchema = typeboxRouteSchema({
 
   body: Type.Object({
     accountName: Type.String(),
-    userId: Type.String(),
+    userIds: Type.Array(Type.String()),
     limit: Type.Number(),
   }),
 
   responses: {
-    204: Type.Null(),
+    200: Type.Object({
+      success: Type.Boolean(),
+      results: Type.Array(
+        Type.Object({
+          success: Type.Boolean(),
+          userId: Type.String(),
+        }),
+      ),
+    }),
     // 用户不存在
     404: Type.Null(),
     400: Type.Object({ code: Type.Literal("INVALID_LIMIT_DATA") }),
     // 有正在进行的同步账户用户时，防止与因限额改变可能发生封锁用户或解封用户的冲突
     409: Type.Null(),
+    500: Type.Object({ message: Type.String() }),
   },
 });
 
 export default route(SetJobChargeLimitSchema, async (req, res) => {
 
-  const { accountName, userId, limit } = req.body;
+  const { accountName, userIds, limit } = req.body;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
@@ -49,28 +58,46 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
 
   const client = getClient(JobChargeLimitServiceClient);
 
-  const logInfo = {
-    operatorUserId: info.identityId,
-    operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.accountSetChargeLimit,
-    operationTypePayload:{
-      accountName, userId, limit: numberToMoney(limit),
-    },
-  };
+  const logInfos = userIds.map((userId) => {
+    return {
+      operatorUserId: info.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.accountSetChargeLimit,
+      operationTypePayload:{
+        accountName, userId, limit: numberToMoney(limit),
+      },
+    };
+  });
 
   return await asyncClientCall(client, "setJobChargeLimit", {
     tenantName: info.tenant,
-    accountName, userId, limit: numberToMoney(limit),
+    accountName, userIds, limit: numberToMoney(limit),
   })
-    .then(async () => {
-      await callLog(logInfo, OperationResult.SUCCESS);
-      return { 204: null };
+    .then(async (res) => {
+      if (res.success) {
+        logInfos.forEach(async (logInfo) => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+        });
+      } else {
+        logInfos.forEach(async (logInfo) => {
+          if (res.results?.find((f) => f.success)) {
+            await callLog(logInfo, OperationResult.SUCCESS);
+          } else {
+            await callLog(logInfo, OperationResult.FAIL);
+          }
+        });
+      }
+
+      return { 200: res };
     })
     .catch(handlegRPCError({
       [Status.NOT_FOUND]: () => ({ 404: null }),
       [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_LIMIT_DATA" as const } }),
       [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
     },
-    async () => await callLog(logInfo, OperationResult.FAIL),
+    async () => logInfos.forEach(async (logInfo) => {
+      await callLog(logInfo, OperationResult.FAIL);
+    }),
     ));
 });
