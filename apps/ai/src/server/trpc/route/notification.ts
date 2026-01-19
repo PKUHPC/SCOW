@@ -1,6 +1,7 @@
 import { ServiceError } from "@grpc/grpc-js";
 import { getNotificationNodeClient } from "@scow/lib-notification/build/index";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { AnyJson } from "@scow/lib-web/build/utils/type";
 import { NoticeType, ReadStatus } from "@scow/notification-protos/build/message_common_pb";
 import { TRPCError } from "@trpc/server";
 import { getUserInfo } from "src/server/auth/server";
@@ -11,13 +12,6 @@ import { authProcedure } from "src/server/trpc/procedure/base";
 import { logger } from "src/server/utils/logger";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
-
-const MetadataMapSchema = z.record(z.string(), z.union([
-  z.string(),
-  z.number(),
-  z.boolean(),
-  z.null(),
-]));
 
 const TemplateSchema = z.object({
   default: z.string(),
@@ -31,6 +25,18 @@ const TemplateSchema = z.object({
   pt: z.string(),
   ru: z.string(),
 });
+
+export const AnyJsonSchema: z.ZodType<AnyJson> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(AnyJsonSchema),
+    z.record(z.string(), AnyJsonSchema),
+  ]),
+);
+const MetadataMapSchema = z.record(z.string(), AnyJsonSchema);
 
 const MessageTypeSchema = z.object({
   type: z.string(),

@@ -3,17 +3,13 @@ import { getNotificationNodeClient } from "@scow/lib-notification/build/index";
 import { NoticeType, ReadStatus } from "@scow/notification-protos/build/message_common_pb";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
+import { AnyJsonSchema } from "src/models/type";
 import { publicConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
 export const MetadataMap = Type.Record(
   Type.String(),
-  Type.Union([
-    Type.String(),
-    Type.Number(),
-    Type.Boolean(),
-    Type.Null(),
-  ]),
+  AnyJsonSchema,
 );
 export type MetadataMapType = Static<typeof MetadataMap>;
 
@@ -39,7 +35,7 @@ export const Message = Type.Object({
     category: Type.String(),
     categoryTemplate: Type.Optional(Template),
   })),
-  metadata: Type.Optional(Type.Record(Type.String(), Type.Any())),
+  metadata: Type.Optional(MetadataMap),
   createdAt: Type.String(),
   updatedAt: Type.String(),
 });
