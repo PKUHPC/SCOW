@@ -174,24 +174,6 @@ jobs:
           echo "ref_type=${ref_type}" >> $GITHUB_OUTPUT
           echo "Target directory: ${target}"
 
-      - name: Upload CLI to file server
-        run: |
-          target_dir="/data/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}"
-
-          echo "Uploading to target directory: ${target_dir}"
-          mkdir -p ~/.ssh
-          echo "${{ secrets.FILE_SERVER_PRIVATE_KEY }}" > ~/.ssh/id_rsa_file_server
-          chmod 600 ~/.ssh/id_rsa_file_server
-          ssh-keyscan "${{ vars.FILE_SERVER_HOST }}" >> ~/.ssh/known_hosts
-
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}" "mkdir -p ${target_dir}"
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server apps/cli/exe/cli-x64 "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-x64
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server apps/cli/exe/cli-arm64 "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-arm64
-
-          echo "✅ File uploaded successfully!"
-          echo "📁 AMD64 Available at: http://${{ vars.FILE_SERVER_HOST }}/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}/scow-cli-x64
-          echo "📁 ARM64 Available at: http://${{ vars.FILE_SERVER_HOST }}/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}/scow-cli-arm64
-
       - name: Upload CLI to ccrepo
         run: |
           target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scow-cli/${{ steps.target.outputs.target }}"
@@ -337,47 +319,6 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - name: Determine target directory
-        id: target
-        run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
-            target="master"
-            ref_type="branch"
-          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
-            tag_name=${GITHUB_REF#refs/tags/}
-            target="${tag_name}"
-            ref_type="tag"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            target="pr-${{ github.event.number }}"
-            ref_type="pr"
-          fi
-
-          echo "target=${target}" >> $GITHUB_OUTPUT
-          echo "ref_type=${ref_type}" >> $GITHUB_OUTPUT
-          echo "Target directory: ${target}"
-
-      - name: Download CLI from file server
-        run: |
-          target_dir="/data/file/packages/PKUHPC/private-scow/${{ steps.target.outputs.target }}"
-
-          mkdir -p ~/.ssh
-          echo "${{ secrets.FILE_SERVER_PRIVATE_KEY }}" > ~/.ssh/id_rsa_file_server
-          chmod 600 ~/.ssh/id_rsa_file_server
-          ssh-keyscan "${{ vars.FILE_SERVER_HOST }}" >> ~/.ssh/known_hosts
-
-          echo "Downloading CLIs from file-server to release/"
-
-          mkdir release
-
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-x64 release/scow-cli-x64
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}":${target_dir}/scow-cli-arm64 release/scow-cli-arm64
-
-          echo "File downloaded successfully from ${target_dir}"
-
-      - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: release
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -385,9 +326,6 @@ jobs:
           body_path: ${{ !startsWith(github.ref_name, 'ai-') && format('changelogs/{0}.md', github.ref_name) || null }}
           generate_release_notes: ${{ startsWith(github.ref_name, 'ai-') }}
           prerelease: ${{ startsWith(github.ref_name, 'ai-') }}
-          files: |
-            release/scow-cli/cli-x64
-            release/scow-cli/cli-arm64
 
       - name: Send Notification Request
         run: |
@@ -403,26 +341,6 @@ jobs:
     if: github.event_name == 'pull_request_target' && github.event.action == 'closed'
 
     steps:
-      - name: Cleanup merged PR directory
-        run: |
-          target_dir="/data/file/packages/PKUHPC/private-scow/pr-${{ github.event.number }}"
-
-          mkdir -p ~/.ssh
-          echo "${{ secrets.FILE_SERVER_PRIVATE_KEY }}" > ~/.ssh/id_rsa_file_server
-          chmod 600 ~/.ssh/id_rsa_file_server
-          ssh-keyscan "${{ vars.FILE_SERVER_HOST }}" >> ~/.ssh/known_hosts
-
-          echo "Cleaning up merged PR directory: ${target_dir}"
-
-          # Check if directory exists before trying to remove it
-          if ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}" "test -d ${target_dir}"; then
-            # Remove the PR directory when merged
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_file_server "${{ secrets.FILE_SERVER_USER }}"@"${{ vars.FILE_SERVER_HOST }}" "rm -rf ${target_dir}"
-            echo "✅ Successfully cleaned up directory: ${target_dir}"
-          else
-            echo "ℹ️  Directory ${target_dir} does not exist, nothing to clean up"
-          fi
-
       - name: Remove CLI from PR directory
         run: |
           target_url="https://ccrepo.pku.edu.cn/repository/scowbin/scow-cli/pr-${{ github.event.number }}"
