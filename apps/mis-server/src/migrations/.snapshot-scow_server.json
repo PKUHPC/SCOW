@@ -1328,6 +1328,139 @@
     },
     {
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "unsigned": true,
+          "autoincrement": true,
+          "primary": true,
+          "nullable": false,
+          "length": null,
+          "mappedType": "integer"
+        },
+        "cluster": {
+          "name": "cluster",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "comment": "集群ID",
+          "mappedType": "string"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": null,
+          "comment": "作业ID",
+          "mappedType": "integer"
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "DATETIME(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "comment": "开始时间",
+          "mappedType": "datetime"
+        },
+        "tenant_billing_item_id": {
+          "name": "tenant_billing_item_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "default": "'UNKNOWN'",
+          "comment": "平台计费项ID",
+          "mappedType": "string"
+        },
+        "account_billing_item_id": {
+          "name": "account_billing_item_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 255,
+          "default": "'UNKNOWN'",
+          "comment": "租户计费项ID",
+          "mappedType": "string"
+        },
+        "tenant_price": {
+          "name": "tenant_price",
+          "type": "DECIMAL(19,4)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "precision": 19,
+          "scale": 4,
+          "default": "0.0000",
+          "mappedType": "decimal"
+        },
+        "account_price": {
+          "name": "account_price",
+          "type": "DECIMAL(19,4)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "precision": 19,
+          "scale": 4,
+          "default": "0.0000",
+          "mappedType": "decimal"
+        },
+        "last_charge_time": {
+          "name": "last_charge_time",
+          "type": "DATETIME(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 6,
+          "comment": "上一次计费时间",
+          "mappedType": "datetime"
+        }
+      },
+      "name": "running_job_charge_record",
+      "indexes": [
+        {
+          "keyName": "query",
+          "columnNames": [
+            "cluster",
+            "job_id"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "PRIMARY",
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [],
+      "foreignKeys": {},
+      "nativeEnums": {}
+    },
+    {
+      "columns": {
         "key": {
           "name": "key",
           "type": "varchar(255)",

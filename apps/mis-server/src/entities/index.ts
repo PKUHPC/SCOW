@@ -10,6 +10,7 @@ import { JobPriceChange } from "src/entities/JobPriceChange";
 import { JobPriceItem } from "src/entities/JobPriceItem";
 import { PayRecord } from "src/entities/PayRecord";
 import { QueryCache } from "src/entities/QueryCache";
+import { RunningJobChargeRecord } from "src/entities/RunningJobChargeRecord";
 import { SystemState } from "src/entities/SystemState";
 import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
@@ -43,4 +44,5 @@ export const entities = [
   AccountAppBlacklist,
   TenantAppBlacklist,
   TenantDefaultAppRemovedList,
+  RunningJobChargeRecord,
 ];

@@ -96,7 +96,6 @@ export async function calculateJobPrice(
     const time = new Decimal(info.timeUsed).div(3600); // 秒到小时
 
     const amountFn = amountStrategyFuncs[priceItem.amount] || customAmountStrategyFuncs[priceItem.amount];
-
     let amount = amountFn ? await amountFn(info, partition) : new Decimal(0);
 
     if (!amountFn || isNaN(amount)) {
@@ -119,15 +118,41 @@ export async function calculateJobPrice(
 
     return new Decimal(0);
   }
-  const accountBase = getPriceItem(path, info.tenant);
-  const tenantBase = getPriceItem(path);
 
-  const accountPrice = await calculatePrice(accountBase, partitionInfo);
-  const tenantPrice = await calculatePrice(tenantBase, partitionInfo);
+  // 增加对计算费用时的容错，如果因为作业计费项等原因计算价格失败，设置为0，保证作业能被记录到scow的数据库中
+  let accountPrice = Decimal(0);
+  let tenantPrice = Decimal(0);
+  let accountBaseItemId: string = "";
+  let tenantBaseItemId: string = "";
+  try {
+    const accountBase = getPriceItem(path, info.submitTime, info.tenant);
+    accountBaseItemId = accountBase.itemId;
+    accountPrice = await calculatePrice(accountBase, partitionInfo);
+  } catch (error) {
+    logger.error(
+      "Failed to calculate account price for job %s in cluster %s. error: %o",
+      info.jobId,
+      info.cluster,
+      error,
+    );
+  }
+
+  try {
+    const tenantBase = getPriceItem(path, info.submitTime, undefined);
+    tenantBaseItemId = tenantBase.itemId;
+    tenantPrice = await calculatePrice(tenantBase, partitionInfo);
+  } catch (error) {
+    logger.error(
+      "Failed to calculate tenant price for job %s in cluster %s. error: %o",
+      info.jobId,
+      info.cluster,
+      error,
+    );
+  }
 
   return {
-    tenant: { billingItemId: tenantBase.itemId, price: tenantPrice },
-    account: { billingItemId: accountBase.itemId, price: accountPrice },
+    tenant: { billingItemId: tenantBaseItemId, price: tenantPrice },
+    account: { billingItemId: accountBaseItemId, price: accountPrice },
   };
 }
 

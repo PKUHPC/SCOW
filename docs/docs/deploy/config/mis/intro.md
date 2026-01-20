@@ -61,7 +61,7 @@ db:
   password: mysqlrootpassword
   dbName: scow
 
-# 获取作业相关配置
+# 同步作业相关配置
 fetchJobs:
   # 从哪个时间点开始获取作业
   # (日期格式ISO 8601,且需在末尾添加时区，推荐使用协调世界时(UTC))
@@ -76,6 +76,12 @@ fetchJobs:
     enabled: true
     # 周期的cron表达式
     cron: "*/10 * * * *"
+
+  # 拉取已结束作业时，结束时间基于当前scow节点时间向前的偏移量
+  endTimeDelaySeconds: 5
+
+  # 正在运行中作业计费的最小间隔
+  runningJobBillingMinDurationHours: 1
 
 # 周期性同步scow与调度器(如slurm)账户用户封锁状态的配置
 periodicSyncUserAccountBlockStatus:

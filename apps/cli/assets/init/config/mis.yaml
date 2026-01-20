@@ -13,6 +13,8 @@ fetchJobs:
     enabled: true
     # 周期的cron表达式
     cron: "*/10 * * * *"
+  endTimeDelaySeconds: 5
+  runningJobBillingMinDurationHours: 1
 
 # 预定义的充值类型
 predefinedChargingTypes:

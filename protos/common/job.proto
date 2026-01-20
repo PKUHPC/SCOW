@@ -13,6 +13,9 @@
 syntax = "proto3";
 
 package scow.common;
+import "google/protobuf/timestamp.proto";
+
+import "common/money.proto";
 
 message RunningJob {
   string job_id = 1;
@@ -47,4 +50,12 @@ message RunningJob {
   optional string reason = 22;
   optional string start_time = 23;
   optional string end_time = 24;
+
+  common.Money account_price = 25;
+  common.Money tenant_price = 26;
+  optional ChargingPeriod charging_period = 27;
+  message ChargingPeriod {
+    google.protobuf.Timestamp start_time = 1;
+    google.protobuf.Timestamp end_time = 2;
+  }
 }

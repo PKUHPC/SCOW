@@ -20,6 +20,7 @@ import { formatTime, RunningJobInfo } from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 import { getAiExceptionJobI18nReason } from "src/utils/form";
+import { nullableMoneyToString } from "src/utils/money";
 
 interface Props {
   open: boolean;
@@ -62,6 +63,9 @@ export const RunningJobDrawer: React.FC<Props> = ({
     [t(pCommon("reason")), "reason", getAiExceptionJobI18nReason],
     [t(p("timeLimit")), "timeLimit"],
     [t(pCommon("timeUsed")), "runningTime"],
+    [t(p("accountPrice")), "accountPrice", (v) => nullableMoneyToString(v)],
+    [t(p("tenantPrice")), "tenantPrice", (v) => nullableMoneyToString(v)],
+    [t(p("chargingPeriod")), "chargingPeriod"],
     [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submissionTime))],
   ] as ([string, keyof RunningJobInfo] | [string, keyof JobInfo, (v: any, r: RunningJobInfo) => string])[];
 
@@ -79,18 +83,29 @@ export const RunningJobDrawer: React.FC<Props> = ({
             column={1}
             bordered
             size="small"
+            labelStyle={{ whiteSpace: "nowrap" }}
           >
             {drawerItems.map((([label, key, format]) => (
               <Descriptions.Item key={item.jobId} label={label}>
-                {format ?
-                  // 如果是集群项展示，则根据当前语言id获取集群名称
-                  (key === "cluster"
-                    ? getClusterName(item[key].id, languageId, publicConfigClusters)
-                    // 如果原因展示，则获取可以展示国际化的AI异常状态原因
-                    : key === "reason" && item[key] !== undefined
-                      ? getAiExceptionJobI18nReason(item[key], t)
-                      : format(item[key], item))
-                  : item[key]}
+                {(() => {
+                  const value = format
+                    ? (key === "cluster"
+                      ? getClusterName(item[key].id, languageId, publicConfigClusters)
+                      : key === "reason" && item[key] !== undefined
+                        ? getAiExceptionJobI18nReason(item[key], t)
+                        : format(item[key], item))
+                    : item[key];
+
+                  if (key === "chargingPeriod") {
+                    const period = item.chargingPeriod;
+                    const text = period?.startTime && period?.endTime ?
+                      `${new Date(period.startTime).toLocaleString()} ~
+                    ${new Date(period.endTime).toLocaleString()}` : "-";
+                    return <span style={{ whiteSpace: "pre-line" }}>{text}</span>;
+                  }
+
+                  return value;
+                })()}
               </Descriptions.Item>
             )))}
           </Descriptions>

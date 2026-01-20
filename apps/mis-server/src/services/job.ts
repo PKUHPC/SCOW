@@ -15,13 +15,14 @@ import {
 } from "@scow/protos/build/server/job";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
-import { createPriceMap, getActiveBillingItems } from "src/bl/PriceMap";
+import { createPriceMap, getBillingItems } from "src/bl/PriceMap";
 import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
 import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
 import { JobPriceChange } from "src/entities/JobPriceChange";
 import { AmountStrategy, JobPriceItem } from "src/entities/JobPriceItem";
+import { RunningJobChargeRecord } from "src/entities/RunningJobChargeRecord";
 import { Tenant } from "src/entities/Tenant";
 import { getJobTotalCountCached, queryWithCache } from "src/utils/cache";
 import { getJobUserAndAccountOwnerDetailsMap, JobUserAndAccountOwnerDetailsMap, toGrpc } from "src/utils/job";
@@ -320,7 +321,33 @@ export const jobServiceServer = plugin((server) => {
         },
       );
 
-      return [{ jobs: reply.map(jobInfoToRunningjob) }];
+      const runningJobIds = reply.map((job) => Number(job.jobId)).filter((x) => !Number.isNaN(x));
+
+      const runningJobChargeRecordMap = runningJobIds.length > 0
+        ? (await em.find(RunningJobChargeRecord, { cluster, jobId: { $in: runningJobIds } }))
+          .reduce((map, record) => {
+            map.set(record.jobId, record);
+            return map;
+          }, new Map<number, RunningJobChargeRecord>())
+        : new Map<number, RunningJobChargeRecord>();
+
+      return [{
+        jobs: reply.map((job) => {
+          const runningJob = jobInfoToRunningjob(job);
+          const chargeRecord = runningJobChargeRecordMap.get(Number(job.jobId));
+
+          if (chargeRecord) {
+            runningJob.accountPrice = decimalToMoney(chargeRecord.accountPrice);
+            runningJob.tenantPrice = decimalToMoney(chargeRecord.tenantPrice);
+            runningJob.chargingPeriod = {
+              startTime: chargeRecord.startTime.toISOString(),
+              endTime: chargeRecord.lastChargeTime.toISOString(),
+            };
+          }
+
+          return runningJob;
+        }),
+      }];
 
     },
 
@@ -387,7 +414,7 @@ export const jobServiceServer = plugin((server) => {
         amountStrategy: item.amount,
       } as JobBillingItem);
 
-      const { defaultPrices, tenantSpecificPrices } = getActiveBillingItems(billingItems);
+      const { defaultPrices, tenantSpecificPrices } = getBillingItems(billingItems);
 
       const activePrices = tenantName
         ? Object.values({ ...defaultPrices, ...tenantSpecificPrices[tenantName] })

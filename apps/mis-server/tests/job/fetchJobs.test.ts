@@ -18,6 +18,7 @@ import { setJobCharge } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { emptyJobPriceInfo } from "src/bl/jobPrice";
 import { JobInfo } from "src/entities/JobInfo";
+import { JobPriceItem } from "src/entities/JobPriceItem";
 import { UserStatus } from "src/entities/UserAccount";
 import { createPriceItems } from "src/tasks/createBillingItems";
 import { fetchJobs } from "src/tasks/fetch";
@@ -41,6 +42,9 @@ beforeEach(async () => {
 
   await createPriceItems(initialEm, server.logger);
 
+  const priceTtems = await initialEm.find(JobPriceItem,{});
+  priceTtems.map((i) => i.createTime = new Date("2020-01-13T03:20:26.715Z"));
+  await initialEm.persistAndFlush(priceTtems);
   data = await insertInitialData(initialEm);
 
 });

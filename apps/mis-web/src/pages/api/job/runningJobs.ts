@@ -16,6 +16,7 @@ import { GetRunningJobsRequest, JobServiceClient } from "@scow/protos/build/serv
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { TenantRole } from "src/models/User";
+import { Money } from "src/models/UserSchemaModel";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
@@ -51,6 +52,12 @@ export const RunningJob = Type.Object({
   nodelist: Type.Optional(Type.String()),
   reason: Type.Optional(Type.String()),
   submitTime: Type.String(),
+  accountPrice: Type.Optional(Money),
+  tenantPrice: Type.Optional(Money),
+  chargingPeriod: Type.Optional(Type.Object({
+    startTime: Type.Optional(Type.String()),
+    endTime: Type.Optional(Type.String()),
+  })),
 });
 export type RunningJob = Static<typeof RunningJob>;
 

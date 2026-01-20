@@ -34,7 +34,7 @@ export const jobInfoToRunningjob = (jobInfo: JobInfo): RunningJob => {
     timeLimit: jobInfo.timeLimitMinutes ? formatTime(jobInfo.timeLimitMinutes * 60 * 1000) : "",
     workingDir: jobInfo.workingDirectory,
     memReq: jobInfo.memReqMb,
-    memAlloc: jobInfo.memReqMb || 0,
+    memAlloc: jobInfo.memAllocMb || 0,
     cpusAlloc: jobInfo.cpusAlloc || 0,
     nodesAlloc: jobInfo.nodesAlloc || 0,
     gpusAlloc: jobInfo.gpusAlloc || 0,

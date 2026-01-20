@@ -36,17 +36,21 @@ export interface JobInfo {
   memAlloc: number;
   account: string;
   tenant: string;
+  submitTime: Date;
 }
 
 export interface PriceMap {
   // path: [cluster, partition, qos]
-  getPriceItem(path: [string, string, string], tenantName?: string): JobPriceItem;
+  getPriceItem(path: [string, string, string], submitTime: Date, tenantName?: string): JobPriceItem;
   getPriceMap(tenantName?: string): Record<string, JobPriceItem>;
 
   calculatePrice(info: JobInfo): Promise<JobPriceInfo>;
 
   getMissingDefaultPriceItems(): string[];
 }
+
+type PriceItemsByPath = Record<string, JobPriceItem[]>;
+type TenantSpecificPriceItems = Record<string, PriceItemsByPath>;
 
 
 export async function createPriceMap(
@@ -61,26 +65,53 @@ export async function createPriceMap(
     orderBy: { createTime: "ASC" },
   });
 
-  const { defaultPrices, tenantSpecificPrices } = getActiveBillingItems(billingItems);
+  const {
+    defaultPrices,
+    tenantSpecificPrices,
+    defaultPricesHistory,
+    tenantSpecificPricesHistory,
+  } = getBillingItems(billingItems);
 
   logger.info("Default Price Map: %o", defaultPrices);
   logger.info("Tenant specific prices %o", tenantSpecificPrices);
 
   checkCustomAmountStrategy(defaultPrices, tenantSpecificPrices);
 
-  const getPriceItem = (path: [string, string, string], tenantName?: string) => {
+  const findPriceItemForPath = (
+    items: PriceItemsByPath | undefined,
+    pathKey: string,
+    submitTime: Date,
+  ): JobPriceItem | undefined => {
+    if (!items) { return undefined; }
+    const priceHistory = items[pathKey];
+    if (!priceHistory || priceHistory.length === 0) { return undefined; }
+    if (!submitTime) {
+      return priceHistory[priceHistory.length - 1];
+    }
+    const submitTimestamp = submitTime.getTime();
+    for (let i = priceHistory.length - 1; i >= 0; i--) {
+      if (priceHistory[i].createTime.getTime() <= submitTimestamp) {
+        return priceHistory[i];
+      }
+    }
+    return undefined;
+  };
+
+  const getPriceItem = (path: [string, string, string], submitTime: Date, tenantName?: string) => {
 
     const [cluster, partition, qos] = path;
+    const pathWithQos = [cluster, partition, qos].join(".");
+    const pathWithoutQos = [cluster, partition].join(".");
 
-    if (tenantName && tenantName in tenantSpecificPrices) {
-      const specific = tenantSpecificPrices[tenantName][[cluster, partition, qos].join(".")] ||
-        tenantSpecificPrices[tenantName][[cluster, partition].join(".")];
+    if (tenantName && tenantName in tenantSpecificPricesHistory) {
+      const specific = findPriceItemForPath(tenantSpecificPricesHistory[tenantName], pathWithQos, submitTime) ||
+        findPriceItemForPath(tenantSpecificPricesHistory[tenantName], pathWithoutQos, submitTime);
 
       if (specific) { return specific; }
     }
 
-    const price = defaultPrices[[cluster, partition, qos].join(".")] ||
-      defaultPrices[[cluster, partition].join(".")];
+    const price = findPriceItemForPath(defaultPricesHistory, pathWithQos, submitTime) ||
+      findPriceItemForPath(defaultPricesHistory, pathWithoutQos, submitTime);
 
     if (!price) {
       throw new Error(`Unknown cluster ${cluster} partition ${partition} qos ${qos}`);
@@ -165,25 +196,46 @@ export async function createPriceMap(
   };
 }
 
-export function getActiveBillingItems(items: JobPriceItem[]) {
-  // { [cluster.partition[.qos]]: price }
-  const defaultPrices: Record<string, JobPriceItem> = {};
-  // { tenantName: { [cluster.partition[.qos] ]: price }}
-  const tenantSpecificPrices: Record<string, Record<string, JobPriceItem>> = {};
+export function getBillingItems(items: JobPriceItem[]) {
+  const defaultPricesHistory: PriceItemsByPath = {};
+  const tenantSpecificPricesHistory: TenantSpecificPriceItems = {};
 
   items.forEach((item) => {
+    const pathKey = item.path.join(".");
     if (!item.tenant) {
-      defaultPrices[item.path.join(".")] = item;
+      if (!defaultPricesHistory[pathKey]) {
+        defaultPricesHistory[pathKey] = [];
+      }
+      defaultPricesHistory[pathKey].push(item);
     } else {
       const tenantName = item.tenant.getProperty("name");
-      if (!(tenantName in tenantSpecificPrices)) {
-        tenantSpecificPrices[tenantName] = {};
+      if (!(tenantName in tenantSpecificPricesHistory)) {
+        tenantSpecificPricesHistory[tenantName] = {};
       }
-      tenantSpecificPrices[tenantName][item.path.join(".")] = item;
+      if (!(pathKey in tenantSpecificPricesHistory[tenantName])) {
+        tenantSpecificPricesHistory[tenantName][pathKey] = [];
+      }
+      tenantSpecificPricesHistory[tenantName][pathKey].push(item);
     }
   });
 
-  return { defaultPrices, tenantSpecificPrices };
+  const buildLatestMap = (itemsByPath: PriceItemsByPath): Record<string, JobPriceItem> => {
+    const result: Record<string, JobPriceItem> = {};
+    Object.entries(itemsByPath).forEach(([pathKey, history]) => {
+      if (history.length > 0) {
+        result[pathKey] = history[history.length - 1];
+      }
+    });
+    return result;
+  };
+
+  const defaultPrices = buildLatestMap(defaultPricesHistory);
+  const tenantSpecificPrices: Record<string, Record<string, JobPriceItem>> = {};
+  Object.entries(tenantSpecificPricesHistory).forEach(([tenant, priceHistory]) => {
+    tenantSpecificPrices[tenant] = buildLatestMap(priceHistory);
+  });
+
+  return { defaultPrices, tenantSpecificPrices, defaultPricesHistory, tenantSpecificPricesHistory };
 }
 
 // 检查用户使用的自定义计费id是否还存在配置文件中，对应的js文件是否能正常加载，如果不能，抛出异常并停止服务

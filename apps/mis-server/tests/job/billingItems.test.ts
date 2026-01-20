@@ -31,6 +31,10 @@ let orm: MikroORM<MySqlDriver>;
 let oldPriceItem: JobPriceItem;
 let client: JobServiceClient;
 
+const DEFAULT_ITEM_CREATE_TIME = "2021-01-01T00:00:00.000Z";
+const OLD_ITEM_CREATE_TIME = "2020-01-01T00:00:00.000Z";
+const FUTURE_ITEM_CREATE_TIME = "2024-01-01T00:00:00.000Z";
+
 beforeEach(async () => {
   server = await createServer();
   orm = server.ext.orm;
@@ -45,13 +49,19 @@ beforeEach(async () => {
 
   await createPriceItems(em, server.logger);
 
+  const currentItems = await em.find(JobPriceItem, {});
+  currentItems.forEach((item) => {
+    item.createTime = new Date(DEFAULT_ITEM_CREATE_TIME);
+  });
+  await em.flush();
+
   // insert an old price item
   oldPriceItem = new JobPriceItem({
     itemId: "HPC102", amount: AmountStrategy.CPUS_ALLOC,
     price: new Decimal("0.02"), path: ["hpc00", "C032M0128G", "low"],
   });
 
-  oldPriceItem.createTime = new Date(new Date().getTime() - 100000);
+  oldPriceItem.createTime = new Date(OLD_ITEM_CREATE_TIME);
 
   await em.persistAndFlush(oldPriceItem);
 
@@ -260,6 +270,7 @@ const calculatePrice = async (testData: typeof import("./testData.json")) => {
       timeUsed: t.elapsedSeconds,
       account: t.account,
       tenant: t.tenant,
+      submitTime: new Date(t.submitTime),
     });
     if (price.tenant?.price.toNumber() !== t.tenantPrice || price.account?.price.toNumber() !== t.accountPrice) {
       wrongPrices.push({
@@ -294,6 +305,52 @@ it.only("calculates job prices", async () => {
   await calculatePrice((await import("./testData.json")).default);
 });
 
+it("uses billing item active at submit time", async () => {
+  const em = orm.em.fork();
+
+  const newPriceItem = new JobPriceItem({
+    itemId: "HPC_NEW",
+    amount: AmountStrategy.CPUS_ALLOC,
+    price: new Decimal("0.5"),
+    path: ["hpc00", "C032M0128G", "low"],
+  });
+
+  newPriceItem.createTime = new Date(FUTURE_ITEM_CREATE_TIME);
+
+  await em.persistAndFlush(newPriceItem);
+
+  const priceMap = await createPriceMap(em.fork(), server.ext.clusters, server.logger);
+
+  const baseJob = {
+    jobId: 999,
+    cluster: "hpc00",
+    cpusAlloc: 32,
+    gpu: 0,
+    memAlloc: 124800,
+    memReq: 124800,
+    partition: "C032M0128G",
+    qos: "low",
+    timeUsed: 3600,
+    account: "hpca",
+    tenant: DEFAULT_TENANT_NAME,
+  };
+
+  const priceBeforeChange = await priceMap.calculatePrice({
+    ...baseJob,
+    submitTime: new Date("2022-06-01T00:00:00.000Z"),
+  });
+
+  const priceAfterChange = await priceMap.calculatePrice({
+    ...baseJob,
+    submitTime: new Date("2024-06-01T00:00:00.000Z"),
+  });
+
+  expect(priceBeforeChange.account?.billingItemId).toBe("HPC01");
+  expect(priceBeforeChange.tenant?.billingItemId).toBe("HPC01");
+  expect(priceAfterChange.account?.billingItemId).toBe(newPriceItem.itemId);
+  expect(priceAfterChange.tenant?.billingItemId).toBe(newPriceItem.itemId);
+});
+
 it("gets missing price items in platform scope", async () => {
   {
     const priceMap = await createPriceMap(orm.em.fork(), server.ext.clusters, server.logger);
@@ -317,6 +374,3 @@ it("gets missing price items in platform scope", async () => {
 
 
 }, 10000000);
-
-
-

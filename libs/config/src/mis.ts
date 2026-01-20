@@ -86,6 +86,16 @@ export const MisConfigSchema = Type.Object({
       enabled: Type.Boolean({ description:"是否默认打开", default: true }),
       cron: Type.String({ description: "获取信息的周期的cron表达式", default: "* * 1 * * *" }),
     }, { default: {} }),
+
+    endTimeDelaySeconds: Type.Number({
+      description: "拉取作业时，将作业的结束时间比当前时间提前多少秒，防止获取的作业信息不完整，默认为5秒",
+      default: 5,
+    }),
+
+    runningJobBillingMinDurationHours: Type.Number({
+      description: "正在运行中作业计费的最小间隔(单位小时)",
+      default: 1,
+    }),
   }, { default: {}, description: "获取作业功能的相关配置" }),
 
   periodicSyncUserAccountBlockStatus: Type.Optional(Type.Object({
