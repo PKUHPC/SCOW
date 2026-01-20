@@ -4,6 +4,7 @@ export * from "./app";
 export * from "./date";
 export * from "./job";
 export * from "./misCommon/appAuthorization";
+export * from "./misCommon/calculatePrice";
 export * from "./misCommon/clustersActivation";
 export * from "./misCommon/userAccount";
 export * from "./scheduleAdapter";

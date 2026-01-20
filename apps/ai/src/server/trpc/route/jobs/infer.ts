@@ -5,7 +5,7 @@ import { aiConfig } from "src/server/config/ai";
 import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -55,7 +55,10 @@ export const InferenceJobInputSchema = z.object({
   localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
   models: z.array(IdPrivateSchema).optional(),
-  mountPoints: z.array(z.string()).optional(),
+  mountPoints: z.array(z.object({
+    path:z.string(),
+    target:z.string(),
+  })).optional(),
   account: z.string(),
   partition: z.string().optional(),
   qos:z.string().optional(),
@@ -69,6 +72,10 @@ export const InferenceJobInputSchema = z.object({
   // 容器内服务端口
   containerServicePort:z.number(),
   envVariables:z.array(EnvVariableSchema).optional(),
+  privateImageRepositoryCredentials: z.object({
+    userName: z.string(),
+    password: z.string(),
+  }).optional(),
 });
 
 export type InferenceJobInput = z.infer<typeof InferenceJobInputSchema>;
@@ -120,7 +127,7 @@ procedure
         });
       }
 
-      const { clusterId, InferenceJobName , image, models, account, partition } = input;
+      const { clusterId, InferenceJobName , image, models, account, partition, mountPoints } = input;
 
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
 
@@ -130,6 +137,14 @@ procedure
           message: `The length of InferenceJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
         });
       }
+
+      if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Files or folders with non-UTF-8 names cannot be selected",
+        });
+      }
+
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);

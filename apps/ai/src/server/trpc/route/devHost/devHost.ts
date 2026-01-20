@@ -4,7 +4,7 @@ import { clusters } from "src/server/config/clusters";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
 import { checkClusterAvailable, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -17,7 +17,10 @@ export const CreateDevHostInputSchema = z.object({
   image: z.number().optional(),
   isImagePrivate: z.boolean().optional(),
   remoteImageUrl: z.string().optional(),
-  mountPoints: z.array(z.string()).optional(),
+  mountPoints: z.array(z.object({
+    path:z.string(),
+    target:z.string(),
+  })).optional(),
   account: z.string(),
   partition: z.string(),
   qos: z.string(),
@@ -25,6 +28,10 @@ export const CreateDevHostInputSchema = z.object({
   gpuCount: z.number().optional(),
   memory: z.number(),
   maxTimeMinutes: z.number(),
+  privateImageRepositoryCredentials: z.object({
+    userName: z.string(),
+    password: z.string(),
+  }).optional(),
 });
 
 export type CreateDevHostInput = z.infer<typeof CreateDevHostInputSchema>;
@@ -69,7 +76,7 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, devHostName, image, maxTimeMinutes } = input;
+      const { clusterId, devHostName, image, maxTimeMinutes,mountPoints } = input;
 
       const devHostConfig = clusters[clusterId]?.ai?.devHost;
       if (!devHostConfig?.enabled) {
@@ -100,6 +107,13 @@ procedure
             message: "The dev host running time cannot be 0",
           });
         }
+      }
+
+      if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Files or folders with non-UTF-8 names cannot be selected",
+        });
       }
 
       const userId = user.identityId;

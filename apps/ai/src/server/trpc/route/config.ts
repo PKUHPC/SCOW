@@ -168,6 +168,8 @@ export const PartitionSchema = z.object({
   memMb: z.number(),
   cores: z.number(),
   gpus: z.number(),
+  idleCores: z.number(),
+  idleGpus: z.number(),
   nodes: z.number(),
   qos: z.array(z.string()),
   comment: z.string().optional(),
@@ -176,11 +178,7 @@ export const PartitionSchema = z.object({
   maxAcceleratorsPerPod:z.number().optional(),
   gpuModel: z.string().optional(),
   acceleratorDescriptions: z.array(z.string()),
-});
-
-const ClusterConfigSchema = z.object({
-  schedulerName: z.string(),
-  partitions: z.array(PartitionSchema),
+  cpuModel: z.string().optional(),
 });
 
 const LoginNodeConfigSchema = z.union([
@@ -313,31 +311,6 @@ export const config = router({
         CLUSTERS_GRAFANA_CONFIG: clustersGrafanaConfig,
       };
     }),
-
-  getClusterConfig: authProcedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: "/config/cluster",
-        tags: ["config"],
-        summary: "clusterConfig",
-      },
-    })
-    .input(z.object({ clusterId: z.string() }))
-    .output(ClusterConfigSchema)
-    .query(async ({ input }) => {
-      const { clusterId } = input;
-
-      const client = getAdapterClient(clusterId);
-      if (!client) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message:`cluster ${clusterId} is not found`,
-        });
-      }
-      return await asyncClientCall(client.config, "getClusterConfig", {});
-    }),
-
   getScowClusterConfig: authProcedure
     .meta({
       openapi: {
@@ -407,7 +380,29 @@ export const config = router({
         accountName, userId: user.identityId,
       });
 
-      return partitions;
+      const reply = await asyncClientCall(client.config, "getClusterInfo", {
+        cluster: clusterId,
+      });
+
+      const idleMap = new Map<string, { idleCpuCount?: number; idleGpuCount?: number }>();
+      reply.partitions?.forEach((partition) => {
+        const key = (partition as any).partitionName ?? (partition as any).name;
+        if (key) {
+          idleMap.set(key, {
+            idleCpuCount: (partition as any).idleCpuCount,
+            idleGpuCount: (partition as any).idleGpuCount,
+          });
+        }
+      });
+
+      return partitions.map((partition) => {
+        const idle = idleMap.get(partition.name);
+        return {
+          ...partition,
+          idleCores: idle?.idleCpuCount ?? 0,
+          idleGpus: idle?.idleGpuCount ?? 0,
+        };
+      });
     }),
 
   getUiConfig: baseProcedure

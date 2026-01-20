@@ -14,7 +14,8 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { AccountStatusFilter, ListAccountsResponse } from "@scow/protos/build/portal/job";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
-import { GetUserInfoResponse, UserServiceClient, UserStatus } from "@scow/protos/build/server/user";
+import { GetUserInfoResponse, GetUsersByIdsResponse, UserServiceClient, UserStatus }
+  from "@scow/protos/build/server/user";
 
 import { getClientFn } from "../api";
 
@@ -158,4 +159,22 @@ export const libCheckUserAccountPermission = async (
   // 无statusFilter默认为仅查询未封锁
   return statusFilter === AccountStatusFilter.ALL ? totalCount === 1 :
     statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedCount === 1 : unblockedCount === 1;
+};
+
+/**
+ * get users from mis db
+ */
+export const libGetUsersByIds = async (
+  userIds: string [],
+  misServerUrl?: string,
+  scowApiAuthToken?: string,
+): Promise<GetUsersByIdsResponse> => {
+
+  if (!misServerUrl) {
+    throw new Error("Mis is not deployed, can not get accounts from mis.");
+  }
+
+  const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
+  const client = getMisClient(UserServiceClient);
+  return await asyncClientCall(client, "getUsersByIds", { userIds });
 };

@@ -417,10 +417,14 @@ export class ScowdJobDriver implements JobDriver {
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
     const { workingDirectory,mountPoints = [],clusterId,appId,customAttributes,
       startCommand,appJobName,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,qos,envVariables = [],
+      remoteImageUrl,gpuType,qos,envVariables = [], privateImageRepositoryCredentials,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,app,proxyBasePath,existImage } = extraParams;
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
 
     const { path:homeDir } = await wrap(
       this.client.file.getHomeDirectory({
@@ -437,8 +441,8 @@ export class ScowdJobDriver implements JobDriver {
       });
     }
 
-    mountPoints.forEach((mountPoint) => {
-      if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+    normalizedMountPoints.forEach(({ path }) => {
+      if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "mountPoint should be in homeDir",
@@ -447,7 +451,7 @@ export class ScowdJobDriver implements JobDriver {
     });
 
     // 检查挂载点是否为目录，不能是软链接
-    for (const path of mountPoints) {
+    for (const { path } of normalizedMountPoints) {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
@@ -477,7 +481,7 @@ export class ScowdJobDriver implements JobDriver {
       ...isModelPrivates.map((isModelPrivate,idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
-      ...mountPoints,
+      ...mountPathList,
     ]);
 
     // make sure appJobsDirectory exists.
@@ -578,6 +582,7 @@ export class ScowdJobDriver implements JobDriver {
       workingDirectory: workingDirectory ?? join(homeDir, appJobsDirectory),
       script: remoteEntryPath,
       envVariables,
+      privateImageRepositoryCredentials,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数确定是创建应用or训练任务，
       // 第二个参数为创建应用时的appId
@@ -615,7 +620,7 @@ export class ScowdJobDriver implements JobDriver {
             : genPublicOrPrivateDataJsonString(modelVersion.path,true),
           ))
         ,
-        mountPoints.join(","),
+        JSON.stringify(normalizedMountPoints),
         gpuType || "",
         getPublicMountPoints(clusterId).join(","),
       ],
@@ -910,16 +915,24 @@ export class ScowdJobDriver implements JobDriver {
 
   async submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
-      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = []} = inputParams;
+      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = [],
+      privateImageRepositoryCredentials,
+    } = inputParams;
     const { isModelPrivates,modelVersions,existImage } = extraParams;
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
+
     const { path:homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
       this.logger,
     );
-    mountPoints.forEach((mountPoint) => {
-      if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+
+    normalizedMountPoints.forEach(({ path }) => {
+      if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "mountPoint should be in homeDir",
@@ -936,11 +949,11 @@ export class ScowdJobDriver implements JobDriver {
       ...isModelPrivates.map((isModelPrivate,idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
-      ...mountPoints,
+      ...mountPathList,
     ]);
 
     // 检查挂载点是否为目录，不能是软链接
-    for (const path of mountPoints) {
+    for (const { path } of normalizedMountPoints) {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
@@ -991,6 +1004,7 @@ export class ScowdJobDriver implements JobDriver {
       workingDirectory: join(homeDir, inferJobsDirectory),
       script: remoteEntryPath,
       envVariables,
+      privateImageRepositoryCredentials,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数为镜像地址
       // 第二个参数为模型版本地址
@@ -1005,7 +1019,7 @@ export class ScowdJobDriver implements JobDriver {
             : genPublicOrPrivateDataJsonString(modelVersion.path,true),
           ))
         ,
-        mountPoints.join(","),
+        JSON.stringify(normalizedMountPoints),
         gpuType || "",
         getPublicMountPoints(clusterId).join(","),
       ],
@@ -1107,10 +1121,14 @@ export class ScowdJobDriver implements JobDriver {
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
     const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
       remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
-      tensorBoardDataPath,
+      tensorBoardDataPath,privateImageRepositoryCredentials,
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions, existImage } = extraParams;
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
 
     const { path:homeDir } = await wrap(
       this.client.file.getHomeDirectory({
@@ -1119,8 +1137,8 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
-    mountPoints.forEach((mountPoint) => {
-      if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+    normalizedMountPoints.forEach(({ path }) => {
+      if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "mountPoint should be in homeDir",
@@ -1143,11 +1161,11 @@ export class ScowdJobDriver implements JobDriver {
       ...isModelPrivates.map((isModelPrivate,idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
-      ...mountPoints,
+      ...mountPathList,
     ]);
 
     // 检查挂载点是否为目录，不能是软链接
-    for (const path of mountPoints) {
+    for (const { path } of normalizedMountPoints) {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
@@ -1214,6 +1232,7 @@ export class ScowdJobDriver implements JobDriver {
       workingDirectory: join(homeDir, trainJobsDirectory),
       script: remoteEntryPath,
       envVariables,
+      privateImageRepositoryCredentials,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数确定是创建应用or训练任务，
       // 第二个参数为创建应用时的appId
@@ -1247,7 +1266,7 @@ export class ScowdJobDriver implements JobDriver {
             : genPublicOrPrivateDataJsonString(modelVersion.path,true),
           ))
         ,
-        mountPoints.join(","),
+        JSON.stringify(normalizedMountPoints),
         gpuType || "",
         // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
         // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
@@ -1353,8 +1372,14 @@ export class ScowdJobDriver implements JobDriver {
   async createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number> {
     const {
       mountPoints = [], clusterId, devHostName, account, partition, coreCount,
-      gpuCount, memory, maxTimeMinutes, remoteImageUrl, qos,
+      gpuCount, memory, maxTimeMinutes, remoteImageUrl, qos,privateImageRepositoryCredentials,
     } = inputParams;
+
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
+
 
     const devHostConfig = clusters[clusterId]?.ai.devHost;
     if (!devHostConfig) {
@@ -1364,7 +1389,6 @@ export class ScowdJobDriver implements JobDriver {
       });
     }
 
-
     const { existImage } = extraParams;
     const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
@@ -1372,8 +1396,9 @@ export class ScowdJobDriver implements JobDriver {
       }),
       this.logger,
     );
-    mountPoints.forEach((mountPoint) => {
-      if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+
+    normalizedMountPoints.forEach(({ path }) => {
+      if (path && !isParentOrSameFolder(homeDir, path)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "mountPoint should be in homeDir",
@@ -1385,14 +1410,14 @@ export class ScowdJobDriver implements JobDriver {
     const devHostDir = join(aiConfig.appJobsDir, scowWorkDirectoryName);
 
     // 确保所有映射到容器的路径都不重复
-    validateUniquePaths([devHostDir, ...mountPoints]);
+    validateUniquePaths([devHostDir, ...mountPathList]);
 
     // 检查挂载点是否为目录，不能是软链接
-    for (const path of mountPoints) {
+    for (const { path } of normalizedMountPoints) {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath: path,
+          filePath:path,
         }),
         this.logger,
       );
@@ -1419,7 +1444,8 @@ export class ScowdJobDriver implements JobDriver {
       timeLimitMinutes: maxTimeMinutes,
       workingDirectory: join(homeDir, devHostDir),
       image: remoteImageUrl || existImage?.path || "",
-      mounts: mountPoints,
+      privateImageRepositoryCredentials,
+      mounts: normalizedMountPoints,
       publicMounts: getPublicMountPoints(clusterId),
       vscodeInfo: {
         vscodeBinPath: devHostConfig.vscodeInfo.binPath,

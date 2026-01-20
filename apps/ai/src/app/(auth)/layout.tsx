@@ -80,7 +80,7 @@ export default function Layout(
 
   const publicConfig = configQuery.data;
   const scowClusterConfigs = scowClusterConfigsQuery.data;
-  const { setDefaultCluster, defaultCluster, currentClusters }
+  const { currentClusters }
    = defaultClusterContext(publicConfig.CLUSTERS, currentClusterIdsQuery?.data?.clusterIds ?? []);
 
   const footerConfig = uiConfig.config?.footer;
@@ -89,7 +89,7 @@ export default function Layout(
 
   const routes = userRoutes(
     userQuery.data.user, publicConfig, scowClusterConfigs,
-    currentClusters, setDefaultCluster, defaultCluster, t, languageId,
+    currentClusters, t,
   );
 
   return (

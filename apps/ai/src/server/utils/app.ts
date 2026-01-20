@@ -241,7 +241,8 @@ export const sshFetchJobInputParams = async<T> (
   try {
     const inputContent = await sftpReadFile(sftp)(inputParamsPath);
     const parsedContent = JSON.parse(inputContent.toString());
-    return schema.parse(parsedContent);
+    const normalizedContent = normalizeLegacyMountPoints(parsedContent);
+    return schema.parse(normalizedContent);
   } catch (e) {
 
     logger.error(`Failed to parse input params file ${inputParamsPath}: ${e as any}`);
@@ -250,6 +251,33 @@ export const sshFetchJobInputParams = async<T> (
       message: `Failed to parse input params file ${inputParamsPath}`,
     });
   }
+};
+
+const normalizeLegacyMountPoints = (input: unknown) => {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return input;
+  }
+
+  const record = input as Record<string, unknown>;
+  const mountPoints = record.mountPoints;
+  if (!Array.isArray(mountPoints)) {
+    return input;
+  }
+
+  const normalizedMountPoints = mountPoints.map((point) => {
+    if (typeof point === "string") {
+      return {
+        path: point,
+        target: point,
+      };
+    }
+    return point;
+  });
+
+  return {
+    ...record,
+    mountPoints: normalizedMountPoints,
+  };
 };
 
 export const scowdFetchJobInputParams = async<T> (
@@ -268,7 +296,8 @@ export const scowdFetchJobInputParams = async<T> (
     logger,
   );
   const parsedContent = JSON.parse(inputContent.content.toString());
-  return schema.parse(parsedContent);
+  const normalizedContent = normalizeLegacyMountPoints(parsedContent);
+  return schema.parse(normalizedContent);
 };
 
 export const validateUniquePaths = (paths: (string | undefined)[]) => {
@@ -377,6 +406,16 @@ export function formatJobDetailsExtraInputs(
       : "command" in inputParams
         ? inputParams.command
         : undefined,
+    mountPoints: "mountPoints" in inputParams
+      ? (inputParams.mountPoints ?? []).map((point) => {
+        const path = point?.path ?? "";
+        const target = point?.target ?? "";
+        return {
+          path,
+          target,
+        };
+      })
+      : undefined,
   };
 
   if ("datasets" in inputParams && "algorithms" in inputParams) {
@@ -400,3 +439,12 @@ export function formatJobDetailsExtraInputs(
   return result;
 
 }
+
+const NON_UTF8_PREFIX = "scow-enc-";
+
+export const hasNonUtf8Segment = (targetPath: string) => (
+  targetPath
+    .split("/")
+    .filter(Boolean)
+    .some((segment) => segment.startsWith(NON_UTF8_PREFIX))
+);

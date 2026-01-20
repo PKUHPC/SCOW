@@ -64,7 +64,7 @@ export default function Page(
   const { user } = usePublicConfig();
   const [rowLimit, setRowLimit] = useState<number | null>(1000);
 
-  useDocumentTitle(t(p("title")));
+  useDocumentTitle(t(p("title"), [podName]));
 
   return (
     <Container>

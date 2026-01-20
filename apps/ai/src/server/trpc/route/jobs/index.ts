@@ -9,19 +9,21 @@ import {
   getAppMetadata,
   getCreateAppParams,
   getJobDetails,
+  listAllAvailableAppsFromAllClusters,
+  listAppAvailableAccountsAndClusters,
   listApps,
   listAppSessions,
   listAvailableApps,
-  listClusters,
   listTags,
   saveImage,
 } from "./apps";
 import { getSubmitInferenceParams,submitInferJob } from "./infer";
-import { cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
+import { calculateJobOneHourPrice,cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
   getPodLogs, getPodMonitorInfo, getPodsByJobId, getSubmitTrainParams,
   trainJob } from "./jobs";
 
 export const jobsRouter = router({
+  listAllAvailableAppsFromAllClusters,
   listAvailableApps,
   getAppMetadata,
   createAppSession,
@@ -33,7 +35,6 @@ export const jobsRouter = router({
   connectToDevHostApp,
   listApps,
   listTags,
-  listClusters,
   cancelJob,
   saveImage,
   trainJob,
@@ -46,4 +47,6 @@ export const jobsRouter = router({
   downloadPodLog,
   getPodMonitorInfo,
   getJobDetails,
+  listAppAvailableAccountsAndClusters,
+  calculateJobOneHourPrice,
 });

@@ -174,6 +174,21 @@ message GetMissingDefaultPriceItemsResponse {
   repeated string items = 1;
 }
 
+message CalculateJobOneHourPriceRequest {
+  string cluster = 1;
+  string partition = 2;
+  string qos = 3;
+  string account = 4;
+  uint32 cpus_alloc = 5;
+  uint32 gpu = 6;
+  uint32 mem_mb = 7;
+}
+
+message CalculateJobOneHourPriceResponse {
+  optional common.Money tenant_price = 1;
+  optional common.Money account_price = 2;
+}
+
 message GetTopSubmitJobUsersRequest {
   google.protobuf.Timestamp start_time = 1;
   google.protobuf.Timestamp end_time = 2;
@@ -291,6 +306,8 @@ service JobService {
   rpc AddBillingItem(AddBillingItemRequest) returns (AddBillingItemResponse);
 
   rpc GetMissingDefaultPriceItems(GetMissingDefaultPriceItemsRequest) returns (GetMissingDefaultPriceItemsResponse);
+
+  rpc CalculateJobOneHourPrice(CalculateJobOneHourPriceRequest) returns (CalculateJobOneHourPriceResponse);
 
   rpc GetTopSubmitJobUsers(GetTopSubmitJobUsersRequest) returns (GetTopSubmitJobUsersResponse);
 

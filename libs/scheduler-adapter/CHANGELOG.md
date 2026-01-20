@@ -28,6 +28,12 @@
 
 - @scow/protos@1.0.32
 
+## 1.1.30
+
+### Patch Changes
+
+- @scow/protos@1.0.32
+
 ## 1.1.29
 
 ### Patch Changes

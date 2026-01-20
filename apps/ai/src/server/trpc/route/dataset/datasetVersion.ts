@@ -32,6 +32,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const DatasetVersionListSchema = z.object({
   id: z.number(),
@@ -136,6 +137,91 @@ export const getMultipleDatasetVersions = procedure
     });
 
     return groupedResults;
+  });
+
+const DatasetVersionItemSchema = z.object({
+  id: z.number(),
+  versionName: z.string(),
+  versionDescription: z.string().optional(),
+});
+
+const DatasetGroupSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  versions: z.array(DatasetVersionItemSchema),
+});
+
+export const getAllDatasetVersions = procedure
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/datasets/all/versions",
+      tags: ["datasetVersion"],
+      summary: "Get all dataset versions grouped by owner scope",
+    },
+  })
+  .input(z.object({
+    clusterId: z.string().optional(),
+  }))
+  .output(z.object({
+    personal: z.array(DatasetGroupSchema),
+    public: z.array(DatasetGroupSchema),
+  }))
+  .query(async ({ input:{ clusterId }, ctx:{ user } }) => {
+    const em = await forkEntityManager();
+
+    const personalDatasets = await em.find(Dataset, {
+      $and: [
+        { owner: user.identityId },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const publicDatasets = await em.find(Dataset, {
+      $and: [
+        { isShared: true },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const datasetIds = [
+      ...personalDatasets.map((dataset) => dataset.id),
+      ...publicDatasets.map((dataset) => dataset.id),
+    ];
+
+    const versions = datasetIds.length > 0
+      ? await em.find(DatasetVersion, {
+        dataset: { $in: datasetIds },
+      }, {
+        populate: ["dataset"],
+        orderBy: { createTime: "desc" },
+      })
+      : [];
+
+    const versionMap = buildVersionMap(versions, (version) => version.dataset.id);
+
+    return mapAssetEntityGroupsWithVersions<Dataset, DatasetVersion, z.infer<typeof DatasetGroupSchema>>({
+      personalEntities: personalDatasets,
+      publicEntities: publicDatasets,
+      versionMap,
+      getEntityId: (dataset) => dataset.id,
+      isVersionShared: (version) => version.sharedStatus === SharedStatus.SHARED,
+      mapResult: (dataset, relatedVersions) => ({
+        id: dataset.id,
+        name: dataset.name,
+        description: dataset.description,
+        versions: relatedVersions.map((version) => ({
+          id: version.id,
+          versionName: version.versionName,
+          versionDescription: version.versionDescription,
+        })),
+      }),
+    });
   });
 
 export const createDatasetVersion = procedure
@@ -875,4 +961,3 @@ export const copyPublicDatasetVersion = procedure
 
     return { newDatasetId: newDataset.id, newDatasetVersionId: newDatasetVersion.id };
   });
-

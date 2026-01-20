@@ -2,7 +2,7 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { raw } from "@mikro-orm/core";
-import { libCheckActivatedClusters, libCheckAppIdInClusterApps } from "@scow/lib-server";
+import { getI18nSeverTypeFormat, libCheckActivatedClusters, libCheckAppIdInClusterApps } from "@scow/lib-server";
 import { AppAuthorizationInfo, AppAuthorizationServiceServer,
   AppAuthorizationServiceService,
   GetTargetAppAuthorizationsRequest_TargetType,
@@ -289,11 +289,21 @@ export const appAuthorizationServiceServer = plugin((server) => {
           if (accountNames.length === 0) return true;
           return !accountNames.every((accountName) =>
             accountBlackAppsMap.get(accountName)?.has(appId) || false);
-        }).map((id) => ({
-          id,
-          name: clusterApps[id].name,
-          logoPath: clusterApps[id].logoPath,
-        }));
+        }).map((id) => {
+          const appConfig = clusterApps[id];
+          const imageConfig = (appConfig as { image?: { name: string; tag?: string } }).image;
+          const webStartCommand =
+            (appConfig.web as { startCommand?: string } | undefined)?.startCommand;
+
+          return {
+            id,
+            name: appConfig.name,
+            logoPath: appConfig.logoPath,
+            comment: appConfig.appComment ? getI18nSeverTypeFormat(appConfig.appComment) : undefined,
+            image: imageConfig ? `${imageConfig.name}:${imageConfig.tag ?? "latest"}` : undefined,
+            startCommand: webStartCommand ?? appConfig.vnc?.xstartup,
+          };
+        });
 
         logger.trace("Available apps: %o for user: %s in cluster: %s", availableApps, userId, clusterId);
 
@@ -537,4 +547,3 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
   });
 });
-

@@ -50,6 +50,10 @@ export class SshJobDriver implements JobDriver {
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,app,proxyBasePath,existImage } = extraParams;
 
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
+
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
@@ -62,8 +66,8 @@ export class SshJobDriver implements JobDriver {
         });
       }
 
-      mountPoints.forEach((mountPoint) => {
-        if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+      normalizedMountPoints.forEach(({ path }) => {
+        if (path && !isParentOrSameFolder(homeDir, path)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "mountPoint should be in homeDir",
@@ -72,7 +76,7 @@ export class SshJobDriver implements JobDriver {
       });
 
       // 检查挂载点是否为目录，不能是软链接
-      for (const path of mountPoints) {
+      for (const { path } of normalizedMountPoints) {
         const lstat = await sftpLstat(sftp)(path).catch((e) => {
           logger.error(e, "lstat %s as %s failed", path, this.userId);
           throw new TRPCError({ code: "FORBIDDEN", message: `${path} is not accessible` });
@@ -99,7 +103,7 @@ export class SshJobDriver implements JobDriver {
         ...isModelPrivates.map((isModelPrivate,idx) =>
           isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
         ,
-        ...mountPoints,
+        ...mountPathList,
       ]);
 
       // make sure appJobsDirectory exists.
@@ -222,7 +226,7 @@ export class SshJobDriver implements JobDriver {
               : genPublicOrPrivateDataJsonString(modelVersion.path,true),
             ))
           ,
-          mountPoints.join(","),
+          JSON.stringify(normalizedMountPoints),
           gpuType || "",
           getPublicMountPoints(clusterId).join(","),
 
@@ -435,13 +439,18 @@ export class SshJobDriver implements JobDriver {
     const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
       gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = []} = inputParams;
     const { isModelPrivates,modelVersions,existImage } = extraParams;
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
+
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
 
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
-      mountPoints.forEach((mountPoint) => {
-        if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+      normalizedMountPoints.forEach(({ path }) => {
+        if (path && !isParentOrSameFolder(homeDir, path)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "mountPoint should be in homeDir",
@@ -458,11 +467,11 @@ export class SshJobDriver implements JobDriver {
         ...isModelPrivates.map((isModelPrivate,idx) =>
           isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
         ,
-        ...mountPoints,
+        ...mountPathList,
       ]);
 
       // 检查挂载点是否为目录，不能是软链接
-      for (const path of mountPoints) {
+      for (const { path } of normalizedMountPoints) {
         const lstat = await sftpLstat(sftp)(path).catch((e) => {
           logger.error(e, "lstat %s as %s failed", path, this.userId);
           throw new TRPCError({ code: "FORBIDDEN", message: `${path} is not accessible` });
@@ -509,7 +518,7 @@ export class SshJobDriver implements JobDriver {
               : genPublicOrPrivateDataJsonString(modelVersion.path,true),
             ))
           ,
-          mountPoints.join(","),
+          JSON.stringify(normalizedMountPoints),
           gpuType || "",
           getPublicMountPoints(clusterId).join(","),
         ],
@@ -582,12 +591,17 @@ export class SshJobDriver implements JobDriver {
     } = inputParams;
     const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions,existImage } = extraParams;
+
+    const normalizedMountPoints = mountPoints
+      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const mountPathList = normalizedMountPoints.map((item) => item.path);
+
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
-      mountPoints.forEach((mountPoint) => {
-        if (mountPoint && !isParentOrSameFolder(homeDir, mountPoint)) {
+      normalizedMountPoints.forEach(({ path }) => {
+        if (path && !isParentOrSameFolder(homeDir, path)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "mountPoint should be in homeDir",
@@ -610,11 +624,11 @@ export class SshJobDriver implements JobDriver {
         ...isModelPrivates.map((isModelPrivate,idx) =>
           isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
         ,
-        ...mountPoints,
+        ...mountPathList,
       ]);
 
       // 检查挂载点是否为目录，不能是软链接
-      for (const path of mountPoints) {
+      for (const { path } of normalizedMountPoints) {
         const lstat = await sftpLstat(sftp)(path).catch((e) => {
           logger.error(e, "lstat %s as %s failed", path, this.userId);
           throw new TRPCError({ code: "FORBIDDEN", message: `${path} is not accessible` });
@@ -689,7 +703,7 @@ export class SshJobDriver implements JobDriver {
               : genPublicOrPrivateDataJsonString(modelVersion.path,true),
             ))
           ,
-          mountPoints.join(","),
+          JSON.stringify(normalizedMountPoints),
           gpuType || "",
           // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
           // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错

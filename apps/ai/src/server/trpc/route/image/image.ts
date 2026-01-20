@@ -1,8 +1,11 @@
 import { getSortedClusterIds } from "@scow/config/build/cluster";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { libGetUsersByIds } from "@scow/lib-server";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
 import { ImageType } from "src/models/Image";
+import { commonConfig } from "src/server/config/common";
+import { config } from "src/server/config/env";
 import { Image, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
@@ -35,7 +38,9 @@ class NoClusterError extends TRPCError {
 export const ImageListSchema = z.object({
   id: z.number(),
   name: z.string(),
-  owner: z.string(),
+  owner: z.string().optional(),
+  ownerId: z.string().optional(),
+  ownerName: z.string().optional(),
   source: z.enum(Source),
   tag: z.string(),
   description: z.string().optional(),
@@ -114,24 +119,49 @@ export const list = procedure
       orderBy: isPublic ? { name:"asc" } : { createTime: "desc" },
     });
 
+    const ownerIds = Array.from(
+      new Set(
+        items
+          .map((item) => item.owner)
+          .filter((owner): owner is string => !!owner),
+      ),
+    );
+
+    let ownerNameMap: Record<string, string> = {};
+
+    if (
+      ownerIds.length > 0
+      && config.MIS_DEPLOYED
+      && config.MIS_SERVER_URL
+      && commonConfig.scowApi?.auth?.token
+    ) {
+      try {
+        const usersResponse = await libGetUsersByIds(
+          ownerIds,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+        ownerNameMap = Object.fromEntries(
+          (usersResponse.users ?? [])
+            .map((user) => [user.userId, user.userName]),
+        );
+      } catch (error) {
+        logger.error({
+          err: error,
+          ownerIds,
+        }, "Failed to load owner names for owner ids");
+      }
+    }
+
     return { items: items.map((x) => {
       return {
-        id: x.id,
-        name: x.name,
-        owner: x.owner,
-        source: x.source,
-        tag: x.tag,
-        description: x.description,
-        path: x.path,
-        sourcePath: x.sourcePath,
-        status: x.status,
+        ...x,
+        owner: x.owner ?? "",
+        ownerId: x.owner ?? undefined,
+        ownerName: x.owner ? ownerNameMap[x.owner] : undefined,
         isShared: Boolean(x.isShared),
-        clusterId: x.clusterId,
         createTime: x.createTime ? x.createTime.toISOString() : undefined,
         types:x.types ?? [],
-        inferServicePort:x.inferServicePort,
-        startCommand:x.startCommand,
-        failedReason:x.failedReason,
       }; }), count };
   });
 

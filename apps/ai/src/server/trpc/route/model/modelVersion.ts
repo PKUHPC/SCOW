@@ -35,6 +35,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const VersionListSchema = z.object({
   id: z.number(),
@@ -136,6 +137,97 @@ export const getMultipleModelVersions = procedure
     });
 
     return groupedResults;
+  });
+
+const ModelVersionItemSchema = z.object({
+  id: z.number(),
+  versionName: z.string(),
+  versionDescription: z.string().optional(),
+  algorithmVersion: z.string().optional(),
+});
+
+const ModelGroupSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  algorithmName: z.string().optional(),
+  algorithmFramework: z.string().optional(),
+  versions: z.array(ModelVersionItemSchema),
+});
+
+export const getAllModelVersions = procedure
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/models/all/versions",
+      tags: ["modelVersions"],
+      summary: "Get all model versions grouped by owner scope",
+    },
+  })
+  .input(z.object({
+    clusterId: z.string().optional(),
+  }))
+  .output(z.object({
+    personal: z.array(ModelGroupSchema),
+    public: z.array(ModelGroupSchema),
+  }))
+  .query(async ({ input: { clusterId }, ctx: { user } }) => {
+    const em = await forkEntityManager();
+
+    const personalModels = await em.find(Model, {
+      $and: [
+        { owner: user.identityId },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const publicModels = await em.find(Model, {
+      $and: [
+        { isShared: true },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const modelIds = [
+      ...personalModels.map((model) => model.id),
+      ...publicModels.map((model) => model.id),
+    ];
+
+    const versions = modelIds.length > 0
+      ? await em.find(ModelVersion, {
+        model: { $in: modelIds },
+      }, {
+        populate: ["model"],
+        orderBy: { createTime: "desc" },
+      })
+      : [];
+
+    const versionMap = buildVersionMap(versions, (version) => version.model.id);
+
+    return mapAssetEntityGroupsWithVersions<Model, ModelVersion, z.infer<typeof ModelGroupSchema>>({
+      personalEntities: personalModels,
+      publicEntities: publicModels,
+      versionMap,
+      getEntityId: (model) => model.id,
+      isVersionShared: (version) => version.sharedStatus === SharedStatus.SHARED,
+      mapResult: (model, relatedVersions) => ({
+        id: model.id,
+        name: model.name,
+        description: model.description,
+        algorithmName: model.algorithmName,
+        algorithmFramework: model.algorithmFramework,
+        versions: relatedVersions.map((version) => ({
+          id: version.id,
+          versionName: version.versionName,
+          versionDescription: version.versionDescription,
+          algorithmVersion: version.algorithmVersion,
+        })),
+      }),
+    });
   });
 
 export const createModelVersion = procedure

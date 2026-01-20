@@ -15,7 +15,7 @@ import {
 } from "@scow/protos/build/server/job";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
-import { createPriceMap, getBillingItems } from "src/bl/PriceMap";
+import { createPriceMap, getBillingItems, JobInfo } from "src/bl/PriceMap";
 import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { Account, AccountState } from "src/entities/Account";
@@ -435,6 +435,41 @@ export const jobServiceServer = plugin((server) => {
       const missingItems = priceMap.getMissingDefaultPriceItems();
 
       return [{ items: missingItems }];
+
+    },
+
+    calculateJobOneHourPrice: async ({ request,em }) => {
+
+      const account = await em.findOne(Account, {
+        accountName: request.account,
+      }, { populate: ["tenant"]});
+
+      if (!account?.tenant) {
+        throw { code: status.NOT_FOUND, message: "Account's tenant is not found." } as ServiceError;
+      }
+
+      const mockJobInfo: JobInfo = {
+        jobId: 0,
+        cluster: request.cluster,
+        partition: request.partition,
+        qos: request.qos,
+        timeUsed: 3600,
+        cpusAlloc: request.cpusAlloc,
+        gpu: request.gpu,
+        memReq: request.memMb,
+        memAlloc: request.memMb,
+        account: request.account,
+        tenant: account.tenant.$.name,
+        submitTime: new Date(),
+      };
+
+      const priceMap = await createPriceMap(em, server.ext.clusters, logger);
+      const price = await priceMap.calculatePrice(mockJobInfo);
+
+      return [{
+        tenantPrice: price.tenant ? decimalToMoney(price.tenant.price) : undefined,
+        accountPrice: price.account ? decimalToMoney(price.account.price) : undefined,
+      }];
 
     },
 

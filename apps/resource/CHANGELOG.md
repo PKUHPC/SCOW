@@ -77,6 +77,21 @@
   - @scow/protos@1.0.32
   - @scow/lib-scheduler-adapter@1.1.30
 
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [6f77b4e]
+- Updated dependencies [2ff4aed]
+- Updated dependencies [6f77b4e]
+- Updated dependencies [6f77b4e]
+  - @scow/config@1.11.2
+  - @scow/lib-web@1.5.7
+  - @scow/lib-hook@1.0.32
+  - @scow/lib-server@1.4.7
+  - @scow/protos@1.0.32
+  - @scow/lib-scheduler-adapter@1.1.30
+
 ## 0.3.6
 
 ### Patch Changes

@@ -92,6 +92,25 @@
   - @scow/protos@1.0.32
   - @scow/rich-error-model@2.0.2
 
+## 1.9.8
+
+### Patch Changes
+
+- 813777b: 修改部分语言切换时国际化文本不生效的问题
+- 6f77b4e: 新增可提交的文件后缀名数组配置
+- 6f77b4e: 文件管理新增软链接处理，并增加不同文件类型的 icon
+- Updated dependencies [6f77b4e]
+- Updated dependencies [2ff4aed]
+- Updated dependencies [6f77b4e]
+- Updated dependencies [6f77b4e]
+  - @scow/config@1.11.2
+  - @scow/lib-web@1.5.7
+  - @scow/lib-notification@1.0.17
+  - @scow/lib-operation-log@2.2.7
+  - @scow/lib-scow-resource@0.2.16
+  - @scow/protos@1.0.32
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.7
 
 ### Patch Changes

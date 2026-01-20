@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package scow.server;
 
+import "common/i18n.proto";
+
 message GetTargetAppAuthorizationsRequest {
   uint32 page_size = 1;
   uint32 page = 2;
@@ -70,6 +72,9 @@ message GetUserAvailableClusterAppsResponse {
     string id = 1;
     string name = 2;
     optional string logo_path = 3;
+    common.I18nStringProtoType comment = 4;
+    optional string image = 5;
+    optional string start_command = 6;
   }
   repeated App apps = 1;
 }

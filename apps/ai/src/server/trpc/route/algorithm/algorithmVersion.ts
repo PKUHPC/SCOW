@@ -31,6 +31,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const getAlgorithmVersions = procedure
   .meta({
@@ -140,6 +141,91 @@ export const getMultipleAlgorithmVersions = procedure
     });
 
     return groupedResults;
+  });
+
+const AlgorithmVersionItemSchema = z.object({
+  id: z.number(),
+  versionName: z.string(),
+  versionDescription: z.string().optional(),
+});
+
+const AlgorithmGroupSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  versions: z.array(AlgorithmVersionItemSchema),
+});
+
+export const getAllAlgorithmVersions = procedure
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/algorithms/all/versions",
+      tags: ["algorithmVersion"],
+      summary: "get all algorithmVersions",
+    },
+  })
+  .input(z.object({
+    clusterId: z.string().optional(),
+  }))
+  .output(z.object({
+    personal: z.array(AlgorithmGroupSchema),
+    public: z.array(AlgorithmGroupSchema),
+  }))
+  .query(async ({ input:{ clusterId },ctx: { user } }) => {
+    const em = await forkEntityManager();
+
+    const personalAlgorithms = await em.find(Algorithm, {
+      $and: [
+        { owner: user.identityId },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const publicAlgorithms = await em.find(Algorithm, {
+      $and: [
+        { isShared: true },
+        clusterId ? { clusterId } : {},
+      ],
+    }, {
+      orderBy: { createTime: "desc" },
+    });
+
+    const algorithmIds = [
+      ...personalAlgorithms.map((algorithm) => algorithm.id),
+      ...publicAlgorithms.map((algorithm) => algorithm.id),
+    ];
+
+    const versions = algorithmIds.length > 0
+      ? await em.find(AlgorithmVersion, {
+        algorithm: { $in: algorithmIds },
+      }, {
+        populate: ["algorithm"],
+        orderBy: { createTime: "desc" },
+      })
+      : [];
+
+    const versionMap = buildVersionMap(versions, (version) => version.algorithm.id);
+
+    return mapAssetEntityGroupsWithVersions<Algorithm, AlgorithmVersion, z.infer<typeof AlgorithmGroupSchema>>({
+      personalEntities: personalAlgorithms,
+      publicEntities: publicAlgorithms,
+      versionMap,
+      getEntityId: (algorithm) => algorithm.id,
+      isVersionShared: (version) => version.sharedStatus === SharedStatus.SHARED,
+      mapResult: (algorithm, relatedVersions) => ({
+        id: algorithm.id,
+        name: algorithm.name,
+        description: algorithm.description,
+        versions: relatedVersions.map((version) => ({
+          id: version.id,
+          versionName: version.versionName,
+          versionDescription: version.versionDescription,
+        })),
+      }),
+    });
   });
 
 export const createAlgorithmVersion = procedure

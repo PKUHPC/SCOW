@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "private": true,
   "scripts": {
-    "generate": "rimraf generated && buf generate --template buf.gen.yaml https://github.com/PKUHPC/scow-scheduler-adapter-interface.git#branch=v1.14.0",
+    "generate": "rimraf generated && buf generate --template buf.gen.yaml https://github.com/PKUHPC/scow-scheduler-adapter-interface.git#branch=feat-ai-refactor-job",
     "build": "rimraf build && tsc"
   },
   "files": [

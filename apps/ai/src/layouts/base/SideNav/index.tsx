@@ -74,6 +74,8 @@ const StyledSider = styled(Sider)`
 const Container = styled.div<{ $width?: number }>`
   background: ${({ theme }) => theme.token.colorBgContainer};
   font-weight: 400;
+  z-index: 1000;
+  border: 1px solid ${({ theme }) => theme.token.colorBgLayout};
 
   .ant-layout-sider {
     &::-webkit-scrollbar {

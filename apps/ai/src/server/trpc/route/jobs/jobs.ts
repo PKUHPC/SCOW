@@ -1,13 +1,16 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
+import { moneyToNumber } from "@scow/lib-decimal";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
+import { libCalculateJobOneHourPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { TRPCError } from "@trpc/server";
 import type { ServerResponse } from "http";
 import { aiConfig } from "src/server/config/ai";
+import { commonConfig } from "src/server/config/common";
 import { config } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkCreateAppEntity, checkEntityAuth } from "src/server/utils/app";
+import { checkCreateAppEntity, checkEntityAuth, hasNonUtf8Segment } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient, getCurrentClusters } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -70,7 +73,10 @@ export const TrainJobInputSchema = z.object({
   framework: Framework.optional(),
   datasets: z.array(IdPrivateSchema).optional(),
   models: z.array(IdPrivateSchema).optional(),
-  mountPoints: z.array(z.string()).optional(),
+  mountPoints: z.array(z.object({
+    path:z.string(),
+    target:z.string(),
+  })).optional(),
   account: z.string(),
   partition: z.string().optional(),
   qos:z.string().optional(),
@@ -86,6 +92,10 @@ export const TrainJobInputSchema = z.object({
   workerNodes: z.number().optional(),
   envVariables:z.array(EnvVariableSchema).optional(),
   tensorBoardDataPath:z.string().optional(),
+  privateImageRepositoryCredentials: z.object({
+    userName: z.string(),
+    password: z.string(),
+  }).optional(),
 });
 
 export type TrainJobInput = z.infer<typeof TrainJobInputSchema>;
@@ -132,7 +142,8 @@ procedure
   })
   .mutation(
     async ({ input, ctx: { user } }) => {
-      const { clusterId, trainJobName, algorithms, image, datasets, models, maxTime, account, partition } = input;
+      const { clusterId, trainJobName, algorithms, image, datasets, models, maxTime, account,
+        partition, mountPoints } = input;
 
       const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
       const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -159,6 +170,13 @@ procedure
             message: "The job running time cannot be 0",
           });
         }
+      }
+
+      if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Files or folders with non-UTF-8 names cannot be selected",
+        });
       }
 
       const userId = user.identityId;
@@ -554,5 +572,44 @@ procedure
         code: "INTERNAL_SERVER_ERROR",
         message: `Failed to get pod monitor info,${error.message}`,
       });
+    }
+  });
+
+const calculateJobPriceSchema = z.object({
+  cluster: z.string(),
+  partition: z.string(),
+  qos: z.string(),
+  account: z.string(),
+  cpusAlloc: z.number(),
+  gpu: z.number(),
+  memMb: z.number(),
+});
+
+export const calculateJobOneHourPrice = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/jobs/calculateJobOneHourPrice",
+      tags: ["job"],
+      summary: "Calculate Job OneHour Price",
+    },
+  })
+  .input(calculateJobPriceSchema)
+  .output(z.number())
+  .query(async ({ input }) => {
+
+    try {
+      const price = await libCalculateJobOneHourPrice(
+        logger,
+        input,
+        config.MIS_SERVER_URL,
+        commonConfig.scowApi?.auth?.token,
+      );
+
+      return price.accountPrice ? moneyToNumber(price.accountPrice) : 0;
+    } catch (error) {
+      logger.error("calculate job one hour price failed : %o",error);
+
+      return 0;
     }
   });

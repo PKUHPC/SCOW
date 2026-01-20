@@ -3,7 +3,8 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { ListAvailableAppsResponse } from "@scow/protos/build/portal/app";
-import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
+import { AppAuthorizationServiceClient, GetUserAvailableClusterAppsResponse }
+  from "@scow/protos/build/server/app_authorization";
 
 import { getClientFn } from "../api";
 import { scowErrorMetadata } from "../error";
@@ -25,6 +26,54 @@ export const libGetUserAvailableClusterApps = async (
   });
 
   return { apps: reply.apps };
+};
+
+// 获取用户所有集群中所有可用的App
+export const libGetUserAvailableApps = async (
+  logger: Logger,
+  clusterIds: string[],
+  userId: string,
+  misServerUrl: string,
+  scowApiAuthToken?: string,
+): Promise<GetUserAvailableClusterAppsResponse> => {
+
+  if (clusterIds.length === 0) {
+    logger.info("No clusters provided when querying available apps for user %s.", userId);
+    return { apps: []};
+  }
+
+  const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
+  const client = getMisClient(AppAuthorizationServiceClient);
+
+  type AvailableApp = NonNullable<GetUserAvailableClusterAppsResponse["apps"]>[number];
+  const appMap = new Map<string, AvailableApp>();
+
+  for (const clusterId of clusterIds) {
+    try {
+      const reply = await asyncClientCall(client, "getUserAvailableClusterApps", {
+        clusterId,
+        userId,
+      });
+
+      reply.apps?.forEach((app) => {
+        if (!appMap.has(app.id)) {
+          appMap.set(app.id, app);
+        }
+      });
+    } catch (e) {
+      const serviceError = e as ServiceError;
+      if (serviceError.code === status.NOT_FOUND) {
+        logger.warn(e, "MIS returned NOT_FOUND when listing apps for user %s in cluster %s, skipping this cluster.",
+          userId, clusterId);
+        continue;
+      }
+
+      logger.error(e, "Failed to get available apps for user %s in cluster %s.", userId, clusterId);
+      throw e;
+    }
+  }
+
+  return { apps: Array.from(appMap.values()) };
 };
 
 // 检查当前应用是否已对传入的账户禁用
@@ -86,5 +135,3 @@ export const libCheckAppIdInClusterApps
   }
 
 };
-
-

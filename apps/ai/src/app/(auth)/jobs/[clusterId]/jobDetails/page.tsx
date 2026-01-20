@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { join } from "path";
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { AppTableStatus } from "src/app/(auth)/jobs/jobList/AppSessionsTable";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
@@ -23,7 +24,6 @@ import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 import { styled, useTheme } from "styled-components";
 
-import { AppTableStatus } from "../AppSessionsTable";
 import { MonitorGrid } from "./MonitorGrid";
 
 const Container = styled.div`
@@ -509,8 +509,8 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
       key: "27",
       label: t(p("mountPoint")),
       children: (() => {
-        if ((jobDetails.extraDisplayInputs?.mountPoints?.length ?? 0) > 0) {
-          return jobDetails.extraDisplayInputs?.mountPoints?.join("；  ");
+        if (jobDetails.extraDisplayInputs?.mountPoints?.length) {
+          return jobDetails.extraDisplayInputs.mountPoints.map((m) => m.path).join("；  ");
         } else {
           return "-";
         }
@@ -853,7 +853,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
         <a
           onClick={() => {
             router.push(
-              join(`/jobs/${clusterId}/${from === AppTableStatus.UNFINISHED ? "runningJobs" : "historyJobs"}`),
+              join(`/jobs/jobList?jobType=${from === AppTableStatus.UNFINISHED ? "unfinishedJobs" : "historyJobs"}`),
             );
           }}
         >

@@ -84,7 +84,7 @@ export const FixedValueSchema = Type.Object({
 export type FixedValueSchema = Static<typeof FixedValueSchema>;
 
 export const ReservedConfigSchema = Type.Union([
-  Type.Object({ 
+  Type.Object({
     type: Type.Literal("fixedValue"),
     ...FixedValueSchema.properties,
   }, { description: "为系统保留字段配置固定值形式" }),
@@ -235,8 +235,8 @@ export const getAppConfigs: GetConfigFn<Record<string, AppConfigSchema>> = (base
               item.name === ReservedAppAttributeName.coreCount ||
               item.name === ReservedAppAttributeName.gpuCount ||
               item.name === ReservedAppAttributeName.maxTime) &&
-            ((config.type === "fixedValue" && !isPositiveInteger(config.value)) || 
-            (config.type === "select" && config.select.some((option) => !isPositiveInteger(option.value))) || 
+            ((config.type === "fixedValue" && !isPositiveInteger(config.value)) ||
+            (config.type === "select" && config.select.some((option) => !isPositiveInteger(option.value))) ||
             (config.type === "select" && config.defaultValue && !isPositiveInteger(config.defaultValue)))
           ) {
             throw new Error(`
@@ -255,4 +255,3 @@ export const getAppConfigs: GetConfigFn<Record<string, AppConfigSchema>> = (base
 
   return appsConfig;
 };
-

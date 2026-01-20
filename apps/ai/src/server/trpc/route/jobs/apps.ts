@@ -1,8 +1,13 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AppType } from "@scow/config/build/appForAi";
+import { getCommonConfig } from "@scow/config/src/common";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { libGetAccounts, libGetUserAvailableApps, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { libWebGetAppForbiddenAccounts } from "@scow/lib-web/build/server/appAuthorization";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { getI18nTypeFormat } from "@scow/lib-web/build/utils/typeConversion";
+import { AccountStatusFilter as AccountStatusFilterProtos } from "@scow/protos/build/portal/job";
+import { GetUserAvailableClusterAppsResponse_App } from "@scow/protos/build/server/app_authorization";
 import { jobInfo_PodStatusToJSON } from "@scow/scheduler-adapter-protos/build/job";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
@@ -11,6 +16,7 @@ import { join } from "path";
 import { AppName } from "src/models/App";
 import { ImageType } from "src/models/Image";
 import { JobType } from "src/models/Job";
+import { AccountStatusFilter } from "src/models/Resource";
 import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { commonConfig } from "src/server/config/common";
@@ -20,7 +26,8 @@ import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
 import { allApps, checkAppExist, checkCreateAppEntity,
-  checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs } from "src/server/utils/app";
+  checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs, 
+  hasNonUtf8Segment } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
@@ -34,6 +41,7 @@ import {
 import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
 import { paginate, paginationSchema } from "src/server/utils/pagination";
+import { getUserAssignedResourceDetails } from "src/server/utils/resource";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { validateSubmitAiJobInfoUnderMis } from "src/server/utils/validation";
@@ -43,7 +51,6 @@ import { parseIp } from "src/utils/parse";
 import { BASE_PATH } from "src/utils/processEnv";
 import { z } from "zod";
 
-import { PartitionSchema } from "../config";
 import { booleanQueryParam } from "../utils";
 import { EnvVariableSchema, EventSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
@@ -103,10 +110,6 @@ export const TOTAL_SESSIONS = "total_sessions.json";
 // 适配器将该文件写在了/tmp目录下
 export const SERVER_SESSION_INFO = "/tmp/server_session_info.json";
 
-export const appSchema = z.object({ id: z.string(), name: z.string(), logoPath: z.string().optional() });
-
-export type AppSchema = z.infer<typeof appSchema>;
-
 export interface ClusterAppsResultSchema {
   clusterId: string;
   apps: AppSchema[];
@@ -122,6 +125,22 @@ const I18nStringSchema = z.union([
     }),
   }),
 ]);
+
+export const appSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  logoPath: z.string().optional(),
+  comment:I18nStringSchema.optional(),
+  image:z.string().optional(),
+  startCommand:z.string().optional(),
+});
+
+export type AppSchema = z.infer<typeof appSchema>;
+
+const mapAvailableAppFromMis = (app: GetUserAvailableClusterAppsResponse_App): AppSchema => ({
+  ...app,
+  comment: getI18nTypeFormat(app.comment),
+});
 
 const SelectOptionSchema = z.object({
   value: z.string(),
@@ -152,12 +171,6 @@ export type AppCustomAttribute = z.infer<typeof AppCustomAttributeSchema>;
 const AttributeTypeSchema = z.enum(["TEXT", "NUMBER", "SELECT"]);
 
 export type AttributeType = z.infer<typeof AttributeTypeSchema>;
-
-const ClusterConfig = z.object({
-  schedulerName: z.string(),
-  clusterId: z.string(),
-  partitions: z.array(PartitionSchema),
-});
 
 export const listAvailableApps = procedure
   .meta({
@@ -203,7 +216,10 @@ export const listAvailableApps = procedure
           commonConfig.scowApi?.auth?.token,
         );
 
-        return { ...availableApps, clusterId };
+        return {
+          clusterId,
+          apps: availableApps.apps.map(mapAvailableAppFromMis),
+        };
       }
 
       const appsConfig = getClusterAppConfigs(clusterId);
@@ -235,6 +251,178 @@ export const listAvailableApps = procedure
     return successfulResults;
   });
 
+
+// 获取所有集群中所有可用的App
+export const listAllAvailableAppsFromAllClusters = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/allAvailableAppsFromAllClusters",
+      tags: ["app"],
+      summary: "List all available apps from all clusters",
+    },
+  })
+  .input(z.void())
+  .output(z.object({ apps: z.array(appSchema) }))
+  .query(async ({ ctx: { user } }) => {
+    const currentClusterIds = await getCurrentClusters(user.identityId);
+
+    if (currentClusterIds.length === 0) {
+      logger.info("User %s has no authorized clusters when listing all apps.", user.identityId);
+      return { apps: []};
+    }
+
+    // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
+    if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
+      const { apps: availableApps } = await libGetUserAvailableApps(
+        logger, currentClusterIds, user.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      return {
+        apps: availableApps.map(mapAvailableAppFromMis),
+      };
+    }
+
+    const appMap = new Map<string, AppSchema>();
+    currentClusterIds.forEach((clusterId) => {
+      const clusterApps = getClusterAppConfigs(clusterId);
+      Object.entries(clusterApps).forEach(([id, app]) => {
+        if (!appMap.has(id)) {
+          appMap.set(id, {
+            id,
+            name: app.name,
+            logoPath: app.logoPath || undefined,
+            comment: app.appComment,
+            image: app.image ? `${app.image?.name}:${app.image?.tag}` : undefined,
+            startCommand: app.web?.startCommand ?? app.vnc?.xstartup ?? "",
+          });
+        }
+      });
+    });
+
+    return {
+      apps: Array.from(appMap.values()),
+    };
+  });
+
+// 应用可用账户下的可用集群
+export const listAppAvailableAccountsAndClusters = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/apps/accountsAndClusters",
+      tags: ["apps"],
+      summary: "List app available accounts and clusters",
+    },
+  })
+  .input(z.object({
+    appId: z.optional(z.string()),
+  }))
+  .output(z.object({ accountClusters: z.record(z.string(),z.array(z.string())) }))
+  .query(async ({ input, ctx: { user } }) => {
+
+    const commonConfig = getCommonConfig();
+    const { appId } = input;
+    const currentClusterIds = await getCurrentClusters(user.identityId);
+
+    if (currentClusterIds.length === 0) {
+      return { accountClusters: {} };
+    }
+
+    const buildAccountClusters = async (
+      clusterIds: string[],
+      getClusterAccounts: (clusterId: string) => Promise<string[] | undefined>,
+    ): Promise<Record<string, string[]>> => {
+      const accountClusterMap = new Map<string, Set<string>>();
+
+      for (const clusterId of clusterIds) {
+        const clusterAccounts = await getClusterAccounts(clusterId);
+        if (!clusterAccounts?.length) {
+          continue;
+        }
+
+        let appForbiddenAccounts: string[] = [];
+        if (config.MIS_DEPLOYED &&
+          config.MIS_SERVER_URL &&
+          commonConfig.allowAppAuthorization &&
+          appId) {
+          appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
+            clusterId, appId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+        }
+
+        clusterAccounts
+          .filter((account) => !appForbiddenAccounts.includes(account))
+          .forEach((account) => {
+            if (!accountClusterMap.has(account)) {
+              accountClusterMap.set(account, new Set());
+            }
+            accountClusterMap.get(account)!.add(clusterId);
+          });
+      }
+
+      return Object.fromEntries(
+        Array.from(accountClusterMap.entries())
+          .map(([account, clusters]) => [account, Array.from(clusters)]),
+      ) as Record<string, string[]>;
+    };
+
+    if (!commonConfig.scowResource?.enabled) {
+      let misAccounts: string[] | undefined;
+      if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
+        const { accounts } = await libGetAccounts(
+          logger,
+          user.identityId,
+          AccountStatusFilterProtos.UNBLOCKED_ONLY,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi.auth.token,
+        );
+        misAccounts = accounts;
+      }
+
+      const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
+        if (misAccounts) {
+          return misAccounts;
+        }
+
+        const client = getAdapterClient(clusterId);
+        if (!client) {
+          logger.warn(`Cluster ${clusterId} not found when listing app available accounts.`);
+          return undefined;
+        }
+
+        const response = await asyncClientCall(client.account, "listAccounts", { userId: user.identityId });
+        return response.accounts ?? [];
+      });
+
+      return { accountClusters };
+    }
+
+    const assignedResourceDetails = await getUserAssignedResourceDetails(
+      user.identityId,
+      AccountStatusFilter.UNBLOCKED_ONLY,
+    ) ?? [];
+
+    const currentClusterSet = new Set(currentClusterIds);
+    const clusterAccountMap = new Map<string, Set<string>>();
+
+    assignedResourceDetails.forEach(({ accountName, assignedClusterPartitions }) => {
+      Object.entries(assignedClusterPartitions ?? {}).forEach(([clusterId, partitions]) => {
+        if (!currentClusterSet.has(clusterId) || partitions.length === 0) {
+          return;
+        }
+
+        if (!clusterAccountMap.has(clusterId)) {
+          clusterAccountMap.set(clusterId, new Set());
+        }
+        clusterAccountMap.get(clusterId)!.add(accountName);
+      });
+    });
+
+    const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
+      return Array.from(clusterAccountMap.get(clusterId) ?? []);
+    });
+
+    return { accountClusters };
+
+  });
 export const getAppMetadata = procedure
   .meta({
     openapi: {
@@ -254,6 +442,7 @@ export const getAppMetadata = procedure
     attributes: z.array(AppCustomAttributeSchema),
     appComment: I18nStringSchema.optional(),
     appStartCommand:z.string(),
+    appLogoPath:z.string().optional(),
   }))
   .query(async ({ input, ctx: { user } }) => {
     const { clusterId, appId } = input;
@@ -296,6 +485,7 @@ export const getAppMetadata = procedure
       attributes,
       appComment: comment,
       appStartCommand:startCommand,
+      appLogoPath: app.logoPath,
     };
   });
 
@@ -313,7 +503,10 @@ export const CreateAppInputSchema = z.object({
   startCommand: z.string().optional(),
   datasets: z.array(IdPrivateSchema).optional(),
   models: z.array(IdPrivateSchema).optional(),
-  mountPoints: z.array(z.string()).optional(),
+  mountPoints: z.array(z.object({
+    path:z.string(),
+    target:z.string(),
+  })).optional(),
   account: z.string(),
   partition: z.string().optional(),
   qos:z.string().optional(),
@@ -326,7 +519,11 @@ export const CreateAppInputSchema = z.object({
   workingDirectory: z.string().optional(),
   customAttributes: z.record(z.string(), z.union([z.number(), z.string(), z.undefined()])),
   gpuType: z.string().optional(),
-  envVariables:z.array(EnvVariableSchema).optional(),
+  envVariables: z.array(EnvVariableSchema).optional(),
+  privateImageRepositoryCredentials: z.object({
+    userName: z.string(),
+    password: z.string(),
+  }).optional(),
 });
 
 export type CreateAppInput = z.infer<typeof CreateAppInputSchema>;
@@ -369,7 +566,7 @@ export const createAppSession = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const { clusterId, appId, appJobName,
-      maxTime, algorithms,image, datasets, models, customAttributes, account, partition } = input;
+      maxTime, algorithms,image, datasets, models, customAttributes, account, partition, mountPoints } = input;
 
     const { ids:algorithmIds, isPrivates:isAlgorithmPrivates } = getIdPrivate(algorithms);
     const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
@@ -396,6 +593,13 @@ export const createAppSession = procedure
           message: "The app running time cannot be 0",
         });
       }
+    }
+
+    if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Files or folders with non-UTF-8 names cannot be selected",
+      });
     }
 
     const userId = user.identityId;
@@ -758,7 +962,10 @@ const ExtraDisplayInputsSchema = z.object({
   datasetNames: z.array(z.string().optional()).optional(),
   algorithmNames: z.array(z.string().optional()).optional(),
   modelNames: z.array(z.string().optional()).optional(),
-  mountPoints: z.array(z.string()).optional(),
+  mountPoints: z.array(z.object({
+    path:z.string(),
+    target:z.string(),
+  })).optional(),
   envVariables:z.array(EnvVariableSchema).optional(),
   startCommand: z.string().optional(),
 }).optional();
@@ -1328,49 +1535,4 @@ export const listTags = procedure
     return {
       tags,
     };
-  });
-
-export const listClusters = procedure
-  .meta({
-    openapi: {
-      method: "GET",
-      path: "/apps/clusters/search",
-      tags: ["app"],
-      summary: "List All Clusters By AppID",
-    },
-  })
-  .input(z.object({
-    appId: z.string(),
-  }))
-  .output(z.object({ clusterConfigs: z.array(ClusterConfig) }))
-  .query(async ({ input, ctx: { user } }) => {
-    const { appId } = input;
-    const allClusterIds = await getCurrentClusters(user.identityId);
-    const clusterIds: string[] = [];
-    // 获取集群ids
-    // common app
-    if (!allApps[appId].clusterSpecificConfigs) {
-      clusterIds.push(...allClusterIds);
-    } else {
-      allApps[appId].clusterSpecificConfigs?.map((config) => {
-        clusterIds.push(config.cluster);
-      });
-    }
-
-    const configs = await Promise.all(clusterIds
-      .map(async (clusterId) => {
-        const client = getAdapterClient(clusterId);
-        if (!client) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message:`cluster ${clusterId} is not found`,
-          });
-        }
-        return await asyncClientCall(client.config, "getClusterConfig", {});
-      }));
-
-    return {
-      clusterConfigs: configs.map((config,idx) => ({ ...config,clusterId:clusterIds[idx] })),
-    };
-
   });

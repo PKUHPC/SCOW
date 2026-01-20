@@ -29,6 +29,12 @@
 
 - 6f77b4e: 新增可提交文件后缀配置，docs/deploy/config/portal/intro
 
+## 1.11.2
+
+### Patch Changes
+
+- 6f77b4e: 新增可提交文件后缀配置，docs/deploy/config/portal/intro
+
 ## 1.11.1
 
 ### Patch Changes

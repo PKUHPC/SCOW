@@ -2,14 +2,12 @@
 
 import { LinkOutlined } from "@ant-design/icons";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
-import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { join } from "path";
 import { TransType } from "src/i18n";
-import { AlgorithmIcon, ClusterIcon, CreateAppIcon, CreateDevHostIcon, DashBoardIcon,
-  DatasetIcon, DevHostIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon, ModelIcon,
-  PrivateAlgorithmIcon, PrivateDatasetIcon, PrivateImageIcon, PrivateModelIcon,
-  PublicAlgorithmIcon, PublicDatasetIcon, PublicImageIcon, PublicModelIcon,
-  RunningJobsIcon, TrainJobIcon, ViewDevHostIcon } from "src/icons/menuIcons";
+import { AlgorithmIcon,AppIcon, DashBoardIcon,
+  DataAssetIcon, DatasetIcon,DevelopAndTrainIcon, FileIcon,
+  ImageIcon, InferIcon, jobIcon, ModelIcon, TrainJobIcon, ViewDevHostIcon,
+} from "src/icons/menuIcons";
 import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Cluster, NavLink, PublicConfig } from "src/server/trpc/route/config";
@@ -21,19 +19,13 @@ export const userRoutes: (
   publicConfig: PublicConfig,
   clusterConfigs: ScowClusterConfigs,
   currentClusters: Cluster[],
-  setDefaultCluster: (cluster: Cluster | undefined) => void,
-  defaultCluster: Cluster | undefined,
   t: TransType,
-  languageId: string,
 ) => NavItemProps[] = (
   user,
   publicConfig,
   clusterConfigs,
   currentClusters,
-  setDefaultCluster,
-  defaultCluster,
   t,
-  languageId,
 ) => {
 
   if (!user) { return []; }
@@ -48,154 +40,81 @@ export const userRoutes: (
       clickToPath: "/dashboard",
     },
     {
-      Icon: DatasetIcon,
-      text: t("routes.data.title"),
-      path: "/dataset",
-      clickToPath: "/dataset/private",
+      Icon: DataAssetIcon,
+      text: t("routes.asset"),
+      path: "/asset",
+      clickToPath: "/asset/dataset",
       children: [
         {
-          Icon: PrivateDatasetIcon,
-          text: t("routes.data.private"),
-          path: "/dataset/private",
+          Icon: DatasetIcon,
+          text: t("routes.data.title"),
+          path: "/asset/dataset",
         },
         {
-          Icon: PublicDatasetIcon,
-          text: t("routes.data.public"),
-          path: "/dataset/public",
-        },
-      ],
-    },
-    {
-      Icon: ImageIcon,
-      text: t("routes.image.title"),
-      path: "/image",
-      clickToPath: "/image/private",
-      children: [
-        {
-          Icon: PrivateImageIcon,
-          text: t("routes.image.private"),
-          path: "/image/private",
+          Icon: ImageIcon,
+          text: t("routes.image.title"),
+          path: "/asset/image",
         },
         {
-          Icon: PublicImageIcon,
-          text: t("routes.image.public"),
-          path: "/image/public",
+          Icon: AlgorithmIcon,
+          text: t("routes.algorithm.title"),
+          path: "/asset/algorithm",
+        },
+        {
+          Icon: ModelIcon,
+          text: t("routes.model.title"),
+          path: "/asset/model",
         },
       ],
     },
     // 无可用集群时不显示该层级路由
     ...(currentClusters.length > 0 ? [ {
-      Icon: ClusterIcon,
-      text: t("routes.job.title"),
+      Icon: DevelopAndTrainIcon,
+      text: t("routes.developTrain"),
       path: "/jobs",
-      clickToPath: `/jobs/${defaultCluster?.id ?? currentClusters[0].id}/createApps`,
-      children: [
-        ...currentClusters.map((cluster) => ({
-          Icon: ClusterIcon,
-          text: getI18nConfigCurrentText(cluster.name, languageId),
-          path: `/jobs/${cluster.id}`,
-          clickable: false,
-          children:[
-            {
-              Icon: CreateAppIcon,
-              text: t("routes.job.createApp"),
-              path: `/jobs/${cluster.id}/createApps`,
-            },
-            {
-              Icon: TrainJobIcon,
-              text: t("routes.job.trainJob"),
-              path: `/jobs/${cluster.id}/trainJobs`,
-            },
-            ...(publicConfig.INFER_ENABLED ? [{
-              Icon: InferIcon,
-              text: t("routes.job.infer"),
-              path: `/jobs/${cluster.id}/inference`,
-            }] : []),
-            {
-              Icon: RunningJobsIcon,
-              text: t("routes.job.unfinishedJobs"),
-              path: `/jobs/${cluster.id}/runningJobs`,
-            },
-            {
-              Icon: HistoryJobsIcon,
-              text: t("routes.job.historyJobs"),
-              path: `/jobs/${cluster.id}/historyJobs`,
-            },
-          ],
-        })),
-      ],
-    },
-    ] : []),
-    {
-      Icon: AlgorithmIcon,
-      text: t("routes.algorithm.title"),
-      path: "/algorithm",
-      clickToPath: "/algorithm/private",
+      clickToPath: "/jobs/createApp",
       children: [
         {
-          Icon: PrivateAlgorithmIcon,
-          text: t("routes.algorithm.private"),
-          path: "/algorithm/private",
+          Icon: AppIcon,
+          text: t("routes.job.createApp"),
+          path: "/jobs/createApp",
         },
         {
-          Icon: PublicAlgorithmIcon,
-          text: t("routes.algorithm.public"),
-          path: "/algorithm/public",
+          Icon: TrainJobIcon,
+          text: t("routes.job.trainJob"),
+          path: "/jobs/createTrain",
+        },
+        ...(publicConfig.INFER_ENABLED ? [{
+          Icon: InferIcon,
+          text: t("routes.job.infer"),
+          path: "/jobs/createInfer",
+        }] : []),
+        ...devHostEnabled ? [{
+          Icon: ViewDevHostIcon,
+          text: t("routes.job.devHost"),
+          path: "/jobs/devList",
+        }] : [],
+        {
+          Icon: jobIcon,
+          text: t("routes.job.title"),
+          path: "/jobs/jobList",
         },
       ],
-    },
-    {
-      Icon: ModelIcon,
-      text: t("routes.model.title"),
-      path: "/model",
-      clickToPath: "/model/private",
-      children: [
-        {
-          Icon: PrivateModelIcon,
-          text: t("routes.model.private"),
-          path: "/model/private",
-        },
-        {
-          Icon: PublicModelIcon,
-          text: t("routes.model.public"),
-          path: "/model/public",
-        },
-      ],
-    },
+    }] : []),
     ...(currentClusters.length > 0 ? [
       {
         Icon: FileIcon,
         text: t("routes.file"),
         path: "/files",
-        clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
-        children: currentClusters.map((cluster) => ({
-          Icon: FileIcon,
-          text: getI18nConfigCurrentText(cluster.name, languageId),
-          path: `/files/${cluster.id}`,
-          clickToPath: `/files/${cluster.id}/~`,
-          handleClick: () => { setDefaultCluster(cluster); },
-        } as NavItemProps)),
+        clickToPath: "/files/~",
+        children:[
+          {
+            Icon: FileIcon,
+            text: t("routes.file"),
+            path: "/files/~",
+          },
+        ],
       },
-    ] : []),
-    // 开发机路由
-    ...(currentClusters.length > 0 && devHostEnabled ? [ {
-      Icon: DevHostIcon,
-      text: t("routes.devHost.title"),
-      path: "/devHost",
-      clickToPath: "/devHost/create",
-      children:[
-        {
-          Icon: CreateDevHostIcon,
-          text: t("routes.devHost.create"),
-          path: "/devHost/create",
-        },
-        {
-          Icon: ViewDevHostIcon,
-          text: t("routes.devHost.list"),
-          path: "/devHost/list",
-        },
-      ],
-    },
     ] : []),
     ...(publicConfig.NAV_LINKS && publicConfig.NAV_LINKS.length > 0
       ? publicConfig.NAV_LINKS.map((link) => {
@@ -232,5 +151,4 @@ export const userRoutes: (
         } as NavItemProps;
       }) : []),
   ];
-
 };

@@ -116,6 +116,28 @@
   - @scow/rich-error-model@2.0.2
   - @scow/lib-scheduler-adapter@1.1.30
 
+## 0.4.8
+
+### Patch Changes
+
+- 2ff4aed: 删除 AI 作业状态用于提示的 popover, 增加部分状态颜色, AI 异常作业状态增加国际化显示
+- 6f77b4e: 文件管理新增软链接处理，并增加不同文件类型的 icon
+- Updated dependencies [6f77b4e]
+- Updated dependencies [2ff4aed]
+- Updated dependencies [6f77b4e]
+- Updated dependencies [6f77b4e]
+  - @scow/config@1.11.2
+  - @scow/lib-web@1.5.7
+  - @scow/scowd-protos@0.3.2
+  - @scow/lib-notification@1.0.17
+  - @scow/lib-operation-log@2.2.7
+  - @scow/lib-scow-resource@0.2.16
+  - @scow/lib-server@1.4.7
+  - @scow/protos@1.0.32
+  - @scow/lib-scowd@1.2.2
+  - @scow/rich-error-model@2.0.2
+  - @scow/lib-scheduler-adapter@1.1.30
+
 ## 0.4.7
 
 ### Patch Changes

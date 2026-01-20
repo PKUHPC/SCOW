@@ -10,8 +10,8 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, message, Modal, Tree } from "antd";
+import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
+import { App, Button, Modal, Tree } from "antd";
 import type { DataNode, EventDataNode } from "antd/es/tree";
 import Link from "next/link";
 import { join } from "path";
@@ -46,6 +46,30 @@ const TopBar = styled(FilterFormContainer)`
   width: 100%;
   &>button {
     margin: 0px 4px;
+  }
+`;
+
+const FolderTriggerButton = styled(Button)`
+  width: 40px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  border-style: none;
+  color: ${({ theme }) => theme.token.colorPrimary} !important;
+  background: ${({ theme }) => theme.token.colorPrimaryBg} !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    border-style: none;
+    color: ${({ theme }) => theme.token.colorPrimary} !important;
+    border-color: ${({ theme }) => theme.token.colorPrimary} !important;
+    background: ${({ theme }) => theme.token.colorPrimaryBgHover} !important;
+  }
+
+  .anticon {
+    font-size: 16px;
   }
 `;
 
@@ -116,6 +140,14 @@ const formatPath = (path: string) => {
   return path;
 };
 
+const NON_UTF8_PREFIX = "scow-enc-";
+
+const hasNonUtf8Segment = (targetPath: string) => (
+  targetPath
+    .split("/")
+    .filter(Boolean)
+    .some((segment) => segment.startsWith(NON_UTF8_PREFIX))
+);
 
 export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, allowedExtensions, onSubmit }) => {
   const t = useI18nTranslateToString();
@@ -138,12 +170,15 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
     enabled: !!clusterId && path === "~" && visible,
   });
 
+  const { message } = App.useApp();
+
   useEffect(() => {
-    if (homeDir) {
+    if (!visible) { return; }
+    if (homeDir && path === "~") {
       setPrevPath(homeDir.path);
       setPath(homeDir.path);
     }
-  }, [homeDir]);
+  }, [homeDir, visible, path]);
 
   const { data: curDirContent, refetch, isLoading: isDirContentLoading } = trpc.file.listDirectory.useQuery({
     clusterId: clusterId,
@@ -208,6 +243,12 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
   };
 
   const onOkClick = () => {
+    const targetPath = selectedKeys.length > 0 ? selectedKeys[0].toString() : path;
+    if (hasNonUtf8Segment(targetPath)) {
+      message.info(t(p("nonUtf8NotAllowed")));
+      return;
+    }
+
     // 不选中文件夹的，直接把所在目录作为值
     if (!selectedFileInfo) {
       onSubmit(path);
@@ -243,11 +284,20 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
 
   return (
     <>
-      <Button size="small" onClick={() => { setVisible(true); }}><FolderAddOutlined /></Button>
+      <FolderTriggerButton
+        size="small"
+        disabled={!clusterId}
+        onClick={() => {
+          setVisible(true);
+        }}
+      >
+        <FolderOutlined />
+      </FolderTriggerButton>
       <Modal
         width={1000}
         open={visible}
         onCancel={() => { closeModal(); }}
+        destroyOnClose
         title={t(p("select"))}
         centered
         footer={[
@@ -351,7 +401,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
                 files={curDirContent || []}
                 filesFilter={(files) => files.filter((file) => !file.name.startsWith("."))}
                 loading={isDirContentLoading}
-                fileNameRender={(fileName: string) => <Button type="link">{fileName}</Button>}
+                fileNameRender={(fileName: string) => <Button style={{ color: "#000" }} type="link">{fileName}</Button>}
                 hiddenColumns={["mtime", "mode", "action"]}
                 pagination={false}
                 rowKey={(r: FileInfo): React.Key => join(path, r.name)}
@@ -388,4 +438,3 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
 
 const MkdirButton = ModalButton(MkdirModal, { icon: <FolderAddOutlined /> });
 const UploadFileButton = ModalButton(UploadModal, { icon: <UploadOutlined /> });
-
