@@ -20,6 +20,7 @@ import { ExtensionManifestWithUrl, fetchManifestsWithErrorHandling, UiExtensionS
 import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { Grid, Layout } from "antd";
 import { usePathname } from "next/navigation";
+import { join } from "path";
 import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useUiConfig } from "src/app/uiContext";
@@ -91,7 +92,9 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const languageId = useI18n().currentLanguage.id;
 
-  const uiExtensionConfig = usePublicConfig()?.publicConfig.UI_EXTENSION;
+  const publicConfig = usePublicConfig()?.publicConfig;
+  const uiExtensionConfig = publicConfig?.UI_EXTENSION;
+  const authPath = join(publicConfig?.BASE_PATH ?? "", "api/auth");
 
   const { hostname, uiConfig } = useUiConfig();
   const footerConfig = uiConfig.config?.footer;
@@ -178,7 +181,11 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         pathname={pathname}
         routes={primaryRoutes}
         user={user}
-        logout={() => { useLogoutMutation.mutateAsync().then(() => { location.reload(); }); }}
+        logout={() => {
+          useLogoutMutation.mutateAsync().then(() => {
+            window.location.href = authPath;
+          });
+        }}
         userLinks={[]}
         languageId={languageId}
         right={headerRightContent}
