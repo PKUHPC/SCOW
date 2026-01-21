@@ -976,7 +976,6 @@ export default {
         blockUserInAccountFailed: "Block user in account failed.",
         unblockUserInAccountFailed: "Unblock user in account failed.",
         batchOperation: "Batch operation",
-        cannotManageUser: "You cannot manage users for account {}.",
         batchUnsealCompleted: "Batch unblocking completed, with {} operation failed",
         batchBlockCompleted: "Batch blocking user operation completed, with {} operation failed",
         batchBlockSuccess:"Batch blocking of users succeeded!",
@@ -1325,6 +1324,7 @@ export default {
               },
             },
             index: {
+              cannotManageUser: "You cannot manage users for account {}.",
               userInAccount: "Users in Account {}",
             },
           },

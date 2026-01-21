@@ -2,11 +2,12 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { compareNumber } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { RefreshLink, useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
+import { RefreshLink } from "@scow/lib-web/build/utils/refreshToken";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
+import { Static } from "@sinclair/typebox";
 import { App, Divider, Popover, Space, Table, Tag } from "antd";
-import React, { Key,useCallback, useState } from "react";
-import { useAsync } from "react-async";
+import { LinkProps } from "next/link";
+import React, { Key, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { DisabledA } from "src/components/DisabledA";
@@ -15,21 +16,27 @@ import { prefix, useI18n,useI18nTranslateToString } from "src/i18n";
 import { DisplayedUserState, UserRole, UserStateInAccount } from "src/models/User";
 import { AddUserButton } from "src/pageComponents/users/AddUserButton";
 import { SetJobChargeLimitLink } from "src/pageComponents/users/JobChargeLimitModal";
+import { type GetAccountUsersSchema } from "src/pages/api/users";
 import { UserStore } from "src/stores/UserStore";
 import { moneyToString } from "src/utils/money";
 
 import { BatchOperationButton } from "./BatchOperationButton";
 
 interface Props {
+  data: Static<typeof GetAccountUsersSchema["responses"]["200"]> | undefined;
+  isLoading: boolean;
+  reload: () => void;
+  update: () => void;
   accountName: string;
   canSetAdmin: boolean;
+  getJobsPageUrl: (userId: string) => LinkProps["href"];
 }
 
 const p = prefix("pageComp.user.userTable.");
 const pCommon = prefix("common.");
 
 export const UserTable: React.FC<Props> = ({
-  accountName, canSetAdmin,
+  data, isLoading, reload, update, accountName, canSetAdmin,
 }) => {
 
   const { setUser, user } = useStore(UserStore);
@@ -41,21 +48,6 @@ export const UserTable: React.FC<Props> = ({
   const languageId = useI18n().currentLanguage.id;
 
   const { message, modal } = App.useApp();
-
-  const [refreshToken, update] = useRefreshToken();
-
-  const promiseFn = useCallback(async () => {
-    if (!accountName) { return undefined; }
-    return await api.getAccountUsers({ query: {
-      accountName,
-    } })
-      .httpError(403, () => {
-        message.error(t(p("cannotManageUser"), [accountName]));
-        return undefined;
-      });
-  }, [user]);
-
-  const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
 
   const DisplayedUserStateTexts = {
     [DisplayedUserState.DISPLAYED_NORMAL]: <Tag color="success">{t(p("normal"))}</Tag>,

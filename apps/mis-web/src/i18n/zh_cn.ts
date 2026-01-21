@@ -970,7 +970,6 @@ export default {
         blockUserInAccountFailed: "在账户下封锁用户失败",
         unblockUserInAccountFailed: "在账户下解封用户失败",
         batchOperation: "批量操作",
-        cannotManageUser: "您不能管理账户{}的用户。",
         batchBlockCompleted: "批量封锁用户操作已完成，其中{}操作失败",
         batchBlockSuccess:"批量封锁用户成功！",
         batchBlockFailed:"批量封锁用户失败！",
@@ -1307,6 +1306,7 @@ export default {
               },
             },
             index: {
+              cannotManageUser: "您不能管理账户{}的用户。",
               userInAccount: "账户{}的用户",
             },
           },

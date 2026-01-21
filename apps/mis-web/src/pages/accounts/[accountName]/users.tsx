@@ -1,4 +1,8 @@
+import { useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
 import { NextPage } from "next";
+import { useCallback } from "react";
+import { useAsync } from "react-async";
+import { api } from "src/apis";
 import { requireAuth } from "src/auth/requireAuth";
 import { NotFoundPage } from "src/components/errorPages/NotFoundPage";
 import { PageTitle } from "src/components/PageTitle";
@@ -26,6 +30,16 @@ export const UsersPage: NextPage = requireAuth(
       return <NotFoundPage />;
     }
 
+    const promiseFn = useCallback(async () => {
+      return await api.getAccountUsers({ query: {
+        accountName,
+      } });
+    }, [accountName]);
+
+    const [refreshToken, update] = useRefreshToken();
+
+    const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
+
     const title = t(p("title"), [accountName]);
 
     return (
@@ -36,8 +50,16 @@ export const UsersPage: NextPage = requireAuth(
         >
         </PageTitle>
         <UserTable
+          data={data}
+          isLoading={isLoading}
+          reload={reload}
+          update={update}
           accountName={accountName}
           canSetAdmin={account.role === UserRole.OWNER}
+          getJobsPageUrl={(userId) => ({
+            pathname: `/accounts/${accountName}/userJobs`,
+            query: { userId },
+          })}
         />
       </div>
     );
