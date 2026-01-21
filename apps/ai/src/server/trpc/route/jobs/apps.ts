@@ -26,7 +26,7 @@ import { callLog } from "src/server/setup/operationLog";
 import { driver } from "src/server/trpc/Driver";
 import { procedure } from "src/server/trpc/procedure/base";
 import { allApps, checkAppExist, checkCreateAppEntity,
-  checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs, 
+  checkEntityAuth, formatJobDetailsExtraInputs, getAllTags, getClusterAppConfigs,
   hasNonUtf8Segment } from "src/server/utils/app";
 import { checkClusterAvailable, getAdapterClient } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
@@ -266,8 +266,10 @@ export const listAllAvailableAppsFromAllClusters = procedure
   .output(z.object({ apps: z.array(appSchema) }))
   .query(async ({ ctx: { user } }) => {
     const currentClusterIds = await getCurrentClusters(user.identityId);
+    const aiClusterSet = new Set(Object.keys(clusters));
+    const availableClusterIds = currentClusterIds.filter((clusterId) => aiClusterSet.has(clusterId));
 
-    if (currentClusterIds.length === 0) {
+    if (availableClusterIds.length === 0) {
       logger.info("User %s has no authorized clusters when listing all apps.", user.identityId);
       return { apps: []};
     }
@@ -275,14 +277,14 @@ export const listAllAvailableAppsFromAllClusters = procedure
     // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的交互式应用
     if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && user.identityId) {
       const { apps: availableApps } = await libGetUserAvailableApps(
-        logger, currentClusterIds, user.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+        logger, availableClusterIds, user.identityId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
       return {
         apps: availableApps.map(mapAvailableAppFromMis),
       };
     }
 
     const appMap = new Map<string, AppSchema>();
-    currentClusterIds.forEach((clusterId) => {
+    availableClusterIds.forEach((clusterId) => {
       const clusterApps = getClusterAppConfigs(clusterId);
       Object.entries(clusterApps).forEach(([id, app]) => {
         if (!appMap.has(id)) {

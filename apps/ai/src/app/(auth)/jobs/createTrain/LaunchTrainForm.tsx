@@ -1222,13 +1222,11 @@ export const LaunchTrainForm = ({
   // 根据账户授权过滤可用集群，并映射出按钮需要的展示文案
   const clusterOptions = useMemo(() => {
     const allowedClusters = new Set<string>(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
-    return (currentAssociateClusterIds ?? []).map((clusterId) => ({
-      id: clusterId,
-      name: getI18nConfigCurrentText(
-        CLUSTERS.find((x) => x.id === clusterId)?.name || clusterId,
-        languageId,
-      ),
-      disabled: selectedAccount ? !allowedClusters.has(clusterId) : true,
+    const associateClusters = new Set<string>(currentAssociateClusterIds ?? []);
+    return CLUSTERS.map((cluster) => ({
+      id: cluster.id,
+      name: getI18nConfigCurrentText(cluster.name, languageId),
+      disabled: !selectedAccount || !allowedClusters.has(cluster.id) || !associateClusters.has(cluster.id),
     }));
   }, [CLUSTERS, accountClusterMap, currentAssociateClusterIds, languageId, selectedAccount]);
 
