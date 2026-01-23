@@ -1,5 +1,11 @@
 # @scow/lib-config
 
+## 1.0.8
+
+### Patch Changes
+
+- 79278d5: AI 和量子系增加页面标题、页面标题标签改为可配置
+
 ## 1.0.7
 
 ### Patch Changes

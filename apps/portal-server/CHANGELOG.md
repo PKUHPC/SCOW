@@ -1,5 +1,39 @@
 # @scow/portal-server
 
+## 1.10.0
+
+### Patch Changes
+
+- 79278d5: connectToApp 接口新增 jobId 参数
+- ca83d79: 登录节点桌面优化数据展示和错误提示
+- 597ac23: 刷新交互时应用密码优先通过适配器获取
+- d871708: 读取当前集群的、或者旧版本的不包含集群信息的相同 ID 的作业信息
+- 79278d5: scow 接入 scowd 版跨集群文件传输
+- 07267b1: 恢复 HPC 压缩下载功能和原本的下载逻辑
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [ca83d79]
+- Updated dependencies [79278d5]
+- Updated dependencies [1154951]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [597ac23]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [c658998]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+  - @scow/scowd-protos@0.4.0
+  - @scow/config@1.13.0
+  - @scow/lib-scheduler-adapter@1.1.34
+  - @scow/protos@1.0.36
+  - @scow/scheduler-adapter-protos@1.5.3
+  - @scow/lib-config@1.0.8
+  - @scow/lib-scowd@1.2.5
+  - @scow/lib-scow-resource@0.2.20
+  - @scow/lib-server@1.4.11
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.11
 
 ### Patch Changes

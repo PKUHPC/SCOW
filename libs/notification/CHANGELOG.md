@@ -1,5 +1,18 @@
 # @scow/lib-notification
 
+## 1.0.21
+
+### Patch Changes
+
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+  - @scow/config@1.13.0
+  - @scow/notification-protos@0.1.9
+
 ## 1.0.20
 
 ### Patch Changes

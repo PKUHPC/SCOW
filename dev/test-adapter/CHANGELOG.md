@@ -1,5 +1,15 @@
 # @scow/test-adapter
 
+## 1.1.18
+
+### Patch Changes
+
+- 597ac23: 刷新交互时应用密码优先通过适配器获取
+- Updated dependencies [597ac23]
+- Updated dependencies [79278d5]
+  - @scow/scheduler-adapter-protos@1.5.3
+  - @scow/lib-config@1.0.8
+
 ## 1.1.17
 
 ### Patch Changes

@@ -1,5 +1,25 @@
 # @scow/lib-web
 
+## 1.5.11
+
+### Patch Changes
+
+- fab1829: shell 只能添加一个集群的一个登录节点的快捷方式修复、出现省略增加 tooltip
+- b4c002a: 提取新设计的公共组件至 lib/web 中
+- 79278d5: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- 5eb4f91: 新增侧边内容的样式公共组件和调整侧边导航栏的宽度
+- 79278d5: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 79278d5: 管理系统平台管理员可配置启用 shell 的 root 权限
+- 79278d5: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- Updated dependencies [79278d5]
+- Updated dependencies [1154951]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+  - @scow/config@1.13.0
+  - @scow/protos@1.0.36
+
 ## 1.5.10
 
 ### Patch Changes

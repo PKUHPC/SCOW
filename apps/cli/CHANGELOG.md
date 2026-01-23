@@ -1,5 +1,23 @@
 # @scow/cli
 
+## 1.10.0
+
+### Patch Changes
+
+- 95b89d5: 完善 footer 配置及文档、ai 仪表盘未配置 resource 不展示数据 bug、创建应用信息报错优化
+- 79278d5: ai 推理、公共挂载点、监控配置支持多集群
+- 79278d5: 消息系统文档、日志、接口安全优化
+- 79278d5: 管理系统平台管理员可配置启用 shell 的 root 权限
+- 1bdc953: cli 如果配置了 fluentd，添加 fluentd 的健康检查，且所有容器等待 fluentd 启动后再启动。修复在高版本 docker 使用 cli 启动系统时，如果配置了 fluentd，其他容器无法正常启动的问题
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+  - @scow/config@1.13.0
+  - @scow/lib-config@1.0.8
+
 ## 1.9.11
 
 ### Patch Changes

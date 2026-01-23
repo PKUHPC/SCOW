@@ -1,5 +1,17 @@
 # @scow/scowd-protos
 
+## 0.4.0
+
+### Minor Changes
+
+- c658998: 修改 LoadImage 接口名，修改 PullImage，PushImage 的返回为流式返回
+
+### Patch Changes
+
+- 79278d5: connectToApp 接口新增 jobId 参数
+- ca83d79: 登录节点桌面优化数据展示和错误提示
+- 79278d5: scow 接入 scowd 版跨集群文件传输
+
 ## 0.3.4
 
 ### Patch Changes

@@ -1,5 +1,46 @@
 # @scow/mis-web
 
+## 1.10.0
+
+### Patch Changes
+
+- 79278d5: 账户/用户信息同步结果增加成功数据及失败详情的展示
+- 026a713: 修复 ai 监控只允许管理员查看的问题
+- 79278d5: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- ca83d79: 登录节点桌面优化数据展示和错误提示
+- 1154951: 账户管理和租户管理的管理成员页面新增批量操作功能
+- 79278d5: 消息系统文档、日志、接口安全优化
+- 79278d5: 资源管理增加操作日志
+- 79278d5: AI 和量子系增加页面标题、页面标题标签改为可配置
+- d1a71d4: 账户管理下的用户管理切换不刷新 bug 修复
+- 79278d5: 管理系统平台管理员可配置启用 shell 的 root 权限
+- 9bb1fa3: 在门户/管理系统/AI 中扩展获取未读消息 metadata 类型包括对象及数组
+- 79278d5: 登录用户在管理的账户下移出自己或取消自己的管理员权限时，账户管理导航下不允许再访问该账户相关信息
+- 79278d5: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- Updated dependencies [fab1829]
+- Updated dependencies [b4c002a]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [1154951]
+- Updated dependencies [5eb4f91]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+  - @scow/lib-web@1.5.11
+  - @scow/config@1.13.0
+  - @scow/protos@1.0.36
+  - @scow/notification-protos@0.1.9
+  - @scow/lib-config@1.0.8
+  - @scow/lib-notification@1.0.21
+  - @scow/lib-operation-log@2.2.11
+  - @scow/lib-scow-resource@0.2.20
+  - @scow/rich-error-model@2.0.2
+
 ## 1.9.11
 
 ### Patch Changes

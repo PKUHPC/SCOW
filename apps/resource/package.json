@@ -1,6 +1,6 @@
 {
   "name": "@scow/resource",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "private": true,
   "files": [
     ".next",
@@ -45,7 +45,6 @@
     "@scow/lib-web": "workspace:*",
     "@scow/protos": "workspace:*",
     "@scow/scow-resource-protos": "workspace:*",
-    "@scow/lib-operation-log": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
     "@tanstack/react-query": "5.90.12",

@@ -1,5 +1,11 @@
 # @scow/scheduler-adapter-protos
 
+## 1.5.3
+
+### Patch Changes
+
+- 597ac23: 刷新交互时应用密码优先通过适配器获取
+
 ## 1.5.2
 
 ### Patch Changes

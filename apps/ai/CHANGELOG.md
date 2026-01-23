@@ -1,5 +1,64 @@
 # @scow/ai
 
+## 0.5.0
+
+### Minor Changes
+
+- 79278d5: 应用训练推理开发机统一和优化
+- 79278d5: 优化 AI 功能菜单：新增数据资产一级菜单（包含数据集、镜像、算法、模型）；数据资产中“我的”和“公共”合并成一个页面通过 Tabs 展示；文件管理增加集群参数
+
+### Patch Changes
+
+- 97f80bc: ai 提交作业时只筛选出 ai 的集群和应用
+- 026a713: 修复 ai 监控只允许管理员查看的问题
+- 79278d5: 登录页面以及各系统 logo 图片颜色不随系统主题色变化修复
+- 95b89d5: 完善 footer 配置及文档、ai 仪表盘未配置 resource 不展示数据 bug、创建应用信息报错优化
+- 79278d5: ai 推理、公共挂载点、监控配置支持多集群
+- 79278d5: 消息系统文档、日志、接口安全优化
+- d871708: AI 作业增加一个保存所有 Session 信息的文件
+- 5eb4f91: 调整侧边导航栏的宽度
+- 79278d5: 修复 AI 未配置应用时直接 500 报错
+- 79278d5: AI 和量子系增加页面标题、页面标题标签改为可配置
+- c658998: 优化上传镜像，在镜像列表页面显示创建中进度日志
+- f209732: 修复 AI 退出登录时不直接跳转登录页面的问题
+- 9bb1fa3: 在门户/管理系统/AI 中扩展获取未读消息 metadata 类型包括对象及数组
+- 79278d5: 升级 next 至 15.5.7 以修复https://nextjs.org/blog/CVE-2025-66478
+- 07267b1: 恢复 HPC 压缩下载功能和原本的下载逻辑
+- Updated dependencies [fab1829]
+- Updated dependencies [79278d5]
+- Updated dependencies [b4c002a]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [ca83d79]
+- Updated dependencies [79278d5]
+- Updated dependencies [1154951]
+- Updated dependencies [5eb4f91]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [597ac23]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [c658998]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+  - @scow/lib-web@1.5.11
+  - @scow/scowd-protos@0.4.0
+  - @scow/config@1.13.0
+  - @scow/lib-scheduler-adapter@1.1.34
+  - @scow/protos@1.0.36
+  - @scow/notification-protos@0.1.9
+  - @scow/scheduler-adapter-protos@1.5.3
+  - @scow/lib-config@1.0.8
+  - @scow/lib-scowd@1.2.5
+  - @scow/lib-notification@1.0.21
+  - @scow/lib-operation-log@2.2.11
+  - @scow/lib-scow-resource@0.2.20
+  - @scow/lib-server@1.4.11
+  - @scow/rich-error-model@2.0.2
+
 ## 0.4.11
 
 ### Patch Changes

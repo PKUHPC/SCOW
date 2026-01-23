@@ -1,5 +1,20 @@
 # @scow/grpc-api
 
+## 1.30.0
+
+### Minor Changes
+
+- 1154951: 将 cancelJobChargeLimit、setJobChargeLimit、removeUserFromAccount、blockUserInAccount、
+  unblockUserInAccount 拓展增加 userIds 参数，并将 userId 改为 optional。
+- 79278d5: 管理系统平台管理员配置是否启用 shell 的 root 权限，增加 getIsUserEnabledRootShell 接口判断用户是否允许使用 shell 的 root 权限
+- 79278d5: 在审计系统的 proto 中增加资源管理下与集群/分区授权相关的 message
+
+### Patch Changes
+
+- 79278d5: connectToApp 接口新增 jobId 参数
+- ca83d79: 登录节点桌面优化数据展示和错误提示
+- 8f30ca0: 管理端 getRunningJobs 增加返回参数：accountPrice、tenantPrice、chargingPeriod 的起止时间（startTime、endTime）
+
 ## 1.29.0
 
 ### Minor Changes

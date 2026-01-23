@@ -1,5 +1,15 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.34
+
+### Patch Changes
+
+- 79278d5: 修复租户管理的未结束作业分配的加速卡展示错误
+- Updated dependencies [1154951]
+- Updated dependencies [597ac23]
+  - @scow/protos@1.0.36
+  - @scow/scheduler-adapter-protos@1.5.3
+
 ## 1.1.33
 
 ### Patch Changes

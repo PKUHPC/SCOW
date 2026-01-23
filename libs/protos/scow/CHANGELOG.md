@@ -1,5 +1,18 @@
 # @scow/protos
 
+## 1.0.36
+
+### Patch Changes
+
+- 1154951: 账户管理和租户管理的管理成员页面新增批量操作功能
+- Updated dependencies [79278d5]
+- Updated dependencies [ca83d79]
+- Updated dependencies [1154951]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+  - @scow/grpc-api@1.30.0
+
 ## 1.0.35
 
 ### Patch Changes

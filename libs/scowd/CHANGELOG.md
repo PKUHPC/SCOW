@@ -1,5 +1,16 @@
 # @scow/lib-scowd
 
+## 1.2.5
+
+### Patch Changes
+
+- 79278d5: scow 接入 scowd 版跨集群文件传输
+- Updated dependencies [79278d5]
+- Updated dependencies [ca83d79]
+- Updated dependencies [c658998]
+- Updated dependencies [79278d5]
+  - @scow/scowd-protos@0.4.0
+
 ## 1.2.4
 
 ### Patch Changes

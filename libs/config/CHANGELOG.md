@@ -1,5 +1,23 @@
 # @scow/config
 
+## 1.13.0
+
+### Minor Changes
+
+- 79278d5: 管理系统平台管理员配置是否启用 shell 的 root 权限，配置文件在 docs/deploy/config/mis/intro
+
+### Patch Changes
+
+- 79278d5: 在 auth.yaml 配置文件中的 UI 配置项中增加页脚的配置
+  文档相对路径/SCOW/docs/deploy/config/auth/config
+- 79278d5: 集群配置文件中增加 ai 推理、公共挂载点、监控的配置(/docs/deploy/config/ai/intro#修改安装配置文件)
+- 8f30ca0: 在 mis.yaml 配置文件中的同步作业相关配置项中增加可配置正在运行中作业计费的最小间隔（单位小时） 文档相对路径/SCOW/docs/deploy/config/mis/fetch-job/intro
+  在 mis.yaml 配置文件中的同步作业相关配置项中增加可配置拉取已结束作业时，结束时间基于当前 scow 节点时间向前的偏移量（单位秒） 文档相对路径/SCOW/docs/deploy/config/mis/fetch-job/intro
+- 79278d5: 在 ui.yaml 配置文件中增加页面标题标签的配置
+  文档相对路径/SCOW/docs/deploy/config/customization/webui
+- Updated dependencies [79278d5]
+  - @scow/lib-config@1.0.8
+
 ## 1.12.1
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @scow/auth
 
+## 1.10.0
+
+### Patch Changes
+
+- 79278d5: AI 和量子系增加页面标题、页面标题标签改为可配置
+- 79278d5: 登录页面优化 UI 优化、页脚更改为可配置
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [79278d5]
+- Updated dependencies [8f30ca0]
+- Updated dependencies [79278d5]
+  - @scow/config@1.13.0
+  - @scow/lib-config@1.0.8
+  - @scow/lib-server@1.4.11
+
 ## 1.9.11
 
 ### Patch Changes
