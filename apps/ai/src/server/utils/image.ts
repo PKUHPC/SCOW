@@ -15,7 +15,6 @@ import { TRPCError } from "@trpc/server";
 import { NodeSSH } from "node-ssh";
 import { Logger } from "ts-log";
 
-import { clusters } from "../config/clusters";
 import { getHarborConfig, HarborClient, harborPassword, harborUrl, harborUser } from "./harbor";
 
 const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
@@ -79,9 +78,9 @@ const runtimeContainerIdPrefix = {
   [k8sRuntime.containerd]: "containerd",
 };
 
-export function getK8sRuntime(clusterId: string): k8sRuntime {
-  const runtime = clusters[clusterId].k8s?.runtime;
-  return runtime ?? k8sRuntime.docker;
+// 只用于ssh，且已经不维护了，直接用最常用的containerd兜底
+export function getK8sRuntime(): k8sRuntime {
+  return k8sRuntime.containerd;
 }
 
 export function getRuntimeCommand(runtime: k8sRuntime): string {
@@ -97,15 +96,13 @@ export async function getLoadedImage({
   ssh,
   logger,
   sourcePath,
-  clusterId,
 }: {
   ssh: NodeSSH,
   logger: Logger,
   sourcePath: string,
-  clusterId: string,
 }): Promise<string | undefined> {
 
-  const runtime = getK8sRuntime(clusterId);
+  const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
   const loadedResp = await loggedExec(ssh, logger, true, command, ["load", "-i", sourcePath]);
@@ -123,17 +120,15 @@ export async function getPulledImage({
   ssh,
   logger,
   sourcePath,
-  clusterId,
   loginInfo,
 }: {
   ssh: NodeSSH,
   logger: Logger,
   sourcePath: string,
-  clusterId: string,
   loginInfo?: LoginInfo,
 }): Promise<string | undefined> {
 
-  const runtime = getK8sRuntime(clusterId);
+  const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
   const { userName, password } = loginInfo ?? {};
@@ -164,16 +159,14 @@ export async function pushImageToHarbor({
   logger,
   localImageUrl,
   harborImageUrl,
-  clusterId,
 }: {
   ssh: NodeSSH,
   logger: Logger,
   localImageUrl: string,
   harborImageUrl: string,
-  clusterId: string,
 }): Promise<void> {
 
-  const runtime = getK8sRuntime(clusterId);
+  const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
   // login harbor
@@ -210,17 +203,15 @@ export async function commitContainerImage({
   logger,
   formattedContainerId,
   localImageUrl,
-  clusterId,
 }: {
   node: string,
   ssh: NodeSSH,
   logger: Logger,
   formattedContainerId: string,
   localImageUrl: string,
-  clusterId: string,
 }): Promise<void> {
 
-  const runtime = getK8sRuntime(clusterId);
+  const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
   const resp = await loggedExec(ssh, logger, true, "sh",
     ["-c", `${command} ps --no-trunc | grep ${formattedContainerId}`]);
@@ -237,8 +228,8 @@ export async function commitContainerImage({
 }
 
 
-export const formatContainerId = (clusterId: string, containerId: string) => {
-  const runtime = getK8sRuntime(clusterId);
+export const formatContainerId = (containerId: string) => {
+  const runtime = getK8sRuntime();
   const prefix = getContainerIdPrefix(runtime);
   return containerId.replace(`${prefix}://`, "");
 };

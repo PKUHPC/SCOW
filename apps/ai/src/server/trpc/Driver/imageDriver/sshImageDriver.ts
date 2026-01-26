@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Source } from "src/server/entities/Image";
-import { commitContainerImage, getLoadedImage, getPulledImage, pushImageToHarbor } from "src/server/utils/image";
+import { commitContainerImage, formatContainerId, getLoadedImage, getPulledImage,
+  pushImageToHarbor } from "src/server/utils/image";
 import { checkSharePermission } from "src/server/utils/share";
 import { sshConnect } from "src/server/utils/ssh";
 import { Logger } from "ts-log";
@@ -36,7 +37,6 @@ export class SshImageDriver implements ImageDriver {
         // 本地镜像时加载镜像
         localImageUrl = await getLoadedImage({
           ssh,
-          clusterId: this.clusterId,
           logger:this.logger,
           sourcePath,
         }).catch((e) => {
@@ -50,7 +50,6 @@ export class SshImageDriver implements ImageDriver {
         // 远程镜像需先拉取到本地
         localImageUrl = await getPulledImage({
           ssh,
-          clusterId: this.clusterId,
           logger:this.logger,
           sourcePath,
           loginInfo:{ userName,password },
@@ -73,7 +72,6 @@ export class SshImageDriver implements ImageDriver {
       // 制作镜像，上传至harbor
       await pushImageToHarbor({
         ssh,
-        clusterId: this.clusterId,
         logger:this.logger,
         localImageUrl,
         harborImageUrl,
@@ -105,7 +103,6 @@ export class SshImageDriver implements ImageDriver {
 
       const localImageUrl = await getPulledImage({
         ssh,
-        clusterId: this.clusterId,
         logger:this.logger,
         sourcePath,
       })
@@ -123,7 +120,6 @@ export class SshImageDriver implements ImageDriver {
       // 制作镜像上传
       await pushImageToHarbor({
         ssh,
-        clusterId: this.clusterId,
         logger:this.logger,
         localImageUrl,
         harborImageUrl,
@@ -139,7 +135,7 @@ export class SshImageDriver implements ImageDriver {
 
   async saveImage({
     node,
-    formattedContainerId,
+    rowContainerId,
     localImageUrl,
     harborImageUrl,
   }: saveImageParams): Promise<void> {
@@ -148,9 +144,8 @@ export class SshImageDriver implements ImageDriver {
       await commitContainerImage({
         node,
         ssh,
-        clusterId:this.clusterId,
         logger:this.logger,
-        formattedContainerId,
+        formattedContainerId:formatContainerId(rowContainerId),
         localImageUrl,
       }).catch((e) => {
         this.logger.error(`commitContainerImage failed while saving the image, ${e.message}`);
@@ -163,7 +158,6 @@ export class SshImageDriver implements ImageDriver {
       // 保存镜像至harbor
       await pushImageToHarbor({
         ssh,
-        clusterId:this.clusterId,
         logger:this.logger,
         localImageUrl,
         harborImageUrl,

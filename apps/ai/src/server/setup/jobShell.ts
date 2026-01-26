@@ -1,5 +1,4 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import * as k8sClient from "@kubernetes/client-node";
 import { normalizePathnameWithQuery } from "@scow/utils";
 import { IncomingMessage } from "http";
 import { NextApiRequest } from "next";
@@ -8,8 +7,7 @@ import { getUserToken } from "src/server/auth/cookie";
 import { validateUserToken } from "src/server/auth/token";
 import { clusters } from "src/server/trpc/route/config";
 import { getAdapterClient } from "src/server/utils/clusters";
-import { BASE_PATH } from "src/utils/processEnv";
-import { PassThrough } from "stream";
+import { BASE_PATH, USE_MOCK } from "src/utils/processEnv";
 import { WebSocket, WebSocketServer } from "ws";
 
 export interface ShellQuery {
@@ -25,7 +23,7 @@ export type ShellInputData =
   | { $case: "disconnect" }
   ;
 export type ShellOutputData =
-  | { $case: "data", data: { data: string } }
+  | { $case: "data", data: { data: number[] | { type: "Buffer"; data: number[] } | string } }
   | { $case: "exit", exit: { code?: number; signal?: string } }
   ;
 export const config = {
@@ -89,6 +87,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   const log = (message: string, ...optionalParams: any[]) => console.log(
     `[io] [${identityId}] ${message}`, optionalParams);
+  let closed = false;
 
   log("Connection request received.");
 
@@ -121,12 +120,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   if (!clusterId || !clusters[clusterId]) {
     log("[params] param-clusterId not passed or unknown");
     ws.close(0, "param-clusterId not passed or unknown");
-    return;
-  }
-
-  if (!clusters[clusterId].k8s?.kubeconfig.path) {
-    log("[config] The current cluster does not have kubeconfig configured.");
-    ws.close(0, "The current cluster does not have kubeconfig configured.");
     return;
   }
 
@@ -168,25 +161,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     ws.send(JSON.stringify(data));
   };
 
-  // 创建PassThrough流作为stdin, stdout, stderr
-  const stdinStream = new PassThrough();
-  const stdoutStream = new PassThrough();
-  const stderrStream = new PassThrough();
-
-  // 将Kubernetes stdout和stderr的输出发送回WebSocket客户端
-  stdoutStream.on("data", (data) => {
-    send({ $case: "data", data: { data: data.toString() } });
-  });
-
-  stderrStream.on("data", (data) => {
-    send({ $case: "data", data: { data: data.toString() } });
-  });
-
-  ws.on("error", async (err) => {
-    log("Error occurred from client. Disconnect.", err);
-    stdinStream.end(); // 结束stdin流输入
-  });
-
   const isValidPod = jobInfo.pods.some((p) => p.namespace === namespace && p.podName === podName);
 
   if (!isValidPod) {
@@ -196,41 +170,132 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   }
 
   try {
-    const kc = new k8sClient.KubeConfig();
-    kc.loadFromFile(join("/etc/scow", clusters[clusterId].k8s?.kubeconfig.path || "/kube/config"));
-    const k8sWs = await new k8sClient.Exec(kc)
-      .exec(namespace, podName, "", ["/bin/sh"], stdoutStream, stderrStream, stdinStream, true);
+    const connectInfo = {
+      jobId,
+      namespace,
+      podName,
+      containerName: "",
+    };
+    const stream = client.job.streamJobShell();
+    let cleanedUp = false;
+    let authChecking = false;
+    let authCheckInterval: NodeJS.Timeout | undefined;
+
+    const cleanup = () => {
+      if (cleanedUp) { return; }
+      cleanedUp = true;
+      if (authCheckInterval) {
+        clearInterval(authCheckInterval);
+        authCheckInterval = undefined;
+      }
+      try {
+        stream.write({ payload: { $case: "disconnect", disconnect: {} } });
+      } catch (e) { void e; }
+      try {
+        stream.end();
+      } catch (e) { void e; }
+      try {
+        stream.removeAllListeners();
+      } catch (e) { void e; }
+    };
+
+    stream.write({
+      payload: { $case: "connect", connect: connectInfo },
+    });
 
     log("Connected to shell");
 
-    // 监听来自客户端WebSocket的消息并写入stdinStream
+    if (process.env.NODE_ENV !== "test" && !USE_MOCK && token) {
+      authCheckInterval = setInterval(async () => {
+        if (closed || cleanedUp || authChecking) { return; }
+        authChecking = true;
+        const authIdentity = await validateUserToken(token);
+        authChecking = false;
+
+        if (!authIdentity || authIdentity !== identityId) {
+          log("token is not valid when connection alive");
+          closed = true;
+          cleanup();
+          try {
+            send({ $case: "exit", exit: { code: 401 } });
+          } catch (e) {
+            log("Error occurred when sending exit message", e);
+          }
+          ws.close(4001, "token is not valid");
+        }
+      }, 300000);
+    }
+
+    stream.on("data", (chunk) => {
+      const payload = chunk.payload;
+      if (!payload) {
+        return;
+      }
+
+      switch (payload.$case) {
+        case "data":
+          send({ $case: "data", data: { data: Array.from(payload.data.data) } });
+          break;
+        case "exit":
+          send({ $case: "exit", exit: { code: payload.exit.code, signal: payload.exit.signal } });
+          break;
+        case "error":
+          log("[shell] Received error from adapter", payload.error.message);
+          send({ $case: "data", data: { data: Array.from(Buffer.from(payload.error.message, "utf8")) } });
+          send({ $case: "exit", exit: { code: 1, signal: "ERROR" } });
+          break;
+      }
+    });
+
+    stream.on("error", (err) => {
+      log("Error occurred from adapter. Disconnect.", err);
+      closed = true;
+      try {
+        send({ $case: "exit", exit: { code: 1 } });
+      } catch (e) {
+        void e;
+      }
+      cleanup();
+      ws.close(1011, "server error");
+    });
+
+    // 监听来自客户端WebSocket的消息并写入适配器stream
     ws.on("message", (data) => {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const message = JSON.parse(data.toString());
-
+      const message = JSON.parse(data.toString()) as ShellInputData;
       switch (message.$case) {
         case "data":
-          stdinStream.write(message.data.data);
+          stream.write({
+            payload: { $case: "data", data: { data: message.data.data } },
+          });
           break;
         case "resize":
-          stdinStream.write(
-            `stty cols ${message.resize.cols} rows ${message.resize.rows}\n`);
+          stream.write({
+            payload: {
+              $case: "resize",
+              resize: { cols: message.resize.cols, rows: message.resize.rows },
+            },
+          });
           break;
         case "disconnect":
-          stdinStream.end();
+          closed = true;
+          cleanup();
           break;
       }
     });
 
     ws.on("close", () => {
-      // 关闭相关流，以确保Kubernetes端的命令执行可以正确结束
-      stdinStream.end();
-      stdoutStream.end();
-      stderrStream.end();
-      k8sWs.close();
+      closed = true;
+      cleanup();
+    });
+
+    ws.on("error", (err) => {
+      closed = true;
+      log("Error occurred from client. Disconnect.", err);
+      cleanup();
     });
   } catch (error) {
-    console.error("Error executing command in Kubernetes", error);
+    console.error("Error executing command via adapter", error);
     ws.close();
   }
 });
@@ -254,4 +319,3 @@ export const setupJobShellServer = (req: NextApiRequest) => {
 
   });
 };
-

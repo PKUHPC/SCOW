@@ -141,14 +141,6 @@ export const ClusterConfigSchema = Type.Object({
     }, { description: "开发机功能配置" })),
   }, { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } }),
 
-  k8s: Type.Optional(Type.Object({
-    runtime: Type.Enum(k8sRuntime, { description: "k8s 集群运行时, ai系统的镜像功能的命令取决于该值, 可选 docker 或者 containerd",
-      default: "containerd" }),
-    kubeconfig: Type.Object({
-      path: Type.String({ description: "集群 kubeconfig 文件路径" }),
-    }, { description: "k8s 集群 kubeconfig 相关配置" }),
-  }, { description: "k8s 集群配置" })),
-
   storage: Type.Optional(StorageConfigSchema),
   description: Type.Optional(createI18nStringSchema({ description: "集群描述" })),
   publicMountPoints:Type.Optional(Type.Array(

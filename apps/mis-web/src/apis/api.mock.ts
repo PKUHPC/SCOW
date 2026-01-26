@@ -559,7 +559,6 @@ export const mockApi: MockApi<typeof api> = {
         crossClusterFileTransfer: undefined,
         hpc: { enabled: true },
         ai: { enabled: false },
-        k8s: undefined,
       },
     },
   }),

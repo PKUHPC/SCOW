@@ -73,8 +73,18 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, pod
         const message = JSON.parse(e.data) as ShellOutputData;
         switch (message.$case) {
           case "data": {
-            const data = Buffer.from(message.data.data);
-            term.write(Uint8Array.from(data));
+            const raw = message.data.data;
+            if (typeof raw === "string") {
+              term.write(new TextEncoder().encode(raw));
+              break;
+            }
+            if (Array.isArray(raw)) {
+              term.write(Uint8Array.from(raw));
+              break;
+            }
+            if (raw && raw.type === "Buffer" && Array.isArray(raw.data)) {
+              term.write(Uint8Array.from(raw.data));
+            }
             break;
           }
           case "exit":
@@ -114,4 +124,3 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, pod
     <TerminalContainer ref={container} />
   );
 };
-

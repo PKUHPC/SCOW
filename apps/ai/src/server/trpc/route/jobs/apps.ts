@@ -36,7 +36,6 @@ import { getProtoAppType } from "src/server/utils/getProtoAppType";
 import { getProtoJobTypes } from "src/server/utils/getProtoJobType";
 import {
   createHarborImageUrl,
-  formatContainerId,
 } from "src/server/utils/image";
 import { isPortReachableThroughUrl } from "src/server/utils/isPortReachable";
 import { logger } from "src/server/utils/logger";
@@ -814,8 +813,6 @@ export const saveImage =
           });
         }
 
-        const formattedContainerId = formatContainerId(clusterId, containerId);
-
         const harborImageUrl = await createHarborImageUrl(imageName, imageTag + tagPostfix, user.identityId,logger);
         const localImageUrl = `${userId}/${imageName}:${imageTag + tagPostfix}`;
 
@@ -858,7 +855,7 @@ export const saveImage =
             },async (imageDriver) => {
               await imageDriver.saveImage({
                 node:nodeName,
-                formattedContainerId,
+                rowContainerId:containerId,
                 localImageUrl,
                 harborImageUrl,
                 imageId: image.id,

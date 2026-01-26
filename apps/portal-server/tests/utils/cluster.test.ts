@@ -2,7 +2,7 @@ import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials } from "@grpc/grpc-js";
 import { ClusterConfigSchema, getClusterConfigs } from "@scow/config/build/cluster";
-import { clusterConfigSchemaProto_K8sRuntimeToJSON, ConfigServiceClient } from "@scow/protos/build/common/config";
+import { ConfigServiceClient } from "@scow/protos/build/common/config";
 import { createServer } from "src/app";
 import { logger } from "src/utils/logger";
 import { getI18nTypeFormat, getLoginNodesTypeFormat } from "tests/file/utils";
@@ -39,10 +39,6 @@ it("get cluster configs info", async () => {
       displayName: getI18nTypeFormat(cluster.displayName),
       loginNodes: !cluster.loginNodes ? [] :
         getLoginNodesTypeFormat(cluster.loginNodes),
-      k8s: cluster.k8s ? {
-        k8sRuntime: clusterConfigSchemaProto_K8sRuntimeToJSON(cluster.k8s.runtime).toLowerCase(),
-        kubeconfig: cluster.k8s.kubeconfig,
-      } : undefined,
     };
     modifiedClusters[cluster.clusterId] = newCluster as ClusterConfigSchema;
   });

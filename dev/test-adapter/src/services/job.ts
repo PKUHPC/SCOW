@@ -25,8 +25,7 @@ export const jobServiceServer = plugin((server) => {
         return true;
       });
 
-      const jobs = testDataClone.filter((x) =>
-        x.cluster === clusterId &&
+      const jobs = testDataClone.filter((x) => x.cluster === clusterId &&
         (endTimeRange ?
           new Date(x.endTime) >= new Date(endTimeRange.startTime ?? 0) &&
           new Date(x.endTime) <= new Date(endTimeRange.endTime ?? 0)
@@ -91,8 +90,14 @@ export const jobServiceServer = plugin((server) => {
     getPodMonitorInfo: async () => {
       return [{ monitorData: []}];
     },
-
-
+    streamJobShell: async (call) => {
+      call.on("data", () => {
+        // no-op for test adapter
+      });
+      call.on("end", () => {
+        call.end();
+      });
+    },
   });
 
 });

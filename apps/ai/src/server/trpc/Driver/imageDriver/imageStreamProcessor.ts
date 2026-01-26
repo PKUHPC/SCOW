@@ -39,7 +39,6 @@ export async function withAbortHandling<R>(
 // 定义公共接口
 interface PullImageParams {
   imageId: number;
-  command: string;
   sourcePath: string;
   loginInfo?: LoginInfo;
   abortController: AbortController;
@@ -53,7 +52,6 @@ interface PullImageParams {
 
 interface PushImageParams {
   imageId: number;
-  command: string;
   localImageUrl: string;
   harborImageUrl: string;
   abortController: AbortController;
@@ -66,7 +64,6 @@ interface PushImageParams {
 // Pull 镜像公共函数
 export async function pullImageWithResStream({
   imageId,
-  command,
   sourcePath,
   loginInfo,
   abortController,
@@ -88,7 +85,6 @@ export async function pullImageWithResStream({
   try {
     const pullResStream = customTimeoutClient.image.pullImage({
       userId: "root",
-      command,
       sourcePath,
       ...(loginInfo && { loginInfo }),
     }, { signal: abortController.signal });
@@ -184,7 +180,6 @@ export async function pullImageWithResStream({
 // Push 镜像公共函数
 export async function pushImageWithResStream({
   imageId,
-  command,
   localImageUrl,
   harborImageUrl,
   abortController,
@@ -203,7 +198,6 @@ export async function pushImageWithResStream({
   try {
     const pushResStream = customTimeoutClient.image.pushImageToHarbor({
       userId: "root",
-      command,
       localImageUrl,
       harborImageUrl,
       harborInfo: {

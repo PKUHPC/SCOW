@@ -1,6 +1,6 @@
 import { ClusterConfigSchema, LoginNodeConfigSchema } from "@scow/config/build/cluster";
 import { I18nStringType } from "@scow/config/build/i18n";
-import { ClusterConfigSchemaProto, clusterConfigSchemaProto_K8sRuntimeFromJSON,
+import { ClusterConfigSchemaProto,
   ClusterConfigSchemaProto_LoginNodesProtoType } from "@scow/protos/build/common/config";
 import { I18nObject_I18n, I18nStringProtoType } from "@scow/protos/build/common/i18n";
 import { underscoreNamingToCamelCase } from "@scow/utils/build/i18n";
@@ -92,12 +92,6 @@ export const convertClusterConfigsToServerProtoType = (
         } : undefined,
       hpc: { enabled: item.hpc.enabled },
       ai: { enabled: item.ai.enabled },
-      k8s: item.k8s ?
-        {
-          runtime: clusterConfigSchemaProto_K8sRuntimeFromJSON(item.k8s.runtime.toUpperCase()),
-          kubeconfig: { path: item.k8s.kubeconfig.path },
-        } : undefined,
-
       storage: item.storage,
       description: item.description ? getI18nSeverTypeFormat(item.description) : undefined,
     };

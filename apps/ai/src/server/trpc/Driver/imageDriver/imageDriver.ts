@@ -30,7 +30,7 @@ export interface copyImageParams {
 }
 export interface saveImageParams {
   node: string;
-  formattedContainerId: string;
+  rowContainerId: string;
   localImageUrl: string;
   harborImageUrl: string;
   imageId: number;

@@ -117,21 +117,7 @@ message ClusterConfigSchemaProto {
     // default value = false
     bool enabled = 1;
   }
-  enum K8sRuntime {
-    DOCKER = 0;
-    CONTAINERD = 1;
-  }
-  message Kubeconfig {
-    // 集群 kubeconfig 文件路径
-    string path = 1;
-  }
-  message K8s {
-    // k8s 集群运行时, ai系统的镜像功能的命令取决于该值, 可选 docker 或者 containerd
-    // default value = containerd
-    K8sRuntime runtime = 1;
-    // k8s 集群 kubeconfig 相关配置
-    Kubeconfig kubeconfig = 2;
-  }
+
 
   message ScowdConfigs {
     bool enabled = 1;
@@ -160,7 +146,6 @@ message ClusterConfigSchemaProto {
   optional CrossClusterFileTransfer cross_cluster_file_transfer = 9;
   Hpc hpc = 10;
   Ai ai = 11;
-  optional K8s k8s = 12;
   // scowd 配置
   ScowdConfigs scowd = 13;
   optional Storage storage = 14;

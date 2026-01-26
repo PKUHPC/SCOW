@@ -4,7 +4,6 @@ import { Source } from "src/server/entities/Image";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
-import { getK8sRuntime, getRuntimeCommand } from "src/server/utils/image";
 import { appendImageCreationOutput, cleanupImageCreationOutput,
   COMMIT_DEFAULT_OUTPUT,
   CreationOperation,
@@ -48,8 +47,6 @@ export class ScowdImageDriver implements ImageDriver {
     return withAbortHandling(imageId, async (abortController) => {
 
       let localImageUrl: string | undefined = undefined;
-      const runtime = getK8sRuntime(this.clusterId);
-      const command = getRuntimeCommand(runtime);
 
       try {
         if (source === Source.INTERNAL) {
@@ -108,7 +105,6 @@ export class ScowdImageDriver implements ImageDriver {
           const loadResponse = await wrap(
             this.client.image.loadImage({
               userId:"root",
-              command,
               sourcePath,
             }),
             this.logger,
@@ -144,7 +140,6 @@ export class ScowdImageDriver implements ImageDriver {
 
           const pullResult = await pullImageWithResStream({
             imageId,
-            command,
             sourcePath,
             loginInfo,
             abortController,
@@ -160,7 +155,6 @@ export class ScowdImageDriver implements ImageDriver {
 
         await pushImageWithResStream({
           imageId,
-          command,
           localImageUrl,
           harborImageUrl,
           abortController,
@@ -192,8 +186,6 @@ export class ScowdImageDriver implements ImageDriver {
 
     return withAbortHandling(newImageId, async (abortController) => {
       try {
-        const runtime = getK8sRuntime(this.clusterId);
-        const command = getRuntimeCommand(runtime);
         // 拉取远程镜像
         if (sourcePath === undefined) {
           throw new TRPCError({
@@ -205,7 +197,6 @@ export class ScowdImageDriver implements ImageDriver {
         let localImageUrl: string | undefined = undefined;
         const pullResult = await pullImageWithResStream({
           imageId: newImageId,
-          command,
           sourcePath,
           abortController,
           logger: this.logger,
@@ -218,7 +209,6 @@ export class ScowdImageDriver implements ImageDriver {
 
         await pushImageWithResStream({
           imageId: newImageId,
-          command,
           localImageUrl,
           harborImageUrl,
           abortController,
@@ -243,7 +233,7 @@ export class ScowdImageDriver implements ImageDriver {
 
   async saveImage({
     node,
-    formattedContainerId,
+    rowContainerId,
     localImageUrl,
     harborImageUrl,
     imageId,
@@ -253,13 +243,10 @@ export class ScowdImageDriver implements ImageDriver {
       try {
       // COMMIT_IMAGE START
         appendImageCreationOutput(imageId, CreationOperation.COMMIT_IMAGE, COMMIT_DEFAULT_OUTPUT, this.logger);
-        const runtime = getK8sRuntime(this.clusterId);
-        const command = getRuntimeCommand(runtime);
         await wrap(
           this.client.image.commitContainerImage({
             userId:"root",
-            command,
-            formattedContainerId,
+            rowContainerId,
             node,
             imageUrl:localImageUrl,
           }),
@@ -292,7 +279,6 @@ export class ScowdImageDriver implements ImageDriver {
 
         await pushImageWithResStream({
           imageId,
-          command,
           localImageUrl,
           harborImageUrl,
           abortController,
