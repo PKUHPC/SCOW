@@ -1,6 +1,7 @@
 export default {
   common: {
     finalError: "Request failed, please try again later",
+    invalidParameter: "Invalid parameter, please contact the administrator",
     noSpaceError: "Insufficient storage space, please clean up the space or contact the administrator",
     timeSubmit: "Submission Time",
     startTime: "Start Time",
@@ -493,7 +494,9 @@ export default {
         totalCpuCount: "Total CPU Cores",
         totalMemory: "Total Memory Capacity",
         appCommentTitle: "Explanation",
-        noSelectableQos: "No Available QOS",
+        noSelectableQos: "No available QOS",
+        dynamicOptionPlaceholder: "Please select a dynamic option",
+        dynamicOptionError: "Failed to fetch dynamic option {0}",
       },
       advancedFileSelectModal: {
         getHomeDirError: "Unable to retrieve user's home directory",

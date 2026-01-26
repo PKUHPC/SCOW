@@ -37,6 +37,7 @@ export enum AttributeType {
   text = "text",
   select = "select",
   file = "file",
+  commandSelect = "commandSelect",
 }
 
 export const WebAppConfigSchema = Type.Object({
@@ -83,6 +84,11 @@ export const FixedValueSchema = Type.Object({
 });
 export type FixedValueSchema = Static<typeof FixedValueSchema>;
 
+export const CommandSelectConfigSchema = Type.Object({
+  script: Type.String({ description: "用于获取选项的脚本" }),
+});
+export type CommandSelectConfigSchema = Static<typeof CommandSelectConfigSchema>;
+
 export const ReservedConfigSchema = Type.Union([
   Type.Object({
     type: Type.Literal("fixedValue"),
@@ -99,6 +105,10 @@ export const ReservedConfigSchema = Type.Union([
       }), { description:"表单选项" },
     ),
   }, { description: "为系统保留字段配置选项形式" }),
+  Type.Object({
+    type: Type.Literal("commandSelect"),
+    commandSelect: CommandSelectConfigSchema,
+  }, { description: "为系统保留字段配置动态选项形式" }),
   // 如果有其他类型保留值配置，继续补充
 ]);
 export type ReservedConfigSchema = Static<typeof ReservedConfigSchema>;
@@ -129,6 +139,7 @@ export const AppConfigSchema = Type.Object({
           }), { description:"表单选项" },
         ),
       ),
+      commandSelect: Type.Optional(CommandSelectConfigSchema),
       fixedValue: Type.Optional(FixedValueSchema),
     }),
   )),

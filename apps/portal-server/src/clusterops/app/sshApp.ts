@@ -572,5 +572,12 @@ export const sshAppServices = (cluster: string, host: string): AppOps => {
 
       });
     },
+
+    runScript: async () => {
+      throw {
+        code: Status.UNIMPLEMENTED,
+        message: "runScript is not implemented",
+      } as ServiceError;
+    },
   };
 };

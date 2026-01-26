@@ -1,6 +1,7 @@
 export default {
   common: {
     finalError: "请求失败，请稍后重试",
+    invalidParameter: "参数错误，请联系管理员",
     noSpaceError: "存储空间不足，请清理空间或联系管理员",
     timeSubmit:"提交时间",
     startTime:"开始时间",
@@ -491,6 +492,8 @@ export default {
         totalMemory: "总内存容量",
         appCommentTitle: "说明",
         noSelectableQos: "无可用QOS",
+        dynamicOptionPlaceholder: "请选择动态选项",
+        dynamicOptionError: "获取动态选项 {0} 失败",
       },
       advancedFileSelectModal: {
         getHomeDirError: "无法获取用户家目录",

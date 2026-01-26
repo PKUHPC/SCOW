@@ -115,13 +115,14 @@ attributes:
 
 | 属性         | 类型                           | 是否必填 | 解释                                                                        |
 |------------|------------------------------|------|---------------------------------------------------------------------------|
-| `type`     | `number`, `text`, `select` 或者 `file` | 是    | 在HTML表单元素中输入的内容的类型                                                        |
+| `type`     | `number`, `text`, `select`, `file` 或者 `commandSelect` | 是    | 在HTML表单元素中输入的内容的类型                                                        |
 | `name`     | 字符串                          | 是    | HTML表单的name属性，在编程中使用，并且会作为计算节点环境变量名，可以在Web应用的`script`或者VNC应用的`xstartup`使用 |
-| `label`    | 字符串                          | 是    | HTML表单的label属性，输入框左侧显示的标签                                                 |
+| `label`    | 字符串 或 [i18n国际化类型](../../customization/custom-config-i18n.md)                          | 是    | HTML表单的label属性，输入框左侧显示的标签                                                 |
 | `required` | 布尔类型                         | 否    | 如果设置为`true`，用户必须填写此项，如果为`false`，用户可以不填，默认为`true`。                        |
 | `defaultValue` | 字符串或者数字               | 否    | 表单的默认值，`number`类型的默认值必须设置为数字。对于`select`类型的表单，如果没有配置`defaultValue`，则默认值为第一项                      |
 | `placeholder`   | 字符串                        | 否    | 描述输入字段预期值的提示信息，提示用户此处的输入                                                  |
 | `select`   | 选项的列表                        | 否    | 如果`type`是`select`，必须配置此项，指明具体的选项，具体配置办法见`select`示例                        |                      |
+| `commandSelect` | 对象 | 否 | 如果`type`是`commandSelect`，必须配置此项。包含`script`属性，值为可执行脚本，该脚本的标准输出将被解析为下拉选项。 |
 | `fixedValue`   | 固定值对象                   | 否    | 包含固定值的值`value`和是否在页面中隐藏`hidden`的配置。如果配置此项，则将覆盖`defaultValue`和`placeholder`的配置，表单元素值将为固定值。详细说明参见[配置fixedValue](#配置fixedvalue的html表单)。                     |                      |
 
 ### 配置输入类型为文本的HTML表单
@@ -179,7 +180,7 @@ attributes:
 | 属性       | 类型                           | 是否必填 | 解释                             |
 |----------|------------------------------|------|--------------------------------|
 | `value`   | 字符串 | 是    | HTML表单选项的value属性，在编程中使用，并且会作为计算节点环境变量的值             |
-| `label`   | 字符串                          | 是    | HTML表单的label属性，选项中展示给用户的文本     |
+| `label`   | 字符串 或 [i18n国际化类型](../../customization/custom-config-i18n.md)                          | 是    | HTML表单的label属性，选项中展示给用户的文本     |
 
 示例如下：
 
@@ -194,9 +195,37 @@ attributes:
         label: v10
       - value: version11
         label: v11
+      - value: version12
+        label: 
+          i18n:
+            default: v12
+            zh_cn: 版本12
 ```
 
 如果用户选择v11选项，计算节点的环境变量 `selectVersion=version11` 可以在应用启动时被读取。
+
+### 配置动态下拉选择器的HTML表单
+
+配置一个动态下拉选择器的表单，需要指定`type`为`commandSelect`, 并且配置`commandSelect`项。`commandSelect`项需要配置`script`，作为获取选项的脚本。
+
+脚本的标准输出应该是一个 JSON 数组，每个元素包含 `label` 和 `value` 属性。`label` 可以是字符串或 i18n 对象。
+
+示例如下：
+
+```yaml
+attributes:
+  - type: commandSelect
+    name: dynamicVersion
+    label: 动态选择版本
+    required: true
+    commandSelect:
+      script: |
+        # 这是一个示例脚本，实际使用时可以是任何可执行命令
+        # 输出必须是合法的 JSON 字符串
+        echo '[{"label": "v1.0", "value": "1.0"}, {"label": {"i18n": {"default": "v2.0", "zh_cn": "版本2.0"}}, "value": "2.0"}]'
+```
+
+如果用户选择了 v1.0，计算节点的环境变量 `dynamicVersion=1.0` 可以在应用启动时被读取。
 
 ### 配置输入类型为文件/文件夹的HTML表单
 

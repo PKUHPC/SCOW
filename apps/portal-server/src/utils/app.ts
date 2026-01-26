@@ -107,11 +107,6 @@ export function convertAttributesFixedValue(input: FixedValueInput | undefined):
   return { value: fixedValue, hidden: input.hidden ?? false };
 }
 
-export function camelToSnakeCase(str: string): string {
-  return str.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase();
-}
-
-
 export function convertToOneOfValue(value: string | number):
    { $case: "number", number: number } | { $case: "text", text: string } {
   if (typeof value === "number") {

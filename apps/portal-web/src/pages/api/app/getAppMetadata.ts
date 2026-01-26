@@ -36,6 +36,11 @@ export const FixedValue = Type.Object({
 });
 export type FixedValue = Static<typeof FixedValue>;
 
+export const CommandSelectConfig = Type.Object({
+  script: Type.String(),
+});
+export type CommandSelectConfig = Static<typeof CommandSelectConfig>;
+
 // Cannot use AppCustomAttribute from protos
 export const AppCustomAttribute = Type.Object({
   type: Type.Union([
@@ -43,6 +48,7 @@ export const AppCustomAttribute = Type.Object({
     Type.Literal("SELECT"),
     Type.Literal("TEXT"),
     Type.Literal("FILE"),
+    Type.Literal("COMMAND_SELECT"),
   ]),
   label: I18nStringSchemaType,
   name: Type.String(),
@@ -55,6 +61,7 @@ export const AppCustomAttribute = Type.Object({
     // Type.Undefined(),
   ])),
   select: Type.Array(SelectOption),
+  commandSelect: Type.Optional(CommandSelectConfig),
 });
 export type AppCustomAttribute = Static<typeof AppCustomAttribute>;
 
@@ -85,11 +92,19 @@ export const FixedValueConfig = Type.Object({
 });
 export type FixedValueConfig = Static<typeof FixedValueConfig>;
 
+export const CommandSelectReservedConfig = Type.Object({
+  type: Type.Literal("commandSelect"),
+});
+
+export type CommandSelectReservedConfig = Static<typeof CommandSelectReservedConfig>;
+
 export const ReservedConfig = Type.Union([
   FixedValueConfig,
   SelectConfig,
+  CommandSelectReservedConfig,
 ]);
 export type ReservedConfig = Static<typeof ReservedConfig>;
+
 
 
 export const ReservedAppAttribute = Type.Object({
@@ -200,6 +215,12 @@ export default /* #__PURE__*/route(GetAppMetadataSchema, async (req, res) => {
               requireGpu: option.requireGpu,
             };
           }) || [],
+        };
+      } else if (
+        item.config?.$case === "commandSelectConfig"
+      ) {
+        attribute.reservedConfig = {
+          type: "commandSelect",
         };
       }
       return attribute;

@@ -43,9 +43,22 @@ message RefreshVncPasswordResponse {
   string password = 1;
 }
 
+message RunScriptRequest {
+  string user_id = 1;
+  string script = 2;
+  // 命令运行超时时间
+  uint32 timeout_seconds = 3;
+}
+
+message RunScriptResponse {
+  string output = 1;
+}
+
 
 service AppService {
   rpc GetAppLastSubmission(GetAppLastSubmissionRequest) returns (GetAppLastSubmissionResponse) {}
 
   rpc RefreshVncPassword(RefreshVncPasswordRequest) returns (RefreshVncPasswordResponse) {};
+
+  rpc RunScript(RunScriptRequest) returns (RunScriptResponse) {};
 }

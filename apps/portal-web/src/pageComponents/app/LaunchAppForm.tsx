@@ -15,10 +15,9 @@ import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AccountStatusFilter, ReservedAppAttributeName } from "src/models/job";
 import { AccountListSelector } from "src/pageComponents/job/AccountListSelector";
-import { AppCustomAttribute, FixedValueConfig, ReservedAppAttribute,
-  SelectConfig,
-  SelectConfigOption,
-  SelectOption } from "src/pages/api/app/getAppMetadata";
+import { AppCustomAttribute, CommandSelectReservedConfig, FixedValueConfig, ReservedAppAttribute,
+  SelectConfig, SelectConfigOption, SelectOption,
+} from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
@@ -27,6 +26,7 @@ import { styled, useTheme } from "styled-components";
 
 import { AdvancedFileSelectModal } from "../filemanager/AdvancedFileSelectModal";
 import { PartitionSelector } from "../job/PartitionSelector";
+import { CommandSelect } from "./CommandSelect";
 
 const Text = styled(Typography.Paragraph)`
 `;
@@ -171,7 +171,7 @@ export const LaunchAppForm: React.FC<Props> = ({
         if (e.code === "INVALID_INPUT") {
           createErrorModal(e.message);
         } else {
-          throw e;
+          message.error(t(pCommon("invalidParameter")));
         }
       })
       .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
@@ -258,7 +258,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     await api.getAppLastSubmission({ query: { cluster: clusterId, appId } })
       .then(async (lastData) => {
 
-        form.setFieldValue("appJobName", genAppJobName(clusterId,appName));
+        form.setFieldValue("appJobName", genAppJobName(clusterId, appName));
 
         // 进入页面时第一次请求集群下未封锁账户
         await api.getAccounts({ query: {
@@ -410,6 +410,10 @@ export const LaunchAppForm: React.FC<Props> = ({
                               break;
                             case "TEXT":
                             case "FILE":
+                            case "COMMAND_SELECT":
+                              // COMMAND_SELECT 的选项是动态获取的，无法在此处通过静态列表校验（attribute.select 为空）
+                              // 且 CommandSelect 组件内部已实现了"若当前值不在选项中，则自动选择第一个"的逻辑
+                              // 所以这里直接回填历史值即可
                               attributesInputObj[attribute.name] = lastAttributes[attribute.name];
                               break;
                             case "SELECT":
@@ -620,6 +624,16 @@ export const LaunchAppForm: React.FC<Props> = ({
             placeholder={getI18nConfigCurrentText(placeholder, languageId)}
           />
         );
+      } else if (item.type === "COMMAND_SELECT") {
+        return (
+          <CommandSelect
+            label={getI18nConfigCurrentText(item.label, languageId)}
+            appId={appId}
+            clusterId={clusterId}
+            attributeName={item.name}
+            placeholder={getI18nConfigCurrentText(placeholder, languageId)}
+          />
+        );
       } else {
         // 如果 item.type === FILE
         return (
@@ -663,7 +677,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     return (
       <Form.Item
         key={`${item.name}+${index}`}
-        label={getI18nConfigCurrentText(item.label, languageId) ?? undefined}
+        label={getI18nConfigCurrentText(item.label, languageId)}
         name={item.name}
         rules={rules}
         initialValue={initialValue}
@@ -719,6 +733,8 @@ export const LaunchAppForm: React.FC<Props> = ({
               <Input />
             )}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+            appId={appId}
+            clusterId={clusterId}
           />
           <FixedOrEditableFormItem
             form={form}
@@ -740,6 +756,8 @@ export const LaunchAppForm: React.FC<Props> = ({
             )}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
             onChange={handleAccountChange}
+            appId={appId}
+            clusterId={clusterId}
           />
 
           <FixedOrEditableFormItem
@@ -763,6 +781,8 @@ export const LaunchAppForm: React.FC<Props> = ({
             )}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
             onChange={handlePartitionChange}
+            appId={appId}
+            clusterId={clusterId}
           />
           <FixedOrEditableFormItem
             form={form}
@@ -783,6 +803,8 @@ export const LaunchAppForm: React.FC<Props> = ({
               />
             )}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+            appId={appId}
+            clusterId={clusterId}
           />
           <FixedOrEditableFormItem
             form={form}
@@ -804,6 +826,8 @@ export const LaunchAppForm: React.FC<Props> = ({
             )}
             isNumberAttribute={true}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+            appId={appId}
+            clusterId={clusterId}
           />
           {
             currentPartitionInfo?.gpus ? (
@@ -832,6 +856,8 @@ export const LaunchAppForm: React.FC<Props> = ({
                 )}
                 isNumberAttribute={true}
                 currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+                appId={appId}
+                clusterId={clusterId}
               />
             ) : (
               <FixedOrEditableFormItem
@@ -860,6 +886,8 @@ export const LaunchAppForm: React.FC<Props> = ({
                 )}
                 isNumberAttribute={true}
                 currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+                appId={appId}
+                clusterId={clusterId}
               />
             )
           }
@@ -894,6 +922,8 @@ export const LaunchAppForm: React.FC<Props> = ({
             )}
             isNumberAttribute={true}
             currentPartitionIsWithGpu={!!currentPartitionInfo?.gpus}
+            appId={appId}
+            clusterId={clusterId}
           />
 
           {customFormItems}
@@ -1023,7 +1053,7 @@ const getSelectAttributeInitalValue = (
 const getReservedAppAttributeConfig = (
   attributes: ReservedAppAttribute[] | undefined,
   attributeName: ReservedAppAttributeName,
-): FixedValueConfig | SelectConfig | undefined => {
+): FixedValueConfig | SelectConfig | CommandSelectReservedConfig | undefined => {
   return attributes?.find((x) => (x.name === attributeName))?.reservedConfig;
 };
 
@@ -1044,12 +1074,14 @@ interface FixedOrEditableFormItemProps {
   label: string;
   rules?: object[];
   dependencies?: NamePath[];
-  reservedConfig?: FixedValueConfig | SelectConfig
+  reservedConfig?: FixedValueConfig | SelectConfig | CommandSelectReservedConfig;
   children: React.ReactNode;
   isNumberAttribute?: boolean;
   ignoreDependenciesWhenFixed?: boolean;
   currentPartitionIsWithGpu?: boolean;
   onChange?: ((value: string) => void) | undefined;
+  appId?: string;
+  clusterId?: string;
 }
 
 /**
@@ -1059,19 +1091,9 @@ interface FixedOrEditableFormItemProps {
  * 2.如果配置为select选项形式，显示下拉框
  */
 const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
-  form,
-  languageId,
-  t,
-  name,
-  label,
-  rules,
-  dependencies,
-  reservedConfig,
-  children,
-  isNumberAttribute,
-  ignoreDependenciesWhenFixed,
-  currentPartitionIsWithGpu,
-  onChange,
+  form, languageId, t, name, label, rules, dependencies, reservedConfig, children,
+  isNumberAttribute, ignoreDependenciesWhenFixed, currentPartitionIsWithGpu,
+  onChange, appId, clusterId,
 }) => {
 
   // 当系统保留字段被配置为固定值时，直接渲染固定值
@@ -1182,6 +1204,23 @@ const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
       </Form.Item>
     );
 
+  } else if (reservedConfig?.type === "commandSelect") {
+    return (
+      <Form.Item
+        name={name}
+        label={label}
+        rules={rules}
+        dependencies={ignoreDependenciesWhenFixed ? undefined : dependencies}
+      >
+        <CommandSelect
+          label={label}
+          appId={appId!}
+          clusterId={clusterId!}
+          attributeName={name}
+          onChange={onChange}
+        />
+      </Form.Item>
+    );
   }
 
   // 没有特殊保留配置时，渲染 Form.Item 和动态子组件

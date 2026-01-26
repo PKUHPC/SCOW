@@ -1,6 +1,7 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
+import { status } from "@grpc/grpc-js";
 import { OperationType } from "@scow/lib-operation-log";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
@@ -12,7 +13,7 @@ import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
 import { route } from "src/utils/route";
-import { parseIp } from "src/utils/server";
+import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const CreateAppSessionSchema = typeboxRouteSchema({
   method: "POST",
@@ -113,14 +114,15 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
   }).then(async (reply) => {
     await callLog({
       ...logInfo,
-      operationTypePayload: { ... logInfo.operationTypePayload, jobId: reply.jobId },
+      operationTypePayload: { ...logInfo.operationTypePayload, jobId: reply.jobId },
     }, OperationResult.SUCCESS);
     return { 200: { jobId: reply.jobId, sessionId: reply.sessionId } };
-  }).catch(async (e) => {
-    await callLog({
-      ...logInfo,
-      operationTypePayload: { ... logInfo.operationTypePayload },
-    }, OperationResult.FAIL);
+  }, handlegRPCError({
+    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+  },
+  async () => await callLog(logInfo, OperationResult.FAIL),
+  )).catch(async (e) => {
+    await callLog(logInfo, OperationResult.FAIL);
     const ex = e as ServiceError;
 
     const { findDetails } = parseErrorStatus(ex.metadata);
@@ -133,8 +135,6 @@ export default /* #__PURE__*/route(CreateAppSessionSchema, async (req, res) => {
           return { 500: { code: "SBATCH_FAILED" as const, message: ex.details } };
         case "INVALID ARGUMENT":
           return { 400: { code: "INVALID_INPUT" as const, message: ex.details } };
-        case "RESOURCE EXHAUSTED":
-          return { 429: { code: "NO_SPACE" as const } };
         case "APP_NOT_FOUND":
           return { 404: { code: "APP_NOT_FOUND" as const, message: ex.details } };
         case "APP_NOT_AVAILABLE":

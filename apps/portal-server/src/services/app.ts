@@ -17,11 +17,11 @@ import {
   WebAppProps_ProxyType,
 } from "@scow/protos/build/portal/app";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
+import { camelToSnakeCase } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
-import { camelToSnakeCase, convertAttributesFixedValue,
-  convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
+import { convertAttributesFixedValue, convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
 import { checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
@@ -177,11 +177,13 @@ export const appServiceServer = plugin((server) => {
               });
             }
             break;
+          case AttributeType.commandSelect:
+            break;
 
           default:
             throw new Error(`
-          the custom form attributes type in ${appId} config should be one of number, text or select,
-          but the type of ${attribute.name} is ${attribute.type as string}`);
+              the custom form attributes type in ${appId} config should be one of number, text, select or commandSelect,
+              but the type of ${attribute.name} is ${attribute.type as string}`);
         }
       });
 
@@ -273,6 +275,15 @@ export const appServiceServer = plugin((server) => {
 
               };
               break;
+            case "commandSelect":
+              reservedAppAttribute.config = {
+                $case: "commandSelectConfig",
+                commandSelectConfig: {
+                  type: GetAppMetadataResponse_ReservedConfigType.COMMAND_SELECT,
+                  script: item.config.commandSelect.script,
+                },
+              };
+              break;
             default:
               break;
           }
@@ -283,7 +294,7 @@ export const appServiceServer = plugin((server) => {
 
       if (app.attributes) {
         app.attributes.forEach((item) => {
-          const attributeType = item.type.toUpperCase();
+          const attributeType = camelToSnakeCase(item.type);
 
           const defaultInput: AppCustomAttribute["defaultInput"] =
             item.defaultValue ? convertToOneOfValue(item.defaultValue) : undefined;
@@ -306,6 +317,9 @@ export const appServiceServer = plugin((server) => {
                 requireGpu: x.requireGpu,
               };
             }) ?? [],
+            commandSelect: {
+              script: item.commandSelect?.script || "",
+            },
           });
         });
       }
@@ -350,6 +364,18 @@ export const appServiceServer = plugin((server) => {
       return [{
         lastSubmissionInfo: reply.lastSubmissionInfo,
       }];
+    },
+
+    runScript: async ({ request, logger }) => {
+      const { cluster, script, userId, timeoutSeconds } = request;
+      await checkActivatedClusters({ clusterIds: cluster });
+
+      const clusterops = getClusterOps(cluster);
+      if (!clusterops) { throw clusterNotFound(cluster); }
+
+      const { output } = await clusterops.app.runScript({ userId, script, timeoutSeconds }, logger);
+
+      return [{ output }];
     },
   });
 

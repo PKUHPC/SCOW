@@ -18,6 +18,7 @@ import type { GetAllClustersAvailableAppsSchema } from "src/pages/api/app/getAll
 import type { GetAppLastSubmissionSchema } from "src/pages/api/app/getAppLastSubmission";
 import type { GetAppMetadataSchema } from "src/pages/api/app/getAppMetadata";
 import type { GetAppSessionsSchema } from "src/pages/api/app/getAppSessions";
+import type { GetDynamicFormOptionsSchema } from "src/pages/api/app/getDynamicFromOptions";
 import type { ListAvailableAppsSchema } from "src/pages/api/app/listAvailableApps";
 import type { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import type { LogoutSchema } from "src/pages/api/auth/logout";
@@ -85,6 +86,7 @@ export const api = {
   getAppLastSubmission: apiClient.fromTypeboxRoute<typeof GetAppLastSubmissionSchema>("GET", "/api/app/getAppLastSubmission"),
   getAppMetadata: apiClient.fromTypeboxRoute<typeof GetAppMetadataSchema>("GET", "/api/app/getAppMetadata"),
   getAppSessions: apiClient.fromTypeboxRoute<typeof GetAppSessionsSchema>("GET", "/api/app/getAppSessions"),
+  getDynamicFormOptions: apiClient.fromTypeboxRoute<typeof GetDynamicFormOptionsSchema>("GET", "/api/app/getDynamicFromOptions"),
   listAvailableApps: apiClient.fromTypeboxRoute<typeof ListAvailableAppsSchema>("GET", "/api/app/listAvailableApps"),
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),

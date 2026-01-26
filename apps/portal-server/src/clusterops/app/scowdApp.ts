@@ -744,5 +744,20 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
         throw err;
       }
     },
+
+    runScript: async (request) => {
+      const { userId, script, timeoutSeconds } = request;
+
+      try {
+        const { output } = await client.app.runScript({ userId, script, timeoutSeconds });
+
+        return { output };
+      } catch (err) {
+        if (err instanceof ConnectError) {
+          throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+        }
+        throw err;
+      }
+    },
   };
 };

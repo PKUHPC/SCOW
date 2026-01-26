@@ -575,6 +575,11 @@ export const mockApi: MockApi<typeof api> = {
     result: true,
   }),
 
+  getDynamicFormOptions: async () => ({ options: [
+    { label: "version1", value: "value1" },
+    { label: "version2", value: "value2" },
+  ]}),
+
 };
 
 

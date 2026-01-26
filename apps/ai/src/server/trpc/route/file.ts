@@ -22,8 +22,6 @@ import { FileMetaSchema, InitMultipartUploadResponseSchema,
 import { getScowdClient, mapConnectErrorToTRPCError } from "../scowd/scowd";
 import { clusters } from "./config";
 
-
-
 // 这些文件操作的API如果按照restful的设计风格，应该把path设置在url中，而不是body中
 // 但是HTTP的URL不区分大小写，但是linux的路径区分
 // 所以还是直接放在body中吧，也不用按照restful的设计风格了
