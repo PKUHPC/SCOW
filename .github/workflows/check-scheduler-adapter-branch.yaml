@@ -1,0 +1,44 @@
+name: Check Scheduler Adapter Branch
+
+on:
+  push:
+    paths:
+      - 'libs/protos/scheduler-adapter/package.json'
+  pull_request:
+    paths:
+      - 'libs/protos/scheduler-adapter/package.json'
+
+jobs:
+  check-branch:
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Check scheduler adapter branch in package.json
+      run: |
+        # 检查文件是否存在
+        if [ ! -f "libs/protos/scheduler-adapter/package.json" ]; then
+          echo "Error: libs/protos/scheduler-adapter/package.json not found"
+          exit 1
+        fi
+        
+        # 提取 generate 脚本中的 branch 参数
+        branch=$(grep -oP 'branch=\K[^"]+' libs/protos/scheduler-adapter/package.json)
+        
+        if [ -z "$branch" ]; then
+          echo "Error: No branch found in generate script"
+          exit 1
+        fi
+        
+        echo "Found branch: $branch"
+        
+        # 检查是否以 v 开头
+        if [[ $branch =~ ^v.* ]]; then
+          echo "✓ Branch '$branch' starts with 'v' - PASS"
+        else
+          echo "✗ Branch '$branch' does not start with 'v' - FAIL"
+          echo "Error: The generate script must use a branch that starts with 'v'"
+          exit 1
+        fi
