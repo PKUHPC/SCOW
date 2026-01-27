@@ -1,3 +1,0 @@
-## beforeScript Type
-
-`string`

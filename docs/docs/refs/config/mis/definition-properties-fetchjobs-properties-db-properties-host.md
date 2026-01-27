@@ -1,3 +1,0 @@
-## host Type
-
-`string`

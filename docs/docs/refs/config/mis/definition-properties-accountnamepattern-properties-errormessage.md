@@ -1,3 +1,0 @@
-## errorMessage Type
-
-`string`

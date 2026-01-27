@@ -1,3 +1,0 @@
-## wm Type
-
-`string`

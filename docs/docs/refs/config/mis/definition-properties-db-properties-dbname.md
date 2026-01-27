@@ -1,3 +1,0 @@
-## dbName Type
-
-`string`

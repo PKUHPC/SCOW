@@ -136,13 +136,6 @@ const config: Config = {
             label: "贡献指南",
           },
           {
-            type: "doc",
-            docId: "refs/index",
-            position: "left",
-            sidebarId: "refs",
-            label: "配置参考",
-          },
-          {
             to: "blog",
             label: "博客",
             position: "left",

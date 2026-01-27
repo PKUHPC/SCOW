@@ -1,3 +1,0 @@
-## port Type
-
-`integer`

@@ -1,3 +1,0 @@
-## gpus Type
-
-`integer`

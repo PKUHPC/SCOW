@@ -1,3 +1,0 @@
-## cores Type
-
-`integer`

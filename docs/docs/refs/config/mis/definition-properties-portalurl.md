@@ -1,3 +1,0 @@
-## portalUrl Type
-
-`string`

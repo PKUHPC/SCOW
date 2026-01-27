@@ -1,3 +1,0 @@
-## user Type
-
-`string`

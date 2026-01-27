@@ -1,3 +1,0 @@
-## misIgnore Type
-
-`boolean`

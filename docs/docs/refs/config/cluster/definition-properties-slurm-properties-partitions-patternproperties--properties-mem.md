@@ -1,3 +1,0 @@
-## mem Type
-
-`integer`

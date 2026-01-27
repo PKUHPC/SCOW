@@ -1,3 +1,0 @@
-## associationTableName Type
-
-`string`

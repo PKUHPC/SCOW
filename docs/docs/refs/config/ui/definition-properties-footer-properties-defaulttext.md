@@ -1,3 +1,0 @@
-## defaultText Type
-
-`string`

@@ -1,3 +1,0 @@
-## xstartup Type
-
-`string`

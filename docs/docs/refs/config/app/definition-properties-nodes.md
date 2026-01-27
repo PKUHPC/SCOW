@@ -1,3 +1,0 @@
-## nodes Type
-
-`string[]`

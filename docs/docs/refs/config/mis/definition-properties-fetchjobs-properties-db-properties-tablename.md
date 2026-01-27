@@ -1,3 +1,0 @@
-## tableName Type
-
-`string`

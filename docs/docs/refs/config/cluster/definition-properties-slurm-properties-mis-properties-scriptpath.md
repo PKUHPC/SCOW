@@ -1,3 +1,0 @@
-## scriptPath Type
-
-`string`
