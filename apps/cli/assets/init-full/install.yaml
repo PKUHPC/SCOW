@@ -171,7 +171,7 @@
 #   basePath: /quantum
 
 #   qobody:
-#     image: ccimage.pku.edu.cn/scow/qobody
+#     image: ccrepo.pku.edu.cn/scow/qobody
 #     # 云平台的token，必填
 #     token: "云平台的token"
 

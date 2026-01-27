@@ -1,4 +1,4 @@
-FROM ccimage.pku.edu.cn/mirror/library/debian:12
+FROM ccrepo.pku.edu.cn/dockerhub/library/debian:12
 
 # Setup proxy
 RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.pku.edu.cn/debian|g' /etc/apt/sources.list.d/debian.sources

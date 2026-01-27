@@ -1,6 +1,6 @@
 services:
   db:
-    image: ccimage.pku.edu.cn/mirror/library/mysql:8
+    image: ccrepo.pku.edu.cn/dockerhub/library/mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
@@ -9,7 +9,7 @@ services:
       - 3306:3306
 
   redis:
-    image: ccimage.pku.edu.cn/mirror/library/redis:alpine
+    image: ccrepo.pku.edu.cn/dockerhub/library/redis:alpine
     ports:
       - 6379:6379
 
@@ -47,7 +47,7 @@ services:
         hard: 10240
 
   ldapadmin:
-    image: ccimage.pku.edu.cn/mirror/osixia/phpldapadmin
+    image: ccrepo.pku.edu.cn/dockerhub/osixia/phpldapadmin
     ports:
       - 3890:80
     environment:

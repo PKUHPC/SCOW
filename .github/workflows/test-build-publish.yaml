@@ -73,13 +73,6 @@ jobs:
         if: vars.RUN_TESTS == 'true'
         run: ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -N ""
 
-      - name: Log in to the ccimage.pku.edu.cn
-        uses: docker/login-action@v3.6.0
-        with:
-          registry: ccimage.pku.edu.cn
-          username: ${{ secrets.CCIMAGE_USERNAME }}
-          password: ${{ secrets.CCIMAGE_PASSWORD }}
-
       - name: Log in to the ccrepo.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
@@ -214,13 +207,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - name: Log in to the ccimage.pku.edu.cn
-        uses: docker/login-action@v3.6.0
-        with:
-          registry: ccimage.pku.edu.cn
-          username: ${{ secrets.CCIMAGE_USERNAME }}
-          password: ${{ secrets.CCIMAGE_PASSWORD }}
-
       - name: Log in to the ccrepo.pku.edu.cn
         uses: docker/login-action@v3.6.0
         with:
@@ -248,7 +234,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ccimage.pku.edu.cn/scow/${{ matrix.name }}
             ccrepo.pku.edu.cn/scow/${{ matrix.name }}
 
       - name: Build and push Docker image

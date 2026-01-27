@@ -9,7 +9,7 @@
 # See the Mulan PSL v2 for more details.
 
 
-FROM ccimage.pku.edu.cn/mirror/library/node:22-alpine AS base
+FROM ccrepo.pku.edu.cn/dockerhub/library/node:22-alpine AS base
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 

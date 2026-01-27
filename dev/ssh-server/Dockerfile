@@ -8,7 +8,7 @@
 # MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v2 for more details.
 
-FROM ccimage.pku.edu.cn/mirror/library/alpine:3.20
+FROM ccrepo.pku.edu.cn/dockerhub/library/alpine:3.20
 
 ENV TZ Asia/Shanghai
 

@@ -139,7 +139,7 @@ quantum:
   # 量子系统的子路径，默认为/quantum，一般无需修改
   basePath: /quantum
   qobody: 
-    # 代理服务的镜像地址。默认使用ccimage上的镜像
+    # 代理服务的镜像地址。默认使用ccrepo上的镜像
     image: 
     # 您的量子云平台账号的token
     token: 

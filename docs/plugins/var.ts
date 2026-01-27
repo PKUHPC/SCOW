@@ -16,7 +16,7 @@ const ORGANIZATION_NAME = "PKUHPC";
 const PROJECT_NAME = "SCOW";
 // gitee or github
 const GIT_PLATFORM = process.env.GIT_PLATFORM || "github";
-const CR_URL = process.env.CR_URL || "ccimage.pku.edu.cn/chenjunda/scow";
+const CR_URL = process.env.CR_URL || "ccrepo.pku.edu.cn/scow/scow";
 const REPO_URL = `https://${GIT_PLATFORM}.com/${ORGANIZATION_NAME}/${PROJECT_NAME}`;
 const REPO_FILE_URL = `${REPO_URL}/blob/master`;
 const DOCS_URL = `https://${ORGANIZATION_NAME}.${GIT_PLATFORM}.io`;

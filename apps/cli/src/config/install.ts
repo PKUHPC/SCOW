@@ -184,7 +184,7 @@ export const InstallConfigSchema = Type.Object({
   quantum: Type.Optional(Type.Object({
     basePath: Type.String({ description: "量子计算系统的部署路径，相对于整个系统的basePath", default: "/quantum" }),
     qobody: Type.Object({
-      image: Type.String({ description: "qobody镜像", default: "ccimage.pku.edu.cn/scow/qobody" }),
+      image: Type.String({ description: "qobody镜像", default: "ccrepo.pku.edu.cn/scow/qobody" }),
       token: Type.String({ description: "云平台的token" }),
     }, { description: "量子计算系统的qobody配置" }),
   })),

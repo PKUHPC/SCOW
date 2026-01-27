@@ -13,7 +13,7 @@ services:
 
 
   qobody:
-    image: ccimage.pku.edu.cn/scow/qobody
+    image: ccrepo.pku.edu.cn/scow/qobody
     ports:
       - "8088:8088"
     env_file:

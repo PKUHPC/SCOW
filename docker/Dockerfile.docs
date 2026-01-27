@@ -9,7 +9,7 @@
 # See the Mulan PSL v2 for more details.
 
 
-FROM ccimage.pku.edu.cn/mirror/library/node:22-alpine AS base
+FROM ccrepo.pku.edu.cn/dockerhub/library/node:22-alpine AS base
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
@@ -51,7 +51,7 @@ COPY protos ./protos
 
 RUN pnpm build
 
-FROM ccimage.pku.edu.cn/mirror/library/nginx:alpine as runner
+FROM ccrepo.pku.edu.cn/dockerhub/library/nginx:alpine as runner
 
 COPY docs/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=builder --chown=nginx:nginx /app/docs/build /etc/nginx/html/
