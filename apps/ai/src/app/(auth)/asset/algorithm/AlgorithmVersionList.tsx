@@ -52,7 +52,11 @@ export const AlgorithmVersionList: React.FC<Props> = (
     refetch();
   }, [algorithms]);
 
-  const checkFileExist = trpc.file.checkFileExist.useMutation();
+  const checkFileExist = trpc.file.checkFileExist.useMutation({
+    onError: (error) => {
+      message.error(`${t("app.common.fileCheckError")}： ${error.message}`);
+    },
+  });
 
   const shareMutation = trpc.algorithm.shareAlgorithmVersion.useMutation({
     onSuccess() {
@@ -155,13 +159,17 @@ export const AlgorithmVersionList: React.FC<Props> = (
 
                     <Tooltip title={t(p("check"))}>
                       <ViewFileIcon onClick={async () => {
-                        const checkExistRes =
-                        await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
-
-                        if (checkExistRes?.exists) {
-                          router.push(`/files${r.privatePath}`);
-                        } else {
-                          deleteAlgorithmVersion(r.id, true);
+                        try {
+                          const checkExistRes =
+                            await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
+                          if (checkExistRes?.exists) {
+                            router.push(`/files${r.privatePath}`);
+                          } else {
+                            deleteAlgorithmVersion(r.id, true);
+                          }
+                        } catch {
+                          // onError 已经处理了 UI 提示
+                          return null;
                         }
                       }}
                       />

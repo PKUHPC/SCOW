@@ -28,7 +28,6 @@ import { ImageQuota } from "./ImageQuota";
 interface Props {
   isPublic: boolean;
   clusters: Cluster[];
-  currentClusterIds: string[];
 }
 
 interface FilterForm {
@@ -47,7 +46,7 @@ const CreateImageModalButton = ModalButton(CreateEditImageModal, { type: "primar
 const EditImageModalButton = ModalLink(CreateEditImageModal);
 const CopyImageModalButton = ModalLink(CopyImageModal);
 
-export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClusterIds }) => {
+export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.imageListTable.");
   const languageId = useI18n().currentLanguage.id;
@@ -187,7 +186,6 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
               refetch={refetch}
               isEdit={false}
               clusters={clusters}
-              currentClusterIds={currentClusterIds}
             > {t("button.addButton")}
             </CreateImageModalButton>
           </Space>
@@ -255,7 +253,6 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters, currentClu
                         isEdit={true}
                         editData={r}
                         clusters={clusters}
-                        currentClusterIds={currentClusterIds}
                       >
                         <Tooltip title={t("button.editButton")}>
                           <EditIcon />

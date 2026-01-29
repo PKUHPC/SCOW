@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useI18nTranslateToString } from "src/i18n";
 import { PlatformOverview } from "src/models/Cluster";
+import { Cluster } from "src/server/trpc/route/config";
 import { useDocumentTitle } from "src/utils/head";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
@@ -47,8 +48,8 @@ const NotificationCol = styled(Col)`
 export default function Page() {
   const t = useI18nTranslateToString();
 
-  const { publicConfig: { CLUSTERS: currentClusters, DASHBOARD_USER_DISPLAY_MODE },
-    publicConfig, user } = usePublicConfig();
+  const { publicConfig: { CLUSTERS: allClusters, DASHBOARD_USER_DISPLAY_MODE },
+    publicConfig, user, currentAvailableClusterIds: clusterIds } = usePublicConfig();
 
   // 判断是否展示全部资源
   const isFullDisplayMode = useMemo(() => {
@@ -61,8 +62,10 @@ export default function Page() {
 
   }, [user]);
 
-  // 使用批量接口获取所有集群信息
-  const clusterIds = currentClusters.map((cluster) => cluster.id);
+  // 使用批量接口获取所有可用集群信息
+  const currentClusters = useMemo(() => {
+    return allClusters.filter((cluster) => clusterIds.includes(cluster.id));
+  }, [allClusters, clusterIds]);
 
 
   const { data: allSummaryClusters, isLoading } = trpc.dashboard.getAllSummaryClustersInfo.useQuery(
@@ -71,15 +74,18 @@ export default function Page() {
   );
 
   // 加载失败的集群、成功的集群、集群信息、平台概览、以及集群概览。
-  const [failedClusters, setFailedClusters] = useState<typeof currentClusters>([]);
-  const [successfulClusters, setSuccessfulClusters] = useState<typeof currentClusters>([]);
+  const [failedClusters, setFailedClusters] = useState<Cluster[]>([]);
+  const [successfulClusters, setSuccessfulClusters] = useState<Cluster[]>([]);
   const [clustersInfo, setClustersInfo] = useState<ClusterPartitionInfo[]>([]);
   const [platformOverview, setPlatformOverview] = useState<PlatformOverview>({ ...initialPlatformOverview });
 
   useEffect(() => {
     if (!isLoading && allSummaryClusters) {
+      // 根据依赖重新计算当前可用集群
+      const currentClusters = allClusters.filter((c) =>
+        clusterIds.includes(c.id),
+      );
       // 集群信息
-
       const successfulClusterIds = new Set(
         allSummaryClusters.map((c) => c.clusterId),
       );
@@ -135,7 +141,10 @@ export default function Page() {
     }
 
   }, [
-    isLoading, currentClusters, allSummaryClusters,
+    isLoading,
+    allClusters,
+    clusterIds,
+    allSummaryClusters,
   ]);
 
   useDocumentTitle(t("routes.dashboard"));

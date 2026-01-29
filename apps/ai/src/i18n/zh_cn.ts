@@ -77,6 +77,7 @@ export default {
       upperCancelShare: "取消分享",
       upperCancelSharing: "取消分享中",
       upperSharing: "分享中",
+      fileCheckError: "查询文件失败",
     },
     dashboard:{
       infoPanes:{
@@ -1259,6 +1260,7 @@ export default {
       upload:"上传文件",
       mkdir:"新建文件夹",
       depression:"解压文件",
+      homeDirError: "目录获取失败",
     },
     fileTable:{
       name:"文件名",

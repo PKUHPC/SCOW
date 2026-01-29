@@ -11,7 +11,7 @@ import { DatasetListTable } from "./DatasetListTable";
 export default function Page() {
   const t = useI18nTranslateToString();
 
-  const { publicConfig, currentAssociateClusterIds } = usePublicConfig();
+  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
   useDocumentTitle(t("app.dataset.title"));
 
   const items: TabsProps["items"] = [
@@ -23,7 +23,7 @@ export default function Page() {
           <DatasetListTable
             isPublic={false}
             clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAssociateClusterIds}
+            currentClusterIds={currentAvailableClusterIds}
           />
         </div>
       ),
@@ -36,7 +36,7 @@ export default function Page() {
           <DatasetListTable
             isPublic={true}
             clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAssociateClusterIds}
+            currentClusterIds={currentAvailableClusterIds}
           />
         </div>
       ),

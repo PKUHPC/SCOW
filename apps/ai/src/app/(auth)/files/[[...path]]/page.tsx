@@ -19,10 +19,10 @@ export default function Page({ params }: { params: Promise<{
 
   const router = useRouter();
 
-  const { clusters, publicConfig: { LOGIN_NODES,CLUSTERS },currentAssociateClusterIds } = usePublicConfig();
+  const { clusters, publicConfig: { LOGIN_NODES,CLUSTERS }, currentAvailableClusterIds } = usePublicConfig();
 
   const { defaultCluster, currentClusters }
-     = defaultClusterContext(CLUSTERS, currentAssociateClusterIds ?? []);
+     = defaultClusterContext(CLUSTERS, currentAvailableClusterIds ?? []);
   const initialClusterId = defaultCluster?.id ?? currentClusters[0].id;
   const [clusterId, setClusterId] = useState(initialClusterId);
 

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { basename, dirname, join } from "path";
@@ -18,6 +6,7 @@ import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVer
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { checkClusterAvailable } from "src/server/utils/clusters";
+import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -27,7 +16,6 @@ import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
-import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { booleanQueryParam, clusterExist } from "../utils";
 
@@ -63,8 +51,16 @@ export const getAlgorithms = procedure
     })),
   })), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
-    const em = await forkEntityManager();
+
     const { page, pageSize, framework, nameOrDesc, clusterId, isPublic } = input;
+    // 如果查询某一个集群
+    if (clusterId) {
+      // 再次检查当前查询集群是否为在线可用集群
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+    }
+
+    const em = await forkEntityManager();
 
     const [items, count] = await em.findAndCount(Algorithm, {
       $and:[

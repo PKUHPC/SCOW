@@ -202,11 +202,10 @@ export const LaunchDevForm = ({
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
   // const i18n = useI18n();
-  const { publicConfig, scowClusterConfigs } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
 
-  const clusterIds = useMemo(() => CLUSTERS.map((cluster) => cluster.id), [CLUSTERS]);
   const {
     data: userPartitions,
     isLoading: partitionLoading,
@@ -215,8 +214,8 @@ export const LaunchDevForm = ({
     data: allClustersInfo,
     isLoading: allClustersLoading,
   } = trpc.dashboard.getAllClustersInfo.useQuery(
-    { clusterIds },
-    { enabled: clusterIds.length > 0 },
+    { clusterIds: currentAvailableClusterIds },
+    { enabled: currentAvailableClusterIds.length > 0 },
   );
 
   const availableClusters = useMemo(() => {

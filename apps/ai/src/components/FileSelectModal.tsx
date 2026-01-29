@@ -152,7 +152,6 @@ const hasNonUtf8Segment = (targetPath: string) => (
 export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, allowedExtensions, onSubmit }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.fileSelectModal.");
-
   const { scowClusterConfigs } = usePublicConfig();
 
   const [visible, setVisible] = useState(false);
@@ -166,11 +165,18 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
   const DecompressionModalButton = ModalButton(DecompressionModal, { icon: <ExpandOutlined />,
     disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
 
-  const { data: homeDir } = trpc.file.getHomeDir.useQuery({ clusterId }, {
+  const { data: homeDir, error: homeDirError } = trpc.file.getHomeDir.useQuery({ clusterId }, {
     enabled: !!clusterId && path === "~" && visible,
+    retry: false,
   });
 
   const { message } = App.useApp();
+
+  useEffect(() => {
+    if (visible && homeDirError) {
+      message.error(`${t(p("homeDirError"))}： ${homeDirError.message}`);
+    }
+  }, [homeDirError, t, p, visible]);
 
   useEffect(() => {
     if (!visible) { return; }
@@ -287,6 +293,11 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
       <FolderTriggerButton
         size="small"
         disabled={!clusterId}
+        style={!clusterId ? {
+          pointerEvents: "none", // 让点击事件穿透到 span
+          opacity: 0.5, // 降低不透明度变灰
+          filter: "grayscale(1)", // 强制灰度
+        } : {}}
         onClick={() => {
           setVisible(true);
         }}

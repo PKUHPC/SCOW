@@ -9,14 +9,17 @@ import { z } from "zod";
 
 export const resource = router({
 
-  // 获取资源管理系统中已授权的 集群ID 列表
+  // 获取当前登录用户的可用 集群ID 列表
+  // (1) 如果没有部署管理系统且资源管理系统为不可用，返回当前系统已配置集群ID
+  // (2) 如果部署了管理系统，没有部署资源管理，则返回管理系统在线集群ID
+  // (3) 如果部署了管理系统和资源管理，则返回已授权的在线集群ID
   getCurrentUserAssignedClusters: authProcedure
     .meta({
       openapi: {
         method: "GET",
         path: "/resource/currentClusterIds",
         tags: ["currentClusterIds"],
-        summary: "获取资源管理系统中已授权的 集群ID 列表",
+        summary: "获取资源管理系统中已授权的 可用集群ID 列表",
       },
     })
     .input(z.void())

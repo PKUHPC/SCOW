@@ -79,6 +79,13 @@ export const list = procedure
 
     const { clusterId, isPublic, nameOrTagOrDesc, withExternal,types:rawTypes, pageSize, page } = input;
 
+    // 如果查询某一个集群
+    if (clusterId) {
+      // 再次检查当前查询集群是否为在线可用集群
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+    }
+
     const types = rawTypes
       ? rawTypes.split(",").filter((t): t is ImageType =>
         Object.values(ImageType).includes(t as ImageType))

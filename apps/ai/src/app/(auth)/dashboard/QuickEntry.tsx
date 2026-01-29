@@ -27,9 +27,13 @@ export const QuickEntry: React.FC = () => {
   const p = prefix("app.dashboard.quickEntry.");
 
   const { publicConfig: { CLUSTERS: currentClusters,
-    PUBLIC_PATH: publicPath, BASE_PATH: basePath } } = usePublicConfig();
+    PUBLIC_PATH: publicPath, BASE_PATH: basePath }, currentAvailableClusterIds } = usePublicConfig();
 
   const languageId = useI18n().currentLanguage.id;
+
+  const currentAvailableClusters = useMemo(() => {
+    return currentClusters.filter((c) => currentAvailableClusterIds.includes(c.id));
+  }, [currentClusters, currentAvailableClusterIds]);
 
   const entryItems = {
     defaultEntries: [
@@ -232,8 +236,8 @@ export const QuickEntry: React.FC = () => {
     <LibQuickEntry
       isLoading={getQuickEntriesLoading}
       quickEntryType="ai"
-      currentClusters={currentClusters}
-      publicConfigClusters={currentClusters}
+      currentClusters={currentAvailableClusters}
+      publicConfigClusters={currentAvailableClusters}
       publicPath={publicPath}
       basePath={basePath}
       languageId={languageId}

@@ -66,6 +66,14 @@ export const list = procedure
   }))
   .output(z.object({ items: z.array(ModelListSchema), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
+
+    // 如果查询某一个集群
+    if (input.clusterId) {
+      // 再次检查当前查询集群是否为在线可用集群
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, input.clusterId);
+    }
+
     const em = await forkEntityManager();
 
     const isPublicQuery = input.isPublic ? {

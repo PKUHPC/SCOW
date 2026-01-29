@@ -63,10 +63,10 @@ export const AppSessionsTable: React.FC<Props> = ({ status }) => {
   const router = useRouter();
   const { message } = App.useApp();
 
-  const { clusters, publicConfig: { CLUSTERS,BASE_PATH }, currentAssociateClusterIds } = usePublicConfig();
+  const { clusters, publicConfig: { CLUSTERS,BASE_PATH }, currentAvailableClusterIds } = usePublicConfig();
 
   const { defaultCluster, currentClusters }
-      = defaultClusterContext(CLUSTERS, currentAssociateClusterIds ?? []);
+      = defaultClusterContext(CLUSTERS, currentAvailableClusterIds ?? []);
   const initialCluster = defaultCluster ?? currentClusters[0];
 
   const unfinished = status === AppTableStatus.UNFINISHED;

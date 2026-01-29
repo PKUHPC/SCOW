@@ -12,7 +12,7 @@ export default function Page() {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.");
 
-  const { publicConfig, currentAssociateClusterIds } = usePublicConfig();
+  const { publicConfig } = usePublicConfig();
   useDocumentTitle(t(p("title")));
 
   const items: TabsProps["items"] = [
@@ -24,7 +24,6 @@ export default function Page() {
           <ImageListTable
             isPublic={false}
             clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAssociateClusterIds}
           />
         </div>
       ),
@@ -37,7 +36,6 @@ export default function Page() {
           <ImageListTable
             isPublic={true}
             clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAssociateClusterIds}
           />
         </div>
       ),

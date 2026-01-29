@@ -29,8 +29,8 @@ export const ClusterSelector: React.FC<Props> = ({ value, onChange }) => {
 
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
-  const { publicConfig, currentAssociateClusterIds } = usePublicConfig();
-  const currentClusters = publicConfig.CLUSTERS.filter((cluster) => (currentAssociateClusterIds.includes(cluster.id)));
+  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const currentClusters = publicConfig.CLUSTERS.filter((cluster) => (currentAvailableClusterIds.includes(cluster.id)));
 
   return (
     <Select
@@ -65,9 +65,9 @@ export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
-  const { publicConfig, currentAssociateClusterIds } = usePublicConfig();
+  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
   const { setDefaultCluster, currentClusters }
-   = defaultClusterContext(publicConfig.CLUSTERS, currentAssociateClusterIds);
+   = defaultClusterContext(publicConfig.CLUSTERS, currentAvailableClusterIds);
 
   return (
     <Select

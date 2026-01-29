@@ -1563,7 +1563,7 @@ export default {
             nodesCount: "Total Nodes",
             cpusCount: "Total CPU Cores",
             gpusCount: "Total Accelerator Cards",
-            totalMemMb: "Total Memory Capacity",
+            totalMemGb: "Total Memory Capacity（GB）",
             clusterState: "Cluster State",
             errorState: "Error",
             deactivatedState: "Deactivated",

@@ -728,6 +728,9 @@ export const unShareAlgorithmVersion = procedure
     if (algorithm.owner !== user.identityId)
       throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId} not accessible` });
 
+    const currentClusterIds = await getCurrentClusters(user.identityId);
+    checkClusterAvailable(currentClusterIds, algorithm.clusterId);
+
     algorithmVersion.sharedStatus = SharedStatus.UNSHARING;
     em.persist([algorithmVersion]);
     await em.flush();

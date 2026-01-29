@@ -77,6 +77,7 @@ export default {
       upperCancelShare: "Cancel sharing",
       upperCancelSharing: "Cancel sharing in progress",
       upperSharing: "Sharing",
+      fileCheckError: "Failed to query file",
     },
     dashboard:{
       infoPanes:{
@@ -1262,6 +1263,7 @@ export default {
       upload: "Upload File",
       mkdir: "Create New Folder",
       depression: "Unzip File",
+      homeDirError: "Failed to retrieve directory",
     },
     fileTable: {
       name: "File Name",

@@ -1541,7 +1541,7 @@ export default {
             nodesCount: "节点总数",
             cpusCount: "CPU总核数",
             gpusCount: "加速卡总卡数",
-            totalMemMb: "内存总容量",
+            totalMemGb: "内存总容量（GB）",
             clusterState: "集群状态",
             errorState: "异常",
             deactivatedState: "停用",

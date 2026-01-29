@@ -12,8 +12,6 @@ import { createInterdependentValidator, imageNameValidation, imageTagValidation,
   inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
-import { defaultClusterContext } from "../../defaultClusterContext";
-
 export interface Props {
   open: boolean;
   onClose: () => void;
@@ -21,7 +19,6 @@ export interface Props {
   isEdit: boolean;
   editData?: ImageInterface;
   clusters: Cluster[];
-  currentClusterIds: string[];
 }
 
 interface FormFields {
@@ -40,7 +37,7 @@ interface FormFields {
 }
 
 export const CreateEditImageModal: React.FC<Props> = ({
-  open, onClose, refetch, isEdit, editData, clusters, currentClusterIds,
+  open, onClose, refetch, isEdit, editData, clusters,
 }: Props) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.createEditImageModal.");
@@ -55,8 +52,6 @@ export const CreateEditImageModal: React.FC<Props> = ({
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
-
-  const { defaultCluster } = defaultClusterContext(clusters, currentClusterIds);
 
   useEffect(() => {
     resetForm();
@@ -160,7 +155,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
         onFinish={onOk}
         wrapperCol={{ span: 20 }}
         labelCol={{ span: 4 }}
-        initialValues={(isEdit && editData) ? editData : { cluster: defaultCluster ?? "" }}
+        initialValues={(isEdit && editData) ? editData : { cluster: "" }}
       >
         { (isEdit && editData) ? (
           <>
@@ -317,7 +312,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                         form.setFields([{ name: "sourcePath", value: path, touched: true }]);
                         form.validateFields(["sourcePath"]);
                       }}
-                      clusterId={cluster?.id ?? defaultCluster?.id ?? ""}
+                      clusterId={cluster?.id ?? ""}
                     />
                   ) : undefined
                 }

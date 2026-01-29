@@ -140,16 +140,18 @@ export const ClusterManagementTable: React.FC<Props> = ({
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalGpuCount"
-          width="10%"
+          width="8%"
           title={tArgs(p("table.gpusCount"))}
           sorter={(a, b) => compareNullableNumber(a.totalGpuCount, b.totalGpuCount)}
         />
         <Table.Column<CombinedClusterInfo>
           dataIndex="totalMemMb"
-          title={tArgs(p("table.totalMemMb"))}
-          width="10%"
+          title={tArgs(p("table.totalMemGb"))}
+          width="12%"
           render={(_, r) => {
-            return `${r.totalMemMb} MB`;
+            // 显示GB， 保留两位小数
+            const totalGb = (r.totalMemMb / 1024).toFixed(2);
+            return `${totalGb}`;
           }}
           sorter={(a, b) => compareNullableNumber(a.totalMemMb, b.totalMemMb)}
         />
@@ -198,16 +200,8 @@ export const ClusterManagementTable: React.FC<Props> = ({
             = getI18nConfigCurrentText(publicConfigClusters[r.clusterId].name, languageId);
             return (
               <>
-                {/* TODO: 暂时只对门户系统（HPC）中的集群增加启用和停用功能 */}
                 {
-                  !r.hpcEnabled && (
-                    <>
-                      --
-                    </>
-                  )
-                }
-                {
-                  r.hpcEnabled && r.activationStatus === ClusterActivationStatus.DEACTIVATED
+                  r.activationStatus === ClusterActivationStatus.DEACTIVATED
                   && (
                     <>
                       <a
@@ -221,7 +215,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
                                   {tArgs(p("activateModal.content"), [
                                     <strong key="clusterId">{r.clusterId}</strong>,
                                     <strong key="clusterName">{clusterName}</strong>,
-                                  ])},
+                                  ])}
                                 </p>
                                 <p style={{ color: "red" }}>{tArgs(p("activateModal.contentAttention"))}</p>
                               </>
@@ -251,7 +245,7 @@ export const ClusterManagementTable: React.FC<Props> = ({
                     </>
                   )
                 }
-                { r.hpcEnabled && r.activationStatus === ClusterActivationStatus.ACTIVATED && (
+                { r.activationStatus === ClusterActivationStatus.ACTIVATED && (
                   <>
                     <DeactivateClusterModalLink
                       clusterId={r.clusterId}

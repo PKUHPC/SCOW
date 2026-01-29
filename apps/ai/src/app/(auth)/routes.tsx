@@ -29,8 +29,7 @@ export const userRoutes: (
 ) => {
 
   if (!user) { return []; }
-
-  const devHostEnabled = Object.values(clusterConfigs).some((c) => c.ai.devHost.enabled);
+  const devHostEnabled = currentClusters.some((c) => clusterConfigs[c.id]?.ai.devHost.enabled);
 
   return [
     {

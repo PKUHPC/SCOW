@@ -76,7 +76,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
   const { clusterId } = params;
   const searchParams = useSearchParams();
 
-  const { publicConfig,user } = usePublicConfig();
+  const { publicConfig, user, currentAvailableClusterIds } = usePublicConfig();
   const cluster = publicConfig.CLUSTERS.find((x) => x.id === clusterId);
 
   // ai配置文件的grafana配置
@@ -87,7 +87,7 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
   const grafanaConfig = clusterGrafanaConfig ?? aiConfigGrafanaConfig;
   const grafanaEnabled = !!grafanaConfig?.enabled;
 
-  if (!cluster) {
+  if (!cluster || !currentAvailableClusterIds.includes(clusterId)) {
     return <NotFoundPage />;
   }
 

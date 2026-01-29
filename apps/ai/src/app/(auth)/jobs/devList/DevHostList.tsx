@@ -31,7 +31,7 @@ interface PageInfo {
 export const DevHostList = () => {
   const t = useI18nTranslateToString();
   const p = prefix("app.devHost.listPage.");
-  const { publicConfig, scowClusterConfigs } = usePublicConfig();
+  const { publicConfig, scowClusterConfigs, currentAvailableClusterIds } = usePublicConfig();
   const router = useRouter();
 
   const [selectedCluster, setSelectedCluster] = useState<string>("");
@@ -143,7 +143,7 @@ export const DevHostList = () => {
 
   // 集群选择器选项
   const clusterOptions = publicConfig.CLUSTERS.filter((cluster) =>
-    scowClusterConfigs[cluster.id]?.ai.devHost.enabled,
+    currentAvailableClusterIds.includes(cluster.id) && scowClusterConfigs[cluster.id]?.ai.devHost.enabled,
   ).map((cluster) => ({
     value: cluster.id,
     label: typeof cluster.name === "string" ?

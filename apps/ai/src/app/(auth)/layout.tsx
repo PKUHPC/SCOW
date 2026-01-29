@@ -98,7 +98,7 @@ export default function Layout(
       publicConfig,
       clusters: publicConfig.CLUSTERS,
       scowClusterConfigs,
-      currentAssociateClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
+      currentAvailableClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
       defaultClusterContext:
           defaultClusterContext(publicConfig.CLUSTERS ?? [], currentClusterIdsQuery?.data?.clusterIds ?? []),
     }}

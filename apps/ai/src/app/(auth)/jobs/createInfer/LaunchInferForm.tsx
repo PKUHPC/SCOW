@@ -216,7 +216,7 @@ export const LaunchInferForm = ({
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
   // const i18n = useI18n();
-  const { publicConfig, currentAssociateClusterIds } = usePublicConfig();
+  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
 
@@ -966,13 +966,19 @@ export const LaunchInferForm = ({
   // 根据账户授权过滤可用集群，并映射出按钮需要的展示文案
   const clusterOptions = useMemo(() => {
     const allowedClusters = new Set<string>(selectedAccount ? (accountClusterMap[selectedAccount] ?? []) : []);
-    const associateClusters = new Set<string>(currentAssociateClusterIds ?? []);
-    return CLUSTERS.map((cluster) => ({
+    // 当前用户关联可用账户下的所有可用在线集群
+    const associateClusterIds = new Set<string>(currentAvailableClusterIds ?? []);
+    // 获取AI可用在线集群
+    const activatedAvailableClusters = CLUSTERS.filter((c) => {
+      return associateClusterIds.has(c.id);
+    });
+      // 只展示：(系统在线的集群) 且 (用户至少有一个账户能访问该集群)
+    return activatedAvailableClusters.map((cluster) => ({
       id: cluster.id,
       name: getI18nConfigCurrentText(cluster.name, languageId),
-      disabled: !selectedAccount || !allowedClusters.has(cluster.id) || !associateClusters.has(cluster.id),
+      disabled: !selectedAccount || !allowedClusters.has(cluster.id),
     }));
-  }, [CLUSTERS, accountClusterMap, currentAssociateClusterIds, languageId, selectedAccount]);
+  }, [CLUSTERS, accountClusterMap, currentAvailableClusterIds, languageId, selectedAccount]);
 
   useEffect(() => {
     // 再次提交时回填账户与集群，避免默认值覆盖历史配置
@@ -1224,7 +1230,7 @@ export const LaunchInferForm = ({
     accountClusterMap,
     clusterOptions,
     createInferParams,
-    currentAssociateClusterIds,
+    currentAvailableClusterIds,
     resourceForm,
     selectedAccount,
     selectedCluster,

@@ -13,10 +13,15 @@ export type ScowClusterConfigs = Record<string, {
 
 export const PublicConfigContext = React.createContext<{
   publicConfig: PublicConfig,
+  // 系统所有已配置集群 ID，名称 列表
   clusters: Cluster[],
   scowClusterConfigs: ScowClusterConfigs;
   user: ClientUserInfo;
-  currentAssociateClusterIds: string[],
+  // 当前登录用户的可用 集群ID 列表
+  // (1) 如果没有部署管理系统且资源管理系统为不可用，返回当前系统已配置集群ID
+  // (2) 如果部署了管理系统，没有部署资源管理，则返回管理系统在线集群ID
+  // (3) 如果部署了管理系统和资源管理，则返回已授权的在线集群ID
+  currentAvailableClusterIds: string[],
   defaultClusterContext: {
     defaultCluster: Cluster | undefined;
     setDefaultCluster: (cluster: Cluster | undefined) => void;
