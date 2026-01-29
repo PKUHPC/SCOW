@@ -1,23 +1,12 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
+import { calcActiveKeys } from "@scow/lib-web/build/layouts/base/common";
+import { SideNav } from "@scow/lib-web/build/layouts/base/SideNav";
+import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
+import { arrayContainsElement } from "@scow/utils";
 import { Layout } from "antd";
-import { usePathname } from "next/navigation";
-import React, { PropsWithChildren, useState } from "react";
-import { NavItemProps } from "src/layouts/base/NavItemProps";
-import { SideNav } from "src/layouts/base/SideNav";
-import { arrayContainsElement } from "src/utils/array";
+import { usePathname, useRouter } from "next/navigation";
+import React, { PropsWithChildren, useMemo } from "react";
 import { styled } from "styled-components";
 
 const ContentPart = styled.div`
@@ -44,12 +33,16 @@ interface Props {
   sidebarRoutes: NavItemProps[];
 }
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({ sidebarRoutes, children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const pathname = usePathname() ?? "";
-
+  const router = useRouter();
 
   const hasSidebar = arrayContainsElement(sidebarRoutes);
+  const selectedKeys = useMemo(() =>
+    sidebarRoutes
+      ? [...calcActiveKeys(sidebarRoutes, pathname)]
+      : []
+  , [sidebarRoutes, pathname]);
 
   return (
     <div>
@@ -57,10 +50,10 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({ sidebarRoutes, 
         {
           hasSidebar && (
             <SideNav
+              activeKeys={selectedKeys}
               pathname={pathname}
-              collapsed={sidebarCollapsed}
               routes={sidebarRoutes}
-              setCollapsed={setSidebarCollapsed}
+              appRouter={router}
             />
           )
         }

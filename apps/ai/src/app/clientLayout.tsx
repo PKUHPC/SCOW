@@ -65,29 +65,33 @@ export function ClientLayout(props: {
 
   if (publicConfig.isLoading) {
     return (
-      <body>
+      <>
         <Loading />
-      </body>
+      </>
     );
   }
 
   if (publicConfig.isError || !publicConfig.isSuccess) {
     return (
-      <body>
+      <>
         <ServerErrorPage />
-      </body>
+      </>
     );
   }
 
   if (initialLanguageDefinitionQuery.isLoading || !initialLanguageDefinitionQuery.data) {
-    return <body><Loading /></body>;
+    return (
+      <>
+        <Loading />
+      </>
+    );
   }
 
   if (initialLanguageDefinitionQuery.isError || !initialLanguageDefinitionQuery.isSuccess) {
     return (
-      <body>
+      <>
         <ServerErrorPage />
-      </body>
+      </>
     );
   }
 

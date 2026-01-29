@@ -1,5 +1,16 @@
 import Icon from "@ant-design/icons";
 import React, { LegacyRef } from "react";
+import styled from "styled-components";
+
+// 给侧边栏底部收缩按钮指定主题颜色
+const StyledSvg = styled.svg`
+  rect {
+    fill: ${({ theme }) => theme.palette.gray[8]};
+  }
+  path {
+    stroke: ${({ theme }) => theme.palette.gray[0]};
+  }
+`;
 
 const userSVG = () => (
   <svg width="16" height="14" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -179,10 +190,10 @@ export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttribute
 
 // 收起菜单图标
 const collapseMenuSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="18" height="18" rx="4" fill="black" />
-    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke="white" stroke-width="1.2" stroke-linecap="round" />
-  </svg>
+  <StyledSvg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="18" height="18" rx="4" />
+    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke-width="1.2" stroke-linecap="round" />
+  </StyledSvg>
 
 );
 
@@ -193,10 +204,10 @@ export const CollapseMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttr
 
 // 展开菜单图标
 const expandMenuSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="18" y="18" width="18" height="18" rx="4" transform="rotate(-180 18 18)" fill="black" />
-    <path d="M7.875 12.375L11.25 9L7.875 5.625" stroke="white" stroke-width="1.2" stroke-linecap="round" />
-  </svg>
+  <StyledSvg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="18" y="18" width="18" height="18" rx="4" transform="rotate(-180 18 18)" />
+    <path d="M7.875 12.375L11.25 9L7.875 5.625" stroke-width="1.2" stroke-linecap="round" />
+  </StyledSvg>
 );
 
 export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,

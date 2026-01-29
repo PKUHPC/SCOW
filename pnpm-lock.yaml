@@ -1025,6 +1025,9 @@ importers:
       '@scow/protos':
         specifier: workspace:*
         version: link:../../libs/protos/scow
+      '@scow/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
       '@sinclair/typebox':
         specifier: 0.34.13
         version: 0.34.13

@@ -1,18 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { arrayContainsElement } from "@scow/utils";
 import { Tooltip } from "antd";
 import { ItemType } from "antd/es/menu/interface";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import Link from "next/link";
 import Router from "next/router";
 import React from "react";
@@ -35,6 +24,7 @@ export function createMenuItems(
   routes: NavItemProps[],
   pathname: string,
   parentClickable: boolean,
+  appRouter?: AppRouterInstance,
 ) {
 
   function createMenuItem(route: NavItemProps): ItemType {
@@ -47,7 +37,14 @@ export function createMenuItems(
         if (EXTERNAL_URL_PREFIX.some((pref) => target.startsWith(pref))) {
           window.location.href = target;
         } else {
-          void Router.push(target);
+          // appRouter模式
+          if (appRouter) {
+            appRouter.push(target);
+          // pageRouter模式
+          } else {
+            void Router.push(target);
+          }
+
         }
       }
     };
@@ -67,7 +64,7 @@ export function createMenuItems(
         onTitleClick:(route.clickable ?? parentClickable)
           ? handleClick
           : undefined,
-        children: createMenuItems(route.children, pathname, parentClickable),
+        children: createMenuItems(route.children, pathname, parentClickable, appRouter),
       } as ItemType;
     }
 

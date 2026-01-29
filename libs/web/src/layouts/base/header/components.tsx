@@ -21,7 +21,7 @@ export const HeaderItem = styled.div`
     padding-right: 8px;
   }
   height: 36px;
-  .ant-typography, a {
+ .ant-typography {
     color: #434343 !important;
     &:hover {
       color: #595959 !important;

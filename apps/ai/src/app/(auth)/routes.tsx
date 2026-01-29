@@ -1,6 +1,7 @@
 "use client";
 
 import { LinkOutlined } from "@ant-design/icons";
+import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { join } from "path";
 import { TransType } from "src/i18n";
@@ -8,7 +9,6 @@ import { AlgorithmIcon,AppIcon, DashBoardIcon,
   DataAssetIcon, DatasetIcon,DevelopAndTrainIcon, FileIcon,
   ImageIcon, InferIcon, jobIcon, ModelIcon, TrainJobIcon, ViewDevHostIcon,
 } from "src/icons/menuIcons";
-import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { Cluster, NavLink, PublicConfig } from "src/server/trpc/route/config";
 

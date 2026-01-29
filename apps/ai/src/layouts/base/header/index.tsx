@@ -5,16 +5,16 @@ import { ExtensionRouteQuery, isUrl } from "@scow/lib-web/build/extensions/commo
 import { NavbarLink, navbarLinksRoute } from "@scow/lib-web/build/extensions/navbarLinks";
 import { callExtensionRoute } from "@scow/lib-web/build/extensions/routes";
 import { ExtensionManifestWithUrl } from "@scow/lib-web/build/extensions/UiExtensionStore";
+import { calcActiveKeys } from "@scow/lib-web/build/layouts/base/common";
+import { BigScreenMenu } from "@scow/lib-web/build/layouts/base/header/BigScreenMenu";
 import { JumpToAnotherLink } from "@scow/lib-web/build/layouts/base/header/components";
-import { UserLink } from "@scow/lib-web/build/layouts/base/types";
+import { NavItemProps, UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { Space } from "antd";
 import { join } from "path";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { antdBreakpoints } from "src/layouts/base/constants";
-import { BigScreenMenu } from "src/layouts/base/header/BigScreenMenu";
 import { Logo } from "src/layouts/base/header/Logo";
-import { NavItemProps } from "src/layouts/base/NavItemProps";
 import { NavIcon } from "src/layouts/icon";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { styled } from "styled-components";
@@ -114,6 +114,12 @@ export const Header: React.FC<Props> = ({
 
   const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
 
+  const selectedKeys = useMemo(() => {
+    if (!routes) return [];
+    const activeKeysSet = calcActiveKeys(routes, pathname);
+    return Array.from(activeKeysSet);
+  }, [routes, pathname]);
+
   const onFetched = (extension: ExtensionManifestWithUrl) => (data: NavbarLink[]) => {
     setLinks((links) => {
       // remove all existing links from the same extension
@@ -176,6 +182,7 @@ export const Header: React.FC<Props> = ({
         <BigScreenMenu
           pathname={pathname}
           routes={routes}
+          activeKeys={selectedKeys}
         />
         <MenuPartPlaceholder />
       </MenuPart>

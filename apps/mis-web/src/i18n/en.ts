@@ -115,7 +115,7 @@ export default {
     organization: "Organization",
     adjustBill: "Adjust Job Billing",
     failedGetTenantAssignedClustersAndPartitions: "Failed to retrieve authorized cluster partition information",
-    accountUserSyncRunning: "Account/User information is currently being synchronized. Please wait for the "
+    accountUserSyncRunning: "Account user information is currently being synchronized. Please wait for the "
     + "synchronization to complete before trying again.",
     finalError: "Request failed, please try again later",
     edit: "edit",
@@ -184,7 +184,7 @@ export default {
         firstNav: "My SCOW",
         runningJobs: "Running Jobs",
         finishedJobs: "Completed Jobs",
-        clusterPartitions: "Cluster and Partition Information",
+        clusterPartitions: "Cluster Partition Information",
       },
       platformManagement: {
         fistNav: "Platform",
@@ -202,7 +202,7 @@ export default {
         accountChargeRecords: "Account Expense Record",
         accountBills: "Account Bill Detail",
         systemDebug: "Platform Operation",
-        statusSynchronization: "Account/User Synchronization",
+        statusSynchronization: "Account User Synchronization",
         jobSynchronization: "Jobs Synchronization",
         resourceManagement: "Resource Management",
         clusterManagement: "Cluster Management",
@@ -1451,7 +1451,7 @@ export default {
           syncSchedulerBlockingStatusNow: "Refresh Scheduler User Blocking Status",
         },
         syncClusterAccountUser: {
-          syncUserAccount: "Account/User Information Synchronization",
+          syncUserAccount: "Account User Synchronization",
           alertInfo: "SCOW will regularly synchronize the information of accounts and users to the scheduler. "
           + "You can click Sync Now to perform a manual synchronization.",
           maxSyncDurationExplanation: "During synchronization, SCOW cannot modify account-related information. "
@@ -1480,7 +1480,7 @@ export default {
           syncStatusSuccess: "SUCCESS",
           syncStatusFailed: "FAILED",
           historyTable: {
-            title: "Account/User Synchronization History",
+            title: "Account User Synchronization History",
             explanation: "Last {} days of synchronization records only",
             index: "Index",
             operatorId: "Operator",

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { getExtensionRouteQuery } from "@scow/lib-web/build/extensions/common";
@@ -17,25 +5,27 @@ import { fromNavItemProps, rewriteNavigationsRoute, toNavItemProps } from "@scow
 import { callExtensionRoute } from "@scow/lib-web/build/extensions/routes";
 import { ExtensionManifestWithUrl, fetchManifestsWithErrorHandling, UiExtensionStoreData }
   from "@scow/lib-web/build/extensions/UiExtensionStore";
+import { calcActiveKeys } from "@scow/lib-web/build/layouts/base/common";
 import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
+import { SideNav } from "@scow/lib-web/build/layouts/base/SideNav";
+import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
+import { arrayContainsElement } from "@scow/utils";
 import { Grid, Layout } from "antd";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { join } from "path";
-import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
+import React, { PropsWithChildren, useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useAsync } from "react-async";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useUiConfig } from "src/app/uiContext";
 import { useI18n } from "src/i18n";
 import { Header } from "src/layouts/base/header";
-import { match } from "src/layouts/base/matchers";
-import { NavItemProps } from "src/layouts/base/NavItemProps";
-import { SideNav } from "src/layouts/base/SideNav";
 import { useDarkMode } from "src/layouts/darkMode";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
-import { arrayContainsElement } from "src/utils/array";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
-// import logo from "src/assets/logo-no-text.svg";
+
 const { useBreakpoint } = Grid;
 
 const Root = styled.div`
@@ -79,7 +69,8 @@ type Props = PropsWithChildren<{
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   routes = [], children, user = undefined, headerRightContent,
 }) => {
-  const [finalRoutes, setFinalRoutes] = useState(routes);
+
+  const router = useRouter();
   const [uiExtensionData, setUiExtensionData] = useState<UiExtensionStoreData | undefined>(undefined);
 
   const pathname = usePathname() ?? "";
@@ -101,6 +92,17 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
   const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
     ?? footerConfig?.defaultText;
 
+  useLayoutEffect(() => {
+    if (pathname === "/dashboard") {
+      // 强制清除所有可能的滚动偏移
+      window.scrollTo(0, 0);
+      // 适应现代浏览器
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      // Safari或特定布局
+      if (document.body) document.body.scrollTop = 0;
+    }
+  }, [pathname]);
+
   const extensions = useMemo(() =>
     (Array.isArray(uiExtensionData)
       ? uiExtensionData
@@ -117,6 +119,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     fetchUiExtension();
   }, [uiExtensionConfig]);
 
+  // fetchUiExtension 只负责获取扩展数据，不负责处理路由
   const fetchUiExtension = useCallback(async () => {
     if (!uiExtensionConfig) {
       setUiExtensionData(undefined);
@@ -134,44 +137,54 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
       const resp = await fetchManifestsWithErrorHandling(uiExtensionConfig.url);
       result = resp;
     }
-    const extensions = (Array.isArray(result) ? result : result ? [result] : []).filter((x) => x);
-    fetchFinalRoutesData(extensions);
 
     setUiExtensionData(result);
   }, [uiExtensionConfig]);
 
-  const fetchFinalRoutesData = async (extensions: ExtensionManifestWithUrl[] | []) => {
-    if (extensions.length === 0) { return routes; }
 
-    let newRoutes = routes;
+  const { data: finalRoutesData } = useAsync({
+    promiseFn: useCallback(async () => {
+      if (extensions.length === 0) { return routes; }
 
-    for (const extension of extensions) {
-      if (!extension.manifests.ai?.rewriteNavigations) { continue; }
-      const resp = await callExtensionRoute(rewriteNavigationsRoute("ai"), routeQuery, {
-        navs: fromNavItemProps(newRoutes),
-      }, extension.url).catch((e) => {
-        console.warn(`Failed to call rewriteNavigations of extension ${extension.name ?? extension.url}. Error: `, e);
-        return { 200: { navs: newRoutes } };
-      });
+      let newRoutes = routes;
 
-      if (resp[200]) {
-        newRoutes = toNavItemProps(newRoutes, resp[200].navs, extension.name);
+      for (const extension of extensions) {
+        if (!extension.manifests.ai?.rewriteNavigations) { continue; }
+
+        const resp = await callExtensionRoute(rewriteNavigationsRoute("ai"), routeQuery, {
+          navs: fromNavItemProps(newRoutes),
+        }, extension.url).catch((e) => {
+          console.warn(`Failed to call rewriteNavigations of extension ${extension.name ?? extension.url}. Error: `, e);
+          return { 200: { navs: newRoutes } };
+        });
+
+        if (resp[200]) {
+          newRoutes = toNavItemProps(newRoutes, resp[200].navs, extension.name);
+        }
       }
-    }
 
-    setFinalRoutes(newRoutes);
-  };
+      return newRoutes;
+    }, [routeQuery, extensions, routes]),
+  });
 
-  const firstLevelRoute = useMemo(() => finalRoutes.find((x) => match(x, pathname)), [finalRoutes, pathname]);
+  const finalRoutes = finalRoutesData ?? routes;
+
+  const activeKeys = useMemo(() =>
+    finalRoutes
+      ? [...calcActiveKeys(finalRoutes, pathname)]
+      : []
+  , [finalRoutes, pathname]);
+
+  const firstLevelRoute = finalRoutes.find((x) => activeKeys.includes(x.path));
 
   const sidebarRoutes = md ? firstLevelRoute?.children : finalRoutes;
 
   const hasSidebar = arrayContainsElement(sidebarRoutes);
 
-  const primaryRoutes = useMemo(() =>
-    (finalRoutes ?? routes).map(({ children, ...rest }) => rest),
-  [finalRoutes, routes],
-  );
+  const primaryRoutes = (finalRoutes ?? routes).map((route) => {
+    const { children, ...rest } = route;
+    return rest;
+  });
 
   return (
     <Root>
@@ -194,8 +207,10 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         {
           (hasSidebar) ? (
             <SideNav
+              activeKeys={activeKeys}
               pathname={pathname}
               routes={sidebarRoutes}
+              appRouter={router}
             />
           ) : undefined
         }

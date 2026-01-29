@@ -115,7 +115,7 @@ export default {
     organization: "组织",
     adjustBill: "修改作业计费",
     failedGetTenantAssignedClustersAndPartitions: "查询授权集群分区信息失败",
-    accountUserSyncRunning: "当前正在执行账户/用户信息同步，请等待该同步执行完成后重试。",
+    accountUserSyncRunning: "当前正在执行账户用户同步，请等待该同步执行完成后重试。",
 
     finalError: "请求失败，请稍后重试",
     edit: "编辑",
@@ -184,7 +184,7 @@ export default {
         firstNav: "用户空间",
         runningJobs: "未结束的作业",
         finishedJobs: "已结束的作业",
-        clusterPartitions: "集群和分区信息",
+        clusterPartitions: "集群分区信息",
       },
       platformManagement: {
         fistNav: "平台管理",
@@ -202,7 +202,7 @@ export default {
         accountChargeRecords: "账户消费记录",
         accountBills: "账户账单明细",
         systemDebug: "平台调试",
-        statusSynchronization: "账户/用户信息同步",
+        statusSynchronization: "账户用户同步",
         jobSynchronization: "作业信息同步",
         resourceManagement: "资源管理",
         clusterManagement: "集群管理",
@@ -1429,7 +1429,7 @@ export default {
           syncSchedulerBlockingStatusNow: "立刻同步调度器账户和用户封锁状态",
         },
         syncClusterAccountUser: {
-          syncUserAccount: "账户/用户信息同步",
+          syncUserAccount: "账户用户同步",
           alertInfo: "SCOW会定期向调度器同步SCOW数据库中账户和用户的信息，您可以点击立刻同步执行一次手动同步。",
 
           maxSyncDurationExplanation: "在同步过程中SCOW无法对账户有关的信息进行修改，为了避免同步时间过长影响用户"
@@ -1458,7 +1458,7 @@ export default {
           syncStatusSuccess: "同步成功",
           syncStatusFailed: "同步失败",
           historyTable: {
-            title: "账户/用户信息同步历史结果",
+            title: "账户用户同步历史结果",
             explanation: "只展示 {} 天内的同步历史结果",
             index: "序号",
             operatorId: "操作员",

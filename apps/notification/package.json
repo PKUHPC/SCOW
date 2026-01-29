@@ -47,6 +47,7 @@
     "@scow/lib-web": "workspace:*",
     "@scow/notification-protos": "workspace:*",
     "@scow/protos": "workspace:*",
+    "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
     "@tanstack/react-query": "5.90.7",
     "ajv": "8.17.1",

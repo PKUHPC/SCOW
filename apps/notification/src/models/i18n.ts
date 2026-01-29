@@ -17,7 +17,7 @@ export const languageDic = {
       msgSub: "消息订阅",
       msgConfig: "消息设置",
       sendMsg: "发送消息",
-      createType: "新建自定义消息类型",
+      createType: "新建消息类型",
     },
     common: {
       default: "默认",
@@ -53,7 +53,7 @@ export const languageDic = {
       selectExpirationTime: "请选择过期时间",
     },
     createCustomMessageType: {
-      pageTitle: "新建自定义消息类型",
+      pageTitle: "新建消息类型",
       create: {
         messageType: "消息类型",
         messageTypePlaceholder: "请输入消息类型，例如：JobFinished",
@@ -203,7 +203,7 @@ export const languageDic = {
       msgSub: "Message Subscription",
       msgConfig: "Message Config",
       sendMsg: "Send Message",
-      createType: "Create Custom Message Type",
+      createType: "Create Message Type",
     },
     common: {
       default: "Default",
@@ -239,7 +239,7 @@ export const languageDic = {
       selectExpirationTime: "Please select expiration time",
     },
     createCustomMessageType: {
-      pageTitle: "Create a custom message type",
+      pageTitle: "Create message type",
       create: {
         messageType: "Message Type",
         messageTypePlaceholder: "Please enter the message type, for example: JobFinished",

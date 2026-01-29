@@ -1,19 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import { arrayContainsElement } from "@scow/utils";
 import { Layout, Menu } from "antd";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createMenuItems } from "src/layouts/base/common";
 import { antdBreakpoints } from "src/layouts/base/constants";
@@ -31,10 +20,12 @@ interface Props {
   routes: NavItemProps[];
   pathname: string;
   activeKeys: string[];
-
+  // 如果应用于AppRouter，需传递next/navigation下的useRouter()获取到的appRouter
+  // 否则维持原始逻辑，默认为pageRouter, 使用 next/router下的 Router
+  appRouter?: AppRouterInstance;
 }
 
-const StyledSider = styled(Sider)`
+const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
   height: 100%;
 
   @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
@@ -49,7 +40,7 @@ const StyledSider = styled(Sider)`
   }
 
   .ant-menu {
-    padding: 12px 8px 40px;
+    padding: 12px 12px 40px;
     min-height: 100%;
     border-right: 0;
   }
@@ -59,13 +50,42 @@ const StyledSider = styled(Sider)`
   }
 
   .ant-menu-title-content {
-    margin-left: 4px;
+    margin-left: ${(props) => (props.collapsed ? "0px" : "8px")} !important;
+  }
+
+  .ant-menu-item-selected {
+    border: 1px solid #f0f0f0 !important;
+    box-shadow: 2px 0 2px 0 rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* menu间去掉左右margin, 上下margin和为8px */
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    margin-inline: 0 !important;
+    margin-block: 4px !important;
+    width: 100% !important;
+  }
+
+   &.ant-layout-sider-collapsed {
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+      /* 这里的 9px 对应 18px 宽度的图标中心点 */
+      padding-inline: calc(50% - 9px) !important;
+
+      .ant-menu-item-icon {
+        width: 18px !important;
+        min-width: 18px !important;
+        margin-inline-end: 0 !important;
+      }
+    }
   }
 `;
 
 const Container = styled.div<{ $width?: number }>`
   background: ${({ theme }) => theme.token.colorBgContainer};
   font-weight: 400;
+  z-index: 1000;
+  border: 1px solid ${({ theme }) => theme.token.colorBgLayout};
   .ant-layout-sider {
     &::-webkit-scrollbar {
       width: 6px;
@@ -88,7 +108,7 @@ const SidebarIconContainer = styled.div<{ sidebarCollapsed: boolean }>`
     background: ${({ theme }) => theme.token.colorBgContainer};
   }
   border-top: 1px #f0f0f0 solid;
-  padding-left: ${(props) => props.sidebarCollapsed ? 26 : 35}px;
+  padding-left: ${(props) => props.sidebarCollapsed ? 26 : 24}px;
   padding-top: 17px;
 `;
 
@@ -103,7 +123,7 @@ function getAllParentKeys(routes: NavItemProps[]): string[] {
 }
 
 export const SideNav: React.FC<Props> = ({
-  routes, pathname, activeKeys,
+  routes, pathname, activeKeys, appRouter,
 }) => {
 
   const parentKeys = useMemo(() => getAllParentKeys(routes), [routes]);
@@ -177,6 +197,7 @@ export const SideNav: React.FC<Props> = ({
       >
         <Menu
           mode="inline"
+          inlineIndent={12}
           selectedKeys={activeKeys}
           {
             ...sidebarCollapsed
@@ -184,7 +205,7 @@ export const SideNav: React.FC<Props> = ({
               : { openKeys }
           }
           onOpenChange={onOpenChange}
-          items={createMenuItems(routes, pathname, false)}
+          items={createMenuItems(routes, pathname, false, appRouter)}
         >
         </Menu>
       </StyledSider>

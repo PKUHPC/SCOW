@@ -91,31 +91,3 @@ export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<H
   ref: LegacyRef<HTMLSpanElement> | undefined) => (
   <Icon component={userSVG} {...props} ref={ref} />
 ));
-
-// 收起菜单图标
-const collapseMenuSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="18" height="18" rx="4" fill="black" />
-    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
-  </svg>
-
-);
-
-export const CollapseMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={collapseMenuSVG} {...props} ref={ref} />
-));
-
-// 展开菜单图标
-const expandMenuSVG = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="18" y="18" width="18" height="18" rx="4" transform="rotate(-180 18 18)" fill="black" />
-    <path d="M7.875 12.375L11.25 9L7.875 5.625" stroke="white" stroke-width="1.2" stroke-linecap="round" />
-  </svg>
-);
-
-export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={expandMenuSVG} {...props} ref={ref} />
-));
-
