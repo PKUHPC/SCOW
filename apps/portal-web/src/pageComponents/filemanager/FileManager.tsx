@@ -208,8 +208,14 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const reload = async (signal?: AbortSignal) => {
     setLoading(true);
     await api.listFile({ query: { cluster: currentClusterRef.current.id, path } }, signal)
-      .httpError(403, () => { message.error(t(p("noAccessPermission"))); })
-      .httpError(412, () => { message.error(t(p("noPath"))); })
+      .httpError(403, (e) => {
+        message.error(t(p("noAccessPermission")));
+        throw e;
+      })
+      .httpError(412, (e) => {
+        message.error(t(p("noPath")));
+        throw e;
+      })
       .then((d) => {
         setFiles(d.items);
       })

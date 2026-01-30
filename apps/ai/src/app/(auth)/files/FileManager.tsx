@@ -12,9 +12,9 @@ import { App, Button, Divider, Dropdown, MenuProps, Space, Tooltip } from "antd"
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { basename,dirname, join } from "path";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
-import { useOperation } from "src/app/(auth)/files/context";
+import { useFileManager } from "src/app/(auth)/files/context";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { CompressionModal } from "src/components/CompressionModal";
 import { DecompressionModal } from "src/components/DecompressionModal";
@@ -113,10 +113,8 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
   const searchParams = useSearchParams();
   const { publicConfig, scowClusterConfigs } = usePublicConfig();
 
-  const prevPathRef = useRef<string>(path);
-
   const [selectedKeys, setSelectedKeys] = useState<FileInfoKey[]>([]);
-  const { operation, setOperation } = useOperation();
+  const { operation, setOperation, filePrevPath, setFilePrevPath } = useFileManager();
   const [showHiddenFile, setShowHiddenFile] = useState(false);
   const [decompression, setDecompression] = useState<Compression>({ started: [], completed: []});
   const [compression, setCompression] = useState<Compression>({ started: [], completed: []});
@@ -183,14 +181,22 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
       return;
     }
 
+    if (!filePrevPath) {
+      setFilePrevPath(path);
+    }
+
     setSelectedKeys([]);
 
     reload()
-      .then(() => { prevPathRef.current = path; })
-      .catch(() => {
-        if (prevPathRef.current !== path) {
-          router.push(fullUrl(prevPathRef.current));
+      .then((res) => {
+        if (res.isError) {
+          if (filePrevPath && filePrevPath !== path) {
+            router.push(fullUrl(filePrevPath));
+          }
+          return;
         }
+
+        setFilePrevPath(path);
       });
   }, [path]);
 

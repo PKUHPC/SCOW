@@ -10,11 +10,13 @@ export interface Operation {
   completed: FileInfo[];
 }
 
-export const OperationContext = React.createContext<{
+export const FileManagerContext = React.createContext<{
   operation: Operation | undefined,
   setOperation: Dispatch<SetStateAction<Operation | undefined>>;
+  filePrevPath: string | undefined;
+  setFilePrevPath: Dispatch<SetStateAction<string | undefined>>;
 }>(undefined!);
 
-export const useOperation = () => {
-  return useContext(OperationContext);
+export const useFileManager = () => {
+  return useContext(FileManagerContext);
 };

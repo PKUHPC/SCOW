@@ -14,16 +14,17 @@
 
 import React, { useState } from "react";
 
-import { Operation, OperationContext } from "./context";
+import { FileManagerContext,Operation } from "./context";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 
   const [operation, setOperation] = useState<Operation | undefined>();
+  const [filePrevPath, setFilePrevPath] = useState<string | undefined>();
 
   return (
-    <OperationContext.Provider value={{ operation, setOperation }}>
+    <FileManagerContext.Provider value={{ operation, setOperation, filePrevPath, setFilePrevPath }}>
       {children}
-    </OperationContext.Provider>
+    </FileManagerContext.Provider>
   );
 
 }
