@@ -12,7 +12,6 @@ export const ChangeEmailSchema = typeboxRouteSchema({
   method: "PATCH",
 
   body: Type.Object({
-    userId: Type.String(),
     newEmail: Type.String(),
   }),
 
@@ -37,9 +36,13 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
   const info = await auth(req, res);
   if (!info) { return; }
 
-  const { userId, newEmail } = req.body;
-
-  return await libWebChangeEmail(userId, newEmail, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN)
+  const { newEmail } = req.body;
+  return await libWebChangeEmail(
+    info.identityId,
+    newEmail,
+    publicConfig.MIS_SERVER_URL,
+    runtimeConfig.SCOW_API_AUTH_TOKEN,
+  )
     .then(async () => {
       return { 204: null };
     })

@@ -137,7 +137,6 @@ export const Profile: React.FC<Props> = ({
               <ChangeEmailModalButton
                 setEmail={setEmail}
                 languageId={languageId}
-                userId={user?.identityId || ""}
                 email={email}
                 api={api}
                 aiChangeEmail={aiChangeEmail}

@@ -19,7 +19,6 @@ export const ChangeEmailSchema = typeboxRouteSchema({
   method: "PATCH",
 
   body: Type.Object({
-    userId: Type.String(),
     newEmail: Type.String(),
   }),
 
@@ -50,7 +49,7 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
     return { 501: null };
   }
 
-  const { userId, newEmail } = req.body;
+  const { newEmail } = req.body;
 
   const client = getClient(UserServiceClient);
 
@@ -64,7 +63,7 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
   };
 
   return await asyncClientCall(client, "changeEmail", {
-    userId,
+    userId:info.identityId,
     newEmail,
   })
     .then(async () => {

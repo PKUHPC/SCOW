@@ -250,14 +250,13 @@ export const auth = router({
       },
     })
     .input(z.object({
-      identityId:z.string(),
       newEmail:z.string(),
     }))
     .output(z.void())
     .mutation(async ({ ctx: { req },input:{ newEmail } }) => {
       await changeEmail(req, newEmail).catch((error) => {
         throw new TRPCError({
-          message: `change email failed,${error.message}`,
+          message: `Change email failed: ${error.message}`,
           code: "BAD_REQUEST",
         });
       });

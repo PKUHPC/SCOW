@@ -10,7 +10,6 @@ export interface Props {
   onClose: () => void;
   setEmail: (email: string) => void;
   languageId: string;
-  userId: string;
   api;
   email?: string;
   aiChangeEmail?: mutationType;
@@ -22,7 +21,7 @@ interface FormInfo {
 }
 
 export const ChangeEmailModal: React.FC<Props> = ({
-  open, onClose, setEmail, languageId, userId, api, email,
+  open, onClose, setEmail, languageId, api, email,
   aiChangeEmail,
 }) => {
 
@@ -50,9 +49,9 @@ export const ChangeEmailModal: React.FC<Props> = ({
     setLoading(true);
 
     if (aiChangeEmail) {
-      changeEmailMutation?.mutate({ identityId: userId, newEmail });
+      changeEmailMutation?.mutate({ newEmail });
     } else {
-      await api.changeEmail({ body: { userId, newEmail } })
+      await api.changeEmail({ body: { newEmail } })
         .httpError(404, () => { message.error(getCurrentLangLibWebText(languageId, "userNotExist")); })
         .httpError(500, () => { message.error(getCurrentLangLibWebText(languageId, "changeEmailFail")); })
         .httpError(501, () => { message.error(getCurrentLangLibWebText(languageId, "unavailable")); })
