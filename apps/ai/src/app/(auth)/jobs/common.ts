@@ -9,6 +9,64 @@ export const FullWidthContainer = styled.div`
   flex-direction: column;
 `;
 
+export interface ClusterNodeInfo {
+  partitions: string[];
+  cpuCoreCount: number;
+  totalMemMb: number;
+  gpuCount: number;
+}
+
+export interface ClusterNodesInfo {
+  nodeInfo: ClusterNodeInfo[];
+}
+
+export const getQueueNodes = (
+  nodesInfo: ClusterNodesInfo | undefined,
+  queueName: string | undefined,
+): ClusterNodeInfo[] => {
+  if (!nodesInfo?.nodeInfo?.length || !queueName) {
+    return [];
+  }
+  return nodesInfo.nodeInfo.filter((node) => (node.partitions ?? []).includes(queueName));
+};
+/**
+ * 确定单节点核心数(cpu或gpu)后，队列中每个节点按照核心数、内存计算可调度的最大 Pod 数
+ * 累加得出队列支持的最大pod总数
+ * 分布式作业的总节点数要小于等于这个Pod数
+ */
+export const getMaxPodsByNodes = ({
+  nodes,
+  queueType,
+  perNodeUnits,
+  memoryPerUnitMb,
+}: {
+  nodes: ClusterNodeInfo[];
+  queueType: "gpu" | "cpu";
+  perNodeUnits: number;
+  memoryPerUnitMb?: number;
+}) => {
+  if (!nodes.length || perNodeUnits <= 0 || Number.isNaN(perNodeUnits)) {
+    return { maxPods: undefined, resourceMaxPods: undefined, memMaxPods: undefined };
+  }
+
+  const resourceMaxPods = nodes.reduce((sum, node) => {
+    const totalUnits = queueType === "gpu" ? node.gpuCount : node.cpuCoreCount;
+    return sum + Math.floor(totalUnits / perNodeUnits);
+  }, 0);
+
+  const perNodeMemMb = memoryPerUnitMb ? perNodeUnits * memoryPerUnitMb : undefined;
+  const memMaxPods = perNodeMemMb && perNodeMemMb > 0
+    ? nodes.reduce((sum, node) => sum + Math.floor(node.totalMemMb / perNodeMemMb), 0)
+    : undefined;
+
+  const podLimitCandidates = [resourceMaxPods, memMaxPods].filter(
+    (value): value is number => value !== undefined,
+  );
+  const maxPods = podLimitCandidates.length ? Math.min(...podLimitCandidates) : undefined;
+
+  return { maxPods, resourceMaxPods, memMaxPods };
+};
+
 export const validateMountPoints = (
   mountsDuplicateText: string,
   workingDirText: string = "",

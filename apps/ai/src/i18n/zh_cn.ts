@@ -587,6 +587,7 @@ export default {
           minNodes:"节点数需至少{0}个",
           tensorflowTotal:"PS节点数与Worker节点数之和需不小于2",
           queueLimit:"总节点数与{0}的乘积不能超过队列容量（{1}）",
+          nodeLimit:"当{0}为{1}时，节点数最大为{2}",
         },
         unitValidation:{
           required:"请输入资源数量",

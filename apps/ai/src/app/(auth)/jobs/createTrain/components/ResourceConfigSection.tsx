@@ -2,6 +2,7 @@ import type { InputNumberProps } from "antd";
 import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { type ReactNode,useEffect, useMemo, useRef } from "react";
+import { type ClusterNodesInfo,getMaxPodsByNodes, getQueueNodes } from "src/app/(auth)/jobs/common";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useTheme } from "styled-components";
@@ -58,6 +59,7 @@ interface ResourceConfigSectionProps {
   selectedQueueKey?: string;
   onQueueSelect: (queueId: string | undefined) => void;
   selectedQueueOption?: QueueRow;
+  queueNodesInfo?: ClusterNodesInfo;
   qosOptions: string[];
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
@@ -106,6 +108,7 @@ export const ResourceConfigSection = ({
   selectedQueueKey,
   onQueueSelect,
   selectedQueueOption,
+  queueNodesInfo,
   qosOptions,
   maxTimeUnit,
   onMaxTimeUnitChange,
@@ -214,6 +217,11 @@ export const ResourceConfigSection = ({
     ? gpuUnitLimit
     : undefined;
 
+  const selectedQueueNodes = useMemo(() => getQueueNodes(queueNodesInfo, selectedQueueOption?.queue), [
+    queueNodesInfo,
+    selectedQueueOption,
+  ]);
+
   const normalizedPsNodes = Math.max(0, Number(psNodeCountValue ?? 0));
   const normalizedWorkerNodes = Math.max(1, Number(workerNodeCountValue ?? 1));
   const normalizedDistributedNodes = Math.max(2, Number(distributedNodeCountValue ?? 2));
@@ -298,6 +306,32 @@ export const ResourceConfigSection = ({
       );
     }
 
+    // 节点的总容量限制
+    if (selectedQueueNodes.length) {
+      const memoryPerUnitMb = selectedQueueOption.type === "gpu"
+        ? selectedQueueOption.memoryPerGpuMb
+        : selectedQueueOption.memoryPerCoreMb;
+      const { maxPods } = getMaxPodsByNodes({
+        nodes: selectedQueueNodes,
+        queueType: selectedQueueOption.type,
+        perNodeUnits,
+        memoryPerUnitMb,
+      });
+
+      if (maxPods !== undefined && nodeMultiplier > maxPods) {
+        return Promise.reject(
+          new Error(
+            t(p("frameworkValidation.nodeLimit"), [
+              unitLabel,
+              perNodeUnits.toString(),
+              maxPods.toString(),
+            ]),
+          ),
+        );
+      }
+    }
+
+    // 队列的容量限制
     if (perNodeUnits * nodeMultiplier > queueTotalUnits) {
       return Promise.reject(
         new Error(
@@ -336,7 +370,7 @@ export const ResourceConfigSection = ({
       hadQueueSelectionRef.current = false;
       form.validateFields(["nodeUnitCount"]).catch(() => undefined);
     }
-  }, [activeResourceTab, form, queueTotalUnits, selectedQueueOption]);
+  }, [activeResourceTab, form, queueTotalUnits, selectedQueueNodes, selectedQueueOption]);
 
   const frameworkItems = frameworkOptions.map((value) => ({
     label: t(p(`frameworkOptions.${value}` as const)),

@@ -587,6 +587,7 @@ export default {
           minNodes:"Node count must be at least {0}",
           tensorflowTotal:"PS nodes + Worker nodes must be at least 2",
           queueLimit:"Total nodes × {0} cannot exceed the queue capacity ({1})",
+          nodeLimit:"When {0} is {1}, the maximum node count is {2}",
         },
         unitValidation:{
           required:"Please enter the resource amount",

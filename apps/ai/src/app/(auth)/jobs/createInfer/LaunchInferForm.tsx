@@ -458,6 +458,11 @@ export const LaunchInferForm = ({
       { enabled: !!selectedAccount && !!selectedCluster },
     );
 
+  const { data: queueNodesInfo } = trpc.dashboard.getClusterNodesInfo.useQuery(
+    { clusterId: selectedCluster! },
+    { enabled: !!queueData && !!selectedCluster },
+  );
+
   const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery({
     isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
     clusterId: selectedCluster,
@@ -1682,6 +1687,7 @@ export const LaunchInferForm = ({
           selectedQueueKey={selectedQueueKey}
           onQueueSelect={handleQueueSelect}
           selectedQueueOption={selectedQueueOption}
+          queueNodesInfo={queueNodesInfo}
           qosOptions={qosOptions}
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}

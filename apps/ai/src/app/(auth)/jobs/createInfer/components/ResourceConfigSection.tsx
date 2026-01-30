@@ -1,6 +1,7 @@
 import { Form, type FormInstance, Select, Space, Switch, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo, useRef } from "react";
+import { type ClusterNodesInfo,getMaxPodsByNodes, getQueueNodes } from "src/app/(auth)/jobs/common";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useTheme } from "styled-components";
@@ -53,6 +54,7 @@ interface ResourceConfigSectionProps {
   selectedQueueKey?: string;
   onQueueSelect: (queueId: string | undefined) => void;
   selectedQueueOption?: QueueRow;
+  queueNodesInfo?: ClusterNodesInfo;
   qosOptions: string[];
   maxTimeUnit: MaxTimeUnit;
   onMaxTimeUnitChange: (unit: MaxTimeUnit) => void;
@@ -74,6 +76,7 @@ export const ResourceConfigSection = ({
   selectedQueueKey,
   onQueueSelect,
   selectedQueueOption,
+  queueNodesInfo,
   qosOptions,
   maxTimeUnit,
   onMaxTimeUnitChange,
@@ -188,6 +191,12 @@ export const ResourceConfigSection = ({
     }
     return limits.length ? Math.min(...limits) : undefined;
   })();
+
+  const selectedQueueNodes = useMemo(() => getQueueNodes(queueNodesInfo, selectedQueueOption?.queue), [
+    queueNodesInfo,
+    selectedQueueOption,
+  ]);
+
   const cpuInputLimit = (() => {
     if (activeResourceTab !== "cpu") {
       return undefined;
@@ -245,6 +254,31 @@ export const ResourceConfigSection = ({
       if (!nodeValue || !unitValue || Number.isNaN(nodeValue) || Number.isNaN(unitValue)) {
         return Promise.resolve();
       }
+
+      if (selectedQueueNodes.length) {
+        const memoryPerUnitMb = selectedQueueOption.type === "gpu"
+          ? selectedQueueOption.memoryPerGpuMb
+          : selectedQueueOption.memoryPerCoreMb;
+        const { maxPods } = getMaxPodsByNodes({
+          nodes: selectedQueueNodes,
+          queueType: selectedQueueOption.type,
+          perNodeUnits: unitValue,
+          memoryPerUnitMb,
+        });
+
+        if (maxPods !== undefined && nodeValue > maxPods) {
+          return Promise.reject(
+            new Error(
+              t(p("frameworkValidation.nodeLimit"), [
+                perNodeLabel,
+                unitValue.toString(),
+                maxPods.toString(),
+              ]),
+            ),
+          );
+        }
+      }
+
       if (nodeValue * unitValue > queueTotalUnits) {
         return Promise.reject(
           new Error(
@@ -274,7 +308,7 @@ export const ResourceConfigSection = ({
       hadQueueSelectionRef.current = false;
       form.validateFields(["gpuCores", "cpuCores", "nodeCount"], { validateOnly: true }).catch(() => undefined);
     }
-  }, [activeResourceTab, form, queueTotalUnits, selectedQueueOption]);
+  }, [activeResourceTab, form, queueTotalUnits, selectedQueueNodes, selectedQueueOption]);
 
   return (
     <SectionCard title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
