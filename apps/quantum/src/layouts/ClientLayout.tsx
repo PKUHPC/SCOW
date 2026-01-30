@@ -157,6 +157,7 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
       }}
       >
         <AntdConfigProvider
+          color={color}
           primaryColor={{
             defaultColor: color,
             darkModeColor,
