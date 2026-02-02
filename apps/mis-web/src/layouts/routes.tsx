@@ -1,4 +1,4 @@
-import { LinkOutlined } from "@ant-design/icons";
+import { DefaultNavLinkIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { AccountAffiliation } from "@scow/protos/build/server/user";
@@ -516,7 +516,7 @@ export const getAvailableRoutes = (user: User | undefined, storageEnabled: boole
           || (childLink.allowedRoles.length &&
             childLink.allowedRoles.some((role) => userCurrentRoles[role])))
           .map((childLink) => ({
-            Icon: !childLink.iconPath ? LinkOutlined : (
+            Icon: !childLink.iconPath ? DefaultNavLinkIcon : (
               <NavIcon
                 src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)}
               />
@@ -531,7 +531,7 @@ export const getAvailableRoutes = (user: User | undefined, storageEnabled: boole
           : (childrenLinks && childrenLinks.length > 0 ? childrenLinks[0].path : "");
 
         return {
-          Icon: !link.iconPath ? LinkOutlined : (
+          Icon: !link.iconPath ? DefaultNavLinkIcon : (
             <NavIcon
               src={join(publicConfig.PUBLIC_PATH, link.iconPath)}
             />

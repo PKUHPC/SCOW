@@ -1,6 +1,6 @@
 "use client";
 
-import { LinkOutlined } from "@ant-design/icons";
+import { DefaultNavLinkIcon } from "@scow/lib-web/build/layouts/base/header/icons";
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { join } from "path";
@@ -123,7 +123,7 @@ export const userRoutes: (
             ? `${link.children[0].url}?token=${user.token}` : "";
 
         return {
-          Icon: !link.iconPath ? LinkOutlined : (
+          Icon: !link.iconPath ? DefaultNavLinkIcon : (
             <NavIcon
               src={join(publicConfig.PUBLIC_PATH, link.iconPath)}
             />
@@ -136,7 +136,7 @@ export const userRoutes: (
           children: link.children?.length ? link.children?.map((childLink: Omit<NavLink, "children" | "url"> & {
             url: string;
           }) => ({
-            Icon: !childLink.iconPath ? LinkOutlined : (
+            Icon: !childLink.iconPath ? DefaultNavLinkIcon : (
               <NavIcon
                 src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)}
               />

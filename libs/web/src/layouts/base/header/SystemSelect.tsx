@@ -35,9 +35,9 @@ const InlineBlockSpan = styled.span`
   }
 `;
 
-const InlineTextSpan = styled.span`
+const InlineTextSpan = styled.span<{ $active?: boolean }>`
   span {
-    color: #434343 !important;
+    color: ${({ $active, theme }) => ($active ? theme.token.colorPrimary : "#434343")};
   }
 `;
 
@@ -70,7 +70,7 @@ export const SystemSelect: React.FC<Props> = ({
       >
         <InlineBlockSpan>
           {activeItem?.icon}
-          <InlineTextSpan>{activeItem?.text}</InlineTextSpan>
+          <InlineTextSpan $active={activeItem?.isActive}>{activeItem?.text}</InlineTextSpan>
           <DownOutlined style={{ marginLeft: "4px" }} />
         </InlineBlockSpan>
       </Dropdown>
