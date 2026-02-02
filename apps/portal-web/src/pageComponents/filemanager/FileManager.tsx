@@ -449,6 +449,62 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     }
   };
 
+  const submitFile = (fileName: string, filePathOverride?: string, clusterIdOverride?: string) => {
+    const targetClusterId = clusterIdOverride ?? currentClusterRef.current.id;
+    const fullPath = filePathOverride ?? join(path, fileName);
+    const targetCluster = currentClusters.find((c) => c.id === targetClusterId) || currentClusterRef.current;
+
+    modal.confirm({
+      title: t(p("tableInfo.submitConfirmTitle")),
+      content: (
+        <>
+          <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
+          <p>
+            {t(p("tableInfo.submitConfirmContent"),
+              [fileName, getI18nConfigCurrentText(targetCluster.name, languageId)])}
+          </p>
+        </>
+      ),
+      okText: t(p("tableInfo.submitConfirmOk")),
+      onOk: async () => {
+        await api.submitFileAsJob({
+          body: {
+            cluster: targetClusterId,
+            filePath: fullPath,
+          },
+        })
+          .httpError(500, (e) => {
+            if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
+            || e.code === "UNIMPLEMENTED") {
+              modal.error({
+                title: t(p("tableInfo.submitFailedMessage")),
+                content: e.message,
+              });
+            } else {
+              message.error(e.message);
+              throw e;
+            }
+          })
+          .httpError(400, (e) => {
+            if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
+              modal.error({
+                title: t(p("tableInfo.submitFailedMessage")),
+                content: e.message,
+              });
+            } else {
+              message.error(e.message);
+              throw e;
+            }
+          })
+          .then((result) => {
+            message.success(t(p("tableInfo.submitSuccessMessage"), [result.jobId]));
+            resetSelectedAndOperation();
+            reload();
+          });
+      },
+    });
+  };
+
   // 递归解析符号链接的最终目标
   const resolveSymlinkTargetRecursively = async (
     startPath: string,
@@ -955,58 +1011,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             )}
             {
               i.type === "FILE" && isExecutableScriptFilename(i.name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES) ? (
-                <Tooltip title={t("button.submitButton")}>
+                <Tooltip title={t(p("submitJob"))}>
                   <SubmitIcon onClick={() => {
-                    const fullPath = join(path, i.name);
-                    modal.confirm({
-                      title: t(p("tableInfo.submitConfirmTitle")),
-                      content: (
-                        <>
-                          <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
-                          <p>
-                            {t(p("tableInfo.submitConfirmContent"),
-                              [i.name, getI18nConfigCurrentText(currentClusterRef.current.name, languageId)])}
-                          </p>
-                        </>
-                      ),
-                      okText: t(p("tableInfo.submitConfirmOk")),
-                      onOk: async () => {
-                        await api.submitFileAsJob({
-                          body: {
-                            cluster: currentClusterRef.current.id,
-                            filePath: fullPath,
-                          },
-                        })
-                          .httpError(500, (e) => {
-                            if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
-                            || e.code === "UNIMPLEMENTED") {
-                              modal.error({
-                                title: t(p("tableInfo.submitFailedMessage")),
-                                content: e.message,
-                              });
-                            } else {
-                              message.error(e.message);
-                              throw e;
-                            }
-                          })
-                          .httpError(400, (e) => {
-                            if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
-                              modal.error({
-                                title: t(p("tableInfo.submitFailedMessage")),
-                                content: e.message,
-                              });
-                            } else {
-                              message.error(e.message);
-                              throw e;
-                            }
-                          })
-                          .then((result) => {
-                            message.success(t(p("tableInfo.submitSuccessMessage"), [result.jobId]));
-                            resetSelectedAndOperation();
-                            reload();
-                          });
-                      },
-                    });
+                    submitFile(i.name);
                   }}
                   />
                 </Tooltip>
@@ -1045,6 +1052,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         previewFile={previewFile}
         setPreviewFile={setPreviewFile}
         storageInfo={storageInfos?.[0]}
+        canSubmitFile={
+          previewFile.open
+          && isExecutableScriptFilename(previewFile.filename, publicConfig.EXECUTABLE_FILENAME_POSTFIXES)
+        }
+        onSubmitFile={() => submitFile(previewFile.filename, previewFile.filePath, previewFile.clusterId)}
       />
       <UploadModal
         open={isUploadModalOpen}

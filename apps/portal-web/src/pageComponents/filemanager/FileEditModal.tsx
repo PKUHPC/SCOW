@@ -68,6 +68,8 @@ interface Props {
   previewFile: PreviewFileProps;
   setPreviewFile: Dispatch<SetStateAction<PreviewFileProps>>;
   storageInfo?: StorageInfo;
+  canSubmitFile?: boolean;
+  onSubmitFile?: () => void;
 }
 
 interface ConfirmModalProps {
@@ -85,6 +87,7 @@ interface FilenameProps {
 export const DEFAULT_FILE_EDIT_LIMIT_SIZE = "1m";
 
 const p = prefix("pageComp.fileManagerComp.fileEditModal.");
+const pFileManager = prefix("pageComp.fileManagerComp.fileManager.");
 
 loader.config({
   paths: {
@@ -140,7 +143,9 @@ const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
   );
 };
 
-export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile, storageInfo }) => {
+export const FileEditModal: React.FC<Props> = ({
+  previewFile, setPreviewFile, storageInfo, canSubmitFile, onSubmitFile,
+}) => {
 
   const t = useI18nTranslateToString();
 
@@ -363,32 +368,45 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile, st
 
   const modalFooterRender = () => {
     const fileEditLimitSize = publicConfig.FILE_EDIT_SIZE || DEFAULT_FILE_EDIT_LIMIT_SIZE;
+    const editButton = fileSize <= convertToBytes(fileEditLimitSize) && !downloading
+      ? (
+        <Button
+          type="primary"
+          onClick={() => {
+            setMode(Mode.EDIT);
+            setOptions({
+              ...options,
+              readOnly: false,
+            });
+          }}
+        >
+          {t(p("edit"))}
+        </Button>
+      )
+      : (
+        <Tooltip
+          title={
+            downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])
+          }
+        >
+          <Button disabled={true}>{t(p("edit"))}</Button>
+        </Tooltip>
+      );
+
     return (
       mode === Mode.PREVIEW ? (
-        fileSize <= convertToBytes(fileEditLimitSize) && !downloading
-          ? (
+        <Space>
+          { canSubmitFile && (
             <Button
+              onClick={onSubmitFile}
+              disabled={downloading || !onSubmitFile}
               type="primary"
-              onClick={() => {
-                setMode(Mode.EDIT);
-                setOptions({
-                  ...options,
-                  readOnly: false,
-                });
-              }}
             >
-              {t(p("edit"))}
+              {t(pFileManager("submitJob"))}
             </Button>
-          )
-          : (
-            <Tooltip
-              title={
-                downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])
-              }
-            >
-              <Button disabled={true}>{t(p("edit"))}</Button>
-            </Tooltip>
-          )
+          )}
+          {editButton}
+        </Space>
       ) : (
         <>
           { storageInfo && storageInfo.quotaBytes - storageInfo.usedStorageBytes <= convertToBytes("10M") && (

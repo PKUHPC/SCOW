@@ -299,6 +299,7 @@ export default {
         cluster: "集群",
         uploadFile: "上传文件",
         uploadDir: "上传文件夹",
+        submitJob: "提交作业",
         compressionInProgress: "正在进行压缩: ",
         compressSelected: "压缩",
         decompressionInProgress: "正在进行解压缩: ",

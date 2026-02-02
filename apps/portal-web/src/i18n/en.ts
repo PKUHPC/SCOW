@@ -300,6 +300,7 @@ export default {
         cluster: "Cluster",
         uploadFile: "Upload File",
         uploadDir: "Upload Directory",
+        submitJob: "Submit Job",
         compressionInProgress: "Compression in progress: ",
         compressSelected: "Compress",
         decompressionInProgress: "Decompression in progress: ",
