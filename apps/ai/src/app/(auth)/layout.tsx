@@ -1,10 +1,10 @@
 "use client";
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
 import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import React from "react";
 import { useUserQuery } from "src/app/auth";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
-import { Loading } from "src/components/Loading";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { BaseLayout } from "src/layouts/base/BaseLayout";
 import { SystemSelect } from "src/layouts/base/header/SystemSelect";
@@ -51,9 +51,7 @@ export default function Layout(
 
   if (userQuery.isLoading) {
     return (
-      <BaseLayout>
-        <Loading />
-      </BaseLayout>
+      <Loading />
     );
   }
 

@@ -2,6 +2,7 @@ import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
 
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { DarkModeCookie } from "@scow/lib-web/build/layouts/darkMode";
 import App, { AppContext, AppInitialProps, AppProps } from "next/app";
 import Head from "next/head";
@@ -54,7 +55,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
   const publicConfigQuery = trpc.config.publicConfig.useQuery();
 
   if (!publicConfigQuery.data) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   const { acceptLanguageHeader, darkModeCookie, languageCookie } = publicConfigQuery.data;

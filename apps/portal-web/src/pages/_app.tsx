@@ -4,13 +4,14 @@ import "src/styles/globals.css";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
 import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
 import { AdminMessageType } from "@scow/lib-web/build/models/notification";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App as AntdApp, Spin } from "antd";
+import { App as AntdApp } from "antd";
 import type { AppContext, AppProps } from "next/app";
 import NextApp from "next/app";
 import dynamic from "next/dynamic";
@@ -175,7 +176,7 @@ function MyAppLoader(appProps: AppProps) {
   const { data, isLoading } = useAsync({ promiseFn });
 
   if (isLoading) {
-    return <Spin />;
+    return <Loading />;
   }
 
   if (!data) {
@@ -194,6 +195,14 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
 
   // remembers extra props from first load
   const { current: { userInfo, primaryColor, footerText, loginNodes } } = useRef(extra);
+
+  // 未持有身份信息时防止UI闪烁，重定向至登录API
+  const isUnauthenticated = !userInfo?.identityId;
+  useEffect(() => {
+    if (isUnauthenticated) {
+      window.location.href = join(publicConfig.BASE_PATH, "/api/auth");
+    }
+  }, [isUnauthenticated]);
 
   const userStore = useConstant(() => {
     const store = createStore(UserStore, userInfo);
@@ -228,12 +237,8 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     }, []),
   });
 
-  if (initialLanguageDefinitionQuery.isLoading) {
-    return (
-      <BodyContainer>
-        <Spin />
-      </BodyContainer>
-    );
+  if (initialLanguageDefinitionQuery.isLoading || isUnauthenticated) {
+    return <Loading />;
   }
 
   if (!initialLanguageDefinitionQuery.data) {

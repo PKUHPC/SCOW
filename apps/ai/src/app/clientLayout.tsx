@@ -1,11 +1,11 @@
 "use client";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { ErrorBoundary } from "src/components/ErrorBoundary";
-import { Loading } from "src/components/Loading";
 import { TopProgressBar } from "src/components/TopProgressBar";
 import { loadLanguageDefinitions,Provider as I18nProvider } from "src/i18n";
 import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
@@ -63,11 +63,11 @@ export function ClientLayout(props: {
       initialLanguageId ? loadLanguageDefinitions(initialLanguageId) : undefined,
   });
 
-  if (publicConfig.isLoading) {
+  if (publicConfig.isLoading
+     || initialLanguageDefinitionQuery.isLoading
+     || !initialLanguageDefinitionQuery.data) {
     return (
-      <>
-        <Loading />
-      </>
+      <Loading />
     );
   }
 
@@ -75,14 +75,6 @@ export function ClientLayout(props: {
     return (
       <>
         <ServerErrorPage />
-      </>
-    );
-  }
-
-  if (initialLanguageDefinitionQuery.isLoading || !initialLanguageDefinitionQuery.data) {
-    return (
-      <>
-        <Loading />
       </>
     );
   }

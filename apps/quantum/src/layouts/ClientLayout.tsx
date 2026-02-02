@@ -2,6 +2,7 @@ import { SystemLanguageConfig } from "@scow/config/build/i18n";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
 import { AiIcon, HighComputingIcon, MisIcon, QuantumIcon } from "@scow/lib-web/build/layouts/base/header/icons";
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { UserInfo } from "@scow/lib-web/build/layouts/base/types";
 import { DarkModeCookie, DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
@@ -15,6 +16,7 @@ import zh_cn from "src/i18n/zh_cn";
 import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { useRoutes } from "src/layouts/routes";
 import { useUserQuery } from "src/utils/auth";
+import { BASE_PATH } from "src/utils/processEnv";
 import { getSystemInitialLanguageId } from "src/utils/systemLanguage";
 import { trpc } from "src/utils/trpc";
 import styled from "styled-components";
@@ -100,7 +102,8 @@ const ClientLayoutLoaded = ({
 
   return (
     <LibBaseLayout
-      logout={() => { logoutMutation.mutateAsync().then(() => { location.reload(); }); }}
+      logout={() => { logoutMutation.mutateAsync()
+        .then(() => { window.location.href = join(BASE_PATH, "/api/auth"); }); }}
       user={user}
       routes={routes}
       footerText={footerText}
@@ -132,9 +135,7 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
 
   if (userQuery.isLoading || publicConfigQuery.isLoading) {
     return (
-      <BodyContainer>
-        <div>Loading...</div>
-      </BodyContainer>
+      <Loading />
     );
   }
 

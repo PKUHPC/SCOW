@@ -1,17 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { joinWithUrl } from "@scow/utils";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, httpLink, loggerLink, splitLink, TRPCClientError } from "@trpc/client";
@@ -35,6 +24,7 @@ declare module "@trpc/client" {
 
 export function ClientProvider(props: { baseUrl: string; basePath: string; children: React.ReactNode }) {
 
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -42,6 +32,7 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
         retry(failureCount, error) {
           const { data } = error as TRPCClientError<AppRouter>;
           if (data?.code && data?.code === "UNAUTHORIZED") {
+            setIsRedirecting(true);
             window.location.href = join(props.basePath, "/api/auth");
             return false;
           }
@@ -60,6 +51,7 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
         const silent = query?.meta?.silent;
 
         if (data?.code && data?.code === "UNAUTHORIZED") {
+          setIsRedirecting(true);
           window.location.href = join(props.basePath, "/api/auth");
         } else if (silent) {
           return;
@@ -79,6 +71,7 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
         const { data, message: errMessage } = error as TRPCClientError<AppRouter>;
         const { onError } = mutation.options;
         if (data?.code && data?.code === "UNAUTHORIZED") {
+          setIsRedirecting(true);
           window.location.href = join(props.basePath, "/api/auth");
         } else if (data?.path?.startsWith("file") && data?.code === "PRECONDITION_FAILED"
          && errMessage.startsWith("SSH_ERROR:")) {
@@ -116,6 +109,12 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
       ],
     }),
   );
+
+  if (isRedirecting) {
+    return (
+      <Loading />
+    );
+  }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>

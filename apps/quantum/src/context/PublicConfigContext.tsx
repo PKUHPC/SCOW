@@ -1,3 +1,4 @@
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { inferRouterOutputs } from "@trpc/server";
 import React, { createContext, useContext } from "react";
 import { AppRouter } from "src/server/trpc/router";
@@ -33,7 +34,7 @@ export const PublicConfigProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const getUserInfoQuery = trpc.auth.getUserInfo.useQuery();
 
   if (publicConfigQuery.isLoading || getUserInfoQuery.isLoading) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   if (publicConfigQuery.isError || !publicConfigQuery.data) {

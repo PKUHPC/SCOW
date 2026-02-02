@@ -1,5 +1,6 @@
 "use client";
 
+import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, loggerLink, TRPCClientError } from "@trpc/client";
 import { message } from "antd";
@@ -13,6 +14,7 @@ const MAX_RETRIES = 3;
 
 export function ClientProvider(props: { basePath: string; children: React.ReactNode }) {
 
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -20,6 +22,7 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
         retry(failureCount, error) {
           const { data } = error as TRPCClientError<AppRouter>;
           if (data?.code && data?.code === "UNAUTHORIZED") {
+            setIsRedirecting(true);
             window.location.href = join(props.basePath, "/api/auth");
             return false;
           }
@@ -36,6 +39,7 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
       onError: (error, query) => {
         const { data, message: msg } = error as TRPCClientError<AppRouter>;
         if (data?.code && data?.code === "UNAUTHORIZED") {
+          setIsRedirecting(true);
           window.location.href = join(props.basePath, "/api/auth");
         } else if (msg) {
           message.error(msg);
@@ -52,6 +56,7 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
         const { data, message: errMessage } = error as TRPCClientError<AppRouter>;
         const { onError } = mutation.options;
         if (data?.code && data?.code === "UNAUTHORIZED") {
+          setIsRedirecting(true);
           window.location.href = join(props.basePath, "/api/auth");
         } else if (data?.path?.startsWith("file") && data?.code === "PRECONDITION_FAILED"
          && errMessage.startsWith("SSH_ERROR:")) {
@@ -80,6 +85,12 @@ export function ClientProvider(props: { basePath: string; children: React.ReactN
       ],
     }),
   );
+
+  if (isRedirecting) {
+    return (
+      <Loading />
+    );
+  }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
