@@ -52,14 +52,10 @@ export const entryNameMap = {
   fileManage: "fileManage",
 
   // ai
-  privateDataset: "privateDataset",
-  publicDataset: "publicDataset",
-  privateImage: "privateImage",
-  publicImage: "publicImage",
-  privateAlgorithm: "privateAlgorithm",
-  publicAlgorithm: "publicAlgorithm",
-  privateModel: "privateModel",
-  publicModel: "publicModel",
+  dataset: "dataset",
+  image: "image",
+  algorithm: "algorithm",
+  model: "model",
   file: "file",
   app: "app",
   trainJobs: "trainJobs",
