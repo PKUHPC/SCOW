@@ -398,24 +398,18 @@ export const JobDetailPage: NextPage = () => {
 
         <Row gutter={16}>
           <Col span={24}>
-            <Tabs defaultActiveKey="1">
-              <Tabs.TabPane tab={t(p("inputCircuit"))} key="1">
-                <pre>{formattedInputData}</pre>
-              </Tabs.TabPane>
-              {
-                formattedOptimizationData.length > 0 && (
-                  <Tabs.TabPane tab={t(p("compiledCircuit"))} key="2">
-                    <pre>{formattedOptimizationData}</pre>
-                  </Tabs.TabPane>
-                )
-              }
-              {
-                formattedOutputData.length > 0 && (
-                  <Tabs.TabPane tab={t(p("outputData"))} key="3">
-                    <pre>{formattedOutputData}</pre>
-                  </Tabs.TabPane>
-                )
-              }
+            <Tabs
+              defaultActiveKey="1"
+              items={[
+                { label: t(p("inputCircuit")), key: "1", children: <pre>{formattedInputData}</pre> },
+                ...(formattedOptimizationData.length > 0
+                  ? [{ label: t(p("compiledCircuit")), key: "2", children: <pre>{formattedOptimizationData}</pre> }]
+                  : []),
+                ...(formattedOutputData.length > 0
+                  ? [{ label: t(p("outputData")), key: "3", children: <pre>{formattedOutputData}</pre> }]
+                  : []),
+              ]}
+            >
             </Tabs>
           </Col>
         </Row>

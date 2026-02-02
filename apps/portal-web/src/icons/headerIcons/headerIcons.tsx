@@ -389,8 +389,8 @@ const createAppSVG = () => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      fill-rule="evenodd"
-      clip-rule="evenodd"
+      fillRule="evenodd"
+      clipRule="evenodd"
       d="M1 2C1 0.89543 1.89543 0 3 0H6.52936C7.63393 0 8.52936 0.895431 8.52936 2V5.52936C8.52936 6.63393 7.63393
       7.52936 6.52936 7.52936H3C1.89543 7.52936 1 6.63393 1 5.52936V2ZM9.47064 2C9.47064 0.89543 10.3661 0 11.4706
       0H15C16.1046 0 17 0.895431 17 2V5.52936C17 6.63393 16.1046 7.52936 15 7.52936H11.4706C10.3661 7.52936 9.47064
@@ -419,8 +419,8 @@ const appSessionsSVG = () => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      fill-rule="evenodd"
-      clip-rule="evenodd"
+      fillRule="evenodd"
+      clipRule="evenodd"
       d="M3 0C1.89543 0 1 0.89543 1 2V5.52936C1 6.63393 1.89543 7.52936 3 7.52936H6.52936C7.63393 7.52936 8.52936
       6.63393 8.52936 5.52936V2C8.52936 0.895431 7.63393 0 6.52936 0H3ZM11.5294 0C10.4248 0 9.52936 0.89543 9.52936
       2V5.52936C9.52936 6.63393 10.4248 7.52936 11.5294 7.52936H15.0587C16.1633 7.52936 17.0587 6.63393 17.0587
@@ -511,9 +511,9 @@ const entryEditSVG = () => (
       1.40145 14.3334 1.66667C14.5986 1.93189 14.7476 2.2916 14.7476 2.66667C14.7476 3.04174 14.5986 3.40145 14.3334
       3.66667L8.00004 10L5.33337 10.6667L6.00004 8L12.3334 1.66667Z"
       stroke="#434343"
-      stroke-width="1.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
@@ -527,8 +527,8 @@ export const EntryEditIcon: React.ForwardRefExoticComponent<IconProps> = React.f
 // 桌面卡片图标
 const desktopCardSVG = (style) => (
   <svg width="30" height="27" viewBox="0 0 30 27" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-    <rect x="6" y="1" width="23" height="18" rx="3" fill="currentColor" stroke="white" stroke-width="2" />
-    <rect x="1" y="8" width="23" height="18" rx="3" fill="currentColor" stroke="white" stroke-width="2" />
+    <rect x="6" y="1" width="23" height="18" rx="3" fill="currentColor" stroke="white" strokeWidth="2" />
+    <rect x="1" y="8" width="23" height="18" rx="3" fill="currentColor" stroke="white" strokeWidth="2" />
   </svg>
 
 );

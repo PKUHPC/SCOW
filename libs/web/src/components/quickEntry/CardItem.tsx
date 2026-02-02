@@ -5,7 +5,7 @@ import { EntryItem } from "./EntryItem";
 
 export type CardItemProps = HTMLAttributes<HTMLDivElement> & {
   draggable: boolean;
-  transparent?: boolean;
+  $transparent?: boolean;
   isDragging?: boolean;
 };
 
@@ -41,10 +41,10 @@ export const EntryCardItem = forwardRef<HTMLDivElement, EntryCardItemProps>
 const CardItemContainer = styled.div<{
   draggable?: boolean;
   isDragging?: boolean;
-  transparent?: boolean;
+  $transparent?: boolean;
 }>`
   cursor: ${(props) => props.draggable ? (props.isDragging ? "grabbing" : "grab") : "pointer"};
-  opacity: ${((props) => props.transparent ? "0.5" : "1")};
+  opacity: ${((props) => props.$transparent ? "0.5" : "1")};
   transform: ${(props) => props.isDragging ? "scale(1.05)" : "scale(1)"};
   box-shadow: ${(p) => p.theme.token.boxShadowSecondary};
 

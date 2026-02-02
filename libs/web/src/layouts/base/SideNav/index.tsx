@@ -100,7 +100,7 @@ const Container = styled.div<{ $width?: number }>`
   }
 `;
 
-const SidebarIconContainer = styled.div<{ sidebarCollapsed: boolean }>`
+const SidebarIconContainer = styled.div<{ $sidebarCollapsed: boolean }>`
   @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
     position: relative;
     z-index: 1000;
@@ -108,7 +108,7 @@ const SidebarIconContainer = styled.div<{ sidebarCollapsed: boolean }>`
     background: ${({ theme }) => theme.token.colorBgContainer};
   }
   border-top: 1px #f0f0f0 solid;
-  padding-left: ${(props) => props.sidebarCollapsed ? 26 : 24}px;
+  padding-left: ${(props) => props.$sidebarCollapsed ? 26 : 24}px;
   padding-top: 17px;
 `;
 
@@ -209,7 +209,7 @@ export const SideNav: React.FC<Props> = ({
         >
         </Menu>
       </StyledSider>
-      <SidebarIconContainer sidebarCollapsed={sidebarCollapsed}>
+      <SidebarIconContainer $sidebarCollapsed={sidebarCollapsed}>
         <a onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
           {React.createElement(
             sidebarCollapsed ? ExpandMenuIcon : CollapseMenuIcon)}

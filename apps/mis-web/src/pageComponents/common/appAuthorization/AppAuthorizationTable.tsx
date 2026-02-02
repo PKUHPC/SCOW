@@ -188,6 +188,7 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
       <Table
         tableLayout="fixed"
         dataSource={filteredData}
+        rowKey="targetName"
         loading={isLoading}
         pagination={setPageInfo ? {
           current: pageInfo.page,

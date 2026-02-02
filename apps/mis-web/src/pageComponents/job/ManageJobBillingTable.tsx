@@ -207,43 +207,42 @@ export const ManageJobBillingTable: React.FC<Props> = ({
       <Table.Column<BillingItemType>
         title={t(pCommon("set"))}
         render={(_, r) => {
-          return {
-            children: (
+          if (r.settable) {
+            return (
               <Space style={{ marginLeft: "4px" }}>
-                {
-                  r.settable ? (
-                    <EditPriceModalLink
-                      nextId={data!.nextId}
-                      cluster={r.cluster}
-                      partition={r.partition}
-                      qos={r.qos}
-                      reload={reload}
-                      tenant={tenant}
-                    >
-                      {t(pCommon("set"))}
-                    </EditPriceModalLink>
-                  ) : (
-                    isFromPlatformAdmin ? (
-                      <Tooltip title={t(p("canNotSetUnAssignedPartition"))}>
-                        <Button
-                          type="link"
-                          disabled
-                          style={{
-                            textAlign: "left",
-                            display: "flex",
-                            padding: "0",
-                            height: "auto",
-                          }}
-                        >
-                          {t(pCommon("set"))}
-                        </Button>
-                      </Tooltip>
-                    ) : undefined
-                  )
-                }
+                <EditPriceModalLink
+                  nextId={data!.nextId}
+                  cluster={r.cluster}
+                  partition={r.partition}
+                  qos={r.qos}
+                  reload={reload}
+                  tenant={tenant}
+                >
+                  {t(pCommon("set"))}
+                </EditPriceModalLink>
               </Space>
-            ),
-          };
+            );
+          } else if (isFromPlatformAdmin) {
+            return (
+              <Space style={{ marginLeft: "4px" }}>
+                <Tooltip title={t(p("canNotSetUnAssignedPartition"))}>
+                  <Button
+                    type="link"
+                    disabled
+                    style={{
+                      textAlign: "left",
+                      display: "flex",
+                      padding: "0",
+                      height: "auto",
+                    }}
+                  >
+                    {t(pCommon("set"))}
+                  </Button>
+                </Tooltip>
+              </Space>
+            );
+          }
+          return null;
         }}
       />
     </Table>

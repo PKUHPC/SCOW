@@ -170,6 +170,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             }}
             tableLayout="fixed"
             dataSource={finalDataSource}
+            rowKey={(record) => record.clusterId + record.info?.id}
             loading={isLoading}
             pagination={false}
             scroll={{ y: 275 }}

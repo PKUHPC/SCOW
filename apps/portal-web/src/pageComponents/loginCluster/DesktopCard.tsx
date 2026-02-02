@@ -142,7 +142,7 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
 
   return (
     <StyledCard
-      boxShadowColor={themeColor}
+      $boxShadowColor={themeColor}
       title={(
         <CardTitleContainer>
           <AvatarContainer>

@@ -95,9 +95,9 @@ const entryEditSVG = () => (
       1.40145 14.3334 1.66667C14.5986 1.93189 14.7476 2.2916 14.7476 2.66667C14.7476 3.04174 14.5986 3.40145 14.3334
       3.66667L8.00004 10L5.33337 10.6667L6.00004 8L12.3334 1.66667Z"
       stroke="#434343"
-      stroke-width="1.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );

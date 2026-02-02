@@ -141,6 +141,7 @@ export const JobBillingTable: React.FC<Props> = ({ data, loading, isUserPartitio
       <Table
         dataSource={data}
         columns={columns}
+        rowKey="index"
         scroll={{ x: 800 }}
         size="middle"
         bordered

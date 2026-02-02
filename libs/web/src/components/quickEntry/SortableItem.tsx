@@ -25,7 +25,7 @@ export const SortableItem: FC<EntryCardItemProps> = (props) => {
     <EntryCardItem
       ref={setNodeRef}
       style={style}
-      transparent={isDragging}
+      $transparent={isDragging}
       {...props}
       {...attributes}
       {...listeners}

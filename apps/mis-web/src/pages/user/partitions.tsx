@@ -114,7 +114,7 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
             const data = renderData[cluster.id];
             return (
               data && data.length > 0 ? (
-                <Collapse defaultActiveKey={[cluster.id]}>
+                <Collapse key={cluster.id} defaultActiveKey={[cluster.id]}>
                   <Panel
                     header={getI18nConfigCurrentText(cluster.name, languageId)}
                     collapsible="header"

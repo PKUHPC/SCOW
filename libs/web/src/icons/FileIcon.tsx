@@ -19,8 +19,8 @@ const folderSVG = () => (
     />
     <defs>
       <linearGradient id="paint0_linear_18_925" x1="16" y1="12" x2="16" y2="22" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#FFE600" />
-        <stop offset="1" stop-color="#FFBF00" />
+        <stop stopColor="#FFE600" />
+        <stop offset="1" stopColor="#FFBF00" />
       </linearGradient>
     </defs>
   </svg>
@@ -44,8 +44,8 @@ const archiveSVG = () => (
     />
     <defs>
       <linearGradient id="paint0_linear_18_1040" x1="16" y1="10" x2="16" y2="22" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#34B1FF" />
-        <stop offset="1" stop-color="#3470FF" />
+        <stop stopColor="#34B1FF" />
+        <stop offset="1" stopColor="#3470FF" />
       </linearGradient>
     </defs>
   </svg>
@@ -92,8 +92,8 @@ const symlinkSVG = () => (
         y2="15.864"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="#34B1FF" />
-        <stop offset="1" stop-color="#3470FF" />
+        <stop stopColor="#34B1FF" />
+        <stop offset="1" stopColor="#3470FF" />
       </linearGradient>
     </defs>
   </svg>
@@ -122,8 +122,8 @@ const supportedFileSVG = () => (
     />
     <defs>
       <linearGradient id="paint0_linear_18_1043" x1="16" y1="9" x2="16" y2="23.1748" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#34B1FF" />
-        <stop offset="1" stop-color="#3470FF" />
+        <stop stopColor="#34B1FF" />
+        <stop offset="1" stopColor="#3470FF" />
       </linearGradient>
     </defs>
   </svg>
@@ -147,8 +147,8 @@ const imageSVG = () => (
     />
     <defs>
       <linearGradient id="paint0_linear_18_1042" x1="16" y1="10" x2="16" y2="22" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#34B1FF" />
-        <stop offset="1" stop-color="#3470FF" />
+        <stop stopColor="#34B1FF" />
+        <stop offset="1" stopColor="#3470FF" />
       </linearGradient>
     </defs>
   </svg>
@@ -172,8 +172,8 @@ const unrecognizedFileSVG = () => (
     />
     <defs>
       <linearGradient id="paint0_linear_397_264" x1="16" y1="9" x2="16" y2="23.1748" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#E4E4E4" />
-        <stop offset="1" stop-color="#A5A5A5" />
+        <stop stopColor="#E4E4E4" />
+        <stop offset="1" stopColor="#A5A5A5" />
       </linearGradient>
     </defs>
   </svg>

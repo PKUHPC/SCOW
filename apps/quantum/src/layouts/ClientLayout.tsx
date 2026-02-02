@@ -17,6 +17,20 @@ import { useRoutes } from "src/layouts/routes";
 import { useUserQuery } from "src/utils/auth";
 import { getSystemInitialLanguageId } from "src/utils/systemLanguage";
 import { trpc } from "src/utils/trpc";
+import styled from "styled-components";
+
+const BodyContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  alignItems: center;
+  justifyContent: center;
+  backgroundColor: #fff;
+  zIndex: 9999;
+`;
 
 const languagesMap = {
   "zh_cn": zh_cn,
@@ -118,17 +132,17 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
 
   if (userQuery.isLoading || publicConfigQuery.isLoading) {
     return (
-      <body>
+      <BodyContainer>
         <div>Loading...</div>
-      </body>
+      </BodyContainer>
     );
   }
 
   if (userQuery.isError || publicConfigQuery.isError || !userQuery.isSuccess || !publicConfigQuery.isSuccess) {
     return (
-      <body>
+      <BodyContainer>
         <div>Error loading user or configuration.</div>
-      </body>
+      </BodyContainer>
     );
   }
 

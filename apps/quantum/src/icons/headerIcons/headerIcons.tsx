@@ -54,7 +54,7 @@ export const JupyterIcon: React.ForwardRefExoticComponent<{}> =
 
 const dashboardSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_177_161)">
+    <g clipPath="url(#clip0_177_161)">
       <path
         d="M14.3994 14.8018C14.7308 14.8018 15 15.07 15 15.4014C15 15.7327 14.7308 16.001 14.3994
            16.001H3.59961C3.26844 16.0007 3 15.7326 3 15.4014C3 15.0701 3.26844 14.802 3.59961
@@ -87,7 +87,7 @@ export const DashboardIcon: React.ForwardRefExoticComponent<{}> =
 
 const deviceSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_177_162)">
+    <g clipPath="url(#clip0_177_162)">
       <path
         d="M16.0001 6C17.1046 6.00008 18.0001 6.89548 18.0001 8V13C18.0001 14.1045 17.1046 14.9999 16.0001
           15H2.00014C0.895568 15 0.000137337 14.1046 0.000137329 13V8C0.000137329 6.89543 0.895568 6 2.00014
@@ -129,7 +129,7 @@ export const DeviceIcon: React.ForwardRefExoticComponent<{}> =
 
 const quantumJobSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_177_166)">
+    <g clipPath="url(#clip0_177_166)">
       <path
         d="M13.5137 0C15.7228 0 17.5137 1.79086 17.5137 4V9.46582C16.7707 8.00313 15.2529
         7 13.5 7C11.0149 7.00021 9.00017 9.01492 9 11.5C9.00024 13.985 11.015 15.9998 13.5
@@ -186,7 +186,7 @@ export const QuantumJobIcon: React.ForwardRefExoticComponent<{}> =
 
 const helpSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_177_167)">
+    <g clipPath="url(#clip0_177_167)">
       <rect width="18" height="16" fill="white" />
       <path
         d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091

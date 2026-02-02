@@ -13,8 +13,22 @@ import { AntdStyleRegistry } from "src/components/layout/style-registry/antd-reg
 import StyledComponentsRegistry from "src/components/layout/style-registry/styled-components-registry";
 import { ScowParamsProvider } from "src/components/scow-params-provider";
 import { UiConfigSchema } from "src/models/ui";
+import styled from "styled-components";
 
 import { UiConfigContext } from "./ui-context";
+
+const BodyContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  alignItems: center;
+  justifyContent: center;
+  backgroundColor: #fff;
+  zIndex: 9999;
+`;
 
 const useReportHeightToScow = () => {
 
@@ -79,7 +93,7 @@ export function ClientLayout(props: {
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
           <StyledComponentsRegistry>
             <AntdStyleRegistry>
-              <body>
+              <BodyContainer>
                 {
                   isLoading ? (
                     <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
@@ -103,8 +117,7 @@ export function ClientLayout(props: {
                     </DarkModeProvider>
                   )
                 }
-
-              </body>
+              </BodyContainer>
             </AntdStyleRegistry>
           </StyledComponentsRegistry>
         </StyleProvider>

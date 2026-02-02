@@ -5,14 +5,14 @@ import { styled } from "styled-components";
 // 1. 基础卡片样式 (StyledCard)
 
 export const StyledCard = styled(Card)<{
-  boxShadowColor: string;
+  $boxShadowColor: string;
 }>`
   width: 100%;
-  box-shadow: ${(props) => `0px 4px 4px 0px ${getTransparentColor(props.boxShadowColor, 0.08)}`};
+  box-shadow: ${(props) => `0px 4px 4px 0px ${getTransparentColor(props.$boxShadowColor, 0.08)}`};
   transition: box-shadow 0.3s ease;
 
   &:hover {
-    box-shadow: ${(props) => `0px 4px 4px 0px ${getTransparentColor(props.boxShadowColor, 0.2)}`};
+    box-shadow: ${(props) => `0px 4px 4px 0px ${getTransparentColor(props.$boxShadowColor, 0.2)}`};
   }
 
   .ant-card-head {

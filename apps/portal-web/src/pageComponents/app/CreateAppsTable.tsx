@@ -117,7 +117,11 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
             <Row gutter={16} style={{ flex: 1, width: "100%" }}>
               {filteredData?.apps.map((app) => (
                 <Col xs={24} sm={12} md={8} lg={6} xl={4} xxl={4} key={app.id} style={{ marginBottom: "16px" }}>
-                  <Card bodyStyle={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                  <Card
+                    styles={{
+                      body: { display: "flex", flexDirection: "column", height: "100%" },
+                    }}
+                  >
                     <Tooltip title={`${t(p("create"))}${app.name}`} placement="bottom">
                       <Link href={`/apps/${clusterId}/create/${app.id}`}>
                         <AvatarContainer>

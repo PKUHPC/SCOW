@@ -181,13 +181,22 @@ export const InitUsersAndAccountsTable: React.FC = () => {
         <Typography.Paragraph>
           <span>{t(p("initAdmin"))}</span>{t(p("set"))}
         </Typography.Paragraph>
-        <Tabs defaultActiveKey="user" tabBarExtraContent={<a onClick={reload}>{t(pCommon("fresh"))}</a>}>
-          <Tabs.TabPane tab={t(pCommon("user"))} key="user">
-            <UserTable data={usersData} loading={usersLoading} reload={usersReload} />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab={t(pCommon("account"))} key="account">
-            <AccountTable data={accountsData} loading={accountsLoading} reload={accountsReload} />
-          </Tabs.TabPane>
+        <Tabs
+          defaultActiveKey="user"
+          tabBarExtraContent={<a onClick={reload}>{t(pCommon("fresh"))}</a>}
+          items={[
+            {
+              label: t(pCommon("user")),
+              key: "user",
+              children: <UserTable data={usersData} loading={usersLoading} reload={usersReload} />,
+            },
+            {
+              label: t(pCommon("account")),
+              key: "account",
+              children: <AccountTable data={accountsData} loading={accountsLoading} reload={accountsReload} />,
+            },
+          ]}
+        >
         </Tabs>
       </FormLayout>
     </div>

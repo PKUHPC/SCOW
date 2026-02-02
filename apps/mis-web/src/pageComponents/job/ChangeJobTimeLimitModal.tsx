@@ -14,6 +14,7 @@ import { arrayContainsElement } from "@scow/lib-web/build/utils/array";
 import { parseMinutes, TimeUnits } from "@scow/lib-web/build/utils/datetime";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Divider, Form, InputNumber, Modal, Progress, Select } from "antd";
+import React from "react";
 import { useRef, useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -142,7 +143,7 @@ export const ChangeJobTimeLimitModal: React.FC<Props> = ({ open, onClose, data, 
       <Form form={form} initialValues={{ limitValue: 1 }}>
         {
           Array.from(dataGroupedByCluster.entries()).map(([cluster, data]) => (
-            <>
+            <React.Fragment key={cluster.id}>
               <Form.Item label={t(pCommon("cluster"))}>
                 <span>{getI18nConfigCurrentText(cluster.name, languageId)}</span>
               </Form.Item>
@@ -158,7 +159,7 @@ export const ChangeJobTimeLimitModal: React.FC<Props> = ({ open, onClose, data, 
                 <span>{data.map((x) => x.timeLimit).join(", ")}</span>
               </Form.Item>
               <Divider />
-            </>
+            </React.Fragment>
           ))
         }
         <Form.Item<FormProps>

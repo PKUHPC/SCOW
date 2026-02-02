@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { Tabs } from "antd";
+import { Tabs, TabsProps } from "antd";
 import { styled } from "styled-components";
 
 export const FilterFormContainer = styled.div`
@@ -46,22 +46,18 @@ interface TabbedFilterFormProps {
 export const FilterFormTabs: React.FC<TabbedFilterFormProps> = ({
   button, tabs, onChange,
 }) => {
+  const items: TabsProps["items"] = tabs.map(({ title, key, node }) => ({
+    key: key ?? title,
+    label: title,
+    children: <TabFormContainer>{node}</TabFormContainer>,
+  }));
   return (
     <NoShakeTab
       defaultActiveKey={tabs.length > 0 ? tabs[0].title : ""}
       size="small"
       tabBarExtraContent={button}
       onChange={onChange}
-    >
-      {
-        tabs.map(({ title, key, node }) => (
-          <Tabs.TabPane tab={title} key={key ?? title}>
-            <TabFormContainer>
-              {node}
-            </TabFormContainer>
-          </Tabs.TabPane>
-        ))
-      }
-    </NoShakeTab>
+      items={items}
+    />
   );
 };

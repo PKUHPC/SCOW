@@ -292,6 +292,7 @@ export const ChargeTable: React.FC<Props> = ({
           tableLayout="fixed"
           dataSource={recordsData?.results}
           onChange={handleTableChange}
+          rowKey="index"
           pagination={{
             showSizeChanger: true,
             current: pageInfo.page,

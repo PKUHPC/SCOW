@@ -112,7 +112,7 @@ export const HistoryJobsIcon: React.ForwardRefExoticComponent<{}> = React.forwar
 // 集群和分区信息图标
 const partitionsSVG = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <g clip-path="url(#clip0_969_1984)">
+    <g clipPath="url(#clip0_969_1984)">
       <path
         d="M9 16C9.55227 16 10 16.4477 10 17C9.99997 17.5522 9.55225 18 9 18C8.44774 18 8.00003 17.5523
         8 17C8 16.4477 8.44771 16 9 16ZM7 1C7.00002 2.10455 7.89545 2.99998 9 3C10.0356 2.99997 10.887
@@ -349,7 +349,7 @@ export const ManageJobPriceIcon: React.ForwardRefExoticComponent<{}> = React.for
 // 用户登录解封
 const unlockLoginSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_806_2276)">
+    <g clipPath="url(#clip0_806_2276)">
       <path
         d="M9.36523 0.00878906C10.8635 0.0947809 12.2857 0.81951 13.3516 2.0498C13.6946 2.44587 13.991
         2.88581 14.2393 3.35645C14.2736 3.4221 14.2255 3.49993 14.1514 3.5H12.6299C12.597 3.5 12.5657 3.48394
@@ -578,7 +578,7 @@ export const AccountPartitionsIcon: React.ForwardRefExoticComponent<{}> = React.
 // 财务管理图标
 const financeManagementSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_813_2632)">
+    <g clipPath="url(#clip0_813_2632)">
       <path
         d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0
         12V11.5996H7C8.43594 11.5996 9.59961 10.4359 9.59961 9V7C9.59961 5.56406 8.43594 4.40039 7
@@ -765,7 +765,7 @@ const adminManageSVG = () => (
   <svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="18" height="14" rx="4" fill="currentColor" />
     <rect x="2.5" y="2.5" width="13" height="9" rx="1.5" fill="currentColor" stroke="white" />
-    <path d="M14.0122 16H3.98784" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M14.0122 16H3.98784" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
@@ -843,7 +843,7 @@ export const TenantsListIcon: React.ForwardRefExoticComponent<{}> = React.forwar
 // 创建租户图标
 const creatTenantSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_806_2279)">
+    <g clipPath="url(#clip0_806_2279)">
       <path
         d="M14 0C16.2091 0 18 1.79086 18 4V8.75781C17.2849 8.27917 16.4251 8 15.5 8C13.0147 8 11 10.0147 11
         12.5C11 13.9141 11.6528 15.175 12.6729 16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086 1.61064e-08
@@ -1064,7 +1064,7 @@ export const ResourceManageIcon: React.ForwardRefExoticComponent<{}> = React.for
 // 集群管理图标
 const clusterManagementSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_806_2366)">
+    <g clipPath="url(#clip0_806_2366)">
       <path
         d="M11.6729 9C10.6528 9.82496 10 11.0859 10 12.5C10 13.9141 10.6528 15.175 11.6729 16H2C0.895431
         16 0 15.1046 0 14V11C0.000197825 9.8956 0.895553 9 2 9H11.6729ZM15.8438 10.0625C16.034 10.0627

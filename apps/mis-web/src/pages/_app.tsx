@@ -31,6 +31,20 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
+import styled from "styled-components";
+
+const BodyContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  alignItems: center;
+  justifyContent: center;
+  backgroundColor: #fff;
+  zIndex: 9999;
+`;
 
 const FailEventHandler: React.FC = () => {
   const { message, modal } = AntdApp.useApp();
@@ -199,14 +213,18 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   });
 
   if (initialLanguageDefinitionQuery.isLoading) {
-    return <body><Spin /></body>;
+    return (
+      <BodyContainer>
+        <ServerErrorPage />
+      </BodyContainer>
+    );
   }
 
   if (!initialLanguageDefinitionQuery.data) {
     return (
-      <body>
+      <BodyContainer>
         <ServerErrorPage />
-      </body>
+      </BodyContainer>
     );
   }
 

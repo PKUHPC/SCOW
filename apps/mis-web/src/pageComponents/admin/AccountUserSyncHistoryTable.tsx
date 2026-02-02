@@ -146,7 +146,7 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
                               return (
                                 // 1.集群内数据同步时发生异常的情况
                                 cr.exceptionHappened ? (
-                                  <div>
+                                  <div key={`${cr.clusterId}-exception`}>
                                     {/* 显示集群名 */}
                                     {clusterName}
                                     <span style={{ margin: "0 4px" }}>:</span>
@@ -175,7 +175,7 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
                                 ) : (
                                   // 2.集群内数据完全同步时
                                   cr.totalSyncCount === cr.totalSuccessfulCount ? (
-                                    <div>
+                                    <div key={`${cr.clusterId}-totally`}>
                                       {clusterName}
                                       <span style={{ margin: "0 4px" }}>:</span>
                                       { cr.totalSyncCount === 0
@@ -196,7 +196,7 @@ export const AccountUserSyncHistoryTable: React.FC<Props> = ({ data, isLoading, 
                                   ) : (
                                     // 3. 集群内数据未完全同步时
                                     // "{集群}：共有 xx 条差异数据需要同步，成功 xx 条，失败 xx 条"
-                                    <div>
+                                    <div key={`${cr.clusterId}-partial`}>
                                       {clusterName}
                                       <span style={{ margin: "0 4px" }}>:</span>
                                       {t(p("syncDetailsContent.syncCountDetailsTotal"), [cr.totalSyncCount])}

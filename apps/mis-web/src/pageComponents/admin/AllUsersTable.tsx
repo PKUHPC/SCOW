@@ -264,6 +264,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
         tableLayout="fixed"
         dataSource={data?.platformUsers}
         loading={isLoading}
+        rowKey="userId"
         pagination={setPageInfo ? {
           current: pageInfo.page,
           defaultPageSize: DEFAULT_PAGE_SIZE,

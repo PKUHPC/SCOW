@@ -24,8 +24,6 @@ import { QuantumJobTable } from "src/pageComponents/quantumJob/HistoryJobTable";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-const { TabPane } = Tabs;
-
 const p = prefix("page.accounts.accountName.historyJobs.");
 
 export const HistoryJobsPage: NextPage = requireAuth(
@@ -43,25 +41,37 @@ export const HistoryJobsPage: NextPage = requireAuth(
         <PageTitle titleText={title} />
         {
           publicConfig.QUANTUM_URL ? (
-            <Tabs defaultActiveKey="HPCAI">
-              <TabPane tab={t("common.HPCAI")} key="HPCAI">
-                <JobTable
-                  accountNames={accountName}
-                  filterAccountName={false}
-                  showAccount={false}
-                  showUser={true}
-                  showedPrices={["account"]}
-                  priceTexts={{ account: t("common.jobBilling") }}
-                />
-              </TabPane>
-              <TabPane tab={t("common.quantum")} key="quantum">
-                <QuantumJobTable
-                  accountName={accountName}
-                  filterAccountName={false}
-                  showAccount={false}
-                  showUser={true}
-                />
-              </TabPane>
+            <Tabs
+              defaultActiveKey="HPCAI"
+              items={[
+                {
+                  key: "HPCAI",
+                  label: t("common.HPCAI"),
+                  children: (
+                    <JobTable
+                      accountNames={accountName}
+                      filterAccountName={false}
+                      showAccount={false}
+                      showUser={true}
+                      showedPrices={["account"]}
+                      priceTexts={{ account: t("common.jobBilling") }}
+                    />
+                  ),
+                },
+                {
+                  key: "quantum",
+                  label: t("common.quantum"),
+                  children: (
+                    <QuantumJobTable
+                      accountName={accountName}
+                      filterAccountName={false}
+                      showAccount={false}
+                      showUser={true}
+                    />
+                  ),
+                },
+              ]}
+            >
             </Tabs>
           )
             : (

@@ -13,7 +13,7 @@
 import { Cluster } from "@scow/config/build/type";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Card, Col, Row } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { PlatformOverview } from "src/models/cluster";
 import { InfoPane } from "src/pageComponents/dashboard/InfoPane";
@@ -62,6 +62,14 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
 
   const theme = useTheme();
 
+  useEffect(() => {
+    if (successfulClusters?.length === 1 && clusterCardsList?.[0]?.key) {
+      if (activeTabKey !== successfulClusters[0].id) {
+        onTabChange(successfulClusters[0].id);
+      }
+    }
+  }, [successfulClusters, activeTabKey, onTabChange]);
+
   let clusterCardsList;
   // card的每一项
   if (successfulClusters?.length === 1) {
@@ -69,9 +77,6 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
       key:x.id,
       tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
     })) ?? [];
-    if (clusterCardsList?.[0]?.key) {
-      onTabChange(clusterCardsList[0].key);
-    }
   } else {
     clusterCardsList = [
       {

@@ -171,8 +171,8 @@ export const MisIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HT
 const noMessageSVG = () => (
   <svg width="13" height="16" viewBox="0 0 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
-      fill-rule="evenodd"
-      clip-rule="evenodd"
+      fillRule="evenodd"
+      clipRule="evenodd"
       d="M8.06959 2.01579C8.10573 1.8832 8.125 1.74382
           8.125 1.6C8.125 0.716344 7.39746 0 6.5 0C5.60254 0 4.875 0.716344 4.875 1.6C4.875 1.74382 4.89427
           1.8832 4.93041 2.01579C2.77573 2.64403 1.15839 4.53293 0.930383
@@ -242,7 +242,7 @@ export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttribute
 const collapseMenuSVG = () => (
   <StyledSvg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="18" height="18" rx="4" />
-    <path d="M10.125 5.625L6.75 9L10.125 12.375" stroke-width="1.2" stroke-linecap="round" />
+    <path d="M10.125 5.625L6.75 9L10.125 12.375" strokeWidth="1.2" strokeLinecap="round" />
   </StyledSvg>
 
 );
@@ -256,7 +256,7 @@ export const CollapseMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttr
 const expandMenuSVG = () => (
   <StyledSvg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="18" y="18" width="18" height="18" rx="4" transform="rotate(-180 18 18)" />
-    <path d="M7.875 12.375L11.25 9L7.875 5.625" stroke-width="1.2" stroke-linecap="round" />
+    <path d="M7.875 12.375L11.25 9L7.875 5.625" strokeWidth="1.2" strokeLinecap="round" />
   </StyledSvg>
 );
 
@@ -267,7 +267,7 @@ export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttrib
 
 const quantumSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g clip-path="url(#clip0_177_160)">
+    <g clipPath="url(#clip0_177_160)">
       <path
         d="M3.87695 2.36907C4.91874 1.9834 6.04862 1.89814 7.13671 2.122C8.22492 2.346 9.22927 2.87083
            10.0342 3.63665C10.4378 4.02073 10.7823 4.45845 11.0615 4.9345C11.6575 4.68366 12.3128 4.54588 13

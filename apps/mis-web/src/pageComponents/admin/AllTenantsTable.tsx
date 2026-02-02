@@ -88,6 +88,7 @@ const TenantInfoTable: React.FC<TenantInfoTableProps> = ({
       dataSource={data?.platformTenants}
       columns={columns}
       loading={isLoading}
+      rowKey="tenantId"
       pagination={{
         showSizeChanger: true,
         defaultPageSize: DEFAULT_PAGE_SIZE,

@@ -237,6 +237,7 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
       <Table
         tableLayout="fixed"
         dataSource={data?.results as TableProps[]}
+        rowKey="index"
         loading={isLoading}
         pagination={{
           showSizeChanger: true,

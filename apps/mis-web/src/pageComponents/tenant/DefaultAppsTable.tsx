@@ -166,6 +166,7 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
       <Table
         tableLayout="fixed"
         dataSource={filteredData}
+        rowKey="id"
         loading={isLoading || loading}
         scroll={{ x: true }}
         pagination={{

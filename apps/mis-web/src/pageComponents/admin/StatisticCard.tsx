@@ -50,7 +50,11 @@ export const StatisticCard: React.FC<Props> = ({ title, newAddValue = 0,
   const t = useI18nTranslateToString();
 
   return (
-    <Card bodyStyle={{ display: "flex", flexDirection: "row", justifyContent: "space-between", padding: "15px" } }>
+    <Card
+      styles={{
+        body: { display: "flex", flexDirection: "row", justifyContent: "space-between", padding: "15px" },
+      }}
+    >
       <Container>
         <Space>
           {iconToNode(icon, iconColor)}

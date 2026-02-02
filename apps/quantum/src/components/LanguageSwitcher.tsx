@@ -85,9 +85,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLangu
         {Object.entries(languageInfo)
           .filter((x) => enabledLanguages.includes(x[0]))
           .map(([id, { name }]) => (
-            <option key={id} value={id}>
+            <Select.Option key={id} value={id}>
               {name}
-            </option>
+            </Select.Option>
           ))}
       </Select>
     </Container>

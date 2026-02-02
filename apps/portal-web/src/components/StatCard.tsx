@@ -34,7 +34,9 @@ export const StatCard: React.FC<Props> = ({ children, title }) => {
   return (
     <Card
       style={{ height: "100%" }}
-      bodyStyle={{ display: "flex", flexDirection: "column", height: "100%" }}
+      styles={{
+        body: { display: "flex", flexDirection: "column", height: "100%" },
+      }}
     >
       <Title>
         {title}

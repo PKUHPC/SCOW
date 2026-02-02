@@ -82,13 +82,21 @@ export const DashboardPage: NextPage = () => {
       </Card>
       <Card>
         <h2 style={{ fontSize: 18 }}>{t(p("recentJob"))}</h2>
-        <Tabs defaultActiveKey="quantum">
-          <Tabs.TabPane tab={t(p("quantum"))} key="quantum">
-            <JobsTable isDashboard={true} />
-          </Tabs.TabPane>
-          <Tabs.TabPane tab="Jupyter" key="jupyter">
-            <AppSessionsTable isDashboard={true} />
-          </Tabs.TabPane>
+        <Tabs
+          defaultActiveKey="quantum"
+          items={[
+            {
+              label: t(p("quantum")),
+              key: "quantum",
+              children: <JobsTable isDashboard={true} />,
+            },
+            {
+              label: "Jupyter",
+              key: "jupyter",
+              children: <AppSessionsTable isDashboard={true} />,
+            },
+          ]}
+        >
         </Tabs>
       </Card>
     </div>

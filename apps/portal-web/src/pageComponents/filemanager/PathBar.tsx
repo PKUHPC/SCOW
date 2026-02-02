@@ -82,13 +82,13 @@ export const PathBar: React.FC<Props> = ({
         ) : (
           <>
             <BarStateBar onClick={() => setState("input")}>
-              <Breadcrumb style={{ alignSelf: "center" }}>
-                {pathSegments.map((segment, index) => (
-                  <Breadcrumb.Item key={index}>
-                    {breadcrumbItemRender(segment, index, pathSegments.slice(1, index + 1).join("/"))}
-                  </Breadcrumb.Item>
-                ))}
-              </Breadcrumb>
+              <Breadcrumb
+                style={{ alignSelf: "center" }}
+                items={pathSegments.map((segment, index) => ({
+                  key: index,
+                  title: breadcrumbItemRender(segment, index, pathSegments.slice(1, index + 1).join("/")),
+                }))}
+              />
             </BarStateBar>
             <Button
               onClick={(e) => {

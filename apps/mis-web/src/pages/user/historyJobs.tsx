@@ -21,8 +21,6 @@ import { QuantumJobTable } from "src/pageComponents/quantumJob/HistoryJobTable";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-const { TabPane } = Tabs;
-
 const p = prefix("page.user.historyJobs.");
 
 export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.length > 0)(
@@ -41,26 +39,38 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
 
         {
           publicConfig.QUANTUM_URL ? (
-            <Tabs defaultActiveKey="HPCAI">
-              <TabPane tab={t("common.HPCAI")} key="HPCAI">
-                <JobTable
-                  accountNames={accountNames}
-                  userId={userStore.user.identityId}
-                  showAccount={true}
-                  showUser={false}
-                  filterUser={false}
-                  showedPrices={["account"]}
-                  priceTexts={{ account: t("common.jobBilling") }}
-                />
-              </TabPane>
-              <TabPane tab={t("common.quantum")} key="quantum">
-                <QuantumJobTable
-                  userId={userStore.user.identityId}
-                  showAccount={true}
-                  showUser={false}
-                  filterUserId={false}
-                />
-              </TabPane>
+            <Tabs
+              defaultActiveKey="HPCAI"
+              items={[
+                {
+                  key: "HPCAI",
+                  label: t("common.HPCAI"),
+                  children: (
+                    <JobTable
+                      accountNames={accountNames}
+                      userId={userStore.user.identityId}
+                      showAccount={true}
+                      showUser={false}
+                      filterUser={false}
+                      showedPrices={["account"]}
+                      priceTexts={{ account: t("common.jobBilling") }}
+                    />
+                  ),
+                },
+                {
+                  key: "quantum",
+                  label: t("common.quantum"),
+                  children: (
+                    <QuantumJobTable
+                      userId={userStore.user.identityId}
+                      showAccount={true}
+                      showUser={false}
+                      filterUserId={false}
+                    />
+                  ),
+                },
+              ]}
+            >
             </Tabs>
           ) : (
             <JobTable

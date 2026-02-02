@@ -15,9 +15,23 @@ import { ScowParamsProvider } from "src/components/ScowParamsProvider";
 import { ServerErrorPage } from "src/components/ServerErrorPage";
 import { trpc } from "src/server/trpc/api";
 import { PublicConfig, UiConfig } from "src/server/trpc/route/config";
+import styled from "styled-components";
 
 import { PublicConfigContext } from "./publicConfigContext";
 import { UiConfigContext } from "./uiContext";
+
+const BodyContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  alignItems: center;
+  justifyContent: center;
+  backgroundColor: #fff;
+  zIndex: 9999;
+`;
 
 const useReportHeightToScow = () => {
 
@@ -90,7 +104,7 @@ export function ClientLayout(props: {
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
           <StyledComponentsRegistry>
             <AntdStyleRegistry>
-              <body>
+              <BodyContainer>
                 {
                   useUiConfig.isLoading || usePublicConfig.isLoading ? (
                     <AntdConfigProvider
@@ -124,7 +138,7 @@ export function ClientLayout(props: {
                   )
                 }
 
-              </body>
+              </BodyContainer>
             </AntdStyleRegistry>
           </StyledComponentsRegistry>
         </StyleProvider>

@@ -5,8 +5,8 @@ import React, { LegacyRef } from "react";
 const noMessageSVG = () => (
   <svg width="13" height="16" viewBox="0 0 13 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
-      fill-rule="evenodd"
-      clip-rule="evenodd"
+      fillRule="evenodd"
+      clipRule="evenodd"
       d="M8.06959 2.01579C8.10573 1.8832 8.125 1.74382
           8.125 1.6C8.125 0.716344 7.39746 0 6.5 0C5.60254 0 4.875 0.716344 4.875 1.6C4.875 1.74382 4.89427
           1.8832 4.93041 2.01579C2.77573 2.64403 1.15839 4.53293 0.930383

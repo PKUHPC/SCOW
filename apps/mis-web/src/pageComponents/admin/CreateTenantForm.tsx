@@ -74,7 +74,7 @@ export const CreateTenantForm: React.FC = () => {
         ]}
         required
       >
-        <Radio.Group defaultValue="new" onChange={() => {}}>
+        <Radio.Group onChange={() => {}}>
           <Radio value={UserType.New}>{t(p("newUser"))}</Radio>
           <Radio value={UserType.Existing}>{t(p("existingUser"))}</Radio>
         </Radio.Group>

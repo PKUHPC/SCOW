@@ -21,8 +21,6 @@ import { AdminJobTable } from "src/pageComponents/tenant/AdminJobTable";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-const { TabPane } = Tabs;
-
 export const AdminJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
   () => {
     const t = useI18nTranslateToString();
@@ -33,16 +31,28 @@ export const AdminJobsPage: NextPage = requireAuth((u) => u.tenantRoles.includes
         <PageTitle titleText={t("common.finishedJobs")} />
         {
           publicConfig.QUANTUM_URL ? (
-            <Tabs defaultActiveKey="HPCAI">
-              <TabPane tab={t("common.HPCAI")} key="HPCAI">
-                <AdminJobTable />
-              </TabPane>
-              <TabPane tab={t("common.quantum")} key="quantum">
-                <QuantumJobTable
-                  showAccount={true}
-                  showUser={true}
-                />
-              </TabPane>
+            <Tabs
+              defaultActiveKey="HPCAI"
+              items={[
+                {
+                  key: "HPCAI",
+                  label: t("common.HPCAI"),
+                  children: (
+                    <AdminJobTable />
+                  ),
+                },
+                {
+                  key: "quantum",
+                  label: t("common.quantum"),
+                  children: (
+                    <QuantumJobTable
+                      showAccount={true}
+                      showUser={true}
+                    />
+                  ),
+                },
+              ]}
+            >
             </Tabs>
           ) : (
             <AdminJobTable />

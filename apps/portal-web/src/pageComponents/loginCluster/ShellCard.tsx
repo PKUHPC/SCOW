@@ -65,7 +65,7 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
 
   return (
     <StyledCard
-      boxShadowColor={themeColor}
+      $boxShadowColor={themeColor}
       title={(
         <CardTitleContainer>
           <ShellIcon styles={{ color: themeColor, width: "30px", height: "27px" }} />

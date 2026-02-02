@@ -21,21 +21,21 @@ interface CustomProgressProps {
   progressColor?: string; // 进度条颜色
 }
 
-const ProgressBarContainer = styled.div<{ width: string, height: string, bgColor: string }>`
+const ProgressBarContainer = styled.div<{ width: string, height: string, $bgColor: string }>`
   display: flex;
   align-items: center;
   width: ${(props) => props.width};
   height: ${(props) => props.height};
-  background-color: ${(props) => props.bgColor};
+  background-color: ${(props) => props.$bgColor};
   border-radius: 5px;
 `;
 
-const ProgressBar = styled.div<{ percent: number, progressColor: string }>`
+const ProgressBar = styled.div<{ $percent: number, $progressColor: string }>`
   height: 100%;
-  background-color: ${(props) => props.progressColor};
+  background-color: ${(props) => props.$progressColor};
   border-radius: 5px;
   transition: width 0.3s ease;
-  width: ${(props) => props.percent}%;
+  width: ${(props) => props.$percent}%;
 `;
 
 const ProgressLabel = styled.div`
@@ -61,8 +61,8 @@ export const CustomProgress: React.FC<CustomProgressProps> = ({
 
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
-      <ProgressBarContainer width={width} height={height} bgColor={bgColor ?? theme.token.colorBorderBg}>
-        <ProgressBar percent={percent} progressColor={progressColor ?? theme.token["blue-4"]} />
+      <ProgressBarContainer width={width} height={height} $bgColor={bgColor ?? theme.token.colorBorderBg}>
+        <ProgressBar $percent={percent} $progressColor={progressColor ?? theme.token["blue-4"]} />
       </ProgressBarContainer>
       <ProgressLabel>
         {percent === 100 ? "100%" : `${normalizedPercent}%`}
