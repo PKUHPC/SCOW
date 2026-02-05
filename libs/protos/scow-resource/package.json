@@ -20,7 +20,7 @@
     "@bufbuild/protobuf": "2.10.0",
     "@bufbuild/protoc-gen-es": "2.10.0",
     "@connectrpc/connect": "2.1.1",
-    "@grpc/grpc-js": "1.12.5",
+    "@grpc/grpc-js": "1.14.3",
     "protobufjs": "7.4.0"
   },
   "devDependencies": {

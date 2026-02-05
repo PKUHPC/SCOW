@@ -30,7 +30,7 @@
     "@connectrpc/connect": "2.1.1",
     "@connectrpc/connect-next": "2.1.1",
     "@connectrpc/connect-web": "2.1.1",
-    "@ddadaal/tsgrpc-client": "0.17.8",
+    "@ddadaal/tsgrpc-client": "0.17.9",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/migrations": "6.4.3",
     "@mikro-orm/mysql": "6.4.3",

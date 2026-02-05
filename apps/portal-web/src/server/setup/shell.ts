@@ -19,7 +19,7 @@ import { publicConfig } from "src/utils/config";
 import { runtimeConfig } from "src/utils/config";
 import { parseIp } from "src/utils/server";
 import { parse } from "url";
-import { WebSocket, WebSocketServer } from "ws";
+import { RawData, WebSocket, WebSocketServer } from "ws";
 
 import { getClusterConfigFiles } from "../clusterConfig";
 
@@ -77,13 +77,15 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   const user = await checkCookie(() => true, req);
 
   if (typeof user === "number") {
-    console.log("[shell] token is not valid");
+    // console.log("[shell] token is not valid");
     ws.close(0, "token is not valid");
     return;
   }
 
-  const log = (message: string, ...optionalParams: any[]) => console.log(
-    `[io] [${user.identityId}] ${message}`, optionalParams);
+  const log = (message: string, ...optionalParams: any[]) => {
+    console.log(
+      `[${new Date().toISOString()}] [io] [${user.identityId}] ${message}`, optionalParams);
+  };
 
   const token = getTokenFromCookie({ req });
   let closed = false;
@@ -161,24 +163,123 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   let cleanedUp = false;
   let authChecking = false;
   let authCheckInterval: NodeJS.Timeout | undefined;
+  let isStreamWritable = true;
+  let pendingMessages: Buffer[] = [];
+
+
+  /* eslint-disable prefer-const */
+  // 保存事件处理器引用以便正确清理
+  let handleMessage: ((data: RawData) => void) | undefined;
+  let handleClose: ((...args: any[]) => void) | undefined;
+  let handleError: ((err: Error) => void) | undefined;
+  let handleStreamDrain: (() => void) | undefined;
+  let handleStreamError: ((err: Error) => void) | undefined;
+  let handleStreamData: ((chunk: ShellResponse) => void) | undefined;
+  /* eslint-enable prefer-const */
+
+  // 公共函数：进行错误处理的包装
+  const safeExecute = (operation: () => void, description: string) => {
+    try {
+      operation();
+    } catch (e) {
+      log(`Failed to ${description}:`, e);
+    }
+  };
+
+  // 公共函数：向流中写入消息
+  const writeToStream = (data: Buffer): boolean => {
+    try {
+      const message = JSON.parse(data.toString()) as ShellInputData;
+      let writeSuccess = false;
+
+      switch (message.$case) {
+        case "data":
+          writeSuccess = stream.write({
+            message: { $case: "data", data: { data: Uint8Array.from(Buffer.from(message.data.data)) } },
+          });
+          break;
+        case "resize":
+          writeSuccess = stream.write({
+            message: {
+              $case: "resize", resize: {
+                cols: message.resize.cols, rows: message.resize.rows,
+              },
+            },
+          });
+          break;
+        case "disconnect":
+          writeSuccess = stream.write({ message: { $case: "disconnect", disconnect: {} } });
+          closed = true;
+          cleanup();
+          return writeSuccess;
+      }
+
+      return writeSuccess;
+    } catch (e) {
+      log("Failed to write message to stream:", e);
+      return false;
+    }
+  };
 
   const cleanup = () => {
     if (cleanedUp) { return; }
     cleanedUp = true;
+
+    log("Cleaning up resources.");
+
+    // 1. 清理认证检查定时器
     if (authCheckInterval) {
       clearInterval(authCheckInterval);
       authCheckInterval = undefined;
     }
-    try {
+
+    // 2. 清理WebSocket事件监听器
+    safeExecute(() => {
+      ws.removeListener("pong", heartbeat);
+      if (handleMessage) ws.removeListener("message", handleMessage);
+      if (handleClose) ws.removeListener("close", handleClose);
+      if (handleError) ws.removeListener("error", handleError);
+    }, "cleanup WebSocket listeners");
+
+    // 3. 清理Stream事件监听器（必须在end之前）
+    safeExecute(() => {
+      if (handleStreamDrain) stream.removeListener("drain", handleStreamDrain);
+      if (handleStreamError) stream.removeListener("error", handleStreamError);
+      if (handleStreamData) stream.removeListener("data", handleStreamData);
+    }, "cleanup Stream listeners");
+
+    // 4. 清空待发送消息队列
+    pendingMessages = [];
+
+    // 5. 断开gRPC Stream连接
+    safeExecute(() => {
       stream.write({ message: { $case: "disconnect", disconnect: {} } });
-    } catch (e) { void e; }
-    try {
+    }, "write disconnect to stream");
+
+    safeExecute(() => {
       stream.end();
-    } catch (e) { void e; }
-    try {
-      stream.removeAllListeners();
-    } catch (e) { void e; }
+    }, "end stream");
   };
+
+  // 处理服务器端drain事件
+  handleStreamDrain = () => {
+    log("Stream buffer drained, resuming writes.");
+    isStreamWritable = true;
+
+    // 发送待处理的消息
+    while (pendingMessages.length > 0 && isStreamWritable) {
+      const messageBuffer = pendingMessages.shift();
+      if (!messageBuffer) break;
+
+      if (!writeToStream(messageBuffer)) {
+        isStreamWritable = false;
+        // 消息重新加入队列首部
+        pendingMessages.unshift(messageBuffer);
+        break;
+      }
+    }
+  };
+  stream.on("drain", handleStreamDrain);
 
   if (process.env.NODE_ENV !== "test" && !USE_MOCK && token) {
     authCheckInterval = setInterval(async () => {
@@ -191,34 +292,29 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         log("token is not valid when connection alive");
         closed = true;
         cleanup();
-        try {
+        safeExecute(() => {
           send({ $case: "exit", exit: { code: 401 } });
-        } catch (e) {
-          log("Error occurred when sending exit message", e);
-        }
+        }, "send exit message");
         ws.close(4001, "token is not valid");
       }
     }, 300000);
   }
 
-  stream.on("error", (err) => {
+  handleStreamError = (err) => {
     log("Error occurred from server. Disconnect.", err);
     closed = true;
-    try {
-      send({ $case: "exit", exit: { code: 1 } });
-    } catch (e) {
-      void e;
-    }
     cleanup();
-    try {
+    safeExecute(() => {
+      send({ $case: "exit", exit: { code: 1 } });
+    }, "send exit message");
+    safeExecute(() => {
       ws.close(1011, "server error");
-    } catch (e) {
-      void e;
-    }
-  });
+    }, "close websocket");
+  };
+  stream.on("error", handleStreamError);
 
 
-  stream.on("data", (chunk: ShellResponse) => {
+  handleStreamData = (chunk: ShellResponse) => {
     switch (chunk.message?.$case) {
       case "data":
         send({ $case: "data", data: { data: chunk.message.data.data.toString() } });
@@ -227,51 +323,56 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         send({ $case: "exit", exit: { code: chunk.message.exit.code, signal: chunk.message.exit.signal } });
         break;
     }
-  });
+  };
+  stream.on("data", handleStreamData);
 
-  ws.on("message", (data) => {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const message = JSON.parse(data.toString()) as ShellInputData;
+  // 保存事件处理器以便后续清理
+  handleMessage = (data: RawData) => {
 
-    switch (message.$case) {
-      case "data":
-        stream.write({ message: { $case: "data", data: { data: Uint8Array.from(Buffer.from(message.data.data)) } } });
-        break;
-      case "resize":
-        stream.write({
-          message: {
-            $case: "resize", resize: {
-              cols: message.resize.cols, rows: message.resize.rows,
-            },
-          },
-        });
-        break;
-      case "disconnect":
-        closed = true;
-        cleanup();
-        break;
+    // 如果流不可写，将消息加入待处理队列
+    if (!isStreamWritable) {
+      log("Stream not writable, queuing message.");
+      pendingMessages.push(data as Buffer);
+      return;
     }
 
-  });
+    // 使用公共函数写入到流
+    const writeSuccess = writeToStream(data as Buffer);
 
-  ws.on("close", async () => {
+    // 如果写入失败，设置流状态并重排队消息
+    if (!writeSuccess) {
+      log("Stream write failed, buffering data.");
+      isStreamWritable = false;
+      // 重排队当前消息
+      pendingMessages.push(data as Buffer);
+    }
+  };
+
+  handleClose = () => {
     closed = true;
+    log("WebSocket closed.");
     cleanup();
-  });
+  };
 
-  ws.on("error", async (err) => {
+  handleError = (err: Error) => {
     closed = true;
     log("Error occurred from client. Disconnect.", err);
-    await callLog({
+    // 不等待异步操作完成，避免阻塞清理流程
+    callLog({
       operatorUserId: user.identityId,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.shellLogin,
       operationTypePayload: {
         clusterId: cluster, loginNode: loginNode.address,
       },
-    }, OperationResult.FAIL);
+    }, OperationResult.FAIL).catch((e) => log("Failed to log shell error:", e));
     cleanup();
-  });
+  };
+
+  // 注册事件监听器
+  ws.on("message", handleMessage);
+  ws.on("close", handleClose);
+  ws.on("error", handleError);
 });
 
 export const setupShellServer = (req: NextApiRequest) => {

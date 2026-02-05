@@ -20,9 +20,9 @@
   "dependencies": {
     "@bufbuild/protobuf": "2.10.0",
     "@connectrpc/connect": "2.1.1",
-    "@ddadaal/tsgrpc-client": "0.17.8",
-    "@ddadaal/tsgrpc-common": "0.2.6",
-    "@grpc/grpc-js": "1.12.5",
+    "@ddadaal/tsgrpc-client": "0.17.9",
+    "@ddadaal/tsgrpc-common": "0.2.7",
+    "@grpc/grpc-js": "1.14.3",
     "@scow/config": "workspace:*",
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/protos": "workspace:*",
@@ -35,7 +35,7 @@
     "ts-log": "2.2.7"
   },
   "devDependencies": {
-    "@ddadaal/tsgrpc-server": "0.19.7",
+    "@ddadaal/tsgrpc-server": "0.19.8",
     "@types/shell-quote": "1.7.5"
   },
   "volta": {
