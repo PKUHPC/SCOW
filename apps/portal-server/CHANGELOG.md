@@ -1,5 +1,27 @@
 # @scow/portal-server
 
+## 1.10.1
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- a91add6: 交互式应用表单项新增支持配置动态下拉框
+- 344b2da: ai 进入容器从调用 k8sAPI 切换为调用适配器和集群删除 k8s 配置
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-scow-resource@0.2.21
+  - @scow/lib-server@1.4.12
+  - @scow/config@1.13.1
+  - @scow/scowd-protos@0.4.1
+  - @scow/utils@1.1.3
+  - @scow/scheduler-adapter-protos@1.5.4
+  - @scow/protos@1.0.37
+  - @scow/lib-scowd@1.2.6
+  - @scow/lib-scheduler-adapter@1.1.35
+
 ## 1.10.0
 
 ### Patch Changes

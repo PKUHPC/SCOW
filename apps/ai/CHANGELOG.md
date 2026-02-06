@@ -1,5 +1,43 @@
 # @scow/ai
 
+## 0.5.1
+
+### Patch Changes
+
+- 299b323: 用户修改邮箱增加校验权限
+- 3fb2e8a: 修复 AI 及量子系统登录登出页面组件时由于没有认证信息而闪现前端异常报错的问题,
+  统一各子系统无登录信息跳转至登录页面前 Loading 效果
+- d4e02dc: 操作按钮鼠标悬浮时背景色随 UI 配置主题色变化, 作业模板 ICON 更换,自定义导航链接默认 ICON 更换,平台切换的按钮中文字 icon 一直都保持主题色
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- b2a9cb8: AI 分布式作业增加节点总容量限制
+- c03aba9: 文件管理访问无权限的路径时 BUG 优化
+- 0b5023f: 修复 ai 导航栏有些图标选中不变色
+- 344b2da: ai 进入容器从调用 k8sAPI 切换为调用适配器和集群删除 k8s 配置
+- f8957cb: 优化侧边栏文字和样式，子系统使用相同的公共组件；修复 AI 导航栏国际化不立即切换的问题
+- c9ecafb: 前端控制台打印 error、warning 修复
+- 7c80ba7: 实现 AI 集群停用
+- Updated dependencies [d4e02dc]
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a5e2a18]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+- Updated dependencies [f8957cb]
+- Updated dependencies [c9ecafb]
+  - @scow/lib-web@1.5.12
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-operation-log@2.2.12
+  - @scow/lib-scow-resource@0.2.21
+  - @scow/lib-server@1.4.12
+  - @scow/config@1.13.1
+  - @scow/scowd-protos@0.4.1
+  - @scow/utils@1.1.3
+  - @scow/scheduler-adapter-protos@1.5.4
+  - @scow/protos@1.0.37
+  - @scow/lib-notification@1.0.22
+  - @scow/lib-scowd@1.2.6
+  - @scow/lib-scheduler-adapter@1.1.35
+
 ## 0.5.0
 
 ### Minor Changes

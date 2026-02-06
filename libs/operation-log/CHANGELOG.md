@@ -1,5 +1,12 @@
 # @scow/lib-operation-log
 
+## 2.2.12
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+  - @scow/protos@1.0.37
+
 ## 2.2.11
 
 ### Patch Changes

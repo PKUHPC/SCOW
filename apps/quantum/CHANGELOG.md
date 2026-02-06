@@ -1,5 +1,36 @@
 # @scow/quantum
 
+## 0.1.12
+
+### Patch Changes
+
+- 3fb2e8a: 修复 AI 及量子系统登录登出页面组件时由于没有认证信息而闪现前端异常报错的问题,
+  统一各子系统无登录信息跳转至登录页面前 Loading 效果
+- d4e02dc: 操作按钮鼠标悬浮时背景色随 UI 配置主题色变化, 作业模板 ICON 更换,自定义导航链接默认 ICON 更换,平台切换的按钮中文字 icon 一直都保持主题色
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- 20c94f3: 修复量子系统 logo 目录多余空格问题
+- 11de67e: 在量子系统中追加灰色色阶，修复因灰色色阶找不到跳转量子系统失败的问题
+- c9ecafb: 前端控制台打印 error、warning 修复
+- Updated dependencies [d4e02dc]
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a5e2a18]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+- Updated dependencies [f8957cb]
+- Updated dependencies [c9ecafb]
+  - @scow/lib-web@1.5.12
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-operation-log@2.2.12
+  - @scow/lib-scow-resource@0.2.21
+  - @scow/lib-server@1.4.12
+  - @scow/config@1.13.1
+  - @scow/utils@1.1.3
+  - @scow/scheduler-adapter-protos@1.5.4
+  - @scow/protos@1.0.37
+  - @scow/lib-scowd@1.2.6
+  - @scow/lib-scheduler-adapter@1.1.35
+
 ## 0.1.11
 
 ### Patch Changes

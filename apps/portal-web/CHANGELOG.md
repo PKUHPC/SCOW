@@ -1,5 +1,33 @@
 # @scow/portal-web
 
+## 1.10.1
+
+### Patch Changes
+
+- 299b323: 用户修改邮箱增加校验权限
+- d4e02dc: 操作按钮鼠标悬浮时背景色随 UI 配置主题色变化, 作业模板 ICON 更换,自定义导航链接默认 ICON 更换,平台切换的按钮中文字 icon 一直都保持主题色
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- 89c1678: HPC 文件管理针对可提交的文件，在预览模式下，增加“提交作业”按钮
+- c03aba9: 文件管理访问无权限的路径时 BUG 优化
+- a91add6: 交互式应用表单项新增支持配置动态下拉框
+- c9ecafb: 前端控制台打印 error、warning 修复
+- Updated dependencies [d4e02dc]
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a5e2a18]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+- Updated dependencies [f8957cb]
+- Updated dependencies [c9ecafb]
+  - @scow/lib-web@1.5.12
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-operation-log@2.2.12
+  - @scow/lib-scow-resource@0.2.21
+  - @scow/config@1.13.1
+  - @scow/utils@1.1.3
+  - @scow/protos@1.0.37
+  - @scow/lib-notification@1.0.22
+
 ## 1.10.0
 
 ### Patch Changes

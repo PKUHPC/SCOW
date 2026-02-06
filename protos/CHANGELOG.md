@@ -1,5 +1,15 @@
 # @scow/grpc-api
 
+## 1.31.0
+
+### Minor Changes
+
+- a91add6: 新增 runScript 接口
+
+### Patch Changes
+
+- 344b2da: ai 进入容器从调用 k8sAPI 切换为调用适配器和集群删除 k8s 配置
+
 ## 1.30.0
 
 ### Minor Changes

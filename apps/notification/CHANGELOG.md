@@ -1,5 +1,29 @@
 # @scow/notification
 
+## 0.2.24
+
+### Patch Changes
+
+- d4e02dc: 操作按钮鼠标悬浮时背景色随 UI 配置主题色变化, 作业模板 ICON 更换,自定义导航链接默认 ICON 更换,平台切换的按钮中文字 icon 一直都保持主题色
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- f8957cb: 优化侧边栏文字和样式，子系统使用相同的公共组件；修复 AI 导航栏国际化不立即切换的问题
+- c9ecafb: 前端控制台打印 error、warning 修复
+- Updated dependencies [d4e02dc]
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a5e2a18]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+- Updated dependencies [f8957cb]
+- Updated dependencies [c9ecafb]
+  - @scow/lib-web@1.5.12
+  - @scow/lib-server@1.4.12
+  - @scow/config@1.13.1
+  - @scow/utils@1.1.3
+  - @scow/protos@1.0.37
+  - @scow/lib-notification@1.0.22
+  - @scow/lib-scheduler-adapter@1.1.35
+
 ## 0.2.23
 
 ### Patch Changes

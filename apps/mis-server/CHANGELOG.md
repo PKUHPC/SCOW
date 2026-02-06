@@ -1,5 +1,25 @@
 # @scow/mis-server
 
+## 1.10.1
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+  - @scow/lib-scow-resource@0.2.21
+  - @scow/lib-server@1.4.12
+  - @scow/lib-hook@1.0.37
+  - @scow/config@1.13.1
+  - @scow/utils@1.1.3
+  - @scow/scheduler-adapter-protos@1.5.4
+  - @scow/protos@1.0.37
+  - @scow/lib-notification@1.0.22
+  - @scow/lib-scowd@1.2.6
+  - @scow/lib-scheduler-adapter@1.1.35
+
 ## 1.10.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @scow/utils
 
+## 1.1.3
+
+### Patch Changes
+
+- a91add6: 交互式应用表单项新增支持配置动态下拉框
+
 ## 1.1.2
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @scow/scowd-protos
 
+## 0.4.1
+
+### Patch Changes
+
+- a91add6: 交互式应用表单项新增支持配置动态下拉框
+- 344b2da: ai 进入容器从调用 k8sAPI 切换为调用适配器和集群删除 k8s 配置
+
 ## 0.4.0
 
 ### Minor Changes

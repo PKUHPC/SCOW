@@ -1,5 +1,13 @@
 # @scow/cli
 
+## 1.10.1
+
+### Patch Changes
+
+- Updated dependencies [344b2da]
+- Updated dependencies [a91add6]
+  - @scow/config@1.13.1
+
 ## 1.10.0
 
 ### Patch Changes

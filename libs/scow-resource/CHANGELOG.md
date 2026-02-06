@@ -1,5 +1,14 @@
 # @scow/lib-scow-resource
 
+## 0.2.21
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- Updated dependencies [344b2da]
+- Updated dependencies [a91add6]
+  - @scow/config@1.13.1
+
 ## 0.2.20
 
 ### Patch Changes

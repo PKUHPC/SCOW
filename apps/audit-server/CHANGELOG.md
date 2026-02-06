@@ -1,5 +1,20 @@
 # @scow/audit-server
 
+## 2.3.30
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- Updated dependencies [cf47ef2]
+- Updated dependencies [344b2da]
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+  - @scow/lib-operation-log@2.2.12
+  - @scow/lib-server@1.4.12
+  - @scow/config@1.13.1
+  - @scow/utils@1.1.3
+  - @scow/protos@1.0.37
+
 ## 2.3.29
 
 ### Patch Changes

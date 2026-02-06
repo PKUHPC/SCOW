@@ -1,5 +1,12 @@
 # @scow/config
 
+## 1.13.1
+
+### Patch Changes
+
+- 344b2da: 删除废弃的 k8sConfig（/docs/deploy/config/ai/intro#集群配置文件）；新配置 containerRuntime 在 scowd 的配置文件的 AI 配置中（https://jgf29kqp7z.feishu.cn/wiki/SQDDwspXOiAYbikoRqBc21WLnqe）
+- a91add6: 交互式应用表单项新增支持配置动态下拉框
+
 ## 1.13.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @scow/test-adapter
 
+## 1.1.19
+
+### Patch Changes
+
+- cf47ef2: 修复所有使用 grpc 项目的内存泄露问题
+- 344b2da: ai 进入容器从调用 k8sAPI 切换为调用适配器和集群删除 k8s 配置
+- Updated dependencies [344b2da]
+  - @scow/scheduler-adapter-protos@1.5.4
+
 ## 1.1.18
 
 ### Patch Changes

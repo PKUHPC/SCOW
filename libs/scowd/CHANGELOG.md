@@ -1,5 +1,13 @@
 # @scow/lib-scowd
 
+## 1.2.6
+
+### Patch Changes
+
+- Updated dependencies [a91add6]
+- Updated dependencies [344b2da]
+  - @scow/scowd-protos@0.4.1
+
 ## 1.2.5
 
 ### Patch Changes
