@@ -22,22 +22,28 @@ interface Options {
   full: boolean
 }
 
+// For pkg executables, assets are in the snapshot filesystem
+// We need to use the path relative to where pkg places them
+const assetsBasePath = (process as any).pkg
+  ? join(__dirname, "../assets") // In pkg, __dirname is at the root of the snapshot
+  : join(__dirname, "../../assets"); // In development, go up from build/cmd
+
 const initAllAssets = [
-  join(__dirname, "../../assets/init-full/install.yaml"),
-  join(__dirname, "../../assets/init-full/config"),
-  join(__dirname, "../../assets/init-full/fluent"),
-  join(__dirname, "../../assets/init-full/plugins"),
-  join(__dirname, "../../assets/init-full/public"),
-  join(__dirname, "../../assets/init-full/quantum"),
+  join(assetsBasePath, "init-full/install.yaml"),
+  join(assetsBasePath, "init-full/config"),
+  join(assetsBasePath, "init-full/fluent"),
+  join(assetsBasePath, "init-full/plugins"),
+  join(assetsBasePath, "init-full/public"),
+  join(assetsBasePath, "init-full/quantum"),
 ];
 
 const initAssets = [
-  join(__dirname, "../../assets/init/install.yaml"),
-  join(__dirname, "../../assets/init/config"),
-  join(__dirname, "../../assets/init/fluent"),
-  join(__dirname, "../../assets/init/plugins"),
-  join(__dirname, "../../assets/init/public"),
-  join(__dirname, "../../assets/init/quantum"),
+  join(assetsBasePath, "init/install.yaml"),
+  join(assetsBasePath, "init/config"),
+  join(assetsBasePath, "init/fluent"),
+  join(assetsBasePath, "init/plugins"),
+  join(assetsBasePath, "init/public"),
+  join(assetsBasePath, "init/quantum"),
 ];
 
 // fs.promise.cp throws error for config dir

@@ -2,19 +2,24 @@
   "name": "@scow/cli",
   "version": "1.10.1",
   "description": "CLI to manage SCOW",
-  "main": "build/index.js",
-  "bin": "build/index.js",
+  "main": "build/bundle.js",
+  "bin": "build/bundle.js",
   "private": true,
   "scripts": {
     "dev": "node -r ts-node/register -r tsconfig-paths/register src/index.ts",
-    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && pkg --compress GZip --no-bytecode --public-packages \"*\" --public .",
+    "build": "rimraf build exe && node scripts/build.mjs",
     "test": "jest",
     "lint": "eslint -c ../../eslint.config.js ."
   },
   "dependencies": {
+    "@ddadaal/tsgrpc-client": "0.17.9",
+    "@grpc/grpc-js": "1.14.3",
     "@octokit/rest": "20.1.1",
     "@scow/config": "workspace:*",
     "@scow/lib-config": "workspace:*",
+    "@scow/lib-scheduler-adapter": "workspace:*",
+    "@scow/lib-scowd": "workspace:*",
+    "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
     "death": "1.1.0",
     "dotenv": "16.4.7",
@@ -24,7 +29,7 @@
     "node-fetch-commonjs": "3.3.2",
     "pino": "9.6.0",
     "pino-pretty": "13.0.0",
-    "pkg": "5.8.1",
+    "@yao-pkg/pkg": "6.12.0",
     "prompts": "2.4.2",
     "yargs": "17.7.2"
   },
@@ -32,7 +37,8 @@
     "@types/death": "1.1.5",
     "@types/js-yaml": "4.0.9",
     "@types/prompts": "2.4.9",
-    "@types/yargs": "17.0.33"
+    "@types/yargs": "17.0.33",
+    "esbuild": "0.27.2"
   },
   "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
@@ -42,15 +48,14 @@
     "extends": "../../package.json"
   },
   "pkg": {
-    "scripts": "build/**/*.js",
+    "scripts": "build/bundle.js",
     "assets": [
       "assets/**/*",
-      "package.json",
-      "node_modules/@sinclair/typebox/**/*"
+      "package.json"
     ],
     "targets": [
-      "node18-linux-x64",
-      "node18-linux-arm64"
+      "node22-linux-arm64",
+      "node22-linux-x64"
     ],
     "outputPath": "exe"
   }

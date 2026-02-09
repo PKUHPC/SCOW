@@ -2,7 +2,7 @@
   "name": "@scow/lib-scowd",
   "version": "1.2.6",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "private": true,
   "scripts": {
     "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",

@@ -15,6 +15,7 @@ dotenv.config();
 
 import { readFileSync } from "fs";
 import { join } from "path";
+import { checkClusters } from "src/cmd/checkClusters";
 import { checkConfig } from "src/cmd/checkConfig";
 import { runCompose } from "src/cmd/compose";
 import { enterDb } from "src/cmd/db";
@@ -69,6 +70,22 @@ void yargs(hideBin(process.argv))
     });
   }, (argv) => {
     checkConfig(argv);
+  })
+  .command("check-clusters", "Check connectivity to all configured scowd and adapters", (yargs) => {
+    return yargs.options({
+      scowConfigPath: {
+        type: "string",
+        description: "The directory containing SCOW config files",
+        default: "./config",
+      },
+      continueOnError: {
+        type: "boolean",
+        description: "Continue checking even if an error occurs",
+        default: false,
+      },
+    });
+  }, (argv) => {
+    void checkClusters(argv);
   })
   .command("init", "Extract sample config files", (yargs) => {
     return yargs.options({
