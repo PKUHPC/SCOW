@@ -63,9 +63,11 @@ message ExportUserRequest {
   optional string tenant_name = 2;
   optional GetAllUsersRequest.UsersSortField sort_field = 3;
   optional SortDirection sort_order = 4;
-  optional string id_or_name = 5;
+  optional string id_or_name = 5;// 有user_id或者user_name时，优先使用这些过滤
   optional PlatformRole platform_role = 6;
   optional TenantRole tenant_role = 7;
+  optional string user_id = 8;
+  optional string user_name = 9;
 }
 
 message ExportUserResponse {

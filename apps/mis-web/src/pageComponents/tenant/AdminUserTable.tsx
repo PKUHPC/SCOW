@@ -32,7 +32,8 @@ interface Props {
 }
 
 interface FilterForm {
-  idOrName: string | undefined;
+  userId: string | undefined;
+  name: string | undefined;
 }
 
 const p = prefix("pageComp.tenant.adminUserTable.");
@@ -60,7 +61,8 @@ export const AdminUserTable: React.FC<Props> = ({
   const [form] = Form.useForm<FilterForm>();
 
   const [query, setQuery] = useState<FilterForm>({
-    idOrName: undefined,
+    userId: undefined,
+    name: undefined,
   });
 
   const [previewItem, setPreviewItem] = useState<FullUserInfo | undefined>(undefined);
@@ -70,7 +72,8 @@ export const AdminUserTable: React.FC<Props> = ({
     useState<{ field: string | null | undefined, order: SortOrder }>({ field: null, order: null });
 
   const filteredData = useMemo(() => data ? data.results.filter((x) => (
-    (!query.idOrName || x.id.includes(query.idOrName) || x.name.includes(query.idOrName))
+    (!query.userId || x.id.includes(query.userId)) &&
+    (!query.name || x.name.includes(query.name))
     && (rangeSearchRole === "ALL_USERS" || x.tenantRoles.includes(
       rangeSearchRole === "TENANT_ADMIN" ? TenantRole.TENANT_ADMIN : TenantRole.TENANT_FINANCE))
   ))
@@ -82,7 +85,8 @@ export const AdminUserTable: React.FC<Props> = ({
   );
 
   const searchData = useMemo(() => data ? data.results.filter((x) => (
-    !query.idOrName || x.id.includes(query.idOrName) || x.name.includes(query.idOrName)
+    (!query.userId || x.id.includes(query.userId)) &&
+    (!query.name || x.name.includes(query.name))
   )) : undefined, [data, query]);
 
 
@@ -129,7 +133,8 @@ export const AdminUserTable: React.FC<Props> = ({
         columns,
         count: total,
         query: {
-          idOrName: query.idOrName,
+          userId: query.userId,
+          userName: query.name,
           selfTenant: true,
           tenantRole: rangeSearchRole === "TENANT_ADMIN"
             ? TenantRole.TENANT_ADMIN
@@ -172,12 +177,19 @@ export const AdminUserTable: React.FC<Props> = ({
           initialValues={query}
           // 搜索结束时重置页码到首页，重置排序信息
           onFinish={async () => {
-            setQuery(await form.validateFields());
+            const { userId, name } = await form.validateFields();
+            setQuery({
+              userId: userId === "" ? undefined : userId?.trim(),
+              name: name === "" ? undefined : name?.trim(),
+            });
             setCurrentPageNum(1);
             setCurrentSortInfo({ field: null, order: null });
           }}
         >
-          <Form.Item label={t(p("idOrName"))} name="idOrName">
+          <Form.Item label={t(pCommon("userId"))} name="userId">
+            <Input />
+          </Form.Item>
+          <Form.Item label={t(pCommon("name"))} name="name">
             <Input />
           </Form.Item>
           <Form.Item>

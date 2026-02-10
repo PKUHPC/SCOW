@@ -198,19 +198,30 @@ export const findUser = async (logger: FastifyBaseLogger,
   );
 };
 
+const escapeLdapFilterValue = (value: string) => value
+  .replace(/\\/g, "\\5c")
+  .replace(/\*/g, "\\2a")
+  .replace(/\(/g, "\\28")
+  .replace(/\)/g, "\\29")
+  .replace(/\0/g, "\\00");
+
 export const findLockedUsers = async (logger: FastifyBaseLogger,
-  config: LdapConfigSchema, client: ldapjs.Client, id?: string) => {
+  config: LdapConfigSchema, client: ldapjs.Client, params?: { identityId?: string; name?: string }) => {
   const baseFilters = [
     ldapjs.parseFilter(config.userFilter),
     new ldapjs.PresenceFilter({
       attribute: "pwdAccountLockedTime",
     }),
   ];
-  if (id) {
-    baseFilters.push(new ldapjs.EqualityFilter({
-      attribute: config.attrs.uid,
-      value: id,
-    }));
+  if (params?.identityId) {
+    baseFilters.push(ldapjs.parseFilter(
+      `(${config.attrs.uid}=*${escapeLdapFilterValue(params.identityId)}*)`,
+    ));
+  }
+  if (params?.name && config.attrs.name) {
+    baseFilters.push(ldapjs.parseFilter(
+      `(${config.attrs.name}=*${escapeLdapFilterValue(params.name)}*)`,
+    ));
   }
 
   return await searchAll(logger, client, config.searchBase,

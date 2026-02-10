@@ -1,7 +1,7 @@
 import { createWriterExtensions, ServiceError } from "@ddadaal/tsgrpc-common";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
-import { Loaded } from "@mikro-orm/core";
+import { FilterQuery, Loaded } from "@mikro-orm/core";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { account_AccountStateFromJSON } from "@scow/protos/build/server/account";
 import { BillListItem, BillType as BillSearchType, UserBill as UserBillType } from "@scow/protos/build/server/bill";
@@ -48,6 +48,8 @@ export const exportServiceServer = plugin((server) => {
         sortField,
         sortOrder,
         idOrName,
+        userId,
+        userName,
         tenantName,
         tenantRole,
         platformRole,
@@ -66,19 +68,30 @@ export const exportServiceServer = plugin((server) => {
         tenant: { name: tenantName },
       } : {};
 
-      const idOrNameQuery = idOrName ? {
-        $or: [
-          { userId: { $like: `%${idOrName}%` } },
-          { name: { $like: `%${idOrName}%` } },
-        ],
-      } : {};
+      const filters: FilterQuery<User>[] = [];
+      if (userId) {
+        filters.push({ userId: { $like: `%${userId}%` } });
+      }
+      if (userName) {
+        filters.push({ name: { $like: `%${userName}%` } });
+      }
+      if (!filters.length && idOrName) {
+        filters.push({
+          $or: [
+            { userId: { $like: `%${idOrName}%` } },
+            { name: { $like: `%${idOrName}%` } },
+          ],
+        });
+      }
+
+      const userQuery = filters.length ? { $and: filters } : {};
 
       const query = {
         $and: [
           platformRoleQuery,
           tenantRoleQuery,
           tenantNameQuery,
-          idOrNameQuery,
+          userQuery,
         ],
       };
 

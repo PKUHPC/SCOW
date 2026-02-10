@@ -23,6 +23,7 @@ export const GetLockedUsersSchema = typeboxRouteSchema({
 
   query: Type.Object({
     userId: Type.Optional(Type.String()), // 用户ID或DN，用于查询特定用户
+    name: Type.Optional(Type.String()), // 用户姓名，用于查询特定用户
   }),
 
   responses: {
@@ -50,10 +51,10 @@ export default /* #__PURE__*/typeboxRoute(
       return { 501: null };
     }
 
-    const { userId } = req.query;
+    const { userId, name } = req.query;
 
     return await getLockedUsers(runtimeConfig.AUTH_INTERNAL_URL,
-      { identityId: userId }, console)
+      { identityId: userId, name }, console)
       .then(async (res) => {
         return { 200: {
           results: res || [],

@@ -38,6 +38,8 @@ export const ExportUserSchema = typeboxRouteSchema({
     sortOrder: Type.Optional(SortDirectionType),
 
     idOrName: Type.Optional(Type.String()),
+    userId: Type.Optional(Type.String()),
+    userName: Type.Optional(Type.String()),
 
     platformRole: Type.Optional(Type.Enum(PlatformRole)),
 
@@ -62,7 +64,7 @@ const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLA
 export default route(ExportUserSchema, async (req, res) => {
   const { query } = req;
 
-  const { columns, sortField, sortOrder, idOrName, platformRole,
+  const { columns, sortField, sortOrder, idOrName, userId, userName, platformRole,
     tenantRole, selfTenant, count, encoding,timeZone } = query;
 
   const info = await auth(req, res);
@@ -99,11 +101,15 @@ export default route(ExportUserSchema, async (req, res) => {
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
+    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
+
     const stream = asyncReplyStreamCall(client, "exportUser", {
       count,
       sortField: mappedSortField,
       sortOrder: mappedSortOrder,
-      idOrName,
+      idOrName: legacyIdOrName,
+      userId,
+      userName,
       tenantName: selfTenant ? info.tenant : undefined,
       tenantRole,
       platformRole,

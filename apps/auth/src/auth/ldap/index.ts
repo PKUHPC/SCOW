@@ -90,8 +90,8 @@ export const createLdapAuthProvider = async (f: FastifyInstance) => {
       });
     } : undefined,
 
-    getLockedUsers: isPpolicyLoaded ? async (identityId, req) => useLdap(req.log, ldap)(async (client) => (
-      findLockedUsers(req.log, ldap, client, identityId)
+    getLockedUsers: isPpolicyLoaded ? async (params, req) => useLdap(req.log, ldap)(async (client) => (
+      findLockedUsers(req.log, ldap, client, params)
     )) : undefined,
 
     unlockUser: isPpolicyLoaded ? async (id, req) => {

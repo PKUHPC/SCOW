@@ -348,8 +348,10 @@ message GetAllUsersRequest {
   optional uint64 page_size = 2;
   optional UsersSortField sort_field = 3;
   optional SortDirection sort_order = 4;
-  optional string id_or_name = 5;
+  optional string id_or_name = 5; // 有user_id或者user_name时，优先使用这些过滤
   optional PlatformRole platform_role = 6;
+  optional string user_id = 7;
+  optional string user_name = 8;
 }
 
 message GetAllUsersResponse {
@@ -373,7 +375,9 @@ message GetUsersByIdsResponse {
 }
 
 message GetPlatformUsersCountsRequest {
-  optional string id_or_name = 1;
+  optional string id_or_name = 1; // 有user_id或者user_name时，优先使用这些过滤
+  optional string user_id = 2;
+  optional string user_name = 3;
 }
 
 message GetPlatformUsersCountsResponse {

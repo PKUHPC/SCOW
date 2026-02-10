@@ -16,13 +16,20 @@ export interface AuthUserInfo {
  */
 export async function getLockedUsers(
   authUrl: string,
-  params: { identityId?: string },
+  params: { identityId?: string; name?: string },
   logger?: Logger,
 ): Promise<AuthUserInfo[] | undefined> {
 
-  const url = params.identityId ?
-    join(authUrl, "/lockUser/getLockedUsers") + "?" + new URLSearchParams
-    ([["identityId", params.identityId]]).toString() : join(authUrl, "/lockUser/getLockedUsers");
+  const searchParams = new URLSearchParams();
+  if (params.identityId) {
+    searchParams.append("identityId", params.identityId);
+  }
+  if (params.name) {
+    searchParams.append("name", params.name);
+  }
+  const url = searchParams.toString()
+    ? `${join(authUrl, "/lockUser/getLockedUsers")}?${searchParams.toString()}`
+    : join(authUrl, "/lockUser/getLockedUsers");
 
   const resp = await fetch(url, {
     headers: applicationJsonHeaders,

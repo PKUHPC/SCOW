@@ -43,7 +43,7 @@ export interface AuthProvider {
   serveLoginHtml: (callbackUrl: string, req: FastifyRequest, rep: FastifyReply) => Promise<void>;
   fetchAuthTokenInfo: (token: string, req: FastifyRequest) => Promise<string | undefined>;
   getUser: undefined | ((identityId: string, req: FastifyRequest) => Promise<UserInfo | undefined>);
-  getLockedUsers: undefined | ((identityId: string | undefined, req: FastifyRequest)
+  getLockedUsers: undefined | ((params: { identityId?: string; name?: string }, req: FastifyRequest)
   => Promise<UserInfo[] | undefined>);
   createUser: undefined | ((info: CreateUserInfo, req: FastifyRequest) => Promise<CreateUserResult>);
   changePassword: undefined | ((id: string, newPassword: string, req: FastifyRequest) => Promise<ChangePasswordResult>);

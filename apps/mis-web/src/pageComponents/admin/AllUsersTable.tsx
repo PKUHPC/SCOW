@@ -23,7 +23,8 @@ import { getRuntimeI18nConfigText } from "src/utils/config";
 import { ChangeTenantModalLink } from "./ChangeTenantModal";
 
 interface FilterForm {
-  idOrName: string | undefined;
+  userId: string | undefined;
+  name: string | undefined;
 }
 
 interface PageInfo {
@@ -55,7 +56,7 @@ const pDelete = prefix("component.deleteModals.");
 export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
 
   const [query, setQuery] = useState<FilterForm>(() => {
-    return { idOrName: undefined };
+    return { userId: undefined, name: undefined };
   });
 
   const t = useI18nTranslateToString();
@@ -75,7 +76,8 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
         pageSize: pageInfo.pageSize,
         sortField: sortInfo.sortField,
         sortOrder: sortInfo.sortOrder,
-        idOrName: query.idOrName,
+        userId: query.userId,
+        userName: query.name,
         platformRole: currentPlatformRole,
       },
     });
@@ -85,7 +87,10 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
 
   const { data: platformUsersCounts, isLoading: isCountLoading, reload: reloadUsersCounts } = useAsync({
     promiseFn: useCallback(
-      async () => await api.getPlatformUsersCounts({ query: { idOrName: query.idOrName } }), [query, refreshToken],
+      async () => await api.getPlatformUsersCounts({ query: {
+        userId: query.userId,
+        userName: query.name,
+      } }), [query, refreshToken],
     ),
   });
 
@@ -135,7 +140,8 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
       message.error(t(pCommon("exportNoDataErrorMsg")));
     } else {
       const exportQuery: Record<string, string | number | boolean | string[] | undefined> = {
-        idOrName: query.idOrName,
+        userId: query.userId,
+        userName: query.name,
         platformRole: currentPlatformRole,
       };
 
@@ -181,13 +187,19 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { idOrName } = await form.validateFields();
-            setQuery({ idOrName: idOrName === "" ? undefined : idOrName?.trim() });
+            const { userId, name } = await form.validateFields();
+            setQuery({
+              userId: userId === "" ? undefined : userId?.trim(),
+              name: name === "" ? undefined : name?.trim(),
+            });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             setSortInfo({ sortField: undefined, sortOrder: undefined });
           }}
         >
-          <Form.Item label={t(p("idOrName"))} name="idOrName">
+          <Form.Item label={t(p("userId"))} name="userId">
+            <Input />
+          </Form.Item>
+          <Form.Item label={t(p("name"))} name="name">
             <Input />
           </Form.Item>
           <Form.Item>

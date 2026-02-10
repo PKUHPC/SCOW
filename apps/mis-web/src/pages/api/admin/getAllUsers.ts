@@ -47,6 +47,8 @@ export const GetAllUsersSchema = typeboxRouteSchema({
     sortOrder: Type.Optional(SortDirectionType),
 
     idOrName: Type.Optional(Type.String()),
+    userId: Type.Optional(Type.String()),
+    userName: Type.Optional(Type.String()),
 
     platformRole: Type.Optional(Type.Enum(PlatformRole)),
 
@@ -67,19 +69,23 @@ export default route(GetAllUsersSchema,
       return;
     }
 
-    const { page = 1, pageSize, sortField, sortOrder, idOrName, platformRole } = req.query;
+    const { page = 1, pageSize, sortField, sortOrder, idOrName, userId, userName, platformRole } = req.query;
 
     const client = getClient(UserServiceClient);
 
     const mappedSortField = sortField ? mapUsersSortFieldType[sortField] : undefined;
     const mappedSortOrder = sortOrder ? mapSortDirectionType[sortOrder] : undefined;
 
+    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
+
     const result = await asyncClientCall(client, "getAllUsers", {
       page,
       pageSize,
       sortField: mappedSortField,
       sortOrder: mappedSortOrder,
-      idOrName,
+      idOrName: legacyIdOrName,
+      userId,
+      userName,
       platformRole,
     });
 

@@ -1,14 +1,14 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Form, Input, Table } from "antd";
+import { App, Table } from "antd";
 import dayjs from "dayjs";
 import { NextPage } from "next";
 import { useCallback, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";
 import { requireAuth } from "src/auth/requireAuth";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { PageTitle } from "src/components/PageTitle";
+import { UserSearchFilters, UserSearchForm } from "src/components/users/UserSearchForm";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { PlatformRole } from "src/models/User";
 import type { LockUsersInfo } from "src/pages/api/admin/getLockedUsers";
@@ -16,18 +16,11 @@ import { Head } from "src/utils/head";
 
 const p = prefix("page.admin.lockedUsers.");
 const pCommon = prefix("common.");
-
 export const LockedUsersPage: NextPage =
   requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
     const t = useI18nTranslateToString();
 
-    const [form] = Form.useForm();
-
-    const [query, setQuery] = useState<{
-      userId: string | undefined,
-    }>(() => ({
-      userId: "",
-    }));
+    const [query, setQuery] = useState<UserSearchFilters>({});
 
     const { message, modal } = App.useApp();
 
@@ -35,6 +28,7 @@ export const LockedUsersPage: NextPage =
       promiseFn: useCallback(async () => {
         const param = {
           userId: query.userId,
+          name: query.name,
         };
         return api.getLockedUsers({ query: param });
 
@@ -45,25 +39,7 @@ export const LockedUsersPage: NextPage =
       <div>
         <Head title={t(p("userUnlock"))} />
         <PageTitle titleText={t(p("userUnlock"))} />
-        <FilterFormContainer>
-          <Form
-            layout="inline"
-            form={form}
-            onFinish={async () => {
-              const { userId } = await form.validateFields();
-              setQuery({
-                userId: userId,
-              });
-            }}
-          >
-            <Form.Item label={t("common.userId")} name="userId">
-              <Input style={{ width: 180 }} />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
-            </Form.Item>
-          </Form>
-        </FilterFormContainer>
+        <UserSearchForm onSearch={setQuery} />
         <Table
           tableLayout="fixed"
           dataSource={data?.results}
@@ -123,4 +99,3 @@ export const LockedUsersPage: NextPage =
   });
 
 export default LockedUsersPage;
-

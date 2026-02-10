@@ -19,6 +19,8 @@ export const GetPlatformUsersCountsSchema = typeboxRouteSchema({
 
   query: Type.Object({
     idOrName: Type.Optional(Type.String()),
+    userId: Type.Optional(Type.String()),
+    userName: Type.Optional(Type.String()),
   }),
 
   responses: {
@@ -35,11 +37,15 @@ export default route(GetPlatformUsersCountsSchema,
     if (!info) {
       return;
     }
-    const { idOrName } = req.query;
+    const { idOrName, userId, userName } = req.query;
     const client = getClient(UserServiceClient);
 
+    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
+
     const result = await asyncClientCall(client, "getPlatformUsersCounts", {
-      idOrName,
+      idOrName: legacyIdOrName,
+      userId,
+      userName,
     });
 
     return {

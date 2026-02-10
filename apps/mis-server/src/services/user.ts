@@ -3,8 +3,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { Loaded, QueryOrder, raw } from "@mikro-orm/core";
-import { LockMode } from "@mikro-orm/core";
+import { FilterQuery, Loaded, LockMode, QueryOrder, raw } from "@mikro-orm/core";
 import { addUserToAccount, changeEmail as libChangeEmail, createUser, deleteUser,
   getCapabilities, getUser, HttpError,
   removeUserFromAccount,
@@ -1114,23 +1113,33 @@ export const userServiceServer = plugin((server) => {
 
     getAllUsers: async ({ request, em }) => {
 
-      const { page, pageSize, sortField, sortOrder, idOrName, platformRole } = request;
+      const { page, pageSize, sortField, sortOrder, idOrName, platformRole, userId, userName } = request;
 
       const roleQuery = platformRole !== undefined ? {
         platformRoles: { $like: `%${platformRoleToJSON(platformRole)}%` },
-      } : {};
+      } : undefined;
 
-      const [users, count] = await em.findAndCount(User, idOrName ? {
-        $and: [
-          {
-            $or: [
-              { userId: { $like: `%${idOrName}%` } },
-              { name: { $like: `%${idOrName}%` } },
-            ],
-          },
-          roleQuery,
-        ],
-      } : roleQuery, {
+      const filters: FilterQuery<User>[] = [];
+      if (userId) {
+        filters.push({ userId: { $like: `%${userId}%` } });
+      }
+      if (userName) {
+        filters.push({ name: { $like: `%${userName}%` } });
+      }
+      if (!filters.length && idOrName) {
+        filters.push({
+          $or: [
+            { userId: { $like: `%${idOrName}%` } },
+            { name: { $like: `%${idOrName}%` } },
+          ],
+        });
+      }
+
+      const query = filters.length || roleQuery
+        ? { $and: [...filters, ...(roleQuery ? [roleQuery] : [])]}
+        : {};
+
+      const [users, count] = await em.findAndCount(User, query, {
         ...generateAllUsersQueryOptions(page, pageSize, sortField, sortOrder),
         populate: ["tenant", "accounts", "accounts.account"],
       });
@@ -1180,22 +1189,28 @@ export const userServiceServer = plugin((server) => {
     },
 
     getPlatformUsersCounts: async ({ request, em }) => {
-      const { idOrName } = request;
-      const idOrNameQuery = idOrName ? {
-        $and: [
-          {
-            $or: [
-              { userId: { $like: `%${idOrName}%` } },
-              { name: { $like: `%${idOrName}%` } },
-            ],
-          },
-        ],
-      } : {};
-      const totalCount = await em.count(User, idOrNameQuery);
+      const { idOrName, userId, userName } = request;
+      const filters: FilterQuery<User>[] = [];
+      if (userId) {
+        filters.push({ userId: { $like: `%${userId}%` } });
+      }
+      if (userName) {
+        filters.push({ name: { $like: `%${userName}%` } });
+      }
+      if (!filters.length && idOrName) {
+        filters.push({
+          $or: [
+            { userId: { $like: `%${idOrName}%` } },
+            { name: { $like: `%${idOrName}%` } },
+          ],
+        });
+      }
+      const baseQuery = filters.length ? { $and: filters } : {};
+      const totalCount = await em.count(User, baseQuery);
       const totalAdminCount = await em.count(User,
-        { platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` }, ...idOrNameQuery });
+        { platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` }, ...baseQuery });
       const totalFinanceCount = await em.count(User,
-        { platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` }, ...idOrNameQuery });
+        { platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` }, ...baseQuery });
 
       return [{
         totalCount: totalCount,

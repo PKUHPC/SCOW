@@ -5,14 +5,14 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { RefreshLink } from "@scow/lib-web/build/utils/refreshToken";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { Static } from "@sinclair/typebox";
-import { App, Divider, Popover, Space, Table, Tag } from "antd";
+import { App, Popover, Space, Table, Tag } from "antd";
 import { LinkProps } from "next/link";
-import React, { Key, useState } from "react";
+import React, { Key, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { DisabledA } from "src/components/DisabledA";
-import { TableTitle } from "src/components/TableTitle";
-import { prefix, useI18n,useI18nTranslateToString } from "src/i18n";
+import { filterUsersByIdOrName, UserSearchFilters, UserSearchForm } from "src/components/users/UserSearchForm";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DisplayedUserState, UserRole, UserStateInAccount } from "src/models/User";
 import { AddUserButton } from "src/pageComponents/users/AddUserButton";
 import { SetJobChargeLimitLink } from "src/pageComponents/users/JobChargeLimitModal";
@@ -44,10 +44,16 @@ export const UserTable: React.FC<Props> = ({
 
   const [selectedAccountUser, setSelectedAccountUser] = useState<AccountUserInfo[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
+  const [filters, setFilters] = useState<UserSearchFilters>({});
 
   const languageId = useI18n().currentLanguage.id;
 
   const { message, modal } = App.useApp();
+
+  const filteredData = useMemo(
+    () => filterUsersByIdOrName(data, filters ?? {}),
+    [data, filters],
+  );
 
   const DisplayedUserStateTexts = {
     [DisplayedUserState.DISPLAYED_NORMAL]: <Tag color="success">{t(p("normal"))}</Tag>,
@@ -99,26 +105,29 @@ export const UserTable: React.FC<Props> = ({
 
   return (
     <>
-      <TableTitle>
-        <Space split={<Divider type="vertical" />}>
-          <AddUserButton
-            refresh={reload}
-            accountName={accountName}
-            token={user?.token || ""}
-            disabled={selectedKeys.length > 0}
-          />
-          <BatchOperationButton
-            selectedAccountUser={selectedAccountUser}
-            setSelectedAccountUser={setSelectedAccountUser}
-            accountName={accountName}
-            setSelectedKeys={setSelectedKeys}
-            reload={reload}
-          />
-          <RefreshLink refresh={update} languageId={languageId} />
-        </Space>
-      </TableTitle>
+      <UserSearchForm
+        onSearch={setFilters}
+        extra={(
+          <Space>
+            <AddUserButton
+              refresh={reload}
+              accountName={accountName}
+              token={user?.token || ""}
+              disabled={selectedKeys.length > 0}
+            />
+            <BatchOperationButton
+              selectedAccountUser={selectedAccountUser}
+              setSelectedAccountUser={setSelectedAccountUser}
+              accountName={accountName}
+              setSelectedKeys={setSelectedKeys}
+              reload={reload}
+            />
+            <RefreshLink refresh={update} languageId={languageId} />
+          </Space>
+        )}
+      />
       <Table
-        dataSource={data?.results}
+        dataSource={filteredData?.results}
         loading={isLoading}
         rowKey="userId"
         scroll={{ x: true }}

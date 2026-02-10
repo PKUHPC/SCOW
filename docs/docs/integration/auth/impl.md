@@ -378,7 +378,8 @@ SCOW中使用`identityId`标识一个用户，并同时使用此`identityId`作�
 
 | 参数          | 位置 | 类型   | 是否必须 | 解释         |
 | ------------- | ---- | ------ | -------- | ------------ |
-| `identityId` | querystring | 字符串 | 是    | 用户的ID    |
+| `identityId` | querystring | 字符串 | 否     | 模糊筛选用户的ID片段  |
+| `name`        | querystring | 字符串 | 否       | 模糊筛选用户的姓名片段  |
 
 #### 200 OK
 

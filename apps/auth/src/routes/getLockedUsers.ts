@@ -3,6 +3,7 @@ import fp from "fastify-plugin";
 
 const QuerystringSchema = Type.Object({
   identityId: Type.Optional(Type.String()),
+  name: Type.Optional(Type.String()),
 });
 
 const ResponsesSchema = Type.Object({
@@ -35,8 +36,8 @@ export const getLockedUsersRoute = fp(async (f) => {
         return await rep.code(501).send({ code: "NOT_SUPPORTED" });
       }
 
-      const { identityId } = req.query;
-      const result = await f.auth.getLockedUsers(identityId, req);
+      const { identityId, name } = req.query;
+      const result = await f.auth.getLockedUsers({ identityId, name }, req);
       if (result) {
         return rep.code(200).send({ user: result });
       } else {
