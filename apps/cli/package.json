@@ -54,8 +54,8 @@
       "package.json"
     ],
     "targets": [
-      "node22-linux-arm64",
-      "node22-linux-x64"
+      "node22-linuxstatic-arm64",
+      "node22-linuxstatic-x64"
     ],
     "outputPath": "exe"
   }

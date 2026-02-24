@@ -59,7 +59,7 @@ try {
 
   // Package with pkg
   console.log("\nPackaging with pkg...");
-  execSync("pnpm exec pkg --compress GZip .", {
+  execSync("pnpm exec pkg --public-packages \"*\" --public --no-bytecode --compress GZip .", {
     cwd: rootDir,
     stdio: "inherit",
   });
