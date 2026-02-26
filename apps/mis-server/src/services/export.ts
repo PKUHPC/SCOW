@@ -317,16 +317,36 @@ export const exportServiceServer = plugin((server) => {
         types,
         target,
         count,
+        idsOrNames,
         userIds,
       } = request;
 
       const searchParam = getChargesTargetSearchParam(target);
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
+
+      const likePattern = (s: string) => `%${s}%`;
+      const trimmedUserIdsOrNames = idsOrNames.map((x) => x.trim()).filter((x) => x.length > 0);
+      const userLikePatterns = trimmedUserIdsOrNames.map(likePattern);
+
+      const trimmedUserIds = userIds.map((x) => x.trim()).filter((x) => x.length > 0);
+
+      // 如果有 idsOrNames 则按 idsOrNames 模糊搜索
+      // 如果没有 idsOrNames 但有 userIds 则按 userIds 精确搜索
+      // 都没有则不加搜索条件
+      const matchedUserIds = userLikePatterns.length > 0
+        ? Array.from(new Set((await em.find(User, {
+          $or: userLikePatterns.flatMap((p) => [
+            { userId: { $like: p } },
+            { name: { $like: p } },
+          ]),
+        }, { fields: ["userId"]})).map((u) => u.userId)))
+        : trimmedUserIds.length > 0 ? trimmedUserIds : [];
+
       const query = {
         time: { $gte: startTime, $lte: endTime },
         ...searchType,
         ...searchParam,
-        ...(userIds.length > 0 ? { userId: { $in: userIds } } : {}),
+        ...(matchedUserIds.length > 0 ? { userId: { $in: matchedUserIds } } : {}),
       };
 
       const recordFormat = (x: Loaded<ChargeRecord, never>) => ({

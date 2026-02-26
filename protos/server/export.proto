@@ -93,7 +93,11 @@ message ExportChargeRecordRequest {
     // 返回所有租户的租户消费记录
     AllTenantsTarget all_tenants = 9;
   }
+  // 如果有 idsOrNames 则按 idsOrNames 模糊搜索
+  // 如果没有 idsOrNames 但有 userIds 则按 userIds 精确搜索
+  // 都没有则不加搜索条件
   repeated string user_ids = 10;
+  repeated string ids_or_names = 11;
 }
 
 message ExportChargeRecordResponse {

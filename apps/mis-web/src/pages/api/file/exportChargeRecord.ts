@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -47,6 +35,7 @@ export const ExportChargeRecordSchema = typeboxRouteSchema({
     isPlatformRecords: Type.Optional(Type.Boolean()),
     searchType: Type.Optional(Type.Enum(SearchType)),
     userIds: Type.Optional(Type.String()),
+    idsOrNames: Type.Optional(Type.String()),
     encoding: Type.Enum(Encoding),
     timeZone:Type.Optional(Type.String()),
   }),
@@ -63,7 +52,10 @@ export const ExportChargeRecordSchema = typeboxRouteSchema({
 export default route(ExportChargeRecordSchema, async (req, res) => {
   const { query } = req;
 
-  const { columns, startTime, endTime, searchType, isPlatformRecords, count, userIds, encoding,timeZone } = query;
+  const {
+    columns, startTime, endTime, searchType, isPlatformRecords,
+    count, idsOrNames, userIds, encoding, timeZone,
+  } = query;
   let { accountNames, types } = query;
   accountNames = emptyStringArrayToUndefined(accountNames);
   types = emptyStringArrayToUndefined(types);
@@ -104,6 +96,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     });
 
     const userIdArray = userIds ? userIds.split(",").map((id) => id.trim()) : [];
+    const idOrNameArray = idsOrNames ? idsOrNames.split(",").map((id) => id.trim()) : [];
 
     const stream = asyncReplyStreamCall(client, "exportChargeRecord", {
       count,
@@ -112,6 +105,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
       types:types ?? [],
       target,
       userIds: userIdArray,
+      idsOrNames: idOrNameArray,
     });
 
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);

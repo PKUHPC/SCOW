@@ -47,7 +47,7 @@ interface FilterForm {
   names?: string[];
   time: [dayjs.Dayjs, dayjs.Dayjs];
   types?: string[];
-  userIds?: string;
+  idsOrNames?: string;
 }
 
 interface Sorter {
@@ -62,8 +62,8 @@ const p = prefix("pageComp.finance.chargeTable.");
 const pCommon = prefix("common.");
 
 // 将用户 ID 字符串转换为数组的函数
-const convertUserIdArray = (userIds: string | undefined) => {
-  return userIds ? userIds.split(",").map((id) => id.trim()) : [];
+const convertIdOrNameArray = (idsOrNames: string | undefined) => {
+  return idsOrNames ? idsOrNames.split(",").map((id) => id.trim()) : [];
 };
 
 export const ChargeTable: React.FC<Props> = ({
@@ -80,12 +80,12 @@ export const ChargeTable: React.FC<Props> = ({
     names: string[] | undefined,
     time: [dayjs.Dayjs, dayjs.Dayjs]
     types: string[] | undefined
-    userIds: string | undefined
+    idsOrNames: string | undefined
   }>({
     names: accountNames,
     time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
     types: undefined,
-    userIds: undefined,
+    idsOrNames: undefined,
   });// 查询对象
 
   // 定义排序状态
@@ -108,14 +108,14 @@ export const ChargeTable: React.FC<Props> = ({
       names: accountNames,
       time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
       types: undefined,
-      userIds: undefined,
+      idsOrNames: undefined,
     });
     setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
     setQuery({
       names: accountNames,
       time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
       types: undefined,
-      userIds: undefined,
+      idsOrNames: undefined,
     });
     setSelectedAccountNames(accountNames);
   }, [accountNames]);
@@ -134,7 +134,7 @@ export const ChargeTable: React.FC<Props> = ({
         pageSize: pageInfo.pageSize,
         sortBy: sorter.field,
         sortOrder: sorter.order,
-        userIdsOrNames: convertUserIdArray(query.userIds),
+        userIdsOrNames: convertIdOrNameArray(query.idsOrNames),
       },
     });
 
@@ -151,7 +151,7 @@ export const ChargeTable: React.FC<Props> = ({
         types: query.types,
         isPlatformRecords,
         searchType,
-        userIdsOrNames: convertUserIdArray(query.userIds),
+        userIdsOrNames: convertIdOrNameArray(query.idsOrNames),
       },
     });
   }, [query]);
@@ -190,7 +190,7 @@ export const ChargeTable: React.FC<Props> = ({
           types: query.types,
           searchType: searchType,
           isPlatformRecords: !!isPlatformRecords,
-          userIds: query.userIds,
+          idsOrNames: query.idsOrNames,
         },
       });
     }
@@ -223,8 +223,8 @@ export const ChargeTable: React.FC<Props> = ({
             form={form}
             initialValues={query}
             onFinish={async () => {
-              const { names, userIds, time, types } = await form.validateFields();
-              setQuery({ names: selectedAccountNames ?? names, userIds, time, types: selectedTypes ?? types });
+              const { names, idsOrNames, time, types } = await form.validateFields();
+              setQuery({ names: selectedAccountNames ?? names, idsOrNames, time, types: selectedTypes ?? types });
               setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             }}
           >
@@ -242,7 +242,7 @@ export const ChargeTable: React.FC<Props> = ({
                 </Form.Item>
               )
             }
-            <Form.Item label={t("common.ownerIdOrName")} name="userIds">
+            <Form.Item label={t("common.ownerIdOrName")} name="idsOrNames">
               <Input style={{ width: 180 }} placeholder={t("common.ownerIdOrName")} />
             </Form.Item>
             <Form.Item label={t(pCommon("time"))} name="time">
