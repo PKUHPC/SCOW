@@ -1,5 +1,4 @@
 "use client";
-import "src/styles/globals.css";
 
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { usePathname } from "next/navigation";
@@ -137,7 +136,6 @@ export function ClientLayout(props: {
                     </DarkModeProvider>
                   )
                 }
-
               </BodyContainer>
             </AntdStyleRegistry>
           </StyledComponentsRegistry>

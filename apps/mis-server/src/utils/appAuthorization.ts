@@ -32,6 +32,11 @@ export const formatTargetAppInfoList = (
   totalCount: number,
   // 类型是账户时：所属租户被禁用的app列表数据
   associatedTenantBlacklist?: Loaded<TenantAppBlacklist, "tenant" | "cluster", PopulatePath.ALL, never>[],
+  // 类型是账户时: 返回账户的拥有者信息
+  accountOwnerMap?: Map<string, {
+    ownerId?: string | undefined;
+    ownerName?: string | undefined;
+  }>,
 ): {
   appLists: TargetAppList[],
   totalCount: number,
@@ -72,12 +77,18 @@ export const formatTargetAppInfoList = (
     }
   }
   logger.trace("Current targetApps if has black app lists: %o", targetApps);
-
   targetApps.forEach((appsInfo, targetName) => {
+    const owner = targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
+      accountOwnerMap?.get(targetName) : undefined;
     appLists.push({
       targetName,
       appsInfo: appsInfo,
       availableAppsCount: appsInfo.filter((a) => (!a.isDisabled)).length,
+      // 类型是账户时返回对应拥有者信息
+      accountOwnerId: targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
+        owner?.ownerId ?? "-" : undefined,
+      accountOwnerName: targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
+        owner?.ownerName ?? "-" : undefined,
     });
   });
   logger.trace("Current app lists: %o", appLists);

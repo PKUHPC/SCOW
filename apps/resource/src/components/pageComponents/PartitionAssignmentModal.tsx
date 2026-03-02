@@ -7,9 +7,9 @@ import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag, Tooltip } 
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
+import { FilterFormContainerWithoutBorder } from "src/components/FilterFormContainer";
 import { I18nDicType } from "src/models/i18n";
-import { AssignmentState, ClusterPartition, PartitionOperationType } from "src/models/partition";
+import { AssignmentState, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
 import { AssignedClustersPartitionsSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
 
@@ -26,11 +26,11 @@ interface Props {
   open: boolean;
   language: I18nDicType;
   languageId: string;
-  tenantAssignedPartitions?: ClusterPartition[];
   currentClustersData?: Cluster[];
-  currentClustersPartitionsData?: ClusterPartition[];
   currentClustersDataFetching: boolean;
-  currentClustersPartitionsFetching: boolean;
+  noPartitionClusterNames: string[],
+  accountOwnerId?: string;
+  accountOwnerName?: string;
 }
 
 interface DisplayedPartition {
@@ -60,18 +60,16 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
   open,
   language,
   languageId,
-  tenantAssignedPartitions,
   currentClustersData,
-  currentClustersPartitionsData,
   currentClustersDataFetching,
-  currentClustersPartitionsFetching,
+  noPartitionClusterNames,
+  accountOwnerId,
+  accountOwnerName,
 }) => {
 
   const { clusterSortedIdList } = usePublicConfig();
 
   const [form] = Form.useForm<FormFields>();
-  const [partitionsInconsistency, setPartitionDataInconsistency]
-   = useState<boolean>(false);
 
   const { message, modal } = App.useApp();
 
@@ -82,40 +80,20 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
   };
   const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
 
-  // 租户授权分区展示列表为当前在线集群分区，如果是集群没有授权的分区，对应分区授权按键不可按，增加提示信息
-  // 账户授权分区展示列表为租户已授权的分区与在线集群的交集，如果是账户没有被授权的集群的分区，对应分区授权按键不可按，增加提示信息
   const displayedTotalPartitionList = useMemo(() => {
 
-    // 已授权的分区信息
-    const assignedDataStr = assignedInfo?.assignedPartitions.map((item) =>
-      `${item.clusterId}-${item.partition}`,
+    if (!assignedInfo) return;
+    const clusterStateMap = new Map(
+      assignedInfo.assignedClusters.map((c) => [c.clusterId, c.assignmentState]),
     );
-    const assignedSet = new Set(assignedDataStr);
-
-    // 已授权的集群Id Set
-    const assignedClusterIdsSet = new Set(assignedInfo?.assignedClusters);
-
     const clusterSortedIdMap = Object.fromEntries(
       clusterSortedIdList.map((id, index) => [id, index]),
     );
 
-    // 如果是租户页面，使用当前在线集群的所有分区
-    // 如果是账户页面，使用当前在线集群的所有分区与租户已授权分区的交集
-    const clusterPartitionsData = operationType === PartitionOperationType.ACCOUNT_OPERATION ?
-      currentClustersPartitionsData?.filter((currentData) => {
-        return tenantAssignedPartitions?.some((tenantPartition) => (
-          tenantPartition.clusterId === currentData.clusterId &&
-        tenantPartition.partition === currentData.partition
-        ));
-      }) :
-      currentClustersPartitionsData;
-
-    const filteredData = clusterPartitionsData?.map((item) => {
+    const filteredData = assignedInfo?.assignedPartitions?.map((item) => {
       return {
         ...item,
-        assignmentState: assignedSet.has(`${item.clusterId}-${item.partition}`) ?
-          AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
-        selectable: assignedClusterIdsSet.has(item.clusterId) ? true : false,
+        selectable: clusterStateMap.get(item.clusterId) === AssignmentState.ASSIGNED,
       };
     }).sort((a, b) => {
       // 先使用 clusterSortedIdList 的索引进行排序
@@ -131,41 +109,9 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
 
     return filteredData;
   }, [assignedInfo,
-    currentClustersPartitionsData,
-    tenantAssignedPartitions,
     currentClustersData,
     clusterSortedIdList,
   ]);
-
-  // 判断是否存在集群连接获取分区信息失败的情况
-  useEffect(() => {
-
-    const currentClusterIds = currentClustersData?.map((x) => x.id);
-    let hasInconsistency: boolean = false;
-    // 如果是平台管理下的租户授权分区，当前已获取的在线集群下如果分区为空则推测获取数据出现问题
-    if (operationType === PartitionOperationType.TENANT_OPERATION &&
-      currentClustersPartitionsData &&
-      currentClusterIds) {
-      hasInconsistency = currentClusterIds.some((id) => {
-        return !currentClustersPartitionsData.find((x) => x.clusterId === id);
-      });
-    }
-
-    // 如果是租户管理下的账户授权分区，当前已获取的在线集群下如果租户已授权的分区数据存在分区为空则推测获取数据出现问题
-    if (operationType === PartitionOperationType.ACCOUNT_OPERATION &&
-      currentClustersPartitionsData &&
-      currentClusterIds &&
-      tenantAssignedPartitions) {
-      hasInconsistency = tenantAssignedPartitions.some((x) => {
-        return currentClusterIds.includes(x.clusterId) &&
-        !currentClustersPartitionsData.find((c) => c.clusterId === x.clusterId);
-      });
-    }
-
-    if (hasInconsistency) {
-      setPartitionDataInconsistency(true);
-    }
-  }, [currentClustersData, currentClustersPartitionsData, tenantAssignedPartitions]);
 
   const [filteredPartitionList, setFilteredPartitionList] =
     useState<DisplayedPartition[] | undefined>(displayedTotalPartitionList);
@@ -322,7 +268,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
       title={language.clusterPartitionManagement.common.assignPartition}
       open={open}
       onCancel={closeModal}
-      confirmLoading={currentClustersDataFetching || currentClustersPartitionsFetching}
+      confirmLoading={currentClustersDataFetching}
       footer={null}
       width={800}
     >
@@ -331,38 +277,22 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
       >
         {
           operationType === PartitionOperationType.TENANT_OPERATION ? (
-            <Form.Item label={language.common.tenant}>
-              <span>{assignedTenantName}</span>
-            </Form.Item>
+            <div style={{ marginBottom: "20px" }}>
+              <span>{language.common.tenant}：{assignedTenantName}</span>
+            </div>
           ) : (
-            <Form.Item label={language.common.account}>
-              <span>{assignedAccountName}</span>
-            </Form.Item>
+            <>
+              <div style={{ marginBottom: "8px" }}>
+                <span>{language.common.account}：{assignedAccountName}</span>
+              </div>
+              <div>
+                <span>{language.common.accountOwner}：{`${accountOwnerName}（ID: ${accountOwnerId}）`}</span>
+              </div>
+            </>
           )
         }
       </Form>
-      {
-        filteredPartitionList?.length === 0
-          && (
-            <div style={{ marginBottom: "20px" }}>
-              {
-                operationType === PartitionOperationType.ACCOUNT_OPERATION ?
-                  language.clusterPartitionManagement.common.noAccountDisplayedPartitions :
-                  language.clusterPartitionManagement.common.noTenantDisplayedPartitions
-              }
-            </div>
-          )
-      }
-      {/* 如果有没有获取到的可以展示的集群分区数据，提示集群分区获取可能失败 */}
-      {
-        partitionsInconsistency && filteredPartitionList && filteredPartitionList.length > 0
-          && (
-            <div style={{ marginBottom: "20px" }}>
-              {language.clusterPartitionManagement.common.someClusterPartitionsFailed}
-            </div>
-          )
-      }
-      <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
+      <FilterFormContainerWithoutBorder style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
           form={filterForm}
@@ -382,18 +312,38 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
           <Form.Item name="partition">
             <Input allowClear placeholder={language.common.partitionInputPlaceholder} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              {language.common.search}
-            </Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {language.common.search}
+          </Button>
         </Form>
-      </FilterFormContainer>
+      </FilterFormContainerWithoutBorder>
 
+      {
+        filteredPartitionList?.length === 0
+          && (
+            <div style={{ marginBottom: "20px" }}>
+              {
+                operationType === PartitionOperationType.ACCOUNT_OPERATION ?
+                  language.clusterPartitionManagement.common.noAccountDisplayedPartitions :
+                  language.clusterPartitionManagement.common.noTenantDisplayedPartitions
+              }
+            </div>
+          )
+      }
+      {
+        noPartitionClusterNames.length > 0 && filteredPartitionList && filteredPartitionList.length > 0
+          && (
+            <div style={{ marginBottom: "20px" }}>
+              {getCurrentLangTextArgs(
+                language.clusterPartitionManagement.common.someClusterPartitionsFailed,
+                [noPartitionClusterNames.join(", ")])}
+            </div>
+          )
+      }
       <Table
         tableLayout="fixed"
         dataSource={filteredPartitionList}
-        loading={currentClustersPartitionsFetching}
+        // loading={currentClustersPartitionsFetching}
         pagination={false}
         rowKey={(record) => [record.clusterId, record.partition].join(".")}
         scroll={{ y: 500 }}

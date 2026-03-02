@@ -19,7 +19,7 @@ import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
-import { UserAccount } from "src/entities/UserAccount";
+import { UserAccount, UserRole } from "src/entities/UserAccount";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { addToTenantDefaultApps, authorizeAccountApp,
   authorizeTenantApp, formatTargetAppInfoList,
@@ -40,7 +40,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
       }
 
       const { pageSize, page, clusterId, targetType,
-        tenantName, filterTargetName } = request;
+        tenantName, filterTargetName, filterAccountOwnerIdOrName } = request;
       if (targetType === GetTargetAppAuthorizationsRequest_TargetType.UNKNOWN) {
         throw new ServiceError({
           code: Status.INVALID_ARGUMENT,
@@ -105,35 +105,76 @@ export const appAuthorizationServiceServer = plugin((server) => {
       // ************************查询账户对象的交互式应用列表**********************************
       } else {
 
-        const accountNameFilter = filterTargetName ? {
-          accountName: { $like: `%${filterTargetName}%` },
-        } : {};
-        const [accounts, count] = await em.findAndCount(Account, {
-          $and: [
-            { tenant: { name: tenantName } },
-            { state: { $ne: AccountState.DELETED } },
-            accountNameFilter,
-          ],
-        },{
-          populate: ["tenant"],
-          ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-        });
-        const accountNames = accounts.map((a) => a.accountName);
-        const associatedTenant = accounts[0]?.tenant?.getProperty("name");
+        interface RawAccountWithOwner {
+          accountName: string,
+          tenantName: string,
+          accountOwnerId: string | undefined,
+          accountOwnerName: string | undefined,
+        }
 
-        const accountBlacklist = await em.find(AccountAppBlacklist, {
-          ...clusterSearchParam,
-          account: { accountName: { $in: accountNames } },
-        }, {
-          populate: ["cluster", "account"],
+        const qb = em.createQueryBuilder(Account, "a");
+        qb
+          .leftJoin("a.tenant", "t")
+          .leftJoin("a.users", "ua", { "ua.role": UserRole.OWNER })
+          .leftJoin("ua.user", "u")
+          .select([
+            "a.account_name as accountName",
+            raw("t.name as tenantName"),
+            raw("u.user_id as accountOwnerId"),
+            raw("u.name as accountOwnerName"),
+          ])
+          .where({
+            "t.name": tenantName,
+            "a.state": { $ne: AccountState.DELETED },
+          });
+
+        if (filterTargetName) {
+          qb.andWhere({
+            "a.account_name": { $like: `%${filterTargetName}%` },
+          });
+        }
+
+        if (filterAccountOwnerIdOrName) {
+          qb.andWhere({
+            $or: [
+              { "u.user_id": { $like: `%${filterAccountOwnerIdOrName}%` } },
+              { "u.name": { $like: `%${filterAccountOwnerIdOrName}%` } },
+            ],
+          });
+        }
+
+        // 克隆queryBuilder，查出总数量，防止后面分页查询的queryBuilder被锁定
+        const count = await qb.clone().count();
+
+        // 执行查询
+        const accountsRaw = await qb
+          .limit(pageSize)
+          .offset((page - 1) * pageSize)
+          .execute<RawAccountWithOwner[]>();
+
+        if (accountsRaw.length === 0) {
+          return [{ appLists: [], totalCount: 0 }];
+        }
+        const associatedTenant = accountsRaw[0].tenantName;
+        const accountNames = accountsRaw.map((a) => a.accountName);
+        const accountOwnerMap = new Map<string, { ownerId?: string, ownerName?: string }>();
+        accountsRaw.forEach((r) => {
+          accountOwnerMap.set(r.accountName, {
+            ownerId: r.accountOwnerId || undefined,
+            ownerName: r.accountOwnerName || undefined,
+          });
         });
 
-        const associatedTenantBlacklist = await em.find(TenantAppBlacklist, {
-          ...clusterSearchParam,
-          tenant: { name: associatedTenant },
-        }, {
-          populate: ["cluster", "tenant"],
-        });
+        const [accountBlacklist, associatedTenantBlacklist] = await Promise.all([
+          em.find(AccountAppBlacklist, {
+            ...clusterSearchParam,
+            account: { accountName: { $in: accountNames } },
+          }, { populate: ["cluster", "account"]}),
+          em.find(TenantAppBlacklist, {
+            ...clusterSearchParam,
+            tenant: { name: associatedTenant },
+          }, { populate: ["cluster", "tenant"]}),
+        ]);
 
         const formatResult = formatTargetAppInfoList(
           logger,
@@ -145,6 +186,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
           targetType,
           count,
           associatedTenantBlacklist,
+          accountOwnerMap,
         );
         return [formatResult];
       }

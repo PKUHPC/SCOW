@@ -1,7 +1,7 @@
 "use client";
 
 import { Head } from "@scow/lib-web/build/components/head";
-import { message } from "antd";
+import { App } from "antd";
 import { useContext, useEffect } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { ScowParamsContext } from "src/components/ScowParamsProvider";
@@ -14,6 +14,8 @@ export default function Page() {
 
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
+
+  const { message } = App.useApp();
 
   useEffect(() => {
     window.parent?.postMessage({
@@ -31,14 +33,14 @@ export default function Page() {
      = trpc.partitions.accountDefaultPartitions.useQuery({ tenantName: tenantNameQuery ?? "" }, {
        enabled: !!tenantNameQuery,
      });
-     
+
   if (error) {
     message.error(language.accountDefaultPartitions.defaultAccountPartitionsNotFoundError);
   }
 
-  const { data: defaultClustersData, 
-    refetch: defaultClustersRefetch, 
-    isFetching: defaultClustersIsFetching, 
+  const { data: defaultClustersData,
+    refetch: defaultClustersRefetch,
+    isFetching: defaultClustersIsFetching,
     error: defaultClustersError } = trpc.partitions.accountDefaultClusters.useQuery(
     { tenantName: tenantNameQuery ?? "" },
     {

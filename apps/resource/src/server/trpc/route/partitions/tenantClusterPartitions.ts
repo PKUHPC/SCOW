@@ -1,5 +1,6 @@
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
+import { AssignedInfoSortBy, AssignmentState, SortOrder } from "src/models/partition";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";
@@ -12,8 +13,10 @@ import { getAvailablePartitionsResult } from "src/server/utils/clusterPartitions
 import { assignTenantAccountsPartitionThroughCluster,
   unAssignTenantAccountsThroughCluster } from "src/server/utils/resourceAssignment";
 import { checkClusterIdAvailable, checkClusterPartitionAvailable, checkSyncRunning } from "src/utils/auth/utils";
+import { DEFAULT_ERROR_MESSAGE, DEFAULT_PAGE_SIZE } from "src/utils/constants";
 import { forkEntityManager } from "src/utils/getOrm";
 import { logger } from "src/utils/logger";
+import { paginationSchema } from "src/utils/pagination";
 import { parseIp } from "src/utils/parse";
 import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
@@ -34,12 +37,25 @@ export const AssignedPartitionSchema = z.object({
   clusterId: z.string(),
   partition: z.string(),
 });
-export type AssignedPartitionSchema = z.infer<typeof AssignedPCountsSchema>;
+export type AssignedPartitionSchema = z.infer<typeof AssignedPartitionSchema>;
+
+export const ClusterAssignedInfoSchema = z.object({
+  clusterId: z.string(),
+  assignmentState: z.enum(AssignmentState),
+});
+export type ClusterAssignedInfoSchema = z.infer<typeof ClusterAssignedInfoSchema>;
+
+export const PartitionAssignedInfoSchema = z.object({
+  clusterId: z.string(),
+  partition: z.string(),
+  assignmentState: z.enum(AssignmentState),
+});
+export type PartitionAssignedInfoSchema = z.infer<typeof PartitionAssignedInfoSchema>;
 
 export const AssignedClustersPartitionsSchema = z.object({
-  assignedClusters: z.array(z.string()),
+  assignedClusters: z.array(ClusterAssignedInfoSchema),
   assignedClustersCount: z.number(),
-  assignedPartitions: z.array(AssignedPartitionSchema),
+  assignedPartitions: z.array(PartitionAssignedInfoSchema),
   assignedPartitionsCount: z.number(),
 });
 export type AssignedClustersPartitionsSchema = z.infer<typeof AssignedClustersPartitionsSchema>;
@@ -47,102 +63,202 @@ export type AssignedClustersPartitionsSchema = z.infer<typeof AssignedClustersPa
 export const AllAssignedInfoSchema = z.object({
   tenantName: z.string(),
   accountName: z.optional(z.string()),
+  ownerId: z.optional(z.string()),
+  ownerName: z.optional(z.string()),
   assignedInfo: AssignedClustersPartitionsSchema,
 });
 export type AllAssignedInfoSchema = z.infer<typeof AllAssignedInfoSchema>;
 
-export const allTenantAssignedClustersPartitions = adminAuthProcedure
+// 在所有在线集群数据下获取租户的集群和分区授权详细信息，包括未授权及已授权
+// 与获取账户授权信息逻辑统一，方便维护
+export const tenantsAssignedDetails = adminAuthProcedure
   .meta({
     openapi: {
       method: "GET",
-      path: "/allTenantAssignedClustersPartitions",
+      path: "/tenantsAssignedDetails",
       tags: ["TenantClusterPartitions"],
-      summary: "获取所有租户已授权集群及分区的详细列表",
+      summary: "获取在线集群下的租户的集群和分区授权详细信息",
     },
   })
-  .input(z.void())
-  .output(z.array(AllAssignedInfoSchema))
-  .query(async () => {
+  .input(
+    z.object({
+      page: paginationSchema.shape.page.default(1),
+      pageSize: paginationSchema.shape.pageSize.default(DEFAULT_PAGE_SIZE),
+      sortBy: z.enum(AssignedInfoSortBy).optional(),
+      sortOrder: z.enum(SortOrder).optional(),
+      searchTenantText: z.string().optional(),
+    }),
+  )
+  .output(
+    z.object({
+      items: z.array(AllAssignedInfoSchema),
+      total: z.number(),
+      noPartitionClusterIds: z.array(z.string()),
+    }),
+  )
+  .query(async ({ input }) => {
 
     return mock(
       async () => {
 
-        // 获取当前在线的集群分区信息
-        const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
-        const currentClusterIdsWithPartitions = Object.keys(currentClusterPartitions);
+        const { page, pageSize, sortBy, sortOrder, searchTenantText } = input;
 
-        // 当前在线集群
-        const currentClusterIds = await getScowActivatedClusterIds();
+        const [currentClusterIds, currentClusterPartitions, allTenants] = await Promise.all([
+          getScowActivatedClusterIds().catch((e) => {
+            logger.error("Activated clusters fetch failed: %s", e);
+            throw new TRPCError({
+              message: `Can not find activated clusters: ${e.message || e.details || DEFAULT_ERROR_MESSAGE}`,
+              code: "INTERNAL_SERVER_ERROR",
+            });
+          }),
+          getScowActivatedClusterPartitions(logger).catch((e) => {
+            logger.error("Activated cluster partitions fetch failed: %s", e);
+            throw new TRPCError({
+              message: `Can not find activated cluster partitions: ${e.message || e.details || DEFAULT_ERROR_MESSAGE}`,
+              code: "INTERNAL_SERVER_ERROR",
+            });
+          }),
+          getScowTenants().catch((e) => {
+            logger.error("Tenants fetch failed: %s", e);
+            throw new TRPCError({
+              message:
+                `Can not find tenants: ${e.message || e.details || DEFAULT_ERROR_MESSAGE}`,
+              code: "INTERNAL_SERVER_ERROR",
+            });
+          }),
+        ]);
+        // 获取无法获取分区信息的异常集群数据
+        const noPartitionClusterIds: string[] = currentClusterIds.filter((clusterId) =>
+          (!Object.keys(currentClusterPartitions).includes(clusterId)));
 
-        const resultMap: Record<string , AllAssignedInfoSchema> = {};
+        let tenantNames = allTenants.names;
+        if (searchTenantText) {
+          tenantNames = tenantNames.filter((name) =>
+            name.toLowerCase().includes(searchTenantText.toLowerCase()),
+          );
+        }
+        if (tenantNames.length === 0) {
+          return { items: [], total: 0, noPartitionClusterIds };
+        }
 
-        // 获取 scow 中所有租户
-        const allTenants = await getScowTenants();
-        allTenants.names.forEach((name) => {
-          resultMap[name] = {
+        const em = await forkEntityManager();
+
+        interface RawTenantClusterRule {
+          tenantName: string;
+          clusterId: string;
+        }
+
+        interface RawTenantPartitionRule {
+          tenantName: string;
+          clusterId: string;
+          partition: string;
+        }
+
+        const [allClusterRules, allPartitionRules] = await Promise.all([
+          em.createQueryBuilder(TenantClusterRule)
+            .select(["tenantName", "clusterId"])
+            .where({
+              tenantName: { $in: tenantNames },
+              clusterId: { $in: currentClusterIds },
+            })
+            .execute<RawTenantClusterRule[]>(),
+          em.createQueryBuilder(TenantPartitionRule)
+            .select(["tenantName", "clusterId", "partition"])
+            .where({
+              tenantName: { $in: tenantNames },
+              clusterId: { $in: currentClusterIds },
+            })
+            .execute<RawTenantPartitionRule[]>(),
+        ]);
+
+        // partitions:Set<string>  使用Key组合防止嵌套循环, 存储 "clusterId:partition"
+        const tenantClusterPartitionMap = new Map<string, { clusters: Set<string>, partitions: Set<string> }>();
+        tenantNames.forEach((name) =>
+          (tenantClusterPartitionMap.set(name, { clusters: new Set(), partitions: new Set() })));
+        // 映射集群规则
+        allClusterRules.forEach((rule) => {
+          const entry = tenantClusterPartitionMap.get(rule.tenantName);
+          if (entry) entry.clusters.add(rule.clusterId);
+        });
+        // 映射分区规则
+        allPartitionRules.forEach((rule) => {
+          const partitionsInCluster = currentClusterPartitions[rule.clusterId] || [];
+          if (partitionsInCluster.includes(rule.partition)) {
+            tenantClusterPartitionMap.get(rule.tenantName)?.partitions.add(`${rule.clusterId}:${rule.partition}`);
+          }
+        });
+
+        const allResults = tenantNames.map((name) => {
+          const tenantAssignedInfo = tenantClusterPartitionMap.get(name)!;
+          return {
             tenantName: name,
-            assignedInfo: {
-              assignedClusters: [],
-              assignedClustersCount: 0,
-              assignedPartitions: [],
-              assignedPartitionsCount: 0,
-            },
-
+            assignedClustersCount: tenantAssignedInfo.clusters.size,
+            assignedPartitionsCount: tenantAssignedInfo.partitions.size,
+            _clustersSet: tenantAssignedInfo.clusters,
+            _partitionsSet: tenantAssignedInfo.partitions,
           };
         });
 
-        const em = await forkEntityManager();
-        // 获取已授权集群信息
-        const qbClusters = em.createQueryBuilder(TenantClusterRule, "tcr");
-        const tenantAssignedClustersInfo = await qbClusters
-          .select(["tenantName", "clusterId"])
-          .where({ "clusterId":  { $in: currentClusterIds } })
-          .execute();
+        if (sortBy && sortOrder) {
+          allResults.sort((a, b) => {
+            let compareValue = 0;
+            switch (sortBy) {
+              case AssignedInfoSortBy.NAME:
+                compareValue = a.tenantName.localeCompare(b.tenantName);
+                break;
+              case AssignedInfoSortBy.ASSIGNED_CLUSTERS_COUNT:
+                compareValue = a.assignedClustersCount - b.assignedClustersCount;
+                break;
+              case AssignedInfoSortBy.ASSIGNED_PARTITIONS_COUNT:
+                compareValue = a.assignedPartitionsCount - b.assignedPartitionsCount;
+                break;
+            }
+            return sortOrder === SortOrder.ASCEND ? compareValue : -compareValue;
+          });
+        }
 
-        tenantAssignedClustersInfo.forEach((item) => {
-          // 只获取与 从scow获取的租户已授权集群信息
-          if (resultMap[item.tenantName]) {
-            resultMap[item.tenantName].assignedInfo.assignedClusters.push(item.clusterId);
-          }
+        const total = allResults.length;
+
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedTenants = allResults.slice(startIndex, endIndex);
+        if (paginatedTenants.length === 0) {
+          return { items: [], total, noPartitionClusterIds };
+        }
+
+        const allOnlinePartitions = Object.entries(currentClusterPartitions).flatMap(([cId, parts]) =>
+          parts.map((p) => ({ clusterId: cId, partition: p })),
+        );
+
+        const items = paginatedTenants.map((t) => {
+          return {
+            tenantName: t.tenantName,
+            assignedInfo: {
+              assignedClusters: currentClusterIds.map((id) => ({
+                clusterId: id,
+                assignmentState: t._clustersSet.has(id)
+                  ? AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
+              })),
+              assignedClustersCount: t.assignedClustersCount,
+              assignedPartitions: allOnlinePartitions.map((p) => {
+                return {
+                  clusterId: p.clusterId,
+                  partition: p.partition,
+                  assignmentState:t._partitionsSet.has(`${p.clusterId}:${p.partition}`)
+                    ? AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
+                };
+              }),
+              assignedPartitionsCount: t.assignedPartitionsCount,
+            },
+          };
         });
 
-        // 获取已授权分区信息
-        const qbPartitions = em.createQueryBuilder(TenantPartitionRule, "tpr");
-        const result = await qbPartitions
-          .select(["tenantName", "partition", "clusterId"])
-          .where({ "clusterId":  { $in: currentClusterIdsWithPartitions } })
-          .execute();
-
-        // 在当前在线集群分区中过滤分区结果
-        const tenantAssignedPartitionsInfo = getAvailablePartitionsResult(currentClusterPartitions, result);
-
-        tenantAssignedPartitionsInfo.forEach((item) => {
-          // 只获取与 从scow获取的租户已授权分区信息
-          if (resultMap[item.tenantName]) {
-            resultMap[item.tenantName].assignedInfo.assignedPartitions.push({
-              clusterId: item.clusterId,
-              partition: item.partition,
-            });
-          }
-        });
-
-
-        const assignedResult = Object.values(resultMap).map((item) => ({
-          tenantName: item.tenantName,
-          assignedInfo: {
-            assignedClusters: item.assignedInfo.assignedClusters,
-            assignedClustersCount: item.assignedInfo.assignedClusters.length,
-            assignedPartitions: item.assignedInfo.assignedPartitions,
-            assignedPartitionsCount: item.assignedInfo.assignedPartitions.length,
-          },
-        }));
-
-        return assignedResult;
+        return { items, total, noPartitionClusterIds };
       },
 
       async () => {
 
-        return MOCK_ALL_TEN_ASSIGNED_INFO;
+        return { items: MOCK_ALL_TEN_ASSIGNED_INFO, total: 100, noPartitionClusterIds: []};
       },
     );
   });
@@ -1313,7 +1429,6 @@ export const tenantAssignedPartitions = adminAuthProcedure
       },
     );
 
-
   });
 
 export const tenantAssignedClusters = adminAuthProcedure
@@ -1363,4 +1478,3 @@ export const tenantAssignedClusters = adminAuthProcedure
       },
     );
   });
-

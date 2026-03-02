@@ -7,9 +7,9 @@ import { authenticate } from "src/auth/server";
 import { AppAuthTargetType,AppAuthTargetTypeProto } from "src/models/app";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
+import { safeGetStringProperty } from "src/utils/format";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
-
 
 export const AppAuthorizationInfo = Type.Object({
   appId: Type.String(),
@@ -23,6 +23,8 @@ export const TargetAppList = Type.Object({
   targetName: Type.String(),
   appsInfo: Type.Array(AppAuthorizationInfo),
   availableAppsCount: Type.Number(),
+  accountOwnerId: Type.Optional(Type.String()),
+  accountOwnerName: Type.Optional(Type.String()),
 });
 export type TargetAppList = Static<typeof TargetAppList>;
 
@@ -49,6 +51,8 @@ export const GetTargetAppAuthorizationsSchema = typeboxRouteSchema({
     // 按名称搜索时的搜索参数
     filterTargetName: Type.Optional(Type.String()),
 
+    // 当搜索类型为账户时搜索的拥有者ID或姓名
+    filterAccountOwnerIdOrName: Type.Optional(Type.String()),
   }),
 
   responses: {
@@ -79,7 +83,7 @@ const formatTargetTypeProto = (targetType: AppAuthTargetType): AppAuthTargetType
 };
 
 export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
-  const { page, pageSize, clusterId, targetType, filterTargetName } = req.query;
+  const { page, pageSize, clusterId, targetType, filterTargetName, filterAccountOwnerIdOrName } = req.query;
 
   const auth = authenticate((info) => {
     return targetType === AppAuthTargetType.TENANT ?
@@ -99,10 +103,17 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
     targetType: formatTargetTypeProto(targetType),
     filterTargetName,
     tenantName: targetType === AppAuthTargetType.ACCOUNT ? info.tenant : undefined,
+    filterAccountOwnerIdOrName: targetType === AppAuthTargetType.ACCOUNT ? filterAccountOwnerIdOrName : undefined,
   })
     .then((reply) => ({
       200: {
-        appLists: reply.appLists,
+        appLists: reply.appLists.map((x) => ({
+          ...x,
+          accountOwnerId: targetType === AppAuthTargetType.ACCOUNT ?
+            safeGetStringProperty(x.accountOwnerId) : undefined,
+          accountOwnerName: targetType === AppAuthTargetType.ACCOUNT ?
+            safeGetStringProperty(x.accountOwnerName) : undefined,
+        })),
         totalCount: reply.totalCount,
       },
     }))

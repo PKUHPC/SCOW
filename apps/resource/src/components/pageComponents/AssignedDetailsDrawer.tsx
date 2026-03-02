@@ -2,8 +2,9 @@
 import { Cluster } from "@scow/config/build/type";
 import { Descriptions, Drawer } from "antd";
 import { I18nDicType } from "src/models/i18n";
-import { PartitionOperationType } from "src/models/partition";
-import { AllAssignedInfoSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
+import { AssignmentState, PartitionOperationType } from "src/models/partition";
+import { AllAssignedInfoSchema, ClusterAssignedInfoSchema,
+  PartitionAssignedInfoSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
 import { getCurrentClusterI18nName } from "src/utils/i18n";
 
 interface Props {
@@ -25,7 +26,7 @@ type NestedKeys<T> = {
 type DrawerItem = [
   string | ((pr: Props) => string),
   NestedKeys<AllAssignedInfoSchema>,
-  (v: any) => string | null,
+  (v: any, record: AllAssignedInfoSchema | undefined) => string | null,
 ];
 
 export const AssignedDetailsDrawer: React.FC<Props> = (props) => {
@@ -33,10 +34,17 @@ export const AssignedDetailsDrawer: React.FC<Props> = (props) => {
   const getNestedValue = (obj: any, path: string) => {
     return path.split(".").reduce((acc, part) => acc?.[part], obj);
   };
-  const formatPartitions = (partitions: { clusterId: string; partition: string }[]) => {
+  const formatClusters = (clusters: ClusterAssignedInfoSchema[]) => {
+    const assignedClusters = clusters.filter((c) => (c.assignmentState === AssignmentState.ASSIGNED));
+    const clusterNames = assignedClusters.map((c) => {
+      return getCurrentClusterI18nName(c.clusterId, languageId, currentClustersData);
+    });
+    return clusterNames.join(", ");
+  };
+  const formatPartitions = (partitions: PartitionAssignedInfoSchema[]) => {
     const clusterMap: Record<string, string[]> = {};
-
-    partitions.forEach(({ clusterId, partition }) => {
+    const assignedPartitions = partitions.filter((p) => (p.assignmentState === AssignmentState.ASSIGNED));
+    assignedPartitions.forEach(({ clusterId, partition }) => {
       const clusterName = getCurrentClusterI18nName(clusterId, languageId, currentClustersData);
       if (!clusterMap[clusterName]) {
         clusterMap[clusterName] = [];
@@ -53,14 +61,18 @@ export const AssignedDetailsDrawer: React.FC<Props> = (props) => {
   const drawerItems: DrawerItem[] = [
     [language.clusterPartitionManagement.details.tenantName, "tenantName", String],
     [language.clusterPartitionManagement.details.accountName, "accountName", (v) => v || null],
+    [language.clusterPartitionManagement.details.accountOwner, "ownerId", (v, record) => {
+      if (!v) return null;
+      return `${record?.ownerName} (ID: ${v})`;
+    }],
     [language.clusterPartitionManagement.details.assignedClustersCount,
       "assignedInfo.assignedClustersCount", (v) => v.toString()],
     [language.clusterPartitionManagement.details.assignedClusters,
       "assignedInfo.assignedClusters", (v) => {
-        const clusterNames = v.map((clusterId) => {
-          return getCurrentClusterI18nName(clusterId, languageId, currentClustersData);
-        });
-        return clusterNames.join(", ");
+        if (Array.isArray(v)) {
+          return formatClusters(v);
+        }
+        return null;
       },
     ],
     [language.clusterPartitionManagement.details.assignedPartitionsCount,
@@ -90,7 +102,7 @@ export const AssignedDetailsDrawer: React.FC<Props> = (props) => {
           >
             {drawerItems.map(([label, key, format]) => {
               const value = getNestedValue(detail, key);
-              const formattedValue = format(value);
+              const formattedValue = format(value, detail);
 
               return formattedValue !== null ? (
                 <Descriptions.Item

@@ -21,6 +21,7 @@ import { AuthorizeAppModalLink } from "./AuthorizeAppModal";
 
 interface FilterForm {
   filterName: string | undefined;
+  accountOwnerIdOrName: string | undefined;
 }
 
 interface PageInfo {
@@ -71,7 +72,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   }, [availableClusters, selectedClusterId]);
 
   const [query, setQuery] = useState<FilterForm>(() => {
-    return { filterName: undefined };
+    return { filterName: undefined, accountOwnerIdOrName: undefined };
   });
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
@@ -94,6 +95,7 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
         clusterId: selectedClusterId,
         targetType,
         filterTargetName: query.filterName,
+        filterAccountOwnerIdOrName: query.accountOwnerIdOrName,
       },
     });
   }, [query, pageInfo, selectedClusterId]);
@@ -107,19 +109,22 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   const handleClusterChange = (clusterId: string) => {
     setSelectedClusterId(clusterId);
     filterForm.resetFields();
-    setQuery({ filterName: undefined });
+    setQuery({ filterName: undefined, accountOwnerIdOrName: undefined });
   };
 
   return (
     <div>
-      <FilterFormContainer>
+      <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
           form={filterForm}
           initialValues={query}
           onFinish={async () => {
-            const { filterName } = await filterForm.validateFields();
-            setQuery({ filterName: filterName === "" ? undefined : filterName?.trim() });
+            const { filterName, accountOwnerIdOrName } = await filterForm.validateFields();
+            setQuery({
+              filterName: filterName === "" ? undefined : filterName?.trim(),
+              accountOwnerIdOrName: accountOwnerIdOrName === "" ? undefined : accountOwnerIdOrName?.trim(),
+            });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
@@ -135,6 +140,18 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
                   >
                     <Input />
                   </Form.Item>
+
+                  {
+                    targetType === AppAuthTargetType.ACCOUNT && (
+                      <Form.Item
+                        label={t(p("accountOwner"))}
+                        name="accountOwnerIdOrName"
+                        style={{ marginLeft: "12px" }}
+                      >
+                        <Input placeholder={t(p("accountOwnerPlaceholder"))} />
+                      </Form.Item>
+                    )
+                  }
                   <Form.Item>
                     <Button type="primary" htmlType="submit">{t("common.search")}</Button>
                   </Form.Item>
@@ -204,6 +221,14 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
           dataIndex="targetName"
           title={targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}
         />
+        {
+          targetType === AppAuthTargetType.ACCOUNT && (
+            <Table.Column<TargetAppList>
+              dataIndex="accountOwnerId"
+              title={t(p("accountOwner"))}
+              render={(_, r) => `${r.accountOwnerName}（ID: ${r.accountOwnerId}）`}
+            />
+          )}
         <Table.Column<TargetAppList>
           dataIndex="availableAppsCount"
           title={t(p("authorizedAppsCount"))}
@@ -217,6 +242,8 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
               <AuthorizeAppModalLink
                 targetType={targetType}
                 targetName={r.targetName}
+                accountOwnerId={r.accountOwnerId}
+                accountOwnerName={r.accountOwnerName}
                 clusterId={clusterId}
                 appsInfo={r.appsInfo}
                 reload={reload}
@@ -228,6 +255,10 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
                 clusterId,
                 availableAppsCount: r.availableAppsCount,
                 availableAppNames: r.appsInfo.filter((x) => !x.isDisabled).map((x) => x.appName),
+                accountOwner: r.accountOwnerId ? {
+                  accountOwnerId: r.accountOwnerId ?? "-",
+                  accountOwnerName: r.accountOwnerName ?? "-",
+                } : undefined,
                 targetType,
               })}
               >

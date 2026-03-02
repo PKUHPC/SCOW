@@ -11,6 +11,10 @@ export interface TargetAppsDrawerItem {
   availableAppsCount: number;
   availableAppNames: string[];
   targetType: AppAuthTargetType;
+  accountOwner?: {
+    accountOwnerId: string,
+    accountOwnerName: string,
+  }
 }
 
 interface Props {
@@ -32,6 +36,8 @@ export const AppAuthInfoDrawer: React.FC<Props> = (props) => {
 
   const drawerItems = [
     [(item?.targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))), "targetName"],
+    [(item?.targetType === AppAuthTargetType.ACCOUNT ? t(p("accountOwner")) : null),
+      "accountOwner", (v) => `${v.accountOwnerName}（ID: ${v.accountOwnerId}）`],
     [t(p("cluster")), "clusterId", getClusterName],
     [t(p("authorizedAppsCount")), "availableAppsCount", (v) => v.toString()],
     [t(p("authorizedApps")), "availableAppNames", (v) => v.join(", ")],

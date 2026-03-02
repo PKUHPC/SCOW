@@ -4,7 +4,7 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { ensureNotUndefined } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { LockMode, UniqueConstraintViolationException } from "@mikro-orm/core";
+import { LockMode, raw, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { createAccount } from "@scow/lib-auth";
 import { removeUserFromAccount } from "@scow/lib-auth";
 import { Decimal, decimalToMoney, moneyToNumber } from "@scow/lib-decimal";
@@ -26,7 +26,7 @@ import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
-import { UserAccount, UserRole as EntityUserRole, UserStatus } from "src/entities/UserAccount";
+import { UserAccount, UserRole as EntityUserRole, UserRole,UserStatus } from "src/entities/UserAccount";
 import { InternalMessageType } from "src/models/messageType";
 import { CLUSTEROPS_ERROR_CODE } from "src/plugins/clusters";
 import { callHook } from "src/plugins/hookClient";
@@ -231,46 +231,124 @@ export const accountServiceServer = plugin((server) => {
 
       const { accountName, tenantName } = request;
 
-      const results = await em.find(Account, {
-        ...tenantName !== undefined ? { tenant: { name: tenantName } } : undefined,
-        ...accountName !== undefined ? { accountName } : undefined,
-      }, { populate: ["users", "users.user", "tenant"]});
+      // 1. 定义接口执行结果的类型
+      // queryBuilder.execute()基于Knex查询，查出来的结构一般为string类型
+      // 对于Decimal等特殊类型，需要单独处理逻辑
+      interface RawAccountQueryResult {
+        id: string;
+        accountName: string;
+        state: AccountState;
+        // 数据库中原始类型为Decimal
+        balance: string;
+        // 数据库中原始类型为 boolean
+        blockedInCluster: boolean | number;
+        comment: string;
+        // 数据库中原始类型为Decimal
+        blockThresholdAmount: string | undefined;
+        tenantName: string;
+        // 数据库中原始类型为Decimal
+        tenantDefaultAccountBlockThreshold: string;
+        whitelistId: number | undefined;
+      }
 
+      interface RawOwnerQueryResult {
+        accountId: string;
+        userId: string;
+        name: string;
+      }
+
+      interface RawCountQueryResult {
+        accountId: string;
+        count: number;
+      }
+
+      // 2. 使用 QueryBuilder 获取账户列表
+      const accounts = await em.createQueryBuilder(Account, "a")
+        .leftJoin("a.tenant", "t")
+        .leftJoin("a.whitelist", "w")
+        .select([
+          "a.id",
+          "a.accountName",
+          "a.state",
+          "a.balance",
+          "a.blockedInCluster",
+          "a.comment",
+          "a.blockThresholdAmount",
+          raw("t.name as tenantName"),
+          raw("t.default_account_block_threshold as tenantDefaultAccountBlockThreshold"),
+          raw("w.id as whitelistId"),
+        ])
+        .where({
+          ...(tenantName ? { "t.name": tenantName } : {}),
+          ...(accountName ? { "a.accountName": accountName } : {}),
+        }).execute<RawAccountQueryResult[]>();
+
+      const accountIds = accounts.map((a) => a.id);
+      if (accounts.length === 0) return [];
+
+      // 2. 使用 QueryBuilder 批量获取拥有者信息
+      const ownersResult = await em.createQueryBuilder(UserAccount, "ua")
+        .leftJoin("ua.user", "u")
+        .select([
+          "ua.account_id as accountId",
+          "u.user_id as userId",
+          "u.name as name",
+        ])
+        .where({
+          account: { $in: accountIds },
+          role: UserRole.OWNER,
+        }).execute<RawOwnerQueryResult[]>();
+      const ownerMap = new Map(ownersResult.map((o) => [o.accountId, o]));
+
+      // 3. 使用 QueryBuilder 批量查出 UserCount
+      const countsResult = await em.createQueryBuilder(UserAccount, "ua")
+        .select([
+          "ua.account_id as accountId",
+          raw("count(ua.id) as count"),
+        ])
+        .where({ account: { $in: accountIds } })
+        .groupBy("ua.account_id")
+        .execute<RawCountQueryResult[]>();
+
+      const userCountMap = new Map(countsResult.map((c) => [c.accountId, c.count]));
       const abnormalAccountsWithoutOwner: string[] = [];
-      const finalResult: AccountProto[] = [];
 
-      for (const x of results) {
-        const owner = x.users.getItems().find((x) => x.role === EntityUserRole.OWNER);
-
+      // 4. 组装结果
+      const finalResult: AccountProto[] = accounts.map((x) => {
+        const owner = ownerMap.get(x.id);
         if (!owner) {
           abnormalAccountsWithoutOwner.push(x.accountName);
         }
+        const balanceDec = new Decimal(x.balance || 0);
+        const thresholdAmount = x.blockThresholdAmount ?? x.tenantDefaultAccountBlockThreshold;
+        const thresholdAmountDec = new Decimal(thresholdAmount || 0);
+        const blockThresholdAmountDec = new Decimal(x.blockThresholdAmount || 0);
+        const tenantDefaultAccountBlockThresholdDec = new Decimal(x.tenantDefaultAccountBlockThreshold || 0);
 
-        const ownerUser = owner?.user.getEntity();
-        const thresholdAmount = x.blockThresholdAmount ?? x.tenant.$.defaultAccountBlockThreshold;
-        const displayedAccountState =
-            getAccountStateInfo(x.whitelist?.id, x.state, x.balance, thresholdAmount).displayedState;
+        const displayedAccountState = getAccountStateInfo(
+          x.whitelistId,
+          x.state,
+          balanceDec,
+          thresholdAmountDec,
+        ).displayedState;
 
-        const result = {
+        return {
           accountName: x.accountName,
-          tenantName: x.tenant.$.name,
-          userCount: x.users.count(),
+          tenantName: x.tenantName,
+          userCount: parseInt(userCountMap.get(x.id)?.toString() || "0"),
           blocked: Boolean(x.blockedInCluster),
           state: account_AccountStateFromJSON(x.state),
           displayedState: displayedAccountState,
-          isInWhitelist: Boolean(x.whitelist?.id),
-          ownerId: ownerUser?.userId,
-          ownerName: ownerUser?.name,
+          isInWhitelist: Boolean(x.whitelistId),
+          ownerId: owner?.userId,
+          ownerName: owner?.name,
           comment: x.comment,
-          balance: decimalToMoney(x.balance),
-          blockThresholdAmount: x.blockThresholdAmount
-            ? decimalToMoney(x.blockThresholdAmount)
-            : undefined,
-          defaultBlockThresholdAmount: decimalToMoney(x.tenant.$.defaultAccountBlockThreshold),
+          balance: decimalToMoney(balanceDec),
+          blockThresholdAmount: x.blockThresholdAmount ?
+            decimalToMoney(blockThresholdAmountDec) : undefined,
+          defaultBlockThresholdAmount: decimalToMoney(tenantDefaultAccountBlockThresholdDec),
         };
-
-        finalResult.push(result);
-      }
+      });
 
       // 对于没有拥有者的数据保留日志
       if (abnormalAccountsWithoutOwner.length > 0) {

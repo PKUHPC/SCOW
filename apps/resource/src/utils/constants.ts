@@ -5,3 +5,6 @@ export const DEFAULT_CONFIG_BASE_PATH = process.env.SCOW_CONFIG_PATH
 
 // DEFAULT_PAGE_SIZE FOR RESOURCE
 export const DEFAULT_PAGE_SIZE = 10;
+
+// DEFAULT ERROR MESSAGE IN RESOURCE SYSTEM
+export const DEFAULT_ERROR_MESSAGE = "Please confirm the error details in resource log.";

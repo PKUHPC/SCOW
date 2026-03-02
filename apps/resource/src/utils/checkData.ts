@@ -1,13 +1,10 @@
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { ClusterPartition } from "src/models/partition";
-import { ClusterWithName } from "src/server/trpc/route/mis-server/cluster";
+import { ClusterPartition, ClusterWithName } from "src/server/trpc/route/mis-server/cluster";
 
 // 判断对象是否为空
 export function isEmptyObject(obj: Record<string, any>): boolean {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
-
-
 // 获取分区获取失败的集群名列表
 export function getMissingPartitionClusterNames(
   comparedClusterIds: string[],
@@ -30,3 +27,17 @@ export function getMissingPartitionClusterNames(
 
   return missingPartitionClusters;
 }
+
+export function getClusterNames(
+  clusterIds: string[],
+  currentClustersData: ClusterWithName[],
+  languageId?: string,
+): string[] {
+  const clusterNames = clusterIds.map((id) => {
+    const clusterName = currentClustersData.find((c) => c.id === id)?.name;
+    return getI18nConfigCurrentText(clusterName, languageId) || id;
+  });
+
+  return clusterNames;
+}
+

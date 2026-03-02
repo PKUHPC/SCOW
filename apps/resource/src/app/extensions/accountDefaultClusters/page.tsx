@@ -3,7 +3,7 @@
 
 import { Cluster } from "@scow/config/build/type";
 import { Head } from "@scow/lib-web/build/components/head";
-import { message } from "antd";
+import { App } from "antd";
 import { useContext, useEffect } from "react";
 import { PageTitle } from "src/components/PageTitle";
 import { ScowParamsContext } from "src/components/ScowParamsProvider";
@@ -17,6 +17,8 @@ export default function Page() {
 
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
+
+  const { message } = App.useApp();
 
   useEffect(() => {
     window.parent?.postMessage({

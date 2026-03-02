@@ -2,19 +2,20 @@
 
 import { Cluster } from "@scow/config/build/type";
 import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, Divider, Form, Input, message, Space, Table } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { App, Button, Divider, Form, Input, Space, Table } from "antd";
+import React, { useEffect, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { AssignedDetailsDrawer } from "src/components/pageComponents/AssignedDetailsDrawer";
 import { ClusterAssignmentModal } from "src/components/pageComponents/ClusterAssignmentModal";
 import { PartitionAssignmentModal } from "src/components/pageComponents/PartitionAssignmentModal";
 import { I18nDicType } from "src/models/i18n";
-import { ClusterPartition, PartitionOperationType } from "src/models/partition";
+import { AssignedInfoSortBy, PartitionOperationType, SortOrder } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
 import { AllAssignedInfoSchema,
   AssignedClustersPartitionsSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
-import { getMissingPartitionClusterNames } from "src/utils/checkData";
+import { getClusterNames } from "src/utils/checkData";
 import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
 
 interface Props {
@@ -25,186 +26,205 @@ interface Props {
 }
 
 interface FilterForm {
+  // 账户名或租户名
   name: string | undefined;
+  // 账户拥有者ID或姓名
+  ownerIdOrName: string | undefined;
 }
 
 export const PartitionManagementTable: React.FC<Props> = ({
   operationType, tenantName, language, languageId }) => {
 
+  const { message } = App.useApp();
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [sortBy, setSortBy] = useState<AssignedInfoSortBy | undefined>();
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>();
+  // const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState<FilterForm>(() => ({
+    name: undefined,
+    ownerIdOrName: undefined,
+  }));
+  const [noPartitionClusterNames, setNoPartitionClusterNames] = useState<string[]>([]);
+
+  // 获取当前在线集群
   const { data: currentClustersData,
     refetch: currentClustersRefetch,
     isFetching: currentClustersIsFetching,
     error: currentClustersError,
   } = trpc.misServer.currentClusters.useQuery();
 
-  const { data: currentClustersPartitionsData,
-    refetch: currentClustersPartitionsRefetch,
-    isFetching: currentClustersPartitionsIsFetching,
-    error: currentClustersPartitionsError } =
-    trpc.misServer.currentClustersPartitionsInfo.useQuery();
-
-  if (currentClustersError) {
-    message.error(language.globalMessage.currentClustersNotFoundError);
-  }
-  if (currentClustersPartitionsError) {
-    message.error(language.globalMessage.currentClusterPartitionsNotFoundError);
-  }
-
-  // 判断平台管理下租户授权分区页面是否有获取分区异常的数据
   useEffect(() => {
-    if (currentClustersPartitionsData && currentClustersData) {
-      // 当前集群ID列表
-      const currentClusterIds = currentClustersData.results.map((c) => c.id);
-      const missingPartitionClusters = getMissingPartitionClusterNames(
-        currentClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
-      // 平台管理下授权分区页面报错
-      if (operationType === PartitionOperationType.TENANT_OPERATION && missingPartitionClusters.length > 0) {
-        message.error(
-          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
-      }
+    if (currentClustersError) {
+      message.error(language.globalMessage.currentClustersNotFoundError);
     }
-  }, [currentClustersPartitionsData, currentClustersData]);
+  }, [currentClustersError]);
 
-  // 仅在账户授权时启用
-  const { data: accountsData, refetch: accountsRefetch, isFetching: accountIsFetching } =
-      trpc.partitions.allAccountsAssignedClustersPartitions.useQuery({ tenantName: tenantName ?? "" }, {
-        enabled: operationType === PartitionOperationType.ACCOUNT_OPERATION,
+  // 仅在平台管理的租户授权时启用
+  const tenantsQuery =
+      trpc.partitions.tenantsAssignedDetails.useQuery({
+        page,
+        pageSize,
+        sortBy,
+        sortOrder,
+        searchTenantText: query.name,
+      },
+      {
+        enabled: operationType === PartitionOperationType.TENANT_OPERATION,
+        placeholderData: keepPreviousData,
       });
 
-  // 仅在账户授权时启用
-  const { data: tenantAssignedClustersData,
-    refetch: tenantAssignedClustersRefetch,
-    isFetching: tenantAssignedClustersIsFetching,
-    error: tenantAssignedClustersError,
-  } = trpc.partitions.tenantAssignedClusters.useQuery({ tenantName: tenantName ?? "" }, {
-    enabled: operationType === PartitionOperationType.ACCOUNT_OPERATION,
-  });
-
-  // 仅在账户授权时启用
-  const { data: tenantAssignedPartitionsData,
-    refetch: tenantAssignedPartitionsRefetch,
-    isFetching: tenantAssignedPartitionsIsFetching,
-    error: tenantAssignedPartitionsError,
-  } = trpc.partitions.tenantAssignedPartitions.useQuery({ tenantName: tenantName ?? "" }, {
-    enabled: operationType === PartitionOperationType.ACCOUNT_OPERATION,
-  });
-
-  if (tenantAssignedClustersError) {
-    message.error(language.globalMessage.tenantAssignedClustersNotFound);
-  }
-  if (tenantAssignedPartitionsError) {
-    message.error(language.globalMessage.assignedPartitionsNotFoundMessage);
-  }
-
-  // 仅在租户授权时启用
-  const { data: tenantsData, refetch: tenantsRefetch, isFetching: tenantsIsFetching } =
-      trpc.partitions.allTenantAssignedClustersPartitions.useQuery(undefined,
-        {
-          enabled: operationType === PartitionOperationType.TENANT_OPERATION,
-        },
-      );
-
-  // 判断租户管理下账户授权分区页面是否有获取分区异常的数据
-  // 只检查当前页面可以展示的租户已授权集群的数据
+  // 平台管理下租户授权分区页面是否有获取分区异常的数据
   useEffect(() => {
-    if (currentClustersPartitionsData && tenantAssignedClustersData && currentClustersData) {
-      // 租户已授权集群ID列表
-      const currentClusterIds = tenantAssignedClustersData.assignedClusters;
-      const missingPartitionClusters = getMissingPartitionClusterNames(
-        currentClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
-      // 租户管理下授权分区页面报错
-      if (operationType === PartitionOperationType.ACCOUNT_OPERATION && missingPartitionClusters.length > 0) {
-        message.error(
-          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
-      }
+    const tenantNoPartitionClusters = tenantsQuery.data?.noPartitionClusterIds;
+    if (tenantNoPartitionClusters?.length && tenantNoPartitionClusters.length > 0 && currentClustersData) {
+      const missingPartitionClusters = getClusterNames(
+        tenantNoPartitionClusters, currentClustersData?.results, languageId);
+      setNoPartitionClusterNames(missingPartitionClusters);
+      message.error(
+        getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
     }
-  }, [currentClustersPartitionsData, tenantAssignedClustersData, currentClustersData]);
+  }, [tenantsQuery.data]);
+
+  useEffect(() => {
+    if (tenantsQuery.error) {
+      message.error(`${language.clusterPartitionManagement.common.tenantsAssignedInfoFetchFailed}`
+        + ` ${tenantsQuery.error.message}`);
+    }
+  }, [tenantsQuery.error]);
+
+  // 仅在租户管理的账户授权时启用
+  const accountsQuery =
+      trpc.partitions.accountsAssignedDetails.useQuery({
+        tenantName: tenantName ?? "",
+        page,
+        pageSize,
+        sortBy,
+        sortOrder,
+        searchAccountText: query.name,
+        searchOwnerText: query.ownerIdOrName,
+      }, {
+        enabled: operationType === PartitionOperationType.ACCOUNT_OPERATION && !!tenantName,
+        placeholderData: keepPreviousData,
+      });
+
+
+  // 租户管理下账户授权分区页面判断是否有获取分区异常的数据
+  // 在租户已授权集群下比较
+  useEffect(() => {
+    const accountNoPartitionClusters = accountsQuery.data?.noPartitionClusterIds;
+
+    if (accountNoPartitionClusters?.length && accountNoPartitionClusters.length > 0
+      && currentClustersData) {
+      const missingPartitionClusters = getClusterNames(
+        accountNoPartitionClusters, currentClustersData?.results, languageId);
+      setNoPartitionClusterNames(missingPartitionClusters);
+      message.error(
+        getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
+    }
+  }, [accountsQuery.data, currentClustersData]);
+
+  useEffect(() => {
+    if (accountsQuery.error) {
+      message.error(`${language.clusterPartitionManagement.common.accountsAssignedInfoFetchFailed}`
+        + ` ${accountsQuery.error.message}`);
+    }
+  }, [accountsQuery.error]);
+
+  const currentQuery = operationType === PartitionOperationType.ACCOUNT_OPERATION ? accountsQuery : tenantsQuery;
+  const data = currentQuery.data?.items ?? [];
+  const total = currentQuery.data?.total ?? 0;
+  const initialLoading = currentQuery.isLoading;
+  const isFetching = currentQuery.isFetching && !currentQuery.isLoading;
 
   const handleReload = () => {
-    if (operationType === PartitionOperationType.ACCOUNT_OPERATION) {
-      accountsRefetch();
-      tenantAssignedClustersRefetch();
-      tenantAssignedPartitionsRefetch();
-      currentClustersRefetch();
-      currentClustersPartitionsRefetch();
-    } else {
-      tenantsRefetch();
-    }
+    currentQuery.refetch();
+    currentClustersRefetch();
   };
 
   return (
     <div>
       <ClusterPartitionInfoTable
-        data={operationType === PartitionOperationType.TENANT_OPERATION ? tenantsData : accountsData }
-        isLoading={
-          operationType === PartitionOperationType.TENANT_OPERATION ?
-            tenantsIsFetching :
-            accountIsFetching && tenantAssignedClustersIsFetching && tenantAssignedPartitionsIsFetching }
+        data={data}
+        total={total}
+        isLoading={(initialLoading || isFetching)}
         reload={() => handleReload()}
         operationType={operationType}
         languageId={languageId}
         language={language}
-        tenantAssignedClusters={tenantAssignedClustersData?.assignedClusters}
-        tenantAssignedPartitions={tenantAssignedPartitionsData?.assignedPartitions}
         currentClustersFetching={currentClustersIsFetching}
         currentClustersData={currentClustersData?.results}
-        currentClustersPartitionsFetching={currentClustersPartitionsIsFetching}
-        currentClustersPartitionsData={currentClustersPartitionsData}
+        noPartitionClusterNames={noPartitionClusterNames}
+        page={page}
+        pageSize={pageSize}
+        query={query}
+        onPageChange={(newPage) => {
+          setPage(newPage);
+        }}
+        onPageSizeChange={(newPageSize) => {
+          setPageSize(newPageSize);
+          setPage(1);
+        }}
+        onSortChange={(field, order) => {
+          setSortBy(field);
+          setSortOrder(order);
+          setPage(1);
+        }}
+        onSearchChange={(text: string | undefined , ownerText: string | undefined) => {
+          setQuery({ name: text, ownerIdOrName: ownerText });
+          setPage(1);
+        }}
       />
     </div>
   );
 };
 
 interface ClusterPartitionManagementInfoTableProps {
-  data: AllAssignedInfoSchema[] | undefined;
+  data: AllAssignedInfoSchema[];
+  total: number;
   isLoading: boolean;
   reload: () => void;
   operationType: PartitionOperationType;
   languageId: string;
   language: I18nDicType;
-  tenantAssignedClusters?: string[];
-  tenantAssignedPartitions?: ClusterPartition[];
   currentClustersData?: Cluster[];
-  currentClustersPartitionsData?: ClusterPartition[];
   currentClustersFetching: boolean;
-  currentClustersPartitionsFetching: boolean;
+  noPartitionClusterNames: string[];
+  page: number;
+  pageSize: number;
+  query: FilterForm;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  onSortChange: (field?: AssignedInfoSortBy, order?: SortOrder) => void;
+  onSearchChange: (text: string | undefined, ownerText: string | undefined) => void;
 }
 
 const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTableProps> = ({
   data,
+  total,
   isLoading,
   reload,
   operationType,
   languageId,
   language,
-  tenantAssignedClusters,
-  tenantAssignedPartitions,
   currentClustersData,
-  currentClustersPartitionsData,
   currentClustersFetching,
-  currentClustersPartitionsFetching,
+  noPartitionClusterNames,
+  page,
+  pageSize,
+  query,
+  onPageChange,
+  onPageSizeChange,
+  onSortChange,
+  onSearchChange,
 }) => {
 
   const [form] = Form.useForm<FilterForm>();
 
-  const [currentPageNum, setCurrentPageNum] = useState<number>(1);
   const [previewItem, setPreviewItem] = useState<AllAssignedInfoSchema | undefined>(undefined);
   const [clusterPreviewItem, setClusterPreviewItem] = useState<AllAssignedInfoSchema | undefined>(undefined);
   const [partitionPreviewItem, setPartitionPreviewItem] = useState<AllAssignedInfoSchema | undefined>(undefined);
-
-  const [query, setQuery] = useState<FilterForm>({
-    name: undefined,
-  });
-
-  const filteredData = useMemo(() => data ? data.filter((x) => {
-
-    if (operationType === PartitionOperationType.TENANT_OPERATION) {
-      return !query.name || x.tenantName.includes(query.name);
-    } else {
-      return !query.name || x.accountName?.includes(query.name);
-    }
-
-  }) : undefined, [data, query, operationType]);
 
   const getPreviewAssignedInfo = (
     sourceData?: AllAssignedInfoSchema[],
@@ -223,16 +243,53 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
     return found?.assignedInfo;
   };
 
+
+  const handleTableChange = (pagination: any, filters: any, sorter: any, extra: any) => {
+
+    // 处理分页
+    if (extra.action === "paginate" && pagination) {
+      if (pagination.current !== page) {
+        onPageChange(pagination.current);
+      }
+      if (pagination.pageSize !== pageSize) {
+        onPageSizeChange(pagination.pageSize);
+      }
+    }
+
+    // 处理排序
+    if (extra.action === "sort" && sorter) {
+      if (sorter.order) {
+        // 有排序
+        let field: AssignedInfoSortBy | undefined;
+
+        // 映射表格列到后端排序字段
+        if (sorter.field === "tenantName" || sorter.field === "accountName") {
+          field = AssignedInfoSortBy.NAME;
+        } else if (sorter.field === "assignedClustersCount") {
+          field = AssignedInfoSortBy.ASSIGNED_CLUSTERS_COUNT;
+        } else if (sorter.field === "assignedPartitionsCount") {
+          field = AssignedInfoSortBy.ASSIGNED_PARTITIONS_COUNT;
+        }
+
+        const order = sorter.order === "ascend" ? SortOrder.ASCEND : SortOrder.DESCEND;
+        onSortChange(field, order);
+      } else {
+        // 取消排序
+        onSortChange(undefined, undefined);
+      }
+    }
+  };
+
   return (
     <div>
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
           form={form}
-          initialValues={query}
-          onFinish={async () => {
-            setQuery(await form.validateFields());
-            setCurrentPageNum(1);
+          initialValues={{ name: query.name, ownerIdOrName: query.ownerIdOrName }}
+          onFinish={async (values) => {
+            onSearchChange(values.name, values.ownerIdOrName);
+            onPageChange(1);
           }}
         >
           <Form.Item
@@ -242,54 +299,74 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
           >
             <Input />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{language.common.search}</Button>
-          </Form.Item>
+          {
+            operationType === PartitionOperationType.ACCOUNT_OPERATION && (
+              <Form.Item
+                label={language.common.accountOwner}
+                name="ownerIdOrName"
+              >
+                <Input placeholder={language.common.searchOwnerText} />
+              </Form.Item>
+            )
+          }
+          <Button className="ant-form-item" type="primary" htmlType="submit">{language.common.search}</Button>
         </Form>
       </FilterFormContainer>
 
       <Table
         tableLayout="fixed"
-        dataSource={filteredData}
+        rowKey={(record) => (operationType === PartitionOperationType.ACCOUNT_OPERATION ?
+          record.accountName! : record.tenantName)}
+        dataSource={data}
         loading={isLoading}
         pagination={{
           showSizeChanger: true,
           defaultPageSize: DEFAULT_PAGE_SIZE,
-          current: currentPageNum,
-          onChange: (page) => setCurrentPageNum(page),
+          current: page,
+          pageSize: pageSize,
+          total: total,
         }}
+        onChange={handleTableChange}
       >
         {
           operationType === PartitionOperationType.TENANT_OPERATION && (
             <Table.Column<AllAssignedInfoSchema>
               dataIndex="tenantName"
               title={language.common.tenant}
-              sorter={(a, b) => (a.tenantName ?? "").localeCompare(b.tenantName ?? "")}
+              sorter={true}
             />
           )
         }
         {
           operationType === PartitionOperationType.ACCOUNT_OPERATION && (
-            <Table.Column<AllAssignedInfoSchema>
-              dataIndex="accountName"
-              title={language.common.account}
-              sorter={(a, b) => (a.accountName ?? "").localeCompare(b.accountName ?? "")}
-            />
+            <>
+              <Table.Column<AllAssignedInfoSchema>
+                dataIndex="accountName"
+                title={language.common.account}
+                sorter={true}
+              />
+              <Table.Column<AllAssignedInfoSchema>
+                dataIndex="ownerId"
+                title={language.common.accountOwner}
+                width="25%"
+                render={(_, r) => `${r.ownerName}（ID: ${r.ownerId}）`}
+              />
+            </>
           )
         }
         <Table.Column<AllAssignedInfoSchema>
           dataIndex="assignedClustersCount"
           title={language.clusterPartitionManagement.common.assignedClustersCount}
-          width="20%"
+          width="16%"
           render={(_, r) => r.assignedInfo.assignedClustersCount}
-          sorter={(a, b) => a.assignedInfo.assignedClustersCount - b.assignedInfo.assignedClustersCount}
+          sorter={true}
         />
         <Table.Column<AllAssignedInfoSchema>
           dataIndex="assignedPartitionsCount"
           title={language.clusterPartitionManagement.common.assignedPartitionsCount}
-          width="20%"
+          width="16%"
           render={(_, r) => r.assignedInfo.assignedPartitionsCount}
-          sorter={(a, b) => a.assignedInfo.assignedPartitionsCount - b.assignedInfo.assignedPartitionsCount}
+          sorter={true}
         />
         <Table.Column<AllAssignedInfoSchema>
           title={language.common.operation}
@@ -327,17 +404,18 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
         }}
         assignedAccountName={clusterPreviewItem?.accountName}
         assignedTenantName={clusterPreviewItem?.tenantName ?? ""}
+        accountOwnerId={clusterPreviewItem?.ownerId}
+        accountOwnerName={clusterPreviewItem?.ownerName}
         assignedClusters={
-          getPreviewAssignedInfo(filteredData,
+          getPreviewAssignedInfo(data,
             clusterPreviewItem?.tenantName,
             clusterPreviewItem?.accountName)?.assignedClusters
-           ?? []}
+         ?? []}
         operationType={operationType}
         reload={reload}
         isCurrentClustersLoading={currentClustersFetching}
         languageId={languageId}
         language={language}
-        tenantAssignedClusters={tenantAssignedClusters}
         currentClustersData={currentClustersData}
       />
       <PartitionAssignmentLink
@@ -348,9 +426,11 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
           }
         }}
         assignedAccountName={partitionPreviewItem?.accountName}
+        accountOwnerId={partitionPreviewItem?.ownerId}
+        accountOwnerName={partitionPreviewItem?.ownerName}
         assignedTenantName={partitionPreviewItem?.tenantName ?? ""}
         assignedInfo={
-          getPreviewAssignedInfo(filteredData,
+          getPreviewAssignedInfo(data,
             partitionPreviewItem?.tenantName,
             partitionPreviewItem?.accountName)
         }
@@ -358,11 +438,9 @@ const ClusterPartitionInfoTable: React.FC<ClusterPartitionManagementInfoTablePro
         reload={reload}
         languageId={languageId}
         language={language}
-        tenantAssignedPartitions={tenantAssignedPartitions}
         currentClustersData={currentClustersData}
         currentClustersDataFetching={currentClustersFetching}
-        currentClustersPartitionsData={currentClustersPartitionsData}
-        currentClustersPartitionsFetching={currentClustersPartitionsFetching}
+        noPartitionClusterNames={noPartitionClusterNames}
       />
       <AssignedDetailsDrawer
         open={previewItem !== undefined}

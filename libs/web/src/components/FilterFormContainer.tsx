@@ -26,6 +26,17 @@ export const FilterFormContainer = styled.div`
 
 `;
 
+// 与文字排列对齐不显示边框
+export const FilterFormContainerWithoutBorder = styled.div`
+  padding: 0px 16px 8px 0px;
+  margin: 8px 0;
+  background: ${({ theme }) => theme.token.colorBgElevated};
+  .ant-form-item {
+    margin: 0px;
+    max-width: 100%;
+  }
+`;
+
 const NoShakeTab = styled(Tabs)`
   .ant-tabs-nav-operations {
     display: none !important;

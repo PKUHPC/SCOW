@@ -4,6 +4,8 @@ export const languageDic = {
     common : {
       tenant: "租户",
       account: "账户",
+      accountOwner: "账户拥有者",
+      searchOwnerText: "拥有者ID或姓名",
       search: "搜索",
       refresh: "刷新",
       add: "添加",
@@ -34,7 +36,9 @@ export const languageDic = {
         noAccountDisplayedClusters: "当前暂无可以授权的集群，请确认当前在线集群信息以及是否已经在租户下授权了集群信息",
         noTenantDisplayedPartitions: "当前暂无可以授权的分区，请确认当前在线集群信息",
         noAccountDisplayedPartitions: "当前暂无可以授权的分区，请确认当前在线集群信息以及是否已经在租户下授权了分区信息",
-        someClusterPartitionsFailed: "当前可能存在获取失败的集群分区数据，请检查各集群连接是否正常",
+        someClusterPartitionsFailed: "{} 集群分区数据获取失败，请检查集群连接是否正常",
+        accountsAssignedInfoFetchFailed: "账户授权集群分区信息获取失败。",
+        tenantsAssignedInfoFetchFailed: "租户授权集群分区信息获取失败。",
       },
       setPartitionAssignmentModal: {
         title: "配置授权分区",
@@ -60,6 +64,7 @@ export const languageDic = {
       details: {
         tenantName: "租户名",
         accountName: "账户名",
+        accountOwner: "账户拥有者",
         assignedClustersCount: "已授权集群数",
         assignedClusters: "已授权集群",
         assignedPartitionsCount:"已授权分区数",
@@ -128,6 +133,8 @@ export const languageDic = {
     common: {
       tenant: "Tenant",
       account: "Account",
+      accountOwner: "Account Owner",
+      searchOwnerText: "Owner id or name",
       search: "Search",
       refresh: "Refresh",
       add: "Add",
@@ -164,8 +171,10 @@ export const languageDic = {
         noAccountDisplayedPartitions: "There are currently no partitions available for authorization. "
         + "Please verify the current online cluster information and whether any partition information "
         + "has already been authorized under the associated tenant.",
-        someClusterPartitionsFailed: "There may be some cluster partition data retrieval failures. "
-        + "Please check the connectivity of each cluster.",
+        someClusterPartitionsFailed: "{} partition data retrieval failed. "
+        + "Please check the connectivity of clusters.",
+        accountsAssignedInfoFetchFailed: "Failed to fetch account assigned cluster partition information.",
+        tenantsAssignedInfoFetchFailed: "Failed to fetch tenant assigned cluster partition information.",
       },
       setPartitionAssignmentModal: {
         title: "Set Partition Assignment",
@@ -195,6 +204,7 @@ export const languageDic = {
       details: {
         tenantName: "Tenant Name",
         accountName: "Account Name",
+        accountOwner: "Account Owner",
         assignedClustersCount: "Assigned Clusters Count",
         assignedClusters: "Assigned Clusters",
         assignedPartitionsCount: "Assigned Partitions Count",

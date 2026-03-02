@@ -5,7 +5,7 @@ import {
   Account_AccountState, Account_DisplayedAccountState,
   GetAccountsResponse,
 } from "@scow/protos/generated/server/account";
-import { ClusterPartition } from "src/models/partition";
+import { AssignmentState, ClusterPartition } from "src/models/partition";
 import { PlatformRole, TenantRole } from "src/models/user";
 import { USE_MOCK } from "src/utils/processEnv";
 
@@ -31,7 +31,7 @@ export const MOCK_USER = {
   tenantRoles: [TenantRole.TENANT_ADMIN],
 };
 
-export const MOCK_ASSGNED_PARTITIONS = [
+export const MOCK_ASSIGNED_PARTITIONS = [
   { clusterId: "hpc01", partition: "normal" },
   { clusterId: "hpc01", partition: "low" },
   { clusterId: "hpc02", partition: "gpu" },
@@ -57,13 +57,13 @@ export const MOCK_ACTIVATED_CLUSTER_INFO: Cluster[] = [
 export const MOCK_ALL_ACC_ASSIGNED_PARTITIONS = {
   accountName: "a_account",
   tenantName: "default",
-  assignedPartitions: MOCK_ASSGNED_PARTITIONS,
+  assignedPartitions: MOCK_ASSIGNED_PARTITIONS,
   assignedTotalCount: 3,
 };
 
 export const MOCK_ALL_TEN_ASSIGNED_PARTITIONS = {
   tenantName: "default",
-  assignedPartitions: MOCK_ASSGNED_PARTITIONS,
+  assignedPartitions: MOCK_ASSIGNED_PARTITIONS,
   assignedTotalCount: 5,
 };
 
@@ -154,26 +154,30 @@ export const MOCK_ALL_TEN_ASSIGNED_INFO: AllAssignedInfoSchema[] = [
     tenantName: "tenant1",
     assignedInfo: {
       assignedClusters: [
-        "hpc01",
-        "hpc02",
+        { clusterId: "hpc01", assignmentState: AssignmentState.ASSIGNED },
+        { clusterId: "hpc02", assignmentState: AssignmentState.ASSIGNED },
       ],
       assignedClustersCount: 2,
       assignedPartitions: [
         {
           clusterId: "hpc01",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc01",
           partition: "gpu",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc02",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc02",
           partition: "gpu",
+          assignmentState: AssignmentState.ASSIGNED,
         },
       ],
       assignedPartitionsCount: 4,
@@ -183,14 +187,30 @@ export const MOCK_ALL_TEN_ASSIGNED_INFO: AllAssignedInfoSchema[] = [
     tenantName: "tenant2",
     assignedInfo: {
       assignedClusters: [
-        "hpc01",
-        "hpc02",
+        { clusterId: "hpc01", assignmentState: AssignmentState.ASSIGNED },
+        { clusterId: "hpc02", assignmentState: AssignmentState.ASSIGNED },
       ],
       assignedClustersCount: 2,
       assignedPartitions: [
         {
           clusterId: "hpc01",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
+        },
+        {
+          clusterId: "hpc01",
+          partition: "gpu",
+          assignmentState: AssignmentState.UNASSIGNED,
+        },
+        {
+          clusterId: "hpc02",
+          partition: "compute",
+          assignmentState: AssignmentState.UNASSIGNED,
+        },
+        {
+          clusterId: "hpc02",
+          partition: "gpu",
+          assignmentState: AssignmentState.UNASSIGNED,
         },
       ],
       assignedPartitionsCount: 1,
@@ -204,26 +224,30 @@ export const MOCK_ALL_ACCT_ASSIGNED_INFO: AllAssignedInfoSchema[] = [
     tenantName: "default",
     assignedInfo: {
       assignedClusters: [
-        "hpc01",
-        "hpc02",
+        { clusterId: "hpc01", assignmentState: AssignmentState.ASSIGNED },
+        { clusterId: "hpc02", assignmentState: AssignmentState.ASSIGNED },
       ],
       assignedClustersCount: 2,
       assignedPartitions: [
         {
           clusterId: "hpc01",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc01",
           partition: "gpu",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc02",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
         },
         {
           clusterId: "hpc02",
           partition: "gpu",
+          assignmentState: AssignmentState.ASSIGNED,
         },
       ],
       assignedPartitionsCount: 4,
@@ -234,14 +258,30 @@ export const MOCK_ALL_ACCT_ASSIGNED_INFO: AllAssignedInfoSchema[] = [
     tenantName: "default",
     assignedInfo: {
       assignedClusters: [
-        "hpc01",
-        "hpc02",
+        { clusterId: "hpc01", assignmentState: AssignmentState.ASSIGNED },
+        { clusterId: "hpc02", assignmentState: AssignmentState.ASSIGNED },
       ],
       assignedClustersCount: 2,
       assignedPartitions: [
         {
           clusterId: "hpc01",
           partition: "compute",
+          assignmentState: AssignmentState.ASSIGNED,
+        },
+        {
+          clusterId: "hpc01",
+          partition: "gpu",
+          assignmentState: AssignmentState.UNASSIGNED,
+        },
+        {
+          clusterId: "hpc02",
+          partition: "compute",
+          assignmentState: AssignmentState.UNASSIGNED,
+        },
+        {
+          clusterId: "hpc02",
+          partition: "gpu",
+          assignmentState: AssignmentState.UNASSIGNED,
         },
       ],
       assignedPartitionsCount: 1,

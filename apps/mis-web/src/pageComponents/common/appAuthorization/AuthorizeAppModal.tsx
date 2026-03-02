@@ -5,7 +5,7 @@ import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag } from "ant
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";
-import { FilterFormContainer } from "src/components/FilterFormContainer";
+import { FilterFormContainerWithoutBorder } from "src/components/FilterFormContainer";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AppAuthTargetType,AuthorizeAction } from "src/models/app";
@@ -19,6 +19,8 @@ interface Props {
   onClose: () => void;
   reload: () => void;
   open: boolean;
+  accountOwnerId?: string,
+  accountOwnerName?: string,
 }
 
 interface FilterForm {
@@ -35,7 +37,8 @@ const AuthorizeAppModal: React.FC<Props> = ({
   onClose,
   reload,
   open,
-
+  accountOwnerId,
+  accountOwnerName,
 }) => {
 
   const { message, modal } = App.useApp();
@@ -110,19 +113,25 @@ const AuthorizeAppModal: React.FC<Props> = ({
       onCancel={onClose}
       footer={null}
     >
-      <div>
-        <span>
+      <>
+        <div style={{ marginBottom: "8px" }}>
           {targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}：
           <span>{targetName}</span>
-        </span>
-        <Divider type="vertical" />
-        <span>
+        </div>
+        {
+          targetType === AppAuthTargetType.ACCOUNT && (
+            <div style={{ marginBottom: "8px" }}>
+              <span>{t(p("accountOwner"))}：{`${accountOwnerName}（ID: ${accountOwnerId}）`}</span>
+            </div>
+          )
+        }
+        <div style={{ marginBottom: "20px" }}>
           {t(p("cluster"))}：
           <span>{clusterName}</span>
-        </span>
-      </div>
+        </div>
+      </>
 
-      <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
+      <FilterFormContainerWithoutBorder style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
           form={filterForm}
@@ -136,12 +145,12 @@ const AuthorizeAppModal: React.FC<Props> = ({
             <Input allowClear placeholder={t(p("searchPlaceholder"))} />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">
+            <Button style={{ marginLeft: "12px" }} type="primary" htmlType="submit">
               {t(p("searchButton"))}
             </Button>
           </Form.Item>
         </Form>
-      </FilterFormContainer>
+      </FilterFormContainerWithoutBorder>
       <Table
         tableLayout="fixed"
         dataSource={filteredData}

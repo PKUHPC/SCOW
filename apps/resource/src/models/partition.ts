@@ -18,4 +18,13 @@ export interface ClusterPartition {
   partition: string,
 }
 
+export enum AssignedInfoSortBy {
+  NAME = "name",
+  ASSIGNED_CLUSTERS_COUNT = "assignedClustersCount",
+  ASSIGNED_PARTITIONS_COUNT = "assignedPartitionsCount",
+}
 
+export enum SortOrder {
+  ASCEND = "asc",
+  DESCEND = "desc",
+}

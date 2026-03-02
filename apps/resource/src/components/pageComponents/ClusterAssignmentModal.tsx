@@ -9,14 +9,13 @@ import { usePublicConfig } from "src/app/publicConfigContext";
 import { I18nDicType } from "src/models/i18n";
 import { AssignmentState, PartitionOperationType } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
+import { ClusterAssignedInfoSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
 
 interface Props {
   operationType: PartitionOperationType
   assignedTenantName: string;
   assignedAccountName?: string;
-  assignedClusters: string[];
-  // 租户已授权的集群信息， 仅应用在账户授权集群时
-  tenantAssignedClusters?: string[];
+  assignedClusters: ClusterAssignedInfoSchema[];
   onClose: () => void;
   reload: () => void;
   isCurrentClustersLoading: boolean;
@@ -24,10 +23,8 @@ interface Props {
   language: I18nDicType;
   languageId: string;
   currentClustersData?: Cluster[];
-}
-
-interface DisplayedCluster extends Cluster {
-  assignmentState: AssignmentState;
+  accountOwnerId?: string;
+  accountOwnerName?: string;
 }
 
 interface FormFields {
@@ -39,7 +36,6 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
   assignedTenantName,
   assignedAccountName,
   assignedClusters,
-  tenantAssignedClusters,
   onClose,
   reload,
   isCurrentClustersLoading,
@@ -47,33 +43,22 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
   language,
   languageId,
   currentClustersData,
+  accountOwnerId,
+  accountOwnerName,
 }) => {
 
   const { clusterSortedIdList } = usePublicConfig();
   const [form] = Form.useForm<FormFields>();
   const { message, modal } = App.useApp();
 
-  // 租户授权集群展示列表为当前在线集群
-  // 账户授权集群展示列表为租户已授权的集群与在线集群的交集
   const displayedTotalClusterList = useMemo(() => {
-
     const clusterSortedIdMap = Object.fromEntries(
       clusterSortedIdList.map((id, index) => [id, index]),
     );
-    const assignedSet = new Set(assignedClusters);
-    const clustersData = operationType === PartitionOperationType.ACCOUNT_OPERATION ?
-      currentClustersData?.filter((x) => tenantAssignedClusters?.includes(x.id))
-      : (currentClustersData ?? []);
-    return (clustersData || []).map((item) => ({
-
-      ...item,
-      assignmentState: assignedSet.has(item.id) ?
-        AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
-
-    })).sort((a, b) => {
+    return (assignedClusters || []).sort((a, b) => {
       // 使用 clusterSortedIdList 的索引进行排序
-      const aIndex = clusterSortedIdMap[a.id] ?? Number.MAX_SAFE_INTEGER;
-      const bIndex = clusterSortedIdMap[b.id] ?? Number.MAX_SAFE_INTEGER;
+      const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
       return aIndex - bIndex;
     });
   }, [assignedClusters, currentClustersData]);
@@ -212,13 +197,18 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
       >
         {
           operationType === PartitionOperationType.TENANT_OPERATION ? (
-            <Form.Item label={language.common.tenant}>
-              <span>{assignedTenantName}</span>
-            </Form.Item>
+            <div style={{ marginBottom: "20px" }}>
+              <span>{language.common.tenant}：{assignedTenantName}</span>
+            </div>
           ) : (
-            <Form.Item label={language.common.account}>
-              <span>{assignedAccountName}</span>
-            </Form.Item>
+            <>
+              <div style={{ marginBottom: "8px" }}>
+                <span>{language.common.account}：{assignedAccountName}</span>
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <span>{language.common.accountOwner}：{`${accountOwnerName}（ID: ${accountOwnerId}）`}</span>
+              </div>
+            </>
           )
         }
       </Form>
@@ -242,13 +232,13 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
         rowKey="id"
         scroll={{ y: 500 }}
       >
-        <Table.Column<DisplayedCluster>
+        <Table.Column<ClusterAssignedInfoSchema>
           dataIndex="id"
           title={language.common.cluster}
           width="60%"
           render={(_, r) => {
-            const name = currentClustersData?.find((cluster) => (cluster.id === r.id))?.name;
-            const clusterName = name ? getI18nConfigCurrentText(name, languageId) : r.id;
+            const name = currentClustersData?.find((cluster) => (cluster.id === r.clusterId))?.name;
+            const clusterName = name ? getI18nConfigCurrentText(name, languageId) : r.clusterId;
             return (
               <>
                 <Space
@@ -266,11 +256,8 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
               </>
             );
           }}
-        // sorter={(a, b) => a.id.localeCompare(b.id)}
-        // sortDirections={["ascend", "descend"]}
-        // sortOrder={currentSortInfo.field === "id" ? currentSortInfo.order : null}
         />
-        <Table.Column<DisplayedCluster>
+        <Table.Column<ClusterAssignedInfoSchema>
           dataIndex="assignmentState"
           title={language.common.operation}
           width="40%"
@@ -284,10 +271,10 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
                     const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
                       ? getCurrentLangTextArgs(
                         language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
-                        [r.id, assignedTenantName])
+                        [r.clusterId, assignedTenantName])
                       : getCurrentLangTextArgs(
                         language.clusterPartitionManagement.setClusterAssignmentModal.unAssignContent,
-                        [r.id, assignedAccountName]);
+                        [r.clusterId, assignedAccountName]);
                     modal.confirm({
                       title: language.common.unassign,
                       icon: <ExclamationCircleOutlined />,
@@ -314,7 +301,7 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
                       ),
                       onOk: async () => {
                         // 对租户/账户取消授权
-                        await unAssignCluster(r.id);
+                        await unAssignCluster(r.clusterId);
                       },
                     });
                   }}
@@ -330,14 +317,14 @@ export const ClusterAssignmentModal: React.FC<Props> = ({
                       : `${language.common.account}${assignedAccountName}`;
                     const contentTexts = getCurrentLangTextArgs(
                       language.clusterPartitionManagement.setClusterAssignmentModal.assignContent,
-                      [r.id, operationTarget]);
+                      [r.clusterId, operationTarget]);
                     modal.confirm({
                       title: language.common.assign,
                       icon: <ExclamationCircleOutlined />,
                       content: contentTexts,
                       onOk: async () => {
                         // 对租户/账户授权;
-                        await assignCluster(r.id);
+                        await assignCluster(r.clusterId);
                       },
                     });
                   }}
