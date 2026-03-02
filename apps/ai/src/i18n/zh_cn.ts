@@ -784,6 +784,8 @@ export default {
         compressing:"正在压缩",
         decompressing:"正在解压缩",
         decompressButtonDisabledTooltip: "当前只支持对 .zip, .tar, .tar.gz, .gz, .tgz 类型文件的解压缩",
+        noAccessPermission: "无访问权限",
+        noPath: "找不到该路径，请检查",
         // 占位对齐
         uploadFile: "上传文件",
         uploadDir: "上传文件夹",

@@ -618,6 +618,8 @@ export default {
         decompressing:"압축 해제 진행 중",
         decompressButtonDisabledTooltip: "압축 해제는 다음 파일 형식에 대해서만 지원됩니다"
         + " .zip, .tar, .tar.gz, .gz, .tgz 파일 형식",
+        noAccessPermission: "접근 권한 없음",
+        noPath: "경로를 찾을 수 없습니다. 확인하세요",
         uploadFile: "파일 업로드",
         uploadDir: "디렉토리 업로드",
         failedResolveSymlink: "심볼릭 링크를 해결하지 못했습니다",

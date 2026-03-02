@@ -618,6 +618,8 @@ export default {
         decompressing:"解凍進行中",
         decompressButtonDisabledTooltip: "解凍は以下の形式のみサポートされています"
         + " .zip、.tar、.tar.gz、.gz、および.tgzファイル形式",
+        noAccessPermission: "アクセス権限がありません",
+        noPath: "パスが見つかりません。確認してください",
         uploadFile: "ファイルをアップロード",
         uploadDir: "ディレクトリをアップロード",
         failedResolveSymlink: "シンボリックリンクの解決に失敗しました",

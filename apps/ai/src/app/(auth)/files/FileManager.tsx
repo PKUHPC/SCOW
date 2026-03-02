@@ -134,7 +134,10 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
 
   const filesQuery = trpc.file.listDirectory.useQuery({
     clusterId: cluster.id, path,
-  }, { enabled: path !== "~" });
+  }, {
+    enabled: path !== "~",
+    retry: 1,
+  });
 
   const { data: storageInfos } = trpc.file.getUserStorageInfo.useQuery(
     { clusterId:cluster.id,paths:"" },
@@ -190,6 +193,13 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix,setClust
     reload()
       .then((res) => {
         if (res.isError) {
+          const code = res.error?.data?.code;
+          const errMsg =
+            code === "FORBIDDEN" ? t(p("noAccessPermission")) :
+              code === "NOT_FOUND" ? t(p("noPath")) :
+                res.error?.message;
+          message.error(errMsg);
+
           if (filePrevPath && filePrevPath !== path) {
             router.push(fullUrl(filePrevPath));
           }

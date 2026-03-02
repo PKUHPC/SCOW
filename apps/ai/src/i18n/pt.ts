@@ -619,6 +619,8 @@ export default {
         decompressing:"Descompressão em progresso",
         decompressButtonDisabledTooltip: "A descompressão é suportada apenas para"
         + " formatos de arquivo .zip, .tar, .tar.gz, .gz e .tgz",
+        noAccessPermission: "Sem permissão de acesso",
+        noPath: "Caminho não encontrado, verifique",
         uploadFile: "Carregar Arquivo",
         uploadDir: "Carregar Diretório",
         failedResolveSymlink: "Falha ao resolver link simbólico",

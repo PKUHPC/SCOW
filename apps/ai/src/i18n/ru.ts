@@ -619,6 +619,8 @@ export default {
         decompressing:"Идёт распаковка",
         decompressButtonDisabledTooltip: "Распаковка поддерживается только для"
         + " форматов .zip, .tar, .tar.gz, .gz и .tgz",
+        noAccessPermission: "Нет прав доступа",
+        noPath: "Путь не найден, проверьте",
         uploadFile: "Загрузить файл",
         uploadDir: "Загрузить каталог",
         failedResolveSymlink: "Не удалось распознать символическую ссылку",
