@@ -28,24 +28,11 @@ import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { BaseLayout } from "src/layouts/BaseLayout";
 import { FloatButtons } from "src/layouts/FloatButtons";
 import { AppInitialConfig } from "src/pages/api/getAppInitialConfig";
+import { UnreadMessage } from "src/pages/api/notification/getUnreadMessages";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
-import styled from "styled-components";
-
-const BodyContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  alignItems: center;
-  justifyContent: center;
-  backgroundColor: #fff;
-  zIndex: 9999;
-`;
 
 const FailEventHandler: React.FC = () => {
   const { message, modal } = AntdApp.useApp();
@@ -184,26 +171,22 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   // remembers extra props from first load
   const { current: { userInfo, primaryColor, footerText } } = useRef(extra);
 
-  // 未持有身份信息时防止UI闪烁，重定向至登录API
-  const isUnauthenticated = !userInfo?.identityId;
-  useEffect(() => {
-    if (isUnauthenticated) {
-      window.location.href = join(publicConfig.BASE_PATH, "/api/auth");
-    }
-  }, [isUnauthenticated]);
-
   const userStore = useConstant(() => {
     const store = createStore(UserStore, userInfo);
     return store;
   });
 
-  const { data } = useAsync({ promiseFn:
-    useCallback(async () => {
-      if (!publicConfig.NOTIF_ENABLED) return undefined;
-      return api.getUnreadMessages({
-        query: { messageType: AdminMessageType.SystemNotification },
-      }).httpError(500, () => {}).then((res) => res).catch(() => undefined); ;
-    }, []) });
+  const fetchUnreadMessages = async (): Promise<UnreadMessage | undefined> => {
+    if (!publicConfig.NOTIF_ENABLED) return undefined;
+
+    const result = await api.getUnreadMessages({
+      query: { messageType: AdminMessageType.SystemNotification },
+    }).httpError(500, () => {})
+      .then((res) => res)
+      .catch(() => undefined);
+
+    return result?.results;
+  };
 
   const clusterInfoStore = useConstant(() => {
     return createStore(
@@ -222,15 +205,13 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     }, []),
   });
 
-  if (initialLanguageDefinitionQuery.isLoading || isUnauthenticated) {
+  if (initialLanguageDefinitionQuery.isLoading) {
     return <Loading />;
   }
 
   if (!initialLanguageDefinitionQuery.data) {
     return (
-      <BodyContainer>
-        <ServerErrorPage />
-      </BodyContainer>
+      <ServerErrorPage />
     );
   }
 
@@ -260,7 +241,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
                 <NotificationLayout
                   interval={300000}
                   languageId={extra.initialLanguageId}
-                  unreadMessages={data?.results}
+                  fetchUnreadMessages={fetchUnreadMessages}
                   onMarkMessageRead={async (messageId: number) => {
                     await api.markMessageRead({ body: { messageId } });
                   }}

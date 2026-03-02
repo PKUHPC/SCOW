@@ -28,24 +28,11 @@ import { AntdConfigProvider } from "src/layouts/AntdConfigProvider";
 import { BaseLayout } from "src/layouts/BaseLayout";
 import { FloatButtons } from "src/layouts/FloatButtons";
 import { AppInitialConfig } from "src/pages/api/getAppInitialConfig";
+import { UnreadMessage } from "src/pages/api/notification/getUnreadMessages";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
-import styled from "styled-components";
-
-const BodyContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  alignItems: center;
-  justifyContent: center;
-  backgroundColor: #fff;
-  zIndex: 9999;
-`;
 
 const FailEventHandler: React.FC = () => {
   const { message } = AntdApp.useApp();
@@ -209,13 +196,16 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     return store;
   });
 
-  const { data } = useAsync({ promiseFn:
-    useCallback(async () => {
-      if (!publicConfig.NOTIF_ENABLED) return undefined;
-      return api.getUnreadMessages({
-        query: { messageType: AdminMessageType.SystemNotification },
-      }).httpError(500, () => {}).then((res) => res).catch(() => undefined); ;
-    }, []) });
+  const fetchUnreadMessages = async (): Promise<UnreadMessage | undefined> => {
+    if (!publicConfig.NOTIF_ENABLED) return undefined;
+
+    const result = await api.getUnreadMessages({
+      query: { messageType: AdminMessageType.SystemNotification },
+    }).httpError(500, () => {})
+      .then((res) => res)
+      .catch(() => undefined);
+    return result?.results;
+  };
 
   const clusterInfoStore = useConstant(() => {
     return createStore(ClusterInfoStore,
@@ -243,9 +233,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
 
   if (!initialLanguageDefinitionQuery.data) {
     return (
-      <BodyContainer>
-        <ServerErrorPage />
-      </BodyContainer>
+      <ServerErrorPage />
     );
   }
 
@@ -278,10 +266,10 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
                 <NotificationLayout
                   interval={300000}
                   languageId={extra.initialLanguageId}
-                  unreadMessages={data?.results}
                   onMarkMessageRead={async (messageId: number) => {
                     await api.markMessageRead({ body: { messageId } });
                   }}
+                  fetchUnreadMessages={fetchUnreadMessages}
                 >
                   <Component {...pageProps} />
                 </NotificationLayout>

@@ -124,10 +124,10 @@ export default function Layout(
           <NotificationLayout
             interval={300000}
             languageId={languageId}
-            unreadMessages={unreadMessagesQuery.data?.results}
             onMarkMessageRead={async (messageId: number) => {
               await createAppSessionMutation.mutateAsync({ messageId });
             }}
+            fetchUnreadMessages={async () => unreadMessagesQuery.data?.results}
           >
             {children}
           </NotificationLayout>

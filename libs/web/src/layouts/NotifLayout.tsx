@@ -14,12 +14,12 @@ interface NotificationLayoutProps {
   children: React.ReactNode;
   languageId: string;
   onMarkMessageRead: (messageId: number) => Promise<void>;
-  unreadMessages?: UnreadMessage;
   interval?: number; // 定时器的时间间隔，默认60秒
+  fetchUnreadMessages: () => Promise<UnreadMessage | undefined>;
 }
 
 const NotificationLayout: React.FC<NotificationLayoutProps> = ({
-  children, languageId, unreadMessages, onMarkMessageRead, interval = 60000 }) => {
+  children, languageId, onMarkMessageRead, fetchUnreadMessages, interval = 60000 }) => {
 
   const [notifApi, contextHolder] = notification.useNotification();
   const notifiedIdsRef = useRef<Set<number>>(new Set()); // 用于追踪已通知的ID
@@ -60,6 +60,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({
   useEffect(() => {
     const fetchNotifications = async () => {
 
+      const unreadMessages = await fetchUnreadMessages();
       if (unreadMessages) {
         for (const msg of unreadMessages.messages) {
           const content = renderingMessage(msg, languageId);
@@ -82,7 +83,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({
 
     // 清除定时器
     return () => clearInterval(timer);
-  }, [interval, languageId, unreadMessages]);
+  }, [interval, languageId, fetchUnreadMessages]);
 
   return (
     <div>

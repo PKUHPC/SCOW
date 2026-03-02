@@ -19,19 +19,6 @@ import styled from "styled-components";
 import { PublicConfigContext } from "./publicConfigContext";
 import { UiConfigContext } from "./uiContext";
 
-const BodyContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  alignItems: center;
-  justifyContent: center;
-  backgroundColor: #fff;
-  zIndex: 9999;
-`;
-
 const useReportHeightToScow = () => {
 
   useEffect(() => {
@@ -103,40 +90,38 @@ export function ClientLayout(props: {
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
           <StyledComponentsRegistry>
             <AntdStyleRegistry>
-              <BodyContainer>
-                {
-                  useUiConfig.isLoading || usePublicConfig.isLoading ? (
-                    <AntdConfigProvider
-                      color={props.defaultPrimaryColor}
-                      primaryColor={{ defaultColor: color,darkModeColor }}
-                    >
-                      <Loading />
-                    </AntdConfigProvider>
-                  ) : (
-                    <DarkModeProvider>
-                      <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
-                        <GlobalStyle />
-                        <ErrorBoundary Component={ServerErrorPage} pathname={pathname ?? ""}>
-                          <UiConfigContext.Provider
+              {
+                useUiConfig.isLoading || usePublicConfig.isLoading ? (
+                  <AntdConfigProvider
+                    color={props.defaultPrimaryColor}
+                    primaryColor={{ defaultColor: color,darkModeColor }}
+                  >
+                    <Loading />
+                  </AntdConfigProvider>
+                ) : (
+                  <DarkModeProvider>
+                    <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
+                      <GlobalStyle />
+                      <ErrorBoundary Component={ServerErrorPage} pathname={pathname ?? ""}>
+                        <UiConfigContext.Provider
+                          value={{
+                            hostname,
+                            uiConfig,
+                          }}
+                        >
+                          <PublicConfigContext.Provider
                             value={{
-                              hostname,
-                              uiConfig,
+                              clusterSortedIdList: publicConfig?.CLUSTER_SORTED_ID_LIST ?? [],
                             }}
                           >
-                            <PublicConfigContext.Provider
-                              value={{
-                                clusterSortedIdList: publicConfig?.CLUSTER_SORTED_ID_LIST ?? [],
-                              }}
-                            >
-                              {props.children}
-                            </PublicConfigContext.Provider>
-                          </UiConfigContext.Provider>
-                        </ErrorBoundary>
-                      </AntdConfigProvider>
-                    </DarkModeProvider>
-                  )
-                }
-              </BodyContainer>
+                            {props.children}
+                          </PublicConfigContext.Provider>
+                        </UiConfigContext.Provider>
+                      </ErrorBoundary>
+                    </AntdConfigProvider>
+                  </DarkModeProvider>
+                )
+              }
             </AntdStyleRegistry>
           </StyledComponentsRegistry>
         </StyleProvider>
