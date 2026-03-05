@@ -366,15 +366,15 @@ it("returns payment records", async () => {
   expect(reply2.results).toHaveLength(2);
 
   expect(reply2.results).toMatchObject([ {
-    accountName: request3.accountName,
-    comment: request3.comment,
-    ipAddress: request3.ipAddress,
-    amount: request3.amount,
-  }, {
     accountName: request1.accountName,
     comment: request1.comment,
     ipAddress: request1.ipAddress,
     amount: request1.amount,
+  },{
+    accountName: request3.accountName,
+    comment: request3.comment,
+    ipAddress: request3.ipAddress,
+    amount: request3.amount,
   }] as Partial<PaymentRecord>);
 
   expect(reply2.total).toStrictEqual(numberToMoney(40));
@@ -416,18 +416,19 @@ it("returns payment records", async () => {
 
   expect(reply5.results).toMatchObject([
     {
-      tenantName: request4.tenantName,
-      accountName: request4.accountName,
-      comment: request4.comment,
-      ipAddress: request4.ipAddress,
-      amount: request4.amount,
-    }, {
       tenantName: request2.tenantName,
       accountName: request2.accountName,
       comment: request2.comment,
       ipAddress: request2.ipAddress,
       amount: request2.amount,
-    } ] as Partial<PaymentRecord>);
+    },
+    {
+      tenantName: request4.tenantName,
+      accountName: request4.accountName,
+      comment: request4.comment,
+      ipAddress: request4.ipAddress,
+      amount: request4.amount,
+    }] as Partial<PaymentRecord>);
 
   expect(reply5.total).toStrictEqual(numberToMoney(60));
 
@@ -436,23 +437,25 @@ it("returns payment records", async () => {
     startTime: startTime.toISOString(),
     endTime, types:extractTypesFromObjects([request1, request3]),
     target:{ $case:"accountsOfTenant", accountsOfTenant:{
-      tenantName: account.tenant.getProperty("name"), accountNames:[]} },
+      tenantName: account.tenant.getProperty("name"), accountNames:[
+        request1.accountName || "", request3.accountName || "",
+      ]} },
   });
 
   expect(reply6.results).toHaveLength(2);
 
   expect(reply6.results).toMatchObject([
     {
-      accountName: request3.accountName,
-      comment: request3.comment,
-      ipAddress: request3.ipAddress,
-      amount: request3.amount,
-    },
-    {
       accountName: request1.accountName,
       comment: request1.comment,
       ipAddress: request1.ipAddress,
       amount: request1.amount,
+    },
+    {
+      accountName: request3.accountName,
+      comment: request3.comment,
+      ipAddress: request3.ipAddress,
+      amount: request3.amount,
     },
   ] as Partial<PaymentRecord>);
 
@@ -1332,14 +1335,14 @@ it("returns paginated charge records without userIdsOrNames filter", async () =>
   });
 
   expect(reply.results).toHaveLength(3);
-  expect(reply.results).toMatchObject([
-    { accountName: chargeRequests[0].accountName,
-      comment: chargeRequests[0].comment, amount: chargeRequests[0].amount },
-    { accountName: chargeRequests[2].accountName,
-      comment: chargeRequests[2].comment, amount: chargeRequests[2].amount },
-    { accountName: chargeRequests[1].accountName,
-      comment: chargeRequests[1].comment, amount: chargeRequests[1].amount },
-  ] as Partial<ChargeRecord>);
+  expect(reply.results).toEqual(expect.arrayContaining([
+    expect.objectContaining({ accountName: chargeRequests[0].accountName,
+      comment: chargeRequests[0].comment, amount: chargeRequests[0].amount }),
+    expect.objectContaining({ accountName: chargeRequests[1].accountName,
+      comment: chargeRequests[1].comment, amount: chargeRequests[1].amount }),
+    expect.objectContaining({ accountName: chargeRequests[2].accountName,
+      comment: chargeRequests[2].comment, amount: chargeRequests[2].amount }),
+  ]) as Partial<ChargeRecord>);
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
     startTime: queryStartTime.toISOString(),

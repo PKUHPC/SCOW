@@ -48,45 +48,58 @@ export const ExportPayRecordSchema = typeboxRouteSchema({
     endTime: Type.String({ format: "date-time" }),
     targetNames: Type.Optional(Type.Array(Type.String())),
     searchType: Type.Enum(SearchType),
-    types:Type.Optional(Type.Array(Type.String())),
+    types: Type.Optional(Type.Array(Type.String())),
     encoding: Type.Enum(Encoding),
     // 导出的时间时区，按照浏览器时区，不传默认UTC
     timeZone: Type.Optional(Type.String()),
+    ownerIdOrName: Type.Optional(Type.String()),
+    operatorIdOrName: Type.Optional(Type.String()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
-
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
 });
 
 export default route(ExportPayRecordSchema, async (req, res) => {
-
   const { query } = req;
 
-  const { columns, startTime, endTime, searchType, count, encoding,timeZone } = query;
+  const {
+    columns,
+    startTime,
+    endTime,
+    searchType,
+    count,
+    encoding,
+    timeZone,
+    ownerIdOrName,
+    operatorIdOrName,
+  } = query;
+
   let { targetNames, types } = query;
+
   // targetName为空字符串数组时视为初始态，即undefined
   targetNames = emptyStringArrayToUndefined(targetNames);
   types = emptyStringArrayToUndefined(types);
+
   let user;
   if (searchType === SearchType.tenant) {
     user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-    i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
+      i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
   } else {
     if (targetNames) {
       user = await authenticate((i) =>
         i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-          i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-          // 排除掉前面的租户财务员和管理员，只剩下账户管理员
-          targetNames.length === 1 &&
-          i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER),
+        i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+        // 排除掉前面的租户财务员和管理员，只剩下账户管理员
+        targetNames.length === 1 &&
+        i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER),
       )(req, res);
     } else {
       user = await authenticate((i) =>
         i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-          i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+        i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
       )(req, res);
     }
   }
@@ -103,7 +116,7 @@ export default route(ExportPayRecordSchema, async (req, res) => {
     operatorUserId: user.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.exportPayRecord,
-    operationTypePayload:{
+    operationTypePayload: {
       target,
     },
   };
@@ -111,9 +124,7 @@ export default route(ExportPayRecordSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
-
     const client = getClient(ExportServiceClient);
 
     const filename = `pay_record-${new Date().toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })}.csv`;
@@ -122,17 +133,20 @@ export default route(ExportPayRecordSchema, async (req, res) => {
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
-    const stream = asyncReplyStreamCall(client, "exportPayRecord", {
-      count,
-      startTime,
-      endTime,
-      target,
-      types:types ?? [],
-    });
+    const stream = asyncReplyStreamCall(client, "exportPayRecord",
+      {
+        count,
+        startTime,
+        endTime,
+        target,
+        types: types ?? [],
+        ownerIdOrName: ownerIdOrName || undefined,
+        operatorIdOrName: operatorIdOrName || undefined,
+      });
 
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
     const t = await getT(languageId);
@@ -151,6 +165,10 @@ export default route(ExportPayRecordSchema, async (req, res) => {
         type: x.type,
         ipAddress: x.ipAddress,
         operatorId: x.operatorId,
+        operatorName: x.operatorName,
+        operatorIdAndName: `${x.operatorName}(ID: ${x.operatorId})`,
+        ownerId: x.ownerId,
+        ownerName: x.ownerName,
         comment: x.comment,
       };
     };
@@ -159,12 +177,13 @@ export default route(ExportPayRecordSchema, async (req, res) => {
       id: "ID",
       accountName: t(pCommon("account")),
       tenantName: t(pCommon("tenant")),
-      time: t(p("paymentDate")),
-      amount: t(p("paymentAmount")),
+      ownerId: t(p("accountHolder")),
+      time: t(p("paymentTime")),
+      amount: t(p("topUpAmount")),
       type: t(pCommon("type")),
-      ipAddress:  t(p("ipAddress")),
-      operatorId: t(p("operatorId")),
+      ipAddress: t(p("ipAddress")),
       comment: t(pCommon("comment")),
+      operatorIdAndName: t(p("operator")),
     };
     const csvStringify = getCsvStringify(headerColumns, columns);
 

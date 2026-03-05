@@ -201,6 +201,9 @@ message PaymentRecord {
   string comment = 7;
   string ip_address = 8;
   string operator_id = 9;
+  string operator_name = 10;
+  optional string owner_id = 11;
+  optional string owner_name = 12;
 }
 
 message GetPaymentRecordsRequest {
@@ -218,11 +221,35 @@ message GetPaymentRecordsRequest {
     // 返回所有租户充值记录
     AllTenantsTarget all_tenants = 6;
   }
+
+  optional string owner_id_or_name = 9;
+
+  optional string operator_id_or_name = 10;
+
+  // if undefined, page is 1
+  optional uint32 page = 11;
+  // if undefined or 0, page_size is 10
+  optional uint64 page_size = 12;
+
+  enum SortBy {
+    UNKNOWN = 0;
+    ACCOUNT_NAME = 1;
+    TIME = 2;
+    AMOUNT = 3;
+    TYPE = 4;
+    IP_ADDRESS = 5;
+    OPERATOR_ID = 6;
+    COMMENT = 7;
+  }
+
+  optional SortBy sort_by = 13;
+  optional common.SortOrder sort_order = 14;
 }
 
 message GetPaymentRecordsResponse {
   repeated PaymentRecord results = 1;
   optional common.Money total = 2;
+  optional uint64 total_count = 3;
 }
 
 message GetAllPayTypesRequest {

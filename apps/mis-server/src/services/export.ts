@@ -19,6 +19,7 @@ import { PayRecord } from "src/entities/PayRecord";
 import { User } from "src/entities/User";
 import { UserRole, UserStatus } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
+import { getAccountNamesByUserIdOrName, getAccountOwnerMap } from "src/utils/account";
 import { getAccountStateInfo } from "src/utils/accountUserState";
 import { billFilter, buildQueryConditions,generateTermArray, mergeUserBillDetails, processBillSummaries,
 } from "src/utils/bill";
@@ -36,7 +37,7 @@ import {
 } from "src/utils/job";
 import { logger } from "src/utils/logger";
 import { mapUsersSortField } from "src/utils/queryOptions";
-
+import { getUserIdsByUserIdOrName, getUserNameMap } from "src/utils/user";
 
 export const exportServiceServer = plugin((server) => {
 
@@ -389,16 +390,58 @@ export const exportServiceServer = plugin((server) => {
         target,
         count,
         types,
+        ownerIdOrName,
+        operatorIdOrName,
       } = ensureNotUndefined(request, ["target"]);
-      const searchParam = getPaymentsTargetSearchParam(target);
+
+      // 账户拥有者模糊查询处理
+      const { accountNames } = target[target.$case];
+      let combineAccountNames: string[] | undefined = accountNames;
+
+      if (ownerIdOrName) {
+        const { accountNames: ownerAccountNames } = await getAccountNamesByUserIdOrName(
+          em,
+          ownerIdOrName,
+          accountNames,
+        );
+
+        // 当accountNames和拥有者对应的账户名交集为空时，直接返回空数据
+        if (ownerAccountNames.length === 0) {
+          return; // 导出空结果
+        }
+
+        combineAccountNames = ownerAccountNames;
+      }
+
+      // 操作员模糊查询处理
+      let operatorUserIds: string[] = [];
+      if (operatorIdOrName?.trim()) {
+        operatorUserIds = await getUserIdsByUserIdOrName(em, operatorIdOrName);
+        if (operatorUserIds.length === 0) {
+          return; // 导出空结果
+        }
+      }
+
+      if (target?.$case === "accountsOfTenant") {
+        target.accountsOfTenant.accountNames = combineAccountNames || [];
+      }
       const searchTypes = getPaymentsSearchType(types);
-      const query: { time: { $gte: string; $lte: string }; [key: string]: any } = {
+      const searchParam = getPaymentsTargetSearchParam(target);
+
+      // 构建查询条件
+      const query: FilterQuery<PayRecord> = {
         time: { $gte: startTime!, $lte: endTime! },
         ...searchParam,
         ...searchTypes,
       };
-      // type并非仅有一个空字符串时，增加type条件
+
+      if (operatorUserIds?.length) {
+        query.operatorId = { $in: operatorUserIds };
+      }
+
+      // 记录格式化函数
       const recordFormat = (x: Loaded<PayRecord, never>) => ({
+        // 这里会先返回基础字段，账户拥有者和操作员会在后续添加
         tenantName: x.tenantName,
         accountName: x.accountName,
         amount: decimalToMoney(x.amount),
@@ -407,46 +450,83 @@ export const exportServiceServer = plugin((server) => {
         ipAddress: x.ipAddress,
         time: x.time.toISOString(),
         type: x.type,
-        operatorId: x.operatorId,
+        operatorId: "",
+        operatorName: "",
+        ownerId: "",
+        operatorIdAndName: "",
       });
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;
 
       const batchSize = 5000;
-      let offset = 0;
+      const writeBatchSize = 200; // 每次写入的批次大小
+      let offset: number = 0;
 
       const { writeAsync } = createWriterExtensions(call);
 
-      while (offset < count) {
-        const limit = Math.min(batchSize, count - offset);
-        const records = (await em.find(PayRecord, query, { limit, offset }))
-          .map(recordFormat ?? ((x) => x));
+      // 获取符合条件的总记录数
+      const totalCount = await em.count(PayRecord, query);
+      const exportCount = count && count > 0 ? Math.min(count, totalCount) : totalCount;
 
-        if (records.length === 0) {
+      while (offset < exportCount) {
+        const limit = Math.min(batchSize, exportCount - offset);
+        const payRecords = await em.find(PayRecord, query, {
+          limit,
+          offset,
+        });
+
+        if (payRecords.length === 0) {
           break;
         }
 
-        let data: RecordFormatReturnType[] = [];
-        // 记录传输的总数量
-        let writeTotal = 0;
+        // 获取操作员姓名映射
+        const operatorIds = [...new Set(payRecords.map((r) => r.operatorId).filter(Boolean))];
+        const operatorMap = await getUserNameMap(em, operatorIds);
 
-        for (const row of records) {
-          data.push(row);
-          writeTotal += 1;
-          if (data.length === 200 || writeTotal === records.length) {
-            await new Promise((resolve) => {
-              void writeAsync({ payRecords: data });
-              // 清空暂存
-              data = [];
-              resolve("done");
-            }).catch((e) => {
-              throw {
-                code: status.INTERNAL,
-                message: "Error when exporting file",
-                details: e?.message,
-              } as ServiceError;
-            });
+        // 提取需要查询账户拥有者的账户标识
+        const accountIdentifiers = payRecords
+          .filter((record) => record.accountName && record.tenantName)
+          .map((record) => ({
+            tenantName: record.tenantName,
+            accountName: record.accountName || "",
+          }));
+
+        const accountMap = await getAccountOwnerMap(em, accountIdentifiers);
+
+        // 处理记录并添加账户拥有者和操作员信息
+        const records: RecordFormatReturnType[] = payRecords.map((record) => {
+          const formattedRecord = recordFormat(record);
+
+          // 添加操作员
+          formattedRecord.operatorId = record.operatorId;
+          formattedRecord.operatorName = operatorMap.get(record.operatorId) || "";
+
+          // 添加账户拥有者信息
+          if (record.accountName && record.tenantName) {
+            const key = `${record.tenantName}-${record.accountName}`;
+            const accountInfo = accountMap.get(key);
+            if (accountInfo?.owner) {
+              formattedRecord.ownerId = `${accountInfo.owner.userName}(ID: ${accountInfo.owner.userId})`;
+            }
           }
+
+          return formattedRecord;
+        });
+
+        // 将记录按批次发送
+        for (let i = 0; i < records.length; i += writeBatchSize) {
+          const batchData = records.slice(i, i + writeBatchSize);
+
+          await new Promise((resolve) => {
+            void writeAsync({ payRecords: batchData });
+            resolve("done");
+          }).catch((e) => {
+            throw {
+              code: status.INTERNAL,
+              message: "Error when exporting file",
+              details: e?.message,
+            } as ServiceError;
+          });
         }
         offset += limit;
       }

@@ -1,6 +1,8 @@
 import { QueryOrderMap } from "@mikro-orm/core";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
-import { GetPaginatedChargeRecordsRequest_SortBy as ChargesSortBy } from "@scow/protos/build/server/charging";
+import { GetPaginatedChargeRecordsRequest_SortBy as ChargesSortBy,
+  GetPaymentRecordsRequest_SortBy as PaymentRecordsSortBy,
+} from "@scow/protos/build/server/charging";
 import { GetJobsRequest_SortBy } from "@scow/protos/build/server/job";
 import { GetAllUsersRequest_UsersSortField, SortDirection } from "@scow/protos/build/server/user";
 import { User } from "src/entities/User";
@@ -89,4 +91,14 @@ export const generateChargersOptions = (
       { [mapChargesSortField[sortBy]]:
         sortOrder === SortOrder.ASCEND ? "ASC" : "DESC" } : undefined,
   };
+};
+
+export const mapPaymentRecordSortField = {
+  [PaymentRecordsSortBy.ACCOUNT_NAME]: "accountName",
+  [PaymentRecordsSortBy.TIME]: "time",
+  [PaymentRecordsSortBy.TYPE]: "type",
+  [PaymentRecordsSortBy.AMOUNT]: "amount",
+  [PaymentRecordsSortBy.IP_ADDRESS]: "ipAddress",
+  [PaymentRecordsSortBy.OPERATOR_ID]: "operatorId",
+  [PaymentRecordsSortBy.COMMENT]: "comment",
 };

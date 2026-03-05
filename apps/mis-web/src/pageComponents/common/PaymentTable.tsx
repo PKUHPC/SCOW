@@ -1,5 +1,4 @@
-import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
-import { compareDateTime, formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
+import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Button, DatePicker, Form, Input, Table } from "antd";
@@ -10,6 +9,7 @@ import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
+import { PaymentSortBy, PaymentSortOrder } from "src/models/payment";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { AccountMultiSelector } from "src/pageComponents/finance/AccountMultiSelector";
@@ -27,7 +27,7 @@ export enum SearchType {
 
 interface Props {
   // 账户充值记录专用项
-  accountNames?: string[];
+  accountName?: string;
   // 搜索类型, self前缀表示只搜索用户自身的账户或租户
   searchType: SearchType;
 }
@@ -41,15 +41,27 @@ interface TableProps {
   index: number;
   ipAddress: string;
   operatorId: string;
+  operatorName: string;
   tenantName?: string;
   accountName?: string;
+  ownerId?: string;
+  ownerName?: string;
 }
 
 interface FilterForm {
   // 账户名或租户名
+  name?: string;
   names?: string[];
   time: [dayjs.Dayjs, dayjs.Dayjs],
   type?: string;
+  operatorId?: string,
+  ownerIdOrName?: string;
+  operatorIdOrName?: string,
+}
+
+interface Sorter {
+  field: PaymentSortBy | undefined;
+  order: PaymentSortOrder | undefined;
 }
 
 const today = dayjs().endOf("day");
@@ -57,27 +69,45 @@ const today = dayjs().endOf("day");
 const p = prefix("pageComp.commonComponent.paymentTable.");
 const pCommon = prefix("common.");
 
-export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
+export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FilterForm>();
 
-  const [selectedNames, setSelectedNames] = useState<string[] | undefined>(accountNames);
+  const [pageInfo, setPageInfo] = useState({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
+  const [selectedNames, setSelectedNames] = useState<string[] | undefined>([]);
 
   const [query, setQuery] = useState<{
+    accountName: string | undefined,
     names: string[] | undefined,
-    time: [dayjs.Dayjs, dayjs.Dayjs]
-    types: string[]
+    time: [dayjs.Dayjs, dayjs.Dayjs],
+    types: string[],
+    operatorIdOrName: string | undefined,
+    ownerIdOrName: string | undefined,
   }>(() => ({
-    // name作为账户名时可能为 undefined 、长度不定的数组
-    // name作为租户名时可能为 undefined 、长度为1的数组
-    names: accountNames,
+    // 账户名
+    accountName: accountName,
+    // 租户名
+    names: [],
     time: [today.subtract(1, "year"), today],
     types: [],
+    operatorIdOrName: "",
+    ownerIdOrName: "",
   }));
 
   const { message } = App.useApp();
+
+  // 定义排序状态
+  const [sorter, setSorter] = useState<Sorter>({ field: undefined, order: undefined });
+
+  const handleTableChange = (pagination, _, sorter) => {
+    setPageInfo({ page: pagination.current, pageSize: pagination.pageSize });
+    setSorter({
+      field: sorter.field,
+      order: sorter.order,
+    });
+  };
 
   const { data, isLoading } = useAsync({
     promiseFn: useCallback(async () => {
@@ -85,7 +115,14 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
         startTime: query.time[0].clone().startOf("day").toISOString(),
         endTime: query.time[1].clone().endOf("day").toISOString(),
         types: query.types,
+        operatorIdOrName: query.operatorIdOrName,
+        ownerIdOrName: query.ownerIdOrName,
+        page: pageInfo.page,
+        pageSize: pageInfo.pageSize,
+        sortBy: sorter.field,
+        sortOrder: sorter.order,
       };
+
       // 平台管理下的租户充值记录
       if (searchType === SearchType.tenant) {
         return api.getTenantPayments({ query: { ...param, tenantName: query.names ? query.names[0] : undefined } });
@@ -93,13 +130,13 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
       } else {
         return api.getPayments({ query: { ...param, accountNames: query.names, searchType } });
       }
-    }, [query]),
+    }, [query, pageInfo]),
   });
 
   useDidUpdateEffect(() => {
-    setQuery((q) => ({ ...q, name: accountNames }));
-    setSelectedNames(accountNames);
-  }, [accountNames]);
+    setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+    setQuery((q) => ({ ...q, accountName: accountName }));
+  }, [accountName]);
 
   const handleExport = async (encoding: Encoding, columns: string[]) => {
 
@@ -125,6 +162,8 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
           targetNames: query.names,
           searchType: searchType,
           types: query.types,
+          operatorIdOrName: query.operatorIdOrName,
+          ownerIdOrName: query.ownerIdOrName,
         },
       });
     }
@@ -132,13 +171,14 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
 
   const exportOptions = useMemo(() => {
     const common = [
-      { label: t(p("paymentDate")), value: "time" },
-      { label: t(p("paymentAmount")), value: "amount" },
+      { label: t(p("paymentTime")), value: "time" },
+      { label: t(p("topUpAmount")), value: "amount" },
       { label: t(pCommon("type")), value: "type" },
 
     ];
     const account = searchType === SearchType.account ? [
       { label: t(pCommon("account")), value: "accountName" },
+      { label: t(p("accountHolder")), value: "ownerId" },
     ] : [];
     const tenant = searchType === SearchType.tenant ? [
       { label: t(pCommon("tenant")), value: "tenantName" },
@@ -149,8 +189,8 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
         value: "ipAddress",
       },
       {
-        label: t(p("operatorId")),
-        value: "operatorId",
+        label: t(p("operator")),
+        value: "operatorIdAndName",
       },
     ] : [];
     const comment = [{ label: t(pCommon("comment")), value: "comment" }];
@@ -165,7 +205,7 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { names, time, type } = await form.validateFields();
+            const { name, time, type, operatorIdOrName, ownerIdOrName } = await form.validateFields();
             let trimmedTypes: string[];
             if (Array.isArray(type) && type.length === 0) {
               trimmedTypes = [];
@@ -173,39 +213,60 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
               trimmedTypes = type ? type.split(/,|，/).map((item) => item.trim()) : [];
             }
             setQuery({
-              names: selectedNames ?? names,
+              accountName: accountName ?? name,
+              names: selectedNames,
               time,
               types: trimmedTypes,
+              operatorIdOrName,
+              ownerIdOrName,
             });
+            setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
           {(searchType === SearchType.account || searchType === SearchType.tenant) ? (
-            <Form.Item
-              label={searchType === SearchType.account ?
-                t(pCommon("account")) : t(pCommon("tenant"))}
-              name="name"
-            >
-              {searchType === SearchType.account ? (
-                <AccountMultiSelector
-                  value={selectedNames ?? []}
-                  onChange={(item) => {
-                    setSelectedNames(item);
-                  }}
-                  placeholder={t(pCommon("selectAccount"))}
-                />
-              ) : (
-                <TenantSelector
-                  onChange={(item) => {
-                    setSelectedNames([item]);
 
-                  }}
-                  placeholder={t(pCommon("selectTenant"))}
-                />
-              )}
-            </Form.Item>
+            <>
+              <Form.Item
+                label={searchType === SearchType.account ?
+                  t(pCommon("account")) : t(pCommon("tenant"))}
+                name="name"
+              >
+                {searchType === SearchType.account ? (
+                  <AccountMultiSelector
+                    value={selectedNames ?? []}
+                    onChange={(item) => {
+                      setSelectedNames(item);
+                    }}
+                    placeholder={t(pCommon("selectAccount"))}
+                  />
+                ) : (
+                  <TenantSelector
+                    onChange={(item) => {
+                      setSelectedNames([item]);
+
+                    }}
+                    placeholder={t(pCommon("selectTenant"))}
+                  />
+                )}
+              </Form.Item>
+            </>
           )
-            : undefined}
-          <Form.Item label={t(pCommon("time"))} name="time">
+            : undefined }
+          {
+            searchType === SearchType.account ? (
+              <Form.Item label={t(p("accountHolder"))} name="ownerIdOrName">
+                <Input style={{ width: 180 }} placeholder={t(p("accountHolderPlaceholder"))} />
+              </Form.Item>
+            ) : undefined
+          }
+          {
+            searchType !== SearchType.selfAccount ? (
+              <Form.Item label={t(p("operator"))} name="operatorIdOrName">
+                <Input style={{ width: 180 }} placeholder={t(p("operatorPlaceholder"))} />
+              </Form.Item>
+            ) : undefined
+          }
+          <Form.Item label={t(p("topUpTime"))} name="time">
             <DatePicker.RangePicker allowClear={false} presets={getDefaultPresets(languageId)} />
           </Form.Item>
           <Form.Item label={t("common.type")} name="type">
@@ -237,21 +298,36 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
       <Table
         tableLayout="fixed"
         dataSource={data?.results as TableProps[]}
+        onChange={handleTableChange}
         rowKey="index"
         loading={isLoading}
         pagination={{
           showSizeChanger: true,
+          current: pageInfo.page,
+          pageSize: pageInfo.pageSize,
           defaultPageSize: DEFAULT_PAGE_SIZE,
+          total: data?.totalCount ?? 0,
+          onChange: (page, pageSize) => {
+            setPageInfo({ page, pageSize });
+          },
         }}
       >
         {
           searchType === SearchType.account
             ? (
-              <Table.Column<TableProps>
-                dataIndex="accountName"
-                title={t(pCommon("account"))}
-                sorter={(a, b) => compareNullableString(a.accountName, b.accountName)}
-              />
+              <>
+                <Table.Column<TableProps>
+                  dataIndex="accountName"
+                  title={t(pCommon("account"))}
+                  sorter={true}
+                />
+                <Table.Column<TableProps>
+                  dataIndex="ownerId"
+                  title={t(p("accountHolder"))}
+                  width="13.5%"
+                  render={(_, record) => `${record.ownerName}(ID: ${record.ownerId})`}
+                />
+              </>
             )
             : undefined
         }
@@ -261,30 +337,30 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
               <Table.Column<TableProps>
                 dataIndex="tenantName"
                 title={t(pCommon("tenant"))}
-                sorter={(a, b) => compareNullableString(a.tenantName, b.tenantName)}
+                sorter={true}
               />
             )
             : undefined
         }
         <Table.Column<TableProps>
           dataIndex="time"
-          title={t(p("paymentDate"))}
+          title={t(p("paymentTime"))}
           width="13.5%"
           render={(v) => formatDateTime(v)}
-          sorter={(a, b) => compareDateTime(a.time, b.time)}
+          sorter={true}
         />
         <Table.Column<TableProps>
           dataIndex="amount"
-          title={t(p("paymentAmount"))}
+          title={t(p("topUpAmount"))}
           width="10%"
-          render={(v) => moneyNumberToString(v)}
-          sorter={(a, b) => compareNullableNumber(a.amount, b.amount)}
+          render={(v) => `${moneyNumberToString(v)}（${t(p("yuan"))}）`}
+          sorter={true}
         />
         <Table.Column<TableProps>
           dataIndex="type"
           title={t(pCommon("type"))}
           width="15%"
-          sorter={(a, b) => a.type.localeCompare(b.type)}
+          sorter={true}
         />
         {
           searchType !== SearchType.selfAccount ? (
@@ -292,12 +368,14 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
               <Table.Column<TableProps>
                 dataIndex="ipAddress"
                 title={t(p("ipAddress"))}
-                sorter={(a, b) => compareNullableString(a.ipAddress, b.ipAddress)}
+                sorter={true}
               />
               <Table.Column<TableProps>
                 dataIndex="operatorId"
-                title={t(p("operatorId"))}
-                sorter={(a, b) => compareNullableString(a.operatorId, b.operatorId)}
+                title={t(p("operator"))}
+                render={(_, record) => `${record.operatorName}(ID: ${record.operatorId})`}
+                width="10%"
+                sorter={true}
               />
             </>
           ) : undefined
@@ -306,7 +384,7 @@ export const PaymentTable: React.FC<Props> = ({ accountNames, searchType }) => {
           dataIndex="comment"
           title={t(pCommon("comment"))}
           width="20%"
-          sorter={(a, b) => compareNullableString(a.comment, b.comment)}
+          sorter={true}
         />
       </Table>
     </div>

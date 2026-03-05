@@ -1,6 +1,6 @@
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { LockMode, QueryOrder, raw } from "@mikro-orm/core";
+import { FilterQuery, LockMode, QueryOrder, raw } from "@mikro-orm/core";
 import { Decimal, decimalToMoney, moneyToNumber, numberToMoney } from "@scow/lib-decimal";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
@@ -12,6 +12,7 @@ import { Account,AccountState } from "src/entities/Account";
 import { ChargeRecord } from "src/entities/ChargeRecord";
 import { PayRecord } from "src/entities/PayRecord";
 import { Tenant } from "src/entities/Tenant";
+import { getAccountNamesByUserIdOrName, getAccountOwnerMap } from "src/utils/account";
 import { getChargeRecordsTotalCountCached, queryWithCache } from "src/utils/cache";
 import {
   getChargesSearchType,
@@ -23,8 +24,9 @@ import {
 } from "src/utils/chargesQuery";
 import { CHARGE_TYPE_OTHERS } from "src/utils/constants";
 import { DEFAULT_PAGE_SIZE } from "src/utils/orm";
-import { mapChargesSortField } from "src/utils/queryOptions";
+import { mapChargesSortField, mapPaymentRecordSortField } from "src/utils/queryOptions";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
+import { getUserIdsByUserIdOrName, getUserNameMap } from "src/utils/user";
 
 export const chargingServiceServer = plugin((server) => {
 
@@ -187,19 +189,118 @@ export const chargingServiceServer = plugin((server) => {
      * @returns
      */
     getPaymentRecords: async ({ request, em }) => {
+      const {
+        endTime,
+        startTime,
+        target,
+        types,
+        ownerIdOrName,
+        operatorIdOrName,
+        page,
+        pageSize,
+        sortBy,
+        sortOrder,
+      } = ensureNotUndefined(request, ["startTime", "endTime", "target", "types"]);
 
-      const { endTime, startTime, target, types } =
-      ensureNotUndefined(request, ["startTime", "endTime", "target", "types"]);
+      // 账户拥有者模糊查询时，先查询所有的账户。再用账户名去查询消费记录
+      const { accountNames } = target[target.$case];
+      let combineAccountNames: string[] | undefined = accountNames;
 
-      const searchParam = getPaymentsTargetSearchParam(target);
+      if (ownerIdOrName) {
+        const { accountNames: ownerAccountNames } = await getAccountNamesByUserIdOrName(
+          em,
+          ownerIdOrName,
+          accountNames,
+        );
+
+        // 当accountNames和拥有者对应的账户名交集为空时，直接返回空
+        if (ownerAccountNames.length === 0) {
+          return [{
+            totalCount: 0,
+            results: [],
+            total: decimalToMoney(new Decimal(0)),
+          }];
+        }
+
+        combineAccountNames = ownerAccountNames;
+      }
+
+      // 操作员模糊查询时，先查出所有符合条件的用户，再用用户ID去查询消费记录
+      let operatorUserIds: string[] = [];
+      if (operatorIdOrName?.trim()) {
+        operatorUserIds = await getUserIdsByUserIdOrName(em, operatorIdOrName);
+
+        // 如果没有符合条件的操作员，直接返回空结果
+        if (operatorUserIds.length === 0) {
+          return [{
+            totalCount: 0,
+            results: [],
+            total: decimalToMoney(new Decimal(0)),
+          }];
+        }
+      }
+
+      const offset = page ? (page - 1) * (pageSize || DEFAULT_PAGE_SIZE) : page;
+      const limit = pageSize;
+
+      const orderBy = {};
+      if (sortBy !== undefined && sortOrder !== undefined) {
+        const order = SortOrder[sortOrder] === "DESCEND" ? "DESC" : "ASC";
+        orderBy[mapPaymentRecordSortField[sortBy]] = order;
+      }
+
+      if (target?.$case === "accountsOfTenant") {
+        target.accountsOfTenant.accountNames = combineAccountNames || [];
+      }
       const searchTypes = getPaymentsSearchType(types);
-      const records = await em.find(PayRecord, {
+      const searchParam = getPaymentsTargetSearchParam(target);
+
+      // 构建查询条件
+      const query: FilterQuery<PayRecord> = {
         time: { $gte: startTime, $lte: endTime },
         ...searchParam,
         ...searchTypes,
-      }, { orderBy: { time: QueryOrder.DESC } });
+      };
+
+      if (operatorUserIds?.length) {
+        query.operatorId = { $in: operatorUserIds };
+      }
+
+      const [payRecords, count] = await em.findAndCount(PayRecord, query, {
+        orderBy,
+        offset,
+        limit,
+      });
+
+      // 获取所有操作员的名称映射
+      const operatorIds = [...new Set(payRecords.map((r) => r.operatorId).filter(Boolean))];
+      const operatorMap = await getUserNameMap(em, operatorIds);
+
+      // 提取需要查询账户拥有者的账户标识
+      const accountIdentifiers = payRecords
+        .filter((record) => record.accountName && record.tenantName)
+        .map((record) => ({
+          tenantName: record.tenantName,
+          accountName: record.accountName || "",
+        }));
+
+      // 获取账户的拥有者映射以便快速查找
+      const accountMap = await getAccountOwnerMap(em, accountIdentifiers);
+
+      // 组装最终结果
+      const records = payRecords.map((record) => {
+        const key = `${record.tenantName}-${record.accountName}`;
+        const accountInfo = accountMap.get(key) || { owner: null };
+
+        return {
+          ...record,
+          owner: accountInfo.owner,
+          operatorName: operatorMap.get(record.operatorId) || "",
+        };
+      });
 
       return [{
+        totalCount: count,
         results: records.map((x) => ({
           tenantName: x.tenantName,
           accountName: x.accountName,
@@ -210,10 +311,14 @@ export const chargingServiceServer = plugin((server) => {
           time: x.time.toISOString(),
           type: x.type,
           operatorId: x.operatorId,
+          operatorName: x.operatorName,
+          ownerId: x.owner?.userId || "",
+          ownerName: x.owner?.userName || "",
         })),
         total: decimalToMoney(records.reduce((prev, curr) => prev.plus(curr.amount), new Decimal(0))),
       }];
     },
+
     /**
      *
      * case tenant:返回这个租户（tenantName）的消费记录

@@ -189,7 +189,7 @@ export const jobServiceServer = plugin((server) => {
             } as ServiceError;
           }
 
-          const comment = `Record id ${record.id}, job biJobIndex ${x.biJobIndex}`;
+          const comment = `job biJobIndex ${x.biJobIndex}`;
 
           const metadataMap: ChargeRecord["metadata"] = {};
           savedFields?.forEach((field) => {

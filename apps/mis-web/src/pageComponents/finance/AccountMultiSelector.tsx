@@ -84,7 +84,7 @@ export const AccountMultiSelector: React.FC<Props> = ({
         placeholder={placeholder}
         value={value}
         disabled={disabled}
-        style={{ width: "calc(100% - 32px)", minWidth: "200px" }}
+        style={{ width: "calc(100% - 30px)", minWidth: "200px" }}
         onChange={(v) => {
           onChange?.(v);
         }}
