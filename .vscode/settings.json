@@ -1,18 +1,11 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "protoc": {
-    "options": [
-      "--proto_path=./protos"
-    ],
-  },
-  "buf.binaryPath": "node_modules/@bufbuild/buf/bin/buf",
-  "cSpell.words": [
-    "trpc"
-  ],
-  "jest.runMode": "on-demand",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
+  "protobuf.buf.path": "${workspaceFolder}/node_modules/.bin/buf",
+  "protobuf.externalLinter.bufPath": "${workspaceFolder}/node_modules/.bin/buf",
+  "protobuf.formatter.preset": "buf",
   "eslint.validate": [
     "javascript",
     "javascriptreact",

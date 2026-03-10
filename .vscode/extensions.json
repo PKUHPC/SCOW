@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "bufbuild.vscode-buf",
     "dbaeumer.vscode-eslint",
     "editorconfig.editorconfig",
     "ms-playwright.playwright",
