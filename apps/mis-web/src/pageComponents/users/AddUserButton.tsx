@@ -1,14 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+
 /**
  * AddUserButton 组件用于在账户下添加新用户，当用户不存在时根据配置决定是否允许创建新用户。
  * 它包含一个按钮，点击按钮后会弹出模态框，用户可以通过表单输入用户 ID 和全名。
@@ -17,7 +7,8 @@
  */
 
 import { PlusOutlined } from "@ant-design/icons";
-import { App, Button, Form, Input, Modal } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { App, Button, Form, Modal } from "antd";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useStore } from "simstate";

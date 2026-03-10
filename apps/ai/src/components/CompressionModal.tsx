@@ -1,7 +1,8 @@
 "use client";
 
 import { DownOutlined } from "@ant-design/icons";
-import { App, Form, Input, Modal, Tree } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { App, Form, Modal, Tree } from "antd";
 import { join } from "path";
 import { useState } from "react";
 import { Compression } from "src/app/(auth)/files/FileManager";

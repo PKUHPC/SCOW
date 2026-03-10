@@ -28,7 +28,7 @@ export const MisConfigSchema = Type.Object({
   predefinedChargingTypes: Type.Array(Type.String(), { description: "预定义的充值类型", default: []}),
 
   accountNamePattern: Type.Optional(Type.Object({
-    regex: Type.String({ description: "账户名的正则规则" }),
+    regex: Type.String({ description: "账户名的正则规则，前后空格会在系统内自动忽略" }),
     errorMessage: Type.Optional(createI18nStringSchema({ description: "如果账户名不符合规则显示什么" })),
   })),
 
@@ -44,13 +44,13 @@ export const MisConfigSchema = Type.Object({
     }, { description: "通过外置页面创建用户时的配置。使用此配置无需认证系统支持创建用户" })),
 
     userIdPattern: Type.Optional(Type.Object({
-      regex: Type.String({ description: "用户ID的正则规则" }),
+      regex: Type.String({ description: "用户ID的正则规则，前后空格会在系统内自动忽略" }),
       errorMessage: Type.Optional(createI18nStringSchema({ description: "如果用户ID不符合规则显示什么" })),
     }, { deprecated: true, description: "请使用createUser.builtin.userIdPattern" })),
 
     builtin: Type.Optional(Type.Object({
       userIdPattern: Type.Optional(Type.Object({
-        regex: Type.String({ description: "用户ID的正则规则" }),
+        regex: Type.String({ description: "用户ID的正则规则，前后空格会在系统内自动忽略" }),
         errorMessage: Type.Optional(createI18nStringSchema({ description: "如果用户ID不符合规则显示什么" })),
       }, { description: "从管理系统里创建用户时，用户ID的验证规则" })),
     }, { default: {}, description: "通过内置页面创建用户时的配置。要使用内置页面，认证系统需要支持创建用户" })),

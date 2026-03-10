@@ -1,9 +1,10 @@
 import { MinusCircleOutlined, PlusCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { numberToMoney } from "@scow/lib-decimal";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
-import { App, Button, Form, Input, InputNumber, Modal, Popover, Select, Space, Table, Tooltip } from "antd";
+import { App, Button, Form, InputNumber, Modal, Popover, Select, Space, Table, Tooltip } from "antd";
 import React, { useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";

@@ -1,13 +1,14 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { FilterFormContainer } from "@scow/lib-web/build/components/FilterFormContainer";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableDateTime, compareNullableDateTimeAsMax,
   compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { WhitelistedAccount } from "@scow/protos/build/server/account";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Space, Table } from "antd";
+import { App, Button, Divider, Form, Space, Table } from "antd";
 import { SortOrder } from "antd/lib/table/interface";
 import React, { useMemo, useState } from "react";
 import { api } from "src/apis";

@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { Form, Input, Modal } from "antd";
 import { useState } from "react";
 import { ModalLink } from "src/components/ModalLink";
@@ -63,7 +64,7 @@ const EditUserProfileModal: React.FC<Props> = ({
           initialValue={email}
           rules={[{ type: "email", message: t(p("errorEmail")) }]}
         >
-          <Input placeholder={t(p("enterEmail"))} />
+          <TrimInput placeholder={t(p("enterEmail"))} />
         </Form.Item>
 
         <Form.Item
@@ -71,7 +72,7 @@ const EditUserProfileModal: React.FC<Props> = ({
           name="phone"
           initialValue={phone}
         >
-          <Input placeholder={t(p("enterPhone"))} />
+          <TrimInput placeholder={t(p("enterPhone"))} />
         </Form.Item>
 
         <Form.Item
@@ -83,7 +84,7 @@ const EditUserProfileModal: React.FC<Props> = ({
             message: t(p("organizationLength")),
           }]}
         >
-          <Input placeholder={t(p("enterOrganization"))} />
+          <TrimInput placeholder={t(p("enterOrganization"))} />
         </Form.Item>
 
         <Form.Item

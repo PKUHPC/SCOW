@@ -1,6 +1,7 @@
 import { I18nStringType } from "@scow/config/build/i18n";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Col, Divider, Form, Input, InputNumber, Row, Select, Spin, Typography } from "antd";
+import { App, Button, Col, Divider, Form, InputNumber, Row, Select, Spin, Typography } from "antd";
 import { Rule } from "antd/es/form";
 import { NamePath } from "antd/es/form/interface";
 import { FormInstance } from "antd/lib";
@@ -27,6 +28,7 @@ import { styled, useTheme } from "styled-components";
 import { AdvancedFileSelectModal } from "../filemanager/AdvancedFileSelectModal";
 import { PartitionSelector } from "../job/PartitionSelector";
 import { CommandSelect } from "./CommandSelect";
+
 
 const Text = styled(Typography.Paragraph)`
 `;

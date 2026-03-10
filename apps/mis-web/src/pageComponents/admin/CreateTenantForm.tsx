@@ -1,15 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { Alert, Divider, Form, Input, Radio } from "antd";
 import React from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -62,7 +51,7 @@ export const CreateTenantForm: React.FC = () => {
           { max: 255 },
         ]}
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Divider orientation="left" orientationMargin="0" plain>{t(p("adminInfo"))}</Divider>
       <Form.Item
@@ -105,10 +94,10 @@ export const CreateTenantForm: React.FC = () => {
           ...userIdRule ? [userIdRule] : [],
         ]}
       >
-        <Input placeholder={userIdRule?.message} />
+        <TrimInput placeholder={userIdRule?.message} />
       </Form.Item>
       <Form.Item label={t(pCommon("userFullName"))} name="userName" rules={[{ required: true }]}>
-        <Input />
+        <TrimInput />
       </Form.Item>
       { userType === UserType.New && (
         <>
@@ -117,7 +106,7 @@ export const CreateTenantForm: React.FC = () => {
             name="userEmail"
             rules={[{ required: true }, getEmailRule(languageId)]}
           >
-            <Input />
+            <TrimInput />
           </Form.Item>
           <Form.Item
             label={t(p("userPassword"))}

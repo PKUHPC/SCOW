@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -131,7 +132,7 @@ export const SaveImageModal: React.FC<Props> = (
             { validator: imageNameValidation },
           ]}
         >
-          <Input allowClear />
+          <TrimInput allowClear />
         </Form.Item>
         <Form.Item
           label={t(p("imageTag"))}
@@ -141,7 +142,7 @@ export const SaveImageModal: React.FC<Props> = (
             { validator: imageTagValidation },
           ]}
         >
-          <Input />
+          <TrimInput />
         </Form.Item>
         <Form.Item
           label={t(pCreate("type"))}

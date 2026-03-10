@@ -1,8 +1,9 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
-import { App, Button, Divider,Form, Input, Space, Table } from "antd";
+import { App, Button, Divider,Form, Space, Table } from "antd";
 import { Popover,Tag } from "antd";
 import { useCallback } from "react";
 import React, { useState } from "react";

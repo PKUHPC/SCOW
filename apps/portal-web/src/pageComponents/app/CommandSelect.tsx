@@ -1,5 +1,6 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Input, Select } from "antd";
+import { App, Select } from "antd";
 import { useCallback, useEffect, useMemo } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";

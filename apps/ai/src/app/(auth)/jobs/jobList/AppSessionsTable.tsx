@@ -1,9 +1,10 @@
 "use client";
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
-import { App, Button, Form, Input, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Popconfirm, Popover, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";

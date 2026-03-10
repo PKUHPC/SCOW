@@ -1,11 +1,12 @@
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, AutoComplete, Button, DatePicker, Divider, Form, Input, InputNumber, Space, Table, Tooltip } from "antd";
+import { App, AutoComplete, Button, DatePicker, Divider, Form, InputNumber, Space, Table, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import React, { useCallback, useRef, useState } from "react";
@@ -233,6 +234,12 @@ export const JobTable: React.FC<Props> = ({
                           }
                           onChange={(value) => {
                             setSelectedAccountName(value || undefined);
+                          }}
+                          onBlur={() => {
+                            const current = form.getFieldValue("name") as string | undefined;
+                            const trimmed = current?.trim() ?? "";
+                            form.setFieldValue("name", trimmed);
+                            setSelectedAccountName(trimmed || undefined);
                           }}
                         />
                       </Form.Item>

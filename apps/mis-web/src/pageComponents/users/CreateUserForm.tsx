@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { Form, Input } from "antd";
 import React from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -38,7 +39,7 @@ export const CreateUserForm: React.FC = () => {
         ]}
 
       >
-        <Input placeholder={userIdRule?.message} />
+        <TrimInput placeholder={userIdRule?.message} />
       </Form.Item>
       <Form.Item
         label={t(pCommon("userFullName"))}
@@ -48,14 +49,14 @@ export const CreateUserForm: React.FC = () => {
           { max: 50 },
         ]}
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Form.Item
         label={t(p("email"))}
         name="email"
         rules={[{ required: true }, getEmailRule(languageId)]}
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Form.Item
         label={t(p("password"))}
@@ -83,7 +84,7 @@ export const CreateUserForm: React.FC = () => {
         label={t(p("phone"))}
         name="phone"
       >
-        <Input placeholder={t(p("enterPhone"))} />
+        <TrimInput placeholder={t(p("enterPhone"))} />
       </Form.Item>
       <Form.Item
         label={t(p("organization"))}
@@ -93,7 +94,7 @@ export const CreateUserForm: React.FC = () => {
           message: t(p("organizationLength")),
         }]}
       >
-        <Input placeholder={t(p("enterOrganization"))} />
+        <TrimInput placeholder={t(p("enterOrganization"))} />
       </Form.Item>
       <Form.Item
         label={t(p("comment"))}

@@ -1,10 +1,11 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Button, Form, Input, InputNumber, message, Popconfirm, Select, Space, Table, Tooltip } from "antd";
+import { Button, Form, InputNumber, message, Popconfirm, Select, Space, Table, Tooltip } from "antd";
 import { useRouter } from "next/router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";

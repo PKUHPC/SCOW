@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal } from "antd";
 import React from "react";
@@ -156,7 +157,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
           ]}
           initialValue={editData?.versionName}
         >
-          <Input allowClear />
+          <TrimInput allowClear />
         </Form.Item>
         <Form.Item label={t(p("description"))} name="versionDescription" initialValue={editData?.versionDescription}>
           <Input.TextArea />
@@ -168,7 +169,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
               name="path"
               rules={[{ required: true }]}
             >
-              <Input
+              <TrimInput
                 disabled={true}
                 suffix={
                   (

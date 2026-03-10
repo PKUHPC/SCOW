@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { FormLayout } from "@scow/lib-web/build/layouts/FormLayout";
 import { App, Button, Form, Input } from "antd";
 import { NextPage } from "next";
@@ -91,7 +92,7 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
             message:getRuntimeI18nConfigText(languageId, "accountNamePatternMessage") }] : []),
         ]}
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Form.Item
         name="ownerId"
@@ -102,14 +103,14 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
         ]}
 
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Form.Item
         name="ownerName"
         label={t(p("ownerName"))}
         rules={[{ required: true }]}
       >
-        <Input />
+        <TrimInput />
       </Form.Item>
       <Form.Item name="comment" label={t(p("remark"))}>
         <Input.TextArea />

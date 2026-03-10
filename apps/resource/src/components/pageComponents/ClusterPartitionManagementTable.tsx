@@ -1,9 +1,10 @@
 "use client";
 
 import { Cluster } from "@scow/config/build/type";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getCurrentLangTextArgs } from "@scow/lib-web/build/utils/systemLanguage";
 import { keepPreviousData } from "@tanstack/react-query";
-import { App, Button, Divider, Form, Input, Space, Table } from "antd";
+import { App, Button, Divider, Form, Space, Table } from "antd";
 import React, { useEffect, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";

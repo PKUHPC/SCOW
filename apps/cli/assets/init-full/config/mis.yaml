@@ -31,6 +31,7 @@ predefinedChargingTypes:
   - 测试
 
 # 创建账户时，账户名的规则。不设置就没有限制
+# 前后空格会在系统内自动忽略
 accountNamePattern:
   # 正则表达式
   regex: "^[a-z][a-z0-9_]{2,19}$"
@@ -52,6 +53,7 @@ createUser:
   # 内置创建用户界面配置
   builtin:
     # 用户ID的格式，不设置就没有限制，部署了AI用户ID不允许有下划线_
+    # 前后空格会在系统内自动忽略
     userIdPattern:
       # 正则表达式
       regex: "^[a-z][a-z0-9]{2,19}$"

@@ -1,8 +1,9 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";

@@ -565,6 +565,7 @@ export const ResourceConfigSection = ({
           />
         </InlineFormItem>
 
+        {/* 仅用于传值，页面hidden，无需处理trim逻辑 */}
         <Form.Item name="gpuCores" hidden>
           <input type="hidden" />
         </Form.Item>

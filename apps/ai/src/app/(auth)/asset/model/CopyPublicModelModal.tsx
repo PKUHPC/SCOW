@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal } from "antd";
 import React from "react";
@@ -104,7 +105,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <Input allowClear />
+          <TrimInput allowClear />
         </Form.Item>
         <Form.Item
           label={t(p("cluster"))}
@@ -121,7 +122,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
           ]}
           initialValue={data?.versionName}
         >
-          <Input />
+          <TrimInput />
         </Form.Item>
         <Form.Item label={t(p("versionDescription"))} name="versionDescription" initialValue={data.versionDescription}>
           <Input.TextArea />
@@ -134,7 +135,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
           name="path"
           rules={[{ required: true }]}
         >
-          <Input
+          <TrimInput
             disabled={true}
             suffix={
               (

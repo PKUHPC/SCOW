@@ -1,9 +1,10 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Input, Select, Space, Table, Tag, Tooltip } from "antd";
+import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
 import { useState } from "react";
 import { SingleClusterSelector } from "src/components/ClusterSelector";

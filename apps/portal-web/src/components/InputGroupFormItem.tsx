@@ -1,16 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Input, Space } from "antd";
+import { useCallback } from "react";
 
 type Props = React.PropsWithChildren<{
   value?: string;
@@ -18,13 +7,26 @@ type Props = React.PropsWithChildren<{
   deltaWidth: string;
 }>;
 
-export const InputGroupFormItem: React.FC<Props> = ({ children, deltaWidth, value, onChange }) => (
-  <Space.Compact style={{ width: "100%" }}>
-    <Input
-      value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      style={{ width: `calc(100% - ${deltaWidth})` }}
-    />
-    {children}
-  </Space.Compact>
-);
+export const InputGroupFormItem: React.FC<Props> = ({ children, deltaWidth, value, onChange }) => {
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const trimmed = e.target.value.trim();
+      if (trimmed !== e.target.value) {
+        onChange?.(trimmed);
+      }
+    },
+    [onChange],
+  );
+
+  return (
+    <Space.Compact style={{ width: "100%" }}>
+      <Input
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        style={{ width: `calc(100% - ${deltaWidth})` }}
+        onBlur={handleBlur}
+      />
+      {children}
+    </Space.Compact>
+  );
+};

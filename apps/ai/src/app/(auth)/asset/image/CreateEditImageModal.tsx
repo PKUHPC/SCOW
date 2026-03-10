@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
 import { App, Form, Input, InputNumber, Modal, Select } from "antd";
@@ -195,7 +196,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                 { validator: imageNameValidation },
               ]}
             >
-              <Input allowClear />
+              <TrimInput allowClear />
             </Form.Item>
             <Form.Item
               label={t(p("imageTag"))}
@@ -205,7 +206,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                 { validator: imageTagValidation },
               ]}
             >
-              <Input />
+              <TrimInput />
             </Form.Item>
             <Form.Item
               label={t(p("cluster"))}
@@ -302,7 +303,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                 }),
               ]}
             >
-              <Input
+              <TrimInput
                 disabled={source === Source.INTERNAL}
                 suffix={ source === Source.INTERNAL ?
                   (
@@ -329,7 +330,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                     dependencies={["password"]}
                     rules={[createInterdependentValidator<FormFields>("password", t(p("userNamePlaceholder")))]}
                   >
-                    <Input placeholder={t(p("userNameAndPassword"))} />
+                    <TrimInput placeholder={t(p("userNameAndPassword"))} />
                   </Form.Item>
                   <Form.Item
                     label={t(p("password"))}

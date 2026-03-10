@@ -2,9 +2,10 @@
 
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { useQuery } from "@connectrpc/connect-query";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { Message } from "@scow/notification-protos/build/message_pb";
 import { adminListMessages } from "@scow/notification-protos/build/message-MessageService_connectquery";
-import { Button, Descriptions, Drawer, Form, Input, Space, Table, Tag, Typography } from "antd";
+import { Button, Descriptions, Drawer, Form, Space, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import React, { useContext, useEffect, useState } from "react";
 import { FilterFormContainer } from "src/components/filter-form-container";

@@ -1,8 +1,9 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TargetAppList } from "@scow/protos/build/server/app_authorization";
 import { Static } from "@sinclair/typebox";
-import { Button, Divider, Form, Input, Space, Table } from "antd";
+import { Button, Divider, Form, Space, Table } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";

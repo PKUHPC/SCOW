@@ -2,8 +2,9 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Space, Table } from "antd";
+import { App, Button, Form, Space, Table } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
 import { SingleClusterSelector } from "src/components/ClusterSelector";

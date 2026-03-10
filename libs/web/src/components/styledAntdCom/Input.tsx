@@ -2,7 +2,9 @@ import { Input, InputNumber, type InputNumberProps } from "antd";
 import type { ComponentType } from "react";
 import { styled } from "styled-components";
 
-export const RoundedInput = styled(Input)`
+import { TrimInput } from "./TrimInput";
+
+export const RoundedInput = styled(TrimInput)`
   font-size: 14px !important;
   font-weight: lighter;
   border-radius: 8px;

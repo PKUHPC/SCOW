@@ -1,9 +1,10 @@
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Form, Input, InputNumber, Space, Table } from "antd";
+import { App, Button, Form, InputNumber, Space, Table } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { api } from "src/apis";

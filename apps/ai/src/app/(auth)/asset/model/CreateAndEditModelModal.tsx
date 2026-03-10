@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal, Select } from "antd";
 import React from "react";
@@ -145,7 +146,7 @@ export const CreateAndEditModalModal: React.FC<Props> = (
           ]}
           initialValue={editData?.modelName}
         >
-          <Input />
+          <TrimInput />
         </Form.Item>
         {editData?.cluster ? (
           <Form.Item
@@ -169,7 +170,7 @@ export const CreateAndEditModalModal: React.FC<Props> = (
           name="algorithmName"
           initialValue={editData?.algorithmName}
         >
-          <Input />
+          <TrimInput />
         </Form.Item>
         <Form.Item
           label={t(p("algorithmFramework"))}

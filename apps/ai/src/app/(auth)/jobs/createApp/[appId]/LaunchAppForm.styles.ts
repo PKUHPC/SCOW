@@ -1,6 +1,8 @@
+import { RoundedInput, RoundedInputNumber,
+  RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import type { TableProps, TabsProps } from "antd";
 import type { SelectProps } from "antd";
-import { Avatar, Button, Card, Checkbox, Input, InputNumber, Segmented, Select,
+import { Avatar, Button, Card, Checkbox, InputNumber, Segmented, Select,
   Space, Table, Tabs, Typography } from "antd";
 import { createElement } from "react";
 import styled from "styled-components";
@@ -77,60 +79,6 @@ export const SectionTitle = styled(Typography.Text)`
 export const Label = styled(Typography.Text)`
   font-weight: lighter !important;
   color: rgba(136, 143, 163, 1) !important;
-`;
-
-export const RoundedInput = styled(Input)`
-  font-size: 14px !important;
-  font-weight: lighter;
-  border-radius: 8px;
-  flex: 1;
-  width: 100%;
-  height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
-
-  .ant-input {
-    border-radius: 8px !important;
-  }
-
-  .ant-input,
-  .ant-input::placeholder,
-  &::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
-    opacity: 1 !important;
-  }
-`;
-
-export const RoundedPasswordInput = styled(Input.Password)`
-  font-size: 14px !important;
-  font-weight: lighter;
-  border-radius: 8px;
-  flex: 1;
-  width: 100%;
-  height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
-
-  .ant-input {
-    border-radius: 8px !important;
-  }
-
-  .ant-input::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
-    opacity: 1 !important;
-  }
-`;
-
-export const RoundedInputNumber = styled(InputNumber)`
-  font-size: 14px !important;
-  font-weight: lighter;
-  border-radius: 8px;
-  flex: 1;
-  height: 42px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
-
-  .ant-input-number-input::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
-    opacity: 1 !important;
-  }
 `;
 
 type RoundedSelectProps = SelectProps & { $noShadow?: boolean };
@@ -412,3 +360,5 @@ export const SubtleCheckbox = styled(Checkbox)`
     color: rgba(136, 143, 163, 1);
   }
 `;
+
+export { RoundedInput, RoundedInputNumber,RoundedPasswordInput };

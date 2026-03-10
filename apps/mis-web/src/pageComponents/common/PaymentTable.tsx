@@ -1,7 +1,8 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { useDidUpdateEffect } from "@scow/lib-web/build/utils/hooks";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, DatePicker, Form, Input, Table } from "antd";
+import { App, Button, DatePicker, Form, Table } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";

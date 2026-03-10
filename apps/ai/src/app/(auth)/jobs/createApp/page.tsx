@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Form, Input, Space } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { Button, Form, Space } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { PageTitle } from "src/components/PageTitle";

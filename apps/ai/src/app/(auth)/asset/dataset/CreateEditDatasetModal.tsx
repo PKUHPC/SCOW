@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal, Select } from "antd";
 import React, { useEffect } from "react";
@@ -176,7 +177,7 @@ export const CreateEditDatasetModal: React.FC<Props> = (
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <Input allowClear />
+          <TrimInput allowClear />
         </Form.Item>
         {isEdit && editData ? (
           <Form.Item

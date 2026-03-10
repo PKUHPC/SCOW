@@ -1,9 +1,10 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { formatBytesToGB,formatBytesToString } from "@scow/lib-web/build/utils/sizeFormatter";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Result, Space, Table, Tooltip } from "antd";
+import { App, Button, Divider, Form, Result, Space, Table, Tooltip } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";

@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { App, Form, Input, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import { api } from "src/apis";
@@ -87,17 +88,17 @@ export const CreateUserModal: React.FC<Props> = ({
             ...userIdRule ? [userIdRule] : [],
           ]}
         >
-          <Input disabled placeholder={userIdRule?.message} />
+          <TrimInput disabled placeholder={userIdRule?.message} />
         </Form.Item>
         <Form.Item label={t(pCommon("userFullName"))} name="name" rules={[{ required: true }]}>
-          <Input />
+          <TrimInput />
         </Form.Item>
         <Form.Item
           label={t(p("email"))}
           name="email"
           rules={[{ required: true }, getEmailRule(languageId)]}
         >
-          <Input />
+          <TrimInput />
         </Form.Item>
         <Form.Item
           label={t(p("password"))}

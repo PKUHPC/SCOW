@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Form, Input, InputNumber, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { Button, Form, InputNumber, Space, Table, TableColumnsType, Tooltip } from "antd";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FilterFormContainer } from "src/components/FilterFormContainer";

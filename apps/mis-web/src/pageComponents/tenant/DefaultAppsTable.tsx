@@ -1,8 +1,9 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Space, Table } from "antd";
+import { App, Button, Form, Space, Table } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";

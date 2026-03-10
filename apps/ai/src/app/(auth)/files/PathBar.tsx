@@ -76,7 +76,11 @@ export const PathBar: React.FC<Props> = ({
             onChange={(e) => {
               setInput(e.target.value);
             }}
-            onSearch={onPathChange}
+            onSearch={(value) => {
+              const trimmed = value.trim();
+              setInput(trimmed);
+              onPathChange(trimmed);
+            }}
             enterButton={icon}
             autoFocus
             prefix={prefix}

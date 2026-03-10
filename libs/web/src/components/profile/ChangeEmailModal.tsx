@@ -1,8 +1,9 @@
-import { App, Form, Input, Modal } from "antd";
+import { App, Form, Modal } from "antd";
 import React, { useState } from "react";
 import { getEmailRule } from "src/utils/form";
 import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 
+import { TrimInput as Input } from "../styledAntdCom/TrimInput";
 import { mutationType } from "./index";
 
 export interface Props {

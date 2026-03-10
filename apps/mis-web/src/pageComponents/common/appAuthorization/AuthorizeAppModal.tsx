@@ -1,7 +1,8 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { AppAuthorizationInfo } from "@scow/protos/build/server/app_authorization";
-import { App, Button, Divider, Form, Input, Modal, Space, Table, Tag } from "antd";
+import { App, Button, Divider, Form, Modal, Space, Table, Tag } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";
 import { api } from "src/apis";

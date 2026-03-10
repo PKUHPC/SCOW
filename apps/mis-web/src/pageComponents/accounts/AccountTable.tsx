@@ -1,10 +1,11 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, Divider, Form, Input, Popover, Space, Table, Tag, Tooltip } from "antd";
+import { App, Button, Divider, Form, Popover, Space, Table, Tag, Tooltip } from "antd";
 import { SortOrder } from "antd/es/table/interface";
 import Link from "next/link";
 import React, { useMemo, useState } from "react";

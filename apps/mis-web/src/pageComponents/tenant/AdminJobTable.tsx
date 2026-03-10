@@ -1,3 +1,4 @@
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
@@ -180,10 +181,10 @@ export const AdminJobTable: React.FC<Props> = () => {
                       <ClusterSelector />
                     </Form.Item>
                     <Form.Item label={t(pCommon("userId"))} name="userId">
-                      <Input />
+                      <TrimInput />
                     </Form.Item>
                     <Form.Item label={t(pCommon("account"))} name="accountName">
-                      <Input />
+                      <TrimInput />
                     </Form.Item>
                     <Form.Item label={t(p("jobEndTime"))} name="jobEndTime">
                       <DatePicker.RangePicker showTime allowClear={false} presets={getDefaultPresets(languageId)} />
@@ -208,6 +209,7 @@ export const AdminJobTable: React.FC<Props> = () => {
                         },
                       ]}
                     >
+                      {/* 已实现空格是非法输入的校验,且自己有OnBlur逻辑，不重复使用TrimInput */}
                       <Input
                         style={{ minWidth: "160px" }}
                         placeholder={t(p("searchTypePlaceholder"))}

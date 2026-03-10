@@ -1,4 +1,5 @@
-import { Alert, App, Form, Input, Modal } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { Alert, App, Form, Modal } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
 import { ModalLink } from "src/components/ModalLink";

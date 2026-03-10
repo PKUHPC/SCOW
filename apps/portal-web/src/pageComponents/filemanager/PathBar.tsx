@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ReloadOutlined, RightOutlined } from "@ant-design/icons";
 import { Breadcrumb, Button, Input } from "antd";
 import { useEffect, useState } from "react";
@@ -74,7 +62,11 @@ export const PathBar: React.FC<Props> = ({
             onChange={(e) => {
               setInput(e.target.value);
             }}
-            onSearch={onPathChange}
+            onSearch={(value) => {
+              const trimmed = value.trim();
+              setInput(trimmed);
+              onPathChange(trimmed);
+            }}
             enterButton={icon}
             autoFocus
             prefix={prefix}

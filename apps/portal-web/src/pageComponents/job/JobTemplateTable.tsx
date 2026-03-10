@@ -1,7 +1,8 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobTemplateInfo } from "@scow/protos/build/portal/job";
-import { App, Button, Form, Input, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
+import { App, Button, Form, Modal, Popconfirm, Space, Table, Tooltip } from "antd";
 import { ColumnsType } from "antd/es/table";
 import Link from "next/link";
 import React, { useCallback, useState } from "react";

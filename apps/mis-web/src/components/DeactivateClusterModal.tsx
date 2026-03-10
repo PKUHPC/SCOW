@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { validateDataConsistency } from "@scow/lib-web/build/utils/form";
 import { Divider, Form, Input, Modal } from "antd";
 import { useState } from "react";
@@ -81,6 +69,7 @@ const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClo
           hasFeedback
           {...validateDataConsistency("confirmedClusterId", clusterId, languageId)}
         >
+          {/* 需满足完全一致校验, 无需考虑trim */}
           <Input onPaste={(e) => e.preventDefault()} />
         </Form.Item>
         <Form.Item
@@ -89,6 +78,7 @@ const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClo
           hasFeedback
           {...validateDataConsistency("confirmedClusterName", clusterName, languageId)}
         >
+          {/* 需满足完全一致校验, 无需考虑trim */}
           <Input onPaste={(e) => e.preventDefault()} />
         </Form.Item>
         <Form.Item

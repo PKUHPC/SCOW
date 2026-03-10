@@ -1,6 +1,7 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { TargetType } from "@scow/notification-protos/build/common_pb";
 import { adminSendMessage } from "@scow/notification-protos/build/message-MessageService_connectquery";
 import { listNoticeTypes } from "@scow/notification-protos/build/notice_type-NoticeTypeService_connectquery";
@@ -121,7 +122,7 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
           message: compLang.titleLengthTip,
         }]}
       >
-        <Input style={{ maxWidth: "700px" }} />
+        <TrimInput style={{ maxWidth: "700px" }} />
       </Form.Item>
 
       <Form.Item

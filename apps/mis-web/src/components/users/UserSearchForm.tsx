@@ -1,5 +1,6 @@
 import { FilterFormContainer } from "@scow/lib-web/build/components/FilterFormContainer";
-import { Button, Form, Input } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { Button, Form } from "antd";
 import React from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 

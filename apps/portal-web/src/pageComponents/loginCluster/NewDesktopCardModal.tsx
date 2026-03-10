@@ -1,5 +1,6 @@
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { AvailableWm } from "@scow/protos/build/portal/desktop";
-import { App, Form, Input, Modal, Select } from "antd";
+import { App, Form, Modal, Select } from "antd";
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { api } from "src/apis";

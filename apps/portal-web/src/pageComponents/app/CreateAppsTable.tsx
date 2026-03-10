@@ -1,5 +1,6 @@
 import { PictureOutlined } from "@ant-design/icons";
-import { Avatar, Button, Card, Col, Form, Input, message, Row, Space, Spin, Tooltip } from "antd";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { Avatar, Button, Card, Col, Form, message, Row, Space, Spin, Tooltip } from "antd";
 import Link from "next/link";
 import { join } from "path";
 import { useCallback, useEffect, useMemo, useState } from "react";

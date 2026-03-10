@@ -1,4 +1,5 @@
 import { parsePlaceholder } from "@scow/lib-config/build/parse";
+import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Checkbox, Col, Form, Input, InputNumber, Row, Select, Space } from "antd";
 import dayjs from "dayjs";
@@ -22,6 +23,7 @@ import { formatSize } from "src/utils/format";
 
 import { AccountListSelector } from "./AccountListSelector";
 import { PartitionSelector } from "./PartitionSelector";
+
 
 interface JobForm {
   cluster: Cluster;
@@ -410,7 +412,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
         </Col>
         <Col span={24} sm={12}>
           <Form.Item label={t(p("jobName"))} name="jobName" rules={[{ required: true }, { max: 50 }]}>
-            <Input />
+            <TrimInput />
           </Form.Item>
         </Col>
       </Row>
@@ -572,7 +574,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
               </>
             )}
           >
-            <Input
+            <TrimInput
               suffix={
                 (
                   <FileSelectModal
@@ -589,12 +591,12 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
         </Col>
         <Col span={24} sm={6}>
           <Form.Item label={t(p("output"))} name="output" rules={[{ required: true }]}>
-            <Input />
+            <TrimInput />
           </Form.Item>
         </Col>
         <Col span={24} sm={6}>
           <Form.Item label={t(p("errorOutput"))} name="errorOutput" rules={[{ required: true }]}>
-            <Input />
+            <TrimInput />
           </Form.Item>
         </Col>
         <Col className="ant-form-item" span={12} sm={6}>
@@ -637,7 +639,7 @@ export const SubmitJobForm: React.FC<Props> = ({ initial = initialValues, submit
               </>
             )}
           >
-            <Input
+            <TrimInput
               style={{ visibility: showScriptOutput ? "visible" : "hidden" }}
             />
           </Form.Item>
