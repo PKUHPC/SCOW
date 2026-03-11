@@ -156,7 +156,11 @@ export const Sortable: FC<Props> = ({
           case "app": {
             const savedAppClusterId = item.entry.app.clusterId;
             if (quickEntryType === "ai") {
-              window.open(join(basePath, "/jobs", savedAppClusterId, "/createApps", item.entry.app.appId), "_blank");
+              window.open(
+                `${join(basePath, "/jobs/createApp", item.entry.app.appId)}` +
+                `?clusterId=${encodeURIComponent(savedAppClusterId)}`,
+                "_blank",
+              );
             } else {
               window.open(join(basePath, "/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
             }
@@ -282,4 +286,3 @@ export const Sortable: FC<Props> = ({
     </div>
   );
 };
-

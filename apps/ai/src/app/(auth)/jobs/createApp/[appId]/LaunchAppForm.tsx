@@ -81,6 +81,7 @@ interface Props {
   appImage?: string;
   appStartCommand?: string;
   createAppParams?: CreateAppInput;
+  clusterId?: string;
 }
 
 const p = prefix("app.jobs.launchAppForm.");
@@ -231,6 +232,7 @@ export const LaunchAppForm = ({
   appImage,
   appStartCommand,
   createAppParams,
+  clusterId,
 }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
@@ -1617,7 +1619,7 @@ export const LaunchAppForm = ({
     }
   }, [accountOptions, createAppParams, resourceForm, selectedAccount]);
 
-  // 选中账户发生变化时，若当前集群不可用则自动切换到第一个可用集群
+  // 选中账户变化时，若当前集群不可用则优先使用 URL 的 clusterId，否则回退到首个可用集群
   useEffect(() => {
     if (createAppParams && !resubmitResourceAppliedRef.current) {
       return;
@@ -1626,7 +1628,12 @@ export const LaunchAppForm = ({
     const currentCluster = selectedCluster ?? resourceForm.getFieldValue("cluster");
 
     const availableClusters = currentAccount ? (accountClusterMap[currentAccount] ?? []) : [];
+    const quickEntryTargetCluster = !createAppParams ? clusterId : undefined;
     const firstEnabledCluster = clusterOptions.find((option) => !option.disabled)?.id;
+
+    const initialCluster = clusterOptions.some((option) => option.id === quickEntryTargetCluster && !option.disabled)
+      ? quickEntryTargetCluster
+      : firstEnabledCluster;
 
     if (!currentAccount || !availableClusters.length) {
       if (currentCluster !== undefined) {
@@ -1634,12 +1641,13 @@ export const LaunchAppForm = ({
       }
       return;
     }
-    if (!currentCluster || !availableClusters.includes(currentCluster) || !firstEnabledCluster) {
-      resourceForm.setFieldValue("cluster", firstEnabledCluster);
+    if (!currentCluster || !availableClusters.includes(currentCluster) || !initialCluster) {
+      resourceForm.setFieldValue("cluster", initialCluster);
     }
   }, [
     accountClusterMap,
     clusterOptions,
+    clusterId,
     createAppParams,
     currentAvailableClusterIds,
     resourceForm,

@@ -87,10 +87,9 @@ export const QuickEntry: React.FC = () => {
         id:"app",
         name:"app",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "jobs/clusterId/createApps",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/createApp",
             icon:"CreateAppIcon",
           },
         },
@@ -99,10 +98,9 @@ export const QuickEntry: React.FC = () => {
         id:"trainJobs",
         name:"trainJobs",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "jobs/clusterId/trainJobs",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/createTrain",
             icon:"TrainJobIcon",
           },
         },
@@ -111,10 +109,9 @@ export const QuickEntry: React.FC = () => {
         id:"inference",
         name:"inference",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "jobs/clusterId/inference",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/jobs/createInfer",
             icon:"InferIcon",
           },
         },
@@ -123,10 +120,9 @@ export const QuickEntry: React.FC = () => {
         id:"runningJobs",
         name:"runningJobs",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "jobs/clusterId/runningJobs",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "jobs/jobList",
             icon:"RunningJobsIcon",
           },
         },
@@ -135,10 +131,9 @@ export const QuickEntry: React.FC = () => {
         id:"historyJobs",
         name:"historyJobs",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "jobs/clusterId/historyJobs",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "jobs/jobList?jobType=historyJobs",
             icon:"HistoryJobsIcon",
           },
         },
@@ -147,10 +142,9 @@ export const QuickEntry: React.FC = () => {
         id:"file",
         name:"file",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "files/clusterId/~",
-            clusterId:"",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "files/~",
             icon:"FileIcon",
           },
         },

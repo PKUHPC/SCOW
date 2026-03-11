@@ -82,6 +82,7 @@ export default function Page({ params }: { params: Promise<{ appId: string }> })
       appImage={appImage}
       appStartCommand={startCommand}
       createAppParams={resubmitInput ? createAppParams : undefined}
+      clusterId={clusterId}
     />
   );
 }
