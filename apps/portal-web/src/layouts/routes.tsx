@@ -74,7 +74,7 @@ export const userRoutes: (
       text: t("routes.apps.title"),
       path: "/apps",
       clickToPath: `/apps/${defaultCluster?.id ?? currentClusters[0].id}/sessions`,
-      clickable: true,
+      clickable: false,
       children: currentClusters.map((cluster) => ({
         Icon: ApplicationIcon,
         text: getI18nConfigCurrentText(cluster.name, languageId),
@@ -103,7 +103,7 @@ export const userRoutes: (
       text: t("routes.file.fileManager"),
       path: "/files",
       clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
-      clickable: true,
+      clickable: false,
       children: [
         {
           Icon: ClusterFileManagerIcon,

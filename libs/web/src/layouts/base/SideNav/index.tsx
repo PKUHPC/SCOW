@@ -3,14 +3,12 @@
 import { arrayContainsElement } from "@scow/utils";
 import { Layout, Menu } from "antd";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect,useMemo, useRef, useState } from "react";
 import { createMenuItems } from "src/layouts/base/common";
 import { antdBreakpoints } from "src/layouts/base/constants";
 import { CollapseMenuIcon, ExpandMenuIcon } from "src/layouts/base/header/icons";
 import { NavItemProps } from "src/layouts/base/types";
 import { css, styled } from "styled-components";
-
-import BodyMask from "./BodyMask";
 
 const { Sider } = Layout;
 
@@ -128,22 +126,44 @@ export const SideNav: React.FC<Props> = ({
 
   const parentKeys = useMemo(() => getAllParentKeys(routes), [routes]);
 
-  const [openKeys, setOpenKeys] = useState(parentKeys);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // 初始值：展开当前激活路由对应的所有父节点
+  const [openKeys, setOpenKeys] = useState<string[]>(() => {
+    return parentKeys.filter((key) =>
+      activeKeys.some((activeKey) => activeKey.startsWith(key)),
+    );
+  });
+
+  // 初始值读取窗口宽度
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= antdBreakpoints[breakpoint];
+  });
 
   const menuFocusedRef = useRef(false);
+  // 用 ref 记录 openKeys，避免 onOpenChange 闭包过期问题
+  const openKeysRef = useRef(openKeys);
+
+  // 用 useLayoutEffect 同步初始化，浏览器绘制前完成，杜绝闪烁
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const collapsed = window.innerWidth <= antdBreakpoints[breakpoint];
+    setSidebarCollapsed(collapsed);
+  }, []);
 
   useEffect(() => {
     /**
-     * 点击菜单，收起其他展开的所有菜单，保持菜单聚焦简洁。
-     * 仅在账户管理页面有效，且用户管理的账户数量超过三个
-     */
-    //
+    * 点击菜单，收起其他展开的所有菜单，保持菜单聚焦简洁。
+    * 仅在账户管理页面有效，且用户管理的账户数量超过三个
+    */
     menuFocusedRef.current = parentKeys.length > 3 && parentKeys[0].startsWith("/accounts");
-
-    if (menuFocusedRef.current) setOpenKeys([parentKeys[0]]);
-    else setOpenKeys(parentKeys);
-  }, [parentKeys]);
+    if (menuFocusedRef.current) {
+      const activeParentKey = activeKeys.find((key) => parentKeys.includes(key));
+      if (activeParentKey) {
+        setOpenKeys([activeParentKey]);
+        openKeysRef.current = [activeParentKey];
+      }
+    }
+  }, [activeKeys, parentKeys]);
 
   const onBreakpoint = useCallback((broken: boolean) => {
     // if broken, big to small. collapse the sidebar
@@ -153,41 +173,25 @@ export const SideNav: React.FC<Props> = ({
 
   const onOpenChange = useCallback((keys) => {
     if (menuFocusedRef.current) {
-      const latestOpenKey = keys.find((key) => !openKeys.includes(key));
-
-      if (!parentKeys.includes(latestOpenKey)) {
-        setOpenKeys(keys);
-      } else {
-        setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
-      }
+      const latestOpenKey = keys.find((key) => !openKeysRef.current.includes(key));
+      const nextKeys = !parentKeys.includes(latestOpenKey)
+        ? keys
+        : latestOpenKey ? [latestOpenKey] : [];
+      setOpenKeys(nextKeys);
+      openKeysRef.current = nextKeys;
     }
-    else setOpenKeys(keys);
-
-  }, [openKeys, parentKeys]);
-
-  // 账户管理页面，联动横向菜单栏展开相应的侧面菜单栏
-  useEffect(() => {
-    if (menuFocusedRef.current) {
-      setOpenKeys([activeKeys[1]]);
+    else {
+      setOpenKeys(keys);
+      openKeysRef.current = keys;
     }
-  }, [activeKeys]);
-
-  useEffect(() => {
-    if (window.innerWidth <= antdBreakpoints[breakpoint]) {
-      setSidebarCollapsed(true);
-    }
-  }, [pathname]);
+  }, [parentKeys]);
 
   if (!arrayContainsElement(routes)) {
     return null;
   }
+
   return (
     <Container $width={sidebarCollapsed ? 72 : 208}>
-      <BodyMask
-        onClick={() => setSidebarCollapsed(true)}
-        sidebarShown={!sidebarCollapsed}
-        breakpoint={antdBreakpoints[breakpoint]}
-      />
       <StyledSider
         onBreakpoint={onBreakpoint}
         collapsed={sidebarCollapsed}
