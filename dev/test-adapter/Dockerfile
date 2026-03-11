@@ -36,7 +36,8 @@ FROM base as pruner
 WORKDIR /app
 
 COPY . .
-RUN pnpm dlx turbo prune --scope="@scow/test-adapter" --docker
+RUN pnpm i --offline --frozen-lockfile
+RUN npx turbo prune --scope="@scow/test-adapter" --docker
 
 FROM base AS builder
 
