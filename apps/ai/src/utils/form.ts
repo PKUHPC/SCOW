@@ -43,7 +43,7 @@ export const createK8sNameValidator = (message?: string) => () => ({
 
     // - 如果长度=1：必须是字母或数字
     // - 如果长度>=2：开头必须是字母，结尾必须是字母或数字，中间允许字母/数字/-
-    const regex = /^([a-z]|[a-z0-9][a-z0-9-]{0,38}[a-z0-9])$/;
+    const regex = /^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$/;
 
     if (!regex.test(value)) {
       return Promise.reject(

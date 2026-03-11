@@ -308,6 +308,7 @@ export const LaunchAppForm = ({
     models: false,
   });
   const resubmitMountEnvAppliedRef = useRef(false);
+  const resubmitCustomFieldsAppliedRef = useRef(false);
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
 
   // 账户集群关系
@@ -428,6 +429,7 @@ export const LaunchAppForm = ({
       models: shouldReset,
     };
     resubmitMountEnvAppliedRef.current = shouldReset;
+    resubmitCustomFieldsAppliedRef.current = shouldReset;
     if (shouldReset) {
       resourceForm.setFieldsValue({ priority: undefined });
       appForm.setFieldsValue({
@@ -502,13 +504,13 @@ export const LaunchAppForm = ({
   const appLogoSrc = effectiveAppLogoPath ? join(publicPath, effectiveAppLogoPath) : undefined;
 
   // 应用名称加载完成后自动生成默认作业名，避免初次打开表单时出现空值
-  // 依据历史参数或默认规则回填队列、资源数量以及最长运行时长
   useEffect(() => {
     if (!effectiveAppName) {
       return;
     }
     const generated = `${effectiveAppName}-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase();
-    if (!jobName || jobName === initialJobName) {
+    // 仅在用户尚未编辑（仍是初始默认名）时刷新默认名称，避免清空后被自动回填
+    if (jobName === initialJobName) {
       setJobName(generated);
       baseForm.setFieldValue("appJobName", generated);
     }
@@ -906,6 +908,50 @@ export const LaunchAppForm = ({
 
     resubmitMountEnvAppliedRef.current = true;
   }, [appForm, createAppParams]);
+
+  useEffect(() => {
+    if (!createAppParams) {
+      resubmitCustomFieldsAppliedRef.current = false;
+      return;
+    }
+    if (!appInfo) {
+      return;
+    }
+    if (resubmitCustomFieldsAppliedRef.current) {
+      return;
+    }
+
+    const attributeList = appInfo.attributes ?? [];
+    const attributeMap = new Map(attributeList.map((item) => [item.name, item.type]));
+    const customFields: Record<string, string | number | undefined> = {};
+
+    Object.entries(createAppParams.customAttributes ?? {}).forEach(([key, value]) => {
+      if (!attributeMap.has(key) || value === undefined || value === null || value === "") {
+        return;
+      }
+
+      const fieldType = attributeMap.get(key);
+      if (fieldType === "NUMBER") {
+        const parsed = Number(value);
+        if (!Number.isNaN(parsed)) {
+          customFields[key] = parsed;
+        }
+        return;
+      }
+
+      customFields[key] = typeof value === "string" ? value : String(value);
+    });
+
+    if (attributeMap.has("workingDir") && createAppParams.workingDirectory) {
+      customFields.workingDir = createAppParams.workingDirectory;
+    }
+
+    appForm.setFieldsValue({
+      customFields,
+    });
+
+    resubmitCustomFieldsAppliedRef.current = true;
+  }, [appForm, appInfo?.attributes, createAppParams]);
 
   // 如果用户来自「再次提交」或历史记录，提前解析镜像相关的偏好设置
   const resubmitImagePreference = useMemo(() => {

@@ -104,6 +104,7 @@ export const CopyPublicModelModal: React.FC<Props> = (
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
+          initialValue={`${modelName}`}
         >
           <TrimInput allowClear />
         </Form.Item>

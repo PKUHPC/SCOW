@@ -103,7 +103,7 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
-          initialValue={`${user.name}/${datasetName}`}
+          initialValue={`${datasetName}`}
         >
           <TrimInput allowClear />
         </Form.Item>

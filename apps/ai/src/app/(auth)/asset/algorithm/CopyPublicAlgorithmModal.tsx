@@ -101,6 +101,7 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
+          initialValue={`${algorithmName}`}
         >
           <TrimInput allowClear />
         </Form.Item>
