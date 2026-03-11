@@ -106,8 +106,7 @@ Promise<{ result: any; refreshTime: Date }> => {
     .select([raw("count(c.id) as total_count"), raw("sum(c.amount) as total_amount")])
     .where({
       time: { $gte: new Date(0).toISOString(), $lte: new Date().toISOString() },
-      ...{ type: { "$ne": null } },
-      ...{ tenantName: { "$ne": null }, accountName: { "$ne": null } },
+      ...{ accountName: { "$ne": null } },
     });
 
   return await queryWithCache({

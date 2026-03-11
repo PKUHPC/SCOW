@@ -319,6 +319,66 @@ it("export charge Records", async () => {
 
 });
 
+it("export charge records keeps account scope for idsOrNames filter", async () => {
+
+  const amount = new Decimal(10);
+
+  const accountCharge = new ChargeRecord({
+    id: 1,
+    time: new Date("2023-12-07T07:21:02.000Z"),
+    target: data.accountA,
+    type: "scopeType",
+    comment: "account charge",
+    amount,
+    userId: data.userA.userId,
+  });
+
+  const tenantCharge = new ChargeRecord({
+    id: 2,
+    time: new Date("2023-12-07T07:21:47.000Z"),
+    target: data.tenant,
+    type: "scopeType",
+    comment: "tenant charge",
+    amount,
+    userId: data.userA.userId,
+  });
+
+  await em.persistAndFlush([accountCharge, tenantCharge]);
+
+  const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+
+  const startTime = new Date("2023-12-07T07:21:02.029Z");
+  const queryStartTime = new Date(startTime);
+  queryStartTime.setDate(startTime.getDate() - 1);
+  const queryEndTime = new Date(startTime);
+  queryEndTime.setDate(startTime.getDate() + 1);
+
+  const stream = asyncReplyStreamCall(client, "exportChargeRecord", {
+    count: 10,
+    startTime: queryStartTime.toISOString(),
+    endTime: queryEndTime.toISOString(),
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    types: ["scopeType"],
+    userIds: [],
+    idsOrNames: [data.userA.userId],
+  });
+
+  const handleChargeResponse = (response: ExportChargeRecordResponse): ChargeRecordProto[] => {
+    return response.chargeRecords;
+  };
+  const records = await collectData(stream, handleChargeResponse);
+
+  expect(records).toHaveLength(1);
+  expect(records[0]).toMatchObject({
+    index: accountCharge.id,
+    accountName: data.accountA.accountName,
+    userId: data.userA.userId,
+    amount: decimalToMoney(amount),
+    type: "scopeType",
+    comment: "account charge",
+  });
+});
+
 
 
 it("export pay Records", async () => {
@@ -542,4 +602,3 @@ it("export job Records", async () => {
     timeEnd: "2020-04-23T23:18:02.000Z",
   }]);
 });
-

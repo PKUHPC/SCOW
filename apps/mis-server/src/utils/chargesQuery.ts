@@ -17,6 +17,15 @@ import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 
 import { CHARGE_TYPE_OTHERS } from "./constants";
+
+export type ChargeRecordsTarget =
+  | { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
+  | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
+  | { $case: "accountsOfAllTenants"; accountsOfAllTenants: AccountsOfAllTenantsTarget }
+  | { $case: "tenant"; tenant: TenantTarget }
+  | { $case: "allTenants"; allTenants: AllTenantsTarget }
+  | undefined;
+
 /**
  * generate charge records' search param of target
  *
@@ -29,13 +38,7 @@ import { CHARGE_TYPE_OTHERS } from "./constants";
  *
  */
 export const getChargesTargetSearchParam = (
-  target:
-  | { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
-  | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
-  | { $case: "accountsOfAllTenants"; accountsOfAllTenants: AccountsOfAllTenantsTarget }
-  | { $case: "tenant"; tenant: TenantTarget }
-  | { $case: "allTenants"; allTenants: AllTenantsTarget }
-  | undefined,
+  target: ChargeRecordsTarget,
 ): { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } } => {
 
   let searchParam: { tenantName?: string | { $ne: null },
@@ -48,7 +51,7 @@ export const getChargesTargetSearchParam = (
       break;
       // 所有租户的租户消费记录
     case "allTenants":
-      searchParam = { tenantName: { $ne:null }, accountName: undefined };
+      searchParam = { accountName: undefined };
       break;
       // 当前租户下当前账户的消费记录
     case "accountOfTenant":
@@ -66,14 +69,40 @@ export const getChargesTargetSearchParam = (
     case "accountsOfAllTenants":
       {
         const { accountNames } = target.accountsOfAllTenants;
-        searchParam = { tenantName: { $ne: null }, accountName:accountNames.length ?
-          { $in: accountNames } : { $ne:null } };
+        searchParam = { accountName:accountNames.length ? { $in: accountNames } : { $ne:null } };
         break;
       };
     default:
       searchParam = {};
   }
   return searchParam;
+};
+
+export const getTenantAccountValidationInput = (
+  target: ChargeRecordsTarget,
+): { tenantName: string, accountNames: string[] } | undefined => {
+  switch (target?.$case) {
+    case "accountOfTenant":
+      return { tenantName: target.accountOfTenant.tenantName, accountNames: [target.accountOfTenant.accountName]};
+    case "accountsOfTenant":
+      return { tenantName: target.accountsOfTenant.tenantName, accountNames: target.accountsOfTenant.accountNames };
+    default:
+      return undefined;
+  }
+};
+
+// 有账户或者用户条件时可以省略租户
+export const getChargesTargetSearchParamForQuery = (
+  targetSearchParam: { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } },
+  hasUserFilter: boolean,
+) => {
+  if (targetSearchParam.accountName !== undefined) {
+    return { accountName: targetSearchParam.accountName };
+  }
+  if (hasUserFilter) {
+    return {};
+  }
+  return targetSearchParam;
 };
 
 // 获得搜索用的type数组
@@ -94,7 +123,7 @@ export const getChargesSearchType = (type: string | undefined) => {
 
   let searchType = {};
   if (!type) {
-    searchType = { type: { $ne: null } };
+    searchType = {};
   } else {
     if (type === CHARGE_TYPE_OTHERS) {
       searchType = { type: { $nin: typesToSearch } };
@@ -109,7 +138,7 @@ export const getChargesSearchType = (type: string | undefined) => {
 export const getChargesSearchTypes = (types: string[] | undefined) => {
   // 排除不包含types或者空数组的情况
   if (!types?.length) {
-    return { type: { $ne: null } };
+    return {};
   }
 
   const typesToSearch = getTypesToSearch();

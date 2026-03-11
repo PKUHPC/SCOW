@@ -8,7 +8,7 @@ import { ChargeRecord as ChargeRecordProto,
   ChargingServiceServer, ChargingServiceService } from "@scow/protos/build/server/charging";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
-import { Account,AccountState } from "src/entities/Account";
+import { Account, AccountState } from "src/entities/Account";
 import { ChargeRecord } from "src/entities/ChargeRecord";
 import { PayRecord } from "src/entities/PayRecord";
 import { Tenant } from "src/entities/Tenant";
@@ -18,10 +18,12 @@ import {
   getChargesSearchType,
   getChargesSearchTypes,
   getChargesTargetSearchParam,
+  getChargesTargetSearchParamForQuery,
   getPaymentsSearchType,
   getPaymentsTargetSearchParam,
   getTypesToSearch,
 } from "src/utils/chargesQuery";
+import { ensureTargetAccountsBelongToTenant } from "src/utils/chargeTargetValidation";
 import { CHARGE_TYPE_OTHERS } from "src/utils/constants";
 import { DEFAULT_PAGE_SIZE } from "src/utils/orm";
 import { mapChargesSortField, mapPaymentRecordSortField } from "src/utils/queryOptions";
@@ -563,7 +565,15 @@ export const chargingServiceServer = plugin((server) => {
     getPaginatedChargeRecords: async ({ request, em }) => {
       const { startTime, endTime, type, types, target, page, pageSize, sortBy, sortOrder, userIdsOrNames }
       = ensureNotUndefined(request, ["startTime", "endTime"]);
-      const searchParam = getChargesTargetSearchParam(target);
+
+      await ensureTargetAccountsBelongToTenant(em, target);
+
+      const targetSearchParam = getChargesTargetSearchParam(target);
+      const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
+      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
+      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
+        ? targetSearchParam.tenantName
+        : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
 
       const qb = em.createQueryBuilder(ChargeRecord, "cr").select("*")
@@ -585,15 +595,29 @@ export const chargingServiceServer = plugin((server) => {
 
         // 如果存在userIdsOrNames字段，则用knex
         if (userIdsOrNames && userIdsOrNames.length > 0) {
-          const sql = qb.getKnexQuery().andWhere(function() {
-            void this.whereIn("cr.user_id", function() {
-              void this.select("user_id")
-                .from("user");
+          const matchedUsersQuery = em.getKnex()("user as u")
+            .distinct("u.user_id")
+            .where(function() {
               for (const idOrName of userIdsOrNames) {
-                void this.orWhereRaw("user_id like " + `'%${idOrName}%'`)
-                  .orWhereRaw("name like " + `'%${idOrName}%'`);
+                void this.orWhere("u.user_id", "like", `%${idOrName}%`)
+                  .orWhere("u.name", "like", `%${idOrName}%`);
               }
             });
+          if (tenantNameForMatchedUsers) {
+            void matchedUsersQuery
+              .leftJoin("tenant as t", "u.tenant_id", "t.id")
+              .andWhere("t.name", tenantNameForMatchedUsers);
+          }
+          const matchedUsers = await matchedUsersQuery;
+
+          const matchedUserIds = matchedUsers.map((x: { user_id: string }) => x.user_id);
+
+          if (matchedUserIds.length === 0) {
+            return [];
+          }
+
+          const sql = qb.getKnexQuery().andWhere(function() {
+            void this.whereIn("cr.user_id", matchedUserIds);
           });
 
           return await em.getConnection().execute(sql);
@@ -634,7 +658,14 @@ export const chargingServiceServer = plugin((server) => {
       const { startTime, endTime, type, types, target, userIdsOrNames, preferCache }
       = ensureNotUndefined(request, ["startTime", "endTime"]);
 
-      const searchParam = getChargesTargetSearchParam(target);
+      await ensureTargetAccountsBelongToTenant(em, target);
+
+      const targetSearchParam = getChargesTargetSearchParam(target);
+      const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
+      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
+      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
+        ? targetSearchParam.tenantName
+        : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
       let refreshTime = new Date();
 
@@ -650,18 +681,32 @@ export const chargingServiceServer = plugin((server) => {
 
       // 如果存在userIdsOrNames字段，则用knex
       if (userIdsOrNames && userIdsOrNames.length > 0) {
-        const sql = qb.getKnexQuery().andWhere(function() {
-          void this.whereIn("c.user_id", function() {
-            void this.select("user_id")
-              .from("user");
+        const matchedUsersQuery = em.getKnex()("user as u")
+          .distinct("u.user_id")
+          .where(function() {
             for (const idOrName of userIdsOrNames) {
-              void this.orWhereRaw("user_id like " + `'%${idOrName}%'`)
-                .orWhereRaw("name like " + `'%${idOrName}%'`);
+              void this.orWhere("u.user_id", "like", `%${idOrName}%`)
+                .orWhere("u.name", "like", `%${idOrName}%`);
             }
           });
-        });
+        if (tenantNameForMatchedUsers) {
+          void matchedUsersQuery
+            .leftJoin("tenant as t", "u.tenant_id", "t.id")
+            .andWhere("t.name", tenantNameForMatchedUsers);
+        }
+        const matchedUsers = await matchedUsersQuery;
 
-        result = await em.getConnection().execute(sql);
+        const matchedUserIds = matchedUsers.map((x: { user_id: string }) => x.user_id);
+
+        if (matchedUserIds.length === 0) {
+          result = [{ total_count: 0, total_amount: 0 }];
+        } else {
+          const sql = qb.getKnexQuery().andWhere(function() {
+            void this.whereIn("c.user_id", matchedUserIds);
+          });
+
+          result = await em.getConnection().execute(sql);
+        }
       } else if (target?.$case === "accountsOfAllTenants" && preferCache) {
 
         const { result: queryResult, refreshTime: cacheTime } = await getChargeRecordsTotalCountCached(em);

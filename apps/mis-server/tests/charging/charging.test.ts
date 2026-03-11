@@ -1268,10 +1268,10 @@ it("returns paginated charge records with userIdsOrNames filter", async () => {
   expect(reply.results).toMatchObject([
     { accountName: chargeRequests[0].accountName, comment: chargeRequests[0].comment,
       amount: chargeRequests[0].amount, userId: chargeRequests[0].userId },
-    { accountName: chargeRequests[2].accountName, comment: chargeRequests[2].comment,
-      amount: chargeRequests[2].amount, userId: chargeRequests[2].userId },
     { accountName: chargeRequests[1].accountName, comment: chargeRequests[1].comment,
       amount: chargeRequests[1].amount, userId: chargeRequests[1].userId },
+    { accountName: chargeRequests[2].accountName, comment: chargeRequests[2].comment,
+      amount: chargeRequests[2].amount, userId: chargeRequests[2].userId },
   ] as Partial<ChargeRecord>);
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
@@ -1490,6 +1490,70 @@ it("returns paginated charge records filtered by userName", async () => {
 
   expect(totalCountReply.totalCount).toBe(2);
   expect(totalCountReply.totalAmount).toStrictEqual(numberToMoney(150));
+});
+
+it("keeps account scope when filtering by userIdsOrNames", async () => {
+  const tenant = new Tenant({ name: "testTenantAccountScope" });
+  const account = new Account({
+    accountName: "accountScope",
+    tenant,
+    blockedInCluster: false,
+    comment: "test",
+  });
+  const user = new User({
+    name: "Scope User",
+    userId: "scopeUser",
+    email: "scope@example.com",
+    tenant,
+  });
+  await em.persistAndFlush([tenant, account, user]);
+
+  const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+  await asyncClientCall(client, "charge", {
+    tenantName: tenant.name,
+    accountName: account.accountName,
+    amount: numberToMoney(10),
+    comment: "account charge",
+    type: "scopeType",
+    userId: user.userId,
+  });
+  await asyncClientCall(client, "charge", {
+    tenantName: tenant.name,
+    amount: numberToMoney(20),
+    comment: "tenant charge",
+    type: "scopeType",
+    userId: user.userId,
+  });
+
+  const now = new Date();
+  const startTime = new Date(now);
+  startTime.setDate(now.getDate() - 1);
+  const endTime = new Date(now);
+  endTime.setDate(now.getDate() + 1);
+
+  const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    page: 1,
+    pageSize: 10,
+    userIds: [],
+    userIdsOrNames: [user.userId],
+    types: ["scopeType"],
+  });
+  expect(reply.results).toHaveLength(1);
+  expect(reply.results[0].accountName).toBe(account.accountName);
+  expect(reply.results[0].amount).toStrictEqual(numberToMoney(10));
+
+  const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    userIdsOrNames: [user.userId],
+    types: ["scopeType"],
+  });
+  expect(totalCountReply.totalCount).toBe(1);
+  expect(totalCountReply.totalAmount).toStrictEqual(numberToMoney(10));
 });
 
 

@@ -27,9 +27,11 @@ import {
   getChargesSearchType,
   getChargesSearchTypes,
   getChargesTargetSearchParam,
+  getChargesTargetSearchParamForQuery,
   getPaymentsSearchType,
   getPaymentsTargetSearchParam,
 } from "src/utils/chargesQuery";
+import { ensureTargetAccountsBelongToTenant } from "src/utils/chargeTargetValidation";
 import {
   getJobsTargetSearchParam,
   getJobUserAndAccountOwnerDetailsMap,
@@ -322,32 +324,61 @@ export const exportServiceServer = plugin((server) => {
         userIds,
       } = request;
 
-      const searchParam = getChargesTargetSearchParam(target);
-      const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
+      await ensureTargetAccountsBelongToTenant(em, target);
 
+      const targetSearchParam = getChargesTargetSearchParam(target);
       const likePattern = (s: string) => `%${s}%`;
       const trimmedUserIdsOrNames = idsOrNames.map((x) => x.trim()).filter((x) => x.length > 0);
       const userLikePatterns = trimmedUserIdsOrNames.map(likePattern);
 
       const trimmedUserIds = userIds.map((x) => x.trim()).filter((x) => x.length > 0);
+      const hasUserFilter = trimmedUserIdsOrNames.length > 0 || trimmedUserIds.length > 0;
+      const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
+      const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
+      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
+        ? targetSearchParam.tenantName
+        : undefined;
 
       // 如果有 idsOrNames 则按 idsOrNames 模糊搜索
       // 如果没有 idsOrNames 但有 userIds 则按 userIds 精确搜索
       // 都没有则不加搜索条件
-      const matchedUserIds = userLikePatterns.length > 0
-        ? Array.from(new Set((await em.find(User, {
-          $or: userLikePatterns.flatMap((p) => [
-            { userId: { $like: p } },
-            { name: { $like: p } },
-          ]),
-        }, { fields: ["userId"]})).map((u) => u.userId)))
-        : trimmedUserIds.length > 0 ? trimmedUserIds : [];
+      const matchedUserIds = await (async () => {
+        if (userLikePatterns.length > 0) {
+          const matchedUsersQuery = em.getKnex()("user as u")
+            .distinct("u.user_id")
+            .where(function() {
+              for (const pattern of userLikePatterns) {
+                void this.orWhere("u.user_id", "like", pattern)
+                  .orWhere("u.name", "like", pattern);
+              }
+            });
+
+          if (tenantNameForMatchedUsers) {
+            void matchedUsersQuery
+              .leftJoin("tenant as t", "u.tenant_id", "t.id")
+              .andWhere("t.name", tenantNameForMatchedUsers);
+          }
+
+          const matchedUsers = await matchedUsersQuery;
+          return matchedUsers.map((x: { user_id: string }) => x.user_id);
+        }
+
+        if (trimmedUserIds.length > 0) {
+          return Array.from(new Set(trimmedUserIds));
+        }
+
+        return [];
+      })();
+
+      if (hasUserFilter && matchedUserIds.length === 0) {
+        return;
+      }
 
       const query = {
         time: { $gte: startTime, $lte: endTime },
         ...searchType,
         ...searchParam,
-        ...(matchedUserIds.length > 0 ? { userId: { $in: matchedUserIds } } : {}),
+        ...(hasUserFilter ? { userId: { $in: matchedUserIds } } : {}),
       };
 
       const recordFormat = (x: Loaded<ChargeRecord, never>) => ({

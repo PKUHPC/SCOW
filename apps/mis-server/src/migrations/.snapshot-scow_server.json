@@ -497,8 +497,9 @@
           "unique": false
         },
         {
-          "keyName": "static_info",
+          "keyName": "idx_tenant_time_acc_amt",
           "columnNames": [
+            "tenant_name",
             "time",
             "account_name",
             "amount"
@@ -509,12 +510,50 @@
           "unique": false
         },
         {
-          "keyName": "query_info",
+          "keyName": "idx_user_time_type_amt",
+          "columnNames": [
+            "user_id",
+            "time",
+            "type",
+            "amount"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "idx_type_time_acc_amt",
+          "columnNames": [
+            "type",
+            "time",
+            "account_name",
+            "amount"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "idx_acc_time_type_amt",
+          "columnNames": [
+            "account_name",
+            "time",
+            "type",
+            "amount"
+          ],
+          "composite": true,
+          "constraint": false,
+          "primary": false,
+          "unique": false
+        },
+        {
+          "keyName": "static_info",
           "columnNames": [
             "time",
-            "tenant_name",
             "account_name",
-            "type"
+            "amount"
           ],
           "composite": true,
           "constraint": false,
