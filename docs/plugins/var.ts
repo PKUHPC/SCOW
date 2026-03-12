@@ -13,7 +13,7 @@
 import { visit } from "unist-util-visit";
 
 const ORGANIZATION_NAME = "PKUHPC";
-const PROJECT_NAME = "SCOW";
+const PROJECT_NAME = "private-scow";
 // gitee or github
 const GIT_PLATFORM = process.env.GIT_PLATFORM || "github";
 const CR_URL = process.env.CR_URL || "ccrepo.pku.edu.cn/scow/scow";

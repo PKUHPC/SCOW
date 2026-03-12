@@ -37,28 +37,7 @@ buf generate --template buf.gen.yaml https://github.com/PKUHPC/private-scow.git#
 
 - [Go](./examples/go.md#使用buf获取proto文件并生成代码)
 
-### 2. 通过npm获取proto文件
-
-您可以通过npm从`npmjs.org`上获取任意版本的proto文件
-
-```bash
-# 最新版本的API文件
-npm install -g @scow/grpc-api
-
-# 特定版本(0.1.2)的API
-npm install -g @scow/grpc-api@0.1.2
-
-# 安装好后，可以去npm的全局模块的目录中查找到这个包，并获取内部的文件
-cd $(npm root -g)/@scow/grpc-api
-
-# 如果您使用npm对您的项目进行依赖管理，则可以在您的项目中安装此包，并直接在此包的node_modules中获取到proto文件
-npm install --save @scow/grpc-api
-cd node_modules/@scow/grpc-api
-```
-
 ## API版本控制
-
-我们通过npm以及package.json文件对API版本进行控制。当前的版本为：![npm](https://img.shields.io/npm/v/@scow/grpc-api?label=%40scow%2Fgrpc-api)
 
 API的版本通过`@scow/grpc-api`包的版本进行定义。SCOW gRPC API版本控制原则：
 

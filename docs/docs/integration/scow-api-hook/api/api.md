@@ -16,6 +16,10 @@ SCOW支持使用API调用。由于历史原因，访问不同的组件需要使�
 
 门户和管理系统应使用gRPC访问portal-server和mis-server来调用。
 
+示例项目：
+
+- [Go](../examples/go.md#使用scow-api)
+
 要使用SCOW API，您需要
 
 1. [获取SCOW Protobuf文件](../proto.md)并生成相关代码
@@ -50,9 +54,6 @@ audit:
 - 将**静态秘密字符串**传入`user_token`参数
 - 将**调用AI和量子系统时的用户ID**传入`x-scow-user-id` metadata
 
-## 实际项目示例
-
-- [Go](../examples/go.md#使用scow-api)
 
 # 通过HTTP调用AI、量子系统
 
