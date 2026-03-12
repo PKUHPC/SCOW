@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package scow_notification;
 
-import "protos/message_common.proto";
+import "message_common.proto";
 import "google/protobuf/struct.proto";
 
 message Message {

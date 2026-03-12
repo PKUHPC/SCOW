@@ -13,11 +13,11 @@
     "vscode": {
       // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
-        "dbaeumer.vscode-eslint",
         "GitHub.copilot",
         "EditorConfig.EditorConfig",
         "hediet.vscode-drawio",
-        "drblury.protobuf-vsc"
+        "drblury.protobuf-vsc",
+        "oxc.oxc-vscode"
       ]
     }
   }

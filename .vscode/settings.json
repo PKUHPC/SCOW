@@ -1,15 +1,8 @@
 {
   "js/ts.tsdk.path": "node_modules/typescript/lib",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
-  },
   "protobuf.buf.path": "${workspaceFolder}/node_modules/.bin/buf",
   "protobuf.externalLinter.bufPath": "${workspaceFolder}/node_modules/.bin/buf",
   "protobuf.formatter.preset": "buf",
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": true,
 }

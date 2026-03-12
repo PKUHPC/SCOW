@@ -23,8 +23,7 @@
     "build:types": "rimraf build && tsc -p tsconfig.types.json && tsc-alias -p tsconfig.types.json",
     "orm": "dotenv -e env/.env.dev -- npx mikro-orm",
     "ormCreate": "dotenv -e env/.env.dev -- npx mikro-orm migration:create",
-    "ormUp": "dotenv -e env/.env.dev -- npx mikro-orm migration:up",
-    "lint": "eslint ."
+    "ormUp": "dotenv -e env/.env.dev -- npx mikro-orm migration:up"
   },
   "mikro-orm": {
     "useTsNode": true,

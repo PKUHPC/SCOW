@@ -14,7 +14,7 @@ syntax = "proto3";
 
 package notification;
 
-import "protos/common.proto";
+import "common.proto";
 
 message CreateMessageConfigRequest {
   optional NoticeType notice_type = 1;

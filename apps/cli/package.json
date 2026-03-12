@@ -8,8 +8,7 @@
   "scripts": {
     "dev": "node -r ts-node/register -r tsconfig-paths/register src/index.ts",
     "build": "rimraf build exe && node scripts/build.mjs",
-    "test": "jest",
-    "lint": "eslint -c ../../eslint.config.js ."
+    "test": "jest"
   },
   "dependencies": {
     "@ddadaal/tsgrpc-client": "0.17.9",

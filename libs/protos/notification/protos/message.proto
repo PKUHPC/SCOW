@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package notification;
 
-import "protos/common.proto";
-import "protos/message_type.proto";
+import "common.proto";
+import "message_type.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 

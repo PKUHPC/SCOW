@@ -15,28 +15,26 @@
     "typecheck": "tsc",
     "genDocs": "pnpm writeEnvDocs && pnpm writeConfigDocs",
     "writeEnvDocs": "ts-node tools/envDoc.ts",
-    "writeConfigDocs": "node tools/configDoc.mjs",
-    "lint": "eslint -c ../eslint.config.js ."
+    "writeConfigDocs": "node tools/configDoc.mjs"
   },
   "dependencies": {
-    "@docusaurus/core": "3.7.0",
-    "@docusaurus/preset-classic": "3.7.0",
-    "@easyops-cn/docusaurus-search-local": "0.48.0",
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/preset-classic": "3.9.2",
+    "@easyops-cn/docusaurus-search-local": "0.55.1",
     "@mdx-js/react": "3.1.0",
     "clsx": "2.1.1",
-    "eslint": "9.36.0",
     "prism-react-renderer": "2.4.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@adobe/jsonschema2md": "8.0.2",
-    "@docusaurus/module-type-aliases": "3.7.0",
-    "@docusaurus/types": "3.7.0",
+    "@docusaurus/module-type-aliases": "3.9.2",
+    "@docusaurus/types": "3.9.2",
     "@node-rs/jieba": "2.0.1",
     "@scow/config": "workspace:*",
     "@sinclair/typebox": "0.34.13",
-    "@tsconfig/docusaurus": "2.0.3",
+    "@tsconfig/docusaurus": "2.0.9",
     "@types/react": "18.3.3",
     "typescript": "5.9.3",
     "unist-util-visit": "5.0.0"

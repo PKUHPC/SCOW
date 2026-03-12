@@ -10,7 +10,7 @@ import { AssignAccountOnCreateRequest,
   GetClusterAssignedAccountsRequest,
   GetTenantAssignedClustersAndPartitionsRequest,
   GetTenantAssignedClustersAndPartitionsResponse,
-} from "@scow/scow-resource-protos/generated/resource/partition";
+} from "@scow/scow-resource-protos/build/partition";
 
 import { getScowResourceClient } from "./client";
 

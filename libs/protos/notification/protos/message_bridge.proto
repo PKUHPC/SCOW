@@ -3,7 +3,7 @@ syntax = "proto3";
 package scow_notification;
 
 import "google/protobuf/struct.proto";
-import "protos/message_common.proto";
+import "message_common.proto";
 
 message SenderInfo {
   optional SenderType sender_type = 1;

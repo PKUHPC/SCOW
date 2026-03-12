@@ -8,15 +8,15 @@
       "esnext"
     ],
     "outDir": "build",
+    "rootDir": "./src",
     "jsx": "react-jsx",
     "module": "ESNext",
-    "baseUrl": ".",
     "paths": {
       "src/*": [
-        "src/*"
+        "./src/*"
       ],
       "tests/*": [
-        "tests/*"
+        "./tests/*"
       ]
     },
   },

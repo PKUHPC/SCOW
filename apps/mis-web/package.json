@@ -9,8 +9,7 @@
     "serve:next": "next start",
     "build": "npm run build:next",
     "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build --turbopack",
-    "client": "ntar client",
-    "lint": "eslint ."
+    "client": "ntar client"
   },
   "files": [
     ".next",

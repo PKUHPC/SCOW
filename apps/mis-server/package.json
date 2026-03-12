@@ -9,8 +9,7 @@
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "serve": "node build/index.js",
     "test": "jest --forceExit",
-    "orm": "dotenv -e env/.env.dev -- npx mikro-orm",
-    "lint": "eslint -c ../../eslint.config.js ."
+    "orm": "dotenv -e env/.env.dev -- npx mikro-orm"
   },
   "files": [
     "scripts",

@@ -22,10 +22,9 @@
     "incremental": true,
     "outDir": "./dist",
     "declaration": true,
-    "baseUrl": "./",
     "paths": {
       "src/*": [
-        "src/*"
+        "./src/*"
       ]
     },
     "plugins": [

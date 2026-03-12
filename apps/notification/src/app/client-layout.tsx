@@ -13,7 +13,6 @@ import { AntdStyleRegistry } from "src/components/layout/style-registry/antd-reg
 import StyledComponentsRegistry from "src/components/layout/style-registry/styled-components-registry";
 import { ScowParamsProvider } from "src/components/scow-params-provider";
 import { UiConfigSchema } from "src/models/ui";
-import styled from "styled-components";
 
 import { UiConfigContext } from "./ui-context";
 

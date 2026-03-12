@@ -19,8 +19,7 @@
     "build": "npm run build:next",
     "build:next": "rimraf .next.backup && cross-env BUILDING=1 NEXT_PUBLIC_BASE_PATH=/@BASE_PATH@ next build --no-mangling --turbopack",
     "build:ts": "rimraf build && tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
-    "test": "jest --passWithNoTests",
-    "lint": "eslint ."
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@ant-design/cssinjs": "1.22.1",

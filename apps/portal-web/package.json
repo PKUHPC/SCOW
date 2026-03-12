@@ -11,8 +11,7 @@
     "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build --turbopack",
     "test": "jest --passWithNoTests",
     "client": "ntar client",
-    "prepareDev": "node scripts/copyMonacoToPublic.js",
-    "lint": "eslint ."
+    "prepareDev": "node scripts/copyMonacoToPublic.js"
   },
   "files": [
     ".next",

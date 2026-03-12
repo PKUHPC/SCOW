@@ -14,7 +14,6 @@ import { ScowParamsProvider } from "src/components/ScowParamsProvider";
 import { ServerErrorPage } from "src/components/ServerErrorPage";
 import { trpc } from "src/server/trpc/api";
 import { PublicConfig, UiConfig } from "src/server/trpc/route/config";
-import styled from "styled-components";
 
 import { PublicConfigContext } from "./publicConfigContext";
 import { UiConfigContext } from "./uiContext";

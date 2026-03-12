@@ -1,9 +1,8 @@
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
     "editorconfig.editorconfig",
-    "ms-playwright.playwright",
     "hediet.vscode-drawio",
-    "drblury.protobuf-vsc"
+    "drblury.protobuf-vsc",
+    "oxc.oxc-vscode"
   ]
 }

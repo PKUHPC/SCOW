@@ -7,7 +7,7 @@ import {
   sftpReadFile, sftpRealPath, sshRmrf,
 } from "@scow/lib-ssh";
 import {
-  FileInfo, FileServiceServer, FileServiceService, fileTypeFromJSON, TransferInfo,
+  FileInfo, FileServiceServer, FileServiceService, fileTypeFromJSON,
 } from "@scow/protos/build/portal/file";
 import path from "path";
 import { getClusterOps } from "src/clusterops";

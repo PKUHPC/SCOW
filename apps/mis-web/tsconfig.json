@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "target": "es5",
     "lib": [
       "dom",
       "dom.iterable",
@@ -18,8 +17,13 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "baseUrl": ".",
-    "incremental": true
+    "incremental": true,
+    "target": "ES2017",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"

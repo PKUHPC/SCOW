@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "generate": "rimraf generated && buf generate --template buf.gen.yaml --path ./protos",
+    "generate": "rimraf generated && buf generate --template buf.gen.yaml ./protos",
     "build": "rimraf build && tsc"
   },
   "files": [

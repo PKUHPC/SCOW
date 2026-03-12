@@ -21,8 +21,7 @@ import { VersionServiceClient } from "@scow/scheduler-adapter-protos/build/versi
 
 import { SslConfig } from "./ssl";
 
-type ClientConstructor<TClient> =
-  new (address: string, credentials: ChannelCredentials) => TClient;
+type ClientConstructor<TClient> = new (address: string, credentials: ChannelCredentials) => TClient;
 
 export interface SchedulerAdapterClient {
   account: AccountServiceClient;
@@ -35,7 +34,9 @@ export interface SchedulerAdapterClient {
 }
 
 export function getClient<TClient>(
-  address: string, sslConfig: SslConfig, ctor: ClientConstructor<TClient>,
+  address: string,
+  sslConfig: SslConfig,
+  ctor: ClientConstructor<TClient>,
 ): TClient {
   if (sslConfig.enabled) {
     return new ctor(
@@ -44,10 +45,7 @@ export function getClient<TClient>(
     );
   }
 
-  return new ctor(
-    address,
-    ChannelCredentials.createInsecure(),
-  );
+  return new ctor(address, ChannelCredentials.createInsecure());
 }
 
 export const getSchedulerAdapterClient = (address: string, sslConfig: SslConfig) => {

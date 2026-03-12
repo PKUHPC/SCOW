@@ -11,5 +11,5 @@
  */
 
 export type { ScowdClient } from "./client";
-export { getScowdClient } from "./client";
 export { createScowdCertificates } from "./ssl";
+export { getScowdClient } from "./client";

@@ -7,8 +7,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
-    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "lint": "eslint ."
+    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
   },
   "files": [
     "build",

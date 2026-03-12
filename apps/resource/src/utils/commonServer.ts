@@ -1,5 +1,5 @@
 import { Loaded } from "@mikro-orm/core";
-import { PartitionNames } from "@scow/scow-resource-protos/generated/resource/partition";
+import { PartitionNames } from "@scow/scow-resource-protos/build/partition";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";

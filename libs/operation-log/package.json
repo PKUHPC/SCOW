@@ -6,8 +6,7 @@
   "main": "build/index.js",
   "scripts": {
     "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
-    "build": "rimraf build && tsc -p tsconfig.build.json",
-    "lint": "eslint -c ../../eslint.config.js ."
+    "build": "rimraf build && tsc -p tsconfig.build.json"
   },
   "files": [
     "build",

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npx oxlint:*)",
+      "Bash(git stash:*)",
+      "Bash(pnpm build:*)"
+    ]
+  }
+}

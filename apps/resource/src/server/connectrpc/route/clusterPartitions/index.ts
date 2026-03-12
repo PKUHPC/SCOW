@@ -10,7 +10,7 @@ import {
   GetClusterAssignedAccountsRequest,
   GetTenantAssignedClustersAndPartitionsRequest,
   IsAccountAuthorizedInClusterPartitionRequest,
-} from "@scow/scow-resource-protos/generated/resource/partition_pb";
+} from "@scow/scow-resource-protos/build/partition_pb";
 import { commonConfig } from "src/server/config/common";
 import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
 import { checkClusterIdAvailable, checkClusterPartitionAvailable } from "src/utils/auth/utils";

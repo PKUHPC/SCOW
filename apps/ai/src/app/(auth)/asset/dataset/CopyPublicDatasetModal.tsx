@@ -2,7 +2,6 @@ import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInpu
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal } from "antd";
 import React from "react";
-import { useUser } from "src/app/auth";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
@@ -37,7 +36,6 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
-  const user = useUser();
 
   const copyMutation = trpc.dataset.copyPublicDatasetVersion.useMutation({
     onSuccess() {

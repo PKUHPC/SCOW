@@ -135,7 +135,7 @@ export const useJobIdsInput = (
           name: "jobIds",
           errors: [],
         }]);
-      } catch (_) {
+      } catch {
         form.setFields([{
           name: "jobIds",
           errors: [errorMessage],

@@ -23,8 +23,7 @@
     "orm": "dotenv -e env/.env.dev -- npx mikro-orm",
     "ormCreate": "dotenv -e env/.env.dev -- npx mikro-orm migration:create",
     "ormUp": "dotenv -e env/.env.dev -- npx mikro-orm migration:up",
-    "prepareDev": "node scripts/copyMonacoToPublic.js",
-    "lint": "eslint ."
+    "prepareDev": "node scripts/copyMonacoToPublic.js"
   },
   "mikro-orm": {
     "useTsNode": true,
