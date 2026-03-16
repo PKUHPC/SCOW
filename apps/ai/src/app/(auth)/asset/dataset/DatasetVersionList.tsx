@@ -155,7 +155,7 @@ export const DatasetVersionList: React.FC<Props> = (
                       await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
 
                       if (checkExistRes?.exists) {
-                        router.push(`/files${r.privatePath}`);
+                        router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
                       } else {
                         deleteDatasetVersion(r.id, r.datasetId, true);
                       }

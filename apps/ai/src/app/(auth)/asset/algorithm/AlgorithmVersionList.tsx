@@ -163,7 +163,7 @@ export const AlgorithmVersionList: React.FC<Props> = (
                           const checkExistRes =
                             await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
                           if (checkExistRes?.exists) {
-                            router.push(`/files${r.privatePath}`);
+                            router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
                           } else {
                             deleteAlgorithmVersion(r.id, true);
                           }

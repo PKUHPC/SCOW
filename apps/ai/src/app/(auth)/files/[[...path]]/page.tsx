@@ -1,7 +1,7 @@
 "use client";
 
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { join } from "path";
 import { use,useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -18,12 +18,17 @@ export default function Page({ params }: { params: Promise<{
   const p = prefix("app.files.pages.");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { clusters, publicConfig: { LOGIN_NODES,CLUSTERS }, currentAvailableClusterIds } = usePublicConfig();
 
+  const clusterIdInSearch = searchParams?.get("cluster") || "";
+  const validateClusterIdInSearch = clusterIdInSearch && clusters.find((x) => x.id === clusterIdInSearch);
+
   const { defaultCluster, currentClusters }
      = defaultClusterContext(CLUSTERS, currentAvailableClusterIds ?? []);
-  const initialClusterId = defaultCluster?.id ?? currentClusters[0].id;
+  const initialClusterId = validateClusterIdInSearch ? clusterIdInSearch :
+    (defaultCluster?.id ?? currentClusters[0].id);
   const [clusterId, setClusterId] = useState(initialClusterId);
 
   const { path: pathParts = []} = use(params);
