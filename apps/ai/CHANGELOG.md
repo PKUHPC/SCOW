@@ -1,5 +1,35 @@
 # @scow/ai
 
+## 0.5.2
+
+### Patch Changes
+
+- 9b46f4a: 智算平台文件管理路径查询失败时抛出错误
+- d8e2d51: 增加 ai 应用再次提交自定义属性回显；ai 作业名校验，应用作业名可清空；调整复制公共资产默认名称。
+- fb60d5c: 修复侧边栏动作中文件管理子导航选中异常，去掉量子侧边栏二级导航自带的灰色背景
+- 470b7ef: 修复 getUnreadMessages 调用导致 mis 的 init 页面需要登录的 bug、删除 BodyContainer
+- ffc4632: 优化页面中 Input 组件失焦时会自动去除前后空格
+- 028995a: 修复 AI 涉及集群选择的快捷入口跳转出错
+- 4acbdcd: AI 数据资产的进入文件功能，因填充默认集群导致接口报错
+- Updated dependencies [7f7a095]
+- Updated dependencies [7f93a72]
+- Updated dependencies [e76e039]
+- Updated dependencies [fb60d5c]
+- Updated dependencies [ffc4632]
+- Updated dependencies [470b7ef]
+- Updated dependencies [ffc4632]
+- Updated dependencies [028995a]
+  - @scow/lib-web@1.5.13
+  - @scow/lib-auth@1.0.4
+  - @scow/config@1.13.2
+  - @scow/protos@1.0.38
+  - @scow/lib-notification@1.0.23
+  - @scow/lib-operation-log@2.2.13
+  - @scow/lib-scow-resource@0.2.22
+  - @scow/lib-server@1.4.13
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-scheduler-adapter@1.1.36
+
 ## 0.5.1
 
 ### Patch Changes

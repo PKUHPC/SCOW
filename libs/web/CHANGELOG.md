@@ -1,5 +1,19 @@
 # @scow/lib-web
 
+## 1.5.13
+
+### Patch Changes
+
+- 7f7a095: 在租户管理下的授权应用和授权集群分区页面增加账户拥有着的查询与展示
+- 7f93a72: 统一侧边栏点击动作
+- fb60d5c: 修复侧边栏动作中文件管理子导航选中异常，去掉量子侧边栏二级导航自带的灰色背景
+- 470b7ef: 修复 getUnreadMessages 调用导致 mis 的 init 页面需要登录的 bug、删除 BodyContainer
+- ffc4632: 优化页面中 Input 组件失焦时会自动去除前后空格
+- 028995a: 修复 AI 涉及集群选择的快捷入口跳转出错
+- Updated dependencies [ffc4632]
+  - @scow/config@1.13.2
+  - @scow/protos@1.0.38
+
 ## 1.5.12
 
 ### Patch Changes

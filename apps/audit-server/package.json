@@ -1,6 +1,6 @@
 {
   "name": "@scow/audit-server",
-  "version": "2.3.30",
+  "version": "2.3.31",
   "description": "",
   "private": true,
   "main": "build/index.js",

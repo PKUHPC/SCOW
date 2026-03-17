@@ -1,5 +1,26 @@
 # @scow/mis-server
 
+## 1.10.2
+
+### Patch Changes
+
+- 5ff48b7: 账户充值记录查询优化。调整查询条件、列表字段、更改分页为后端分页。
+- 2750f41: 通过优化 sql 查询语句与索引，优化消费记录接口时长问题
+- 7f7a095: 在租户管理下的授权应用和授权集群分区页面增加账户拥有着的查询与展示
+- e76e039: 账户管理-用户管理、平台与租户的用户列表、平台-用户登录解封增加用户 ID 和姓名筛选。修改了 getLockedUsers 接口，文档位于 docs/integration/auth/impl#get-lockusergetlockedusers。
+- 7f7a095: 优化管理系统账户列表获取逻辑，优化资源管理授权集群分区页面数据逻辑
+- 0c326bc: 修复账户消费记录导出时无法根据用户 id 和 name 模糊搜索的问题
+- Updated dependencies [e76e039]
+- Updated dependencies [ffc4632]
+  - @scow/lib-auth@1.0.4
+  - @scow/config@1.13.2
+  - @scow/protos@1.0.38
+  - @scow/lib-hook@1.0.38
+  - @scow/lib-notification@1.0.23
+  - @scow/lib-scow-resource@0.2.22
+  - @scow/lib-server@1.4.13
+  - @scow/lib-scheduler-adapter@1.1.36
+
 ## 1.10.1
 
 ### Patch Changes

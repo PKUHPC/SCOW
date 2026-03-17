@@ -1,5 +1,25 @@
 # @scow/notification
 
+## 0.2.25
+
+### Patch Changes
+
+- 470b7ef: 修复 getUnreadMessages 调用导致 mis 的 init 页面需要登录的 bug、删除 BodyContainer
+- ffc4632: 优化页面中 Input 组件失焦时会自动去除前后空格
+- Updated dependencies [7f7a095]
+- Updated dependencies [7f93a72]
+- Updated dependencies [fb60d5c]
+- Updated dependencies [ffc4632]
+- Updated dependencies [470b7ef]
+- Updated dependencies [ffc4632]
+- Updated dependencies [028995a]
+  - @scow/lib-web@1.5.13
+  - @scow/config@1.13.2
+  - @scow/protos@1.0.38
+  - @scow/lib-notification@1.0.23
+  - @scow/lib-server@1.4.13
+  - @scow/lib-scheduler-adapter@1.1.36
+
 ## 0.2.24
 
 ### Patch Changes

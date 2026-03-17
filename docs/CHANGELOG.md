@@ -1,5 +1,11 @@
 # @scow/docs
 
+## 1.4.24
+
+### Patch Changes
+
+- e76e039: 账户管理-用户管理、平台与租户的用户列表、平台-用户登录解封增加用户 ID 和姓名筛选。修改了 getLockedUsers 接口，文档位于 docs/integration/auth/impl#get-lockusergetlockedusers。
+
 ## 1.4.23
 
 ### Patch Changes

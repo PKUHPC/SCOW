@@ -1,5 +1,16 @@
 # @scow/cli
 
+## 1.10.2
+
+### Patch Changes
+
+- 345bb3b: 恢复支持 centos 7
+- ffc4632: 在账户名，用户 ID 正则配置中增加前后空格会被忽略的描述
+- 22655e8: 实现 check-clusters 命令,检查 scowd 和 adapter 是否可以正常连接,输出按集群组合展示
+- Updated dependencies [ffc4632]
+  - @scow/config@1.13.2
+  - @scow/lib-scheduler-adapter@1.1.36
+
 ## 1.10.1
 
 ### Patch Changes
