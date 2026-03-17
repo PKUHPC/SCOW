@@ -1,14 +1,16 @@
 import { LinkOutlined } from "@ant-design/icons";
 import { join } from "path";
-import { ExtensionRouteQuery,isUrl } from "src/extensions/common";
+import { ExtensionRouteQuery, isUrl } from "src/extensions/common";
 import { defineExtensionRoute } from "src/extensions/routes";
 import { NavItemProps } from "src/layouts/base/types";
 import { NavIcon } from "src/layouts/icon";
 import { z } from "zod";
 
-import { AccountPartitionsIcon, CreateCustomMessageIcon, DefaultClustersIcon,
+import {
+  AccountPartitionsIcon, CreateCustomMessageIcon, DefaultClustersIcon,
   DefaultPartitionsIcon, MessageConfigIcon, NotificationIcon,
-  SendMessageIcon, SubscriptionIcon } from "./menuIcon";
+  SendMessageIcon, SubscriptionIcon
+} from "./menuIcon";
 
 export const BaseNavItem = z.object({
   path: z.string({ description: "目标路径。如果是外部链接，需要以 http:// 或 https:// 开头。如果是SCOW的路径，无需加base path" }),
@@ -129,6 +131,7 @@ export const toNavItemProps = (
       handleClick: originalItemsMap.get(item.path)?.handleClick,
       children: item.children ? rec(item.children) : undefined,
       hideIfNotActive: item.hideIfNotActive,
+      match: originalItemsMap.get(item.path)?.match,
     }));
   };
 

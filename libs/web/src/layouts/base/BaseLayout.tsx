@@ -34,7 +34,7 @@ const ContentPart = styled.div`
 
 `;
 
-const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
+const Content = styled(Layout.Content) <{ $isDashboard: boolean }>`
   margin: ${(props) => props.$isDashboard ? "8px 8px 0px" : "8px"};
   padding: 16px;
   flex: 1;
@@ -80,7 +80,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     (Array.isArray(extensionStoreData)
       ? extensionStoreData
       : extensionStoreData ? [extensionStoreData] : []).filter((x) => x),
-  [extensionStoreData]);
+    [extensionStoreData]);
 
   const routeQuery = useMemo(() => getExtensionRouteQuery(
     dark.dark,
@@ -119,7 +119,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     finalRoutes
       ? [...calcActiveKeys(finalRoutes, router.asPath)]
       : []
-  , [finalRoutes, router.asPath]);
+    , [finalRoutes, router.asPath]);
 
   const firstLevelRoute = finalRoutes.find((x) => activeKeys.includes(x.path));
 
@@ -163,7 +163,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
           <Content $isDashboard={router.pathname === "/dashboard"}>
             {children}
           </Content>
-          { router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : "" }
+          {router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : ""}
         </ContentPart>
       </StyledLayout>
     </Root>

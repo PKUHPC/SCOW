@@ -40,7 +40,7 @@ export function createMenuItems(
           // appRouter模式
           if (appRouter) {
             appRouter.push(target);
-          // pageRouter模式
+            // pageRouter模式
           } else {
             void Router.push(target);
           }
@@ -55,25 +55,22 @@ export function createMenuItems(
         key: route.path,
         title: route.text,
         label:
-        <Tooltip
-          title={route.text?.length > 13 ? route.text : null}
-          mouseEnterDelay={0.3}
-          placement="bottomLeft"
-        >{route.text}
-        </Tooltip>,
-        onTitleClick:(route.clickable ?? parentClickable)
+          <Tooltip
+            title={route.text?.length > 13 ? route.text : null}
+            mouseEnterDelay={0.3}
+            placement="bottomLeft"
+          >{route.text}
+          </Tooltip>,
+        onTitleClick: (route.clickable ?? parentClickable)
           ? handleClick
           : undefined,
         children: createMenuItems(route.children, pathname, parentClickable, appRouter),
       } as ItemType;
     }
 
-    // 标准化 key，去掉末尾斜杠
-    const normalizedKey = normalizePath(route.path);
-
     return {
       icon: iconToNode(route.Icon),
-      key: normalizedKey,
+      key: route.path,
       label:
         <Tooltip
           title={route.text?.length > 13 ? route.text : null}
@@ -127,8 +124,6 @@ export function calcActiveKeys(links: NavItemProps[], pathname: string): Set<str
 
   for (const link of links) {
 
-    const normalizedPath = normalizePath(link.path);
-
     if (arrayContainsElement(link.children)) {
       const childrenSelectedKeys = calcActiveKeys(link.children, pathname);
       for (const childKey of childrenSelectedKeys) {
@@ -137,22 +132,14 @@ export function calcActiveKeys(links: NavItemProps[], pathname: string): Set<str
     }
 
     if (
-      // 子级比较时也用标准化后的 path
-      link.children?.some((x) => {
-        const normalizedChildPath = normalizePath(x.path);
-        return selectedKeys.has(normalizedChildPath);
-      }) ||
-      (normalizedPath === "/" && pathname === "/") ||
-      (normalizedPath !== "/" && normalizedPath !== "" && match(link, pathname))
+      link.children?.some((x) => selectedKeys.has(x.path)) ||
+      (link.path === "/" && pathname === "/") ||
+      (link.path !== "/" && link.path !== "" && match(link, pathname))
     ) {
-      // 存标准化后的 path
-      selectedKeys.add(normalizedPath);
+      selectedKeys.add(link.path);
     }
   }
 
   return selectedKeys;
 }
 
-function normalizePath(path: string): string {
-  return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
-}
