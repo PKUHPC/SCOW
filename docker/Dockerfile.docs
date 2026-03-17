@@ -39,6 +39,9 @@ COPY tsconfig.json turbo.json ./
 COPY libs/tsconfig.json ./libs/
 COPY protos ./protos
 
+ARG BASE_PATH="/"
+ENV BASE_PATH=${BASE_PATH}
+
 RUN pnpm build
 
 FROM ccrepo.pku.edu.cn/dockerhub/library/nginx:alpine AS runner
