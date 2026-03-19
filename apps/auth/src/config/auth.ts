@@ -170,7 +170,7 @@ export const UiConfigSchema = Type.Object({
       texts: Type.Array(createI18nStringSchema({ description: "默认 slogan 正文", defaultValue: "" })
         , { description: "默认 slogan 正文数组", default: []}),
     }, { default: {} }),
-    footerTextColor: Type.String({ description: "默认 footer 文字颜色", default: "white" }),
+    footerTextColor: Type.String({ description: "默认 footer 文字颜色", default: "#434343" }),
     footerText: Type.Optional(createI18nStringSchema({ description: "默认 footer 文字" })),
   }),
   hostnameMap: Type.Optional(Type.Record(Type.String(), Type.Object({

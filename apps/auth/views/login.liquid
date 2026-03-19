@@ -8,12 +8,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
+      height: 100%;
       background-image:
         url("{{ backgroundImagePath }}"),
         url("{{ backgroundDefaultImagePath }}");
       background-repeat: no-repeat;
-      background-color: {{ backgroundFallbackColor }};
+      background-color: #fff;
       background-size: cover;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: auto;
     }
     .button-primary {
         background-color: {{ themeColor }};
@@ -22,16 +28,127 @@
       height: 100%;
       width: 100%;
     }
+    .eye-toggle {
+      cursor: pointer;
+      background-color: #8C8C8C;
+      transition: background-color 0.2s ease;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+    }
+    .eye-toggle:hover {
+      background-color: {{ themeColor }};
+    }
+    .login-main {
+      display: flex;
+      width: 100%;
+      flex: 0 0 auto;
+      --logo-bottom-offset: 7rem;
+      --footer-outer-height: 0px;
+      --panel-gap: 22.5rem;
+      --login-left-half-height: 0rem;
+      margin-top: var(--logo-bottom-offset);
+      min-height: max(0px, calc(100vh - var(--logo-bottom-offset) - var(--footer-outer-height)));
+    }
+    .login-col {
+      width: 50%;
+    }
+    .login-left {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: calc(var(--panel-gap) / 2);
+    }
+    .login-right {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      flex-direction: column;
+      padding-left: calc(var(--panel-gap) / 2);
+    }
+    .login-right-content {
+      width: max-content;
+      max-width: 100%;
+    }
+    .slogan-title {
+      line-height: 3rem;
+    }
+    .login-footer {
+      flex: 0 0 auto;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    @media screen and (max-width: 1920px) {
+      .login-main {
+        --panel-gap: 22.5rem;
+      }
+    }
+    @media screen and (max-width: 1600px) {
+      .login-main {
+        --panel-gap: 15rem;
+      }
+    }
     @media screen and (max-width: 1200px) {
-      .hidden-xs{
-          display: none;
+      .login-main {
+        --panel-gap: 7.5rem;
+      }
+    }
+    @media screen and (max-width: 992px) {
+      .login-main {
+        --panel-gap: 4.5rem;
+      }
+    }
+    @media screen and (max-width: 720px) {
+      .login-main {
+        position: relative;
+        min-height: 0;
+        height: auto;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: max(1.5rem, calc((100vh - var(--logo-bottom-offset)) / 2 - var(--login-left-half-height)));
+        padding-bottom: 1.5rem;
+      }
+      .login-col {
+        width: 100%;
+        height: auto;
+      }
+      .login-left {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        justify-content: center;
+        padding-right: 0;
+      }
+      .login-right {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        padding-left: 0;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 4rem;
+      }
+      .login-right-content {
+        text-align: center;
+      }
+      .login-footer {
+        position: static;
       }
     }
   </style>
 </head>
 
 <body style="font-family:Roboto">
-    <div class="fixed top-9 left-12">
+    <div class="fixed top-9 left-12 login-logo">
       {% if logoLink == "" %}
       <img class="w-40" src="{{ logoUrl }}" alt="logo">
       {% else %}
@@ -40,20 +157,20 @@
       </a>
       {% endif %}
     </div>
-    <div class="w-full h-screen flex">
-      <div class="w-1/2 h-screen ml-20 flex items-center justify-center">
-        <div class="w-72 max-w-md min-w-max bg-white rounded-lg pt-12 pb-4">
+    <div class="login-main">
+      <div class="login-col login-left">
+        <div class="w-72 max-w-md min-w-max bg-white rounded-xl pt-12 pb-4">
           <form id="loginForm" method="post" action="">
             <div class="mb-14 text-2xl font-semibold text-center">{{ authTexts.login.accountPasswordLogin }}</div>
             <div class="px-10 flex flex-col items-center">
               <div class="w-72 mb-6">
                 <input type='text' name="username" placeholder="{{ authTexts.login.userId }}" required
-                    class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
+                    class="px-4 w-full border rounded-lg py-2 text-gray-700 focus:outline-none" />
               </div>
               <div class="w-72 mb-6">
                 <div class="password-field relative flex items-center">
                     <input id="password" name="password" placeholder="{{ authTexts.login.password }}" type="password" required
-                        class="px-8 w-full border rounded px-3 py-2 text-gray-700 focus:outline-none" />
+                        class="px-4 w-full border rounded-lg py-2 text-gray-700 focus:outline-none" />
                     <div id="eye-elem" class="eye-toggle absolute w-5 h-5 right-3 bg-contain"></div>
                 </div>
               </div>
@@ -115,7 +232,7 @@
               {% if verifyOtpFail %}
                 <p class="my-4 text-center text-red-600">{{ authTexts.login.invalidOtp }}</p>
               {% endif %}
-              <button type="submit" class="w-72 py-2 mb-14 mt-6 rounded button-primary text-gray-100 focus:outline-none">
+              <button type="submit" class="w-72 py-2 mb-14 mt-6 rounded-lg button-primary text-gray-100 focus:outline-none">
                   {{ authTexts.login.login }}
               </button>
             </div>
@@ -132,16 +249,18 @@
           {% endif %}
         </div>
       </div>
-      <div class="w-1/2 h-screen pl-32 flex justify-center flex-col hidden-xs">
-          <div class="text-4xl font-semibold mb-12"  style="color: {{ sloganColor }}">{{ sloganTitle | default: authTexts.login.platformSystem}}</div>
+      <div class="login-col login-right hidden-xs">
+        <div class="login-right-content">
+          <div class="slogan-title text-4xl font-semibold mb-16"  style="color: {{ sloganColor }};">{{ sloganTitle | default: authTexts.login.platformSystem}}</div>
           {% for sloganText in sloganTextArr %}
-            <div class="text-2xl mb-8"  style="color: {{ sloganColor }}">{{ sloganText }}</div>
+            <div class="text-2xl {% if forloop.last %}mb-0{% else %}mb-6{% endif %}"  style="color: {{ sloganColor }}">{{ sloganText }}</div>
           {% endfor %}
+        </div>
       </div>
     </div>
 
     {%- if footerText != "" -%}
-      <div class="absolute bottom-0 w-full pl-24 my-4 text-white text-xs" style="color: {{ footerTextColor }}">
+      <div class="login-footer w-full pt-6 mb-4 text-center text-white text-xs" style="color: {{ footerTextColor }}">
         {{ footerText | default: 'Powered by <a href="https://github.com/PKUHPC/private-scow" target="_blank">SCOW</a>' }}
       </div>
     {%- endif -%}
@@ -222,6 +341,46 @@
     {% endif %}
 
     <script>
+      const loginMainElem = document.querySelector('.login-main');
+      const loginLeftElem = document.querySelector('.login-left');
+      const loginLogoElem = document.querySelector('.login-logo');
+      const loginFooterElem = document.querySelector('.login-footer');
+
+      function updateLoginLayout() {
+        if (!loginMainElem || !loginLeftElem) {
+          return;
+        }
+
+        if (loginLogoElem) {
+          const logoBottom = loginLogoElem.getBoundingClientRect().bottom;
+          const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+          const clampedLogoBottom = Math.min(Math.max(logoBottom, 0), viewportHeight);
+          loginMainElem.style.setProperty('--logo-bottom-offset', clampedLogoBottom + 'px');
+        }
+
+        if (loginFooterElem) {
+          const footerRect = loginFooterElem.getBoundingClientRect();
+          const footerStyles = getComputedStyle(loginFooterElem);
+          const footerMarginTop = parseFloat(footerStyles.marginTop) || 0;
+          const footerMarginBottom = parseFloat(footerStyles.marginBottom) || 0;
+          const footerOuterHeight = footerRect.height + footerMarginTop + footerMarginBottom;
+          loginMainElem.style.setProperty('--footer-outer-height', footerOuterHeight + 'px');
+        } else {
+          loginMainElem.style.setProperty('--footer-outer-height', '0px');
+        }
+
+        if (window.matchMedia('(max-width: 720px)').matches) {
+          const halfHeight = loginLeftElem.getBoundingClientRect().height / 2;
+          const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+          loginMainElem.style.setProperty('--login-left-half-height', (halfHeight / rootFontSize) + 'rem');
+        } else {
+          loginMainElem.style.setProperty('--login-left-half-height', '0rem');
+        }
+      }
+
+      window.addEventListener('resize', updateLoginLayout);
+      window.addEventListener('load', updateLoginLayout);
+
       // 图片预加载
       const eyeImg = new Image();
       eyeImg.src = "{{ eyeImagePath }}";
@@ -231,19 +390,23 @@
       document.querySelectorAll('.password-field').forEach(container => {
         const eyeElem = container.querySelector('.eye-toggle');
         const passwordInput = container.querySelector('input[type="password"]');
-        eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
-        eyeElem.style.cursor = "pointer"
+        eyeElem.style.webkitMaskImage = "url('" + eyeCloseImg.src + "')";
+        eyeElem.style.maskImage = "url('" + eyeCloseImg.src + "')";
 
         eyeElem.addEventListener("click", function() {
           if (passwordInput.type === "password") {
             passwordInput.setAttribute("type", "text");
-            eyeElem.style.backgroundImage =  "url('" + eyeImg.src + "')"
+            eyeElem.style.webkitMaskImage = "url('" + eyeImg.src + "')";
+            eyeElem.style.maskImage = "url('" + eyeImg.src + "')";
           } else {
             passwordInput.setAttribute("type", "password");
-            eyeElem.style.backgroundImage =  "url('" + eyeCloseImg.src + "')"
+            eyeElem.style.webkitMaskImage = "url('" + eyeCloseImg.src + "')";
+            eyeElem.style.maskImage = "url('" + eyeCloseImg.src + "')";
           }
         })
       })
+
+      updateLoginLayout();
 
       function hideChangePasswordModal() {
         document.getElementById('change-password-modal').classList.add('hidden')
