@@ -4,7 +4,8 @@
       "Bash(node:*)",
       "Bash(npx oxlint:*)",
       "Bash(git stash:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(bash .claude/skills/pr-desc/run.sh:*)"
     ]
   }
 }
