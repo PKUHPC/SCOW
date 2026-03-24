@@ -11,7 +11,7 @@
  */
 
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { GetUserInfoResponse, UserServiceClient } from "@scow/protos/build/server/user";
+import { AccountState, GetUserInfoResponse, UserServiceClient } from "@scow/protos/build/server/user";
 import { getClientFn } from "src/utils/api";
 
 export const libWebGetUserInfo = async (
@@ -35,7 +35,12 @@ export const libWebGetUserInfo = async (
 
   try {
     const reply = await asyncClientCall(client, "getUserInfo", { userId });
-    return reply;
+
+    // 返回用户信息的时候，去掉已删除的账户
+    return {
+      ...reply,
+      affiliations: reply.affiliations.filter((account) => account.accountState !== AccountState.ACCOUNT_DELETED),
+    };
   } catch (e: any) {
     console.error(e.details);
     return undefined;
