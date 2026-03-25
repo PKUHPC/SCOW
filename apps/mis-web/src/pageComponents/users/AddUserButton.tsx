@@ -86,7 +86,11 @@ const NewUserModal: React.FC<ModalProps> = ({
         >
           <Input placeholder={userIdRule?.message} />
         </Form.Item>
-        <Form.Item name="name" required label={t(pCommon("userFullName"))}>
+        <Form.Item name="name"
+          rules={[
+            { required: true },
+          ]}
+          label={t(pCommon("userFullName"))}>
           <Input />
         </Form.Item>
       </Form>
@@ -164,8 +168,8 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
 
     // 否则按照原有逻辑禁用按钮
     return currentAffiliation &&
-           (currentAffiliation.accountState === 2 || currentAffiliation.accountState === 3)
-           || isBelowBlockThreshold;
+      (currentAffiliation.accountState === 2 || currentAffiliation.accountState === 3)
+      || isBelowBlockThreshold;
   };
 
 
