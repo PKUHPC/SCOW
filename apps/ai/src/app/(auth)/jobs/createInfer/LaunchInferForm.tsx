@@ -1692,6 +1692,7 @@ export const LaunchInferForm = ({
           maxTimeUnit={maxTimeUnit}
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           gpuUnitLimit={gpuUnitLimit}
+          isResubmit={Boolean(createInferParams)}
         />
 
         <InferConfigSection

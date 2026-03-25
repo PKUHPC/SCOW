@@ -2173,6 +2173,7 @@ export const LaunchAppForm = ({
           onMaxTimeUnitChange={handleMaxTimeUnitChange}
           maxJobRunningTimeHours={maxJobRunningTimeHours}
           convertDurationToHours={convertDurationToHours}
+          isResubmit={Boolean(createAppParams)}
         />
 
         <AppConfigSection

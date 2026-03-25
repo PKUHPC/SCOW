@@ -4,6 +4,7 @@ import type { ColumnsType } from "antd/es/table";
 import { type ReactNode,useEffect, useMemo, useRef } from "react";
 import { type ClusterNodesInfo,getMaxPodsByNodes, getQueueNodes } from "src/app/(auth)/jobs/common";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
+import { useQueueTabSelection } from "src/app/(auth)/jobs/hooks/useQueueTabSelection";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useTheme } from "styled-components";
 
@@ -67,6 +68,7 @@ interface ResourceConfigSectionProps {
   convertDurationToHours: (value: number, unit: MaxTimeUnit) => number;
   frameworkOptions: TrainFramework[];
   gpuUnitLimit?: number;
+  isResubmit?: boolean;
 }
 
 type AddonNumberInputProps = {
@@ -116,37 +118,26 @@ export const ResourceConfigSection = ({
   convertDurationToHours,
   frameworkOptions,
   gpuUnitLimit,
+  isResubmit,
 }: ResourceConfigSectionProps) => {
   const theme = useTheme();
   const t = useI18nTranslateToString();
-
-  const sortedGpuRows = useMemo(
-    () => [...gpuRows].sort((a, b) => (a.disabled === b.disabled ? 0 : a.disabled ? 1 : -1)),
-    [gpuRows],
-  );
-
-  const sortedCpuRows = useMemo(
-    () => [...cpuRows].sort((a, b) => (a.disabled === b.disabled ? 0 : a.disabled ? 1 : -1)),
-    [cpuRows],
-  );
-
-  const handleTabChange = (key: string) => {
-    const tabKey = key as QueueKind;
-    onActiveResourceTabChange(tabKey);
-    form.setFieldValue("queue", tabKey);
-
-    const options = tabKey === "gpu" ? sortedGpuRows : sortedCpuRows;
-    if (!options.length) {
-      onQueueSelect(undefined);
-      return;
-    }
-
-    const hasValidSelection = options.some((option) => option.id === selectedQueueKey);
-    if (!hasValidSelection) {
-      const firstOption = options[0]?.id;
-      onQueueSelect(firstOption);
-    }
-  };
+  const {
+    sortedGpuRows,
+    sortedCpuRows,
+    handleTabChange,
+    markAccountTouched,
+    markClusterTouched,
+  } = useQueueTabSelection({
+    gpuRows,
+    cpuRows,
+    activeResourceTab,
+    onActiveResourceTabChange,
+    selectedQueueKey,
+    onQueueSelect,
+    syncQueueField: (tab) => form.setFieldValue("queue", tab),
+    isResubmit,
+  });
 
   const gpuTab = {
     key: "gpu",
@@ -394,7 +385,10 @@ export const ResourceConfigSection = ({
             size="large"
             options={accountOptions}
             placeholder={t(p("accountPlaceholder"))}
-            onChange={(value) => form.setFieldValue("account", value)}
+            onChange={(value) => {
+              markAccountTouched();
+              form.setFieldValue("account", value);
+            }}
           />
         </InlineFormItem>
 
@@ -414,6 +408,7 @@ export const ResourceConfigSection = ({
                   disabled={disabled}
                   onClick={() => {
                     if (disabled) { return; }
+                    markClusterTouched();
                     form.setFieldValue("cluster", id);
                   }}
                 >

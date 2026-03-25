@@ -1971,6 +1971,7 @@ export const LaunchTrainForm = ({
           convertDurationToHours={convertDurationToHours}
           frameworkOptions={frameworkOptions}
           gpuUnitLimit={gpuUnitLimit}
+          isResubmit={Boolean(createTrainParams)}
         />
 
         <TrainConfigSection
