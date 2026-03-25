@@ -27,6 +27,7 @@ export class Dataset {
   clusterId: string;
   createTime?: Date;
   updateTime?: Date;
+  isPlatformOwned: boolean;
 
   constructor(init: {
     name: string;
@@ -38,6 +39,7 @@ export class Dataset {
     clusterId: string;
     createTime?: Date;
     updateTime?: Date;
+    isPlatformOwned?: boolean;
   }) {
 
     this.name = init.name;
@@ -47,6 +49,7 @@ export class Dataset {
     this.scene = init.scene;
     this.description = init.description;
     this.clusterId = init.clusterId;
+    this.isPlatformOwned = init.isPlatformOwned ?? false;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -76,3 +79,4 @@ datasetEntitySchema.addProperty("clusterId", String);
 datasetEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 datasetEntitySchema.addProperty("updateTime", Date, {
   columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+datasetEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

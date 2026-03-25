@@ -1,27 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
 import { App, Button, Modal, Tree } from "antd";
 import type { DataNode, EventDataNode } from "antd/es/tree";
 import Link from "next/link";
 import { join } from "path";
-import React, { Key, useEffect, useState } from "react";
+import React, { Key, useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { FileInfo, FileType } from "src/models/File";
-import { fileInfoKey,getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/utils/file";
+import { fileInfoKey, getExtension, isDecompressibleFile, isParentOrSameFolder } from "src/utils/file";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
@@ -78,6 +66,7 @@ interface Props {
   allowedExtensions?: string[]
   allowedFileType: FileType[],
   onSubmit: (path: string) => void;
+  usePublicPath?: boolean; // 是否使用集群配置文件ai的clusterPublicPath
 }
 
 interface DirContent {
@@ -107,10 +96,10 @@ function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
   }));
 }
 
-function updateTreeData(treeData: DataNode[], homeDir: string,
+function updateTreeData(treeData: DataNode[], rootPath: string,
   targetKey: string, newChildren: DirContent[]): DataNode[] {
-  if (targetKey === homeDir) {
-    return convertToDirTree(newChildren, homeDir);
+  if (targetKey === rootPath) {
+    return convertToDirTree(newChildren, rootPath);
   };
   return treeData.map((node) => {
     // 如果找到了目标节点（即当前目录）
@@ -120,9 +109,9 @@ function updateTreeData(treeData: DataNode[], homeDir: string,
       return { ...node, children: childrenNodes };
     }
 
-    // 如果当前节点有子节点，递归地更新它们
+    // 如果当前节点有子节点,递归地更新它们
     if (node.children) {
-      return { ...node, children: updateTreeData(node.children, homeDir, targetKey, newChildren) };
+      return { ...node, children: updateTreeData(node.children, rootPath, targetKey, newChildren) };
     }
 
     return node;
@@ -149,26 +138,62 @@ const hasNonUtf8Segment = (targetPath: string) => (
     .some((segment) => segment.startsWith(NON_UTF8_PREFIX))
 );
 
-export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, allowedExtensions, onSubmit }) => {
+export const FileSelectModal: React.FC<Props> = ({
+  clusterId,
+  allowedFileType,
+  allowedExtensions,
+  onSubmit,
+  usePublicPath,
+}) => {
+
+  const onlyFile = allowedFileType.length === 1 && allowedFileType[0] === "FILE";
+
   const t = useI18nTranslateToString();
   const p = prefix("component.fileSelectModal.");
   const { scowClusterConfigs } = usePublicConfig();
 
+  // 使用 useMemo 计算 rootPath，避免每次渲染都重新计算
+  const rootPath = useMemo(() => {
+    if (!usePublicPath) {
+      return "~";
+    }
+
+    const clusterConfig = scowClusterConfigs[clusterId];
+    const clusterPublicPath = clusterConfig?.ai?.clusterPublicPath;
+
+    if (!clusterPublicPath) {
+      console.warn(`Cluster ${clusterId} has no clusterPublicPath configured, using default home directory.`);
+      return "~";
+    }
+
+    return clusterPublicPath;
+  }, [usePublicPath, scowClusterConfigs, clusterId]);
+
+  // 判断是否使用公共路径模式
+  const isPublicPathMode = useMemo(() => rootPath !== "~", [rootPath]);
+
   const [visible, setVisible] = useState(false);
-  const [prevPath, setPrevPath] = useState<string>("~");
-  const [path, setPath] = useState<string>("~");
+  const [prevPath, setPrevPath] = useState<string>(rootPath);
+  const [path, setPath] = useState<string>(rootPath);
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
   const [selectedFileInfo, setSelectedFileInfo] = useState<FileInfo | undefined>(undefined);
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [dirTree, setDirTree] = useState<DataNode[]>([]);
+  const [boundaryPath, setBoundaryPath] = useState<string>(rootPath);
 
-  const DecompressionModalButton = ModalButton(DecompressionModal, { icon: <ExpandOutlined />,
-    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
-
-  const { data: homeDir, error: homeDirError } = trpc.file.getHomeDir.useQuery({ clusterId }, {
-    enabled: !!clusterId && path === "~" && visible,
-    retry: false,
+  const DecompressionModalButton = ModalButton(DecompressionModal, {
+    icon: <ExpandOutlined />,
+    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()),
   });
+
+  // 只在家目录模式下查询用户家目录
+  const { data: homeDir, error: homeDirError } = trpc.file.getHomeDir.useQuery(
+    { clusterId },
+    {
+      enabled: !!clusterId && !isPublicPathMode && path === "~" && visible,
+      retry: false,
+    },
+  );
 
   const { message } = App.useApp();
 
@@ -179,37 +204,70 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
   }, [homeDirError, t, p, visible]);
 
   useEffect(() => {
-    if (!visible) { return; }
-    if (homeDir && path === "~") {
-      setPrevPath(homeDir.path);
-      setPath(homeDir.path);
-    }
-  }, [homeDir, visible, path]);
+    if (!visible || isPublicPathMode) return;
+    if (!homeDir?.path || path !== "~") return;
+    setPrevPath(homeDir.path);
+    setPath(homeDir.path);
+    setBoundaryPath(homeDir.path);
+  }, [visible, isPublicPathMode, homeDir?.path, path]);
 
-  const { data: curDirContent, refetch, isLoading: isDirContentLoading } = trpc.file.listDirectory.useQuery({
-    clusterId: clusterId,
-    path,
-  }, { enabled: !!clusterId && path !== "~" });
+  // 查询目录内容
+  const { data: curDirContent, refetch, isLoading: isDirContentLoading } = trpc.file.listDirectory.useQuery(
+    {
+      clusterId: clusterId,
+      path,
+    },
+    { enabled: !!clusterId && path !== "~" },
+  );
 
+  // 路径边界验证
   useEffect(() => {
-    if (!homeDir?.path || path === "~") return;
+    // 如果路径还是初始值，不进行验证
+    if (path === rootPath) return;
 
-    if (!isParentOrSameFolder(homeDir.path, path)) {
-      message.info(t(p("onlyHomeDir")));
+    let actualBoundary: string | undefined;
+
+    if (isPublicPathMode) {
+      // 公共路径模式：直接使用 rootPath 作为边界
+      actualBoundary = rootPath;
+    } else {
+      // 家目录模式：使用 homeDir.path 作为边界
+      if (!homeDir?.path) return;
+      actualBoundary = homeDir.path;
+    }
+
+    // 检查当前路径是否在边界内
+    if (!isParentOrSameFolder(actualBoundary, path)) {
+      const errorMessage = isPublicPathMode
+        ? t(p("onlyPublicPath"))
+        : t(p("onlyHomeDir"));
+
+      message.info(errorMessage);
       setPath(prevPath);
     }
-  }, [homeDir, path]);
+  }, [homeDir, path, rootPath, isPublicPathMode]);
 
+  // 更新目录树
   useEffect(() => {
-    if (!curDirContent) return;
+    if (!visible || !curDirContent) return;
 
     if (dirTree.length === 0) {
       setDirTree(convertToDirTree(curDirContent, path));
     } else {
-      setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent));
+      setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent));
     }
+  }, [visible, curDirContent, path, boundaryPath, dirTree.length]);
 
-  }, [curDirContent]);
+  // 当 rootPath 改变时，重置所有状态
+  useEffect(() => {
+    setPrevPath(rootPath);
+    setPath(rootPath);
+    setBoundaryPath(rootPath);
+    setSelectedKeys([]);
+    setSelectedFileInfo(undefined);
+    setExpandedKeys([]);
+    setDirTree([]);
+  }, [rootPath]);
 
   const keysToFiles = (keys: React.Key[]) => {
     return curDirContent?.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
@@ -240,8 +298,8 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
 
   const closeModal = () => {
     setVisible(false);
-    setPrevPath("~");
-    setPath("~");
+    setPrevPath(rootPath);
+    setPath(rootPath);
     setSelectedKeys([]);
     setSelectedFileInfo(undefined);
     setExpandedKeys([]);
@@ -309,7 +367,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
         open={visible}
         onCancel={() => { closeModal(); }}
         destroyOnClose
-        title={t(p("select"))}
+        title={onlyFile ? t(p("selectFile")) : t(p("select"))}
         centered
         footer={[
           <div key="footer" style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
@@ -320,7 +378,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
                 scowdEnabled={scowClusterConfigs[clusterId]?.scowdEnabled}
                 reload={async () => {
                   await refetch();
-                  setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent ?? []));
+                  setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
                 }}
               >
                 {t(p("upload"))}
@@ -331,7 +389,7 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
                 path={join("/", path)}
                 reload={async (dirName: string) => {
                   await refetch();
-                  setDirTree(updateTreeData(dirTree, homeDir?.path || "~", join(path, dirName), curDirContent ?? []));
+                  setDirTree(updateTreeData(dirTree, boundaryPath, join(path, dirName), curDirContent ?? []));
                 }}
               >
                 {t(p("mkdir"))}
@@ -342,10 +400,11 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
                     clusterId={clusterId}
                     reload={async () => {
                       await refetch();
-                      setDirTree(updateTreeData(dirTree, homeDir?.path || "~", path, curDirContent ?? []));
+                      setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
                     }}
                     sourcePath={path}
                     files={keysToFiles(selectedKeys)}
+                    usePublicPath={usePublicPath}
                   >
                     {t(p("depression"))}
                   </DecompressionModalButton>
@@ -391,12 +450,16 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
               }
             />
           </TopBar>
-          <div style={{ display: "flex", flexDirection: "row",
-            width: "100%", alignItems: "flex-start" }}
+          <div style={{
+            display: "flex", flexDirection: "row",
+            width: "100%", alignItems: "flex-start",
+          }}
           >
             <DirectoryTree
-              style={{ width: 240, height: 541, overflow: "auto",
-                border: "1px solid #e0e0e0", borderRadius: "5px" }}
+              style={{
+                width: 240, height: 541, overflow: "auto",
+                border: "1px solid #e0e0e0", borderRadius: "5px",
+              }}
               showLine
               selectedKeys={[path]}
               expandedKeys={expandedKeys}
@@ -404,8 +467,10 @@ export const FileSelectModal: React.FC<Props> = ({ clusterId, allowedFileType, a
               onExpand={onDirExpand}
               treeData={dirTree}
             />
-            <div style={{ width: "100%", overflowX: "auto", marginLeft: "6px",
-              display: "flex", flex: 1, border: "1px solid #e0e0e0", borderRadius: "5px" }}
+            <div style={{
+              width: "100%", overflowX: "auto", marginLeft: "6px",
+              display: "flex", flex: 1, border: "1px solid #e0e0e0", borderRadius: "5px",
+            }}
             >
               <FileTable
                 style={{ flex: 1, overflowX: "auto" }}

@@ -40,6 +40,7 @@ export class Image {
   inferServicePort?: string;
   startCommand?: string;
   failedReason?: string;
+  isPlatformOwned: boolean;
 
   constructor(init: {
     name: string;
@@ -59,6 +60,7 @@ export class Image {
     inferServicePort?: string;
     startCommand?: string;
     failedReason?: string;
+    isPlatformOwned?: boolean;
   }) {
     this.name = init.name;
     this.owner = init.owner;
@@ -75,6 +77,7 @@ export class Image {
     this.inferServicePort = init.inferServicePort;
     this.startCommand = init.startCommand;
     this.failedReason = init.failedReason;
+    this.isPlatformOwned = init.isPlatformOwned ?? false;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -97,7 +100,7 @@ imageEntitySchema.addEnum("source", String, { items: () => Source });
 imageEntitySchema.addProperty("tag", String);
 imageEntitySchema.addProperty("tagPostfix", String, { nullable: true });
 imageEntitySchema.addUnique({
-  properties: ["name", "tag", "owner"],
+  properties: ["name", "tag", "owner", "isPlatformOwned"],
   name: "unique_name_tag_owner",
 });
 imageEntitySchema.addProperty("description", String, { nullable: true });
@@ -118,3 +121,4 @@ imageEntitySchema.addProperty("failedReason", String, { columnType: "TEXT",nulla
 imageEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 imageEntitySchema.addProperty("updateTime", Date, {
   columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+imageEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

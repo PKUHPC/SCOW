@@ -42,6 +42,7 @@ export class ScowdImageDriver implements ImageDriver {
     loginInfo,
     harborImageUrl,
     imageId,
+    noCheckPermission,
   }: CreateImageParams): Promise<void> {
 
     return withAbortHandling(imageId, async (abortController) => {
@@ -58,6 +59,7 @@ export class ScowdImageDriver implements ImageDriver {
             this.client.file.exists({
               userId: this.userId,
               path:sourcePath,
+              noCheckPermission,
             }),
             this.logger,
           );
@@ -78,6 +80,7 @@ export class ScowdImageDriver implements ImageDriver {
             this.client.file.getFileMetadata({
               userId: this.userId,
               filePath:sourcePath,
+              noCheckPermission,
             }),
             this.logger,
           );

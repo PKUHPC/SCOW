@@ -5,19 +5,24 @@ import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
-import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
 import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
+interface EditProps {
+  versionName?: string;
+  versionId?: number;
+  versionDescription?: string;
+}
 export interface Props {
   open: boolean;
   onClose: () => void;
-  datasetId: number;
-  datasetName: string | undefined;
-  isEdit?: boolean;
-  editData?: DatasetVersionInterface;
+  algorithmId: number;
+  algorithmName: string | undefined;
   cluster?: Cluster;
   refetch: () => void;
+  editData?: EditProps;
+  isPlatformOwned?: boolean;
+  usePublicPath?: boolean;
 }
 
 interface FormFields {
@@ -26,22 +31,22 @@ interface FormFields {
   path: string,
 }
 
-export const CreateEditDSVersionModal: React.FC<Props> = (
-  { open, onClose, datasetId, datasetName, isEdit, editData, cluster, refetch },
+export const CreateAndEditVersionModal: React.FC<Props> = (
+  { open, onClose, algorithmId, algorithmName, refetch, cluster, editData, isPlatformOwned, usePublicPath },
 ) => {
   const t = useI18nTranslateToString();
-  const p = prefix("app.dataset.createEditDSVersionModal.");
+  const p = prefix("app.algorithm.CreateAndEditVersionModal.");
   const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
 
-  const createMutation = trpc.dataset.createDatasetVersion.useMutation({
+  const createAlgorithmVersionMutation = trpc.algorithm.createAlgorithmVersion.useMutation({
     onSuccess() {
       message.success(t(p("addSuccessfully")));
-      onClose();
       form.resetFields();
+      onClose();
       refetch();
     },
     onError(e) {
@@ -53,11 +58,12 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
             errors: [t(p("alreadyExisted"))],
           },
         ]);
+        return;
       } else if (e.data?.code === "BAD_REQUEST") {
         message.error(t(p("addressNotFound")));
         form.setFields([
           {
-            name: "path",
+            name: "name",
             errors: [t(p("addressNotFound"))],
           },
         ]);
@@ -67,7 +73,7 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
     },
   });
 
-  const editMutation = trpc.dataset.updateDatasetVersion.useMutation({
+  const updateAlgorithmVersionMutation = trpc.algorithm.updateAlgorithmVersion.useMutation({
     onSuccess() {
       message.success(t(p("editSuccessfully")));
       onClose();
@@ -79,15 +85,18 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
         form.setFields([
           {
             name: "versionName",
-            errors: [t(p("alreadyExisted"))],
+            errors: [t(p("notFound"))],
           },
         ]);
-      } else if (e.data?.code === "NOT_FOUND") {
+      }
+      else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      } else if (e.data?.code === "PRECONDITION_FAILED") {
+      }
+      else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      } else {
-        message.success(t(p("editFailed")));
+      }
+      else {
+        message.error(t(p("editFailed")));
       }
     },
   });
@@ -95,45 +104,57 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
   const onOk = async () => {
     form.validateFields();
     const { versionName, versionDescription, path } = await form.validateFields();
-
-    if (isEdit && editData) {
-      editMutation.mutate({
-        datasetVersionId: editData.id,
+    if (editData?.versionName && editData.versionId) {
+      updateAlgorithmVersionMutation.mutate({
+        algorithmVersionId: editData.versionId,
         versionName,
         versionDescription,
-        datasetId: editData.datasetId,
+        algorithmId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
-    } else {
-      createMutation.mutate({
+    }
+    else {
+      createAlgorithmVersionMutation.mutate({
         versionName,
         versionDescription,
         path,
-        datasetId,
+        algorithmId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
 
+  const labelWidth = languageId === "zh_cn" ? 80 : 140;
 
   return (
     <Modal
-      title={isEdit ? t(p("edit")) : t(p("add"))}
+      title={editData?.versionName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createMutation.isPending || editMutation.isPending}
+      confirmLoading={createAlgorithmVersionMutation.isPending || updateAlgorithmVersionMutation.isPending}
       onCancel={onClose}
+      destroyOnClose
       width={800}
     >
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 19 }}
-        labelCol={{ span: 5 }}
-        initialValues={editData}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
       >
         <Form.Item
           label={t(p("name"))}
         >
-          {datasetName}
+          {algorithmName}
         </Form.Item>
         <Form.Item
           label={t(p("cluster"))}
@@ -148,38 +169,39 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
+          initialValue={editData?.versionName}
         >
           <TrimInput allowClear />
         </Form.Item>
-        <Form.Item label={t(p("description"))} name="versionDescription">
+        <Form.Item label={t(p("description"))} name="versionDescription" initialValue={editData?.versionDescription}>
           <Input.TextArea />
         </Form.Item>
         {
-          !isEdit && (
-            <>
-              <Form.Item
-                label={t(p("select"))}
-                name="path"
-                rules={[{ required: true }]}
-              >
-                <TrimInput
-                  disabled={true}
-                  suffix={
-                    (
-                      <FileSelectModal
-                        allowedFileType={["DIR"]}
-                        onSubmit={(path: string) => {
-                          form.setFields([{ name: "path", value: path, touched: true }]);
-                          form.validateFields(["path"]);
-                        }}
-                        clusterId={cluster?.id ?? ""}
-                      />
-                    )
-                  }
-                />
-              </Form.Item>
-            </>
-          )
+          !editData?.versionName ? (
+            <Form.Item
+              label={t(p("select"))}
+              name="path"
+              rules={[{ required: true }]}
+            >
+              <TrimInput
+                disabled={true}
+                placeholder={t(p("selectAlgorithmFolder"))}
+                suffix={
+                  (
+                    <FileSelectModal
+                      allowedFileType={["DIR"]}
+                      onSubmit={(path: string) => {
+                        form.setFields([{ name: "path", value: path, touched: true }]);
+                        form.validateFields(["path"]);
+                      }}
+                      clusterId={cluster?.id ?? ""}
+                      usePublicPath={usePublicPath}
+                    />
+                  )
+                }
+              />
+            </Form.Item>
+          ) : undefined
         }
       </Form>
     </Modal>

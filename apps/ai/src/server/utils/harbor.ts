@@ -140,9 +140,10 @@ export class HarborClient {
   async getReference(p: {
     userId: string,
     imageName: string,
+    isPlatformOwned?: boolean,
   }) {
     const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}/artifacts`;
+        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}/artifacts`;
 
     return await this.harborFetch(url);
   }
@@ -150,10 +151,11 @@ export class HarborClient {
   async deleteRepository(p: {
     userId: string,
     imageName: string,
+    isPlatformOwned?: boolean,
   }) {
 
     const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}`;
+        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}`;
 
     return await this.harborFetch(url, { method: "DELETE" });
   }
@@ -164,9 +166,10 @@ export class HarborClient {
     reference: string,
     imageTag: string,
     imageTagPostfix: string,
+    isPlatformOwned?: boolean,
   }) {
     const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}`
+        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}`
         + `/artifacts/${p.reference}/tags/${p.imageTag + (p.imageTagPostfix ?? "")}`;
 
     return await this.harborFetch(url, { method: "DELETE" });

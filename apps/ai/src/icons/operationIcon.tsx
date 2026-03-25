@@ -244,7 +244,7 @@ export const ShareIcon: React.ForwardRefExoticComponent<IconProps> =
   ));
 
 // 取消分享图标
-const cancleShareSVG = () => (
+const cancelShareSVG = () => (
   <svg width="13" height="12" viewBox="0 0 13 12" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M11.6641 6.17578C11.8984 5.94147 12.2784 5.94147 12.5127 6.17578C12.7464 6.41003 12.7465 6.78927
@@ -269,15 +269,15 @@ const cancleShareSVG = () => (
   </svg>
 );
 
-export const CancleShareIcon: React.ForwardRefExoticComponent<IconProps> =
+export const CancelShareIcon: React.ForwardRefExoticComponent<IconProps> =
   React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
     props.disabled ? (
       <DisableIconContainer>
-        <Icon component={cancleShareSVG} {...props} ref={ref} />
+        <Icon component={cancelShareSVG} {...props} ref={ref} />
       </DisableIconContainer>
     ) : (
       <IconContainer>
-        <Icon component={cancleShareSVG} {...props} ref={ref} />
+        <Icon component={cancelShareSVG} {...props} ref={ref} />
       </IconContainer>
     )
   ));
@@ -653,5 +653,107 @@ export const MoreIcon: React.ForwardRefExoticComponent<IconProps> = React.forwar
     <IconContainer>
       <Icon component={moreSVG} {...props} ref={ref} />
     </IconContainer>
+  ),
+);
+
+// 发布图标
+const publishSVG = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 13 13" fill="none">
+    <path
+      d="M9.59961 0.404526C11.0355 0.404526 12.1991 1.5683 12.1992 3.00414V10.0041C12.1992 11.4401 11.0355
+      12.6037 9.59961 12.6037H2.59961C1.16367 12.6037 -2.1885e-07 11.4401 0 10.0041V3.00414C0.000119367 1.5683
+      1.16374 0.404526 2.59961 0.404526C2.93091 0.404526 3.1991 0.672866 3.19922 1.00414C3.19922 1.33551 2.93098
+      1.60374 2.59961 1.60374C1.82648 1.60374 1.19934 2.23104 1.19922 3.00414V10.0041C1.19922 10.7773 1.82641 11.4045
+      2.59961 11.4045H9.59961C10.3728 11.4045 11 10.7773 11 10.0041V3.00414C10.9999 2.23104 10.3727 1.60374 9.59961
+      1.60374C9.26824 1.60374 9 1.33551 9 1.00414C9.00012 0.672867 9.26831 0.404526 9.59961 0.404526ZM5.65723
+      0.214096C5.89714 -0.0711498 6.33656 -0.0715612 6.57617 0.214096L9.01562 3.1223C9.19273 3.33357 9.16481 3.64884
+      8.9541 3.8264C8.74253 4.00382 8.42647 3.97641 8.24902 3.76488L6.61621 1.81761V5.50414C6.61598 5.77994 6.39201
+      6.0039 6.11621 6.00414C5.84041 6.0039 5.61644 5.77993 5.61621 5.50414V1.81761L3.9834 3.76488C3.80596 3.9763
+      3.49083 4.00371 3.2793 3.8264C3.06785 3.64892 3.04035 3.33383 3.21777 3.1223L5.65723 0.214096Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const PublishIcon: React.ForwardRefExoticComponent<IconProps> =
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+    props.disabled ? (
+      <DisableIconContainer>
+        <Icon component={publishSVG} {...props} ref={ref} />
+      </DisableIconContainer>
+    ) : (
+      <IconContainer>
+        <Icon component={publishSVG} {...props} ref={ref} />
+      </IconContainer>
+    )
+  ));
+
+// 取消发布图标
+const cancelPublishSVG = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="22" viewBox="0 0 24 22" fill="none">
+    <rect width="24" height="22" rx="6" fill="white" />
+    <path
+      d="M8.5 5.40036C8.83114 5.40036 9.09924 5.66891 9.09961 5.99997C9.09954 6.33128 8.83133 6.59958
+      8.5 6.59958C7.72703 6.59958 7.09998 7.22709 7.09961 7.99997V15C7.09968 15.7731 7.72685 16.4004 8.5
+      16.4004H11.4209C11.6282 16.8445 11.9065 17.2487 12.2402 17.5996H8.5C7.0641 17.5996 5.90046 16.4358
+      5.90039 15V7.99997C5.90076 6.56435 7.06429 5.40036 8.5 5.40036ZM17.7344 12.2451C17.9294 12.0503
+      18.2461 12.0507 18.4414 12.2451C18.6362 12.4403 18.6364 12.757 18.4414 12.9521L16.5508 14.8427L18.4414
+      16.7334C18.6362 16.9286 18.6363 17.2452 18.4414 17.4404C18.2463 17.6354 17.9296 17.6352 17.7344
+      17.4404L15.8438 15.5498L13.9531 17.4404C13.758 17.6354 13.4413 17.6352 13.2461 17.4404C13.0517
+      17.2451 13.0512 16.9284 13.2461 16.7334L15.1367 14.8427L13.2461 12.9521C13.0517 12.7568 13.0512
+      12.4401 13.2461 12.2451C13.4411 12.0503 13.7579 12.0507 13.9531 12.2451L15.8438 14.1357L17.7344
+      12.2451ZM11.5576 5.20993C11.7975 4.92499 12.2369 4.92468 12.4766 5.20993L14.916 8.11813C15.0929 8.32935
+      15.065 8.64469 14.8545 8.82224C14.643 8.99961 14.3269 8.97212 14.1494 8.76071L12.6162
+      6.93259V10.5C12.6159 10.831 12.3477 11.0995 12.0166 11.0996C11.6855 11.0995 11.4173 10.831 11.417
+      10.5V6.93259L9.88379 8.76071C9.70639 8.97208 9.39122 8.99939 9.17969 8.82224C8.96853 8.64471 8.94083
+      8.32955 9.11816 8.11813L11.5576 5.20993ZM15.5 5.40036C16.9357 5.40036 18.0992 6.56435 18.0996
+      7.99997V10.8271C17.7361 10.5693 17.3327 10.3641 16.9004 10.2226V7.99997C16.9 7.22709 16.273 6.59958
+      15.5 6.59958C15.1687 6.59958 14.9005 6.33128 14.9004 5.99997C14.9008 5.66891 15.1689 5.40036
+      15.5 5.40036Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const CancelPublishIcon: React.ForwardRefExoticComponent<IconProps> =
+  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+    props.disabled ? (
+      <DisableIconContainer>
+        <Icon component={cancelPublishSVG} {...props} ref={ref} />
+      </DisableIconContainer>
+    ) : (
+      <IconContainer>
+        <Icon component={cancelPublishSVG} {...props} ref={ref} />
+      </IconContainer>
+    )
+  ));
+
+// 取消发布图标
+const platformSVG = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M5.67578 0.933594C5.86266 0.774337 6.13734 0.774337 6.32422 0.933594L7.2666 1.73633C7.50678
+    1.94085 7.80565 2.06475 8.12012 2.08984L9.35352 2.1875C9.59819 2.20708 9.79292 2.40181 9.8125
+    2.64648L9.91016 3.87988C9.93525 4.19435 10.0591 4.49322 10.2637 4.7334L11.0664 5.67578C11.2257
+    5.86266 11.2257 6.13734 11.0664 6.32422L10.2637 7.2666C10.0591 7.50677 9.93525 7.80565 9.91016
+    8.12012L9.8125 9.35352C9.79292 9.59819 9.59819 9.79292 9.35352 9.8125L8.12012 9.91016C7.80565
+    9.93525 7.50678 10.0591 7.2666 10.2637L6.32422 11.0664C6.13734 11.2257 5.86266 11.2257 5.67578
+    11.0664L4.7334 10.2637C4.49323 10.0591 4.19435 9.93525 3.87988 9.91016L2.64648 9.8125C2.40181
+    9.79292 2.20707 9.59819 2.1875 9.35352L2.08984 8.12012C2.06475 7.80565 1.94085 7.50678 1.73633
+    7.2666L0.933594 6.32422C0.774337 6.13734 0.774337 5.86266 0.933594 5.67578L1.73633
+    4.7334C1.94085 4.49322 2.06475 4.19435 2.08984 3.87988L2.1875 2.64648C2.20708 2.40181
+    2.40181 2.20707 2.64648 2.1875L3.87988 2.08984C4.19435 2.06475 4.49322 1.94085 4.7334
+    1.73633L5.67578 0.933594Z"
+      fill="currentColor"
+      stroke="currentColor"
+    />
+    <path d="M8 4.79999L5.25 7.19999L4 6.10908" stroke="white" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+
+);
+
+export const PlatformIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+    <Icon component={platformSVG} {...props} ref={ref} />
   ),
 );

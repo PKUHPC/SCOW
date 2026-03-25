@@ -41,6 +41,7 @@ export class Algorithm {
 
   createTime?: Date;
   updateTime?: Date;
+  isPlatformOwned: boolean;
 
   constructor(init: {
     name: string;
@@ -51,6 +52,7 @@ export class Algorithm {
     clusterId: string;
     createTime?: Date;
     updateTime?: Date;
+    isPlatformOwned?: boolean;
   }) {
 
     this.name = init.name;
@@ -59,6 +61,7 @@ export class Algorithm {
     this.isShared = init.isShared || false;
     this.description = init.description;
     this.clusterId = init.clusterId;
+    this.isPlatformOwned = init.isPlatformOwned ?? false;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -91,3 +94,4 @@ algorithmEntitySchema.addProperty("createTime", Date,
   { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 algorithmEntitySchema.addProperty("updateTime", Date,
   { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+algorithmEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

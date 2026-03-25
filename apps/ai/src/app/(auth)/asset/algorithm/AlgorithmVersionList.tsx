@@ -2,9 +2,10 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
+import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { CancleShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
+import { CancelShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface } from "src/models/Algorithm";
 import { SharedStatus } from "src/models/common";
 import { Cluster } from "src/server/trpc/route/config";
@@ -15,7 +16,6 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
 import { CopyPublicAlgorithmModal } from "./CopyPublicAlgorithmModal";
-import { CreateAndEditVersionModal } from "./CreateAndEditVersionModal";
 
 export interface Props {
   isPublic?: boolean;
@@ -122,10 +122,16 @@ export const AlgorithmVersionList: React.FC<Props> = (
         columns={[
           { dataIndex: "versionName", title: t(p("versionName")) },
           { dataIndex: "versionDescription", title: t(p("versionDescription")) },
-          { dataIndex: "createTime", title: t(p("createTime")), render:(createTime) => formatDateTime(createTime) },
+          {
+            dataIndex: "updateTime", title: t(p("updatedTime")),
+            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-",
+          },
           { dataIndex: "action", title: t(p("action")),
             ...isPublic ? {} : { width: 350 },
             render: (_, r) => {
+              const shareConfirmTitle = r.sharedStatus === SharedStatus.SHARED
+                ? t(p("cancelShareTitle"))
+                : t(p("share"));
               return isPublic ? (
                 <CopyPublicAlgorithmModalButton
                   data={r}
@@ -176,12 +182,12 @@ export const AlgorithmVersionList: React.FC<Props> = (
                     </Tooltip>
                     <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
                       {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                        <CancleShareIcon
+                        <CancelShareIcon
                           disabled={r.sharedStatus === SharedStatus.UNSHARING}
                           onClick={() => {
                             if (r.sharedStatus !== SharedStatus.UNSHARING) {
                               confirm({
-                                title: t(p("share")),
+                                title: shareConfirmTitle,
                                 content:
                           `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
                                 onOk: async () => {
@@ -207,7 +213,7 @@ export const AlgorithmVersionList: React.FC<Props> = (
                           onClick={() => {
                             if (r.sharedStatus !== SharedStatus.SHARING) {
                               confirm({
-                                title: t(p("share")),
+                                title: shareConfirmTitle,
                                 content:
                           `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
                                 onOk: async () => {

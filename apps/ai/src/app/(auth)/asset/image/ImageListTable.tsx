@@ -7,22 +7,23 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
 import { useState } from "react";
+import { CreateEditImageModal } from "src/components/assets/image/CreateEditImageModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon } from "src/icons/operationIcon";
+import { CancelShareIcon, CopyIcon, DeleteIcon, EditIcon, PlatformIcon, ShareIcon } from "src/icons/operationIcon";
 import { getImageTexts, getImageTypeText, ImageType, Status } from "src/models/Image";
-import { statusColors } from "src/models/Job";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import { TableContainer } from "../common";
+import { PlatformTag } from "../PlatformTag";
 import { CopyImageModal } from "./CopyImageModal";
-import { CreateEditImageModal } from "./CreateEditImageModal";
 import { ImageCreationLogModal } from "./ImageCreationLogModal";
 import { ImageQuota } from "./ImageQuota";
 
@@ -50,7 +51,9 @@ const CopyImageModalButton = ModalLink(CopyImageModal);
 export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.imageListTable.");
+  const pCommon = prefix("app.common.");
   const languageId = useI18n().currentLanguage.id;
+  const theme = useTheme();
 
   const sourceText = {
     INTERNAL: getImageTexts(t).INTERNAL,
@@ -214,25 +217,41 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
             render: (_, r) => r.types.map((t) => <Tag key={t}>{TypeText[t]}</Tag>) },
           { dataIndex: "source", title: t(p("source")),render: (_, r) => sourceText[r.source] },
           { dataIndex: "description", title: t(p("description")) },
-          isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),
-            render: (_, r) => r.owner } : {},
+          isPublic ? {
+            dataIndex: "shareUser",
+            title: t(pCommon("publishUser")),
+            // @ts-ignore
+            render: (_, r) =>
+              r.isPlatformOwned ? (
+                <PlatformTag color={theme.token.colorPrimary}>
+                  <span>{t(pCommon("platform"))}</span>
+                  <PlatformIcon />
+                </PlatformTag>
+              ) : (
+                `${r.ownerName}（ID:${r.owner}）`
+              ),
+          } : {},
           { dataIndex: "status", title: t(p("status")),
             render: (_, r) => {
               switch (r.status) {
                 case Status.CREATING:
                   return (
                     <>
-                      <a style={{ color: statusColors.RUNNING }} onClick={() => handleOpenModal(r)}>
+                      <a style={{ color: "#46B600" }} onClick={() => handleOpenModal(r)}>
                         {t(p("processing"))}
                       </a>
                     </>
                   );
-                case Status.CREATED:
-                  return <a style={{ color: statusColors.COMPLETED }}>{t(p("success"))}</a>;
+                case Status.CREATED:{
+                  if (r.isShared) {
+                    return <a style={{ color: "#5FBDEC" }}>{t(pCommon("PUBLISHED"))}</a>;
+                  }
+                  return <a style={{ color: "#3584D9" }}>{t(p("success"))}</a>;
+                }
                 default:
                   return (
                     <>
-                      <a style={{ color: statusColors.FAILED }} onClick={() => handleOpenModal(r)}>
+                      <a style={{ color: "#D93566" }} onClick={() => handleOpenModal(r)}>
                         {t(p("error"))}
                       </a>
                     </>
@@ -240,8 +259,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
               }
             },
           },
-          { dataIndex: "createTime", title: t(p("createTime")),
-            render: (_, r) => r.createTime ? formatDateTime(r.createTime) : "-" },
+          { dataIndex: "updateTime", title: t(p("updatedTime")),
+            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
           { dataIndex: "action", title: t(p("action")),
             render: (_, r) => {
               const shareOrUnshareStr = r.isShared ? t(p("cancelShare")) : t(p("share"));
@@ -264,7 +283,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                       <Tooltip title={shareOrUnshareStr}>
                         <span onClick={() => {
                           modal.confirm({
-                            title: `${shareOrUnshareStr}${t(p("image"))}`,
+                            title: `${shareOrUnshareStr}${languageId === "en" ? " " : ""}${t(p("image"))}`,
                             content: `${t(p("confirmText"),[shareOrUnshareStr,r.name,r.tag])}`,
                             onOk: async () => {
                               await shareOrUnshareMutation.mutateAsync({
@@ -280,7 +299,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                           });
                         }}
                         >
-                          { r.isShared ? <CancleShareIcon /> : <ShareIcon />}
+                          { r.isShared ? <CancelShareIcon /> : <ShareIcon />}
                         </span>
                       </Tooltip>
                     )}

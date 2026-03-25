@@ -1,10 +1,11 @@
 import { TRPCClientError } from "@trpc/client";
 import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
+import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { CancleShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
+import { CancelShareIcon,CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
 import { ModelInterface } from "src/models/Model";
 import { Cluster } from "src/server/trpc/route/config";
@@ -15,7 +16,6 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
 import { CopyPublicModelModal } from "./CopyPublicModelModal";
-import { CreateAndEditVersionModal } from "./CreateAndEditVersionModal";
 
 export interface Props {
   isPublic?: boolean;
@@ -29,7 +29,7 @@ const EditVersionModalButton = ModalLink(CreateAndEditVersionModal);
 const CopyPublicModelModalButton = ModalLink(CopyPublicModelModal);
 
 export const ModelVersionList: React.FC<Props> = (
-  { isPublic, modelId, modelName, cluster },
+  { models, isPublic, modelId, modelName, cluster },
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.modelVersionList.");
@@ -47,6 +47,10 @@ export const ModelVersionList: React.FC<Props> = (
   if (versionError) {
     message.error(t(p("notFound")));
   }
+
+  useEffect(() => {
+    refetch();
+  }, [models]);
 
   const checkFileExist = trpc.file.checkFileExist.useMutation({
     onError: (error) => {
@@ -119,10 +123,16 @@ export const ModelVersionList: React.FC<Props> = (
           { dataIndex: "versionName", title: t(p("versionName")) },
           { dataIndex: "versionDescription", title: t(p("versionDescription")) },
           { dataIndex: "algorithmVersion", title: t(p("algorithmVersion")) },
-          { dataIndex: "createTime", title: t(p("createTime")), render:(createTime) => formatDateTime(createTime) },
+          {
+            dataIndex: "updateTime", title: t(p("updatedTime")),
+            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-",
+          },
           { dataIndex: "action", title: t(p("action")),
             ...isPublic ? {} : { width: 350 },
             render: (_, r) => {
+              const shareConfirmTitle = r.sharedStatus === SharedStatus.SHARED
+                ? t(p("cancelShareTitle"))
+                : t(p("share"));
               return isPublic ? (
                 <CopyPublicModelModalButton
                   modelId={modelId}
@@ -176,7 +186,7 @@ export const ModelVersionList: React.FC<Props> = (
                       <span onClick={() => {
                         if (r.sharedStatus !== SharedStatus.SHARING && r.sharedStatus !== SharedStatus.UNSHARING) {
                           confirm({
-                            title: t(p("share")),
+                            title: shareConfirmTitle,
                             content:
                           `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
                             onOk: async () => {
@@ -198,7 +208,7 @@ export const ModelVersionList: React.FC<Props> = (
                       }}
                       >
                         {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                          <CancleShareIcon
+                          <CancelShareIcon
                             disabled={r.sharedStatus === SharedStatus.UNSHARING}
                           />
                         ) : (

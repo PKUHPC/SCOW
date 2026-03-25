@@ -799,6 +799,7 @@ export default {
         delete: "Eliminar Versión de Modelo",
         versionName: "Nombre de Versión",
         versionDescription: "Descripción de Versión",
+        path: "Ruta",
         algorithmVersion: "Versión de Algoritmo",
         createTime: "Tiempo de Creación",
         action: "Acciones",

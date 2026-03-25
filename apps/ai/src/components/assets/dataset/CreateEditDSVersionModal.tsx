@@ -5,22 +5,21 @@ import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
+import { DatasetVersionInterface } from "src/server/trpc/route/dataset/datasetVersion";
 import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
-interface EditProps {
-  versionName?: string;
-  versionId?: number;
-  versionDescription?: string;
-}
 export interface Props {
   open: boolean;
   onClose: () => void;
-  algorithmId: number;
-  algorithmName: string | undefined;
+  datasetId: number;
+  datasetName: string | undefined;
+  isEdit?: boolean;
+  editData?: DatasetVersionInterface;
   cluster?: Cluster;
   refetch: () => void;
-  editData?: EditProps;
+  isPlatformOwned?: boolean;
+  usePublicPath?: boolean;
 }
 
 interface FormFields {
@@ -29,21 +28,50 @@ interface FormFields {
   path: string,
 }
 
-export const CreateAndEditVersionModal: React.FC<Props> = (
-  { open, onClose, algorithmId, algorithmName, refetch, cluster, editData },
+export const CreateEditDSVersionModal: React.FC<Props> = (
+  { open, onClose, datasetId, datasetName, isEdit, editData, cluster, refetch, isPlatformOwned, usePublicPath },
 ) => {
   const t = useI18nTranslateToString();
-  const p = prefix("app.algorithm.CreateAndEditVersionModal.");
+  const p = prefix("app.dataset.createEditDSVersionModal.");
   const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
 
-  const createAlgorithmVersionMutation = trpc.algorithm.createAlgorithmVersion.useMutation({
+  const createMutation = trpc.dataset.createDatasetVersion.useMutation({
     onSuccess() {
       message.success(t(p("addSuccessfully")));
+      onClose();
       form.resetFields();
+      refetch();
+    },
+    onError(e) {
+      if (e.data?.code === "CONFLICT") {
+        message.error(t(p("alreadyExisted")));
+        form.setFields([
+          {
+            name: "versionName",
+            errors: [t(p("alreadyExisted"))],
+          },
+        ]);
+      } else if (e.data?.code === "BAD_REQUEST") {
+        message.error(t(p("addressNotFound")));
+        form.setFields([
+          {
+            name: "path",
+            errors: [t(p("addressNotFound"))],
+          },
+        ]);
+      } else {
+        message.error(e.message);
+      }
+    },
+  });
+
+  const editMutation = trpc.dataset.updateDatasetVersion.useMutation({
+    onSuccess() {
+      message.success(t(p("editSuccessfully")));
       onClose();
       refetch();
     },
@@ -56,46 +84,12 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-        return;
-      } else if (e.data?.code === "BAD_REQUEST") {
-        message.error(t(p("addressNotFound")));
-        form.setFields([
-          {
-            name: "name",
-            errors: [t(p("addressNotFound"))],
-          },
-        ]);
-      } else {
-        message.error(e.message);
-      }
-    },
-  });
-
-
-  const updateAlgorithmVersionMutation = trpc.algorithm.updateAlgorithmVersion.useMutation({
-    onSuccess() {
-      message.success(t(p("editSuccessfully")));
-      onClose();
-      refetch();
-    },
-    onError(e) {
-      if (e.data?.code === "CONFLICT") {
-        message.error(t(p("alreadyExisted")));
-        form.setFields([
-          {
-            name: "versionName",
-            errors: [t(p("notFound"))],
-          },
-        ]);
-      }
-      else if (e.data?.code === "NOT_FOUND") {
+      } else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      }
-      else if (e.data?.code === "PRECONDITION_FAILED") {
+      } else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      }
-      else {
-        message.error(t(p("editFailed")));
+      } else {
+        message.success(t(p("editFailed")));
       }
     },
   });
@@ -103,44 +97,57 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
   const onOk = async () => {
     form.validateFields();
     const { versionName, versionDescription, path } = await form.validateFields();
-    if (editData?.versionName && editData.versionId) {
-      updateAlgorithmVersionMutation.mutate({
-        algorithmVersionId:editData.versionId,
+
+    if (isEdit && editData) {
+      editMutation.mutate({
+        datasetVersionId: editData.id,
         versionName,
         versionDescription,
-        algorithmId,
+        datasetId: editData.datasetId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
-    }
-    else {
-      createAlgorithmVersionMutation.mutate({
+    } else {
+      createMutation.mutate({
         versionName,
         versionDescription,
         path,
-        algorithmId,
+        datasetId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
 
+  const labelWidth = languageId === "zh_cn" ? 80 : 140;
+
   return (
     <Modal
-      title={editData?.versionName ? t(p("edit")) : t(p("add"))}
+      title={isEdit ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createAlgorithmVersionMutation.isPending || updateAlgorithmVersionMutation.isPending}
+      confirmLoading={createMutation.isPending || editMutation.isPending}
       onCancel={onClose}
-      destroyOnClose
       width={800}
     >
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 20 }}
-        labelCol={{ span: 4 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
+        initialValues={editData}
       >
         <Form.Item
           label={t(p("name"))}
         >
-          {algorithmName}
+          {datasetName}
         </Form.Item>
         <Form.Item
           label={t(p("cluster"))}
@@ -155,37 +162,40 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
-          initialValue={editData?.versionName}
         >
           <TrimInput allowClear />
         </Form.Item>
-        <Form.Item label={t(p("description"))} name="versionDescription" initialValue={editData?.versionDescription}>
+        <Form.Item label={t(p("description"))} name="versionDescription">
           <Input.TextArea />
         </Form.Item>
         {
-          !editData?.versionName ? (
-            <Form.Item
-              label={t(p("select"))}
-              name="path"
-              rules={[{ required: true }]}
-            >
-              <TrimInput
-                disabled={true}
-                suffix={
-                  (
-                    <FileSelectModal
-                      allowedFileType={["DIR"]}
-                      onSubmit={(path: string) => {
-                        form.setFields([{ name: "path", value: path, touched: true }]);
-                        form.validateFields(["path"]);
-                      }}
-                      clusterId={cluster?.id ?? ""}
-                    />
-                  )
-                }
-              />
-            </Form.Item>
-          ) : undefined
+          !isEdit && (
+            <>
+              <Form.Item
+                label={t(p("select"))}
+                name="path"
+                rules={[{ required: true }]}
+              >
+                <TrimInput
+                  disabled={true}
+                  placeholder={t(p("selectDatasetFolder"))}
+                  suffix={
+                    (
+                      <FileSelectModal
+                        allowedFileType={["DIR"]}
+                        onSubmit={(path: string) => {
+                          form.setFields([{ name: "path", value: path, touched: true }]);
+                          form.validateFields(["path"]);
+                        }}
+                        clusterId={cluster?.id ?? ""}
+                        usePublicPath={usePublicPath}
+                      />
+                    )
+                  }
+                />
+              </Form.Item>
+            </>
+          )
         }
       </Form>
     </Modal>

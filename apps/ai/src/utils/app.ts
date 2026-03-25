@@ -1,4 +1,5 @@
 import { FormInstance } from "antd";
+import { ReactNode } from "react";
 import { TextsTransType } from "src/models/Algorithm";
 import { IdPrivate } from "src/server/trpc/route/jobs/jobs";
 
@@ -17,7 +18,8 @@ export const getIdPrivate = (array?: IdPrivate[]) =>
 
 
 interface SelectOption {
-  label: string;
+  label: string | ReactNode;
+  labelText?: string;
   value: string | number;
   disabled?: boolean;
 }
@@ -39,8 +41,15 @@ export const setJobCreationNameVersion = <T extends Record<string, any>>(
   if (nameOption && versionOption) {
     // 从label中提取元素纯名称, 去掉末尾的owner
     const i18nVersionTag = t("app.jobs.launchAppForm.versionTag");
-    const pureName = nameOption.label.replace(/\([^)]*\)$/, "");
-    const selectedNameVersion = `${pureName}（${i18nVersionTag}：${versionOption.label}）`;
+
+    const nameLabel = typeof nameOption.label === "string" ? nameOption.label : nameOption.labelText ?? "";
+    if (!nameLabel) {
+      console.warn("Name option label is empty, using fallback");
+      return;
+    }
+    const pureName = nameLabel.replace(/\([^)]*\)$/, "");
+    const versionLabel = typeof versionOption.label === "string" ? versionOption.label : versionOption.labelText ?? "";
+    const selectedNameVersion = `${pureName}（${i18nVersionTag}：${versionLabel}）`;
     form.setFieldValue([formName, index, "selectedNameVersion"], selectedNameVersion);
   }
 };

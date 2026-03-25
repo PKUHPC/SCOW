@@ -2,9 +2,10 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
+import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { CancleShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon,ViewFileIcon } from "src/icons/operationIcon";
+import { CancelShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon,ViewFileIcon } from "src/icons/operationIcon";
 import { SharedStatus } from "src/models/common";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
@@ -15,7 +16,6 @@ import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
 import { CopyPublicDatasetModal } from "./CopyPublicDatasetModal";
-import { CreateEditDSVersionModal } from "./CreateEditDSVersionModal";
 
 export interface Props {
   datasets: DatasetInterface[];
@@ -129,8 +129,10 @@ export const DatasetVersionList: React.FC<Props> = (
         { dataIndex: "versionName", title: t(p("versionName")) },
         { dataIndex: "versionDescription", title: t(p("versionDescription")) },
         ...(isPublic ? [] : [{ dataIndex: "privatePath", title: t(p("path")) }]),
-        { dataIndex: "createTime", title: t(p("createTime")),
-          render: (_, r) => r.createTime ? formatDateTime(r.createTime) : "-" },
+        {
+          dataIndex: "updateTime", title: t(p("updatedTime")),
+          render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-",
+        },
         { dataIndex: "action", title: t(p("action")),
           render: (_, r) => {
             return !isPublic ? (
@@ -143,6 +145,7 @@ export const DatasetVersionList: React.FC<Props> = (
                   isEdit={true}
                   editData={r}
                   refetch={refetch}
+                  isPlatformOwned={false}
                 >
                   <Tooltip title={t("button.editButton")}>
                     <EditIcon />
@@ -169,8 +172,11 @@ export const DatasetVersionList: React.FC<Props> = (
                 <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
                   <span onClick={() => {
                     if (r.sharedStatus !== SharedStatus.SHARING && r.sharedStatus !== SharedStatus.UNSHARING) {
+                      const shareConfirmTitle = r.sharedStatus === SharedStatus.SHARED
+                        ? t(p("cancelShareTitle"))
+                        : t(p("share"));
                       modal.confirm({
-                        title: t(p("share")),
+                        title: shareConfirmTitle,
                         content:
                       `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
                         onOk: async () => {
@@ -191,7 +197,7 @@ export const DatasetVersionList: React.FC<Props> = (
                   }}
                   >
                     {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                      <CancleShareIcon
+                      <CancelShareIcon
                         disabled={r.sharedStatus === SharedStatus.UNSHARING}
                       />
                     ) : (
@@ -228,5 +234,3 @@ export const DatasetVersionList: React.FC<Props> = (
     />
   );
 };
-
-

@@ -203,6 +203,7 @@ const ClusterAiConfigSchema = z.object({
     }),
     maxRunningTimeHours: z.number().optional(),
   }),
+  clusterPublicPath: z.string(),
 });
 
 export const config = router({
@@ -344,6 +345,7 @@ export const config = router({
               vscodeInfo: cluster.ai?.devHost?.vscodeInfo ?? { binPath: "" },
               maxRunningTimeHours: cluster.ai?.devHost?.maxRunningTimeHours,
             },
+            clusterPublicPath: cluster.ai?.clusterPublicPath ?? "",
           },
         };
         return acc;
@@ -351,7 +353,9 @@ export const config = router({
         scowdEnabled: boolean,
         storage: { enabled: boolean,paths: string[], replicaExist: boolean },
         loginNodes: LoginNodeConfig,
-        ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number } },
+        ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number },
+          clusterPublicPath: string,
+        },
       }>);
 
       return clusterConfigs;

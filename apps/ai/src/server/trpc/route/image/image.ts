@@ -9,7 +9,8 @@ import { config } from "src/server/config/env";
 import { Image, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkClusterAvailable } from "src/server/utils/clusters";
+import { PlatformRole } from "src/server/trpc/route/auth";
+import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
 import { bytesToGB, createHarborImageUrl, getUserHarborProjectName, isValidImageAddress } from "src/server/utils/image";
@@ -50,10 +51,12 @@ export const ImageListSchema = z.object({
   isShared: z.boolean(),
   clusterId: z.string().optional(),
   createTime: z.string().optional(),
+  updateTime: z.string().optional(),
   types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
   inferServicePort:z.string().optional(),
   startCommand:z.string().optional(),
   failedReason:z.string().optional(),
+  isPlatformOwned:z.boolean(),
 });
 
 export const list = procedure
@@ -73,11 +76,20 @@ export const list = procedure
     withExternal: booleanQueryParam().optional(),
     // GET请求不能传array类型
     types: z.string().optional().default(""),
+    isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
   }))
   .output(z.object({ items: z.array(ImageListSchema), count: z.number() }))
   .query(async ({ input, ctx:{ user } }) => {
 
-    const { clusterId, isPublic, nameOrTagOrDesc, withExternal,types:rawTypes, pageSize, page } = input;
+    const {
+      clusterId,
+      isPublic,
+      nameOrTagOrDesc,
+      withExternal,
+      types:rawTypes,
+      isPlatformOwned,
+      pageSize,
+      page } = input;
 
     // 如果查询某一个集群
     if (clusterId) {
@@ -93,10 +105,22 @@ export const list = procedure
 
     const em = await forkEntityManager();
 
-    const isPublicQuery = isPublic ? {
-      isShared: true,
-      owner: { $ne: null },
-    } : { owner: user.identityId };
+    // 构建查询条件
+    let isPublicQuery: any;
+
+    if (isPlatformOwned) { // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
+      isPublicQuery = { isPlatformOwned: true };
+    } else if (isPublic) {
+      isPublicQuery = {
+        isShared: true,
+        owner: { $ne: null },
+      };
+    } else {
+      isPublicQuery = {
+        owner: user.identityId,
+        isPlatformOwned: false,
+      };
+    }
 
     const nameOrTagOrDescQuery = nameOrTagOrDesc ? {
       $or: [
@@ -168,7 +192,12 @@ export const list = procedure
         ownerName: x.owner ? ownerNameMap[x.owner] : undefined,
         isShared: Boolean(x.isShared),
         createTime: x.createTime ? x.createTime.toISOString() : undefined,
+        updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
         types:x.types ?? [],
+        inferServicePort:x.inferServicePort,
+        startCommand:x.startCommand,
+        failedReason:x.failedReason,
+        isPlatformOwned: x.isPlatformOwned,
       }; }), count };
   });
 
@@ -231,6 +260,7 @@ export const createImage = procedure
     types:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
     inferServicePort:z.string().optional(),
     startCommand:z.string().optional(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.number())
   .mutation(async ({ input, ctx: { user, req } }) => {
@@ -243,7 +273,7 @@ export const createImage = procedure
       });
     }
     const em = await forkEntityManager();
-    const { name, tag, source, sourcePath, userName, password } = input;
+    const { name, tag, source, sourcePath, userName, password, isPlatformOwned = false } = input;
 
     if (source === Source.EXTERNAL && !isValidImageAddress(sourcePath)) {
       throw new TRPCError({
@@ -255,8 +285,9 @@ export const createImage = procedure
     // tag的唯一标识符
     const tagPostfix = dayjs().unix().toString();
 
-    const imageNameTagExist = await em.findOne(Image, {
-      name, tag, owner: user.identityId });
+    const imageNameTagExist = await em.findOne(Image, isPlatformOwned
+      ? { name, tag, isPlatformOwned: true }
+      : { name, tag, owner: user.identityId, isPlatformOwned: false });
 
     if (imageNameTagExist) {
       throw new TRPCError({
@@ -265,13 +296,34 @@ export const createImage = procedure
       });
     };
 
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can create platform owned image",
+        });
+      }
+    }
+
+    // 如果是公共数据资产且为本地上传路径
+    if (isPlatformOwned && source === Source.INTERNAL) {
+      const noCheckPermission = shouldPathsSkipPermissionCheck(input.clusterId,
+        [sourcePath], true);
+      if (!noCheckPermission) {
+        throw new TRPCError({ code: "FORBIDDEN",
+          message: `${sourcePath} is outside the required PublicPath boundary` });
+      }
+    }
+
     // 获取加载镜像的集群节点
     const processClusterId = input.clusterId;
 
     if (!processClusterId) { throw new NoClusterError(name, tag); }
     checkClusterAvailable(currentClusterIds, processClusterId);
 
-    const harborImageUrl = await createHarborImageUrl(name, tag + tagPostfix, user.identityId, logger);
+    const harborImageUrl =
+    await createHarborImageUrl(name, tag + tagPostfix, user.identityId, logger, isPlatformOwned);
 
     // 创建一个状态为 creating 的数据
     const image = new Image({
@@ -280,12 +332,13 @@ export const createImage = procedure
       status: Status.CREATING,
       owner: user.identityId,
       tagPostfix,
+      isPlatformOwned,
     });
     await em.persistAndFlush([image]);
 
     const createProcess = async () => {
       const em = await forkEntityManager();
-      const image = await em.findOne(Image, { name, tag, owner: user.identityId });
+      const image = await em.findOne(Image, { name, tag, owner: user.identityId, isPlatformOwned });
 
       if (!image) {
         throw new Error(`Image creation error: image ${name}:${tag} not found`);
@@ -310,6 +363,7 @@ export const createImage = procedure
             loginInfo:{ userName,password },
             harborImageUrl,
             imageId: image.id,
+            noCheckPermission: isPlatformOwned,
           });
         },logger);
 
@@ -364,6 +418,7 @@ export const updateImage = procedure
     types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER, ImageType.DEV_HOST])),
     inferServicePort:z.string().optional(),
     startCommand:z.string().optional(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.number())
   .use(async ({ input:{ id }, ctx, next }) => {
@@ -413,7 +468,10 @@ export const updateImage = procedure
     return res;
   })
   .mutation(
-    async ({ input:{ id,description,types,inferServicePort,startCommand }, ctx: { user } }) => {
+    async ({
+      input: { id, description, types, inferServicePort, startCommand, isPlatformOwned = false },
+      ctx: { user },
+    }) => {
       const em = await forkEntityManager();
 
       const image = await em.findOne(Image, { id: id });
@@ -424,12 +482,26 @@ export const updateImage = procedure
         });
       };
 
-      if (image.owner !== user.identityId) {
+      if (isPlatformOwned) {
+        const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+        if (!isPlatformAdmin) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only platform admin can update platform owned image",
+          });
+        }
+      }
+
+      if (!isPlatformOwned && (image.owner !== user.identityId)) {
+        const detailMessage =
+          `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+        logger.error(detailMessage);
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: `Image ${id} not accessible`,
+          message: "Operation failed: The image asset does not belong to the current user.",
         });
       }
+
       image.description = description;
       image.types = types;
       image.inferServicePort = inferServicePort;
@@ -449,7 +521,11 @@ export const deleteImage = procedure
       summary: "delete a image",
     },
   })
-  .input(z.object({ id: z.number(), force: booleanQueryParam().optional() }))
+  .input(z.object({
+    id: z.number(),
+    force: booleanQueryParam().optional(),
+    isPlatformOwned: z.boolean().optional(),
+  }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
     const { user, req } = ctx;
@@ -500,6 +576,7 @@ export const deleteImage = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const image = await em.findOne(Image, { id: input.id });
+    const { isPlatformOwned } = input;
 
     if (!image) {
       throw new TRPCError({
@@ -516,10 +593,23 @@ export const deleteImage = procedure
       });
     }
 
-    if (image.owner !== user.identityId) {
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can delete platform owned image",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && (image.owner !== user.identityId)) {
+      const detailMessage =
+        `Image id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: `Image ${image.name}:${image.tag} not accessible`,
+        message: "Operation failed: The image asset does not belong to the current user.",
       });
     }
 
@@ -537,7 +627,11 @@ export const deleteImage = procedure
     const harborConfig = getHarborConfig();
     const harbor = new HarborClient(harborConfig);
     // 获取harbor中的reference以删除镜像
-    const getReferenceRes = await harbor.getReference({ userId:user.identityId,imageName:image.name });
+    const getReferenceRes = await harbor.getReference({
+      userId:user.identityId,
+      imageName:image.name,
+      isPlatformOwned,
+    });
 
     if (!getReferenceRes.ok) {
       const errorText = await getReferenceRes.text(); // 首先获取文本形式的响应体
@@ -592,7 +686,11 @@ export const deleteImage = procedure
 
     // 如果上面的tag是最相同imageName下相同镜像的最后一个标签，则删除整个Repository
     if (needDeleteRepository) {
-      const deleteRepository = await harbor.deleteRepository({ userId:user.identityId,imageName:image.name });
+      const deleteRepository = await harbor.deleteRepository({
+        userId:user.identityId,
+        imageName:image.name,
+        isPlatformOwned,
+      });
 
 
       // harbor 删除出错，但状态本身就是失败时无需操作
@@ -615,6 +713,7 @@ export const deleteImage = procedure
         reference,
         imageTag:image.tag,
         imageTagPostfix: image.tagPostfix ?? "",
+        isPlatformOwned,
       });
 
       // harbor 删除出错，但状态本身就是失败时无需操作
@@ -658,7 +757,7 @@ export const shareOrUnshareImage = procedure
       summary: "share a image",
     },
   })
-  .input(z.object({ id: z.number(), share: z.boolean() }))
+  .input(z.object({ id: z.number(), share: z.boolean(), isPlatformOwned: z.boolean().optional() }))
   .output(z.void())
   .use(async ({ input:{ id, share }, ctx, next }) => {
     const { user, req } = ctx;
@@ -708,30 +807,44 @@ export const shareOrUnshareImage = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const image = await em.findOne(Image, { id: input.id });
+    const { id, share, isPlatformOwned } = input;
+    const image = await em.findOne(Image, { id });
 
     if (!image) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message: `Image ${input.id} not found`,
+        message: `Image ${id} not found`,
       });
     };
 
     if (image.status === Status.CREATING) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Image ${input.id} is still being creating.`,
+        message: `Image ${id} is still being creating.`,
       });
     }
 
-    if (image.owner !== user.identityId) {
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can share platform owned image",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && image.owner !== user.identityId) {
+      const detailMessage =
+        `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: `Image ${input.id} not accessible`,
+        message: "Operation failed: The image asset does not belong to the current user.",
       });
     }
 
-    image.isShared = input.share;
+    image.isShared = share;
 
     await em.persistAndFlush(image);
     return;
@@ -837,7 +950,7 @@ export const copyImage = procedure
     }
 
     const imageNameTagsExist = await em.findOne(Image,
-      { name: newName, tag: newTag, owner: user.identityId });
+      { name: newName, tag: newTag, owner: user.identityId, isPlatformOwned: false });
     if (imageNameTagsExist) {
       throw new TRPCError({
         code: "CONFLICT",

@@ -37,21 +37,21 @@ export interface ShareParams {
 }
 
 export interface FileDriver {
-  deleteFile(path: string): Promise<void>;
-  deleteDir(path: string): Promise<void>;
-  copy(fromPath: string, toPath: string): Promise<void>;
-  createFile(path: string): Promise<void>;
+  deleteFile(path: string, noCheckPermission?: boolean): Promise<void>;
+  deleteDir(path: string, noCheckPermission?: boolean): Promise<void>;
+  copy(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
+  createFile(path: string, noCheckPermission?: boolean): Promise<void>;
   getHomeDirectory(): Promise<string>;
-  makeDirectory(path: string): Promise<void>;
-  move(fromPath: string, toPath: string): Promise<void>;
-  readDirectory(path: string): Promise<ListDirectoryOutput[]>;
-  download(path: string, download: string,res: NextApiResponse<any>): Promise<void>;
-  upload(path: string, uploadedFile: File): Promise<NextResponse<{ message: string; }>>;
-  getFileMetadata(path: string): Promise<FileMeta>;
-  exists(path: string): Promise<boolean>;
+  makeDirectory(path: string, noCheckPermission?: boolean): Promise<void>;
+  move(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
+  readDirectory(path: string, noCheckPermission?: boolean): Promise<ListDirectoryOutput[]>;
+  download(path: string, download: string, res: NextApiResponse<any>, noCheckPermission?: boolean): Promise<void>;
+  upload(path: string, uploadedFile: File, noCheckPermission?: boolean): Promise<NextResponse<{ message: string; }>>;
+  getFileMetadata(path: string, noCheckPermission?: boolean): Promise<FileMeta>;
+  exists(path: string, noCheckPermission?: boolean): Promise<boolean>;
   chmod(path: string, mode: string): Promise<void>;
-  decompressFile(filePath: string, decompressionPath: string): Promise<void>;
-  compressFiles(paths: string[], archivePath: string): Promise<void>;
+  decompressFile(filePath: string, decompressionPath: string, noCheckPermission?: boolean): Promise<void>;
+  compressFiles(paths: string[], archivePath: string, noCheckPermission?: boolean): Promise<void>;
 
   /**
  * 取消分享时删除相应的文件夹
@@ -70,8 +70,8 @@ export interface FileDriver {
   getUpdatedSharedPath(newName: string,oldPath: string): Promise<string>;
 
   checkCopyFilePath(toPath: string,fileName: string): Promise<void>;
-  checkCreateResourcePath(toPath: string): Promise<void>;
-  checkSharePermission(sourcePath: string): Promise<void>;
+  checkCreateResourcePath(toPath: string, noCheckPermission?: boolean): Promise<void>;
+  checkSharePermission(sourcePath: string, noCheckPermission?: boolean): Promise<void>;
 }
 
 function createFileDriver(opts: {

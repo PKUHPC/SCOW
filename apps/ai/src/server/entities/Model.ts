@@ -28,6 +28,7 @@ export class Model {
   clusterId: string;
   createTime?: Date;
   updateTime?: Date;
+  isPlatformOwned: boolean;
 
   constructor(init: {
     name: string;
@@ -39,6 +40,7 @@ export class Model {
     clusterId: string;
     createTime?: Date;
     updateTime?: Date;
+    isPlatformOwned?: boolean;
   }) {
     this.name = init.name;
     this.owner = init.owner;
@@ -47,6 +49,7 @@ export class Model {
     this.isShared = init.isShared ?? false;
     this.description = init.description;
     this.clusterId = init.clusterId;
+    this.isPlatformOwned = init.isPlatformOwned ?? false;
 
     if (init.createTime) {
       this.createTime = init.createTime;
@@ -85,3 +88,4 @@ modelEntitySchema.addProperty("createTime", Date, {
 
 modelEntitySchema.addProperty("updateTime", Date, {
   columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+modelEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

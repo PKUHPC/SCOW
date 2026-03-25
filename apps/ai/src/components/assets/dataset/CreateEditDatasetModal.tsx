@@ -2,15 +2,14 @@ import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInpu
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form, Input, Modal, Select } from "antd";
 import React, { useEffect } from "react";
+import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { DatasetType, getDatasetTexts, SceneType } from "src/models/Dateset";
+import { getDatasetTexts } from "src/models/Dateset";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
 import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
-
-import { defaultClusterContext } from "../../defaultClusterContext";
 
 export interface Props {
   open: boolean;
@@ -20,6 +19,7 @@ export interface Props {
   editData?: DatasetInterface;
   clusters: Cluster[];
   currentClusterIds: string[];
+  isPlatformOwned?: boolean;
 }
 
 interface FormFields {
@@ -32,7 +32,7 @@ interface FormFields {
 }
 
 export const CreateEditDatasetModal: React.FC<Props> = (
-  { open, onClose, refetch, isEdit, editData, clusters, currentClusterIds },
+  { open, onClose, refetch, isEdit, editData, clusters, currentClusterIds, isPlatformOwned },
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.createEditDatasetModal.");
@@ -69,11 +69,6 @@ export const CreateEditDatasetModal: React.FC<Props> = (
       form.setFieldsValue({
         type: editData.type,
         scene: editData.scene,
-      });
-    } else {
-      form.setFieldsValue({
-        type: DatasetType.IMAGE,
-        scene: SceneType.CWS,
       });
     }
   };
@@ -140,6 +135,7 @@ export const CreateEditDatasetModal: React.FC<Props> = (
         type,
         scene,
         description,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     } else {
       createMutation.mutate({
@@ -148,9 +144,12 @@ export const CreateEditDatasetModal: React.FC<Props> = (
         type,
         description,
         scene,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
+
+  const labelWidth = languageId === "zh_cn" ? 80 : 140;
 
   return (
     <Modal
@@ -164,8 +163,17 @@ export const CreateEditDatasetModal: React.FC<Props> = (
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 19 }}
-        labelCol={{ span: 5 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
         initialValues={isEdit && editData ? editData : { cluster: defaultCluster }}
       >
         <Form.Item
@@ -185,7 +193,7 @@ export const CreateEditDatasetModal: React.FC<Props> = (
           >
             {getI18nConfigCurrentText(
               clusters.find((x) => (x.id === editData.clusterId))?.name, languageId)
-                      ?? editData.clusterId }
+              ?? editData.clusterId}
           </Form.Item>
         ) : (
           <Form.Item
@@ -199,14 +207,22 @@ export const CreateEditDatasetModal: React.FC<Props> = (
           </Form.Item>
         )
         }
-        <Form.Item label={t(p("type"))} name="type" required={true}>
+        <Form.Item
+          label={t(p("type"))}
+          name="type"
+          rules={[{ required: true, message: t(p("selectType")) }]}
+        >
           <Select
             style={{ minWidth: "100px" }}
             options={
               Object.entries(DatasetTypeTextTrans).map(([key, value]) => ({ label:value, value:key }))}
           />
         </Form.Item>
-        <Form.Item label={t(p("scene"))} name="scene" required={true}>
+        <Form.Item
+          label={t(p("scene"))}
+          name="scene"
+          rules={[{ required: true, message: t(p("selectScene")) }]}
+        >
           <Select
             style={{ minWidth: "100px" }}
             options={

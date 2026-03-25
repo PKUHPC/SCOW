@@ -19,7 +19,8 @@ import { Model } from "src/server/entities/Model";
 import { ModelVersion } from "src/server/entities/ModelVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkClusterAvailable } from "src/server/utils/clusters";
+import { PlatformRole } from "src/server/trpc/route/auth";
+import { checkClusterAvailable, checkIsPublicPaths, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
@@ -47,6 +48,7 @@ export const VersionListSchema = z.object({
   path: z.string(),
   privatePath: z.string(),
   createTime: z.string().optional(),
+  updateTime: z.string().optional(),
 });
 
 export const versionList = procedure
@@ -78,6 +80,8 @@ export const versionList = procedure
       });
 
     return { items: items.map((x) => {
+      const createTime = x.createTime ? x.createTime.toISOString() : undefined;
+      const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
       return {
         id: x.id,
         modelId: x.model.id,
@@ -87,7 +91,8 @@ export const versionList = procedure
         path: x.path,
         privatePath: x.privatePath,
         sharedStatus: x.sharedStatus,
-        createTime: x.createTime ? x.createTime.toISOString() : undefined,
+        createTime,
+        updateTime: updateTime ?? createTime,
       }; }), count };
   });
 
@@ -176,7 +181,7 @@ export const getAllModelVersions = procedure
 
     const personalModels = await em.find(Model, {
       $and: [
-        { owner: user.identityId },
+        { owner: user.identityId, isPlatformOwned: false }, // 开发训练页的我的模型只展示个人创建的非平台模型
         clusterId ? { clusterId } : {},
       ],
     }, {
@@ -245,6 +250,7 @@ export const createModelVersion = procedure
     algorithmVersion: z.string().optional(),
     path: z.string(),
     modelId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
   .use(async ({ input:{ modelId,versionName }, ctx, next }) => {
@@ -295,8 +301,26 @@ export const createModelVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${input.modelId} not found` });
     }
 
-    if (model.owner !== user.identityId) {
-      throw new TRPCError({ code: "FORBIDDEN", message: `Model ${input.modelId} not accessible` });
+    const isPlatformOwned = input.isPlatformOwned ?? false;
+
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can create platform owned model version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage =
+        `Model id:${input.modelId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The model asset does not belong to the current user.",
+      });
     }
 
     const modelVersionExist = await em.findOne(ModelVersion,
@@ -306,13 +330,16 @@ export const createModelVersion = procedure
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
 
+    const noCheckPermission = shouldPathsSkipPermissionCheck(model.clusterId,
+      [input.path], isPlatformOwned ?? false);
+
     const host = getClusterLoginNode(model.clusterId);
 
     if (!host) { throw clusterNotFound(model.clusterId); }
     // 检查目录是否存在
     const isPathExisted = await withFileDriver(
       { clusterId: model.clusterId, user: user.identityId },
-      async (driver) => await driver.exists(input.path),
+      async (driver) => await driver.exists(input.path, noCheckPermission),
       logger,
     );
     if (!isPathExisted) {
@@ -324,7 +351,7 @@ export const createModelVersion = procedure
       clusterId:model.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkCreateResourcePath(input.path);
+      await fileDriver.checkCreateResourcePath(input.path, noCheckPermission);
     }, logger);
 
     const modelVersion = new ModelVersion({ ...input, privatePath: input.path, model: model });
@@ -347,6 +374,7 @@ export const updateModelVersion = procedure
     versionDescription: z.string().optional(),
     algorithmVersion: z.string().optional(),
     modelId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
   .use(async ({ input:{ modelId,versionId,versionName }, ctx, next }) => {
@@ -394,15 +422,31 @@ export const updateModelVersion = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
 
-    const { versionId, versionName, versionDescription, algorithmVersion, modelId } = input;
+    const { versionId, versionName, versionDescription, algorithmVersion, modelId, isPlatformOwned } = input;
 
     const model = await em.findOne(Model, { id: modelId });
     if (!model) {
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
     }
 
-    if (model.owner !== user.identityId) {
-      throw new TRPCError({ code: "FORBIDDEN", message: `Model ${modelId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can update platform owned model version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage =
+        `Model id:${modelId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The model asset does not belong to the current user.",
+      });
     }
 
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
@@ -426,7 +470,7 @@ export const updateModelVersion = procedure
     && versionName !== modelVersion.versionName;
 
     // 更新已分享目录下的版本路径名称
-    if (needUpdateSharedPath) {
+    if (needUpdateSharedPath && !isPlatformOwned) {
       // 获取更新后的已分享版本路径
       const newVersionSharedPath = await driver.withFileDriver({
         clusterId:model.clusterId,
@@ -460,6 +504,7 @@ export const deleteModelVersion = procedure
   .input(z.object({
     versionId: z.number(),
     modelId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ success: z.boolean() }))
   .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
@@ -513,6 +558,7 @@ export const deleteModelVersion = procedure
     const em = await forkEntityManager();
 
     const modelVersion = await em.findOne(ModelVersion, { id: input.versionId });
+    const isPlatformOwned = input.isPlatformOwned ?? false;
 
     if (!modelVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${input.versionId} not found` });
@@ -523,8 +569,24 @@ export const deleteModelVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${input.modelId} not found` });
     }
 
-    if (model.owner !== user.identityId) {
-      throw new TRPCError({ code: "FORBIDDEN", message: `Model ${input.modelId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can delete platform owned model version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage =
+        `Model id:${input.modelId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The model asset does not belong to the current user.",
+      });
     }
 
     // 正在分享中或取消分享中的版本，不可删除
@@ -535,21 +597,23 @@ export const deleteModelVersion = procedure
           message: `ModelVersion (id:${input.versionId}) is currently being shared or unshared` });
     }
 
-    // 如果是已分享的模型版本，则删除分享
+    // 如果是已分享的模型版本，则删除分享; 如果是公共数据资产则不删除分享文件夹
     if (modelVersion.sharedStatus === SharedStatus.SHARED) {
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, model.clusterId);
 
-      try {
-        await driver.withFileDriver({
-          clusterId:model.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.checkSharePermission(modelVersion.privatePath);
-        }, logger);
+      if (!isPlatformOwned) {
 
-        const pathToUnshare
+        try {
+          await driver.withFileDriver({
+            clusterId:model.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.checkSharePermission(modelVersion.privatePath);
+          }, logger);
+
+          const pathToUnshare
         = model.versions.filter((v) => (v.id !== input.versionId && v.sharedStatus === SharedStatus.SHARED))
           .length > 0 ?
           // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
@@ -557,14 +621,15 @@ export const deleteModelVersion = procedure
           // 除了此版本以外没有其他已分享的版本则取消分享整个模型
           : dirname(dirname(modelVersion.path));
 
-        await driver.withFileDriver({
-          clusterId:model.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.unShareFileOrDir(pathToUnshare);
-        }, logger);
-      } catch (e) {
-        logger.error(`ssh failure occured when unshare modelVersion ${input.versionId} of model ${input.modelId}`, e);
+          await driver.withFileDriver({
+            clusterId:model.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.unShareFileOrDir(pathToUnshare);
+          }, logger);
+        } catch (e) {
+          logger.error(`ssh failure occured when unshare modelVersion ${input.versionId} of model ${input.modelId}`, e);
+        }
       }
 
       model.isShared = model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 1
@@ -590,6 +655,7 @@ export const shareModelVersion = procedure
   .input(z.object({
     modelId: z.number(),
     versionId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
@@ -638,7 +704,7 @@ export const shareModelVersion = procedure
 
     return res;
   })
-  .mutation(async ({ input:{ modelId, versionId }, ctx: { user } }) => {
+  .mutation(async ({ input:{ modelId, versionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
     if (!modelVersion)
@@ -651,19 +717,70 @@ export const shareModelVersion = procedure
     if (!model)
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
 
-    if (model.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Model ${modelId}  not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can share platform owned model version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage =
+        `Model id:${modelId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The model asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
+
+    // 若公共资产路径改变，则无法发布
+    const checkIsPublicAssetModelVersion = checkIsPublicPaths(
+      model.clusterId,
+      [modelVersion.path],
+    );
+
+    if (isPlatformOwned && !checkIsPublicAssetModelVersion) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to model version files; publishing is not allowed.",
+      });
+    }
 
     await driver.withFileDriver({
       clusterId:model.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(modelVersion.privatePath);
+      await fileDriver.checkSharePermission(modelVersion.privatePath, isPlatformOwned);
     }, logger);
 
+    modelVersion.sharedStatus = SharedStatus.SHARING;
+    em.persist([modelVersion]);
+    await em.flush();
+
+    if (isPlatformOwned) {
+      const modelVersion = await em.findOne(ModelVersion, { id: versionId });
+      if (!modelVersion)
+        throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${modelId} not found` });
+
+      const model = await em.findOne(Model, { id: modelId });
+      if (!model)
+        throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
+
+      modelVersion.sharedStatus = SharedStatus.SHARED;
+      modelVersion.path = modelVersion.privatePath;
+      if (!model.isShared) { model.isShared = true; };
+
+      await em.persistAndFlush([modelVersion, model]);
+
+      return;
+    }
 
     const homeDir = await driver.withFileDriver({
       clusterId:model.clusterId,
@@ -673,9 +790,6 @@ export const shareModelVersion = procedure
     }, logger);
     const homeTopDir = dirname(dirname(homeDir));
 
-    modelVersion.sharedStatus = SharedStatus.SHARING;
-    em.persist([modelVersion]);
-    await em.flush();
 
     const successCallback = async (targetFullPath: string) => {
       const em = await forkEntityManager();
@@ -735,9 +849,10 @@ export const unShareModelVersion = procedure
   .input(z.object({
     versionId: z.number(),
     modelId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .mutation(async ({ input:{ versionId, modelId }, ctx: { user } }) => {
+  .mutation(async ({ input:{ versionId, modelId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
     if (!modelVersion)
@@ -752,8 +867,25 @@ export const unShareModelVersion = procedure
     if (!model)
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${modelId} not found` });
 
-    if (model.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Model ${modelId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can unshare platform owned model version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && (model.owner !== user.identityId)) {
+      const detailMessage =
+        `Model id:${modelId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The model asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, model.clusterId);
@@ -793,6 +925,11 @@ export const unShareModelVersion = procedure
 
       await em.persistAndFlush([modelVersion]);
     };
+
+    if (isPlatformOwned) {
+      await successCallback();
+      return;
+    }
 
     const sharedModelVersionPath =
     model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
@@ -896,7 +1033,11 @@ export const copyPublicModelVersion = procedure
       });
     }
     // 2. 检查该用户是否已有同名模型
-    const model = await em.findOne(Model, { name: input.modelName, owner: user.identityId });
+    const model = await em.findOne(Model, {
+      name: input.modelName,
+      owner: user.identityId,
+      isPlatformOwned: false,
+    });
     if (model) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -933,6 +1074,19 @@ export const copyPublicModelVersion = procedure
       model: newModel,
     });
 
+    // 若公共资产路径改变，则无法复制
+    const checkIsPublicPathsResult = checkIsPublicPaths(
+      modelVersion.model.$.clusterId,
+      [modelVersion.path],
+    );
+
+    if (!checkIsPublicPathsResult && modelVersion.model.$.isPlatformOwned === true) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to the model version files; copying is not allowed.",
+      });
+    }
+
     try {
       await withFileDriver(
         { clusterId:modelVersion.model.$.clusterId, user:user.identityId },
@@ -940,7 +1094,9 @@ export const copyPublicModelVersion = procedure
           const cluster = clusters[modelVersion.model.$.clusterId];
 
           await driver.copy(modelVersion.path,
-            cluster.scowd?.enabled ? path.join(input.path,path.basename(modelVersion.path)) : input.path);
+            cluster.scowd?.enabled ? path.join(input.path,path.basename(modelVersion.path)) : input.path,
+            checkIsPublicPathsResult,
+          );
         },
         logger,
       );

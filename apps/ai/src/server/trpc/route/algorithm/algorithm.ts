@@ -5,6 +5,7 @@ import { Algorithm, Framework } from "src/server/entities/Algorithm";
 import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
+import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable } from "src/server/utils/clusters";
 import { getCurrentClusters } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
@@ -13,6 +14,7 @@ import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
 import { getClusterLoginNode } from "src/server/utils/ssh";
+import { getUsersName } from "src/server/utils/user";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
 
@@ -35,11 +37,13 @@ export const getAlgorithms = procedure
     nameOrDesc: z.string().optional(),
     clusterId: z.string().optional(),
     isPublic: booleanQueryParam().optional(),
+    isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
   }))
   .output(z.object({ items: z.array(z.object({
     id:z.number(),
     name:z.string(),
     owner:z.string(),
+    ownerName:z.string(),
     framework:z.enum(Framework),
     isShared:z.boolean(),
     description:z.string().optional(),
@@ -49,10 +53,13 @@ export const getAlgorithms = procedure
       id: z.number(),
       path: z.string(),
     })),
+    updateTime: z.string().optional(),
+    versionsCount: z.number(),
+    isPlatformOwned: z.boolean(),
   })), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
 
-    const { page, pageSize, framework, nameOrDesc, clusterId, isPublic } = input;
+    const { page, pageSize, framework, nameOrDesc, clusterId, isPublic, isPlatformOwned } = input;
     // 如果查询某一个集群
     if (clusterId) {
       // 再次检查当前查询集群是否为在线可用集群
@@ -62,10 +69,36 @@ export const getAlgorithms = procedure
 
     const em = await forkEntityManager();
 
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can get platform owned algorithms",
+        });
+      }
+    }
+
+    // 构建查询条件
+    let isPublicQuery: any;
+
+    if (isPlatformOwned) { // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
+      isPublicQuery = { isPlatformOwned: true };
+    } else if (isPublic) {
+      isPublicQuery = {
+        isShared: true,
+        owner: { $ne: null },
+      };
+    } else {
+      isPublicQuery = {
+        owner: user.identityId,
+        isPlatformOwned: false,
+      };
+    }
+
     const [items, count] = await em.findAndCount(Algorithm, {
       $and:[
-        isPublic ? { isShared:true } :
-          { owner: user.identityId },
+        isPublicQuery,
         framework ? { framework } : {},
         clusterId ? { clusterId } : {},
         nameOrDesc ?
@@ -81,11 +114,23 @@ export const getAlgorithms = procedure
       orderBy: { createTime: "desc" },
     });
 
+    const ownerIds = Array.from(new Set(items.map((x) => x.owner)));
+
+    let userMap: Record<string, string> = {};
+    if (ownerIds.length > 0) {
+      const users = await getUsersName(ownerIds);
+      userMap = users.reduce((acc, user) => {
+        acc[user.userId] = user.userName;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+
     return { items: items.map((x) => {
       return {
         id:x.id,
         name:x.name,
         owner:x.owner,
+        ownerName: userMap[x.owner] ?? x.owner,
         framework:x.framework,
         isShared:x.isShared,
         description:x.description,
@@ -94,6 +139,9 @@ export const getAlgorithms = procedure
         versions: isPublic ?
           x.versions.filter((x) => (x.sharedStatus === SharedStatus.SHARED)).map((y) => ({ id: y.id, path: y.path }))
           : x.versions.map((y) => ({ id: y.id, path: y.privatePath })),
+        versionsCount: x.versions.length,
+        updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
+        isPlatformOwned: x.isPlatformOwned,
       }; }), count };
 
   });
@@ -113,6 +161,7 @@ export const createAlgorithm = procedure
     framework: z.enum(Framework),
     clusterId: z.string(),
     description: z.string().optional(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.number())
   .use(async ({ input:{ clusterId,name }, ctx, next }) => {
@@ -158,8 +207,22 @@ export const createAlgorithm = procedure
       });
     }
 
+    const isPlatformOwned = input.isPlatformOwned ?? false;
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can create platform owned algorithm",
+        });
+      }
+    }
+
     const em = await forkEntityManager();
-    const algorithmExist = await em.findOne(Algorithm, { name:input.name, owner: user.identityId });
+    const algorithmExist = await em.findOne(Algorithm, isPlatformOwned
+      ? { name: input.name, isPlatformOwned: true }
+      : { name: input.name, owner: user.identityId, isPlatformOwned: false });
+
     if (algorithmExist) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -167,7 +230,7 @@ export const createAlgorithm = procedure
       });
     }
 
-    const algorithm = new Algorithm({ ...input, owner: user.identityId });
+    const algorithm = new Algorithm({ ...input, owner: user.identityId, isPlatformOwned });
     await em.persistAndFlush(algorithm);
     return algorithm.id;
   });
@@ -186,6 +249,7 @@ export const updateAlgorithm = procedure
     name: z.string(),
     framework: z.enum(Framework),
     description: z.string().optional(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
@@ -229,7 +293,8 @@ export const updateAlgorithm = procedure
 
     return res;
   })
-  .mutation(async ({ input:{ name, framework, description, id }, ctx: { user } }) => {
+  .mutation(async ({ input:{ name, framework, description, id, isPlatformOwned }, ctx: { user } }) => {
+
     const em = await forkEntityManager();
     const algorithm = await em.findOne(Algorithm, { id });
 
@@ -240,9 +305,19 @@ export const updateAlgorithm = procedure
       });
     }
 
-    const algorithmExist = await em.findOne(Algorithm, { name,
-      owner: user.identityId,
-    });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can update platform owned algorithm",
+        });
+      }
+    }
+
+    const algorithmExist = await em.findOne(Algorithm, isPlatformOwned
+      ? { name, isPlatformOwned: true }
+      : { name, owner: user.identityId, isPlatformOwned: false });
 
     if (algorithmExist && algorithmExist !== algorithm) {
       throw new TRPCError({
@@ -251,8 +326,15 @@ export const updateAlgorithm = procedure
       });
     }
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm ${id} not accessible` });
+    if (!isPlatformOwned && (algorithm.owner !== user.identityId)) {
+      const detailMessage =
+        `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
 
     // 存在正在分享或正在取消分享的算法版本，则不可更新名称
     const changingVersions = await em.find(AlgorithmVersion, { algorithm,
@@ -268,8 +350,8 @@ export const updateAlgorithm = procedure
       });
     }
 
-    // 如果是已分享的算法且名称发生变化，则变更共享路径下的此算法名称为新名称
-    if (algorithm.isShared && name !== algorithm.name) {
+    // 如果是已分享的个人算法且名称发生变化，则变更共享路径下的此算法名称为新名称
+    if (algorithm.isShared && name !== algorithm.name && !isPlatformOwned) {
 
       const sharedVersions = await em.find(AlgorithmVersion, { algorithm, sharedStatus: SharedStatus.SHARED });
       const oldPath = dirname(dirname(sharedVersions[0].path));
@@ -309,7 +391,7 @@ export const deleteAlgorithm = procedure
       summary: "delete a algorithm",
     },
   })
-  .input(z.object({ id: z.number() }))
+  .input(z.object({ id: z.number(), isPlatformOwned: z.boolean().optional() }))
   .output(z.void())
   .use(async ({ input:{ id }, ctx, next }) => {
 
@@ -353,7 +435,7 @@ export const deleteAlgorithm = procedure
 
     return res;
   })
-  .mutation(async ({ input:{ id }, ctx:{ user } }) => {
+  .mutation(async ({ input:{ id, isPlatformOwned = false }, ctx:{ user } }) => {
     const em = await forkEntityManager();
     const algorithm = await em.findOne(Algorithm, { id });
 
@@ -364,8 +446,25 @@ export const deleteAlgorithm = procedure
       });
     }
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm (id:${id}) not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can delete platform owned algorithm",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && (algorithm.owner !== user.identityId)) {
+      const detailMessage =
+        `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
 
     const algorithmVersions = await em.find(AlgorithmVersion, { algorithm });
 
@@ -382,7 +481,7 @@ export const deleteAlgorithm = procedure
     const sharedVersions = algorithmVersions.filter((v) => (v.sharedStatus === SharedStatus.SHARED));
 
     // 获取此算法的共享的算法绝对路径
-    if (sharedVersions.length > 0) {
+    if (!isPlatformOwned && sharedVersions.length > 0) {
       const sharedAlgorithmPath = dirname(dirname(sharedVersions[0].path));
 
       const currentClusterIds = await getCurrentClusters(user.identityId);

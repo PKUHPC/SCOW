@@ -5,21 +5,23 @@ import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
+import { CreateAndEditAlgorithmModal } from "src/components/assets/algorithm/CreateAndEditAlgorithmModal";
+import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { CreateNewVersionIcon, DeleteIcon, EditIcon } from "src/icons/operationIcon";
+import { CreateNewVersionIcon, DeleteIcon, EditIcon, PlatformIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface, AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
 import { formatDateTime } from "src/utils/datetime";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import { TableContainer } from "../common";
+import { PlatformTag } from "../PlatformTag";
 import { AlgorithmVersionList } from "./AlgorithmVersionList";
-import { CreateAndEditAlgorithmModal } from "./CreateAndEditAlgorithmModal";
-import { CreateAndEditVersionModal } from "./CreateAndEditVersionModal";
 
 interface Props {
   isPublic: boolean;
@@ -56,7 +58,9 @@ const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.algorithmTable.");
+  const pCommon = prefix("app.common.");
   const languageId = useI18n().currentLanguage.id;
+  const theme = useTheme();
 
   // 本来应该是放在组件外，但是为了国际化将其放入组件中
   const FilterType = {
@@ -151,13 +155,24 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
       render: (_, r) => {
         return r.versions.length;
       } },
-    isPublic ? { dataIndex: "shareUser", title: t(p("shareUser")),
-      render: (_, r) => {
-        return r.owner;
-      } } : {},
-    { dataIndex: "createTime", title: t(p("createTime")),
-      render:(createTime) => formatDateTime(createTime),
-    },
+    ...(isPublic
+      ? [{
+        dataIndex: "shareUser",
+        title: t(pCommon("publishUser")),
+        // @ts-ignore
+        render: (_, r) =>
+          r.isPlatformOwned ? (
+            <PlatformTag color={theme.token.colorPrimary}>
+              <span>{t(pCommon("platform"))}</span>
+              <PlatformIcon />
+            </PlatformTag>
+          ) : (
+            `${r.ownerName}（ID:${r.owner}）`
+          ),
+      } as const]
+      : []),
+    { dataIndex: "updateTime", title: t(p("updatedTime")),
+      render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
     ...!isPublic ? [{ dataIndex: "action", title:  t(p("action")),
       render: (_: any, r: AlgorithmInterface) => {
         return (
@@ -217,6 +232,7 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
             const { nameOrDesc } = await form.validateFields();
             setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+            refetch();
           }}
         >
           <Form.Item label={t(p("cluster"))} name="clusterId">
@@ -288,4 +304,3 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
     </TableContainer>
   );
 };
-

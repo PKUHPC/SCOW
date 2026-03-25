@@ -27,6 +27,7 @@ message FileInfo {
 message ReadDirectoryRequest {
   string user_id = 1;
   string dir_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message ReadDirectoryResponse {
@@ -36,6 +37,7 @@ message ReadDirectoryResponse {
 message CreateFileRequest {
   string user_id = 1;
   string file_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message CreateFileResponse {
@@ -44,6 +46,7 @@ message CreateFileResponse {
 message MakeDirectoryRequest {
   string user_id = 1;
   string dir_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message MakeDirectoryResponse {
@@ -52,6 +55,7 @@ message MakeDirectoryResponse {
 message DeleteDirectoryRequest {
   string user_id = 1;
   string dir_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message DeleteDirectoryResponse {
@@ -60,6 +64,7 @@ message DeleteDirectoryResponse {
 message DeleteFileRequest {
   string user_id = 1;
   string file_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message DeleteFileResponse {
@@ -98,6 +103,7 @@ message ChangeModeResponse {
 message GetFileMetadataRequest {
   string user_id = 1;
   string file_path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message GetFileMetadataResponse {
@@ -126,6 +132,7 @@ message MoveRequest {
   string user_id = 1;
   string from_path = 2;
   string to_path = 3;
+  optional bool no_check_permission = 4;
 }
 
 message MoveResponse {
@@ -134,6 +141,7 @@ message MoveResponse {
 message ExistsRequest {
   string user_id = 1;
   string path = 2;
+  optional bool no_check_permission = 3;
 }
 
 message ExistsResponse {
@@ -144,6 +152,7 @@ message CopyRequest {
   string user_id = 1;
   string from_path = 2;
   string to_path = 3;
+  optional bool no_check_permission = 4;
 }
 
 message CopyResponse {
@@ -153,6 +162,7 @@ message InitMultipartUploadRequest {
   string user_id = 1;
   string path = 2;
   string name = 3;
+  optional bool no_check_permission = 4;
 }
 
 message InitMultipartUploadResponse {
@@ -166,6 +176,7 @@ message UploadRequest {
   message Info {
     string user_id = 1;
     string path = 2;
+    optional bool no_check_permission = 3;
   }
 
   oneof message {
@@ -183,6 +194,7 @@ message MergeFileChunksRequest {
   string path = 2;
   string name = 3;
   uint64 size_byte = 4;
+  optional bool no_check_permission = 5;
 }
 
 message MergeFileChunksResponse {
@@ -194,6 +206,7 @@ message DownloadRequest {
   uint32 chunk_size_byte = 3;
   optional uint64 offset_bytes = 4;
   optional uint32 limit_bytes = 5;
+  optional bool no_check_permission = 6;
 }
 
 message DownloadResponse {
@@ -216,6 +229,7 @@ message CompressFilesRequest {
   repeated string paths = 2;
   // 目标压缩文件路径
   string archive_path = 3;
+  optional bool no_check_permission = 4;
 }
 
 message CompressFilesResponse {}
@@ -226,6 +240,7 @@ message DecompressFileRequest {
   string file_path = 2;
   // 目标解压缩文件路径
   string decompression_path = 3;
+  optional bool no_check_permission = 4;
 }
 
 message DecompressFileResponse {}

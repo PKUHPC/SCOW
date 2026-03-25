@@ -799,6 +799,7 @@ export default {
         delete: "Supprimer la version du modèle",
         versionName: "Nom de la version",
         versionDescription: "Description de la version",
+        path: "Chemin",
         algorithmVersion: "Version de l'algorithme",
         createTime: "Heure de création",
         action: "Actions",

@@ -799,6 +799,7 @@ export default {
         delete: "Удалить версию модели",
         versionName: "Имя версии",
         versionDescription: "Описание версии",
+        path: "Путь",
         algorithmVersion: "Версия алгоритма",
         createTime: "Время создания",
         action: "Действия",

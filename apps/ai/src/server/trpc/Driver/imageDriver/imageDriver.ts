@@ -17,6 +17,7 @@ export interface CreateImageParams {
   loginInfo: LoginInfo;
   harborImageUrl: string;
   imageId: number;
+  noCheckPermission?: boolean;
 }
 export interface copyImageParams {
   // 复制的镜像源ID

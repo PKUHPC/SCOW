@@ -8,7 +8,8 @@ import { Cluster, PublicConfig } from "src/server/trpc/route/config";
 export type ScowClusterConfigs = Record<string, {
   scowdEnabled: boolean,
   storage: { enabled: boolean, replicaExist: boolean, paths: string[] },
-  ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number } },
+  ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number },
+    clusterPublicPath: string },
 }>;
 
 export const PublicConfigContext = React.createContext<{

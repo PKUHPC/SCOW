@@ -18,7 +18,9 @@ import { Algorithm } from "src/server/entities/Algorithm";
 import { AlgorithmVersion, SharedStatus } from "src/server/entities/AlgorithmVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkClusterAvailable } from "src/server/utils/clusters";
+import { PlatformRole } from "src/server/trpc/route/auth";
+import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
+import { checkIsPublicPaths } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -55,6 +57,7 @@ export const getAlgorithmVersions = procedure
     privatePath: z.string(),
     sharedStatus:z.enum(SharedStatus),
     createTime:z.string().optional(),
+    updateTime: z.string().optional(),
   })), count: z.number() }))
   .query(async ({ input:{ algorithmId, page, pageSize, isPublic } }) => {
     const em = await forkEntityManager();
@@ -70,14 +73,17 @@ export const getAlgorithmVersions = procedure
       });
 
     return { items:items.map((x) => {
+      const createTime = x.createTime ? x.createTime.toISOString() : undefined;
+      const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
       return {
         id:x.id,
         versionName:x.versionName,
         versionDescription:x.versionDescription,
         sharedStatus:x.sharedStatus,
-        createTime:x.createTime ? x.createTime.toISOString() : undefined,
+        createTime,
         path:x.path,
         privatePath: x.privatePath,
+        updateTime: updateTime ?? createTime,
       };
     }), count };
   });
@@ -106,6 +112,7 @@ export const getMultipleAlgorithmVersions = procedure
         privatePath: z.string(),
         sharedStatus:z.enum(SharedStatus),
         createTime:z.string().optional(),
+        updateTime: z.string().optional(),
       })), count: z.number() }),
     ),
   )
@@ -177,7 +184,7 @@ export const getAllAlgorithmVersions = procedure
 
     const personalAlgorithms = await em.find(Algorithm, {
       $and: [
-        { owner: user.identityId },
+        { owner: user.identityId, isPlatformOwned: false }, // 开发训练页的我的算法只展示个人创建的非平台算法
         clusterId ? { clusterId } : {},
       ],
     }, {
@@ -242,6 +249,7 @@ export const createAlgorithmVersion = procedure
     path: z.string(),
     versionDescription: z.string().optional(),
     algorithmId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
   .use(async ({ input:{ algorithmId,versionName }, ctx, next }) => {
@@ -284,40 +292,60 @@ export const createAlgorithmVersion = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const algorithm = await em.findOne(Algorithm, { id: input.algorithmId });
-    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${input.algorithmId} not Found` });
 
-    if (algorithm && algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "CONFLICT",
-        message: `Algorithm id:${input.algorithmId} is belonged to the other user`,
+    const { algorithmId, isPlatformOwned = false, versionName, path } = input;
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not Found` });
+
+    if (!isPlatformOwned && algorithm && algorithm.owner !== user.identityId) {
+      const detailMessage =
+        `Algorithm id:${algorithmId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
       });
+    }
+
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can create platform owned algorithm version",
+        });
+      }
+    }
 
     const algorithmVersionExist = await em.findOne(AlgorithmVersion,
-      { versionName: input.versionName, algorithm });
+      { versionName, algorithm });
     if (algorithmVersionExist)
-      throw new TRPCError({ code: "CONFLICT", message: `AlgorithmVersion name:${input.versionName} already exist` });
+      throw new TRPCError({ code: "CONFLICT", message: `AlgorithmVersion name:${versionName} already exist` });
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
+
+    const noCheckPermission = shouldPathsSkipPermissionCheck(algorithm.clusterId,
+      [path], isPlatformOwned);
 
     // 检查目录是否存在
     await driver.withFileDriver({
       clusterId:algorithm.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkCreateResourcePath(input.path);
+      await fileDriver.checkCreateResourcePath(path, noCheckPermission);
     }, logger);
 
     const isPathExisted = await withFileDriver(
       { clusterId: algorithm.clusterId, user: user.identityId },
-      async (driver) => await driver.exists(input.path),
+      async (driver) => await driver.exists(path, noCheckPermission),
       logger,
     );
     if (!isPathExisted) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exist` });
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${path} does not exist` });
     }
 
-    const algorithmVersion = new AlgorithmVersion({ ...input, privatePath: input.path, algorithm: algorithm });
+    const algorithmVersion = new AlgorithmVersion({ ...input, privatePath: path, algorithm: algorithm });
     await em.persistAndFlush(algorithmVersion);
     return { id: algorithmVersion.id };
   });
@@ -336,6 +364,7 @@ export const updateAlgorithmVersion = procedure
     algorithmVersionId: z.number(),
     versionName: z.string(),
     versionDescription: z.string().optional(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
   .use(async ({ input:{ algorithmId,algorithmVersionId,versionName }, ctx, next }) => {
@@ -381,41 +410,61 @@ export const updateAlgorithmVersion = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
 
-    const algorithm = await em.findOne(Algorithm, { id: input.algorithmId });
-    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${input.algorithmId} not found` });
+    const { algorithmId, algorithmVersionId, versionName, versionDescription, isPlatformOwned } = input;
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm ${input.algorithmId} not accessible` });
+    const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+    if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
 
-    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: input.algorithmVersionId });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can update platform owned algorithm version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage =
+        `Algorithm id:${algorithmId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
+
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion)
-      throw new TRPCError({ code: "NOT_FOUND", message: `AlgorithmVersion id:${input.algorithmVersionId} not found` });
+      throw new TRPCError({ code: "NOT_FOUND", message: `AlgorithmVersion id:${algorithmVersionId} not found` });
 
     const algorithmVersionExist = await em.findOne(AlgorithmVersion,
-      { versionName: input.versionName, algorithm });
+      { versionName: versionName, algorithm });
+
     if (algorithmVersionExist && algorithmVersionExist !== algorithmVersion) {
-      throw new TRPCError({ code: "CONFLICT", message: `AlgorithmVersion name:${input.versionName} already exist` });
+      throw new TRPCError({ code: "CONFLICT", message: `AlgorithmVersion name:${versionName} already exist` });
     }
 
     if (algorithmVersion.sharedStatus === SharedStatus.SHARING ||
       algorithmVersion.sharedStatus === SharedStatus.UNSHARING) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
-        message: `Unfinished processing of algorithmVersion ${input.algorithmVersionId} exists`,
+        message: `Unfinished processing of algorithmVersion ${algorithmVersionId} exists`,
       });
     }
 
     const needUpdateSharedPath = algorithmVersion.sharedStatus === SharedStatus.SHARED
-    && input.versionName !== algorithmVersion.versionName;
+    && versionName !== algorithmVersion.versionName;
 
     // 更新已分享目录下的版本路径名称
-    if (needUpdateSharedPath) {
+    if (needUpdateSharedPath && !isPlatformOwned) {
       // 获取更新后的已分享版本路径
       const newVersionSharedPath = await driver.withFileDriver({
         clusterId:algorithm.clusterId,
         user:user.identityId,
       }, async (fileDriver) => {
-        return await fileDriver.getUpdatedSharedPath(input.versionName,dirname(algorithmVersion.path));
+        return await fileDriver.getUpdatedSharedPath(versionName,dirname(algorithmVersion.path));
       }, logger);
 
       const baseFolderName = basename(algorithmVersion.path);
@@ -423,8 +472,8 @@ export const updateAlgorithmVersion = procedure
       algorithmVersion.path = join(newVersionSharedPath, baseFolderName);
     }
 
-    algorithmVersion.versionName = input.versionName;
-    algorithmVersion.versionDescription = input.versionDescription;
+    algorithmVersion.versionName = versionName;
+    algorithmVersion.versionDescription = versionDescription;
 
     await em.flush();
     return { id: algorithmVersion.id };
@@ -439,7 +488,11 @@ export const deleteAlgorithmVersion = procedure
       summary: "delete a new algorithmVersion",
     },
   })
-  .input(z.object({ algorithmVersionId: z.number(), algorithmId:z.number() }))
+  .input(z.object({
+    algorithmVersionId: z.number(),
+    algorithmId:z.number(),
+    isPlatformOwned: z.boolean().optional(),
+  }))
   .output(z.void())
   .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
 
@@ -485,7 +538,7 @@ export const deleteAlgorithmVersion = procedure
 
     return res;
   })
-  .mutation(async ({ input:{ algorithmVersionId, algorithmId }, ctx: { user } }) => {
+  .mutation(async ({ input:{ algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
     if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
@@ -495,50 +548,69 @@ export const deleteAlgorithmVersion = procedure
     if (!algorithm)
       throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId} is not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can delete platform owned algorithm version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage =
+        `Algorithm id:${algorithmId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
 
     // 正在分享中或取消分享中的版本，不可删除
-    if (algorithmVersion.sharedStatus === SharedStatus.SHARING
+    if (!isPlatformOwned && algorithmVersion.sharedStatus === SharedStatus.SHARING
       || algorithmVersion.sharedStatus === SharedStatus.UNSHARING) {
       throw new TRPCError(
         { code: "PRECONDITION_FAILED",
           message: `AlgorithmVersion (id:${algorithmVersionId}) is currently being shared or unshared` });
     }
 
-    // 如果是已分享的数据集版本，则删除分享
+    // 如果是已分享的算法版本，则删除分享; 如果是公共数据资产则不删除分享文件夹
     if (algorithmVersion.sharedStatus === SharedStatus.SHARED) {
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, algorithm.clusterId);
-      try {
-        await driver.withFileDriver({
-          clusterId:algorithm.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.checkSharePermission(algorithmVersion.privatePath);
-        }, logger);
 
-        const pathToUnshare
-        = algorithm.versions.filter((v) =>
-          (v.id !== algorithmVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+      if (!isPlatformOwned) {
+        try {
+          await driver.withFileDriver({
+            clusterId:algorithm.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+          }, logger);
+
+          const pathToUnshare
+          = algorithm.versions.filter((v) =>
+            (v.id !== algorithmVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
           // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-          dirname(algorithmVersion.path)
+            dirname(algorithmVersion.path)
           // 除了此版本以外没有其他已分享的版本则取消分享整个算法
-          : dirname(dirname(algorithmVersion.path));
+            : dirname(dirname(algorithmVersion.path));
 
-        await driver.withFileDriver({
-          clusterId:algorithm.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.unShareFileOrDir(pathToUnshare);
-        }, logger);
+          await driver.withFileDriver({
+            clusterId:algorithm.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.unShareFileOrDir(pathToUnshare);
+          }, logger);
 
-      } catch (e) {
-        logger.error(`ssh failure occurred when unshare
-        algorithmVersion ${algorithmVersionId} of algorithm ${algorithmId}`, e);
+        } catch (e) {
+          logger.error("ssh failure occurred when unshare" +
+            `algorithmVersion ${algorithmVersionId} of algorithm ${algorithmId}`, e);
+        }
       }
-
 
       algorithm.isShared = algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 1
         ? true : false;
@@ -562,6 +634,7 @@ export const shareAlgorithmVersion = procedure
   .input(z.object({
     algorithmId: z.number(),
     algorithmVersionId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
@@ -608,7 +681,7 @@ export const shareAlgorithmVersion = procedure
 
     return res;
   })
-  .mutation(async ({ input:{ algorithmId, algorithmVersionId }, ctx: { user } }) => {
+  .mutation(async ({ input:{ algorithmId, algorithmVersionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion)
@@ -621,19 +694,71 @@ export const shareAlgorithmVersion = procedure
     if (!algorithm)
       throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId}  not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can share platform owned algorithm version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage =
+        `Algorithm id:${algorithmId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
+
+    // 若公共资产路径改变，则无法发布
+    const checkIsPublicAssetAlgorithmVersion = checkIsPublicPaths(
+      algorithm.clusterId,
+      [algorithmVersion.path],
+    );
+
+    if (isPlatformOwned && !checkIsPublicAssetAlgorithmVersion) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to algorithm version files; publishing is not allowed.",
+      });
+    }
 
     await driver.withFileDriver({
       clusterId:algorithm.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(algorithmVersion.privatePath);
+      await fileDriver.checkSharePermission(algorithmVersion.privatePath, isPlatformOwned);
     }, logger);
 
+    algorithmVersion.sharedStatus = SharedStatus.SHARING;
+    em.persist([algorithmVersion]);
+    await em.flush();
+
+    if (isPlatformOwned) {
+      const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
+      if (!algorithmVersion)
+        throw new TRPCError({ code: "NOT_FOUND", message: `AlgorithmVersion id:${algorithmId} not found` });
+
+      const algorithm = await em.findOne(Algorithm, { id: algorithmId });
+      if (!algorithm)
+        throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
+
+      algorithmVersion.sharedStatus = SharedStatus.SHARED;
+      algorithmVersion.path = algorithmVersion.privatePath;
+
+      if (!algorithm.isShared) { algorithm.isShared = true; };
+
+      await em.persistAndFlush([algorithmVersion, algorithm]);
+
+      return;
+    }
 
     const homeDir = await driver.withFileDriver({
       clusterId:algorithm.clusterId,
@@ -642,10 +767,6 @@ export const shareAlgorithmVersion = procedure
       return await fileDriver.getHomeDirectory();
     }, logger);
     const homeTopDir = dirname(dirname(homeDir));
-
-    algorithmVersion.sharedStatus = SharedStatus.SHARING;
-    em.persist([algorithmVersion]);
-    await em.flush();
 
     const successCallback = async (targetFullPath: string) => {
       const em = await forkEntityManager();
@@ -705,9 +826,10 @@ export const unShareAlgorithmVersion = procedure
   .input(z.object({
     algorithmVersionId: z.number(),
     algorithmId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .mutation(async ({ input:{ algorithmVersionId, algorithmId }, ctx: { user } }) => {
+  .mutation(async ({ input:{ algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion)
@@ -725,8 +847,25 @@ export const unShareAlgorithmVersion = procedure
     if (!algorithm)
       throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
 
-    if (algorithm.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Algorithm id:${algorithmId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can unshare platform owned algorithm version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage =
+        `Algorithm id:${algorithmId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The algorithm asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, algorithm.clusterId);
@@ -766,6 +905,11 @@ export const unShareAlgorithmVersion = procedure
       algorithmVersion.sharedStatus = SharedStatus.SHARED;
       await em.persistAndFlush([algorithmVersion]);
     };
+
+    if (isPlatformOwned) {
+      await successCallback();
+      return;
+    }
 
     const sharedAlgorithmVersionPath =
     algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
@@ -863,8 +1007,12 @@ export const copyPublicAlgorithmVersion = procedure
         message: `Algorithm Version ${input.algorithmVersionId} does not exist or is not public`,
       });
     }
-    // 2. 检查该用户是否已有同名算法
-    const algorithm = await em.findOne(Algorithm, { name: input.algorithmName, owner: user.identityId });
+    // 2. 检查该用户是否已有同名算法 (平台身份时可以有同名数据集)
+    const algorithm = await em.findOne(Algorithm, {
+      name: input.algorithmName,
+      owner: user.identityId,
+      isPlatformOwned: false,
+    });
     if (algorithm) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -900,6 +1048,19 @@ export const copyPublicAlgorithmVersion = procedure
       algorithm: newAlgorithm,
     });
 
+    const checkIsPublicPathsResult = checkIsPublicPaths(
+      algorithmVersion.algorithm.$.clusterId,
+      [algorithmVersion.path],
+    );
+
+    // 若公共资产路径改变，则无法复制
+    if (!checkIsPublicPathsResult && algorithmVersion.algorithm.$.isPlatformOwned === true) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to the algorithm version files; copying is not allowed.",
+      });
+    }
+
     try {
       await withFileDriver(
         { clusterId:algorithmVersion.algorithm.$.clusterId, user:user.identityId },
@@ -909,7 +1070,7 @@ export const copyPublicAlgorithmVersion = procedure
           // scowd复制需要再路径最后加上文件夹名
           await driver.copy(algorithmVersion.path,
             cluster.scowd?.enabled ? path.join(input.path,path.basename(algorithmVersion.path)) : input.path,
-          );
+            checkIsPublicPathsResult);
         },
         logger,
       );

@@ -15,6 +15,7 @@ interface Props {
   open: boolean;
   clusterId: string;
   sourcePath: string;
+  usePublicPath?: boolean;
   files: FileInfo[];
   onClose: () => void;
   reload: () => void;
@@ -25,7 +26,7 @@ interface FormProps {
   decompressionPath: string;
 }
 
-export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clusterId, sourcePath,
+export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clusterId, sourcePath, usePublicPath,
   files, setDecompression }) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.decompressionModal.");
@@ -58,6 +59,7 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
         clusterId,
         filePath: join(sourcePath, f.name),
         decompressionPath,
+        usePublicPath,
       });
     })).then((decompressionResults) => {
 
@@ -76,8 +78,13 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
 
       if (errors.length > 0) {
         const errorDetails = errors.map((error) => {
-          return `Filename: ${error?.fileName} \n`
-          + `Reason: ${error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason}`;
+          const rawReason = error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason;
+
+          const finalReason = String(rawReason).includes("is outside user home directory")
+            ? "Operation exceeds path boundary limits"
+            : rawReason;
+
+          return `Filename: ${error?.fileName} \nReason: ${finalReason}`;
         }).join("; \n\n");
 
         if (errors.length === files.length) {

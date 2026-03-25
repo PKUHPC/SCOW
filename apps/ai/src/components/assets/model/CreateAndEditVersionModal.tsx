@@ -22,6 +22,8 @@ export interface Props {
   cluster?: Cluster;
   modelName?: string;
   editData?: EditProps;
+  isPlatformOwned?: boolean;
+  usePublicPath?: boolean;
 }
 
 interface FormFields {
@@ -32,7 +34,7 @@ interface FormFields {
 }
 
 export const CreateAndEditVersionModal: React.FC<Props> = (
-  { open, onClose, modelId, cluster, modelName, refetch, editData },
+  { open, onClose, modelId, cluster, modelName, refetch, editData, isPlatformOwned, usePublicPath },
 ) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.createAndEditVersionModal.");
@@ -73,7 +75,6 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
     },
   });
 
-
   const updateModelVersionMutation = trpc.model.updateModelVersion.useMutation({
     onSuccess() {
       message.success(t(p("editSuccessfully")));
@@ -112,6 +113,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
         versionDescription,
         algorithmVersion,
         modelId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
     else {
@@ -121,9 +123,12 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
         algorithmVersion,
         path,
         modelId,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
+
+  const labelWidth = languageId === "zh_cn" ? 80 : 140;
 
   return (
     <Modal
@@ -138,8 +143,17 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 20 }}
-        labelCol={{ span: 4 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
       >
         <Form.Item
           label={t(p("name"))}
@@ -178,6 +192,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
             >
               <TrimInput
                 disabled={true}
+                placeholder={t(p("selectModelFolder"))}
                 suffix={
                   (
                     <FileSelectModal
@@ -187,6 +202,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
                         form.validateFields(["path"]);
                       }}
                       clusterId={cluster?.id ?? ""}
+                      usePublicPath={usePublicPath}
                     />
                   )
                 }

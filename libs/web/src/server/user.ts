@@ -1,5 +1,5 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ChangeEmailResponse, QueryIsUserEnabledRootShellResponse,
+import { ChangeEmailResponse, GetUsersByIdsResponse, QueryIsUserEnabledRootShellResponse,
   UserServiceClient } from "@scow/protos/build/server/user";
 import { getClientFn } from "src/utils/api";
 
@@ -55,5 +55,36 @@ export const libQueryIsUserEnabledRootShell = async (
   } catch (e: any) {
     console.error(`Error querying root shell enabled? for User ID ${userId}:`, e.details || e.message);
     return { result: false };
+  }
+};
+
+export const libWebGetUsersByIds = async (
+  userIds: string[],
+  misServerUrl?: string,
+  scowApiAuthToken?: string,
+): Promise<GetUsersByIdsResponse | undefined> => {
+
+  // if mis is Deployed
+  if (!misServerUrl) {
+    console.log("Mis is not deployed, can not get userInfo from mis.");
+    return undefined;
+  }
+
+  const config = {
+    SERVER_URL: misServerUrl,
+    SCOW_API_AUTH_TOKEN: scowApiAuthToken,
+  };
+  const getMisClient = getClientFn(config);
+  const client = getMisClient(UserServiceClient);
+
+  if (!userIds || userIds.length === 0) {
+    return { users: []};
+  }
+
+  try {
+    return asyncClientCall(client, "getUsersByIds", { userIds });
+  } catch (e: any) {
+    console.error("Failed to call getUsersByIds:", e instanceof Error ? e.message : e);
+    return undefined;
   }
 };

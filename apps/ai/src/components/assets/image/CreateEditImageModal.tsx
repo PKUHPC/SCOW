@@ -20,6 +20,8 @@ export interface Props {
   isEdit: boolean;
   editData?: ImageInterface;
   clusters: Cluster[];
+  isPlatformOwned?: boolean;
+  usePublicPath?: boolean;
 }
 
 interface FormFields {
@@ -38,7 +40,14 @@ interface FormFields {
 }
 
 export const CreateEditImageModal: React.FC<Props> = ({
-  open, onClose, refetch, isEdit, editData, clusters,
+  open,
+  onClose,
+  refetch,
+  isEdit,
+  editData,
+  clusters,
+  isPlatformOwned,
+  usePublicPath,
 }: Props) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.createEditImageModal.");
@@ -62,10 +71,6 @@ export const CreateEditImageModal: React.FC<Props> = ({
     if (isEdit && editData) {
       form.setFieldsValue({
         source: editData.source,
-      });
-    } else {
-      form.setFieldsValue({
-        source: Source.INTERNAL,
       });
     }
   };
@@ -115,15 +120,27 @@ export const CreateEditImageModal: React.FC<Props> = ({
 
   const onOk = async () => {
     form.validateFields();
-    const { name, cluster, tag, description, source, sourcePath,userName,password,types,
-      inferServicePort,startCommand } = await form.validateFields();
+    const {
+      name,
+      cluster,
+      tag,
+      description,
+      source,
+      sourcePath,
+      userName,
+      password,
+      types,
+      inferServicePort,
+      startCommand,
+    } = await form.validateFields();
     if (isEdit && editData) {
       editMutation.mutate({
         id: editData.id,
         description,
         types,
-        inferServicePort:inferServicePort?.toString(),
+        inferServicePort: inferServicePort?.toString(),
         startCommand,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     } else {
       createMutation.mutate({
@@ -136,11 +153,14 @@ export const CreateEditImageModal: React.FC<Props> = ({
         userName,
         password,
         types,
-        inferServicePort:inferServicePort?.toString(),
+        inferServicePort: inferServicePort?.toString(),
         startCommand,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     };
   };
+
+  const labelWidth = languageId === "zh_cn" ? 70 : 130;
 
   return (
     <Modal
@@ -154,9 +174,18 @@ export const CreateEditImageModal: React.FC<Props> = ({
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 20 }}
-        labelCol={{ span: 4 }}
-        initialValues={(isEdit && editData) ? editData : { cluster: "" }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
+        initialValues={(isEdit && editData) ? editData : { cluster:  "" }}
       >
         { (isEdit && editData) ? (
           <>
@@ -313,6 +342,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
                         form.setFields([{ name: "sourcePath", value: path, touched: true }]);
                         form.validateFields(["sourcePath"]);
                       }}
+                      usePublicPath={usePublicPath}
                       clusterId={cluster?.id ?? ""}
                     />
                   ) : undefined

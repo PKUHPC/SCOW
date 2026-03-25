@@ -139,6 +139,7 @@ export const ClusterConfigSchema = Type.Object({
         description: "开发机最大运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
       })),
     }, { description: "开发机功能配置" })),
+    clusterPublicPath: Type.Optional(Type.String({ description: "公共数据资产目录路径, 配置生效后请勿随意修改，否则已有的公共数据资产将无法正常使用" })),
   }, { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } }),
 
   storage: Type.Optional(StorageConfigSchema),

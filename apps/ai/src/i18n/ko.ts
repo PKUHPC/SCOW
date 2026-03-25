@@ -798,6 +798,7 @@ export default {
         delete: "모델 버전 삭제",
         versionName: "버전 이름",
         versionDescription: "버전 설명",
+        path: "Path",
         algorithmVersion: "알고리즘 버전",
         createTime: "생성 시간",
         action: "작업",

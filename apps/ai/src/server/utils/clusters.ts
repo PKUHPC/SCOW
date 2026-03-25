@@ -16,6 +16,7 @@ import { TRPCError } from "@trpc/server";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { logger } from "src/server/utils/logger";
+import { isParentOrSameFolder } from "src/utils/file";
 
 type ClientConstructor<TClient> =
   new (address: string, credentials: ChannelCredentials) => TClient;
@@ -99,7 +100,7 @@ export async function getCurrentClusters(userId: string): Promise<string[]> {
 
   // 如果部署了管理系统且部署了资源管理
   const userAffliction
-       = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+    = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
   const accountNames = userAffliction?.affiliations.map((a) => (a.accountName));
   const tenantName = userAffliction?.tenantName;
@@ -128,4 +129,35 @@ export const checkClusterAvailable = (clusterIds: string[], clusterId: string) =
         "Please confirm whether the cluster is activated or has been authorized for the login user.",
     });
   }
+};
+
+export const shouldPathsSkipPermissionCheck = (
+  clusterId: string,
+  paths: string[],
+  isPlatformAdmin: boolean,
+): boolean => {
+
+  const cluster = clusters[clusterId];
+  const clusterPublicPath = cluster.ai.clusterPublicPath;
+
+  if (!isPlatformAdmin || !clusterPublicPath) {
+    return false;
+  }
+
+  return paths.every((path) => isParentOrSameFolder(clusterPublicPath, path));
+};
+
+export const checkIsPublicPaths = (
+  clusterId: string,
+  paths: string[],
+): boolean => {
+
+  const cluster = clusters[clusterId];
+  const clusterPublicPath = cluster.ai.clusterPublicPath;
+
+  if (!clusterPublicPath) {
+    return false;
+  }
+
+  return paths.every((path) => isParentOrSameFolder(clusterPublicPath, path));
 };

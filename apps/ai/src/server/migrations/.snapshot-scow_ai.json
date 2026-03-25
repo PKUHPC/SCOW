@@ -100,6 +100,17 @@
           "length": 6,
           "default": "current_timestamp(6)",
           "mappedType": "datetime"
+        },
+        "is_platform_owned": {
+          "name": "is_platform_owned",
+          "type": "tinyint(1)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 1,
+          "default": "false",
+          "mappedType": "boolean"
         }
       },
       "name": "algorithm",
@@ -358,6 +369,17 @@
           "length": 6,
           "default": "current_timestamp(6)",
           "mappedType": "datetime"
+        },
+        "is_platform_owned": {
+          "name": "is_platform_owned",
+          "type": "tinyint(1)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 1,
+          "default": "false",
+          "mappedType": "boolean"
         }
       },
       "name": "dataset",
@@ -650,11 +672,12 @@
           "primary": false,
           "nullable": false,
           "length": 255,
-          "default": "'APP,TRAIN,INFER'",
+          "default": "'APP,TRAIN,INFER,DEV_HOST'",
           "enumItems": [
             "APP",
             "TRAIN",
-            "INFER"
+            "INFER",
+            "DEV_HOST"
           ],
           "mappedType": "string"
         },
@@ -709,6 +732,17 @@
           "length": 6,
           "default": "current_timestamp(6)",
           "mappedType": "datetime"
+        },
+        "is_platform_owned": {
+          "name": "is_platform_owned",
+          "type": "tinyint(1)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 1,
+          "default": "false",
+          "mappedType": "boolean"
         }
       },
       "name": "image",
@@ -718,7 +752,8 @@
           "columnNames": [
             "name",
             "tag",
-            "owner"
+            "owner",
+            "is_platform_owned"
           ],
           "composite": true,
           "constraint": true,
@@ -845,6 +880,17 @@
           "length": 6,
           "default": "current_timestamp(6)",
           "mappedType": "datetime"
+        },
+        "is_platform_owned": {
+          "name": "is_platform_owned",
+          "type": "tinyint(1)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "length": 1,
+          "default": "false",
+          "mappedType": "boolean"
         }
       },
       "name": "model",

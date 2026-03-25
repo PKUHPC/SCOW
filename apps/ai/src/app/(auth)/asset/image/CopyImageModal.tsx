@@ -1,7 +1,7 @@
 import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { App, Form, Input, InputNumber, Modal, Select } from "antd";
 import React from "react";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getImageTypeText, ImageType } from "src/models/Image";
 import { imageNameValidation, imageTagValidation, inputNumberFloorConfig } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
@@ -53,6 +53,7 @@ export const CopyImageModal: React.FC<Props> = (
   const t = useI18nTranslateToString();
   const p = prefix("app.image.copyImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
+  const languageId = useI18n().currentLanguage.id;
 
   const TypeText = getImageTypeText(t);
 
@@ -78,6 +79,10 @@ export const CopyImageModal: React.FC<Props> = (
       refetch();
     },
     onError(e) {
+      if (e.message === "Access denied to image files; copying is not allowed.") {
+        message.error(t(p("noAccessCopy")));
+        return;
+      }
       message.error(`${t(p("failed"))}:${e.message}`);
     },
   });
@@ -97,6 +102,8 @@ export const CopyImageModal: React.FC<Props> = (
     });
   };
 
+  const labelWidth = languageId === "zh_cn" ? 90 : 130;
+
   return (
     <Modal
       title={t(p("copy"))}
@@ -109,8 +116,17 @@ export const CopyImageModal: React.FC<Props> = (
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 20 }}
-        labelCol={{ span: 4 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
         initialValues={{ ...initialValues }}
       >
         <Form.Item

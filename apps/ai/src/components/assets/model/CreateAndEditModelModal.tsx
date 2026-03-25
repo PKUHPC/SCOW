@@ -11,31 +11,33 @@ import { trpc } from "src/utils/trpc";
 
 interface EditProps {
   cluster?: Cluster;
-  algorithmName: string;
-  algorithmId: number;
-  algorithmFramework: Framework;
-  algorithmDescription?: string;
+  modelId: number;
+  modelName: string;
+  algorithmName?: string;
+  algorithmFramework?: Framework;
+  modalDescription?: string;
 }
 export interface Props {
   open: boolean;
   onClose: () => void;
   refetch: () => void;
   editData?: EditProps;
+  isPlatformOwned?: boolean;
 }
-type AlgorithmType = keyof typeof AlgorithmTypeText;
 
 interface FormFields {
-  name: string,
-  type: AlgorithmType,
+  modelName: string,
   cluster: Cluster,
-  description?: string,
+  algorithmName: string,
+  algorithmFramework: Framework,
+  modalDescription: string,
 }
 
-export const CreateAndEditAlgorithmModal: React.FC<Props> = (
-  { open, onClose, refetch, editData },
+export const CreateAndEditModalModal: React.FC<Props> = (
+  { open, onClose, refetch, editData, isPlatformOwned },
 ) => {
   const t = useI18nTranslateToString();
-  const p = prefix("app.algorithm.createAndEditAlgorithmModal.");
+  const p = prefix("app.model.createAndEditModelModal.");
   const pCommon = prefix("common.");
   const languageId = useI18n().currentLanguage.id;
 
@@ -47,7 +49,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
 
-  const createAlgorithmMutation = trpc.algorithm.createAlgorithm.useMutation({
+  const createModelMutation = trpc.model.createModel.useMutation({
     onSuccess() {
       message.success(t(p("addSuccessfully")));
       form.resetFields();
@@ -59,16 +61,16 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
         message.error(t(p("alreadyExisted")));
         form.setFields([
           {
-            name: "name",
+            name: "modelName",
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-      } else {
-        message.error(t(p("addFailed")));
+        return;
       }
+      message.error(t(p("addFailed")));
     } });
 
-  const updateAlgorithmMutation = trpc.algorithm.updateAlgorithm.useMutation({
+  const updateModelMutation = trpc.model.updateModel.useMutation({
     onSuccess() {
       message.success(t(p("editSuccessfully")));
       refetch();
@@ -79,57 +81,84 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
         message.error(t(p("alreadyExisted")));
         form.setFields([
           {
-            name: "name",
+            name: "modelName",
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-      } else if (e.data?.code === "NOT_FOUND") {
+      }
+      else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      } else if (e.data?.code === "PRECONDITION_FAILED") {
+      }
+      else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      } else {
+      }
+      else {
         message.error(t(p("editFailed")));
+
       }
     } });
 
   const onOk = async () => {
-    const { name, type, description, cluster } = await form.validateFields();
+    const { modelName:formModalName, cluster, algorithmName:formAlgorithmName,
+      algorithmFramework:formAlgorithmFramework, modalDescription:formModalDescription } =
+    await form.validateFields();
 
-    if (editData?.algorithmName) {
-      updateAlgorithmMutation.mutate({
-        id:editData.algorithmId, name, framework:type, description,
+    if (editData?.modelId) {
+      updateModelMutation.mutate({
+        id:editData.modelId,
+        name:formModalName,
+        algorithmName:formAlgorithmName,
+        algorithmFramework:formAlgorithmFramework,
+        description:formModalDescription,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     } else {
-      createAlgorithmMutation.mutate({
-        name, framework:type, description, clusterId:cluster.id,
+      createModelMutation.mutate({
+        name:formModalName,
+        algorithmName:formAlgorithmName,
+        algorithmFramework:formAlgorithmFramework,
+        description:formModalDescription,
+        clusterId:cluster.id,
+        ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
 
+  const labelWidth = languageId === "zh_cn" ? 80 : 160;
+
   return (
     <Modal
-      title={editData?.algorithmName ? t(p("edit")) : t(p("add"))}
+      title={editData?.modelName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
-      confirmLoading={createAlgorithmMutation.isPending || updateAlgorithmMutation.isPending}
+      confirmLoading={createModelMutation.isPending}
       onCancel={onClose}
       width={800}
     >
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 17 }}
-        labelCol={{ span: 5 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
       >
         <Form.Item
           label={t(p("name"))}
-          name="name"
+          name="modelName"
           rules={[
             { required: true },
             createNoChineseValidator(t(pCommon("noChinese"))),
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
-          initialValue={editData?.algorithmName}
+          initialValue={editData?.modelName}
         >
           <TrimInput />
         </Form.Item>
@@ -150,13 +179,16 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
             <SingleClusterSelector />
           </Form.Item>
         )}
-
         <Form.Item
-          label={t(p("framework"))}
-          name="type"
-          rules={[
-            { required: true },
-          ]}
+          label={t(p("algorithmName"))}
+          name="algorithmName"
+          initialValue={editData?.algorithmName}
+        >
+          <TrimInput />
+        </Form.Item>
+        <Form.Item
+          label={t(p("algorithmFramework"))}
+          name="algorithmFramework"
           initialValue={editData?.algorithmFramework}
         >
           <Select
@@ -168,8 +200,8 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
         </Form.Item>
         <Form.Item
           label={t(p("description"))}
-          name="description"
-          initialValue={editData?.algorithmDescription}
+          name="modalDescription"
+          initialValue={editData?.modalDescription}
         >
           <Input.TextArea />
         </Form.Item>

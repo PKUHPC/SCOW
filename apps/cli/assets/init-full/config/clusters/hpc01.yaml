@@ -41,6 +41,8 @@ ai:
   #     binPath: "/demo_path/vscode/bin/code-server"
   #   # 最大运行时间，可选，不填写表示不限制运行时间
   #   # maxRunningTimeHours: 10
+  # 公共数据资产目录路径，若AI可用则必填，配置时需同步在集群中创建该目录, 该路径配置之后请勿随意修改，否则已有的公共数据资产将无法正常使用
+  # clusterPublicPath: "/nfs/.public"
 
 # # 可选，默认不开启
 # storage:

@@ -798,6 +798,7 @@ export default {
         delete: "モデルバージョンを削除",
         versionName: "バージョン名",
         versionDescription: "バージョン説明",
+        path: "パス",
         algorithmVersion: "アルゴリズムバージョン",
         createTime: "作成時刻",
         action: "アクション",

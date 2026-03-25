@@ -5,20 +5,22 @@ import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Modal, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
+import { CreateAndEditModalModal } from "src/components/assets/model/CreateAndEditModelModal";
+import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { CreateNewVersionIcon, DeleteIcon, EditIcon } from "src/icons/operationIcon";
+import { CreateNewVersionIcon, DeleteIcon, EditIcon, PlatformIcon } from "src/icons/operationIcon";
 import { ModelInterface } from "src/models/Model";
 import { Cluster } from "src/server/trpc/route/config";
 import { formatDateTime } from "src/utils/datetime";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import { TableContainer } from "../common";
-import { CreateAndEditModalModal } from "./CreateAndEditModelModal";
-import { CreateAndEditVersionModal } from "./CreateAndEditVersionModal";
+import { PlatformTag } from "../PlatformTag";
 import { ModelVersionList } from "./ModelVersionList";
 
 interface Props {
@@ -45,7 +47,10 @@ const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.modelTable.");
+  const pCommon = prefix("app.common.");
   const languageId = useI18n().currentLanguage.id;
+  const theme = useTheme();
+
 
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
@@ -125,10 +130,24 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     { dataIndex: "algorithmName", title: t(p("algorithmName")) },
     { dataIndex: "algorithmFramework", title: t(p("algorithmFramework")) },
     { dataIndex: "versions", title: t(p("versions")), render:(versions) => versions.length },
-    isPublic ? { dataIndex: "owner", title: t(p("owner")) } : {},
-    { dataIndex: "createTime", title: t(p("createTime")),
-      render:(createTime) => formatDateTime(createTime),
-    },
+    ...(isPublic
+      ? [{
+        dataIndex: "shareUser",
+        title: t(pCommon("publishUser")),
+        // @ts-ignore
+        render: (_, r) =>
+          r.isPlatformOwned ? (
+            <PlatformTag color={theme.token.colorPrimary}>
+              <span>{t(pCommon("platform"))}</span>
+              <PlatformIcon />
+            </PlatformTag>
+          ) : (
+            `${r.ownerName}（ID:${r.owner}）`
+          ),
+      } as const]
+      : []),
+    { dataIndex: "updateTime", title: t(p("updatedTime")),
+      render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
     ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
       render: (_: any, r: ModelInterface) => {
         return (
@@ -189,6 +208,7 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
             const { nameOrDesc } = await form.validateFields();
             setQuery({ ...query, nameOrDesc: nameOrDesc?.trim() });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
+            refetch();
           }}
         >
           <Form.Item label={t(p("cluster"))} name="clusterId">

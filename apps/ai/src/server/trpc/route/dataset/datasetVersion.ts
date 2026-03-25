@@ -19,7 +19,9 @@ import { Dataset } from "src/server/entities/Dataset";
 import { DatasetVersion } from "src/server/entities/DatasetVersion";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
-import { checkClusterAvailable } from "src/server/utils/clusters";
+import { PlatformRole } from "src/server/trpc/route/auth";
+import { checkIsPublicPaths } from "src/server/utils/clusters";
+import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -43,6 +45,7 @@ export const DatasetVersionListSchema = z.object({
   privatePath: z.string(),
   createTime: z.string().optional(),
   datasetId: z.number(),
+  updateTime: z.string().optional(),
 });
 
 export type DatasetVersionInterface = z.infer<typeof DatasetVersionListSchema>;
@@ -78,6 +81,8 @@ export const versionList = procedure
       });
 
     return { items: items.map((x) => {
+      const createTime = x.createTime ? x.createTime.toISOString() : undefined;
+      const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
       return {
         id: x.id,
         versionName: x.versionName,
@@ -85,8 +90,9 @@ export const versionList = procedure
         privatePath: x.privatePath,
         path: x.path,
         sharedStatus: x.sharedStatus,
-        createTime: x.createTime ? x.createTime.toISOString() : undefined,
+        createTime,
         datasetId: x.dataset.id,
+        updateTime: updateTime ?? createTime,
       }; }), count };
   });
 
@@ -173,7 +179,7 @@ export const getAllDatasetVersions = procedure
 
     const personalDatasets = await em.find(Dataset, {
       $and: [
-        { owner: user.identityId },
+        { owner: user.identityId, isPlatformOwned: false }, // 开发训练页的我的数据集只展示个人创建的非平台数据集
         clusterId ? { clusterId } : {},
       ],
     }, {
@@ -238,6 +244,7 @@ export const createDatasetVersion = procedure
     path: z.string(),
     versionDescription: z.string().optional(),
     datasetId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ datasetVersionId: z.number() }))
   .use(async ({ input:{ datasetId,versionName }, ctx, next }) => {
@@ -283,7 +290,7 @@ export const createDatasetVersion = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const { versionName, path, datasetId } = input;
+    const { versionName, path, datasetId, isPlatformOwned } = input;
 
     const dataset = await em.findOne(Dataset, { id: datasetId });
     if (!dataset)
@@ -297,27 +304,47 @@ export const createDatasetVersion = procedure
       });
     }
 
-    if (dataset && dataset.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Dataset ${datasetId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can create platform owned dataset version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && dataset && dataset.owner !== user.identityId) {
+      const detailMessage =
+        `Dataset id:${datasetId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The dataset asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
+
+    const noCheckPermission = shouldPathsSkipPermissionCheck(dataset.clusterId,
+      [path], isPlatformOwned ?? false);
 
     // 检查目录是否存在
     await driver.withFileDriver({
       clusterId:dataset.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkCreateResourcePath(input.path);
+      await fileDriver.checkCreateResourcePath(path, noCheckPermission);
     }, logger);
 
     const isPathExisted = await withFileDriver(
       { clusterId: dataset.clusterId, user: user.identityId },
-      async (driver) => await driver.exists(input.path),
+      async (driver) => await driver.exists(path, noCheckPermission),
       logger,
     );
     if (!isPathExisted) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: `${input.path} does not exist` });
+      throw new TRPCError({ code: "BAD_REQUEST", message: `${path} does not exist` });
     }
 
     const datasetVersion = new DatasetVersion({ ...input, privatePath: path, dataset: dataset });
@@ -339,6 +366,7 @@ export const updateDatasetVersion = procedure
     versionName: z.string(),
     versionDescription: z.string().optional(),
     datasetId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.number())
   .use(async ({ input:{ datasetId,versionName }, ctx, next }) => {
@@ -386,14 +414,31 @@ export const updateDatasetVersion = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
 
-    const { datasetVersionId, versionName, versionDescription, datasetId } = input;
+    const { datasetVersionId, versionName, versionDescription, datasetId, isPlatformOwned } = input;
 
     const dataset = await em.findOne(Dataset, { id: datasetId });
     if (!dataset)
       throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
 
-    if (dataset.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Dataset ${datasetVersionId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can update platform owned dataset version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && dataset.owner !== user.identityId) {
+      const detailMessage =
+        `Dataset id:${datasetId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The dataset asset does not belong to the current user.",
+      });
+    }
 
     const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
     if (!datasetVersion)
@@ -423,7 +468,7 @@ export const updateDatasetVersion = procedure
       && versionName !== datasetVersion.versionName;
 
     // 更新已分享目录下的版本路径名称
-    if (needUpdateSharedPath) {
+    if (needUpdateSharedPath && !isPlatformOwned) {
       // 获取更新后的已分享版本路径
       const newVersionSharedPath = await driver.withFileDriver({
         clusterId:dataset.clusterId,
@@ -457,6 +502,7 @@ export const deleteDatasetVersion = procedure
   .input(z.object({
     datasetVersionId: z.number(),
     datasetId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
@@ -507,7 +553,7 @@ export const deleteDatasetVersion = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const { datasetVersionId, datasetId } = input;
+    const { datasetVersionId, datasetId, isPlatformOwned } = input;
     const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
 
     if (!datasetVersion)
@@ -518,8 +564,25 @@ export const deleteDatasetVersion = procedure
     if (!dataset)
       throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
 
-    if (dataset.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Dataset ${datasetId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can delete platform owned dataset version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && dataset.owner !== user.identityId) {
+      const detailMessage =
+        `Dataset id:${datasetId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The dataset asset does not belong to the current user.",
+      });
+    }
 
     // 正在分享中或取消分享中的版本，不可删除
     if (datasetVersion.sharedStatus === SharedStatus.SHARING
@@ -529,36 +592,39 @@ export const deleteDatasetVersion = procedure
           message: `DatasetVersion (id:${datasetVersionId}) is currently being shared or unshared` });
     }
 
-    // 如果是已分享的数据集版本，则删除分享
+    // 如果是已分享的数据集版本，则删除分享; 如果是公共数据资产则不删除分享文件夹
     if (datasetVersion.sharedStatus === SharedStatus.SHARED) {
 
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, dataset.clusterId);
 
-      try {
-        await driver.withFileDriver({
-          clusterId:dataset.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.checkSharePermission(datasetVersion.privatePath);
-        }, logger);
+      if (!isPlatformOwned) {
 
-        const pathToUnshare
-        = dataset.versions.filter((v) =>
-          (v.id !== datasetVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+        try {
+          await driver.withFileDriver({
+            clusterId:dataset.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.checkSharePermission(datasetVersion.privatePath);
+          }, logger);
+
+          const pathToUnshare = dataset.versions.filter((v) =>
+            (v.id !== datasetVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
           // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-          dirname(datasetVersion.path)
+            dirname(datasetVersion.path)
           // 除了此版本以外没有其他已分享的版本则取消分享整个数据集
-          : dirname(dirname(datasetVersion.path));
+            : dirname(dirname(datasetVersion.path));
 
-        await driver.withFileDriver({
-          clusterId:dataset.clusterId,
-          user:user.identityId,
-        }, async (fileDriver) => {
-          await fileDriver.unShareFileOrDir(pathToUnshare);
-        }, logger);
-      } catch (e) {
-        logger.error(`ssh failure occured when unshare datasetVersion ${datasetVersionId} of dataset ${datasetId} `, e);
+          await driver.withFileDriver({
+            clusterId:dataset.clusterId,
+            user:user.identityId,
+          }, async (fileDriver) => {
+            await fileDriver.unShareFileOrDir(pathToUnshare);
+          }, logger);
+        } catch (e) {
+          logger.error(`ssh failure occured when unshare datasetVersion ${datasetVersionId}` +
+             `of dataset ${datasetId} `, e);
+        }
       }
 
       dataset.isShared = dataset.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 1
@@ -583,6 +649,7 @@ export const shareDatasetVersion = procedure
   .input(z.object({
     datasetVersionId: z.number(),
     datasetId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .use(async ({ input:{ datasetId, datasetVersionId }, ctx, next }) => {
@@ -633,7 +700,7 @@ export const shareDatasetVersion = procedure
   })
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const { datasetVersionId, datasetId } = input;
+    const { datasetVersionId, datasetId, isPlatformOwned } = input;
     const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
     if (!datasetVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
@@ -645,19 +712,71 @@ export const shareDatasetVersion = procedure
     if (!dataset)
       throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
 
-    if (dataset.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Dataset ${datasetId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can share platform owned dataset version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && dataset.owner !== user.identityId) {
+      const detailMessage =
+        `Dataset id:${datasetId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The dataset asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
+
+    // 若公共资产路径改变，则无法发布
+    const checkIsPublicAssetDatasetVersion = checkIsPublicPaths(
+      dataset.clusterId,
+      [datasetVersion.path],
+    );
+
+    if (isPlatformOwned && !checkIsPublicAssetDatasetVersion) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to dataset version files; publishing is not allowed.",
+      });
+    }
 
     await driver.withFileDriver({
       clusterId:dataset.clusterId,
       user:user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkSharePermission(datasetVersion.privatePath);
+      await fileDriver.checkSharePermission(datasetVersion.privatePath, isPlatformOwned);
     }, logger);
 
+    datasetVersion.sharedStatus = SharedStatus.SHARING;
+    em.persist([datasetVersion]);
+    await em.flush();
+
+    if (isPlatformOwned) {
+      const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
+      if (!datasetVersion)
+        throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
+
+      const dataset = await em.findOne(Dataset, { id: datasetId });
+      if (!dataset)
+        throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
+
+      datasetVersion.sharedStatus = SharedStatus.SHARED;
+      datasetVersion.path = datasetVersion.privatePath;
+
+      if (!dataset.isShared) { dataset.isShared = true; };
+
+      await em.persistAndFlush([datasetVersion, dataset]);
+
+      return;
+    }
 
     const homeDir = await driver.withFileDriver({
       clusterId:dataset.clusterId,
@@ -667,9 +786,6 @@ export const shareDatasetVersion = procedure
     }, logger);
     const homeTopDir = dirname(dirname(homeDir));
 
-    datasetVersion.sharedStatus = SharedStatus.SHARING;
-    em.persist([datasetVersion]);
-    await em.flush();
 
     const successCallback = async (targetFullPath: string) => {
       const em = await forkEntityManager();
@@ -730,11 +846,12 @@ export const unShareDatasetVersion = procedure
   .input(z.object({
     datasetVersionId: z.number(),
     datasetId: z.number(),
+    isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const { datasetVersionId, datasetId } = input;
+    const { datasetVersionId, datasetId, isPlatformOwned } = input;
     const datasetVersion = await em.findOne(DatasetVersion, { id: datasetVersionId });
     if (!datasetVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `DatasetVersion ${datasetVersionId} not found` });
@@ -748,8 +865,25 @@ export const unShareDatasetVersion = procedure
     if (!dataset)
       throw new TRPCError({ code: "NOT_FOUND", message: `Dataset ${datasetId} not found` });
 
-    if (dataset.owner !== user.identityId)
-      throw new TRPCError({ code: "FORBIDDEN", message: `Dataset ${datasetId} not accessible` });
+    if (isPlatformOwned) {
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
+      if (!isPlatformAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only platform admin can unshare platform owned dataset version",
+        });
+      }
+    }
+
+    if (!isPlatformOwned && dataset.owner !== user.identityId) {
+      const detailMessage =
+        `Dataset id:${datasetId} is not owned by current user. currentUserId:${user.identityId}`;
+      logger.error(detailMessage);
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Operation failed: The dataset asset does not belong to the current user.",
+      });
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, dataset.clusterId);
@@ -789,6 +923,11 @@ export const unShareDatasetVersion = procedure
       datasetVersion.sharedStatus = SharedStatus.SHARED;
       await em.persistAndFlush([datasetVersion]);
     };
+
+    if (isPlatformOwned) {
+      await successCallback();
+      return;
+    }
 
     const sharedDatasetVersionPath =
     dataset.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
@@ -893,8 +1032,12 @@ export const copyPublicDatasetVersion = procedure
         message: `Dataset Version ${input.datasetVersionId} does not exist or is not public`,
       });
     }
-    // 2. 检查该用户是否已有同名数据集
-    const dataset = await em.findOne(Dataset, { name: input.datasetName, owner: user.identityId });
+    // 2. 检查该用户是否已有同名数据集 (平台身份时可以有同名数据集)
+    const dataset = await em.findOne(Dataset, {
+      name: input.datasetName,
+      owner: user.identityId,
+      isPlatformOwned: false,
+    });
     if (dataset) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -931,6 +1074,19 @@ export const copyPublicDatasetVersion = procedure
       dataset: newDataset,
     });
 
+    // 若公共资产路径改变，则无法复制
+    const checkIsPublicPathsResult = checkIsPublicPaths(
+      datasetVersion.dataset.$.clusterId,
+      [datasetVersion.path],
+    );
+
+    if (!checkIsPublicPathsResult && datasetVersion.dataset.$.isPlatformOwned === true) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Access denied to the dataset version files; copying is not allowed.",
+      });
+    }
+
     try {
       await withFileDriver(
         { clusterId:datasetVersion.dataset.$.clusterId, user:user.identityId },
@@ -939,7 +1095,8 @@ export const copyPublicDatasetVersion = procedure
 
           // scowd复制需要再路径最后加上文件夹名
           await driver.copy(datasetVersion.path,
-            cluster.scowd?.enabled ? path.join(input.path,path.basename(datasetVersion.path)) : input.path);
+            cluster.scowd?.enabled ? path.join(input.path,path.basename(datasetVersion.path)) : input.path,
+            checkIsPublicPathsResult);
         },
         logger,
       );

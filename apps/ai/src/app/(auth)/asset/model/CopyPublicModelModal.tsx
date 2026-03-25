@@ -46,6 +46,10 @@ export const CopyPublicModelModal: React.FC<Props> = (
     onError(err) {
       const errCode = err.data?.code;
       const errMessage = err.message;
+      if (errMessage === "Access denied to the model version files; copying is not allowed.") {
+        message.error(t(p("noAccessCopy")));
+        return;
+      }
       if (errCode === "CONFLICT" && errMessage.startsWith("A model with the same name")) {
         form.setFields([
           {
@@ -75,6 +79,8 @@ export const CopyPublicModelModal: React.FC<Props> = (
     });
   };
 
+  const labelWidth = languageId === "zh_cn" ? 120 : 160;
+
   return (
     <Modal
       title={t(p("copy"))}
@@ -88,8 +94,17 @@ export const CopyPublicModelModal: React.FC<Props> = (
       <Form
         form={form}
         onFinish={onOk}
-        wrapperCol={{ span: 18 }}
-        labelCol={{ span: 6 }}
+        layout="horizontal"
+        labelAlign="left"
+        labelCol={{
+          flex: `0 0 ${labelWidth}px`,
+        }}
+        wrapperCol={{
+          flex: "1 1 auto",
+          style: {
+            marginLeft: "16px",
+          },
+        }}
       >
         <Form.Item
           label={t(p("sourceName"))}

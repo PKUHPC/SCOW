@@ -1,3 +1,4 @@
+import { getClusterConfigs } from "@scow/config/build/cluster";
 import { getCommonConfig } from "@scow/config/build/common";
 import { chmodSync, mkdirSync } from "fs";
 import path from "path";
@@ -36,6 +37,39 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       }
     } catch (error) {
       logger.error("Failed to check scowApi.token configuration:", error);
+      throw error;
+    }
+  }
+
+  // 检查 集群ai 配置 - 如果启用了 ai 模块，则相关集群中必须配置公共数据资产目录
+  if (config.ai) {
+
+    try {
+      const clustersConfig = getClusterConfigs();
+
+      Object.values(clustersConfig).forEach((cluster) => {
+        const aiConfig = cluster.ai;
+
+        if (aiConfig?.enabled && !aiConfig.clusterPublicPath?.trim()) {
+          let clusterDisplayName;
+
+          if (typeof cluster.displayName === "string") {
+            clusterDisplayName = cluster.displayName;
+          } else {
+            clusterDisplayName = cluster.displayName.i18n.default;
+          }
+
+          throw new Error(
+            "The public data asset directory (clusterPublicPath) is required because the AI" +
+            " module is enabled on this cluster. " +
+            `Please configure 'ai.clusterPublicPath' for cluster ${clusterDisplayName} in the cluster configuration.`,
+          );
+        }
+      });
+
+
+    } catch (error) {
+      logger.error("Failed to check clusterPublicPath configuration:", error);
       throw error;
     }
   }

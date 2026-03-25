@@ -21,14 +21,14 @@ const LOADED_IMAGE_REGEX = "Loaded image: ([\\w./-]+(?::[\\w.-]+)?)";
 
 export const loadedImageRegex = new RegExp(LOADED_IMAGE_REGEX);
 
-export function getUserHarborProjectName(userId: string) {
-  return `u_${userId}`;
+export function getUserHarborProjectName(userId: string, isPlatformOwned?: boolean) {
+  return isPlatformOwned ? "admin_public_asset" : `u_${userId}`;
 }
 
 // 创建要上传到harbor的镜像地址
 export async function createHarborImageUrl(imageName: string, imageTag: string,
-  userId: string,logger: Logger): Promise<string> {
-  const projectName = getUserHarborProjectName(userId);
+  userId: string,logger: Logger, isPlatformOwned?: boolean): Promise<string> {
+  const projectName = getUserHarborProjectName(userId, isPlatformOwned);
 
   const harborConfig = getHarborConfig();
   const harbor = new HarborClient(harborConfig);

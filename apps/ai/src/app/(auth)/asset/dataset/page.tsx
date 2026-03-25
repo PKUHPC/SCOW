@@ -12,6 +12,7 @@ export default function Page() {
   const t = useI18nTranslateToString();
 
   const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+
   useDocumentTitle(t("app.dataset.title"));
 
   const items: TabsProps["items"] = [

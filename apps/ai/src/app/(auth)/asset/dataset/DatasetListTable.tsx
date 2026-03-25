@@ -6,11 +6,13 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Modal, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
+import { CreateEditDatasetModal } from "src/components/assets/dataset/CreateEditDatasetModal";
+import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { CreateNewVersionIcon, DeleteIcon,EditIcon } from "src/icons/operationIcon";
+import { CreateNewVersionIcon, DeleteIcon, EditIcon, PlatformIcon } from "src/icons/operationIcon";
 import { DatasetTypeText, getDatasetTexts } from "src/models/Dateset";
 import { Cluster } from "src/server/trpc/route/config";
 import { DatasetInterface } from "src/server/trpc/route/dataset/dataset";
@@ -18,10 +20,10 @@ import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
+import { useTheme } from "styled-components";
 
 import { TableContainer } from "../common";
-import { CreateEditDatasetModal } from "./CreateEditDatasetModal";
-import { CreateEditDSVersionModal } from "./CreateEditDSVersionModal";
+import { PlatformTag } from "../PlatformTag";
 import { DatasetVersionList } from "./DatasetVersionList";
 
 interface Props {
@@ -57,7 +59,9 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
   const t = useI18nTranslateToString();
   const pModel = prefix("app.dataset.model.");
   const p = prefix("app.dataset.datasetListTable.");
+  const pCommon = prefix("app.common.");
   const languageId = useI18n().currentLanguage.id;
+  const theme = useTheme();
 
   // 本来应该是放在组件外，但是为了国际化将其放入组件中
   const FilterType = {
@@ -238,13 +242,21 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
           ...(isPublic
             ? [{
               dataIndex: "shareUser",
-              title: t(p("shareUser")),
+              title: t(pCommon("publishUser")),
               // @ts-ignore
-              render: (_, r) => r.owner,
+              render: (_, r) =>
+                r.isPlatformOwned ? (
+                  <PlatformTag color={theme.token.colorPrimary}>
+                    <span>{t(pCommon("platform"))}</span>
+                    <PlatformIcon />
+                  </PlatformTag>
+                ) : (
+                  `${r.ownerName}（ID:${r.owner}）`
+                ),
             } as const]
             : []),
-          { dataIndex: "createTime", title: t(p("createTime")),
-            render: (_, r) => r.createTime ? formatDateTime(r.createTime) : "-" },
+          { dataIndex: "updateTime", title: t(p("updatedTime")),
+            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
           ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
             render: (_: any, r: DatasetInterface) => {
               return (
