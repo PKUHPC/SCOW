@@ -58,15 +58,18 @@ import type { QueryFileTransferProgressSchema } from "src/pages/api/file/queryFi
 import type { StartFileTransferSchema } from "src/pages/api/file/startFileTransfer";
 import type { TerminateFileTransferSchema } from "src/pages/api/file/terminateFileTransfer";
 import type { UploadFileSchema } from "src/pages/api/file/upload";
+import type { CalculateJobPriceSchema } from "src/pages/api/job/calculateJobPrice";
 import type { CancelJobSchema } from "src/pages/api/job/cancelJob";
 import type { DeleteJobTemplateSchema } from "src/pages/api/job/deleteJobTemplate";
 import type { GetAccountsSchema } from "src/pages/api/job/getAccounts";
 import type { GetAllJobsSchema } from "src/pages/api/job/getAllJobs";
+import type { GetAvailableAccountsAndClustersSchema } from "src/pages/api/job/getAvailableAccountsAndClusters";
 import type { GetAvailablePartitionsForClusterSchema } from "src/pages/api/job/getAvailablePartitionsForCluster";
 import type { GetJobTemplateSchema } from "src/pages/api/job/getJobTemplate";
 import type { GetRunningJobsSchema } from "src/pages/api/job/getRunningJobs";
 import type { ListJobTemplatesSchema } from "src/pages/api/job/listJobTemplates";
 import type { RenameJobTemplateSchema } from "src/pages/api/job/renameJobTemplate";
+import type { SaveAsJobTemplateSchema } from "src/pages/api/job/saveAsJobTemplate";
 import type { SubmitFileAsJobSchema } from "src/pages/api/job/submitFileAsJob";
 import type { SubmitJobSchema } from "src/pages/api/job/submitJob";
 import type { GetUnreadMessagesSchema } from "src/pages/api/notification/getUnreadMessages";
@@ -93,8 +96,8 @@ export const api = {
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
   getClusterInfo: apiClient.fromTypeboxRoute<typeof GetClusterInfoSchema>("GET", "/api//cluster"),
   getAllClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetAllClusterNodesInfoSchema>("GET", "/api/dashboard/getAllClusterNodesInfo"),
-  getAllSummaryClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllSummaryClustersInfoSchema>("GET", "/api/dashboard/getAllSummaryClustersInfo"),
   getAllClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllClustersInfoSchema>("GET", "/api/dashboard/getAllClustersInfo"),
+  getAllSummaryClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllSummaryClustersInfoSchema>("GET", "/api/dashboard/getAllSummaryClustersInfo"),
   getClusterRunningInfo: apiClient.fromTypeboxRoute<typeof GetClusterRunningInfoSchema>("GET", "/api/dashboard/getClusterInfo"),
   getClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterNodesInfoSchema>("GET", "/api/dashboard/getClusterNodesInfo"),
   getQuickEntries: apiClient.fromTypeboxRoute<typeof GetQuickEntriesSchema>("GET", "/api/dashboard/getQuickEntries"),
@@ -135,15 +138,18 @@ export const api = {
   getUserAssociatedClusterPartitions: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterPartitionsSchema>("GET", "/api//getUserAssociatedClusterPartitions"),
   getUserAvailableClusterApps: apiClient.fromTypeboxRoute<typeof GetUserAvailableClusterAppsSchema>("GET", "/api//getUserAvalableClusterApps"),
   getUserInfo: apiClient.fromTypeboxRoute<typeof GetUserInfoSchema>("GET", "/api//getUserInfo"),
+  calculateJobPrice: apiClient.fromTypeboxRoute<typeof CalculateJobPriceSchema>("GET", "/api/job/calculateJobPrice"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/job/getAccounts"),
   getAllJobs: apiClient.fromTypeboxRoute<typeof GetAllJobsSchema>("GET", "/api/job/getAllJobs"),
+  getAvailableAccountsAndClusters: apiClient.fromTypeboxRoute<typeof GetAvailableAccountsAndClustersSchema>("GET", "/api/job/getAvailableAccountsAndClusters"),
   getAvailablePartitionsForCluster: apiClient.fromTypeboxRoute<typeof GetAvailablePartitionsForClusterSchema>("GET", "/api/job/getAvailablePartitionsForCluster"),
   getJobTemplate: apiClient.fromTypeboxRoute<typeof GetJobTemplateSchema>("GET", "/api/job/getJobTemplate"),
   getRunningJobs: apiClient.fromTypeboxRoute<typeof GetRunningJobsSchema>("GET", "/api/job/getRunningJobs"),
   listJobTemplates: apiClient.fromTypeboxRoute<typeof ListJobTemplatesSchema>("GET", "/api/job/listJobTemplates"),
   renameJobTemplate: apiClient.fromTypeboxRoute<typeof RenameJobTemplateSchema>("POST", "/api/job/renameJobTemplate"),
+  saveAsJobTemplate: apiClient.fromTypeboxRoute<typeof SaveAsJobTemplateSchema>("POST", "/api/job/saveAsJobTemplate"),
   submitFileAsJob: apiClient.fromTypeboxRoute<typeof SubmitFileAsJobSchema>("POST", "/api/job/submitFileAsJob"),
   submitJob: apiClient.fromTypeboxRoute<typeof SubmitJobSchema>("POST", "/api/job/submitJob"),
   getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>("GET", "/api/notification/getUnreadMessages"),

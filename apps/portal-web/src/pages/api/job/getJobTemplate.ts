@@ -31,11 +31,7 @@ export const JobTemplate = Type.Object({
   gpuCount: Type.Optional(Type.Number()),
   maxTime: Type.Number(), // 最长运行时间
   command: Type.String(),
-  workingDirectory: Type.String(),
-  output: Type.Optional(Type.String()),
-  errorOutput: Type.Optional(Type.String()),
   comment: Type.Optional(Type.String()),
-  scriptOutput:Type.Optional(Type.String()),
   maxTimeUnit: Type.Optional(Type.Enum(TimeUnit)), // 最长运行时间单位
 });
 export type JobTemplate = Static<typeof JobTemplate>;

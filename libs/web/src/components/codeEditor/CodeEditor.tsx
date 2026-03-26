@@ -19,6 +19,7 @@ const Container = styled.div`
   border-radius: ${({ theme }) => theme.token.borderRadius};
 `;
 
+
 const extensions = [StreamLanguage.define(shell)];
 
 export const CodeEditor: React.FC<Props> = ({ value, onChange, height = "", placeholder = "", className }) => {

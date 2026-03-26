@@ -1203,13 +1203,14 @@ export const LaunchTrainForm = ({
   const memMbForQuery = hasMemoryPerUnit
     ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0)))
     : 0;
+  const timeSecondsForPrice = 3600;
   // 仅在关键字段齐备、并且能计算出每单位内存时才触发价格查询，避免无效请求
   const jobPriceQueryEnabled =
     Boolean(selectedAccount && selectedCluster && selectedQueueKey && priority) &&
     hasMemoryPerUnit &&
     unitsForQuery > 0;
 
-  const { data: jobOneHourPrice } = trpc.jobs.calculateJobOneHourPrice.useQuery({
+  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery({
     cluster: selectedCluster!,
     partition: selectedQueueKey!,
     account: selectedAccount!,
@@ -1217,6 +1218,7 @@ export const LaunchTrainForm = ({
     cpusAlloc: selectedCpuCount,
     memMb: memMbForQuery,
     qos: priority,
+    timeSeconds: timeSecondsForPrice,
   }, {
     enabled: jobPriceQueryEnabled,
   });

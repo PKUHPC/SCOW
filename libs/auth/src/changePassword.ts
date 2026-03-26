@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  */
 
-import { applicationJsonHeaders, logHttpErrorAndThrow } from "src/utils";
+import { applicationJsonHeaders, logHttpErrorAndThrow } from "./utils";
 import { Logger } from "ts-log";
 
 export async function changePassword(

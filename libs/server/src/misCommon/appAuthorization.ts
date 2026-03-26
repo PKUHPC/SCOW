@@ -135,3 +135,26 @@ export const libCheckAppIdInClusterApps
   }
 
 };
+
+// 获取应用禁用的账户列表
+export const libGetAppForbiddenAccounts = async (
+  clusterId: string,
+  appId: string,
+  misServerUrl: string,
+  scowApiAuthToken?: string,
+): Promise<string[]> => {
+
+  const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
+  const client = getMisClient(AppAuthorizationServiceClient);
+
+  try {
+    const reply = await asyncClientCall(client, "getAppForbiddenAccounts", {
+      clusterId,
+      appId,
+    });
+    return reply.accountNames;
+  } catch (e: any) {
+    console.error(e.details);
+    return [];
+  }
+};

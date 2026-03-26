@@ -9,7 +9,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 const p = prefix("pageComp.app.launchAppForm.");
 
 export interface CommandSelectProps {
-  label: string;
+  label: string | React.ReactNode;
   appId: string;
   clusterId: string;
   attributeName: string;

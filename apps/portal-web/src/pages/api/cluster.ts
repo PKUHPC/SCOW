@@ -15,6 +15,7 @@ export const Partition = Type.Object({
   nodes: Type.Number(),
   qos: Type.Optional(Type.Array(Type.String())),
   comment: Type.Optional(Type.String()),
+  description: Type.Optional(Type.String()),
 });
 
 export type Partition = Static<typeof Partition>;

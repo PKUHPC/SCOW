@@ -147,6 +147,19 @@ message GetClusterNodesInfoResponse {
   repeated NodeInfo nodes = 1;
 }
 
+message GetAvailableAccountsAndClustersRequest {
+  string user_id = 1;
+}
+
+message AvailableAccountClusters {
+  string account_name = 1;
+  repeated string clusters = 2;
+}
+
+message GetAvailableAccountsAndClustersResponse {
+  repeated AvailableAccountClusters account_clusters = 1;
+}
+
 service ConfigService {
 
   rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
@@ -161,4 +174,6 @@ service ConfigService {
   rpc GetClusterNodesInfo(GetClusterNodesInfoRequest) returns (GetClusterNodesInfoResponse) {
     option deprecated = true;
   };
+
+  rpc GetAvailableAccountsAndClusters(GetAvailableAccountsAndClustersRequest) returns (GetAvailableAccountsAndClustersResponse);
 }

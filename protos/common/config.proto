@@ -21,6 +21,8 @@ message Partition {
   repeated string qos = 6;
   // price item description
   optional string comment = 7;
+  // 提交作业时展示的分区描述
+  optional string description = 8;
 }
 
 message GetClusterConfigResponse {

@@ -81,6 +81,7 @@ message GetUserAvailableClusterAppsResponse {
     common.I18nStringProtoType comment = 4;
     optional string image = 5;
     optional string start_command = 6;
+    repeated string available_accounts = 7;
   }
   repeated App apps = 1;
 }

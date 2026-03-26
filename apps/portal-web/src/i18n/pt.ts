@@ -23,7 +23,6 @@ export default {
       runningJobs: "Tarefas em execução",
       allJobs: "Todas as tarefas",
       submitJob: "Submeter tarefa",
-      jobTemplates: "Modelos de tarefa",
     },
     apps: {
       title: "Aplicações",
@@ -114,18 +113,6 @@ export default {
       fileSelectModal: {
         title: "Seleção de diretório",
         newPath: "Novo diretório",
-      },
-      jobTemplateModal: {
-        clusterLabel: "Cluster",
-        errorMessage: "Modelo inexistente!",
-        changeSuccessMessage: "Alterado com sucesso!",
-        changTemplateName: "Alterar nome do modelo",
-        newTemplateName: "Novo nome do modelo",
-        templateName: "Nome do modelo",
-        comment: "Comentário",
-        useTemplate: "Submeter com modelo",
-        popConfirm: "Tem certeza de que deseja eliminar este modelo?",
-        deleteSuccessMessage: "Modelo eliminado!",
       },
       runningJobDrawer: {
         cluster: "Cluster",
@@ -675,10 +662,6 @@ export default {
       runningJobs: {
         title: "Tarefas em execução",
         pageTitle: "Minhas tarefas em execução",
-      },
-      savedJobs: {
-        title: "Modelos de tarefa",
-        pageTitle: "Meus modelos de tarefa",
       },
       submit: {
         title: "Submeter tarefa",

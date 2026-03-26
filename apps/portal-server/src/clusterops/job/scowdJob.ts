@@ -186,7 +186,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   submitJob: async (request, logger) => {
     const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit = TimeUnit.MINUTES,
-      saveAsTemplate, userId, nodeCount, partition, qos, account, comment, workingDirectory, output
+      saveAsTemplate, userId, nodeCount, partition, qos, account, workingDirectory, output
       , errorOutput, memory, scriptOutput } = request;
 
     try {
@@ -245,12 +245,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
           qos,
           account,
           command,
-          comment,
-          workingDirectory,
-          output,
-          errorOutput,
           memory,
-          scriptOutput,
           maxTimeUnit,
         };
 
@@ -347,5 +342,37 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
       }
       throw err;
     }
+  },
+  saveAsJobTemplate: async (request, logger) => {
+    const { userId, memoryMb, ...rest } = request;
+    try {
+      const jobInfo: JobTemplate = { ...rest, memory: memoryMb };
+
+      logger.info("jobInfo: %o", jobInfo);
+
+      const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
+
+      const { exists } = await client.file.exists({ userId, path: join(userHomeDir, portalConfig.savedJobsDir) });
+
+      if (!exists) {
+        await client.file.makeDirectory({ userId, dirPath: join(userHomeDir, portalConfig.savedJobsDir) });
+      }
+
+      const submitTime = Date.now();
+      const id = `${jobInfo.jobName}-${submitTime}`;
+      const filePath = join(userHomeDir, portalConfig.savedJobsDir, id);
+      const metadata: JobMetadata = { ...jobInfo, submitTime:submitTime.toString() };
+
+      await client.file.writeFile({ userId, filePath, content: JSON.stringify(metadata) });
+
+      logger.info("Saved job as template to %s", filePath);
+    } catch (err) {
+      if (err instanceof ConnectError) {
+        throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
+      }
+      throw err;
+    }
+
+    return [{}];
   },
 });

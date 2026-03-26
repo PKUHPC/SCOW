@@ -15,6 +15,7 @@ syntax = "proto3";
 package scow.portal;
 
 import "common/job.proto";
+import "common/money.proto";
 import "google/protobuf/timestamp.proto";
 
 message CancelJobRequest {
@@ -94,11 +95,7 @@ message JobTemplate {
   optional uint32 gpu_count = 7;
   uint32 max_time = 8; // 最长运行时间
   string command = 9;
-  string working_directory = 10;
-  optional string output = 11;
-  optional string error_output = 12;
   optional string comment = 13;
-  optional string script_output = 14;
   optional TimeUnit max_time_unit = 15; // 最长运行时间单位，默认为MINUTES
 }
 
@@ -125,6 +122,7 @@ message JobTemplateInfo {
   string job_name = 2;
   google.protobuf.Timestamp submit_time = 3;
   optional string comment = 4;
+  optional string cluster = 5;
 }
 
 message ListJobTemplatesResponse {
@@ -201,6 +199,40 @@ message SubmitFileAsJobResponse {
   uint32 job_id = 1;
 }
 
+message CalculateJobPriceRequest {
+  string cluster = 1;
+  string partition = 2;
+  string qos = 3;
+  string account_name = 4;
+  uint32 cpus_alloc = 5;
+  uint32 gpu = 6;
+  uint32 mem_mb = 7;
+  uint32 time_seconds = 8;
+}
+
+message CalculateJobPriceResponse {
+  common.Money account_price = 1;
+}
+
+message SaveAsJobTemplateRequest {
+  string user_id = 1;
+  string job_name = 2;
+  string account = 3;
+  string cluster = 4;
+  string partition = 5;
+  string qos = 6;
+  uint32 node_count = 7;
+  uint32 core_count = 8;
+  optional uint32 gpu_count = 9;
+  string memory_mb = 10;
+  string command = 11;
+  uint32 max_time = 12; // 最长运行时间
+  TimeUnit max_time_unit = 13; // 最长运行时间单位，默认为MINUTES
+  reserved 14 to 17;
+}
+
+message SaveAsJobTemplateResponse {
+}
 
 service JobService {
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
@@ -219,8 +251,12 @@ service JobService {
 
   rpc RenameJobTemplate(RenameJobTemplateRequest) returns (RenameJobTemplateResponse);
 
+  rpc SaveAsJobTemplate(SaveAsJobTemplateRequest) returns (SaveAsJobTemplateResponse);
+
   rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
 
   rpc SubmitFileAsJob(SubmitFileAsJobRequest) returns (SubmitFileAsJobResponse);
+
+  rpc CalculateJobPrice(CalculateJobPriceRequest) returns (CalculateJobPriceResponse);
 
 }

@@ -1,11 +1,13 @@
 import { Plugin, plugin } from "@ddadaal/tsgrpc-server";
 import { ScowResourceConfigSchema } from "@scow/config/build/common";
-import { PartitionNames } from "@scow/scow-resource-protos/build/partition_pb";
+import {
+  ClusterPartition,
+  PartitionNames,
+} from "@scow/scow-resource-protos/build/partition_pb";
 import { AssignAccountOnCreateRequest,
   GetAccountAssignedPartitionsForClusterRequest,
   GetAccountsAssignedClusterIdsRequest,
   GetAccountsAssignedClustersAndPartitionsRequest,
-  GetAccountsAssignedClustersAndPartitionsResponse,
   GetAccountsAssignedPartitionsForClusterRequest,
   GetClusterAssignedAccountsRequest,
   GetTenantAssignedClustersAndPartitionsRequest,
@@ -13,6 +15,10 @@ import { AssignAccountOnCreateRequest,
 } from "@scow/scow-resource-protos/build/partition";
 
 import { getScowResourceClient } from "./client";
+
+interface AccountClusterPartitions {
+  clusterPartitions: ClusterPartition[];
+}
 
 export interface ScowResourcePlugin {
   resource: {
@@ -30,7 +36,7 @@ export interface ScowResourcePlugin {
     Promise<string[]>;
 
     getAccountsAssignedClustersAndPartitions: (params: GetAccountsAssignedClustersAndPartitionsRequest) =>
-    Promise<GetAccountsAssignedClustersAndPartitionsResponse>;
+    Promise<Record<string, AccountClusterPartitions>>;
 
     getTenantAssignedClustersAndPartitions: (params: GetTenantAssignedClustersAndPartitionsRequest) =>
     Promise<GetTenantAssignedClustersAndPartitionsResponse>;
@@ -76,12 +82,17 @@ export const scowResourcePlugin = (
 
   const getAccountsAssignedClustersAndPartitions = async (params: GetAccountsAssignedClustersAndPartitionsRequest) => {
     const reply = await client.resource.getAccountsAssignedClustersAndPartitions(params);
-    return reply.assignedClusterPartitions;
+    return reply.assignedClusterPartitions.reduce<Record<string, AccountClusterPartitions>>((acc, item) => {
+      acc[item.account] = {
+        clusterPartitions: item.clusterPartitions,
+      };
+      return acc;
+    }, {});
   };
 
   const getTenantAssignedClustersAndPartitions = async (params: GetTenantAssignedClustersAndPartitionsRequest) => {
     const reply = await client.resource.getTenantAssignedClustersAndPartitions(params);
-    return reply.assignedClusterPartitions;
+    return reply;
   };
 
   const getClusterAssignedAccounts = async (params: GetClusterAssignedAccountsRequest) => {

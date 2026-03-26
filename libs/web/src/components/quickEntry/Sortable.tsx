@@ -162,7 +162,8 @@ export const Sortable: FC<Props> = ({
                 "_blank",
               );
             } else {
-              window.open(join(basePath, "/apps", savedAppClusterId, "/create", item.entry.app.appId), "_blank");
+              window.open(join(basePath, "/apps",
+                `/createApps?appId=${item.entry.app.appId}&clusterId=${savedAppClusterId}`), "_blank");
             }
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;

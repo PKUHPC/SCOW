@@ -1,8 +1,10 @@
-import { Form, Tooltip } from "antd";
+import { Form } from "antd";
 import type { FormInstance,FormItemProps, Rule } from "antd/es/form";
 import React, { ReactNode, useMemo } from "react";
 import { QuestionMarkIcon } from "src/icons/commonIcons";
 import { styled } from "styled-components";
+
+import { Tooltip } from "./Tooltip";
 
 /**
  * 类型守卫：区分规则是“对象”还是“函数”
@@ -24,7 +26,11 @@ const LabelWithHelp: React.FC<{
     {label}
     {required && <span style={{ color: "red", marginLeft: 4 }}>*</span>}
     {help && (
-      <Tooltip title={help}>
+      <Tooltip
+        title={help}
+        arrow={false}
+        align={{ offset: [0, -12]}}
+      >
         <QuestionMarkIcon style={{ marginLeft: 6, color: "#999", fontSize: 16 }} />
       </Tooltip>
     )}

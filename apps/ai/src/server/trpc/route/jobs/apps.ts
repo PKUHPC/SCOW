@@ -323,8 +323,9 @@ export const listAppAvailableAccountsAndClusters = procedure
     const commonConfig = getCommonConfig();
     const { appId } = input;
     const currentClusterIds = await getCurrentClusters(user.identityId);
+    const currentAiClusterIds = currentClusterIds.filter((clusterId) => Boolean(clusters[clusterId]));
 
-    if (currentClusterIds.length === 0) {
+    if (currentAiClusterIds.length === 0) {
       return { accountClusters: {} };
     }
 
@@ -378,7 +379,7 @@ export const listAppAvailableAccountsAndClusters = procedure
         misAccounts = accounts;
       }
 
-      const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
+      const accountClusters = await buildAccountClusters(currentAiClusterIds, async (clusterId) => {
         if (misAccounts) {
           return misAccounts;
         }
@@ -401,7 +402,7 @@ export const listAppAvailableAccountsAndClusters = procedure
       AccountStatusFilter.UNBLOCKED_ONLY,
     ) ?? [];
 
-    const currentClusterSet = new Set(currentClusterIds);
+    const currentClusterSet = new Set(currentAiClusterIds);
     const clusterAccountMap = new Map<string, Set<string>>();
 
     assignedResourceDetails.forEach(({ accountName, assignedClusterPartitions }) => {
@@ -417,7 +418,7 @@ export const listAppAvailableAccountsAndClusters = procedure
       });
     });
 
-    const accountClusters = await buildAccountClusters(currentClusterIds, async (clusterId) => {
+    const accountClusters = await buildAccountClusters(currentAiClusterIds, async (clusterId) => {
       return Array.from(clusterAccountMap.get(clusterId) ?? []);
     });
 

@@ -51,11 +51,6 @@ const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
     margin-left: ${(props) => (props.collapsed ? "0px" : "8px")} !important;
   }
 
-  .ant-menu-item-selected {
-    border: 1px solid #f0f0f0 !important;
-    box-shadow: 2px 0 2px 0 rgba(0, 0, 0, 0.05) !important;
-  }
-
   /* menu间去掉左右margin, 上下margin和为8px */
   .ant-menu-item,
   .ant-menu-submenu-title {

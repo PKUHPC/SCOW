@@ -537,3 +537,27 @@ export const DesktopCardIcon: React.ForwardRefExoticComponent<IconProps> =
   React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => desktopCardSVG(props.styles)} {...props} ref={ref} />
   ));
+
+
+// 编辑图标
+const editSVG = (style) => (
+  <svg width="24" height="22" viewBox="0 0 24 22" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
+    <rect width="24" height="22" rx="6" fill="transparent" />
+    <path
+      d="M12.6904 4.91602C13.0215 4.91624 13.2908 5.18459 13.291 5.51562C13.291 5.84685 13.0216
+    6.115 12.6904 6.11523H9.5166C8.19126 6.11523 7.11644 7.19034 7.11621 8.51562V13.3203C7.11621 14.6458
+    8.19112 15.7207 9.5166 15.7207H14.3213C15.6466 15.7205 16.7217 14.6457 16.7217 13.3203V10.1465C16.7219
+    9.81531 16.9901 9.5459 17.3213 9.5459C17.6523 9.54613 17.9207 9.81545 17.9209 10.1465V13.3203C17.9209
+    15.3084 16.3093 16.9207 14.3213 16.9209H9.5166C7.52838 16.9209 5.91602 15.3085 5.91602 13.3203V8.51562C5.91625
+    6.5276 7.52852 4.91602 9.5166 4.91602H12.6904ZM16.125 5.86426C16.3593 5.62994 16.7383 5.62994 16.9727
+    5.86426C17.207 6.09857 17.207 6.4776 16.9727 6.71191L12.3428 11.3428C12.1085 11.5771 11.7284 11.5771
+    11.4941 11.3428C11.2598 11.1085 11.2599 10.7285 11.4941 10.4941L16.125 5.86426Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const EditIcon: React.ForwardRefExoticComponent<IconProps> =
+  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={() => editSVG(props.styles)} {...props} ref={ref} />
+  ));

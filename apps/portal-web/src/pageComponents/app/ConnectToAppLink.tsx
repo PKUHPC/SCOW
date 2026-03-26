@@ -9,12 +9,11 @@ import { DisabledA } from "src/components/DisabledA";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ConnectIcon } from "src/icons/operationIcon";
 import { type ConnectToAppSchema } from "src/pages/api/app/connectToApp";
-import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
 import { openDesktop } from "src/utils/vnc";
 
 export interface Props {
-  cluster: Cluster;
+  clusterId: string;
   session: AppSession;
   refreshToken: boolean;
 }
@@ -22,7 +21,7 @@ export interface Props {
 const p = prefix("pageComp.app.connectToAppLink.");
 
 export const ConnectTopAppLink: React.FC<Props> = ({
-  session, cluster, refreshToken,
+  session, clusterId, refreshToken,
 }) => {
 
   const { message } = App.useApp();
@@ -55,7 +54,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
     // 先通过ConnectToApp获取后端返回的host，port，proxyType
     const response = await api.connectToApp({ body:
-        { cluster: cluster.id, sessionId: session.sessionId, jobId: session.jobId } }, signal)
+        { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } }, signal)
       .httpError(404, () => {
         return false;
       })
@@ -71,7 +70,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       // 对于 web或vnc 应用，模拟到端口的http请求
       return await api.checkAppConnectivity({
         query: {
-          cluster: cluster.id,
+          cluster: clusterId,
           host: response.host,
           port: response.port,
           appType: response.type,
@@ -85,7 +84,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       return false;
     }
 
-  }, [session.host, session.port, cluster.id, isConnected]);
+  }, [session.host, session.port, clusterId, isConnected]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -135,7 +134,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       const { connect, host, password, port, proxyType, customFormData } = replyRef.current;
       const interpolatedValues = { HOST: host, PASSWORD: password, PORT: port, ...customFormData };
       const path = parsePlaceholder(connect.path, interpolatedValues);
-      const pathname = join(publicConfig.BASE_PATH, "/api/proxy", cluster.id, proxyType, host, String(port), path);
+      const pathname = join(publicConfig.BASE_PATH, "/api/proxy", clusterId, proxyType, host, String(port), path);
 
       const interpolateValues = (obj: Record<string, string>) => {
         return Object.keys(obj).reduce((prev, curr) => {
@@ -157,7 +156,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
 
       // 如果不是web应用需要重新发起 connectToApp的请求
       const res = await api.connectToApp({ body:
-        { cluster: cluster.id, sessionId: session.sessionId, jobId: session.jobId } })
+        { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } })
         .httpError(404, () => { message.error(t(p("notFoundMessage"))); })
         .httpError(409, () => { message.error(t(p("notConnectableMessage"))); });
 
@@ -182,7 +181,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
         // vnc 应用需要点击连接时 发送connectToApp请求实时刷新密码
         const { host, port, password } = res;
         // vnc应用一定有密码
-        openDesktop(cluster.id, host, port, password ?? "");
+        openDesktop(clusterId, host, port, password ?? "");
       }
     }
   };

@@ -23,7 +23,6 @@ export default {
       runningJobs: "Выполняемые задания",
       allJobs: "Все задания",
       submitJob: "Отправить задание",
-      jobTemplates: "Шаблоны заданий",
     },
     apps: {
       title: "Приложения",
@@ -114,18 +113,6 @@ export default {
       fileSelectModal: {
         title: "Выбор каталога",
         newPath: "Новый каталог",
-      },
-      jobTemplateModal: {
-        clusterLabel: "Кластер",
-        errorMessage: "Шаблон не существует!",
-        changeSuccessMessage: "Успешно изменено!",
-        changTemplateName: "Изменить название шаблона",
-        newTemplateName: "Новое название шаблона",
-        templateName: "Название шаблона",
-        comment: "Комментарий",
-        useTemplate: "Отправить по шаблону",
-        popConfirm: "Вы уверены, что хотите удалить этот шаблон?",
-        deleteSuccessMessage: "Шаблон удалён!",
       },
       runningJobDrawer: {
         cluster: "Кластер",
@@ -676,10 +663,6 @@ export default {
       runningJobs: {
         title: "Выполняемые задания",
         pageTitle: "Мои выполняемые задания",
-      },
-      savedJobs: {
-        title: "Шаблоны заданий",
-        pageTitle: "Мои шаблоны заданий",
       },
       submit: {
         title: "Отправить задание",

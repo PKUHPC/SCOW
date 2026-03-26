@@ -122,17 +122,17 @@ export const mockApi: MockApi<typeof api> = {
     results: [{
       clusterId: "hpc01",
       apps: [
-        { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg" },
-        { id: "emacs", name: "Emacs" },
-        { id: "jupyter", name: "jupyter" },
+        { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: []},
+        { id: "emacs", name: "Emacs", availableAccounts: []},
+        { id: "jupyter", name: "jupyter", availableAccounts: []},
       ],
     }],
   }),
   listAvailableApps: async () => ({
     apps: [
-      { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg" },
-      { id: "emacs", name: "Emacs" },
-      { id: "jupyter", name: "jupyter" },
+      { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: []},
+      { id: "emacs", name: "Emacs", availableAccounts: []},
+      { id: "jupyter", name: "jupyter", availableAccounts: []},
     ],
   }),
 
@@ -167,17 +167,17 @@ export const mockApi: MockApi<typeof api> = {
       {
         jobId: 100, jobName: "123", sessionId: "123", appId: "vscode", appName: "vscode", state: "PENDING",
         reason: "resource",submitTime: new Date().toISOString(), host: "192.168.88.100", port: 1000,
-        dataPath: "/test", timeLimit: "01:00:00", runningTime: "",
+        dataPath: "/test", timeLimit: "01:00:00", runningTime: "", clusterId: "hpc00",
       },
       {
         jobId: 101, jobName: "124", sessionId: "124", appId: "vscode", appName: "vscode", state: "RUNNING",
         submitTime: new Date().toISOString(), dataPath: "/test",
-        timeLimit: "1-01:00:00", runningTime: "01:50",
+        timeLimit: "1-01:00:00", runningTime: "01:50", clusterId: "hpc01",
       },
       {
         jobId: 102, jobName: "125", sessionId: "125", appId: "vscode", appName: "vscode", state: "RUNNING",
         submitTime: new Date().toISOString(), host: "192.168.88.100", port: 10000, dataPath: "/test",
-        timeLimit: "INVALID", runningTime: "01:55",
+        timeLimit: "INVALID", runningTime: "01:55", clusterId: "hpc02",
       },
     ],
   }),
@@ -235,9 +235,6 @@ export const mockApi: MockApi<typeof api> = {
       nodeCount: 4,
       partition: "low",
       qos: "low",
-      output: "job.%j.out",
-      errorOutput: "job.%j.err",
-      workingDirectory: "/nfs/jobs/123",
       maxTimeUnit: TimeUnit.MINUTES,
     },
   }),
@@ -580,7 +577,14 @@ export const mockApi: MockApi<typeof api> = {
     { label: "version2", value: "value2" },
   ]}),
 
+  getAvailableAccountsAndClusters: async () => ({
+    accountClusters:[],
+  }),
+
+  calculateJobPrice: async () => ({
+    accountPrice:0,
+  }),
+
+  saveAsJobTemplate: async () => null,
+
 };
-
-
-

@@ -31,6 +31,7 @@
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/lib-scow-resource": "workspace:*",
     "@scow/lib-scowd": "workspace:*",
+    "@scow/lib-decimal": "workspace:*",
     "@scow/lib-server": "workspace:*",
     "@scow/lib-ssh": "workspace:*",
     "@scow/protos": "workspace:*",

@@ -24,7 +24,6 @@ export default {
       runningJobs: "Laufende Jobs",
       allJobs: "Alle Jobs",
       submitJob: "Job einreichen",
-      jobTemplates: "Jobvorlagen",
     },
     apps: {
       title: "Applikationen",
@@ -115,18 +114,6 @@ export default {
       fileSelectModal: {
         title: "Dateiverzeichnis-Auswahl",
         newPath: "Neues Verzeichnis",
-      },
-      jobTemplateModal: {
-        clusterLabel: "Cluster",
-        errorMessage: "Vorlage existiert nicht",
-        changeSuccessMessage: "Erfolgreich geändert",
-        changTemplateName: "Vorlagenname ändern",
-        newTemplateName: "Neuer Vorlagenname",
-        templateName: "Vorlagenname",
-        comment: "Kommentar",
-        useTemplate: "Mit Vorlage einreichen",
-        popConfirm: "Möchten Sie diese Vorlage löschen?",
-        deleteSuccessMessage: "Vorlage wurde gelöscht",
       },
       runningJobDrawer: {
         cluster: "Cluster",
@@ -677,10 +664,6 @@ export default {
       runningJobs: {
         title: "Laufende Jobs",
         pageTitle: "Meine laufenden Jobs",
-      },
-      savedJobs: {
-        title: "Jobvorlagen",
-        pageTitle: "Meine Jobvorlagen",
       },
       submit: {
         title: "Job einreichen",

@@ -23,7 +23,6 @@ export default {
       runningJobs: "실행/대기 중 작업",
       allJobs: "전체 작업",
       submitJob: "작업 제출",
-      jobTemplates: "작업 템플릿",
     },
     apps: {
       title: "애플리케이션",
@@ -113,18 +112,6 @@ export default {
       fileSelectModal: {
         title: "파일 디렉토리 선택",
         newPath: "새 디렉토리",
-      },
-      jobTemplateModal: {
-        clusterLabel: "클러스터",
-        errorMessage: "템플릿이 존재하지 않습니다",
-        changeSuccessMessage: "수정되었습니다",
-        changTemplateName: "템플릿 이름 변경",
-        newTemplateName: "새 템플릿 이름",
-        templateName: "템플릿 이름",
-        comment: "비고",
-        useTemplate: "템플릿 제출",
-        popConfirm: "이 템플릿을 삭제하시겠습니까?",
-        deleteSuccessMessage: "템플릿이 삭제되었습니다",
       },
       runningJobDrawer: {
         cluster: "클러스터",
@@ -668,10 +655,6 @@ export default {
       runningJobs: {
         title: "실행 중 작업",
         pageTitle: "내 실행 중 작업",
-      },
-      savedJobs: {
-        title: "작업 템플릿",
-        pageTitle: "내 작업 템플릿",
       },
       submit: {
         title: "작업 제출",

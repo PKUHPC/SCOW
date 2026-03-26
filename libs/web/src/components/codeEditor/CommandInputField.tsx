@@ -8,21 +8,27 @@ import { CodeEditor } from "./CodeEditor";
 interface Props {
   defaultCommand?: string;
   placeholder?: string;
+  needResetButton?: boolean;
   resetButtonText?: string;
+  defaultRows?: number;
 }
 
 const defaultPlaceholder =
   "Please enter command";
 const defaultResetButtonText = "Reset";
+const defaultRowsCount = 3;
 
 export const CommandInputField = ({
   defaultCommand,
   placeholder = defaultPlaceholder,
+  needResetButton = false,
   resetButtonText = defaultResetButtonText,
+  defaultRows = defaultRowsCount,
 }: Props) => {
   const formInstance = Form.useFormInstance();
   const commandValue = Form.useWatch("command", formInstance) ?? "";
   const isAtDefault = commandValue === (defaultCommand ?? "");
+  const normalizedDefaultRows = Math.max(1, defaultRows);
 
   const handleChange = (value: string) => {
     formInstance.setFieldsValue({ command: value });
@@ -36,35 +42,41 @@ export const CommandInputField = ({
     <CommandContainer>
       <CommandEditorShell>
         <StyledCodeEditor
+          $defaultRows={normalizedDefaultRows}
           value={commandValue}
           onChange={handleChange}
           placeholder={placeholder}
         />
       </CommandEditorShell>
 
-      <CommandResetButton
-        size="small"
-        onClick={handleReset}
-        disabled={isAtDefault}
-      >
-        {resetButtonText}
-      </CommandResetButton>
+      {
+        needResetButton && (
+          <CommandResetButton
+            size="small"
+            onClick={handleReset}
+            disabled={isAtDefault}
+          >
+            {resetButtonText}
+          </CommandResetButton>
+        )
+      }
+
     </CommandContainer>
   );
 };
 
 const CommandContainer = styled.div`
-  border: 1px solid ${({ theme }) => theme.token.colorBorder};
+  border: 1px solid ${({ theme }) => theme.palette.gray[3]};
   border-radius: 8px;
   background: ${({ theme }) => theme.token.colorBgContainer};
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
-  padding: 16px 0 5px 0;
+  padding: 8px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
 `;
 
-const StyledCodeEditor = styled(CodeEditor)`
+const StyledCodeEditor = styled(CodeEditor)<{ $defaultRows: number }>`
   width: 100%;
   display: block;
   border: none !important;
@@ -76,39 +88,41 @@ const StyledCodeEditor = styled(CodeEditor)`
     box-shadow: none !important;
   }
 
+  .cm-content,
+  .cm-line {
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 300 !important;
+    line-height: 20px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
   .cm-editor.cm-focused {
     outline: none;
   }
 
   .cm-scroller {
     border: none;
-    min-height: calc(3 * 24px);
+    min-height: ${({ $defaultRows }) => `${$defaultRows * 24}px`};
   }
 
-  .cm-placeholder,
+  .cm-placeholder {
+    color:${({ theme }) => theme.palette.gray[6]};
+    font-weight: 300 !important;
+  }
+
   .cm-gutterElement {
-    color:rgba(136, 143, 163, 1)
+    color:${({ theme }) => theme.palette.gray[6]};
+    font-weight: 300 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .cm-gutters {
     background: transparent !important;
     border: none !important;
     color: ${({ theme }) => theme.token.colorTextDescription};
-  }
-
-  .cm-editor .cm-content ::selection,
-  .cm-selectionBackground,
-  .cm-editor.cm-focused .cm-selectionBackground {
-    background: #d6e8ff !important;
-    color: ${({ theme }) => theme.token.colorText} !important;
-  }
-
-  .cm-activeLine {
-    background: #f0f7ff !important;
-  }
-
-  .cm-activeLineGutter {
-    background: #f0f7ff !important;
   }
 `;
 

@@ -438,7 +438,7 @@ export const jobServiceServer = plugin((server) => {
 
     },
 
-    calculateJobOneHourPrice: async ({ request,em }) => {
+    calculateJobPrice: async ({ request,em }) => {
 
       const account = await em.findOne(Account, {
         accountName: request.account,
@@ -453,7 +453,7 @@ export const jobServiceServer = plugin((server) => {
         cluster: request.cluster,
         partition: request.partition,
         qos: request.qos,
-        timeUsed: 3600,
+        timeUsed: request.timeSeconds,
         cpusAlloc: request.cpusAlloc,
         gpu: request.gpu,
         memReq: request.memMb,

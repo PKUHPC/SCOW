@@ -34,28 +34,6 @@ export const createResourceNameValidator = (message?: string) => () => ({
   },
 });
 
-export const createK8sNameValidator = (message?: string) => () => ({
-  validator(_: RuleObject, value: string) {
-    if (!value) {
-      return Promise.resolve();
-    }
-
-
-    // - 如果长度=1：必须是字母或数字
-    // - 如果长度>=2：开头必须是字母，结尾必须是字母或数字，中间允许字母/数字/-
-    const regex = /^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$/;
-
-    if (!regex.test(value)) {
-      return Promise.reject(
-        message ??
-          "必须是1-40个小写字母、数字或'-'，并且以字母开头和结尾必须是字母或数字",
-      );
-    }
-
-    return Promise.resolve();
-  },
-});
-
 export const imageNameValidation = (_: RuleObject, value: any) => {
   // 由字母（小写）、数字、"_"、"-"和"."组成，不能以符号开始或结束， 小于128字符
   if (/^[a-z0-9]([a-z0-9_\-.]{0,126}[a-z0-9])?$/.test(value)) {

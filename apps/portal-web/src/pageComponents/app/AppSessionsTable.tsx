@@ -9,6 +9,7 @@ import { useRouter } from "next/router";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
+import { useStore } from "simstate";
 import { api } from "src/apis";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -16,22 +17,19 @@ import { CancelIcon, EndIcon, EnterDirectoryIcon } from "src/icons/operationIcon
 import { calculateAppRemainingTime, compareState } from "src/models/job";
 import { statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/app/ConnectToAppLink";
-import { Cluster } from "src/utils/cluster";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 
 interface FilterForm {
   appJobName: string | undefined
-}
-
-interface Props {
-  cluster: Cluster;
+  clusterId: string | undefined
 }
 
 const p = prefix("pageComp.app.appSessionTable.");
 
-export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
+export const AppSessionsTable = () => {
 
   const [query, setQuery] = useState<FilterForm>(() => {
-    return { appJobName: undefined };
+    return { appJobName: undefined, clusterId: undefined };
   });
   const [form] = Form.useForm<FilterForm>();
 
@@ -40,6 +38,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
   const { message } = App.useApp();
 
   const router = useRouter();
+  const { currentClusters } = useStore(ClusterInfoStore);
 
   const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
@@ -48,7 +47,8 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
   const { data, isLoading, reload } = useAsync({
     promiseFn: useCallback(async () => {
       // List all desktop
-      const { sessions } = await api.getAppSessions({ query: { cluster: cluster.id } });
+      const clusters = currentClusters.map((cluster) => cluster.id);
+      const { sessions } = await api.getAppSessions({ query: { clusters } });
 
       return sessions.map((x) => ({
         ...x,
@@ -57,7 +57,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
           x.state === "PENDING" ? "" : x.timeLimit,
       }));
 
-    }, [cluster]),
+    }, [currentClusters]),
   });
 
   const filteredData = useMemo(() => {
@@ -68,8 +68,12 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
       filtered = filtered.filter((x) => (x.jobName.toLowerCase().includes(query.appJobName!.toLowerCase())));
     }
 
+    if (query.clusterId) {
+      filtered = filtered.filter((x) => (x.clusterId.toLowerCase().includes(query.clusterId!.toLowerCase())));
+    }
+
     return filtered;
-  }, [data, query.appJobName]);
+  }, [data, query]);
 
 
   const columns: TableColumnsType<NonNullable<typeof data>[number]> = [
@@ -140,7 +144,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
           <Tooltip title={t(p("table.linkToPath"))}>
             <EnterDirectoryIcon
               onClick={() => {
-                router.push(join("/files", cluster.id, record.dataPath));
+                router.push(join("/files", record.clusterId, record.dataPath));
               }}
             />
           </Tooltip>
@@ -149,14 +153,14 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
               <>
                 <ConnectTopAppLink
                   session={record}
-                  cluster={cluster}
+                  clusterId={record.clusterId}
                   refreshToken={connectivityRefreshToken}
                 />
                 <Popconfirm
                   title={t(p("table.popFinishConfirmTitle"))}
                   onConfirm={async () =>
                     api.cancelJob({ query: {
-                      cluster: cluster.id,
+                      cluster: record.clusterId,
                       jobId: record.jobId,
                     } })
                       .then(() => {
@@ -178,7 +182,7 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
                 title={t(p("table.popCancelConfirmTitle"))}
                 onConfirm={async () =>
                   api.cancelJob({ query: {
-                    cluster: cluster.id,
+                    cluster: record.clusterId,
                     jobId: record.jobId,
                   } })
                     .then(() => {
@@ -211,10 +215,13 @@ export const AppSessionsTable: React.FC<Props> = ({ cluster }) => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { appJobName } = await form.validateFields();
-            setQuery({ appJobName: appJobName?.trim() });
+            const { appJobName, clusterId } = await form.validateFields();
+            setQuery({ appJobName: appJobName?.trim(), clusterId: clusterId?.trim() });
           }}
         >
+          <Form.Item label={t(p("filterForm.cluster"))} name="clusterId">
+            <Input style={{ minWidth: "160px" }} />
+          </Form.Item>
           <Form.Item label={t(p("filterForm.appJobName"))} name="appJobName">
             <Input style={{ minWidth: "160px" }} />
           </Form.Item>

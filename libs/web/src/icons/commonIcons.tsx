@@ -2,6 +2,7 @@
 
 import Icon from "@ant-design/icons";
 import React, { LegacyRef } from "react";
+import { useTheme } from "styled-components";
 
 /**
  * 工厂函数：创建一个带默认缩放的 Icon 组件
@@ -35,3 +36,26 @@ const questionMarkSVG = () => (
 
 
 export const QuestionMarkIcon = createIcon(questionMarkSVG);
+
+
+// 下拉框的箭头
+const selectionArrow = () => {
+  const theme = useTheme();
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="22" viewBox="0 0 24 22" fill="none">
+      <path d="M16.8652 7.23438C17.1375 6.92217 17.5784 6.92217 17.8506 7.23438C18.1227 7.54659 18.1228 8.0521 17.8506 8.36426L12.0273 15.0439L6.2041 8.36426C5.93199 8.05212 5.93209 7.54658 6.2041 7.23438C6.47632 6.92217 6.91724 6.92217 7.18945 7.23438L12.0273 12.7822L16.8652 7.23438Z" fill={theme.palette.gray[5]} />
+    </svg>
+  );
+};
+
+export const selectionArrowIcon = createIcon(selectionArrow);
+
+
+const doubleCircle = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="9" cy="9" r="8.5" fill="transparent" stroke="currentColor" />
+    <circle cx="9" cy="9" r="5" fill="currentColor" />
+  </svg>
+);
+
+export const doubleCircleForTableIcon = createIcon(doubleCircle);

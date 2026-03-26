@@ -33,7 +33,6 @@ export const entryNameMap = {
   submitJob:"routes.job.submitJob",
   runningJobs:"routes.job.runningJobs",
   allJobs:"routes.job.allJobs",
-  savedJobs:"routes.job.jobTemplates",
   loginCluster:"routes.loginCluster",
 } as const;
 

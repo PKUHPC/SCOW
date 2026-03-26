@@ -1,5 +1,9 @@
 import { Loaded } from "@mikro-orm/core";
-import { PartitionNames } from "@scow/scow-resource-protos/build/partition";
+import {
+  AccountsAssignedClustersAndPartitions,
+  ClusterPartition,
+  PartitionNames,
+} from "@scow/scow-resource-protos/build/partition";
 import { AccountClusterRule } from "src/server/entities/AccountClusterRule";
 import { AccountPartitionRule } from "src/server/entities/AccountPartitionRule";
 import { TenantClusterRule } from "src/server/entities/TenantClusterRule";
@@ -145,12 +149,16 @@ export async function getAccountsAssignedPartitionsInCluster(
  */
 export async function getAccountsAssignedClusterPartitions(
   accountNames: string[], tenantName: string, currentClusterPartitions: Record<string, string[]>):
-  Promise<Record<string, PartitionNames>> {
+  Promise<AccountsAssignedClustersAndPartitions[]> {
 
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return {
-      "hpc01": { partitionNames: ["compute1", "compute2"]},
-    };
+    return accountNames.map((accountName) => ({
+      account: accountName,
+      clusterPartitions: [{
+        cluster: "hpc01",
+        partitionName: ["compute1", "compute2"],
+      }],
+    }));
   }
 
   const currentClusterIds = Object.keys(currentClusterPartitions);
@@ -171,7 +179,7 @@ export async function getAccountsAssignedClusterPartitions(
   });
   const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundPartitions);
 
-  const results = mapToClusterPartitions(foundClusters, filteredPartitionsResult);
+  const results = mapToAccountClusterPartitions(accountNames, foundClusters, filteredPartitionsResult);
 
   return results;
 }
@@ -322,6 +330,63 @@ function mapToClusterPartitions(
   });
 
   return results;
+}
+
+function mapToAccountClusterPartitions(
+  accountNames: string[],
+  clustersInfo: Loaded<AccountClusterRule>[],
+  partitionsInfo: Loaded<AccountPartitionRule>[],
+): AccountsAssignedClustersAndPartitions[] {
+
+  const results: Record<string, AccountsAssignedClustersAndPartitions> = {};
+  const clusterMap: Record<string, Record<string, ClusterPartition>> = {};
+  const partitionSets: Record<string, Record<string, Set<string>>> = {};
+
+  accountNames.forEach((accountName) => {
+    results[accountName] = { account: accountName, clusterPartitions: []};
+    clusterMap[accountName] = {};
+    partitionSets[accountName] = {};
+  });
+
+  // 按账户-集群初始化
+  clustersInfo.forEach((cluster) => {
+    if (!results[cluster.accountName]) {
+      results[cluster.accountName] = { account: cluster.accountName, clusterPartitions: []};
+    }
+    if (!clusterMap[cluster.accountName]) {
+      clusterMap[cluster.accountName] = {};
+    }
+    if (!partitionSets[cluster.accountName]) {
+      partitionSets[cluster.accountName] = {};
+    }
+    if (clusterMap[cluster.accountName][cluster.clusterId]) {
+      return;
+    }
+    const clusterPartition: ClusterPartition = {
+      cluster: cluster.clusterId,
+      partitionName: [],
+    };
+    results[cluster.accountName].clusterPartitions.push(clusterPartition);
+    clusterMap[cluster.accountName][cluster.clusterId] = clusterPartition;
+    partitionSets[cluster.accountName][cluster.clusterId] = new Set();
+  });
+
+  // 填充分区
+  partitionsInfo.forEach((partition) => {
+    const clusterResult = clusterMap[partition.accountName]?.[partition.clusterId];
+    const partitionSet = partitionSets[partition.accountName]?.[partition.clusterId];
+
+    if (!clusterResult || !partitionSet) {
+      return;
+    }
+
+    if (!partitionSet.has(partition.partition)) {
+      partitionSet.add(partition.partition);
+      clusterResult.partitionName.push(partition.partition);
+    }
+  });
+
+  return Object.values(results);
 }
 
 

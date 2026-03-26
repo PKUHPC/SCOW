@@ -38,11 +38,11 @@ export const DualTitleCard = ({
 
 // 带主副标题的卡片，由两个antd 的Card组成
 export const PaddedCard = styled(Card)`
-  border: 1px solid #F0F0F0;
+  border: 1px solid ${({ theme }) => theme.palette.gray[3]};
   border-radius: 8px;
 
   .ant-card-head {
-    padding: 16px 36px !important;
+    padding: 24px !important;
   }
 
   .ant-card-body {
@@ -69,8 +69,8 @@ export const HeaderAvatar = styled(Avatar)`
 `;
 
 export const HeaderTitle = styled.span`
-  font-size: 20px;
-  line-height: 22px;
+  font-size: 16px;
+  line-height: 24px;
 `;
 
 export const BorderlessCard = styled(Card)`
@@ -78,12 +78,12 @@ export const BorderlessCard = styled(Card)`
 
   .ant-card-head {
     min-height: 0 !important;
-    padding: 0 12px !important;
+    padding: 0 !important;
     border: none !important;
   }
 
   .ant-card-body {
-    padding: 26px 12px 0 12px !important;
+    padding: 26px 0 0 0 !important;
   }
 `;
 

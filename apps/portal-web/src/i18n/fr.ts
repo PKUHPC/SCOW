@@ -23,7 +23,6 @@ export default {
       runningJobs: "Jobs en cours",
       allJobs: "Tous les jobs",
       submitJob: "Soumettre un job",
-      jobTemplates: "Modèles de job",
     },
     apps: {
       title: "Applications",
@@ -114,18 +113,6 @@ export default {
       fileSelectModal: {
         title: "Sélection du répertoire de fichiers",
         newPath: "Nouveau répertoire",
-      },
-      jobTemplateModal: {
-        clusterLabel: "Cluster",
-        errorMessage: "Le modèle n'existe pas",
-        changeSuccessMessage: "Modifié avec succès",
-        changTemplateName: "Changer le nom du modèle",
-        newTemplateName: "Nouveau nom du modèle",
-        templateName: "Nom du modèle",
-        comment: "Commentaire",
-        useTemplate: "Soumettre le modèle",
-        popConfirm: "Confirmer la suppression de ce modèle ?",
-        deleteSuccessMessage: "Modèle supprimé",
       },
       runningJobDrawer: {
         cluster: "Cluster",
@@ -678,10 +665,6 @@ export default {
       runningJobs: {
         title: "Jobs en cours",
         pageTitle: "Mes jobs en cours",
-      },
-      savedJobs: {
-        title: "Modèles de job",
-        pageTitle: "Mes modèles de job",
       },
       submit: {
         title: "Soumettre un job",

@@ -1,12 +1,15 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
+import { numberToMoney } from "@scow/lib-decimal";
 import { jobInfoToPortalJobInfo, jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
 import { getClusterAssignedAccounts } from "@scow/lib-scow-resource";
 import { libGetAccounts, libGetUserInfo } from "@scow/lib-server";
+import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { AccountStatusFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/portal/job";
 import { getClusterOps } from "src/clusterops";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
+import { filterAccountsByStatus } from "src/utils/app";
 import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode } from "src/utils/ssh";
@@ -90,58 +93,9 @@ export const jobServiceServer = plugin((server) => {
         return [{ accounts: accounts }];
       }
 
-      const filteredUnblockedAccounts: string[] = [];
-      const filteredBlockedAccounts: string[] = [];
-      const filteredUnblockedUserAccounts: string[] = [];
-      const filteredBlockedUserAccounts: string[] = [];
+      const filterAccounts = await filterAccountsByStatus(cluster, userId, accounts, statusFilter, logger);
 
-      const filterAccountPromise = Promise.allSettled(accounts.map(async (account) => {
-        try {
-          const resp = await callOnOne(
-            cluster,
-            logger,
-            // 当没有特殊指定时，为查询所有分区下的状态
-            async (client) => await asyncClientCall(client.account, "queryAccountBlockStatus", {
-              accountName: account,
-            }),
-          );
-          if (resp.blocked) {
-            filteredBlockedAccounts.push(account);
-          } else {
-            filteredUnblockedAccounts.push(account);
-          }
-        } catch (error) {
-          logger.error(`Error occured when query the block status of ${account}.`, error);
-        }
-      }));
-
-      const filterUserStatusPromise = Promise.allSettled(accounts.map(async (account) => {
-        try {
-          const resp = await callOnOne(
-            cluster,
-            logger,
-            async (client) => await asyncClientCall(client.user, "queryUserInAccountBlockStatus", {
-              accountName: account, userId,
-            }),
-          );
-          if (resp.blocked) {
-            filteredBlockedUserAccounts.push(account);
-          } else {
-            filteredUnblockedUserAccounts.push(account);
-          }
-        } catch (error) {
-          logger.error(`Error occured when query the block status of ${userId} in ${account}.`, error);
-        }
-      }));
-
-      await Promise.allSettled([filterAccountPromise, filterUserStatusPromise]);
-
-      const unblockAccounts =
-        filteredUnblockedAccounts.filter((account) => filteredUnblockedUserAccounts.includes(account));
-      const blockedAccounts = Array.from(new Set(filteredBlockedAccounts.concat(filteredBlockedUserAccounts)));
-
-      return [{ accounts:
-        statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedAccounts : unblockAccounts }];
+      return [{ accounts: filterAccounts }];
     },
 
     getJobTemplate: async ({ request, logger }) => {
@@ -173,7 +127,26 @@ export const jobServiceServer = plugin((server) => {
         userId,
       }, logger);
 
-      return [{ results: reply.results.map((x) => ({ ...x, submitTime: x.submitTime?.toISOString() })) }];
+      const results = reply.results.map((x) => {
+        if (!x.submitTime) {
+          return { ...x, submitTime: undefined };
+        }
+
+        const submitTimestamp = x.submitTime.getTime();
+        if (Number.isNaN(submitTimestamp)) {
+          logger.warn(
+            "Invalid submitTime in job template. cluster=%s, templateId=%s, submitTime=%o",
+            cluster,
+            x.id,
+            x.submitTime,
+          );
+          return { ...x, submitTime: undefined };
+        }
+
+        return { ...x, submitTime: new Date(submitTimestamp).toISOString() };
+      });
+
+      return [{ results }];
 
     },
 
@@ -293,6 +266,43 @@ export const jobServiceServer = plugin((server) => {
       const { jobId } = await clusterOps.job.submitFileAsJob({ ...request }, logger);
 
       return [{ jobId }];
+    },
+
+    calculateJobPrice: async ({ request, logger }) => {
+      if (!config.MIS_DEPLOYED) {
+        return [{ accountPrice: numberToMoney(0) }];
+      }
+
+      try {
+        const { accountName, ...restRequest } = request;
+        const price = await libCalculateJobPrice(
+          logger,
+          {
+            ...restRequest,
+            account: accountName,
+          },
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+
+        return [{ accountPrice: price.accountPrice ?? numberToMoney(0) }];
+      } catch (error) {
+        logger.error("calculate job price failed : %o", error);
+        return [{ accountPrice: numberToMoney(0) }];
+      }
+    },
+
+    saveAsJobTemplate: async ({ request, logger }) => {
+      const { cluster } = request;
+      await checkActivatedClusters({ clusterIds: cluster });
+
+      const clusterops = getClusterOps(cluster);
+
+      if (!clusterops) { throw clusterNotFound(cluster); }
+
+      await clusterops.job.saveAsJobTemplate(request, logger);
+
+      return [{}];
     },
 
   });

@@ -1,7 +1,7 @@
+import { createK8sNameValidator } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { createK8sNameValidator } from "src/utils/form";
 
 import { Label, RoundedInput } from "../LaunchDevForm.styles";
 import type { BaseFormValues } from "../LaunchDevForm.types";

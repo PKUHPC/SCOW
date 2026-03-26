@@ -116,7 +116,7 @@ export const AppSessionsTable: React.FC<Props> = ({ isDashboard }) => {
 
   const callbackPath = `/${pathSegments.join("/")}`;
 
-  const appCreateUrl = `apps/${cluster}/create/${appId}?callbackPath=${encodeURIComponent(callbackPath)}`;
+  const appCreateUrl = `apps/createApps?appId=${appId}&callbackPath=${encodeURIComponent(callbackPath)}`;
 
   const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
     onError: (e) => {

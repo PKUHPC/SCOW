@@ -174,7 +174,7 @@ message GetMissingDefaultPriceItemsResponse {
   repeated string items = 1;
 }
 
-message CalculateJobOneHourPriceRequest {
+message CalculateJobPriceRequest {
   string cluster = 1;
   string partition = 2;
   string qos = 3;
@@ -182,9 +182,10 @@ message CalculateJobOneHourPriceRequest {
   uint32 cpus_alloc = 5;
   uint32 gpu = 6;
   uint32 mem_mb = 7;
+  uint32 time_seconds = 8;
 }
 
-message CalculateJobOneHourPriceResponse {
+message CalculateJobPriceResponse {
   optional common.Money tenant_price = 1;
   optional common.Money account_price = 2;
 }
@@ -307,7 +308,7 @@ service JobService {
 
   rpc GetMissingDefaultPriceItems(GetMissingDefaultPriceItemsRequest) returns (GetMissingDefaultPriceItemsResponse);
 
-  rpc CalculateJobOneHourPrice(CalculateJobOneHourPriceRequest) returns (CalculateJobOneHourPriceResponse);
+  rpc CalculateJobPrice(CalculateJobPriceRequest) returns (CalculateJobPriceResponse);
 
   rpc GetTopSubmitJobUsers(GetTopSubmitJobUsersRequest) returns (GetTopSubmitJobUsersResponse);
 

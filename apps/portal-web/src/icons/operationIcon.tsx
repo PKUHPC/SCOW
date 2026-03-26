@@ -17,7 +17,7 @@ export const IconContainer = styled.div`
   cursor: pointer;
   color: ${({ theme }) => theme.token.colorPrimary };
   &:hover {
-    background: ${({ theme }) => theme.palette?.primary?.[0] ?? "#B6000314"};
+    background: ${({ theme }) => theme.palette.primary[0] ?? "#B6000314"};
   };
 `;
 

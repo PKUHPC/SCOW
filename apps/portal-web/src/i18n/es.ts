@@ -23,7 +23,6 @@ export default {
       runningJobs: "Trabajos en ejecución",
       allJobs: "Todos los trabajos",
       submitJob: "Enviar trabajo",
-      jobTemplates: "Plantillas de trabajo",
     },
     apps: {
       title: "Aplicaciones",
@@ -114,18 +113,6 @@ export default {
       fileSelectModal: {
         title: "Selección de directorio",
         newPath: "Nuevo directorio",
-      },
-      jobTemplateModal: {
-        clusterLabel: "Cluster",
-        errorMessage: "La plantilla no existe",
-        changeSuccessMessage: "Modificado correctamente",
-        changTemplateName: "Cambiar nombre de plantilla",
-        newTemplateName: "Nuevo nombre de plantilla",
-        templateName: "Nombre de plantilla",
-        comment: "Comentario",
-        useTemplate: "Enviar con plantilla",
-        popConfirm: "¿Confirmas que quieres eliminar esta plantilla?",
-        deleteSuccessMessage: "Plantilla eliminada",
       },
       runningJobDrawer: {
         cluster: "Cluster",
@@ -442,6 +429,7 @@ export default {
         },
         filterForm: {
           appJobName: "Nombre del trabajo",
+          cluster: "cluster",
           onlyNotEnded: "Mostrar solo trabajos en ejecución",
         },
       },
@@ -675,10 +663,6 @@ export default {
       runningJobs: {
         title: "Trabajos en ejecución",
         pageTitle: "Mis trabajos en ejecución",
-      },
-      savedJobs: {
-        title: "Plantillas de trabajo",
-        pageTitle: "Mis plantillas de trabajo",
       },
       submit: {
         title: "Enviar trabajo",

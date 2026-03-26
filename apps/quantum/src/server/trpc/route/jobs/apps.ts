@@ -67,7 +67,7 @@ export const listAppSessions =
       const client = getPortalClient(AppServiceClient);
 
       const jobsInfo = await asyncUnaryCall(client, "listAppSessions", {
-        cluster, userId,
+        clusters: [cluster], userId,
       }).then((reply) => {
         return reply.sessions;
       }).catch((e) => {

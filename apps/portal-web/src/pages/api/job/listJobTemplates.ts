@@ -24,6 +24,7 @@ export const JobTemplateInfo = Type.Object({
   jobName: Type.String(),
   submitTime: Type.Optional(Type.String()),
   comment: Type.Optional(Type.String()),
+  cluster: Type.Optional(Type.String()),
 });
 
 export type JobTemplateInfo = Static<typeof JobTemplateInfo>;
@@ -32,7 +33,7 @@ export const ListJobTemplatesSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-    cluster: Type.String(),
+    clusters: Type.Union([Type.String(), Type.Array(Type.String())]),
   }),
 
   responses: {
@@ -56,12 +57,38 @@ export default route(ListJobTemplatesSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { cluster } = req.query;
+  const { clusters } = req.query;
+  const clusterIds = Array.from(new Set(Array.isArray(clusters) ? clusters : [clusters]));
 
   const client = getClient(JobServiceClient);
 
-  return asyncUnaryCall(client, "listJobTemplates", {
-    userId: info.identityId, cluster,
-  }).then(({ results }) => ({ 200: { results } }));
+  const settledReplies = await Promise.allSettled(
+    clusterIds.map(async (cluster) => {
+      const { results } = await asyncUnaryCall(client, "listJobTemplates", {
+        userId: info.identityId,
+        cluster,
+      });
+      // 当后端模板记录没有cluster字段时，回填当前查询集群，便于前端多集群场景区分
+      return results.map((item) => ({ ...item, cluster: item.cluster ?? cluster }));
+    }),
+  );
+
+  const mergedResults = settledReplies.flatMap((item) => (
+    item.status === "fulfilled" ? item.value : []
+  ));
+
+  const failedClusters = settledReplies
+    .map((item, index) => (item.status === "rejected" ? clusterIds[index] : undefined))
+    .filter((cluster): cluster is string => cluster !== undefined);
+
+  if (failedClusters.length > 0) {
+    console.warn(
+      "[listJobTemplates] failed clusters: %s, failed count: %d",
+      failedClusters.join(","),
+      failedClusters.length,
+    );
+  }
+
+  return { 200: { results: mergedResults } };
 
 });

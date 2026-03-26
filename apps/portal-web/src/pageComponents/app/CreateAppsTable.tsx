@@ -1,14 +1,17 @@
 import { PictureOutlined } from "@ant-design/icons";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { Avatar, Button, Card, Col, Form, message, Row, Space, Spin, Tooltip } from "antd";
-import Link from "next/link";
+import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
+import { RoundedSearch } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { Avatar, Card, Col, Form, Input, Row, Space, Spin, Tooltip } from "antd";
 import { join } from "path";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAsync } from "react-async";
-import { api } from "src/apis";
-import { prefix, useI18nTranslateToString } from "src/i18n";
+import { useEffect, useMemo, useState } from "react";
+import { useStore } from "simstate";
+import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
+import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { publicConfig } from "src/utils/config";
 import { styled } from "styled-components";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+
+interface App { id: string; name: string; logoPath?: string; };
 
 const CardContainer = styled.div`
   flex: 1;
@@ -19,6 +22,8 @@ const CardContainer = styled.div`
 const AvatarContainer = styled.div`
   display: flex;
   justify-content: center;
+  cursor: pointer;
+  text-decoration: underline;
 `;
 
 const NameContainer = styled.div`
@@ -27,6 +32,24 @@ const NameContainer = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  color: ${(props) => props.theme.token.colorPrimary};
+`;
+
+const SearchContainer = styled(Space)`
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    background: ${({ theme }) => theme.token.colorBgContainer};
+    border-radius: 12px;
+    padding: 12px 10px 12px 20px;
+`;
+
+const AppListContainer = styled.div`
+    background: ${({ theme }) => theme.token.colorBgContainer};
+    padding: 20px 30px 10px;
+    border-radius: 8px;
+    min-height: calc(100vh - 236px);
 `;
 
 interface FilterForm {
@@ -34,33 +57,30 @@ interface FilterForm {
 }
 
 interface Props {
-  clusterId: string;
+  allApps: App[];
+  isLoading: boolean;
+  selectedCluster: string | undefined;
+  setSelectedCluster: (value: string | undefined) => void;
+  setSelectedAppInfo: (value: App) => void;
 }
 
 type ImageErrorMap = Record<string, boolean>;
 
 const p = prefix("pageComp.app.createApps.");
 
-export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
+export const CreateAppsTable: React.FC<Props> = ({ allApps, isLoading,
+  selectedCluster, setSelectedCluster, setSelectedAppInfo }) => {
 
   const t = useI18nTranslateToString();
+  const languageId = useI18n().currentLanguage.id;
 
   const [filterForm] = Form.useForm<FilterForm>();
   const initialFilterQuery = {
     appName: undefined,
   };
-  const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
+  const { currentClusters } = useStore(ClusterInfoStore);
 
-  const { data, isLoading } = useAsync({ promiseFn: useCallback(async () => {
-    return await api.listAvailableApps({ query: { cluster: clusterId } })
-      .httpError(500, (e) => {
-        if (e.code === "APP_CONFIG_ERROR") {
-          message.error(e.error);
-        } else {
-          throw e;
-        }
-      });
-  }, [clusterId]) });
+  const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
 
   const [imageErrorMap, setImageErrorMap] = useState<ImageErrorMap>({});
 
@@ -71,52 +91,91 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
 
-    if (!data) return undefined;
+    if (!allApps) return [];
     if (!query.appName) {
-      return data;
+      return allApps;
     }
-    const filteredValues = data.apps
+    const filteredValues = allApps
       .filter((app) => app.name.toLowerCase().includes(query.appName?.toLowerCase() || ""));
-    return { apps: filteredValues };
+    return filteredValues;
 
-  }, [data, query]);
+  }, [allApps, query]);
 
   useEffect(() => {
     filterForm.resetFields();
     setQuery(initialFilterQuery);
-  }, [clusterId, filterForm]);
+  }, [selectedCluster, filterForm]);
 
   return (
     <Spin spinning={isLoading} tip={isLoading ? t(p("loading")) : ""} style={{ marginTop: "150px" }}>
-      <Space style={{ marginBottom: "20px", display: "flex", justifyContent: "flex-end" }}>
+      <SearchContainer>
+        <Space wrap>
+          <span style={{ marginRight: "8px" }}>{t(p("cluster"))}</span>
+          <RoundedButton
+            size="middle"
+            type={selectedCluster === undefined ? "primary" : "default"}
+            $selected={!selectedCluster}
+            onClick={() => {
+              setSelectedCluster(undefined);
+            }}
+          >
+            {t(p("all"))}
+          </RoundedButton>
+          {currentClusters.map((cluster) => {
+            const button = (
+              <RoundedButton
+                size="middle"
+                key={cluster.id}
+                type={selectedCluster === cluster.id ? "primary" : "default"}
+                $selected={selectedCluster === cluster.id}
+                onClick={() => {
+                  setSelectedCluster(cluster.id);
+                }}
+              >
+                {getI18nConfigCurrentText(cluster.name, languageId)}
+              </RoundedButton>
+            );
+
+            return (
+              <Tooltip
+                key={cluster.id}
+                arrow={false}
+                align={{ offset: [0, -12]}}
+              >
+                <span>{button}</span>
+              </Tooltip>
+            );
+          })}
+        </Space>
         <Form<FilterForm>
           layout="inline"
           form={filterForm}
           initialValues={initialFilterQuery}
-          onFinish={async () => {
-            const { appName } = await filterForm.validateFields();
-            setQuery({ appName: appName === "" ? undefined : appName?.trim() });
-          }}
         >
           <Form.Item name="appName">
-            <Input allowClear placeholder={t(p("searchPlaceholder"))} />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              {t("button.searchButton")}
-            </Button>
+            <RoundedSearch
+              placeholder={t(p("searchPlaceholder"))}
+              onSearch={
+                async () => {
+                  const { appName } = await filterForm.validateFields();
+                  setQuery({ appName: appName === "" ? undefined : appName?.trim() });
+                }
+              }
+              size="large"
+              enterButton
+            />
           </Form.Item>
         </Form>
-      </Space>
-      <>
-        {!isLoading && filteredData?.apps.length === 0 ? (
+      </SearchContainer>
+      <AppListContainer>
+        {!isLoading && filteredData?.length === 0 ? (
           <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
             {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("notFoundMessage"))}
           </div>
         ) : (
           <CardContainer>
             <Row gutter={16} style={{ flex: 1, width: "100%" }}>
-              {filteredData?.apps.map((app) => (
+              {filteredData?.map((app) => (
                 <Col xs={24} sm={12} md={8} lg={6} xl={4} xxl={4} key={app.id} style={{ marginBottom: "16px" }}>
                   <Card
                     styles={{
@@ -124,7 +183,7 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
                     }}
                   >
                     <Tooltip title={`${t(p("create"))}${app.name}`} placement="bottom">
-                      <Link href={`/apps/${clusterId}/create/${app.id}`}>
+                      <div onClick={() => { setSelectedAppInfo(app); }}>
                         <AvatarContainer>
                           {
                             (app.logoPath && imageErrorMap[app.id] !== true) ? (
@@ -155,7 +214,7 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
                           }
                         </AvatarContainer>
                         <NameContainer>{app.name}</NameContainer>
-                      </Link>
+                      </div>
                     </Tooltip>
                   </Card>
                 </Col>
@@ -163,7 +222,7 @@ export const CreateAppsTable: React.FC<Props> = ({ clusterId }) => {
             </Row>
           </CardContainer>
         )}
-      </>
+      </AppListContainer>
     </Spin>
   );
 };

@@ -1,7 +1,7 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
-import { libCalculateJobOneHourPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
+import { libCalculateJobPrice } from "@scow/lib-server/build/misCommon/calculatePrice";
 import { TRPCError } from "@trpc/server";
 import type { ServerResponse } from "http";
 import { aiConfig } from "src/server/config/ai";
@@ -583,15 +583,16 @@ const calculateJobPriceSchema = z.object({
   cpusAlloc: z.number(),
   gpu: z.number(),
   memMb: z.number(),
+  timeSeconds: z.number().int().positive(),
 });
 
-export const calculateJobOneHourPrice = procedure
+export const calculateJobPrice = procedure
   .meta({
     openapi: {
       method: "GET",
-      path: "/jobs/calculateJobOneHourPrice",
+      path: "/jobs/calculateJobPrice",
       tags: ["job"],
-      summary: "Calculate Job OneHour Price",
+      summary: "Calculate Job Price",
     },
   })
   .input(calculateJobPriceSchema)
@@ -599,7 +600,7 @@ export const calculateJobOneHourPrice = procedure
   .query(async ({ input }) => {
 
     try {
-      const price = await libCalculateJobOneHourPrice(
+      const price = await libCalculateJobPrice(
         logger,
         input,
         config.MIS_SERVER_URL,
@@ -608,7 +609,7 @@ export const calculateJobOneHourPrice = procedure
 
       return price.accountPrice ? moneyToNumber(price.accountPrice) : 0;
     } catch (error) {
-      logger.error("calculate job one hour price failed : %o",error);
+      logger.error("calculate job price failed : %o",error);
 
       return 0;
     }

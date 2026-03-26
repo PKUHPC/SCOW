@@ -13,6 +13,7 @@ export const App = Type.Object({
   id: Type.String(),
   name: Type.String(),
   logoPath: Type.Optional(Type.String()),
+  availableAccounts: Type.Array(Type.String()),
 });
 export type App = Static<typeof App>;
 

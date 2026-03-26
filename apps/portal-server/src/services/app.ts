@@ -1,8 +1,10 @@
+import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
-import { getI18nSeverTypeFormat, libGetUserAvailableClusterApps } from "@scow/lib-server";
+import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
+import { getI18nSeverTypeFormat, libGetAccounts, libGetUserAvailableClusterApps, libGetUserInfo } from "@scow/lib-server";
 import {
   AppCustomAttribute,
   AppCustomAttribute_AttributeType,
@@ -16,13 +18,16 @@ import {
   GetAppMetadataResponse_ReservedConfigType,
   WebAppProps_ProxyType,
 } from "@scow/protos/build/portal/app";
+import { AppSession } from "@scow/protos/build/portal/app";
+import { AccountStatusFilter } from "@scow/protos/build/portal/job";
 import { DetailedError, encodeMessage, ErrorInfo } from "@scow/rich-error-model";
 import { camelToSnakeCase } from "@scow/utils";
 import { getClusterOps } from "src/clusterops";
 import { commonConfig } from "src/config/common";
 import { config } from "src/config/env";
 import { convertAttributesFixedValue, convertToOneOfValue, getClusterAppConfigs } from "src/utils/app";
-import { checkActivatedClusters } from "src/utils/clusters";
+import { filterAccountsByStatus } from "src/utils/app";
+import { callOnOne, checkActivatedClusters } from "src/utils/clusters";
 import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
@@ -213,16 +218,53 @@ export const appServiceServer = plugin((server) => {
 
     listAppSessions: async ({ request, logger }) => {
 
-      const { cluster, userId } = request;
-      await checkActivatedClusters({ clusterIds: cluster });
+      const { cluster, clusters, userId } = request;
+      const targetClusters = (() => {
+        if (clusters && Array.isArray(clusters) && clusters.length > 0) {
+          return clusters;
+        } else if (cluster) {
+          return [cluster];
+        } else {
+          throw {
+            code: Status.INVALID_ARGUMENT,
+            message: "the cluster cannot be empty",
+          } as ServiceError;
+        }
+      })();
 
-      const clusterops = getClusterOps(cluster);
+      await checkActivatedClusters({ clusterIds: targetClusters });
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      const allSessions: AppSession[] = [];
 
-      const reply = await clusterops.app.listAppSessions({ userId }, logger);
+      const queryPromises = targetClusters.map(async (clusterId) => {
+        const clusterops = getClusterOps(clusterId);
 
-      return [{ sessions: reply.sessions.map((x) => ({ ...x, submitTime: x.submitTime?.toISOString() })) }];
+        if (!clusterops) {
+          logger.warn(`cluster ${clusterId} not found`);
+          return [];
+        }
+
+        try {
+          const reply = await clusterops.app.listAppSessions({ userId }, logger);
+
+          return reply.sessions.map((session) => ({
+            ...session,
+            submitTime: session.submitTime?.toISOString(),
+            clusterId: clusterId,
+          }));
+        } catch (error) {
+          logger.error(`find cluster ${clusterId} session failed:`, error);
+          return [];
+        }
+      });
+
+      const results = await Promise.all(queryPromises);
+
+      results.forEach((clusterSessions) => {
+        allSessions.push(...clusterSessions);
+      });
+
+      return [{ sessions: allSessions }];
     },
 
     getAppMetadata: async ({ request }) => {
@@ -334,18 +376,67 @@ export const appServiceServer = plugin((server) => {
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
+      // 先计算 配置了 resource 的集群分区过滤结果
+      let resourceFilteredAccountSet: Set<string> | undefined;
+      if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled && userId) {
+        const [userInfo, { accounts }] = await Promise.all([
+          libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token),
+          libGetAccounts(logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
+            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token),
+        ]);
+        const assignedClusterPartitionsByAccount = await getUserAccountsClusterPartitionsByAccount(
+          commonConfig.scowResource, accounts, userInfo.tenantName,
+        );
+        resourceFilteredAccountSet = new Set(
+          accounts.filter((account) => {
+            const partitions = assignedClusterPartitionsByAccount[account]?.[cluster];
+            return partitions && partitions.length > 0;
+          }),
+        );
+      }
+
+      const applyResourceFilter = (accountList: string[]) =>
+        resourceFilteredAccountSet
+          ? accountList.filter((a) => resourceFilteredAccountSet!.has(a))
+          : accountList;
+
       // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
       if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
         const availableApps = await libGetUserAvailableClusterApps(
           logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-        return [ availableApps ];
+        return [{
+          apps: availableApps.apps.map((app) => ({
+            ...app,
+            availableAccounts: applyResourceFilter(app.availableAccounts ?? []),
+          })),
+        }];
       }
 
       const apps = getClusterAppConfigs(cluster);
+      let accountsResult: string[] = [];
+
+      if (config.MIS_DEPLOYED && userId) {
+        // 开启resource 已预先获取并过滤了账户，直接复用；否则单独请求 MIS
+        accountsResult = resourceFilteredAccountSet
+          ? Array.from(resourceFilteredAccountSet)
+          : (await libGetAccounts(logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
+            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)).accounts;
+      } else if (!config.MIS_DEPLOYED && userId) {
+        const reply = await callOnOne(
+          cluster,
+          logger,
+          async (client) => await asyncClientCall(client.account, "listAccounts", {
+            userId,
+          }),
+        );
+        accountsResult = await filterAccountsByStatus(cluster, userId, reply.accounts,
+          AccountStatusFilter.UNBLOCKED_ONLY, logger);
+      }
 
       return [{
         apps: Object.keys(apps)
-          .map((x) => ({ id: x, name: apps[x].name, logoPath: apps[x].logoPath })) }];
+          .map((x) => ({ id: x, name: apps[x].name, logoPath:
+            apps[x].logoPath, availableAccounts: accountsResult })) }];
     },
 
     getAppLastSubmission: async ({ request, logger }) => {

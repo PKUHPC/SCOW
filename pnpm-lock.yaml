@@ -1212,6 +1212,9 @@ importers:
       '@scow/lib-config':
         specifier: workspace:*
         version: link:../../libs/libconfig
+      '@scow/lib-decimal':
+        specifier: workspace:*
+        version: link:../../libs/decimal
       '@scow/lib-scheduler-adapter':
         specifier: workspace:*
         version: link:../../libs/scheduler-adapter

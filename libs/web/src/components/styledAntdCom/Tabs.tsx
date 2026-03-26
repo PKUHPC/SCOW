@@ -23,16 +23,8 @@ export const StyledTabs = styled(TabsWrapper)`
   }
 
   .ant-tabs-content-holder {
-    max-height: 340px;
-    overflow-y: auto;
-  }
-
-  .ant-tabs-content {
-    height: 100%;
-  }
-
-  .ant-tabs-tabpane {
-    height: 100%;
+    max-height: none;
+    overflow: visible;
   }
 
   .ant-table-thead {
@@ -46,7 +38,7 @@ export const StyledTabs = styled(TabsWrapper)`
   .ant-tabs-tab {
     padding: 12px 0;
     margin: 0;
-    color: rgba(136, 143, 163, 1) !important;
+    color: ${({ theme }) => theme.palette.gray[6]} !important;
     font-size: 15px;
   }
 

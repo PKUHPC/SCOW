@@ -86,7 +86,8 @@ message CreateAppSessionResponse {
 
 message ListAppSessionsRequest {
   string user_id = 1;
-  string cluster = 2;
+  optional string cluster = 2;
+  repeated string clusters = 3;
 }
 
 message AppSession {
@@ -112,6 +113,7 @@ message AppSession {
   optional string app_type = 15;
   string job_name = 16;
   optional string connect_path = 17;
+  string cluster_id = 18;
 }
 
 message ListAppSessionsResponse {
@@ -235,6 +237,7 @@ message App {
   string id = 1;
   string name = 2;
   optional string logo_path = 3;
+  repeated string available_accounts = 4;
 }
 
 message ListAvailableAppsResponse {
@@ -278,7 +281,6 @@ message RunScriptRequest {
 message RunScriptResponse {
   string output = 1;
 }
-
 
 service AppService {
   rpc ConnectToApp(ConnectToAppRequest) returns (ConnectToAppResponse);

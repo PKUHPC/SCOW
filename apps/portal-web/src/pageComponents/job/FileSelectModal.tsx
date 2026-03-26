@@ -11,6 +11,7 @@
  */
 
 import { DatabaseOutlined, FolderAddOutlined } from "@ant-design/icons";
+import { RoundedSmallButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { Button, Modal } from "antd";
 import Link from "next/link";
 import { join } from "path";
@@ -126,11 +127,13 @@ export const FileSelectModal: React.FC<Props> = ({ cluster, onSubmit }) => {
 
   return (
     <>
-      <Button
-        size="small"
+      <RoundedSmallButton
         loading={isGettingHomeDirectoryLoading}
+        autoInsertSpace={false}
         onClick={() => { setVisible(true); }}
-      >{t("button.selectButton")}</Button>
+      >
+        {t("button.selectButton")}
+      </RoundedSmallButton>
       <Modal
         width={600}
         open={visible}

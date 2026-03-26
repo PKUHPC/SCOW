@@ -76,17 +76,6 @@ export const QuickEntry: React.FC = () => {
           },
         },
       },
-      {
-        id:"savedJobs",
-        name:"savedJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
-            path: "/jobs/savedJobs",
-            icon:"SaveOutlined",
-          },
-        },
-      },
     ],
     staticEntries: [
       {
@@ -116,9 +105,9 @@ export const QuickEntry: React.FC = () => {
         id:"appSessions",
         name:"appSessions",
         entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
-            path: "/apps/clusterId/sessions",
+          $case:"pageLink" as const,
+          pageLink:{
+            path: "/apps/sessions",
             clusterId:"",
             icon:"AppSessionsIcon",
           },

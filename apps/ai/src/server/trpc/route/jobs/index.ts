@@ -18,7 +18,7 @@ import {
   saveImage,
 } from "./apps";
 import { getSubmitInferenceParams,submitInferJob } from "./infer";
-import { calculateJobOneHourPrice,cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
+import { calculateJobPrice,cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
   getPodLogs, getPodMonitorInfo, getPodsByJobId, getSubmitTrainParams,
   trainJob } from "./jobs";
 
@@ -48,5 +48,5 @@ export const jobsRouter = router({
   getPodMonitorInfo,
   getJobDetails,
   listAppAvailableAccountsAndClusters,
-  calculateJobOneHourPrice,
+  calculateJobPrice,
 });

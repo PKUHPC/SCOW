@@ -19,7 +19,7 @@ import { Tenant } from "src/entities/Tenant";
 import { TenantAppBlacklist } from "src/entities/TenantAppBlacklist";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
-import { UserAccount, UserRole } from "src/entities/UserAccount";
+import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
 import { addToTenantDefaultApps, authorizeAccountApp,
   authorizeTenantApp, formatTargetAppInfoList,
@@ -296,10 +296,15 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
         // 查询当前用户关联的未删除的账户列表
         const qb = em.createQueryBuilder(UserAccount, "ua");
-        const accounts: { accountName: string }[] = await qb
+        const accounts: { accountName: string, accountsBlockedInCluster: boolean,
+          blockedInCluster: UserStatus }[] = await qb
           .join("ua.user", "u")
           .join("ua.account", "a")
-          .select("a.account_name AS accountName")
+          .select([
+            "a.account_name AS accountName",
+            "a.blocked_in_cluster AS accountsBlockedInCluster",
+            "ua.blockedInCluster",
+          ])
           .where({ "u.userId": userId })
           .andWhere({ "a.state": { $ne: AccountState.DELETED } })
           .execute();
@@ -337,6 +342,12 @@ export const appAuthorizationServiceServer = plugin((server) => {
           const webStartCommand =
             (appConfig.web as { startCommand?: string } | undefined)?.startCommand;
 
+          const availableAccounts = accounts
+            .filter((account) =>
+              !accountBlackAppsMap.get(account.accountName)?.has(id) && !account.accountsBlockedInCluster
+            && account.blockedInCluster !== UserStatus.BLOCKED,
+            );
+
           return {
             id,
             name: appConfig.name,
@@ -344,6 +355,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
             comment: appConfig.appComment ? getI18nSeverTypeFormat(appConfig.appComment) : undefined,
             image: imageConfig ? `${imageConfig.name}:${imageConfig.tag ?? "latest"}` : undefined,
             startCommand: webStartCommand ?? appConfig.vnc?.xstartup,
+            availableAccounts: availableAccounts.map((a) => a.accountName),
           };
         });
 

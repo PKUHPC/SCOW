@@ -46,7 +46,7 @@ export default function Home() {
 
   const { cluster, appId } = quantumConfigQuery.data;
 
-  const appCreateUrl = `apps/${cluster}/create/${appId}`;
+  const appCreateUrl = `apps/createApps?appId=${appId}`;
 
   return (
     <TypographyLink

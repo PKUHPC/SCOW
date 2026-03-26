@@ -3,8 +3,11 @@ import { Logger } from "ts-log";
 
 
 export interface JobTemplate {
+  // 之前的模板的的展示名称，现在模板名继续沿用这个字段
   jobName: string;
   account: string;
+  // 兼容之前的模板没有cluster参数
+  cluster?: string;
   partition?: string | undefined;
   qos?: string | undefined;
   nodeCount: number;
@@ -12,14 +15,9 @@ export interface JobTemplate {
   gpuCount?: number;
   /** in minutes */
   maxTime: number;
-  command: string;
-  workingDirectory: string;
-  output?: string;
-  errorOutput?: string;
-  memory?: string;
-  comment?: string | undefined;
-  scriptOutput?: string | undefined;
   maxTimeUnit?: TimeUnit | undefined;
+  command: string;
+  memory?: string;
 }
 
 export interface ListJobTemplatesRequest {
@@ -31,6 +29,7 @@ export interface JobTemplateInfo {
   jobName: string;
   submitTime: Date;
   comment: string | undefined;
+  cluster?: string;
 }
 
 export interface ListJobTemplatesReply {
@@ -112,6 +111,25 @@ interface SubmitFileAsJobReply {
   jobId: number;
 }
 
+export interface SaveAsJobTemplateRequest {
+  userId: string;
+  // 之前的模板的的展示名称，现在继续沿用这个
+  jobName: string;
+  account: string;
+  cluster: string;
+  partition: string;
+  qos: string;
+  nodeCount: number;
+  coreCount: number;
+  gpuCount?: number;
+  memoryMb: string;
+  command: string;
+  maxTime: number;
+  maxTimeUnit: TimeUnit; // 最长运行时间单位，默认为MINUTES
+}
+
+interface SaveAsJobTemplateRequestReply {}
+
 
 export interface JobOps {
   listJobTemplates(req: ListJobTemplatesRequest, logger: Logger): Promise<ListJobTemplatesReply>;
@@ -119,6 +137,7 @@ export interface JobOps {
   saveJobTemplate(req: SaveJobTemplateRequest, logger: Logger): Promise<SaveJobTemplateReply>;
   deleteJobTemplate(req: DeleteJobTemplateRequest, logger: Logger): Promise<DeleteJobTemplateReply>;
   renameJobTemplate(req: RenameJobTemplateRequest, logger: Logger): Promise<RenameJobTemplateReply>;
+  saveAsJobTemplate(req: SaveAsJobTemplateRequest, logger: Logger): Promise<SaveAsJobTemplateRequestReply>;
 
   submitJob(req: SubmitJobRequest, logger: Logger): Promise<SubmitJobReply>;
   submitFileAsJob(req: SubmitFileAsJobRequest, logger: Logger): Promise<SubmitFileAsJobReply>;

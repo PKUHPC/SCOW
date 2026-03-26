@@ -150,7 +150,7 @@ export const sshJobServices = (host: string): JobOps => ({
 
   submitJob: async (request, logger) => {
     const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit = TimeUnit.MINUTES,
-      saveAsTemplate, userId, nodeCount, partition, qos, account, comment, workingDirectory, output
+      saveAsTemplate, userId, nodeCount, partition, qos, account, workingDirectory, output
       , errorOutput, memory, scriptOutput } = request;
 
     // make sure working directory exists
@@ -213,12 +213,7 @@ export const sshJobServices = (host: string): JobOps => ({
         qos,
         account,
         command,
-        comment,
-        workingDirectory,
-        output,
-        errorOutput,
         memory,
-        scriptOutput,
         maxTimeUnit,
       };
 
@@ -321,5 +316,11 @@ export const sshJobServices = (host: string): JobOps => ({
     );
 
     return { jobId: reply.jobId };
+  },
+  saveAsJobTemplate: async () => {
+    throw {
+      code: Status.UNIMPLEMENTED,
+      message: "saveAsJobTemplate is not implemented for ssh job service",
+    } as ServiceError;
   },
 });

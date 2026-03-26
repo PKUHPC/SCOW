@@ -23,7 +23,6 @@ export default {
       runningJobs: "未終了のジョブ",
       allJobs: "すべてのジョブ",
       submitJob: "ジョブを提出",
-      jobTemplates: "ジョブテンプレート",
     },
     apps: {
       title: "アプリケーション",
@@ -113,18 +112,6 @@ export default {
       fileSelectModal: {
         title: "ファイルディレクトリ選択",
         newPath: "新しいディレクトリ",
-      },
-      jobTemplateModal: {
-        clusterLabel: "クラスター",
-        errorMessage: "テンプレートが存在しません",
-        changeSuccessMessage: "修正に成功しました",
-        changTemplateName: "テンプレート名を変更",
-        newTemplateName: "新しいテンプレート名",
-        templateName: "テンプレート名",
-        comment: "備考",
-        useTemplate: "テンプレートで提出",
-        popConfirm: "このテンプレートを削除しますか?",
-        deleteSuccessMessage: "テンプレートを削除しました",
       },
       runningJobDrawer: {
         cluster: "クラスター",
@@ -668,10 +655,6 @@ export default {
       runningJobs: {
         title: "未終了のジョブ",
         pageTitle: "実行中のジョブ",
-      },
-      savedJobs: {
-        title: "ジョブテンプレート",
-        pageTitle: "自分のジョブテンプレート",
       },
       submit: {
         title: "ジョブを提出",

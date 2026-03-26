@@ -20,6 +20,7 @@ import { route } from "src/utils/route";
 
 // Cannot use AppSession from protos
 export const AppSession = Type.Object({
+  clusterId: Type.String(),
   sessionId: Type.String(),
   jobName: Type.String(),
   jobId: Type.Number(),
@@ -44,7 +45,7 @@ export const GetAppSessionsSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-    cluster: Type.String(),
+    clusters: Type.Array(Type.String()),
   }),
 
   responses: {
@@ -63,12 +64,12 @@ export default /* #__PURE__*/route(GetAppSessionsSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { cluster } = req.query;
+  const { clusters } = req.query;
 
   const client = getClient(AppServiceClient);
 
   return asyncUnaryCall(client, "listAppSessions", {
-    cluster, userId: info.identityId,
+    clusters, userId: info.identityId,
   }).then((reply) => {
     return { 200: { sessions: reply.sessions } };
   });
