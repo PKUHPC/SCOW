@@ -910,7 +910,6 @@ export const LaunchTrainForm = ({
     () => imageOptionsForSource.find((item) => item.value === normalizedSelectedImageValue),
     [imageOptionsForSource, normalizedSelectedImageValue],
   );
-  const lastCommandImageKeyRef = useRef<string | undefined>();
   const resubmitCommandKeyRef = useRef<string | undefined>();
   const resubmitCommandUsedRef = useRef<boolean>(false);
   const resubmitCommandLockedRef = useRef<boolean>(false);
@@ -1000,12 +999,6 @@ export const LaunchTrainForm = ({
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
     const cache = commandCacheRef.current;
     const entry = cache[currentKey] ?? (cache[currentKey] = { default: currentCommandDefault });
-    const lastKey = lastCommandImageKeyRef.current;
-
-    if (lastKey !== currentKey) {
-      entry.custom = undefined;
-      lastCommandImageKeyRef.current = currentKey;
-    }
 
     if (entry.default !== currentCommandDefault) {
       entry.default = currentCommandDefault;
@@ -2007,7 +2000,7 @@ export const LaunchTrainForm = ({
           <span>{t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.location.href = join(misPath,"/user/partitions"); }}>
+          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>

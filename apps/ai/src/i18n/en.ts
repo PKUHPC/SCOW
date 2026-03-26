@@ -720,8 +720,6 @@ export default {
           helpTip:"Add multiple environment variables",
         },
         servicePortField:{
-          helpTip:"Prefills the service port defined by the selected image. "
-          + "Defaults to 0 when missing and can be edited.",
           requiredMessage:"Please enter the service port",
           invalidMessage:"Port must be between 1 and 65535",
           containerServicePort:"Service port",

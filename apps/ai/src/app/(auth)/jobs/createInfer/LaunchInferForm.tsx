@@ -95,6 +95,7 @@ const IMAGE_PLACEHOLDER_KEYS: Record<TrainImageSourceKey, ImagePlaceholderKey> =
   public: "imagePlaceholders.public",
   remote: "imagePlaceholders.remote",
 } as const;
+export const DEFAULT_SERVICE_PORT = 8080;
 
 // 根据队列类型自定义底部统计栏的字段文案
 const QUEUE_LABEL_KEYS: Record<QueueKind,
@@ -702,7 +703,6 @@ export const LaunchInferForm = ({
     () => imageOptionsForSource.find((item) => item.value === normalizedSelectedImageValue),
     [imageOptionsForSource, normalizedSelectedImageValue],
   );
-  const lastCommandImageKeyRef = useRef<string | undefined>();
   const resubmitCommandKeyRef = useRef<string | undefined>();
   const resubmitCommandUsedRef = useRef<boolean>(false);
   const resubmitCommandLockedRef = useRef<boolean>(false);
@@ -792,13 +792,6 @@ export const LaunchInferForm = ({
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
     const cache = commandCacheRef.current;
     const entry = cache[currentKey] ?? (cache[currentKey] = { default: currentCommandDefault });
-    const lastKey = lastCommandImageKeyRef.current;
-
-    // 切换镜像时重置自定义命令，回到新镜像的默认值
-    if (lastKey !== currentKey) {
-      entry.custom = undefined;
-      lastCommandImageKeyRef.current = currentKey;
-    }
 
     if (entry.default !== currentCommandDefault) {
       entry.default = currentCommandDefault;
@@ -1265,7 +1258,7 @@ export const LaunchInferForm = ({
       appForm.setFieldsValue({
         image: draft.image,
         command: draft.command,
-        containerServicePort: draft.containerServicePort,
+        containerServicePort: draft.containerServicePort ?? DEFAULT_SERVICE_PORT,
         usePrivateImage: draft.usePrivateImage ?? false,
         remoteUsername: draft.remoteUsername,
         remotePassword: draft.remotePassword,
@@ -1724,7 +1717,7 @@ export const LaunchInferForm = ({
           <span>{t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.location.href = join(misPath,"/user/partitions"); }}>
+          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>

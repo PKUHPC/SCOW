@@ -9,6 +9,7 @@ import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 
 import { PublicImageOption } from "../../PublicImageOption";
+import { DEFAULT_SERVICE_PORT } from "../LaunchInferForm";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
@@ -74,9 +75,19 @@ export const InferConfigSection = ({
   const autoFillImageKey = selectedImageOption?.value ?? `source:${selectedImageSource}`;
   const lastSyncedImageKeyRef = useRef<string | undefined>();
   const lastSyncedPortRef = useRef<number | undefined>();
+  const applyContainerServicePort = (port: number) => {
+    form.setFieldValue("containerServicePort", port);
+    // 自动填充后立即重校验，避免保留旧的错误提示
+    void form.validateFields(["containerServicePort"]).catch(() => undefined);
+  };
 
   useEffect(() => {
-    const defaultPort = selectedImageOption?.servicePort ?? 0;
+    const imageServicePort = selectedImageOption?.servicePort;
+    const defaultPort = (
+      typeof imageServicePort === "number" && imageServicePort > 0
+        ? imageServicePort
+        : DEFAULT_SERVICE_PORT
+    );
     const rawValue = form.getFieldValue("containerServicePort");
     const numericValue = rawValue === "" ? undefined : Number(rawValue);
     const currentValue = Number.isFinite(numericValue) ? numericValue : undefined;
@@ -91,14 +102,14 @@ export const InferConfigSection = ({
         lastSyncedPortRef.current = currentValue;
         return;
       }
-      // 选择切换时跟随镜像默认端口（0 视为无效占位）
+      // 选择切换时跟随镜像端口；镜像未配置时回落到 8080
       lastSyncedPortRef.current = defaultPort;
-      form.setFieldValue("containerServicePort", defaultPort);
+      applyContainerServicePort(defaultPort);
       return;
     }
 
     if (currentValue === undefined) {
-      form.setFieldValue("containerServicePort", defaultPort);
+      applyContainerServicePort(defaultPort);
       lastSyncedPortRef.current = defaultPort;
       return;
     }
@@ -108,7 +119,7 @@ export const InferConfigSection = ({
       && currentValue === lastSyncedPortRef.current
       && currentValue !== defaultPort
     ) {
-      form.setFieldValue("containerServicePort", defaultPort);
+      applyContainerServicePort(defaultPort);
       lastSyncedPortRef.current = defaultPort;
       return;
     }
@@ -232,7 +243,6 @@ export const InferConfigSection = ({
 
         <InlineFormItem
           name="command"
-          rules={[{ required: true, message: t(pAppConfig("commandRequired")) }]}
           label={<Label>{t(pAppConfig("commandLabel"))}</Label>}
         >
           <CommandInputField defaultCommand={currentCommandDefault} />
@@ -244,9 +254,13 @@ export const InferConfigSection = ({
             { required: true, message: t(pAppConfig("servicePortField.requiredMessage")) },
             {
               validator: (_: unknown, value: number) => {
+                if (value === undefined || value === null) {
+                  // 空值交给 required 规则处理，避免重复提示
+                  return Promise.resolve();
+                }
                 const numericValue = Number(value);
-                if (value === undefined || value === null || Number.isNaN(numericValue)) {
-                  return Promise.reject(new Error(t(pAppConfig("servicePortField.requiredMessage"))));
+                if (Number.isNaN(numericValue)) {
+                  return Promise.reject(new Error(t(pAppConfig("servicePortField.invalidMessage"))));
                 }
                 if (numericValue <= 0 || numericValue > 65535) {
                   return Promise.reject(new Error(t(pAppConfig("servicePortField.invalidMessage"))));
@@ -256,7 +270,6 @@ export const InferConfigSection = ({
             },
           ]}
           label={<Label>{t(pAppConfig("servicePortField.containerServicePort"))}</Label>}
-          helpTip={t(pAppConfig("servicePortField.helpTip"))}
         >
           <RoundedInputNumber
             size="large"

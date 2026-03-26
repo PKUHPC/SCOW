@@ -200,7 +200,6 @@ export const TrainConfigSection = ({
 
         <InlineFormItem
           name="command"
-          rules={[{ required: true, message: t(p("commandRequired")) }]}
           label={<Label>{t(p("commandLabel"))}</Label>}
         >
           <CommandInputField defaultCommand={currentCommandDefault} />

@@ -1002,7 +1002,8 @@ export class ScowdJobDriver implements JobDriver {
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
       workingDirectory: join(homeDir, inferJobsDirectory),
-      script: remoteEntryPath,
+      // 当运行命令为空时，直接传""，不传脚本路径
+      script: entryScript ? remoteEntryPath : "" ,
       envVariables,
       privateImageRepositoryCredentials,
       // 对于AI模块，需要传递的额外参数
@@ -1230,7 +1231,8 @@ export class ScowdJobDriver implements JobDriver {
       memoryMb: Number(memory),
       timeLimitMinutes: maxTime,
       workingDirectory: join(homeDir, trainJobsDirectory),
-      script: remoteEntryPath,
+      // 当运行命令为空时，直接传""，不传脚本路径
+      script: entryScript ? remoteEntryPath : "" ,
       envVariables,
       privateImageRepositoryCredentials,
       // 对于AI模块，需要传递的额外参数

@@ -1389,7 +1389,7 @@ export const LaunchDevForm = ({
           <span>{t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.location.href = join(misPath,"/user/partitions"); }}>
+          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>

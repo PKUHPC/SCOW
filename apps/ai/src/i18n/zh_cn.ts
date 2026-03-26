@@ -720,8 +720,6 @@ export default {
           helpTip:"支持添加多个环境变量",
         },
         servicePortField:{
-          helpTip:"自动显示镜像中配置的服务端口，未配置时默认为0，可自行修改",
-          // 占位
           requiredMessage:"请输入服务端口",
           invalidMessage:"服务端口需在1到65535之间",
           containerServicePort:"服务端口",
