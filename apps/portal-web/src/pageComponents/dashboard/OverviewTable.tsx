@@ -29,7 +29,6 @@ interface Props {
   isLoading: boolean;
   summaryClusterInfo: SummaryClusterInfo[];
   platformOverview?: PlatformOverview | undefined;
-  successfulClusters?: Cluster[] | undefined;
 }
 
 interface InfoProps {
@@ -92,7 +91,7 @@ const p = prefix("pageComp.dashboard.overviewTable.");
 
 // currentClusters 是过滤用户可用集群后的集合
 export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
-  currentClusters, isLoading, platformOverview, successfulClusters, summaryClusterInfo }) => {
+  currentClusters, isLoading, platformOverview, summaryClusterInfo }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { dark } = useDarkMode();
@@ -161,7 +160,6 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           activeTabKey={activeTabKey}
           onTabChange={setActiveTabKey}
           currentClusters={currentClusters}
-          successfulClusters={successfulClusters}
         />
         <TableContainer>
           <Table

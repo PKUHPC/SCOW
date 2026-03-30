@@ -70,7 +70,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
           clustersInfo: [],
           failedClusters: [],
           platformOverview: createEmptyOverview(),
-          successfulClusters: [],
         };
       }
 
@@ -83,7 +82,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
 
       const successfulClusterNames = new Set(summaryClusterInfoResults.map((result) => result.clusterId));
       const failedClusters = currentClusters.filter((cluster) => !successfulClusterNames.has(cluster.id));
-      const successfulClusters = currentClusters.filter((cluster) => successfulClusterNames.has(cluster.id));
 
       // 构建集群分区信息，包含使用率计算
       const clustersInfo = summaryClusterInfoResults.flatMap((cluster) =>
@@ -117,7 +115,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
         clustersInfo,
         failedClusters,
         platformOverview,
-        successfulClusters,
         summaryClusterInfoResults,
       };
     }, [currentClusters]),
@@ -143,7 +140,6 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
           failedClusters={data?.failedClusters ?? []}
           currentClusters={currentClusters}
           platformOverview={data?.platformOverview}
-          successfulClusters={data?.successfulClusters}
           summaryClusterInfo={data?.summaryClusterInfoResults ?? []}
         />
       </DisplayModeContext.Provider>

@@ -7,6 +7,7 @@ import { libWebGetUserInfo } from "@scow/lib-web/build/server/userAccount";
 import { getHostname } from "@scow/lib-web/build/utils/getHostname";
 import { formatActivatedClusters } from "@scow/lib-web/build/utils/misCommon/clustersActivation";
 import { getCurrentLanguageId } from "@scow/lib-web/build/utils/systemLanguage";
+import { AccountState } from "@scow/protos/build/server/user";
 import { Static, Type } from "@sinclair/typebox";
 import { USE_MOCK } from "src/apis/useMock";
 import { getTokenFromCookie } from "src/auth/cookie";
@@ -91,13 +92,13 @@ export default route(GetAppInitialConfigSchema, async (req) => {
     const userInfo = await validateToken(token);
 
     if (userInfo) {
-      const userInfo2 = await libWebGetUserInfo(
+      const misUserInfo = await libWebGetUserInfo(
         userInfo.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
 
-      if (userInfo2) {
+      if (misUserInfo) {
 
-        const isTenantAdmin = userInfo2.tenantRoles?.includes(0) ?? false;
-        const isPlatformAdmin = userInfo2.platformRoles?.includes(0) ?? false;
+        const isTenantAdmin = misUserInfo.tenantRoles?.includes(0) ?? false;
+        const isPlatformAdmin = misUserInfo.platformRoles?.includes(0) ?? false;
 
         const isAdmin = isTenantAdmin || isPlatformAdmin;
 
@@ -108,9 +109,13 @@ export default route(GetAppInitialConfigSchema, async (req) => {
         };
 
         if (publicConfig.MIS_DEPLOYED && runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled) {
+          const accountNames = misUserInfo.affiliations
+            .filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
+            .map((a) => a.accountName);
+
           const userAssociatedClusterIds = await getUserAssociatedClusterIds(
-            userInfo2.affiliations.map((a) => a.accountName),
-            userInfo2.tenantName,
+            accountNames,
+            misUserInfo.tenantName,
             runtimeConfig.SCOW_RESOURCE_CONFIG,
           );
 

@@ -27,7 +27,6 @@ interface Props {
   activeTabKey: string;
   onTabChange: (key: string) => void;
   currentClusters: Cluster[];
-  successfulClusters?: Cluster[] | undefined;
 }
 
 const InfoPaneContainer = styled.div`
@@ -55,25 +54,27 @@ const colors = {
 };
 const p = prefix("pageComp.dashboard.infoPanes.");
 export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
-  onTabChange, currentClusters, successfulClusters }) => {
+  onTabChange, currentClusters }) => {
 
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const theme = useTheme();
+  const showPlatformOverview = currentClusters.length > 1;
 
   useEffect(() => {
-    if (successfulClusters?.length === 1 && clusterCardsList?.[0]?.key) {
-      if (activeTabKey !== successfulClusters[0].id) {
-        onTabChange(successfulClusters[0].id);
+    if (!showPlatformOverview) {
+      const onlyClusterId = currentClusters[0]?.id;
+      if (onlyClusterId && activeTabKey !== onlyClusterId) {
+        onTabChange(onlyClusterId);
       }
     }
-  }, [successfulClusters, activeTabKey, onTabChange]);
+  }, [showPlatformOverview, currentClusters, activeTabKey, onTabChange]);
 
   let clusterCardsList;
   // card的每一项
-  if (successfulClusters?.length === 1) {
-    clusterCardsList = successfulClusters?.map((x) => ({
+  if (!showPlatformOverview) {
+    clusterCardsList = currentClusters.map((x) => ({
       key:x.id,
       tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
     })) ?? [];
@@ -95,10 +96,10 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
           {t(p("platformOverview"))}
         </div>,
       },
-      ...((successfulClusters?.length ?? 0) > 1 ? successfulClusters : currentClusters)?.map((x) => ({
+      ...currentClusters.map((x) => ({
         key:x.id,
         tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
-      })) ?? [],
+      })),
     ];
   }
 

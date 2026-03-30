@@ -25,7 +25,6 @@ interface Props {
   isLoading: boolean;
   summaryClusterInfo: SummaryClusterInfo[];
   platformOverview?: PlatformOverview | undefined;
-  successfulClusters?: Cluster[] | undefined;
 }
 
 interface InfoProps {
@@ -81,7 +80,7 @@ const Container = styled.div`
 `;
 
 export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
-  currentClusters, isLoading, summaryClusterInfo, platformOverview, successfulClusters }) => {
+  currentClusters, isLoading, summaryClusterInfo, platformOverview }) => {
 
   const { dark } = useDarkMode();
   const languageId = useI18n().currentLanguage.id;
@@ -141,6 +140,19 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
   const finalDataSource = activeTabKey === "platformOverview" ?
     dataSource.concat(failedClusters.map((c) => ({ clusterId: c.id }))) : dataSource;
 
+  // 平台概览中，无授权分区的集群不展示 0，而是展示 "-"
+  const noAuthorizedPartitionClusterIds = useMemo((): Set<string> => {
+    return new Set(
+      summaryClusterInfo
+        .filter((cluster) => cluster.partitions.length === 0)
+        .map((cluster) => cluster.clusterId),
+    );
+  }, [summaryClusterInfo]);
+
+  const shouldRenderDash = (clusterId: string) => {
+    return activeTabKey === "platformOverview" && noAuthorizedPartitionClusterIds.has(clusterId);
+  };
+
   const isFullDisplayMode = useContext(DisplayModeContext);
 
   return (
@@ -152,7 +164,6 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           activeTabKey={activeTabKey}
           onTabChange={setActiveTabKey}
           currentClusters={currentClusters}
-          successfulClusters={successfulClusters}
         />
         <Table
           style={{
@@ -199,7 +210,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             dataIndex="nodeCount"
             title={t(p("nodeCount"))}
             sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.nodeCount, b.info?.nodeCount, sortOrder)}
-            render={(_, r) => r.info?.nodeCount ?? "-"}
+            render={(_, r) => shouldRenderDash(r.clusterId) ? "-" : (r.info?.nodeCount ?? "-")}
           />
           {
             isFullDisplayMode && (
@@ -268,7 +279,7 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
             title={t(p("pendingJobCount"))}
             sorter={(a, b, sortOrder) =>
               compareWithUndefined(a.info?.pendingJobCount, b.info?.pendingJobCount, sortOrder)}
-            render={(_, r) => r.info?.pendingJobCount ?? "-" }
+            render={(_, r) => shouldRenderDash(r.clusterId) ? "-" : (r.info?.pendingJobCount ?? "-")}
           />
           <Table.Column<TableProps>
             dataIndex="partitionStatus"

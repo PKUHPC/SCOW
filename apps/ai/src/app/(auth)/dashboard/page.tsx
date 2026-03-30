@@ -73,9 +73,8 @@ export default function Page() {
     { enabled: clusterIds.length > 0 },
   );
 
-  // 加载失败的集群、成功的集群、集群信息、平台概览、以及集群概览。
+  // 加载失败的集群、集群信息、平台概览、以及集群概览。
   const [failedClusters, setFailedClusters] = useState<Cluster[]>([]);
-  const [successfulClusters, setSuccessfulClusters] = useState<Cluster[]>([]);
   const [clustersInfo, setClustersInfo] = useState<ClusterPartitionInfo[]>([]);
   const [platformOverview, setPlatformOverview] = useState<PlatformOverview>({ ...initialPlatformOverview });
 
@@ -90,16 +89,9 @@ export default function Page() {
         allSummaryClusters.map((c) => c.clusterId),
       );
 
-      const successfulClusters = currentClusters.filter((cluster) =>
-        successfulClusterIds.has(cluster.id),
-      );
-
       const failedClusters = currentClusters.filter(
         (cluster) => !successfulClusterIds.has(cluster.id),
       );
-
-      setFailedClusters(failedClusters);
-      setSuccessfulClusters(successfulClusters);
 
       // 存储各集群各队列分区的详细信息
       const clustersInfo = allSummaryClusters
@@ -134,7 +126,6 @@ export default function Page() {
       });
 
       setFailedClusters(failedClusters);
-      setSuccessfulClusters(successfulClusters);
       setClustersInfo(clustersInfo);
       setPlatformOverview(platformOverview);
 
@@ -168,7 +159,6 @@ export default function Page() {
           failedClusters={failedClusters}
           currentClusters={currentClusters}
           platformOverview={platformOverview}
-          successfulClusters={successfulClusters}
           summaryClusterInfo={allSummaryClusters ?? []}
         />
       </DisplayModeContext.Provider>

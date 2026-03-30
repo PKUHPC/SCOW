@@ -73,6 +73,7 @@ export default route(GetAllSummaryClustersInfoSchema, async (req, res) => {
 
   const reply = await libWebGetUserInfo(
     info.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+
   const accountNames = reply?.affiliations.filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
     .map((a) => (a.accountName)) || [];
 

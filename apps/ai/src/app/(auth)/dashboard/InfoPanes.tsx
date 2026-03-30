@@ -16,7 +16,6 @@ interface Props {
   activeTabKey: string;
   onTabChange: (key: string) => void;
   currentClusters: Cluster[];
-  successfulClusters?: Cluster[] | undefined
 }
 
 const InfoPaneContainer = styled.div`
@@ -44,21 +43,22 @@ const colors = {
 };
 
 export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
-  onTabChange, currentClusters, successfulClusters }) => {
+  onTabChange, currentClusters }) => {
 
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const p = prefix("app.dashboard.infoPanes.");
 
   const theme = useTheme();
+  const showPlatformOverview = currentClusters.length > 1;
 
   let clusterCardsList;
   // card的每一项
-  if (successfulClusters?.length === 1) {
-    clusterCardsList = successfulClusters?.map((x) => ({
+  if (!showPlatformOverview) {
+    clusterCardsList = currentClusters.map((x) => ({
       key:x.id,
       tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
-    })) ?? [];
+    }));
   } else {
     clusterCardsList = [
       {
@@ -77,21 +77,22 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
           {t(p("platformOverview"))}
         </div>,
       },
-      ...((successfulClusters?.length ?? 0) > 1 ? successfulClusters : currentClusters)?.map((x) => ({
+      ...currentClusters.map((x) => ({
         key:x.id,
         tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
-      })) ?? [],
+      })),
     ];
   }
 
   // 初始化单集群默认选中项，避免 render 阶段 setState
   useEffect(() => {
-    const firstKey = clusterCardsList?.[0]?.key;
-    const isSingleCluster = (successfulClusters?.length ?? 0) === 1;
-    if (isSingleCluster && firstKey) {
-      onTabChange(firstKey);
+    if (!showPlatformOverview) {
+      const onlyClusterId = currentClusters[0]?.id;
+      if (onlyClusterId && activeTabKey !== onlyClusterId) {
+        onTabChange(onlyClusterId);
+      }
     }
-  }, [clusterCardsList, successfulClusters?.length, onTabChange]);
+  }, [showPlatformOverview, currentClusters, activeTabKey, onTabChange]);
 
   const { nodeCount, runningNodeCount, idleNodeCount, notAvailableNodeCount,
     cpuCoreCount, runningCpuCount, idleCpuCount, notAvailableCpuCount,
