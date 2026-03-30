@@ -1,7 +1,5 @@
 export default {
   clusterSelectorPlaceholder: "Выберите кластер",
-  smallScreenMenuWelcome: "Добро пожаловать",
-  smallScreenMenuLogout: "Выйти",
   userIndicatorName: "Имя пользователя: ",
   userIndicatorId: "ID пользователя: ",
   userIndicatorInfo: "Личная информация",
@@ -10,8 +8,6 @@ export default {
   darkModeSystem: "Следовать системе",
   darkModeLight: "Светлая",
   darkModeDark: "Тёмная",
-  defaultClusterSelectorTitle: "Функции, требующие выбора кластера, используют кластер по умолчанию",
-  defaultClusterSelectorLabel: "Выбрать кластер по умолчанию",
   dateTimeToday: "Сегодня",
   dateTimeTWeek: "Эта неделя",
   dateTimeTMonth: "Этот месяц",

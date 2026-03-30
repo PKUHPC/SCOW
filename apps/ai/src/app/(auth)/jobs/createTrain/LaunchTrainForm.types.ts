@@ -4,7 +4,7 @@ import type {
   AppFormValues,
   ImageSourceKey,
   ResourceFormValues as BaseResourceFormValues,
-} from "../createApp/[appId]/LaunchAppForm.types";
+} from "../LaunchJobForm.types";
 
 export type TrainImageSourceKey = Exclude<ImageSourceKey, "preset">;
 export type TrainFramework = "single" | FrameworkType;
@@ -22,4 +22,4 @@ export interface ResourceFormValues extends BaseResourceFormValues {
   distributedNodeCount?: number;
 }
 
-export * from "../createApp/[appId]/LaunchAppForm.types";
+export * from "../LaunchJobForm.types";

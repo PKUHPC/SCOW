@@ -75,13 +75,6 @@ export default {
         refreshAccountList: "Обновить список аккаунтов",
         noAvailableAccount: "Нет доступных аккаунтов",
       },
-      partitionSelector: {
-        isLoading: "Получение данных...",
-        selectPartitionPlaceholder: "Выберите раздел",
-        refreshPartitionList: "Обновить список разделов",
-        noAvailablePartition: "Нет доступных разделов",
-        noAssignedPartition: "Нет назначенных разделов",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "Кластер",
@@ -548,10 +541,6 @@ export default {
       },
       infoPane: {
         nodeUtilization: "Загрузка узлов",
-      },
-      doubleInfoPane: {
-        CPUCoreUsage: "Использование ядер CPU",
-        GPUCoreUsage: "Использование акселераторов",
       },
       titleContainer: {
         available: "Доступно",

@@ -17,7 +17,7 @@ import {
   SectionTitle,
   StyledTable,
   StyledTabs,
-} from "../LaunchInferForm.styles";
+} from "../../LaunchJobForm.styles";
 import type {
   CPUQueueRow,
   GPUQueueRow,

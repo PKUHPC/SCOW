@@ -4,12 +4,6 @@ package scow.server;
 
 import "google/protobuf/timestamp.proto";
 
-enum ChangeStorageQuotaMode {
-  INCREASE = 0;
-  DECREASE = 1;
-  SET = 2;
-}
-
 message PlatFormAdminInfo {
   string user_id = 1;
   string user_name = 2;
@@ -18,29 +12,6 @@ message PlatFormAdminInfo {
 message PlatFormFinancialStaffInfo {
   string user_id = 1;
   string user_name = 2;
-}
-
-message ChangeStorageQuotaRequest {
-  string user_id = 1;
-  string cluster = 2;
-  ChangeStorageQuotaMode mode = 3;
-  uint64 value = 4;
-}
-
-// INVALID_ARGUMENT: change value is not valid.
-// NOT_FOUND: user_id or cluster is not found
-message ChangeStorageQuotaResponse {
-  uint64 current_quota = 1;
-}
-
-message QueryStorageQuotaRequest {
-  string user_id = 1;
-  string cluster = 2;
-}
-
-// NOT_FOUND: cluster or userId is not found.
-message QueryStorageQuotaResponse {
-  uint64 current_quota = 1;
 }
 
 message ImportUsersData {
@@ -322,10 +293,6 @@ message CheckAccountUserSynchronizationRunningResponse {
 }
 
 service AdminService {
-  rpc ChangeStorageQuota(ChangeStorageQuotaRequest)
-      returns (ChangeStorageQuotaResponse);
-  rpc QueryStorageQuota(QueryStorageQuotaRequest)
-      returns (QueryStorageQuotaResponse);
   rpc ImportUsers(ImportUsersRequest) returns (ImportUsersResponse);
   rpc GetClusterUsers(GetClusterUsersRequest) returns (GetClusterUsersResponse);
   rpc GetFetchInfo(GetFetchInfoRequest) returns (GetFetchInfoResponse);

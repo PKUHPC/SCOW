@@ -7,7 +7,7 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled, useTheme } from "styled-components";
 
 import { validateMountPoints } from "./common";
-import { RoundedInput } from "./createApp/[appId]/LaunchAppForm.styles";
+import { RoundedInput } from "./LaunchJobForm.styles";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
 
 const MountListContainer = styled.div`

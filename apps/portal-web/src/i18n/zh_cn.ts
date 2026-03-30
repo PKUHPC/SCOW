@@ -82,13 +82,6 @@ export default {
         refreshAccountList: "刷新账户列表",
         noAvailableAccount: "无可用账户",
       },
-      partitionSelector: {
-        isLoading: "查询中...",
-        selectPartitionPlaceholder: "请选择分区",
-        refreshPartitionList: "刷新分区列表",
-        noAvailablePartition: "无可用分区",
-        noAssignedPartition: "无授权分区",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "集群",
@@ -685,10 +678,6 @@ export default {
       },
       infoPane:{
         nodeUtilization:"节点使用率",
-      },
-      doubleInfoPane:{
-        CPUCoreUsage:"CPU核心使用率",
-        GPUCoreUsage:"加速卡使用率",
       },
       titleContainer:{
         available:"可用",

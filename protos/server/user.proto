@@ -49,16 +49,6 @@ message GetUserStatusResponse {
   map<string, uint64> storage_quotas = 2;
 }
 
-message QueryUsedStorageQuotaRequest {
-  string tenant_name = 1;
-  string user_id = 2;
-  string cluster = 3;
-}
-
-message QueryUsedStorageQuotaResponse {
-  uint64 used = 1;
-}
-
 message GetAccountUsersRequest {
   string tenant_name = 1;
   string account_name = 2;
@@ -508,9 +498,6 @@ service UserService {
   rpc QueryIsUserInAccount(QueryIsUserInAccountRequest)
       returns (QueryIsUserInAccountResponse);
   rpc GetUserStatus(GetUserStatusRequest) returns (GetUserStatusResponse);
-  rpc QueryUsedStorageQuota(QueryUsedStorageQuotaRequest)
-      returns (QueryUsedStorageQuotaResponse);
-
   rpc GetUsersByIds(GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
 
   //新增用户，在数据库中增加用户，然后调用auth服务在ldap中增加该用户，

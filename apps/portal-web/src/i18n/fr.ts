@@ -75,13 +75,6 @@ export default {
         refreshAccountList: "Actualiser la liste des comptes",
         noAvailableAccount: "Aucun compte disponible",
       },
-      partitionSelector: {
-        isLoading: "Récupération des données...",
-        selectPartitionPlaceholder: "Sélectionner une partition",
-        refreshPartitionList: "Actualiser la liste des partitions",
-        noAvailablePartition: "Aucune partition disponible",
-        noAssignedPartition: "Aucune partition autorisée",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "Cluster",
@@ -550,10 +543,6 @@ export default {
       },
       infoPane: {
         nodeUtilization: "Utilisation des nœuds",
-      },
-      doubleInfoPane: {
-        CPUCoreUsage: "Utilisation des cœurs CPU",
-        GPUCoreUsage: "Utilisation des cartes accélératrices",
       },
       titleContainer: {
         available: "Disponible",

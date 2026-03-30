@@ -61,7 +61,7 @@ import {
   mapQueuesToRows,
   renderCascaderLabels,
   toIdPrivateList,
-} from "./LaunchTrainForm.utils";
+} from "../LaunchJobForm.utils";
 
 // ======================= 类型定义 =======================
 interface Props {

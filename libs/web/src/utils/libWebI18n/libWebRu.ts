@@ -1,8 +1,6 @@
 /* eslint-disable @stylistic/max-len */
 export default {
   clusterSelectorPlaceholder: "Выберите кластер",
-  smallScreenMenuWelcome: "Добро пожаловать",
-  smallScreenMenuLogout: "Выйти",
   userIndicatorName: "Имя пользователя: ",
   userIndicatorId: "ID пользователя: ",
   userIndicatorInfo: "Личная информация",
@@ -11,8 +9,7 @@ export default {
   darkModeSystem: "Следовать системе",
   darkModeLight: "Светлый",
   darkModeDark: "Тёмный",
-  defaultClusterSelectorTitle: "Функции, требующие выбора кластера, будут использовать кластер по умолчанию",
-  defaultClusterSelectorLabel: "Выберите кластер по умолчанию",
+
   dateTimeToday: "Сегодня",
   dateTimeTWeek: "Эта неделя",
   dateTimeTMonth: "Этот месяц",

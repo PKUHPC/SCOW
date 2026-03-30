@@ -1,7 +1,5 @@
 export default {
   clusterSelectorPlaceholder: "Seleccione un clúster",
-  smallScreenMenuWelcome: "Bienvenido",
-  smallScreenMenuLogout: "Cerrar sesión",
   userIndicatorName: "Nombre de usuario: ",
   userIndicatorId: "ID de usuario: ",
   userIndicatorInfo: "Información personal",
@@ -10,8 +8,6 @@ export default {
   darkModeSystem: "Seguir al sistema",
   darkModeLight: "Claro",
   darkModeDark: "Oscuro",
-  defaultClusterSelectorTitle: "Las funciones que requieren clúster usarán el clúster predeterminado",
-  defaultClusterSelectorLabel: "Seleccionar clúster predeterminado",
   dateTimeToday: "Hoy",
   dateTimeTWeek: "Esta semana",
   dateTimeTMonth: "Este mes",

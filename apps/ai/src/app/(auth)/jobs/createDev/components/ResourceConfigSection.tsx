@@ -16,7 +16,7 @@ import {
   SectionTitle,
   StyledTable,
   StyledTabs,
-} from "../LaunchDevForm.styles";
+} from "../../LaunchJobForm.styles";
 import type {
   CPUQueueRow,
   GPUQueueRow,

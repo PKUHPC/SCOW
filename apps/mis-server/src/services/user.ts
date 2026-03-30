@@ -168,28 +168,6 @@ export const userServiceServer = plugin((server) => {
       }];
     },
 
-    queryUsedStorageQuota: async () => {
-      // const { cluster, userId } = request;
-
-      // const reply = await server.ext.clusters.callOnOne(
-      //   cluster,
-      //   logger,
-      //   async (ops) => ops.storage.queryUsedStorageQuota({
-      //     request: { userId }, logger,
-      //   }),
-      // );
-
-      // if (reply.code === "NOT_FOUND") {
-      //   throw <ServiceError>{
-      //     code: Status.NOT_FOUND, message: `User ${userId}  is not found.`,
-      //   };
-      // }
-
-      return [{
-        used: 10,
-      }];
-    },
-
     addUserToAccount: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作

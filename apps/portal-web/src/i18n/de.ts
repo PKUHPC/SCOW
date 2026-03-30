@@ -76,13 +76,6 @@ export default {
         refreshAccountList: "Kontoliste aktualisieren",
         noAvailableAccount: "Kein verfügbares Konto",
       },
-      partitionSelector: {
-        isLoading: "Daten werden abgerufen...",
-        selectPartitionPlaceholder: "Partition wählen",
-        refreshPartitionList: "Partitionsliste aktualisieren",
-        noAvailablePartition: "Keine verfügbare Partition",
-        noAssignedPartition: "Keine zugewiesene Partition",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "Cluster",
@@ -549,10 +542,6 @@ export default {
       },
       infoPane: {
         nodeUtilization: "Knotenauslastung",
-      },
-      doubleInfoPane: {
-        CPUCoreUsage: "CPU-Kernauslastung",
-        GPUCoreUsage: "Beschleunigerkartenauslastung",
       },
       titleContainer: {
         available: "Verfügbar",

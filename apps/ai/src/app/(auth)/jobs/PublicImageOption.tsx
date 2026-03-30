@@ -3,7 +3,7 @@
 import { Typography } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 
-import { StyledPublicImageOption } from "./createApp/[appId]/LaunchAppForm.styles";
+import { StyledPublicImageOption } from "./LaunchJobForm.styles";
 
 interface PublicImageOptionProps {
   name: string;

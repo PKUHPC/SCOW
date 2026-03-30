@@ -1,7 +1,5 @@
 export default {
   clusterSelectorPlaceholder: "クラスタを選択してください",
-  smallScreenMenuWelcome: "ようこそ",
-  smallScreenMenuLogout: "ログアウト",
   userIndicatorName: "ユーザー名: ",
   userIndicatorId: "ユーザーID: ",
   userIndicatorInfo: "個人情報",
@@ -10,8 +8,6 @@ export default {
   darkModeSystem: "システムに従う",
   darkModeLight: "ライト",
   darkModeDark: "ダーク",
-  defaultClusterSelectorTitle: "クラスタ選択が必要な機能はデフォルトクラスタを使用します",
-  defaultClusterSelectorLabel: "デフォルトクラスタを選択",
   dateTimeToday: "今日",
   dateTimeTWeek: "今週",
   dateTimeTMonth: "今月",

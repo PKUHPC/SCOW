@@ -1,7 +1,5 @@
 export default {
   clusterSelectorPlaceholder: "클러스터를 선택하세요",
-  smallScreenMenuWelcome: "환영합니다",
-  smallScreenMenuLogout: "로그아웃",
   userIndicatorName: "사용자 이름: ",
   userIndicatorId: "사용자 ID: ",
   userIndicatorInfo: "개인 정보",
@@ -10,8 +8,6 @@ export default {
   darkModeSystem: "시스템 따르기",
   darkModeLight: "라이트",
   darkModeDark: "다크",
-  defaultClusterSelectorTitle: "클러스터 선택이 필요한 기능은 기본 클러스터를 사용합니다",
-  defaultClusterSelectorLabel: "기본 클러스터 선택",
   dateTimeToday: "오늘",
   dateTimeTWeek: "이번 주",
   dateTimeTMonth: "이번 달",

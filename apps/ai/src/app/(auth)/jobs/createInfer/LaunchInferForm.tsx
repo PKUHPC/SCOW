@@ -31,7 +31,7 @@ import {
   HeaderTitle,
   PaddedCard,
   SectionTitle,
-} from "./LaunchInferForm.styles";
+} from "../LaunchJobForm.styles";
 import type {
   AppFormValues,
   BaseFormValues,
@@ -47,7 +47,7 @@ import type {
   QueueKind,
   QueueRow,
   ResourceFormValues,
-  TrainImageSourceKey,
+  InferImageSourceKey,
   VersionGroup,
 } from "./LaunchInferForm.types";
 import {
@@ -60,7 +60,7 @@ import {
   mapQueuesToRows,
   renderCascaderLabels,
   toIdPrivateList,
-} from "./LaunchInferForm.utils";
+} from "../LaunchJobForm.utils";
 
 // ======================= 类型定义 =======================
 type ResubmitInferParams = InferenceJobInput;
@@ -81,7 +81,7 @@ type QueueFooterLabelKey = Extract<LaunchInferFormKey, `queueFooterLabels.${stri
 
 // 镜像来源配置（label & placeholder 的 key）
 const IMAGE_SOURCE_TAB_CONFIG: readonly {
-  key: TrainImageSourceKey;
+  key: InferImageSourceKey;
   labelKey: ImageSourceLabelKey;
   placeholderKey: ImagePlaceholderKey;
 }[] = [
@@ -90,7 +90,7 @@ const IMAGE_SOURCE_TAB_CONFIG: readonly {
   { key: "remote", labelKey: "imageSourceTabs.remote", placeholderKey: "imagePlaceholders.remote" },
 ];
 
-const IMAGE_PLACEHOLDER_KEYS: Record<TrainImageSourceKey, ImagePlaceholderKey> = {
+const IMAGE_PLACEHOLDER_KEYS: Record<InferImageSourceKey, ImagePlaceholderKey> = {
   mine: "imagePlaceholders.mine",
   public: "imagePlaceholders.public",
   remote: "imagePlaceholders.remote",
@@ -258,10 +258,10 @@ export const LaunchInferForm = ({
   const [jobName, setJobName] = useState(initialJobName);
   const [activeResourceTab, setActiveResourceTab] = useState<QueueKind>("gpu");
   const [selectedQueueKey, setSelectedQueueKey] = useState<string | undefined>();
-  const [selectedImageSource, setSelectedImageSource] = useState<TrainImageSourceKey>("mine");
+  const [selectedImageSource, setSelectedImageSource] = useState<InferImageSourceKey>("mine");
 
   // 记录不同镜像来源下用户填写的草稿，切换标签时可恢复
-  const imageSourceDraftsRef = useRef<Record<TrainImageSourceKey, ImageSourceDraft>>({
+  const imageSourceDraftsRef = useRef<Record<InferImageSourceKey, ImageSourceDraft>>({
     mine: {},
     public: {},
     remote: {},
@@ -431,7 +431,7 @@ export const LaunchInferForm = ({
   }, [appForm, resourceForm, selectedCluster]);
 
   // ----------- 交互处理逻辑 -----------
-  const handleImageSourceChange = (nextSource: TrainImageSourceKey) => {
+  const handleImageSourceChange = (nextSource: InferImageSourceKey) => {
     // 在切换标签前保存当前填写的数据，便于恢复
     const currentDraft: ImageSourceDraft = {
       image: appForm.getFieldValue("image"),

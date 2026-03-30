@@ -75,13 +75,6 @@ export default {
         refreshAccountList: "アカウント一覧を更新",
         noAvailableAccount: "利用可能なアカウントなし",
       },
-      partitionSelector: {
-        isLoading: "データ取得中...",
-        selectPartitionPlaceholder: "パーティションを選択",
-        refreshPartitionList: "パーティション一覧を更新",
-        noAvailablePartition: "利用可能なパーティションなし",
-        noAssignedPartition: "割り当てられたパーティションなし",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "クラスター",
@@ -541,10 +534,6 @@ export default {
       },
       infoPane: {
         nodeUtilization: "ノード利用率",
-      },
-      doubleInfoPane: {
-        CPUCoreUsage: "CPUコア使用率",
-        GPUCoreUsage: "アクセラレータカード使用率",
       },
       titleContainer: {
         available: "利用可能",

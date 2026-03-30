@@ -24,7 +24,7 @@ import { BaseInfoSection } from "./submitJobCom/BaseInfoSection";
 import { JobConfigSection } from "./submitJobCom/JobConfigSection";
 import { PartitionRow, PartitionTabKey, ResourceConfigSection } from "./submitJobCom/ResourceConfigSection";
 import { SaveAsTemplateModal } from "./submitJobCom/SaveAsTemplateModal";
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "./submitJobCom/SubmitJobForm.style";
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import { BaseFormValues, JobFormValues, ResourceFormValues } from "./submitJobCom/SubmitJobForm.types";
 import { TemplateListModal } from "./submitJobCom/TemplateListModal";
 import { AntdButton } from "@scow/lib-web/build/components/styledAntdCom/Button";

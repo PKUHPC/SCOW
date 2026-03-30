@@ -1,7 +1,7 @@
 import { PictureOutlined } from "@ant-design/icons";
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { RoundedSearch } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { Avatar, Card, Col, Form, Input, Row, Space, Spin, Tooltip } from "antd";
+import { Avatar, Card, Col, Form, Row, Space, Spin, Tooltip } from "antd";
 import { join } from "path";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "simstate";

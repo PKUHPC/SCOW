@@ -44,30 +44,3 @@ export async function getScowAccounts(tenantName?: string, accountName?: string)
 
 }
 
-// // 获取 scow 的账户在集群中的可用分区
-// export async function getAccountAvailablePartitionsForCluster(clusterId: string, accountName: string):
-// Promise<GetAvailablePartitionsForClusterResponse> {
-
-//   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-//     return { partitions: []};
-//   }
-
-//   const resp = authenticate();
-//   if (!resp) {
-//     throw new Error("Can not Access to SCOW mis-server.");
-//   }
-
-//   const commonConfigClient = getScowClient(ConfigServiceClient);
-
-//   const availablePartitions
-//     = await asyncClientCall(commonConfigClient, "getAvailablePartitionsForCluster", {
-//       cluster: clusterId, accountName, userId: "",
-//     });
-//   if (!availablePartitions || availablePartitions.partitions.length === 0) {
-//     logger.info("Can not find available partitions of %s in %s.", accountName, clusterId);
-//     return { partitions: []};
-//   }
-
-//   return availablePartitions;
-
-// }

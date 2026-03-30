@@ -1,8 +1,6 @@
 /* eslint-disable @stylistic/max-len */
 export default {
   clusterSelectorPlaceholder: "Cluster auswählen",
-  smallScreenMenuWelcome: "Willkommen",
-  smallScreenMenuLogout: "Abmelden",
   userIndicatorName: "Benutzername: ",
   userIndicatorId: "Benutzer-ID: ",
   userIndicatorInfo: "Persönliche Informationen",
@@ -11,8 +9,6 @@ export default {
   darkModeSystem: "Systemeinstellung",
   darkModeLight: "Hell",
   darkModeDark: "Dunkel",
-  defaultClusterSelectorTitle: "Funktionen mit Clusterauswahl verwenden den Standard-Cluster",
-  defaultClusterSelectorLabel: "Standard-Cluster auswählen",
   dateTimeToday: "Heute",
   dateTimeTWeek: "Diese Woche",
   dateTimeTMonth: "Dieser Monat",

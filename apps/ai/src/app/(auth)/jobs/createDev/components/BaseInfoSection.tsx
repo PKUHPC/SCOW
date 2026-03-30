@@ -3,7 +3,7 @@ import { Form, type FormInstance } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 
-import { Label, RoundedInput } from "../LaunchDevForm.styles";
+import { Label, RoundedInput } from "../../LaunchJobForm.styles";
 import type { BaseFormValues } from "../LaunchDevForm.types";
 
 const p = prefix("app.jobs.baseInfoSection.");

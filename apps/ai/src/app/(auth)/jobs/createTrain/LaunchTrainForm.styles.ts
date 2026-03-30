@@ -1,7 +1,7 @@
 import { Segmented, Space } from "antd";
 import styled from "styled-components";
 
-export * from "../createApp/[appId]/LaunchAppForm.styles";
+export * from "../LaunchJobForm.styles";
 
 export const FrameworkSegmentedControl = styled(Segmented)`
   && {

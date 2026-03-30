@@ -30,7 +30,7 @@ import {
   HeaderTitle,
   PaddedCard,
   SectionTitle,
-} from "./LaunchDevForm.styles";
+} from "../LaunchJobForm.styles";
 import type {
   AppFormValues,
   BaseFormValues,
@@ -49,7 +49,7 @@ import {
   convertDurationToHours,
   deriveQueueStats,
   mapQueuesToRows,
-} from "./LaunchDevForm.utils";
+} from "../LaunchJobForm.utils";
 
 // ======================= 类型定义 =======================
 interface Props {

@@ -11,7 +11,6 @@ import type { AuthorizeAppSchema } from "src/pages/api/admin/authorization/autho
 import type { GetTargetAppAuthorizationsSchema } from "src/pages/api/admin/authorization/getTargetAppAuthorizations";
 import type { ChangeJobPriceSchema } from "src/pages/api/admin/changeJobPrice";
 import type { ChangePasswordAsPlatformAdminSchema } from "src/pages/api/admin/changePassword";
-import type { ChangeStorageQuotaSchema } from "src/pages/api/admin/changeStorage";
 import type { DeactivateClusterSchema } from "src/pages/api/admin/deactivateCluster";
 import type { EditUserProfileSchema } from "src/pages/api/admin/editUserProfile";
 import type { FetchJobsSchema } from "src/pages/api/admin/fetchJobs/fetchJobs";
@@ -48,7 +47,6 @@ import type { MigrateNodeSchema } from "src/pages/api/admin/migrateNode";
 import type { GetAlarmDbIdSchema } from "src/pages/api/admin/monitor/getAlarmDbId";
 import type { GetAlarmLogsSchema } from "src/pages/api/admin/monitor/getAlarmLogs";
 import type { GetAlarmLogsCountSchema } from "src/pages/api/admin/monitor/getAlarmLogsCount";
-import type { QueryStorageQuotaSchema } from "src/pages/api/admin/queryStorageQuota";
 import type { SetPlatformRoleSchema } from "src/pages/api/admin/setPlatformRole";
 import type { SetTenantRoleSchema } from "src/pages/api/admin/setTenantRole";
 import type { GetSyncAccountUserHistorySchema } from "src/pages/api/admin/synchronize/getSyncAccountUserHistory";
@@ -138,7 +136,6 @@ import type { CancelJobChargeLimitSchema } from "src/pages/api/users/jobChargeLi
 import type { SetJobChargeLimitSchema } from "src/pages/api/users/jobChargeLimit/set";
 import type { RemoveUserFromAccountSchema } from "src/pages/api/users/removeFromAccount";
 import type { SetAdminSchema } from "src/pages/api/users/setAsAdmin";
-import type { QueryStorageUsageSchema } from "src/pages/api/users/storageUsage";
 import type { UnblockUserInAccountSchema } from "src/pages/api/users/unblockInAccount";
 import type { UnsetAdminSchema } from "src/pages/api/users/unsetAdmin";
 
@@ -150,7 +147,6 @@ export const api = {
   getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>("GET", "/api/admin/authorization/getTargetAppAuthorizations"),
   changeJobPrice: apiClient.fromTypeboxRoute<typeof ChangeJobPriceSchema>("PATCH", "/api/admin/changeJobPrice"),
   changePasswordAsPlatformAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsPlatformAdminSchema>("PATCH", "/api/admin/changePassword"),
-  changeStorageQuota: apiClient.fromTypeboxRoute<typeof ChangeStorageQuotaSchema>("PUT", "/api/admin/changeStorage"),
   deactivateCluster: apiClient.fromTypeboxRoute<typeof DeactivateClusterSchema>("PUT", "/api/admin/deactivateCluster"),
   editUserProfile: apiClient.fromTypeboxRoute<typeof EditUserProfileSchema>("PATCH", "/api/admin/editUserProfile"),
   fetchJobs: apiClient.fromTypeboxRoute<typeof FetchJobsSchema>("POST", "/api/admin/fetchJobs/fetchJobs"),
@@ -187,7 +183,6 @@ export const api = {
   getAlarmDbId: apiClient.fromTypeboxRoute<typeof GetAlarmDbIdSchema>("GET", "/api/admin/monitor/getAlarmDbId"),
   getAlarmLogs: apiClient.fromTypeboxRoute<typeof GetAlarmLogsSchema>("GET", "/api/admin/monitor/getAlarmLogs"),
   getAlarmLogsCount: apiClient.fromTypeboxRoute<typeof GetAlarmLogsCountSchema>("GET", "/api/admin/monitor/getAlarmLogsCount"),
-  queryStorageQuota: apiClient.fromTypeboxRoute<typeof QueryStorageQuotaSchema>("GET", "/api/admin/queryStorageQuota"),
   setPlatformRole: apiClient.fromTypeboxRoute<typeof SetPlatformRoleSchema>("PUT", "/api/admin/setPlatformRole"),
   setTenantRole: apiClient.fromTypeboxRoute<typeof SetTenantRoleSchema>("PUT", "/api/admin/setTenantRole"),
   getSyncAccountUserHistory: apiClient.fromTypeboxRoute<typeof GetSyncAccountUserHistorySchema>("GET", "/api/admin/synchronize/getSyncAccountUserHistory"),
@@ -281,7 +276,6 @@ export const api = {
   setJobChargeLimit: apiClient.fromTypeboxRoute<typeof SetJobChargeLimitSchema>("PUT", "/api/users/jobChargeLimit/set"),
   removeUserFromAccount: apiClient.fromTypeboxRoute<typeof RemoveUserFromAccountSchema>("DELETE", "/api/users/removeFromAccount"),
   setAdmin: apiClient.fromTypeboxRoute<typeof SetAdminSchema>("PUT", "/api/users/setAsAdmin"),
-  queryStorageUsage: apiClient.fromTypeboxRoute<typeof QueryStorageUsageSchema>("GET", "/api/users/storageUsage"),
   unblockUserInAccount: apiClient.fromTypeboxRoute<typeof UnblockUserInAccountSchema>("PUT", "/api/users/unblockInAccount"),
   unsetAdmin: apiClient.fromTypeboxRoute<typeof UnsetAdminSchema>("PUT", "/api/users/unsetAdmin"),
 };

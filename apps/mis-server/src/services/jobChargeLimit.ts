@@ -245,43 +245,5 @@ export const jobChargeLimitServer = plugin((server) => {
       }];
     },
 
-    // addJobCharge: async ({ request, em, logger }) => {
-    //   const { accountName, charge, userId } = ensureNotUndefined(request, ["charge"]);
-
-    //   await em.transactional(async (em) => {
-    //     const userAccount = await em.findOne(UserAccount, {
-    //       user: { userId },
-    //       account: { accountName },
-    //     }, {  populate: ["user", "account"], lockMode: LockMode.PESSIMISTIC_WRITE });
-
-    //     if (!userAccount) {
-    //       throw <ServiceError>{
-    //         code: Status.NOT_FOUND,
-    //         details: "User is not found in account.",
-    //       };
-    //     }
-
-    //     const chargeNumber = moneyToNumber(charge);
-    //     if (userAccount.usedJobCharge && userAccount.jobChargeLimit) {
-    //       userAccount.usedJobCharge = userAccount.usedJobCharge.plus(chargeNumber);
-    //       if (userAccount.usedJobCharge.gt(userAccount.jobChargeLimit)) {
-    //         await userAccount.block(server.ext.clusters);
-    //       } else {
-    //         await userAccount.unblock(server.ext.clusters);
-    //       }
-
-    //       logger.info("Add job charge %s to user %s account %s. Current: %s/%s",
-    //         chargeNumber.toFixed(2),
-    //         userId,
-    //         accountName,
-    //         userAccount.usedJobCharge.toFixed(2),
-    //         userAccount.jobChargeLimit.toFixed(2),
-    //       );
-    //     }
-    //   });
-
-    //   return [{}];
-
-    // },
   });
 });

@@ -75,13 +75,6 @@ export default {
         refreshAccountList: "계정 목록 새로고침",
         noAvailableAccount: "사용 가능한 계정 없음",
       },
-      partitionSelector: {
-        isLoading: "데이터 조회 중...",
-        selectPartitionPlaceholder: "파티션을 선택하세요",
-        refreshPartitionList: "파티션 목록 새로고침",
-        noAvailablePartition: "사용 가능한 파티션 없음",
-        noAssignedPartition: "권한 있는 파티션 없음",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "클러스터",
@@ -541,10 +534,6 @@ export default {
       },
       infoPane: {
         nodeUtilization: "노드 사용률",
-      },
-      doubleInfoPane: {
-        CPUCoreUsage: "CPU 코어 사용률",
-        GPUCoreUsage: "가속 카드 사용률",
       },
       titleContainer: {
         available: "사용 가능",

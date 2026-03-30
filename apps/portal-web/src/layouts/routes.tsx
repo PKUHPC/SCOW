@@ -2,7 +2,7 @@ import { DefaultNavLinkIcon } from "@scow/lib-web/build/layouts/base/header/icon
 import { NavItemProps } from "@scow/lib-web/build/layouts/base/types";
 import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { join } from "path";
-import { useI18n, useI18nTranslateToString } from "src/i18n";
+import { useI18nTranslateToString } from "src/i18n";
 import {
   AllJobsIcon, ApplicationIcon, AppSessionsIcon, ClusterFileManagerIcon
   , CreateAppIcon, DashBoardIcon, FileManagerIcon,

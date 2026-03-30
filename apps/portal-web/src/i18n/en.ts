@@ -82,13 +82,6 @@ export default {
         refreshAccountList: "Refresh Account List",
         noAvailableAccount: "No Available Account",
       },
-      partitionSelector: {
-        isLoading: "Retrieving data...",
-        selectPartitionPlaceholder: "Select Partition",
-        refreshPartitionList: "Refresh Partition List",
-        noAvailablePartition: "No Available Partition",
-        noAssignedPartition: "No Assigned Partition",
-      },
       allJobsTable: {
         searchForm: {
           clusterLabel: "Cluster",
@@ -688,10 +681,6 @@ export default {
       },
       infoPane:{
         nodeUtilization:"Node Utilization",
-      },
-      doubleInfoPane:{
-        CPUCoreUsage:"CPU Core Usage",
-        GPUCoreUsage:"Accelerator Card Usage",
       },
       titleContainer:{
         available:"Available",

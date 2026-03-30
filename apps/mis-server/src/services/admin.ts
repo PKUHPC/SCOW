@@ -31,63 +31,6 @@ import { checkRunningSyncTask, ensureNoRunningSyncTask } from "src/utils/synchro
 export const adminServiceServer = plugin((server) => {
 
   server.addService<AdminServiceServer>(AdminServiceService, {
-    changeStorageQuota: async () => {
-      // const { cluster, mode, userId, value } = request;
-
-      // const quota = await em.findOne(StorageQuota, {
-      //   user: { userId }, cluster,
-      // });
-
-      // if (!quota) {
-      //   throw <ServiceError>{
-      //     code: Status.NOT_FOUND, message: `User ${userId} or cluster ${cluster} is not found`,
-      //   };
-      // }
-
-      // const reply = await server.ext.clusters.callOnOne(
-      //   cluster,
-      //   logger,
-      //   async (ops) => ops.storage.changeStorageQuota({ request: { mode, userId, value }, logger }),
-      // );
-
-      // if (reply.code === "NOT_FOUND") {
-      //   throw <ServiceError> {
-      //     code: Status.NOT_FOUND, message: `User ${userId} or cluster ${cluster} is not found`,
-      //   };
-      // }
-
-      // if (reply.code === "INVALID_VALUE") {
-      //   throw <ServiceError> {
-      //     code: Status.INVALID_ARGUMENT, message: `The changed storage quota value ${value} is not valid`,
-      //   };
-      // }
-
-      // quota.storageQuota = reply.currentQuota;
-
-      // await em.flush();
-
-      // return [{ currentQuota: quota.storageQuota }];
-      return [{ currentQuota: 10 }];
-
-    },
-
-    queryStorageQuota: async () => {
-      // const { cluster, userId } = request;
-
-      // const quota = await em.findOne(StorageQuota, {
-      //   user: { userId }, cluster,
-      // });
-
-      // if (!quota) {
-      //   throw {
-      //     code: Status.NOT_FOUND, message: `User ${userId} or cluster ${cluster} is not found`,
-      //   } as ServiceError;
-      // }
-
-      // return [{ currentQuota: quota.storageQuota }];
-      return [{ currentQuota: 0 }];
-    },
-
     importUsers: async ({ request, em, logger }) => {
 
       // 检查当前是否有正在执行的同步用户账户操作

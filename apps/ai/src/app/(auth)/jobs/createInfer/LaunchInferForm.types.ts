@@ -1,12 +1,12 @@
 import type {
   ImageSourceKey,
   ResourceFormValues as BaseResourceFormValues,
-} from "../createApp/[appId]/LaunchAppForm.types";
+} from "../LaunchJobForm.types";
 
-export type TrainImageSourceKey = Exclude<ImageSourceKey, "preset">;
+export type InferImageSourceKey = Exclude<ImageSourceKey, "preset">;
 export interface ResourceFormValues extends BaseResourceFormValues {
   nodeCount?: number;
   maxTimeUnlimited?: boolean;
 }
 
-export * from "../createApp/[appId]/LaunchAppForm.types";
+export * from "../LaunchJobForm.types";

@@ -5,7 +5,7 @@ import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Avatar, Button, Divider, Form, Spin, Typography } from "antd";
+import { App, Avatar, Button, Divider, Form, Typography } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import { join } from "path";
@@ -26,7 +26,7 @@ import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
 import { styled } from "styled-components";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "../job/submitJobCom/SubmitJobForm.style";
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import { AppConfigSection } from "./CreateAppCom/AppConfigSection";
 import { AppResourceFormValues,FixedOrEditableFormItem,
   getSelectAttributeInitalValue } from "./CreateAppCom/FixedOrEditableFormItem";

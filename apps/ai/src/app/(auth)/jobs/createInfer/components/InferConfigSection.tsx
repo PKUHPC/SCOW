@@ -22,23 +22,23 @@ import {
   SectionCard,
   SectionTitle,
   SubtleCheckbox,
-} from "../LaunchInferForm.styles";
+} from "../../LaunchJobForm.styles";
 import type {
   AppFormValues,
   ImageOption,
-  TrainImageSourceKey,
+  InferImageSourceKey,
 } from "../LaunchInferForm.types";
 
 interface ImageSourceTab {
-  key: TrainImageSourceKey;
+  key: InferImageSourceKey;
   label: string;
 }
 
 interface InferConfigSectionProps {
   form: FormInstance<AppFormValues>;
   imageSourceTabs: ImageSourceTab[];
-  selectedImageSource: TrainImageSourceKey;
-  onImageSourceChange: (source: TrainImageSourceKey) => void;
+  selectedImageSource: InferImageSourceKey;
+  onImageSourceChange: (source: InferImageSourceKey) => void;
   imagePlaceholder: string;
   imageOptions: ImageOption[];
   isImagesLoading: boolean;
@@ -145,7 +145,7 @@ export const InferConfigSection = ({
               size="large"
               options={imageSourceTabs.map(({ key, label }) => ({ label, value: key }))}
               value={selectedImageSource}
-              onChange={(imageSource) => onImageSourceChange(imageSource as TrainImageSourceKey)}
+              onChange={(imageSource) => onImageSourceChange(imageSource as InferImageSourceKey)}
             />
 
             {selectedImageSource === "remote" ? (

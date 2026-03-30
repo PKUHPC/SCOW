@@ -15,7 +15,7 @@ import {
   SectionCard,
   SectionTitle,
   SubtleCheckbox,
-} from "../LaunchDevForm.styles";
+} from "../../LaunchJobForm.styles";
 import type {
   AppFormValues,
   DevImageSourceKey,
