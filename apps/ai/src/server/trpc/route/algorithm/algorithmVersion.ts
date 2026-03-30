@@ -33,6 +33,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildSharedTopDir } from "../utils/sharedTopDir";
 import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const getAlgorithmVersions = procedure
@@ -766,7 +767,7 @@ export const shareAlgorithmVersion = procedure
     }, async (fileDriver) => {
       return await fileDriver.getHomeDirectory();
     }, logger);
-    const homeTopDir = dirname(dirname(homeDir));
+    const sharedTopDir = buildSharedTopDir(algorithm.clusterId, homeDir);
 
     const successCallback = async (targetFullPath: string) => {
       const em = await forkEntityManager();
@@ -807,7 +808,7 @@ export const shareAlgorithmVersion = procedure
         sharedTarget:SHARED_TARGET.ALGORITHM,
         targetName:algorithm.name,
         targetSubName:algorithmVersion.versionName,
-        homeTopDir,
+        sharedTopDir,
       }, successCallback, failureCallback);
     }, logger);
 

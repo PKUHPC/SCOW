@@ -32,8 +32,8 @@ export interface ShareParams {
   targetName: string,
   // 分享的目标子级名称：数据集版本，算法版本，模型版本的名称
   targetSubName: string,
-  // 用户家目录/home/{userId}的上级目录
-  homeTopDir: string,
+  // 默认是用户家目录/nfs/home/{userId}的上上级目录/nfs，配置了sharedTopDir则直接使用
+  sharedTopDir: string,
 }
 
 export interface FileDriver {

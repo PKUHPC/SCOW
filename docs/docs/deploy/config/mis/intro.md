@@ -150,6 +150,8 @@ nodeMigration:
     - group: ["linux", "ai01"]
     - group: ["linux", "ai02", "crane01"]
 
+# 节点迁移跨集群状态比对时，节点名按大小写不敏感匹配；展示与迁移调用仍使用各集群原始节点名
+
 # 选配是否允许用户和账户管理员修改作业时限，默认为true
 allowUserChangeJobTimeLimit: true
 

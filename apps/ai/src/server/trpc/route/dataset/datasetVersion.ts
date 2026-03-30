@@ -34,6 +34,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildSharedTopDir } from "../utils/sharedTopDir";
 import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const DatasetVersionListSchema = z.object({
@@ -784,7 +785,7 @@ export const shareDatasetVersion = procedure
     }, async (fileDriver) => {
       return await fileDriver.getHomeDirectory();
     }, logger);
-    const homeTopDir = dirname(dirname(homeDir));
+    const sharedTopDir = buildSharedTopDir(dataset.clusterId, homeDir);
 
 
     const successCallback = async (targetFullPath: string) => {
@@ -822,11 +823,11 @@ export const shareDatasetVersion = procedure
       user:user.identityId,
     }, async (fileDriver) => {
       await fileDriver.shareFileOrDir({
-        sourceFilePath:datasetVersion.privatePath ,
+        sourceFilePath:datasetVersion.privatePath,
         sharedTarget:SHARED_TARGET.DATASET,
         targetName:dataset.name,
         targetSubName:datasetVersion.versionName,
-        homeTopDir,
+        sharedTopDir,
       }, successCallback, failureCallback);
     }, logger);
 

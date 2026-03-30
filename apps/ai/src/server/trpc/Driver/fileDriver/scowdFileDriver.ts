@@ -382,11 +382,11 @@ export class ScowdFileDriver implements FileDriver {
 
   // 以root身份分享的文件夹
   async shareFileOrDir(
-    { sourceFilePath,sharedTarget,targetName,targetSubName,homeTopDir }: ShareParams,
+    { sourceFilePath,sharedTarget,targetName,targetSubName,sharedTopDir }: ShareParams,
     successCallback?: shareOkCallback,
     failureCallback?: callback): Promise<void> {
     // 获取类别路径 如 nfs/home/.shared/{userId}/{target}
-    const targetDirectory = path.join(homeTopDir, SHARED_DIR, this.userId, sharedTarget);
+    const targetDirectory = path.join(sharedTopDir, SHARED_DIR, this.userId, sharedTarget);
     // nfs/home/.shared/{userId}/{target}/{targetName}
     const targetTopDir = path.join(targetDirectory, targetName);
     // nfs/home/.shared/{userId}/{target}/{targetName}/{versionName}
@@ -414,7 +414,7 @@ export class ScowdFileDriver implements FileDriver {
         await wrap(
           this.client.file.changeMode({
             userId: this.userId,
-            path: SHARED_DIR,
+            path: targetDirectory,
             mode: "555",
             recursive:true,
           }),

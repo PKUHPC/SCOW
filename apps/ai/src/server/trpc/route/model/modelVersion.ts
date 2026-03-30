@@ -36,6 +36,7 @@ import { getCurrentClusters } from "../../../utils/clusters";
 import { driver } from "../../Driver";
 import { withFileDriver } from "../../Driver/fileDriver/fileDriver";
 import { booleanQueryParam } from "../utils";
+import { buildSharedTopDir } from "../utils/sharedTopDir";
 import { buildVersionMap, mapAssetEntityGroupsWithVersions } from "../utils/versionHelpers";
 
 export const VersionListSchema = z.object({
@@ -788,7 +789,7 @@ export const shareModelVersion = procedure
     }, async (fileDriver) => {
       return await fileDriver.getHomeDirectory();
     }, logger);
-    const homeTopDir = dirname(dirname(homeDir));
+    const sharedTopDir = buildSharedTopDir(model.clusterId, homeDir);
 
 
     const successCallback = async (targetFullPath: string) => {
@@ -830,7 +831,7 @@ export const shareModelVersion = procedure
         sharedTarget:SHARED_TARGET.MODEL,
         targetName:model.name,
         targetSubName:modelVersion.versionName,
-        homeTopDir,
+        sharedTopDir,
       }, successCallback, failureCallback);
     }, logger);
 

@@ -1,16 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -41,6 +28,9 @@ export const MigrateNodeSchema = typeboxRouteSchema({
 
     // 节点已在某集群上线
     409: Type.Object({ message: Type.String() }),
+
+    // 集群不存在
+    404: Type.Object({ message: Type.String() }),
 
     /** 迁移失败 */
     500: Type.Object({ message: Type.String() }),
@@ -87,6 +77,7 @@ export default route(MigrateNodeSchema,
       return { 204: null };
     })
       .catch(handlegRPCError({
+        [Status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
         [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
         [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
         [Status.UNIMPLEMENTED]: (e) => ({ 501:{ message: e.details } }),

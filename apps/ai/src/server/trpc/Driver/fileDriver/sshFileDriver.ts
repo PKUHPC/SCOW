@@ -297,7 +297,7 @@ export class SshFileDriver implements FileDriver {
 
   // 以root身份分享的文件夹
   async shareFileOrDir(
-    { sourceFilePath,sharedTarget,targetName,targetSubName,homeTopDir }: ShareParams,
+    { sourceFilePath,sharedTarget,targetName,targetSubName,sharedTopDir }: ShareParams,
     successCallback?: shareOkCallback,
     failureCallback?: callback): Promise<void> {
 
@@ -305,7 +305,7 @@ export class SshFileDriver implements FileDriver {
       await sshConnect(this.host, "root", this.logger, async (ssh) => {
         const sftp = await ssh.requestSFTP();
         // 获取类别路径 如 nfs/home/.shared/{userId}/{target}
-        const targetDirectory = path.join(homeTopDir, SHARED_DIR, this.userId, sharedTarget);
+        const targetDirectory = path.join(sharedTopDir, SHARED_DIR, this.userId, sharedTarget);
         // nfs/home/.shared/{userId}/{target}/{targetName}
         const targetTopDir = path.join(targetDirectory, targetName);
         // nfs/home/.shared/{userId}/{target}/{targetName}/{versionName}
@@ -314,7 +314,7 @@ export class SshFileDriver implements FileDriver {
         // 判断共享目录是否存在
         if (!await sftpExists(sftp, targetDirectory)) {
           await loggedExec(ssh, this.logger, false, "mkdir", ["-p", targetDirectory]);
-          await loggedExec(ssh, this.logger, false, "chmod", ["-R", "555", SHARED_DIR]);
+          await loggedExec(ssh, this.logger, false, "chmod", ["-R", "555", targetDirectory]);
         }
 
         // 判断目标路径是否存在，如果不存在则创建

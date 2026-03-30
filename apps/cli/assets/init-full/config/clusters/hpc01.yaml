@@ -41,6 +41,14 @@ ai:
   #     binPath: "/demo_path/vscode/bin/code-server"
   #   # 最大运行时间，可选，不填写表示不限制运行时间
   #   # maxRunningTimeHours: 10
+  # # 选配：分享数据资产的文件夹所在的目录
+  # 计算共享目录顶层路径：
+  #  1) 优先使用集群级 `sharedTopDir` 配置；
+  #  2) 未配置时按用户家目录回退到“上上级目录”（如 `/nfs/home/user` -> `/nfs`）；
+  #  3) 若上上级退化为根目录 `/`，则回退为上级目录，避免共享目录挂到根路径。
+  # 共享目录的路径是在共享目录顶层路径里的.shared文件夹中（比如`${sharedTopDir}/.shared`,`/nfs/.shared`）
+  # 配置后，不可修改
+  # sharedTopDir: "/nfs"
   # 公共数据资产目录路径，若AI可用则必填，配置时需同步在集群中创建该目录, 该路径配置之后请勿随意修改，否则已有的公共数据资产将无法正常使用
   # clusterPublicPath: "/nfs/.public"
 

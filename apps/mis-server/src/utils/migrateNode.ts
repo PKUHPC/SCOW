@@ -57,6 +57,8 @@ export interface NodeClusterStatusWithPartitions extends NodeClusterStatus {
   partitions: string[]; // 分区信息
 }
 
+export const normalizeNodeName = (nodeName: string): string => nodeName.toLowerCase();
+
 interface ClusterCheckResult {
   clusterErrors: string[];
   versionErrors: string[];

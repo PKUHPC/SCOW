@@ -13,7 +13,7 @@ import { configClusters } from "src/config/clusters";
 import { rootKeyPair } from "src/config/env";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 import { getUniqueMigrationGroups, handleValidationErrors,NodeClusterStatus,
-  NodeClusterStatusWithPartitions, performClusterChecks
+  NodeClusterStatusWithPartitions, normalizeNodeName, performClusterChecks
   ,validateMigratableClustersConfig } from "src/utils/migrateNode";
 import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
@@ -226,6 +226,12 @@ export const misConfigServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
+      // 单节点搜索场景中，为了支持大小写无关匹配，先拉全量节点再做本地过滤
+      const searchedNormalizedNodeName = nodeNames.length === 1
+        ? normalizeNodeName(nodeNames[0])
+        : undefined;
+      const nodeNamesForClusterQuery = [];
+
       // 1. 配置校验是否正确
       const migratableClusterGroups = validateMigratableClustersConfig();
 
@@ -264,7 +270,7 @@ export const misConfigServiceServer = plugin((server) => {
         logger,
         async (client) => {
           return await asyncClientCall(client.config, "getClusterNodesInfo", {
-            nodeNames: nodeNames || [],
+            nodeNames: nodeNamesForClusterQuery,
           });
         },
       ).catch((e) => {
@@ -293,6 +299,10 @@ export const misConfigServiceServer = plugin((server) => {
 
       logger.info(`get nodes from cluster ${cluster} success`);
 
+      const filteredOriginNodes = searchedNormalizedNodeName
+        ? originNodes.filter((node) => normalizeNodeName(node.nodeName) === searchedNormalizedNodeName)
+        : originNodes;
+
       // 在步骤5之前增加节点状态聚合Map, 记录各节点在其可能存在的集群中的状态
       const nodeClusterStatusMap = new Map<string, NodeClusterStatusWithPartitions[]>();
 
@@ -306,7 +316,7 @@ export const misConfigServiceServer = plugin((server) => {
             logger,
             async (client) => {
               return await asyncClientCall(client.config, "getClusterNodesInfo", {
-                nodeNames: nodeNames || [],
+                nodeNames: nodeNamesForClusterQuery,
               });
             },
           ).catch((e) => {
@@ -337,9 +347,13 @@ export const misConfigServiceServer = plugin((server) => {
 
           logger.info("%s 集群中的节点 %o", targetCluster, nodes);
 
+          const filteredTargetNodes = searchedNormalizedNodeName
+            ? nodes.filter((node) => normalizeNodeName(node.nodeName) === searchedNormalizedNodeName)
+            : nodes;
+
           // 构建节点的各集群状态映射
-          nodes.forEach((node) => {
-            const key = node.nodeName;
+          filteredTargetNodes.forEach((node) => {
+            const key = normalizeNodeName(node.nodeName);
             const nodeValue = nodeClusterStatusMap.get(key) || [];
             nodeValue.push({
               cluster: targetCluster,
@@ -350,7 +364,7 @@ export const misConfigServiceServer = plugin((server) => {
 
             nodeClusterStatusMap.set(key, nodeValue);
           });
-          return nodes;
+          return filteredTargetNodes;
         }),
       );
 
@@ -365,9 +379,9 @@ export const misConfigServiceServer = plugin((server) => {
       }
 
       // 6. 首先筛选出当前集群节点中存在于其他集群的节点，并过滤其他集群已上线的节点
-      const filterOtherClusterUpNodes = originNodes.filter((node) => {
+      const filterOtherClusterUpNodes = filteredOriginNodes.filter((node) => {
         // 全局状态检查（a. 过滤其他集群已上线的节点）
-        const allClustersStatus = nodeClusterStatusMap.get(node.nodeName) || [];
+        const allClustersStatus = nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)) || [];
 
         return allClustersStatus.length && !allClustersStatus.some((node) =>
           (node.state !== NodeInfo_NodeState.NOT_AVAILABLE || !node.removable),
@@ -386,7 +400,7 @@ export const misConfigServiceServer = plugin((server) => {
             NodeStatus.ACTIVE_MIGRATABLE : // b. 节点在该集群上，可迁移
             NodeStatus.OCCUPIED_BY_JOBS; // c. 节点在该集群上，不可迁移
         } else { // 该节点不在该集群线上或drain了
-          const allClustersStatus = nodeClusterStatusMap.get(node.nodeName) || [];
+          const allClustersStatus = nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)) || [];
 
           const allOffline = allClustersStatus.every((s) =>
             s.state === NodeInfo_NodeState.NOT_AVAILABLE && s.removable,
@@ -406,7 +420,11 @@ export const misConfigServiceServer = plugin((server) => {
           }
         }
 
-        return { ...node , nodeStatus: statusType, migratableClusterList: nodeClusterStatusMap.get(node.nodeName) };
+        return {
+          ...node,
+          nodeStatus: statusType,
+          migratableClusterList: nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)),
+        };
 
       });
 
@@ -435,6 +453,7 @@ export const misConfigServiceServer = plugin((server) => {
 
       // originCluster未定义时为节点上线，有定义为节点迁移
       const { nodeName, originCluster, destinationCluster } = request;
+      const normalizedRequestedNodeName = normalizeNodeName(nodeName);
 
       // 2. 从配置文件获取要上线的集群节点可能迁移的目标集群
       const uniqueGroups = getUniqueMigrationGroups(migratableClusterGroups, destinationCluster);
@@ -471,7 +490,6 @@ export const misConfigServiceServer = plugin((server) => {
 
       // 4. 节点下线
       if (originCluster) {
-
         logger.info(`remove node ${nodeName} from cluster ${originCluster}`);
 
         await server.ext.clusters.callOnOne(
@@ -495,16 +513,16 @@ export const misConfigServiceServer = plugin((server) => {
         });
 
         logger.info(`remove node ${nodeName} from cluster ${originCluster} success`);
-
       }
 
       logger.info(`add node ${nodeName} to cluster ${destinationCluster}`);
 
       // 节点状态聚合数组, 记录节点在其可能存在的集群中的状态
       const nodeClusterStatusArr: NodeClusterStatus[] = [];
+      // 记录该节点在各集群中的原始节点名，供迁移时使用目标集群节点名
+      const clusterNodeNameMap = new Map<string, string>();
 
       // 5. 获取各相关集群与目标集群的该节点状态数组
-
       const nodeClusterErrorArr: string[] = [];
 
       await Promise.allSettled(
@@ -514,35 +532,35 @@ export const misConfigServiceServer = plugin((server) => {
             logger,
             async (client) => {
               return await asyncClientCall(client.config, "getClusterNodesInfo", {
-                nodeNames: [ nodeName ],
+                nodeNames: [],
               });
             },
           ).catch((e) => {
 
-            logger.error(`get ${targetCluster} ${nodeName} NodesInfo failed`, e);
-
-            const errDetailsArr = e.details.split("Error: 5 NOT_FOUND");
-
-            if (errDetailsArr.length === 1) { // 非找不到节点，是其他错误
-              nodeClusterErrorArr.push(targetCluster);
-            }
+            logger.error(`get ${targetCluster} NodesInfo failed`, e);
+            nodeClusterErrorArr.push(targetCluster);
 
             throw {
-              code: status.NOT_FOUND,
+              code: status.UNKNOWN,
             } as ServiceError;
-
           });
+
+          const matchedNode = nodes.find((node) =>
+            normalizeNodeName(node.nodeName) === normalizedRequestedNodeName,
+          );
+
+          if (!matchedNode) {
+            return;
+          }
+
+          clusterNodeNameMap.set(targetCluster, matchedNode.nodeName);
+
           // 构建节点的各集群状态映射
-          nodes.forEach((node) => {
-
-            nodeClusterStatusArr.push({
-              cluster: targetCluster,
-              state: node.state,
-              removable: node.removable,
-            });
-
+          nodeClusterStatusArr.push({
+            cluster: targetCluster,
+            state: matchedNode.state,
+            removable: matchedNode.removable,
           });
-          return nodes;
         }),
       );
 
@@ -575,6 +593,24 @@ export const misConfigServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
+      const destinationClusterNodeNameInCluster = clusterNodeNameMap.get(destinationCluster);
+      if (!destinationClusterNodeNameInCluster) {
+        throw {
+          code: status.FAILED_PRECONDITION,
+          message: `node ${nodeName} is not found in cluster ${destinationCluster}`,
+        } as ServiceError;
+      }
+
+      logger.info(
+        "Resolved migrate node names: requestedNode=%s, destinationCluster=%s, destinationNodeInCluster=%s",
+        nodeName,
+        destinationCluster,
+        destinationClusterNodeNameInCluster,
+      );
+
+      // 始终使用目标集群中查询到的原始节点名，避免大小写不一致导致上线失败
+      const destinationClusterNodeName = destinationClusterNodeNameInCluster;
+
       // 7. 节点在目标集群上线
       await server.ext.clusters.callOnOne(
         destinationCluster,
@@ -582,12 +618,12 @@ export const misConfigServiceServer = plugin((server) => {
         async (client) => {
 
           return await asyncClientCall(client.node, "addNodeToCluster", {
-            nodeName,
+            nodeName: destinationClusterNodeName,
           });
         },
       ).catch((e) => {
 
-        const message = `add node to cluster ${originCluster} failed`;
+        const message = `add node to cluster ${destinationCluster} failed`;
 
         logger.error(message, e);
 
@@ -597,7 +633,7 @@ export const misConfigServiceServer = plugin((server) => {
         } as ServiceError;
       });
 
-      logger.info(`add node ${nodeName} to cluster ${destinationCluster} success`);
+      logger.info(`add node ${destinationClusterNodeName} to cluster ${destinationCluster} success`);
 
       return [{}];
     },
