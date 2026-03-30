@@ -109,6 +109,7 @@ module.exports = {
       interpreter_args,
       env: {
         PORT: "5004",
+        AUTH_URL: "http://localhost:5000",
         QUANTUM_URL: "localhost:5007",
         QUANTUM_DEPLOYED: 1,
         ...PRODUCTION_ENV,
