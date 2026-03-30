@@ -139,11 +139,12 @@ export const LaunchAppForm: React.FC<Props> = ({
           });
         return { cluster: selectedCluster, ...result };
       }
-    }, [appInfo, selectedCluster]),
+    }, [appId, selectedCluster]),
   });
 
   // 只有当返回数据对应当前选中集群时才使用，避免切换集群期间使用旧集群的配置
-  const appMetadata = appMetadataResult?.cluster === selectedCluster ? appMetadataResult : undefined;
+  // 如果没有选择集群直接返回appMetadataResult
+  const appMetadata = (!selectedCluster || appMetadataResult?.cluster === selectedCluster) ? appMetadataResult : undefined;
 
   const { appComment, appCustomFormAttributes: attributes = [],
     reservedAppAttributes } = appMetadata ?? {};
@@ -322,7 +323,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       return result;
     }
 
-    if (partitionsInfo?.length > 0) {
+     if (partitionsInfo?.length > 0) {
       const hasCpuPartition = partitionsInfo.some(p => p.kind === "cpu");
       const hasGpuPartition = partitionsInfo.some(p => p.kind === "gpu");
 
@@ -343,14 +344,11 @@ export const LaunchAppForm: React.FC<Props> = ({
   ]);
 
   const accountOptions = useMemo(() => {
-    if (fixedAccountName) {
-      return [fixedAccountName];
-    }
     if (fixedAccountList.length > 0) {
       return fixedAccountList;
     }
     return allAvailableAccounts;
-  }, [allAvailableAccounts, fixedAccountName, fixedAccountList]);
+  }, [allAvailableAccounts, fixedAccountList]);
 
   const clusterOptions = useMemo(() => {
     // 使用复合 map 精确判断：该账户在该 app 下，在哪些集群可用
@@ -688,6 +686,7 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   useEffect(() => {
     if (!accountOptions.length) return;
+    if(selectedAccount && fixedAccountList) return;
     const currentAccount = resourceForm.getFieldValue("account");
     if (currentAccount && accountOptions.includes(currentAccount)) return;
 
@@ -697,7 +696,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       : accountOptions[0];
 
     resourceForm.setFieldValue("account", defaultAccount);
-  }, [accountOptions, availableAccounts, preSelectedCluster, resourceForm]);
+  }, [accountOptions, availableAccounts, preSelectedCluster, resourceForm, fixedAccountList]);
 
   useEffect(() => {
     if (!partitionRows.length) {
@@ -776,7 +775,7 @@ export const LaunchAppForm: React.FC<Props> = ({
                 t={t}
                 name="appJobName"
                 label={<FormLabel>{t(p("appJobName"))}</FormLabel>}
-                rules={[{ required: true }, { max: 50 }]}
+                rules={[{ required: true, message: t(p("jobNameRequired")) }, { max: 50 }]}
                 reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes,
                   ReservedAppAttributeName.APP_JOB_NAME)}
                 children={(

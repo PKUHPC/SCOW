@@ -11,6 +11,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancelIcon, EndIcon, EnterDirectoryIcon } from "src/icons/operationIcon";
@@ -18,18 +19,21 @@ import { calculateAppRemainingTime, compareState } from "src/models/job";
 import { statusColors } from "src/models/job";
 import { ConnectTopAppLink } from "src/pageComponents/app/ConnectToAppLink";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
+import { Cluster } from "src/utils/cluster";
 
 interface FilterForm {
   appJobName: string | undefined
-  clusterId: string | undefined
+  cluster: Cluster
 }
 
 const p = prefix("pageComp.app.appSessionTable.");
 
 export const AppSessionsTable = () => {
 
+  const { currentClusters, defaultCluster, activatedClusters } = useStore(ClusterInfoStore);
+
   const [query, setQuery] = useState<FilterForm>(() => {
-    return { appJobName: undefined, clusterId: undefined };
+    return { appJobName: undefined, cluster: defaultCluster ?? currentClusters[0] };
   });
   const [form] = Form.useForm<FilterForm>();
 
@@ -38,7 +42,6 @@ export const AppSessionsTable = () => {
   const { message } = App.useApp();
 
   const router = useRouter();
-  const { currentClusters } = useStore(ClusterInfoStore);
 
   const [connectivityRefreshToken, setConnectivityRefreshToken] = useState(false);
 
@@ -68,8 +71,8 @@ export const AppSessionsTable = () => {
       filtered = filtered.filter((x) => (x.jobName.toLowerCase().includes(query.appJobName!.toLowerCase())));
     }
 
-    if (query.clusterId) {
-      filtered = filtered.filter((x) => (x.clusterId.toLowerCase().includes(query.clusterId!.toLowerCase())));
+    if (query.cluster) {
+      filtered = filtered.filter((x) => x.clusterId === query.cluster!.id);
     }
 
     return filtered;
@@ -215,12 +218,12 @@ export const AppSessionsTable = () => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { appJobName, clusterId } = await form.validateFields();
-            setQuery({ appJobName: appJobName?.trim(), clusterId: clusterId?.trim() });
+            const { appJobName, cluster } = await form.validateFields();
+            setQuery({ appJobName: appJobName?.trim(), cluster: cluster });
           }}
         >
-          <Form.Item label={t(p("filterForm.cluster"))} name="clusterId">
-            <Input style={{ minWidth: "160px" }} />
+          <Form.Item label={t(p("filterForm.cluster"))} name="cluster">
+            <SingleClusterSelector clusterIds={activatedClusters.map((x) => x.id)} />
           </Form.Item>
           <Form.Item label={t(p("filterForm.appJobName"))} name="appJobName">
             <Input style={{ minWidth: "160px" }} />

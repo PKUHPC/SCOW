@@ -225,7 +225,7 @@ export const ResourceConfigSection = ({
           name="cluster"
           label={<FormLabel>{t(p("clusterLabel"))}</FormLabel>}
           rules={[
-            { required: true },
+            { required: true, message: t(p("clusterRequired")) },
           ]}
           children={(
             <Space wrap>
@@ -322,7 +322,11 @@ export const ResourceConfigSection = ({
           label={<FormLabel>{t(p("nodeCount"))}</FormLabel>}
           dependencies={["partition"]}
           rules={[
-            { required: true, type: "integer", max: currentPartitionInfo?.nodes },
+            { required: true,
+              type: "integer",
+              max: currentPartitionInfo?.nodes,
+              message: t(p("nodeCountRequired")),
+           },
           ]}
           reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT)}
           children={(
@@ -380,6 +384,7 @@ export const ResourceConfigSection = ({
                   type: "integer",
                   max: currentPartitionInfo ?
                     currentPartitionInfo.cores / currentPartitionInfo.nodes : undefined,
+                  message: t(p("cpuCoresRequired")),
                 },
               ]}
               reservedConfig={
@@ -406,7 +411,7 @@ export const ResourceConfigSection = ({
           t={t}
           name="maxTime"
           label={<FormLabel>{t(p("maxTime"))}</FormLabel>}
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: t(p("maxTimeRequired")) }]}
           reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME)}
           children={(
             <RoundedInputNumberWithAddonAfter
