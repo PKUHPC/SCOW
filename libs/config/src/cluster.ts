@@ -154,16 +154,13 @@ export const ClusterConfigSchema = Type.Object({
       devHost: Type.Optional(
         Type.Object(
           {
-            enabled: Type.Optional(
-              Type.Boolean({ description: "是否开启开发机功能", default: false }),
-            ),
+            enabled: Type.Optional(Type.Boolean({ description: "是否开启开发机功能", default: false })),
             vscodeInfo: Type.Object({
               binPath: Type.String({ description: "vscode二进制路径" }),
             }),
             maxRunningTimeHours: Type.Optional(
               Type.Number({
-                description:
-                  "开发机最大运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
+                description: "开发机最大运行时间，单位小时。超过此时间则不能成功创建开发机。不填为不限制",
               }),
             ),
           },
@@ -172,8 +169,7 @@ export const ClusterConfigSchema = Type.Object({
       ),
       clusterPublicPath: Type.Optional(
         Type.String({
-          description:
-            "公共数据资产目录路径, 配置生效后请勿随意修改，否则已有的公共数据资产将无法正常使用",
+          description: "公共数据资产目录路径, 配置生效后请勿随意修改，否则已有的公共数据资产将无法正常使用",
         }),
       ),
 
@@ -192,9 +188,7 @@ export const ClusterConfigSchema = Type.Object({
 
   inferConfig: Type.Optional(
     Type.Object({
-      proxyHost: Type.Optional(
-        Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" }),
-      ),
+      proxyHost: Type.Optional(Type.String({ description: "推理服务代理地址，可选配置，不配置时用scow节点地址转发" })),
     }),
   ),
 
@@ -234,11 +228,7 @@ export type ClusterType = "hpc" | "ai";
  * @param
  * type: 获取的集群类型，如果不传则返回所有集群，如果传入则返回指定类型的集群，例如：["hpc", "ai"] 返回所有HPC和AI集群
  */
-export type GetClusterConfigFn<T> = (
-  baseConfigPath?: string,
-  logger?: Logger,
-  type?: ClusterType[],
-) => T;
+export type GetClusterConfigFn<T> = (baseConfigPath?: string, logger?: Logger, type?: ClusterType[]) => T;
 
 export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigSchema>> = (
   baseConfigPath,
@@ -268,18 +258,14 @@ export const getClusterConfigs: GetClusterConfigFn<Record<string, ClusterConfigS
             allAddressesList.push(ln);
 
             if (clusterInfo.scowd?.enabled) {
-              throw new Error(
-                "If scowd is enabled, scowd port must be configured for each LoginNode.",
-              );
+              throw new Error("If scowd is enabled, scowd port must be configured for each LoginNode.");
             }
           } else {
             uniqueAddressesList.add(ln.address);
             allAddressesList.push(ln.address);
 
             if (clusterInfo.scowd?.enabled && ln.scowd.port === undefined) {
-              throw new Error(
-                "If scowd is enabled, scowd port must be configured for each LoginNode.",
-              );
+              throw new Error("If scowd is enabled, scowd port must be configured for each LoginNode.");
             }
           }
         });
