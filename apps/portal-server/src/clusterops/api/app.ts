@@ -14,7 +14,8 @@ export interface CreateAppRequest {
   proxyBasePath: string;
   nodeCount: number;
   gpuCount?: number;
-  memory?: string;
+  /** in MB */
+  memoryMb?: number;
 }
 
 export interface CreateAppReply {

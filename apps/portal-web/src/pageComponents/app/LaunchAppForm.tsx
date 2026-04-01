@@ -430,9 +430,9 @@ export const LaunchAppForm: React.FC<Props> = ({
     selectedPartitionInfo,
   ]);
 
-  const totalMemory = useMemo(() => {
+  const totalMemoryMb = useMemo(() => {
     if (!selectedPartitionInfo || !nodeCount) {
-      return "-";
+      return undefined;
     }
     const memPerCore = Math.floor(selectedPartitionInfo.memMb / selectedPartitionInfo.cores);
     if (activePartitionTab === "gpu") {
@@ -441,11 +441,11 @@ export const LaunchAppForm: React.FC<Props> = ({
         ? Math.floor(selectedPartitionInfo.cores / selectedPartitionInfo.gpus)
         : 0;
       const memorySize = nodeCount * gpuPerNode * coresPerGpu * memPerCore;
-      return memorySize > 0 ? formatSize(memorySize, ["MB", "GB", "TB"]) : "-";
+      return memorySize > 0 ? memorySize : undefined;
     }
     const cpuPerNode = coreCount ?? 0;
     const memorySize = nodeCount * cpuPerNode * memPerCore;
-    return memorySize > 0 ? formatSize(memorySize, ["MB", "GB", "TB"]) : "-";
+    return memorySize > 0 ? memorySize : undefined;
   }, [
     activePartitionTab,
     coreCount,
@@ -453,6 +453,8 @@ export const LaunchAppForm: React.FC<Props> = ({
     nodeCount,
     selectedPartitionInfo,
   ]);
+
+  const totalMemory = totalMemoryMb !== undefined ? formatSize(totalMemoryMb, ["MB", "GB", "TB"]) : "-";
 
   const timeSecondsForPrice = 3600;
 
@@ -567,7 +569,7 @@ export const LaunchAppForm: React.FC<Props> = ({
       nodeCount: nodeCount,
       coreCount: gpuCount ? gpuCount * Math.floor(selectedPartitionInfo!.cores / selectedPartitionInfo!.gpus) : coreCount,
       gpuCount,
-      memory: totalMemory,
+      memoryMb: totalMemoryMb,
       partition,
       qos,
       account,

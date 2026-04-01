@@ -34,12 +34,10 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
     createApp: async (request, logger) => {
       const apps = getClusterAppConfigs(cluster);
 
-      const { appId, userId, account, coreCount, nodeCount, gpuCount, memory, maxTime, proxyBasePath,
+      const { appId, userId, account, coreCount, nodeCount, gpuCount, memoryMb, maxTime, proxyBasePath,
         partition, qos, customAttributes, appJobName } = request;
 
       const jobName = appJobName;
-
-      const memoryMb = memory ? Number(memory.slice(0, -2)) : undefined;
 
       const userSbatchOptions = customAttributes.sbatchOptions
         ? splitSbatchArgs(customAttributes.sbatchOptions)

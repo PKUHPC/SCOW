@@ -109,7 +109,7 @@ export const appServiceServer = plugin((server) => {
 
     createAppSession: async ({ request, logger }) => {
 
-      const { account, appId, appJobName, cluster, coreCount, nodeCount, gpuCount, memory, maxTime,
+      const { account, appId, appJobName, cluster, coreCount, nodeCount, gpuCount, memoryMb, maxTime,
         proxyBasePath, partition, qos, userId, customAttributes } = request;
 
       // 检查在线集群
@@ -203,7 +203,7 @@ export const appServiceServer = plugin((server) => {
         coreCount,
         nodeCount,
         gpuCount,
-        memory,
+        memoryMb,
         account,
         maxTime,
         partition,
