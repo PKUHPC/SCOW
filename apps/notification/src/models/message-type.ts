@@ -30,6 +30,7 @@ export enum InternalMessageType {
   JobFinished = "JobFinished",
   JobAbnormalTermination = "JobAbnormalTermination",
   AccountUserSyncResult = "AccountUserSyncResult",
+  MonitorAlert = "MonitorAlert",
 }
 
 export enum AdminMessageType {
@@ -442,6 +443,26 @@ export const internalMessageTypesMap = new Map<InternalMessageType, MessageTypeI
       + "Successfully processed {__totalSucceedCount__} records, failed {__totalFailedCount__} records.",
       zhCn:  "{__time__}，{__syncI18nClusterNames__}同步【{__messageStatus__}】。"
       + "共成功 {__totalSucceedCount__} 条，失败 {__totalFailedCount__} 条。",
+    },
+  }],
+  // 监控告警消息，title/content 由 Alertmanager 通过 webhook 传入，元数据中含双语字段
+  [InternalMessageType.MonitorAlert, {
+    type: "MonitorAlert",
+    titleTemplate: {
+      default: "监控告警",
+      en: "Monitor Alert",
+      zhCn: "监控告警",
+    },
+    category: "Admin",
+    categoryTemplate: {
+      default: "系统消息",
+      en: "System Messages",
+      zhCn: "系统消息",
+    },
+    contentTemplate: {
+      default: "{__contentZhCn__}",
+      en: "{__contentEn__}",
+      zhCn: "{__contentZhCn__}",
     },
   }],
   // 其他默认数据...

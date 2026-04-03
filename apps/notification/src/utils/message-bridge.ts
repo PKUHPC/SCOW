@@ -122,9 +122,9 @@ export async function systemBatchSendMsgsToBridge(em: SqlEntityManager, infos: S
 
     const usersInfo = await fetchAllUsers(targetIds, logger);
 
-    usersInfo.forEach(async (info) => {
+    for (const info of usersInfo) {
       if (info === undefined) {
-        return;
+        continue;
       }
 
       // 查询 messageType 的模板信息
@@ -146,7 +146,7 @@ export async function systemBatchSendMsgsToBridge(em: SqlEntityManager, infos: S
         } },
         noticeTypes,
       } as BridgeMessage);
-    });
+    }
   }
 
   // 按批次发送消息

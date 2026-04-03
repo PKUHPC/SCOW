@@ -72,7 +72,9 @@ export const notification = router({
       },
     })
     .input(z.object({
+      // Deprecated: use messageTypes instead.
       messageType: z.string().optional(),
+      messageTypes: z.array(z.string()).optional(),
       page: z.number().optional(),
       pageSize: z.number().optional(),
     }))
@@ -80,7 +82,7 @@ export const notification = router({
       z.object({ results: UnreadMessageSchema.optional() }),
     )
     .query(async ({ input, ctx: { user, req, res } }) => {
-      const { messageType, page, pageSize } = input;
+      const { messageType, messageTypes, page, pageSize } = input;
 
       const subLogger = logger.child({ user: user.identityId });
 
@@ -109,6 +111,7 @@ export const notification = router({
       try {
         const response = await notifClient.scowMessage.listMessages({
           messageType,
+          messageTypes: messageTypes ?? [],
           page,
           pageSize,
           userId: userInfo.identityId,

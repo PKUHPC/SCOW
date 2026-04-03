@@ -284,7 +284,7 @@ export const accountServiceServer = plugin((server) => {
         }).execute<RawAccountQueryResult[]>();
 
       const accountIds = accounts.map((a) => a.id);
-      if (accounts.length === 0) return [];
+      if (accounts.length === 0) return [{ results: [] }];
 
       // 2. 使用 QueryBuilder 批量获取拥有者信息
       const ownersResult = await em.createQueryBuilder(UserAccount, "ua")

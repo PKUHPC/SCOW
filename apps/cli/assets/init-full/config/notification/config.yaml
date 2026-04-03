@@ -40,3 +40,28 @@ messageBridge:
 deleteExpiredMessages:
   cron: "0 3 * * *"
 
+# 可选：Alertmanager Webhook 集成配置
+# 配置后 notification 服务将暴露 HTTP 接口接收 Alertmanager 推送的告警，
+# 并根据 receiverMappings 将告警消息发送给对应用户。
+# alertmanager:
+#   # 是否启用，默认为 true，设为 false 可临时关闭集成而保留配置
+#   enabled: true
+#   receiverMappings:
+#       # alertname 标签值列表，用于匹配 Alertmanager 推送的告警（支持多个告警共享同一接收者配置）
+#     - alertIds:
+#         - HighCPUUsage
+#         - HighMemoryUsage
+#       # 直接指定接收用户的 ID 列表（可选）
+#       users:
+#         - user1
+#         - user2
+#       # 按 SCOW 角色接收，运行时自动查询对应用户（可选）
+#       # 可选值：PLATFORM_ADMIN | PLATFORM_FINANCE | TENANT_ADMIN | TENANT_FINANCE | ACCOUNT_ADMIN | ACCOUNT_OWNER
+#       roles:
+#         - PLATFORM_ADMIN
+#     - alertIds:
+#         - DiskAlmostFull
+#       roles:
+#         - PLATFORM_ADMIN
+#         - TENANT_ADMIN
+

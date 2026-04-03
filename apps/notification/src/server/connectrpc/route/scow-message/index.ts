@@ -183,7 +183,10 @@ export default (router: ConnectRouter) => {
     },
 
     async listMessages(req, ctx) {
-      const { userId, category, noticeType, messageType, readStatus, page, pageSize } = req;
+      const { userId, category, noticeType, messageType, messageTypes, readStatus, page, pageSize } = req;
+      const effectiveMessageTypes = messageTypes.length > 0
+        ? messageTypes
+        : messageType ? [messageType] : [];
 
       if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
 
@@ -282,8 +285,8 @@ export default (router: ConnectRouter) => {
           if (category) {
             queryBuilder.andWhere("m.category", category);
           }
-          if (messageType) {
-            queryBuilder.andWhere("m.message_type", messageType);
+          if (effectiveMessageTypes.length > 0) {
+            queryBuilder.andWhere("m.message_type", "in", effectiveMessageTypes);
           }
         })
         .orderBy("m.created_at", "DESC")

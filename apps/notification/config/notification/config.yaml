@@ -24,3 +24,33 @@ log:
 deleteExpiredMessages:
   cron: "0 3 * * *"
 
+# Alertmanager Webhook 集成配置（可选）
+# Alertmanager 侧配置示例：
+#   receivers:
+#     - name: 'scow-notification'
+#       webhook_configs:
+#         - url: 'http://<notification-host>/api/alertmanager/webhook'
+#           http_config:
+#             authorization:
+#               credentials: '<scowApi.auth.token 的值>'
+#           send_resolved: true
+# 告警规则建议在 annotations 中携带以下字段：
+#   summary: "English title"
+#   summary_zh: "中文标题"
+#   description: "English description"
+#   description_zh: "中文描述"
+#alertmanager:
+#  receiverMappings:
+#    - alertId: "HighCPU"
+#      users:
+#        - "ops_user1"
+#      roles:
+#        - "PLATFORM_ADMIN"
+#    - alertId: "DiskFull"
+#      roles:
+#        - "PLATFORM_ADMIN"
+#        - "TENANT_ADMIN"
+#    - alertId: "NodeDown"
+#      roles:
+#        - "PLATFORM_ADMIN"
+#        - "ACCOUNT_ADMIN"

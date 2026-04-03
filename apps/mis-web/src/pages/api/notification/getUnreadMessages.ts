@@ -53,7 +53,9 @@ export const GetUnreadMessagesSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
+    // Deprecated: use messageTypes instead.
     messageType: Type.Optional(Type.String()),
+    messageTypes: Type.Optional(Type.Array(Type.String())),
     page: Type.Optional(Type.Number()),
     pageSize: Type.Optional(Type.Number()),
   }),
@@ -87,10 +89,10 @@ export default route(GetUnreadMessagesSchema, async (req, res) => {
     return { 503: { code: "SERVICE_TEMPORARILY_UNAVAILABLE" as const } };
   }
 
-  const { messageType, page, pageSize } = req.query;
+  const { messageType, messageTypes, page, pageSize } = req.query;
 
   return notifClient.scowMessage.listMessages({
-    messageType, page, pageSize,
+    messageType, messageTypes: messageTypes ?? [], page, pageSize,
     userId: info.identityId, readStatus: ReadStatus.UNREAD, noticeType: NoticeType.SITE_MESSAGE,
   })
     .then((res) => {

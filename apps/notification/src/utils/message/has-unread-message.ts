@@ -1,7 +1,6 @@
 import { Knex } from "@mikro-orm/mysql";
 import { NoticeType } from "src/models/notice-type";
 import { validateToken } from "src/server/auth/token";
-import { SenderType } from "src/server/entities/Message";
 import { ReadStatus, TargetType } from "src/server/entities/UserMessageRead";
 
 import { forkEntityManager } from "../get-orm";
@@ -39,27 +38,17 @@ export const hasUnreadMessage = async (token: string) => {
         });
     });
 
-  // 构建子查询：从 messages 表获取 sender_type = PLATFORM_ADMIN 的 message_id
-  const mSubquery = knex("messages as m")
-    .select("m.id as message_id")
-    .where("m.sender_type", SenderType.PLATFORM_ADMIN);
+  const unionSubquery = mtSubquery.as("message_ids");
 
-  // 使用 UNION 合并两个子查询
-  const unionSubquery = knex.union([
-    mtSubquery,
-    mSubquery,
-  ], true).as("message_ids");
-
-  // 未读消息的查询
+  // 未读消息的查询：umr 为 NULL（无记录）或明确标记为未读且未删除
   const readConditions = function(this: Knex.QueryBuilder) {
-    this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
-      this.select("umr.message_id as message_id")
-        .where("umr.status", ReadStatus.READ);
-    })
-      .orWhere(function(this: Knex.QueryBuilder) {
-        this.where("umr.status", ReadStatus.UNREAD)
-          .andWhere("umr.is_deleted", false);
-      });
+    this.where(function(this: Knex.QueryBuilder) {
+      this.whereNull("umr.status")
+        .orWhere(function(this: Knex.QueryBuilder) {
+          this.where("umr.status", ReadStatus.UNREAD)
+            .andWhere("umr.is_deleted", false);
+        });
+    });
   };
   // 构建最终查询
   const result = await knex("messages as m")
@@ -71,6 +60,10 @@ export const hasUnreadMessage = async (token: string) => {
     // 筛选符合条件的 message_id
     .whereIn("m.id", knex.select("message_id").from(unionSubquery))
     .andWhere(readConditions)
+    .andWhere(function() {
+      this.where("m.expired_at", ">", new Date())
+        .orWhereNull("m.expired_at");
+    })
     .limit(1)
     .select("m.*");
 

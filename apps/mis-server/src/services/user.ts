@@ -1515,5 +1515,47 @@ export const userServiceServer = plugin((server) => {
 
     },
 
+    getUserIdsByRoles: async ({ request, em }) => {
+      const { filters } = request;
+      const userIds = new Set<string>();
+
+      for (const { role, tenantName, accountName } of filters) {
+        switch (role?.$case) {
+          case "platformRole": {
+            // platformRoleToJSON converts proto number enum → DB string, e.g. 0 → "PLATFORM_ADMIN"
+            const roleStr = platformRoleToJSON(role.platformRole);
+            const users = await em.find(User, { platformRoles: { $like: `%${roleStr}%` } });
+            users.forEach((u) => userIds.add(u.userId));
+            break;
+          }
+          case "tenantRole": {
+            // tenantRoleToJSON converts proto number enum → DB string, e.g. 0 → "TENANT_ADMIN"
+            const roleStr = tenantRoleToJSON(role.tenantRole);
+            const query: FilterQuery<User> = tenantName
+              ? { tenant: { name: tenantName }, tenantRoles: { $like: `%${roleStr}%` } }
+              : { tenantRoles: { $like: `%${roleStr}%` } };
+            const users = await em.find(User, query);
+            users.forEach((u) => userIds.add(u.userId));
+            break;
+          }
+          case "accountRole": {
+            // PFUserRole reverse lookup converts proto number → string name, e.g. 1 → "ADMIN"
+            // which matches the entity UserRole string enum values
+            const dbRole = PFUserRole[role.accountRole] as UserRole;
+            const accountQuery = (accountName
+              ? { account: { accountName, ...(tenantName ? { tenant: { name: tenantName } } : {}) }, role: dbRole }
+              : tenantName
+                ? { account: { tenant: { name: tenantName } }, role: dbRole }
+                : { role: dbRole }) as FilterQuery<UserAccount>;
+            const uas = await em.find(UserAccount, accountQuery, { populate: ["user"] });
+            uas.forEach((ua) => userIds.add(ua.user.$.userId));
+            break;
+          }
+        }
+      }
+
+      return [{ userIds: Array.from(userIds) }];
+    },
+
   });
 });

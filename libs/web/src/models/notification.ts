@@ -37,6 +37,20 @@ export enum AdminMessageType {
   SystemNotification = "SystemNotification",
 }
 
+export enum InternalMessageType {
+  AccountOverdue = "AccountOverdue",
+  AccountRechargeSuccess = "AccountRechargeSuccess",
+  AccountLowBalance = "AccountLowBalance",
+  AccountBalance = "AccountBalance",
+  AccountLocked = "AccountLocked",
+  AccountUnblocked = "AccountUnblocked",
+  JobStarted = "JobStarted",
+  JobFinished = "JobFinished",
+  JobAbnormalTermination = "JobAbnormalTermination",
+  AccountUserSyncResult = "AccountUserSyncResult",
+  MonitorAlert = "MonitorAlert",
+}
+
 export const adminMessageTypesMap = new Map<AdminMessageType, MessageTypeInfo>([
   [AdminMessageType.SystemNotification, {
     type: "SystemNotification",

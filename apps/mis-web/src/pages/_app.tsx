@@ -8,7 +8,7 @@ import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import { DarkModeProvider } from "@scow/lib-web/build/layouts/darkMode";
 import { GlobalStyle } from "@scow/lib-web/build/layouts/globalStyle";
 import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
-import { AdminMessageType } from "@scow/lib-web/build/models/notification";
+import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/models/notification";
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App as AntdApp } from "antd";
@@ -180,7 +180,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     if (!publicConfig.NOTIF_ENABLED) return undefined;
 
     const result = await api.getUnreadMessages({
-      query: { messageType: AdminMessageType.SystemNotification },
+      query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
     }).httpError(500, () => {})
       .then((res) => res)
       .catch(() => undefined);

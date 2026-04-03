@@ -47,12 +47,15 @@ message AdminSendMessageResponse {
 
 message ListMessagesRequest {
   optional string user_id = 1;
+  // Deprecated: use message_types instead. Kept for backward compatibility.
   optional string message_type = 2;
   optional string category = 3;
   optional NoticeType notice_type = 4;
   optional ReadStatus read_status = 5;
   optional uint32 page = 6;
   optional uint32 page_size = 7;
+  // Filter by multiple message types. Takes precedence over message_type when non-empty.
+  repeated string message_types = 8;
 }
 
 message ListMessagesResponse {
@@ -122,6 +125,40 @@ message AdminListMessagesResponse {
   repeated Message messages = 2;
 }
 
+// Single alert item from Alertmanager webhook v4 payload.
+message AlertmanagerAlert {
+  // "firing" or "resolved"
+  string status = 1;
+  // Key-value pairs identifying the alert, e.g. alertname, instance, severity, cluster.
+  // Used to match receiverMappings via the "alertname" label.
+  map<string, string> labels = 2;
+  // Human-readable metadata attached to the alert rule, e.g.:
+  //   summary / summary_zh   — short title (English / Chinese)
+  //   description / description_zh — detailed message body
+  //   {starts_at} and {ends_at} placeholders in description/description_zh are replaced at runtime.
+  map<string, string> annotations = 3;
+  // Time when the alert started firing.
+  google.protobuf.Timestamp starts_at = 4;
+  // Time when the alert was resolved. Zero value ("0001-01-01T00:00:00Z") means still firing.
+  google.protobuf.Timestamp ends_at = 5;
+}
+
+// Alertmanager webhook v4 request payload.
+message ReceiveMonitorAlertRequest {
+  // Webhook payload version, currently always "4".
+  string version = 1;
+  // Opaque key identifying the alert group (based on group_by labels in Alertmanager routing).
+  // Multiple alerts with the same group_by label values share the same group_key.
+  string group_key = 2;
+  // "firing" if at least one alert is firing, "resolved" if all alerts resolved
+  string status = 3;
+  // Snapshot of all alerts in this group at the time of the notification.
+  // May contain multiple alerts when Alertmanager groups them by shared labels.
+  repeated AlertmanagerAlert alerts = 4;
+}
+
+message ReceiveMonitorAlertResponse {}
+
 service MessageService {
   rpc AdminSendMessage(AdminSendMessageRequest) returns (AdminSendMessageResponse);
   rpc AdminListMessages(AdminListMessagesRequest) returns (AdminListMessagesResponse);
@@ -136,4 +173,8 @@ service MessageService {
 
   rpc GetMessageExpirationTime(GetMessageExpirationTimeRequest) returns (GetMessageExpirationTimeResponse);
   rpc ChangeMessageExpirationTime(ChangeMessageExpirationTimeRequest) returns (ChangeMessageExpirationTimeResponse);
+
+  // Receives monitor alerts from Alertmanager and dispatches them to configured recipients.
+  // Alertmanager webhook url: /api/notification.MessageService/ReceiveMonitorAlert
+  rpc ReceiveMonitorAlert(ReceiveMonitorAlertRequest) returns (ReceiveMonitorAlertResponse);
 }

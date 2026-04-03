@@ -45,6 +45,7 @@ const NotificationPage = () => {
 
   const { data, refetch, isLoading } = useQuery(listMessages, {
     noticeType: NoticeType.SITE_MESSAGE,
+    messageTypes: [],
     ...query,
     ...pageInfo,
     $typeName: "notification.ListMessagesRequest",

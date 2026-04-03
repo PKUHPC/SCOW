@@ -14,6 +14,16 @@ import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
 
+export const AlertmanagerRoleSchema = Type.Union([
+  Type.Literal("PLATFORM_ADMIN"),
+  Type.Literal("PLATFORM_FINANCE"),
+  Type.Literal("TENANT_ADMIN"),
+  Type.Literal("TENANT_FINANCE"),
+  Type.Literal("ACCOUNT_ADMIN"),
+  Type.Literal("ACCOUNT_OWNER"),
+]);
+export type AlertmanagerRole = Static<typeof AlertmanagerRoleSchema>;
+
 export const NotificationConfigSchema = Type.Object({
   db: Type.Object({
     host: Type.String({ description: "数据库地址" }),
@@ -72,6 +82,20 @@ export const NotificationConfigSchema = Type.Object({
     // 默认每天凌晨 3 点执行一次
     cron: Type.String({ description: "删除消息的周期的cron表达式", default: "0 3 * * *" }),
   }),
+
+  alertmanager: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否启用 Alertmanager Webhook 集成", default: true }),
+    receiverMappings: Type.Array(Type.Object({
+      alertIds: Type.Array(Type.String(), { description: "alertname 标签值列表，用于匹配告警" }),
+      users: Type.Optional(Type.Array(Type.String(), {
+        description: "直接指定的接收用户 ID 列表",
+      })),
+      roles: Type.Optional(Type.Array(
+        AlertmanagerRoleSchema,
+        { description: "接收该告警的 SCOW 角色列表，运行时自动查询对应用户" },
+      )),
+    }), { description: "告警 ID 到接收者的映射配置" }),
+  }, { description: "Alertmanager Webhook 集成配置" })),
 });
 
 const NOTIFICATION_CONFIG_NAME = "notification/config";

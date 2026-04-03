@@ -46,12 +46,15 @@ message SystemBatchSendMessagesResponse {
 
 message ListMessagesRequest {
   string user_id = 1;
+  // Deprecated: use message_types instead. Kept for backward compatibility.
   optional string message_type = 2;
   optional string category = 3;
   optional NoticeType notice_type = 4;
   optional ReadStatus read_status = 5;
   optional uint32 page = 6;
   optional uint32 page_size = 7;
+  // Filter by multiple message types. Takes precedence over message_type when non-empty.
+  repeated string message_types = 8;
 }
 
 message ListMessagesResponse {

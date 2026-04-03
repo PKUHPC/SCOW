@@ -485,6 +485,31 @@ message QueryIsUserEnabledRootShellResponse {
   bool result = 1;
 }
 
+// A role filter for targeted user queries using existing role enums.
+// Specify exactly one of platform_role, tenant_role, or account_role.
+// - tenant_name: scopes tenant_role or account_role to a specific tenant.
+// - account_name: scopes account_role to a specific account (accountName is globally unique).
+// PlatformRole values ignore both scope fields.
+message RoleFilter {
+  oneof role {
+    PlatformRole platform_role = 1;
+    TenantRole   tenant_role   = 2;
+    UserRole     account_role  = 3;
+  }
+  optional string tenant_name  = 4;
+  optional string account_name = 5;
+}
+
+// Request to query user IDs matching any of the given role filters.
+message GetUserIdsByRolesRequest {
+  repeated RoleFilter filters = 1;
+}
+
+// Returns deduplicated user IDs matching the requested role filters.
+message GetUserIdsByRolesResponse {
+  repeated string user_ids = 1;
+}
+
 service UserService {
 
   rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
@@ -532,4 +557,7 @@ service UserService {
   rpc ChangeTenant(ChangeTenantRequest) returns (ChangeTenantResponse);
 
   rpc QueryIsUserEnabledRootShell(QueryIsUserEnabledRootShellRequest) returns (QueryIsUserEnabledRootShellResponse);
+
+  // Returns deduplicated user IDs for all users that belong to any of the given SCOW roles.
+  rpc GetUserIdsByRoles(GetUserIdsByRolesRequest) returns (GetUserIdsByRolesResponse);
 }

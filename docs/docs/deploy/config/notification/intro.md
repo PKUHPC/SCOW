@@ -20,7 +20,7 @@ SCOW 配置开启消息系统首先需要在 `install.yaml` 文件中，添加�
 ```YAML
 notification:
   # 可选，默认为 /notification
-  bashPath: /notif
+  basePath: /notif
 ```
 
 在 SCOW v1 版本中的消息系统使用 UI 扩展的方式接入的 SCOW。所以需要在 `config/mis.yaml` 和/或 `config/portal.yaml` 和/或 `config/ai.yaml` 文件中添加 UI 扩展相关配置，具体如下：
@@ -106,4 +106,104 @@ deleteExpiredMessages:
   # 必填，定时删除的执行周期，为 cron 表达式
   # 默认为 "0 3 * * *"，每天凌晨 3 点执行一次
   cron: "0 3 * * *"
+
+# 可选，Alertmanager Webhook 集成配置
+# 配置后，通知系统可接收 Alertmanager 推送的告警并转发给指定用户
+alertmanager:
+  # 是否启用，默认为 true，设为 false 可临时关闭集成而保留配置
+  enabled: true
+  # 告警 ID 到接收者的映射配置
+  # alertIds 对应 Prometheus 告警规则中的 alertname 标签值，支持多个告警共享同一接收者配置
+  receiverMappings:
+    - alertIds:
+        - "HighCPU"
+        - "HighMemory"
+      # 直接指定接收用户的 ID 列表（可选）
+      users:
+        - "user1"
+      # 按 SCOW 角色指定接收者，运行时自动查询对应用户（可选）
+      # 可选值：PLATFORM_ADMIN、PLATFORM_FINANCE、TENANT_ADMIN、TENANT_FINANCE、ACCOUNT_ADMIN、ACCOUNT_OWNER
+      roles:
+        - "PLATFORM_ADMIN"
+    - alertIds:
+        - "DiskFull"
+      roles:
+        - "PLATFORM_ADMIN"
+        - "TENANT_ADMIN"
 ```
+
+## 对接 Alertmanager 告警通知
+
+通知系统支持接收 Alertmanager 的 Webhook 推送，并将告警转发为站内通知发送给指定用户。
+
+### 工作原理
+
+1. Alertmanager 触发告警后，通过 Webhook 将告警数据推送到通知系统
+2. 通知系统根据告警的 `alertname` 标签，在 `receiverMappings` 中查找对应配置
+3. 将告警内容构建为站内通知，发送给配置的目标用户
+
+### 配置 Alertmanager
+
+在 Alertmanager 的 `config.yaml` 中添加 Webhook receiver：
+
+```yaml
+receivers:
+  - name: 'scow-notification'
+    webhook_configs:
+      - url: 'http://<scow ip>/<notif base path>/api/notification.MessageService/ReceiveMonitorAlert'
+        http_config:
+          # 对应 config/common.yaml 中 scowApi.auth.token 的值
+          authorization:
+            credentials: '<scowApi.auth.token>'
+        send_resolved: true
+
+route:
+  receiver: 'scow-notification'
+  group_by: ['alertname']
+```
+
+notif base path 为 `install.yaml` 文件中填写的消息系统 `basePath`
+
+### 配置 Prometheus 告警规则
+
+通知标题固定显示为"监控告警"，告警规则的 `annotations` 中可通过以下约定字段提供双语通知正文：
+
+| annotations 字段 | 说明 |
+|---|---|
+| `description` | 英文正文（可选） |
+| `description_zh` | 中文正文（可选，缺省时使用 `description`） |
+
+正文中可使用以下模板占位符，系统在发送前自动替换为真实值：
+
+| 占位符 | 说明 | 示例值 |
+|---|---|---|
+| `{starts_at}` | 告警触发时间（UTC） | `2025-03-27 06:00:00 UTC` |
+| `{ends_at}` | 告警恢复时间（UTC），仍在触发时为空字符串 | `2025-03-27 06:05:00 UTC` |
+
+示例：
+
+```yaml
+groups:
+  - name: system
+    rules:
+      - alert: HighCPU
+        expr: node_cpu_utilization > 0.9
+        annotations:
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.instance }} (since {starts_at})"
+          description_zh: "节点 {{ $labels.instance }} 的 CPU 使用率为 {{ $value | humanizePercentage }}（触发时间：{starts_at}）"
+```
+
+### 接收者角色说明
+
+`roles` 字段支持以下 SCOW 角色值，系统在运行时自动查询对应用户：
+
+| 角色值 | 说明 |
+|---|---|
+| `PLATFORM_ADMIN` | 平台管理员 |
+| `PLATFORM_FINANCE` | 平台财务 |
+| `TENANT_ADMIN` | 租户管理员（所有租户） |
+| `TENANT_FINANCE` | 租户财务（所有租户） |
+| `ACCOUNT_ADMIN` | 账户管理员（所有账户） |
+| `ACCOUNT_OWNER` | 账户拥有者（所有账户） |
+
+`users` 与 `roles` 可同时配置，系统会合并去重后统一推送。

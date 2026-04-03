@@ -1,7 +1,7 @@
 "use client";
 import { Loading } from "@scow/lib-web/build/layouts/base/Loading";
 import NotificationLayout from "@scow/lib-web/build/layouts/NotifLayout";
-import { AdminMessageType } from "@scow/lib-web/build/models/notification";
+import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/models/notification";
 import React from "react";
 import { useUserQuery } from "src/app/auth";
 import { LanguageSwitcher } from "src/components/LanguageSwitcher";
@@ -38,7 +38,7 @@ export default function Layout(
   const scowClusterConfigsQuery = useScowClusterConfigsQuery();
   const currentClusterIdsQuery = useCurrentClusterIdsQuery();
   const unreadMessagesQuery = trpc.notification.getUnreadMessages.useQuery({
-    messageType: AdminMessageType.SystemNotification,
+    messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert],
   }, {
     enabled: !!configQuery.data?.NOTIF_ENABLED,
   });

@@ -1,10 +1,13 @@
-import { timestampDate, timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { Timestamp, timestampDate, timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
+import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Knex } from "@mikro-orm/mysql";
 import { checkScowApiToken } from "@scow/lib-server";
 import { NoticeType, ReadStatus } from "@scow/notification-protos/build/common_pb";
 import { MessageService } from "@scow/notification-protos/build/message_pb";
-import { adminMessageTypesMap } from "src/models/message-type";
+import { PlatformRole as ProtoPlatformRole, RoleFilter, TenantRole as ProtoTenantRole,
+  UserRole as ProtoUserRole, UserServiceClient } from "@scow/protos/build/server/user";
+import { InternalMessageType, adminMessageTypesMap } from "src/models/message-type";
 import { PlatformRole } from "src/models/user";
 import { commonConfig } from "src/server/config/common";
 import { notificationConfig } from "src/server/config/notification";
@@ -12,15 +15,43 @@ import { AdminMessageConfig } from "src/server/entities/AdminMessageConfig";
 import { Message, SenderType } from "src/server/entities/Message";
 import { MessageTarget } from "src/server/entities/MessageTarget";
 import { ReadStatus as EntityReadStatus, TargetType, UserMessageRead } from "src/server/entities/UserMessageRead";
+import { UserSubscription } from "src/server/entities/UserSubscription";
 import { getUser } from "src/utils/auth";
 import { checkAuth } from "src/utils/auth/check-auth";
 import { toCamelCaseArray } from "src/utils/camelCase";
 import { ensureNotUndefined } from "src/utils/ensure-not-undefined";
 import { forkEntityManager } from "src/utils/get-orm";
 import { logger } from "src/utils/logger";
-import { adminSendMsgToBridge } from "src/utils/message-bridge";
+import {
+  adminSendMsgToBridge, systemBatchSendMsgsToBridge, SystemSendMsgToBridge,
+} from "src/utils/message-bridge";
+import { getMessageConfigWithDefault } from "src/utils/message-config";
 import { getMessagesTypeData } from "src/utils/message-type";
 import { checkAdminMessageTypeExist } from "src/utils/rendering-message";
+import { AlertmanagerRole } from "@scow/config/build/notification";
+import { getScowClient } from "src/utils/scow-client";
+
+const alertmanagerRoleToFilter: Record<AlertmanagerRole, RoleFilter> = {
+  PLATFORM_ADMIN:  { role: { $case: "platformRole", platformRole: ProtoPlatformRole.PLATFORM_ADMIN } },
+  PLATFORM_FINANCE: { role: { $case: "platformRole", platformRole: ProtoPlatformRole.PLATFORM_FINANCE } },
+  TENANT_ADMIN:    { role: { $case: "tenantRole",   tenantRole: ProtoTenantRole.TENANT_ADMIN } },
+  TENANT_FINANCE:  { role: { $case: "tenantRole",   tenantRole: ProtoTenantRole.TENANT_FINANCE } },
+  ACCOUNT_ADMIN:   { role: { $case: "accountRole",  accountRole: ProtoUserRole.ADMIN } },
+  ACCOUNT_OWNER:   { role: { $case: "accountRole",  accountRole: ProtoUserRole.OWNER } },
+};
+
+async function resolveRoleUsers(roles: AlertmanagerRole[]): Promise<string[]> {
+  const client = getScowClient(UserServiceClient);
+  try {
+    const { userIds } = await asyncClientCall(client, "getUserIdsByRoles", {
+      filters: roles.map((r) => alertmanagerRoleToFilter[r]),
+    });
+    return userIds;
+  } catch (err) {
+    logger.error({ roles, err }, "alertmanager webhook: failed to resolve users for roles");
+    return [];
+  }
+}
 
 export default (router: ConnectRouter) => {
   router.service(MessageService, {
@@ -250,7 +281,11 @@ export default (router: ConnectRouter) => {
     },
 
     async listMessages(req, ctx) {
-      const { userId, category, noticeType, messageType, readStatus, page, pageSize } = req;
+      const { userId, category, noticeType, messageType, messageTypes, readStatus, page, pageSize } = req;
+      // messageTypes takes precedence over messageType when non-empty
+      const effectiveMessageTypes = messageTypes.length > 0
+        ? messageTypes
+        : messageType ? [messageType] : [];
 
       if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
 
@@ -303,7 +338,7 @@ export default (router: ConnectRouter) => {
           readConditions = function(this: Knex.QueryBuilder) {
             this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
               this.select("umr.message_id as message_id")
-                .where("umr.status", ReadStatus.READ);
+                .where("umr.status", EntityReadStatus.READ);
             })
               .orWhere(function(this: Knex.QueryBuilder) {
                 this.where("umr.status", EntityReadStatus.UNREAD)
@@ -349,8 +384,8 @@ export default (router: ConnectRouter) => {
           if (category) {
             queryBuilder.andWhere("m.category", category);
           }
-          if (messageType) {
-            queryBuilder.andWhere("m.message_type", messageType);
+          if (effectiveMessageTypes.length > 0) {
+            queryBuilder.andWhere("m.message_type", "in", effectiveMessageTypes);
           }
         })
         .orderBy("m.created_at", "DESC")
@@ -377,8 +412,8 @@ export default (router: ConnectRouter) => {
             if (category) {
               queryBuilder.andWhere("m.category", category);
             }
-            if (messageType) {
-              queryBuilder.andWhere("m.message_type", messageType);
+            if (effectiveMessageTypes.length > 0) {
+              queryBuilder.andWhere("m.message_type", "in", effectiveMessageTypes);
             }
           }),
       ]);
@@ -722,6 +757,169 @@ export default (router: ConnectRouter) => {
       return {
         expiredAfterSeconds: messageConfigs[0].expiredAfterSeconds,
       };
+    },
+
+    async receiveMonitorAlert(req, ctx) {
+      await checkScowApiToken(ctx, commonConfig.scowApi);
+
+      const clientIp = ctx.requestHeader.get("x-forwarded-for")
+        ?? ctx.requestHeader.get("x-real-ip")
+        ?? "unknown";
+
+      logger.info(
+        {
+          clientIp,
+          version: req.version,
+          groupKey: req.groupKey,
+          status: req.status,
+          alertCount: req.alerts.length,
+          alertnames: req.alerts.map((a) => a.labels["alertname"]).filter(Boolean),
+        },
+        "alertmanager webhook: received request",
+      );
+
+      const alertmanagerCfg = notificationConfig.alertmanager;
+      if (alertmanagerCfg?.enabled === false) {
+        logger.debug("alertmanager webhook: disabled by config, skipped");
+        return {};
+      }
+      if (!alertmanagerCfg?.receiverMappings?.length) {
+        logger.debug("alertmanager webhook: no receiverMappings configured, skipped");
+        return {};
+      }
+
+      const em = await forkEntityManager();
+      const messageType = InternalMessageType.MonitorAlert;
+      const category = "Admin";
+      const senderSystemId = "alertmanager";
+      const adminMessageConfig = await getMessageConfigWithDefault(em, messageType, NoticeType.SITE_MESSAGE);
+      const bridgeMessages: SystemSendMsgToBridge[] = [];
+
+      for (const alert of req.alerts) {
+        const alertname = alert.labels["alertname"];
+        if (!alertname) {
+          logger.warn({ alert }, "alertmanager webhook: alert missing alertname label, skipping");
+          continue;
+        }
+
+        const mapping = alertmanagerCfg.receiverMappings.find((m) => m.alertIds.includes(alertname));
+        if (!mapping) {
+          logger.debug({ alertname }, "alertmanager webhook: no receiver mapping found, skipping");
+          continue;
+        }
+
+        const formatTs = (ts: Timestamp | undefined): string => {
+          if (!ts || (ts.seconds === 0n && ts.nanos === 0)) return "";
+          return timestampDate(ts).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+        };
+        const startsAtStr = formatTs(alert.startsAt);
+        const endsAtStr = formatTs(alert.endsAt);
+        const replaceTimestamps = (text: string): string =>
+          text.replace(/\{starts_at\}/g, startsAtStr).replace(/\{ends_at\}/g, endsAtStr);
+
+        logger.debug(
+          {
+            alertname,
+            startsAt: alert.startsAt,
+            endsAt: alert.endsAt,
+            startsAtStr,
+            endsAtStr,
+            rawDescriptionEn: alert.annotations["description"],
+            rawDescriptionZhCn: alert.annotations["description_zh"],
+          },
+          "alertmanager webhook: timestamp substitution inputs",
+        );
+
+        const contentEn = replaceTimestamps(alert.annotations["description"] || "");
+        const contentZhCn = replaceTimestamps(alert.annotations["description_zh"] || alert.annotations["description"] || "");
+
+        logger.debug(
+          { alertname, contentEn, contentZhCn },
+          "alertmanager webhook: timestamp substitution result",
+        );
+
+        const metadata: Record<string, string> = {
+          contentEn,
+          contentZhCn,
+          alertname,
+          status: alert.status || req.status,
+          severity: alert.labels["severity"] ?? "",
+        };
+
+        const directUsers = mapping.users ?? [];
+        const roleUsers = mapping.roles?.length
+          ? await resolveRoleUsers(mapping.roles as AlertmanagerRole[])
+          : [];
+        const targetIds = [...new Set([...directUsers, ...roleUsers])];
+
+        if (targetIds.length === 0) {
+          logger.warn({ alertname }, "alertmanager webhook: no target users resolved, skipping");
+          continue;
+        }
+
+        const message = new Message({
+          senderType: SenderType.SYSTEM,
+          senderId: senderSystemId,
+          targetType: TargetType.USER,
+          messageType,
+          category,
+          metadata,
+          descriptionData: [],
+        });
+        await em.persistAndFlush(message);
+
+        const userSubMap = new Map<string, UserSubscription>();
+        if (adminMessageConfig.canUserModify && adminMessageConfig.enabled) {
+          const userSubs = await em.find(UserSubscription, {
+            userId: { $in: targetIds },
+            messageType,
+            noticeType: NoticeType.SITE_MESSAGE,
+          });
+          for (const sub of userSubs) {
+            userSubMap.set(sub.userId, sub);
+          }
+        }
+
+        const messageTargets: MessageTarget[] = [];
+        for (const userId of targetIds) {
+          let messageEnabled = adminMessageConfig.enabled;
+          if (adminMessageConfig.canUserModify && adminMessageConfig.enabled) {
+            const userSub = userSubMap.get(userId);
+            if (userSub) messageEnabled = userSub.isSubscribed;
+          }
+
+          if (messageEnabled) {
+            messageTargets.push(new MessageTarget({
+              noticeTypes: [NoticeType.SITE_MESSAGE],
+              targetId: userId,
+              targetType: TargetType.USER,
+              message,
+            }));
+          }
+        }
+
+        if (messageTargets.length > 0) {
+          await em.persistAndFlush(messageTargets);
+        }
+
+        bridgeMessages.push({
+          senderType: SenderType.SYSTEM,
+          senderId: senderSystemId,
+          category,
+          targetType: TargetType.USER,
+          targetIds,
+          messageType,
+          metadata,
+        });
+
+        logger.info({ alertname, targetCount: targetIds.length }, "alertmanager webhook: alert message sent");
+      }
+
+      if (notificationConfig.messageBridge && bridgeMessages.length > 0) {
+        systemBatchSendMsgsToBridge(em, bridgeMessages);
+      }
+
+      return {};
     },
   });
 };
