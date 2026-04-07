@@ -1,12 +1,11 @@
 import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { Desktop } from "@scow/protos/build/portal/desktop";
 import { RemoteControlTool } from "@scow/protos/build/portal/desktop";
 import { DesktopOps } from "src/clusterops/api/desktop";
 import { getDesktopConfig } from "src/utils/desktops";
 import { scowdClientNotFound } from "src/utils/errors";
-import { certificates, getLoginNodeScowdUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { getLoginNodeScowdUrl, getScowdClientByUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { getShadowDeskList } from "src/utils/shadowDesk";
 import { displayIdToPort, getTurboVNCBinPath } from "src/utils/turbovnc";
 
@@ -23,7 +22,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       throw { code: status.INTERNAL, details: `Cluster ${cluster} not have login node ${host}` } as ServiceError;
     }
 
-    const client = getScowdClient(scowdUrl, certificates);
+    const client = getScowdClientByUrl(scowdUrl);
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
     try {
@@ -56,7 +55,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       throw { code: status.INTERNAL, details: `Cluster ${cluster} not have login node ${host}` } as ServiceError;
     }
 
-    const client = getScowdClient(scowdUrl, certificates);
+    const client = getScowdClientByUrl(scowdUrl);
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
     const { desktopsDir } = getDesktopConfig(cluster);
@@ -87,7 +86,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       throw { code: status.INTERNAL, details: `Cluster ${cluster} not have login node ${host}` } as ServiceError;
     }
 
-    const client = getScowdClient(scowdUrl, certificates);
+    const client = getScowdClientByUrl(scowdUrl);
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
     const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
@@ -118,7 +117,7 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       throw { code: status.INTERNAL, details: `Cluster ${cluster} not have login node ${host}` } as ServiceError;
     }
 
-    const client = getScowdClient(scowdUrl, certificates);
+    const client = getScowdClientByUrl(scowdUrl);
     if (!client) { throw scowdClientNotFound(scowdUrl); }
 
     try {

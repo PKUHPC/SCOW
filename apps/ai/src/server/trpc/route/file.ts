@@ -596,7 +596,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       try {
-        const client = getScowdClient(clusterId);
+        const client = getScowdClient(clusterId, userId);
         const initData = await client.file.initMultipartUpload({
           userId: user.identityId,
           path,
@@ -692,7 +692,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       try {
-        const client = getScowdClient(clusterId);
+        const client = getScowdClient(clusterId, userId);
         await client.file.mergeFileChunks({
           userId: user.identityId,
           path,

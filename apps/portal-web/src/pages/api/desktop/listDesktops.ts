@@ -59,30 +59,31 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
 
   const client = getClient(DesktopServiceClient);
 
-  return await asyncUnaryCall(client, "listUserDesktops", {
+  const { userDesktops } = await asyncUnaryCall(client, "listUserDesktops", {
     cluster, loginNode, userId: info.identityId,
-  }).then(async ({ userDesktops }) => {
-    return {
-      200: {
-        userDesktops: userDesktops.map((userDesktop) => ({
-          host: userDesktop.host,
-          desktops: userDesktop.desktops?.map((desktop) => {
-            return {
-              type: desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
-                ? "shadowdesk" as const : "vnc" as const,
-              data: {
-                // scowd 模式下返回的数据一定包含 id
-                id: desktop.id || desktop.displayId,
-                displayId: desktop.displayId,
-                desktopName: desktop.desktopName,
-                wm: desktop.wm,
-                isActive: desktop.isActive,
-                createTime: desktop.createTime,
-              },
-            };
-          }),
-        })),
-      } };
   });
+
+  return {
+    200: {
+      userDesktops: userDesktops.map((userDesktop) => ({
+        host: userDesktop.host,
+        desktops: userDesktop.desktops?.map((desktop) => {
+          return {
+            type: desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
+              ? "shadowdesk" as const : "vnc" as const,
+            data: {
+              // scowd 模式下返回的数据一定包含 id
+              id: desktop.id || desktop.displayId,
+              displayId: desktop.displayId,
+              desktopName: desktop.desktopName,
+              wm: desktop.wm,
+              isActive: desktop.isActive,
+              createTime: desktop.createTime,
+            },
+          };
+        }),
+      })),
+    },
+  };
 
 });

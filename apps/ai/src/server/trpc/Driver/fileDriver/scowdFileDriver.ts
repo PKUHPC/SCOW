@@ -23,7 +23,7 @@ export class ScowdFileDriver implements FileDriver {
     private userId: string,
     private logger: Logger,
   ) {
-    this.client = getScowdClient(this.clusterId);
+    this.client = getScowdClient(this.clusterId, this.userId);
   }
 
   async deleteFile(path: string, noCheckPermission?: boolean): Promise<void> {

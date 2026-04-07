@@ -193,7 +193,7 @@ export const tenantServiceServer = plugin((server) => {
             for (const [cluster, config] of Object.entries(configClusters)) {
               if (config.storage?.enabled && config.scowd?.enabled) {
                 const tenantQuotas = await em.find(TenantStorageQuota, { tenant: user.tenant });
-                const scowdClient = getScowdClient(cluster);
+                const scowdClient = getScowdClient(cluster, userId);
 
                 const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
                 if (quotaBytes === undefined) {

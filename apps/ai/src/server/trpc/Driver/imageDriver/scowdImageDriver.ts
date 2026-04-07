@@ -23,10 +23,10 @@ export class ScowdImageDriver implements ImageDriver {
     private userId: string,
     private logger: Logger,
   ) {
-    this.client = getScowdClient(this.clusterId);
+    this.client = getScowdClient(this.clusterId, this.userId);
 
     // pull 和 push 镜像可能会很耗时，手动设置超时时间，先定1h
-    this.customTimeoutClient = getScowdClient(this.clusterId,{
+    this.customTimeoutClient = getScowdClient(this.clusterId, this.userId, {
       // HTTP/2 连接空闲时长，超过后关闭连接
       idleConnectionTimeoutMs: 1 * 60 * 60 * 1000,
       // 单个请求默认超时时间

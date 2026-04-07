@@ -21,6 +21,7 @@
     "@connectrpc/connect": "2.1.1",
     "@connectrpc/connect-node": "2.1.1",
     "@grpc/grpc-js": "1.14.3",
-    "@scow/scowd-protos": "workspace:*"
+    "@scow/scowd-protos": "workspace:*",
+    "ts-log": "2.2.7"
   }
 }

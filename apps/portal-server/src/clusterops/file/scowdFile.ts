@@ -1,18 +1,19 @@
 import { ConnectError } from "@connectrpc/connect";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { getScowdClient, ScowdClient } from "@scow/lib-scowd/build/client";
+import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { FileInfo, fileTypeFromJSON } from "@scow/protos/build/portal/file";
 import { DownloadResponse } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileOps } from "src/clusterops/api/file";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
-import { certificates, generateScowdUrl } from "src/utils/scowd";
-import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
+import { generateScowdUrl, getScowdClientByUrl, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { getClusterTransferNode, tryGetClusterTransferNode } from "src/utils/ssh";
 
-export const scowdFileServices = (client: ScowdClient): FileOps => ({
-  copy: async (request) => {
+export const scowdFileServices = (getClient: (userId: string) => ScowdClient): FileOps => ({
+  copy: async (request, logger) => {
     const { userId, fromPath, toPath } = request;
+    const client = getClient(userId);
+    logger.info("Copying %s to %s for user %s", fromPath, toPath, userId);
 
     try {
       await client.file.copy({ userId, fromPath, toPath });
@@ -25,9 +26,11 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  createFile: async (request) => {
+  createFile: async (request, logger) => {
 
     const { userId, path } = request;
+    const client = getClient(userId);
+    logger.info("Creating file %s for user %s", path, userId);
 
     try {
       const { exists } = await client.file.exists({ userId, path });
@@ -46,8 +49,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  deleteDirectory: async (request) => {
+  deleteDirectory: async (request, logger) => {
     const { userId, path } = request;
+    const client = getClient(userId);
+    logger.info("Deleting directory %s for user %s", path, userId);
 
     try {
       await client.file.deleteDirectory({ userId, dirPath: path });
@@ -60,9 +65,11 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  deleteFile: async (request) => {
+  deleteFile: async (request, logger) => {
 
     const { userId, path } = request;
+    const client = getClient(userId);
+    logger.info("Deleting file %s for user %s", path, userId);
 
     try {
       await client.file.deleteFile({ userId, filePath: path });
@@ -77,6 +84,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   getHomeDirectory: async (request) => {
     const { userId } = request;
+    const client = getClient(userId);
 
     try {
       const res = await client.file.getHomeDirectory({ userId });
@@ -89,8 +97,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  makeDirectory: async (request) => {
+  makeDirectory: async (request, logger) => {
     const { userId, path } = request;
+    const client = getClient(userId);
+    logger.info("Creating directory %s for user %s", path, userId);
 
     try {
       const { exists } = await client.file.exists({ userId, path });
@@ -109,8 +119,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  move: async (request) => {
+  move: async (request, logger) => {
     const { userId, fromPath, toPath } = request;
+    const client = getClient(userId);
+    logger.info("Moving %s to %s for user %s", fromPath, toPath, userId);
 
     try {
       await client.file.move({ userId, fromPath, toPath });
@@ -125,6 +137,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   readDirectory: async (request) => {
     const { userId, path } = request;
+    const client = getClient(userId);
 
     try {
       const res = await client.file.readDirectory({ userId, dirPath: path });
@@ -152,6 +165,8 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   download: async (request, logger) => {
     const { userId, path, call } = request;
+    const client = getClient(userId);
+
     let readStream: AsyncIterable<DownloadResponse> | undefined;
 
     let clientDisconnected = false;
@@ -254,6 +269,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   upload: async (request, logger) => {
     const { call, userId, path } = request;
+    const client = getClient(userId);
 
     class RequestError extends Error {
       constructor(
@@ -297,6 +313,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   getFileMetadata: async (request) => {
     const { userId, path } = request;
+    const client = getClient(userId);
 
     try {
       const { sizeByte, type, isSymlink, linkTargetPath, linkTargetType }
@@ -317,6 +334,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
 
   exists: async (request) => {
     const { userId, path } = request;
+    const client = getClient(userId);
 
     try {
       const res = await client.file.exists({ userId, path: path });
@@ -331,8 +349,10 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     }
   },
 
-  decompressFile: async (request) => {
+  decompressFile: async (request, logger) => {
     const { userId, filePath, decompressionPath } = request;
+    const client = getClient(userId);
+    logger.info("Decompressing %s to %s for user %s", filePath, decompressionPath, userId);
 
     try {
       await client.file.decompressFile({
@@ -356,7 +376,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     const toAddress = getClusterTransferNode(toCluster).address;
 
     const scowdUrl = generateScowdUrl(fromHost, fromPort);
-    const scowdClient = getScowdClient(scowdUrl, certificates);
+    const scowdClient = getScowdClientByUrl(scowdUrl);
     try {
       await scowdClient.fileTransfer.startFileTransfer({
         userId, destAddress: toAddress, destPath: toPath, sourcePath: fromPath });
@@ -378,7 +398,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
       const { host: fromHost, port: fromPort } = getClusterTransferNode(cluster);
 
       const scowdUrl = generateScowdUrl(fromHost, fromPort);
-      const scowdClient = getScowdClient(scowdUrl, certificates);
+      const scowdClient = getScowdClientByUrl(scowdUrl);
 
       const { transferInfos } = await scowdClient.fileTransfer.queryFileTransfer({ userId });
 
@@ -421,7 +441,7 @@ export const scowdFileServices = (client: ScowdClient): FileOps => ({
     const toAddress = getClusterTransferNode(toCluster).address;
 
     const scowdUrl = generateScowdUrl(fromHost, fromPort);
-    const scowdClient = getScowdClient(scowdUrl, certificates);
+    const scowdClient = getScowdClientByUrl(scowdUrl);
 
     try {
       await scowdClient.fileTransfer.terminateFileTransfer({

@@ -15,10 +15,11 @@ import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 import { JobMetadata } from "./index";
 
-export const scowdJobServices = (client: ScowdClient): JobOps => ({
+export const scowdJobServices = (getClient: (userId: string) => ScowdClient): JobOps => ({
 
   getJobTemplate: async (request, logger) => {
     const { id, userId } = request;
+    const client = getClient(userId);
 
     try {
       const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -51,6 +52,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   listJobTemplates: async (request, logger) => {
     const { userId } = request;
+    const client = getClient(userId);
 
     try {
       const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -98,6 +100,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   saveJobTemplate: async (request, logger) => {
     const { userId, jobId, jobInfo } = request;
+    const client = getClient(userId);
 
     const id = `${jobInfo.jobName}-${jobId}`;
     logger.info("Save job to %s", id);
@@ -129,6 +132,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   deleteJobTemplate: async (request) => {
     const { id, userId } = request;
+    const client = getClient(userId);
 
     try {
       const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -153,6 +157,7 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   renameJobTemplate: async (request, logger) => {
     const { id, userId, jobName } = request;
+    const client = getClient(userId);
 
     try {
       const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -188,6 +193,8 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
     const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit = TimeUnit.MINUTES,
       saveAsTemplate, userId, nodeCount, partition, qos, account, workingDirectory, output
       , errorOutput, memory, scriptOutput } = request;
+    const client = getClient(userId);
+    logger.info("Submitting job %s for user %s in cluster %s", jobName, userId, cluster);
 
     try {
       // make sure working directory exists
@@ -279,6 +286,8 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
 
   submitFileAsJob: async (request, logger) => {
     const { cluster, userId, filePath } = request;
+    const client = getClient(userId);
+    logger.info("Submitting file %s as job for user %s in cluster %s", filePath, userId, cluster);
 
     try {
       // make sure working directory exists
@@ -345,6 +354,8 @@ export const scowdJobServices = (client: ScowdClient): JobOps => ({
   },
   saveAsJobTemplate: async (request, logger) => {
     const { userId, memoryMb, ...rest } = request;
+    const client = getClient(userId);
+
     try {
       const jobInfo: JobTemplate = { ...rest, memory: memoryMb };
 

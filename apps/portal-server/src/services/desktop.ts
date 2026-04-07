@@ -25,53 +25,48 @@ export const desktopServiceServer = plugin((server) => {
         throw clusterNotFound(cluster);
       }
 
-      const listResp = await Promise.all(loginNodes.map(async (loginNode) => {
-        return await clusterops.desktop.listUserDesktops({ loginNode: loginNode.address, userId }, logger);
-      })).then((response) => {
-        return response;
-      });
-      const desktopCount = listResp?.[0]?.desktops?.length || 0;
-
-      // find if the user has running session 确定现有的桌面是否超过了maxDesktops
-      if (desktopCount < maxDesktops) {
-        if (remoteControlTool === RemoteControlTool.SHADOWDESK) {
-          const createResp = await createShadowDesk(cluster, host, userId, desktopName || "", wm);
-
-          let shadowdeskUrl: string = "";
-
-          if (createResp.ok) {
-            const resp = await createResp.json();
-            shadowdeskUrl = String(resp?.data?.url);
-          } else {
-            return createResp.json().then((errorData) => {
-              logger.error(`create shadowdesk desktop error: ${errorData}`);
-              throw { code: Status.INTERNAL, message: `${JSON.stringify(errorData)}` } as ServiceError;
-            });
-          }
-          return [{ shadowdeskUrl, host: "", port: 0, password: "" }];
-        } else {
-          await checkActivatedClusters({ clusterIds: cluster });
-
-          ensureEnabled(cluster);
-
-          const availableWms = getDesktopConfig(cluster).wms;
-
-          if (availableWms.find((x) => x.wm === wm) === undefined) {
-            throw { code: Status.INVALID_ARGUMENT, message: `${wm} is not a acceptable wm.` } as ServiceError;
-          }
-
-          checkLoginNodeInCluster(cluster, host);
-
-          const clusterops = getClusterOps(cluster);
-
-          const reply = await clusterops.desktop.createDesktop(
-            { loginNode: host, wm, userId, desktopName: desktopName ?? "" },
-            logger);
-
-          return [{ ...reply }];
+      if (remoteControlTool === RemoteControlTool.SHADOWDESK) {
+        // find if the user has running session on the target login node 确定现有的桌面是否超过了maxDesktops
+        const listResp = await clusterops.desktop.listUserDesktops({ loginNode: host, userId }, logger);
+        const desktopCount = listResp?.desktops?.length || 0;
+        if (desktopCount >= maxDesktops) {
+          throw { code: Status.RESOURCE_EXHAUSTED, message: "Too many desktops" } as ServiceError;
         }
+
+        const createResp = await createShadowDesk(cluster, host, userId, desktopName || "", wm);
+
+        let shadowdeskUrl: string = "";
+
+        if (createResp.ok) {
+          const resp = await createResp.json();
+          shadowdeskUrl = String(resp?.data?.url);
+        } else {
+          return createResp.json().then((errorData) => {
+            logger.error(`create shadowdesk desktop error: ${errorData}`);
+            throw { code: Status.INTERNAL, message: `${JSON.stringify(errorData)}` } as ServiceError;
+          });
+        }
+        return [{ shadowdeskUrl, host: "", port: 0, password: "" }];
       } else {
-        throw { code: Status.RESOURCE_EXHAUSTED, message: "Too many desktops" } as ServiceError;
+        await checkActivatedClusters({ clusterIds: cluster });
+
+        ensureEnabled(cluster);
+
+        const availableWms = getDesktopConfig(cluster).wms;
+
+        if (availableWms.find((x) => x.wm === wm) === undefined) {
+          throw { code: Status.INVALID_ARGUMENT, message: `${wm} is not a acceptable wm.` } as ServiceError;
+        }
+
+        checkLoginNodeInCluster(cluster, host);
+
+        const clusterops = getClusterOps(cluster);
+
+        const reply = await clusterops.desktop.createDesktop(
+          { loginNode: host, wm, userId, desktopName: desktopName ?? "" },
+          logger);
+
+        return [{ ...reply }];
       }
     },
 
@@ -162,12 +157,18 @@ export const desktopServiceServer = plugin((server) => {
       if (!loginNodes) {
         throw clusterNotFound(cluster);
       }
-      // 请求集群的所有登录节点
-      return await Promise.all(loginNodes.map(async (loginNode) => {
-        return await clusterops.desktop.listUserDesktops({ loginNode: loginNode.address, userId }, logger);
-      })).then((response) => {
-        return [{ userDesktops: response }];
+      // 请求集群的所有登录节点，部分节点宕机不影响其他节点的结果
+      const results = await Promise.allSettled(loginNodes.map((loginNode) =>
+        clusterops.desktop.listUserDesktops({ loginNode: loginNode.address, userId }, logger),
+      ));
+      const userDesktops = results.flatMap((result, i) => {
+        if (result.status === "rejected") {
+          logger.warn(`Failed to list desktops for login node ${loginNodes[i].address}: ${result.reason}`);
+          return [];
+        }
+        return [result.value];
       });
+      return [{ userDesktops }];
     },
 
     listAvailableWms: async ({ request }) => {

@@ -1,15 +1,18 @@
 import { Code } from "@connectrpc/connect";
 import { status } from "@grpc/grpc-js";
 import { getLoginNode } from "@scow/config/build/cluster";
-import { getScowdClient as getClient, ScowdClient } from "@scow/lib-scowd/build/client";
+import { createBalancedScowdClientGetter, createScowdClientByUrlGetter } from "@scow/lib-scowd/build/client";
 import { createScowdCertificates } from "@scow/lib-scowd/build/ssl";
 import { removePort } from "@scow/utils";
 import { configClusters } from "src/config/clusters";
 import { config } from "src/config/env";
+import { logger } from "src/utils/logger";
 
 import { scowdClientNotFound } from "./errors";
 
 export const certificates = createScowdCertificates(config);
+
+export const getScowdClientByUrl = createScowdClientByUrlGetter({ certificates, logger });
 
 export function generateScowdUrl(address: string, scowdPort: number | undefined) {
   return config.SCOWD_SSL_ENABLED
@@ -26,23 +29,21 @@ export function getLoginNodeScowdUrl(cluster: string, host: string): string | un
   return generateScowdUrl(address, scowdPort);
 }
 
-const scowdClientForClusters = Object.entries(configClusters).reduce((prev, [cluster]) => {
-  const clusterInfo = configClusters[cluster];
-  const loginNode = getLoginNode(clusterInfo?.loginNodes?.[0]);
-  const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode.address);
-  if (!clusterInfo.scowd?.enabled || !loginNode.scowdPort || !scowdUrl) {
-    prev[cluster] = undefined;
-  } else {
-    const client = getClient(scowdUrl, certificates);
-    prev[cluster] = client;
-  }
-  return prev;
-}, {} as Record<string, ScowdClient | undefined>);
+const getClientByCluster = createBalancedScowdClientGetter({
+  getClusterIds: () => Object.keys(configClusters),
+  getClusterInfo: (cluster) => configClusters[cluster],
+  getLoginNodes: (clusterInfo) => clusterInfo?.loginNodes,
+  getLoginNode,
+  getLoginNodeAddress: (loginNode) => loginNode.address,
+  getLoginNodeScowdUrl,
+  isScowdEnabled: (clusterInfo) => !!clusterInfo?.scowd?.enabled,
+  certificates,
+  logger,
+});
 
-export const getScowdClient = (cluster: string) => {
-  const client = scowdClientForClusters[cluster];
+export const getScowdClient = (cluster: string, userId?: string) => {
+  const client = getClientByCluster(cluster, userId);
   if (!client) { throw scowdClientNotFound(cluster); }
-
   return client;
 };
 

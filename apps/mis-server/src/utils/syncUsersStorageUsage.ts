@@ -44,7 +44,6 @@ export async function syncUsersStorageUsage(
     // Process all clusters
     for (const cluster of clusterNames) {
       logger.info("Processing cluster: %s", cluster);
-      const scowdClient = getScowdClient(cluster);
       const storagePaths = path ? [path] : clusterConfigs[cluster].storage?.paths;
 
       if (!clusterConfigs[cluster].storage?.enabled || !storagePaths || storagePaths.length === 0) {
@@ -68,6 +67,7 @@ export async function syncUsersStorageUsage(
             Math.min(i + 10, totalUsers), userIdsSlice.join(", "));
 
           try {
+            const scowdClient = getScowdClient(cluster);
             // Query storage quota information
             const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
               userIds: userIdsSlice, path,

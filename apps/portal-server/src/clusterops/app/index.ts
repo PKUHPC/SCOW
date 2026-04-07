@@ -11,10 +11,10 @@ export const appOps = (cluster: string): AppOps => {
 
   const clusterInfo = configClusters[cluster];
   if (clusterInfo.scowd?.enabled) {
-    const client = getScowdClient(cluster);
+    const getClient = (userId: string) => getScowdClient(cluster, userId);
 
     return {
-      ...scowdAppServices(cluster, client),
+      ...scowdAppServices(cluster, getClient),
     };
   } else {
     const host = getClusterLoginNode(cluster);

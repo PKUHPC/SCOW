@@ -1,6 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { getLoginNode } from "@scow/config/build/cluster";
-import { getScowdClient as getClient, SafeConnectTransportOptions, ScowdClient } from "@scow/lib-scowd/build/client";
+import { createBalancedScowdClientGetter, SafeConnectTransportOptions } from "@scow/lib-scowd/build/client";
 import { createScowdCertificates } from "@scow/lib-scowd/build/ssl";
 import { removePort } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
@@ -31,23 +31,29 @@ export function getLoginNodeScowdUrl(cluster: string, host: string): string | un
 
 
 // Cache for ScowdClient instances
-const clientCache = new Map<string, ScowdClient>();
-export const getScowdClient = (cluster: string,connectTransportOptions?: SafeConnectTransportOptions) => {
-  if (clientCache.has(cluster)) {
-    return clientCache.get(cluster)!;
-  }
+const getClientByCluster = createBalancedScowdClientGetter({
+  getClusterIds: () => Object.keys(clusters),
+  getClusterInfo: (cluster) => clusters[cluster],
+  getLoginNodes: (clusterInfo) => clusterInfo?.loginNodes,
+  getLoginNode,
+  getLoginNodeAddress: (loginNode) => loginNode.address,
+  getLoginNodeScowdUrl,
+  isScowdEnabled: (clusterInfo) => !!clusterInfo?.scowd?.enabled,
+  certificates,
+  logger,
+});
 
-  const clusterInfo = clusters[cluster];
-  const loginNode = getLoginNode(clusterInfo?.loginNodes?.[0]);
-  const scowdUrl = getLoginNodeScowdUrl(cluster, loginNode.address);
-
-  if (!clusterInfo.scowd?.enabled || !loginNode.scowdPort || !scowdUrl) {
+export const getScowdClient = (
+  cluster: string,
+  userIdOrOptions?: string | SafeConnectTransportOptions,
+  connectTransportOptions?: SafeConnectTransportOptions,
+) => {
+  const userId = typeof userIdOrOptions === "string" ? userIdOrOptions : undefined;
+  const options = typeof userIdOrOptions === "string" ? connectTransportOptions : userIdOrOptions;
+  const client = getClientByCluster(cluster, userId, options);
+  if (!client) {
     throw scowdClientNotFound(cluster);
   }
-
-  const client = getClient(scowdUrl, certificates, connectTransportOptions);
-  clientCache.set(cluster, client);
-
   return client;
 };
 

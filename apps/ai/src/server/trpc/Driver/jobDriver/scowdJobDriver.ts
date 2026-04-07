@@ -112,7 +112,7 @@ export class ScowdJobDriver implements JobDriver {
     private userId: string,
     private logger: Logger,
   ) {
-    this.client = getScowdClient(this.clusterId);
+    this.client = getScowdClient(this.clusterId, this.userId);
   }
 
   private getTotalSessionsPath(homeDir: string) {

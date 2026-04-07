@@ -66,7 +66,7 @@ export const fileServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const client = getScowdClient(cluster);
+      const client = getScowdClient(cluster, userId);
 
       try {
         logger.info("Starting file compression...");
@@ -235,7 +235,7 @@ export const fileServiceServer = plugin((server) => {
 
       const subLogger = logger.child({ userId, paths, cluster });
       subLogger.info("Download and compress file started");
-      const client = getScowdClient(cluster);
+      const client = getScowdClient(cluster, userId);
 
       try {
         let clientDisconnected = false;
@@ -401,7 +401,7 @@ export const fileServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const client = getScowdClient(cluster);
+      const client = getScowdClient(cluster, userId);
 
       try {
         const initData = await client.file.initMultipartUpload({ userId, path, name });
@@ -445,7 +445,7 @@ export const fileServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const client = getScowdClient(cluster);
+      const client = getScowdClient(cluster, userId);
 
       try {
         await client.file.mergeFileChunks({ userId, path, name, sizeByte: BigInt(sizeByte) });

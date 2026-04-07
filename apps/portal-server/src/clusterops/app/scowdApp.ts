@@ -28,7 +28,7 @@ import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { displayIdToPort, getTurboVNCBinPath, parseDisplayId, parseOtp } from "src/utils/turbovnc";
 
 
-export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps => {
+export const scowdAppServices = (cluster: string, getClient: (userId: string) => ScowdClient): AppOps => {
 
   return {
     createApp: async (request, logger) => {
@@ -36,6 +36,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
       const { appId, userId, account, coreCount, nodeCount, gpuCount, memoryMb, maxTime, proxyBasePath,
         partition, qos, customAttributes, appJobName } = request;
+      const client = getClient(userId);
 
       const jobName = appJobName;
 
@@ -283,6 +284,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
     getAppLastSubmission: async (request, logger) => {
       const { userId, appId } = request;
+      const client = getClient(userId);
 
       try {
         const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -310,6 +312,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
       const apps = getClusterAppConfigs(cluster);
 
       const { userId } = request;
+      const client = getClient(userId);
 
       // If a job is not running, it cannot be ready
       const runningJobsInfo = await callOnOne(
@@ -618,6 +621,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
       const apps = getClusterAppConfigs(cluster);
 
       const { sessionId, userId, jobId } = request;
+      const client = getClient(userId);
 
       try {
         const userHomeDir = (await client.file.getHomeDirectory({ userId })).path;
@@ -745,6 +749,7 @@ export const scowdAppServices = (cluster: string, client: ScowdClient): AppOps =
 
     runScript: async (request) => {
       const { userId, script, timeoutSeconds } = request;
+      const client = getClient(userId);
 
       try {
         const { output } = await client.app.runScript({ userId, script, timeoutSeconds });

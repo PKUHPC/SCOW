@@ -15,10 +15,10 @@ export const jobOps = (cluster: string): JobOps => {
 
   const clusterInfo = configClusters[cluster];
   if (clusterInfo.scowd?.enabled) {
-    const client = getScowdClient(cluster);
+    const getClient = (userId: string) => getScowdClient(cluster, userId);
 
     return {
-      ...scowdJobServices(client),
+      ...scowdJobServices(getClient),
     };
   } else {
     const host = getClusterLoginNode(cluster);
