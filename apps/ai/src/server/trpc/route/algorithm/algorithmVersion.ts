@@ -21,6 +21,7 @@ import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { checkIsPublicPaths } from "src/server/utils/clusters";
+import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
@@ -684,6 +685,7 @@ export const shareAlgorithmVersion = procedure
   })
   .mutation(async ({ input:{ algorithmId, algorithmVersionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
+    ensureAiUserShareEnabled(isPlatformOwned);
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `AlgorithmVersion id:${algorithmId} not found` });
@@ -832,6 +834,7 @@ export const unShareAlgorithmVersion = procedure
   .output(z.void())
   .mutation(async ({ input:{ algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
+    ensureAiUserShareEnabled(isPlatformOwned);
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `AlgorithmVersion id:${algorithmVersionId} not found` });

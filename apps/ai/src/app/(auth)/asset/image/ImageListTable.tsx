@@ -7,6 +7,7 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Button, Form, Select, Space, Table, Tag, Tooltip } from "antd";
 import NextError from "next/error";
 import { useState } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { CreateEditImageModal } from "src/components/assets/image/CreateEditImageModal";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
@@ -54,6 +55,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const pCommon = prefix("app.common.");
   const languageId = useI18n().currentLanguage.id;
   const theme = useTheme();
+  const { publicConfig } = usePublicConfig();
+  const isUserShareEnabled = publicConfig.AI_USER_SHARE_ENABLED;
 
   const sourceText = {
     INTERNAL: getImageTexts(t).INTERNAL,
@@ -279,7 +282,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                         </Tooltip>
                       </EditImageModalButton>
                     )}
-                    { r.status === Status.CREATED && (
+                    { r.status === Status.CREATED && isUserShareEnabled && (
                       <Tooltip title={shareOrUnshareStr}>
                         <span onClick={() => {
                           modal.confirm({

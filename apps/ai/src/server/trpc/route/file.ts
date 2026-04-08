@@ -18,8 +18,12 @@ import { z } from "zod";
 
 import { getCurrentClusters } from "../../utils/clusters";
 import { withFileDriver } from "../Driver/fileDriver/fileDriver";
-import { FileMetaSchema, InitMultipartUploadResponseSchema,
-  ListDirectoryOutput, ListDirectorySchema } from "../model/file";
+import {
+  FileMetaSchema,
+  InitMultipartUploadResponseSchema,
+  ListDirectoryOutput,
+  ListDirectorySchema,
+} from "../model/file";
 import { getScowdClient, mapConnectErrorToTRPCError } from "../scowd/scowd";
 import { clusters } from "./config";
 
@@ -40,12 +44,11 @@ export const file = router({
     .input(z.object({ clusterId: z.string() }))
     .output(z.object({ path: z.string() }))
     .query(async ({ input: { clusterId }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           const homeDir = await driver.getHomeDirectory();
           return { path: homeDir };
@@ -53,7 +56,6 @@ export const file = router({
         logger,
       );
     }),
-
 
   deleteItem: authProcedure
     .meta({
@@ -64,39 +66,55 @@ export const file = router({
         summary: "删除指定的文件或目录",
       },
     })
-    .input(z.object({ clusterId: z.string(), target: z.enum(["FILE", "DIR", "SYMLINK"]), path: z.string() }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        target: z.enum(["FILE", "DIR", "SYMLINK"]),
+        path: z.string(),
+      }),
+    )
     .output(z.void())
-    .use(async ({ input:{ target, clusterId, path }, ctx, next }) => {
+    .use(async ({ input: { target, clusterId, path }, ctx, next }) => {
       const res = await next({ ctx });
       const { user, req } = ctx;
 
       const logInfo = {
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
-        operationTypePayload:{
-          clusterId, path,
+        operationTypePayload: {
+          clusterId,
+          path,
         },
       };
 
       if (target === "FILE") {
         if (res.ok) {
-          await callLog({ ...logInfo, operationTypeName:OperationType.deleteFile }, OperationResult.SUCCESS);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.deleteFile },
+            OperationResult.SUCCESS,
+          );
         } else {
-          await callLog({ ...logInfo, operationTypeName: OperationType.deleteFile }, OperationResult.FAIL);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.deleteFile },
+            OperationResult.FAIL,
+          );
         }
       } else {
         if (res.ok) {
-          await callLog({ ...logInfo, operationTypeName:OperationType.deleteDirectory }, OperationResult.SUCCESS);
-
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.deleteDirectory },
+            OperationResult.SUCCESS,
+          );
         } else {
-          await callLog({ ...logInfo, operationTypeName:OperationType.deleteDirectory }, OperationResult.FAIL);
-
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.deleteDirectory },
+            OperationResult.FAIL,
+          );
         }
       }
       return res;
     })
     .mutation(async ({ input: { target, clusterId, path }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -105,7 +123,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           if (target === "FILE") {
             await driver.deleteFile(path, noCheckPermission);
@@ -125,42 +143,57 @@ export const file = router({
         summary: "复制或移动文件",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      op: z.enum(["copy", "move"]),
-      fromPath: z.string(),
-      toPath: z.string(),
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        op: z.enum(["copy", "move"]),
+        fromPath: z.string(),
+        toPath: z.string(),
+      }),
+    )
     .output(z.void())
-    .use(async ({ input:{ clusterId,op,fromPath,toPath }, ctx, next }) => {
+    .use(async ({ input: { clusterId, op, fromPath, toPath }, ctx, next }) => {
       const res = await next({ ctx });
       const { user, req } = ctx;
 
       const logInfo = {
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
-        operationTypePayload:{
-          clusterId, fromPath, toPath,
+        operationTypePayload: {
+          clusterId,
+          fromPath,
+          toPath,
         },
       };
 
       if (op === "copy") {
         if (res.ok) {
-          await callLog({ ...logInfo, operationTypeName: OperationType.copyFileItem }, OperationResult.SUCCESS);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.copyFileItem },
+            OperationResult.SUCCESS,
+          );
         } else {
-          await callLog({ ...logInfo, operationTypeName: OperationType.copyFileItem }, OperationResult.FAIL);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.copyFileItem },
+            OperationResult.FAIL,
+          );
         }
       } else {
         if (res.ok) {
-          await callLog({ ...logInfo, operationTypeName: OperationType.moveFileItem }, OperationResult.SUCCESS);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.moveFileItem },
+            OperationResult.SUCCESS,
+          );
         } else {
-          await callLog({ ...logInfo, operationTypeName: OperationType.moveFileItem }, OperationResult.FAIL);
+          await callLog(
+            { ...logInfo, operationTypeName: OperationType.moveFileItem },
+            OperationResult.FAIL,
+          );
         }
       }
       return res;
     })
     .mutation(async ({ input: { op, clusterId, fromPath, toPath }, ctx: { user } }) => {
-
       // 校验targetPath是否与fromPath自身相同或是fromPath的子目录
       // 因为同名文件与文件夹不可能共存，所以此处不用考虑类型为文件的特殊情况
       const normalizedFromPath = path.normalize(fromPath);
@@ -177,11 +210,15 @@ export const file = router({
 
       // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [fromPath, toPath], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [fromPath, toPath],
+        isPlatformAdmin,
+      );
 
       if (op === "copy") {
         await withFileDriver(
-          { clusterId, user:user.identityId },
+          { clusterId, user: user.identityId },
           async (driver) => {
             await driver.copy(fromPath, toPath, noCheckPermission);
           },
@@ -189,7 +226,7 @@ export const file = router({
         );
       } else {
         await withFileDriver(
-          { clusterId, user:user.identityId },
+          { clusterId, user: user.identityId },
           async (driver) => {
             await driver.move(fromPath, toPath, noCheckPermission);
           },
@@ -209,7 +246,7 @@ export const file = router({
     })
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(z.void())
-    .use(async ({ input:{ path,clusterId }, ctx, next }) => {
+    .use(async ({ input: { path, clusterId }, ctx, next }) => {
       const res = await next({ ctx });
       const { user, req } = ctx;
 
@@ -217,8 +254,9 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.createDirectory,
-        operationTypePayload:{
-          clusterId, path,
+        operationTypePayload: {
+          clusterId,
+          path,
         },
       };
 
@@ -233,7 +271,6 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { clusterId, path }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -242,7 +279,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           await driver.makeDirectory(path, noCheckPermission);
         },
@@ -261,7 +298,7 @@ export const file = router({
     })
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(z.void())
-    .use(async ({ input:{ path,clusterId }, ctx, next }) => {
+    .use(async ({ input: { path, clusterId }, ctx, next }) => {
       const res = await next({ ctx });
 
       const { user, req } = ctx;
@@ -269,8 +306,9 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.createFile,
-        operationTypePayload:{
-          clusterId, path,
+        operationTypePayload: {
+          clusterId,
+          path,
         },
       };
 
@@ -285,7 +323,6 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { clusterId, path }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -294,7 +331,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           await driver.createFile(path, noCheckPermission);
         },
@@ -314,7 +351,6 @@ export const file = router({
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(z.array(ListDirectorySchema))
     .query(async ({ input: { clusterId, path }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -323,7 +359,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => await driver.readDirectory(path, noCheckPermission),
         logger,
       );
@@ -338,13 +374,20 @@ export const file = router({
         summary: "检查文件是否存在",
       },
     })
-    .input(z.object({ clusterId: z.string(), path: z.string(), isPlatformOwned: z.optional(z.boolean()) }))
-    .output(z.object({
-      exists: z.boolean(),
-      existsForUsedPath: z.boolean().optional(), // 是否存在于之前的公共数据资产配置路径
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        path: z.string(),
+        isPlatformOwned: z.optional(z.boolean()),
+      }),
+    )
+    .output(
+      z.object({
+        exists: z.boolean(),
+        existsForUsedPath: z.boolean().optional(), // 是否存在于之前的公共数据资产配置路径
+      }),
+    )
     .mutation(async ({ input: { clusterId, path, isPlatformOwned }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -356,7 +399,7 @@ export const file = router({
       const safeExists = async (noCheckPermission: boolean) => {
         try {
           return await withFileDriver(
-            { clusterId, user:user.identityId },
+            { clusterId, user: user.identityId },
             async (driver) => await driver.exists(path, noCheckPermission),
             logger,
           );
@@ -391,7 +434,6 @@ export const file = router({
     .input(z.object({ clusterId: z.string(), path: z.string() }))
     .output(FileMetaSchema)
     .mutation(async ({ input: { clusterId, path }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -400,7 +442,7 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => await driver.getFileMetadata(path, noCheckPermission),
         logger,
       );
@@ -418,7 +460,6 @@ export const file = router({
     .input(z.object({ clusterId: z.string(), path: z.string(), download: z.string() }))
     .output(z.void())
     .query(async ({ input: { clusterId, path, download }, ctx: { user, res } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
@@ -430,13 +471,12 @@ export const file = router({
       const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
 
       await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           await driver.download(path, download, res, noCheckPermission);
         },
         logger,
       );
-
     }),
 
   decompressFile: authProcedure
@@ -448,32 +488,47 @@ export const file = router({
         summary: "解压文件",
       },
     })
-    .input(z.object({ clusterId: z.string(), filePath: z.string(), decompressionPath: z.string(),
-      usePublicPath: z.optional(z.boolean()) }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        filePath: z.string(),
+        decompressionPath: z.string(),
+        usePublicPath: z.optional(z.boolean()),
+      }),
+    )
     .output(z.void())
-    .mutation(async ({ input: { clusterId, filePath, decompressionPath, usePublicPath }, ctx: { user } }) => {
+    .mutation(
+      async ({
+        input: { clusterId, filePath, decompressionPath, usePublicPath },
+        ctx: { user },
+      }) => {
+        const currentClusterIds = await getCurrentClusters(user.identityId);
+        checkClusterAvailable(currentClusterIds, clusterId);
 
-      const currentClusterIds = await getCurrentClusters(user.identityId);
-      checkClusterAvailable(currentClusterIds, clusterId);
+        // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
+        const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
+        const noCheckPermission = shouldPathsSkipPermissionCheck(
+          clusterId,
+          [filePath, decompressionPath],
+          isPlatformAdmin,
+        );
 
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission =
-      shouldPathsSkipPermissionCheck(clusterId, [filePath, decompressionPath], isPlatformAdmin);
+        if (usePublicPath && !noCheckPermission) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `${decompressionPath} is outside the required PublicPath boundary`,
+          });
+        }
 
-      if (usePublicPath && !noCheckPermission) {
-        throw new TRPCError({ code: "FORBIDDEN",
-          message: `${decompressionPath} is outside the required PublicPath boundary` });
-      }
-
-      return await withFileDriver(
-        { clusterId, user:user.identityId },
-        async (driver) => {
-          await driver.decompressFile(filePath, decompressionPath, noCheckPermission);
-        },
-        logger,
-      );
-    }),
+        return await withFileDriver(
+          { clusterId, user: user.identityId },
+          async (driver) => {
+            await driver.decompressFile(filePath, decompressionPath, noCheckPermission);
+          },
+          logger,
+        );
+      },
+    ),
 
   compressFiles: authProcedure
     .meta({
@@ -484,26 +539,29 @@ export const file = router({
         summary: "压缩文件",
       },
     })
-    .input(z.object({ clusterId: z.string(), filePaths: z.array(z.string()), archivePath: z.string() }))
+    .input(
+      z.object({ clusterId: z.string(), filePaths: z.array(z.string()), archivePath: z.string() }),
+    )
     .output(z.void())
     .mutation(async ({ input: { clusterId, filePaths, archivePath }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission =
-      shouldPathsSkipPermissionCheck(clusterId, [...filePaths, archivePath], isPlatformAdmin);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [...filePaths, archivePath],
+        isPlatformAdmin,
+      );
 
       return await withFileDriver(
-        { clusterId, user:user.identityId },
+        { clusterId, user: user.identityId },
         async (driver) => {
           await driver.compressFiles(filePaths, archivePath, noCheckPermission);
         },
         logger,
       );
     }),
-
 
   getUserStorageInfo: authProcedure
     .meta({
@@ -514,23 +572,31 @@ export const file = router({
         summary: "获取用户存储配额",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      paths: z.string()
-        .transform((val) => val === "" ? [] : val.split(",")),
-    }))
-    .output(z.array(z.object({
-      path:z.string(),
-      quotaBytes:z.number(),
-      usedStorageBytes:z.number(),
-    })))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        paths: z.string().transform((val) => (val === "" ? [] : val.split(","))),
+      }),
+    )
+    .output(
+      z.array(
+        z.object({
+          path: z.string(),
+          quotaBytes: z.number(),
+          usedStorageBytes: z.number(),
+        }),
+      ),
+    )
     .query(async ({ input: { clusterId, paths }, ctx: { user } }) => {
-
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
       const { quotaUsage } = await libGetUserQuotaUsage(
-        user.identityId, clusterId, paths, envConfig.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token,
+        user.identityId,
+        clusterId,
+        paths,
+        envConfig.MIS_SERVER_URL,
+        commonConfig.scowApi?.auth?.token,
       );
 
       return quotaUsage;
@@ -545,13 +611,15 @@ export const file = router({
         summary: "初始化分片上传",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      path: z.string(),
-      name: z.string(),
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        path: z.string(),
+        name: z.string(),
+      }),
+    )
     .output(InitMultipartUploadResponseSchema)
-    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+    .use(async ({ input: { path, clusterId, name }, ctx, next }) => {
       const res = await next({ ctx });
 
       const { user, req } = ctx;
@@ -559,8 +627,9 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.uploadFile,
-        operationTypePayload:{
-          clusterId, path: join(path, name),
+        operationTypePayload: {
+          clusterId,
+          path: join(path, name),
         },
       };
 
@@ -571,7 +640,6 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { clusterId, path, name }, ctx: { user } }) => {
-
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);
@@ -585,7 +653,9 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
       const host = getClusterLoginNode(clusterId);
-      if (!host) { throw clusterNotFound(clusterId); }
+      if (!host) {
+        throw clusterNotFound(clusterId);
+      }
 
       if (!cluster.scowd?.enabled) {
         throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
@@ -607,16 +677,17 @@ export const file = router({
         return {
           ...initData,
           chunkSizeByte: Number(initData.chunkSizeByte),
-          filesInfo: initData.filesInfo.map((info): ListDirectoryOutput => ({
-            name: info.name,
-            // TODO: 修改
-            type: info.fileType === 0 ? "FILE" : "DIR",
-            mtime: info.modTime,
-            mode: info.mode,
-            size: Number(info.sizeByte),
-          })),
+          filesInfo: initData.filesInfo.map(
+            (info): ListDirectoryOutput => ({
+              name: info.name,
+              // TODO: 修改
+              type: info.fileType === 0 ? "FILE" : "DIR",
+              mtime: info.modTime,
+              mode: info.mode,
+              size: Number(info.sizeByte),
+            }),
+          ),
         };
-
       } catch (err) {
         subLogger.error({ error: err }, "Merge file chunks failed");
         if (err instanceof ConnectError) {
@@ -625,7 +696,6 @@ export const file = router({
         throw err;
       }
     }),
-
 
   mergeFileChunks: authProcedure
     .meta({
@@ -636,14 +706,16 @@ export const file = router({
         summary: "合并文件分片",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      path: z.string(),
-      name: z.string(),
-      sizeByte: z.number(),
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        path: z.string(),
+        name: z.string(),
+        sizeByte: z.number(),
+      }),
+    )
     .output(z.object({}))
-    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+    .use(async ({ input: { path, clusterId, name }, ctx, next }) => {
       const res = await next({ ctx });
 
       const { user, req } = ctx;
@@ -651,8 +723,9 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.uploadFile,
-        operationTypePayload:{
-          clusterId, path: join(path, name),
+        operationTypePayload: {
+          clusterId,
+          path: join(path, name),
         },
       };
 
@@ -667,7 +740,6 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { clusterId, path, name, sizeByte }, ctx: { user } }) => {
-
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);
@@ -681,7 +753,9 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
       const host = getClusterLoginNode(clusterId);
-      if (!host) { throw clusterNotFound(clusterId); }
+      if (!host) {
+        throw clusterNotFound(clusterId);
+      }
 
       if (!cluster.scowd?.enabled) {
         throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
@@ -703,7 +777,6 @@ export const file = router({
 
         subLogger.info("Merge file chunks completed successfully");
         return {};
-
       } catch (err) {
         subLogger.error({ error: err }, "Merge file chunks failed");
         if (err instanceof ConnectError) {
@@ -712,5 +785,4 @@ export const file = router({
         throw err;
       }
     }),
-
 });

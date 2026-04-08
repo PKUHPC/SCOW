@@ -130,6 +130,7 @@ const PublicConfigSchema = z.object({
   NOTIF_NAME: z.string().optional(),
   NOTIF_ADDRESS: z.string().optional(),
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
+  AI_USER_SHARE_ENABLED: z.boolean(),
   INFER_ENABLED:z.boolean(),
   GRAFANA_CONFIG:grafanaConfigSchema.optional(),
   CLUSTERS_GRAFANA_CONFIG:z.record(z.string(), grafanaConfigSchema).optional(),
@@ -306,6 +307,7 @@ export const config = router({
 
         NOTIF_ADDRESS: commonConfig.notification?.address,
 
+        AI_USER_SHARE_ENABLED: aiConfig.asset?.userShare?.enabled ?? false,
         INFER_ENABLED: aiConfig.inferConfig?.enabled === false ? false : true,
 
         GRAFANA_CONFIG: buildGrafanaConfig(aiConfig.jobMonitor),

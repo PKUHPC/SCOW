@@ -1333,6 +1333,8 @@ export default {
     fileSelectModal: {
       onlyHomeDir: "Operations are only allowed in the home directory",
       notAllowed: "The current file or folder cannot be selected",
+      selectFolder: "Please select a folder",
+      selectTarImage: "Please select a tar file as the image",
       nonUtf8NotAllowed: "Files or folders with non-UTF-8 names cannot be selected",
       select: "Select Folder",
       selectFile:"Select File",

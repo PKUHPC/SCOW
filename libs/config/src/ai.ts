@@ -15,6 +15,12 @@ export const AiConfigSchema = Type.Object({
   }),
   appJobsDir: Type.String({ description: "将交互式任务的信息保存到什么位置。相对于用户的家目录", default: "scow/ai/appData" }),
 
+  asset: Type.Optional(Type.Object({
+    userShare: Type.Optional(Type.Object({
+      enabled: Type.Boolean({ description: "是否开启用户分享数据资产功能", default: false }),
+    }, { default: {}, description: "用户分享数据资产功能配置" })),
+  }, { default: {}, description: "数据资产相关配置" })),
+
   navLinks: Type.Optional(Type.Array(
     Type.Object({
       text: Type.String({ description: "一级导航名称" }),

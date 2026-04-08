@@ -1080,6 +1080,8 @@ export default {
     fileSelectModal: {
       onlyHomeDir: "Les opérations ne sont autorisées que dans le répertoire personnel",
       notAllowed: "Le fichier ou dossier actuel ne peut pas être sélectionné",
+      selectFolder: "Veuillez sélectionner un dossier",
+      selectTarImage: "Veuillez sélectionner un fichier tar comme image",
       select: "Sélectionner un fichier",
       upload: "Téléverser un fichier",
       mkdir: "Créer un nouveau dossier",

@@ -1079,6 +1079,8 @@ export default {
     fileSelectModal: {
       onlyHomeDir: "ホームディレクトリでのみ操作が許可されています",
       notAllowed: "現在のファイルまたはフォルダーは選択できません",
+      selectFolder: "フォルダーを選択してください",
+      selectTarImage: "イメージとして tar ファイルを選択してください",
       select: "ファイルを選択",
       upload: "ファイルをアップロード",
       mkdir: "新しいフォルダーを作成",

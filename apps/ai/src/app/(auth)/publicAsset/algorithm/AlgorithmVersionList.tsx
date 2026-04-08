@@ -3,6 +3,7 @@ import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
+import { VersionShareAction } from "src/components/assets/VersionShareAction";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { CancelPublishIcon, DeleteIcon, EditIcon, PublishIcon, ViewFileIcon } from "src/icons/operationIcon";
@@ -179,63 +180,28 @@ export const AlgorithmVersionList: React.FC<Props> = (
                     />
                   </Tooltip>
                   <Tooltip title={t(pCommon(getPublishStatusUpperText(r.sharedStatus)))}>
-                    {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                      <CancelPublishIcon
-                        disabled={r.sharedStatus === SharedStatus.UNSHARING}
-                        onClick={() => {
-                          if (r.sharedStatus !== SharedStatus.UNSHARING) {
-                            confirm({
-                              title: publishTitle,
-                              content:
-                          `${t(p("confirmed"),[t(pCommon(getPublishStatusText(r.sharedStatus))),r.versionName])}`,
-                              onOk: async () => {
-                                if (r.sharedStatus === SharedStatus.SHARED) {
-                                  await unShareMutation.mutateAsync({
-                                    algorithmVersionId: r.id,
-                                    algorithmId,
-                                    isPlatformOwned: true,
-                                  });
-                                } else {
-                                  await shareMutation.mutateAsync({
-                                    algorithmVersionId: r.id,
-                                    algorithmId,
-                                    isPlatformOwned: true,
-                                  });
-                                }
-                              },
-                            });
-                          }
-                        }}
-                      />
-                    ) : (
-                      <PublishIcon
-                        disabled={r.sharedStatus === SharedStatus.SHARING}
-                        onClick={() => {
-                          if (r.sharedStatus !== SharedStatus.SHARING) {
-                            confirm({
-                              title: publishTitle,
-                              content:
-                          `${t(p("confirmed"),[t(pCommon(getPublishStatusText(r.sharedStatus))),r.versionName])}`,
-                              onOk: async () => {
-                                if (r.sharedStatus === SharedStatus.SHARED) {
-                                  await unShareMutation.mutateAsync({
-                                    algorithmVersionId: r.id,
-                                    algorithmId,
-                                    isPlatformOwned: true,
-                                  });
-                                } else {
-                                  await shareMutation.mutateAsync({
-                                    algorithmVersionId: r.id,
-                                    algorithmId,
-                                    isPlatformOwned: true,
-                                  });
-                                }
-                              },
-                            });
-                          }
-                        }}
-                      />
-                    )}
+                    <VersionShareAction
+                      sharedStatus={r.sharedStatus}
+                      confirmTitle={publishTitle}
+                      confirmContent={`${t(p("confirmed"), [t(pCommon(getPublishStatusText(r.sharedStatus))), r.versionName])}`}
+                      confirmAction={confirm}
+                      sharedIcon={CancelPublishIcon}
+                      unsharedIcon={PublishIcon}
+                      onShare={async () => {
+                        await shareMutation.mutateAsync({
+                          algorithmVersionId: r.id,
+                          algorithmId,
+                          isPlatformOwned: true,
+                        });
+                      }}
+                      onUnshare={async () => {
+                        await unShareMutation.mutateAsync({
+                          algorithmVersionId: r.id,
+                          algorithmId,
+                          isPlatformOwned: true,
+                        });
+                      }}
+                    />
                   </Tooltip>
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon

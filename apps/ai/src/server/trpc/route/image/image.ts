@@ -10,6 +10,7 @@ import { Image, Source, Status } from "src/server/entities/Image";
 import { callLog } from "src/server/setup/operationLog";
 import { procedure } from "src/server/trpc/procedure/base";
 import { PlatformRole } from "src/server/trpc/route/auth";
+import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
 import { getHarborConfig, HarborClient } from "src/server/utils/harbor";
@@ -808,6 +809,7 @@ export const shareOrUnshareImage = procedure
   .mutation(async ({ input, ctx: { user } }) => {
     const em = await forkEntityManager();
     const { id, share, isPlatformOwned } = input;
+    ensureAiUserShareEnabled(isPlatformOwned);
     const image = await em.findOne(Image, { id });
 
     if (!image) {

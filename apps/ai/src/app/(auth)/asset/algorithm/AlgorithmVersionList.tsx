@@ -2,10 +2,12 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
+import { usePublicConfig } from "src/app/(auth)/context";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
+import { VersionShareAction } from "src/components/assets/VersionShareAction";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { CancelShareIcon, CopyIcon, DeleteIcon, EditIcon, ShareIcon, ViewFileIcon } from "src/icons/operationIcon";
+import { CopyIcon, DeleteIcon, EditIcon, ViewFileIcon } from "src/icons/operationIcon";
 import { AlgorithmInterface } from "src/models/Algorithm";
 import { SharedStatus } from "src/models/common";
 import { Cluster } from "src/server/trpc/route/config";
@@ -34,6 +36,8 @@ export const AlgorithmVersionList: React.FC<Props> = (
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.algorithmVersionList.");
   const pCommon = prefix("app.common.");
+  const { publicConfig } = usePublicConfig();
+  const isUserShareEnabled = publicConfig.AI_USER_SHARE_ENABLED;
 
   const { message } = App.useApp();
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
@@ -180,61 +184,28 @@ export const AlgorithmVersionList: React.FC<Props> = (
                       }}
                       />
                     </Tooltip>
-                    <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
-                      {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                        <CancelShareIcon
-                          disabled={r.sharedStatus === SharedStatus.UNSHARING}
-                          onClick={() => {
-                            if (r.sharedStatus !== SharedStatus.UNSHARING) {
-                              confirm({
-                                title: shareConfirmTitle,
-                                content:
-                          `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
-                                onOk: async () => {
-                                  if (r.sharedStatus === SharedStatus.SHARED) {
-                                    await unShareMutation.mutateAsync({
-                                      algorithmVersionId: r.id,
-                                      algorithmId,
-                                    });
-                                  } else {
-                                    await shareMutation.mutateAsync({
-                                      algorithmVersionId: r.id,
-                                      algorithmId,
-                                    });
-                                  }
-                                },
-                              });
-                            }
+                    {isUserShareEnabled ? (
+                      <Tooltip title={t(pCommon(getSharedStatusUpperText(r.sharedStatus)))}>
+                        <VersionShareAction
+                          sharedStatus={r.sharedStatus}
+                          confirmTitle={shareConfirmTitle}
+                          confirmContent={`${t(p("confirmed"), [t(pCommon(getSharedStatusText(r.sharedStatus))), r.versionName])}`}
+                          confirmAction={confirm}
+                          onShare={async () => {
+                            await shareMutation.mutateAsync({
+                              algorithmVersionId: r.id,
+                              algorithmId,
+                            });
+                          }}
+                          onUnshare={async () => {
+                            await unShareMutation.mutateAsync({
+                              algorithmVersionId: r.id,
+                              algorithmId,
+                            });
                           }}
                         />
-                      ) : (
-                        <ShareIcon
-                          disabled={r.sharedStatus === SharedStatus.SHARING}
-                          onClick={() => {
-                            if (r.sharedStatus !== SharedStatus.SHARING) {
-                              confirm({
-                                title: shareConfirmTitle,
-                                content:
-                          `${t(p("confirmed"),[t(pCommon(getSharedStatusText(r.sharedStatus))),r.versionName])}`,
-                                onOk: async () => {
-                                  if (r.sharedStatus === SharedStatus.SHARED) {
-                                    await unShareMutation.mutateAsync({
-                                      algorithmVersionId: r.id,
-                                      algorithmId,
-                                    });
-                                  } else {
-                                    await shareMutation.mutateAsync({
-                                      algorithmVersionId: r.id,
-                                      algorithmId,
-                                    });
-                                  }
-                                },
-                              });
-                            }
-                          }}
-                        />
-                      )}
-                    </Tooltip>
+                      </Tooltip>
+                    ) : null}
                     <Tooltip title={t("button.deleteButton")}>
                       <DeleteIcon
                         disabled={r.sharedStatus === SharedStatus.SHARING

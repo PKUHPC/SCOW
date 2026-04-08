@@ -2,6 +2,7 @@ import { TRPCClientError } from "@trpc/client";
 import { App, Modal, Space,Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
+import { VersionShareAction } from "src/components/assets/VersionShareAction";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
 import { ModalLink } from "src/components/ModalLink";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -178,42 +179,28 @@ export const ModelVersionList: React.FC<Props> = (
                     />
                   </Tooltip>
                   <Tooltip title={t(pCommon(getPublishStatusUpperText(r.sharedStatus)))}>
-                    <span onClick={() => {
-                      if (r.sharedStatus !== SharedStatus.SHARING && r.sharedStatus !== SharedStatus.UNSHARING) {
-                        confirm({
-                          title: publishTitle,
-                          content:
-                          `${t(p("confirmed"),[t(pCommon(getPublishStatusText(r.sharedStatus))),r.versionName])}`,
-                          onOk: async () => {
-                            if (r.sharedStatus === SharedStatus.SHARED) {
-
-                              await unShareMutation.mutateAsync({
-                                versionId: r.id,
-                                modelId,
-                                isPlatformOwned: true,
-                              });
-                            } else {
-                              await shareMutation.mutateAsync({
-                                versionId: r.id,
-                                modelId,
-                                isPlatformOwned: true,
-                              });
-                            }
-                          },
+                    <VersionShareAction
+                      sharedStatus={r.sharedStatus}
+                      confirmTitle={publishTitle}
+                      confirmContent={`${t(p("confirmed"), [t(pCommon(getPublishStatusText(r.sharedStatus))), r.versionName])}`}
+                      confirmAction={confirm}
+                      sharedIcon={CancelPublishIcon}
+                      unsharedIcon={PublishIcon}
+                      onShare={async () => {
+                        await shareMutation.mutateAsync({
+                          versionId: r.id,
+                          modelId,
+                          isPlatformOwned: true,
                         });
-                      }
-                    }}
-                    >
-                      {(r.sharedStatus === SharedStatus.SHARED || r.sharedStatus === SharedStatus.UNSHARING) ? (
-                        <CancelPublishIcon
-                          disabled={r.sharedStatus === SharedStatus.UNSHARING}
-                        />
-                      ) : (
-                        <PublishIcon
-                          disabled={r.sharedStatus === SharedStatus.SHARING}
-                        />
-                      )}
-                    </span>
+                      }}
+                      onUnshare={async () => {
+                        await unShareMutation.mutateAsync({
+                          versionId: r.id,
+                          modelId,
+                          isPlatformOwned: true,
+                        });
+                      }}
+                    />
                   </Tooltip>
                   <Tooltip title={t("button.deleteButton")}>
                     <DeleteIcon

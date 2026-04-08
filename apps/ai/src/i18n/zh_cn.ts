@@ -1330,6 +1330,8 @@ export default {
     fileSelectModal:{
       onlyHomeDir:"仅可在家目录下操作",
       notAllowed:"当前文件或文件夹不可选取",
+      selectFolder:"请选择文件夹",
+      selectTarImage:"请选择 tar 文件作为镜像",
       nonUtf8NotAllowed:"不允许选中非UTF-8编码命名的文件或文件夹",
       select:"选择文件夹",
       selectFile:"选择文件",

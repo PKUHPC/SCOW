@@ -236,7 +236,23 @@ imageCleanup:
   enabled: true
   # 选配：默认为 0 * * * *
   cron: "0 * * * *"
+
+# 选配数据资产相关配置
+# asset:
+#   userShare:
+#     enabled: false
 ```
+
+其中，`asset.userShare.enabled` 用于控制“用户分享数据资产”功能是否开放：
+
+- `true`：允许普通用户继续分享自己的数据资产
+- `false`：关闭用户分享入口和后端分享操作
+
+管理员注意：
+
+- 关闭该功能前，建议先完成“用户分享数据迁移为平台公共数据资产”的运维操作
+- 将现有用户分享数据迁移到各集群的 `clusterPublicPath` 下
+- 避免关闭后仍有历史用户分享数据停留在旧 `shared` 路径中
 
 ### 编写文件管理配置
 

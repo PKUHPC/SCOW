@@ -321,7 +321,7 @@ export const FileSelectModal: React.FC<Props> = ({
     }
 
     if (!checkFileSelectability(selectedFileInfo)) {
-      message.info(t(p("notAllowed")));
+      message.info(getNotAllowedMessage());
       return;
     }
 
@@ -344,6 +344,24 @@ export const FileSelectModal: React.FC<Props> = ({
   const checkFileSelectability = (fileInfo: FileInfo) => {
     return allowedFileType.includes(fileInfo.type)
       && (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)));
+  };
+
+  const getNotAllowedMessage = () => {
+    const isTarOnly = allowedExtensions?.length === 1 && allowedExtensions?.[0] === "tar";
+
+    if (allowedFileType.length === 1 && allowedFileType[0] === "DIR") {
+      return t(p("selectFolder"));
+    }
+
+    if (
+      allowedFileType.length === 1
+      && allowedFileType[0] === "FILE"
+      && isTarOnly
+    ) {
+      return t(p("selectTarImage"));
+    }
+
+    return t(p("notAllowed"));
   };
 
   return (

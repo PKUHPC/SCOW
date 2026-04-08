@@ -26,6 +26,7 @@ import { forkEntityManager } from "src/server/utils/getOrm";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
+import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { SHARED_TARGET }
   from "src/server/utils/share";
 import { getClusterLoginNode } from "src/server/utils/ssh";
@@ -707,6 +708,7 @@ export const shareModelVersion = procedure
   })
   .mutation(async ({ input:{ modelId, versionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
+    ensureAiUserShareEnabled(isPlatformOwned);
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
     if (!modelVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${modelId} not found` });
@@ -855,6 +857,7 @@ export const unShareModelVersion = procedure
   .output(z.void())
   .mutation(async ({ input:{ versionId, modelId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
+    ensureAiUserShareEnabled(isPlatformOwned);
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
     if (!modelVersion)
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
