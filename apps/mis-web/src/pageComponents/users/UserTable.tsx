@@ -61,10 +61,9 @@ export const UserTable: React.FC<Props> = ({
     [DisplayedUserState.DISPLAYED_BLOCKED]: <Tag color="error">{t(p("blocked"))}</Tag>,
   };
 
-  const roleTags = {
-    [UserRole.OWNER]: <Tag color="gold">{t(pCommon("owner"))}</Tag>,
+  const roleTags: Partial<Record<UserRole, React.ReactElement>> = {
+    [UserRole.OWNER]: <Tag color="gold">{t("userRoles.owner")}</Tag>,
     [UserRole.ADMIN]: <Tag color="blue">{t(p("admin"))}</Tag>,
-    [UserRole.USER]: <Tag>{t(p("user"))}</Tag>,
   };
 
   // 如果移出自己操作成功，更新当前用户的账户关系
@@ -158,6 +157,7 @@ export const UserTable: React.FC<Props> = ({
           title={t(p("role"))}
           render={(r: UserRole) => roleTags[r]}
           sorter={(a, b) => compareNumber(a.role, b.role)}
+          defaultSortOrder="descend"
         />
         <Table.Column<AccountUserInfo>
           dataIndex="displayedUserState"
