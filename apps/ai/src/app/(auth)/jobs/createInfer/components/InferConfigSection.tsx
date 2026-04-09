@@ -1,33 +1,35 @@
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+
+import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox";
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import {
+  RoundedInput,
+  RoundedInputNumber,
+  RoundedPasswordInput,
+} from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import {
+  SectionTitle,
+  TitledSectionCard as SectionCard,
+} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Form, type FormInstance, Space } from "antd";
 import { type ReactNode, useEffect, useRef } from "react";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
-import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
+import { InferInlineFormItem as InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { EnvironmentVariableList } from "src/app/(auth)/jobs/EnvironmentVariableList";
-import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
-import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
-import { prefix, useI18nTranslateToString } from "src/i18n";
-
-import { PublicImageOption } from "../../PublicImageOption";
-import { DEFAULT_SERVICE_PORT } from "../LaunchInferForm";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
   ImageSelectorWrapper,
-  Label,
-  RoundedInput,
-  RoundedInputNumber,
-  RoundedPasswordInput,
-  RoundedSelect,
-  SectionCard,
-  SectionTitle,
-  SubtleCheckbox,
-} from "../../LaunchJobForm.styles";
-import type {
-  AppFormValues,
-  ImageOption,
-  InferImageSourceKey,
-} from "../LaunchInferForm.types";
+} from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
+import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
+import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { prefix, useI18nTranslateToString } from "src/i18n";
+
+import type { AppFormValues, ImageOption, InferImageSourceKey } from "../LaunchInferForm.types";
+
+import { DEFAULT_SERVICE_PORT } from "../LaunchInferForm";
 
 interface ImageSourceTab {
   key: InferImageSourceKey;
@@ -70,8 +72,7 @@ export const InferConfigSection = ({
   displayRender,
 }: InferConfigSectionProps) => {
   const t = useI18nTranslateToString();
-  const modelsPlaceholder = isModelsLoading ?
-    t(pAppConfig("models.loading")) : t(pAppConfig("models.placeholder"));
+  const modelsPlaceholder = isModelsLoading ? t(pAppConfig("models.loading")) : t(pAppConfig("models.placeholder"));
   const autoFillImageKey = selectedImageOption?.value ?? `source:${selectedImageSource}`;
   const lastSyncedImageKeyRef = useRef<string | undefined>();
   const lastSyncedPortRef = useRef<number | undefined>();
@@ -83,11 +84,8 @@ export const InferConfigSection = ({
 
   useEffect(() => {
     const imageServicePort = selectedImageOption?.servicePort;
-    const defaultPort = (
-      typeof imageServicePort === "number" && imageServicePort > 0
-        ? imageServicePort
-        : DEFAULT_SERVICE_PORT
-    );
+    const defaultPort =
+      typeof imageServicePort === "number" && imageServicePort > 0 ? imageServicePort : DEFAULT_SERVICE_PORT;
     const rawValue = form.getFieldValue("containerServicePort");
     const numericValue = rawValue === "" ? undefined : Number(rawValue);
     const currentValue = Number.isFinite(numericValue) ? numericValue : undefined;
@@ -115,9 +113,9 @@ export const InferConfigSection = ({
     }
 
     if (
-      lastSyncedPortRef.current !== undefined
-      && currentValue === lastSyncedPortRef.current
-      && currentValue !== defaultPort
+      lastSyncedPortRef.current !== undefined &&
+      currentValue === lastSyncedPortRef.current &&
+      currentValue !== defaultPort
     ) {
       applyContainerServicePort(defaultPort);
       lastSyncedPortRef.current = defaultPort;
@@ -129,16 +127,8 @@ export const InferConfigSection = ({
 
   return (
     <SectionCard title={<SectionTitle>{t(pAppConfig("inferTitle"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-      >
-        <InlineFormItem
-          label={(
-            <Label>{t(pAppConfig("imageField.label"))}</Label>
-          )}
-        >
+      <Form form={form} colon={false} requiredMark={false}>
+        <InlineFormItem label={<Label>{t(pAppConfig("imageField.label"))}</Label>}>
           <ImageSelectorWrapper>
             <ImageSegmentedControl
               block
@@ -161,12 +151,8 @@ export const InferConfigSection = ({
                     onBlur={() => form.validateFields(["image"])}
                   />
                 </Form.Item>
-                <Form.Item
-                  name="usePrivateImage"
-                  valuePropName="checked"
-                  noStyle
-                >
-                  <SubtleCheckbox>{t(pAppConfig("imageField.usePrivateImage"))}</SubtleCheckbox>
+                <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
+                  <Checkbox>{t(pAppConfig("imageField.usePrivateImage"))}</Checkbox>
                 </Form.Item>
                 {usePrivateRemoteImage ? (
                   <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 8 }}>
@@ -175,10 +161,7 @@ export const InferConfigSection = ({
                       noStyle
                       rules={[{ required: true, message: t(pAppConfig("imageField.remoteUsernameRequired")) }]}
                     >
-                      <RoundedInput
-                        size="large"
-                        placeholder={t(pAppConfig("imageField.remoteUsernamePlaceholder"))}
-                      />
+                      <RoundedInput size="large" placeholder={t(pAppConfig("imageField.remoteUsernamePlaceholder"))} />
                     </Form.Item>
                     <Form.Item
                       name="remotePassword"
@@ -206,45 +189,37 @@ export const InferConfigSection = ({
                     placeholder={imagePlaceholder}
                     options={imageOptions}
                     style={{ width: "100%" }}
-                    loading={(selectedImageSource === "mine" || selectedImageSource === "public") ?
-                      isImagesLoading : false}
+                    loading={
+                      selectedImageSource === "mine" || selectedImageSource === "public" ? isImagesLoading : false
+                    }
                     optionLabelProp="displayLabel"
                     optionRender={(option) => {
                       if (selectedImageSource !== "public") {
                         return option.label;
                       }
                       const data = option.data as ImageOption;
-                      const labelText = typeof option.label === "string"
-                        ? option.label
-                        : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
+                      const labelText =
+                        typeof option.label === "string" ? option.label : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
                       const [labelName = "", labelTag = ""] = labelText.split(":").map((value) => value.trim());
                       const name = data.rawName ?? labelName;
                       const tag = data.rawTag ?? labelTag;
-                      return data.displayLabel ?? (
-                        <PublicImageOption
-                          name={name}
-                          tag={tag}
-                          ownerName={data.ownerName}
-                          ownerId={data.ownerId}
-                        />
+                      return (
+                        data.displayLabel ?? (
+                          <PublicImageOption name={name} tag={tag} ownerName={data.ownerName} ownerId={data.ownerId} />
+                        )
                       );
                     }}
                   />
                 </Form.Item>
                 {selectedImageOption?.description && (
-                  <ImageDescriptionBox>
-                    {selectedImageOption?.description}
-                  </ImageDescriptionBox>
+                  <ImageDescriptionBox>{selectedImageOption?.description}</ImageDescriptionBox>
                 )}
               </>
             )}
           </ImageSelectorWrapper>
         </InlineFormItem>
 
-        <InlineFormItem
-          name="command"
-          label={<Label>{t(pAppConfig("commandLabel"))}</Label>}
-        >
+        <InlineFormItem name="command" label={<Label>{t(pAppConfig("commandLabel"))}</Label>}>
           <CommandInputField defaultCommand={currentCommandDefault} />
         </InlineFormItem>
 
@@ -271,18 +246,10 @@ export const InferConfigSection = ({
           ]}
           label={<Label>{t(pAppConfig("servicePortField.containerServicePort"))}</Label>}
         >
-          <RoundedInputNumber
-            size="large"
-            min={0}
-            max={65535}
-            precision={0}
-            style={{ width: 160 }}
-          />
+          <RoundedInputNumber size="large" min={0} max={65535} precision={0} style={{ width: 152 }} />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(pAppConfig("models.label"))}</Label>}
-        >
+        <InlineFormItem label={<Label>{t(pAppConfig("models.label"))}</Label>}>
           <ResourceSelectorList
             name="models"
             placeholder={modelsPlaceholder}

@@ -1,17 +1,14 @@
 import { Segmented, Space } from "antd";
 import styled from "styled-components";
 
-export * from "../LaunchJobForm.styles";
-
 export const FrameworkSegmentedControl = styled(Segmented)`
   && {
-    width: 45%;
-    min-width: 500px;
+    max-width: 520px;
   }
 
   padding: 5px 14px !important;
   border-radius: 8px;
-  color: rgba(136, 143, 163, 1) !important;
+  color: ${({ theme }) => theme.palette.gray[6]} !important;
   margin-bottom: 6px !important;
 
   .ant-segmented-item-label {
@@ -26,8 +23,8 @@ export const FrameworkSegmentedControl = styled(Segmented)`
 `;
 
 export const InlineAddonInputGroup = styled(Space.Compact)`
-  width: 35%;
-  min-width: 200px;
+  width: 100%;
+  max-width: 520px;
   height: 42px;
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.palette.gray[4]};
@@ -48,7 +45,7 @@ export const InlineAddonInputGroup = styled(Space.Compact)`
     display: flex;
     align-items: center;
     height: 100%;
-    flex: 0 0 150px;
+    flex: 0 0 160px;
     padding: 0 14px;
     font-size: 14px;
     color: rgba(136, 143, 163, 1);
@@ -59,7 +56,7 @@ export const InlineAddonInputGroup = styled(Space.Compact)`
   .addon-input {
     flex: 1;
     height: 100%;
-    border-color: transparent;
+    border-color: transparent !important;
     box-shadow: none !important;
     border-radius: 0 !important;
   }
@@ -74,6 +71,11 @@ export const InlineAddonInputGroup = styled(Space.Compact)`
   .addon-input.ant-input-number-status-error {
     border-color: transparent !important;
     box-shadow: none !important;
+  }
+
+  .addon-input.ant-input-number-disabled {
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
+    background-color: ${({ theme }) => theme.palette.gray[1]} !important;
   }
 
   .addon-input .ant-input-number-input {

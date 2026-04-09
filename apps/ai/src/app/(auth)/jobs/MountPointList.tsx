@@ -1,13 +1,13 @@
 "use client";
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { Form } from "antd";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled, useTheme } from "styled-components";
 
 import { validateMountPoints } from "./common";
-import { RoundedInput } from "./LaunchJobForm.styles";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
 
 const MountListContainer = styled.div`
@@ -32,11 +32,10 @@ const MountRemoveButton = styled(RemoveButton)`
   margin-top: 10px;
 `;
 
-
 const p = prefix("app.jobs.mountPointList.");
 
 interface Props {
-  clusterId: string
+  clusterId: string;
 }
 
 export const MountPointList = ({ clusterId }: Props) => {
@@ -65,7 +64,7 @@ export const MountPointList = ({ clusterId }: Props) => {
                     size="large"
                     disabled
                     placeholder={!clusterId ? t(p("selectClusterFirst")) : t(p("selectSourcePath"))}
-                    suffix={(
+                    prefix={
                       <FileSelectModal
                         allowedFileType={["DIR"]}
                         onSubmit={(path: string) => {
@@ -74,7 +73,7 @@ export const MountPointList = ({ clusterId }: Props) => {
                         }}
                         clusterId={clusterId}
                       />
-                    )}
+                    }
                   />
                 </Form.Item>
 
@@ -106,10 +105,7 @@ export const MountPointList = ({ clusterId }: Props) => {
             </MountRow>
           ))}
 
-          <AddButton
-            icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
-            onClick={() => add({})}
-          >
+          <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
             {t(p("addButton"))}
           </AddButton>
         </MountListContainer>

@@ -369,6 +369,7 @@ export default {
         searchPlaceholder: "Enter application name",
         noSearchResult: "No interactive application related to '{}' was found",
         appNotFoundMessage: "No interactive application available for creation.",
+        loading: "Loading available applications",
       },
       jobList:{
         title:"Jobs",
@@ -763,6 +764,7 @@ export default {
       publicImageOption:{
         sharedBy:"Published by: {0}",
         ownerIdSuffix:" (ID:{0})",
+        platformName:"Platform",
       },
     },
     jobShell:{

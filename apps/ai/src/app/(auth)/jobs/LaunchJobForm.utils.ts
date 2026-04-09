@@ -1,5 +1,5 @@
-import { isValidElement, type ReactNode } from "react";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { createElement, isValidElement, type ReactNode } from "react";
+import { OwnerDisplayText, type ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { formatSize } from "src/utils/format";
 
 import type {
@@ -32,6 +32,7 @@ export const resolveText = (value: ReactNode | string | number | undefined): str
     return value.map((child) => resolveText(child)).join("");
   }
   if (isValidElement(value)) {
+    if ((value.props as Record<string, unknown>)?.["data-display-only"]) return "";
     return resolveText(value.props?.children);
   }
   return "";
@@ -133,11 +134,24 @@ export const toIdPrivateList = (
   return result;
 };
 
-// 将级联控件的标签格式化成可展示文本
-export const renderCascaderLabels = (labels: ReactNode[]) => labels
-  .map((label) => resolveText(label))
-  .filter((text) => Boolean(text))
-  .join(" / ");
+// 将级联控件的标签格式化成可展示文本；若选中项携带 ownerText 则拼到末尾（灰色样式）
+export const renderCascaderLabels = (labels: ReactNode[], selectedOptions?: unknown[]): ReactNode => {
+  const pathText = labels
+    .map((label) => resolveText(label))
+    .filter((text) => Boolean(text))
+    .join(" / ");
+
+  const ownerText = (selectedOptions as Record<string, unknown>[] | undefined)
+    ?.map((opt) => opt.ownerText as string | undefined)
+    .find(Boolean);
+
+  if (!ownerText) return pathText;
+
+  return createElement("span", null,
+    pathText,
+    createElement(OwnerDisplayText, null, ownerText),
+  );
+};
 
 // 选出第一个可用的队列 ID
 export const pickFirstEnabledQueueId = (rows: QueueRow[]): string | undefined =>

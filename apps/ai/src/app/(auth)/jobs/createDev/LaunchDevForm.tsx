@@ -1,9 +1,18 @@
 "use client";
 
+import type { ColumnsType } from "antd/es/table";
+
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import {
+  BorderlessCard,
+  HeaderRow,
+  HeaderTitle,
+  PaddedCard,
+} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App,Button, Form, Space, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { App, Button, Form, Space, Typography } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -16,21 +25,6 @@ import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
-import { PublicImageOption } from "../PublicImageOption";
-import { BaseInfoSection } from "./components/BaseInfoSection";
-import { DevConfigSection } from "./components/DevConfigSection";
-import { ResourceConfigSection } from "./components/ResourceConfigSection";
-import {
-  BorderlessCard,
-  FixedFooter,
-  FooterActions,
-  FooterStats,
-  FooterStatValue,
-  HeaderRow,
-  HeaderTitle,
-  PaddedCard,
-  SectionTitle,
-} from "../LaunchJobForm.styles";
 import type {
   AppFormValues,
   BaseFormValues,
@@ -45,11 +39,12 @@ import type {
   QueueRow,
   ResourceFormValues,
 } from "./LaunchDevForm.types";
-import {
-  convertDurationToHours,
-  deriveQueueStats,
-  mapQueuesToRows,
-} from "../LaunchJobForm.utils";
+
+import { convertDurationToHours, deriveQueueStats, mapQueuesToRows } from "../LaunchJobForm.utils";
+import { PublicImageOption } from "../PublicImageOption";
+import { BaseInfoSection } from "./components/BaseInfoSection";
+import { DevConfigSection } from "./components/DevConfigSection";
+import { ResourceConfigSection } from "./components/ResourceConfigSection";
 
 // ======================= 类型定义 =======================
 interface Props {
@@ -83,8 +78,10 @@ const IMAGE_PLACEHOLDER_KEYS: Record<DevImageSourceKey, ImagePlaceholderKey> = {
 } as const;
 
 // 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }> = {
+const QUEUE_LABEL_KEYS: Record<
+  QueueKind,
+  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
+> = {
   gpu: {
     gpu: "queueFooterLabels.totalGpu",
     cpu: "queueFooterLabels.totalCpu",
@@ -105,19 +102,17 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "20%",
+    width: "14%",
   },
   {
     title: t(p("gpuColumns.accelerator")),
     dataIndex: "accelerator",
     key: "accelerator",
-    width: "20%",
+    width: "28%",
     render: (_: unknown, record: GPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.accelerator}</Typography.Text>
-        {record.acceleratorDetail ? (
-          <Typography.Text>{record.acceleratorDetail}</Typography.Text>
-        ) : null}
+        {record.acceleratorDetail ? <Typography.Text>{record.acceleratorDetail}</Typography.Text> : null}
         {record.acceleratorVramGb ? (
           <Typography.Text>{t(p("gpuColumns.vram"), [record.acceleratorVramGb])}</Typography.Text>
         ) : null}
@@ -150,7 +145,7 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "20%",
+    width: "18%",
     render: (value: string) => value || "-",
   },
 ];
@@ -161,19 +156,17 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "25%",
+    width: "14%",
   },
   {
     title: t(p("cpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "25%",
+    width: "30%",
     render: (_: unknown, record: CPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.cpuModel}</Typography.Text>
-        {record.cpuDetail ? (
-          <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text>
-        ) : null}
+        {record.cpuDetail ? <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text> : null}
       </Space>
     ),
   },
@@ -181,23 +174,20 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.capacity")),
     dataIndex: "capacity",
     key: "capacity",
-    width: "25%",
+    width: "28%",
   },
   {
     title: t(p("cpuColumns.memoryPerCore")),
     dataIndex: "memoryPerCore",
     key: "memoryPerCore",
-    width: "25%",
+    width: "28%",
     render: (text?: string) => text ?? "-",
   },
 ];
 
-
 // ======================= 组件实现 =======================
 // 主表单组件，协调基础信息、资源配置与应用配置三个分区，并负责数据提交
-export const LaunchDevForm = ({
-  createDevParams,misPath,
-}: Props) => {
+export const LaunchDevForm = ({ createDevParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
@@ -206,14 +196,9 @@ export const LaunchDevForm = ({
   const { CLUSTERS } = publicConfig;
   const router = useRouter();
 
-  const {
-    data: userPartitions,
-    isLoading: partitionLoading,
-  } = trpc.resource.getUserAssociatedClusterPartitions.useQuery();
-  const {
-    data: allClustersInfo,
-    isLoading: allClustersLoading,
-  } = trpc.dashboard.getAllClustersInfo.useQuery(
+  const { data: userPartitions, isLoading: partitionLoading } =
+    trpc.resource.getUserAssociatedClusterPartitions.useQuery();
+  const { data: allClustersInfo, isLoading: allClustersLoading } = trpc.dashboard.getAllClustersInfo.useQuery(
     { clusterIds: currentAvailableClusterIds },
     { enabled: currentAvailableClusterIds.length > 0 },
   );
@@ -223,8 +208,7 @@ export const LaunchDevForm = ({
       return [];
     }
 
-    const devHostEnabledClusters = CLUSTERS.filter((cluster) =>
-      scowClusterConfigs[cluster.id]?.ai?.devHost?.enabled);
+    const devHostEnabledClusters = CLUSTERS.filter((cluster) => scowClusterConfigs[cluster.id]?.ai?.devHost?.enabled);
 
     if (userPartitions?.clusterPartitions === undefined) {
       return devHostEnabledClusters.map((cluster) => {
@@ -246,8 +230,7 @@ export const LaunchDevForm = ({
       .map((cluster) => {
         const userPartitionNames = clusterPartitions[cluster.id] || [];
         const clusterInfo = allClustersInfo?.clusters.find((c) => c.clusterId === cluster.id);
-        const partitions = clusterInfo?.partitions?.filter((p) =>
-          userPartitionNames.includes(p.partitionName)) ?? [];
+        const partitions = clusterInfo?.partitions?.filter((p) => userPartitionNames.includes(p.partitionName)) ?? [];
 
         return {
           id: cluster.id,
@@ -273,10 +256,11 @@ export const LaunchDevForm = ({
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
-    () => IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
-      key: tab.key,
-      label: t(p(tab.labelKey)),
-    })),
+    () =>
+      IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
+        key: tab.key,
+        label: t(p(tab.labelKey)),
+      })),
     [languageId, t],
   );
   const handleJobNameChange = (value: string) => {
@@ -296,10 +280,8 @@ export const LaunchDevForm = ({
     setMaxTimeUnit(unit);
   };
 
-
   // 生成默认作业名称，帮助用户快速提交
-  const initialJobName =
-  useMemo(() => `dev-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(), []);
+  const initialJobName = useMemo(() => `dev-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(), []);
   const [jobName, setJobName] = useState(initialJobName);
   const [activeResourceTab, setActiveResourceTab] = useState<QueueKind>("gpu");
   const [selectedQueueKey, setSelectedQueueKey] = useState<string | undefined>();
@@ -343,12 +325,14 @@ export const LaunchDevForm = ({
     { enabled: Boolean(selectedCluster) },
   );
 
-  const accountOptions = useMemo(() => (
-    (accountListData?.accounts ?? []).map((account) => ({
-      label: account,
-      value: account,
-    }))
-  ), [accountListData]);
+  const accountOptions = useMemo(
+    () =>
+      (accountListData?.accounts ?? []).map((account) => ({
+        label: account,
+        value: account,
+      })),
+    [accountListData],
+  );
 
   // ----------- 服务请求与变更提示 -----------
   // 提交开发机任务的 RPC 请求，集中处理成功跳转和常见错误提示
@@ -360,19 +344,18 @@ export const LaunchDevForm = ({
     onError: (error) => {
       const detail = error.data?.detailedError;
       if (detail?.type === "account_user_not_available") {
-        message.error(
-          t(p("submitFailedAccountUserUnavailable"), [detail.accountName ?? "", detail.userId ?? ""]),
-        );
+        message.error(t(p("submitFailedAccountUserUnavailable"), [detail.accountName ?? "", detail.userId ?? ""]));
         return;
       }
       if (detail?.type === "cluster_partition_not_available" && detail.partitionName) {
         const clusterName = CLUSTERS.find((x) => x.id === detail.clusterId)?.name || detail.clusterId;
         const i18nClusterName = getI18nConfigCurrentText(clusterName, languageId);
         message.error(
-          t(
-            p("submitFailedAccountPartitionUnavailable"),
-            [detail.accountName ?? "", i18nClusterName, detail.partitionName],
-          ),
+          t(p("submitFailedAccountPartitionUnavailable"), [
+            detail.accountName ?? "",
+            i18nClusterName,
+            detail.partitionName,
+          ]),
         );
         return;
       }
@@ -476,20 +459,22 @@ export const LaunchDevForm = ({
 
   // 根据选中的账户与集群拉取对应的队列与资源详情
   // ----- 数据拉取：根据选中账户/集群实时刷新依赖数据 -----
-  const { data: queueData, isLoading: getAvailablePartitionIsLoading } =
-    trpc.config.getAvailablePartitions.useQuery(
-      { accountName: selectedAccount!, clusterId: selectedCluster! },
-      { enabled: !!selectedAccount && !!selectedCluster },
-    );
+  const { data: queueData, isLoading: getAvailablePartitionIsLoading } = trpc.config.getAvailablePartitions.useQuery(
+    { accountName: selectedAccount!, clusterId: selectedCluster! },
+    { enabled: !!selectedAccount && !!selectedCluster },
+  );
 
-  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery({
-    isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
-    clusterId: selectedCluster,
-    withExternal: "true",
-    types: ImageType.DEV_HOST,
-  }, {
-    enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
-  });
+  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery(
+    {
+      isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
+      clusterId: selectedCluster,
+      withExternal: "true",
+      types: ImageType.DEV_HOST,
+    },
+    {
+      enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
+    },
+  );
 
   useEffect(() => {
     if (!createDevParams) {
@@ -502,12 +487,10 @@ export const LaunchDevForm = ({
 
     const mountPointsDraft = (createDevParams.mountPoints ?? [])
       .map((item) => {
-        const path = typeof (item as { path?: string })?.path === "string"
-          ? (item as { path?: string }).path!.trim()
-          : "";
-        const target = typeof (item as { target?: string })?.target === "string"
-          ? (item as { target?: string }).target!.trim()
-          : "";
+        const path =
+          typeof (item as { path?: string })?.path === "string" ? (item as { path?: string }).path!.trim() : "";
+        const target =
+          typeof (item as { target?: string })?.target === "string" ? (item as { target?: string }).target!.trim() : "";
         return {
           source: path,
           target,
@@ -546,7 +529,7 @@ export const LaunchDevForm = ({
         image: String(createDevParams.image),
       };
       return {
-        source: createDevParams.isImagePrivate === false ? "public" as const : "mine" as const,
+        source: createDevParams.isImagePrivate === false ? ("public" as const) : ("mine" as const),
         draft,
       };
     }
@@ -578,25 +561,25 @@ export const LaunchDevForm = ({
           ownerName: image.ownerName,
           ownerId: image.ownerId,
           startCommand: image.startCommand ?? undefined,
-          displayLabel: selectedImageSource === "public"
-            ? (
+          displayLabel:
+            selectedImageSource === "public" ? (
               <PublicImageOption
                 name={image.name}
                 tag={image.tag}
                 ownerName={image.ownerName}
                 ownerId={image.ownerId}
               />
-            )
-            : `${image.name}: ${image.tag}`,
+            ) : (
+              `${image.name}: ${image.tag}`
+            ),
         })) as ImageOption[];
     }
     return [];
   }, [images, selectedImageSource, languageId]);
 
   // 统一选中值的类型，避免数字 ID 与字符串之间的比较问题
-  const normalizedSelectedImageValue = selectedImageValue !== undefined && selectedImageValue !== null
-    ? String(selectedImageValue)
-    : undefined;
+  const normalizedSelectedImageValue =
+    selectedImageValue !== undefined && selectedImageValue !== null ? String(selectedImageValue) : undefined;
 
   const selectedImageOption = useMemo(
     () => imageOptionsForSource.find((item) => item.value === normalizedSelectedImageValue),
@@ -618,8 +601,7 @@ export const LaunchDevForm = ({
   }, [cpuRows, gpuRows]);
 
   // 按当前标签筛出实际展示的队列集合
-  const currentQueueOptions: QueueRow[] =
-    activeResourceTab === "gpu" ? gpuRows : cpuRows;
+  const currentQueueOptions: QueueRow[] = activeResourceTab === "gpu" ? gpuRows : cpuRows;
 
   // 结合选中主键获取当前行，用于派生底部统计和表单限制
   const selectedQueueOption = useMemo(
@@ -633,12 +615,7 @@ export const LaunchDevForm = ({
   const totalGpuUnits = normalizedGpuPerNode * normalizedNodeCount;
   const totalCpuUnits = normalizedCpuPerNode * normalizedNodeCount;
 
-  const {
-    cpuPerUnit,
-    memoryPerUnitText,
-    memoryPerUnitMb,
-    qosOptions,
-  } = useMemo(
+  const { cpuPerUnit, memoryPerUnitText, memoryPerUnitMb, qosOptions } = useMemo(
     () => deriveQueueStats(selectedQueueOption),
     [selectedQueueOption],
   );
@@ -648,25 +625,21 @@ export const LaunchDevForm = ({
       return undefined;
     }
     const candidates: number[] = [selectedQueueOption.totalUnits];
-    if (typeof selectedQueueOption.maxAcceleratorsPerPod === "number"
-      && selectedQueueOption.maxAcceleratorsPerPod > 0) {
+    if (
+      typeof selectedQueueOption.maxAcceleratorsPerPod === "number" &&
+      selectedQueueOption.maxAcceleratorsPerPod > 0
+    ) {
       candidates.push(selectedQueueOption.maxAcceleratorsPerPod);
     }
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const {
-    gpu: gpuLabelKey,
-    cpu: cpuLabelKey,
-    memory: memoryLabelKey,
-  } = QUEUE_LABEL_KEYS[activeResourceTab];
+  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
   const gpuLabel = t(p(gpuLabelKey));
   const cpuLabel = t(p(cpuLabelKey));
   const memoryLabel = t(p(memoryLabelKey));
 
-  const displayedGpu = activeResourceTab === "gpu"
-    ? (totalGpuUnits > 0 ? totalGpuUnits : "-")
-    : "-";
+  const displayedGpu = activeResourceTab === "gpu" ? (totalGpuUnits > 0 ? totalGpuUnits : "-") : "-";
 
   const displayedCpu = (() => {
     if (activeResourceTab === "gpu") {
@@ -692,9 +665,7 @@ export const LaunchDevForm = ({
 
   const unitsForQuery = activeResourceTab === "gpu" ? totalGpuUnits : totalCpuUnits;
   const hasMemoryPerUnit = memoryPerUnitMb !== undefined && memoryPerUnitMb !== null && !Number.isNaN(memoryPerUnitMb);
-  const memMbForQuery = hasMemoryPerUnit
-    ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0)))
-    : 0;
+  const memMbForQuery = hasMemoryPerUnit ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0))) : 0;
   const timeSecondsForPrice = 3600;
   // 仅在关键字段齐备、并且能计算出每单位内存时才触发价格查询，避免无效请求
   const jobPriceQueryEnabled =
@@ -702,28 +673,33 @@ export const LaunchDevForm = ({
     hasMemoryPerUnit &&
     unitsForQuery > 0;
 
-  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery({
-    cluster: selectedCluster!,
-    partition: selectedQueueKey!,
-    account: selectedAccount!,
-    gpu: totalGpuUnits,
-    cpusAlloc: totalCpuUnits,
-    memMb: memMbForQuery,
-    qos: priority,
-    timeSeconds: timeSecondsForPrice,
-  }, {
-    enabled: jobPriceQueryEnabled,
-  });
+  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery(
+    {
+      cluster: selectedCluster!,
+      partition: selectedQueueKey!,
+      account: selectedAccount!,
+      gpu: totalGpuUnits,
+      cpusAlloc: totalCpuUnits,
+      memMb: memMbForQuery,
+      qos: priority,
+      timeSeconds: timeSecondsForPrice,
+    },
+    {
+      enabled: jobPriceQueryEnabled,
+    },
+  );
 
   const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)} ${t(p("yuan"))}`;
 
-  const clusterOptions = useMemo(() => (
-    availableClusters.map((cluster) => ({
-      id: cluster.id,
-      name: cluster.name,
-      disabled: false,
-    }))
-  ), [availableClusters]);
+  const clusterOptions = useMemo(
+    () =>
+      availableClusters.map((cluster) => ({
+        id: cluster.id,
+        name: cluster.name,
+        disabled: false,
+      })),
+    [availableClusters],
+  );
 
   useEffect(() => {
     // 再次提交时回填账户与集群，避免默认值覆盖历史配置
@@ -738,9 +714,7 @@ export const LaunchDevForm = ({
     const targetAccount = createDevParams.account;
     const targetCluster = createDevParams.clusterId;
 
-    const accountAvailable = targetAccount
-      ? accountOptions.some((option) => option.value === targetAccount)
-      : false;
+    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
 
     const targetClusterOption = targetCluster
       ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
@@ -788,8 +762,7 @@ export const LaunchDevForm = ({
     const targetQueueId = createDevParams.partition;
     const targetQueue = targetQueueId ? queueRowById.get(targetQueueId) : undefined;
 
-    const nextTab: QueueKind = targetQueue?.type
-      ?? ((createDevParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
+    const nextTab: QueueKind = targetQueue?.type ?? ((createDevParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
 
     if (activeResourceTab !== nextTab) {
       setActiveResourceTab(nextTab);
@@ -900,9 +873,7 @@ export const LaunchDevForm = ({
       return;
     }
 
-    const currentSelection = currentQueueOptions.find(
-      (option) => option.id === selectedQueueKey,
-    );
+    const currentSelection = currentQueueOptions.find((option) => option.id === selectedQueueKey);
     if (!currentSelection) {
       const savedQueueId = createDevParams?.partition;
       if (createDevParams && selectedQueueKey === savedQueueId) {
@@ -947,9 +918,7 @@ export const LaunchDevForm = ({
       return;
     }
     const currentCluster = selectedCluster ?? resourceForm.getFieldValue("cluster");
-    const exists = currentCluster
-      ? clusterOptions.some((option) => option.id === currentCluster)
-      : false;
+    const exists = currentCluster ? clusterOptions.some((option) => option.id === currentCluster) : false;
     if (!exists) {
       resourceForm.setFieldValue("cluster", clusterOptions[0].id);
     }
@@ -1033,12 +1002,12 @@ export const LaunchDevForm = ({
     const isRemote = source === "remote";
     const isLocalLibrary = source === "mine" || source === "public";
 
-    const remoteMatches = !isRemote || (
-      currentImage === desiredImage
-      && Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage)
-      && appForm.getFieldValue("remoteUsername") === draft.remoteUsername
-      && appForm.getFieldValue("remotePassword") === draft.remotePassword
-    );
+    const remoteMatches =
+      !isRemote ||
+      (currentImage === desiredImage &&
+        Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage) &&
+        appForm.getFieldValue("remoteUsername") === draft.remoteUsername &&
+        appForm.getFieldValue("remotePassword") === draft.remotePassword);
 
     if (isLocalLibrary) {
       if (currentSource !== source) {
@@ -1075,11 +1044,7 @@ export const LaunchDevForm = ({
 
     imageSourceDraftsRef.current[source] = draft;
 
-    if (
-      currentSource === source
-      && currentImage === desiredImage
-      && remoteMatches
-    ) {
+    if (currentSource === source && currentImage === desiredImage && remoteMatches) {
       resubmitImageAppliedRef.current = true;
       return;
     }
@@ -1110,13 +1075,7 @@ export const LaunchDevForm = ({
     }
 
     resubmitImageAppliedRef.current = true;
-  }, [
-    appForm,
-    imageOptionsForSource,
-    isImagesLoading,
-    resubmitImagePreference,
-    selectedImageSource,
-  ]);
+  }, [appForm, imageOptionsForSource, isImagesLoading, resubmitImagePreference, selectedImageSource]);
 
   useEffect(() => {
     // 当取消勾选私有镜像时，主动清空认证字段，避免提交冗余信息
@@ -1202,14 +1161,7 @@ export const LaunchDevForm = ({
     }
 
     try {
-      const {
-        account,
-        cluster,
-        priority: qos,
-        cpuCores,
-        gpuCores,
-        maxTime,
-      } = resourceValues;
+      const { account, cluster, priority: qos, cpuCores, gpuCores, maxTime } = resourceValues;
       const partition = selectedQueueKey;
       const queueOption = selectedQueueOption;
 
@@ -1255,9 +1207,7 @@ export const LaunchDevForm = ({
         return;
       }
 
-      const memoryMb = memoryPerUnitMb
-        ? Math.max(0, Math.round(memoryPerUnitMb * unitCount))
-        : undefined;
+      const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
       const maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTime, maxTimeUnit) * 60));
 
@@ -1307,12 +1257,14 @@ export const LaunchDevForm = ({
         memory: memoryMb ?? 0,
         maxTimeMinutes,
         ...(mountPointsPayload.length ? { mountPoints: mountPointsPayload } : {}),
-        ...(appValues.usePrivateImage ? {
-          privateImageRepositoryCredentials: {
-            userName: appValues.remoteUsername ?? "",
-            password: appValues.remotePassword ?? "",
-          },
-        } : {}),
+        ...(appValues.usePrivateImage
+          ? {
+              privateImageRepositoryCredentials: {
+                userName: appValues.remoteUsername ?? "",
+                password: appValues.remotePassword ?? "",
+              },
+            }
+          : {}),
       };
 
       await createDevJobMutation.mutateAsync(payload);
@@ -1326,20 +1278,14 @@ export const LaunchDevForm = ({
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
-          title={(
+          title={
             <HeaderRow align="center" size={16}>
-              <HeaderTitle>
-                {t(pDev("createDevTitle"))}
-              </HeaderTitle>
+              <HeaderTitle>{t(pDev("createDevTitle"))}</HeaderTitle>
             </HeaderRow>
-          )}
+          }
         >
           <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection
-              form={baseForm}
-              jobName={jobName}
-              onJobNameChange={handleJobNameChange}
-            />
+            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
           </BorderlessCard>
         </PaddedCard>
 
@@ -1378,28 +1324,34 @@ export const LaunchDevForm = ({
           usePrivateRemoteImage={usePrivateRemoteImage}
           selectedCluster={selectedCluster}
         />
-
       </PageContainer>
 
       <FixedFooter>
         <FooterStats>
-          <span>{gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue></span>
-          <span>{cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue></span>
-          <span>{memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue></span>
-          <span>{t(p("hourlyCostLabel"))}
+          <span>
+            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
+          </span>
+          <span>
+            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
+          </span>
+          <span>
+            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
+          <a
+            onClick={() => {
+              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
+            }}
+          >
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
-          <Button
-            type="primary"
-            onClick={handleSubmit}
-            loading={createDevJobMutation.isPending}
-          >
+          <Button type="primary" onClick={handleSubmit} loading={createDevJobMutation.isPending}>
             {t(p("submit"))}
           </Button>
         </FooterActions>

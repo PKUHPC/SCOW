@@ -9,18 +9,13 @@ export const PageContainer = styled(Space)`
   padding-right: calc(160px - ${existingPadding}px);
   padding-left: calc(160px - ${existingPadding}px);
 
-  @media (max-width: ${antdBreakpoints.xxl}px) {
-    padding-right: calc(120px - ${existingPadding}px);
-    padding-left: calc(120px - ${existingPadding}px);
-  }
-
   @media (max-width: ${antdBreakpoints.xl}px) {
-    padding-right: calc(80px - ${existingPadding}px);
-    padding-left: calc(80px - ${existingPadding}px);
+    padding-right: calc(96px - ${existingPadding}px);
+    padding-left: calc(96px - ${existingPadding}px);
   }
 
   @media (max-width: ${antdBreakpoints.lg}px) {
-    padding-right: calc(40px - ${existingPadding}px);
-    padding-left: calc(40px - ${existingPadding}px);
+    padding-right: calc(56px - ${existingPadding}px);
+    padding-left: calc(56px - ${existingPadding}px);
   }
 `;

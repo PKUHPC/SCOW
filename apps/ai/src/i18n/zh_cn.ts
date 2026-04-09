@@ -369,6 +369,7 @@ export default {
         searchPlaceholder: "请输入应用名",
         noSearchResult: "未找到与 \"{}\" 相关的交互式应用",
         appNotFoundMessage: "没有可以创建的交互式应用",
+        loading: "正在加载可创建的应用",
       },
       jobList:{
         title:"作业",
@@ -763,6 +764,7 @@ export default {
       publicImageOption:{
         sharedBy:"发布者：{0}",
         ownerIdSuffix:"（ID:{0}）",
+        platformName:"平台",
       },
     },
     jobShell:{

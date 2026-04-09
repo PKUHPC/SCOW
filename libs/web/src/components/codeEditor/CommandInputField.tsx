@@ -13,8 +13,7 @@ interface Props {
   defaultRows?: number;
 }
 
-const defaultPlaceholder =
-  "Please enter command";
+const defaultPlaceholder = "Please enter command";
 const defaultResetButtonText = "Reset";
 const defaultRowsCount = 3;
 
@@ -49,24 +48,17 @@ export const CommandInputField = ({
         />
       </CommandEditorShell>
 
-      {
-        needResetButton && (
-          <CommandResetButton
-            size="small"
-            onClick={handleReset}
-            disabled={isAtDefault}
-          >
-            {resetButtonText}
-          </CommandResetButton>
-        )
-      }
-
+      {needResetButton && (
+        <CommandResetButton size="small" onClick={handleReset} disabled={isAtDefault}>
+          {resetButtonText}
+        </CommandResetButton>
+      )}
     </CommandContainer>
   );
 };
 
 const CommandContainer = styled.div`
-  border: 1px solid ${({ theme }) => theme.palette.gray[3]};
+  border: 1px solid ${({ theme }) => theme.palette.gray[4]};
   border-radius: 8px;
   background: ${({ theme }) => theme.token.colorBgContainer};
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
@@ -105,15 +97,17 @@ const StyledCodeEditor = styled(CodeEditor)<{ $defaultRows: number }>`
   .cm-scroller {
     border: none;
     min-height: ${({ $defaultRows }) => `${$defaultRows * 24}px`};
+    max-height: calc(20 * 24px);
+    overflow-y: auto;
   }
 
   .cm-placeholder {
-    color:${({ theme }) => theme.palette.gray[6]};
+    color: ${({ theme }) => theme.palette.gray[6]};
     font-weight: 300 !important;
   }
 
   .cm-gutterElement {
-    color:${({ theme }) => theme.palette.gray[6]};
+    color: ${({ theme }) => theme.palette.gray[6]};
     font-weight: 300 !important;
     display: flex !important;
     align-items: center !important;

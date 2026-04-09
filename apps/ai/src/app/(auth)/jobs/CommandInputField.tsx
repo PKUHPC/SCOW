@@ -29,18 +29,10 @@ export const CommandInputField = ({ defaultCommand }: Props) => {
   return (
     <CommandContainer>
       <CommandEditorShell>
-        <StyledCodeEditor
-          value={commandValue}
-          onChange={handleChange}
-          placeholder={t(p("placeholder"))}
-        />
+        <StyledCodeEditor value={commandValue} onChange={handleChange} placeholder={t(p("placeholder"))} />
       </CommandEditorShell>
 
-      <CommandResetButton
-        size="small"
-        onClick={handleReset}
-        disabled={isAtDefault}
-      >
+      <CommandResetButton size="small" onClick={handleReset} disabled={isAtDefault}>
         {t(p("resetButton"))}
       </CommandResetButton>
     </CommandContainer>
@@ -48,7 +40,7 @@ export const CommandInputField = ({ defaultCommand }: Props) => {
 };
 
 const CommandContainer = styled.div`
-  border: 1px solid ${({ theme }) => theme.token.colorBorder};
+  border: 1px solid ${({ theme }) => theme.palette.gray[4]};
   border-radius: 8px;
   background: ${({ theme }) => theme.token.colorBgContainer};
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
@@ -70,6 +62,16 @@ const StyledCodeEditor = styled(CodeEditor)`
     box-shadow: none !important;
   }
 
+  .cm-content,
+  .cm-line {
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 300 !important;
+    line-height: 20px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
   .cm-editor.cm-focused {
     outline: none;
   }
@@ -77,11 +79,20 @@ const StyledCodeEditor = styled(CodeEditor)`
   .cm-scroller {
     border: none;
     min-height: calc(3 * 24px);
+    max-height: calc(20 * 24px);
+    overflow-y: auto;
   }
 
-  .cm-placeholder,
+  .cm-placeholder {
+    color: ${({ theme }) => theme.palette.gray[6]};
+    font-weight: 300 !important;
+  }
+
   .cm-gutterElement {
-    color:rgba(136, 143, 163, 1)
+    color: ${({ theme }) => theme.palette.gray[6]};
+    font-weight: 300 !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .cm-gutters {
@@ -113,22 +124,23 @@ const CommandEditorShell = styled.div`
 const CommandResetButton = styled(Button)`
   align-self: flex-end;
   border-radius: 8px !important;
-  border-color: ${({ theme }) => theme.token.colorBorderSecondary} !important;
-  color: ${({ theme }) => theme.token.colorTextDescription} !important;
-  background: ${({ theme }) => theme.token.colorFillQuaternary} !important;
-  box-shadow: none !important;
+  border-color: ${({ theme }) => theme.palette.gray[3]} !important;
+  color: ${({ theme }) => theme.palette.gray[6]} !important;
+  background: ${({ theme }) => theme.palette.gray[0]} !important;
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
   padding: 0 14px !important;
   margin-right: 5px !important;
   height: 30px !important;
 
-  &:hover {
+  &:hover,
+  &:active {
     color: ${({ theme }) => theme.token.colorPrimary} !important;
     border-color: ${({ theme }) => theme.token.colorPrimary} !important;
   }
 
   &:disabled {
-    color: ${({ theme }) => theme.token.colorTextDisabled} !important;
-    border-color: ${({ theme }) => theme.token.colorBorder} !important;
-    background: ${({ theme }) => theme.token.colorFillQuaternary} !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
+    border-color: ${({ theme }) => theme.palette.gray[4]} !important;
+    box-shadow: none !important;
   }
 `;

@@ -5,8 +5,9 @@ import { Form } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled, useTheme } from "styled-components";
 
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+
 import { validateEnvKeyFormat } from "./common";
-import { RoundedInput } from "./LaunchJobForm.styles";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
 
 

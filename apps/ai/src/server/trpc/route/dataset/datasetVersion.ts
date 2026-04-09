@@ -24,6 +24,7 @@ import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { checkIsPublicPaths } from "src/server/utils/clusters";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
@@ -170,6 +171,9 @@ const DatasetGroupSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   versions: z.array(DatasetVersionItemSchema),
+  ownerName: z.string().optional(),
+  ownerId: z.string().optional(),
+  isPlatformOwned: z.boolean(),
 });
 
 export const getAllDatasetVersions = procedure
@@ -239,6 +243,9 @@ export const getAllDatasetVersions = procedure
 
     const versionMap = buildVersionMap(versions, (version) => version.dataset.id);
 
+    const allDatasets = [...personalDatasets, ...publicDatasets];
+    const userMap = await buildUserMap(allDatasets.map((d) => d.owner));
+
     return mapAssetEntityGroupsWithVersions<Dataset, DatasetVersion, z.infer<typeof DatasetGroupSchema>>({
       personalEntities: personalDatasets,
       publicEntities: publicDatasets,
@@ -249,6 +256,9 @@ export const getAllDatasetVersions = procedure
         id: dataset.id,
         name: dataset.name,
         description: dataset.description,
+        ownerName: userMap[dataset.owner] ?? dataset.owner,
+        ownerId: dataset.owner,
+        isPlatformOwned: dataset.isPlatformOwned,
         versions: relatedVersions.map((version) => ({
           id: version.id,
           versionName: version.versionName,

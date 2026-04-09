@@ -1,26 +1,23 @@
+import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox";
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import {
+  SectionTitle,
+  TitledSectionCard as SectionCard,
+} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Form, type FormInstance, Space } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
-import { prefix, useI18nTranslateToString } from "src/i18n";
-
-import { PublicImageOption } from "../../PublicImageOption";
 import {
   ImageDescriptionBox,
   ImageSegmentedControl,
   ImageSelectorWrapper,
-  Label,
-  RoundedInput,
-  RoundedPasswordInput,
-  RoundedSelect,
-  SectionCard,
-  SectionTitle,
-  SubtleCheckbox,
-} from "../../LaunchJobForm.styles";
-import type {
-  AppFormValues,
-  DevImageSourceKey,
-  ImageOption,
-} from "../LaunchDevForm.types";
+} from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
+import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
+import { prefix, useI18nTranslateToString } from "src/i18n";
+
+import type { AppFormValues, DevImageSourceKey, ImageOption } from "../LaunchDevForm.types";
 
 interface ImageSourceTab {
   key: DevImageSourceKey;
@@ -58,13 +55,14 @@ export const DevConfigSection = ({
 
   return (
     <SectionCard title={<SectionTitle>{t(p("devTitle"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-      >
+      <Form form={form} colon={false} requiredMark={false}>
         <InlineFormItem
-          label={(<Label>{t(p("imageField.label"))}<span style={{ color: "red", marginLeft: 4 }}>*</span></Label>)}
+          label={
+            <Label>
+              {t(p("imageField.label"))}
+              <span style={{ color: "red", marginLeft: 4 }}>*</span>
+            </Label>
+          }
         >
           <ImageSelectorWrapper>
             <ImageSegmentedControl
@@ -88,12 +86,8 @@ export const DevConfigSection = ({
                     onBlur={() => form.validateFields(["image"])}
                   />
                 </Form.Item>
-                <Form.Item
-                  name="usePrivateImage"
-                  valuePropName="checked"
-                  noStyle
-                >
-                  <SubtleCheckbox>{t(p("imageField.usePrivateImage"))}</SubtleCheckbox>
+                <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
+                  <Checkbox>{t(p("imageField.usePrivateImage"))}</Checkbox>
                 </Form.Item>
                 {usePrivateRemoteImage ? (
                   <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 8 }}>
@@ -102,10 +96,7 @@ export const DevConfigSection = ({
                       noStyle
                       rules={[{ required: true, message: t(p("imageField.remoteUsernameRequired")) }]}
                     >
-                      <RoundedInput
-                        size="large"
-                        placeholder={t(p("imageField.remoteUsernamePlaceholder"))}
-                      />
+                      <RoundedInput size="large" placeholder={t(p("imageField.remoteUsernamePlaceholder"))} />
                     </Form.Item>
                     <Form.Item
                       name="remotePassword"
@@ -133,35 +124,30 @@ export const DevConfigSection = ({
                     placeholder={imagePlaceholder}
                     options={imageOptions}
                     style={{ width: "100%" }}
-                    loading={(selectedImageSource === "mine" || selectedImageSource === "public") ?
-                      isImagesLoading : false}
+                    loading={
+                      selectedImageSource === "mine" || selectedImageSource === "public" ? isImagesLoading : false
+                    }
                     optionLabelProp="displayLabel"
                     optionRender={(option) => {
                       if (selectedImageSource !== "public") {
                         return option.label;
                       }
                       const data = option.data as ImageOption;
-                      const labelText = typeof option.label === "string"
-                        ? option.label
-                        : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
+                      const labelText =
+                        typeof option.label === "string" ? option.label : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
                       const [labelName = "", labelTag = ""] = labelText.split(":").map((value) => value.trim());
                       const name = data.rawName ?? labelName;
                       const tag = data.rawTag ?? labelTag;
-                      return data.displayLabel ?? (
-                        <PublicImageOption
-                          name={name}
-                          tag={tag}
-                          ownerName={data.ownerName}
-                          ownerId={data.ownerId}
-                        />
+                      return (
+                        data.displayLabel ?? (
+                          <PublicImageOption name={name} tag={tag} ownerName={data.ownerName} ownerId={data.ownerId} />
+                        )
                       );
                     }}
                   />
                 </Form.Item>
                 {selectedImageOption?.description && (
-                  <ImageDescriptionBox>
-                    {selectedImageOption?.description}
-                  </ImageDescriptionBox>
+                  <ImageDescriptionBox>{selectedImageOption?.description}</ImageDescriptionBox>
                 )}
               </>
             )}
@@ -174,7 +160,6 @@ export const DevConfigSection = ({
         >
           <MountPointList clusterId={selectedCluster ?? ""} />
         </InlineFormItem>
-
       </Form>
     </SectionCard>
   );

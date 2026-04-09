@@ -1,5 +1,6 @@
-import { Input, InputNumber, type InputNumberProps, Select, type SelectProps } from "antd";
 import type { ComponentType } from "react";
+
+import { Input, InputNumber, type InputNumberProps, Select, type SelectProps } from "antd";
 import { css, styled } from "styled-components";
 
 import { selectionArrowIcon } from "../../icons/commonIcons";
@@ -18,7 +19,7 @@ const commonInputStyles = css`
   &,
   .ant-input-affix-wrapper {
     border-radius: 8px !important;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
   }
 
   ${focusedBorderAndShadowStyle}
@@ -28,9 +29,18 @@ const commonInputStyles = css`
     box-shadow: none !important;
   }
 
-  .ant-input::placeholder, &::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
+  .ant-input::placeholder,
+  &::placeholder {
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     opacity: 1 !important;
+  }
+
+  &:disabled,
+  &.ant-input-disabled,
+  .ant-input-affix-wrapper-disabled,
+  .ant-input-affix-wrapper-disabled .ant-input {
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
+    background-color: ${({ theme }) => theme.palette.gray[1]} !important;
   }
 `;
 
@@ -42,13 +52,13 @@ export const RoundedSearch = styled(Input.Search)`
   ${commonInputStyles}
 
   .ant-input-outlined::placeholder, &::placeholder {
-    color: #BFBFBF !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     font-weight: 300;
   }
   .ant-input-search-button {
     width: 60px;
     background: ${({ theme }) => theme.token.colorBgContainer};
-    border-left: 2px solid ${({ theme }) => theme.palette.gray[3]};
+    border-left: 2px solid ${({ theme }) => theme.palette.gray[4]};
     &:hover {
       background: none !important;
     }
@@ -56,7 +66,7 @@ export const RoundedSearch = styled(Input.Search)`
       background: none !important;
     }
     .ant-btn-icon {
-      color: ${({ theme }) => theme.palette.primary[6]}
+      color: ${({ theme }) => theme.palette.primary[6]};
     }
   }
 `;
@@ -72,11 +82,11 @@ export const RoundedPasswordInput = styled(Input.Password)`
 
   .ant-input {
     border-radius: 8px !important;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]};
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]};
   }
 
   .ant-input::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     opacity: 1 !important;
   }
 
@@ -93,7 +103,7 @@ export const RoundedInputNumber: ComponentType<InputNumberProps> = styled(InputN
   &,
   .ant-input-number {
     border-radius: 8px !important;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
   }
 
   .ant-input-number-input {
@@ -101,7 +111,7 @@ export const RoundedInputNumber: ComponentType<InputNumberProps> = styled(InputN
   }
 
   .ant-input-number-input::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     opacity: 1 !important;
   }
 
@@ -117,17 +127,17 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
 
   .ant-input {
     border-radius: 8px !important;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]};
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]};
   }
 
   &.ant-input-number-group-wrapper .ant-input-number {
     height: 42px;
     border-radius: 8px 0 0 8px;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
   }
 
   .ant-input-number-input::placeholder {
-    color: rgba(136, 143, 163, 1) !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     opacity: 1 !important;
   }
 
@@ -157,7 +167,7 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
   }
 
   &.ant-input-number-group-wrapper .ant-select-selector {
-    border-left: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    border-left: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-radius: 0 8px 8px 0 !important;
     box-shadow: none !important;
   }
@@ -169,7 +179,7 @@ export const RoundedInputNumberWithAddonAfter: ComponentType<InputNumberProps> =
 
   &.ant-input-number-group-wrapper .ant-input-number-group-addon .ant-select-selector {
     height: 42px !important;
-    border-color: ${({ theme }) => theme.palette.gray[3]} !important;
+    border-color: ${({ theme }) => theme.palette.gray[4]} !important;
     display: flex;
     align-items: center;
     margin: 0 !important;
@@ -210,7 +220,7 @@ export const AddonAfterSelect: ComponentType<SelectProps> = styled(Select).attrs
   box-shadow: none !important;
 
   && .ant-select-selector {
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
     border-radius: 0 8px 8px 0 !important;
     border-left-width: 1px !important;
     height: 42px !important;
@@ -231,7 +241,7 @@ export const AddonAfterSelect: ComponentType<SelectProps> = styled(Select).attrs
 
   && .ant-select-selection-placeholder {
     font-size: 14px !important;
-    color: rgba(136, 143, 163, 1) !important;
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
     display: flex;
     align-items: center;
   }

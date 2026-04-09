@@ -1,45 +1,39 @@
 "use client";
 
+import type { ColumnsType } from "antd/es/table";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
+
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import {
+  BorderlessCard,
+  HeaderRow,
+  HeaderTitle,
+  PaddedCard,
+} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
 import { Rule } from "antd/es/form";
-import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { HeaderAvatar } from "src/app/(auth)/jobs/LaunchJobForm.styles";
+import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
-import type { CreateAppInput } from "src/server/trpc/route/jobs/apps";
 import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
-import { PublicImageOption } from "../../PublicImageOption";
-import { AppConfigSection } from "./components/AppConfigSection";
-import { BaseInfoSection } from "./components/BaseInfoSection";
-import { ResourceConfigSection } from "./components/ResourceConfigSection";
-import {
-  BorderlessCard,
-  FixedFooter,
-  FooterActions,
-  FooterStats,
-  FooterStatValue,
-  HeaderAvatar,
-  HeaderRow,
-  HeaderTitle,
-  Label,
-  PaddedCard,
-  RoundedInput,
-  RoundedInputNumber,
-  RoundedSelect,
-  SectionTitle,
-} from "./LaunchAppForm.styles";
 import type {
   AppFormValues,
   BaseFormValues,
@@ -58,6 +52,10 @@ import type {
   ResourceFormValues,
   VersionGroup,
 } from "./LaunchAppForm.types";
+
+import { AppConfigSection } from "./components/AppConfigSection";
+import { BaseInfoSection } from "./components/BaseInfoSection";
+import { ResourceConfigSection } from "./components/ResourceConfigSection";
 import {
   buildSelectionPathLookup,
   buildVersionLookup,
@@ -85,6 +83,7 @@ interface Props {
 }
 
 const p = prefix("app.jobs.launchAppForm.");
+const pPublicOption = prefix("app.jobs.publicImageOption.");
 type LaunchAppFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchAppFormKey, `imageSourceTabs.${string}`>;
 type ImagePlaceholderKey = Extract<LaunchAppFormKey, `imagePlaceholders.${string}`>;
@@ -110,8 +109,10 @@ const IMAGE_PLACEHOLDER_KEYS: Record<ImageSourceKey, ImagePlaceholderKey> = {
 } as const;
 
 // 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }> = {
+const QUEUE_LABEL_KEYS: Record<
+  QueueKind,
+  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
+> = {
   gpu: {
     gpu: "queueFooterLabels.totalGpu",
     cpu: "queueFooterLabels.totalCpu",
@@ -132,19 +133,17 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "20%",
+    width: "14%",
   },
   {
     title: t(p("gpuColumns.accelerator")),
     dataIndex: "accelerator",
     key: "accelerator",
-    width: "20%",
+    width: "28%",
     render: (_: unknown, record: GPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.accelerator}</Typography.Text>
-        {record.acceleratorDetail ? (
-          <Typography.Text>{record.acceleratorDetail}</Typography.Text>
-        ) : null}
+        {record.acceleratorDetail ? <Typography.Text>{record.acceleratorDetail}</Typography.Text> : null}
         {record.acceleratorVramGb ? (
           <Typography.Text>{t(p("gpuColumns.vram"), [record.acceleratorVramGb])}</Typography.Text>
         ) : null}
@@ -177,7 +176,7 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "20%",
+    width: "18%",
     render: (value: string) => value || "-",
   },
 ];
@@ -188,19 +187,17 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "25%",
+    width: "14%",
   },
   {
     title: t(p("cpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "25%",
+    width: "30%",
     render: (_: unknown, record: CPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.cpuModel}</Typography.Text>
-        {record.cpuDetail ? (
-          <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text>
-        ) : null}
+        {record.cpuDetail ? <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text> : null}
       </Space>
     ),
   },
@@ -208,17 +205,16 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.capacity")),
     dataIndex: "capacity",
     key: "capacity",
-    width: "25%",
+    width: "28%",
   },
   {
     title: t(p("cpuColumns.memoryPerCore")),
     dataIndex: "memoryPerCore",
     key: "memoryPerCore",
-    width: "25%",
+    width: "28%",
     render: (text?: string) => text ?? "-",
   },
 ];
-
 
 // ======================= 组件实现 =======================
 // 主表单组件，协调基础信息、资源配置与应用配置三个分区，并负责数据提交
@@ -252,10 +248,11 @@ export const LaunchAppForm = ({
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
-    () => IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
-      key: tab.key,
-      label: t(p(tab.labelKey)),
-    })),
+    () =>
+      IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
+        key: tab.key,
+        label: t(p(tab.labelKey)),
+      })),
     [languageId, t],
   );
   const handleJobNameChange = (value: string) => {
@@ -275,10 +272,11 @@ export const LaunchAppForm = ({
     setMaxTimeUnit(unit);
   };
 
-
   // 生成默认作业名称，帮助用户快速提交
-  const initialJobName =
-  useMemo(() => `${(appName ?? "app")}-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(), [appName]);
+  const initialJobName = useMemo(
+    () => `${appName ?? "app"}-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(),
+    [appName],
+  );
   const [jobName, setJobName] = useState(initialJobName);
   const [activeResourceTab, setActiveResourceTab] = useState<QueueKind>("gpu");
   const [selectedQueueKey, setSelectedQueueKey] = useState<string | undefined>();
@@ -321,12 +319,14 @@ export const LaunchAppForm = ({
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
 
   // 账户下拉选项根据 cluster 关联关系动态生成
-  const accountOptions = useMemo(() => (
-    Object.keys(accountClusterMap).map((account) => ({
-      label: account,
-      value: account,
-    }))
-  ), [accountClusterMap]);
+  const accountOptions = useMemo(
+    () =>
+      Object.keys(accountClusterMap).map((account) => ({
+        label: account,
+        value: account,
+      })),
+    [accountClusterMap],
+  );
 
   // ----------- 表单字段监听 -----------
   // 通过 Form.useWatch 实时感知三个分表单中的关键字段，后续计算和副作用均依赖这些最新值
@@ -351,19 +351,18 @@ export const LaunchAppForm = ({
     onError: (error) => {
       const detail = error.data?.detailedError;
       if (detail?.type === "account_user_not_available") {
-        message.error(
-          t(p("submitFailedAccountUserUnavailable"), [detail.accountName ?? "", detail.userId ?? ""]),
-        );
+        message.error(t(p("submitFailedAccountUserUnavailable"), [detail.accountName ?? "", detail.userId ?? ""]));
         return;
       }
       if (detail?.type === "cluster_partition_not_available" && detail.partitionName) {
         const clusterName = publicConfig.CLUSTERS.find((x) => x.id === detail.clusterId)?.name || detail.clusterId;
         const i18nClusterName = getI18nConfigCurrentText(clusterName, currentLanguage.id);
         message.error(
-          t(
-            p("submitFailedAccountPartitionUnavailable"),
-            [detail.accountName ?? "", i18nClusterName, detail.partitionName],
-          ),
+          t(p("submitFailedAccountPartitionUnavailable"), [
+            detail.accountName ?? "",
+            i18nClusterName,
+            detail.partitionName,
+          ]),
         );
         return;
       }
@@ -495,8 +494,9 @@ export const LaunchAppForm = ({
 
   // 拉取所选集群下该应用的元信息（展示名、Logo、默认镜像/命令等）
   const { data: appInfo } = trpc.jobs.getAppMetadata.useQuery(
-    { clusterId:selectedCluster!, appId },
-    { enabled: !!selectedCluster });
+    { clusterId: selectedCluster!, appId },
+    { enabled: !!selectedCluster },
+  );
 
   const effectiveAppName = appInfo?.appName ?? appName ?? "";
   const effectiveAppLogoPath = appInfo?.appLogoPath ?? appLogoPath;
@@ -525,15 +525,13 @@ export const LaunchAppForm = ({
     }
 
     return attributes.map((item, index) => {
-      const rules: Rule[] = item.type === "NUMBER"
-        ? [{ type: "integer" }, { required: item.required }]
-        : [{ required: item.required }];
+      const rules: Rule[] =
+        item.type === "NUMBER" ? [{ type: "integer" }, { required: item.required }] : [{ required: item.required }];
 
       const placeholder = item.placeholder ?? "";
 
       // 筛选选项：若没有配置requireGpu直接使用，配置了requireGpu项使用与否则看改分区有无GPU
-      const selectOptions = item.select.filter((x) =>
-        !x.requireGpu || (x.requireGpu && activeResourceTab === "gpu"));
+      const selectOptions = item.select.filter((x) => !x.requireGpu || (x.requireGpu && activeResourceTab === "gpu"));
       const initialValue = item.type === "SELECT" ? (item.defaultValue ?? selectOptions[0].value) : item.defaultValue;
 
       let inputItem: JSX.Element;
@@ -544,34 +542,41 @@ export const LaunchAppForm = ({
           <RoundedInput
             placeholder={getI18nConfigCurrentText(placeholder, languageId)}
             prefix={
-              (
-                <FileSelectModal
-                  allowedFileType={["DIR"]}
-                  onSubmit={(path: string) => {
-                    appForm.setFieldsValue({
-                      customFields: {
-                        [item.name]: path,
-                      },
-                    });
-                    appForm.validateFields([["customFields", item.name]]);
-                  }}
-                  clusterId={selectedCluster ?? ""}
-                />
-              )
+              <FileSelectModal
+                allowedFileType={["DIR"]}
+                onSubmit={(path: string) => {
+                  appForm.setFieldsValue({
+                    customFields: {
+                      [item.name]: path,
+                    },
+                  });
+                  appForm.validateFields([["customFields", item.name]]);
+                }}
+                clusterId={selectedCluster ?? ""}
+              />
             }
+            style={{ width: "480px" }}
           />
         );
       } else {
-        inputItem = item.type === "NUMBER" ?
-          (<RoundedInputNumber placeholder={getI18nConfigCurrentText(placeholder, languageId)} />)
-          : item.type === "TEXT" ? (<RoundedInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} />)
-            : (
-              <RoundedSelect
-                options={selectOptions.map((x) => ({
-                  label: getI18nConfigCurrentText(x.label, languageId), value: x.value }))}
-                placeholder={getI18nConfigCurrentText(placeholder, languageId)}
-              />
-            );
+        inputItem =
+          item.type === "NUMBER" ? (
+            <RoundedInputNumber
+              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
+              style={{ width: "480px" }}
+            />
+          ) : item.type === "TEXT" ? (
+            <RoundedInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} style={{ width: "480px" }} />
+          ) : (
+            <RoundedSelect
+              options={selectOptions.map((x) => ({
+                label: getI18nConfigCurrentText(x.label, languageId),
+                value: x.value,
+              }))}
+              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
+              style={{ width: "480px" }}
+            />
+          );
       }
 
       // 判断是否配置了requireGpu选项
@@ -579,7 +584,7 @@ export const LaunchAppForm = ({
         const preValue = appForm.getFieldValue(item.name);
 
         if (preValue) {
-        // 切换分区后看之前的版本是否还存在，若不存在，则选择版本的select的值置空
+          // 切换分区后看之前的版本是否还存在，若不存在，则选择版本的select的值置空
           const optionsContained = selectOptions.find((i) => i.value === preValue);
           if (!optionsContained) appForm.setFieldValue(item.name, null);
         }
@@ -592,9 +597,11 @@ export const LaunchAppForm = ({
           name={["customFields", item.name]}
           rules={rules}
           initialValue={initialValue}
-          {...(item.name === "workingDir" ? {
-            helpTip: t(p("workingDirHelpTip")),
-          } : {})}
+          {...(item.name === "workingDir"
+            ? {
+                helpTip: t(p("workingDirHelpTip")),
+              }
+            : {})}
         >
           {inputItem}
         </InlineFormItem>
@@ -604,64 +611,91 @@ export const LaunchAppForm = ({
 
   // 根据选中的账户与集群拉取对应的队列与资源详情
   // ----- 数据拉取：根据选中账户/集群实时刷新依赖数据 -----
-  const { data: queueData, isLoading: getAvailablePartitionIsLoading } =
-    trpc.config.getAvailablePartitions.useQuery(
-      { accountName: selectedAccount!, clusterId: selectedCluster! },
-      { enabled: !!selectedAccount && !!selectedCluster },
-    );
+  const { data: queueData, isLoading: getAvailablePartitionIsLoading } = trpc.config.getAvailablePartitions.useQuery(
+    { accountName: selectedAccount!, clusterId: selectedCluster! },
+    { enabled: !!selectedAccount && !!selectedCluster },
+  );
 
-  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery({
-    isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
-    clusterId: selectedCluster,
-    withExternal: "true",
-    types: ImageType.APP,
-  }, {
-    enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
-  });
+  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery(
+    {
+      isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
+      clusterId: selectedCluster,
+      withExternal: "true",
+      types: ImageType.APP,
+    },
+    {
+      enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
+    },
+  );
 
-  const { data: algorithms, isLoading: isAlgorithmsLoading } = trpc.algorithm.getAllAlgorithmVersions.useQuery({
-    clusterId: selectedCluster,
-  }, {
-    enabled: !!selectedCluster,
-  });
+  const { data: algorithms, isLoading: isAlgorithmsLoading } = trpc.algorithm.getAllAlgorithmVersions.useQuery(
+    {
+      clusterId: selectedCluster,
+    },
+    {
+      enabled: !!selectedCluster,
+    },
+  );
 
-  const { data: datasets, isLoading: isDatasetsLoading } = trpc.dataset.getAllDatasetVersions.useQuery({
-    clusterId: selectedCluster,
-  }, {
-    enabled: !!selectedCluster,
-  });
+  const { data: datasets, isLoading: isDatasetsLoading } = trpc.dataset.getAllDatasetVersions.useQuery(
+    {
+      clusterId: selectedCluster,
+    },
+    {
+      enabled: !!selectedCluster,
+    },
+  );
 
-  const { data: models, isLoading: isModelsLoading } = trpc.model.getAllModelVersions.useQuery({
-    clusterId: selectedCluster,
-  }, {
-    enabled: !!selectedCluster,
-  });
+  const { data: models, isLoading: isModelsLoading } = trpc.model.getAllModelVersions.useQuery(
+    {
+      clusterId: selectedCluster,
+    },
+    {
+      enabled: !!selectedCluster,
+    },
+  );
+
+  // 根据 isPlatformOwned 构造发布者展示文字
+  const buildOwnerText = (isPlatformOwned: boolean, ownerName?: string, ownerId?: string) => {
+    if (isPlatformOwned) return t(pPublicOption("sharedBy"), [t(pPublicOption("platformName"))]);
+    const ownerDisplay = ownerName ?? ownerId ?? "-";
+    return t(pPublicOption("sharedBy"), [ownerDisplay])
+      + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
+  };
 
   // 构造算法/数据集/模型的级联选项结构
   const algorithmCategories = useMemo<ResourceCategory[]>(() => {
-    const personalChildren = (algorithms?.personal ?? []).map((algorithm) => ({
-      label: algorithm.name,
-      value: algorithm.id,
-      description: algorithm.description,
-      children: (algorithm.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription,
-        children: [],
-      })),
-    })).filter((algorithm) => algorithm.children.length > 0);
+    const personalChildren = (algorithms?.personal ?? [])
+      .map((algorithm) => ({
+        label: algorithm.name,
+        value: algorithm.id,
+        description: algorithm.description,
+        children: (algorithm.versions ?? []).map((version) => ({
+          label: version.versionName,
+          value: version.id,
+          description: version.versionDescription,
+          children: [],
+        })),
+      }))
+      .filter((algorithm) => algorithm.children.length > 0);
 
-    const publicChildren = (algorithms?.public ?? []).map((algorithm) => ({
-      label: algorithm.name,
-      value: algorithm.id,
-      description: algorithm.description,
-      children: (algorithm.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription,
-        children: [],
-      })),
-    })).filter((algorithm) => algorithm.children.length > 0);
+    const publicChildren = (algorithms?.public ?? [])
+      .map((algorithm) => {
+        const ownerText = buildOwnerText(algorithm.isPlatformOwned, algorithm.ownerName, algorithm.ownerId);
+        return {
+          label: algorithm.name,
+          value: algorithm.id,
+          description: algorithm.description,
+          ownerText,
+          children: (algorithm.versions ?? []).map((version) => ({
+            label: version.versionName,
+            value: version.id,
+            description: version.versionDescription,
+            children: [],
+          })),
+        };
+      })
+      .filter((algorithm) => algorithm.children.length > 0);
 
     const categories: ResourceCategory[] = [];
     if (personalChildren.length > 0) {
@@ -683,29 +717,37 @@ export const LaunchAppForm = ({
 
   // 数据集与模型同样构造树形层级，过滤掉缺少版本的数据项
   const datasetCategories = useMemo<ResourceCategory[]>(() => {
-    const personalChildren = (datasets?.personal ?? []).map((dataset) => ({
-      label: dataset.name,
-      value: dataset.id,
-      description: dataset.description,
-      children: (dataset.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription,
-        children: [],
-      })),
-    })).filter((dataset) => dataset.children.length > 0);
+    const personalChildren = (datasets?.personal ?? [])
+      .map((dataset) => ({
+        label: dataset.name,
+        value: dataset.id,
+        description: dataset.description,
+        children: (dataset.versions ?? []).map((version) => ({
+          label: version.versionName,
+          value: version.id,
+          description: version.versionDescription,
+          children: [],
+        })),
+      }))
+      .filter((dataset) => dataset.children.length > 0);
 
-    const publicChildren = (datasets?.public ?? []).map((dataset) => ({
-      label: dataset.name,
-      value: dataset.id,
-      description: dataset.description,
-      children: (dataset.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription,
-        children: [],
-      })),
-    })).filter((dataset) => dataset.children.length > 0);
+    const publicChildren = (datasets?.public ?? [])
+      .map((dataset) => {
+        const ownerText = buildOwnerText(dataset.isPlatformOwned, dataset.ownerName, dataset.ownerId);
+        return {
+          label: dataset.name,
+          value: dataset.id,
+          description: dataset.description,
+          ownerText,
+          children: (dataset.versions ?? []).map((version) => ({
+            label: version.versionName,
+            value: version.id,
+            description: version.versionDescription,
+            children: [],
+          })),
+        };
+      })
+      .filter((dataset) => dataset.children.length > 0);
 
     const categories: ResourceCategory[] = [];
     if (personalChildren.length > 0) {
@@ -726,29 +768,37 @@ export const LaunchAppForm = ({
   }, [datasets, languageId, t]);
 
   const modelCategories = useMemo<ResourceCategory[]>(() => {
-    const personalChildren = (models?.personal ?? []).map((model) => ({
-      label: model.name,
-      value: model.id,
-      description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
-      children: (model.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription ?? version.algorithmVersion ?? undefined,
-        children: [],
-      })),
-    })).filter((model) => model.children.length > 0);
+    const personalChildren = (models?.personal ?? [])
+      .map((model) => ({
+        label: model.name,
+        value: model.id,
+        description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
+        children: (model.versions ?? []).map((version) => ({
+          label: version.versionName,
+          value: version.id,
+          description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+          children: [],
+        })),
+      }))
+      .filter((model) => model.children.length > 0);
 
-    const publicChildren = (models?.public ?? []).map((model) => ({
-      label: model.name,
-      value: model.id,
-      description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
-      children: (model.versions ?? []).map((version) => ({
-        label: version.versionName,
-        value: version.id,
-        description: version.versionDescription ?? version.algorithmVersion ?? undefined,
-        children: [],
-      })),
-    })).filter((model) => model.children.length > 0);
+    const publicChildren = (models?.public ?? [])
+      .map((model) => {
+        const ownerText = buildOwnerText(model.isPlatformOwned, model.ownerName, model.ownerId);
+        return {
+          label: model.name,
+          value: model.id,
+          description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
+          ownerText,
+          children: (model.versions ?? []).map((version) => ({
+            label: version.versionName,
+            value: version.id,
+            description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+            children: [],
+          })),
+        };
+      })
+      .filter((model) => model.children.length > 0);
 
     const categories: ResourceCategory[] = [];
     if (personalChildren.length > 0) {
@@ -769,28 +819,17 @@ export const LaunchAppForm = ({
   }, [models, languageId, t]);
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
-  const datasetSelectionLookup = useMemo(
-    () => buildSelectionPathLookup(datasetCategories),
-    [datasetCategories],
-  );
+  const datasetSelectionLookup = useMemo(() => buildSelectionPathLookup(datasetCategories), [datasetCategories]);
 
-  const algorithmSelectionLookup = useMemo(
-    () => buildSelectionPathLookup(algorithmCategories),
-    [algorithmCategories],
-  );
+  const algorithmSelectionLookup = useMemo(() => buildSelectionPathLookup(algorithmCategories), [algorithmCategories]);
 
-  const modelSelectionLookup = useMemo(
-    () => buildSelectionPathLookup(modelCategories),
-    [modelCategories],
-  );
+  const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
 
-  const resolveSelectionPath = (
-    lookup: Map<string, CascaderSelection>,
-    id: number,
-    isPrivate: boolean,
-  ) => {
+  const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
     const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-    if (primary) { return primary; }
+    if (primary) {
+      return primary;
+    }
     return lookup.get(createSelectionLookupKey(id, !isPrivate));
   };
 
@@ -886,12 +925,10 @@ export const LaunchAppForm = ({
 
     const mountPointsDraft = (createAppParams.mountPoints ?? [])
       .map((item) => {
-        const path = typeof (item as { path?: string })?.path === "string"
-          ? (item as { path?: string }).path!.trim()
-          : "";
-        const target = typeof (item as { target?: string })?.target === "string"
-          ? (item as { target?: string }).target!.trim()
-          : "";
+        const path =
+          typeof (item as { path?: string })?.path === "string" ? (item as { path?: string }).path!.trim() : "";
+        const target =
+          typeof (item as { target?: string })?.target === "string" ? (item as { target?: string }).target!.trim() : "";
         return {
           source: path,
           target,
@@ -979,7 +1016,7 @@ export const LaunchAppForm = ({
         image: String(createAppParams.image),
       };
       return {
-        source: createAppParams.isImagePrivate === false ? "public" as const : "mine" as const,
+        source: createAppParams.isImagePrivate === false ? ("public" as const) : ("mine" as const),
         draft,
       };
     }
@@ -1042,17 +1079,19 @@ export const LaunchAppForm = ({
         return [];
       }
       const { name: rawName, tag: rawTag } = parseImageReference(effectiveAppImage);
-      return [{
-        label: effectiveAppImage,
-        value: effectiveAppImage,
-        description: getI18nConfigCurrentText(effectiveAppComment, languageId),
-        displayLabel: effectiveAppImage,
-        startCommand: effectiveAppStartCommand,
-        rawName,
-        rawTag,
-        ownerName: undefined,
-        ownerId: undefined,
-      }];
+      return [
+        {
+          label: effectiveAppImage,
+          value: effectiveAppImage,
+          description: getI18nConfigCurrentText(effectiveAppComment, languageId),
+          displayLabel: effectiveAppImage,
+          startCommand: effectiveAppStartCommand,
+          rawName,
+          rawTag,
+          ownerName: undefined,
+          ownerId: undefined,
+        },
+      ];
     }
     if (selectedImageSource === "mine" || selectedImageSource === "public") {
       const items = images?.items ?? [];
@@ -1067,25 +1106,25 @@ export const LaunchAppForm = ({
           ownerName: image.ownerName,
           ownerId: image.ownerId,
           startCommand: image.startCommand ?? undefined,
-          displayLabel: selectedImageSource === "public"
-            ? (
+          displayLabel:
+            selectedImageSource === "public" ? (
               <PublicImageOption
                 name={image.name}
                 tag={image.tag}
                 ownerName={image.ownerName}
                 ownerId={image.ownerId}
               />
-            )
-            : `${image.name}: ${image.tag}`,
+            ) : (
+              `${image.name}: ${image.tag}`
+            ),
         })) as ImageOption[];
     }
     return [];
   }, [effectiveAppComment, effectiveAppImage, images, selectedImageSource, effectiveAppStartCommand, languageId]);
 
   // 统一选中值的类型，避免数字 ID 与字符串之间的比较问题
-  const normalizedSelectedImageValue = selectedImageValue !== undefined && selectedImageValue !== null
-    ? String(selectedImageValue)
-    : undefined;
+  const normalizedSelectedImageValue =
+    selectedImageValue !== undefined && selectedImageValue !== null ? String(selectedImageValue) : undefined;
 
   const selectedImageOption = useMemo(
     () => imageOptionsForSource.find((item) => item.value === normalizedSelectedImageValue),
@@ -1107,13 +1146,13 @@ export const LaunchAppForm = ({
     resubmitCommandKeyRef.current = resubmitCommandKey;
 
     if (
-      createAppParams
-      && trimmedResubmitCommand
-      && resubmitSource === selectedImageSource
-      && resubmitCommandKey
-      && !hasClusterSwitchedRef.current
-      && !resubmitCommandLockedRef.current
-      && currentCommandKey === resubmitCommandKey
+      createAppParams &&
+      trimmedResubmitCommand &&
+      resubmitSource === selectedImageSource &&
+      resubmitCommandKey &&
+      !hasClusterSwitchedRef.current &&
+      !resubmitCommandLockedRef.current &&
+      currentCommandKey === resubmitCommandKey
     ) {
       if (selectedImageSource === "remote") {
         const currentRemote = typeof selectedImageValue === "string" ? selectedImageValue : undefined;
@@ -1130,9 +1169,10 @@ export const LaunchAppForm = ({
       }
       if (selectedImageSource === "mine" || selectedImageSource === "public") {
         const currentLocal = typeof selectedImageValue === "string" ? selectedImageValue : undefined;
-        const expectedLocal = createAppParams.image !== undefined && createAppParams.image !== null
-          ? String(createAppParams.image)
-          : undefined;
+        const expectedLocal =
+          createAppParams.image !== undefined && createAppParams.image !== null
+            ? String(createAppParams.image)
+            : undefined;
         if (expectedLocal && currentLocal === expectedLocal) {
           return trimmedResubmitCommand;
         }
@@ -1178,12 +1218,7 @@ export const LaunchAppForm = ({
     // 当已使用过历史命令且镜像 key 改变时，锁定历史命令，后续使用镜像默认值
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
     const resubmitKey = resubmitCommandKeyRef.current;
-    if (
-      resubmitKey
-      && resubmitCommandUsedRef.current
-      && currentKey
-      && currentKey !== resubmitKey
-    ) {
+    if (resubmitKey && resubmitCommandUsedRef.current && currentKey && currentKey !== resubmitKey) {
       resubmitCommandLockedRef.current = true;
     }
   }, [normalizedSelectedImageValue, selectedImageSource]);
@@ -1228,9 +1263,9 @@ export const LaunchAppForm = ({
 
     const resubmitKey = resubmitCommandKeyRef.current;
     if (
-      resubmitKey
-      && currentKey === resubmitKey
-      && currentCommandDefault === (createAppParams?.startCommand?.trim() ?? undefined)
+      resubmitKey &&
+      currentKey === resubmitKey &&
+      currentCommandDefault === (createAppParams?.startCommand?.trim() ?? undefined)
     ) {
       resubmitCommandUsedRef.current = true;
     }
@@ -1277,8 +1312,7 @@ export const LaunchAppForm = ({
   }, [cpuRows, gpuRows]);
 
   // 按当前标签筛出实际展示的队列集合
-  const currentQueueOptions: QueueRow[] =
-    activeResourceTab === "gpu" ? gpuRows : cpuRows;
+  const currentQueueOptions: QueueRow[] = activeResourceTab === "gpu" ? gpuRows : cpuRows;
 
   // 结合选中主键获取当前行，用于派生底部统计和表单限制
   const selectedQueueOption = useMemo(
@@ -1292,35 +1326,28 @@ export const LaunchAppForm = ({
     memoryPerUnitText,
     memoryPerUnitMb,
     qosOptions,
-  } = useMemo(
-    () => deriveQueueStats(selectedQueueOption),
-    [selectedQueueOption],
-  );
+  } = useMemo(() => deriveQueueStats(selectedQueueOption), [selectedQueueOption]);
 
   const gpuUnitLimit = useMemo(() => {
     if (selectedQueueOption?.type !== "gpu") {
       return undefined;
     }
     const candidates: number[] = [selectedQueueOption.totalUnits];
-    if (typeof selectedQueueOption.maxAcceleratorsPerPod === "number"
-      && selectedQueueOption.maxAcceleratorsPerPod > 0) {
+    if (
+      typeof selectedQueueOption.maxAcceleratorsPerPod === "number" &&
+      selectedQueueOption.maxAcceleratorsPerPod > 0
+    ) {
       candidates.push(selectedQueueOption.maxAcceleratorsPerPod);
     }
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const {
-    gpu: gpuLabelKey,
-    cpu: cpuLabelKey,
-    memory: memoryLabelKey,
-  } = QUEUE_LABEL_KEYS[activeResourceTab];
+  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
   const gpuLabel = t(p(gpuLabelKey));
   const cpuLabel = t(p(cpuLabelKey));
   const memoryLabel = t(p(memoryLabelKey));
 
-  const displayedGpu = activeResourceTab === "gpu"
-    ? (selectedGpuCount > 0 ? selectedGpuCount : "-")
-    : "-";
+  const displayedGpu = activeResourceTab === "gpu" ? (selectedGpuCount > 0 ? selectedGpuCount : "-") : "-";
 
   const displayedCpu = (() => {
     if (activeResourceTab === "gpu") {
@@ -1346,9 +1373,7 @@ export const LaunchAppForm = ({
 
   const unitsForQuery = activeResourceTab === "gpu" ? selectedGpuCount : selectedCpuCount;
   const hasMemoryPerUnit = memoryPerUnitMb !== undefined && memoryPerUnitMb !== null && !Number.isNaN(memoryPerUnitMb);
-  const memMbForQuery = hasMemoryPerUnit
-    ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0)))
-    : 0;
+  const memMbForQuery = hasMemoryPerUnit ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0))) : 0;
   const timeSecondsForPrice = 3600;
   // 仅在关键字段齐备、并且能计算出每单位内存时才触发价格查询，避免无效请求
   const jobPriceQueryEnabled =
@@ -1356,18 +1381,21 @@ export const LaunchAppForm = ({
     hasMemoryPerUnit &&
     unitsForQuery > 0;
 
-  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery({
-    cluster: selectedCluster!,
-    partition: selectedQueueKey!,
-    account: selectedAccount!,
-    gpu: selectedGpuCount,
-    cpusAlloc: selectedCpuCount,
-    memMb: memMbForQuery,
-    qos: priority,
-    timeSeconds: timeSecondsForPrice,
-  }, {
-    enabled: jobPriceQueryEnabled,
-  });
+  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery(
+    {
+      cluster: selectedCluster!,
+      partition: selectedQueueKey!,
+      account: selectedAccount!,
+      gpu: selectedGpuCount,
+      cpusAlloc: selectedCpuCount,
+      memMb: memMbForQuery,
+      qos: priority,
+      timeSeconds: timeSecondsForPrice,
+    },
+    {
+      enabled: jobPriceQueryEnabled,
+    },
+  );
 
   const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)} ${t(p("yuan"))}`;
 
@@ -1402,9 +1430,7 @@ export const LaunchAppForm = ({
     const targetAccount = createAppParams.account;
     const targetCluster = createAppParams.clusterId;
 
-    const accountAvailable = targetAccount
-      ? accountOptions.some((option) => option.value === targetAccount)
-      : false;
+    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
 
     const targetClusterOption = targetCluster
       ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
@@ -1452,8 +1478,7 @@ export const LaunchAppForm = ({
     const targetQueueId = createAppParams.partition;
     const targetQueue = targetQueueId ? queueRowById.get(targetQueueId) : undefined;
 
-    const nextTab: QueueKind = targetQueue?.type
-      ?? ((createAppParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
+    const nextTab: QueueKind = targetQueue?.type ?? ((createAppParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
 
     if (activeResourceTab !== nextTab) {
       setActiveResourceTab(nextTab);
@@ -1509,14 +1534,12 @@ export const LaunchAppForm = ({
     if (targetQueue.type === "gpu") {
       if (createAppParams.gpuCount !== undefined && createAppParams.gpuCount !== null) {
         const normalizedGpu = Math.max(1, createAppParams.gpuCount);
-        const perPodLimit = typeof targetQueue.maxAcceleratorsPerPod === "number"
-          && targetQueue.maxAcceleratorsPerPod > 0
-          ? targetQueue.maxAcceleratorsPerPod
-          : undefined;
+        const perPodLimit =
+          typeof targetQueue.maxAcceleratorsPerPod === "number" && targetQueue.maxAcceleratorsPerPod > 0
+            ? targetQueue.maxAcceleratorsPerPod
+            : undefined;
         const queueLimit = targetQueue.totalUnits;
-        const effectiveLimit = perPodLimit !== undefined
-          ? Math.min(queueLimit, perPodLimit)
-          : queueLimit;
+        const effectiveLimit = perPodLimit !== undefined ? Math.min(queueLimit, perPodLimit) : queueLimit;
         updates.gpuCores = Math.min(normalizedGpu, effectiveLimit);
       } else {
         updates.gpuCores = undefined;
@@ -1584,9 +1607,7 @@ export const LaunchAppForm = ({
       return;
     }
 
-    const currentSelection = currentQueueOptions.find(
-      (option) => option.id === selectedQueueKey,
-    );
+    const currentSelection = currentQueueOptions.find((option) => option.id === selectedQueueKey);
     if (!currentSelection) {
       const savedQueueId = createAppParams?.partition;
       if (createAppParams && selectedQueueKey === savedQueueId) {
@@ -1791,12 +1812,12 @@ export const LaunchAppForm = ({
     const isPreset = source === "preset";
     const isLocalLibrary = source === "mine" || source === "public";
 
-    const remoteMatches = !isRemote || (
-      currentImage === desiredImage
-      && Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage)
-      && appForm.getFieldValue("remoteUsername") === draft.remoteUsername
-      && appForm.getFieldValue("remotePassword") === draft.remotePassword
-    );
+    const remoteMatches =
+      !isRemote ||
+      (currentImage === desiredImage &&
+        Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage) &&
+        appForm.getFieldValue("remoteUsername") === draft.remoteUsername &&
+        appForm.getFieldValue("remotePassword") === draft.remotePassword);
 
     if (isLocalLibrary) {
       if (currentSource !== source) {
@@ -1851,11 +1872,7 @@ export const LaunchAppForm = ({
 
     imageSourceDraftsRef.current[source] = draft;
 
-    if (
-      currentSource === source
-      && currentImage === desiredImage
-      && remoteMatches
-    ) {
+    if (currentSource === source && currentImage === desiredImage && remoteMatches) {
       resubmitImageAppliedRef.current = true;
       return;
     }
@@ -2007,19 +2024,23 @@ export const LaunchAppForm = ({
         return;
       }
 
-      const memoryMb = memoryPerUnitMb
-        ? Math.max(0, Math.round(memoryPerUnitMb * unitCount))
-        : undefined;
+      const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
       const maxTimeMinutes = Math.max(1, Math.round(convertDurationToHours(maxTime, maxTimeUnit) * 60));
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
-      const algorithmLookup = buildVersionLookup(algorithms?.personal as VersionGroup[] | undefined,
-        algorithms?.public as VersionGroup[] | undefined);
-      const datasetLookup = buildVersionLookup(datasets?.personal as VersionGroup[] | undefined,
-        datasets?.public as VersionGroup[] | undefined);
-      const modelLookup = buildVersionLookup(models?.personal as VersionGroup[] | undefined,
-        models?.public as VersionGroup[] | undefined);
+      const algorithmLookup = buildVersionLookup(
+        algorithms?.personal as VersionGroup[] | undefined,
+        algorithms?.public as VersionGroup[] | undefined,
+      );
+      const datasetLookup = buildVersionLookup(
+        datasets?.personal as VersionGroup[] | undefined,
+        datasets?.public as VersionGroup[] | undefined,
+      );
+      const modelLookup = buildVersionLookup(
+        models?.personal as VersionGroup[] | undefined,
+        models?.public as VersionGroup[] | undefined,
+      );
 
       const algorithmsPayload = toIdPrivateList(appValues.algorithms, algorithmLookup);
       const datasetsPayload = toIdPrivateList(appValues.datasets, datasetLookup);
@@ -2046,18 +2067,18 @@ export const LaunchAppForm = ({
       // 仅保留当前应用定义的自定义字段，避免提交多余键
       const attributeNames = appInfo?.attributes?.map((item) => item.name) ?? [];
       const customAttributesEntries = Object.entries(appValues.customFields ?? {})
-        .filter(([key, value]) =>
-          attributeNames.includes(key) && value !== undefined && value !== null && value !== "")
+        .filter(([key, value]) => attributeNames.includes(key) && value !== undefined && value !== null && value !== "")
         .map(([key, value]) => [key, value!]);
 
       const customAttributes = Object.fromEntries(customAttributesEntries);
 
       const workingDirectoryRaw = appValues.customFields?.workingDir;
-      const workingDirectory = typeof workingDirectoryRaw === "string"
-        ? workingDirectoryRaw
-        : workingDirectoryRaw !== undefined && workingDirectoryRaw !== null
-          ? workingDirectoryRaw.toString()
-          : undefined;
+      const workingDirectory =
+        typeof workingDirectoryRaw === "string"
+          ? workingDirectoryRaw
+          : workingDirectoryRaw !== undefined && workingDirectoryRaw !== null
+            ? workingDirectoryRaw.toString()
+            : undefined;
 
       let imageId: number | undefined;
       let remoteImageUrl: string | undefined;
@@ -2113,12 +2134,14 @@ export const LaunchAppForm = ({
         customAttributes,
         gpuType: queueOption.type === "gpu" ? queueOption.gpuType : undefined,
         envVariables: envVariablesPayload.length ? envVariablesPayload : undefined,
-        ...appValues.usePrivateImage ? {
-          privateImageRepositoryCredentials:{
-            userName: appValues.remoteUsername ?? "",
-            password: appValues.remotePassword ?? "",
-          },
-        } : {},
+        ...(appValues.usePrivateImage
+          ? {
+              privateImageRepositoryCredentials: {
+                userName: appValues.remoteUsername ?? "",
+                password: appValues.remotePassword ?? "",
+              },
+            }
+          : {}),
       });
     } catch (error) {
       console.error("Failed to submit create app session form:", error);
@@ -2130,26 +2153,15 @@ export const LaunchAppForm = ({
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
-          title={(
+          title={
             <HeaderRow align="center" size={16}>
-              {appLogoSrc ? (
-                <HeaderAvatar
-                  size={32}
-                  src={appLogoSrc}
-                />
-              ) : null}
-              <HeaderTitle>
-                {t(p("createAppTitle"), [effectiveAppName ?? ""])}
-              </HeaderTitle>
+              {appLogoSrc ? <HeaderAvatar size={32} src={appLogoSrc} /> : null}
+              <HeaderTitle>{t(p("createAppTitle"), [effectiveAppName ?? ""])}</HeaderTitle>
             </HeaderRow>
-          )}
+          }
         >
           <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection
-              form={baseForm}
-              jobName={jobName}
-              onJobNameChange={handleJobNameChange}
-            />
+            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
           </BorderlessCard>
         </PaddedCard>
 
@@ -2199,28 +2211,34 @@ export const LaunchAppForm = ({
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
         />
-
       </PageContainer>
 
       <FixedFooter>
         <FooterStats>
-          <span>{gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue></span>
-          <span>{cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue></span>
-          <span>{memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue></span>
-          <span>{t(p("hourlyCostLabel"))}
+          <span>
+            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
+          </span>
+          <span>
+            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
+          </span>
+          <span>
+            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
+          <a
+            onClick={() => {
+              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
+            }}
+          >
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>
         <FooterActions>
           <Button onClick={handleCancel}>{t(p("cancel"))}</Button>
-          <Button
-            type="primary"
-            onClick={handleSubmit}
-            loading={createAppSessionMutation.isPending}
-          >
+          <Button type="primary" onClick={handleSubmit} loading={createAppSessionMutation.isPending}>
             {t(p("submit"))}
           </Button>
         </FooterActions>

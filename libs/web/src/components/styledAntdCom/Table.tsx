@@ -1,5 +1,6 @@
-import { Table, type TableProps } from "antd";
 import type { ComponentType, ReactNode } from "react";
+
+import { Table, type TableProps } from "antd";
 import { styled } from "styled-components";
 
 import { doubleCircleForTableIcon } from "../../icons/commonIcons";
@@ -26,27 +27,31 @@ const defaultRadioSelectionCell = (
   );
 };
 
-const TableWrapper = ({ className, rowSelection, ...tableProps }: TableProps<any> & { className?: string }) => {
-  const mergedRowSelection: TableProps<any>["rowSelection"] = rowSelection?.type === "radio"
-    ? {
-      ...rowSelection,
-      renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
-    }
-    : rowSelection;
+const TableWrapper = ({
+  className,
+  rowSelection,
+  ...tableProps
+}: TableProps<any> & { className?: string }) => {
+  const mergedRowSelection: TableProps<any>["rowSelection"] =
+    rowSelection?.type === "radio"
+      ? {
+          ...rowSelection,
+          renderCell: rowSelection.renderCell ?? defaultRadioSelectionCell,
+        }
+      : rowSelection;
 
-  return (
-    <Table
-      {...tableProps}
-      className={className}
-      rowSelection={mergedRowSelection}
-    />
-  );
+  return <Table {...tableProps} className={className} rowSelection={mergedRowSelection} />;
 };
 
 export const StyledTable: StyledTableComponent = styled(TableWrapper)<TableProps<any>>`
   .ant-table-container {
     border-radius: 12px;
-    border: 1px solid ${({ theme }) => theme.palette.gray[3]};
+    border-top: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+    border-right: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+    border-bottom: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+    border-left: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+    overflow: hidden;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
   }
 
   .ant-table-tbody > tr > td {
@@ -90,5 +95,74 @@ export const StyledTable: StyledTableComponent = styled(TableWrapper)<TableProps
 
   .scow-table-radio-selected-icon {
     color: ${({ theme }) => theme.token.colorPrimary};
+  }
+
+  .ant-table-selection-column {
+    width: 56px !important;
+    min-width: 56px !important;
+  }
+`;
+
+export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<TableProps<any>>`
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.palette.gray[3]};
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+
+  .ant-table {
+    border-radius: 0;
+  }
+
+  .ant-table-container {
+    border-radius: 0;
+    border: none !important;
+  }
+
+  .ant-table-content,
+  .ant-table-body {
+    overflow: hidden !important;
+  }
+
+  .ant-table-thead > tr > th {
+    background-color: ${({ theme }) => theme.palette.gray[0]};
+    border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    color: ${({ theme }) => theme.palette.gray[7]};
+    height: 56px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .ant-table-thead > tr > th::before {
+    display: none !important;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    border-inline-end: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+  }
+
+  .ant-table-thead > tr > th:last-child,
+  .ant-table-tbody > tr > td:last-child {
+    border-inline-end: none !important;
+  }
+
+  .ant-table-tbody > tr > td {
+    border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;
+    color: ${({ theme }) => theme.palette.gray[7]};
+    height: 56px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .ant-table-tbody > tr > td:first-child {
+    color: ${({ theme }) => theme.palette.gray[6]};
+  }
+
+  .ant-table-tbody > tr:last-child > td {
+    border-bottom: none !important;
+  }
+
+  .ant-table-tbody > tr:hover > td {
+    background-color: ${({ theme }) => theme.palette.gray[1]} !important;
   }
 `;

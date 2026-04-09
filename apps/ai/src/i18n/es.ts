@@ -310,6 +310,7 @@ export default {
         searchPlaceholder: "Ingrese nombre de aplicación",
         noSearchResult: "No se encontró ninguna aplicación interactiva relacionada con '{}'",
         appNotFoundMessage: "No hay aplicación interactiva disponible para crear.",
+        loading: "Cargando aplicaciones disponibles",
       },
       historyJobs:{
         title:"Trabajos Completados",

@@ -3,7 +3,7 @@ import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input
 import { CompactInlineFormItem, StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Descriptions, Empty, Form, Space, theme as antdTheme } from "antd";
+import { App, Button, Descriptions, Empty, Form, theme as antdTheme } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -17,8 +17,10 @@ import { styled, useTheme } from "styled-components";
 export interface TemplateListModalProps {
   open: boolean;
   onClose: () => void;
-  onUse?: (payload: { cluster: string; template: Awaited<ReturnType<typeof api.getJobTemplate>>["template"] }) =>
-    void | Promise<void>;
+  onUse?: (payload: {
+    cluster: string;
+    template: Awaited<ReturnType<typeof api.getJobTemplate>>["template"];
+  }) => void | Promise<void>;
   clusterIds: string[];
 }
 
@@ -57,19 +59,50 @@ const formatMaxRuntime = (
 const getTemplateKey = (cluster: string, id: string) => `${cluster}::${id}`;
 
 const ModalContentWrapper = styled.div`
-  min-height: 460px;
+  display: grid;
+  grid-template-columns: 242px 1fr;
+  grid-template-rows: minmax(440px, 1fr);
   width: 100%;
-  display: flex;
-  align-items: stretch;
   font-size: 14px;
-  margin-left: -8px;
 `;
 
 const TemplateListPanel = styled.div`
-  width: 210px;
-  flex: 0 0 210px;
-  border-right: 1px solid ${({ theme }) => theme.palette.gray[2] ?? "#f0f0f0"};
-  padding: 24px 0;
+  background-color: ${({ theme }) => theme.palette.gray[2]};
+  border-radius: 12px;
+  margin: 24px 0 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+`;
+
+const TemplateRightColumn = styled.div`
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ModalFooterArea = styled.div`
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 16px 0 0;
+  gap: 16px;
+
+  .ant-btn-default {
+    border-color: ${({ theme }) => theme.palette.gray[3]};
+    color: ${({ theme }) => theme.palette.gray[6]};
+    border-radius: 8px;
+    height: 36px;
+    padding: 0 24px;
+  }
+
+  .ant-btn-primary {
+    border-radius: 8px;
+    box-shadow: none;
+    height: 36px;
+    padding: 0 24px;
+  }
 `;
 
 const TemplateListContainer = styled.div<{ $maxHeight: number }>`
@@ -93,10 +126,8 @@ const TemplateListItem = styled.div<{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: ${({ $selected, $selectedColor, theme }) => (
-    $selected ? $selectedColor : (theme.palette.gray[6])
-  )};
-  background: ${({ $hovered, theme }) => ($hovered ? (theme.palette.gray[2]) : "transparent")};
+  color: ${({ $selected, $selectedColor, theme }) => ($selected ? $selectedColor : theme.palette.gray[6])};
+  background: ${({ $hovered, theme }) => ($hovered ? theme.palette.gray[3] : "transparent")};
   font-size: 14px;
   cursor: pointer;
   user-select: none;
@@ -105,7 +136,7 @@ const TemplateListItem = styled.div<{
 const TemplateDetailPanel = styled.div`
   flex: 1;
   min-width: 0;
-  padding: 30px 0 30px 36px;
+  padding: 40px 0 0 48px;
   display: flex;
 `;
 
@@ -140,16 +171,11 @@ const TemplateNameText = styled.span`
   white-space: nowrap;
 `;
 
-export const TemplateListModal: React.FC<TemplateListModalProps> = ({
-  open,
-  onClose,
-  onUse,
-  clusterIds,
-}) => {
+export const TemplateListModal: React.FC<TemplateListModalProps> = ({ open, onClose, onUse, clusterIds }) => {
   const p = prefix("pageComp.submitJobCom.templateListModal.");
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
-  const leftListMaxHeight = 400;
+  const leftListMaxHeight = 380;
   const { message } = App.useApp();
 
   const { useToken } = antdTheme;
@@ -175,9 +201,13 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
     if (!open || clusterIds.length === 0) {
       return [];
     }
-    return await api.listJobTemplates({ query: {
-      clusters: clusterIds,
-    } }).then((x) => x.results);
+    return await api
+      .listJobTemplates({
+        query: {
+          clusters: clusterIds,
+        },
+      })
+      .then((x) => x.results);
   }, [clusterIds, open]);
 
   const { data: templateData, isLoading, reload } = useAsync({ promiseFn });
@@ -198,11 +228,11 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
     }));
 
     setTemplates(normalizedTemplates);
-    setSelectedTemplateKey((previous) => (
+    setSelectedTemplateKey((previous) =>
       normalizedTemplates.some((item) => item.templateKey === previous)
         ? previous
-        : normalizedTemplates[0]?.templateKey
-    ));
+        : normalizedTemplates[0]?.templateKey,
+    );
   }, [templateData]);
 
   const selectedTemplate = useMemo(
@@ -210,12 +240,15 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
     [selectedTemplateKey, templates],
   );
 
-  const resolveTemplateCluster = useCallback((cluster?: string) => {
-    if (cluster && cluster !== "-") {
-      return cluster;
-    }
-    return clusterIds.length === 1 ? clusterIds[0] : undefined;
-  }, [clusterIds]);
+  const resolveTemplateCluster = useCallback(
+    (cluster?: string) => {
+      if (cluster && cluster !== "-") {
+        return cluster;
+      }
+      return clusterIds.length === 1 ? clusterIds[0] : undefined;
+    },
+    [clusterIds],
+  );
 
   const detailPromiseFn = useCallback(async () => {
     if (!open || !selectedTemplate?.id) {
@@ -227,12 +260,13 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
       return undefined;
     }
 
-    return await api.getJobTemplate({
-      query: {
-        cluster,
-        id: selectedTemplate.id,
-      },
-    })
+    return await api
+      .getJobTemplate({
+        query: {
+          cluster,
+          id: selectedTemplate.id,
+        },
+      })
       .httpError(404, () => undefined)
       .then((res) => res?.template);
   }, [open, resolveTemplateCluster, selectedTemplate?.cluster, selectedTemplate?.id]);
@@ -288,12 +322,13 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
 
     setDeleteLoading(true);
 
-    await api.deleteJobTemplate({
-      query: {
-        cluster,
-        templateId: selectedTemplate.id,
-      },
-    })
+    await api
+      .deleteJobTemplate({
+        query: {
+          cluster,
+          templateId: selectedTemplate.id,
+        },
+      })
       .httpError(404, () => {
         message.error(t(p("templateNotFoundOrDeleted")));
       })
@@ -356,11 +391,14 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
     }
 
     setRenameLoading(true);
-    await api.renameJobTemplate({ body: {
-      cluster,
-      templateId: renamingTemplate.id,
-      jobName: nextName,
-    } })
+    await api
+      .renameJobTemplate({
+        body: {
+          cluster,
+          templateId: renamingTemplate.id,
+          jobName: nextName,
+        },
+      })
       .httpError(404, () => {
         message.error(t(p("templateNotFoundOrDeleted")));
       })
@@ -401,26 +439,14 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
     <>
       <StyledModal
         open={open}
+        centered
         title={<span style={{ fontSize: 16 }}>{t(p("title"))}</span>}
         onCancel={onClose}
         destroyOnClose
         getContainer={false}
         width={865}
-        styles={{ body:{ padding: 0 } }}
-        footer={(
-          <Space size={16}>
-            <Button
-              style={{ fontSize: 14 }}
-              onClick={openDeleteConfirmModal}
-              disabled={!selectedTemplate}
-            >
-              {t(p("deleteTemplate"))}
-            </Button>
-            <Button style={{ fontSize: 14 }} type="primary" onClick={handleUse} disabled={!selectedTemplate}>
-              {t(p("useTemplate"))}
-            </Button>
-          </Space>
-        )}
+        styles={{ body: { padding: 0 } }}
+        footer={null}
       >
         <ModalContentWrapper>
           <TemplateListPanel>
@@ -448,9 +474,7 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
                     $selectedColor={token.colorPrimary}
                   >
                     <Tooltip title={template.name} arrow={false}>
-                      <TemplateNameText>
-                        {template.name}
-                      </TemplateNameText>
+                      <TemplateNameText>{template.name}</TemplateNameText>
                     </Tooltip>
                     <span
                       role="button"
@@ -473,46 +497,52 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
               })}
             </TemplateListContainer>
           </TemplateListPanel>
-          <TemplateDetailPanel>
-            {selectedTemplate ? (
-              <Descriptions
-                column={1}
-                colon
-                labelStyle={{ width: 220, color: descriptionLabelColor, fontSize: 14 }}
-                contentStyle={{ color: descriptionContentColor, fontSize: 14 }}
-                items={[
-                  { key: "account", label: t(p("account")), children: selectedTemplateWithDetails?.account },
-                  {
-                    key: "cluster",
-                    label: t(p("cluster")),
-                    children: clusterDisplayName,
-                  },
-                  { key: "partition", label: t(p("partition")), children: selectedTemplateWithDetails?.partition },
-                  { key: "qos", label: t(p("qos")), children: selectedTemplateWithDetails?.qos },
-                  { key: "nodeCount", label: t(p("nodeCount")), children: selectedTemplateWithDetails?.nodeCount },
-                  {
-                    key: "cpuCoresPerNode",
-                    label: t(p("cpuCoresPerNode")),
-                    children: selectedTemplateWithDetails?.cpuCoresPerNode,
-                  },
-                  { key: "maxRuntime", label: t(p("maxRuntime")), children: selectedTemplateWithDetails?.maxRuntime },
-                  {
-                    key: "command",
-                    label: t(p("command")),
-                    children: (
-                      <TemplateCommand>
-                        {selectedTemplateWithDetails?.command}
-                      </TemplateCommand>
-                    ),
-                  },
-                ]}
-              />
-            ) : (
-              <TemplateEmptyState>
-                <Empty description={isLoading ? t(p("loading")) : t(p("empty"))} />
-              </TemplateEmptyState>
-            )}
-          </TemplateDetailPanel>
+          <TemplateRightColumn>
+            <TemplateDetailPanel>
+              {selectedTemplate ? (
+                <Descriptions
+                  column={1}
+                  colon
+                  labelStyle={{ width: 160, color: descriptionLabelColor, fontSize: 14, paddingBottom: 2 }}
+                  contentStyle={{ color: descriptionContentColor, fontSize: 14, paddingBottom: 2 }}
+                  items={[
+                    { key: "account", label: t(p("account")), children: selectedTemplateWithDetails?.account },
+                    {
+                      key: "cluster",
+                      label: t(p("cluster")),
+                      children: clusterDisplayName,
+                    },
+                    { key: "partition", label: t(p("partition")), children: selectedTemplateWithDetails?.partition },
+                    { key: "qos", label: t(p("qos")), children: selectedTemplateWithDetails?.qos },
+                    { key: "nodeCount", label: t(p("nodeCount")), children: selectedTemplateWithDetails?.nodeCount },
+                    {
+                      key: "cpuCoresPerNode",
+                      label: t(p("cpuCoresPerNode")),
+                      children: selectedTemplateWithDetails?.cpuCoresPerNode,
+                    },
+                    { key: "maxRuntime", label: t(p("maxRuntime")), children: selectedTemplateWithDetails?.maxRuntime },
+                    {
+                      key: "command",
+                      label: t(p("command")),
+                      children: <TemplateCommand>{selectedTemplateWithDetails?.command}</TemplateCommand>,
+                    },
+                  ]}
+                />
+              ) : (
+                <TemplateEmptyState>
+                  <Empty description={isLoading ? t(p("loading")) : t(p("empty"))} />
+                </TemplateEmptyState>
+              )}
+            </TemplateDetailPanel>
+            <ModalFooterArea>
+              <Button style={{ fontSize: 14 }} onClick={openDeleteConfirmModal} disabled={!selectedTemplate}>
+                {t(p("deleteTemplate"))}
+              </Button>
+              <Button style={{ fontSize: 14 }} type="primary" onClick={handleUse} disabled={!selectedTemplate}>
+                {t(p("useTemplate"))}
+              </Button>
+            </ModalFooterArea>
+          </TemplateRightColumn>
         </ModalContentWrapper>
       </StyledModal>
       <StyledModal
@@ -524,7 +554,7 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
         cancelText={t(p("cancel"))}
         confirmLoading={renameLoading}
         okButtonProps={{ disabled: !renameValue.trim() }}
-        style={{ top: 148 }}
+        centered
         styles={{ body: { paddingBottom: 42 } }}
         closable={false}
       >
@@ -550,13 +580,11 @@ export const TemplateListModal: React.FC<TemplateListModalProps> = ({
         confirmLoading={deleteLoading}
         okButtonProps={{ disabled: !selectedTemplate }}
         width={480}
-        style={{ top: 148 }}
+        centered
         styles={{ body: { paddingBottom: 42 } }}
         closable={false}
       >
-        <DeleteConfirmText $color={descriptionLabelColor}>
-          {t(p("deleteConfirm"))}
-        </DeleteConfirmText>
+        <DeleteConfirmText $color={descriptionLabelColor}>{t(p("deleteConfirm"))}</DeleteConfirmText>
       </StyledModal>
     </>
   );

@@ -23,6 +23,7 @@ import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable, checkIsPublicPaths, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
@@ -160,6 +161,9 @@ const ModelGroupSchema = z.object({
   algorithmName: z.string().optional(),
   algorithmFramework: z.string().optional(),
   versions: z.array(ModelVersionItemSchema),
+  ownerName: z.string().optional(),
+  ownerId: z.string().optional(),
+  isPlatformOwned: z.boolean(),
 });
 
 export const getAllModelVersions = procedure
@@ -215,6 +219,9 @@ export const getAllModelVersions = procedure
 
     const versionMap = buildVersionMap(versions, (version) => version.model.id);
 
+    const allModels = [...personalModels, ...publicModels];
+    const userMap = await buildUserMap(allModels.map((m) => m.owner));
+
     return mapAssetEntityGroupsWithVersions<Model, ModelVersion, z.infer<typeof ModelGroupSchema>>({
       personalEntities: personalModels,
       publicEntities: publicModels,
@@ -227,6 +234,9 @@ export const getAllModelVersions = procedure
         description: model.description,
         algorithmName: model.algorithmName,
         algorithmFramework: model.algorithmFramework,
+        ownerName: userMap[model.owner] ?? model.owner,
+        ownerId: model.owner,
+        isPlatformOwned: model.isPlatformOwned,
         versions: relatedVersions.map((version) => ({
           id: version.id,
           versionName: version.versionName,

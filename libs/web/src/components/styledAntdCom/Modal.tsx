@@ -59,6 +59,6 @@ export const CompactInlineFormItem = styled(InlineFormItem)`
   }
 
   .ant-form-item-label {
-    width: 64px;
+    width: 72px;
   }
 `;

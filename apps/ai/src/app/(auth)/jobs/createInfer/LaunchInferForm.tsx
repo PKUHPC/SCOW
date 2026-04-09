@@ -1,15 +1,24 @@
 "use client";
 
+import type { ColumnsType } from "antd/es/table";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import {
+  BorderlessCard,
+  HeaderRow,
+  HeaderTitle,
+  PaddedCard,
+} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { join } from "path";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ImageType, Status } from "src/models/Image";
 import { InferenceJobInput } from "src/server/trpc/route/jobs/infer";
@@ -17,21 +26,6 @@ import { formatSize } from "src/utils/format";
 import { parseBooleanParam } from "src/utils/parse";
 import { trpc } from "src/utils/trpc";
 
-import { PublicImageOption } from "../PublicImageOption";
-import { BaseInfoSection } from "./components/BaseInfoSection";
-import { InferConfigSection } from "./components/InferConfigSection";
-import { ResourceConfigSection } from "./components/ResourceConfigSection";
-import {
-  BorderlessCard,
-  FixedFooter,
-  FooterActions,
-  FooterStats,
-  FooterStatValue,
-  HeaderRow,
-  HeaderTitle,
-  PaddedCard,
-  SectionTitle,
-} from "../LaunchJobForm.styles";
 import type {
   AppFormValues,
   BaseFormValues,
@@ -50,6 +44,7 @@ import type {
   InferImageSourceKey,
   VersionGroup,
 } from "./LaunchInferForm.types";
+
 import {
   buildSelectionPathLookup,
   buildVersionLookup,
@@ -61,6 +56,10 @@ import {
   renderCascaderLabels,
   toIdPrivateList,
 } from "../LaunchJobForm.utils";
+import { PublicImageOption } from "../PublicImageOption";
+import { BaseInfoSection } from "./components/BaseInfoSection";
+import { InferConfigSection } from "./components/InferConfigSection";
+import { ResourceConfigSection } from "./components/ResourceConfigSection";
 
 // ======================= 类型定义 =======================
 type ResubmitInferParams = InferenceJobInput;
@@ -73,6 +72,7 @@ interface Props {
 const p = prefix("app.jobs.launchAppForm.");
 const pResource = prefix("app.jobs.resourceConfigSection.");
 const pInfer = prefix("app.jobs.launchInferForm.");
+const pPublicOption = prefix("app.jobs.publicImageOption.");
 
 type LaunchInferFormKey = Parameters<typeof p>[0];
 type ImageSourceLabelKey = Extract<LaunchInferFormKey, `imageSourceTabs.${string}`>;
@@ -98,8 +98,10 @@ const IMAGE_PLACEHOLDER_KEYS: Record<InferImageSourceKey, ImagePlaceholderKey> =
 export const DEFAULT_SERVICE_PORT = 8080;
 
 // 根据队列类型自定义底部统计栏的字段文案
-const QUEUE_LABEL_KEYS: Record<QueueKind,
-  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }> = {
+const QUEUE_LABEL_KEYS: Record<
+  QueueKind,
+  { gpu: QueueFooterLabelKey; cpu: QueueFooterLabelKey; memory: QueueFooterLabelKey }
+> = {
   gpu: {
     gpu: "queueFooterLabels.totalGpu",
     cpu: "queueFooterLabels.totalCpu",
@@ -120,19 +122,17 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "20%",
+    width: "14%",
   },
   {
     title: t(p("gpuColumns.accelerator")),
     dataIndex: "accelerator",
     key: "accelerator",
-    width: "20%",
+    width: "28%",
     render: (_: unknown, record: GPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.accelerator}</Typography.Text>
-        {record.acceleratorDetail ? (
-          <Typography.Text>{record.acceleratorDetail}</Typography.Text>
-        ) : null}
+        {record.acceleratorDetail ? <Typography.Text>{record.acceleratorDetail}</Typography.Text> : null}
         {record.acceleratorVramGb ? (
           <Typography.Text>{t(p("gpuColumns.vram"), [record.acceleratorVramGb])}</Typography.Text>
         ) : null}
@@ -165,7 +165,7 @@ const buildGpuColumns = (t: TranslateFn): ColumnsType<GPUQueueRow> => [
     title: t(p("gpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "20%",
+    width: "18%",
     render: (value: string) => value || "-",
   },
 ];
@@ -176,19 +176,17 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.queue")),
     dataIndex: "queue",
     key: "queue",
-    width: "25%",
+    width: "14%",
   },
   {
     title: t(p("cpuColumns.cpuModel")),
     dataIndex: "cpuModel",
     key: "cpuModel",
-    width: "25%",
+    width: "30%",
     render: (_: unknown, record: CPUQueueRow) => (
       <Space direction="vertical" size={0}>
         <Typography.Text>{record.cpuModel}</Typography.Text>
-        {record.cpuDetail ? (
-          <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text>
-        ) : null}
+        {record.cpuDetail ? <Typography.Text type="secondary">{record.cpuDetail}</Typography.Text> : null}
       </Space>
     ),
   },
@@ -196,23 +194,20 @@ const buildCpuColumns = (t: TranslateFn): ColumnsType<CPUQueueRow> => [
     title: t(p("cpuColumns.capacity")),
     dataIndex: "capacity",
     key: "capacity",
-    width: "25%",
+    width: "28%",
   },
   {
     title: t(p("cpuColumns.memoryPerCore")),
     dataIndex: "memoryPerCore",
     key: "memoryPerCore",
-    width: "25%",
+    width: "28%",
     render: (text?: string) => text ?? "-",
   },
 ];
 
-
 // ======================= 组件实现 =======================
 // 主表单组件，协调基础信息、资源配置与应用配置三个分区，并负责数据提交
-export const LaunchInferForm = ({
-  createInferParams, misPath,
-}: Props) => {
+export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const { currentLanguage } = useI18n();
   const languageId = currentLanguage.id;
   const t = useI18nTranslateToString();
@@ -229,10 +224,11 @@ export const LaunchInferForm = ({
   const gpuColumns = useMemo(() => buildGpuColumns(t), [languageId, t]);
   const cpuColumns = useMemo(() => buildCpuColumns(t), [languageId, t]);
   const imageSourceTabs = useMemo(
-    () => IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
-      key: tab.key,
-      label: t(p(tab.labelKey)),
-    })),
+    () =>
+      IMAGE_SOURCE_TAB_CONFIG.map((tab) => ({
+        key: tab.key,
+        label: t(p(tab.labelKey)),
+      })),
     [languageId, t],
   );
   const handleJobNameChange = (value: string) => {
@@ -253,8 +249,7 @@ export const LaunchInferForm = ({
   };
 
   // 生成默认作业名称，帮助用户快速提交
-  const initialJobName =
-  useMemo(() => `infer-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(), []);
+  const initialJobName = useMemo(() => `infer-${dayjs().format("YYMMDD-HHmmss")}`.toLowerCase(), []);
   const [jobName, setJobName] = useState(initialJobName);
   const [activeResourceTab, setActiveResourceTab] = useState<QueueKind>("gpu");
   const [selectedQueueKey, setSelectedQueueKey] = useState<string | undefined>();
@@ -288,18 +283,19 @@ export const LaunchInferForm = ({
   const [maxTimeUnit, setMaxTimeUnit] = useState<MaxTimeUnit>("hour");
 
   // 账户集群关系
-  const { data: appAvailableAccountsAndClusters } =
-  trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
+  const { data: appAvailableAccountsAndClusters } = trpc.jobs.listAppAvailableAccountsAndClusters.useQuery({});
 
   const accountClusterMap = appAvailableAccountsAndClusters?.accountClusters ?? {};
 
   // 账户下拉选项根据 cluster 关联关系动态生成
-  const accountOptions = useMemo(() => (
-    Object.keys(accountClusterMap).map((account) => ({
-      label: account,
-      value: account,
-    }))
-  ), [accountClusterMap]);
+  const accountOptions = useMemo(
+    () =>
+      Object.keys(accountClusterMap).map((account) => ({
+        label: account,
+        value: account,
+      })),
+    [accountClusterMap],
+  );
 
   // ----------- 表单字段监听 -----------
   // 通过 Form.useWatch 实时感知三个分表单中的关键字段，后续计算和副作用均依赖这些最新值
@@ -327,8 +323,8 @@ export const LaunchInferForm = ({
       const detail = error.data?.detailedError;
       if (detail?.type === "account_user_not_available") {
         message.error(
-          `${t(pInfer("submitInferFailed"))}: `
-          + `${t("common.userAccountNotAvailableWhenSubmit", [detail.userId ?? "", detail.accountName ?? ""])}`,
+          `${t(pInfer("submitInferFailed"))}: ` +
+            `${t("common.userAccountNotAvailableWhenSubmit", [detail.userId ?? "", detail.accountName ?? ""])}`,
         );
         return;
       }
@@ -336,9 +332,12 @@ export const LaunchInferForm = ({
         const clusterName = CLUSTERS.find((x) => x.id === detail.clusterId)?.name || detail.clusterId;
         const i18nClusterName = getI18nConfigCurrentText(clusterName, languageId);
         message.error(
-          `${t(pInfer("submitInferFailed"))}: `
-          + `${t("common.clusterPartitionNotAvailableForAccount",
-            [detail.accountName ?? "", i18nClusterName, detail.partitionName])}`,
+          `${t(pInfer("submitInferFailed"))}: ` +
+            `${t("common.clusterPartitionNotAvailableForAccount", [
+              detail.accountName ?? "",
+              i18nClusterName,
+              detail.partitionName,
+            ])}`,
         );
         return;
       }
@@ -453,60 +452,77 @@ export const LaunchInferForm = ({
 
   // 根据选中的账户与集群拉取对应的队列与资源详情
   // ----- 数据拉取：根据选中账户/集群实时刷新依赖数据 -----
-  const { data: queueData, isLoading: getAvailablePartitionIsLoading } =
-    trpc.config.getAvailablePartitions.useQuery(
-      { accountName: selectedAccount!, clusterId: selectedCluster! },
-      { enabled: !!selectedAccount && !!selectedCluster },
-    );
+  const { data: queueData, isLoading: getAvailablePartitionIsLoading } = trpc.config.getAvailablePartitions.useQuery(
+    { accountName: selectedAccount!, clusterId: selectedCluster! },
+    { enabled: !!selectedAccount && !!selectedCluster },
+  );
 
   const { data: queueNodesInfo } = trpc.dashboard.getClusterNodesInfo.useQuery(
     { clusterId: selectedCluster! },
     { enabled: !!queueData && !!selectedCluster },
   );
 
-  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery({
-    isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
-    clusterId: selectedCluster,
-    withExternal: "true",
-    types: ImageType.INFER,
-  }, {
-    enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
-  });
+  const { data: images, isLoading: isImagesLoading } = trpc.image.list.useQuery(
+    {
+      isPublic: selectedImageSource === "public" ? parseBooleanParam(true) : parseBooleanParam(false),
+      clusterId: selectedCluster,
+      withExternal: "true",
+      types: ImageType.INFER,
+    },
+    {
+      enabled: !!selectedCluster && (selectedImageSource === "public" || selectedImageSource === "mine"),
+    },
+  );
 
-  const { data: models, isLoading: isModelsLoading } = trpc.model.getAllModelVersions.useQuery({
-    clusterId: selectedCluster,
-  }, {
-    enabled: !!selectedCluster,
-  });
+  const { data: models, isLoading: isModelsLoading } = trpc.model.getAllModelVersions.useQuery(
+    {
+      clusterId: selectedCluster,
+    },
+    {
+      enabled: !!selectedCluster,
+    },
+  );
+
+  const buildOwnerText = (isPlatformOwned: boolean, ownerName?: string, ownerId?: string) => {
+    if (isPlatformOwned) return t(pPublicOption("sharedBy"), [t(pPublicOption("platformName"))]);
+    const ownerDisplay = ownerName ?? ownerId ?? "-";
+    return t(pPublicOption("sharedBy"), [ownerDisplay])
+      + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
+  };
 
   const modelCategories = useMemo<ResourceCategory[]>(() => {
-    const personalChildren = (models?.personal ?? []).map((model) => ({
-      label: model.name,
-      value: model.id,
-      description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
-      children: (model.versions ?? [])
-        .filter((version) => Boolean(version?.id) && Boolean(version?.versionName))
-        .map((version) => ({
-          label: version.versionName,
-          value: version.id,
-          description: version.versionDescription ?? version.algorithmVersion ?? undefined,
-          children: [],
-        })),
-    })).filter((model) => model.children.length > 0);
+    const personalChildren = (models?.personal ?? [])
+      .map((model) => ({
+        label: model.name,
+        value: model.id,
+        description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
+        children: (model.versions ?? [])
+          .filter((version) => Boolean(version?.id) && Boolean(version?.versionName))
+          .map((version) => ({
+            label: version.versionName,
+            value: version.id,
+            description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+            children: [],
+          })),
+      }))
+      .filter((model) => model.children.length > 0);
 
-    const publicChildren = (models?.public ?? []).map((model) => ({
-      label: model.name,
-      value: model.id,
-      description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
-      children: (model.versions ?? [])
-        .filter((version) => Boolean(version?.id) && Boolean(version?.versionName))
-        .map((version) => ({
-          label: version.versionName,
-          value: version.id,
-          description: version.versionDescription ?? version.algorithmVersion ?? undefined,
-          children: [],
-        })),
-    })).filter((model) => model.children.length > 0);
+    const publicChildren = (models?.public ?? [])
+      .map((model) => ({
+        label: model.name,
+        value: model.id,
+        description: model.description ?? [model.algorithmName, model.algorithmFramework].filter(Boolean).join(" / "),
+        ownerText: buildOwnerText(model.isPlatformOwned, model.ownerName, model.ownerId),
+        children: (model.versions ?? [])
+          .filter((version) => Boolean(version?.id) && Boolean(version?.versionName))
+          .map((version) => ({
+            label: version.versionName,
+            value: version.id,
+            description: version.versionDescription ?? version.algorithmVersion ?? undefined,
+            children: [],
+          })),
+      }))
+      .filter((model) => model.children.length > 0);
 
     const categories: ResourceCategory[] = [];
     if (personalChildren.length > 0) {
@@ -527,18 +543,13 @@ export const LaunchInferForm = ({
   }, [models, languageId, t]);
 
   // 预构建 id → 路径 的查找表，方便再次提交时把后端记录转回级联路径
-  const modelSelectionLookup = useMemo(
-    () => buildSelectionPathLookup(modelCategories),
-    [modelCategories],
-  );
+  const modelSelectionLookup = useMemo(() => buildSelectionPathLookup(modelCategories), [modelCategories]);
 
-  const resolveSelectionPath = (
-    lookup: Map<string, CascaderSelection>,
-    id: number,
-    isPrivate: boolean,
-  ) => {
+  const resolveSelectionPath = (lookup: Map<string, CascaderSelection>, id: number, isPrivate: boolean) => {
     const primary = lookup.get(createSelectionLookupKey(id, isPrivate));
-    if (primary) { return primary; }
+    if (primary) {
+      return primary;
+    }
     return lookup.get(createSelectionLookupKey(id, !isPrivate));
   };
 
@@ -581,12 +592,10 @@ export const LaunchInferForm = ({
 
     const mountPointsDraft = (createInferParams.mountPoints ?? [])
       .map((item) => {
-        const path = typeof (item as { path?: string })?.path === "string"
-          ? (item as { path?: string }).path!.trim()
-          : "";
-        const target = typeof (item as { target?: string })?.target === "string"
-          ? (item as { target?: string }).target!.trim()
-          : "";
+        const path =
+          typeof (item as { path?: string })?.path === "string" ? (item as { path?: string }).path!.trim() : "";
+        const target =
+          typeof (item as { target?: string })?.target === "string" ? (item as { target?: string }).target!.trim() : "";
         return {
           source: path,
           target,
@@ -638,7 +647,7 @@ export const LaunchInferForm = ({
         image: String(createInferParams.image),
       };
       return {
-        source: createInferParams.isImagePrivate === false ? "public" as const : "mine" as const,
+        source: createInferParams.isImagePrivate === false ? ("public" as const) : ("mine" as const),
         draft,
       };
     }
@@ -679,25 +688,25 @@ export const LaunchInferForm = ({
           ownerId: image.ownerId,
           startCommand: image.startCommand ?? undefined,
           servicePort: image.inferServicePort ? Number(image.inferServicePort) : undefined,
-          displayLabel: selectedImageSource === "public"
-            ? (
+          displayLabel:
+            selectedImageSource === "public" ? (
               <PublicImageOption
                 name={image.name}
                 tag={image.tag}
                 ownerName={image.ownerName}
                 ownerId={image.ownerId}
               />
-            )
-            : `${image.name}: ${image.tag}`,
+            ) : (
+              `${image.name}: ${image.tag}`
+            ),
         })) as ImageOption[];
     }
     return [];
   }, [images, selectedImageSource, languageId]);
 
   // 统一选中值的类型，避免数字 ID 与字符串之间的比较问题
-  const normalizedSelectedImageValue = selectedImageValue !== undefined && selectedImageValue !== null
-    ? String(selectedImageValue)
-    : undefined;
+  const normalizedSelectedImageValue =
+    selectedImageValue !== undefined && selectedImageValue !== null ? String(selectedImageValue) : undefined;
 
   const selectedImageOption = useMemo(
     () => imageOptionsForSource.find((item) => item.value === normalizedSelectedImageValue),
@@ -718,13 +727,13 @@ export const LaunchInferForm = ({
     resubmitCommandKeyRef.current = resubmitCommandKey;
 
     if (
-      createInferParams
-      && trimmedResubmitCommand
-      && resubmitSource === selectedImageSource
-      && resubmitCommandKey
-      && !hasClusterSwitchedRef.current
-      && !resubmitCommandLockedRef.current
-      && currentCommandKey === resubmitCommandKey
+      createInferParams &&
+      trimmedResubmitCommand &&
+      resubmitSource === selectedImageSource &&
+      resubmitCommandKey &&
+      !hasClusterSwitchedRef.current &&
+      !resubmitCommandLockedRef.current &&
+      currentCommandKey === resubmitCommandKey
     ) {
       if (selectedImageSource === "remote") {
         const currentRemote = typeof selectedImageValue === "string" ? selectedImageValue : undefined;
@@ -734,9 +743,10 @@ export const LaunchInferForm = ({
       }
       if (selectedImageSource === "mine" || selectedImageSource === "public") {
         const currentLocal = typeof selectedImageValue === "string" ? selectedImageValue : undefined;
-        const expectedLocal = createInferParams.image !== undefined && createInferParams.image !== null
-          ? String(createInferParams.image)
-          : undefined;
+        const expectedLocal =
+          createInferParams.image !== undefined && createInferParams.image !== null
+            ? String(createInferParams.image)
+            : undefined;
         if (expectedLocal && currentLocal === expectedLocal) {
           return trimmedResubmitCommand;
         }
@@ -774,12 +784,7 @@ export const LaunchInferForm = ({
     // 当已使用过历史命令且镜像 key 改变时，锁定历史命令，后续使用镜像默认值
     const currentKey = getCommandCacheKey(selectedImageSource, normalizedSelectedImageValue);
     const resubmitKey = resubmitCommandKeyRef.current;
-    if (
-      resubmitKey
-      && resubmitCommandUsedRef.current
-      && currentKey
-      && currentKey !== resubmitKey
-    ) {
+    if (resubmitKey && resubmitCommandUsedRef.current && currentKey && currentKey !== resubmitKey) {
       resubmitCommandLockedRef.current = true;
     }
   }, [normalizedSelectedImageValue, selectedImageSource]);
@@ -814,9 +819,9 @@ export const LaunchInferForm = ({
     // 标记已使用过再次提交的命令，以便后续切换镜像时锁定历史命令
     const resubmitKey = resubmitCommandKeyRef.current;
     if (
-      resubmitKey
-      && currentKey === resubmitKey
-      && currentCommandDefault === (createInferParams?.command?.trim() ?? undefined)
+      resubmitKey &&
+      currentKey === resubmitKey &&
+      currentCommandDefault === (createInferParams?.command?.trim() ?? undefined)
     ) {
       resubmitCommandUsedRef.current = true;
     }
@@ -863,8 +868,7 @@ export const LaunchInferForm = ({
   }, [cpuRows, gpuRows]);
 
   // 按当前标签筛出实际展示的队列集合
-  const currentQueueOptions: QueueRow[] =
-    activeResourceTab === "gpu" ? gpuRows : cpuRows;
+  const currentQueueOptions: QueueRow[] = activeResourceTab === "gpu" ? gpuRows : cpuRows;
 
   // 结合选中主键获取当前行，用于派生底部统计和表单限制
   const selectedQueueOption = useMemo(
@@ -878,12 +882,7 @@ export const LaunchInferForm = ({
   const totalGpuUnits = normalizedGpuPerNode * normalizedNodeCount;
   const totalCpuUnits = normalizedCpuPerNode * normalizedNodeCount;
 
-  const {
-    cpuPerUnit,
-    memoryPerUnitText,
-    memoryPerUnitMb,
-    qosOptions,
-  } = useMemo(
+  const { cpuPerUnit, memoryPerUnitText, memoryPerUnitMb, qosOptions } = useMemo(
     () => deriveQueueStats(selectedQueueOption),
     [selectedQueueOption],
   );
@@ -893,25 +892,21 @@ export const LaunchInferForm = ({
       return undefined;
     }
     const candidates: number[] = [selectedQueueOption.totalUnits];
-    if (typeof selectedQueueOption.maxAcceleratorsPerPod === "number"
-      && selectedQueueOption.maxAcceleratorsPerPod > 0) {
+    if (
+      typeof selectedQueueOption.maxAcceleratorsPerPod === "number" &&
+      selectedQueueOption.maxAcceleratorsPerPod > 0
+    ) {
       candidates.push(selectedQueueOption.maxAcceleratorsPerPod);
     }
     return candidates.length ? Math.min(...candidates) : undefined;
   }, [selectedQueueOption]);
 
-  const {
-    gpu: gpuLabelKey,
-    cpu: cpuLabelKey,
-    memory: memoryLabelKey,
-  } = QUEUE_LABEL_KEYS[activeResourceTab];
+  const { gpu: gpuLabelKey, cpu: cpuLabelKey, memory: memoryLabelKey } = QUEUE_LABEL_KEYS[activeResourceTab];
   const gpuLabel = t(p(gpuLabelKey));
   const cpuLabel = t(p(cpuLabelKey));
   const memoryLabel = t(p(memoryLabelKey));
 
-  const displayedGpu = activeResourceTab === "gpu"
-    ? (totalGpuUnits > 0 ? totalGpuUnits : "-")
-    : "-";
+  const displayedGpu = activeResourceTab === "gpu" ? (totalGpuUnits > 0 ? totalGpuUnits : "-") : "-";
 
   const displayedCpu = (() => {
     if (activeResourceTab === "gpu") {
@@ -937,9 +932,7 @@ export const LaunchInferForm = ({
 
   const unitsForQuery = activeResourceTab === "gpu" ? totalGpuUnits : totalCpuUnits;
   const hasMemoryPerUnit = memoryPerUnitMb !== undefined && memoryPerUnitMb !== null && !Number.isNaN(memoryPerUnitMb);
-  const memMbForQuery = hasMemoryPerUnit
-    ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0)))
-    : 0;
+  const memMbForQuery = hasMemoryPerUnit ? Math.max(0, Math.round(unitsForQuery * (memoryPerUnitMb ?? 0))) : 0;
   const timeSecondsForPrice = 3600;
   // 仅在关键字段齐备、并且能计算出每单位内存时才触发价格查询，避免无效请求
   const jobPriceQueryEnabled =
@@ -947,18 +940,21 @@ export const LaunchInferForm = ({
     hasMemoryPerUnit &&
     unitsForQuery > 0;
 
-  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery({
-    cluster: selectedCluster!,
-    partition: selectedQueueKey!,
-    account: selectedAccount!,
-    gpu: totalGpuUnits,
-    cpusAlloc: totalCpuUnits,
-    memMb: memMbForQuery,
-    qos: priority,
-    timeSeconds: timeSecondsForPrice,
-  }, {
-    enabled: jobPriceQueryEnabled,
-  });
+  const { data: jobOneHourPrice } = trpc.jobs.calculateJobPrice.useQuery(
+    {
+      cluster: selectedCluster!,
+      partition: selectedQueueKey!,
+      account: selectedAccount!,
+      gpu: totalGpuUnits,
+      cpusAlloc: totalCpuUnits,
+      memMb: memMbForQuery,
+      qos: priority,
+      timeSeconds: timeSecondsForPrice,
+    },
+    {
+      enabled: jobPriceQueryEnabled,
+    },
+  );
 
   const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)} ${t(p("yuan"))}`;
 
@@ -972,7 +968,7 @@ export const LaunchInferForm = ({
     const activatedAvailableClusters = CLUSTERS.filter((c) => {
       return associateClusterIds.has(c.id);
     });
-      // 只展示：(系统在线的集群) 且 (用户至少有一个账户能访问该集群)
+    // 只展示：(系统在线的集群) 且 (用户至少有一个账户能访问该集群)
     return activatedAvailableClusters.map((cluster) => ({
       id: cluster.id,
       name: getI18nConfigCurrentText(cluster.name, languageId),
@@ -993,9 +989,7 @@ export const LaunchInferForm = ({
     const targetAccount = createInferParams.account;
     const targetCluster = createInferParams.clusterId;
 
-    const accountAvailable = targetAccount
-      ? accountOptions.some((option) => option.value === targetAccount)
-      : false;
+    const accountAvailable = targetAccount ? accountOptions.some((option) => option.value === targetAccount) : false;
 
     const targetClusterOption = targetCluster
       ? clusterOptions.find((option) => option.id === targetCluster && !option.disabled)
@@ -1043,16 +1037,14 @@ export const LaunchInferForm = ({
     const targetQueueId = createInferParams.partition;
     const targetQueue = targetQueueId ? queueRowById.get(targetQueueId) : undefined;
 
-    const nextTab: QueueKind = targetQueue?.type
-      ?? ((createInferParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
+    const nextTab: QueueKind = targetQueue?.type ?? ((createInferParams.gpuCount ?? 0) > 0 ? "gpu" : "cpu");
 
     if (activeResourceTab !== nextTab) {
       setActiveResourceTab(nextTab);
     }
 
-    const isSavedMaxTimeUnlimited = createInferParams.maxTime === 0
-      || createInferParams.maxTime === undefined
-      || createInferParams.maxTime === null;
+    const isSavedMaxTimeUnlimited =
+      createInferParams.maxTime === 0 || createInferParams.maxTime === undefined || createInferParams.maxTime === null;
     let maxTimeValue: number | undefined;
     if (!isSavedMaxTimeUnlimited && createInferParams.maxTime) {
       const minutes = Math.max(1, createInferParams.maxTime);
@@ -1169,9 +1161,7 @@ export const LaunchInferForm = ({
       return;
     }
 
-    const currentSelection = currentQueueOptions.find(
-      (option) => option.id === selectedQueueKey,
-    );
+    const currentSelection = currentQueueOptions.find((option) => option.id === selectedQueueKey);
     if (!currentSelection) {
       const savedQueueId = createInferParams?.partition;
       if (createInferParams && selectedQueueKey === savedQueueId) {
@@ -1318,12 +1308,12 @@ export const LaunchInferForm = ({
     const isRemote = source === "remote";
     const isLocalLibrary = source === "mine" || source === "public";
 
-    const remoteMatches = !isRemote || (
-      currentImage === desiredImage
-      && Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage)
-      && appForm.getFieldValue("remoteUsername") === draft.remoteUsername
-      && appForm.getFieldValue("remotePassword") === draft.remotePassword
-    );
+    const remoteMatches =
+      !isRemote ||
+      (currentImage === desiredImage &&
+        Boolean(appForm.getFieldValue("usePrivateImage")) === Boolean(draft.usePrivateImage) &&
+        appForm.getFieldValue("remoteUsername") === draft.remoteUsername &&
+        appForm.getFieldValue("remotePassword") === draft.remotePassword);
 
     if (isLocalLibrary) {
       if (currentSource !== source) {
@@ -1360,11 +1350,7 @@ export const LaunchInferForm = ({
 
     imageSourceDraftsRef.current[source] = draft;
 
-    if (
-      currentSource === source
-      && currentImage === desiredImage
-      && remoteMatches
-    ) {
+    if (currentSource === source && currentImage === desiredImage && remoteMatches) {
       resubmitImageAppliedRef.current = true;
       return;
     }
@@ -1395,13 +1381,7 @@ export const LaunchInferForm = ({
     }
 
     resubmitImageAppliedRef.current = true;
-  }, [
-    appForm,
-    imageOptionsForSource,
-    isImagesLoading,
-    resubmitImagePreference,
-    selectedImageSource,
-  ]);
+  }, [appForm, imageOptionsForSource, isImagesLoading, resubmitImagePreference, selectedImageSource]);
 
   useEffect(() => {
     // 当取消勾选私有镜像时，主动清空认证字段，避免提交冗余信息
@@ -1544,9 +1524,7 @@ export const LaunchInferForm = ({
         return;
       }
 
-      const memoryMb = memoryPerUnitMb
-        ? Math.max(0, Math.round(memoryPerUnitMb * unitCount))
-        : undefined;
+      const memoryMb = memoryPerUnitMb ? Math.max(0, Math.round(memoryPerUnitMb * unitCount)) : undefined;
 
       const submitUnlimited = Boolean(maxTimeUnlimited);
       let maxTimeMinutes: number | undefined;
@@ -1560,8 +1538,10 @@ export const LaunchInferForm = ({
       }
 
       // 将级联选择值映射回后端所需的 {id, isPrivate} 列表
-      const modelLookup = buildVersionLookup(models?.personal as VersionGroup[] | undefined,
-        models?.public as VersionGroup[] | undefined);
+      const modelLookup = buildVersionLookup(
+        models?.personal as VersionGroup[] | undefined,
+        models?.public as VersionGroup[] | undefined,
+      );
 
       const modelsPayload = toIdPrivateList(appValues.models, modelLookup);
 
@@ -1609,7 +1589,7 @@ export const LaunchInferForm = ({
       const trimmedCommand = appValues.command?.trim();
       const startCommandValue = trimmedCommand ? trimmedCommand : undefined;
 
-      const normalizedMaxTime = submitUnlimited ? 0 : maxTimeMinutes ?? 0;
+      const normalizedMaxTime = submitUnlimited ? 0 : (maxTimeMinutes ?? 0);
       const containerServicePortValue = Number(appValues.containerServicePort ?? 0);
 
       await createInferJobMutation.mutateAsync({
@@ -1633,12 +1613,14 @@ export const LaunchInferForm = ({
         gpuType: queueOption.type === "gpu" ? queueOption.gpuType : undefined,
         containerServicePort: containerServicePortValue,
         envVariables: envVariablesPayload.length ? envVariablesPayload : undefined,
-        ...appValues.usePrivateImage ? {
-          privateImageRepositoryCredentials:{
-            userName: appValues.remoteUsername ?? "",
-            password: appValues.remotePassword ?? "",
-          },
-        } : {},
+        ...(appValues.usePrivateImage
+          ? {
+              privateImageRepositoryCredentials: {
+                userName: appValues.remoteUsername ?? "",
+                password: appValues.remotePassword ?? "",
+              },
+            }
+          : {}),
       });
     } catch (error) {
       console.error("Failed to submit create infer job form:", error);
@@ -1650,20 +1632,14 @@ export const LaunchInferForm = ({
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
-          title={(
+          title={
             <HeaderRow align="center" size={16}>
-              <HeaderTitle>
-                {t(pInfer("createInferTitle"))}
-              </HeaderTitle>
+              <HeaderTitle>{t(pInfer("createInferTitle"))}</HeaderTitle>
             </HeaderRow>
-          )}
+          }
         >
           <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <BaseInfoSection
-              form={baseForm}
-              jobName={jobName}
-              onJobNameChange={handleJobNameChange}
-            />
+            <BaseInfoSection form={baseForm} jobName={jobName} onJobNameChange={handleJobNameChange} />
           </BorderlessCard>
         </PaddedCard>
 
@@ -1706,27 +1682,33 @@ export const LaunchInferForm = ({
           selectedCluster={selectedCluster}
           displayRender={renderCascaderLabels}
         />
-
       </PageContainer>
 
       <FixedFooter>
         <FooterStats>
-          <span>{gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue></span>
-          <span>{cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue></span>
-          <span>{memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue></span>
-          <span>{t(p("hourlyCostLabel"))}
+          <span>
+            {gpuLabel} <FooterStatValue>{displayedGpu}</FooterStatValue>
+          </span>
+          <span>
+            {cpuLabel} <FooterStatValue>{displayedCpu}</FooterStatValue>
+          </span>
+          <span>
+            {memoryLabel} <FooterStatValue>{displayedMemory}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("hourlyCostLabel"))}
             <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
           </span>
-          <a onClick={() => { window.open(join(misPath, "/user/partitions"), "_blank", "noopener"); }}>
+          <a
+            onClick={() => {
+              window.open(join(misPath, "/user/partitions"), "_blank", "noopener");
+            }}
+          >
             <FooterStatValue $isPrimaryColor>{t(p("chargeStandard"))}</FooterStatValue>
           </a>
         </FooterStats>
         <FooterActions>
-          <Button
-            type="primary"
-            onClick={handleSubmit}
-            loading={createInferJobMutation.isPending}
-          >
+          <Button type="primary" onClick={handleSubmit} loading={createInferJobMutation.isPending}>
             {t(p("submit"))}
           </Button>
         </FooterActions>

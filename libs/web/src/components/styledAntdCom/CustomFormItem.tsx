@@ -1,5 +1,6 @@
+import type { FormInstance, FormItemProps, Rule } from "antd/es/form";
+
 import { Form } from "antd";
-import type { FormInstance,FormItemProps, Rule } from "antd/es/form";
 import React, { ReactNode, useMemo } from "react";
 import { QuestionMarkIcon } from "src/icons/commonIcons";
 import { styled } from "styled-components";
@@ -26,11 +27,7 @@ const LabelWithHelp: React.FC<{
     {label}
     {required && <span style={{ color: "red", marginLeft: 4 }}>*</span>}
     {help && (
-      <Tooltip
-        title={help}
-        arrow={false}
-        align={{ offset: [0, -12]}}
-      >
+      <Tooltip title={help} arrow={false} align={{ offset: [0, -12] }}>
         <QuestionMarkIcon style={{ marginLeft: 6, color: "#999", fontSize: 16 }} />
       </Tooltip>
     )}
@@ -42,9 +39,12 @@ const LabelWithHelp: React.FC<{
  * - 自动识别 rules 中是否有 required（支持 RuleObject 与 RuleRender）
  * - 固定顺序为：label → 星号 → 问号
  */
-export const CustomFormItem: React.FC<
-  FormItemProps & { helpTip?: ReactNode }
-> = ({ label, rules, helpTip, ...rest }) => {
+export const CustomFormItem: React.FC<FormItemProps & { helpTip?: ReactNode }> = ({
+  label,
+  rules,
+  helpTip,
+  ...rest
+}) => {
   // 关键：这里直接拿到 Form 上下文实例（不会是 undefined）
   const form: FormInstance = Form.useFormInstance();
 
@@ -69,28 +69,28 @@ export const CustomFormItem: React.FC<
   }, [rules, form]);
 
   return (
-    <Form.Item
-      {...rest}
-      label={<LabelWithHelp label={label} required={isRequired} help={helpTip} />}
-      rules={rules}
-    />
+    <Form.Item {...rest} label={<LabelWithHelp label={label} required={isRequired} help={helpTip} />} rules={rules} />
   );
 };
 
-export const InlineFormItem = styled(CustomFormItem)`
+export const InlineFormItem = styled(CustomFormItem)<{ $labelWidth?: number }>`
   .ant-form-item-row {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 24px;
   }
 
   .ant-form-item-label {
-    width: 150px;
+    width: ${({ $labelWidth = 131 }) => $labelWidth}px;
     display: flex;
     align-items: center;
-    height: 40px;
+    min-height: 40px;
     padding: 0;
-    white-space: nowrap;
+  }
+
+  .ant-form-item-label > label {
+    white-space: normal;
+    height: auto;
   }
 
   .ant-form-item-control {

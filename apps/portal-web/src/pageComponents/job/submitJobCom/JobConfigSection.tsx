@@ -3,7 +3,7 @@ import { CommandInputField } from "@scow/lib-web/build/components/codeEditor/Com
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { SectionTitle,TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Form, type FormInstance } from "antd";
 import { join } from "path";
 import { useCallback, useEffect } from "react";
@@ -44,60 +44,60 @@ export const JobConfigSection = ({
 }: JobConfigSectionProps) => {
   const t = useI18nTranslateToString();
   const calculateWorkingDirectory = (template: string, homePath: string = "") =>
-    join(homePath + "/",
-      parsePlaceholder(template, { name: jobName }));
+    join(homePath + "/", parsePlaceholder(template, { name: jobName }));
 
   const clusterInfoQuery = useAsync({
-    promiseFn: useCallback(async () => cluster
-      ? api.getClusterInfo({ query: { cluster: cluster.id } })
-      : undefined, [cluster?.id]),
+    promiseFn: useCallback(
+      async () => (cluster ? api.getClusterInfo({ query: { cluster: cluster.id } }) : undefined),
+      [cluster?.id],
+    ),
   });
 
   const { data: homePath } = useAsync({
-    promiseFn: useCallback(async () => cluster
-      ? api.getHomeDirectory({ query: { cluster: cluster.id } })
-      : { path: "" }, [cluster?.id]),
+    promiseFn: useCallback(
+      async () => (cluster ? api.getHomeDirectory({ query: { cluster: cluster.id } }) : { path: "" }),
+      [cluster?.id],
+    ),
   });
 
   useEffect(() => {
     if (!form.isFieldTouched("workingDirectory") && clusterInfoQuery.data) {
-      form.setFieldValue("workingDirectory",
-        calculateWorkingDirectory(clusterInfoQuery.data.clusterInfo.submitJobDirTemplate, homePath?.path));
+      form.setFieldValue(
+        "workingDirectory",
+        calculateWorkingDirectory(clusterInfoQuery.data.clusterInfo.submitJobDirTemplate, homePath?.path),
+      );
     }
   }, [clusterInfoQuery.data, form, homePath?.path, jobName]);
 
   return (
     <TitledSectionCard title={<SectionTitle>{t(p("jobConfigSectionTitle"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-        initialValues={{}}
-      >
+      <Form form={form} colon={false} requiredMark={false} initialValues={{}}>
         <InlineFormItem
           name="workingDirectory"
           label={<FormLabel>{t(p("workingDirectory"))}</FormLabel>}
-          helpTip={(
+          helpTip={
             <>
               <span>{t(p("wdTooltip1"))}</span>
               <br />
               <span>{t(p("wdTooltip2"))}</span>
             </>
-          )}
+          }
           rules={[{ required: true }]}
         >
           <RoundedInput
             size="large"
-            style={{ width: "50%" }}
-            suffix={cluster ? (
-              <FileSelectModal
-                onSubmit={(path: string) => {
-                  form.setFields([{ name: "workingDirectory", value: path, touched: true }]);
-                  form.validateFields(["workingDirectory"]);
-                }}
-                cluster={cluster}
-              />
-            ) : undefined}
+            style={{ width: "100%" }}
+            prefix={
+              cluster ? (
+                <FileSelectModal
+                  onSubmit={(path: string) => {
+                    form.setFields([{ name: "workingDirectory", value: path, touched: true }]);
+                    form.validateFields(["workingDirectory"]);
+                  }}
+                  cluster={cluster}
+                />
+              ) : undefined
+            }
           />
         </InlineFormItem>
 
@@ -113,7 +113,6 @@ export const JobConfigSection = ({
             onChange={(event) => onOutputChange(event.target.value)}
           />
         </InlineFormItem>
-
 
         <InlineFormItem
           name="errorOutput"
@@ -132,9 +131,7 @@ export const JobConfigSection = ({
           name="scriptOutput"
           label={<FormLabel>{t(p("scriptOutputLabel"))}</FormLabel>}
           helpTip={t(p("wdTooltip3"))}
-          rules={[
-            { required: true, message: t(p("scriptOutputRequired")) },
-          ]}
+          rules={[{ required: true, message: t(p("scriptOutputRequired")) }]}
         >
           <RoundedInput
             size="large"
@@ -148,11 +145,11 @@ export const JobConfigSection = ({
           name="command"
           rules={[{ required: true, message: t(p("commandRequired")) }]}
           label={<FormLabel>{t(p("commandLabel"))}</FormLabel>}
+          style={{ marginBottom: 0 }}
         >
           <CommandInputField placeholder={submitJobPromptText} defaultRows={10} />
         </InlineFormItem>
       </Form>
     </TitledSectionCard>
-
   );
 };

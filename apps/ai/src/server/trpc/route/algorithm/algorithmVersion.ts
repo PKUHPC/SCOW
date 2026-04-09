@@ -23,6 +23,7 @@ import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/serve
 import { checkIsPublicPaths } from "src/server/utils/clusters";
 import { ensureAiUserShareEnabled } from "src/server/utils/assetShare";
 import { forkEntityManager } from "src/server/utils/getOrm";
+import { buildUserMap } from "src/server/trpc/route/utils/userMap";
 import { logger } from "src/server/utils/logger";
 import { paginationProps } from "src/server/utils/orm";
 import { paginationSchema } from "src/server/utils/pagination";
@@ -163,6 +164,9 @@ const AlgorithmGroupSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   versions: z.array(AlgorithmVersionItemSchema),
+  ownerName: z.string().optional(),
+  ownerId: z.string().optional(),
+  isPlatformOwned:z.boolean(),
 });
 
 export const getAllAlgorithmVersions = procedure
@@ -218,6 +222,9 @@ export const getAllAlgorithmVersions = procedure
 
     const versionMap = buildVersionMap(versions, (version) => version.algorithm.id);
 
+    const allAlgorithms = [...personalAlgorithms, ...publicAlgorithms];
+    const userMap = await buildUserMap(allAlgorithms.map((a) => a.owner));
+
     return mapAssetEntityGroupsWithVersions<Algorithm, AlgorithmVersion, z.infer<typeof AlgorithmGroupSchema>>({
       personalEntities: personalAlgorithms,
       publicEntities: publicAlgorithms,
@@ -228,6 +235,9 @@ export const getAllAlgorithmVersions = procedure
         id: algorithm.id,
         name: algorithm.name,
         description: algorithm.description,
+        ownerName: userMap[algorithm.owner] ?? algorithm.owner,
+        ownerId: algorithm.owner,
+        isPlatformOwned: algorithm.isPlatformOwned,
         versions: relatedVersions.map((version) => ({
           id: version.id,
           versionName: version.versionName,

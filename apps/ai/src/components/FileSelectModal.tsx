@@ -1,6 +1,8 @@
-import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, FolderOutlined, UploadOutlined } from "@ant-design/icons";
-import { App, Button, Modal, Tree } from "antd";
 import type { DataNode, EventDataNode } from "antd/es/tree";
+
+import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, UploadOutlined } from "@ant-design/icons";
+import { fileIcon as FileIcon } from "@scow/lib-web/build/icons/commonIcons";
+import { App, Button, Modal, Tree } from "antd";
 import Link from "next/link";
 import { join } from "path";
 import React, { Key, useEffect, useMemo, useState } from "react";
@@ -32,7 +34,7 @@ const TopBar = styled(FilterFormContainer)`
   flex-direction: row;
   padding-bottom: 8px;
   width: 100%;
-  &>button {
+  & > button {
     margin: 0px 4px;
   }
 `;
@@ -42,29 +44,32 @@ const FolderTriggerButton = styled(Button)`
   height: 24px !important;
   border-radius: 6px !important;
   border-style: none;
-  color: ${({ theme }) => theme.token.colorPrimary} !important;
   background: ${({ theme }) => theme.token.colorPrimaryBg} !important;
   box-shadow: none !important;
+  border-color: transparent !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  &:hover {
-    border-style: none;
-    color: ${({ theme }) => theme.token.colorPrimary} !important;
-    border-color: ${({ theme }) => theme.token.colorPrimary} !important;
-    background: ${({ theme }) => theme.token.colorPrimaryBgHover} !important;
-  }
+  padding: 0 !important;
+  margin-inline-end: 16px;
 
   .anticon {
-    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+
+    svg {
+      width: 20px !important;
+      height: 32px !important;
+    }
   }
 `;
 
 interface Props {
-  clusterId: string,
-  allowedExtensions?: string[]
-  allowedFileType: FileType[],
+  clusterId: string;
+  allowedExtensions?: string[];
+  allowedFileType: FileType[];
   onSubmit: (path: string) => void;
   usePublicPath?: boolean; // 是否使用集群配置文件ai的clusterPublicPath
 }
@@ -75,10 +80,9 @@ interface DirContent {
   mtime: string;
   size: number;
   mode: number;
-};
+}
 
 function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
-
   const sortedData = data.sort((a, b) => {
     if (a.type === "DIR" && b.type !== "DIR") {
       return -1;
@@ -96,11 +100,15 @@ function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
   }));
 }
 
-function updateTreeData(treeData: DataNode[], rootPath: string,
-  targetKey: string, newChildren: DirContent[]): DataNode[] {
+function updateTreeData(
+  treeData: DataNode[],
+  rootPath: string,
+  targetKey: string,
+  newChildren: DirContent[],
+): DataNode[] {
   if (targetKey === rootPath) {
     return convertToDirTree(newChildren, rootPath);
-  };
+  }
   return treeData.map((node) => {
     // 如果找到了目标节点（即当前目录）
     if (node.key === targetKey) {
@@ -116,7 +124,7 @@ function updateTreeData(treeData: DataNode[], rootPath: string,
 
     return node;
   });
-};
+}
 
 // 处理path的特殊情况,比如为空或者不以"/"开头
 const formatPath = (path: string) => {
@@ -131,12 +139,11 @@ const formatPath = (path: string) => {
 
 const NON_UTF8_PREFIX = "scow-enc-";
 
-const hasNonUtf8Segment = (targetPath: string) => (
+const hasNonUtf8Segment = (targetPath: string) =>
   targetPath
     .split("/")
     .filter(Boolean)
-    .some((segment) => segment.startsWith(NON_UTF8_PREFIX))
-);
+    .some((segment) => segment.startsWith(NON_UTF8_PREFIX));
 
 export const FileSelectModal: React.FC<Props> = ({
   clusterId,
@@ -145,7 +152,6 @@ export const FileSelectModal: React.FC<Props> = ({
   onSubmit,
   usePublicPath,
 }) => {
-
   const onlyFile = allowedFileType.length === 1 && allowedFileType[0] === "FILE";
 
   const t = useI18nTranslateToString();
@@ -212,7 +218,11 @@ export const FileSelectModal: React.FC<Props> = ({
   }, [visible, isPublicPathMode, homeDir?.path, path]);
 
   // 查询目录内容
-  const { data: curDirContent, refetch, isLoading: isDirContentLoading } = trpc.file.listDirectory.useQuery(
+  const {
+    data: curDirContent,
+    refetch,
+    isLoading: isDirContentLoading,
+  } = trpc.file.listDirectory.useQuery(
     {
       clusterId: clusterId,
       path,
@@ -238,9 +248,7 @@ export const FileSelectModal: React.FC<Props> = ({
 
     // 检查当前路径是否在边界内
     if (!isParentOrSameFolder(actualBoundary, path)) {
-      const errorMessage = isPublicPathMode
-        ? t(p("onlyPublicPath"))
-        : t(p("onlyHomeDir"));
+      const errorMessage = isPublicPathMode ? t(p("onlyPublicPath")) : t(p("onlyHomeDir"));
 
       message.info(errorMessage);
       setPath(prevPath);
@@ -273,8 +281,7 @@ export const FileSelectModal: React.FC<Props> = ({
     return curDirContent?.filter((x) => keys.includes(fileInfoKey(x, path))) ?? [];
   };
 
-  const onDirExpand = (expandDirs: Key[],
-    { node, expanded }: { node: EventDataNode<DataNode>, expanded: boolean }) => {
+  const onDirExpand = (expandDirs: Key[], { node, expanded }: { node: EventDataNode<DataNode>; expanded: boolean }) => {
     const expandDirSet = new Set(expandDirs);
     if (!expanded) {
       node.children?.forEach((children) => {
@@ -342,8 +349,10 @@ export const FileSelectModal: React.FC<Props> = ({
   };
 
   const checkFileSelectability = (fileInfo: FileInfo) => {
-    return allowedFileType.includes(fileInfo.type)
-      && (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)));
+    return (
+      allowedFileType.includes(fileInfo.type) &&
+      (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)))
+    );
   };
 
   const getNotAllowedMessage = () => {
@@ -369,21 +378,27 @@ export const FileSelectModal: React.FC<Props> = ({
       <FolderTriggerButton
         size="small"
         disabled={!clusterId}
-        style={!clusterId ? {
-          pointerEvents: "none", // 让点击事件穿透到 span
-          opacity: 0.5, // 降低不透明度变灰
-          filter: "grayscale(1)", // 强制灰度
-        } : {}}
+        style={
+          !clusterId
+            ? {
+                pointerEvents: "none", // 让点击事件穿透到 span
+                opacity: 0.5, // 降低不透明度变灰
+                filter: "grayscale(1)", // 强制灰度
+              }
+            : {}
+        }
         onClick={() => {
           setVisible(true);
         }}
       >
-        <FolderOutlined />
+        <FileIcon />
       </FolderTriggerButton>
       <Modal
         width={1000}
         open={visible}
-        onCancel={() => { closeModal(); }}
+        onCancel={() => {
+          closeModal();
+        }}
         destroyOnClose
         title={onlyFile ? t(p("selectFile")) : t(p("select"))}
         centered
@@ -412,26 +427,33 @@ export const FileSelectModal: React.FC<Props> = ({
               >
                 {t(p("mkdir"))}
               </MkdirButton>
-              {
-                scowClusterConfigs[clusterId]?.scowdEnabled && (
-                  <DecompressionModalButton
-                    clusterId={clusterId}
-                    reload={async () => {
-                      await refetch();
-                      setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
-                    }}
-                    sourcePath={path}
-                    files={keysToFiles(selectedKeys)}
-                    usePublicPath={usePublicPath}
-                  >
-                    {t(p("depression"))}
-                  </DecompressionModalButton>
-                )
-              }
+              {scowClusterConfigs[clusterId]?.scowdEnabled && (
+                <DecompressionModalButton
+                  clusterId={clusterId}
+                  reload={async () => {
+                    await refetch();
+                    setDirTree(updateTreeData(dirTree, boundaryPath, path, curDirContent ?? []));
+                  }}
+                  sourcePath={path}
+                  files={keysToFiles(selectedKeys)}
+                  usePublicPath={usePublicPath}
+                >
+                  {t(p("depression"))}
+                </DecompressionModalButton>
+              )}
             </div>
             <div key="right">
-              <Button key="cancel" onClick={() => { closeModal(); }}>{t("button.cancelButton")}</Button>
-              <Button key="ok" type="primary" onClick={onOkClick}>{t("button.confirmButton")}</Button>
+              <Button
+                key="cancel"
+                onClick={() => {
+                  closeModal();
+                }}
+              >
+                {t("button.cancelButton")}
+              </Button>
+              <Button key="ok" type="primary" onClick={onOkClick}>
+                {t("button.confirmButton")}
+              </Button>
             </div>
           </div>,
         ]}
@@ -450,33 +472,33 @@ export const FileSelectModal: React.FC<Props> = ({
                 }
               }}
               breadcrumbItemRender={(segment, index, curPath) =>
-                index === 0
-                  ? (
-                    <Link
-                      href=""
-                      onClick={(e) => onClickLink(e, "/")}
-                    ><DatabaseOutlined /></Link>
-                  )
-                  : (
-                    <Link
-                      href=""
-                      onClick={(e) => onClickLink(e, curPath)}
-                    >
-                      {segment}
-                    </Link>
-                  )
+                index === 0 ? (
+                  <Link href="" onClick={(e) => onClickLink(e, "/")}>
+                    <DatabaseOutlined />
+                  </Link>
+                ) : (
+                  <Link href="" onClick={(e) => onClickLink(e, curPath)}>
+                    {segment}
+                  </Link>
+                )
               }
             />
           </TopBar>
-          <div style={{
-            display: "flex", flexDirection: "row",
-            width: "100%", alignItems: "flex-start",
-          }}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              alignItems: "flex-start",
+            }}
           >
             <DirectoryTree
               style={{
-                width: 240, height: 541, overflow: "auto",
-                border: "1px solid #e0e0e0", borderRadius: "5px",
+                width: 240,
+                height: 541,
+                overflow: "auto",
+                border: "1px solid #e0e0e0",
+                borderRadius: "5px",
               }}
               showLine
               selectedKeys={[path]}
@@ -485,17 +507,27 @@ export const FileSelectModal: React.FC<Props> = ({
               onExpand={onDirExpand}
               treeData={dirTree}
             />
-            <div style={{
-              width: "100%", overflowX: "auto", marginLeft: "6px",
-              display: "flex", flex: 1, border: "1px solid #e0e0e0", borderRadius: "5px",
-            }}
+            <div
+              style={{
+                width: "100%",
+                overflowX: "auto",
+                marginLeft: "6px",
+                display: "flex",
+                flex: 1,
+                border: "1px solid #e0e0e0",
+                borderRadius: "5px",
+              }}
             >
               <FileTable
                 style={{ flex: 1, overflowX: "auto" }}
                 files={curDirContent || []}
                 filesFilter={(files) => files.filter((file) => !file.name.startsWith("."))}
                 loading={isDirContentLoading}
-                fileNameRender={(fileName: string) => <Button style={{ color: "#000" }} type="link">{fileName}</Button>}
+                fileNameRender={(fileName: string) => (
+                  <Button style={{ color: "#000" }} type="link">
+                    {fileName}
+                  </Button>
+                )}
                 hiddenColumns={["mtime", "mode", "action"]}
                 pagination={false}
                 rowKey={(r: FileInfo): React.Key => join(path, r.name)}
@@ -522,7 +554,6 @@ export const FileSelectModal: React.FC<Props> = ({
                 scroll={{ x: true, y: 500 }}
               />
             </div>
-
           </div>
         </ModalContainer>
       </Modal>

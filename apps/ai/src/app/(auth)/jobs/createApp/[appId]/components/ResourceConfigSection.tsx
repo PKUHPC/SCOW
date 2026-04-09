@@ -1,21 +1,21 @@
-import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
+
+import { RoundedButton as ClusterButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { AddonAfterSelect, RoundedInputNumberWithAddonAfter } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
+import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
+import {
+  SectionTitle,
+  TitledSectionCard as SectionCard,
+} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { Form, type FormInstance, Select, Space, Tooltip } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { useQueueTabSelection } from "src/app/(auth)/jobs/hooks/useQueueTabSelection";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { useTheme } from "styled-components";
 
-import {
-  ClusterButton,
-  Label,
-  RoundedAfterInputNumber,
-  RoundedInputNumber,
-  RoundedSelect,
-  SectionCard,
-  SectionTitle,
-  StyledTable,
-  StyledTabs,
-} from "../LaunchAppForm.styles";
 import type {
   CPUQueueRow,
   GPUQueueRow,
@@ -87,24 +87,18 @@ export const ResourceConfigSection = ({
   convertDurationToHours,
   isResubmit,
 }: ResourceConfigSectionProps) => {
-  const theme = useTheme();
   const t = useI18nTranslateToString();
-  const {
-    sortedGpuRows,
-    sortedCpuRows,
-    handleTabChange,
-    markAccountTouched,
-    markClusterTouched,
-  } = useQueueTabSelection({
-    gpuRows,
-    cpuRows,
-    activeResourceTab,
-    onActiveResourceTabChange,
-    selectedQueueKey,
-    onQueueSelect,
-    syncQueueField: (tab) => form.setFieldValue("queue", tab),
-    isResubmit,
-  });
+  const { sortedGpuRows, sortedCpuRows, handleTabChange, markAccountTouched, markClusterTouched } =
+    useQueueTabSelection({
+      gpuRows,
+      cpuRows,
+      activeResourceTab,
+      onActiveResourceTabChange,
+      selectedQueueKey,
+      onQueueSelect,
+      syncQueueField: (tab) => form.setFieldValue("queue", tab),
+      isResubmit,
+    });
 
   const gpuTab = {
     key: "gpu",
@@ -150,8 +144,7 @@ export const ResourceConfigSection = ({
           onChange: (keys) => onQueueSelect(keys[0] as string),
           getCheckboxProps: () => ({ disabled: false }),
         }}
-        rowClassName={(record) =>
-          activeResourceTab === "cpu" && record.id === selectedQueueKey ? "selected-row" : ""}
+        rowClassName={(record) => (activeResourceTab === "cpu" && record.id === selectedQueueKey ? "selected-row" : "")}
       />
     ),
   };
@@ -167,17 +160,8 @@ export const ResourceConfigSection = ({
 
   return (
     <SectionCard title={<SectionTitle>{t(p("title"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-        initialValues={{ queue: activeResourceTab }}
-      >
-        <InlineFormItem
-          name="account"
-          label={<Label>{t(p("accountLabel"))}</Label>}
-          rules={[{ required: true }]}
-        >
+      <Form form={form} colon={false} requiredMark={false} initialValues={{ queue: activeResourceTab }}>
+        <InlineFormItem name="account" label={<Label>{t(p("accountLabel"))}</Label>} rules={[{ required: true }]}>
           <RoundedSelect
             size="large"
             options={accountOptions}
@@ -189,11 +173,7 @@ export const ResourceConfigSection = ({
           />
         </InlineFormItem>
 
-        <InlineFormItem
-          name="cluster"
-          label={<Label>{t(p("clusterLabel"))}</Label>}
-          rules={[{ required: true }]}
-        >
+        <InlineFormItem name="cluster" label={<Label>{t(p("clusterLabel"))}</Label>} rules={[{ required: true }]}>
           <Space wrap>
             {clusterOptions.map(({ id, name, disabled }) => {
               const button = (
@@ -204,7 +184,9 @@ export const ResourceConfigSection = ({
                   $selected={selectedCluster === id}
                   disabled={disabled}
                   onClick={() => {
-                    if (disabled) { return; }
+                    if (disabled) {
+                      return;
+                    }
                     markClusterTouched();
                     form.setFieldValue("cluster", id);
                   }}
@@ -226,29 +208,17 @@ export const ResourceConfigSection = ({
           </Space>
         </InlineFormItem>
 
-        <InlineFormItem
-          name="queue"
-          label={<Label>{t(p("queueLabel"))}</Label>}
-          rules={[{ required: true }]}
-        >
-          <StyledTabs
-            activeKey={activeResourceTab}
-            onChange={handleTabChange}
-            type="line"
-            items={[gpuTab, cpuTab]}
-          />
+        <InlineFormItem name="queue" label={<Label>{t(p("queueLabel"))}</Label>} rules={[{ required: true }]}>
+          <StyledTabs activeKey={activeResourceTab} onChange={handleTabChange} type="line" items={[gpuTab, cpuTab]} />
         </InlineFormItem>
 
-        <InlineFormItem
-          name="priority"
-          label={<Label>{t(p("priorityLabel"))}</Label>}
-          rules={[{ required: true }]}
-        >
+        <InlineFormItem name="priority" label={<Label>{t(p("priorityLabel"))}</Label>} rules={[{ required: true }]}>
           <RoundedSelect
             size="large"
             options={qosOptions.map((qos) => ({ label: qos, value: qos }))}
             placeholder={t(p("priorityPlaceholder"))}
             disabled={!qosOptions.length}
+            style={{ width: "480px" }}
           />
         </InlineFormItem>
 
@@ -265,7 +235,7 @@ export const ResourceConfigSection = ({
               precision={0}
               max={gpuInputMax}
               disabled={!selectedQueueOption}
-              style={{ width: "50%" }}
+              style={{ width: "480px" }}
             />
           </InlineFormItem>
         ) : (
@@ -278,9 +248,9 @@ export const ResourceConfigSection = ({
               size="large"
               min={1}
               precision={0}
-              max={ selectedQueueOption ? (selectedQueueOption?.totalUnits / selectedQueueOption.totalNodes) : 1}
+              max={selectedQueueOption ? selectedQueueOption?.totalUnits / selectedQueueOption.totalNodes : 1}
               disabled={!selectedQueueOption}
-              style={{ width: "50%" }}
+              style={{ width: "480px" }}
             />
           </InlineFormItem>
         )}
@@ -289,7 +259,7 @@ export const ResourceConfigSection = ({
           label={<Label>{t(p("maxRunTimeLabel"))}</Label>}
           name="maxTime"
           rules={[
-            { required:true, message: t(p("maxRunTimeRequired")) },
+            { required: true, message: t(p("maxRunTimeRequired")) },
             {
               validator: (_, value) => {
                 if (value <= 0) {
@@ -298,33 +268,30 @@ export const ResourceConfigSection = ({
                 if (maxJobRunningTimeHours !== undefined) {
                   const valueInHours = convertDurationToHours(value, maxTimeUnit);
                   if (valueInHours > maxJobRunningTimeHours) {
-                    return Promise.reject(
-                      new Error(t(p("maxRunTimeExceed"), [maxJobRunningTimeHours.toString()])),
-                    );
+                    return Promise.reject(new Error(t(p("maxRunTimeExceed"), [maxJobRunningTimeHours.toString()])));
                   }
                 }
                 return Promise.resolve();
               },
-            }]}
+            },
+          ]}
         >
-          <RoundedAfterInputNumber
+          <RoundedInputNumberWithAddonAfter
             size="large"
             min={1}
             step={1}
-            theme={theme}
-            style={{ width: "50%", minWidth:"130px" }}
-            addonAfter={(
-              <RoundedSelect
-                $noShadow
-                style={{ minWidth: "70px" }}
+            style={{ width: "calc(480px - 72px)", minWidth: "130px" }}
+            addonAfter={
+              <AddonAfterSelect
+                style={{ minWidth: "72px" }}
                 value={maxTimeUnit}
                 onChange={(value) => onMaxTimeUnitChange(value as MaxTimeUnit)}
               >
                 <Select.Option value="min">{t(p("durationUnits.minute"))}</Select.Option>
                 <Select.Option value="hour">{t(p("durationUnits.hour"))}</Select.Option>
                 <Select.Option value="day">{t(p("durationUnits.day"))}</Select.Option>
-              </RoundedSelect>
-            )}
+              </AddonAfterSelect>
+            }
           />
         </InlineFormItem>
       </Form>

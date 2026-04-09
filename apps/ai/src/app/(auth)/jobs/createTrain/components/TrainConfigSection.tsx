@@ -1,33 +1,31 @@
-import { Form, type FormInstance, Space, Switch } from "antd";
 import type { ReactNode } from "react";
+import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+
+import { Checkbox } from "@scow/lib-web/build/components/styledAntdCom/Checkbox";
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import {
+  SectionTitle,
+  TitledSectionCard as SectionCard,
+} from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { Form, type FormInstance, Space, Switch } from "antd";
 import { CommandInputField } from "src/app/(auth)/jobs/CommandInputField";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { EnvironmentVariableList } from "src/app/(auth)/jobs/EnvironmentVariableList";
+import {
+  ImageDescriptionBox,
+  ImageSegmentedControl,
+  ImageSelectorWrapper,
+} from "src/app/(auth)/jobs/LaunchJobForm.styles";
 import { MountPointList } from "src/app/(auth)/jobs/MountPointList";
-import type { ResourceCategory } from "src/app/(auth)/jobs/ResourceSelectorList";
+import { PublicImageOption } from "src/app/(auth)/jobs/PublicImageOption";
 import { ResourceSelectorList } from "src/app/(auth)/jobs/ResourceSelectorList";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useTheme } from "styled-components";
 
-import { PublicImageOption } from "../../PublicImageOption";
-import {
-  ImageDescriptionBox,
-  ImageSegmentedControl,
-  ImageSelectorWrapper,
-  Label,
-  RoundedInput,
-  RoundedPasswordInput,
-  RoundedSelect,
-  SectionCard,
-  SectionTitle,
-  SubtleCheckbox,
-} from "../LaunchTrainForm.styles";
-import type {
-  ImageOption,
-  TrainAppFormValues,
-  TrainImageSourceKey,
-} from "../LaunchTrainForm.types";
+import type { ImageOption, TrainAppFormValues, TrainImageSourceKey } from "../LaunchTrainForm.types";
 
 interface ImageSourceTab {
   key: TrainImageSourceKey;
@@ -88,13 +86,14 @@ export const TrainConfigSection = ({
 
   return (
     <SectionCard title={<SectionTitle>{t(p("trainTitle"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-      >
+      <Form form={form} colon={false} requiredMark={false}>
         <InlineFormItem
-          label={(<Label>{t(p("imageField.label"))}<span style={{ color: "red", marginLeft: 4 }}>*</span></Label>)}
+          label={
+            <Label>
+              {t(p("imageField.label"))}
+              <span style={{ color: "red", marginLeft: 4 }}>*</span>
+            </Label>
+          }
         >
           <ImageSelectorWrapper>
             <ImageSegmentedControl
@@ -118,12 +117,8 @@ export const TrainConfigSection = ({
                     onBlur={() => form.validateFields(["image"])}
                   />
                 </Form.Item>
-                <Form.Item
-                  name="usePrivateImage"
-                  valuePropName="checked"
-                  noStyle
-                >
-                  <SubtleCheckbox>{t(p("imageField.usePrivateImage"))}</SubtleCheckbox>
+                <Form.Item name="usePrivateImage" valuePropName="checked" noStyle>
+                  <Checkbox>{t(p("imageField.usePrivateImage"))}</Checkbox>
                 </Form.Item>
                 {usePrivateRemoteImage ? (
                   <Space direction="vertical" size={8} style={{ width: "100%", marginTop: 8 }}>
@@ -132,10 +127,7 @@ export const TrainConfigSection = ({
                       noStyle
                       rules={[{ required: true, message: t(p("imageField.remoteUsernameRequired")) }]}
                     >
-                      <RoundedInput
-                        size="large"
-                        placeholder={t(p("imageField.remoteUsernamePlaceholder"))}
-                      />
+                      <RoundedInput size="large" placeholder={t(p("imageField.remoteUsernamePlaceholder"))} />
                     </Form.Item>
                     <Form.Item
                       name="remotePassword"
@@ -163,51 +155,41 @@ export const TrainConfigSection = ({
                     placeholder={imagePlaceholder}
                     options={imageOptions}
                     style={{ width: "100%" }}
-                    loading={(selectedImageSource === "mine" || selectedImageSource === "public") ?
-                      isImagesLoading : false}
+                    loading={
+                      selectedImageSource === "mine" || selectedImageSource === "public" ? isImagesLoading : false
+                    }
                     optionLabelProp="displayLabel"
                     optionRender={(option) => {
                       if (selectedImageSource !== "public") {
                         return option.label;
                       }
                       const data = option.data as ImageOption;
-                      const labelText = typeof option.label === "string"
-                        ? option.label
-                        : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
+                      const labelText =
+                        typeof option.label === "string" ? option.label : `${data.rawName ?? ""}:${data.rawTag ?? ""}`;
                       const [labelName = "", labelTag = ""] = labelText.split(":").map((value) => value.trim());
                       const name = data.rawName ?? labelName;
                       const tag = data.rawTag ?? labelTag;
-                      return data.displayLabel ?? (
-                        <PublicImageOption
-                          name={name}
-                          tag={tag}
-                          ownerName={data.ownerName}
-                          ownerId={data.ownerId}
-                        />
+                      return (
+                        data.displayLabel ?? (
+                          <PublicImageOption name={name} tag={tag} ownerName={data.ownerName} ownerId={data.ownerId} />
+                        )
                       );
                     }}
                   />
                 </Form.Item>
                 {selectedImageOption?.description && (
-                  <ImageDescriptionBox>
-                    {selectedImageOption?.description}
-                  </ImageDescriptionBox>
+                  <ImageDescriptionBox>{selectedImageOption?.description}</ImageDescriptionBox>
                 )}
               </>
             )}
           </ImageSelectorWrapper>
         </InlineFormItem>
 
-        <InlineFormItem
-          name="command"
-          label={<Label>{t(p("commandLabel"))}</Label>}
-        >
+        <InlineFormItem name="command" label={<Label>{t(p("commandLabel"))}</Label>}>
           <CommandInputField defaultCommand={currentCommandDefault} />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(p("datasets.label"))}</Label>}
-        >
+        <InlineFormItem label={<Label>{t(p("datasets.label"))}</Label>}>
           <ResourceSelectorList
             name="datasets"
             placeholder={datasetsPlaceholder}
@@ -218,9 +200,7 @@ export const TrainConfigSection = ({
           />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(p("algorithms.label"))}</Label>}
-        >
+        <InlineFormItem label={<Label>{t(p("algorithms.label"))}</Label>}>
           <ResourceSelectorList
             name="algorithms"
             placeholder={algorithmsPlaceholder}
@@ -231,9 +211,7 @@ export const TrainConfigSection = ({
           />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(p("models.label"))}</Label>}
-        >
+        <InlineFormItem label={<Label>{t(p("models.label"))}</Label>}>
           <ResourceSelectorList
             name="models"
             placeholder={modelsPlaceholder}
@@ -258,9 +236,7 @@ export const TrainConfigSection = ({
           <EnvironmentVariableList />
         </InlineFormItem>
 
-        <InlineFormItem
-          label={<Label>{t(p("tensorBoard.label"))}</Label>}
-        >
+        <InlineFormItem label={<Label>{t(p("tensorBoard.label"))}</Label>}>
           <div style={{ width: "60%", minHeight: controlHeightLg, display: "flex", alignItems: "center", gap: 12 }}>
             <Form.Item
               name="needTensorBoard"
@@ -275,15 +251,13 @@ export const TrainConfigSection = ({
               <Form.Item
                 name="tensorBoardDataPath"
                 style={{ flex: 1, marginBottom: 0 }}
-                rules={[
-                  { required: true, message:t(p("tensorBoard.dataPathRequired")) },
-                ]}
+                rules={[{ required: true, message: t(p("tensorBoard.dataPathRequired")) }]}
               >
                 <RoundedInput
                   size="large"
                   disabled
                   placeholder={t(p("tensorBoard.dataPathPlaceholder"))}
-                  suffix={(
+                  prefix={
                     <FileSelectModal
                       allowedFileType={["DIR"]}
                       onSubmit={(path: string) => {
@@ -292,7 +266,7 @@ export const TrainConfigSection = ({
                       }}
                       clusterId={clusterId}
                     />
-                  )}
+                  }
                 />
               </Form.Item>
             ) : null}
