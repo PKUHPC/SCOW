@@ -270,7 +270,8 @@ export default {
         decompressButtonDisabledTooltip: ".zip, .tar, .tar.gz, .gz, .tgz 파일만 지원됩니다",
         storageQuota: "저장 할당량",
         usage: "사용량",
-        storageQuotaTooltip: "현재 파일 시스템은 백업으로 추가 공간을 사용합니다. 따라서 사용량이 실제 파일 크기보다 높게 표시될 수 있습니다",
+        storageQuotaTooltip:
+          "현재 파일 시스템은 백업으로 추가 공간을 사용합니다. 따라서 사용량이 실제 파일 크기보다 높게 표시될 수 있습니다",
         failedResolveSymlink: "심볼릭 링크 해석 실패",
         noAccessPermission: "접근 권한 없음",
         noPath: "경로를 찾을 수 없습니다. 확인하세요",
@@ -319,7 +320,8 @@ export default {
           deleteConfirmOk: "확인",
           deleteSuccessMessage: "삭제 성공",
           submitConfirmTitle: "제출 확인",
-          submitConfirmNotice: "스크립트 파일이 유효한 절대 경로를 작업 디렉토리로 지정했는지 확인하세요. 지정하지 않으면 스크립트 파일의 디렉토리가 기본 작업 디렉토리로 사용됩니다",
+          submitConfirmNotice:
+            "스크립트 파일이 유효한 절대 경로를 작업 디렉토리로 지정했는지 확인하세요. 지정하지 않으면 스크립트 파일의 디렉토리가 기본 작업 디렉토리로 사용됩니다",
           submitConfirmContent: "{} 를 {} 에 제출하시겠습니까?",
           submitConfirmOk: "확인",
           submitSuccessMessage: "제출 성공! 새 작업 ID: {}",
@@ -372,6 +374,7 @@ export default {
         calculateHashError: "해시 계산 오류: {}",
         uploadFileListNotExist: "업로드 파일 목록에 없습니다: {}",
         mergeFileChunksErrorText: "파일 {} 병합 실패. {}",
+        isNotFile: "업로드하려면 파일을 드래그하세요",
         isMerging: "병합 중...",
       },
       uploadDirModal: {
@@ -396,6 +399,7 @@ export default {
         calculateHashError: "해시 계산 오류: {}",
         uploadFileListNotExist: "업로드 파일 목록에 없습니다: {}",
         mergeFileChunksErrorText: "파일 {} 병합 실패. {}",
+        isNotDir: "업로드하려면 폴더를 드래그하세요",
         isMerging: "병합 중...",
       },
     },
@@ -597,7 +601,8 @@ export default {
       pageNotExist: "요청한 페이지가 존재하지 않습니다",
       serverWrong: "서버 오류",
       sorry: "죄송합니다. 서버 오류가 발생했습니다. 새로고침 후 다시 시도하세요",
-      clusterNotAvailable: "현재 접근 중인 클러스터를 사용할 수 없거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요",
+      clusterNotAvailable:
+        "현재 접근 중인 클러스터를 사용할 수 없거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요",
     },
     others: {
       clusterSelector: "클러스터를 선택하세요",
@@ -699,7 +704,8 @@ export default {
       otherError: "서버 오류 발생",
       adapterConnectionError: "{} 클러스터에 현재 연결할 수 없습니다. 나중에 다시 시도하세요",
       noActivatedClusters: "사용 가능한 클러스터가 없습니다. 페이지 새로고침 후 다시 시도하세요",
-      notExistInActivatedClusters: "조회 중인 클러스터가 비활성화되었을 수 있습니다. 페이지 새로고침 후 다시 시도하세요",
+      notExistInActivatedClusters:
+        "조회 중인 클러스터가 비활성화되었을 수 있습니다. 페이지 새로고침 후 다시 시도하세요",
       noClusters: "클러스터 구성 파일을 찾을 수 없습니다. 관리자에게 문의하세요",
     },
     dashboard: {

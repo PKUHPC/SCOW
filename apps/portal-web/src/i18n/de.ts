@@ -1,8 +1,8 @@
 export default {
   common: {
     finalError: "Anfrage fehlgeschlagen, bitte versuchen Sie es später erneut",
-    noSpaceError: "Unzureichender Speicherplatz,"
-    + " bitte bereinigen Sie den Speicher oder kontaktieren Sie den Administrator",
+    noSpaceError:
+      "Unzureichender Speicherplatz," + " bitte bereinigen Sie den Speicher oder kontaktieren Sie den Administrator",
     timeSubmit: "Abgabezeit",
     startTime: "Startzeit",
     endTime: "Endzeit",
@@ -80,8 +80,9 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Zeit",
-          popoverTitle: "Alle aktiven Jobs (Einreichen, Warten, Starten, Laufen, Fehlgeschlagen, Abgeschlossen)"
-          + " in diesem Zeitraum abfragen",
+          popoverTitle:
+            "Alle aktiven Jobs (Einreichen, Warten, Starten, Laufen, Fehlgeschlagen, Abgeschlossen)" +
+            " in diesem Zeitraum abfragen",
           jobId: "Job-ID",
         },
         tableInfo: {
@@ -174,12 +175,13 @@ export default {
         hours: "Stunden",
         days: "Tage",
         workingDirectory: "Arbeitsverzeichnis",
-        wdTooltip1: "1. Bitte absoluten Pfad eingeben."
-        + " Relative Pfade beziehen sich auf das Home-Verzeichnis des Benutzers",
-        wdTooltip2: "2. Wenn das angegebene Verzeichnis nicht zugänglich ist,"
-        + " schlägt die Einreichung oder Ausführung fehl",
-        wdTooltip3: "Diese Datei dient zum Speichern des vom Adapter zurückgegebenen Skripts."
-        + " Der Standardwert bezieht sich auf die Ausgabedatei",
+        wdTooltip1:
+          "1. Bitte absoluten Pfad eingeben." + " Relative Pfade beziehen sich auf das Home-Verzeichnis des Benutzers",
+        wdTooltip2:
+          "2. Wenn das angegebene Verzeichnis nicht zugänglich ist," + " schlägt die Einreichung oder Ausführung fehl",
+        wdTooltip3:
+          "Diese Datei dient zum Speichern des vom Adapter zurückgegebenen Skripts." +
+          " Der Standardwert bezieht sich auf die Ausgabedatei",
         output: "Standardausgabedatei",
         errorOutput: "Fehlerausgabedatei",
         saveJobSubmissionFile: "Jobeinreichungsdatei speichern",
@@ -275,8 +277,9 @@ export default {
         decompressButtonDisabledTooltip: "Dekomprimierung wird nur für .zip, .tar, .tar.gz, .gz und .tgz unterstützt",
         storageQuota: "Speicherquota",
         usage: "Nutzung",
-        storageQuotaTooltip: "Das aktuelle Dateisystem hat Backups eingerichtet,"
-        + " die zusätzlichen Speicher belegen. Die Nutzung kann daher höher als die tatsächliche Dateigröße sein",
+        storageQuotaTooltip:
+          "Das aktuelle Dateisystem hat Backups eingerichtet," +
+          " die zusätzlichen Speicher belegen. Die Nutzung kann daher höher als die tatsächliche Dateigröße sein",
         failedResolveSymlink: "Symbolischen Link auflösen fehlgeschlagen",
         noAccessPermission: "Keine Zugriffsberechtigung",
         noPath: "Pfad nicht gefunden, bitte prüfen",
@@ -325,9 +328,10 @@ export default {
           deleteConfirmOk: "Bestätigen",
           deleteSuccessMessage: "Erfolgreich gelöscht",
           submitConfirmTitle: "Senden bestätigen",
-          submitConfirmNotice: "Bitte stellen Sie sicher,"
-          + "dass das Skript einen gültigen absoluten Pfad als Arbeitsverzeichnis angibt."
-          + " Ohne Angabe wird das Verzeichnis der Skriptdatei verwendet",
+          submitConfirmNotice:
+            "Bitte stellen Sie sicher," +
+            "dass das Skript einen gültigen absoluten Pfad als Arbeitsverzeichnis angibt." +
+            " Ohne Angabe wird das Verzeichnis der Skriptdatei verwendet",
           submitConfirmContent: "{} nach {} senden?",
           submitConfirmOk: "Bestätigen",
           submitSuccessMessage: "Erfolgreich gesendet! Neue Job-ID: {}",
@@ -380,6 +384,7 @@ export default {
         calculateHashError: "Fehler bei Hash-Berechnung: {}",
         uploadFileListNotExist: "Hochgeladene Datei existiert nicht in Liste: {}",
         mergeFileChunksErrorText: "Zusammenfügen der Datei {} fehlgeschlagen. {}",
+        isNotFile: "Bitte ziehen Sie Dateien zum Hochladen hierher",
         isMerging: "Zusammenfügen läuft...",
       },
       uploadDirModal: {
@@ -404,6 +409,7 @@ export default {
         calculateHashError: "Fehler bei Hash-Berechnung: {}",
         uploadFileListNotExist: "Hochgeladene Datei existiert nicht in Liste: {}",
         mergeFileChunksErrorText: "Zusammenfügen der Datei {} fehlgeschlagen. {}",
+        isNotDir: "Bitte ziehen Sie Ordner zum Hochladen hierher",
         isMerging: "Zusammenfügen läuft...",
       },
     },
@@ -605,8 +611,9 @@ export default {
       pageNotExist: "Die angeforderte Seite existiert nicht",
       serverWrong: "Serverfehler",
       sorry: "Entschuldigung, ein Serverfehler ist aufgetreten. Bitte aktualisieren und erneut versuchen",
-      clusterNotAvailable: "Der aktuell aufgerufene Cluster ist nicht verfügbar oder es gibt keine "
-      + "verfügbaren Cluster. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator",
+      clusterNotAvailable:
+        "Der aktuell aufgerufene Cluster ist nicht verfügbar oder es gibt keine " +
+        "verfügbaren Cluster. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator",
     },
     others: {
       clusterSelector: "Bitte Cluster auswählen",
@@ -685,8 +692,8 @@ export default {
         reloadButton: "Aktualisieren und neu verbinden",
         popoverTitle: "Befehle",
         popoverContent1: "Zum Dateisystem wechseln",
-        popoverContent2: "Nach Eingabe dieses Befehls wechseln Sie ins"
-        + " Dateisystem und können Dateien hoch- und herunterladen",
+        popoverContent2:
+          "Nach Eingabe dieses Befehls wechseln Sie ins" + " Dateisystem und können Dateien hoch- und herunterladen",
         popoverContent3: "Datei herunterladen",
         popoverContentFile: "Dateiname",
         popoverContent4: "Durch Eingabe",
@@ -703,24 +710,26 @@ export default {
       },
     },
     _app: {
-      sshError: "Verbindung als Benutzer zum Login-Knoten nicht möglich."
-      + " Stellen Sie sicher, dass die Berechtigungen Ihres Home-Verzeichnisses 700, 750 oder 755 sind",
-      textExceedsLength: "Zu viele Terminal-Login-Meldungen."
-      + " Bitte reduzieren Sie unnötige Ausgaben in Dateien wie ~/.bashrc",
+      sshError:
+        "Verbindung als Benutzer zum Login-Knoten nicht möglich." +
+        " Stellen Sie sicher, dass die Berechtigungen Ihres Home-Verzeichnisses 700, 750 oder 755 sind",
+      textExceedsLength:
+        "Zu viele Terminal-Login-Meldungen." + " Bitte reduzieren Sie unnötige Ausgaben in Dateien wie ~/.bashrc",
       sftpError: "SFTP-Vorgang fehlgeschlagen. Haben Sie die nötigen Berechtigungen?",
       otherError: "Serverfehler",
       adapterConnectionError: "Cluster {} ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut",
       noActivatedClusters: "Keine verfügbaren Cluster. Bitte nach Aktualisierung erneut versuchen",
-      notExistInActivatedClusters: "Der abgefragte Cluster wurde möglicherweise deaktiviert."
-      + " Bitte nach Aktualisierung erneut versuchen",
+      notExistInActivatedClusters:
+        "Der abgefragte Cluster wurde möglicherweise deaktiviert." + " Bitte nach Aktualisierung erneut versuchen",
       noClusters: "Cluster-Konfigurationsdateien nicht gefunden. Bitte Administrator kontaktieren",
     },
     dashboard: {
       title: "Dashboard",
     },
     common: {
-      noAvailableClusters: "Derzeit sind keine Cluster verfügbar. "
-      + "Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator",
+      noAvailableClusters:
+        "Derzeit sind keine Cluster verfügbar. " +
+        "Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator",
       clusterNotAvailableForAccount: "Konto {0} hat keine Berechtigung für Cluster {1}",
       clusterPartitionNotAvailableForAccount: "Konto {0} hat keine Berechtigung für Cluster {1} und Partition {2}",
       userAccountNotAvailableWhenSubmit: "Benutzer {0} ist im Konto {1} nicht verfügbar",

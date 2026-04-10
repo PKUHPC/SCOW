@@ -79,8 +79,9 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Temps",
-          popoverTitle: "Interroger tous les jobs actifs"
-          + " (soumis, en attente, démarrés, en cours, échoués, terminés) sur cette plage de temps",
+          popoverTitle:
+            "Interroger tous les jobs actifs" +
+            " (soumis, en attente, démarrés, en cours, échoués, terminés) sur cette plage de temps",
           jobId: "ID du job",
         },
         tableInfo: {
@@ -173,12 +174,15 @@ export default {
         hours: "Heures",
         days: "Jours",
         workingDirectory: "Répertoire de travail",
-        wdTooltip1: "1. Saisissez un chemin absolu."
-        + " Un chemin relatif sera relatif au répertoire personnel de l'utilisateur.",
-        wdTooltip2: "2. Si le répertoire n'est pas accessible ou opérationnel,"
-        + " la soumission ou l'exécution du job échouera.",
-        wdTooltip3: "Ce fichier est utilisé pour enregistrer le script renvoyé par l'adaptateur ;"
-        + " la valeur par défaut fait référence au fichier de sortie.",
+        wdTooltip1:
+          "1. Saisissez un chemin absolu." +
+          " Un chemin relatif sera relatif au répertoire personnel de l'utilisateur.",
+        wdTooltip2:
+          "2. Si le répertoire n'est pas accessible ou opérationnel," +
+          " la soumission ou l'exécution du job échouera.",
+        wdTooltip3:
+          "Ce fichier est utilisé pour enregistrer le script renvoyé par l'adaptateur ;" +
+          " la valeur par défaut fait référence au fichier de sortie.",
         output: "Fichier de sortie standard",
         errorOutput: "Fichier de sortie d'erreur",
         saveJobSubmissionFile: "Enregistrer le fichier de soumission du job",
@@ -234,8 +238,9 @@ export default {
         saveFileSuccess: "Enregistré avec succès",
         fileSizeExceeded: "Fichier trop volumineux (maximum {}), veuillez télécharger et éditer",
         fileFetchAbortPrompt: "L'opération de récupération du fichier {} a été interrompue",
-        quotaLimit: "L'espace de stockage est inférieur à 10M."
-        + " L'enregistrement du fichier peut entraîner une perte de contenu",
+        quotaLimit:
+          "L'espace de stockage est inférieur à 10M." +
+          " L'enregistrement du fichier peut entraîner une perte de contenu",
       },
       createFileModal: {
         createErrorMessage: "Un fichier ou répertoire du même nom existe déjà",
@@ -272,13 +277,14 @@ export default {
         compressSelected: "Compresser",
         decompressionInProgress: "Décompression en cours : ",
         decompressionSelected: "Décompresser",
-        decompressButtonDisabledTooltip: "La décompression est uniquement supportée pour"
-        + " .zip, .tar, .tar.gz, .gz et .tgz",
+        decompressButtonDisabledTooltip:
+          "La décompression est uniquement supportée pour" + " .zip, .tar, .tar.gz, .gz et .tgz",
         storageQuota: "Quota de stockage",
         usage: "Utilisation",
-        storageQuotaTooltip: "Le système de fichiers actuel a des sauvegardes,"
-        + " ce qui utilise de l'espace supplémentaire ;"
-        + " l'utilisation peut être supérieure à la taille réelle des fichiers",
+        storageQuotaTooltip:
+          "Le système de fichiers actuel a des sauvegardes," +
+          " ce qui utilise de l'espace supplémentaire ;" +
+          " l'utilisation peut être supérieure à la taille réelle des fichiers",
         failedResolveSymlink: "Échec de la résolution du lien symbolique",
         noAccessPermission: "Permission d'accès refusée",
         noPath: "Chemin introuvable, veuillez vérifier",
@@ -327,8 +333,9 @@ export default {
           deleteConfirmOk: "Confirmer",
           deleteSuccessMessage: "Suppression réussie",
           submitConfirmTitle: "Confirmer la soumission",
-          submitConfirmNotice: "Assurez-vous que le fichier script spécifie un chemin absolu valide"
-          + " comme répertoire de travail ; sinon, le répertoire du fichier script sera utilisé par défaut",
+          submitConfirmNotice:
+            "Assurez-vous que le fichier script spécifie un chemin absolu valide" +
+            " comme répertoire de travail ; sinon, le répertoire du fichier script sera utilisé par défaut",
           submitConfirmContent: "Confirmer la soumission de {} à {} ?",
           submitConfirmOk: "Confirmer",
           submitSuccessMessage: "Soumis avec succès ! Nouvel ID de job : {}",
@@ -381,6 +388,7 @@ export default {
         calculateHashError: "Erreur de calcul du hash : {}",
         uploadFileListNotExist: "La liste des fichiers téléversés est introuvable : {}",
         mergeFileChunksErrorText: "Échec de fusion du fichier {}. {}",
+        isNotFile: "Veuillez glisser des fichiers pour les téléverser",
         isMerging: "Fusion en cours...",
       },
       uploadDirModal: {
@@ -405,6 +413,7 @@ export default {
         calculateHashError: "Erreur de calcul du hash : {}",
         uploadFileListNotExist: "La liste des fichiers téléversés est introuvable : {}",
         mergeFileChunksErrorText: "Échec de fusion du fichier {}. {}",
+        isNotDir: "Veuillez glisser des dossiers pour les téléverser",
         isMerging: "Fusion en cours...",
       },
     },
@@ -606,8 +615,9 @@ export default {
       pageNotExist: "La page que vous avez demandée n'existe pas",
       serverWrong: "Erreur du serveur",
       sorry: "Désolé, une erreur serveur est survenue. Veuillez rafraîchir et réessayer",
-      clusterNotAvailable: "Le cluster que vous consultez est indisponible ou aucun cluster n'est disponible."
-      + " Réessayez plus tard ou contactez l'administrateur",
+      clusterNotAvailable:
+        "Le cluster que vous consultez est indisponible ou aucun cluster n'est disponible." +
+        " Réessayez plus tard ou contactez l'administrateur",
     },
     others: {
       clusterSelector: "Veuillez sélectionner un cluster",
@@ -686,36 +696,39 @@ export default {
         reloadButton: "Actualiser et reconnecter",
         popoverTitle: "Commandes",
         popoverContent1: "Aller au système de fichiers ",
-        popoverContent2: "Après avoir saisi cette commande,"
-        + " vous accéderez au système de fichiers où vous pouvez téléverser et télécharger des fichiers",
+        popoverContent2:
+          "Après avoir saisi cette commande," +
+          " vous accéderez au système de fichiers où vous pouvez téléverser et télécharger des fichiers",
         popoverContent3: "Télécharger un fichier",
         popoverContentFile: "Nom du fichier",
         popoverContent4: "En saisissant",
         popoverContent5: ", le fichier du chemin courant sera téléchargé localement",
-        popoverContent6: "Les chemins relatifs ne sont pas supportés pour le moment."
-        + " Pour télécharger ou éditer des fichiers d'autres répertoires, utilisez",
+        popoverContent6:
+          "Les chemins relatifs ne sont pas supportés pour le moment." +
+          " Pour télécharger ou éditer des fichiers d'autres répertoires, utilisez",
         popoverContent7: "la commande pour accéder au système de fichiers",
         popoverContent8: "Exemple d'utilisation : ",
         popoverContent9: "Éditer un fichier",
         popoverContent10: "Après avoir saisi la commande ",
         popoverContent11: ", vous serez redirigé vers une page d'édition pour modifier le fichier spécifié",
         popoverContent12: "Téléverser des fichiers ",
-        popoverContent13: "En saisissant cette commande,"
-        + " vous pouvez téléverser des fichiers locaux vers le répertoire courant",
+        popoverContent13:
+          "En saisissant cette commande," + " vous pouvez téléverser des fichiers locaux vers le répertoire courant",
         command: "Commande",
       },
     },
     _app: {
-      sshError: "Impossible de se connecter en tant qu'utilisateur au nœud de connexion."
-      + " Assurez-vous que les permissions de votre répertoire personnel sont 700, 750 ou 755",
-      textExceedsLength: "Trop de messages de connexion au terminal."
-      + " Réduisez les sorties inutiles dans '~/.bashrc' et autres",
+      sshError:
+        "Impossible de se connecter en tant qu'utilisateur au nœud de connexion." +
+        " Assurez-vous que les permissions de votre répertoire personnel sont 700, 750 ou 755",
+      textExceedsLength:
+        "Trop de messages de connexion au terminal." + " Réduisez les sorties inutiles dans '~/.bashrc' et autres",
       sftpError: "Opération SFTP échouée. Vérifiez vos permissions",
       otherError: "Erreur du serveur",
       adapterConnectionError: "Le cluster {} est actuellement inaccessible. Réessayez plus tard",
       noActivatedClusters: "Aucun cluster disponible. Réessayez après rafraîchissement",
-      notExistInActivatedClusters: "Le(s) cluster(s) consulté(s) peut/peuvent avoir été désactivé(s)."
-      + " Réessayez après rafraîchissement",
+      notExistInActivatedClusters:
+        "Le(s) cluster(s) consulté(s) peut/peuvent avoir été désactivé(s)." + " Réessayez après rafraîchissement",
       noClusters: "Impossible de trouver les fichiers de configuration des clusters. Contactez l'administrateur",
     },
     dashboard: {
@@ -724,8 +737,8 @@ export default {
     common: {
       noAvailableClusters: "Aucun cluster disponible pour le moment. Réessayez plus tard ou contactez l'administrateur",
       clusterNotAvailableForAccount: "Le compte {0} n'est pas autorisé pour le cluster {1}",
-      clusterPartitionNotAvailableForAccount: "Le compte {0} n'est pas autorisé pour"
-      + " le cluster {1} et la partition {2}",
+      clusterPartitionNotAvailableForAccount:
+        "Le compte {0} n'est pas autorisé pour" + " le cluster {1} et la partition {2}",
       userAccountNotAvailableWhenSubmit: "L'utilisateur {0} n'est pas disponible sous le compte {1}",
       appNotAvailableForAccount: "Le compte {0} n'est pas autorisé pour l'application {1}",
       appNotFound: "Application {} introuvable",

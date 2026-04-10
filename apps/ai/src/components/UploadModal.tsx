@@ -2,7 +2,7 @@
 
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
-import { calculateBlobSHA256, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
+import { calculateBlobSHA256, isDirectoryEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
 import { join } from "path";
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +11,6 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { trpc } from "src/utils/trpc";
 
 import { urlToUpload } from "../app/(auth)/files/api";
-
 
 interface Props {
   open: boolean;
@@ -34,11 +33,14 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
   const { message, modal } = App.useApp();
   const { publicConfig } = usePublicConfig();
-  const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
+  const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
 
   const uploadControllers = useRef(new Map<string, AbortController>());
   // 使用上传文件的速度追踪器，速度更新时间 1000 ms
   const speedTracker = useUploadSpeedTracker(1000);
+
+  // 判断当前拖拽是否有文件夹
+  const hasFolderInDropRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -111,7 +113,8 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       setUploadFileList((prevList) => {
         return prevList.map((uploadFile) => {
           return uploadFile.name === file.name
-            ? { ...uploadFile,
+            ? {
+              ...uploadFile,
               percent: percentage,
               status: "uploading" as const,
             } : uploadFile;
@@ -216,10 +219,28 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         </p>
       )}
 
-      <Upload.Dragger
-        name="file"
-        multiple
-        {
+      <div
+        onDropCapture={(event) => {
+          const droppedItems = Array.from(event.dataTransfer?.items ?? []);
+          const hasDirectory = droppedItems.some((item) => isDirectoryEntry(item));
+          // 捕获阶段先于 Upload 内部处理，确保 beforeUpload 读到的是本次 drop 的值
+          hasFolderInDropRef.current = hasDirectory;
+          if (hasDirectory) {
+            // 阻止事件到达 Upload.Dragger，避免其尝试处理含文件夹的 drop
+            event.preventDefault();
+            event.stopPropagation();
+            message.error(t(p("isNotFile")));
+          }
+        }}
+        onClickCapture={() => {
+          // 点击打开文件选择框时重置，避免上次 folder drop 污染点击上传
+          hasFolderInDropRef.current = false;
+        }}
+      >
+        <Upload.Dragger
+          name="file"
+          multiple
+          {
           ...(scowdEnabled ? {
             customRequest: ({ file, onSuccess, onError, onProgress }) => {
               startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError);
@@ -227,106 +248,110 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           } : {
             action: async (file) => urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH),
           })
-        }
-        withCredentials
-        showUploadList={{
-          removeIcon: (file) => {
-            return (
-              file.status === "uploading"
-                ? (
-                  <DeleteOutlined
-                    onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                    title={t(p("cancelUpload"))}
-                  />
-                )
-                : (
-                  <DeleteOutlined title={t(p("delRecord"))} />
-                )
-            );
-          },
-        }}
-        onChange={({ file, fileList }) => {
-          console.log(fileList);
-          const updatedFileList = [...fileList.filter((f) => f.status)];
-          setUploadFileList(updatedFileList);
-
-          if (file.status === "done") {
-            message.success(`${file.name}${t(p("success"))}`);
-            reload();
-          } else if (file.status === "error") {
-            // 优先使用 response 中的消息，如果没有则回退到 error.message
-            const errorMsg = file.response?.message || // 后端主动返回的 message
-                              file.error?.message || // 网络或异常错误
-                              `${file.name}${t(p("failed"))}`; // 默认提示
-
-
-            message.error(file.response?.code === "TOO_MANY_REQUESTS" ? t(pCommon("noSpaceError")) : errorMsg);
           }
-        }}
-        beforeUpload={(file) => {
-          const fileMaxSize = parseInt(publicConfig.CLIENT_MAX_BODY_SIZE.slice(0, -1)) * (1024 ** 3);
+          withCredentials
+          showUploadList={{
+            removeIcon: (file) => {
+              return (
+                file.status === "uploading"
+                  ? (
+                    <DeleteOutlined
+                      onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                      title={t(p("cancelUpload"))}
+                    />
+                  )
+                  : (
+                    <DeleteOutlined title={t(p("delRecord"))} />
+                  )
+              );
+            },
+          }}
+          onChange={({ file, fileList }) => {
+            const updatedFileList = [...fileList.filter((f) => f.status)];
+            setUploadFileList(updatedFileList);
 
-          if (!scowdEnabled && file.size > fileMaxSize) {
-            message.error(`${file.name}${t(p("failed"))},${t(p("exceed"))}${publicConfig.CLIENT_MAX_BODY_SIZE}`);
-            return Upload.LIST_IGNORE;
-          }
+            if (file.status === "done") {
+              message.success(`${file.name}${t(p("success"))}`);
+              reload();
+            } else if (file.status === "error") {
+              // 优先使用 response 中的消息，如果没有则回退到 error.message
+              const errorMsg = file.response?.message || // 后端主动返回的 message
+                file.error?.message || // 网络或异常错误
+                `${file.name}${t(p("failed"))}`; // 默认提示
 
-          return new Promise((resolve, reject) => {
-            checkFileExist.mutateAsync({ path:join(path, file.name), clusterId }).then(({ exists }) => {
-              if (exists) {
-                modal.confirm({
-                  title: t(p("alreadyExisted")),
-                  content: t(p("confirmText"),[file.name]),
-                  okText: t("button.confirmButton"),
-                  onOk: async () => {
-                    const fileType = await getFileType.mutateAsync({ path:join(path, file.name), clusterId });
 
-                    if (fileType.type) {
-                      await deleteFileMutation.mutateAsync({
-                        target: fileType.type === "DIR" ? "DIR" : "FILE",
-                        clusterId: clusterId,
-                        path: join(path, file.name),
-                      }).then(() => resolve(file));
-                    }
+              message.error(file.response?.code === "TOO_MANY_REQUESTS" ? t(pCommon("noSpaceError")) : errorMsg);
+            }
+          }}
+          beforeUpload={(file) => {
+            // 本次拖拽含有文件夹，全部阻止
+            if (hasFolderInDropRef.current) {
+              return Upload.LIST_IGNORE;
+            }
+            const fileMaxSize = parseInt(publicConfig.CLIENT_MAX_BODY_SIZE.slice(0, -1)) * (1024 ** 3);
 
-                  },
-                  onCancel: () => { reject(file); },
-                });
-              } else {
-                resolve(file);
-              }
+            if (!scowdEnabled && file.size > fileMaxSize) {
+              message.error(`${file.name}${t(p("failed"))},${t(p("exceed"))}${publicConfig.CLIENT_MAX_BODY_SIZE}`);
+              return Upload.LIST_IGNORE;
+            }
+
+            return new Promise((resolve, reject) => {
+              checkFileExist.mutateAsync({ path: join(path, file.name), clusterId }).then(({ exists }) => {
+                if (exists) {
+                  modal.confirm({
+                    title: t(p("alreadyExisted")),
+                    content: t(p("confirmText"), [file.name]),
+                    okText: t("button.confirmButton"),
+                    onOk: async () => {
+                      const fileType = await getFileType.mutateAsync({ path: join(path, file.name), clusterId });
+
+                      if (fileType.type) {
+                        await deleteFileMutation.mutateAsync({
+                          target: fileType.type === "DIR" ? "DIR" : "FILE",
+                          clusterId: clusterId,
+                          path: join(path, file.name),
+                        }).then(() => resolve(file));
+                      }
+
+                    },
+                    onCancel: () => { reject(file); },
+                  });
+                } else {
+                  resolve(file);
+                }
+              });
             });
-          });
-        }}
-        fileList={uploadFileList}
-        itemRender={(originNode, file) => {
-          const speed = speedTracker.getFileSpeed(file.uid);
-          const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
-            : speed?.speedText ?? "0 B/s";
-          return (
-            <div>
-              {/* 原始的文件节点（包含进度条等） */}
-              {originNode}
-              {/* 只在scowd下展示下载进度及下载速度 */}
-              {scowdEnabled && (
-                <PercentAndSpeedContainer>
-                  {file.status === "uploading" && (
-                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
-                  )}
-                </PercentAndSpeedContainer>
-              )}
-            </div>
-          );
-        }}
-      >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">{t(p("uploadText"))}</p>
-        <p className="ant-upload-hint">
-          {t(p("singleOrMultiply"))}
-        </p>
-      </Upload.Dragger>
+          }}
+          fileList={uploadFileList}
+          itemRender={(originNode, file) => {
+            const speed = speedTracker.getFileSpeed(file.uid);
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+              : speed?.speedText ?? "0 B/s";
+            return (
+              <div>
+                {/* 原始的文件节点（包含进度条等） */}
+                {originNode}
+                {/* 只在scowd下展示下载进度及下载速度 */}
+                {scowdEnabled && (
+                  <PercentAndSpeedContainer>
+                    {file.status === "uploading" && (
+                      <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                    )}
+                  </PercentAndSpeedContainer>
+                )}
+              </div>
+            );
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">{t(p("uploadText"))}</p>
+          <p className="ant-upload-hint">
+            {t(p("singleOrMultiply"))}
+          </p>
+        </Upload.Dragger>
+      </div>
     </Modal>
   );
 };

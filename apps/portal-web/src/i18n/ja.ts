@@ -174,7 +174,8 @@ export default {
         workingDirectory: "作業ディレクトリ",
         wdTooltip1: "1. 絶対パスを入力してください。相対パスの場合はユーザーのホームディレクトリ基準になります。",
         wdTooltip2: "2. 指定ディレクトリがアクセス不能または操作不能の場合、ジョブの提出・実行は失敗します。",
-        wdTooltip3: "このファイルはアダプタが返すスクリプトを保存するためのものです。既定値は出力ファイルを参照します。",
+        wdTooltip3:
+          "このファイルはアダプタが返すスクリプトを保存するためのものです。既定値は出力ファイルを参照します。",
         output: "標準出力ファイル",
         errorOutput: "エラー出力ファイル",
         saveJobSubmissionFile: "ジョブ提出ファイルを保存",
@@ -270,7 +271,8 @@ export default {
         decompressButtonDisabledTooltip: "解凍は .zip、.tar、.tar.gz、.gz、.tgz のみ対応しています",
         storageQuota: "ストレージクォータ",
         usage: "使用量",
-        storageQuotaTooltip: "現在のファイルシステムはバックアップにより追加のストレージを消費します。そのため使用量は実際のファイルサイズより多く表示されます",
+        storageQuotaTooltip:
+          "現在のファイルシステムはバックアップにより追加のストレージを消費します。そのため使用量は実際のファイルサイズより多く表示されます",
         failedResolveSymlink: "シンボリックリンクの解決に失敗",
         noAccessPermission: "アクセス権限がありません",
         noPath: "パスが見つかりません。確認してください",
@@ -319,7 +321,8 @@ export default {
           deleteConfirmOk: "確認",
           deleteSuccessMessage: "削除しました",
           submitConfirmTitle: "送信の確認",
-          submitConfirmNotice: "スクリプトの作業ディレクトリとして有効な絶対パスを指定してください。指定がない場合はスクリプトの所在ディレクトリが既定になります",
+          submitConfirmNotice:
+            "スクリプトの作業ディレクトリとして有効な絶対パスを指定してください。指定がない場合はスクリプトの所在ディレクトリが既定になります",
           submitConfirmContent: "{} を {} に送信しますか?",
           submitConfirmOk: "確認",
           submitSuccessMessage: "送信しました。新しいジョブID: {}",
@@ -372,6 +375,7 @@ export default {
         calculateHashError: "ハッシュ計算エラー: {}",
         uploadFileListNotExist: "アップロードファイル一覧に存在しません: {}",
         mergeFileChunksErrorText: "ファイル {} の結合に失敗。{}",
+        isNotFile: "アップロードするにはファイルをドラッグしてください",
         isMerging: "結合中...",
       },
       uploadDirModal: {
@@ -396,6 +400,7 @@ export default {
         calculateHashError: "ハッシュ計算エラー: {}",
         uploadFileListNotExist: "アップロードファイル一覧に存在しません: {}",
         mergeFileChunksErrorText: "ファイル {} の結合に失敗。{}",
+        isNotDir: "アップロードするにはフォルダーをドラッグしてください",
         isMerging: "結合中...",
       },
     },
@@ -597,7 +602,8 @@ export default {
       pageNotExist: "要求されたページは存在しません",
       serverWrong: "サーバーエラー",
       sorry: "申し訳ありません。サーバーエラーが発生しました。更新してもう一度お試しください",
-      clusterNotAvailable: "現在アクセス中のクラスターは利用できないか、利用可能なクラスターがありません。後でもう一度お試しください、または管理者に連絡してください",
+      clusterNotAvailable:
+        "現在アクセス中のクラスターは利用できないか、利用可能なクラスターがありません。後でもう一度お試しください、または管理者に連絡してください",
     },
     others: {
       clusterSelector: "クラスターを選択してください",
@@ -676,7 +682,8 @@ export default {
         reloadButton: "更新して再接続",
         popoverTitle: "コマンド",
         popoverContent1: "ファイルシステムへ移動",
-        popoverContent2: "このコマンドを入力するとファイルシステムへ移動し、ファイルのアップロード・ダウンロードが可能です",
+        popoverContent2:
+          "このコマンドを入力するとファイルシステムへ移動し、ファイルのアップロード・ダウンロードが可能です",
         popoverContent3: "ファイルをダウンロード",
         popoverContentFile: "ファイル名",
         popoverContent4: "次を入力すると",
@@ -693,20 +700,24 @@ export default {
       },
     },
     _app: {
-      sshError: "ログインノードにユーザーとして接続できません。ホームディレクトリの権限が 700、750、755 のいずれかであることを確認してください",
-      textExceedsLength: "ターミナルのログインメッセージが多すぎます。~/.bashrc などのファイルで不要な出力を減らしてください",
+      sshError:
+        "ログインノードにユーザーとして接続できません。ホームディレクトリの権限が 700、750、755 のいずれかであることを確認してください",
+      textExceedsLength:
+        "ターミナルのログインメッセージが多すぎます。~/.bashrc などのファイルで不要な出力を減らしてください",
       sftpError: "SFTP 操作に失敗しました。権限をご確認ください",
       otherError: "サーバーでエラーが発生しました",
       adapterConnectionError: "{} クラスターに現在接続できません。後でもう一度お試しください",
       noActivatedClusters: "利用可能なクラスターがありません。ページを更新した後でお試しください",
-      notExistInActivatedClusters: "問い合わせ中のクラスターは停止されている可能性があります。ページを更新した後でお試しください",
+      notExistInActivatedClusters:
+        "問い合わせ中のクラスターは停止されている可能性があります。ページを更新した後でお試しください",
       noClusters: "クラスターの構成ファイルが見つかりません。管理者に連絡してください",
     },
     dashboard: {
       title: "ダッシュボード",
     },
     common: {
-      noAvailableClusters: "現在利用可能なクラスターはありません。後でもう一度お試しください、または管理者に連絡してください",
+      noAvailableClusters:
+        "現在利用可能なクラスターはありません。後でもう一度お試しください、または管理者に連絡してください",
       clusterNotAvailableForAccount: "アカウント {0} はクラスター {1} の権限がありません",
       clusterPartitionNotAvailableForAccount: "アカウント {0} はクラスター {1} とパーティション {2} の権限がありません",
       userAccountNotAvailableWhenSubmit: "ユーザー {0} はアカウント {1} で利用できません",

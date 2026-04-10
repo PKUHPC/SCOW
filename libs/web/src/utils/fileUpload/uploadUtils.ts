@@ -27,10 +27,8 @@ export const formatSpeed = (bytesPerSecond: number): string => {
   return `${value.toFixed(decimals)} ${units[i]}`;
 };
 
-
 export async function calculateBlobSHA256(blob: Blob): Promise<string> {
   try {
-
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = Uint8Array.from(Buffer.from(arrayBuffer));
     const hash = crypto.createHash("sha256");
@@ -39,8 +37,22 @@ export async function calculateBlobSHA256(blob: Blob): Promise<string> {
 
     return hashHex;
   } catch (error: any) {
-
     throw new Error(`Failed to calculate hash: ${error.message}`);
   }
 }
 
+// webkitRelativePath 只在 <input webkitdirectory> 选择时由浏览器填充，拖拽时永远是空字符串
+// 所以拖拽时通过 webkitGetAsEntry 来区分是文件还是文件夹
+type DragItemWithEntry = DataTransferItem & {
+  webkitGetAsEntry?: () => { isDirectory?: boolean } | null;
+};
+
+export const isDirectoryEntry = (item: DataTransferItem) => {
+  const entry = (item as DragItemWithEntry).webkitGetAsEntry?.();
+  return entry?.isDirectory ?? false;
+};
+
+export const isFileEntry = (item: DataTransferItem) => {
+  const entry = (item as DragItemWithEntry).webkitGetAsEntry?.();
+  return entry?.isFile ?? false;
+};

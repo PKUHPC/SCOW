@@ -1,6 +1,6 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
-import { PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
+import { isDirectoryEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile } from "antd";
 import pLimit from "p-limit";
 import { join } from "path";
@@ -34,7 +34,7 @@ type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => v
 export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
 
   const { message, modal } = App.useApp();
-  const [ uploadFileList, setUploadFileList ] = useState<UploadFile[]>([]);
+  const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
   const uploadFileListRef = useRef<UploadFile[]>([]);
   const uploadControllers = useRef(new Map<string, AbortController>());
   const limit = useRef(pLimit(2));
@@ -42,6 +42,9 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   const t = useI18nTranslateToString();
   // 使用上传文件的速度追踪器，速度更新时间 1000 ms
   const speedTracker = useUploadSpeedTracker(1000);
+
+  // 判断当前拖拽是否有文件夹
+  const hasFolderInDropRef = useRef(false);
 
   useEffect(() => {
     uploadFileListRef.current = uploadFileList;
@@ -119,9 +122,11 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       setUploadFileList((prevList) => {
         return prevList.map((uploadFile) => {
           return uploadFile.name === file.name
-            ? { ...uploadFile,
+            ? {
+              ...uploadFile,
               percent: percentage,
-              status: "uploading" as const }
+              status: "uploading" as const
+            }
             : uploadFile;
         });
       });
@@ -216,111 +221,134 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       <p>
         {t(p("uploadRemark1"))}<span>{path}</span>{t(p("uploadRemark2"))}
       </p>
-      { !scowdEnabled && (
+      {!scowdEnabled && (
         <p>
           {t(p("uploadRemark3"))}<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>{t(p("uploadRemark4"))}
         </p>
       )}
-      <Upload.Dragger
-        name="file"
-        multiple
-        {...(scowdEnabled ? {
-          customRequest: ({ file, onSuccess, onError, onProgress }) => {
-            limit.current(() => startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError));
-          },
-        } : {
-          action: async (file) => urlToUpload(cluster, join(path, file.name)),
-        })}
-        withCredentials
-        showUploadList={{
-          removeIcon: (file) => {
-            return (
-              file.status === "uploading"
-                ? (
-                  <DeleteOutlined
-                    onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                    title={t(p("cancelUpload"))}
-                  />
-                )
-                : <DeleteOutlined title={t(p("deleteUploadRecords"))} />
-            );
-          },
-        }}
-        onChange={({ file, fileList }) => {
-
-          const updatedFileList = [...fileList.filter((f) => f.status)];
-          setUploadFileList(updatedFileList);
-
-          if (file.status === "done") {
-            message.success(`${file.name}${t(p("successMessage"))}`);
-            reload();
-          } else if (file.status === "error") {
-            message.error(`${file.name}${t(p("errorMessage"))}`);
+      <div
+        onDropCapture={(event) => {
+          const droppedItems = Array.from(event.dataTransfer?.items ?? []);
+          const hasDirectory = droppedItems.some((item) => isDirectoryEntry(item));
+          // 捕获阶段先于 Upload 内部处理，确保 beforeUpload 读到的是本次 drop 的值
+          hasFolderInDropRef.current = hasDirectory;
+          if (hasDirectory) {
+            // 阻止事件到达 Upload.Dragger，避免其尝试处理含文件夹的 drop
+            event.preventDefault();
+            event.stopPropagation();
+            message.error(t(p("isNotFile")));
           }
         }}
-        beforeUpload={(file) => {
-          const fileMaxSize = convertToBytes(publicConfig.CLIENT_MAX_BODY_SIZE);
-
-          if (!scowdEnabled && file.size > fileMaxSize) {
-            message.error(t(p("maxSizeErrorMessage"), [file.name, publicConfig.CLIENT_MAX_BODY_SIZE]));
-            return Upload.LIST_IGNORE;
-          }
-
-          return new Promise((resolve, reject) => {
-
-            api.fileExist({ query:{ cluster: cluster, path: join(path, file.name) } }).then(({ result }) => {
-              if (result) {
-                modal.confirm({
-                  title: t(p("existedModalTitle")),
-                  content: t(p("existedModalContent"), [file.name]),
-                  okText: t(p("existedModalOk")),
-                  onOk: async () => {
-                    const fileType = await api.getFileType({ query:{ cluster: cluster, path: join(path, file.name) } });
-                    const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
-                    await deleteOperation({ query: { cluster: cluster, path: join(path, file.name) } })
-                      .then(() => resolve(file));
-                  },
-                  // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-                  onCancel: () => { reject(file); },
-                });
-              } else {
-                resolve(file);
-              }
-
-            });
-
-
-          });
-        }}
-        fileList={uploadFileList}
-        itemRender={(originNode, file) => {
-          const speed = speedTracker.getFileSpeed(file.uid);
-          const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
-            : speed?.speedText ?? "0 B/s";
-          return (
-            <div>
-              {/* 原始的文件节点（包含进度条等） */}
-              {originNode}
-              {/* 只在scowd下展示下载进度及下载速度 */}
-              {scowdEnabled && (
-                <PercentAndSpeedContainer>
-                  {file.status === "uploading" && (
-                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
-                  )}
-                </PercentAndSpeedContainer>
-              )}
-            </div>
-          );
+        onClickCapture={() => {
+          // 点击打开文件选择框时重置，避免上次 folder drop 污染点击上传
+          hasFolderInDropRef.current = false;
         }}
       >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">{t(p("dragText"))}</p>
-        <p className="ant-upload-hint">
-          {t(p("hintText"))}
-        </p>
-      </Upload.Dragger>
+        <Upload.Dragger
+          name="file"
+          multiple
+          {...(scowdEnabled ? {
+            customRequest: ({ file, onSuccess, onError, onProgress }) => {
+              limit.current(() => startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError));
+            },
+          } : {
+            action: async (file) => urlToUpload(cluster, join(path, file.name)),
+          })}
+          withCredentials
+          showUploadList={{
+            removeIcon: (file) => {
+              return (
+                file.status === "uploading"
+                  ? (
+                    <DeleteOutlined
+                      onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                      title={t(p("cancelUpload"))}
+                    />
+                  )
+                  : <DeleteOutlined title={t(p("deleteUploadRecords"))} />
+              );
+            },
+          }}
+          onChange={({ file, fileList }) => {
+
+            const updatedFileList = [...fileList.filter((f) => f.status)];
+            setUploadFileList(updatedFileList);
+
+            if (file.status === "done") {
+              message.success(`${file.name}${t(p("successMessage"))}`);
+              reload();
+            } else if (file.status === "error") {
+              message.error(`${file.name}${t(p("errorMessage"))}`);
+            }
+          }}
+          beforeUpload={(file) => {
+            // 本次拖拽含有文件夹，全部阻止
+            if (hasFolderInDropRef.current) {
+              return Upload.LIST_IGNORE;
+            }
+            const fileMaxSize = convertToBytes(publicConfig.CLIENT_MAX_BODY_SIZE);
+
+            if (!scowdEnabled && file.size > fileMaxSize) {
+              message.error(t(p("maxSizeErrorMessage"), [file.name, publicConfig.CLIENT_MAX_BODY_SIZE]));
+              return Upload.LIST_IGNORE;
+            }
+
+            return new Promise((resolve, reject) => {
+
+              api.fileExist({ query: { cluster: cluster, path: join(path, file.name) } }).then(({ result }) => {
+                if (result) {
+                  modal.confirm({
+                    title: t(p("existedModalTitle")),
+                    content: t(p("existedModalContent"), [file.name]),
+                    okText: t(p("existedModalOk")),
+                    onOk: async () => {
+                      const fileType = await api.getFileType({ query: { cluster: cluster, path: join(path, file.name) } });
+                      const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
+                      await deleteOperation({ query: { cluster: cluster, path: join(path, file.name) } })
+                        .then(() => resolve(file));
+                    },
+                    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+                    onCancel: () => { reject(file); },
+                  });
+                } else {
+                  resolve(file);
+                }
+
+              });
+
+
+            });
+          }}
+          fileList={uploadFileList}
+          itemRender={(originNode, file) => {
+            const speed = speedTracker.getFileSpeed(file.uid);
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+              : speed?.speedText ?? "0 B/s";
+            return (
+              <div>
+                {/* 原始的文件节点（包含进度条等） */}
+                {originNode}
+                {/* 只在scowd下展示下载进度及下载速度 */}
+                {scowdEnabled && (
+                  <PercentAndSpeedContainer>
+                    {file.status === "uploading" && (
+                      <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                    )}
+                  </PercentAndSpeedContainer>
+                )}
+              </div>
+            );
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">{t(p("dragText"))}</p>
+          <p className="ant-upload-hint">
+            {t(p("hintText"))}
+          </p>
+        </Upload.Dragger>
+      </div>
     </Modal>
   );
 };

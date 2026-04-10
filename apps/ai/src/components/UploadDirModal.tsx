@@ -1,6 +1,6 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
-import { calculateBlobSHA256, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
+import { calculateBlobSHA256, isFileEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile, UploadProps } from "antd";
 import { RcFile } from "antd/lib/upload";
 import { dirname, join } from "path";
@@ -52,6 +52,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const speedTracker = useUploadSpeedTracker(1000);
 
   const t = useI18nTranslateToString();
+
+  // 判断当前拖拽是否有文件
+  const hasFileInDropRef = useRef(false);
+
 
   useEffect(() => {
     if (open) {
@@ -178,6 +182,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
    * 针对每个文件夹进行独立的覆盖检查和文件夹创建
    */
   const beforeUploadHandler = async (file: RcFile): Promise<boolean | string> => {
+    // 本次拖拽含有文件，全部阻止
+    if (hasFileInDropRef.current) {
+      return Upload.LIST_IGNORE;
+    }
     // 获取文件的相对路径或名称
     const relativePath = file.webkitRelativePath || file.name;
     const folderName = relativePath.split("/")[0];
@@ -313,9 +321,11 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       setUploadFileList((prevList) => {
         return prevList.map((uploadFile) => {
           return uploadFile.name === file.name
-            ? { ...uploadFile,
+            ? {
+              ...uploadFile,
               percent: percentage,
-              status: "uploading" as const }
+              status: "uploading" as const
+            }
             : uploadFile;
         });
       });
@@ -416,61 +426,82 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           {t(p("uploadRemark4"))}
         </p>
       )}
-      <Upload.Dragger
-        directory
-        name="file"
-        multiple
-        withCredentials
-        {...(scowdEnabled ? {
-          customRequest: ({ file, onSuccess, onError, onProgress }) => {
-            startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError);
-          },
-        } : {
-          action: async (file) => urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
-        })}
-        showUploadList={{
-          removeIcon: (file) => {
-            return file.status === "uploading" ? (
-              <DeleteOutlined
-                onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                title={t(p("cancelUpload"))}
-              />
-            ) : (
-              <DeleteOutlined title={t(p("deleteUploadRecords"))} />
-            );
-          },
+
+      <div
+        onDropCapture={(event) => {
+          const droppedItems = Array.from(event.dataTransfer?.items ?? []);
+          const hasFile = droppedItems.some((item) => isFileEntry(item));
+          // 捕获阶段先于 Upload 内部处理，确保 beforeUpload 读到的是本次 drop 的值
+          hasFileInDropRef.current = hasFile;
+          if (hasFile) {
+            // 阻止事件到达 Upload.Dragger，避免其尝试处理含文件的 drop
+            event.preventDefault();
+            event.stopPropagation();
+            message.error(t(p("isNotDir")));
+          }
         }}
-        beforeUpload={beforeUploadHandler}
-        onChange={handleChange}
-        onRemove={(file) => {
-          setUploadFileList((prev) => prev.filter((item) => item.uid !== file.uid));
-          speedTracker.cleanupFile(file.uid);
-          return true;
-        }}
-        fileList={uploadFileList}
-        itemRender={(originNode, file) => {
-          const speed = speedTracker.getFileSpeed(file.uid);
-          const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
-            : speed?.speedText ?? "0 B/s";
-          return (
-            <div>
-              {/* 原始的文件节点（包含进度条等） */}
-              {originNode}
-              <PercentAndSpeedContainer>
-                {file.status === "uploading" && (
-                  <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
-                )}
-              </PercentAndSpeedContainer>
-            </div>
-          );
+        onClickCapture={() => {
+          // 点击打开文件夹选择框时重置，避免上次 file drop 污染点击上传
+          hasFileInDropRef.current = false;
         }}
       >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">{t(p("dragText"))}</p>
-        <p className="ant-upload-hint">{t(p("hintText"))}</p>
-      </Upload.Dragger>
+        <Upload.Dragger
+          directory
+          name="file"
+          multiple
+          withCredentials
+          {...(scowdEnabled ? {
+            customRequest: ({ file, onSuccess, onError, onProgress }) => {
+              startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError);
+            },
+          } : {
+            action: async (file) => urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
+          })}
+          showUploadList={{
+            removeIcon: (file) => {
+              return file.status === "uploading" ? (
+                <DeleteOutlined
+                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                  title={t(p("cancelUpload"))}
+                />
+              ) : (
+                <DeleteOutlined title={t(p("deleteUploadRecords"))} />
+              );
+            },
+          }}
+          beforeUpload={beforeUploadHandler}
+          onChange={handleChange}
+          onRemove={(file) => {
+            setUploadFileList((prev) => prev.filter((item) => item.uid !== file.uid));
+            speedTracker.cleanupFile(file.uid);
+            return true;
+          }}
+          fileList={uploadFileList}
+          itemRender={(originNode, file) => {
+            const speed = speedTracker.getFileSpeed(file.uid);
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+              : speed?.speedText ?? "0 B/s";
+            return (
+              <div>
+                {/* 原始的文件节点（包含进度条等） */}
+                {originNode}
+                <PercentAndSpeedContainer>
+                  {file.status === "uploading" && (
+                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                  )}
+                </PercentAndSpeedContainer>
+              </div>
+            );
+          }}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">{t(p("dragText"))}</p>
+          <p className="ant-upload-hint">{t(p("hintText"))}</p>
+        </Upload.Dragger>
+      </div>
+
     </Modal>
   );
 };

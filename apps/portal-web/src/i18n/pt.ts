@@ -79,8 +79,9 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Tempo",
-          popoverTitle: "Consultar todas as tarefas ativas"
-          + " (como envio, pendente, iniciado, em execução, com falha, concluído) neste intervalo de tempo",
+          popoverTitle:
+            "Consultar todas as tarefas ativas" +
+            " (como envio, pendente, iniciado, em execução, com falha, concluído) neste intervalo de tempo",
           jobId: "ID da tarefa",
         },
         tableInfo: {
@@ -173,12 +174,15 @@ export default {
         hours: "Horas",
         days: "Dias",
         workingDirectory: "Diretório de trabalho",
-        wdTooltip1: "1. Insira um caminho absoluto. Se inserir um caminho relativo,"
-        + " será relativo ao diretório home do utilizador.",
-        wdTooltip2: "2. Se o diretório especificado não for acessível ou não puder ser operado,"
-        + " a submissão ou execução da tarefa falhará.",
-        wdTooltip3: "Este ficheiro é usado para guardar o script retornado pelo adaptador;"
-        + " o valor padrão refere-se ao ficheiro de saída.",
+        wdTooltip1:
+          "1. Insira um caminho absoluto. Se inserir um caminho relativo," +
+          " será relativo ao diretório home do utilizador.",
+        wdTooltip2:
+          "2. Se o diretório especificado não for acessível ou não puder ser operado," +
+          " a submissão ou execução da tarefa falhará.",
+        wdTooltip3:
+          "Este ficheiro é usado para guardar o script retornado pelo adaptador;" +
+          " o valor padrão refere-se ao ficheiro de saída.",
         output: "Ficheiro de saída padrão",
         errorOutput: "Ficheiro de erro",
         saveJobSubmissionFile: "Guardar ficheiro de submissão",
@@ -274,8 +278,8 @@ export default {
         decompressButtonDisabledTooltip: "A descompressão é suportada apenas para .zip, .tar, .tar.gz, .gz e .tgz",
         storageQuota: "Quota de armazenamento",
         usage: "Utilização",
-        storageQuotaTooltip: "O sistema de ficheiros atual possui backups que ocupam espaço adicional,"
-        + " aumentando a utilização",
+        storageQuotaTooltip:
+          "O sistema de ficheiros atual possui backups que ocupam espaço adicional," + " aumentando a utilização",
         failedResolveSymlink: "Falha ao resolver link simbólico",
         noAccessPermission: "Sem permissão de acesso",
         noPath: "Caminho não encontrado, verifique",
@@ -324,8 +328,9 @@ export default {
           deleteConfirmOk: "Confirmar",
           deleteSuccessMessage: "Eliminado com sucesso",
           submitConfirmTitle: "Confirmar submissão",
-          submitConfirmNotice: "Certifique-se de que o ficheiro script especifica um caminho absoluto válido como"
-          + " diretório de trabalho. Caso contrário, usa-se o diretório do próprio script.",
+          submitConfirmNotice:
+            "Certifique-se de que o ficheiro script especifica um caminho absoluto válido como" +
+            " diretório de trabalho. Caso contrário, usa-se o diretório do próprio script.",
           submitConfirmContent: "Confirmar submissão de {} para {}?",
           submitConfirmOk: "Confirmar",
           submitSuccessMessage: "Submetido com sucesso! O novo ID da tarefa é: {}",
@@ -378,6 +383,7 @@ export default {
         calculateHashError: "Erro ao calcular hash: {}",
         uploadFileListNotExist: "Lista de ficheiros a carregar não existe: {}",
         mergeFileChunksErrorText: "Falha ao juntar partes do ficheiro {}. {}",
+        isNotFile: "Arraste arquivos para fazer upload",
         isMerging: "A juntar...",
       },
       uploadDirModal: {
@@ -402,6 +408,7 @@ export default {
         calculateHashError: "Erro ao calcular hash: {}",
         uploadFileListNotExist: "Lista de ficheiros a carregar não existe: {}",
         mergeFileChunksErrorText: "Falha ao juntar partes do ficheiro {}. {}",
+        isNotDir: "Arraste pastas para fazer upload",
         isMerging: "A juntar...",
       },
     },
@@ -603,8 +610,9 @@ export default {
       pageNotExist: "A página solicitada não existe",
       serverWrong: "Erro do servidor",
       sorry: "Lamentamos, ocorreu um erro no servidor. Atualize e tente novamente",
-      clusterNotAvailable: "O cluster atualmente acessado está indisponível ou não há clusters disponíveis."
-      + " Tente mais tarde ou contate o administrador.",
+      clusterNotAvailable:
+        "O cluster atualmente acessado está indisponível ou não há clusters disponíveis." +
+        " Tente mais tarde ou contate o administrador.",
     },
     others: {
       clusterSelector: "Selecione um cluster",
@@ -683,8 +691,9 @@ export default {
         reloadButton: "Atualizar e reconectar",
         popoverTitle: "Comandos",
         popoverContent1: "Navegar para o sistema de ficheiros ",
-        popoverContent2: "Depois de inserir este comando, você irá para o sistema de ficheiros,"
-        + " onde pode carregar e descarregar ficheiros.",
+        popoverContent2:
+          "Depois de inserir este comando, você irá para o sistema de ficheiros," +
+          " onde pode carregar e descarregar ficheiros.",
         popoverContent3: "Transferir um ficheiro",
         popoverContentFile: "Nome do ficheiro",
         popoverContent4: "Ao inserir",
@@ -701,15 +710,16 @@ export default {
       },
     },
     _app: {
-      sshError: "Não é possível conectar ao nó de login como utilizador."
-      + " Certifique-se que as permissões do diretório home são 700, 750 ou 755.",
+      sshError:
+        "Não é possível conectar ao nó de login como utilizador." +
+        " Certifique-se que as permissões do diretório home são 700, 750 ou 755.",
       textExceedsLength: "Há demasiadas mensagens no terminal. Reduza a saída desnecessária em '~/.bashrc' etc.",
       sftpError: "Operação SFTP falhou. Confirme as permissões",
       otherError: "Erro no servidor!",
       adapterConnectionError: "O cluster {} está indisponível. Tente novamente mais tarde.",
       noActivatedClusters: "Sem clusters disponíveis. Tente novamente após atualizar a página",
-      notExistInActivatedClusters: "O cluster consultado pode ter sido desativado."
-      + " Tente novamente após atualizar a página",
+      notExistInActivatedClusters:
+        "O cluster consultado pode ter sido desativado." + " Tente novamente após atualizar a página",
       noClusters: "Não foi possível encontrar ficheiros de configuração de clusters. Contate o administrador",
     },
     dashboard: {

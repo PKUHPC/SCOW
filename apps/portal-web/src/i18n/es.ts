@@ -79,8 +79,9 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Tiempo",
-          popoverTitle: "Consulta todos los trabajos activos"
-          + " (como enviados, en espera, iniciados, en ejecución, fallidos, completados) en este intervalo de tiempo",
+          popoverTitle:
+            "Consulta todos los trabajos activos" +
+            " (como enviados, en espera, iniciados, en ejecución, fallidos, completados) en este intervalo de tiempo",
           jobId: "ID de trabajo",
         },
         tableInfo: {
@@ -173,12 +174,15 @@ export default {
         hours: "Horas",
         days: "Días",
         workingDirectory: "Directorio de trabajo",
-        wdTooltip1: "1. Ingresa una ruta absoluta. Si ingresas una ruta relativa,"
-        + " será respecto al directorio home del usuario.",
-        wdTooltip2: "2. Si el directorio especificado no es accesible o no se puede operar,"
-        + " el envío o ejecución del trabajo fallará.",
-        wdTooltip3: "Este archivo se utiliza para guardar el script devuelto por el adaptador;"
-        + " el valor por defecto se refiere al archivo de salida.",
+        wdTooltip1:
+          "1. Ingresa una ruta absoluta. Si ingresas una ruta relativa," +
+          " será respecto al directorio home del usuario.",
+        wdTooltip2:
+          "2. Si el directorio especificado no es accesible o no se puede operar," +
+          " el envío o ejecución del trabajo fallará.",
+        wdTooltip3:
+          "Este archivo se utiliza para guardar el script devuelto por el adaptador;" +
+          " el valor por defecto se refiere al archivo de salida.",
         output: "Archivo de salida estándar",
         errorOutput: "Archivo de salida de error",
         saveJobSubmissionFile: "Guardar archivo de envío de trabajo",
@@ -274,8 +278,9 @@ export default {
         decompressButtonDisabledTooltip: "La descompresión solo es compatible para .zip, .tar, .tar.gz, .gz y .tgz",
         storageQuota: "Cuota de almacenamiento",
         usage: "Uso",
-        storageQuotaTooltip: "El sistema de archivos actual tiene copias de seguridad que ocupan espacio adicional."
-        + " La utilización puede ser mayor que el tamaño real de tus archivos",
+        storageQuotaTooltip:
+          "El sistema de archivos actual tiene copias de seguridad que ocupan espacio adicional." +
+          " La utilización puede ser mayor que el tamaño real de tus archivos",
         failedResolveSymlink: "Error al resolver enlace simbólico",
         noAccessPermission: "Sin permiso de acceso",
         noPath: "Ruta no encontrada, por favor verifica",
@@ -324,8 +329,9 @@ export default {
           deleteConfirmOk: "Confirmar",
           deleteSuccessMessage: "Eliminado correctamente",
           submitConfirmTitle: "Confirmar envío",
-          submitConfirmNotice: "Asegúrate de que el archivo script especifica una ruta absoluta"
-          + " válida como directorio de trabajo. Si no se especifica, se usará el directorio del archivo script",
+          submitConfirmNotice:
+            "Asegúrate de que el archivo script especifica una ruta absoluta" +
+            " válida como directorio de trabajo. Si no se especifica, se usará el directorio del archivo script",
           submitConfirmContent: "¿Confirmas el envío de {} a {}?",
           submitConfirmOk: "Confirmar",
           submitSuccessMessage: "¡Enviado correctamente! Tu nuevo ID de trabajo es: {}",
@@ -378,6 +384,7 @@ export default {
         calculateHashError: "Error calculando hash: {}",
         uploadFileListNotExist: "La lista de archivos subidos no existe: {}",
         mergeFileChunksErrorText: "Error al combinar el archivo {}. {}",
+        isNotFile: "Arrastre archivos para subirlos",
         isMerging: "Combinando...",
       },
       uploadDirModal: {
@@ -402,6 +409,7 @@ export default {
         calculateHashError: "Error calculando hash: {}",
         uploadFileListNotExist: "La lista de archivos subidos no existe: {}",
         mergeFileChunksErrorText: "Error al combinar el archivo {}. {}",
+        isNotDir: "Arrastre carpetas para subirlas",
         isMerging: "Combinando...",
       },
     },
@@ -604,8 +612,9 @@ export default {
       pageNotExist: "La página solicitada no existe",
       serverWrong: "Error del servidor",
       sorry: "Lo sentimos, ocurrió un error del servidor. Por favor actualiza y vuelve a intentarlo",
-      clusterNotAvailable: "El cluster al que estás accediendo no está disponible o no hay clusters disponibles."
-      + " Inténtalo más tarde o contacta al administrador",
+      clusterNotAvailable:
+        "El cluster al que estás accediendo no está disponible o no hay clusters disponibles." +
+        " Inténtalo más tarde o contacta al administrador",
     },
     others: {
       clusterSelector: "Por favor selecciona un cluster",
@@ -684,14 +693,16 @@ export default {
         reloadButton: "Actualizar y reconectar",
         popoverTitle: "Comandos",
         popoverContent1: "Ir al sistema de archivos ",
-        popoverContent2: "Después de introducir este comando,"
-        + " accederás al sistema de archivos donde puedes subir y descargar archivos",
+        popoverContent2:
+          "Después de introducir este comando," +
+          " accederás al sistema de archivos donde puedes subir y descargar archivos",
         popoverContent3: "Descargar un archivo",
         popoverContentFile: "Nombre de archivo",
         popoverContent4: "Al introducir",
         popoverContent5: ", el archivo en tu ruta actual se descargará localmente",
-        popoverContent6: "Las rutas relativas no están soportadas por el momento."
-        + " Si necesitas descargar o editar archivos de otros directorios, usa",
+        popoverContent6:
+          "Las rutas relativas no están soportadas por el momento." +
+          " Si necesitas descargar o editar archivos de otros directorios, usa",
         popoverContent7: "el comando para acceder al sistema de archivos",
         popoverContent8: "Ejemplo de uso: ",
         popoverContent9: "Editar un archivo",
@@ -703,16 +714,19 @@ export default {
       },
     },
     _app: {
-      sshError: "No es posible conectarse como usuario al nodo de acceso."
-      + " Asegúrate de que los permisos de tu directorio home sean 700, 750 o 755",
-      textExceedsLength: "Hay demasiados mensajes de inicio de sesión en el terminal."
-      + " Reduce la salida innecesaria en archivos como '~/.bashrc'",
+      sshError:
+        "No es posible conectarse como usuario al nodo de acceso." +
+        " Asegúrate de que los permisos de tu directorio home sean 700, 750 o 755",
+      textExceedsLength:
+        "Hay demasiados mensajes de inicio de sesión en el terminal." +
+        " Reduce la salida innecesaria en archivos como '~/.bashrc'",
       sftpError: "Operación SFTP fallida. Por favor confirma que tienes los permisos necesarios",
       otherError: "¡Error del servidor!",
       adapterConnectionError: "El cluster {} no está disponible actualmente. Inténtalo de nuevo más tarde",
       noActivatedClusters: "No hay clusters disponibles. Intenta de nuevo después de actualizar la página",
-      notExistInActivatedClusters: "El/los cluster(s) consultado(s) pueden haber sido desactivados."
-      + " Intenta de nuevo después de actualizar la página",
+      notExistInActivatedClusters:
+        "El/los cluster(s) consultado(s) pueden haber sido desactivados." +
+        " Intenta de nuevo después de actualizar la página",
       noClusters: "No se encontraron archivos de configuración de clusters. Contacta al administrador",
     },
     dashboard: {

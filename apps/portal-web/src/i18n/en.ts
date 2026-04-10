@@ -65,8 +65,8 @@ export default {
       oldPassword: "Old Password",
       newPassword: "New Password",
       confirm: "Confirm Password",
-      userNotExist:"User Not Exist",
-      unavailable:"This feature is not available in the current configuration",
+      userNotExist: "User Not Exist",
+      unavailable: "This feature is not available in the current configuration",
       changeEmailFail: "Failed to change email.",
       changeEmailSuccess: "Email changed successfully!",
       changeEmail: "Change Email",
@@ -86,8 +86,9 @@ export default {
         searchForm: {
           clusterLabel: "Cluster",
           time: "Time",
-          popoverTitle: "Query all active jobs (such as job submission, pending, started, running, "
-          + "failed, completed) in this time range",
+          popoverTitle:
+            "Query all active jobs (such as job submission, pending, started, running, " +
+            "failed, completed) in this time range",
           jobId: "Job ID",
         },
         tableInfo: {
@@ -168,7 +169,7 @@ export default {
       // submitJobForm
       submitJobForm: {
         title: "Submit Job",
-        basicInfoSectionTitle:"Basic Info",
+        basicInfoSectionTitle: "Basic Info",
         jobConfigSectionTitle: "Job Configuration",
         errorMessage: "Failed to submit job",
         successMessage: "Submitted successfully! Your new job ID is: ",
@@ -184,15 +185,18 @@ export default {
         maxTime: "Max Running Time",
         requireMaxTime: "Please enter the maximum runtime",
         minute: "Minutes",
-        hours:"Hours",
+        hours: "Hours",
         days: "Days",
         workingDirectory: "Working Directory",
-        wdTooltip1: "1. Please enter the absolute path. If you enter a relative path, it will be "
-        + "relative to the user's home directory.",
-        wdTooltip2: "2. If the specified directory is not accessible or cannot be operated on, "
-        + "the job submission or execution will fail.",
-        wdTooltip3: "This file is used to save the script returned by the adapter"
-        + "The default value refers to the output file.",
+        wdTooltip1:
+          "1. Please enter the absolute path. If you enter a relative path, it will be " +
+          "relative to the user's home directory.",
+        wdTooltip2:
+          "2. If the specified directory is not accessible or cannot be operated on, " +
+          "the job submission or execution will fail.",
+        wdTooltip3:
+          "This file is used to save the script returned by the adapter" +
+          "The default value refers to the output file.",
         output: "Standard Output File",
         outputRequired: "Please enter the standard output file",
         errorOutput: "Error Output File",
@@ -201,7 +205,7 @@ export default {
         scriptOutputRequired: "Please enter the job script file",
         commandLabel: "Command",
         commandRequired: "Please enter the command to run",
-        saveJobSubmissionFile:"Save Job Submission File",
+        saveJobSubmissionFile: "Save Job Submission File",
         totalNodeCount: "Total Nodes: ",
         totalGpuCount: "Total Accelerator Cards: ",
         totalCoreCount: "Total CPU Cores: ",
@@ -226,17 +230,19 @@ export default {
         unavailableParamsCancel: "Cancel",
       },
     },
-    submitJobCom:{
+    submitJobCom: {
       title: "Submit Job",
       baseInfoSection: {
         jobNameLabel: "Job Name",
-        jobNameHelp: "Naming rules: lowercase letters, numbers, and hyphens only." +
-        " It must start with a letter, and end with a letter or number.",
+        jobNameHelp:
+          "Naming rules: lowercase letters, numbers, and hyphens only." +
+          " It must start with a letter, and end with a letter or number.",
         jobNameRequired: "Please enter a job name",
-        jobNameRule: "Must be 1-40 characters long, using only lowercase letters, numbers, " +
-        "or '-' , and must start with a letter and end with a letter or number.",
+        jobNameRule:
+          "Must be 1-40 characters long, using only lowercase letters, numbers, " +
+          "or '-' , and must start with a letter and end with a letter or number.",
       },
-      ResourceConfigSection:{
+      ResourceConfigSection: {
         sectionTitle: "Resource Configuration",
         accountLabel: "Account",
         accountPlaceholder: "Please select an account",
@@ -271,7 +277,7 @@ export default {
         nodeSpecCpu: "CPU: {0} cores",
         nodeSpecMemory: "Memory: {0}",
       },
-      templateListModal:{
+      templateListModal: {
         title: "Templates",
         deleteTemplate: "Delete Template",
         useTemplate: "Use Template",
@@ -352,7 +358,6 @@ export default {
         fileSizeExceeded: "File too large (maximum {}), please download and edit",
         fileFetchAbortPrompt: "Fetch {} operation was aborted",
         quotaLimit: "The storage space is less than 10M. Saving the file may cause the file content to be lost.",
-
       },
       createFileModal: {
         createErrorMessage: "File or directory with the same name already exists!",
@@ -390,12 +395,13 @@ export default {
         compressSelected: "Compress",
         decompressionInProgress: "Decompression in progress: ",
         decompressionSelected: "Decompress",
-        decompressButtonDisabledTooltip: "Decompression is only supported for"
-        + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
+        decompressButtonDisabledTooltip:
+          "Decompression is only supported for" + " .zip, .tar, .tar.gz, .gz, and .tgz file formats",
         storageQuota: "Storage Quota",
         usage: "Usage",
-        storageQuotaTooltip: "The current file system has backups set up, which will take up additional "
-          + "storage space. Therefore, the storage usage will be higher than your actual file size.",
+        storageQuotaTooltip:
+          "The current file system has backups set up, which will take up additional " +
+          "storage space. Therefore, the storage usage will be higher than your actual file size.",
         failedResolveSymlink: "Failed to resolve symbolic link",
         noAccessPermission: "No access permission",
         noPath: "Path not found, please check",
@@ -444,9 +450,10 @@ export default {
           deleteConfirmOk: "Confirm",
           deleteSuccessMessage: "Deleted successfully",
           submitConfirmTitle: "Submit Confirmation",
-          submitConfirmNotice: "Please ensure that the script file specifies a valid absolute path "
-          + "as its working directory. If a working directory is not specified, the directory containing "
-          + "the script file will be designated as the default working directory.",
+          submitConfirmNotice:
+            "Please ensure that the script file specifies a valid absolute path " +
+            "as its working directory. If a working directory is not specified, the directory containing " +
+            "the script file will be designated as the default working directory.",
           submitConfirmContent: "Confirm submission of {} to {}?",
           submitConfirmOk: "Confirm",
           submitSuccessMessage: "Submitted successfully! Your new job ID is: {}",
@@ -499,6 +506,7 @@ export default {
         calculateHashError: "Error calculating hash: {}",
         uploadFileListNotExist: "The uploaded file list does not exist: {}",
         mergeFileChunksErrorText: "Failed to merge file {}. {}",
+        isNotFile: "Please drag files to upload",
         isMerging: "Merging in progress...",
       },
       uploadDirModal: {
@@ -523,6 +531,7 @@ export default {
         calculateHashError: "Error calculating hash: {}",
         uploadFileListNotExist: "The uploaded file list does not exist: {}",
         mergeFileChunksErrorText: "Failed to merge file {}. {}",
+        isNotDir: "Please drag folders to upload",
         isMerging: "Merging in progress...",
       },
     },
@@ -577,7 +586,7 @@ export default {
         coreCount: "CPU Cores per Node",
         maxTime: "Maximum Running Time",
         minute: "Minutes",
-        hour:"Hours",
+        hour: "Hours",
         day: "Days",
         totalGpuCount: "Total Accelerator Cards",
         totalCpuCount: "Total CPU Cores",
@@ -632,70 +641,70 @@ export default {
         failure: "Decompression Failed",
       },
     },
-    dashboard:{
-      addEntryModal:{
-        addQuickEntry:"Add links",
-        cancel:"cancel",
+    dashboard: {
+      addEntryModal: {
+        addQuickEntry: "Add links",
+        cancel: "cancel",
       },
-      changeClusterModal:{
-        selectCluster:"Select Cluster",
-        cluster:"cluster",
-        loginNode:"Login node",
+      changeClusterModal: {
+        selectCluster: "Select Cluster",
+        cluster: "cluster",
+        loginNode: "Login node",
       },
-      quickEntry:{
-        quickEntry:"Links",
-        finish:"Finish",
-        cancel:"Cancel",
-        edit:"Edit",
-        saveFailed:"Save failed",
-        saveSuccessfully:"Save succeeded",
+      quickEntry: {
+        quickEntry: "Links",
+        finish: "Finish",
+        cancel: "Cancel",
+        edit: "Edit",
+        saveFailed: "Save failed",
+        saveSuccessfully: "Save succeeded",
       },
-      sortable:{
-        alreadyExist:"Link already exists",
-        exceedMaxSize:"Up to 10 quickEntries can be added",
-        saveFailed:"Save failed",
-        saveSuccessfully:"Save succeeded",
+      sortable: {
+        alreadyExist: "Link already exists",
+        exceedMaxSize: "Up to 10 quickEntries can be added",
+        saveFailed: "Save failed",
+        saveSuccessfully: "Save succeeded",
       },
-      overviewTable:{
-        title:"Platform overview",
-        clusterName:"Cluster",
-        partitionName:"Partition",
-        nodeCount:"All nodes",
-        pendingJobCount:"Pending Jobs",
-        cpuUsage:"CPU",
-        gpuUsage:"Accelerator Card Usage",
-        usageRatePercentage:"Nodes",
-        partitionStatus:"Status",
-        available:"Available",
-        notAvailable:"Error",
+      overviewTable: {
+        title: "Platform overview",
+        clusterName: "Cluster",
+        partitionName: "Partition",
+        nodeCount: "All nodes",
+        pendingJobCount: "Pending Jobs",
+        cpuUsage: "CPU",
+        gpuUsage: "Accelerator Card Usage",
+        usageRatePercentage: "Nodes",
+        partitionStatus: "Status",
+        available: "Available",
+        notAvailable: "Error",
       },
-      infoPanes:{
-        nodeInfo:"Nodes",
-        node:"Nodes",
-        resourceInfo:"CPU & Accelerator Card",
-        core:"Core",
-        running:"Running",
-        idle:"idle",
-        notAvailable:"Error",
-        card:"Card",
-        job:"Job",
-        pending:"Pending",
-        platformOverview:"Platform Overview",
-        totalNodes:"Total Nodes",
-        totalCores:"Total Cores",
-        totalCards:"Total Cards",
+      infoPanes: {
+        nodeInfo: "Nodes",
+        node: "Nodes",
+        resourceInfo: "CPU & Accelerator Card",
+        core: "Core",
+        running: "Running",
+        idle: "idle",
+        notAvailable: "Error",
+        card: "Card",
+        job: "Job",
+        pending: "Pending",
+        platformOverview: "Platform Overview",
+        totalNodes: "Total Nodes",
+        totalCores: "Total Cores",
+        totalCards: "Total Cards",
         gpu: "Accelerator Card",
       },
-      nodeRange:{
-        jobs:"Jobs",
-        running:"Running",
-        pending:"Pending",
+      nodeRange: {
+        jobs: "Jobs",
+        running: "Running",
+        pending: "Pending",
       },
-      infoPane:{
-        nodeUtilization:"Node Utilization",
+      infoPane: {
+        nodeUtilization: "Node Utilization",
       },
-      titleContainer:{
-        available:"Available",
+      titleContainer: {
+        available: "Available",
       },
       NotificationCard: {
         message: "Message",
@@ -716,13 +725,13 @@ export default {
       desktopCardList: {
         newDesktop: "New Desktop",
       },
-      desktopCard:{
+      desktopCard: {
         clusterName: "Cluster",
         loginNode: "Login Node",
         desktopType: "Desktop Type",
         remoteControlTool: "Remote Control Tool",
         createTime: "Creation Time",
-        connect:"Connect",
+        connect: "Connect",
         delete: "Delete Desktop",
         deleteConfirmContent: "This action is irreversible. Are you sure you want to delete?",
         expiredTitle: "Desktop expired",
@@ -754,15 +763,16 @@ export default {
       systemNotAllowed: "The system does not allow access to this page.",
       notAllowed: "Access Denied",
       needLogin: "Login Required",
-      notLogin: "You are either not logged in or your login session has expired. "
-      + "You need to login to access this page.",
+      notLogin:
+        "You are either not logged in or your login session has expired. " + "You need to login to access this page.",
       login: "Login",
       notExist: "Does Not Exist",
       pageNotExist: "The page you requested does not exist.",
       serverWrong: "Server Error",
       sorry: "Sorry, there was a server error. Please refresh and try again.",
-      clusterNotAvailable: "The cluster you are currently accessing is unavailable or there are no available clusters. "
-      + " Please try again later or contact the administrator.",
+      clusterNotAvailable:
+        "The cluster you are currently accessing is unavailable or there are no available clusters. " +
+        " Please try again later or contact the administrator.",
     },
     others: {
       clusterSelector: "Please select a cluster.",
@@ -824,11 +834,11 @@ export default {
       changePassword: "Change Password",
       loginPassword: "Login Password",
       platformRole: "Platform Role",
-      tenantRole:"Tenant Role",
+      tenantRole: "Tenant Role",
       phone: "Phone",
       organization: "Organization",
-      createTime:"Creation Time",
-      email:"Email",
+      createTime: "Creation Time",
+      email: "Email",
       platformAdmin: "Platform Admin",
       platformFinance: "Platform Financial Officer",
       tenantAdmin: "Tenant Admin",
@@ -841,14 +851,16 @@ export default {
         reloadButton: "Refresh and Reconnect",
         popoverTitle: "Commands",
         popoverContent1: "Navigate to the file system ",
-        popoverContent2: "After entering this command, you will navigate to the file system, where you "
-        + "can upload and download files.",
+        popoverContent2:
+          "After entering this command, you will navigate to the file system, where you " +
+          "can upload and download files.",
         popoverContent3: "Download a file",
         popoverContentFile: "File Name",
         popoverContent4: "By entering",
         popoverContent5: ", the file in your current path will be downloaded locally. ",
-        popoverContent6: "Relative paths are not supported at the moment. "
-        + "If you need to download or edit files from other directories, please use",
+        popoverContent6:
+          "Relative paths are not supported at the moment. " +
+          "If you need to download or edit files from other directories, please use",
         popoverContent7: "command to navigate to the file system.",
         popoverContent8: "Usage example: ",
         popoverContent9: "Edit a file",
@@ -861,24 +873,26 @@ export default {
       },
     },
     _app: {
-      sshError: "Unable to connect as a user to the login node. Please make sure the permissions "
-      + "of your home directory are 700, 750, or 755.",
-      textExceedsLength:"There are too many terminal login prompts. "
-                        + "Please reduce unnecessary information output in files such as'~/. bashrc'!",
+      sshError:
+        "Unable to connect as a user to the login node. Please make sure the permissions " +
+        "of your home directory are 700, 750, or 755.",
+      textExceedsLength:
+        "There are too many terminal login prompts. " +
+        "Please reduce unnecessary information output in files such as'~/. bashrc'!",
       sftpError: "SFTP operation failed. Please confirm if you have the necessary permissions.",
       otherError: "Server encountered an error!",
       adapterConnectionError: "The {} cluster is currently unreachable. Please try again later. ",
       noActivatedClusters: "No available clusters. Please try again after refreshing the page.",
-      notExistInActivatedClusters: "The cluster(s) being queried may have been deactivated. "
-      + "Please try again after refreshing the page.",
+      notExistInActivatedClusters:
+        "The cluster(s) being queried may have been deactivated. " + "Please try again after refreshing the page.",
       noClusters: "Unable to find cluster configuration files. Please contact the system administrator.",
     },
     dashboard: {
       title: "Dashboard",
     },
     common: {
-      noAvailableClusters: "There are currently no available clusters."
-      + " Please try again later or contact the administrator.",
+      noAvailableClusters:
+        "There are currently no available clusters." + " Please try again later or contact the administrator.",
       clusterNotAvailableForAccount: "Account {0} is not authorized for cluster {1}",
       clusterPartitionNotAvailableForAccount: "Account {0} is not authorized for cluster {1} and partition {2}",
       userAccountNotAvailableWhenSubmit: "User {0} is not available under account {1}",
