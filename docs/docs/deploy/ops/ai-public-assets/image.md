@@ -133,7 +133,7 @@ title: AI 公共镜像迁移
 
 ### 1. 准备脚本
 
-例如：
+先在方便获取脚本的节点上准备脚本，例如：
 
 ```bash
 mkdir -p /root/migratesh
@@ -146,15 +146,44 @@ cd /root/migratesh
 /root/migratesh/ai-public-image-migration.sh
 ```
 
-### 2. 语法检查
+如果该节点不是实际执行节点，还需要再把脚本复制到真正执行迁移的节点，例如：
 
 ```bash
-bash -n /root/migratesh/ai-public-image-migration.sh
+scp /root/migratesh/ai-public-image-migration.sh k8s-master01:/root/migratesh/
 ```
 
-### 3. 准备数据库变量
+然后确认脚本文件存在：
 
-默认按“通过 Docker 包装脚本调用数据库容器内 `mysql`”执行，因此这里推荐先使用数据库容器内部可访问的地址：
+```bash
+ls -l /root/migratesh/ai-public-image-migration.sh
+```
+
+### 2. 确认数据库访问方式
+
+先执行：
+
+```bash
+which mysql
+```
+
+然后二选一：
+
+- 如果已经能找到 `mysql`，后续直接使用宿主机本地 `mysql`
+- 如果找不到 `mysql`，后续才使用 Docker 包装脚本方案
+
+如果实际执行节点与数据库宿主机不是同一台机器，或者当前节点无法直接解析数据库宿主机名，请参考[数据资产迁移文档](./)中“运维执行步骤”关于如何通过 `hostname -I` / `ss -lntp` 获取新的 `MYSQL_HOST` 的说明。
+
+如果数据库需通过另一台宿主机 IP 访问，例如 `10.129.227.94:7573`，则设置：
+
+```bash
+export MYSQL_HOST=10.129.227.94
+export MYSQL_PORT=7573
+export MYSQL_USER=root
+export MYSQL_PASSWORD='请替换为真实密码'
+export MYSQL_DATABASE=scow_ai
+```
+
+如果当前执行节点没有 `mysql`，并且数据库运行在 Docker 容器内，则使用容器内部地址：
 
 ```bash
 export MYSQL_HOST=127.0.0.1
@@ -164,29 +193,21 @@ export MYSQL_PASSWORD='请替换为真实密码'
 export MYSQL_DATABASE=scow_ai
 ```
 
-### 4. 准备 Harbor 变量
+### 3. 准备 Harbor 变量
 
-先明确 3 类含义：
+先区分 3 类变量：
 
-- `HARBOR_API_PROTOCOL`
-  - Harbor Core API 的协议
-  - 脚本用它访问 `/api/v2.0/projects`、创建项目、复制 artifact
-- `HARBOR_API_URL`
-  - Harbor Core API 的地址，不带协议
-  - 例如 `k8s-master:3000`
+- `HARBOR_API_PROTOCOL` / `HARBOR_API_URL`
+  - 用于访问 Harbor Core API
+  - 例如 `http://k8s-master:3000/api/v2.0/...`
 - `HARBOR_REGISTRY_URL`
-  - 镜像仓库地址，不带协议
-  - 脚本用它生成新平台镜像记录的 `path`
+  - 用于生成镜像 `path`
   - 例如 `k8s-master:3000` 或 `10.129.227.64:80`
+- `HARBOR_PROTOCOL` / `HARBOR_URL`
+  - 默认共享配置
+  - 若不显式拆分，脚本会同时把它们用于 Harbor API 和 registry
 
-基础共享配置：
-
-- `HARBOR_PROTOCOL`
-- `HARBOR_URL`
-
-脚本默认会把 `HARBOR_PROTOCOL`、`HARBOR_URL` 同时用于 Harbor API 和 registry。若当前环境里 API 地址与 registry 地址不同，再显式设置 `HARBOR_API_*` / `HARBOR_REGISTRY_URL` 做细分覆盖。
-
-大多数环境里，Harbor API 地址和 registry 地址其实是同一套，此时直接设置一套即可。
+大多数环境里，Harbor API 地址和 registry 地址其实是同一套，此时直接设置一套即可：
 
 ```bash
 export HARBOR_PROTOCOL=http
@@ -203,7 +224,7 @@ export HARBOR_API_URL=k8s-master:3000
 export HARBOR_REGISTRY_URL=k8s-master:3000
 ```
 
-若你的部署中 Harbor API 地址和 registry 地址不同，再显式拆开写，例如：
+如果 Harbor API 地址和 registry 地址不同，再显式拆开写，例如：
 
 ```bash
 export HARBOR_PROTOCOL=http
@@ -215,16 +236,17 @@ export HARBOR_USER=admin
 export HARBOR_PASSWORD='请替换为真实密码'
 ```
 
-变量含义总结：
-
-- `HARBOR_API_PROTOCOL` + `HARBOR_API_URL` 用于访问 Harbor Core API，例如 `http://k8s-master:3000/api/v2.0/...`
-- `HARBOR_REGISTRY_URL` 用于生成镜像 `path` 和 Harbor 仓库地址，例如 `k8s-master:3000/admin_public_asset/image1:tagxxx`
-- `HARBOR_PROTOCOL` / `HARBOR_URL` 是默认共享配置；若 API 地址与 registry 地址不同，应优先显式设置 `HARBOR_API_URL` 和 `HARBOR_REGISTRY_URL`
-
-### 5. 连通性检查
+### 4. 连通性检查
 
 #### 数据库
-默认执行方式如下。假设 AI 数据库容器名为 `scow-ai-db-1`：
+
+如果 `which mysql` 有输出，直接执行：
+
+```bash
+MYSQL_PWD="$MYSQL_PASSWORD" mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "select 1;"
+```
+
+如果 `which mysql` 没有输出，再先验证数据库容器。例如数据库容器名为 `scow-ai-db-1`：
 
 ```bash
 docker exec -e MYSQL_PWD="$MYSQL_PASSWORD" scow-ai-db-1 \
@@ -247,32 +269,8 @@ export PATH="/root/migratesh/bin:$PATH"
 
 注意：
 
-- 上面脚本中的 `scow-ai-db-1` 只是示例，必须替换为目标环境中的实际 AI 数据库容器名
-
-确认当前 `mysql` 命令已指向这个包装脚本：
-
-```bash
-which mysql
-```
-
-期望输出类似：
-
-```text
-/root/migratesh/bin/mysql
-```
-
-通过这个包装脚本执行时，`MYSQL_HOST` 和 `MYSQL_PORT` 应保持为数据库容器内部可访问的值，通常为：
-
-```bash
-export MYSQL_HOST=127.0.0.1
-export MYSQL_PORT=3306
-```
-
-如果宿主机本身已安装 `mysql` 客户端，也可以直接执行：
-
-```bash
-MYSQL_PWD="$MYSQL_PASSWORD" mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "select 1;"
-```
+- `scow-ai-db-1` 只是示例，必须替换为实际数据库容器名
+- 一旦确认本机已有可用 `mysql`，就不要再继续执行包装脚本方案
 
 #### Harbor API
 
@@ -280,7 +278,15 @@ MYSQL_PWD="$MYSQL_PASSWORD" mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_U
 curl -u "$HARBOR_USER:$HARBOR_PASSWORD" -v "$HARBOR_API_PROTOCOL://$HARBOR_API_URL/api/v2.0/projects"
 ```
 
-### 6. 执行 dry-run
+### 5. 语法检查和 dry-run
+
+先做语法检查：
+
+```bash
+bash -n /root/migratesh/ai-public-image-migration.sh
+```
+
+然后执行 dry-run：
 
 ```bash
 DRY_RUN=1 bash /root/migratesh/ai-public-image-migration.sh
@@ -293,7 +299,7 @@ column -t /tmp/ai-public-image-migration.success.tsv
 column -t /tmp/ai-public-image-migration.failures.tsv
 ```
 
-### 7. 正式执行
+### 6. 正式执行
 
 ```bash
 DRY_RUN=0 bash /root/migratesh/ai-public-image-migration.sh

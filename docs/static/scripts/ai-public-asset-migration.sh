@@ -40,6 +40,9 @@ set -o pipefail
 : "${SUCCESS_FILE:=/tmp/ai-public-asset-migration.success.tsv}"
 : "${FAILURES_FILE:=/tmp/ai-public-asset-migration.failures.tsv}"
 
+TSV_NULL_PLACEHOLDER="__NULL__"
+TSV_EMPTY_PLACEHOLDER="__EMPTY__"
+
 declare -A CLUSTER_PUBLIC_PATH_MAP=(
   # 这里填写各 cluster_id 对应的 clusterPublicPath。
   # 例如：["ai1"]="/data/.public"
@@ -96,8 +99,10 @@ sql_escape() {
 
 sql_quote_nullable() {
   local value="$1"
-  if [[ "${value}" == "\\N" ]]; then
+  if [[ "${value}" == "${TSV_NULL_PLACEHOLDER}" ]]; then
     printf 'NULL'
+  elif [[ "${value}" == "${TSV_EMPTY_PLACEHOLDER}" ]]; then
+    printf "''"
   else
     printf "'%s'" "$(sql_escape "${value}")"
   fi
@@ -221,6 +226,10 @@ copy_shared_path() {
   local cluster_public_path="$3"
   local owner_group
 
+  if [[ ! -e "${source_path}" ]]; then
+    return 1
+  fi
+
   if [[ -e "${target_path}" ]]; then
     return 1
   fi
@@ -234,12 +243,12 @@ copy_shared_path() {
   # 这里故意复制到 target_path 的父目录，而不是直接 cp 到 target_path。
   # 原因是 source_path 本身通常就是一个目录，当前写法与现有 share 实现一致：
   # cp -r src parent_dir  => 最终生成 parent_dir/$(basename src)，也就是 target_path。
-  cp -r --preserve=links "${source_path}" "$(dirname "${target_path}")"
+  cp -r --preserve=links "${source_path}" "$(dirname "${target_path}")" || return 1
   # owner/group 不写死，直接对齐 clusterPublicPath 本身，避免在不同环境里写错账号。
   owner_group="$(resolve_owner_group "${cluster_public_path}")"
-  chown -R "${owner_group}" "${target_path}"
+  chown -R "${owner_group}" "${target_path}" || return 1
   # 权限语义对齐当前用户分享实现，统一递归设为 555。
-  chmod -R 555 "${target_path}"
+  chmod -R 555 "${target_path}" || return 1
 }
 
 should_switch_migration_root_for_conflict() {
@@ -420,12 +429,36 @@ dataset_source_row_by_id() {
   mysql_query "
     SELECT
       d.id,
-      REPLACE(REPLACE(REPLACE(d.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      d.owner,
-      d.type,
-      d.scene,
-      REPLACE(REPLACE(REPLACE(COALESCE(d.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      d.cluster_id,
+      CASE
+        WHEN d.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(d.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN d.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.owner
+      END,
+      CASE
+        WHEN d.type IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.type = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.type
+      END,
+      CASE
+        WHEN d.scene IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.scene = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.scene
+      END,
+      CASE
+        WHEN d.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(d.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN d.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.cluster_id
+      END,
       DATE_FORMAT(d.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(d.update_time, '%Y-%m-%d %H:%i:%s')
     FROM dataset d
@@ -450,11 +483,31 @@ algorithm_source_row_by_id() {
   mysql_query "
     SELECT
       a.id,
-      REPLACE(REPLACE(REPLACE(a.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      a.owner,
-      a.framework,
-      REPLACE(REPLACE(REPLACE(COALESCE(a.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      a.cluster_id,
+      CASE
+        WHEN a.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(a.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN a.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.owner
+      END,
+      CASE
+        WHEN a.framework IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.framework = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.framework
+      END,
+      CASE
+        WHEN a.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(a.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN a.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.cluster_id
+      END,
       DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s')
     FROM algorithm a
@@ -479,12 +532,36 @@ model_source_row_by_id() {
   mysql_query "
     SELECT
       m.id,
-      REPLACE(REPLACE(REPLACE(m.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      m.owner,
-      COALESCE(m.algorithm_framework, '\\N'),
-      COALESCE(m.algorithm_name, '\\N'),
-      REPLACE(REPLACE(REPLACE(COALESCE(m.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      m.cluster_id,
+      CASE
+        WHEN m.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(m.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN m.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.owner
+      END,
+      CASE
+        WHEN m.algorithm_framework IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.algorithm_framework = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.algorithm_framework
+      END,
+      CASE
+        WHEN m.algorithm_name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.algorithm_name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.algorithm_name
+      END,
+      CASE
+        WHEN m.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(m.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN m.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.cluster_id
+      END,
       DATE_FORMAT(m.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(m.update_time, '%Y-%m-%d %H:%i:%s')
     FROM model m
@@ -509,10 +586,26 @@ dataset_shared_versions() {
   mysql_query "
     SELECT
       dv.id,
-      REPLACE(REPLACE(REPLACE(dv.version_name, '\t', ' '), '\n', ' '), '\r', ' '),
-      REPLACE(REPLACE(REPLACE(COALESCE(dv.version_description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      dv.private_path,
-      dv.path,
+      CASE
+        WHEN dv.version_name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN dv.version_name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(dv.version_name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN dv.version_description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN dv.version_description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(dv.version_description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN dv.private_path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN dv.private_path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE dv.private_path
+      END,
+      CASE
+        WHEN dv.path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN dv.path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE dv.path
+      END,
       DATE_FORMAT(dv.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(dv.update_time, '%Y-%m-%d %H:%i:%s')
     FROM dataset_version dv
@@ -527,10 +620,26 @@ algorithm_shared_versions() {
   mysql_query "
     SELECT
       av.id,
-      REPLACE(REPLACE(REPLACE(av.version_name, '\t', ' '), '\n', ' '), '\r', ' '),
-      REPLACE(REPLACE(REPLACE(COALESCE(av.version_description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      av.private_path,
-      av.path,
+      CASE
+        WHEN av.version_name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN av.version_name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(av.version_name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN av.version_description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN av.version_description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(av.version_description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN av.private_path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN av.private_path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE av.private_path
+      END,
+      CASE
+        WHEN av.path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN av.path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE av.path
+      END,
       DATE_FORMAT(av.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(av.update_time, '%Y-%m-%d %H:%i:%s')
     FROM algorithm_version av
@@ -545,11 +654,31 @@ model_shared_versions() {
   mysql_query "
     SELECT
       mv.id,
-      REPLACE(REPLACE(REPLACE(mv.version_name, '\t', ' '), '\n', ' '), '\r', ' '),
-      REPLACE(REPLACE(REPLACE(COALESCE(mv.version_description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      COALESCE(mv.algorithm_version, '\\N'),
-      mv.private_path,
-      mv.path,
+      CASE
+        WHEN mv.version_name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN mv.version_name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(mv.version_name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN mv.version_description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN mv.version_description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(mv.version_description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN mv.algorithm_version IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN mv.algorithm_version = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE mv.algorithm_version
+      END,
+      CASE
+        WHEN mv.private_path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN mv.private_path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE mv.private_path
+      END,
+      CASE
+        WHEN mv.path IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN mv.path = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE mv.path
+      END,
       DATE_FORMAT(mv.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(mv.update_time, '%Y-%m-%d %H:%i:%s')
     FROM model_version mv
@@ -563,12 +692,36 @@ list_dataset_assets() {
   mysql_query "
     SELECT
       d.id,
-      REPLACE(REPLACE(REPLACE(d.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      d.owner,
-      d.type,
-      d.scene,
-      REPLACE(REPLACE(REPLACE(COALESCE(d.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      d.cluster_id,
+      CASE
+        WHEN d.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(d.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN d.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.owner
+      END,
+      CASE
+        WHEN d.type IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.type = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.type
+      END,
+      CASE
+        WHEN d.scene IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.scene = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.scene
+      END,
+      CASE
+        WHEN d.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(d.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN d.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN d.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE d.cluster_id
+      END,
       DATE_FORMAT(d.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(d.update_time, '%Y-%m-%d %H:%i:%s')
     FROM dataset d
@@ -592,11 +745,31 @@ list_algorithm_assets() {
   mysql_query "
     SELECT
       a.id,
-      REPLACE(REPLACE(REPLACE(a.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      a.owner,
-      a.framework,
-      REPLACE(REPLACE(REPLACE(COALESCE(a.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      a.cluster_id,
+      CASE
+        WHEN a.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(a.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN a.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.owner
+      END,
+      CASE
+        WHEN a.framework IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.framework = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.framework
+      END,
+      CASE
+        WHEN a.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(a.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN a.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN a.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE a.cluster_id
+      END,
       DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s')
     FROM algorithm a
@@ -620,12 +793,36 @@ list_model_assets() {
   mysql_query "
     SELECT
       m.id,
-      REPLACE(REPLACE(REPLACE(m.name, '\t', ' '), '\n', ' '), '\r', ' '),
-      m.owner,
-      COALESCE(m.algorithm_framework, '\\N'),
-      COALESCE(m.algorithm_name, '\\N'),
-      REPLACE(REPLACE(REPLACE(COALESCE(m.description, '\\N'), '\t', ' '), '\n', ' '), '\r', ' '),
-      m.cluster_id,
+      CASE
+        WHEN m.name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(m.name, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN m.owner IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.owner = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.owner
+      END,
+      CASE
+        WHEN m.algorithm_framework IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.algorithm_framework = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.algorithm_framework
+      END,
+      CASE
+        WHEN m.algorithm_name IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.algorithm_name = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.algorithm_name
+      END,
+      CASE
+        WHEN m.description IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.description = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE REPLACE(REPLACE(REPLACE(m.description, '\t', ' '), '\n', ' '), '\r', ' ')
+      END,
+      CASE
+        WHEN m.cluster_id IS NULL THEN '${TSV_NULL_PLACEHOLDER}'
+        WHEN m.cluster_id = '' THEN '${TSV_EMPTY_PLACEHOLDER}'
+        ELSE m.cluster_id
+      END,
       DATE_FORMAT(m.create_time, '%Y-%m-%d %H:%i:%s'),
       DATE_FORMAT(m.update_time, '%Y-%m-%d %H:%i:%s')
     FROM model m

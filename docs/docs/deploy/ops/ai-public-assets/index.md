@@ -37,6 +37,7 @@ title: AI 公共数据资产迁移
 - 脚本按“单条失败继续，最后汇总失败项”设计。
 - 脚本不会自动冻结用户编辑/删除；若迁移过程中检测到记录被并发修改，会跳过该条并记入失败清单。
 - `dataset / algorithm / model` 主表没有数据库层唯一约束，脚本里的重名检查是唯一保障，不能依赖数据库自动拦截。
+- 脚本通过本地 `cp/chown/chmod` 操作 `/.shared/...` 和 `clusterPublicPath/...`，因此必须在**本地可直接访问这两个目录的节点**执行；如果在 `pre-scow` 这类看不到 `/data/.shared` 的管理节点执行，会出现 `cp: cannot stat '/data/.shared/...'` 之类错误。
 
 ## 命名规则
 
@@ -121,7 +122,16 @@ clusterPublicPath/Migration_YYYYMMDDHHmmss
 
 ### 1. 准备脚本
 
-将脚本放到运维机本地，例如：
+脚本必须在**本地能直接访问**共享目录和公共目录的节点执行。先检查：
+
+```bash
+ls -ld /data/.shared
+ls -ld /data/.public
+```
+
+如果这里任何一个目录不存在，说明当前机器不是实际执行节点。此时不要继续执行，应切换到实际挂载 `/data/.shared` 和 `/data/.public` 的节点，例如 `k8s-master01`。
+
+先在方便获取脚本的节点上准备脚本：
 
 ```bash
 mkdir -p /root/migratesh
@@ -134,20 +144,24 @@ cd /root/migratesh
 /root/migratesh/ai-public-asset-migration.sh
 ```
 
-### 2. 编辑脚本中的 `CLUSTER_PUBLIC_PATH_MAP`
+如果该节点不是实际执行节点，还需要再把脚本复制到真正执行迁移的节点，例如：
+
+```bash
+scp /root/migratesh/ai-public-asset-migration.sh k8s-master01:/root/migratesh/
+```
+
+然后确认脚本存在：
+
+```bash
+ls -l /root/migratesh/ai-public-asset-migration.sh
+```
+
+### 2. 编辑 `CLUSTER_PUBLIC_PATH_MAP`
 
 打开脚本：
 
 ```bash
 vim /root/migratesh/ai-public-asset-migration.sh
-```
-
-找到：
-
-```bash
-declare -A CLUSTER_PUBLIC_PATH_MAP=(
-  # ["ai1"]="/data/.public"
-)
 ```
 
 按实际环境填写，例如：
@@ -163,23 +177,42 @@ declare -A CLUSTER_PUBLIC_PATH_MAP=(
 ```bash
 declare -A CLUSTER_PUBLIC_PATH_MAP=(
   ["ai1"]="/data/.public"
-  ["hpc01"]="/nfs/.public"
+  ["dev-k8s"]="/nfs/.public"
 )
 ```
 
-### 3. 语法检查
+### 3. 确认数据库访问方式
 
-先做一次 Bash 语法检查：
+先执行：
 
 ```bash
-bash -n /root/migratesh/ai-public-asset-migration.sh
+which mysql
 ```
 
-无输出即表示语法通过。
+然后二选一：
 
-### 4. 准备数据库连接变量
+- 如果已经能找到 `mysql`，后续直接使用宿主机本地 `mysql`
+- 如果找不到 `mysql`，后续才使用 Docker 包装脚本方案
 
-脚本依赖以下环境变量：
+如果数据库不在当前执行节点，而在另一台宿主机上，则应使用**数据库宿主机的实际 IP** 作为 `MYSQL_HOST`。可在数据库宿主机上执行：
+
+```bash
+hostname
+hostname -I
+ss -lntp | grep 7573
+```
+
+例如已确认数据库通过 `10.129.227.94:7573` 对外提供服务，则在执行节点上设置：
+
+```bash
+export MYSQL_HOST=10.129.227.94
+export MYSQL_PORT=7573
+export MYSQL_USER=root
+export MYSQL_PASSWORD='请替换为真实密码'
+export MYSQL_DATABASE=scow_ai
+```
+
+如果当前执行节点没有 `mysql`，并且数据库运行在 Docker 容器内，则使用容器内部地址：
 
 ```bash
 export MYSQL_HOST=127.0.0.1
@@ -189,40 +222,22 @@ export MYSQL_PASSWORD='请替换为真实密码'
 export MYSQL_DATABASE=scow_ai
 ```
 
-推荐先确认变量是否已设置：
+### 4. 验证数据库连通性
 
-```bash
-echo "$MYSQL_HOST"
-echo "$MYSQL_PORT"
-echo "$MYSQL_USER"
-echo "$MYSQL_DATABASE"
-[[ -n "$MYSQL_PASSWORD" ]] && echo "MYSQL_PASSWORD 已设置" || echo "MYSQL_PASSWORD 未设置"
-```
-
-### 5. 先验证数据库可连通
-
-#### 情况 A：宿主机已安装 `mysql` 客户端
-
-直接执行：
+如果 `which mysql` 有输出，直接执行：
 
 ```bash
 MYSQL_PWD="$MYSQL_PASSWORD" mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "select 1;"
 ```
 
-若输出 `1`，说明数据库连接正常。
-
-#### 情况 B：宿主机未安装 `mysql` 客户端，但数据库运行在 Docker 容器内
-
-此时先用数据库容器验证一次连通性。例如数据库容器名为 `scow-ai-db-1`：
+如果 `which mysql` 没有输出，再先验证数据库容器。例如数据库容器名为 `scow-ai-db-1`：
 
 ```bash
 docker exec -e MYSQL_PWD="$MYSQL_PASSWORD" scow-ai-db-1 \
   mysql -h 127.0.0.1 -P 3306 -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "select 1;"
 ```
 
-若输出 `1`，说明数据库本身可连通。
-
-然后在运维机上临时创建一个 `mysql` 包装脚本，让迁移脚本仍然可以按原样调用 `mysql`：
+确认容器方案可用后，再创建包装脚本：
 
 ```bash
 mkdir -p /root/migratesh/bin
@@ -236,34 +251,18 @@ export PATH="/root/migratesh/bin:$PATH"
 
 注意：
 
-- 上面脚本中的 `scow-ai-db-1` 只是示例，必须替换为目标环境中的实际 AI 数据库容器名
+- `scow-ai-db-1` 只是示例，必须替换为实际数据库容器名
+- 一旦确认本机已有可用 `mysql`，就不要再继续执行包装脚本方案
 
-确认当前 `mysql` 命令已指向这个包装脚本：
+### 5. 语法检查和 dry-run
 
-```bash
-which mysql
-```
-
-期望输出类似：
-
-```text
-/root/migratesh/bin/mysql
-```
-
-注意：
-
-- 如果通过这个包装脚本执行，则 `MYSQL_HOST` 和 `MYSQL_PORT` 应改为数据库容器内部可访问的值，通常为：
+先做语法检查：
 
 ```bash
-export MYSQL_HOST=127.0.0.1
-export MYSQL_PORT=3306
+bash -n /root/migratesh/ai-public-asset-migration.sh
 ```
 
-- 如果直接在宿主机上连映射端口，则应使用宿主机暴露的端口，例如 `7573`
-
-### 6. 先执行 dry-run
-
-先不要正式迁移，先预演确认目标路径是否位于 `clusterPublicPath/Migration/...`：
+然后执行 dry-run：
 
 ```bash
 DRY_RUN=1 bash /root/migratesh/ai-public-asset-migration.sh
@@ -272,22 +271,17 @@ DRY_RUN=1 bash /root/migratesh/ai-public-asset-migration.sh
 dry-run 成功后，检查输出文件：
 
 ```bash
-sed -n '1,50p' /tmp/ai-public-asset-migration.success.tsv
-sed -n '1,50p' /tmp/ai-public-asset-migration.failures.tsv
+column -t /tmp/ai-public-asset-migration.success.tsv
+column -t /tmp/ai-public-asset-migration.failures.tsv
 ```
 
-说明：
-
-- 这两个 `tsv` 文件的第一行是表头
-- `success.tsv` 会直接带出当前资产的目标路径摘要，便于运维核对路径是否落到 `clusterPublicPath/Migration...`
-- `failures.tsv` 会给出失败阶段和错误信息
-
-运维需要重点确认：
+重点确认：
 
 - 目标名称是否符合预期
+- `target_path` 是否落到 `clusterPublicPath/Migration/...`
 - 失败清单是否为空
 
-### 7. 正式执行
+### 6. 正式执行
 
 确认 dry-run 无误后，再正式执行：
 
@@ -301,7 +295,7 @@ DRY_RUN=0 bash /root/migratesh/ai-public-asset-migration.sh
 DRY_RUN=0 bash /root/migratesh/ai-public-asset-migration.sh | tee /tmp/ai-public-asset-migration.run.log
 ```
 
-### 8. 执行后检查
+### 7. 执行后检查
 
 先看脚本输出结果：
 
@@ -310,7 +304,7 @@ column -t /tmp/ai-public-asset-migration.success.tsv
 column -t /tmp/ai-public-asset-migration.failures.tsv
 ```
 
-### 9. 结果判定
+### 8. 结果判定
 
 执行后至少要确认：
 
