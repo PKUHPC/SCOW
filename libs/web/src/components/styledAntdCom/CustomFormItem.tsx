@@ -86,6 +86,7 @@ export const InlineFormItem = styled(CustomFormItem)<{ $labelWidth?: number }>`
     align-items: center;
     min-height: 40px;
     padding: 0;
+    text-align: left;
   }
 
   .ant-form-item-label > label {
