@@ -118,11 +118,6 @@ export const TableWithSplitLines: StyledTableComponent = styled(TableWrapper)<Ta
     border: none !important;
   }
 
-  .ant-table-content,
-  .ant-table-body {
-    overflow: hidden !important;
-  }
-
   .ant-table-thead > tr > th {
     background-color: ${({ theme }) => theme.palette.gray[0]};
     border-bottom: 1px solid ${({ theme }) => theme.palette.gray[3]} !important;

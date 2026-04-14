@@ -459,6 +459,8 @@ export default {
         algorithm: "算法",
         dataset: "数据集",
         mountPoint: "挂载点",
+        mountPath: "路径",
+        mountTarget: "目标路径",
         envVariable: "环境变量",
         variableName: "变量名",
         variableValue: "变量值",

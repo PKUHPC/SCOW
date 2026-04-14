@@ -494,6 +494,8 @@ export default {
         algorithm: "Алгоритм",
         dataset: "Набор данных",
         mountPoint: "Точка монтирования",
+        mountPath: "Путь",
+        mountTarget: "Целевой путь",
         envVariable: "Переменная окружения",
         variableName: "Имя переменной",
         variableValue: "Значение переменной",

@@ -496,6 +496,8 @@ export default {
         algorithm: "Algorithme",
         dataset: "Jeu de données",
         mountPoint: "Point de montage",
+        mountPath: "Chemin",
+        mountTarget: "Chemin cible",
         envVariable: "Variable d'environnement",
         variableName: "Nom de la variable",
         variableValue: "Valeur de la variable",

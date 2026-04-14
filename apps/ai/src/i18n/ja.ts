@@ -493,6 +493,8 @@ export default {
         algorithm: "アルゴリズム",
         dataset: "データセット",
         mountPoint: "マウントポイント",
+        mountPath: "パス",
+        mountTarget: "ターゲットパス",
         envVariable: "環境変数",
         variableName: "変数名",
         variableValue: "変数値",

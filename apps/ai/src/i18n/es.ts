@@ -497,6 +497,8 @@ export default {
         algorithm: "Algoritmo",
         dataset: "Conjunto de Datos",
         mountPoint: "Punto de montaje",
+        mountPath: "Ruta",
+        mountTarget: "Ruta de destino",
         envVariable: "Variable de entorno",
         variableName: "Nombre de variable",
         variableValue: "Valor de variable",

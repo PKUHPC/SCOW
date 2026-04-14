@@ -498,6 +498,8 @@ export default {
         algorithm: "Algorithmus",
         dataset: "Datensatz",
         mountPoint: "Mount-Punkt",
+        mountPath: "Pfad",
+        mountTarget: "Zielpfad",
         envVariable: "Umgebungsvariable",
         variableName: "Variablenname",
         variableValue: "Variablenwert",

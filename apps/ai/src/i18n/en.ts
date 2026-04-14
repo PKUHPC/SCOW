@@ -459,6 +459,8 @@ export default {
         algorithm: "Algorithm",
         dataset: "Dataset",
         mountPoint: "Mount point",
+        mountPath: "Path",
+        mountTarget: "Target path",
         envVariable: "Environment variable",
         variableName: "Variable name",
         variableValue: "Variable value",

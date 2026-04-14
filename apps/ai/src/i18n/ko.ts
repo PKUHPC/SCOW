@@ -492,6 +492,8 @@ export default {
         algorithm: "알고리즘",
         dataset: "데이터셋",
         mountPoint: "마운트 지점",
+        mountPath: "경로",
+        mountTarget: "대상 경로",
         envVariable: "환경 변수",
         variableName: "변수 이름",
         variableValue: "변수 값",
