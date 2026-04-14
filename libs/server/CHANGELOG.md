@@ -1,5 +1,25 @@
 # @scow/lib-server
 
+## 1.5.0
+
+### Minor Changes
+
+- 148099e: 重构 hpc 提交作业
+
+### Patch Changes
+
+- Updated dependencies [f8fe60d]
+- Updated dependencies [148099e]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+  - @scow/config@1.14.0
+  - @scow/scheduler-adapter-protos@1.5.5
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+  - @scow/rich-error-model@2.0.3
+
 ## 1.4.13
 
 ### Patch Changes

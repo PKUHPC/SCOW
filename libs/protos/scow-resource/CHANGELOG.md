@@ -1,5 +1,11 @@
 # @scow/scow-resource-protos
 
+## 0.3.2
+
+### Patch Changes
+
+- 148099e: 重构 hpc 提交作业
+
 ## 0.3.1
 
 ### Patch Changes

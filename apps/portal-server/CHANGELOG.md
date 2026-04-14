@@ -1,5 +1,34 @@
 # @scow/portal-server
 
+## 1.11.0
+
+### Minor Changes
+
+- 148099e: 重构 hpc 提交作业
+
+### Patch Changes
+
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 5160f9e: 修复创建交互式应用时内存需求计算错误并重新设计创建交互式应用接口数据类型
+- 434cdf3: 实现 scowd 多登录节点负载均衡与请求亲和性路由
+- Updated dependencies [f8fe60d]
+- Updated dependencies [c981960]
+- Updated dependencies [148099e]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [434cdf3]
+  - @scow/config@1.14.0
+  - @scow/scowd-protos@0.5.0
+  - @scow/lib-server@1.5.0
+  - @scow/scheduler-adapter-protos@1.5.5
+  - @scow/lib-scow-resource@0.2.23
+  - @scow/lib-scowd@1.2.7
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+  - @scow/rich-error-model@2.0.3
+
 ## 1.10.2
 
 ### Patch Changes

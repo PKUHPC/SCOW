@@ -1,5 +1,24 @@
 # @scow/cli
 
+## 1.11.0
+
+### Patch Changes
+
+- f341bec: CLI 运行 db 时可以输入中文
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- c981960: 增加以平台角色管理公共数据资产数据集、算法、模型、镜像的功能，并对现有数据资产进行相应影响，同时文件管理也允许平台管理访问公共数据资产路径，普通用户也可复制该路径。
+- 00aa2eb: 增加分享数据资产的文件夹所在的目录的可选配置 sharedTopDir
+- 3d18a5c: 默认取消用户数据资产分享功能、运维数据资产脚本迁移、细化数据资产文件选择框文件选择报错提示
+- Updated dependencies [f8fe60d]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [434cdf3]
+  - @scow/config@1.14.0
+  - @scow/lib-scowd@1.2.7
+  - @scow/lib-scheduler-adapter@1.1.37
+
 ## 1.10.2
 
 ### Patch Changes

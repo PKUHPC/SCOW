@@ -1,5 +1,33 @@
 # @scow/resource
 
+## 0.3.14
+
+### Patch Changes
+
+- 148099e: 重构 hpc 提交作业
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- Updated dependencies [f8fe60d]
+- Updated dependencies [f3da786]
+- Updated dependencies [6ef8e28]
+- Updated dependencies [148099e]
+- Updated dependencies [148099e]
+- Updated dependencies [2d3dcf6]
+- Updated dependencies [41dd8f4]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [c981960]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [1733acd]
+  - @scow/config@1.14.0
+  - @scow/lib-web@1.6.0
+  - @scow/lib-server@1.5.0
+  - @scow/scow-resource-protos@0.3.2
+  - @scow/lib-hook@1.0.39
+  - @scow/lib-operation-log@2.2.14
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+
 ## 0.3.13
 
 ### Patch Changes

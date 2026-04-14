@@ -1,5 +1,19 @@
 # @scow/lib-scow-resource
 
+## 0.2.23
+
+### Patch Changes
+
+- 148099e: 重构 hpc 提交作业
+- Updated dependencies [f8fe60d]
+- Updated dependencies [148099e]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+  - @scow/config@1.14.0
+  - @scow/scow-resource-protos@0.3.2
+
 ## 0.2.22
 
 ### Patch Changes

@@ -1,5 +1,36 @@
 # @scow/mis-web
 
+## 1.11.0
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- c7877af: 将账户"拥有者"角色统一重命名为"主管理员"
+- c576348: 账户管理下的添加用户时，姓名增加必填校验
+- 00aa2eb: 为适配不同调度系统对主机名大小写处理不一致的情况，节点迁移功能在跨集群状态比对时采用大小写不敏感匹配
+- Updated dependencies [f8fe60d]
+- Updated dependencies [f3da786]
+- Updated dependencies [6ef8e28]
+- Updated dependencies [148099e]
+- Updated dependencies [148099e]
+- Updated dependencies [2d3dcf6]
+- Updated dependencies [41dd8f4]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [c981960]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [1733acd]
+  - @scow/notification-protos@0.1.10
+  - @scow/config@1.14.0
+  - @scow/lib-web@1.6.0
+  - @scow/lib-scow-resource@0.2.23
+  - @scow/lib-notification@1.0.24
+  - @scow/lib-operation-log@2.2.14
+  - @scow/protos@1.0.39
+  - @scow/rich-error-model@2.0.3
+
 ## 1.10.2
 
 ### Patch Changes

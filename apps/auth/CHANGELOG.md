@@ -1,5 +1,20 @@
 # @scow/auth
 
+## 1.11.0
+
+### Patch Changes
+
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 96b875f: 登录页面样式调整和增加响应式
+- Updated dependencies [f8fe60d]
+- Updated dependencies [148099e]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+  - @scow/config@1.14.0
+  - @scow/lib-server@1.5.0
+
 ## 1.10.2
 
 ### Patch Changes

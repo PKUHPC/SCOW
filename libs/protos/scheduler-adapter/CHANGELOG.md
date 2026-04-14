@@ -1,5 +1,11 @@
 # @scow/scheduler-adapter-protos
 
+## 1.5.5
+
+### Patch Changes
+
+- 148099e: 重构 hpc 提交作业
+
 ## 1.5.4
 
 ### Patch Changes

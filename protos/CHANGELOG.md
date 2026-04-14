@@ -1,5 +1,19 @@
 # @scow/grpc-api
 
+## 1.33.0
+
+### Minor Changes
+
+- 5160f9e: `CreateAppSessionRequest` 中的内存字段从 `string memory` 改为 `uint32 memory_mb`，类型由格式化字符串改为以 MB 为单位的整数
+- 148099e: common/config.proto 中 Partition 增加分区描述；增加获取可用账户下用可用集群 GetAvailableAccountsAndClusters；增加计算作业费用 CalculateJobPrice；增加保存作业模板 SaveAsJobTemplate。
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- 148099e: 1. 重构 hpc 交互式应用提交作业页面 2. 修改交互式应用菜单，不再以集群为维度
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 148099e: listAppSessions 增加 clusters 传参
+
 ## 1.32.0
 
 ### Minor Changes

@@ -1,5 +1,36 @@
 # @scow/quantum
 
+## 0.1.14
+
+### Patch Changes
+
+- 148099e: 1. 重构 hpc 交互式应用提交作业页面 2. 修改交互式应用菜单，不再以集群为维度
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- Updated dependencies [f8fe60d]
+- Updated dependencies [f3da786]
+- Updated dependencies [6ef8e28]
+- Updated dependencies [148099e]
+- Updated dependencies [148099e]
+- Updated dependencies [2d3dcf6]
+- Updated dependencies [41dd8f4]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [c981960]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [1733acd]
+- Updated dependencies [434cdf3]
+  - @scow/config@1.14.0
+  - @scow/lib-web@1.6.0
+  - @scow/lib-server@1.5.0
+  - @scow/scheduler-adapter-protos@1.5.5
+  - @scow/lib-scow-resource@0.2.23
+  - @scow/lib-scowd@1.2.7
+  - @scow/lib-operation-log@2.2.14
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+  - @scow/rich-error-model@2.0.3
+
 ## 0.1.13
 
 ### Patch Changes

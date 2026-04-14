@@ -1,5 +1,50 @@
 # @scow/ai
 
+## 0.5.3
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- 6ef8e28: hpc 和 ai 提交作业 UI 调整
+- 148099e: 重构 hpc 提交作业
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 41dd8f4: 上传文件/文件夹使用拖拽功能时只能拖拽对应类型的文件，如果出现错误类型增加提示，本次上传不进行上传
+- b883196: AI 推理训练页面表单项设置错误
+- b87bed6: 优化 ai 作业页面队列展示
+- c981960: 增加以平台角色管理公共数据资产数据集、算法、模型、镜像的功能，并对现有数据资产进行相应影响，同时文件管理也允许平台管理访问公共数据资产路径，普通用户也可复制该路径。
+- 1e06ee1: 修复授权的集群没有授权分区时不显示的问题
+- 434cdf3: 实现 scowd 多登录节点负载均衡与请求亲和性路由
+- 00aa2eb: 增加分享数据资产的文件夹所在的目录的可选配置 sharedTopDir
+- 3d18a5c: 默认取消用户数据资产分享功能、运维数据资产脚本迁移、细化数据资产文件选择框文件选择报错提示
+- Updated dependencies [f8fe60d]
+- Updated dependencies [c981960]
+- Updated dependencies [f3da786]
+- Updated dependencies [6ef8e28]
+- Updated dependencies [148099e]
+- Updated dependencies [148099e]
+- Updated dependencies [2d3dcf6]
+- Updated dependencies [41dd8f4]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [c981960]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [1733acd]
+- Updated dependencies [434cdf3]
+  - @scow/notification-protos@0.1.10
+  - @scow/config@1.14.0
+  - @scow/lib-web@1.6.0
+  - @scow/scowd-protos@0.5.0
+  - @scow/lib-server@1.5.0
+  - @scow/scheduler-adapter-protos@1.5.5
+  - @scow/lib-scow-resource@0.2.23
+  - @scow/lib-scowd@1.2.7
+  - @scow/lib-notification@1.0.24
+  - @scow/lib-operation-log@2.2.14
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+  - @scow/rich-error-model@2.0.3
+
 ## 0.5.2
 
 ### Patch Changes

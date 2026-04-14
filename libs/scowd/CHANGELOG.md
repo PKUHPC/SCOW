@@ -1,5 +1,13 @@
 # @scow/lib-scowd
 
+## 1.2.7
+
+### Patch Changes
+
+- 434cdf3: 实现 scowd 多登录节点负载均衡与请求亲和性路由
+- Updated dependencies [c981960]
+  - @scow/scowd-protos@0.5.0
+
 ## 1.2.6
 
 ### Patch Changes

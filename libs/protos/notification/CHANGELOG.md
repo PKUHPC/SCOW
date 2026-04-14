@@ -1,5 +1,11 @@
 # @scow/notification-protos
 
+## 0.1.10
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+
 ## 0.1.9
 
 ### Patch Changes

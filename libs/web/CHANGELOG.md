@@ -1,5 +1,29 @@
 # @scow/lib-web
 
+## 1.6.0
+
+### Minor Changes
+
+- 148099e: 重构 hpc 提交作业
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- f3da786: 前端网页使用的登录用户信息中，去掉已删除的账户，避免无效的账户展示或参与接口查询
+- 6ef8e28: hpc 和 ai 提交作业 UI 调整
+- 148099e: 1. 重构 hpc 交互式应用提交作业页面 2. 修改交互式应用菜单，不再以集群为维度
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 41dd8f4: 上传文件/文件夹使用拖拽功能时只能拖拽对应类型的文件，如果出现错误类型增加提示，本次上传不进行上传
+- c981960: 增加以平台角色管理公共数据资产数据集、算法、模型、镜像的功能，并对现有数据资产进行相应影响，同时文件管理也允许平台管理访问公共数据资产路径，普通用户也可复制该路径。
+- 1733acd: 文字修改和 label 左对齐
+- Updated dependencies [f8fe60d]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+  - @scow/config@1.14.0
+  - @scow/protos@1.0.39
+
 ## 1.5.13
 
 ### Patch Changes

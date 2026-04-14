@@ -1,5 +1,12 @@
 # @scow/test-adapter
 
+## 1.1.20
+
+### Patch Changes
+
+- Updated dependencies [148099e]
+  - @scow/scheduler-adapter-protos@1.5.5
+
 ## 1.1.19
 
 ### Patch Changes

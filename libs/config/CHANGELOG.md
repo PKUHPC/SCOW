@@ -1,5 +1,18 @@
 # @scow/config
 
+## 1.14.0
+
+### Minor Changes
+
+- 3d18a5c: 增加 AI 数据资产-是否启用用户分享功能的配置，默认关闭，文档地址：docs/deploy/config/ai/intro
+- c981960: 集群配置文件增加 clusterPublicPath，用于 AI 的公共数据资产目录路径的配置。配置路径：docs/deploy/config/ai/intro。
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- e578c89: 调整 oxfmt 格式化规则配置
+- 00aa2eb: 增加分享数据资产的文件夹所在的目录的可选配置 sharedTopDir（docs/docs/deploy/config/ai/intro.md 中的 集群配置文件）
+
 ## 1.13.2
 
 ### Patch Changes

@@ -1,5 +1,32 @@
 # @scow/mis-server
 
+## 1.11.0
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- 00aa2eb: 为适配不同调度系统对主机名大小写处理不一致的情况，节点迁移功能在跨集群状态比对时采用大小写不敏感匹配
+- 434cdf3: 实现 scowd 多登录节点负载均衡与请求亲和性路由
+- Updated dependencies [f8fe60d]
+- Updated dependencies [148099e]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [434cdf3]
+  - @scow/notification-protos@0.1.10
+  - @scow/config@1.14.0
+  - @scow/lib-server@1.5.0
+  - @scow/scheduler-adapter-protos@1.5.5
+  - @scow/scow-resource-protos@0.3.2
+  - @scow/lib-scow-resource@0.2.23
+  - @scow/lib-scowd@1.2.7
+  - @scow/lib-notification@1.0.24
+  - @scow/lib-hook@1.0.39
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+
 ## 1.10.2
 
 ### Patch Changes

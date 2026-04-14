@@ -1,5 +1,32 @@
 # @scow/notification
 
+## 0.2.26
+
+### Patch Changes
+
+- f8fe60d: 集成 Alertmanager 监控告警通知
+- 2d3dcf6: 删除 dead code 并提取 AI 作业表单公共模块
+- Updated dependencies [f8fe60d]
+- Updated dependencies [f3da786]
+- Updated dependencies [6ef8e28]
+- Updated dependencies [148099e]
+- Updated dependencies [148099e]
+- Updated dependencies [2d3dcf6]
+- Updated dependencies [41dd8f4]
+- Updated dependencies [3d18a5c]
+- Updated dependencies [c981960]
+- Updated dependencies [e578c89]
+- Updated dependencies [c981960]
+- Updated dependencies [00aa2eb]
+- Updated dependencies [1733acd]
+  - @scow/notification-protos@0.1.10
+  - @scow/config@1.14.0
+  - @scow/lib-web@1.6.0
+  - @scow/lib-server@1.5.0
+  - @scow/lib-notification@1.0.24
+  - @scow/protos@1.0.39
+  - @scow/lib-scheduler-adapter@1.1.37
+
 ## 0.2.25
 
 ### Patch Changes
