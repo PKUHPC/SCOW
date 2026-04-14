@@ -50,6 +50,8 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
     jobEndTimeStart: Type.Optional(Type.String({ format: "date-time" })),
     jobEndTimeEnd: Type.Optional(Type.String({ format: "date-time" })),
     userId: Type.Optional(Type.String()),
+    userIdOrName: Type.Optional(Type.String()),
+    ownerIdOrName: Type.Optional(Type.String()),
     clusters: Type.Optional(Type.Array(Type.String())),
     accountName: Type.Optional(Type.String()),
     encoding: Type.Enum(Encoding),
@@ -82,7 +84,8 @@ export default route(ExportJobRecordSchema, async (req, res) => {
   const { query } = req;
 
   const { columns, jobEndTimeStart, jobEndTimeEnd, accountName, count,
-    userId, encoding, timeZone, jobId, jobIds, finalPriceText, searchType, publicConfigClusters } = query;
+    userId, userIdOrName, ownerIdOrName,
+    encoding, timeZone, jobId, jobIds, finalPriceText, searchType, publicConfigClusters } = query;
   let { clusters } = query;
 
   const trimmedIds = parseJobIds(jobIds);
@@ -123,6 +126,8 @@ export default route(ExportJobRecordSchema, async (req, res) => {
       jobEndTimeEnd,
       target,
       clusters,
+      userIdOrName: userIdOrName?.trim() || undefined,
+      ownerIdOrName: ownerIdOrName?.trim() || undefined,
     });
 
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
@@ -227,7 +232,4 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     );
   }
 });
-
-
-
 

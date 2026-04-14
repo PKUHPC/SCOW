@@ -172,6 +172,10 @@ message ExportJobRecordRequest {
     // 导出租户内执行过的多个ID的作业列表
     JobsOfJobIdsTarget jobs_of_job_ids = 12;
   }
+  // 模糊匹配用户ID或姓名
+  optional string user_id_or_name = 13;
+  // 模糊匹配账户拥有者ID或姓名
+  optional string owner_id_or_name = 14;
 }
 
 // 还要调整

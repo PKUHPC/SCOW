@@ -106,10 +106,12 @@ export default {
         title: "파일 디렉토리 선택",
         newPath: "새 디렉토리",
       },
-      runningJobDrawer: {
+      jobDrawer: {
         cluster: "클러스터",
         jobId: "작업 ID",
         account: "계정",
+        userId: "사용자 ID",
+        userName: "사용자 이름",
         jobName: "작업 이름",
         partition: "파티션",
         qos: "QOS",
@@ -126,7 +128,7 @@ export default {
         runningOrQueueTime: "실행/대기 시간",
         submissionTime: "제출 시간",
         timeLimit: "최대 실행 시간",
-        drawerTitle: "실행 중 작업 상세",
+        drawerTitle: "작업 상세 정보",
       },
       runningJobTable: {
         filterForm: {

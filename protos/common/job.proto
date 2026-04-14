@@ -54,6 +54,9 @@ message RunningJob {
   common.Money account_price = 25;
   common.Money tenant_price = 26;
   optional ChargingPeriod charging_period = 27;
+  optional string user_name = 28;
+  optional string account_owner_id = 29;
+  optional string account_owner_name = 30;
   message ChargingPeriod {
     google.protobuf.Timestamp start_time = 1;
     google.protobuf.Timestamp end_time = 2;

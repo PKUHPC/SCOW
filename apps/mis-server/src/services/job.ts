@@ -24,8 +24,11 @@ import { JobPriceChange } from "src/entities/JobPriceChange";
 import { AmountStrategy, JobPriceItem } from "src/entities/JobPriceItem";
 import { RunningJobChargeRecord } from "src/entities/RunningJobChargeRecord";
 import { Tenant } from "src/entities/Tenant";
+import { User } from "src/entities/User";
+import { UserAccount, UserRole } from "src/entities/UserAccount";
 import { getJobTotalCountCached, queryWithCache } from "src/utils/cache";
 import { getJobUserAndAccountOwnerDetailsMap, JobUserAndAccountOwnerDetailsMap, toGrpc } from "src/utils/job";
+import { getAccountNamesMatchedByOwner, getUserIdsMatchedByUserIdOrName } from "src/utils/jobSearch";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateGetJobsOptions } from "src/utils/queryOptions";
@@ -34,27 +37,41 @@ import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 function filterJobs({
   clusters, accountName, jobEndTimeEnd, tenantName,
   jobEndTimeStart, jobId, userId, startBiJobIndex, biJobIndexs, jobIds,
-}: JobFilter) {
+}: JobFilter, ownerMatchedAccountNames?: string[], userMatchedUserIds?: string[]) {
+  const accountFilter = ownerMatchedAccountNames
+    ? {
+      account: {
+        $in: ownerMatchedAccountNames,
+      },
+    }
+    : accountName ? { account: accountName } : {};
+  const userFilter = userMatchedUserIds
+    ? {
+      user: {
+        $in: userMatchedUserIds,
+      },
+    }
+    : userId ? { user: userId } : {};
 
   return {
     ...startBiJobIndex ? { biJobIndex: { $gte: startBiJobIndex } } : {},
-    ...userId ? { user: userId } : {},
+    ...userFilter,
     ...clusters.length > 0 ? { cluster: { $in: clusters } } : {},
     ...biJobIndexs?.length > 0 ? { biJobIndex: { $in: biJobIndexs } } : {},
     // 优先使用 jobIds
     ...jobIds.length > 0
       ? {
         idJob: { $in: jobIds },
-        ...accountName ? { account: accountName } : {},
+        ...accountFilter,
       }
       // 其次使用 jobId
       : jobId
         ? {
           idJob: jobId,
-          ...accountName ? { account: accountName } : {},
+          ...accountFilter,
         }
         : {
-          ...accountName ? { account: accountName } : {},
+          ...accountFilter,
           ...(jobEndTimeEnd || jobEndTimeStart) ? {
             timeEnd: {
               ...jobEndTimeStart ? { $gte: jobEndTimeStart } : {},
@@ -75,7 +92,44 @@ export const jobServiceServer = plugin((server) => {
       const { filter, page, pageSize, sortBy, sortOrder } =
         ensureNotUndefined(request, ["filter"]);
 
-      const sqlFilter = filterJobs(filter);
+      const trimmedUserIdOrName = filter.userIdOrName?.trim();
+      const trimmedOwnerIdOrName = filter.ownerIdOrName?.trim();
+
+      let userMatchedUserIds: string[] | undefined = undefined;
+      if (trimmedUserIdOrName) {
+        const matchedUsers = await getUserIdsMatchedByUserIdOrName(em, trimmedUserIdOrName);
+        userMatchedUserIds = filter.userId
+          ? (matchedUsers.includes(filter.userId) ? [filter.userId] : [])
+          : matchedUsers;
+
+        if (userMatchedUserIds.length === 0) {
+          return [{
+            totalCount: 0,
+            jobs: [],
+            totalAccountPrice: decimalToMoney(new Decimal(0)),
+            totalTenantPrice: decimalToMoney(new Decimal(0)),
+          }];
+        }
+      }
+
+      let ownerMatchedAccountNames: string[] | undefined = undefined;
+      if (trimmedOwnerIdOrName) {
+        const matchedAccounts = await getAccountNamesMatchedByOwner(em, trimmedOwnerIdOrName);
+        ownerMatchedAccountNames = filter.accountName
+          ? (matchedAccounts.includes(filter.accountName) ? [filter.accountName] : [])
+          : matchedAccounts;
+
+        if (ownerMatchedAccountNames.length === 0) {
+          return [{
+            totalCount: 0,
+            jobs: [],
+            totalAccountPrice: decimalToMoney(new Decimal(0)),
+            totalTenantPrice: decimalToMoney(new Decimal(0)),
+          }];
+        }
+      }
+
+      const sqlFilter = filterJobs(filter, ownerMatchedAccountNames, userMatchedUserIds);
 
       logger.info("getJobs sqlFilter %s", JSON.stringify(sqlFilter));
       let jobs: Loaded<JobInfoEntity, never, "*", never>[], count: number;
@@ -273,7 +327,9 @@ export const jobServiceServer = plugin((server) => {
     },
 
     getRunningJobs: async ({ request, em, logger }) => {
-      const { cluster, userId, accountName, tenantName, jobIdList } = request;
+      const { cluster, userId, accountName, tenantName, jobIdList, userIdOrName, ownerIdOrName } = request;
+      const trimmedUserIdOrName = userIdOrName?.trim();
+      const trimmedOwnerIdOrName = ownerIdOrName?.trim();
 
       const tenantAccounts = tenantName !== undefined
         ? (await em.find(Account, { tenant: { name: tenantName } }, { fields: ["accountName"]}))
@@ -331,22 +387,78 @@ export const jobServiceServer = plugin((server) => {
           }, new Map<number, RunningJobChargeRecord>())
         : new Map<number, RunningJobChargeRecord>();
 
-      return [{
-        jobs: reply.map((job) => {
-          const runningJob = jobInfoToRunningjob(job);
-          const chargeRecord = runningJobChargeRecordMap.get(Number(job.jobId));
+      const runningJobs = reply.map((job) => {
+        const runningJob = jobInfoToRunningjob(job);
+        const chargeRecord = runningJobChargeRecordMap.get(Number(job.jobId));
 
-          if (chargeRecord) {
-            runningJob.accountPrice = decimalToMoney(chargeRecord.accountPrice);
-            runningJob.tenantPrice = decimalToMoney(chargeRecord.tenantPrice);
-            runningJob.chargingPeriod = {
-              startTime: chargeRecord.startTime.toISOString(),
-              endTime: chargeRecord.lastChargeTime.toISOString(),
-            };
+        if (chargeRecord) {
+          runningJob.accountPrice = decimalToMoney(chargeRecord.accountPrice);
+          runningJob.tenantPrice = decimalToMoney(chargeRecord.tenantPrice);
+          runningJob.chargingPeriod = {
+            startTime: chargeRecord.startTime.toISOString(),
+            endTime: chargeRecord.lastChargeTime.toISOString(),
+          };
+        }
+
+        return runningJob;
+      });
+
+      const runningUsers = [...new Set(runningJobs.map((job) => job.user))];
+      const runningAccounts = [...new Set(runningJobs.map((job) => job.account))];
+
+      const userNameMap = new Map<string, string>();
+      if (runningUsers.length > 0) {
+        const users = await em.find(User, { userId: { $in: runningUsers } }, { fields: ["userId", "name"]});
+        for (const user of users) {
+          userNameMap.set(user.userId, user.name);
+        }
+      }
+
+      const accountOwnerMap = new Map<string, { accountOwnerId: string; accountOwnerName: string }>();
+      if (runningAccounts.length > 0) {
+        const ownerRelations = await em.find(UserAccount, {
+          account: { accountName: { $in: runningAccounts } },
+          role: UserRole.OWNER,
+        }, { populate: ["account", "user"]});
+
+        for (const relation of ownerRelations) {
+          const runningAccountName = relation.account.$.accountName;
+          if (!accountOwnerMap.has(runningAccountName)) {
+            accountOwnerMap.set(runningAccountName, {
+              accountOwnerId: relation.user.$.userId,
+              accountOwnerName: relation.user.$.name,
+            });
           }
+        }
+      }
 
-          return runningJob;
-        }),
+      const jobsWithExtraInfo = runningJobs.map((job) => {
+        const owner = accountOwnerMap.get(job.account);
+        job.userName = userNameMap.get(job.user);
+        job.accountOwnerId = owner?.accountOwnerId;
+        job.accountOwnerName = owner?.accountOwnerName;
+
+        return job;
+      });
+
+      const filteredByUser = trimmedUserIdOrName
+        ? jobsWithExtraInfo.filter((job) => {
+          const matchedByUserId = job.user.includes(trimmedUserIdOrName);
+          const matchedByUserName = job.userName?.includes(trimmedUserIdOrName) ?? false;
+          return matchedByUserId || matchedByUserName;
+        })
+        : jobsWithExtraInfo;
+
+      const jobs = trimmedOwnerIdOrName
+        ? filteredByUser.filter((job) => {
+          const matchedByOwnerId = job.accountOwnerId?.includes(trimmedOwnerIdOrName) ?? false;
+          const matchedByOwnerName = job.accountOwnerName?.includes(trimmedOwnerIdOrName) ?? false;
+          return matchedByOwnerId || matchedByOwnerName;
+        })
+        : filteredByUser;
+
+      return [{
+        jobs,
       }];
 
     },

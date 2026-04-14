@@ -30,6 +30,7 @@ export const RunningJobsPage: NextPage = requireAuth((u) => u.accountAffiliation
           accountNames={userStore.user.accountAffiliations.map((x) => x.accountName)}
           showAccount={true}
           showUser={false}
+          showOwner={true}
         />
       </div>
 

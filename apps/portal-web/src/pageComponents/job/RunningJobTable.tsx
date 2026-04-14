@@ -27,7 +27,7 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { DetailIcon, EndIcon, EnterDirectoryIcon } from "src/icons/operationIcon";
 import { runningJobId, RunningJobInfo } from "src/models/job";
 import { statusColors } from "src/models/job";
-import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
+import { JobDrawer } from "src/pageComponents/job/JobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 
@@ -275,7 +275,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
         </Table>
       </TableWrapper>
-      <RunningJobDrawer
+      <JobDrawer
         open={previewItem !== undefined}
         item={previewItem}
         onClose={() => setPreviewItem(undefined)}

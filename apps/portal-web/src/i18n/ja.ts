@@ -106,10 +106,12 @@ export default {
         title: "ファイルディレクトリ選択",
         newPath: "新しいディレクトリ",
       },
-      runningJobDrawer: {
+      jobDrawer: {
         cluster: "クラスター",
         jobId: "ジョブID",
         account: "アカウント",
+        userId: "ユーザーID",
+        userName: "ユーザー名",
         jobName: "ジョブ名",
         partition: "パーティション",
         qos: "QOS",
@@ -126,7 +128,7 @@ export default {
         runningOrQueueTime: "実行/待機時間",
         submissionTime: "提出時刻",
         timeLimit: "最大実行時間",
-        drawerTitle: "未終了ジョブの詳細",
+        drawerTitle: "ジョブ詳細",
       },
       runningJobTable: {
         filterForm: {

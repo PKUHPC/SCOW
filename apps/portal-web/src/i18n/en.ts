@@ -116,11 +116,13 @@ export default {
         title: "File Directory Selection Box",
         newPath: "New Directory",
       },
-      // runningJobDrawer
-      runningJobDrawer: {
+      // jobDrawer
+      jobDrawer: {
         cluster: "Cluster",
         jobId: "Job ID",
         account: "Account",
+        userId: "User ID",
+        userName: "User Name",
         jobName: "Job Name",
         partition: "Partition",
         qos: "QOS",
@@ -137,7 +139,7 @@ export default {
         runningOrQueueTime: "Running/Queue Time",
         submissionTime: "Submission Time",
         timeLimit: "Maximum Running Time",
-        drawerTitle: "Details of Running Jobs",
+        drawerTitle: "Job Details",
       },
       // runningJobTable
       runningJobTable: {

@@ -30,11 +30,11 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
   const drawerItems = [
     [t(pCommon("workName")), "jobName"],
     [t(pCommon("clusterWorkId")), "idJob"],
-    [t(pCommon("userId")), "user"],
     [t(pCommon("userName")), "userName"],
+    [t(pCommon("userId")), "user"],
     [t(pCommon("account")), "account"],
-    [t(pCommon("accountOwnerId")), "accountOwnerId"],
     [t(pCommon("accountOwnerName")), "accountOwnerName"],
+    [t(pCommon("accountOwnerId")), "accountOwnerId"],
     [t(pCommon("clusterName")), "cluster", getClusterName],
     [t(pCommon("partition")), "partition"],
     ["QOS", "qos"],

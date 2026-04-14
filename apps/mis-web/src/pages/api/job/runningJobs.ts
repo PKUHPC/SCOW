@@ -26,11 +26,14 @@ export const RunningJob = Type.Object({
   partition: Type.String(),
   name: Type.String(),
   user: Type.String(),
+  userName: Type.Optional(Type.String()),
   state: Type.String(),
   runningTime: Type.String(),
   nodes: Type.String(),
   nodesOrReason: Type.String(),
   account: Type.String(),
+  accountOwnerId: Type.Optional(Type.String()),
+  accountOwnerName: Type.Optional(Type.String()),
   cores: Type.String(),
   gpus: Type.String(),
   qos: Type.String(),
@@ -74,6 +77,8 @@ export const GetRunningJobsSchema = typeboxRouteSchema({
       否则：403
      */
     userId: Type.Optional(Type.String()),
+    userIdOrName: Type.Optional(Type.String()),
+    ownerIdOrName: Type.Optional(Type.String()),
     accountName: Type.Optional(Type.String()),
 
     cluster: Type.String(),
@@ -117,11 +122,13 @@ export default /* #__PURE__*/route(GetRunningJobsSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { cluster, userId, accountName } = req.query;
+  const { cluster, userId, userIdOrName, ownerIdOrName, accountName } = req.query;
 
   const filter: GetRunningJobsRequest = {
     cluster,
     jobIdList: [],
+    userIdOrName,
+    ownerIdOrName,
   };
 
   if (info.tenantRoles.includes(TenantRole.TENANT_ADMIN)

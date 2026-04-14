@@ -57,6 +57,8 @@ export const GetJobFilter = Type.Object({
     否则：403
     */
   userId: Type.Optional(Type.String()),
+  userIdOrName: Type.Optional(Type.String()),
+  ownerIdOrName: Type.Optional(Type.String()),
   accountName: Type.Optional(Type.String()),
 
   clusters: Type.Optional(Type.Array(Type.String())),
@@ -152,8 +154,8 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
 
   if (!info) { return; }
 
-  const { page = 1, accountName, userId, jobEndTimeEnd, jobEndTimeStart, jobId, clusters, pageSize, sortBy, sortOrder,
-    jobIds } = req.query;
+  const { page = 1, accountName, userId, userIdOrName, ownerIdOrName, jobEndTimeEnd, jobEndTimeStart, jobId,
+    clusters, pageSize, sortBy, sortOrder, jobIds } = req.query;
 
   const trimmedIds = parseJobIds(jobIds);
 
@@ -174,7 +176,9 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
     || (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
   ) {
     filter.userId = userId;
+    filter.userIdOrName = userIdOrName?.trim() || undefined;
     filter.accountName = accountName;
+    filter.ownerIdOrName = ownerIdOrName?.trim() || undefined;
   } else {
     return { 403: null };
   }

@@ -108,10 +108,12 @@ export default {
         title: "Выбор каталога",
         newPath: "Новый каталог",
       },
-      runningJobDrawer: {
+      jobDrawer: {
         cluster: "Кластер",
         jobId: "ID задания",
         account: "Аккаунт",
+        userId: "ID пользователя",
+        userName: "Имя пользователя",
         jobName: "Название задания",
         partition: "Раздел",
         qos: "QOS",
@@ -128,7 +130,7 @@ export default {
         runningOrQueueTime: "Время выполнения/ожидания",
         submissionTime: "Время отправки",
         timeLimit: "Максимальное время выполнения",
-        drawerTitle: "Подробности выполняемых заданий",
+        drawerTitle: "Подробности задания",
       },
       runningJobTable: {
         filterForm: {

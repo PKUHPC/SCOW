@@ -222,23 +222,23 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           sorter={true}
         />
         {
-          showAccount ? (
-            <Table.Column<JobInfo>
-              dataIndex="account"
-              width="50px"
-              ellipsis
-              title={t(pCommon("account"))}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        {
           showUser ? (
             <Table.Column<JobInfo>
               dataIndex="user"
               width="50px"
               ellipsis
               title={t(pCommon("userId"))}
+              sorter={true}
+            />
+          ) : undefined
+        }
+        {
+          showAccount ? (
+            <Table.Column<JobInfo>
+              dataIndex="account"
+              width="50px"
+              ellipsis
+              title={t(pCommon("account"))}
               sorter={true}
             />
           ) : undefined

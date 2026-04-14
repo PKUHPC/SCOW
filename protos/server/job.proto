@@ -35,6 +35,8 @@ message JobFilter {
   repeated uint64 job_ids = 9;
   // unique id for job
   repeated uint64 bi_job_indexs = 10;
+  optional string owner_id_or_name = 11;
+  optional string user_id_or_name = 12;
 }
 
 message GetJobsRequest {
@@ -101,6 +103,8 @@ message GetRunningJobsRequest {
   optional string tenant_name = 3;
   optional string account_name = 4;
   repeated string job_id_list = 5;
+  optional string user_id_or_name = 6;
+  optional string owner_id_or_name = 7;
 }
 
 message GetRunningJobsResponse {

@@ -33,7 +33,8 @@ interface FilterForm {
   jobEndTime: [dayjs.Dayjs, dayjs.Dayjs];
   jobId: number | undefined;
   accountName?: string;
-  userId?: string;
+  userIdOrName?: string;
+  ownerIdOrName?: string;
   name?: string;
   clusters: Cluster[];
 }
@@ -45,6 +46,7 @@ interface Props {
   filterUser?: boolean;
   showUser: boolean;
   showAccount: boolean;
+  showOwner?: boolean;
   showedPrices: ("tenant" | "account")[];
   priceTexts?: { tenant?: string; account?: string };
 }
@@ -54,17 +56,14 @@ interface Sorter {
   order: JobSortOrder | undefined,
 }
 
-interface PrecisionDiffQuery {
-  userId: string | undefined;
-  accountName: string | undefined;
-  jobId: number | undefined;
-}
-
-interface RangeDiffQuery {
-  userId: string | undefined;
-  accountName: string | undefined;
-  jobEndTimeStart: string;
-  jobEndTimeEnd: string;
+interface DiffQuery {
+  userId?: string;
+  userIdOrName?: string;
+  ownerIdOrName?: string;
+  accountName?: string;
+  jobId?: number;
+  jobEndTimeStart?: string;
+  jobEndTimeEnd?: string;
 }
 
 const p = prefix("pageComp.job.historyJobTable.");
@@ -76,7 +75,7 @@ const priceText = {
 
 export const JobTable: React.FC<Props> = ({
   userId, accountNames, filterAccountName = true, filterUser = true,
-  showAccount, showUser, showedPrices, priceTexts,
+  showAccount, showUser, showOwner = false, showedPrices, priceTexts,
 }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
@@ -89,7 +88,7 @@ export const JobTable: React.FC<Props> = ({
   const [selectedAccountName, setSelectedAccountName] = useState<string | undefined>(undefined);
 
   // 防止用户切换批量/精确搜索、修改账户条件，但还没点击搜索时，导出结果已经跟随条件变化的情况。
-  const [currentDiffQuery, setCurrentDiffQuery] = useState<PrecisionDiffQuery | RangeDiffQuery | undefined>(undefined);
+  const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
 
   const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
   const sortedClusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList)
@@ -121,15 +120,20 @@ export const JobTable: React.FC<Props> = ({
 
 
   const promiseFn = useCallback(async () => {
+    // userId 仅作为页面上下文约束，不是前端搜索框字段。
+    const fixedUserQuery = userId ? { userId } : {};
+
     // 根据 rangeSearch.current来判断是批量/精确搜索，
     // accountName 根据accountNames是否数组来判断顶部导航类型，如是用户空间用输入值，账户管理则用props中的accountNames限制搜索范围
     const diffQuery = rangeSearch.current ? {
-      userId: userId || query.userId,
+      ...fixedUserQuery,
+      ...(!userId ? { userIdOrName: query.userIdOrName || undefined } : {}),
+      ownerIdOrName: query.ownerIdOrName || undefined,
       accountName: Array.isArray(accountNames) ? selectedAccountName : accountNames,
       jobEndTimeStart: query.jobEndTime[0].toISOString(),
       jobEndTimeEnd: query.jobEndTime[1].toISOString(),
     } : {
-      userId: userId,
+      ...fixedUserQuery,
       jobId: query.jobId,
       accountName: Array.isArray(accountNames) ? undefined : accountNames,
     };
@@ -196,8 +200,13 @@ export const JobTable: React.FC<Props> = ({
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { userId, name, ...currentQuery } = await form.validateFields();
-            setQuery({ userId: userId?.trim(), name: name?.trim(), ...currentQuery });
+            const { userIdOrName, ownerIdOrName, name, ...currentQuery } = await form.validateFields();
+            setQuery({
+              userIdOrName: userIdOrName?.trim(),
+              ownerIdOrName: ownerIdOrName?.trim(),
+              name: name?.trim(),
+              ...currentQuery,
+            });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
@@ -219,6 +228,13 @@ export const JobTable: React.FC<Props> = ({
                   <Form.Item label={t(pCommon("cluster"))} name="clusters">
                     <ClusterSelector />
                   </Form.Item>
+                  {
+                    filterUser ? (
+                      <Form.Item label={t(pCommon("user"))} name="userIdOrName">
+                        <Input placeholder={t(p("userIdOrNamePlaceholder"))} />
+                      </Form.Item>
+                    ) : undefined
+                  }
                   {
                     filterAccountName ? (
                       <Form.Item label={t("common.account")} name="name">
@@ -246,9 +262,9 @@ export const JobTable: React.FC<Props> = ({
                     ) : undefined
                   }
                   {
-                    filterUser ? (
-                      <Form.Item label={t(pCommon("userId"))} name="userId">
-                        <Input />
+                    showOwner ? (
+                      <Form.Item label={t(pCommon("accountOwner"))} name="ownerIdOrName">
+                        <Input placeholder={t(p("ownerIdOrNamePlaceholder"))} />
                       </Form.Item>
                     ) : undefined
                   }
@@ -285,6 +301,7 @@ export const JobTable: React.FC<Props> = ({
         setSorter={setSorter}
         showAccount={showAccount}
         showUser={showUser}
+        showOwner={showOwner}
         showedPrices={showedPrices}
         priceTexts={priceTexts}
       />
@@ -300,13 +317,14 @@ interface JobInfoTableProps {
   setSorter: (sorter: Sorter) => void;
   showAccount: boolean;
   showUser: boolean;
+  showOwner?: boolean;
   showedPrices: ("tenant" | "account")[];
   priceTexts?: { tenant?: string; account?: string };
 }
 
 export const JobInfoTable: React.FC<JobInfoTableProps> = ({
   data, pageInfo, setPageInfo, setSorter, isLoading,
-  showAccount, showUser, showedPrices, priceTexts,
+  showAccount, showUser, showOwner = false, showedPrices, priceTexts,
 }) => {
   const router = useRouter();
   const t = useI18nTranslateToString();
@@ -364,7 +382,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
       </TableTitle>
       <Table
         onChange={handleTableChange}
-        rowKey={(i) => i.cluster + i.biJobIndex + i.idJob}
+        rowKey={(i) => `${i.cluster}::${i.biJobIndex}::${i.idJob}`}
         dataSource={data?.jobs}
         loading={isLoading}
         pagination={setPageInfo ? {
@@ -391,21 +409,10 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           sorter={true}
         />
         {
-          showAccount ? (
-            <Table.Column<JobInfo>
-              dataIndex="account"
-              width="13%"
-              ellipsis
-              title={t(pCommon("account"))}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        {
           showUser ? (
             <Table.Column<JobInfo>
               dataIndex="user"
-              width="12%"
+              width="13%"
               ellipsis
               title={t(pCommon("user"))}
               render={(user,record) => `${record.userName} (ID:${user})`}
@@ -413,10 +420,33 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
             />
           ) : undefined
         }
+        {
+          showAccount ? (
+            <Table.Column<JobInfo>
+              dataIndex="account"
+              width="9%"
+              ellipsis
+              title={t(pCommon("account"))}
+              sorter={true}
+            />
+          ) : undefined
+        }
+        {
+          showOwner ? (
+            <Table.Column<JobInfo>
+              dataIndex="accountOwnerName"
+              width="10%"
+              ellipsis
+              title={t(pCommon("accountOwner"))}
+              render={(_, record) => `${record.accountOwnerName ?? "-"} (ID:${record.accountOwnerId ?? "-"})`}
+              sorter={true}
+            />
+          ) : undefined
+        }
         <Table.Column<JobInfo>
           dataIndex="cluster"
           title={t(pCommon("clusterName"))}
-          width="12%"
+          width="10%"
           ellipsis
           render={(cluster) => getClusterName(cluster, languageId, publicConfigClusters)}
           sorter={true}
@@ -437,14 +467,14 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         />
         <Table.Column
           dataIndex="timeSubmit"
-          width="11.5%"
+          width="10%"
           title={t(pCommon("timeSubmit"))}
           render={(time: string) => formatDateTime(time)}
           sorter={true}
         />
         <Table.Column<JobInfo>
           dataIndex="timeEnd"
-          width="11.5%"
+          width="10%"
           title={t(pCommon("timeEnd"))}
           render={(time: string) => formatDateTime(time)}
           sorter={true}
@@ -462,7 +492,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         }
         <Table.Column<JobInfo>
           title={t(pCommon("operation"))}
-          width="4.5%"
+          width="5%"
           fixed="right"
           render={(_, r) => {
             return router.pathname === "/user/historyJobs" ? (

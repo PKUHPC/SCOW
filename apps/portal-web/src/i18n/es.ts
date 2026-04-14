@@ -108,10 +108,12 @@ export default {
         title: "Selección de directorio",
         newPath: "Nuevo directorio",
       },
-      runningJobDrawer: {
+      jobDrawer: {
         cluster: "Cluster",
         jobId: "ID de trabajo",
         account: "Cuenta",
+        userId: "ID de usuario",
+        userName: "Nombre de usuario",
         jobName: "Nombre del trabajo",
         partition: "Partición",
         qos: "QOS",
@@ -128,7 +130,7 @@ export default {
         runningOrQueueTime: "Tiempo de ejecución/espera",
         submissionTime: "Hora de envío",
         timeLimit: "Tiempo máximo de ejecución",
-        drawerTitle: "Detalles de los trabajos en ejecución",
+        drawerTitle: "Detalles del trabajo",
       },
       runningJobTable: {
         filterForm: {

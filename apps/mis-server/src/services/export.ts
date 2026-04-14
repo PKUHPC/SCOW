@@ -5,12 +5,14 @@ import { FilterQuery, Loaded } from "@mikro-orm/core";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { account_AccountStateFromJSON } from "@scow/protos/build/server/account";
 import { BillListItem, BillType as BillSearchType, UserBill as UserBillType } from "@scow/protos/build/server/bill";
-import {
-  ExportServiceServer,
-  ExportServiceService } from "@scow/protos/build/server/export";
+import { ExportServiceServer, ExportServiceService } from "@scow/protos/build/server/export";
 import {
   platformRoleFromJSON,
-  platformRoleToJSON, SortDirection, tenantRoleFromJSON, tenantRoleToJSON } from "@scow/protos/build/server/user";
+  platformRoleToJSON,
+  SortDirection,
+  tenantRoleFromJSON,
+  tenantRoleToJSON,
+} from "@scow/protos/build/server/user";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountBill, BillType } from "src/entities/AccountBill";
 import { ChargeRecord } from "src/entities/ChargeRecord";
@@ -21,7 +23,12 @@ import { UserRole, UserStatus } from "src/entities/UserAccount";
 import { UserBill } from "src/entities/UserBill";
 import { getAccountNamesByUserIdOrName, getAccountOwnerMap } from "src/utils/account";
 import { getAccountStateInfo } from "src/utils/accountUserState";
-import { billFilter, buildQueryConditions,generateTermArray, mergeUserBillDetails, processBillSummaries,
+import {
+  billFilter,
+  buildQueryConditions,
+  generateTermArray,
+  mergeUserBillDetails,
+  processBillSummaries,
 } from "src/utils/bill";
 import {
   getChargesSearchType,
@@ -37,39 +44,37 @@ import {
   getJobUserAndAccountOwnerDetailsMap,
   JobUserAndAccountOwnerDetailsMap,
 } from "src/utils/job";
+import { getAccountNamesMatchedByOwner, getUserIdsMatchedByUserIdOrName } from "src/utils/jobSearch";
 import { logger } from "src/utils/logger";
 import { mapUsersSortField } from "src/utils/queryOptions";
 import { getUserIdsByUserIdOrName, getUserNameMap } from "src/utils/user";
 
 export const exportServiceServer = plugin((server) => {
-
   server.addService<ExportServiceServer>(ExportServiceService, {
-
     exportUser: async (call) => {
       const { request, em } = call;
-      const {
-        sortField,
-        sortOrder,
-        idOrName,
-        userId,
-        userName,
-        tenantName,
-        tenantRole,
-        platformRole,
-        count,
-      } = request;
+      const { sortField, sortOrder, idOrName, userId, userName, tenantName, tenantRole, platformRole, count } = request;
 
-      const platformRoleQuery = platformRole !== undefined ? {
-        platformRoles: { $like: `%${platformRoleToJSON(platformRole)}%` },
-      } : {};
+      const platformRoleQuery =
+        platformRole !== undefined
+          ? {
+              platformRoles: { $like: `%${platformRoleToJSON(platformRole)}%` },
+            }
+          : {};
 
-      const tenantRoleQuery = tenantRole !== undefined ? {
-        tenantRoles: { $like: `%${tenantRoleToJSON(tenantRole)}%` },
-      } : {};
+      const tenantRoleQuery =
+        tenantRole !== undefined
+          ? {
+              tenantRoles: { $like: `%${tenantRoleToJSON(tenantRole)}%` },
+            }
+          : {};
 
-      const tenantNameQuery = tenantName !== undefined ? {
-        tenant: { name: tenantName },
-      } : {};
+      const tenantNameQuery =
+        tenantName !== undefined
+          ? {
+              tenant: { name: tenantName },
+            }
+          : {};
 
       const filters: FilterQuery<User>[] = [];
       if (userId) {
@@ -80,22 +85,14 @@ export const exportServiceServer = plugin((server) => {
       }
       if (!filters.length && idOrName) {
         filters.push({
-          $or: [
-            { userId: { $like: `%${idOrName}%` } },
-            { name: { $like: `%${idOrName}%` } },
-          ],
+          $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
         });
       }
 
       const userQuery = filters.length ? { $and: filters } : {};
 
       const query = {
-        $and: [
-          platformRoleQuery,
-          tenantRoleQuery,
-          tenantNameQuery,
-          userQuery,
-        ],
+        $and: [platformRoleQuery, tenantRoleQuery, tenantNameQuery, userQuery],
       };
 
       const recordFormat = (x: Loaded<User, "tenant" | "accounts" | "accounts.account">) => ({
@@ -105,12 +102,14 @@ export const exportServiceServer = plugin((server) => {
         phone: x.phone,
         organization: x.organization,
         adminComment: x.adminComment,
-        availableAccounts: x.accounts.getItems()
+        availableAccounts: x.accounts
+          .getItems()
           .filter((ua) => ua.blockedInCluster === UserStatus.UNBLOCKED)
           .map((ua) => {
             return ua.account.getProperty("accountName");
           }),
-        affiliatedAccounts: x.accounts.getItems()
+        affiliatedAccounts: x.accounts
+          .getItems()
           .filter((ua) => ua.account.getProperty("state") !== AccountState.DELETED)
           .map((ua) => {
             return ua.account.getProperty("accountName");
@@ -130,12 +129,17 @@ export const exportServiceServer = plugin((server) => {
 
       while (offset < count) {
         const limit = Math.min(batchSize, count - offset);
-        const records = ((await em.find(User, query, {
-          limit, offset,
-          orderBy: (sortField !== undefined && sortOrder !== undefined) ?
-            { [mapUsersSortField[sortField]]: sortOrder === SortDirection.ASC ? "ASC" : "DESC" } : undefined,
-          populate: ["tenant", "accounts", "accounts.account"]}))
-          .map(recordFormat ?? ((x) => x)));
+        const records = (
+          await em.find(User, query, {
+            limit,
+            offset,
+            orderBy:
+              sortField !== undefined && sortOrder !== undefined
+                ? { [mapUsersSortField[sortField]]: sortOrder === SortDirection.ASC ? "ASC" : "DESC" }
+                : undefined,
+            populate: ["tenant", "accounts", "accounts.account"],
+          })
+        ).map(recordFormat ?? ((x) => x));
 
         if (records.length === 0) {
           break;
@@ -169,23 +173,11 @@ export const exportServiceServer = plugin((server) => {
     },
 
     exportAccount: async (call) => {
-
       const accountsWithoutOwner: string[] = [];
       const { request, em } = call;
-      const {
-        tenantName,
-        accountName,
-        blocked,
-        debt,
-        frozen,
-        normal,
-        deleted,
-        count,
-        ownerIdOrName,
-      } = request;
+      const { tenantName, accountName, blocked, debt, frozen, normal, deleted, count, ownerIdOrName } = request;
 
       const recordFormat = (x: Loaded<Account, "tenant" | "users" | "users.user">) => {
-
         const owner = x.users.getItems().find((x) => x.role === UserRole.OWNER);
 
         if (!owner) {
@@ -195,8 +187,12 @@ export const exportServiceServer = plugin((server) => {
         const ownerUser = owner?.user.getEntity();
 
         const blockThresholdAmount = x.blockThresholdAmount ?? x.tenant.$.defaultAccountBlockThreshold;
-        const exportedState =
-          getAccountStateInfo(x.whitelist?.id, x.state, x.balance, blockThresholdAmount).displayedState;
+        const exportedState = getAccountStateInfo(
+          x.whitelist?.id,
+          x.state,
+          x.balance,
+          blockThresholdAmount,
+        ).displayedState;
 
         return {
           accountName: x.accountName,
@@ -215,8 +211,9 @@ export const exportServiceServer = plugin((server) => {
 
       if (accountsWithoutOwner.length > 0) {
         logger.warn(
-          `Found accounts without an owner. Accounts: ${accountsWithoutOwner.join(",")}. `
-            + "The items will be displayed as \"-\" in the exported file.");
+          `Found accounts without an owner. Accounts: ${accountsWithoutOwner.join(",")}. ` +
+            'The items will be displayed as "-" in the exported file.',
+        );
       }
 
       type RecordFormatReturnType = ReturnType<typeof recordFormat>;
@@ -225,7 +222,8 @@ export const exportServiceServer = plugin((server) => {
 
       const { writeAsync } = createWriterExtensions(call);
 
-      const baseQb = em.createQueryBuilder(Account, "a")
+      const baseQb = em
+        .createQueryBuilder(Account, "a")
         .select("*")
         .leftJoinAndSelect("a.users", "ua")
         .leftJoinAndSelect("ua.user", "u")
@@ -244,10 +242,13 @@ export const exportServiceServer = plugin((server) => {
       }
 
       if (debt) {
-        void baseQb.andWhere({ "a.state": AccountState.NORMAL })
+        void baseQb
+          .andWhere({ "a.state": AccountState.NORMAL })
           .andWhere("a.whitelist_id IS NULL")
-          .andWhere("CASE WHEN a.block_threshold_amount IS NOT NULL"
-            + " THEN a.balance <= a.block_threshold_amount ELSE a.balance <= t.default_account_block_threshold END");
+          .andWhere(
+            "CASE WHEN a.block_threshold_amount IS NOT NULL" +
+              " THEN a.balance <= a.block_threshold_amount ELSE a.balance <= t.default_account_block_threshold END",
+          );
       }
 
       if (frozen) {
@@ -264,9 +265,8 @@ export const exportServiceServer = plugin((server) => {
 
       if (ownerIdOrName) {
         const knexQuery = baseQb.getKnexQuery();
-        knexQuery.andWhere(function() {
-          this.where("u.user_id", "like", `%${ownerIdOrName}%`)
-            .orWhere("u.name", "like", `%${ownerIdOrName}%`);
+        knexQuery.andWhere(function () {
+          this.where("u.user_id", "like", `%${ownerIdOrName}%`).orWhere("u.name", "like", `%${ownerIdOrName}%`);
         });
       }
 
@@ -274,10 +274,10 @@ export const exportServiceServer = plugin((server) => {
         const qb = baseQb.clone();
         const limit = Math.min(batchSize, count - offset);
 
-        const queryResult = await qb
-          .limit(limit)
-          .offset(offset)
-          .getResultList() as Loaded<Account, "tenant" | "users" | "users.user">[];
+        const queryResult = (await qb.limit(limit).offset(offset).getResultList()) as Loaded<
+          Account,
+          "tenant" | "users" | "users.user"
+        >[];
 
         const records = queryResult.map(recordFormat ?? ((x) => x));
 
@@ -313,16 +313,7 @@ export const exportServiceServer = plugin((server) => {
 
     exportChargeRecord: async (call) => {
       const { request, em } = call;
-      const {
-        startTime,
-        endTime,
-        type,
-        types,
-        target,
-        count,
-        idsOrNames,
-        userIds,
-      } = request;
+      const { startTime, endTime, type, types, target, count, idsOrNames, userIds } = request;
 
       await ensureTargetAccountsBelongToTenant(em, target);
 
@@ -335,21 +326,20 @@ export const exportServiceServer = plugin((server) => {
       const hasUserFilter = trimmedUserIdsOrNames.length > 0 || trimmedUserIds.length > 0;
       const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
-      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
-        ? targetSearchParam.tenantName
-        : undefined;
+      const tenantNameForMatchedUsers =
+        typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
 
       // 如果有 idsOrNames 则按 idsOrNames 模糊搜索
       // 如果没有 idsOrNames 但有 userIds 则按 userIds 精确搜索
       // 都没有则不加搜索条件
       const matchedUserIds = await (async () => {
         if (userLikePatterns.length > 0) {
-          const matchedUsersQuery = em.getKnex()("user as u")
+          const matchedUsersQuery = em
+            .getKnex()("user as u")
             .distinct("u.user_id")
-            .where(function() {
+            .where(function () {
               for (const pattern of userLikePatterns) {
-                void this.orWhere("u.user_id", "like", pattern)
-                  .orWhere("u.name", "like", pattern);
+                void this.orWhere("u.user_id", "like", pattern).orWhere("u.name", "like", pattern);
               }
             });
 
@@ -400,8 +390,7 @@ export const exportServiceServer = plugin((server) => {
       while (offset < count) {
         const limit = Math.min(batchSize, count - offset);
 
-        const records = (await em.find(ChargeRecord, query, { limit, offset }))
-          .map(recordFormat ?? ((x) => x));
+        const records = (await em.find(ChargeRecord, query, { limit, offset })).map(recordFormat ?? ((x) => x));
 
         if (records.length === 0) {
           break;
@@ -415,15 +404,10 @@ export const exportServiceServer = plugin((server) => {
 
     exportPayRecord: async (call) => {
       const { request, em } = call;
-      const {
-        startTime,
-        endTime,
-        target,
-        count,
-        types,
-        ownerIdOrName,
-        operatorIdOrName,
-      } = ensureNotUndefined(request, ["target"]);
+      const { startTime, endTime, target, count, types, ownerIdOrName, operatorIdOrName } = ensureNotUndefined(
+        request,
+        ["target"],
+      );
 
       // 账户拥有者模糊查询处理
       const { accountNames } = target[target.$case];
@@ -565,9 +549,7 @@ export const exportServiceServer = plugin((server) => {
 
     exportBill: async (call) => {
       const { request, em } = call;
-      const {
-        accountNames, userIdsOrNames, termStart, termEnd, type, count, tenantName,
-      } = request;
+      const { accountNames, userIdsOrNames, termStart, termEnd, type, count, tenantName } = request;
 
       const knex = em.getKnex();
       let termArr: string[] = [];
@@ -609,7 +591,6 @@ export const exportServiceServer = plugin((server) => {
 
           // 根据当前查询出来的账单账户，去查询所有月账单，将详情分别统计
           records = await processBillSummaries(em, result, termArr);
-
         } else {
           // 年、月账单的正常查询
           // 构建查询条件
@@ -672,9 +653,13 @@ export const exportServiceServer = plugin((server) => {
 
       let records: UserBillType[];
 
-      const items = await em.find(UserBill, { accountBill: { $in: accountBillIds } }, {
-        orderBy: { createTime: "desc" },
-      });
+      const items = await em.find(
+        UserBill,
+        { accountBill: { $in: accountBillIds } },
+        {
+          orderBy: { createTime: "desc" },
+        },
+      );
 
       // 如果只传过来一个账户账单id，那说明不是汇总的数据，直接返回查询的结果
       if (accountBillIds.length === 1) {
@@ -713,33 +698,62 @@ export const exportServiceServer = plugin((server) => {
           });
         }
       }
-
     },
 
     exportJobRecord: async (call) => {
       const { request, em } = call;
-      const {
-        jobEndTimeStart,
-        jobEndTimeEnd,
-        target,
-        count,
-        clusters,
-      } = ensureNotUndefined(request, ["target"]);
+      const { jobEndTimeStart, jobEndTimeEnd, target, count, clusters, userIdOrName, ownerIdOrName } =
+        ensureNotUndefined(request, ["target"]);
       // 定义查询条件
       const searchParam = getJobsTargetSearchParam(target);
+
+      const trimmedUserIdOrName = userIdOrName?.trim();
+      const trimmedOwnerIdOrName = ownerIdOrName?.trim();
+
+      let userMatchedUserIds: string[] | undefined = undefined;
+      if (trimmedUserIdOrName) {
+        const matchedUsers = await getUserIdsMatchedByUserIdOrName(em, trimmedUserIdOrName);
+        const fixedUserId = typeof searchParam.user === "string" ? searchParam.user : undefined;
+        userMatchedUserIds = fixedUserId ? (matchedUsers.includes(fixedUserId) ? [fixedUserId] : []) : matchedUsers;
+
+        if (userMatchedUserIds.length === 0) {
+          return;
+        }
+      }
+
+      let ownerMatchedAccountNames: string[] | undefined = undefined;
+      if (trimmedOwnerIdOrName) {
+        const matchedAccounts = await getAccountNamesMatchedByOwner(em, trimmedOwnerIdOrName);
+        const fixedAccountName = typeof searchParam.account === "string" ? searchParam.account : undefined;
+        ownerMatchedAccountNames = fixedAccountName
+          ? matchedAccounts.includes(fixedAccountName)
+            ? [fixedAccountName]
+            : []
+          : matchedAccounts;
+
+        if (ownerMatchedAccountNames.length === 0) {
+          return;
+        }
+      }
+
       const query = {
-        ...(jobEndTimeEnd || jobEndTimeStart) ? {
-          timeEnd: {
-            ...jobEndTimeStart ? { $gte: jobEndTimeStart } : {},
-            ...jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {},
-          },
-        } : {},
+        ...(jobEndTimeEnd || jobEndTimeStart
+          ? {
+              timeEnd: {
+                ...(jobEndTimeStart ? { $gte: jobEndTimeStart } : {}),
+                ...(jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {}),
+              },
+            }
+          : {}),
         ...searchParam,
-        ...clusters.length > 0 ? { cluster: clusters } : {},
+        ...(clusters.length > 0 ? { cluster: clusters } : {}),
+        ...(ownerMatchedAccountNames ? { account: { $in: ownerMatchedAccountNames } } : {}),
+        ...(userMatchedUserIds ? { user: { $in: userMatchedUserIds } } : {}),
       };
 
-      const recordFormat = (x: Loaded<JobInfo, never>
-         & { userName: string; accountOwnerId?: string; accountOwnerName?: string; }) => ({
+      const recordFormat = (
+        x: Loaded<JobInfo, never> & { userName: string; accountOwnerId?: string; accountOwnerName?: string },
+      ) => ({
         idJob: x.idJob,
         jobName: x.jobName,
         account: x.account,
@@ -750,21 +764,21 @@ export const exportServiceServer = plugin((server) => {
         qos: x.qos,
         timeSubmit: x.timeSubmit.toISOString(),
         timeEnd: x.timeEnd.toISOString(),
-        biJobIndex:x.biJobIndex,
-        nodelist:x.nodelist,
-        timeStart:x.timeStart ? x.timeStart.toISOString() : undefined,
-        gpu:x.gpu,
-        cpusReq:x.cpusReq,
-        memReq:x.memReq,
-        nodesReq:x.nodesReq,
-        cpusAlloc:x.cpusAlloc,
-        memAlloc:x.memAlloc,
-        nodesAlloc:x.nodesAlloc,
-        timelimit:x.timelimit,
-        timeUsed:x.timeUsed,
-        timeWait:x.timeWait,
-        recordTime:x.recordTime.toISOString(),
-        tenantPrice:decimalToMoney(x.tenantPrice),
+        biJobIndex: x.biJobIndex,
+        nodelist: x.nodelist,
+        timeStart: x.timeStart ? x.timeStart.toISOString() : undefined,
+        gpu: x.gpu,
+        cpusReq: x.cpusReq,
+        memReq: x.memReq,
+        nodesReq: x.nodesReq,
+        cpusAlloc: x.cpusAlloc,
+        memAlloc: x.memAlloc,
+        nodesAlloc: x.nodesAlloc,
+        timelimit: x.timelimit,
+        timeUsed: x.timeUsed,
+        timeWait: x.timeWait,
+        recordTime: x.recordTime.toISOString(),
+        tenantPrice: decimalToMoney(x.tenantPrice),
         userName: x.userName,
         accountOwnerId: x.accountOwnerId ?? "-",
         accountOwnerName: x.accountOwnerName ?? "-",
@@ -790,7 +804,6 @@ export const exportServiceServer = plugin((server) => {
         if (jobIds.length > 0) {
           jobUserAndAccountOwnerDetailsMap = await getJobUserAndAccountOwnerDetailsMap(em, jobIds);
         }
-
 
         // 将详细信息合并到记录中
         const recordsWithDetails = records.map((job) => {

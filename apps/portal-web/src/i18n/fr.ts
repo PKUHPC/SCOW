@@ -108,10 +108,12 @@ export default {
         title: "Sélection du répertoire de fichiers",
         newPath: "Nouveau répertoire",
       },
-      runningJobDrawer: {
+      jobDrawer: {
         cluster: "Cluster",
         jobId: "ID du job",
         account: "Compte",
+        userId: "ID utilisateur",
+        userName: "Nom d'utilisateur",
         jobName: "Nom du job",
         partition: "Partition",
         qos: "QOS",
@@ -128,7 +130,7 @@ export default {
         runningOrQueueTime: "Temps d'exécution/attente",
         submissionTime: "Heure de soumission",
         timeLimit: "Temps d'exécution maximal",
-        drawerTitle: "Détails des jobs en cours",
+        drawerTitle: "Détails du job",
       },
       runningJobTable: {
         filterForm: {

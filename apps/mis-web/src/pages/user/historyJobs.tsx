@@ -51,6 +51,7 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
                       userId={userStore.user.identityId}
                       showAccount={true}
                       showUser={false}
+                      showOwner={true}
                       filterUser={false}
                       showedPrices={["account"]}
                       priceTexts={{ account: t("common.jobBilling") }}
@@ -78,6 +79,7 @@ export const JobsPage: NextPage = requireAuth((u) => u.accountAffiliations.lengt
               userId={userStore.user.identityId}
               showAccount={true}
               showUser={false}
+              showOwner={true}
               filterUser={false}
               showedPrices={["account"]}
               priceTexts={{ account: t("common.jobBilling") }}

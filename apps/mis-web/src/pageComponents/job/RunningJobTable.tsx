@@ -32,7 +32,8 @@ interface FilterForm {
   jobId: number | undefined;
   cluster: Cluster;
   accountName?: string;
-  userId?: string
+  userIdOrName?: string;
+  ownerIdOrName?: string;
 }
 
 interface Props {
@@ -41,15 +42,61 @@ interface Props {
   filterAccountName?: boolean;
   showAccount: boolean;
   showUser: boolean;
+  showOwner?: boolean;
   showChangeTimeLimit?: boolean;
 }
+
+type ColumnWidthKey =
+  | "cluster"
+  | "jobId"
+  | "name"
+  | "user"
+  | "account"
+  | "owner"
+  | "partition"
+  | "qos"
+  | "nodes"
+  | "cores"
+  | "gpus"
+  | "state"
+  | "runningOrQueueTime"
+  | "reason"
+  | "timeLimit"
+  | "operationCompact"
+  | "operationDefault";
+
+const COLUMN_WIDTH_WEIGHT: Record<ColumnWidthKey, number> = {
+  cluster: 9.5,
+  jobId: 5,
+  name: 10,
+  user: 10,
+  account: 10,
+  owner: 10,
+  partition: 6.5,
+  qos: 6.5,
+  nodes: 5,
+  cores: 5,
+  gpus: 6,
+  state: 6,
+  runningOrQueueTime: 8,
+  reason: 8,
+  timeLimit: 6.5,
+  operationCompact: 8,
+  operationDefault: 12,
+};
 
 
 const p = prefix("pageComp.job.runningJobTable.");
 const pCommon = prefix("common.");
 
 export const RunningJobQueryTable: React.FC<Props> = ({
-  userId, accountNames, showUser, showAccount, filterAccountName = true, showChangeTimeLimit = false,
+  userId,
+  accountNames,
+  showUser,
+  showAccount,
+  showOwner = false,
+  filterAccountName = true,
+  showChangeTimeLimit = false,
 }) => {
 
   const t = useI18nTranslateToString();
@@ -89,12 +136,29 @@ export const RunningJobQueryTable: React.FC<Props> = ({
       accountName: query.accountName || undefined,
     };
 
+    const diffSearchQuery = searchType.current === "precision" ? {
+      userIdOrName: undefined,
+      ownerIdOrName: undefined,
+    } : {
+      userIdOrName: query.userIdOrName || undefined,
+      ownerIdOrName: query.ownerIdOrName || undefined,
+    };
+
     return await api.getRunningJobs({ query: {
-      userId: userId || query.userId || undefined,
+      userId: userId || undefined,
       cluster: query.cluster.id,
       ...diffAccountNameQuery,
+      ...diffSearchQuery,
     } });
-  }, [userId, searchType.current, query.cluster, query.accountName, query.jobId,query.userId]);
+  }, [
+    userId,
+    searchType.current,
+    query.cluster,
+    query.accountName,
+    query.jobId,
+    query.userIdOrName,
+    query.ownerIdOrName,
+  ]);
 
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
@@ -118,9 +182,13 @@ export const RunningJobQueryTable: React.FC<Props> = ({
           form={form}
           initialValues={query}
           onFinish={async () => {
+            const values = await form.validateFields();
             setQuery({
               ...query,
-              ...(await form.validateFields()),
+              ...values,
+              accountName: values.accountName?.trim(),
+              userIdOrName: values.userIdOrName?.trim(),
+              ownerIdOrName: values.ownerIdOrName?.trim(),
             });
           }}
         >
@@ -143,6 +211,11 @@ export const RunningJobQueryTable: React.FC<Props> = ({
                     <Form.Item label={t(pCommon("cluster"))} name="cluster">
                       <SingleClusterSelector />
                     </Form.Item>
+                    {showUser && (
+                      <Form.Item label={t(pCommon("user"))} name="userIdOrName" style={{ marginLeft:"0.5em" }}>
+                        <Input placeholder={t(p("userIdOrNamePlaceholder"))} />
+                      </Form.Item>
+                    )}
                     {
                       filterAccountName
                         ? accountNames
@@ -163,13 +236,15 @@ export const RunningJobQueryTable: React.FC<Props> = ({
                               >
                                 <Input />
                               </Form.Item>
-                              <Form.Item label={t(pCommon("userId"))} name="userId" style={{ marginLeft:"0.5em" }}>
-                                <Input />
-                              </Form.Item>
                             </>
                           )
                         : undefined
                     }
+                    {showAccount && (
+                      <Form.Item label={t(pCommon("accountOwner"))} name="ownerIdOrName" style={{ marginLeft:"0.5em" }}>
+                        <Input placeholder={t(p("ownerIdOrNamePlaceholder"))} />
+                      </Form.Item>
+                    )}
                   </>
                 ),
 
@@ -197,6 +272,7 @@ export const RunningJobQueryTable: React.FC<Props> = ({
         isLoading={isLoading}
         showAccount={showAccount}
         showUser={showUser}
+        showOwner={showOwner}
         showCluster={false}
         showChangeTimeLimit={showChangeTimeLimit}
         reload={reload}
@@ -215,6 +291,7 @@ interface JobInfoTableProps {
   data: RunningJobInfo[] | undefined;
   isLoading: boolean;
   showAccount: boolean;
+  showOwner?: boolean;
   showCluster: boolean;
   showUser: boolean;
   showChangeTimeLimit?: boolean;
@@ -228,10 +305,19 @@ interface JobInfoTableProps {
 const ChangeJobTimeLimitModalLink = ModalLink(ChangeJobTimeLimitModal);
 
 export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, isLoading, reload, showAccount, showUser, showCluster, selection,showChangeTimeLimit = false,
+  data,
+  isLoading,
+  reload,
+  showAccount,
+  showOwner = false,
+  showUser,
+  showCluster,
+  selection,
+  showChangeTimeLimit = false,
 }) => {
   const router = useRouter();
   const [previewItem, setPreviewItem] = useState<RunningJobInfo | undefined>(undefined);
+  const compactOperation = router.pathname === "/user/runningJobs" || router.pathname === "/dashboard";
 
   // 租户页面或者用户账户管理员页面且用户账户管理员允许修改作业时限
   const changeJobLimitEnabled = showChangeTimeLimit || publicConfig.CHANGE_JOB_LIMIT.allowUserAndAccountAdmin;
@@ -240,7 +326,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
   const languageId = useI18n().currentLanguage.id;
 
   const renderOperation = useCallback((r: RunningJobInfo) => {
-    if (router.pathname === "/user/runningJobs" || router.pathname === "/dashboard") {
+    if (compactOperation) {
       return (
         <Space size={16}>
           <Tooltip title={t(pCommon("detail"))}>
@@ -310,6 +396,38 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
     );
   }, [t]);
 
+  const visibleColumnWeights = useMemo(() => {
+    const visibleColumns: ColumnWidthKey[] = [];
+    if (showCluster) {
+      visibleColumns.push("cluster");
+    }
+    visibleColumns.push("jobId", "name");
+    if (showUser) {
+      visibleColumns.push("user");
+    }
+    if (showAccount) {
+      visibleColumns.push("account");
+    }
+    if (showOwner) {
+      visibleColumns.push("owner");
+    }
+    visibleColumns.push(
+      "partition",
+      "qos",
+      "nodes",
+      "cores",
+      "gpus",
+      "state",
+      "runningOrQueueTime",
+      "reason",
+      "timeLimit",
+      compactOperation ? "operationCompact" : "operationDefault",
+    );
+
+    const totalWeight = visibleColumns.reduce((sum, key) => sum + COLUMN_WIDTH_WEIGHT[key], 0);
+    return (key: ColumnWidthKey) => `${((COLUMN_WIDTH_WEIGHT[key] / totalWeight) * 100).toFixed(3)}%`;
+  }, [compactOperation, showAccount, showCluster, showOwner, showUser]);
+
   return (
     <>
       {selection ? (
@@ -346,14 +464,14 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             defaultPageSize: DEFAULT_PAGE_SIZE,
           }}
           rowKey={runningJobId}
-          scroll={{ x: data?.length ? 2000 : true }}
+          scroll={{ x: data?.length ? 2200 : true }}
           tableLayout="fixed"
         >
           {
             showCluster && (
               <Table.Column<RunningJobInfo>
                 dataIndex="cluster"
-                width="9.5%"
+                width={visibleColumnWeights("cluster")}
                 title={t(pCommon("cluster"))}
                 render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
                 sorter={(a, b) => {
@@ -366,13 +484,14 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           }
           <Table.Column<RunningJobInfo>
             dataIndex="jobId"
-            width="5%"
+            width={visibleColumnWeights("jobId")}
             title={t(pCommon("workId"))}
             sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
               a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
           />
           <Table.Column<RunningJobInfo>
             dataIndex="name"
+            width={visibleColumnWeights("name")}
             ellipsis
             title={t(pCommon("workName"))}
             sorter={(a, b) => a.name.localeCompare(b.name)}
@@ -381,9 +500,10 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             showUser && (
               <Table.Column<RunningJobInfo>
                 dataIndex="user"
-                width="8%"
+                width={visibleColumnWeights("user")}
                 ellipsis
-                title={t(pCommon("userId"))}
+                title={t(pCommon("user"))}
+                render={(user, record) => `${record.userName} (ID:${user})`}
                 sorter={(a, b) => a.user.localeCompare(b.user)}
               />
             )
@@ -392,23 +512,36 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             showAccount && (
               <Table.Column<RunningJobInfo>
                 dataIndex="account"
-                width="9.5%"
+                width={visibleColumnWeights("account")}
                 ellipsis
                 title={t(pCommon("account"))}
                 sorter={(a, b) => a.account.localeCompare(b.account)}
               />
             )
           }
+          {
+            showOwner && (
+              <Table.Column<RunningJobInfo>
+                dataIndex="accountOwnerName"
+                width={visibleColumnWeights("owner")}
+                ellipsis
+                title={t(pCommon("accountOwner"))}
+                render={(_, r) => `${r.accountOwnerName ?? "-"} (ID:${r.accountOwnerId ?? "-"})`}
+                sorter={(a, b) =>
+                  (a.accountOwnerName ?? "").localeCompare(b.accountOwnerName ?? "")}
+              />
+            )
+          }
           <Table.Column<RunningJobInfo>
             dataIndex="partition"
-            width="6.3%"
+            width={visibleColumnWeights("partition")}
             ellipsis
             title={t(pCommon("partition"))}
             sorter={(a, b) => a.partition.localeCompare(b.partition)}
           />
           <Table.Column<RunningJobInfo>
             dataIndex="qos"
-            width="6.3%"
+            width={visibleColumnWeights("qos")}
             ellipsis
             title="QOS"
             sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
@@ -416,7 +549,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="nodes"
-            width="5%"
+            width={visibleColumnWeights("nodes")}
             ellipsis
             title={t(p("nodes"))}
             sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
@@ -424,7 +557,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="cores"
-            width="5%"
+            width={visibleColumnWeights("cores")}
             ellipsis
             title={t(p("cores"))}
             sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
@@ -432,7 +565,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="gpus"
-            width="6%"
+            width={visibleColumnWeights("gpus")}
             ellipsis
             title={t(p("gpus"))}
             sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
@@ -440,7 +573,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="state"
-            width="6%"
+            width={visibleColumnWeights("state")}
             title={t(pCommon("status"))}
             sorter={(a, b) => a.state.localeCompare(b.state)}
             render={(text: string): React.ReactNode => {
@@ -450,13 +583,14 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="runningOrQueueTime"
-            width="8%"
+            width={visibleColumnWeights("runningOrQueueTime")}
             ellipsis
             title={t(p("time"))}
             sorter={(a, b) => compareTimeAsSeconds(a.runningOrQueueTime, b.runningOrQueueTime)}
           />
           <Table.Column<RunningJobInfo>
             dataIndex="reason"
+            width={visibleColumnWeights("reason")}
             ellipsis={true}
             title={t(p("reason"))}
             render={(d: string) => {
@@ -467,14 +601,14 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
           <Table.Column<RunningJobInfo>
             dataIndex="timeLimit"
-            width="6.5%"
+            width={visibleColumnWeights("timeLimit")}
             title={t(p("limit"))}
             sorter={(a, b) => compareTimeAsSeconds(a.timeLimit, b.timeLimit)}
           />
 
           <Table.Column<RunningJobInfo>
             title={t(pCommon("operation"))}
-            width={router.pathname === "/user/runningJobs" || router.pathname === "/dashboard" ? "8%" : "12%"}
+            width={visibleColumnWeights(compactOperation ? "operationCompact" : "operationDefault")}
             fixed="right"
             render={(_, r) => {
               return renderOperation(r);
@@ -490,4 +624,3 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
     </>
   );
 };
-

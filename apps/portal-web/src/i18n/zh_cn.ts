@@ -115,11 +115,13 @@ export default {
         title: "文件目录选择框",
         newPath: "新目录",
       },
-      // runningJobDrawer
-      runningJobDrawer: {
+      // jobDrawer
+      jobDrawer: {
         cluster: "集群",
         jobId: "作业ID",
         account: "账户",
+        userId: "用户ID",
+        userName: "用户姓名",
         jobName: "作业名",
         partition: "分区",
         qos: "QOS",
@@ -136,7 +138,7 @@ export default {
         runningOrQueueTime: "运行/排队时间",
         submissionTime: "提交时间",
         timeLimit: "最长运行时间",
-        drawerTitle: "未结束的作业详细信息",
+        drawerTitle: "作业详细信息",
       },
       // runningJobTable
       runningJobTable: {
