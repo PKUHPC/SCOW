@@ -136,6 +136,8 @@ attributes:
 
 ```yaml title="install.yaml"
 quantum: 
+  # 是否启用量子系统。默认为true，设置为false时nginx不渲染量子系统相关路由
+  # enabled: true
   # 量子系统的子路径，默认为/quantum，一般无需修改
   basePath: /quantum
   qobody: 

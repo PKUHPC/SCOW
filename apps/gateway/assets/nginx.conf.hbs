@@ -6,40 +6,45 @@ map $http_accept $proxy_accept_encoding {
 
 server {
 
-  server_name ${ALLOWED_SERVER_NAME};
+  server_name {{ ALLOWED_SERVER_NAME }};
 
-  resolver ${RESOLVER} valid=10s;
+  resolver {{ RESOLVER }} valid=10s;
   resolver_timeout 5s;
 
   sendfile on;
 
   listen 80;
 
-  client_max_body_size ${CLIENT_MAX_BODY_SIZE};
+  client_max_body_size {{ CLIENT_MAX_BODY_SIZE }};
   access_log /dev/stdout;
   error_log stderr;
 
-  proxy_read_timeout ${PROXY_READ_TIMEOUT};
+  proxy_read_timeout {{ PROXY_READ_TIMEOUT }};
 
-  location ${BASE_PATH}${PORTAL_PATH} {
-    set $portal_path_url ${PORTAL_PATH_INTERNAL_URL};
+  {{#if PORTAL_ENABLED}}
+  location {{ BASE_PATH }}{{ PORTAL_PATH }} {
+    set $portal_path_url {{ PORTAL_PATH_INTERNAL_URL }};
     proxy_pass $portal_path_url;
 
     proxy_set_header Accept-Encoding $proxy_accept_encoding;
     include includes/headers;
     include includes/websocket;
   }
+  {{/if}}
 
-  location ${BASE_PATH}${MIS_PATH} {
-    set $mis_path_url ${MIS_PATH_INTERNAL_URL};
+  {{#if MIS_ENABLED}}
+  location {{ BASE_PATH }}{{ MIS_PATH }} {
+    set $mis_path_url {{ MIS_PATH_INTERNAL_URL }};
     proxy_pass $mis_path_url;
 
     include includes/headers;
     include includes/websocket;
   }
+  {{/if}}
 
-  location ${BASE_PATH}${AI_PATH} {
-    set $ai_path_url ${AI_PATH_INTERNAL_URL};
+  {{#if AI_ENABLED}}
+  location {{ BASE_PATH }}{{ AI_PATH }} {
+    set $ai_path_url {{ AI_PATH_INTERNAL_URL }};
     proxy_pass $ai_path_url;
 
     proxy_set_header Accept-Encoding $proxy_accept_encoding;
@@ -48,9 +53,9 @@ server {
     include includes/websocket;
   }
 
-  location ${BASE_PATH}${AI_PATH}/api/jobs/podLogs {
+  location {{ BASE_PATH }}{{ AI_PATH }}/api/jobs/podLogs {
     # 与 /ai 一致的上游
-    set $ai_path_url ${AI_PATH_INTERNAL_URL};
+    set $ai_path_url {{ AI_PATH_INTERNAL_URL }};
     proxy_pass $ai_path_url;
 
      # —— 关键：SSE 相关 ——
@@ -64,9 +69,11 @@ server {
     include includes/headers;
     include includes/websocket;
   }
+  {{/if}}
 
-  location ${BASE_PATH}${QUANTUM_PATH} {
-    set $quantum_path_url ${QUANTUM_PATH_INTERNAL_URL};
+  {{#if QUANTUM_ENABLED}}
+  location {{ BASE_PATH }}{{ QUANTUM_PATH }} {
+    set $quantum_path_url {{ QUANTUM_PATH_INTERNAL_URL }};
     proxy_pass $quantum_path_url;
 
     proxy_set_header Accept-Encoding $proxy_accept_encoding;
@@ -74,35 +81,36 @@ server {
     include includes/headers;
     include includes/websocket;
   }
+  {{/if}}
 
-  location ${BASE_PATH}${NOTIFICATION_PATH} {
-    set $notification_path_url ${NOTIFICATION_PATH_INTERNAL_URL};
+  location {{ BASE_PATH }}{{ NOTIFICATION_PATH }} {
+    set $notification_path_url {{ NOTIFICATION_PATH_INTERNAL_URL }};
     proxy_pass $notification_path_url;
 
     include includes/headers;
     include includes/websocket;
   }
 
-  location ${BASE_PATH}${VNC_PATH} {
-    proxy_pass ${NOVNC_INTERNAL_URL};
+  location {{ BASE_PATH }}{{ VNC_PATH }} {
+    proxy_pass {{ NOVNC_INTERNAL_URL }};
 
     include includes/headers;
   }
 
-  location ${BASE_PATH}${PUBLIC_PATH} {
-    alias ${PUBLIC_DIR};
+  location {{ BASE_PATH }}{{ PUBLIC_PATH }} {
+    alias {{ PUBLIC_DIR }};
     autoindex off;
   }
 
-  location ~ ^${BASE_PATH}/auth/public/(.*) {
-    set $auth ${AUTH_URL};
+  location ~ ^{{ BASE_PATH }}/auth/public/(.*) {
+    set $auth {{ AUTH_URL }};
     proxy_pass $auth/public/$1?$args;
 
     include includes/headers;
   }
 
-  location ${BASE_PATH}${RESOURCE_PATH} {
-    set $resource_path_url ${RESOURCE_PATH_INTERNAL_URL};
+  location {{ BASE_PATH }}{{ RESOURCE_PATH }} {
+    set $resource_path_url {{ RESOURCE_PATH_INTERNAL_URL }};
     proxy_pass $resource_path_url;
 
     include includes/headers;
@@ -119,10 +127,9 @@ server {
     root   /usr/share/nginx/html;
   }
 
-  ${EXTRA}
+  {{ EXTRA }}
 }
 
-${DEFAULT_SERVER_BLOCK}
-
+{{ DEFAULT_SERVER_BLOCK }}
 
 

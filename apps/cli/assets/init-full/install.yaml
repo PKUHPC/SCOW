@@ -10,6 +10,9 @@
 # 门户相关配置。默认不部署
 # 如果不部署，请删除或者注释整个部分
 # portal:
+#   # 是否启用门户系统。默认为true
+#   # enabled: true
+
 #   # 门户路径相对于整个系统的部署路径。默认/
 #   # 若设置则/开头，不要以/结尾.
 #   # 如果BASE_PATH为/root1，PORTAL.BASE_PATH为/root2，那么最终访问门户系统的路径是/root1/root2
@@ -26,6 +29,9 @@
 # 管理系统相关配置。默认不部署
 # 如果不部署，请删除或者注释整个部分
 # mis:
+#   # 是否启用管理系统。默认为true
+#   # enabled: true
+
 #   # 门户系统路径相对于整个系统的部署路径。默认/
 #   # 若设置则/开头，不要以/结尾.
 #   # 如果BASE_PATH为/root1，PORTAL.BASE_PATH为/root2，那么最终访问管理系统的路径是/root1/root2
@@ -165,8 +171,26 @@
 #   # 启用的插件
 #   enabledPlugins: ["plugin1"]
 
+# AI系统相关配置。默认不部署
+# 如果不部署，请删除或者注释整个部分
+# ai:
+#   # 是否启用AI系统。默认为true
+#   # enabled: true
+
+#   # AI系统的部署路径，相对于整个系统的basePath。默认/ai
+#   # basePath: /ai
+
+#   # mysql数据库的镜像地址。默认为mysql:8
+#   # mysqlImage: "mysql:8"
+
+#   # AI系统数据库的密码。如果部署AI系统，则必须配置
+#   # dbPassword: "must!chang3this"
+
 # 量子系统设置
 # quantum:
+#   # 是否启用量子系统。默认为true
+#   # enabled: true
+
 #   # 量子系统的子路径
 #   basePath: /quantum
 

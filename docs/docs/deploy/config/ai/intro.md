@@ -169,6 +169,8 @@ jobMonitor:
 # ...
 # 确保 AI 系统会部署
 ai:
+  # 是否启用AI系统。默认为true，设置为false时nginx不渲染AI系统相关路由
+  # enabled: true
   # dbPassword 为 AI 系统数据库密码
   # 在系统第一次启动前可自由设置，使用此密码可以以 root 身份登录数据库
   # 一旦数据库启动后即不可修改

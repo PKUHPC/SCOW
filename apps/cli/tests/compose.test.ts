@@ -35,9 +35,9 @@ it("generate correct paths", async () => {
 
   const config = getInstallConfig(configPath);
 
-  config.portal = { basePath: "/", novncClientImage: "" };
-  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
-  config.ai = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.ai = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
 
@@ -108,8 +108,8 @@ describe("sets custom auth environment", () => {
 it("deploy audit", async () => {
   const config = getInstallConfig(configPath);
   config.audit = { dbPassword: "must!chang3this", mysqlImage: "" };
-  config.portal = { basePath: "/", novncClientImage: "" };
-  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
 
@@ -120,11 +120,115 @@ it("deploy audit", async () => {
 
 it("deploy ai", async () => {
   const config = getInstallConfig(configPath);
-  config.ai = { basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
-  config.portal = { basePath: "/", novncClientImage: "" };
-  config.mis = { basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+  config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+  config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
 
   const composeConfig = createComposeSpec(config);
 
   expect(composeConfig.services["mis-web"].environment).toContain("AI_URL=/ai");
+});
+
+describe("module enabled=false", () => {
+
+  it("portal disabled: services absent and env vars correct", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: false, basePath: "/", novncClientImage: "" };
+    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    // portal services should not be present
+    expect(spec.services["portal-server"]).toBeUndefined();
+    expect(spec.services["portal-web"]).toBeUndefined();
+    expect(spec.services["novnc"]).toBeUndefined();
+
+    // gateway should report portal as disabled
+    expect(spec.services.gateway.environment).toContain("PORTAL_ENABLED=false");
+
+    // mis-web should report portal as not deployed
+    expect(spec.services["mis-web"].environment).toContain("PORTAL_DEPLOYED=false");
+
+    // ai should report portal as not deployed
+    expect(spec.services.ai.environment).toContain("PORTAL_DEPLOYED=false");
+  });
+
+  it("mis disabled: services absent and env vars correct", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+    config.mis = { enabled: false, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    // mis services should not be present
+    expect(spec.services["mis-server"]).toBeUndefined();
+    expect(spec.services["mis-web"]).toBeUndefined();
+    expect(spec.services["db"]).toBeUndefined();
+
+    // gateway should report mis as disabled
+    expect(spec.services.gateway.environment).toContain("MIS_ENABLED=false");
+
+    // portal-server and portal-web should report mis as not deployed
+    expect(spec.services["portal-server"].environment).toContain("MIS_DEPLOYED=false");
+    expect(spec.services["portal-server"].environment).toContain("MIS_SERVER_URL=");
+    expect(spec.services["portal-web"].environment).toContain("MIS_DEPLOYED=false");
+    expect(spec.services["portal-web"].environment).toContain("MIS_SERVER_URL=");
+
+    // ai should report mis as not deployed
+    expect(spec.services.ai.environment).toContain("MIS_DEPLOYED=false");
+    expect(spec.services.ai.environment).toContain("MIS_SERVER_URL=");
+  });
+
+  it("ai disabled: services absent and env vars correct", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.ai = { enabled: false, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    // ai services should not be present
+    expect(spec.services["ai"]).toBeUndefined();
+    expect(spec.services["ai-db"]).toBeUndefined();
+
+    // gateway should report ai as disabled
+    expect(spec.services.gateway.environment).toContain("AI_ENABLED=false");
+
+    // portal-web should report ai as not deployed
+    expect(spec.services["portal-web"].environment).toContain("AI_DEPLOYED=false");
+
+    // mis-web should report ai as not deployed
+    expect(spec.services["mis-web"].environment).toContain("AI_DEPLOYED=false");
+  });
+
+  it("quantum disabled: services absent and env vars correct", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.quantum = {
+      enabled: false,
+      basePath: "/quantum",
+      qobody: { image: "", token: "test-token" },
+    };
+
+    const spec = createComposeSpec(config);
+
+    // quantum services should not be present
+    expect(spec.services["quantum"]).toBeUndefined();
+    expect(spec.services["qobody"]).toBeUndefined();
+
+    // gateway should report quantum as disabled
+    expect(spec.services.gateway.environment).toContain("QUANTUM_ENABLED=false");
+
+    // portal-web should report quantum as not deployed
+    expect(spec.services["portal-web"].environment).toContain("QUANTUM_DEPLOYED=false");
+
+    // mis-web should report quantum as not deployed
+    expect(spec.services["mis-web"].environment).toContain("QUANTUM_DEPLOYED=false");
+
+    // mis-server should report quantum as not deployed
+    expect(spec.services["mis-server"].environment).toContain("QUANTUM_DEPLOYED=false");
+  });
 });

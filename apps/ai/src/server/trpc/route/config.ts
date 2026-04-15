@@ -257,7 +257,7 @@ export const config = router({
 
         MIS_SERVER_URL: envConfig.MIS_SERVER_URL,
 
-        PORTAL_URL: envConfig.PORTAL_URL,
+        PORTAL_URL: envConfig.PORTAL_DEPLOYED ? envConfig.PORTAL_URL : "",
 
         QUANTUM_URL: envConfig.QUANTUM_DEPLOYED ? envConfig.QUANTUM_URL : "",
 

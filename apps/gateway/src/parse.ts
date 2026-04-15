@@ -11,18 +11,12 @@
  */
 
 import { omitConfigSpec } from "@scow/lib-config";
+import Handlebars from "handlebars";
 import { readFileSync } from "fs";
 import { type config } from "src/env";
 
-export function parsePlaceholder(str: string, values: Record<string, string>): string {
-  return str.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, p1) => values[p1] ?? "");
-}
-
-export function getNginxConfig(envConfig: typeof config) {
-
-  const nginxConfTemplate = readFileSync("assets/nginx.conf", "utf8");
-
-  const nginxConf = parsePlaceholder(nginxConfTemplate, omitConfigSpec(envConfig));
-
-  return nginxConf;
+export function getNginxConfig(envConfig: typeof config): string {
+  const templateSrc = readFileSync("assets/nginx.conf.hbs", "utf8");
+  const template = Handlebars.compile(templateSrc, { noEscape: true });
+  return template(omitConfigSpec(envConfig));
 }

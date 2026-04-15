@@ -93,6 +93,7 @@ export const InstallConfigSchema = Type.Object({
   }, { default: {} }),
 
   portal: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否启用门户系统", default: true }),
     basePath: Type.String({ description: "门户系统的部署路径，相对于整个系统的basePath", default: "/" }),
     novncClientImage: Type.String({ description: "novnc客户端镜像", default: "ghcr.io/pkuhpc/novnc-client-docker:master" }),
 
@@ -105,6 +106,7 @@ export const InstallConfigSchema = Type.Object({
   }, { description: "门户系统部署选项，如果不设置，则不部署门户系统" })),
 
   mis: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否启用管理系统", default: true }),
     mysqlImage: Type.String({ description: "管理系统数据库镜像", default: "mysql:8" }),
     basePath: Type.String({ description: "管理系统的部署路径，相对于整个系统的", default: "/mis" }),
     dbPassword: Type.String({ description: "管理系统数据库密码", default: "must!chang3this" }),
@@ -172,6 +174,7 @@ export const InstallConfigSchema = Type.Object({
   })),
 
   ai: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否启用AI系统", default: true }),
     basePath: Type.String({ description: "AI系统的部署路径，相对于整个系统的basePath", default: "/ai" }),
     mysqlImage: Type.String({ description: "AI系统数据库镜像", default: "mysql:8" }),
     dbPassword: Type.String({ description: "AI系统数据库密码", default: "must!chang3this" }),
@@ -182,6 +185,7 @@ export const InstallConfigSchema = Type.Object({
   })),
 
   quantum: Type.Optional(Type.Object({
+    enabled: Type.Boolean({ description: "是否启用量子计算系统", default: true }),
     basePath: Type.String({ description: "量子计算系统的部署路径，相对于整个系统的basePath", default: "/quantum" }),
     qobody: Type.Object({
       image: Type.String({ description: "qobody镜像", default: "ccrepo.pku.edu.cn/scow/qobody" }),

@@ -1,8 +1,10 @@
 port: 80
 basePath: /
 imageTag: master
-portal: {}
+portal:
+  enabled: true
 mis:
+  enabled: true
   dbPassword: must!chang3this
 log:
   fluentd:

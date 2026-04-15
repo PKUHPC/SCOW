@@ -14,6 +14,8 @@ title: 配置门户系统
 ```yaml title="install.yaml"
 # 确保门户系统会部署
 portal:
+  # 是否启用门户系统。默认为true，设置为false时nginx不渲染门户相关路由
+  # enabled: true
   # 如果门户系统将会部署在系统的根目录下，设置BASE_PATH为/。默认为/
   basePath: /
   # 如果门户系统将会部署在系统的/portal下，设置BASE_PATH为/portal

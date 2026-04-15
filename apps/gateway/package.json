@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@scow/lib-config": "workspace:*",
-    "@scow/utils": "workspace:*"
+    "@scow/utils": "workspace:*",
+    "handlebars": "4.7.9"
   },
   "devDependencies": {
     "@webantic/nginx-config-parser": "1.6.1"
