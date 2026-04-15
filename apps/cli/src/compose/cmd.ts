@@ -19,17 +19,17 @@ import { InstallConfigSchema } from "src/config/install";
 import { logger } from "src/log";
 import { readEnabledPlugins } from "src/plugin";
 
-export function getAvailabelDockerComposeCommand() {
+export function getAvailableDockerComposeCommand() {
 
   // check if docker compose is available
-  const r1 = spawnSync("docker compose", { shell: true, stdio: "pipe" });
-  if (!r1.error && !r1.output.toString().includes("is not a docker command")) {
+  const r1 = spawnSync("docker", ["compose", "version"], { stdio: "pipe" });
+  if (!r1.error && r1.status === 0) {
     return "docker compose";
   }
 
   // check if docker-compose is available
-  const r2 = spawnSync("docker-compose", { shell: true, stdio: "pipe" });
-  if (!r2.error) {
+  const r2 = spawnSync("docker-compose", ["version"], { stdio: "pipe" });
+  if (!r2.error && r2.status === 0) {
     return "docker-compose";
   }
 
@@ -38,7 +38,7 @@ export function getAvailabelDockerComposeCommand() {
 
 export async function runComposeCommand(config: InstallConfigSchema, args: string[]) {
 
-  const dockerComposeCommand = getAvailabelDockerComposeCommand();
+  const dockerComposeCommand = getAvailableDockerComposeCommand();
 
   logger.debug("Using %s to run docker compose commands", dockerComposeCommand);
 
