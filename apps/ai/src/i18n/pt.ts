@@ -1154,10 +1154,8 @@ export default {
       uploadText: "Clique ou arraste arquivos aqui para carregar",
       singleOrMultiply: "Suporta carregamento de arquivos únicos ou múltiplos",
       uploadFileListNotExist: "Lista de arquivos não existe",
-      mergeFileChunkError: "Falha ao mesclar arquivo {}. {}",
       fileUploadError: "Falha no carregamento do arquivo: {}",
       isNotFile: "Arraste arquivos para fazer upload",
-      isMerging: "Mesclagem em progresso...",
     },
     uploadDirModal: {
       title: "Carregar Diretório",
@@ -1180,9 +1178,8 @@ export default {
       multipartUploadError: "Falha no carregamento do arquivo: {}",
       calculateHashError: "Erro ao calcular hash: {}",
       uploadFileListNotExist: "A lista de arquivos carregados não existe: {}",
-      mergeFileChunksErrorText: "Falha ao mesclar arquivo {}, por favor tente novamente",
       isNotDir: "Arraste pastas para fazer upload",
-      isMerging: "Mesclagem em progresso...",
+      deleteFolderFailed: "Falha ao eliminar a pasta {}",
     },
   },
   layout: {

@@ -19,6 +19,7 @@ export const urlToUpload = (
   basePath: string,
   chunk?: boolean,
   originPath?: string,
+  chunkIdx?: number,
 ): string => {
 
   const searchParams = new URLSearchParams({
@@ -26,6 +27,7 @@ export const urlToUpload = (
     clusterId,
     chunk: String(chunk ?? false),
     originPath: originPath ?? "",
+    chunkIdx: chunkIdx !== undefined ? String(chunkIdx) : "",
   } satisfies UploadQuery);
 
   return join(basePath, "/files/upload") + "?" + searchParams.toString();

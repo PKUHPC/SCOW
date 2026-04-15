@@ -46,7 +46,7 @@ export interface FileDriver {
   move(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
   readDirectory(path: string, noCheckPermission?: boolean): Promise<ListDirectoryOutput[]>;
   download(path: string, download: string, res: NextApiResponse<any>, noCheckPermission?: boolean): Promise<void>;
-  upload(path: string, uploadedFile: File, noCheckPermission?: boolean): Promise<NextResponse<{ message: string; }>>;
+  upload(path: string, uploadedFile: File, chunkIdx?: number, noCheckPermission?: boolean): Promise<NextResponse<{ message: string; }>>;
   getFileMetadata(path: string, noCheckPermission?: boolean): Promise<FileMeta>;
   exists(path: string, noCheckPermission?: boolean): Promise<boolean>;
   chmod(path: string, mode: string): Promise<void>;

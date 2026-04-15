@@ -1143,10 +1143,8 @@ export default {
       uploadText: "여기를 클릭하거나 파일을 끌어다 업로드하세요",
       singleOrMultiply: "단일 또는 여러 파일 업로드를 지원합니다",
       uploadFileListNotExist: "파일 목록이 존재하지 않습니다",
-      mergeFileChunkError: "파일 {} 병합 실패. {}",
       fileUploadError: "파일 업로드 실패: {}",
       isNotFile: "업로드하려면 파일을 드래그하세요",
-      isMerging: "병합 진행 중...",
     },
     uploadDirModal: {
       title: "디렉터리 업로드",
@@ -1169,9 +1167,8 @@ export default {
       multipartUploadError: "파일 업로드 실패: {}",
       calculateHashError: "해시 계산 오류: {}",
       uploadFileListNotExist: "업로드된 파일 목록이 존재하지 않습니다: {}",
-      mergeFileChunksErrorText: "파일 {} 병합 실패, 다시 시도하세요",
       isNotDir: "업로드하려면 폴더를 드래그하세요",
-      isMerging: "Merging in progress...",
+      deleteFolderFailed: "폴더 {} 삭제 실패",
     },
   },
   layout: {

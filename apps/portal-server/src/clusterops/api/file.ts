@@ -111,7 +111,8 @@ interface UploadRequest_ReadStream {
 export interface UploadRequest {
   userId: string;
   path: string;
-  call: ReaderExtensions<UploadRequest_ReadStream>
+  call: ReaderExtensions<UploadRequest_ReadStream>;
+  chunkIdx?: number;
 }
 
 export interface UploadReply {

@@ -7,7 +7,12 @@ import { commonConfig } from "src/server/config/common";
 import { config as envConfig } from "src/server/config/env";
 import { callLog } from "src/server/setup/operationLog";
 import { router } from "src/server/trpc/def";
+import { withFileDriver } from "src/server/trpc/Driver/fileDriver/fileDriver";
+import { FileMetaSchema, InitMultipartUploadResponseSchema, ListDirectorySchema } from "src/server/trpc/model/file";
 import { authProcedure } from "src/server/trpc/procedure/base";
+import { clusters } from "src/server/trpc/route/config";
+import { getScowdClient, mapConnectErrorToTRPCError } from "src/server/trpc/scowd/scowd";
+import { getCurrentClusters } from "src/server/utils/clusters";
 import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
@@ -15,17 +20,6 @@ import { logger } from "src/server/utils/logger";
 import { getClusterLoginNode } from "src/server/utils/ssh";
 import { parseIp } from "src/utils/parse";
 import { z } from "zod";
-
-import { getCurrentClusters } from "../../utils/clusters";
-import { withFileDriver } from "../Driver/fileDriver/fileDriver";
-import {
-  FileMetaSchema,
-  InitMultipartUploadResponseSchema,
-  ListDirectoryOutput,
-  ListDirectorySchema,
-} from "../model/file";
-import { getScowdClient, mapConnectErrorToTRPCError } from "../scowd/scowd";
-import { clusters } from "./config";
 
 // 这些文件操作的API如果按照restful的设计风格，应该把path设置在url中，而不是body中
 // 但是HTTP的URL不区分大小写，但是linux的路径区分
@@ -611,13 +605,13 @@ export const file = router({
         summary: "初始化分片上传",
       },
     })
-    .input(
-      z.object({
-        clusterId: z.string(),
-        path: z.string(),
-        name: z.string(),
-      }),
-    )
+    .input(z.object({
+      clusterId: z.string(),
+      path: z.string(),
+      name: z.string(),
+      fileSizeByte: z.number(),
+      modificationTime: z.number(),
+    }))
     .output(InitMultipartUploadResponseSchema)
     .use(async ({ input: { path, clusterId, name }, ctx, next }) => {
       const res = await next({ ctx });
@@ -639,7 +633,10 @@ export const file = router({
 
       return res;
     })
-    .mutation(async ({ input: { clusterId, path, name }, ctx: { user } }) => {
+    .mutation(async ({
+      input: { clusterId, path, name, fileSizeByte, modificationTime }, ctx: { user },
+    }) => {
+
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);
@@ -671,22 +668,16 @@ export const file = router({
           userId: user.identityId,
           path,
           name,
+          fileSizeByte: BigInt(fileSizeByte),
+          modificationTime: BigInt(modificationTime),
           noCheckPermission,
         });
 
         return {
-          ...initData,
           chunkSizeByte: Number(initData.chunkSizeByte),
-          filesInfo: initData.filesInfo.map(
-            (info): ListDirectoryOutput => ({
-              name: info.name,
-              // TODO: 修改
-              type: info.fileType === 0 ? "FILE" : "DIR",
-              mtime: info.modTime,
-              mode: info.mode,
-              size: Number(info.sizeByte),
-            }),
-          ),
+          fileSizeByte: Number(initData.fileSizeByte),
+          modificationTime: Number(initData.modificationTime),
+          uploadedIndices: initData.uploadedIndices.map((i) => Number(i)),
         };
       } catch (err) {
         subLogger.error({ error: err }, "Merge file chunks failed");
@@ -696,6 +687,87 @@ export const file = router({
         throw err;
       }
     }),
+
+
+  completeMultipartUpload: authProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/file/completeMultipartUpload",
+        tags: ["file"],
+        summary: "完成分片上传",
+      },
+    })
+    .input(z.object({
+      clusterId: z.string(),
+      path: z.string(),
+      name: z.string(),
+    }))
+    .output(z.object({}))
+    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+      const res = await next({ ctx });
+
+      const { user, req } = ctx;
+      const logInfo = {
+        operatorUserId: user.identityId,
+        operatorIp: parseIp(req) ?? "",
+        operationTypeName: OperationType.uploadFile,
+        operationTypePayload:{
+          clusterId, path: join(path, name),
+        },
+      };
+
+      if (res.ok) {
+        await callLog(logInfo, OperationResult.SUCCESS);
+      }
+
+      if (!res.ok) {
+        await callLog(logInfo, OperationResult.FAIL);
+      }
+
+      return res;
+    })
+    .mutation(async ({ input: { clusterId, path, name }, ctx: { user } }) => {
+
+      const userId = user.identityId;
+
+      const currentClusterIds = await getCurrentClusters(userId);
+      checkClusterAvailable(currentClusterIds, clusterId);
+
+      const subLogger = logger.child({ user, clusterId, path, name });
+      subLogger.info("Complete multipart upload started");
+
+      const cluster = clusters[clusterId];
+      if (!cluster) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
+      }
+      const host = getClusterLoginNode(clusterId);
+      if (!host) { throw clusterNotFound(clusterId); }
+
+      if (!cluster.scowd?.enabled) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
+      }
+
+      try {
+        const client = getScowdClient(clusterId);
+        await client.file.completeMultipartUpload({
+          userId: user.identityId,
+          path,
+          name,
+        });
+
+        subLogger.info("Complete multipart upload completed successfully");
+        return {};
+
+      } catch (err) {
+        subLogger.error({ error: err }, "Complete multipart upload failed");
+        if (err instanceof ConnectError) {
+          throw mapConnectErrorToTRPCError(err);
+        }
+        throw err;
+      }
+    }),
+
 
   mergeFileChunks: authProcedure
     .meta({
@@ -739,50 +811,10 @@ export const file = router({
 
       return res;
     })
-    .mutation(async ({ input: { clusterId, path, name, sizeByte }, ctx: { user } }) => {
-      const userId = user.identityId;
-
-      const currentClusterIds = await getCurrentClusters(userId);
-      checkClusterAvailable(currentClusterIds, clusterId);
-
-      const subLogger = logger.child({ user, clusterId, path, name });
-      subLogger.info("Merge file chunks started");
-
-      const cluster = clusters[clusterId];
-      if (!cluster) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
-      }
-      const host = getClusterLoginNode(clusterId);
-      if (!host) {
-        throw clusterNotFound(clusterId);
-      }
-
-      if (!cluster.scowd?.enabled) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
-      }
-
-      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
-
-      try {
-        const client = getScowdClient(clusterId, userId);
-        await client.file.mergeFileChunks({
-          userId: user.identityId,
-          path,
-          name,
-          sizeByte: BigInt(sizeByte),
-          noCheckPermission,
-        });
-
-        subLogger.info("Merge file chunks completed successfully");
-        return {};
-      } catch (err) {
-        subLogger.error({ error: err }, "Merge file chunks failed");
-        if (err instanceof ConnectError) {
-          throw mapConnectErrorToTRPCError(err);
-        }
-        throw err;
-      }
+    .mutation(async () => {
+      throw new TRPCError({
+        code: "NOT_IMPLEMENTED",
+        message: "This interface is deprecated.",
+      });
     }),
 });

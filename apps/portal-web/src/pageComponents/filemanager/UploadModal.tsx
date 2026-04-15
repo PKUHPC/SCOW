@@ -9,7 +9,6 @@ import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { urlToUpload } from "src/pageComponents/filemanager/api";
 import { publicConfig } from "src/utils/config";
-import { calculateBlobSHA256 } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
 
 interface Props {
@@ -79,17 +78,39 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   };
 
   const startMultipartUpload = async (file: File, onProgress: OnProgressCallback) => {
-    const { tempFileDir, chunkSizeByte, filesInfo } = await api.initMultipartUpload({
-      body: { cluster, path, name: file.name },
+    let initData = await api.initMultipartUpload({
+      body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
     }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
 
-    const uploadedChunkIndices = new Set(
-      filesInfo.map((item) => {
-        const reg = /_(\d+).scowuploadtemp/;
-        const match = reg.exec(item.name);
-        return match ? parseInt(match[1]) : null;
-      }).filter((index) => index !== null),
-    );
+    if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
+      await new Promise<void>((resolve, reject) => {
+        modal.confirm({
+          title: t(p("resumeUploadTitle")),
+          content: t(p("resumeUploadContent")),
+          okText: t(p("resumeUploadOk")),
+          cancelText: t(p("resumeUploadCancel")),
+          onOk: async () => {
+            try {
+              await api.deleteFile({ query: { cluster, path: join(path, file.name + ".uploading") } });
+            } catch (e) {
+              console.error("Failed to delete .uploading file", e);
+            }
+
+            initData = await api.initMultipartUpload({
+              body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
+            }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+            resolve();
+          },
+          onCancel: () => {
+            reject(new Error("User cancelled upload"));
+          },
+        });
+      });
+    }
+
+    const { chunkSizeByte, uploadedIndices } = initData;
+
+    const uploadedChunkIndices = new Set(uploadedIndices);
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
 
@@ -142,19 +163,17 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         return;
       }
 
-      if (uploadedChunkIndices.has(start + 1)) {
+      if (uploadedChunkIndices.has(start)) {
         // 如果文件块已经上传，直接跳过
         return;
       }
 
       const chunk = file.slice(start * chunkSizeByte, (start + 1) * chunkSizeByte);
-      const hash = await calculateBlobSHA256(chunk);
-      const fileName = `${hash}_${start + 1}.scowuploadtemp`;
 
       const formData = new FormData();
       formData.append("file", chunk);
 
-      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName), true, join(path, file.name)), {
+      const response = await fetch(urlToUpload(cluster, join(path, file.name), true, undefined, start), {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -178,7 +197,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         }
 
         // 如果分片已经上传过，跳过
-        if (uploadedChunkIndices.has(i + 1)) {
+        if (uploadedChunkIndices.has(i)) {
           continue;
         }
 
@@ -188,10 +207,10 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       await Promise.all(tasks);
 
       if (!controller.signal.aborted) {
-        await api.mergeFileChunks({ body: { cluster, path, name: file.name, sizeByte: file.size } })
+        await api.completeMultipartUpload({ body: { cluster, path, name: file.name } })
           .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
           .httpError(520, (err) => {
-            message.error(t(p("mergeFileChunksErrorText"), [file.name, err?.error]));
+            message.error(t(p("completeUploadErrorText"), [file.name, err?.error]));
           });
       }
 
@@ -322,7 +341,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           fileList={uploadFileList}
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("checking"))
               : speed?.speedText ?? "0 B/s";
             return (
               <div>

@@ -354,10 +354,12 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   mergeFileChunks: null,
+  completeMultipartUpload: null,
   initMultipartUpload: async () => ({
-    tempFileDir: "home/user/scow/tempDir",
     chunkSizeByte: 5 * 1024 * 1024,
-    filesInfo: [],
+    fileSizeByte: 12312412,
+    modificationTime: 1772258428000,
+    uploadedIndices: [],
   }),
 
   markMessageRead: null,

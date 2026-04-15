@@ -96,6 +96,7 @@
     "nprogress": "0.2.0",
     "pino": "9.6.0",
     "protobufjs": "7.4.0",
+    "p-limit": "6.2.0",
     "react": "18.3.1",
     "react-async": "10.0.1",
     "react-dom": "18.3.1",

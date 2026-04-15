@@ -1155,10 +1155,8 @@ export default {
       uploadText: "Haga clic o arrastre archivos aquí para subir",
       singleOrMultiply: "Soporta subir archivos individuales o múltiples",
       uploadFileListNotExist: "La lista de archivos no existe",
-      mergeFileChunkError: "Error al fusionar archivo {}. {}",
       fileUploadError: "Error al subir archivo: {}",
       isNotFile: "Arrastre archivos para subirlos",
-      isMerging: "Fusionando en progreso...",
     },
     uploadDirModal: {
       title: "Subir Directorio",
@@ -1181,9 +1179,8 @@ export default {
       multipartUploadError: "Error al subir archivo: {}",
       calculateHashError: "Error al calcular hash: {}",
       uploadFileListNotExist: "La lista de archivos subidos no existe: {}",
-      mergeFileChunksErrorText: "Error al fusionar archivo {}, por favor intente nuevamente",
       isNotDir: "Arrastre carpetas para subirlas",
-      isMerging: "Fusionando en progreso...",
+      deleteFolderFailed: "Error al eliminar la carpeta {}",
     },
   },
   layout: {

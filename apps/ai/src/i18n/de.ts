@@ -1155,10 +1155,8 @@ export default {
       uploadText: "Klicken oder Dateien hierher ziehen zum Hochladen",
       singleOrMultiply: "Unterstützt Upload einzelner oder mehrerer Dateien",
       uploadFileListNotExist: "Dateiliste existiert nicht",
-      mergeFileChunkError: "Datei-Zusammenführung fehlgeschlagen {}. {}",
       fileUploadError: "Datei-Upload fehlgeschlagen: {}",
       isNotFile: "Bitte ziehen Sie Dateien zum Hochladen hierher",
-      isMerging: "Zusammenführung läuft...",
     },
     uploadDirModal: {
       title: "Verzeichnis hochladen",
@@ -1181,9 +1179,8 @@ export default {
       multipartUploadError: "Datei-Upload fehlgeschlagen: {}",
       calculateHashError: "Fehler beim Berechnen des Hashs: {}",
       uploadFileListNotExist: "Die hochgeladene Dateiliste existiert nicht: {}",
-      mergeFileChunksErrorText: "Zusammenführung der Datei {} fehlgeschlagen, bitte versuchen Sie es erneut",
       isNotDir: "Bitte ziehen Sie Ordner zum Hochladen hierher",
-      isMerging: "Zusammenführung läuft...",
+      deleteFolderFailed: "Fehler beim Löschen des Ordners {}",
     },
   },
   layout: {

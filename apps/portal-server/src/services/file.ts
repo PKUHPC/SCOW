@@ -6,9 +6,7 @@ import {
   loggedExec, sftpAppendFile, sftpExists, sftpMkdir,
   sftpReadFile, sftpRealPath, sshRmrf,
 } from "@scow/lib-ssh";
-import {
-  FileInfo, FileServiceServer, FileServiceService, fileTypeFromJSON,
-} from "@scow/protos/build/portal/file";
+import { FileServiceServer, FileServiceService } from "@scow/protos/build/portal/file";
 import path from "path";
 import { getClusterOps } from "src/clusterops";
 import { FileType } from "src/clusterops/api/file";
@@ -344,7 +342,7 @@ export const fileServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const { cluster, path, userId } = info.message.info;
+      const { cluster, path, userId, chunkIdx } = info.message.info;
 
       const host = getClusterLoginNode(cluster);
 
@@ -358,7 +356,7 @@ export const fileServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      const reply = await clusterops.file.upload({ userId, path, call }, logger);
+      const reply = await clusterops.file.upload({ userId, path, chunkIdx, call }, logger);
 
       return [{ ...reply }];
 
@@ -385,7 +383,7 @@ export const fileServiceServer = plugin((server) => {
 
     initMultipartUpload: async ({ request }) => {
 
-      const { cluster, userId, path, name } = request;
+      const { cluster, userId, path, name, fileSizeByte, modificationTime } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
@@ -404,20 +402,16 @@ export const fileServiceServer = plugin((server) => {
       const client = getScowdClient(cluster, userId);
 
       try {
-        const initData = await client.file.initMultipartUpload({ userId, path, name });
+        const initData = await client.file.initMultipartUpload({
+          userId, path, name, fileSizeByte: BigInt(fileSizeByte), modificationTime: BigInt(modificationTime),
+        });
 
         return [{
           ...initData,
           chunkSizeByte: Number(initData.chunkSizeByte),
-          filesInfo: initData.filesInfo.map((info): FileInfo => {
-            return {
-              name: info.name,
-              type: fileTypeFromJSON(info.fileType),
-              mtime: info.modTime,
-              mode: info.mode,
-              size: Number(info.sizeByte),
-            };
-          }),
+          fileSizeByte: Number(initData.fileSizeByte),
+          modificationTime: Number(initData.modificationTime),
+          uploadedIndices: initData.uploadedIndices.map((i) => Number(i)),
         }];
 
       } catch (err) {
@@ -428,8 +422,9 @@ export const fileServiceServer = plugin((server) => {
       }
     },
 
-    mergeFileChunks: async ({ request }) => {
-      const { cluster, userId, path, name, sizeByte } = request;
+    completeMultipartUpload: async ({ request }) => {
+
+      const { userId, cluster, path, name } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
@@ -448,8 +443,7 @@ export const fileServiceServer = plugin((server) => {
       const client = getScowdClient(cluster, userId);
 
       try {
-        await client.file.mergeFileChunks({ userId, path, name, sizeByte: BigInt(sizeByte) });
-
+        await client.file.completeMultipartUpload({ userId, path, name });
         return [{}];
 
       } catch (err) {
@@ -459,7 +453,6 @@ export const fileServiceServer = plugin((server) => {
         throw err;
       }
     },
-
 
     getFileMetadata: async ({ request, logger }) => {
       const { userId, cluster, path } = request;

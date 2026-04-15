@@ -11,7 +11,6 @@ import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { urlToUpload } from "src/pageComponents/filemanager/api";
 import { publicConfig } from "src/utils/config";
-import { calculateBlobSHA256 } from "src/utils/file";
 import { convertToBytes } from "src/utils/format";
 
 interface Props {
@@ -50,6 +49,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const folderEnsureExistPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
   // 用于缓存每个文件夹的确认 Promise
   const folderConfirmPromisesRef = useRef<Map<string, Promise<"overwrite" | "skip">>>(new Map());
+  // 用于缓存文件夹删除的 Promise
+  const folderDeletePromisesRef = useRef<Map<string, Promise<void>>>(new Map());
+  // 用于追踪已经删除的文件夹
+  const folderDeletedSetRef = useRef<Set<string>>(new Set());
   // 使用 Ref 保存前一次 uploadFileList 的内容
   const previousFileListRef = useRef<UploadFile[]>([]);
 
@@ -92,6 +95,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     if (isNewUpload) {
       folderOverwriteSetRef.current.clear();
       folderEnsureExistSetRef.current.clear();
+      folderDeletedSetRef.current.clear();
     }
 
     previousFileListRef.current = currentFileList;
@@ -223,6 +227,23 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         folderConfirmPromisesRef.current.delete(folderPath);
 
         if (userChoice === "overwrite") {
+          // 删除已存在的文件夹（同一文件夹只执行一次，通过 Promise 缓存保证并发安全）
+          if (!folderDeletedSetRef.current.has(folderPath)) {
+            let deletePromise = folderDeletePromisesRef.current.get(folderPath);
+            if (!deletePromise) {
+              deletePromise = api.deleteDir({ query: { cluster, path: folderPath } })
+                .then(() => {})
+                .catch(() => {
+                  message.error(t(p("deleteFolderFailed"), [folderName]));
+                })
+                .finally(() => {
+                  folderDeletePromisesRef.current.delete(folderPath);
+                  folderDeletedSetRef.current.add(folderPath);
+                });
+              folderDeletePromisesRef.current.set(folderPath, deletePromise);
+            }
+            await deletePromise;
+          }
           folderOverwriteSetRef.current.add(folderPath);
         } else {
           return Upload.LIST_IGNORE;
@@ -271,6 +292,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     folderEnsureExistSetRef.current.clear();
     folderEnsureExistPromisesRef.current.clear();
     folderConfirmPromisesRef.current.clear();
+    folderDeletePromisesRef.current.clear();
+    folderDeletedSetRef.current.clear();
     speedTracker.cleanupAll();
     reload();
     onClose();
@@ -293,19 +316,45 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     const folderName = relativePath.split("/").slice(0, -1).join("/");
     const folderPath = join(path, folderName);
 
-    const { tempFileDir, chunkSizeByte, filesInfo } = await api.initMultipartUpload({
-      body: { cluster, path: folderPath, name: file.name },
+    let initData = await api.initMultipartUpload({
+      body: {
+        cluster, path: folderPath, name: file.name,
+        fileSizeByte: file.size, modificationTime: file.lastModified,
+      },
     }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
 
-    const uploadedChunkIndices = new Set(
-      filesInfo
-        .map((item) => {
-          const reg = /_(\d+).scowuploadtemp/;
-          const match = reg.exec(item.name);
-          return match ? parseInt(match[1]) : null;
-        })
-        .filter((index) => index !== null),
-    );
+    if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
+      await new Promise<void>((resolve, reject) => {
+        modal.confirm({
+          title: t(p("resumeUploadTitle")),
+          content: t(p("resumeUploadContent")),
+          okText: t(p("resumeUploadOk")),
+          cancelText: t(p("resumeUploadCancel")),
+          onOk: async () => {
+            try {
+              await api.deleteFile({ query: { cluster, path: join(folderPath, file.name + ".uploading") } });
+            } catch (e) {
+              console.error("Failed to delete .uploading file", e);
+            }
+
+            initData = await api.initMultipartUpload({
+              body: {
+                cluster, path: folderPath, name: file.name,
+                fileSizeByte: file.size, modificationTime: file.lastModified,
+              },
+            }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+            resolve();
+          },
+          onCancel: () => {
+            reject(new Error("User cancelled upload"));
+          },
+        });
+      });
+    }
+
+    const { chunkSizeByte, uploadedIndices } = initData;
+
+    const uploadedChunkIndices = new Set(uploadedIndices);
 
     const totalCount = Math.ceil(file.size / chunkSizeByte);
 
@@ -352,19 +401,17 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         return;
       }
 
-      if (uploadedChunkIndices.has(start + 1)) {
+      if (uploadedChunkIndices.has(start)) {
         // 如果文件块已经上传，直接跳过
         return;
       }
 
       const chunk = file.slice(start * chunkSizeByte, (start + 1) * chunkSizeByte);
-      const hash = await calculateBlobSHA256(chunk);
-      const fileName = `${hash}_${start + 1}.scowuploadtemp`;
 
       const formData = new FormData();
       formData.append("file", chunk);
 
-      const response = await fetch(urlToUpload(cluster, join(tempFileDir, fileName), true, join(path, file.name)), {
+      const response = await fetch(urlToUpload(cluster, join(path, relativePath), true, undefined, start), {
         method: "POST",
         body: formData,
         signal: controller.signal,
@@ -387,7 +434,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         }
 
         // 如果分片已经上传过，跳过
-        if (uploadedChunkIndices.has(i + 1)) {
+        if (uploadedChunkIndices.has(i)) {
           continue;
         }
 
@@ -398,9 +445,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
       if (!controller.signal.aborted) {
         await api
-          .mergeFileChunks({ body: { cluster, path: folderPath, name: file.name, sizeByte: file.size } })
+          .completeMultipartUpload({ body: { cluster, path: folderPath, name: file.name } })
+          .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
           .httpError(520, (err) => {
-            message.error(t(p("mergeFileChunksErrorText"), [file.webkitRelativePath, err?.error]));
+            message.error(t(p("completeUploadErrorText"), [file.name, err?.error]));
           });
       }
     } catch (err: any) {
@@ -494,7 +542,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
 
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("checking"))
               : speed?.speedText ?? "0 B/s";
             return (
               <div>

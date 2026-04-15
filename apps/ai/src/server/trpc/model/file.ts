@@ -32,8 +32,8 @@ export type FileMeta = z.infer<typeof FileMetaSchema>;
 
 
 export const InitMultipartUploadResponseSchema = z.object({
-  tempFileDir: z.string(),
   chunkSizeByte: z.number(),
-  filesInfo: z.array(ListDirectorySchema),
-
+  fileSizeByte: z.number(),
+  modificationTime: z.number(),
+  uploadedIndices: z.array(z.number()),
 });

@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import path, { basename, dirname, join } from "path";
 import { config } from "src/server/config/env";
 import { FileMeta, ListDirectoryOutput } from "src/server/trpc/model/file";
-import { getScowdClient,mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
+import { getScowdClient, mapConnectErrorToTRPCError, wrap } from "src/server/trpc/scowd/scowd";
 import { ErrorCode } from "src/server/utils/errorCode";
 import { getPermissionsFromMode } from "src/server/utils/getPermissionsFromMode";
 import { Logger } from "ts-log";
@@ -15,7 +15,6 @@ import { callback, FileDriver, SHARED_DIR, shareOkCallback, ShareParams } from "
 import { getContentType, readableStreamToNodeReadable } from "./sshFileDriver";
 
 export class ScowdFileDriver implements FileDriver {
-
   private client: ScowdClient;
 
   constructor(
@@ -103,9 +102,10 @@ export class ScowdFileDriver implements FileDriver {
     );
   }
   async createFile(path: string, noCheckPermission?: boolean): Promise<void> {
-
     const { exists } = await wrap(
-      this.client.file.exists({ userId: this.userId, path, noCheckPermission }), this.logger);
+      this.client.file.exists({ userId: this.userId, path, noCheckPermission }),
+      this.logger,
+    );
 
     if (exists) {
       throw new TRPCError({ code: "CONFLICT", message: `${path} already exists` });
@@ -133,15 +133,16 @@ export class ScowdFileDriver implements FileDriver {
 
     const results = resp.filesInfo.map((info) => {
       const type =
-        info.fileType === scowdFileType.DIR ? "DIR" :
-          info.fileType === scowdFileType.SYMLINK ? "SYMLINK" :
-            "FILE";
+        info.fileType === scowdFileType.DIR ? "DIR" : info.fileType === scowdFileType.SYMLINK ? "SYMLINK" : "FILE";
 
-      const linkTargetType = info.linkTargetType === undefined ? undefined : (
-        info.linkTargetType === scowdFileType.DIR ? "DIR" :
-          info.linkTargetType === scowdFileType.SYMLINK ? "SYMLINK" :
-            "FILE"
-      );
+      const linkTargetType =
+        info.linkTargetType === undefined
+          ? undefined
+          : info.linkTargetType === scowdFileType.DIR
+            ? "DIR"
+            : info.linkTargetType === scowdFileType.SYMLINK
+              ? "SYMLINK"
+              : "FILE";
 
       return {
         name: info.name,
@@ -174,26 +175,29 @@ export class ScowdFileDriver implements FileDriver {
     const resp = await wrap(
       this.client.file.getFileMetadata({
         userId: this.userId,
-        filePath:path,
+        filePath: path,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );
 
-    const type = resp.isSymlink ? "SYMLINK" :
-      resp.type === scowdFileType.DIR ? "DIR" : "FILE";
+    const type = resp.isSymlink ? "SYMLINK" : resp.type === scowdFileType.DIR ? "DIR" : "FILE";
 
     return {
       size: Number(resp.sizeByte),
       type: type,
       isSymlink: resp.isSymlink,
       linkTargetPath: resp.linkTargetPath,
-      linkTargetType: resp.linkTargetType === scowdFileType.DIR ? "DIR" :
-        resp.linkTargetType === scowdFileType.SYMLINK ? "SYMLINK" : "FILE",
+      linkTargetType:
+        resp.linkTargetType === scowdFileType.DIR
+          ? "DIR"
+          : resp.linkTargetType === scowdFileType.SYMLINK
+            ? "SYMLINK"
+            : "FILE",
     };
   }
 
-  async download(path: string,download: string, res: NextApiResponse<any>, noCheckPermission?: boolean) {
+  async download(path: string, download: string, res: NextApiResponse<any>, noCheckPermission?: boolean) {
     let clientDisconnected = false;
     const abortController = new AbortController();
 
@@ -216,31 +220,36 @@ export class ScowdFileDriver implements FileDriver {
       const meta = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath:path,
+          filePath: path,
           noCheckPermission: noCheckPermission ?? false,
         }),
         this.logger,
       );
 
-      const filename = basename(path).replace(/"/g, "\\\"");
+      const filename = basename(path).replace(/"/g, '\\"');
       const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
-      const contentType = download === "true" ? getContentType(filename, "application/octet-stream") :
-        getContentType(filename, "text/plain; charset=utf-8");
+      const contentType =
+        download === "true"
+          ? getContentType(filename, "application/octet-stream")
+          : getContentType(filename, "text/plain; charset=utf-8");
       res.setHeader("Content-Type", contentType);
 
       res.setHeader("Content-Disposition", `${download === "true" ? "attachment" : "inline"}; ${dispositionParm}`);
 
       res.setHeader("Content-Length", String(meta.sizeByte));
 
-      const readStream = this.client.file.download({
-        userId: this.userId,
-        path,
-        chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
-        noCheckPermission: noCheckPermission ?? false,
-      }, {
-        signal: abortController.signal,
-      });
+      const readStream = this.client.file.download(
+        {
+          userId: this.userId,
+          path,
+          chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+          noCheckPermission: noCheckPermission ?? false,
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
 
       for await (const { chunk } of readStream) {
         if (clientDisconnected || res.destroyed) {
@@ -297,28 +306,37 @@ export class ScowdFileDriver implements FileDriver {
     }
   }
 
-  async upload(path: string, uploadedFile: File, noCheckPermission?: boolean) {
+  async upload(path: string, uploadedFile: File, chunkIdx?: number, noCheckPermission?: boolean) {
     try {
       const userId = this.userId;
 
       await this.client.file.upload(
         (async function* () {
-        // 初始上传信息：文件路径和用户信息
-          yield { message: { case: "info", value: { path, userId, noCheckPermission: noCheckPermission ?? false } } };
+          // 初始上传信息：文件路径和用户信息
+          yield {
+            message: {
+              case: "info",
+              value: {
+                path,
+                userId,
+                chunkIdx: chunkIdx !== undefined ? BigInt(chunkIdx) : undefined,
+                noCheckPermission: noCheckPermission ?? false,
+              },
+            },
+          };
 
           // 将上传的文件流拆分为块，并逐个发送给 gRPC 服务器
           const readableStream = uploadedFile.stream();
           const nodeReadableStream = readableStreamToNodeReadable(readableStream);
 
           for await (const chunk of nodeReadableStream) {
-          // 逐个块上传，确保每个 chunk 都以 'chunk' 形式上传
+            // 逐个块上传，确保每个 chunk 都以 'chunk' 形式上传
             yield { message: { case: "chunk", value: chunk } };
           }
         })(),
       );
 
       return NextResponse.json({ message: "File uploaded successfully" }, { status: 200 });
-
     } catch (err) {
       throw mapConnectErrorToTRPCError(err);
     }
@@ -330,7 +348,7 @@ export class ScowdFileDriver implements FileDriver {
         userId: this.userId,
         path,
         mode,
-        recursive:true,
+        recursive: true,
       }),
       this.logger,
     );
@@ -338,34 +356,30 @@ export class ScowdFileDriver implements FileDriver {
 
   async decompressFile(filePath: string, decompressionPath: string, noCheckPermission?: boolean): Promise<void> {
     await wrap(
-      this.client.file.decompressFile(
-        {
-          userId: this.userId,
-          filePath,
-          decompressionPath,
-          noCheckPermission,
-        },
-      ),
+      this.client.file.decompressFile({
+        userId: this.userId,
+        filePath,
+        decompressionPath,
+        noCheckPermission,
+      }),
       this.logger,
     );
   }
 
-  async compressFiles(paths: string[],archivePath: string, noCheckPermission?: boolean): Promise<void> {
+  async compressFiles(paths: string[], archivePath: string, noCheckPermission?: boolean): Promise<void> {
     await wrap(
-      this.client.file.compressFiles(
-        {
-          userId: this.userId,
-          paths,
-          archivePath,
-          noCheckPermission,
-        },
-      ),
+      this.client.file.compressFiles({
+        userId: this.userId,
+        paths,
+        archivePath,
+        noCheckPermission,
+      }),
       this.logger,
     );
   }
 
   // 以root身份删除取消分享的文件夹
-  async unShareFileOrDir(sharedPath: string,successCallback?: callback,failureCallback?: callback): Promise<void> {
+  async unShareFileOrDir(sharedPath: string, successCallback?: callback, failureCallback?: callback): Promise<void> {
     await wrap(
       this.client.file.deleteDirectory({
         userId: this.userId,
@@ -382,9 +396,10 @@ export class ScowdFileDriver implements FileDriver {
 
   // 以root身份分享的文件夹
   async shareFileOrDir(
-    { sourceFilePath,sharedTarget,targetName,targetSubName,sharedTopDir }: ShareParams,
+    { sourceFilePath, sharedTarget, targetName, targetSubName, sharedTopDir }: ShareParams,
     successCallback?: shareOkCallback,
-    failureCallback?: callback): Promise<void> {
+    failureCallback?: callback,
+  ): Promise<void> {
     // 获取类别路径 如 nfs/home/.shared/{userId}/{target}
     const targetDirectory = path.join(sharedTopDir, SHARED_DIR, this.userId, sharedTarget);
     // nfs/home/.shared/{userId}/{target}/{targetName}
@@ -396,7 +411,7 @@ export class ScowdFileDriver implements FileDriver {
       const targetDirectoryExists = await wrap(
         this.client.file.exists({
           userId: this.userId,
-          path:targetDirectory,
+          path: targetDirectory,
         }),
         this.logger,
       );
@@ -416,7 +431,7 @@ export class ScowdFileDriver implements FileDriver {
             userId: this.userId,
             path: targetDirectory,
             mode: "555",
-            recursive:true,
+            recursive: true,
           }),
           this.logger,
         );
@@ -425,7 +440,7 @@ export class ScowdFileDriver implements FileDriver {
       const targetFullDirExists = await wrap(
         this.client.file.exists({
           userId: this.userId,
-          path:targetFullDir,
+          path: targetFullDir,
         }),
         this.logger,
       );
@@ -448,8 +463,8 @@ export class ScowdFileDriver implements FileDriver {
           // sourceFilePath: /nfs/home/demo_admin2/1111
           // targetFullDir /nfs/.shared/demo_admin2/dataset/oyx0529/v1
           // 需要再targetFullDir 需要拼上sourceFilePath 的末尾
-          fromPath:sourceFilePath,
-          toPath:path.join(targetFullDir , path.basename(sourceFilePath)) ,
+          fromPath: sourceFilePath,
+          toPath: path.join(targetFullDir, path.basename(sourceFilePath)),
         }),
         this.logger,
       );
@@ -459,7 +474,7 @@ export class ScowdFileDriver implements FileDriver {
           userId: this.userId,
           path: targetTopDir,
           mode: "555",
-          recursive:true,
+          recursive: true,
         }),
         this.logger,
       );
@@ -475,7 +490,7 @@ export class ScowdFileDriver implements FileDriver {
     const oldPathExistsRes = await wrap(
       this.client.file.exists({
         userId: this.userId,
-        path:oldPath,
+        path: oldPath,
       }),
       this.logger,
     );
@@ -502,7 +517,7 @@ export class ScowdFileDriver implements FileDriver {
     const toPathExists = await wrap(
       this.client.file.exists({
         userId: this.userId,
-        path:toPath,
+        path: toPath,
       }),
       this.logger,
     );
@@ -518,7 +533,7 @@ export class ScowdFileDriver implements FileDriver {
     const fileNameExists = await wrap(
       this.client.file.exists({
         userId: this.userId,
-        path:join(toPath, fileName),
+        path: join(toPath, fileName),
       }),
       this.logger,
     );
@@ -532,15 +547,15 @@ export class ScowdFileDriver implements FileDriver {
       });
     }
 
-    const { permission:toPathPermission } = await wrap(
+    const { permission: toPathPermission } = await wrap(
       this.client.file.getFileMetadata({
         userId: this.userId,
-        filePath:toPath,
+        filePath: toPath,
       }),
       this.logger,
     );
 
-    const { canRead,canWrite } = getPermissionsFromMode(toPathPermission);
+    const { canRead, canWrite } = getPermissionsFromMode(toPathPermission);
     if (!canRead) {
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -561,7 +576,7 @@ export class ScowdFileDriver implements FileDriver {
     const toPathExists = await wrap(
       this.client.file.exists({
         userId: this.userId,
-        path:toPath,
+        path: toPath,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
@@ -575,16 +590,16 @@ export class ScowdFileDriver implements FileDriver {
       });
     }
 
-    const { permission:toPathPermission } = await wrap(
+    const { permission: toPathPermission } = await wrap(
       this.client.file.getFileMetadata({
         userId: this.userId,
-        filePath:toPath,
+        filePath: toPath,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
     );
 
-    const { canRead,canWrite } = getPermissionsFromMode(toPathPermission);
+    const { canRead, canWrite } = getPermissionsFromMode(toPathPermission);
     if (!canRead) {
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -605,7 +620,7 @@ export class ScowdFileDriver implements FileDriver {
     const sourcePathExists = await wrap(
       this.client.file.exists({
         userId: this.userId,
-        path:sourcePath,
+        path: sourcePath,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,
@@ -620,10 +635,10 @@ export class ScowdFileDriver implements FileDriver {
       });
     }
 
-    const { permission:toPathPermission } = await wrap(
+    const { permission: toPathPermission } = await wrap(
       this.client.file.getFileMetadata({
         userId: this.userId,
-        filePath:sourcePath,
+        filePath: sourcePath,
         noCheckPermission: noCheckPermission ?? false,
       }),
       this.logger,

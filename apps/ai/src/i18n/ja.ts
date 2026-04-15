@@ -1146,10 +1146,8 @@ export default {
       uploadText: "クリックまたはファイルをここにドラッグしてアップロード",
       singleOrMultiply: "単一または複数ファイルのアップロードをサポート",
       uploadFileListNotExist: "ファイルリストが存在しません",
-      mergeFileChunkError: "ファイル{}のマージに失敗しました。{}",
       fileUploadError: "ファイルアップロードに失敗しました：{}",
       isNotFile: "アップロードするにはファイルをドラッグしてください",
-      isMerging: "マージ進行中...",
     },
     uploadDirModal: {
       title: "ディレクトリをアップロード",
@@ -1172,9 +1170,8 @@ export default {
       multipartUploadError: "ファイルのアップロードに失敗しました：{}",
       calculateHashError: "ハッシュの計算エラー：{}",
       uploadFileListNotExist: "アップロードされたファイルリストが存在しません：{}",
-      mergeFileChunksErrorText: "ファイル{}のマージに失敗しました。もう一度お試しください",
       isNotDir: "アップロードするにはフォルダーをドラッグしてください",
-      isMerging: "マージ進行中...",
+      deleteFolderFailed: "フォルダ {} の削除に失敗",
     },
   },
   layout: {

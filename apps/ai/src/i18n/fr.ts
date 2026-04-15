@@ -1153,10 +1153,8 @@ export default {
       uploadText: "Cliquez ou faites glisser des fichiers ici pour téléverser",
       singleOrMultiply: "Prend en charge le téléversement de fichiers uniques ou multiples",
       uploadFileListNotExist: "La liste des fichiers n'existe pas",
-      mergeFileChunkError: "Échec de la fusion du fichier {}. {}",
       fileUploadError: "Téléversement du fichier échoué : {}",
       isNotFile: "Veuillez glisser des fichiers pour les téléverser",
-      isMerging: "Fusion en cours...",
     },
     uploadDirModal: {
       title: "Téléverser un dossier",
@@ -1179,9 +1177,8 @@ export default {
       multipartUploadError: "Échec du téléversement du fichier : {}",
       calculateHashError: "Erreur lors du calcul du hash : {}",
       uploadFileListNotExist: "La liste des fichiers téléversés n'existe pas : {}",
-      mergeFileChunksErrorText: "Échec de la fusion du fichier {}, veuillez réessayer",
       isNotDir: "Veuillez glisser des dossiers pour les téléverser",
-      isMerging: "Fusion en cours...",
+      deleteFolderFailed: "Échec de la suppression du dossier {}",
     },
   },
   layout: {

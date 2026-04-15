@@ -1149,10 +1149,8 @@ export default {
       uploadText: "Нажмите или перетащите файлы сюда для загрузки",
       singleOrMultiply: "Поддерживается загрузка одного или нескольких файлов",
       uploadFileListNotExist: "Список файлов не существует",
-      mergeFileChunkError: "Не удалось объединить файл {}. {}",
       fileUploadError: "Ошибка загрузки файла: {}",
       isNotFile: "Перетащите файлы для загрузки",
-      isMerging: "Идёт объединение...",
     },
     uploadDirModal: {
       title: "Загрузка каталога",
@@ -1175,9 +1173,8 @@ export default {
       multipartUploadError: "Не удалось загрузить файл: {}",
       calculateHashError: "Ошибка вычисления хэша: {}",
       uploadFileListNotExist: "Список загруженных файлов не существует: {}",
-      mergeFileChunksErrorText: "Не удалось объединить файл {}, попробуйте снова",
       isNotDir: "Перетащите папки для загрузки",
-      isMerging: "Идёт объединение...",
+      deleteFolderFailed: "Не удалось удалить каталог {}",
     },
   },
   layout: {

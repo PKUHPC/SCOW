@@ -12,6 +12,7 @@ const queryZod = z.object({
   path: z.string(),
   chunk: z.string(),
   originPath: z.string().optional(),
+  chunkIdx: z.string().optional(),
 });
 
 export type UploadQuery = z.infer<typeof queryZod>;
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ code: "UNAUTHORIZED" }, { status: 401 });
   }
 
-  const { clusterId, path } = queryZod.parse(Object.fromEntries(new URL(request.url).searchParams));
+  const { clusterId, path, chunkIdx } = queryZod.parse(Object.fromEntries(new URL(request.url).searchParams));
 
   const formData = await request.formData();
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       try {
         const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
         const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
-        return await driver.upload(path, uploadedFile, noCheckPermission);
+        return await driver.upload(path, uploadedFile, chunkIdx ? Number(chunkIdx) : undefined, noCheckPermission);
       } catch (error: any) {
         const rawMessage = error?.message || "Unknown error";
         const rawCode = error?.code || "UPLOAD_FAILED";

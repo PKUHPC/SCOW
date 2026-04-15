@@ -1,8 +1,9 @@
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
-import { calculateBlobSHA256, isFileEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
+import { isFileEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload, UploadFile, UploadProps } from "antd";
 import { RcFile } from "antd/lib/upload";
+import pLimit from "p-limit";
 import { dirname, join } from "path";
 import { useEffect, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
@@ -33,6 +34,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const { message, modal } = App.useApp();
   const { publicConfig } = usePublicConfig();
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
+  const limit = useRef(pLimit(2));
   const uploadControllers = useRef(new Map<string, AbortController>());
 
   // 使用 ref 来追踪每个文件夹的覆盖确认状态
@@ -45,6 +47,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const folderEnsureExistPromisesRef = useRef<Map<string, Promise<void>>>(new Map());
   // 用于缓存每个文件夹的确认 Promise
   const folderConfirmPromisesRef = useRef<Map<string, Promise<"overwrite" | "skip">>>(new Map());
+  // 用于缓存文件夹删除的 Promise
+  const folderDeletePromisesRef = useRef<Map<string, Promise<void>>>(new Map());
+  // 用于追踪已经删除的文件夹
+  const folderDeletedSetRef = useRef<Set<string>>(new Set());
   // 使用 Ref 保存前一次 uploadFileList 的内容
   const previousFileListRef = useRef<UploadFile[]>([]);
 
@@ -82,6 +88,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     if (isNewUpload) {
       folderOverwriteSetRef.current.clear();
       folderEnsureExistSetRef.current.clear();
+      folderDeletedSetRef.current.clear();
     }
 
     previousFileListRef.current = currentFileList;
@@ -110,7 +117,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   const checkFileExist = trpc.file.checkFileExist.useMutation();
   const mkdir = trpc.file.mkdir.useMutation();
   const initMultipartUpload = trpc.file.initMultipartUpload.useMutation();
-  const mergeFileChunks = trpc.file.mergeFileChunks.useMutation();
+  const completeMultipartUpload = trpc.file.completeMultipartUpload.useMutation();
+  const deleteFileMutation = trpc.file.deleteItem.useMutation();
 
   /**
    * 检查文件夹是否存在
@@ -217,6 +225,27 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         folderConfirmPromisesRef.current.delete(folderPath);
 
         if (userChoice === "overwrite") {
+          // 删除已存在的文件夹（同一文件夹只执行一次，通过 Promise 缓存保证并发安全）
+          if (!folderDeletedSetRef.current.has(folderPath)) {
+            let deletePromise = folderDeletePromisesRef.current.get(folderPath);
+            if (!deletePromise) {
+              deletePromise = deleteFileMutation.mutateAsync({
+                target: "DIR",
+                clusterId,
+                path: folderPath,
+              })
+                .then(() => {})
+                .catch(() => {
+                  message.error(t(p("deleteFolderFailed"), [folderName]));
+                })
+                .finally(() => {
+                  folderDeletePromisesRef.current.delete(folderPath);
+                  folderDeletedSetRef.current.add(folderPath);
+                });
+              folderDeletePromisesRef.current.set(folderPath, deletePromise);
+            }
+            await deletePromise;
+          }
           folderOverwriteSetRef.current.add(folderPath);
         } else {
           return Upload.LIST_IGNORE;
@@ -253,6 +282,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   };
 
   const onModalClose = () => {
+    limit.current.clearQueue();
     for (const controller of Array.from(uploadControllers.current.values())) {
       controller.abort();
     }
@@ -263,6 +293,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     folderEnsureExistSetRef.current.clear();
     folderEnsureExistPromisesRef.current.clear();
     folderConfirmPromisesRef.current.clear();
+    folderDeletePromisesRef.current.clear();
+    folderDeletedSetRef.current.clear();
     speedTracker.cleanupAll();
     reload();
     onClose();
@@ -285,108 +317,133 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     const folderName = relativePath.split("/").slice(0, -1).join("/");
     const folderPath = join(path, folderName);
 
-    const { tempFileDir, chunkSizeByte, filesInfo } = await initMultipartUpload.mutateAsync({
-      clusterId, path: folderPath, name: file.name,
-    });
-
-
-    const uploadedChunkIndices = new Set(
-      filesInfo
-        .map((item) => {
-          const reg = /_(\d+).scowuploadtemp/;
-          const match = reg.exec(item.name);
-          return match ? parseInt(match[1]) : null;
-        })
-        .filter((index) => index !== null),
-    );
-
-    const totalCount = Math.ceil(file.size / chunkSizeByte);
-    let uploadedCount = uploadedChunkIndices.size;
-
     const uploadFile = uploadFileList.find((uploadFile) => uploadFile.uid === file.uid);
     if (!uploadFile) {
       message.error(t(p("uploadFileListNotExist"), [file.webkitRelativePath]));
       return;
     }
-    const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
-    speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
-
-    const updateProgress = (count: number) => {
-      uploadedCount += count;
-      const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
-
-      const currentTotalLoaded = uploadedCount * chunkSizeByte;
-      speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
-
-      setUploadFileList((prevList) => {
-        return prevList.map((uploadFile) => {
-          return uploadFile.name === file.name
-            ? {
-              ...uploadFile,
-              percent: percentage,
-              status: "uploading" as const
-            }
-            : uploadFile;
-        });
-      });
-
-      onProgress?.({ percent: percentage });
-    };
-
-    const controller = new AbortController();
-    uploadControllers.current.set(uploadFile.uid, controller);
-
-    const uploadChunk = async (start: number): Promise<void> => {
-      if (controller.signal.aborted) {
-        return;
-      }
-
-      if (uploadedChunkIndices.has(start + 1)) {
-        // 如果文件块已经上传，直接跳过
-        return;
-      }
-
-      const chunk = file.slice(start * chunkSizeByte, (start + 1) * chunkSizeByte);
-      const hash = await calculateBlobSHA256(chunk);
-      const fileName = `${hash}_${start + 1}.scowuploadtemp`;
-
-      const formData = new FormData();
-      formData.append("file", chunk);
-
-      const response = await fetch(urlToUpload(clusterId, join(tempFileDir, fileName),
-        publicConfig.BASE_PATH, true, join(path, file.webkitRelativePath)), {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-
-      updateProgress(1);
-    };
 
     try {
-      // 顺序上传分片，失败时立即终止
+      let initData = await initMultipartUpload.mutateAsync({
+        clusterId, path: folderPath, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified,
+      });
+
+      if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
+        await new Promise<void>((resolve, reject) => {
+          modal.confirm({
+            title: t(p("resumeUploadTitle")),
+            content: t(p("resumeUploadContent")),
+            okText: t(p("resumeUploadOk")),
+            cancelText: t(p("resumeUploadCancel")),
+            onOk: async () => {
+              try {
+                await deleteFileMutation.mutateAsync({
+                  target: "FILE",
+                  clusterId,
+                  path: join(folderPath, file.name + ".uploading"),
+                });
+              } catch (e) {
+                console.error("Failed to delete .uploading file", e);
+              }
+
+              initData = await initMultipartUpload.mutateAsync({
+                clusterId, path: folderPath, name: file.name,
+                fileSizeByte: file.size, modificationTime: file.lastModified,
+              });
+              resolve();
+            },
+            onCancel: () => {
+              reject(new Error("User cancelled upload"));
+            },
+          });
+        });
+      }
+
+      const { chunkSizeByte, uploadedIndices } = initData;
+
+      const uploadedChunkIndices = new Set(uploadedIndices);
+
+      const totalCount = Math.ceil(file.size / chunkSizeByte);
+      let uploadedCount = uploadedChunkIndices.size;
+
+      const alreadyUploadedBytes = uploadedCount * chunkSizeByte;
+      speedTracker.initFileSpeed(uploadFile.uid, alreadyUploadedBytes);
+
+      const updateProgress = (count: number) => {
+        uploadedCount += count;
+        const percentage = Number(((uploadedCount / totalCount) * 100).toFixed(2));
+
+        const currentTotalLoaded = uploadedCount * chunkSizeByte;
+        speedTracker.updateFileBytes(uploadFile.uid, currentTotalLoaded);
+
+        setUploadFileList((prevList) => {
+          return prevList.map((uploadFile) => {
+            return uploadFile.name === file.name
+              ? { ...uploadFile,
+                percent: percentage,
+                status: "uploading" as const }
+              : uploadFile;
+          });
+        });
+
+        onProgress?.({ percent: percentage });
+      };
+
+      const controller = new AbortController();
+      uploadControllers.current.set(uploadFile.uid, controller);
+
+      const uploadChunk = async (start: number): Promise<void> => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        if (uploadedChunkIndices.has(start)) {
+          // 如果文件块已经上传，直接跳过
+          return;
+        }
+
+        const chunk = file.slice(start * chunkSizeByte, (start + 1) * chunkSizeByte);
+
+        const formData = new FormData();
+        formData.append("file", chunk);
+
+        const response = await fetch(urlToUpload(clusterId, join(path, file.webkitRelativePath),
+          publicConfig.BASE_PATH, true, undefined, start), {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+
+        updateProgress(1);
+      };
+
+      const chunkLimit = pLimit(2);
+      const tasks: Promise<void>[] = [];
+
       for (let i = 0; i < totalCount; i++) {
         if (controller.signal.aborted) {
           break;
         }
 
         // 如果分片已经上传过，跳过
-        if (uploadedChunkIndices.has(i + 1)) {
+        if (uploadedChunkIndices.has(i)) {
           continue;
         }
 
-        await uploadChunk(i);
+        tasks.push(chunkLimit(() => uploadChunk(i)));
       }
+
+      await Promise.all(tasks);
 
       if (!controller.signal.aborted) {
         try {
-          await mergeFileChunks.mutateAsync({ clusterId, path: folderPath, name: file.name, sizeByte: file.size });
+          await completeMultipartUpload.mutateAsync({ clusterId, path: folderPath, name: file.name });
         } catch (err: any) {
-          message.error(t(p("mergeFileChunksErrorText"), [file.webkitRelativePath, err.message]));
+          message.error(t(p("completeMultipartUploadErrorText"), [file.webkitRelativePath, err.message]));
         }
       }
     } catch (err: any) {
@@ -452,7 +509,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           withCredentials
           {...(scowdEnabled ? {
             customRequest: ({ file, onSuccess, onError, onProgress }) => {
-              startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError);
+              limit.current(() => startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError));
             },
           } : {
             action: async (file) => urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
@@ -479,7 +536,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           fileList={uploadFileList}
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("isMerging"))
+            const extraInfo = (file.percent && file.percent === 100) ? t(p("isChecking"))
               : speed?.speedText ?? "0 B/s";
             return (
               <div>

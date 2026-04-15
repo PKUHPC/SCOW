@@ -163,12 +163,15 @@ message InitMultipartUploadRequest {
   string path = 2;
   string name = 3;
   optional bool no_check_permission = 4;
+  uint64 file_size_byte = 5;
+  uint64 modification_time = 6;
 }
 
 message InitMultipartUploadResponse {
-  string temp_file_dir = 1;
-  uint64 chunk_size_byte = 2;
-  repeated FileInfo files_info = 3;
+  uint64 chunk_size_byte = 1;
+  uint64 file_size_byte = 2;
+  uint64 modification_time = 3;
+  repeated uint64 uploaded_indices = 4;
 }
 
 message UploadRequest {
@@ -177,6 +180,8 @@ message UploadRequest {
     string user_id = 1;
     string path = 2;
     optional bool no_check_permission = 3;
+    // 不传 chunk_idx 表示并非分片上传的请求，是普通的文件上传
+    optional uint64 chunk_idx = 4;
   }
 
   oneof message {
@@ -189,15 +194,14 @@ message UploadResponse {
   uint64 written_bytes = 1;
 }
 
-message MergeFileChunksRequest {
+message CompleteMultipartUploadRequest {
   string user_id = 1;
   string path = 2;
   string name = 3;
-  uint64 size_byte = 4;
-  optional bool no_check_permission = 5;
+  optional bool no_check_permission = 4;
 }
 
-message MergeFileChunksResponse {
+message CompleteMultipartUploadResponse {
 }
 
 message DownloadRequest {
@@ -268,7 +272,7 @@ service FileService {
   rpc CompressAndDownload (CompressAndDownloadRequest) returns (stream CompressAndDownloadResponse);
   rpc InitMultipartUpload(InitMultipartUploadRequest) returns (InitMultipartUploadResponse);
   rpc Upload(stream UploadRequest) returns (UploadResponse);
-  rpc MergeFileChunks(MergeFileChunksRequest) returns (MergeFileChunksResponse);
+  rpc CompleteMultipartUpload(CompleteMultipartUploadRequest) returns (CompleteMultipartUploadResponse);
 
   rpc CompressFiles(CompressFilesRequest) returns (CompressFilesResponse);
 

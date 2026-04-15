@@ -1,4 +1,3 @@
-import * as crypto from "crypto";
 import { styled } from "styled-components";
 
 export const PercentAndSpeedContainer = styled.div({
@@ -26,20 +25,6 @@ export const formatSpeed = (bytesPerSecond: number): string => {
 
   return `${value.toFixed(decimals)} ${units[i]}`;
 };
-
-export async function calculateBlobSHA256(blob: Blob): Promise<string> {
-  try {
-    const arrayBuffer = await blob.arrayBuffer();
-    const buffer = Uint8Array.from(Buffer.from(arrayBuffer));
-    const hash = crypto.createHash("sha256");
-    hash.update(buffer);
-    const hashHex = hash.digest("hex");
-
-    return hashHex;
-  } catch (error: any) {
-    throw new Error(`Failed to calculate hash: ${error.message}`);
-  }
-}
 
 // webkitRelativePath 只在 <input webkitdirectory> 选择时由浏览器填充，拖拽时永远是空字符串
 // 所以拖拽时通过 webkitGetAsEntry 来区分是文件还是文件夹

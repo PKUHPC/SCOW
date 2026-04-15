@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncRequestStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -32,6 +20,7 @@ export const UploadFileSchema = typeboxRouteSchema({
   query: Type.Object({
     cluster: Type.String(),
     path: Type.String(),
+    chunkIdx: Type.Optional(Type.Number()),
     chunk: Type.Optional(Type.Boolean()), // Added to control logging for chunked uploads
     originPath: Type.Optional(Type.String()),
   }),
@@ -46,7 +35,7 @@ const auth = authenticate(() => true);
 
 export default route(UploadFileSchema, async (req, res) => {
 
-  const { cluster, path, chunk, originPath } = req.query;
+  const { cluster, path, chunkIdx, chunk, originPath } = req.query;
 
   const info = await auth(req, res);
 
@@ -73,7 +62,9 @@ export default route(UploadFileSchema, async (req, res) => {
   })) as Parameters<BusboyEvents["file"]>;
 
   return await asyncRequestStreamCall(client, "upload", async ({ writeAsync }, stream) => {
-    await writeAsync({ message: { $case: "info", info: { cluster, path, userId: info.identityId } } });
+    await writeAsync({ message: {
+      $case: "info", info: { cluster, path, userId: info.identityId, chunkIdx },
+    } });
 
     await pipeline(
       file,

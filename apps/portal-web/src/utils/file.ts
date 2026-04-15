@@ -60,20 +60,3 @@ export const openPreviewLink = (href: string) => {
   window.open(href, "ViewFile", "location=yes,resizable=yes,scrollbars=yes,status=yes");
 };
 
-export async function calculateBlobSHA256(blob: Blob): Promise<string> {
-
-  try {
-
-    const arrayBuffer = await blob.arrayBuffer();
-    const buffer = Uint8Array.from(Buffer.from(arrayBuffer));
-    const hash = crypto.createHash("sha256");
-    hash.update(buffer);
-    const hashHex = hash.digest("hex");
-
-    return hashHex;
-  } catch (error) {
-
-    throw new Error(`Failed to calculate hash: ${error.message}`);
-  }
-}
-

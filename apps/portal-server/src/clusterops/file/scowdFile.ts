@@ -268,7 +268,7 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
   },
 
   upload: async (request, logger) => {
-    const { call, userId, path } = request;
+    const { call, userId, path, chunkIdx } = request;
     const client = getClient(userId);
 
     class RequestError extends Error {
@@ -289,7 +289,10 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
 
     try {
       const res = await client.file.upload((async function* () {
-        yield { message: { case: "info", value: { path, userId } } };
+        yield { message: {
+          case: "info",
+          value: { path, userId, chunkIdx: chunkIdx !== undefined ? BigInt(chunkIdx) : undefined },
+        } };
 
         for await (const data of call.iter()) {
           if (data.message?.$case !== "chunk") {
