@@ -56,7 +56,7 @@
     "antd": "5.19.4",
     "js-yaml": "4.1.0",
     "long": "5.2.4",
-    "next": "15.5.9",
+    "next": "15.5.15",
     "next-compose-plugins": "2.2.1",
     "nextjs-cors": "2.2.1",
     "nookies": "2.5.2",

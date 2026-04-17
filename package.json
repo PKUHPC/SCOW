@@ -64,7 +64,7 @@
   "packageManager": "pnpm@10.25.0",
   "pnpm": {
     "patchedDependencies": {
-      "next@15.5.9": "patches/next@15.5.9.patch"
+      "next@15.5.15": "patches/next@15.5.15.patch"
     },
     "neverBuiltDependencies": []
   }
