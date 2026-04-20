@@ -1,10 +1,10 @@
 stages:
   - name: Code1
-    reviewers: ["Miracle575"]
+    reviewers: [ "piccaSun" ]
 
   - name: Code2
-    reviewers: ["ddadaal"]
+    reviewers: [ "Miracle575" ]
 
   - name: E2E
-    reviewers: ["lyl-available"]
+    reviewers: [ "lyl-available" ]
     optional: true
