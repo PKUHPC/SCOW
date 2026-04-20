@@ -130,7 +130,6 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     };
 
     const headerColumns = {
-      id: "ID",
       accountName: t(pCommon("account")),
       tenantName: t(pCommon("tenant")),
       userId: t(pCommon("user")),

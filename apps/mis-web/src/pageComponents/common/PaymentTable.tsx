@@ -53,11 +53,11 @@ interface FilterForm {
   // 账户名或租户名
   name?: string;
   names?: string[];
-  time: [dayjs.Dayjs, dayjs.Dayjs],
+  time: [dayjs.Dayjs, dayjs.Dayjs];
   type?: string;
-  operatorId?: string,
+  operatorId?: string;
   ownerIdOrName?: string;
-  operatorIdOrName?: string,
+  operatorIdOrName?: string;
 }
 
 interface Sorter {
@@ -80,12 +80,12 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
   const [selectedNames, setSelectedNames] = useState<string[] | undefined>([]);
 
   const [query, setQuery] = useState<{
-    accountName: string | undefined,
-    names: string[] | undefined,
-    time: [dayjs.Dayjs, dayjs.Dayjs],
-    types: string[],
-    operatorIdOrName: string | undefined,
-    ownerIdOrName: string | undefined,
+    accountName: string | undefined;
+    names: string[] | undefined;
+    time: [dayjs.Dayjs, dayjs.Dayjs];
+    types: string[];
+    operatorIdOrName: string | undefined;
+    ownerIdOrName: string | undefined;
   }>(() => ({
     // 账户名
     accountName: accountName,
@@ -127,7 +127,6 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
       // 平台管理下的租户充值记录
       if (searchType === SearchType.tenant) {
         return api.getTenantPayments({ query: { ...param, tenantName: query.names ? query.names[0] : undefined } });
-
       } else {
         return api.getPayments({ query: { ...param, accountNames: query.names, searchType } });
       }
@@ -139,8 +138,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
     setQuery((q) => ({ ...q, accountName: accountName }));
   }, [accountName]);
 
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
-
+  const handleExport = async (encoding: Encoding) => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     const total = data?.results?.length ?? 0;
@@ -150,13 +148,12 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
     } else if (total <= 0) {
       message.error(t(pCommon("exportNoDataErrorMsg")));
     } else {
-
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportPayRecord",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: total,
-        timeZone:timeZone,
+        timeZone: timeZone,
         query: {
           startTime: query.time[0].clone().startOf("day").toISOString(),
           endTime: query.time[1].clone().endOf("day").toISOString(),
@@ -175,25 +172,28 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
       { label: t(p("paymentTime")), value: "time" },
       { label: t(p("topUpAmount")), value: "amount" },
       { label: t(pCommon("type")), value: "type" },
-
     ];
-    const account = searchType === SearchType.account ? [
-      { label: t(pCommon("account")), value: "accountName" },
-      { label: t(p("accountHolder")), value: "ownerId" },
-    ] : [];
-    const tenant = searchType === SearchType.tenant ? [
-      { label: t(pCommon("tenant")), value: "tenantName" },
-    ] : [];
-    const ipAndOperator = searchType !== SearchType.selfAccount ? [
-      {
-        label: t(p("ipAddress")),
-        value: "ipAddress",
-      },
-      {
-        label: t(p("operator")),
-        value: "operatorIdAndName",
-      },
-    ] : [];
+    const account =
+      searchType === SearchType.account
+        ? [
+            { label: t(pCommon("account")), value: "accountName" },
+            { label: t(p("accountHolder")), value: "ownerId" },
+          ]
+        : [];
+    const tenant = searchType === SearchType.tenant ? [{ label: t(pCommon("tenant")), value: "tenantName" }] : [];
+    const ipAndOperator =
+      searchType !== SearchType.selfAccount
+        ? [
+            {
+              label: t(p("ipAddress")),
+              value: "ipAddress",
+            },
+            {
+              label: t(p("operator")),
+              value: "operatorIdAndName",
+            },
+          ]
+        : [];
     const comment = [{ label: t(pCommon("comment")), value: "comment" }];
     return [...account, ...tenant, ...common, ...ipAndOperator, ...comment];
   }, [searchType, t]);
@@ -224,12 +224,10 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
         >
-          {(searchType === SearchType.account || searchType === SearchType.tenant) ? (
-
+          {searchType === SearchType.account || searchType === SearchType.tenant ? (
             <>
               <Form.Item
-                label={searchType === SearchType.account ?
-                  t(pCommon("account")) : t(pCommon("tenant"))}
+                label={searchType === SearchType.account ? t(pCommon("account")) : t(pCommon("tenant"))}
                 name="name"
               >
                 {searchType === SearchType.account ? (
@@ -244,29 +242,23 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
                   <TenantSelector
                     onChange={(item) => {
                       setSelectedNames([item]);
-
                     }}
                     placeholder={t(pCommon("selectTenant"))}
                   />
                 )}
               </Form.Item>
             </>
-          )
-            : undefined }
-          {
-            searchType === SearchType.account ? (
-              <Form.Item label={t(p("accountHolder"))} name="ownerIdOrName">
-                <Input style={{ width: 180 }} placeholder={t(p("accountHolderPlaceholder"))} />
-              </Form.Item>
-            ) : undefined
-          }
-          {
-            searchType !== SearchType.selfAccount ? (
-              <Form.Item label={t(p("operator"))} name="operatorIdOrName">
-                <Input style={{ width: 180 }} placeholder={t(p("operatorPlaceholder"))} />
-              </Form.Item>
-            ) : undefined
-          }
+          ) : undefined}
+          {searchType === SearchType.account ? (
+            <Form.Item label={t(p("accountHolder"))} name="ownerIdOrName">
+              <Input style={{ width: 180 }} placeholder={t(p("accountHolderPlaceholder"))} />
+            </Form.Item>
+          ) : undefined}
+          {searchType !== SearchType.selfAccount ? (
+            <Form.Item label={t(p("operator"))} name="operatorIdOrName">
+              <Input style={{ width: 180 }} placeholder={t(p("operatorPlaceholder"))} />
+            </Form.Item>
+          ) : undefined}
           <Form.Item label={t(p("topUpTime"))} name="time">
             <DatePicker.RangePicker allowClear={false} presets={getDefaultPresets(languageId)} />
           </Form.Item>
@@ -274,23 +266,18 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             <Input style={{ width: 180 }} placeholder={t(p("searchTypePlaceholder"))} />
           </Form.Item>
           <Form.Item label={t(p("total"))}>
-            <span>
-              {data ? data.results.length : 0}
-            </span>
+            <span>{data ? data.results.length : 0}</span>
           </Form.Item>
           <Form.Item label={t(p("sum"))}>
-            <span>
-              {data ? moneyNumberToString(data.total) : 0}
-            </span>
+            <span>{data ? moneyNumberToString(data.total) + " " + t(pCommon("unit")) : 0}</span>
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
           <Form.Item>
-            <ExportFileModaLButton
-              options={exportOptions}
-              onExport={handleExport}
-            >
+            <ExportFileModaLButton onExport={handleExport}>
               {t(pCommon("export"))}
             </ExportFileModaLButton>
           </Form.Item>
@@ -313,36 +300,20 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
           },
         }}
       >
-        {
-          searchType === SearchType.account
-            ? (
-              <>
-                <Table.Column<TableProps>
-                  dataIndex="accountName"
-                  title={t(pCommon("account"))}
-                  sorter={true}
-                />
-                <Table.Column<TableProps>
-                  dataIndex="ownerId"
-                  title={t(p("accountHolder"))}
-                  width="13.5%"
-                  render={(_, record) => `${record.ownerName}(ID: ${record.ownerId})`}
-                />
-              </>
-            )
-            : undefined
-        }
-        {
-          searchType === SearchType.tenant
-            ? (
-              <Table.Column<TableProps>
-                dataIndex="tenantName"
-                title={t(pCommon("tenant"))}
-                sorter={true}
-              />
-            )
-            : undefined
-        }
+        {searchType === SearchType.account ? (
+          <>
+            <Table.Column<TableProps> dataIndex="accountName" title={t(pCommon("account"))} sorter={true} />
+            <Table.Column<TableProps>
+              dataIndex="ownerId"
+              title={t(p("accountHolder"))}
+              width="13.5%"
+              render={(_, record) => `${record.ownerName}(ID: ${record.ownerId})`}
+            />
+          </>
+        ) : undefined}
+        {searchType === SearchType.tenant ? (
+          <Table.Column<TableProps> dataIndex="tenantName" title={t(pCommon("tenant"))} sorter={true} />
+        ) : undefined}
         <Table.Column<TableProps>
           dataIndex="time"
           title={t(p("paymentTime"))}
@@ -354,41 +325,24 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
           dataIndex="amount"
           title={t(p("topUpAmount"))}
           width="10%"
-          render={(v) => `${moneyNumberToString(v)}（${t(p("yuan"))}）`}
+          render={(v) => moneyNumberToString(v)}
           sorter={true}
         />
-        <Table.Column<TableProps>
-          dataIndex="type"
-          title={t(pCommon("type"))}
-          width="15%"
-          sorter={true}
-        />
-        {
-          searchType !== SearchType.selfAccount ? (
-            <>
-              <Table.Column<TableProps>
-                dataIndex="ipAddress"
-                title={t(p("ipAddress"))}
-                sorter={true}
-              />
-              <Table.Column<TableProps>
-                dataIndex="operatorId"
-                title={t(p("operator"))}
-                render={(_, record) => `${record.operatorName}(ID: ${record.operatorId})`}
-                width="10%"
-                sorter={true}
-              />
-            </>
-          ) : undefined
-        }
-        <Table.Column<TableProps>
-          dataIndex="comment"
-          title={t(pCommon("comment"))}
-          width="20%"
-          sorter={true}
-        />
+        <Table.Column<TableProps> dataIndex="type" title={t(pCommon("type"))} width="15%" sorter={true} />
+        {searchType !== SearchType.selfAccount ? (
+          <>
+            <Table.Column<TableProps> dataIndex="ipAddress" title={t(p("ipAddress"))} sorter={true} />
+            <Table.Column<TableProps>
+              dataIndex="operatorId"
+              title={t(p("operator"))}
+              render={(_, record) => `${record.operatorName}(ID: ${record.operatorId})`}
+              width="10%"
+              sorter={true}
+            />
+          </>
+        ) : undefined}
+        <Table.Column<TableProps> dataIndex="comment" title={t(pCommon("comment"))} width="20%" sorter={true} />
       </Table>
     </div>
-
   );
 };

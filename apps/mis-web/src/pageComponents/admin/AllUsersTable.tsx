@@ -121,7 +121,7 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
     reloadUsersCounts();
   };
 
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
+  const handleExport = async (encoding: Encoding) => {
 
     let total = 0;
     // 获取浏览器时区
@@ -155,7 +155,7 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportUser",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: total,
         timeZone, // 将浏览器时区作为参数传递到后端
         query: exportQuery,
@@ -208,7 +208,6 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
           </Form.Item>
           <Form.Item>
             <ExportFileModaLButton
-              options={exportOptions}
               onExport={handleExport}
             >
               {t(pCommon("export"))}

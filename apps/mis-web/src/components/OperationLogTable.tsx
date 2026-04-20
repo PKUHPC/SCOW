@@ -172,7 +172,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
     });
   };
 
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
+  const handleExport = async (encoding: Encoding) => {
     const total = data?.totalCount ?? 0;
 
     // 获取浏览器时区
@@ -186,7 +186,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportOperationLog",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: total,
         timeZone, // 将浏览器时区作为参数传递到后端
         query: {
@@ -290,7 +290,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           </Form.Item>
           <Form.Item>
             <ExportFileModaLButton
-              options={exportOptions}
               onExport={handleExport}
             >
               {t(pCommon("export"))}

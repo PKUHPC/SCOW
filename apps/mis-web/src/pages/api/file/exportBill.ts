@@ -81,7 +81,7 @@ export default route(ExportBillSchema, async (req, res) => {
   } else {
     user = await authenticate((i) =>
       i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-        i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
+        i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
     )(req, res);
   }
   if (!user) { return; }
@@ -137,11 +137,16 @@ export default route(ExportBillSchema, async (req, res) => {
       };
     };
 
-    const headerColumns = {
+    const unit = t(pCommon("unit"));
+    const fixedColumns = new Set(["accountName", "accountOwnerName", "term", "amount"]);
+    const headerColumns: Record<string, string> = {
       accountName: t(pCommon("account")),
       accountOwnerName: t(pCommon("owner")),
       term: t(p("term")),
-      amount: t(pCommon("amount")),
+      amount: `${t(pCommon("amount"))} (${unit})`,
+      ...Object.fromEntries(
+        columns.filter((col) => !fixedColumns.has(col)).map((col) => [col, `${col} (${unit})`]),
+      ),
     };
 
     const csvStringify = getBillCsvStringify(headerColumns, columns);

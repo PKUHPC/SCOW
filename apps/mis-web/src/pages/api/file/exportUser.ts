@@ -91,7 +91,7 @@ export default route(ExportUserSchema, async (req, res) => {
   } else {
     const client = getClient(ExportServiceClient);
 
-    const filename = `account-${new Date().toLocaleString("zh-CN",{ timeZone: timeZone ?? "UTC" })}.csv`;
+    const filename = `user-${new Date().toLocaleString("zh-CN",{ timeZone: timeZone ?? "UTC" })}.csv`;
     const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);

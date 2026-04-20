@@ -117,7 +117,7 @@ export const AdminUserTable: React.FC<Props> = ({
     setCurrentSortInfo({ field: null, order: null });
   };
 
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
+  const handleExport = async (encoding: Encoding) => {
     // 获取浏览器时区
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -131,7 +131,7 @@ export const AdminUserTable: React.FC<Props> = ({
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportUser",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: total,
         query: {
           userId: query.userId,
@@ -198,7 +198,6 @@ export const AdminUserTable: React.FC<Props> = ({
           </Form.Item>
           <Form.Item>
             <ExportFileModaLButton
-              options={exportOptions}
               onExport={handleExport}
             >
               {t(pCommon("export"))}

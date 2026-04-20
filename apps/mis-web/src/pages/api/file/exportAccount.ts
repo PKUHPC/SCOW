@@ -129,8 +129,8 @@ export default route(ExportAccountSchema, async (req, res) => {
       owner: t(p("owner")),
       userCount: t(pCommon("userCount")),
       tenantName: t(p("tenant")),
-      balance: t(pCommon("balance")),
-      blockThresholdAmount: t(p("blockThresholdAmount")),
+      balance: `${t(pCommon("balance"))} (${t(pCommon("unit"))})`,
+      blockThresholdAmount: `${t(p("blockThresholdAmount"))} (${t(pCommon("unit"))})`,
       displayedState: t(p("status")),
       comment: t(p("comment")),
     };
@@ -141,8 +141,8 @@ export default route(ExportAccountSchema, async (req, res) => {
         owner: `${x.ownerName}(ID:${x.ownerId})`,
         userCount: x.userCount,
         tenantName: x.tenantName,
-        balance: nullableMoneyToString(x.balance) + t(p("unit")),
-        blockThresholdAmount: `${nullableMoneyToString(x.blockThresholdAmount)} ${t(p("unit"))}`,
+        balance: nullableMoneyToString(x.balance),
+        blockThresholdAmount: nullableMoneyToString(x.blockThresholdAmount),
         displayedState: DisplayedStateI18nTexts[x.displayedState],
         comment: x.comment,
       };

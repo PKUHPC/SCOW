@@ -1,6 +1,5 @@
 import type { GetJobFilter, GetJobInfoSchema } from "src/pages/api/job/jobInfo";
 import type { FilterForm } from "src/utils/jobIds";
-
 import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -138,7 +137,9 @@ export const AdminJobTable: React.FC<Props> = () => {
         query: {
           ...currentDiffQuery,
           searchType: SearchType.TENANT,
-          finalPriceText: JSON.stringify(finalPriceText),
+          finalPriceText: JSON.stringify(
+            Object.fromEntries(Object.entries(finalPriceText).map(([k, v]) => [k, `${v} (${t(pCommon("unit"))})`])),
+          ),
           publicConfigClusters: JSON.stringify(publicConfigClusters),
         },
       });
@@ -405,13 +406,13 @@ const JobInfoTable: React.FC<JobInfoTableProps> = ({
         <Table.Column<JobInfo>
           dataIndex="accountPrice"
           width="6.1%"
-          title={t(p("tenantPrice"))}
+          title={`${t(p("tenantPrice"))} (${t(pCommon("unit"))})`}
           render={(price: Money) => moneyToString(price)}
         />
         <Table.Column<JobInfo>
           dataIndex="tenantPrice"
           width="6%"
-          title={t(p("platformPrice"))}
+          title={`${t(p("platformPrice"))} (${t(pCommon("unit"))})`}
           render={(price: Money) => moneyToString(price)}
         />
         <Table.Column<JobInfo>

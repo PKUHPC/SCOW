@@ -1,3 +1,6 @@
+import type { GetJobInfoSchema } from "src/pages/api/job/jobInfo";
+import type { Cluster } from "src/utils/cluster";
+
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
@@ -23,9 +26,7 @@ import { exportJobColumns, JobSortBy, JobSortOrder, SearchType } from "src/model
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
-import type { GetJobInfoSchema } from "src/pages/api/job/jobInfo";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import type { Cluster } from "src/utils/cluster";
 import { getClusterName, getSortedClusterValues } from "src/utils/cluster";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
 
@@ -52,8 +53,8 @@ interface Props {
 }
 
 interface Sorter {
-  field: JobSortBy | undefined,
-  order: JobSortOrder | undefined,
+  field: JobSortBy | undefined;
+  order: JobSortOrder | undefined;
 }
 
 interface DiffQuery {
@@ -91,8 +92,9 @@ export const JobTable: React.FC<Props> = ({
   const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
 
   const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
-  const sortedClusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList)
-    .filter((x) => Object.keys(activatedClusters).includes(x.id));
+  const sortedClusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList).filter((x) =>
+    Object.keys(activatedClusters).includes(x.id),
+  );
 
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
@@ -110,14 +112,12 @@ export const JobTable: React.FC<Props> = ({
       ...q,
       accountName: Array.isArray(accountNames) ? accountNames[0] : accountNames,
     }));
-
   }, [accountNames]);
 
   const [form] = Form.useForm<FilterForm>();
 
   // 定义排序状态
-  const [sorter, setSorter] = useState<Sorter>({ field:undefined, order:undefined });
-
+  const [sorter, setSorter] = useState<Sorter>({ field: undefined, order: undefined });
 
   const promiseFn = useCallback(async () => {
     // userId 仅作为页面上下文约束，不是前端搜索框字段。
@@ -140,21 +140,25 @@ export const JobTable: React.FC<Props> = ({
 
     setCurrentDiffQuery(diffQuery);
 
-    return await api.getJobInfo({ query: {
-      ...diffQuery,
-      sortBy: sorter.field,
-      sortOrder: sorter.order,
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize,
-      clusters: query.clusters?.map((x) => x.id),
-    } }).catch((e: HttpError) => {
-      if (e.status === 403) {
-        message.error(t(p("noAuth")));
-        return undefined;
-      } else {
-        throw e;
-      }
-    });
+    return await api
+      .getJobInfo({
+        query: {
+          ...diffQuery,
+          sortBy: sorter.field,
+          sortOrder: sorter.order,
+          page: pageInfo.page,
+          pageSize: pageInfo.pageSize,
+          clusters: query.clusters?.map((x) => x.id),
+        },
+      })
+      .catch((e: HttpError) => {
+        if (e.status === 403) {
+          message.error(t(p("noAuth")));
+          return undefined;
+        } else {
+          throw e;
+        }
+      });
   }, [pageInfo, query, sorter]);
 
   const { data, isLoading } = useAsync({ promiseFn });
@@ -185,13 +189,14 @@ export const JobTable: React.FC<Props> = ({
           ...currentDiffQuery,
           searchType: SearchType.NORMAL,
           clusters: query.clusters?.map((x) => x.id),
-          finalPriceText: JSON.stringify(finalPriceText),
+          finalPriceText: JSON.stringify(
+            Object.fromEntries(Object.entries(finalPriceText).map(([k, v]) => [k, `${v} (${t(pCommon("unit"))})`])),
+          ),
           publicConfigClusters: JSON.stringify(publicConfigClusters),
         },
       });
     }
   };
-
 
   return (
     <div>
@@ -211,17 +216,15 @@ export const JobTable: React.FC<Props> = ({
           }}
         >
           <FilterFormTabs
-            button={(
+            button={
               <Space>
-                <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
-                <ExportFileModaLButton
-                  onExport={handleExport}
-                >
-                  {t(pCommon("export"))}
-                </ExportFileModaLButton>
+                <Button type="primary" htmlType="submit">
+                  {t(pCommon("search"))}
+                </Button>
+                <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
               </Space>
-            )}
-            onChange={(a) => rangeSearch.current = a === "range"}
+            }
+            onChange={(a) => (rangeSearch.current = a === "range")}
             tabs={[
               { title: t(p("batchSearch")), key: "range", node: (
                 <>
@@ -241,9 +244,9 @@ export const JobTable: React.FC<Props> = ({
                         <AutoComplete
                           style={{ minWidth: 150 }}
                           allowClear
-                          options={
-                            (Array.isArray(accountNames) ? accountNames : [accountNames]).map((x) => ({ value: x }))
-                          }
+                          options={(Array.isArray(accountNames) ? accountNames : [accountNames]).map((x) => ({
+                            value: x,
+                          }))}
                           placeholder={t("common.selectAccount")}
                           filterOption={(inputValue, option) =>
                             option!.value.toUpperCase().includes(inputValue.toUpperCase())
@@ -266,19 +269,17 @@ export const JobTable: React.FC<Props> = ({
                       <Form.Item label={t(pCommon("accountOwner"))} name="ownerIdOrName">
                         <Input placeholder={t(p("ownerIdOrNamePlaceholder"))} />
                       </Form.Item>
-                    ) : undefined
-                  }
-                  <Form.Item label={t(p("jobEndTime"))} name="jobEndTime">
-                    <DatePicker.RangePicker
-                      showTime
-                      presets={getDefaultPresets(languageId)}
-                      allowClear={false}
-                    />
-                  </Form.Item>
-                </>
-              ) },
+                    ) : undefined}
+                    <Form.Item label={t(p("jobEndTime"))} name="jobEndTime">
+                      <DatePicker.RangePicker showTime presets={getDefaultPresets(languageId)} allowClear={false} />
+                    </Form.Item>
+                  </>
+                ),
+              },
               {
-                title: t(p("precision")), key: "precision", node: (
+                title: t(p("precision")),
+                key: "precision",
+                node: (
                   <>
                     <Form.Item label={t(pCommon("cluster"))} name="clusters">
                       <ClusterSelector />
@@ -287,7 +288,8 @@ export const JobTable: React.FC<Props> = ({
                       <InputNumber style={{ minWidth: "160px" }} min={1} />
                     </Form.Item>
                   </>
-                ) },
+                ),
+              },
             ]}
           />
         </Form>
@@ -310,9 +312,9 @@ export const JobTable: React.FC<Props> = ({
 };
 
 interface JobInfoTableProps {
-  data: Static<typeof GetJobInfoSchema["responses"]["200"]> | undefined;
-  pageInfo: { page: number, pageSize: number };
-  setPageInfo?: (info: { page: number, pageSize: number }) => void;
+  data: Static<(typeof GetJobInfoSchema)["responses"]["200"]> | undefined;
+  pageInfo: { page: number; pageSize: number };
+  setPageInfo?: (info: { page: number; pageSize: number }) => void;
   isLoading: boolean;
   setSorter: (sorter: Sorter) => void;
   showAccount: boolean;
@@ -348,51 +350,55 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
   return (
     <>
       <TableTitle justify="flex-start">
-        {
-          data ? (
-            <div>
-              <span>
-                {t(p("jobNumber"))}：<span>{data.totalCount}</span>
-              </span>
-              {
-                showedPrices.includes("account") ? (
-                  <>
-                    <Divider type="vertical" />
-                    <span>
-                      {finalPriceText.account}{t(pCommon("sum"))}：
-                      <span>{nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}</span>
-                    </span>
-                  </>
-                ) : undefined
-              }
-              {
-                showedPrices.includes("tenant") ? (
-                  <>
-                    <Divider type="vertical" />
-                    <span>
-                      {finalPriceText.tenant}{t(pCommon("sum"))}：
-                      <span>{nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}</span>
-                    </span>
-                  </>
-                ) : undefined
-              }
-            </div>
-          ) : undefined
-        }
+        {data ? (
+          <div>
+            <span>
+              {t(p("jobNumber"))}：<span>{data.totalCount}</span>
+            </span>
+            {showedPrices.includes("account") ? (
+              <>
+                <Divider type="vertical" />
+                <span>
+                  {finalPriceText.account}
+                  {t(pCommon("sum"))}：
+                  <span>
+                    {nullableMoneyToString(data.totalAccountPrice)} {t(pCommon("unit"))}
+                  </span>
+                </span>
+              </>
+            ) : undefined}
+            {showedPrices.includes("tenant") ? (
+              <>
+                <Divider type="vertical" />
+                <span>
+                  {finalPriceText.tenant}
+                  {t(pCommon("sum"))}：
+                  <span>
+                    {nullableMoneyToString(data.totalTenantPrice)} {t(pCommon("unit"))}
+                  </span>
+                </span>
+              </>
+            ) : undefined}
+          </div>
+        ) : undefined}
       </TableTitle>
       <Table
         onChange={handleTableChange}
         rowKey={(i) => `${i.cluster}::${i.biJobIndex}::${i.idJob}`}
         dataSource={data?.jobs}
         loading={isLoading}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.totalCount,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.totalCount,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         tableLayout="fixed"
         scroll={{ x: data?.jobs?.length ? 1450 : true }}
       >
@@ -458,13 +464,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           title={t(pCommon("partition"))}
           sorter={true}
         />
-        <Table.Column<JobInfo>
-          dataIndex="qos"
-          width="8.5%"
-          ellipsis
-          title="QOS"
-          sorter={true}
-        />
+        <Table.Column<JobInfo> dataIndex="qos" width="8.5%" ellipsis title="QOS" sorter={true} />
         <Table.Column
           dataIndex="timeSubmit"
           width="10%"
@@ -479,17 +479,15 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           render={(time: string) => formatDateTime(time)}
           sorter={true}
         />
-        {
-          showedPrices.map((v, i) => (
-            <Table.Column<JobInfo>
-              key={i}
-              dataIndex={`${v}Price`}
-              width="8%"
-              title={finalPriceText[v]}
-              render={(price: Money) => moneyToString(price) + " " + t(pCommon("unit"))}
-            />
-          ))
-        }
+        {showedPrices.map((v, i) => (
+          <Table.Column<JobInfo>
+            key={i}
+            dataIndex={`${v}Price`}
+            width="8%"
+            title={`${finalPriceText[v]} (${t(pCommon("unit"))})`}
+            render={(price: Money) => moneyToString(price)}
+          />
+        ))}
         <Table.Column<JobInfo>
           title={t(pCommon("operation"))}
           width="5%"
@@ -497,9 +495,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           render={(_, r) => {
             return router.pathname === "/user/historyJobs" ? (
               <Tooltip title={t(pCommon("detail"))}>
-                <DetailIcon
-                  onClick={() => setPreviewItem(r)}
-                />
+                <DetailIcon onClick={() => setPreviewItem(r)} />
               </Tooltip>
             ) : (
               <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>

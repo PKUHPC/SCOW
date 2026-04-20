@@ -56,7 +56,12 @@ const convertIdOrNameArray = (idsOrNames: string | undefined) => {
 };
 
 export const ChargeTable: React.FC<Props> = ({
-  accountNames, showAccountName, showTenantName, isPlatformRecords, searchType }) => {
+  accountNames,
+  showAccountName,
+  showTenantName,
+  isPlatformRecords,
+  searchType,
+}) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const [pageInfo, setPageInfo] = useState({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
@@ -66,16 +71,16 @@ export const ChargeTable: React.FC<Props> = ({
   const { message } = App.useApp();
   const [form] = Form.useForm<FilterForm>();
   const [query, setQuery] = useState<{
-    names: string[] | undefined,
-    time: [dayjs.Dayjs, dayjs.Dayjs]
-    types: string[] | undefined
-    idsOrNames: string | undefined
+    names: string[] | undefined;
+    time: [dayjs.Dayjs, dayjs.Dayjs];
+    types: string[] | undefined;
+    idsOrNames: string | undefined;
   }>({
     names: accountNames,
     time: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
     types: undefined,
     idsOrNames: undefined,
-  });// 查询对象
+  }); // 查询对象
 
   // 定义排序状态
   const [sorter, setSorter] = useState<Sorter>({ field: undefined, order: undefined });
@@ -130,7 +135,6 @@ export const ChargeTable: React.FC<Props> = ({
     return getChargesInfo;
   }, [query, pageInfo]);
 
-
   const totalResultPromiseFn = useCallback(async () => {
     return await api.getChargeRecordsTotalCount({
       query: {
@@ -155,7 +159,7 @@ export const ChargeTable: React.FC<Props> = ({
   });
 
   // 处理消费记录导出的函数
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
+  const handleExport = async (encoding: Encoding) => {
     const totalCount = totalResultData?.totalCount ?? 0;
 
     // 时区信息
@@ -169,9 +173,9 @@ export const ChargeTable: React.FC<Props> = ({
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportChargeRecord",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: totalCount,
-        timeZone:timeZone,
+        timeZone: timeZone,
         query: {
           startTime: query.time[0].clone().startOf("day").toISOString(),
           endTime: query.time[1].clone().endOf("day").toISOString(),
@@ -194,12 +198,8 @@ export const ChargeTable: React.FC<Props> = ({
       { label: t(pCommon("type")), value: "type" },
       { label: t(pCommon("comment")), value: "comment" },
     ];
-    const account = showAccountName ? [
-      { label: t(pCommon("account")), value: "accountName" },
-    ] : [];
-    const tenant = showTenantName ? [
-      { label: t(pCommon("tenant")), value: "tenantName" },
-    ] : [];
+    const account = showAccountName ? [{ label: t(pCommon("account")), value: "accountName" }] : [];
+    const tenant = showTenantName ? [{ label: t(pCommon("tenant")), value: "tenantName" }] : [];
     return [...account, ...tenant, ...common];
   }, [showAccountName, showTenantName, t]);
 
@@ -217,20 +217,18 @@ export const ChargeTable: React.FC<Props> = ({
               setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             }}
           >
-            {
-              showAccountName && (
-                <Form.Item label={t("common.account")} name="name">
-                  <AccountMultiSelector
-                    value={selectedAccountNames ?? []}
-                    onChange={(value) => {
-                      setSelectedAccountNames(value);
-                    }}
-                    placeholder={t("common.selectAccount")}
-                    fromAllTenants={showTenantName ? true : false}
-                  />
-                </Form.Item>
-              )
-            }
+            {showAccountName && (
+              <Form.Item label={t("common.account")} name="name">
+                <AccountMultiSelector
+                  value={selectedAccountNames ?? []}
+                  onChange={(value) => {
+                    setSelectedAccountNames(value);
+                  }}
+                  placeholder={t("common.selectAccount")}
+                  fromAllTenants={showTenantName ? true : false}
+                />
+              </Form.Item>
+            )}
             <Form.Item label={t("common.ownerIdOrName")} name="idsOrNames">
               <Input style={{ width: 180 }} placeholder={t("common.ownerIdOrName")} />
             </Form.Item>
@@ -247,7 +245,7 @@ export const ChargeTable: React.FC<Props> = ({
                 }}
                 placeholder={t("common.selectType")}
               >
-                {(filteredTypes).map((x) => (
+                {filteredTypes.map((x) => (
                   <Select.Option key={x} value={x}>
                     {x}
                   </Select.Option>
@@ -255,23 +253,22 @@ export const ChargeTable: React.FC<Props> = ({
               </Select>
             </Form.Item>
             <Form.Item label={t("common.total")}>
-              <span>
-                {totalResultData?.totalCount ?? 0}
-              </span>
+              <span>{totalResultData?.totalCount ?? 0}</span>
             </Form.Item>
             <Form.Item label={t(pCommon("sum"))}>
               <span>
-                {totalResultData?.totalAmount ? moneyNumberToString(totalResultData.totalAmount) : 0}
+                {totalResultData?.totalAmount
+                  ? moneyNumberToString(totalResultData.totalAmount) + " " + t(pCommon("unit"))
+                  : 0}
               </span>
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+              <Button type="primary" htmlType="submit">
+                {t(pCommon("search"))}
+              </Button>
             </Form.Item>
             <Form.Item>
-              <ExportFileModaLButton
-                options={exportOptions}
-                onExport={handleExport}
-              >
+              <ExportFileModaLButton onExport={handleExport}>
                 {t(pCommon("export"))}
               </ExportFileModaLButton>
             </Form.Item>
@@ -299,22 +296,14 @@ export const ChargeTable: React.FC<Props> = ({
             },
           }}
         >
-          {
-            showAccountName && (
-              <Table.Column dataIndex="accountName" title={t(pCommon("account"))} />
-            )
-          }
-          {
-            showTenantName && (
-              <Table.Column dataIndex="tenantName" title={t("common.tenant")} />
-            )
-          }
+          {showAccountName && <Table.Column dataIndex="accountName" title={t(pCommon("account"))} />}
+          {showTenantName && <Table.Column dataIndex="tenantName" title={t("common.tenant")} />}
 
           <Table.Column<ChargeInfo>
             dataIndex="userId"
             title={t(pCommon("user"))}
             width="15%"
-            render={(_, r) => r.userId ? (`${r.userId} (${r.userName})`) : ""}
+            render={(_, r) => (r.userId ? `${r.userId} (${r.userName})` : "")}
             sorter={true}
           />
           <Table.Column<ChargeInfo>
@@ -329,32 +318,21 @@ export const ChargeTable: React.FC<Props> = ({
             render={(v) => moneyNumberToString(v)}
             sorter={true}
           />
-          <Table.Column<ChargeInfo>
-            dataIndex="type"
-            title={t(pCommon("type"))}
-            sorter={true}
-          />
-          <Table.Column<ChargeInfo>
-            dataIndex="comment"
-            title={t(pCommon("comment"))}
-            width="20%"
-          />
-          {
-            publicConfig.JOB_CHARGE_METADATA?.savedFields && (
-              <Table.Column<ChargeInfo>
-                dataIndex="metadata"
-                title={t(pCommon("other"))}
-                width="20%"
-                render={(v) => {
-                  const metadataToDisplay = v ? formatMetadataDisplay(v) : undefined;
-                  return getI18nConfigCurrentText(metadataToDisplay, languageId);
-                }}
-              />
-            )
-          }
+          <Table.Column<ChargeInfo> dataIndex="type" title={t(pCommon("type"))} sorter={true} />
+          <Table.Column<ChargeInfo> dataIndex="comment" title={t(pCommon("comment"))} width="20%" />
+          {publicConfig.JOB_CHARGE_METADATA?.savedFields && (
+            <Table.Column<ChargeInfo>
+              dataIndex="metadata"
+              title={t(pCommon("other"))}
+              width="20%"
+              render={(v) => {
+                const metadataToDisplay = v ? formatMetadataDisplay(v) : undefined;
+                return getI18nConfigCurrentText(metadataToDisplay, languageId);
+              }}
+            />
+          )}
         </Table>
       </Spin>
     </div>
-
   );
 };

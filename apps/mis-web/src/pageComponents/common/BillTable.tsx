@@ -152,7 +152,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
   types.forEach((i) => {
     columns.push({
       dataIndex: i,
-      title: i,
+      title: `${i} (${t(pCommon("unit"))})`,
       render: (text) => {
         return text ? moneyNumberToString(Number(text)) : "-";
       },
@@ -186,7 +186,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
   },[data]);
 
 
-  const handleExport = async (encoding: Encoding, columns: string[]) => {
+  const handleExport = async (encoding: Encoding) => {
 
     const total = data?.total ?? 0;
 
@@ -200,7 +200,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
       window.location.href = urlToExport({
         encoding,
         exportApi: "exportBill",
-        columns,
+        columns: exportOptions.map((o) => o.value),
         count: total,
         timeZone,
         query: {
@@ -302,7 +302,6 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
 
           <Form.Item>
             <ExportFileModaLButton
-              options={exportOptions}
               onExport={handleExport}
             >
               {t(pCommon("export"))}

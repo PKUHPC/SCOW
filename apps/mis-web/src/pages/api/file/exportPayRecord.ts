@@ -174,7 +174,6 @@ export default route(ExportPayRecordSchema, async (req, res) => {
     };
 
     const headerColumns = {
-      id: "ID",
       accountName: t(pCommon("account")),
       tenantName: t(pCommon("tenant")),
       ownerId: t(p("accountHolder")),
