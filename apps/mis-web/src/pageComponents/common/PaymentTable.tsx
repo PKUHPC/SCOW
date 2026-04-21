@@ -266,7 +266,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             <Input style={{ width: 180 }} placeholder={t(p("searchTypePlaceholder"))} />
           </Form.Item>
           <Form.Item label={t(p("total"))}>
-            <span>{data ? data.results.length : 0}</span>
+            <span>{data ? data.totalCount : 0}</span>
           </Form.Item>
           <Form.Item label={t(p("sum"))}>
             <span>{data ? moneyNumberToString(data.total) + " " + t(pCommon("unit")) : 0}</span>
@@ -277,9 +277,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
             </Button>
           </Form.Item>
           <Form.Item>
-            <ExportFileModaLButton onExport={handleExport}>
-              {t(pCommon("export"))}
-            </ExportFileModaLButton>
+            <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
           </Form.Item>
         </Form>
       </FilterFormContainer>

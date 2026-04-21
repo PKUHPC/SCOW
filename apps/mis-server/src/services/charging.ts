@@ -4,8 +4,10 @@ import { FilterQuery, LockMode, QueryOrder, raw } from "@mikro-orm/core";
 import { Decimal, decimalToMoney, moneyToNumber, numberToMoney } from "@scow/lib-decimal";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
-import { ChargeRecord as ChargeRecordProto,
-  ChargingServiceServer, ChargingServiceService } from "@scow/protos/build/server/charging";
+import {
+  ChargeRecord as ChargeRecordProto,
+  ChargingServiceServer, ChargingServiceService
+} from "@scow/protos/build/server/charging";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { Account, AccountState } from "src/entities/Account";
@@ -191,18 +193,8 @@ export const chargingServiceServer = plugin((server) => {
      * @returns
      */
     getPaymentRecords: async ({ request, em }) => {
-      const {
-        endTime,
-        startTime,
-        target,
-        types,
-        ownerIdOrName,
-        operatorIdOrName,
-        page,
-        pageSize,
-        sortBy,
-        sortOrder,
-      } = ensureNotUndefined(request, ["startTime", "endTime", "target", "types"]);
+      const { endTime, startTime, target, types, ownerIdOrName, operatorIdOrName, page, pageSize, sortBy, sortOrder } =
+        ensureNotUndefined(request, ["startTime", "endTime", "target", "types"]);
 
       // 账户拥有者模糊查询时，先查询所有的账户。再用账户名去查询消费记录
       const { accountNames } = target[target.$case];
@@ -217,11 +209,13 @@ export const chargingServiceServer = plugin((server) => {
 
         // 当accountNames和拥有者对应的账户名交集为空时，直接返回空
         if (ownerAccountNames.length === 0) {
-          return [{
-            totalCount: 0,
-            results: [],
-            total: decimalToMoney(new Decimal(0)),
-          }];
+          return [
+            {
+              totalCount: 0,
+              results: [],
+              total: decimalToMoney(new Decimal(0)),
+            },
+          ];
         }
 
         combineAccountNames = ownerAccountNames;
@@ -234,11 +228,13 @@ export const chargingServiceServer = plugin((server) => {
 
         // 如果没有符合条件的操作员，直接返回空结果
         if (operatorUserIds.length === 0) {
-          return [{
-            totalCount: 0,
-            results: [],
-            total: decimalToMoney(new Decimal(0)),
-          }];
+          return [
+            {
+              totalCount: 0,
+              results: [],
+              total: decimalToMoney(new Decimal(0)),
+            },
+          ];
         }
       }
 
@@ -268,11 +264,22 @@ export const chargingServiceServer = plugin((server) => {
         query.operatorId = { $in: operatorUserIds };
       }
 
-      const [payRecords, count] = await em.findAndCount(PayRecord, query, {
+      const payRecords = await em.find(PayRecord, query, {
         orderBy,
         offset,
         limit,
       });
+
+      // 查询符合条件的所有记录总数和金额总和（不受分页影响）
+      const [totalCount, totalSumResult] = await Promise.all([
+        em.count(PayRecord, query),
+        em
+          .createQueryBuilder(PayRecord, "pr")
+          .select(raw("sum(pr.amount) as total_sum"))
+          .where(query)
+          .execute("get") as Promise<{ total_sum: string | null }>,
+      ]);
+      const totalAmount = new Decimal(totalSumResult?.total_sum ?? 0);
 
       // 获取所有操作员的名称映射
       const operatorIds = [...new Set(payRecords.map((r) => r.operatorId).filter(Boolean))];
@@ -301,24 +308,26 @@ export const chargingServiceServer = plugin((server) => {
         };
       });
 
-      return [{
-        totalCount: count,
-        results: records.map((x) => ({
-          tenantName: x.tenantName,
-          accountName: x.accountName,
-          amount: decimalToMoney(x.amount),
-          comment: x.comment,
-          index: x.id,
-          ipAddress: x.ipAddress,
-          time: x.time.toISOString(),
-          type: x.type,
-          operatorId: x.operatorId,
-          operatorName: x.operatorName,
-          ownerId: x.owner?.userId || "",
-          ownerName: x.owner?.userName || "",
-        })),
-        total: decimalToMoney(records.reduce((prev, curr) => prev.plus(curr.amount), new Decimal(0))),
-      }];
+      return [
+        {
+          totalCount: totalCount,
+          results: records.map((x) => ({
+            tenantName: x.tenantName,
+            accountName: x.accountName,
+            amount: decimalToMoney(x.amount),
+            comment: x.comment,
+            index: x.id,
+            ipAddress: x.ipAddress,
+            time: x.time.toISOString(),
+            type: x.type,
+            operatorId: x.operatorId,
+            operatorName: x.operatorName,
+            ownerId: x.owner?.userId || "",
+            ownerName: x.owner?.userName || "",
+          })),
+          total: decimalToMoney(totalAmount),
+        },
+      ];
     },
 
     /**
@@ -340,9 +349,8 @@ export const chargingServiceServer = plugin((server) => {
         = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       let searchParam: { tenantName?: string, accountName?: string | { $ne: null } } = {};
-      switch (target?.$case)
-      {
-      // 当前租户的租户消费记录
+      switch (target?.$case) {
+        // 当前租户的租户消费记录
         case "tenant":
           searchParam = { tenantName: target[target.$case].tenantName, accountName: undefined };
           break;
@@ -356,11 +364,11 @@ export const chargingServiceServer = plugin((server) => {
           break;
         // 当前租户下所有账户的消费记录
         case "accountsOfTenant":
-          searchParam = { tenantName: target[target.$case].tenantName, accountName: { $ne:null } };
+          searchParam = { tenantName: target[target.$case].tenantName, accountName: { $ne: null } };
           break;
         // 所有租户下所有账户的消费记录
         case "accountsOfAllTenants":
-          searchParam = { accountName: { $ne:null } };
+          searchParam = { accountName: { $ne: null } };
           break;
         default:
           searchParam = {};
@@ -409,29 +417,29 @@ export const chargingServiceServer = plugin((server) => {
 
       // 查询消费记录
       const results: { account_name: string, user_name: string, chargedAmount: number }[] =
-      // 从pay_record表中查询
-      await knex("charge_record as cr")
-      // 选择account_name字段
-      // 选择user表中的name字段，并将其命名为user_name
-      // 计算amount字段的总和，并将其命名为totalAmount
-        .select(["cr.account_name", "u.name as user_name", knex.raw("SUM(amount) as chargedAmount")])
-        .join("user as u", "u.user_id", "=", "cr.user_id")
-        .where("cr.time", "<=", endTime)
-        .andWhere("cr.time", ">=", startTime)
-        // 过滤为空的情况
-        .whereNotNull("cr.account_name")
-        // 按account_name和user_name分组
-        .groupBy(["cr.account_name", "u.name"])
-      // 按totalAmount降序排序
-        .orderBy("chargedAmount", "desc")
-      // 限制结果的数量为topRank
-        .limit(topRank);
+        // 从pay_record表中查询
+        await knex("charge_record as cr")
+          // 选择account_name字段
+          // 选择user表中的name字段，并将其命名为user_name
+          // 计算amount字段的总和，并将其命名为totalAmount
+          .select(["cr.account_name", "u.name as user_name", knex.raw("SUM(amount) as chargedAmount")])
+          .join("user as u", "u.user_id", "=", "cr.user_id")
+          .where("cr.time", "<=", endTime)
+          .andWhere("cr.time", ">=", startTime)
+          // 过滤为空的情况
+          .whereNotNull("cr.account_name")
+          // 按account_name和user_name分组
+          .groupBy(["cr.account_name", "u.name"])
+          // 按totalAmount降序排序
+          .orderBy("chargedAmount", "desc")
+          // 限制结果的数量为topRank
+          .limit(topRank);
 
       return [
         {
           results: results.map((x) => ({
             accountName: x.account_name,
-            userName:x.user_name,
+            userName: x.user_name,
             chargedAmount: numberToMoney(x.chargedAmount),
           })),
         },
@@ -483,34 +491,34 @@ export const chargingServiceServer = plugin((server) => {
 
       // 查询支付记录
       const results: { account_name: string, user_name: string, totalAmount: number }[] =
-      // 从pay_record表中查询
-      await knex("pay_record as pr")
-      // 选择account_name字段
-      // 选择user表中的name字段，并将其命名为user_name
-      // 计算amount字段的总和，并将其命名为totalAmount
-        .select(["pr.account_name", "u.name as user_name", knex.raw("SUM(amount) as totalAmount")])
-        // 通过accountName字段与account表连接
-        .join("account as a", "a.account_name ", "=", "pr.account_name")
-        // 通过account_id字段与user_account表连接
-        .join("user_account as ua", "ua.account_id", "=", "a.id")
-        .where("role", "=", "OWNER")
-        .join("user as u", "u.id", "=", "ua.user_id")
-        .where("pr.time", "<=", endTime)
-        .andWhere("pr.time", ">=", startTime)
-        // 过滤为空的情况
-        .whereNotNull("pr.account_name")
-        // 按account_name和user_name分组
-        .groupBy(["pr.account_name", "u.name"])
-      // 按totalAmount降序排序
-        .orderBy("totalAmount", "desc")
-      // 限制结果的数量为topRank
-        .limit(topRank);
+        // 从pay_record表中查询
+        await knex("pay_record as pr")
+          // 选择account_name字段
+          // 选择user表中的name字段，并将其命名为user_name
+          // 计算amount字段的总和，并将其命名为totalAmount
+          .select(["pr.account_name", "u.name as user_name", knex.raw("SUM(amount) as totalAmount")])
+          // 通过accountName字段与account表连接
+          .join("account as a", "a.account_name ", "=", "pr.account_name")
+          // 通过account_id字段与user_account表连接
+          .join("user_account as ua", "ua.account_id", "=", "a.id")
+          .where("role", "=", "OWNER")
+          .join("user as u", "u.id", "=", "ua.user_id")
+          .where("pr.time", "<=", endTime)
+          .andWhere("pr.time", ">=", startTime)
+          // 过滤为空的情况
+          .whereNotNull("pr.account_name")
+          // 按account_name和user_name分组
+          .groupBy(["pr.account_name", "u.name"])
+          // 按totalAmount降序排序
+          .orderBy("totalAmount", "desc")
+          // 限制结果的数量为topRank
+          .limit(topRank);
 
       return [
         {
           results: results.map((x) => ({
             accountName: x.account_name,
-            userName:x.user_name,
+            userName: x.user_name,
             payAmount: numberToMoney(x.totalAmount),
           })),
         },
@@ -564,7 +572,7 @@ export const chargingServiceServer = plugin((server) => {
        */
     getPaginatedChargeRecords: async ({ request, em }) => {
       const { startTime, endTime, type, types, target, page, pageSize, sortBy, sortOrder, userIdsOrNames }
-      = ensureNotUndefined(request, ["startTime", "endTime"]);
+        = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       await ensureTargetAccountsBelongToTenant(em, target);
 
@@ -597,7 +605,7 @@ export const chargingServiceServer = plugin((server) => {
         if (userIdsOrNames && userIdsOrNames.length > 0) {
           const matchedUsersQuery = em.getKnex()("user as u")
             .distinct("u.user_id")
-            .where(function() {
+            .where(function () {
               for (const idOrName of userIdsOrNames) {
                 void this.orWhere("u.user_id", "like", `%${idOrName}%`)
                   .orWhere("u.name", "like", `%${idOrName}%`);
@@ -616,7 +624,7 @@ export const chargingServiceServer = plugin((server) => {
             return [];
           }
 
-          const sql = qb.getKnexQuery().andWhere(function() {
+          const sql = qb.getKnexQuery().andWhere(function () {
             void this.whereIn("cr.user_id", matchedUserIds);
           });
 
@@ -656,7 +664,7 @@ export const chargingServiceServer = plugin((server) => {
    */
     getChargeRecordsTotalCount: async ({ request, em }) => {
       const { startTime, endTime, type, types, target, userIdsOrNames, preferCache }
-      = ensureNotUndefined(request, ["startTime", "endTime"]);
+        = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       await ensureTargetAccountsBelongToTenant(em, target);
 
@@ -683,7 +691,7 @@ export const chargingServiceServer = plugin((server) => {
       if (userIdsOrNames && userIdsOrNames.length > 0) {
         const matchedUsersQuery = em.getKnex()("user as u")
           .distinct("u.user_id")
-          .where(function() {
+          .where(function () {
             for (const idOrName of userIdsOrNames) {
               void this.orWhere("u.user_id", "like", `%${idOrName}%`)
                 .orWhere("u.name", "like", `%${idOrName}%`);
@@ -701,7 +709,7 @@ export const chargingServiceServer = plugin((server) => {
         if (matchedUserIds.length === 0) {
           result = [{ total_count: 0, total_amount: 0 }];
         } else {
-          const sql = qb.getKnexQuery().andWhere(function() {
+          const sql = qb.getKnexQuery().andWhere(function () {
             void this.whereIn("c.user_id", matchedUserIds);
           });
 
