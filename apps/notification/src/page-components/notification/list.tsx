@@ -15,7 +15,7 @@ import { useMutation } from "@connectrpc/connect-query";
 import { ListMessagesResponse, Message } from "@scow/notification-protos/build/message_pb";
 import { markMessageRead } from "@scow/notification-protos/build/message-MessageService_connectquery";
 import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
-import { List, PaginationProps, Typography } from "antd";
+import { App, List, PaginationProps, Typography } from "antd";
 import { join } from "path";
 import React, { useContext, useState } from "react";
 import { PageInfo } from "src/app/extensions/(user)/notification/page";
@@ -118,6 +118,7 @@ export const NotificationList: React.FC<Props> = ({
     onSuccess: () => refetch(),
   });
 
+  const { modal } = App.useApp();
   const { scowLangId, scowDark: isDark, basePath } = useContext(ScowParamsContext);
 
   const onPageChange: PaginationProps["onChange"] = (page, pageSize) => {
@@ -170,9 +171,13 @@ export const NotificationList: React.FC<Props> = ({
                 <ActionsContainer>
                   <div>{renderingContent.createdAt}</div>
                   <DeleteIcon
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
-                      await handleDelete(item.id);
+                      modal.confirm({
+                        title: compLang.deleteConfirmTitle,
+                        content: compLang.deleteConfirmContent,
+                        onOk: () => handleDelete(item.id),
+                      });
                     }}
                   />
                 </ActionsContainer>

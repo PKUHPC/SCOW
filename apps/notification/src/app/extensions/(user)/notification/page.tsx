@@ -19,7 +19,7 @@ import {
   listMessages,
   markAllMessagesRead,
 } from "@scow/notification-protos/build/message-MessageService_connectquery";
-import { Button, message } from "antd";
+import { App } from "antd";
 import React, { useContext, useState } from "react";
 import { NoShadowButton } from "src/components/no-shadow-button";
 import { PageTitle } from "src/components/page-title";
@@ -37,6 +37,8 @@ const NotificationPage = () => {
 
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
+  const { message, modal } = App.useApp();
+  const lang = language.notification;
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
   const [query, setQuery] = useState<Partial<ListMessagesRequest>>({
@@ -52,33 +54,40 @@ const NotificationPage = () => {
   });
 
   const { mutateAsync: markAllRead, isPending: isMarkAllReadPending } = useMutation(markAllMessagesRead, {
-    onError: () => message.error(language.notification.markAllReadErrorInfo),
+    onError: () => message.error(lang.markAllReadErrorInfo),
     onSuccess: () => {
       refetch();
-      message.success(language.notification.markAllReadSuccessInfo);
+      message.success(lang.markAllReadSuccessInfo);
     },
   });
 
   const { mutateAsync: deleteAllRead, isPending: isDeleteAllReadPending } = useMutation(deleteAllReadMessages, {
-    onError: () => message.error(language.notification.deleteReadMsgErrorInfo),
+    onError: () => message.error(lang.deleteReadMsgErrorInfo),
     onSuccess: () => {
       refetch();
-      message.success(language.notification.deleteReadMsgSuccessInfo);
+      message.success(lang.deleteReadMsgSuccessInfo);
     },
   });
 
-
-  const handleMarkAllRead = async () => {
-    await markAllRead({});
+  const handleMarkAllRead = () => {
+    modal.confirm({
+      title: lang.markAllReadConfirmTitle,
+      content: lang.markAllReadConfirmContent,
+      onOk: () => markAllRead({}),
+    });
   };
 
-  const handleDeleteAll = async () => {
-    await deleteAllRead({});
+  const handleDeleteAll = () => {
+    modal.confirm({
+      title: lang.deleteReadMsgConfirmTitle,
+      content: lang.deleteReadMsgConfirmContent,
+      onOk: () => deleteAllRead({}),
+    });
   };
 
   return (
     <div>
-      <PageTitle titleText={language.notification.pageTitle}>
+      <PageTitle titleText={lang.pageTitle}>
         <div style={{ textAlign: "right", marginBottom: "10px" }}>
           <NoShadowButton
             type="primary"
@@ -86,11 +95,11 @@ const NotificationPage = () => {
             loading={isMarkAllReadPending}
             style={{ marginRight: "10px" }}
           >
-            {language.notification.markAllRead}
+            {lang.markAllRead}
           </NoShadowButton>
-          <Button onClick={handleDeleteAll} loading={isDeleteAllReadPending}>
-            {language.notification.deleteReadMsg}
-          </Button>
+          <NoShadowButton type="primary" onClick={handleDeleteAll} loading={isDeleteAllReadPending}>
+            {lang.deleteReadMsg}
+          </NoShadowButton>
         </div>
       </PageTitle>
       <NotificationListTable

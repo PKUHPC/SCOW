@@ -3,7 +3,7 @@ import React, { LegacyRef } from "react";
 import { styled } from "styled-components";
 
 interface IconProps {
-  onClick?: (e: any) => Promise<void>;
+  onClick?: (e: any) => void;
 }
 
 export const IconContainer = styled.div`

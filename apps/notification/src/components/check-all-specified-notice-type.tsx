@@ -6,7 +6,7 @@ import { getNoticeTypeName } from "src/models/notice-type";
 
 export interface SelectAllProps {
   e: CheckboxChangeEvent;
-  checkedNoticeType: NoticeType
+  checkedNoticeType: NoticeType;
 }
 
 interface Props {
@@ -17,15 +17,20 @@ interface Props {
   indeterminate?: boolean;
 }
 
-export const CheckAllSpecifiedNoticeType: React.FC<Props> = ({ type, disabled, checked, handleCheckAll, indeterminate }) => {
-
+export const CheckAllSpecifiedNoticeType: React.FC<Props> = ({
+  type,
+  disabled,
+  checked,
+  handleCheckAll,
+  indeterminate,
+}) => {
   return (
     <>
       <Checkbox
         disabled={disabled}
         checked={checked}
-        onChange={(e) => handleCheckAll({ e, checkedNoticeType: type })}
         indeterminate={indeterminate}
+        onChange={(e) => handleCheckAll({ e, checkedNoticeType: type })}
       >
         {getNoticeTypeName(type)}
       </Checkbox>

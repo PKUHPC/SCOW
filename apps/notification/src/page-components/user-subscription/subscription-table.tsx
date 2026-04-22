@@ -11,12 +11,13 @@
  */
 
 import { useMutation, useQuery } from "@connectrpc/connect-query";
+import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import {
   listUserSubscriptions,
   modifyUserSubscription,
 } from "@scow/notification-protos/build/user_subscription-UserSubscriptionService_connectquery";
 import { Form, message, Table } from "antd";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { NoShadowButton } from "src/components/no-shadow-button";
 import { PageTitle } from "src/components/page-title";
 import { ScowParamsContext } from "src/components/scow-params-provider";
@@ -50,6 +51,18 @@ export interface FormValues {
   noticeConfigs: Record<string, Partial<Record<NoticeType, boolean>>>;
 }
 
+const noticeTypeNumbers = Object.values(NoticeType).filter((v): v is NoticeType => typeof v === "number");
+
+const defaultAllTrue = noticeTypeNumbers.reduce((acc, noticeType) => {
+  acc[noticeType] = true;
+  return acc;
+}, {} as Record<NoticeType, boolean>);
+
+const defaultNoticeTypesPartialChecked = noticeTypeNumbers.reduce((acc, noticeType) => {
+  acc[noticeType] = false;
+  return acc;
+}, {} as Record<NoticeType, boolean>);
+
 export const UserSubscriptionTable: React.FC = () => {
 
   const { scowLangId, scowDark } = useContext(ScowParamsContext);
@@ -58,42 +71,79 @@ export const UserSubscriptionTable: React.FC = () => {
 
   const [form] = Form.useForm<FormValues>();
 
-  const defaultCheckAllDisabled = useMemo(() => {
-    return Object.values(NoticeType)
-      .filter((value) => typeof value === "number")
-      .reduce((acc, noticeType) => {
-        acc[noticeType] = true;
-        return acc;
-      }, {} as Record<NoticeType, boolean>);
-  }, [...Object.values(NoticeType)]);
-
-  const defaultNoticeTypesCheckValue = useMemo(() => {
-    return Object.values(NoticeType)
-      .filter((value) => typeof value === "number")
-      .reduce((acc, noticeType) => {
-        acc[noticeType] = true;
-        return acc;
-      }, {} as Record<NoticeType, boolean>);
-  }, [...Object.values(NoticeType)]);
-
   const [noticeTypeAllChecked, setNoticeTypeAllChecked]
-      = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
-  const [checkAllDisabled, setCheckAllDisabled] = useState(defaultCheckAllDisabled);
+      = useState<Partial<Record<NoticeType, boolean>>>(defaultAllTrue);
+  const [noticeTypePartialChecked, setNoticeTypePartialChecked]
+      = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesPartialChecked);
+  const [checkAllDisabled, setCheckAllDisabled] = useState(defaultAllTrue);
   const [hasChange, setHasChange] = useState(false);
 
-  const { data, isLoading } = useQuery(listUserSubscriptions);
-  const { mutateAsync } = useMutation(modifyUserSubscription, {
+  const { data, isLoading, refetch } = useQuery(listUserSubscriptions);
+  const { mutateAsync, isPending } = useMutation(modifyUserSubscription, {
     onError: (err) => message.error(err.message),
     onSuccess: () => {
       setHasChange(false);
       message.success(compLang.saveSuccess);
+      refetch();
     },
   });
 
   const columns = useSubscriptionColumns({
     form, messageConfigs: data?.configs, checkAllDisabled,
-    noticeTypeAllChecked, setNoticeTypeAllChecked, setHasChange, lang: language,
+    noticeTypeAllChecked, setNoticeTypeAllChecked,
+    noticeTypePartialChecked, setNoticeTypePartialChecked,
+    setHasChange, lang: language,
   });
+
+  const initFormFromData = (configs: MessageConfig[]) => {
+    const noticeConfigs: Record<string, Partial<Record<NoticeType, boolean>>> = {};
+    // 统计每个 NoticeType 的用户可操作项数量和已勾选数量
+    const stats: Record<number, { modifiable: number; checked: number }> = {};
+    const newCheckAllDisabled = { ...defaultAllTrue };
+
+    configs.forEach((item) => {
+      noticeConfigs[item.messageType] = {};
+      item.noticeConfigs.forEach((config) => {
+        if (config.noticeType === undefined) return;
+        const noticeType = config.noticeType as number;
+        noticeConfigs[item.messageType][noticeType] = config.enabled;
+        if (config.canUserModify === true) {
+          newCheckAllDisabled[noticeType] = false;
+          if (!stats[noticeType]) stats[noticeType] = { modifiable: 0, checked: 0 };
+          stats[noticeType].modifiable++;
+          if (config.enabled) stats[noticeType].checked++;
+        }
+      });
+    });
+
+    const newAllChecked = { ...defaultAllTrue };
+    const newPartialChecked = { ...defaultNoticeTypesPartialChecked };
+
+    Object.entries(stats).forEach(([noticeTypeStr, { modifiable, checked }]) => {
+      const noticeType = Number(noticeTypeStr) as NoticeType;
+      if (checked === modifiable) {
+        newAllChecked[noticeType] = true;
+        newPartialChecked[noticeType] = false;
+      } else if (checked > 0) {
+        newAllChecked[noticeType] = false;
+        newPartialChecked[noticeType] = true;
+      } else {
+        newAllChecked[noticeType] = false;
+        newPartialChecked[noticeType] = false;
+      }
+    });
+
+    setCheckAllDisabled(newCheckAllDisabled);
+    setNoticeTypeAllChecked(newAllChecked);
+    setNoticeTypePartialChecked(newPartialChecked);
+    form.setFieldsValue({ noticeConfigs });
+  };
+
+  const handleCancel = () => {
+    if (!data) return;
+    initFormFromData(data.configs);
+    setHasChange(false);
+  };
 
   const handleSave = async () => {
     if (!data) return;
@@ -148,62 +198,37 @@ export const UserSubscriptionTable: React.FC = () => {
 
   useEffect(() => {
     if (data) {
-      const initialValues: FormValues = data.configs.reduce((acc, item) => {
-        if (!acc.noticeConfigs) acc.noticeConfigs = {};
-        const allCantModifyAndDisabledSet = new Set<NoticeType>();
-        acc.noticeConfigs[item.messageType] = {};
-        item.noticeConfigs.forEach((config) => {
-          if (config.noticeType === undefined) return;
-          const noticeType = config.noticeType as number; // 类型断言
-          acc.noticeConfigs[item.messageType][noticeType] = config.enabled;
-          // 设置对应类型是否全选
-          if (!config.enabled && config.canUserModify === true) {
-            setNoticeTypeAllChecked((prev) => ({
-              ...prev,
-              [noticeType]: false,
-            }));
-          }
-          if (config.canUserModify === true) {
-            setCheckAllDisabled((prev) => ({
-              ...prev,
-              [noticeType]: false,
-            }));
-          }
-        });
-        // 如果所有的值都是
-        allCantModifyAndDisabledSet.forEach((noticeType) => {
-          setNoticeTypeAllChecked((prev) => ({
-            ...prev,
-            [noticeType]: false,
-          }));
-        });
-        return acc;
-      }, { noticeConfigs:  {} as Record<string, Partial<Record<NoticeType, boolean>>> }); // 添加显式类型断言
-
-      form.setFieldsValue({ noticeConfigs: initialValues.noticeConfigs });
-
+      initFormFromData(data.configs);
     }
   }, [data]);
 
   return (
     <div>
       <PageTitle titleText={language.subscription.pageTitle}>
-        <NoShadowButton
-          disabled={!hasChange}
-          type="primary"
-          shape="round"
-          size="large"
-          onClick={handleSave}
-        >
-          {language.common.save}
-        </NoShadowButton>
+        {hasChange && (
+          <div style={{ textAlign: "right", marginBottom: "10px" }}>
+            <NoShadowButton
+              onClick={handleCancel}
+              style={{ marginRight: "10px" }}
+            >
+              {language.common.cancel}
+            </NoShadowButton>
+            <NoShadowButton
+              loading={isPending}
+              type="primary"
+              onClick={handleSave}
+            >
+              {language.common.save}
+            </NoShadowButton>
+          </div>
+        )}
       </PageTitle>
       <Form form={form} name="message-config">
         <Table
           bordered
           pagination={false}
           rowKey="messageType"
-          loading={isLoading}
+          loading={isLoading || isPending}
           columns={columns}
           dataSource={data?.configs ?? []}
           rowClassName={(_, index) => (index % 2 === 0 ? "white-row" : "gray-row")}

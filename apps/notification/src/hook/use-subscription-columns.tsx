@@ -33,6 +33,8 @@ interface Props {
   checkAllDisabled: Partial<Record<NoticeType, boolean>>;
   noticeTypeAllChecked: Partial<Record<NoticeType, boolean>>;
   setNoticeTypeAllChecked: Dispatch<React.SetStateAction<Partial<Record<NoticeType, boolean>>>>;
+  noticeTypePartialChecked: Partial<Record<NoticeType, boolean>>;
+  setNoticeTypePartialChecked: Dispatch<React.SetStateAction<Partial<Record<NoticeType, boolean>>>>;
   setHasChange: Dispatch<React.SetStateAction<boolean>>;
   lang: I18nDicType;
 }
@@ -49,7 +51,10 @@ const TooltipCheckbox: React.FC<TooltipCheckboxProps> = ({ tooltipTitle, ...rest
 
 
 export function useSubscriptionColumns({
-  form, messageConfigs, checkAllDisabled, noticeTypeAllChecked, setNoticeTypeAllChecked, setHasChange, lang,
+  form, messageConfigs, checkAllDisabled,
+  noticeTypeAllChecked, setNoticeTypeAllChecked,
+  noticeTypePartialChecked, setNoticeTypePartialChecked,
+  setHasChange, lang,
 }: Props) {
 
   const { data: noticeTypesData } = useQuery(listNoticeTypes);
@@ -58,34 +63,41 @@ export function useSubscriptionColumns({
 
   const { scowLangId } = useContext(ScowParamsContext);
 
-  const handleCheckChange = ({ e, checkedNoticeType }: SelectAllProps) => {
+  const handleCheckChange = (checkedNoticeType: NoticeType) => {
     if (!messageConfigs) return;
 
-    const values = form.getFieldsValue();
     setHasChange(true);
-    const defaultCheckValue = e.target.checked;
+
+    // form 值在 Form.Item onChange 后已更新，直接读取新值计算状态
+    const values = form.getFieldsValue();
+    let checkedCount = 0;
+    let modifiableCount = 0;
 
     for (const messageType of Object.keys(values.noticeConfigs)) {
-      const noticeConfig = Object.keys(values.noticeConfigs[messageType]).find((noticeType) => {
-        const enumNoticeType = Number(noticeType) as unknown as NoticeType;
-        return enumNoticeType === checkedNoticeType;
-      });
       const canUserModify = messageConfigs.find((config) =>
-        config.messageType === messageType && !!config.noticeConfigs.find((noticeConfig) =>
-          noticeConfig.noticeType === checkedNoticeType && noticeConfig.canUserModify));
+        config.messageType === messageType && config.noticeConfigs.find(
+          (nc) => nc.noticeType === checkedNoticeType && nc.canUserModify));
 
-      if (noticeConfig && canUserModify && values.noticeConfigs[messageType][noticeConfig] !== defaultCheckValue) {
-        setNoticeTypeAllChecked({
-          ...noticeTypeAllChecked,
-          [checkedNoticeType]: false,
-        });
-        return;
+      if (canUserModify) {
+        modifiableCount++;
+        if (values.noticeConfigs[messageType][checkedNoticeType]) {
+          checkedCount++;
+        }
       }
-    };
-    setNoticeTypeAllChecked({
-      ...noticeTypeAllChecked,
-      [checkedNoticeType]: defaultCheckValue,
-    });
+    }
+
+    if (modifiableCount === 0) return;
+
+    if (checkedCount === modifiableCount) {
+      setNoticeTypeAllChecked((prev) => ({ ...prev, [checkedNoticeType]: true }));
+      setNoticeTypePartialChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
+    } else if (checkedCount === 0) {
+      setNoticeTypeAllChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
+      setNoticeTypePartialChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
+    } else {
+      setNoticeTypeAllChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
+      setNoticeTypePartialChecked((prev) => ({ ...prev, [checkedNoticeType]: true }));
+    }
   };
 
 
@@ -95,10 +107,8 @@ export function useSubscriptionColumns({
     const values = form.getFieldsValue();
     setHasChange(true);
 
-    setNoticeTypeAllChecked({
-      ...noticeTypeAllChecked,
-      [checkedNoticeType]: e.target.checked,
-    });
+    setNoticeTypeAllChecked((prev) => ({ ...prev, [checkedNoticeType]: e.target.checked }));
+    setNoticeTypePartialChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
 
     const parsedValues = {
       noticeConfigs: Object.keys(values.noticeConfigs).reduce((acc, messageType) => {
@@ -158,47 +168,45 @@ export function useSubscriptionColumns({
           return template?.[scowLangId] || template?.default;
         },
       },
-      {
-        title: compLang.noticeType,
-        children: noticeTypesData?.noticeTypes.map((type) => ({
-          title: (
-            <CheckAllSpecifiedNoticeType
-              disabled={checkAllDisabled[type] ?? true}
-              checked={noticeTypeAllChecked[type] ?? false}
-              type={type}
-              handleCheckAll={handleCheckAll}
-            />
-          ),
-          dataIndex: type,
-          key: type,
-          render: (_, record) => {
-            const noticeTypeConfig = record.noticeConfigs.find((config) => config.noticeType === type);
-            const checkboxDisabled = !noticeTypeConfig?.canUserModify;
-            const checked = noticeTypeConfig?.enabled;
+      ...(noticeTypesData?.noticeTypes.map((type) => ({
+        title: (
+          <CheckAllSpecifiedNoticeType
+            disabled={checkAllDisabled[type] ?? true}
+            checked={noticeTypeAllChecked[type] ?? false}
+            indeterminate={noticeTypePartialChecked[type] ?? false}
+            type={type}
+            handleCheckAll={handleCheckAll}
+          />
+        ),
+        dataIndex: type,
+        key: type,
+        render: (_, record) => {
+          const noticeTypeConfig = record.noticeConfigs.find((config) => config.noticeType === type);
+          const checkboxDisabled = !noticeTypeConfig?.canUserModify;
+          const checked = noticeTypeConfig?.enabled;
 
-            const title = checkboxDisabled ?
-              (checked ? compLang.unableToCancelPrompt : compLang.unableToOpenPrompt) : "";
+          const title = checkboxDisabled ?
+            (checked ? compLang.unableToCancelPrompt : compLang.unableToOpenPrompt) : "";
 
-            return (
-              <Form.Item
-                name={["noticeConfigs", record.messageType, type]}
-                valuePropName="checked"
-                noStyle
-              >
-                <TooltipCheckbox
-                  tooltipTitle={title}
-                  disabled={checkboxDisabled}
-                  onChange={(e) => handleCheckChange({ e, checkedNoticeType: type })}
-                />
-              </Form.Item>
-            );
-          },
-        })),
-      },
+          return (
+            <Form.Item
+              name={["noticeConfigs", record.messageType, type]}
+              valuePropName="checked"
+              noStyle
+            >
+              <TooltipCheckbox
+                tooltipTitle={title}
+                disabled={checkboxDisabled}
+                onChange={() => handleCheckChange(type)}
+              />
+            </Form.Item>
+          );
+        },
+      })) ?? []),
     ];
 
     setColumns(columns);
-  }, [noticeTypesData, checkAllDisabled, ...Object.values(noticeTypeAllChecked)]);
+  }, [noticeTypesData, checkAllDisabled, ...Object.values(noticeTypeAllChecked), ...Object.values(noticeTypePartialChecked)]);
 
   return columns;
 }

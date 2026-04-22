@@ -16,7 +16,7 @@ export const languageDic = {
     api: {
       notification: "通知",
       myMsgs: "我的消息",
-      msgSub: "消息订阅",
+      msgSub: "消息接收设置",
       msgConfig: "消息发送设置",
       sendMsg: "系统公告",
       createType: "新建消息类型",
@@ -166,21 +166,27 @@ export const languageDic = {
       deleteReadMsgSuccessInfo: "删除已读消息成功",
       markAllRead: "全部已读",
       deleteReadMsg: "删除已读",
+      markAllReadConfirmTitle: "确认全部已读",
+      markAllReadConfirmContent: "确认将所有消息标记为已读？",
+      deleteReadMsgConfirmTitle: "确认删除已读",
+      deleteReadMsgConfirmContent: "确认删除所有已读消息？",
       listTable: {
         deleteError: "删除失败",
         deleteSuccess: "删除成功",
         all: "全部",
-        systemNotif: "系统通知",
+        systemNotif: "系统公告",
         accountNotif: "账户通知",
         jobNotif: "作业通知",
       },
       list: {
         read: "已读",
         unread: "未读",
+        deleteConfirmTitle: "确认删除",
+        deleteConfirmContent: "确认删除该消息？",
       },
     },
     subscription: {
-      pageTitle: "消息订阅",
+      pageTitle: "消息接收设置",
       subscriptionTable: {
         saveSuccess: "保存成功",
         formError: "表单数据错误，请联系管理员",
@@ -203,7 +209,7 @@ export const languageDic = {
     api: {
       notification: "Notification",
       myMsgs: "My Messages",
-      msgSub: "Message Subscription",
+      msgSub: "Message Receiving Settings",
       msgConfig: "Message Delivery Settings",
       sendMsg: "System Announcements",
       createType: "Create Message Type",
@@ -320,8 +326,7 @@ export const languageDic = {
         selectSentType: "Please select a notification type",
         sendMsg: "Publish Announcement",
         msgExpirationTime: "Validity Period",
-        msgExpirationTimeTip:
-          "After this system announcement expires, it will be automatically deleted.",
+        msgExpirationTimeTip: "After this system announcement expires, it will be automatically deleted.",
         expirationTimeSelectRule: "Please select a validity period",
       },
       adminMessagesTable: {
@@ -357,21 +362,27 @@ export const languageDic = {
       deleteReadMsgSuccessInfo: "Deleted read message successfully",
       markAllRead: "Mark read",
       deleteReadMsg: "Delete read messages",
+      markAllReadConfirmTitle: "Confirm Mark All Read",
+      markAllReadConfirmContent: "Are you sure you want to mark all messages as read?",
+      deleteReadMsgConfirmTitle: "Confirm Delete Read",
+      deleteReadMsgConfirmContent: "Are you sure you want to delete all read messages?",
       listTable: {
         deleteError: "Deletion failed",
         deleteSuccess: "Deleted successfully",
         all: "All",
-        systemNotif: "System Notifications",
+        systemNotif: "System Announcements",
         accountNotif: "Account Notifications",
         jobNotif: "Job Notifications",
       },
       list: {
         read: "read",
         unread: "unread",
+        deleteConfirmTitle: "Confirm Delete",
+        deleteConfirmContent: "Are you sure you want to delete this message?",
       },
     },
     subscription: {
-      pageTitle: "Message Subscription",
+      pageTitle: "Message Receiving Settings",
       subscriptionTable: {
         saveSuccess: "Saved Successfully",
         formError: "The form data is incorrect, please contact the administrator",
@@ -399,7 +410,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "Notificação",
       myMsgs: "Minhas mensagens",
-      msgSub: "Assinatura de mensagens",
+      msgSub: "Configurações de recebimento de mensagens",
       msgConfig: "Configurações de envio de mensagens",
       sendMsg: "Anúncios do sistema",
       createType: "Criar tipo de mensagem personalizada",
@@ -540,7 +551,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "Assinatura de mensagens",
+      pageTitle: "Configurações de recebimento de mensagens",
       subscriptionTable: {
         saveSuccess: "Salvo com sucesso",
         formError: "Dados do formulário incorretos, contate o administrador",
@@ -559,7 +570,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "Notificación",
       myMsgs: "Mis mensajes",
-      msgSub: "Suscripción de mensajes",
+      msgSub: "Configuración de recepción de mensajes",
       msgConfig: "Configuración de envío de mensajes",
       sendMsg: "Anuncios del sistema",
       createType: "Crear tipo de mensaje personalizado",
@@ -699,7 +710,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "Suscripción de mensajes",
+      pageTitle: "Configuración de recepción de mensajes",
       subscriptionTable: {
         saveSuccess: "Guardado con éxito",
         formError: "Datos incorrectos, contacte al administrador",
@@ -718,7 +729,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "Уведомление",
       myMsgs: "Мои сообщения",
-      msgSub: "Подписка на сообщения",
+      msgSub: "Настройки получения сообщений",
       msgConfig: "Настройки отправки сообщений",
       sendMsg: "Системные объявления",
       createType: "Создать пользовательский тип сообщения",
@@ -858,7 +869,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "Подписка на сообщения",
+      pageTitle: "Настройки получения сообщений",
       subscriptionTable: {
         saveSuccess: "Успешно сохранено",
         formError: "Некорректные данные формы, обратитесь к администратору",
@@ -877,7 +888,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "알림",
       myMsgs: "내 메시지",
-      msgSub: "메시지 구독",
+      msgSub: "메시지 수신 설정",
       msgConfig: "메시지 발송 설정",
       sendMsg: "시스템 공지",
       createType: "사용자 지정 메시지 유형 생성",
@@ -1016,7 +1027,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "메시지 구독",
+      pageTitle: "메시지 수신 설정",
       subscriptionTable: {
         saveSuccess: "저장 성공",
         formError: "폼 데이터가 잘못되었습니다. 관리자에게 문의하세요",
@@ -1035,7 +1046,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "通知",
       myMsgs: "マイメッセージ",
-      msgSub: "メッセージ購読",
+      msgSub: "メッセージ受信設定",
       msgConfig: "メッセージ送信設定",
       sendMsg: "システム公告",
       createType: "カスタムメッセージタイプ作成",
@@ -1174,7 +1185,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "メッセージ購読",
+      pageTitle: "メッセージ受信設定",
       subscriptionTable: {
         saveSuccess: "保存に成功",
         formError: "フォームデータが不正です。管理者に連絡してください",
@@ -1193,7 +1204,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "Benachrichtigung",
       myMsgs: "Meine Nachrichten",
-      msgSub: "Nachrichtenabonnement",
+      msgSub: "Nachrichtenempfangseinstellungen",
       msgConfig: "Nachrichtenversandeinstellungen",
       sendMsg: "Systemankündigungen",
       createType: "Benutzerdefinierten Nachrichtentyp erstellen",
@@ -1333,7 +1344,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "Nachrichtenabonnement",
+      pageTitle: "Nachrichtenempfangseinstellungen",
       subscriptionTable: {
         saveSuccess: "Erfolgreich gespeichert",
         formError: "Formulardaten sind fehlerhaft, wenden Sie sich an den Administrator",
@@ -1352,7 +1363,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
     api: {
       notification: "Notification",
       myMsgs: "Mes messages",
-      msgSub: "Abonnement aux messages",
+      msgSub: "Paramètres de réception des messages",
       msgConfig: "Paramètres d’envoi des messages",
       sendMsg: "Annonces système",
       createType: "Créer un type de message personnalisé",
@@ -1440,7 +1451,8 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       messageConfigModal: {
         modifySuccess: "Modification réussie",
         authorization: "Paramètres de réception",
-        dontAllowCancel: "Ne pas autoriser les utilisateurs à désactiver la réception des types de notification suivants",
+        dontAllowCancel:
+          "Ne pas autoriser les utilisateurs à désactiver la réception des types de notification suivants",
         inputTitle: "Saisissez le titre",
       },
     },
@@ -1492,7 +1504,7 @@ export const optionalLanguageDic: Record<string, DeepPartial<I18nDicType>> = {
       },
     },
     subscription: {
-      pageTitle: "Abonnement aux messages",
+      pageTitle: "Paramètres de réception des messages",
       subscriptionTable: {
         saveSuccess: "Enregistré avec succès",
         formError: "Données du formulaire incorrectes, contactez l’administrateur",
