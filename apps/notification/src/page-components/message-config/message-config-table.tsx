@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
@@ -54,12 +42,48 @@ const GrayRow = styled.tr<StyledTrProps>`
   }
 `;
 
+const ExpirationRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+`;
+
+const ExpirationActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+`;
+
 export interface FormValues {
   noticeConfigs: Record<string, Partial<Record<NoticeType, boolean>>>;
 }
 
 interface ExpirationTimeFormValues {
   expirationDays: number;
+}
+
+function getDefaultNoticeTypeCheckedValues() {
+  return Object.values(NoticeType)
+    .filter((value) => typeof value === "number")
+    .reduce((acc, noticeType) => {
+      acc[noticeType] = true;
+      return acc;
+    }, {} as Record<NoticeType, boolean>);
+}
+
+function cloneNoticeConfigs(values: FormValues): FormValues {
+  return {
+    noticeConfigs: Object.fromEntries(
+      Object.entries(values.noticeConfigs).map(([messageType, config]) => [
+        messageType,
+        { ...config },
+      ]),
+    ),
+  };
 }
 
 export const MessageConfigTable: React.FC = () => {
@@ -71,23 +95,19 @@ export const MessageConfigTable: React.FC = () => {
   const lang = getLanguage(scowLangId);
   const compLang = lang.messageConfig.messageConfigTable;
 
-  const defaultNoticeTypesCheckValue = useMemo(() => {
-    return Object.values(NoticeType)
-      .filter((value) => typeof value === "number") // 只保留数值部分
-      .reduce((acc, noticeType) => {
-        acc[noticeType] = true;
-        return acc;
-      }, {} as Record<NoticeType, boolean>);
-  }, [...Object.values(NoticeType)]);
+  const defaultNoticeTypesCheckValue = useMemo(() => getDefaultNoticeTypeCheckedValues(), []);
 
   const [noticeTypeAllChecked, setNoticeTypeAllChecked]
-      = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
+    = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
   const [hasChange, setHasChange] = useState(false);
+  const [lastSavedValues, setLastSavedValues] = useState<FormValues>({ noticeConfigs: {} });
+  const [lastSavedChecked, setLastSavedChecked]
+    = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
 
-  const { data, isLoading, refetch } = useQuery(listMessageConfigs);
+  const { data, isLoading, isFetching, refetch } = useQuery(listMessageConfigs);
   const { data: expirationTime, isLoading: expirationTimeLoading } = useQuery(getMessageExpirationTime);
 
-  const { mutateAsync } = useMutation(modifyMessageConfigs, {
+  const { mutateAsync, isPending } = useMutation(modifyMessageConfigs, {
     onError: (err) => message.error(err.message),
     onSuccess: () => {
       message.success(compLang.saveSuccess);
@@ -106,6 +126,12 @@ export const MessageConfigTable: React.FC = () => {
   const columns = useMessageConfigColumns({
     form, noticeTypeAllChecked, setNoticeTypeAllChecked, setHasChange, lang,
   });
+
+  const handleCancel = () => {
+    form.setFieldsValue(cloneNoticeConfigs(lastSavedValues));
+    setNoticeTypeAllChecked({ ...lastSavedChecked });
+    setHasChange(false);
+  };
 
   const handleSave = async () => {
     if (!data) return;
@@ -149,11 +175,15 @@ export const MessageConfigTable: React.FC = () => {
         };
       });
 
-      await mutateAsync({ configs: parsedValues.map((x) => ({
-        ...x,
-        $typeName: "notification.MessageConfig",
-        noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
-      })) });
+      await mutateAsync({
+        configs: parsedValues.map((x) => ({
+          ...x,
+          $typeName: "notification.MessageConfig",
+          noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
+        }))
+      });
+      setLastSavedValues(cloneNoticeConfigs(values));
+      setLastSavedChecked({ ...noticeTypeAllChecked });
 
     } catch {
       message.error(compLang.saveError);
@@ -170,6 +200,7 @@ export const MessageConfigTable: React.FC = () => {
 
   useEffect(() => {
     if (data) {
+      const nextChecked = getDefaultNoticeTypeCheckedValues();
       const initialValues: FormValues = data.configs.reduce((acc, item) => {
         if (!acc.noticeConfigs) acc.noticeConfigs = {};
         acc.noticeConfigs[item.messageType] = {};
@@ -177,34 +208,24 @@ export const MessageConfigTable: React.FC = () => {
           if (config.noticeType === undefined) return;
           const noticeType = config.noticeType as number; // 类型断言
           acc.noticeConfigs[item.messageType][noticeType] = config.enabled;
-          // 设置对应类型是否全选
           if (!config.enabled) {
-            setNoticeTypeAllChecked((prev) => ({
-              ...prev,
-              [noticeType]: false,
-            }));
+            nextChecked[noticeType] = false;
           }
         });
         return acc;
-      }, { noticeConfigs:  {} as Record<string, Partial<Record<NoticeType, boolean>>> }); // 添加显式类型断言
+      }, { noticeConfigs: {} as Record<string, Partial<Record<NoticeType, boolean>>> }); // 添加显式类型断言
 
       form.setFieldsValue({ noticeConfigs: initialValues.noticeConfigs });
+      setNoticeTypeAllChecked(nextChecked);
+      setLastSavedValues(cloneNoticeConfigs({ noticeConfigs: initialValues.noticeConfigs }));
+      setLastSavedChecked({ ...nextChecked });
+      setHasChange(false);
     }
   }, [form, data]);
 
   return (
     <div>
-      <PageTitle titleText={lang.messageConfig.pageTitle}>
-        <NoShadowButton
-          disabled={!hasChange}
-          onClick={handleSave}
-          type="primary"
-          shape="round"
-          size="large"
-        >
-          {lang.common.save}
-        </NoShadowButton>
-      </PageTitle>
+      <PageTitle titleText={lang.messageConfig.pageTitle} />
       <Form form={expirationTimeForm}>
         <Form.Item
           label={(
@@ -217,16 +238,32 @@ export const MessageConfigTable: React.FC = () => {
           )}
           name="expirationDays"
         >
-          <ExpirationTimeSelect
-            style={{ width: 200 }}
-            loading={expirationTimeLoading}
-            onChange={async (value) => {
-              await changeExpireTime({
-                expiredAfterSeconds: value === NEVER_EXPIRES_VALUE
-                  ? undefined : BigInt(dayjs.duration(value, "days").asSeconds()),
-              });
-            }}
-          />
+          <ExpirationRow>
+            <ExpirationTimeSelect
+              style={{ width: 200 }}
+              loading={expirationTimeLoading}
+              onChange={async (value) => {
+                await changeExpireTime({
+                  expiredAfterSeconds: value === NEVER_EXPIRES_VALUE
+                    ? undefined : BigInt(dayjs.duration(value, "days").asSeconds()),
+                });
+              }}
+            />
+            {hasChange ? (
+              <ExpirationActions>
+                <NoShadowButton onClick={handleCancel}>
+                  {lang.common.cancel}
+                </NoShadowButton>
+                <NoShadowButton
+                  loading={isPending}
+                  onClick={handleSave}
+                  type="primary"
+                >
+                  {lang.common.save}
+                </NoShadowButton>
+              </ExpirationActions>
+            ) : null}
+          </ExpirationRow>
         </Form.Item>
       </Form>
       <Form form={form} name="message-config">
@@ -234,7 +271,7 @@ export const MessageConfigTable: React.FC = () => {
           bordered
           pagination={false}
           rowKey="messageType"
-          loading={isLoading}
+          loading={isLoading || isPending || isFetching}
           columns={columns}
           dataSource={data?.configs ?? []}
           rowClassName={(_, index) => (index % 2 === 0 ? "white-row" : "gray-row")}

@@ -980,6 +980,9 @@ importers:
 
   apps/notification:
     dependencies:
+      '@ant-design/colors':
+        specifier: 7.2.0
+        version: 7.2.0
       '@ant-design/cssinjs':
         specifier: 1.22.1
         version: 1.22.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

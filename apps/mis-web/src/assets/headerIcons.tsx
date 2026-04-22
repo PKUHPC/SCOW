@@ -1200,19 +1200,6 @@ export const StatisticIcon: React.ForwardRefExoticComponent<{}> = React.forwardR
   (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={statisticSVG} {...props} ref={ref} />,
 );
 
-// 返回图标
-const backSVG = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M10 3.75L2.5 10L10 16.25" stroke="black" stroke-width="2" stroke-linecap="round" />
-    <path d="M17.5 3.75L10 10L17.5 16.25" stroke="black" stroke-width="2" stroke-linecap="round" />
-  </svg>
-);
-
-export const BackIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={backSVG} {...props} ref={ref} />,
-);
-
-
 // 权限管理图标
 const permissionManagementSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1325,4 +1312,30 @@ export const ShellIcon: React.ForwardRefExoticComponent<IconProps> = React.forwa
   (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => shellSVG(props.styles)} {...props} ref={ref} />
   ),
+);
+
+// 消息设置图标
+const messageConfigSVG = () => (
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M17.9092 3.58398C17.9233 3.72073 17.9307 3.85952 17.9307 4V8.74023C17.2211 8.27253 16.3714
+      8.0001 15.458 8C12.9727 8 10.958 10.0147 10.958 12.5C10.958 13.9139 11.61 15.175 12.6299
+      16H4C1.79086 16 0 14.2091 0 12V4C0 3.85955 0.00638304 3.7207 0.0205078 3.58398L8.72168
+      8.43652L8.96484 8.57227L9.20898 8.43652L17.9092 3.58398ZM16.6299 10.2783C16.8206 10.2784 16.9952
+      10.3873 17.0791 10.5586L17.9512 12.3398C18.0036 12.4469 18.0157 12.5684 17.9873 12.6816L17.9453
+      12.791L17.0732 14.459C16.9979 14.6031 16.8574 14.7004 16.6992 14.7227L16.6299 14.7275H14.3301C14.1731
+      14.7274 14.0263 14.654 13.9326 14.5312L13.8965 14.4756L12.9443 12.8076C12.8593 12.6584 12.8567 12.4757
+      12.9375 12.3242L13.8896 10.543L13.9258 10.4844C14.019 10.3562 14.1689 10.2784 14.3301
+      10.2783H16.6299ZM13.9502 12.5518L14.6211 13.7275H16.3271L16.9414 12.5527L16.3184 11.2783H14.6299L13.9502
+      12.5518ZM15.4395 11.8135C15.8188 11.8136 16.1268 12.1221 16.127 12.5029C16.1269 12.8838 15.8189 13.1923
+      15.4395 13.1924C15.06 13.1924 14.752 12.8839 14.752 12.5029C14.7521 12.1221 15.06 11.8135 15.4395
+      11.8135ZM13.9307 0C15.6372 4.80849e-05 17.0925 1.06949 17.667 2.57422L8.96484 7.42676L0.262695
+      2.57422C0.837157 1.06931 2.29326 9.85715e-08 4 0H13.9307Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const MessageConfigIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={messageConfigSVG} {...props} ref={ref} />,
 );

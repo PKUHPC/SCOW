@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { PlatformRole } from "src/models/user";
 import { validateToken } from "src/server/auth/token";
 import { applyMiddleware } from "src/server/middleware/cors";
 import { getLanguage } from "src/utils/i18n";
@@ -11,20 +10,19 @@ interface NavItem {
   clickable?: boolean | undefined;
   icon?: {
     src: string;
-    alt?: string
-  },
+    alt?: string;
+  };
   svgIcon?: string; // 使用被插入系统的svg icon，icon可以随菜单变色
   openInNewPage?: boolean | undefined;
   children?: NavItem[] | undefined;
   hideIfNotActive?: boolean | undefined;
-};
+}
 
 interface Request {
   navs: NavItem[];
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-
   const body = req.body as Request;
 
   const searchParams = req.query;
@@ -47,6 +45,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const userInfo = await validateToken(scowUserCookie);
 
+  if (!userInfo) {
+    return res.status(401).json({ message: "UNAUTHORIZED" });
+  }
+
   body.navs.push({
     path: "/",
     clickToPath: "/notification",
@@ -65,26 +67,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         text: language.msgSub,
         svgIcon: "SubscriptionIcon",
       },
-      ...cookie && userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ? [
-        {
-          path: "/message-config",
-          clickToPath: undefined,
-          text: language.msgConfig,
-          svgIcon: "MessageConfigIcon",
-        },
-        {
-          path: "/send-message",
-          clickToPath: undefined,
-          text: language.sendMsg,
-          svgIcon: "SendMessageIcon",
-        },
-        {
-          path: "/create-custom-message-type",
-          clickToPath: undefined,
-          text: language.createType,
-          svgIcon: "CreateCustomMessageIcon",
-        },
-      ] : [],
     ],
   });
 

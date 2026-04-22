@@ -214,6 +214,7 @@ export default {
         permissionManagement: "Permission Management",
         appAuthorization: "Authorize application",
         nodeMigration: "Node Migration",
+        notification: "Notification Settings",
       },
       tenantManagement: {
         firstNav: "Tenant",

@@ -14,9 +14,10 @@ interface Props {
   handleCheckAll: (props: SelectAllProps) => void;
   disabled?: boolean;
   checked: boolean;
+  indeterminate?: boolean;
 }
 
-export const CheckAllSpecifiedNoticeType: React.FC<Props> = ({ type, disabled, checked, handleCheckAll }) => {
+export const CheckAllSpecifiedNoticeType: React.FC<Props> = ({ type, disabled, checked, handleCheckAll, indeterminate }) => {
 
   return (
     <>
@@ -24,6 +25,7 @@ export const CheckAllSpecifiedNoticeType: React.FC<Props> = ({ type, disabled, c
         disabled={disabled}
         checked={checked}
         onChange={(e) => handleCheckAll({ e, checkedNoticeType: type })}
+        indeterminate={indeterminate}
       >
         {getNoticeTypeName(type)}
       </Checkbox>

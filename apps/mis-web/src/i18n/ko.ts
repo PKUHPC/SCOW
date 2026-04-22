@@ -212,6 +212,7 @@ export default {
         permissionManagement: "권한 관리",
         appAuthorization: "애플리케이션 권한 부여",
         nodeMigration: "노드 마이그레이션",
+        notification: "알림 설정",
       },
       tenantManagement: {
         firstNav: "테넌트",

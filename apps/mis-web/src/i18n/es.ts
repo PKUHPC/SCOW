@@ -212,6 +212,7 @@ export default {
         permissionManagement: "Gestión de permisos",
         appAuthorization: "Autorizar aplicación",
         nodeMigration: "Migración de nodos",
+        notification: "Configuración de notificaciones",
       },
       tenantManagement: {
         firstNav: "Inquilino",

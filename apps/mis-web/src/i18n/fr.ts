@@ -214,6 +214,7 @@ export default {
         permissionManagement: "Gestion des permissions",
         appAuthorization: "Autoriser l'application",
         nodeMigration: "Migration de nœuds",
+        notification: "Paramètres de notification",
       },
       tenantManagement: {
         firstNav: "Locataire",

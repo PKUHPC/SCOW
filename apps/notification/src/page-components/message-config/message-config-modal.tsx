@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { useMutation } from "@connectrpc/connect-query";
 import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import {
@@ -18,7 +6,7 @@ import {
 import { Checkbox, Form, message, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import { I18nDicType } from "src/models/i18n";
-import { getNoticeTypeName,NoticeType } from "src/models/notice-type";
+import { getNoticeTypeName, NoticeType } from "src/models/notice-type";
 
 interface FormValues {
   userModifyConfigs: NoticeType[];
@@ -49,7 +37,7 @@ export const MessageConfigModal: React.FC<Props> = ({
       };
       form.setFieldsValue(initialValues);
     }
-  },[data]);
+  }, [data]);
 
   const [userModifyConfigLoading, setUserModifyConfigLoading] = useState<boolean>();
 
@@ -79,14 +67,16 @@ export const MessageConfigModal: React.FC<Props> = ({
   const submitUserModifyConfig = () => {
     const { userModifyConfigs } = form.getFieldsValue();
     setUserModifyConfigLoading(true);
-    mutateAsync({ configs: [{
-      ...data,
-      noticeConfigs: data?.noticeConfigs.map((config) => ({
-        ...config,
-        canUserModify: config.noticeType !== undefined
-          ? !userModifyConfigs.includes(config.noticeType) : config.canUserModify,
-      })),
-    }]});
+    mutateAsync({
+      configs: [{
+        ...data,
+        noticeConfigs: data?.noticeConfigs.map((config) => ({
+          ...config,
+          canUserModify: config.noticeType !== undefined
+            ? !userModifyConfigs.includes(config.noticeType) : config.canUserModify,
+        })),
+      }]
+    });
   };
 
   return (

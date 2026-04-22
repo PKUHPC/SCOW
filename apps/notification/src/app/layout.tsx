@@ -7,11 +7,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <ServerClientProvider basePath={BASE_PATH}>
-        <ClientLayout basePath={BASE_PATH}>
-          {children}
-        </ClientLayout>
-      </ServerClientProvider>
+      <body>
+        <ServerClientProvider basePath={BASE_PATH}>
+          <ClientLayout basePath={BASE_PATH}>
+            {children}
+          </ClientLayout>
+        </ServerClientProvider>
+      </body>
     </html>
   );
 }

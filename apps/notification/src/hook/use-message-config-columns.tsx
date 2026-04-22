@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { useQuery } from "@connectrpc/connect-query";
 import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import { listNoticeTypes } from "@scow/notification-protos/build/notice_type-NoticeTypeService_connectquery";
@@ -99,8 +87,50 @@ export function useMessageConfigColumns({
     form.setFieldsValue(parsedValues);
   };
 
+  const isIndeterminate = (type: NoticeType): boolean => {
+    const values = form.getFieldsValue();
+    if (!values.noticeConfigs) return false;
+
+    const allValues = Object.keys(values.noticeConfigs).map((messageType) => {
+      return values.noticeConfigs[messageType]?.[type];
+    });
+
+    const checkedCount = allValues.filter(Boolean).length;
+    return checkedCount > 0 && checkedCount < allValues.length;
+  };
+
   useEffect(() => {
     if (!data) return;
+
+    const dynamicNoticeTypeColumns = data?.noticeTypes
+      .map((type) => ({
+        title: (
+          <CheckAllSpecifiedNoticeType
+            checked={noticeTypeAllChecked[type] ?? false}
+            type={type}
+            handleCheckAll={handleCheckAll}
+            indeterminate={isIndeterminate(type)}
+          />
+        ),
+        dataIndex: type,
+        key: type,
+        render: (_: unknown, record: MessageConfig) => {
+          return (
+            <Form.Item
+              name={["noticeConfigs", record.messageType, type]}
+              valuePropName="checked"
+              noStyle
+            >
+              <Checkbox
+                onChange={(e) => handleCheckChange({
+                  e,
+                  checkedNoticeType: type,
+                })}
+              />
+            </Form.Item>
+          );
+        },
+      }));
 
     const columns: TableColumnsType<MessageConfig> = [
       {
@@ -131,38 +161,13 @@ export function useMessageConfigColumns({
           return template?.[scowLangId] || template?.default;
         },
       },
-      {
-        title: compLang.noticeType,
-        children: data?.noticeTypes.map((type) => ({
-          title: (
-            <CheckAllSpecifiedNoticeType
-              checked={noticeTypeAllChecked[type] ?? false}
-              type={type}
-              handleCheckAll={handleCheckAll}
-            />
-          ),
-          dataIndex: type,
-          key: type,
-          render: (_, record) => {
-            return (
-              <Form.Item
-                name={["noticeConfigs", record.messageType, type]}
-                valuePropName="checked"
-                noStyle
-              >
-                <Checkbox onChange={(e) => handleCheckChange({ e, checkedNoticeType: type })} />
-              </Form.Item>
-            );
-          },
-        })),
-      },
+      ...dynamicNoticeTypeColumns,
       {
         title: compLang.operation,
         dataIndex: "",
         key: "x",
         render: (_, record) => (
           <MessageConfigModalButton
-            // formNoticeConfigs={form.getFieldsValue().noticeConfigs}
             data={record}
             enabledNoticeTypes={data?.noticeTypes ?? []}
             lang={lang}
@@ -174,7 +179,7 @@ export function useMessageConfigColumns({
     ];
 
     setColumns(columns);
-  }, [data, ...Object.values(noticeTypeAllChecked)]);
+  }, [data, lang, scowLangId, noticeTypeAllChecked]);
 
   return columns;
 }

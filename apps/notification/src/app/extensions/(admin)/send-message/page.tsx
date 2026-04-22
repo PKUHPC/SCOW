@@ -16,8 +16,7 @@ const SendMessagePage = () => {
   return (
     <>
       <PageTitle titleText={language.sendMessage.pageTitle}></PageTitle>
-      <div style={{ fontSize: "16px" }}>{language.sendMessage.pageTip}</div>
-      <Divider style={{ margin: "10px 0" }} />
+      <Divider />
       <div style={{ marginTop: "40px" }}>
         <MessageForm lang={language} onSendSuccess={() => setRefreshFlag((v) => v + 1)} />
       </div>

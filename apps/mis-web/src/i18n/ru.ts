@@ -214,6 +214,7 @@ export default {
         permissionManagement: "Управление правами",
         appAuthorization: "Авторизация приложения",
         nodeMigration: "Миграция узлов",
+        notification: "Настройки уведомлений",
       },
       tenantManagement: {
         firstNav: "Тенант",

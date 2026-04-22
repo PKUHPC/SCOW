@@ -2,10 +2,10 @@
 
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { useQuery } from "@connectrpc/connect-query";
-import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { RoundedSearch } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { Message } from "@scow/notification-protos/build/message_pb";
 import { adminListMessages } from "@scow/notification-protos/build/message-MessageService_connectquery";
-import { Button, Descriptions, Drawer, Form, Space, Table, Tag, Typography } from "antd";
+import { Button, Descriptions, Drawer, Form, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import React, { useContext, useEffect, useState } from "react";
 import { FilterFormContainer } from "src/components/filter-form-container";
@@ -15,8 +15,14 @@ import { getNoticeTypeName } from "src/models/notice-type";
 import { formatDateTime } from "src/utils/datetime";
 import { getLanguage } from "src/utils/i18n";
 import { renderingMessage } from "src/utils/rendering-message";
+import { styled } from "styled-components";
 
 const { Text } = Typography;
+
+const SearchWrapper = styled.div`
+  width: 400px;
+  zoom: 0.85;
+`;
 
 interface AdminMessagesTableProps {
   lang: I18nDicType;
@@ -58,15 +64,6 @@ const MessageDetailDrawer: React.FC<MessageDetailDrawerProps> = ({
           {content?.content || language.sendMessage.adminMessagesTable.noContent}
         </div>
       ),
-    },
-    {
-      key: "messageType",
-      label: language.sendMessage.adminMessagesTable.messageType,
-      children: (() => {
-        const template = message.messageType?.titleTemplate;
-        return template?.[scowLangId] || template?.default ||
-          message.messageType?.type || language.sendMessage.adminMessagesTable.unknown;
-      })(),
     },
     {
       key: "time",
@@ -216,22 +213,23 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
         <Form<FilterForm>
           form={form}
           initialValues={{ keyword }}
-          onFinish={async () => {
-            const values = await form.validateFields();
-            setKeyword((values.keyword ?? "").trim());
-            setCurrentPage(1);
-          }}
         >
-          <Space>
-            <Form.Item label={language.sendMessage.adminMessagesTable.keywordLabel} name="keyword">
-              <Input
-                style={{ width: 260 }}
-                allowClear
+          <Form.Item name="keyword">
+            <SearchWrapper>
+              <RoundedSearch
                 placeholder={language.sendMessage.adminMessagesTable.keywordPlaceholder}
+                onSearch={
+                  async () => {
+                    const values = await form.validateFields();
+                    setKeyword((values.keyword ?? "").trim());
+                    setCurrentPage(1);
+                  }
+                }
+                size="large"
+                enterButton
               />
-            </Form.Item>
-            <Button type="primary" htmlType="submit">{language.sendMessage.adminMessagesTable.search}</Button>
-          </Space>
+            </SearchWrapper>
+          </Form.Item>
         </Form>
       </FilterFormContainer>
 

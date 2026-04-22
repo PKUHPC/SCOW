@@ -214,6 +214,7 @@ export default {
         permissionManagement: "权限管理",
         appAuthorization: "授权应用",
         nodeMigration: "节点迁移",
+        notification: "通知设置",
       },
       tenantManagement: {
         firstNav: "租户管理",

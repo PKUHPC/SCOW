@@ -22,6 +22,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@ant-design/colors": "7.2.0",
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
     "@bufbuild/protobuf": "2.10.0",

@@ -1,16 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
+import { generate } from "@ant-design/colors";
 import { PrimaryColor } from "@scow/config/build/ui";
 import { App, ConfigProvider, theme } from "antd";
 import deDElocale from "antd/locale/de_DE";
@@ -22,7 +11,8 @@ import koKRlocale from "antd/locale/ko_KR";
 import ptPTlocale from "antd/locale/pt_PT";
 import ruRUlocale from "antd/locale/ru_RU";
 import zhCNlocale from "antd/locale/zh_CN";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
+import { darkGray, lightGray } from "@scow/lib-web/build/styles/constants";
 import { ThemeProvider } from "styled-components";
 
 import { ScowParamsContext } from "../scow-params-provider";
@@ -32,11 +22,24 @@ type Props = React.PropsWithChildren<{
   primaryColor: PrimaryColor;
 }>;
 
-const StyledComponentsThemeProvider: React.FC<Props> = ({ children }) => {
+const StyledComponentsThemeProvider: React.FC<Props> = ({ children, color }) => {
+  const { scowDark } = useContext(ScowParamsContext);
   const { token } = theme.useToken();
+  const grayPalette = useMemo(() => (scowDark ? darkGray : lightGray), [scowDark]);
+  const primaryPalette = useMemo(
+    () => generate(color ?? token.colorPrimary),
+    [color, token.colorPrimary],
+  );
+  const styledTheme = useMemo(() => ({
+    token,
+    palette: {
+      primary: primaryPalette,
+      gray: grayPalette,
+    },
+  }), [grayPalette, primaryPalette, token]);
 
   return (
-    <ThemeProvider theme={{ token }}>
+    <ThemeProvider theme={styledTheme}>
       {children}
     </ThemeProvider>
   );
@@ -64,9 +67,13 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, co
           pt: ptPTlocale,
         } as Record<string, any>)[scowLangId] ?? enUSlocale
       }
-      theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-        colorText: scowDark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif" },
-      algorithm: scowDark ? theme.darkAlgorithm : undefined }}
+      theme={{
+        token: {
+          colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
+          colorText: scowDark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif"
+        },
+        algorithm: scowDark ? theme.darkAlgorithm : undefined
+      }}
     >
       <StyledComponentsThemeProvider color={currentPrimaryColor} primaryColor={primaryColor}>
         <App>

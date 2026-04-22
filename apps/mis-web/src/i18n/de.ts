@@ -214,6 +214,7 @@ export default {
         permissionManagement: "Berechtigungsverwaltung",
         appAuthorization: "Anwendung autorisieren",
         nodeMigration: "Knotenmigration",
+        notification: "Benachrichtigungseinstellungen",
       },
       tenantManagement: {
         firstNav: "Mandant",
