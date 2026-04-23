@@ -14,7 +14,7 @@ export const IconContainer = styled.div`
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  color: ${({ theme }) => theme.token.colorPrimary };
+  color: ${({ theme }) => theme.token.colorPrimary};
   &:hover {
     background: ${({ theme }) => theme.palette?.primary?.[0] ?? "#B6000314"};
   }
@@ -25,7 +25,7 @@ export const NoHoverIconContainer = styled.div`
   width: 22px;
   display: flex;
   justify-content: center;
-  color: ${({ theme }) => theme.token.colorPrimary };
+  color: ${({ theme }) => theme.token.colorPrimary};
 `;
 
 export const DisableIconContainer = styled.div`
@@ -757,3 +757,4 @@ export const PlatformIcon: React.ForwardRefExoticComponent<IconProps> = React.fo
     <Icon component={platformSVG} {...props} ref={ref} />
   ),
 );
+

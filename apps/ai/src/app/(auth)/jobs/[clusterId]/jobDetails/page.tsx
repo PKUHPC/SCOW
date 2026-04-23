@@ -2,7 +2,7 @@
 
 import type { DescriptionsProps, TableProps, TabsProps } from "antd";
 
-import { LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
+import { CheckOutlined, LoadingOutlined, ReloadOutlined } from "@ant-design/icons";
 import { TableWithSplitLines } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, DatePicker, Descriptions, Divider, Flex, Select, Space, Table, Tabs, Typography } from "antd";
@@ -15,6 +15,7 @@ import { join } from "path";
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { AppTableStatus } from "src/app/(auth)/jobs/jobList/AppSessionsTable";
+import { CopyIcon, IconContainer } from "src/icons/operationIcon";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
@@ -80,6 +81,14 @@ interface DetailTableDataType {
   value: string;
 }
 
+const CheckIconContainer = styled(IconContainer)`
+  cursor: default;
+  color: inherit;
+  &:hover {
+    background: transparent;
+  }
+`;
+
 const INVALID_DATE = "1970-01-01T00:00:00.000Z";
 const ALL = "all";
 const CUSTOM = "custom";
@@ -127,19 +136,19 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     firstTitle: string,
     secondTitle: string,
   ): TableProps<DetailTableDataType>["columns"] => [
-    {
-      title: firstTitle,
-      dataIndex: "name",
-      key: "name",
-      render: renderAutoWrapCell,
-    },
-    {
-      title: secondTitle,
-      dataIndex: "value",
-      key: "value",
-      render: renderAutoWrapCell,
-    },
-  ];
+      {
+        title: firstTitle,
+        dataIndex: "name",
+        key: "name",
+        render: renderAutoWrapCell,
+      },
+      {
+        title: secondTitle,
+        dataIndex: "value",
+        key: "value",
+        render: renderAutoWrapCell,
+      },
+    ];
 
   const jobId = searchParams?.get("jobId");
   const sessionId = searchParams?.get("sessionId");
@@ -523,34 +532,34 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     // 25.算法，只在应用和训练时展示
     ...(jobType === JobType.APP || jobType === JobType.TRAIN
       ? [
-          {
-            key: "25",
-            label: t(p("algorithm")),
-            children: (() => {
-              if ((jobDetails.extraDisplayInputs?.algorithmNames?.length ?? 0) > 0) {
-                return jobDetails.extraDisplayInputs?.algorithmNames?.join("；  ");
-              } else {
-                return "-";
-              }
-            })(),
-          },
-        ]
+        {
+          key: "25",
+          label: t(p("algorithm")),
+          children: (() => {
+            if ((jobDetails.extraDisplayInputs?.algorithmNames?.length ?? 0) > 0) {
+              return jobDetails.extraDisplayInputs?.algorithmNames?.join("；  ");
+            } else {
+              return "-";
+            }
+          })(),
+        },
+      ]
       : []),
     // 26.数据集, 只在应用和训练时展示
     ...(jobType === JobType.APP || jobType === JobType.TRAIN
       ? [
-          {
-            key: "26",
-            label: t(p("dataset")),
-            children: (() => {
-              if ((jobDetails.extraDisplayInputs?.datasetNames?.length ?? 0) > 0) {
-                return jobDetails.extraDisplayInputs?.datasetNames?.join("；  ");
-              } else {
-                return "-";
-              }
-            })(),
-          },
-        ]
+        {
+          key: "26",
+          label: t(p("dataset")),
+          children: (() => {
+            if ((jobDetails.extraDisplayInputs?.datasetNames?.length ?? 0) > 0) {
+              return jobDetails.extraDisplayInputs?.datasetNames?.join("；  ");
+            } else {
+              return "-";
+            }
+          })(),
+        },
+      ]
       : []),
     // 27.挂载点
     {
@@ -637,56 +646,80 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     // 30.训练作业时，TensorBoard地址；推理作业：推理服务地址; 其他空值占位
     ...(jobType === JobType.TRAIN
       ? [
-          {
-            key: "30",
-            label: "TensorBoard",
-            children: (() => {
-              const node = jobDetails.tensorBoardInfo?.node;
-              const port = jobDetails.tensorBoardInfo?.port;
-              if (node && port) {
-                // 复用应用连接中的absolute代理
-                const pathname = join("/api/proxy", clusterId, "absolute", node, port.toString()) + "/";
-                return (
-                  <Link href={pathname} target="_blank">
-                    {t(p("view"))}
-                  </Link>
-                );
-              }
-              return "-";
-            })(),
-          },
-        ]
+        {
+          key: "30",
+          label: "TensorBoard",
+          children: (() => {
+            const node = jobDetails.tensorBoardInfo?.node;
+            const port = jobDetails.tensorBoardInfo?.port;
+            if (node && port) {
+              // 复用应用连接中的absolute代理
+              const pathname = join("/api/proxy", clusterId, "absolute", node, port.toString()) + "/";
+              return (
+                <Link href={pathname} target="_blank">
+                  {t(p("view"))}
+                </Link>
+              );
+            }
+            return "-";
+          })(),
+        },
+      ]
       : jobType === JobType.INFER
         ? [
-            {
-              key: "30",
-              label: t(p("inferServiceAddress")),
-              children: (() => {
-                if (jobType === JobType.INFER) {
-                  const webHost = window.location.hostname;
-                  const host = jobDetails.host;
+          {
+            key: "30",
+            label: t(p("inferServiceAddress")),
+            children: (() => {
 
-                  if (!jobDetails.port) {
-                    return "-";
-                  }
+              const webHost = window.location.hostname;
+              const host = jobDetails.host;
 
-                  // 如果没有host，默认在scow节点转发
-                  if (!host) {
-                    return `${webHost}:${jobDetails.port}`;
-                  }
-
-                  return `${host}:${jobDetails.port}`;
-                }
-              })(),
-            },
-          ]
+              if (!jobDetails.port) {
+                return "-";
+              }
+              // 如果没有host，默认在scow节点转发
+              const targetHost = host ?? webHost;
+              const inferServiceAddress = `${targetHost}:${jobDetails.port}`;
+              const inferServiceUrl = `${window.location.protocol}//${inferServiceAddress}`;
+              return (
+                <Typography.Link
+                  href={inferServiceUrl}
+                  target="_blank"
+                  // noopener: 防止新打开的页面通过 window.opener 访问原页面的控制权，避免恶意网站篡改原页面
+                  // noreferrer: 隐藏来源页面的引用信息（Referer Header），同时包含 noopener 的效果
+                  rel="noopener noreferrer"
+                  copyable={{
+                    text: inferServiceAddress,
+                    tooltips: t("button.copyButton"),
+                    icon: [
+                      <CopyIcon key="copy" />,
+                      <CheckIconContainer key="success">
+                        <CheckOutlined style={{ fontSize: 13 }} />
+                      </CheckIconContainer>
+                    ],
+                  }}
+                >
+                  <span style={{
+                    textDecoration: "underline",
+                    textUnderlineOffset: 2,
+                    marginRight: 8
+                  }}>
+                    {inferServiceAddress}
+                  </span>
+                </Typography.Link>
+              );
+            }
+            )(),
+          },
+        ]
         : [
-            {
-              key: "30",
-              label: "",
-              children: "",
-            },
-          ]),
+          {
+            key: "30",
+            label: "",
+            children: "",
+          },
+        ]),
   ];
 
   const eventColumns: TableProps<EventDataType>["columns"] = [
@@ -754,87 +787,87 @@ export default function Page(props: { params: Promise<{ clusterId: string }> }) 
     },
     ...(jobType !== JobType.INFER
       ? [
-          {
-            key: "2",
-            label: t(p("jobEventsTab")),
-            children: (
-              <Table<EventDataType>
-                columns={eventColumns}
-                dataSource={jobEventData}
-                pagination={{
-                  hideOnSinglePage: true,
-                  defaultPageSize: 4,
-                }}
-                scroll={{ y: 350 }}
-              />
-            ),
-          },
-        ]
+        {
+          key: "2",
+          label: t(p("jobEventsTab")),
+          children: (
+            <Table<EventDataType>
+              columns={eventColumns}
+              dataSource={jobEventData}
+              pagination={{
+                hideOnSinglePage: true,
+                defaultPageSize: 4,
+              }}
+              scroll={{ y: 350 }}
+            />
+          ),
+        },
+      ]
       : []),
     ...(grafanaEnabled
       ? [
-          {
-            key: "3",
-            label: t(p("monitor")),
-            children: (
-              <div style={{ maxHeight: "640px" }}>
-                <Flex justify="space-between" style={{ marginBottom: "20px" }}>
-                  <Flex justify="space-between" align="center" style={{ width: "600px" }}>
-                    <span>Pod: </span>
+        {
+          key: "3",
+          label: t(p("monitor")),
+          children: (
+            <div style={{ maxHeight: "640px" }}>
+              <Flex justify="space-between" style={{ marginBottom: "20px" }}>
+                <Flex justify="space-between" align="center" style={{ width: "600px" }}>
+                  <span>Pod: </span>
+                  <Select
+                    mode="multiple"
+                    placeholder={t(p("selectPods"))}
+                    defaultValue={[]}
+                    style={{ width: "100%", marginLeft: "20px" }}
+                    listHeight={200}
+                    maxTagCount={1}
+                    maxTagPlaceholder={(omittedValues) => `等${omittedValues.length + 1}个`}
+                    options={podListData.map((pod) => ({
+                      label: pod.podName,
+                      value: pod.podName,
+                    }))}
+                    onChange={(value) => {
+                      setSelectedMonitorPodIds(value);
+                    }}
+                  />
+                </Flex>
+                <Flex justify="space-between" align="center">
+                  <Flex justify="space-between" align="center" style={{ width: "300px" }}>
+                    <span style={{ minWidth: "70px" }}>{t(p("selectTime"))}:</span>
                     <Select
-                      mode="multiple"
-                      placeholder={t(p("selectPods"))}
-                      defaultValue={[]}
-                      style={{ width: "100%", marginLeft: "20px" }}
+                      placeholder={t(p("selectTime"))}
+                      value={monitorTime}
+                      style={{ width: "100%", marginRight: "20px" }}
                       listHeight={200}
-                      maxTagCount={1}
-                      maxTagPlaceholder={(omittedValues) => `等${omittedValues.length + 1}个`}
-                      options={podListData.map((pod) => ({
-                        label: pod.podName,
-                        value: pod.podName,
-                      }))}
-                      onChange={(value) => {
-                        setSelectedMonitorPodIds(value);
+                      options={MONITOR_TIME_OPTIONS}
+                      onChange={(v) => {
+                        monitorTimeUserTouchedRef.current = true;
+                        setMonitorTime(v);
+                        setMonitorAccurateTime(null);
                       }}
                     />
                   </Flex>
-                  <Flex justify="space-between" align="center">
-                    <Flex justify="space-between" align="center" style={{ width: "300px" }}>
-                      <span style={{ minWidth: "70px" }}>{t(p("selectTime"))}:</span>
-                      <Select
-                        placeholder={t(p("selectTime"))}
-                        value={monitorTime}
-                        style={{ width: "100%", marginRight: "20px" }}
-                        listHeight={200}
-                        options={MONITOR_TIME_OPTIONS}
-                        onChange={(v) => {
-                          monitorTimeUserTouchedRef.current = true;
-                          setMonitorTime(v);
-                          setMonitorAccurateTime(null);
-                        }}
-                      />
-                    </Flex>
-                    <DatePicker.RangePicker
-                      disabled={monitorTime !== CUSTOM}
-                      value={monitorAccurateTime}
-                      showTime
-                      placeholder={[t(p("startTime")), t(p("endTime"))]}
-                      allowClear={false}
-                      onChange={setMonitorAccurateTime}
-                    />
-                    <Button
-                      type="text"
-                      icon={<ReloadOutlined />}
-                      style={{ marginLeft: "20px" }}
-                      onClick={() => setReloadFlag(Date.now())}
-                    ></Button>
-                  </Flex>
+                  <DatePicker.RangePicker
+                    disabled={monitorTime !== CUSTOM}
+                    value={monitorAccurateTime}
+                    showTime
+                    placeholder={[t(p("startTime")), t(p("endTime"))]}
+                    allowClear={false}
+                    onChange={setMonitorAccurateTime}
+                  />
+                  <Button
+                    type="text"
+                    icon={<ReloadOutlined />}
+                    style={{ marginLeft: "20px" }}
+                    onClick={() => setReloadFlag(Date.now())}
+                  ></Button>
                 </Flex>
-                <MonitorGrid sources={monitorUrlArray}></MonitorGrid>
-              </div>
-            ),
-          },
-        ]
+              </Flex>
+              <MonitorGrid sources={monitorUrlArray}></MonitorGrid>
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 
