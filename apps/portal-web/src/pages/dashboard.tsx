@@ -41,7 +41,9 @@ const NotificationCol = styled(Col)`
 padding-bottom: 16px;
 `;
 
-const DashboardPageContent = styled.div``;
+const DashboardPageContent = styled.div`
+  flex: 1;
+`;
 
 export const DashboardPage: NextPage = requireAuth(() => true)(() => {
   const userStore = useStore(UserStore);

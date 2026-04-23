@@ -1,7 +1,7 @@
 import { DisplayModeContext } from "@scow/lib-web/build/layouts/DisplayModeContext";
 import { compareWithUndefined } from "@scow/lib-web/build/utils/dashboard";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { SummaryPartitionInfo,SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
+import { SummaryPartitionInfo, SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -293,10 +293,8 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
           />
         </Table>
       </Container>
-
     ) : (
       <DashboardSection
-        style={{ marginBottom: "16px" }}
         title={t(p("platformOverview"))}
       >
         {t(p("contact"))}

@@ -16,7 +16,9 @@ import { NotificationCard } from "./NotificationCard";
 import { OverviewTable } from "./OverviewTable";
 import { QuickEntry } from "./QuickEntry";
 
-const DashboardPageContent = styled.div``;
+const DashboardPageContent = styled.div`
+  flex: 1;
+`;
 
 interface ClusterPartitionInfo extends SummaryPartitionInfo {
   clusterId: string;

@@ -1,6 +1,6 @@
 import { Card, Col, Row, Spin, Tabs } from "antd";
 import { NextPage } from "next";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Head } from "src/components/head";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AllowedChipIdType, DeviceCardsData, DevicesMap } from "src/models/device";
@@ -9,6 +9,11 @@ import { AppSessionsTable } from "src/pageComponents/jupyter/AppSessionsTable";
 import { JobsTable } from "src/pageComponents/quantum/JobsTable";
 import { getGateFidelities, mapDeviceStateToDisplayState } from "src/utils/chip";
 import { trpc } from "src/utils/trpc";
+import { styled } from "styled-components";
+
+const DashboardPageContent = styled.div`
+  flex: 1;
+`;
 
 export const DashboardPage: NextPage = () => {
   const t = useI18nTranslateToString();
@@ -51,7 +56,7 @@ export const DashboardPage: NextPage = () => {
   }, [data, languageId]);
 
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <DashboardPageContent>
       <Head title={t(p("title"))} />
       <Card style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 18, marginBottom: 16, marginTop: -4 }}>{t(p("device"))}</h2>
@@ -99,7 +104,7 @@ export const DashboardPage: NextPage = () => {
         >
         </Tabs>
       </Card>
-    </div>
+    </DashboardPageContent>
   );
 };
 

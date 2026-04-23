@@ -4,7 +4,9 @@ const FooterContainer = styled.div`
   display: flex;
   justify-content: center;
   color: rgb(160, 174, 192);
-  margin-bottom: 12px;
+  padding-top: 16px;
+  margin-bottom: -10px;
+  margin-top: auto;
 `;
 
 interface Props {
@@ -13,7 +15,6 @@ interface Props {
 }
 
 export const Footer: React.FC<Props> = ({ text, versionTag }) => {
-
   return (
     <>
       {

@@ -38,8 +38,10 @@ const Content = styled(Layout.Content) <{ $isDashboard: boolean }>`
   margin: ${(props) => props.$isDashboard ? "8px 8px 0px" : "8px"};
   padding: 16px;
   flex: 1;
+  display: ${(props) => props.$isDashboard ? "flex" : "block"};
+  flex-direction: column;
   background: ${({ theme }) => theme.token.colorBgLayout};
-  max-height: ${(props) => props.$isDashboard ? "" : "calc(100vh - 78px)"};
+  max-height: calc(100vh - 78px);
   overflow-y: auto;
   .ant-table-wrapper .ant-table {
     scrollbar-color: auto !important;
@@ -162,8 +164,8 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         <ContentPart>
           <Content $isDashboard={router.pathname === "/dashboard"}>
             {children}
+            {router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : ""}
           </Content>
-          {router.pathname === "/dashboard" ? <Footer text={footerText} versionTag={versionTag} /> : ""}
         </ContentPart>
       </StyledLayout>
     </Root>
