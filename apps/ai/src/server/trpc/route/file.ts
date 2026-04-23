@@ -748,12 +748,17 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
       }
 
+      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [path], isPlatformAdmin);
+
       try {
         const client = getScowdClient(clusterId);
         await client.file.completeMultipartUpload({
           userId: user.identityId,
           path,
           name,
+          noCheckPermission,
         });
 
         subLogger.info("Complete multipart upload completed successfully");
