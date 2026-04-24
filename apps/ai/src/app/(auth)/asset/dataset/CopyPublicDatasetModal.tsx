@@ -1,6 +1,9 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal } from "antd";
+import { App, Form } from "antd";
 import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -20,15 +23,13 @@ export interface Props {
 }
 
 interface FormFields {
-  versionName: string,
-  versionDescription?: string,
-  targetPath: string,
+  versionName: string;
+  versionDescription?: string;
+  targetPath: string;
   targetDatasetName: string;
 }
 
-export const CopyPublicDatasetModal: React.FC<Props> = (
-  { open, onClose, data, datasetId, datasetName, cluster },
-) => {
+export const CopyPublicDatasetModal: React.FC<Props> = ({ open, onClose, data, datasetId, datasetName, cluster }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.copyPublicDatasetModal.");
   const pCommon = prefix("common.");
@@ -77,9 +78,10 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 120 : 160;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={t(p("copy"))}
       open={open}
       onOk={form.submit}
@@ -92,6 +94,8 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -103,13 +107,9 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
         }}
         initialValues={data}
       >
-        <Form.Item
-          label={t(p("sourceName"))}
-        >
-          {datasetName}
-        </Form.Item>
-        <Form.Item
-          label={t(p("targetName"))}
+        <CustomFormItem label={renderLabel(t(p("sourceName")))}>{datasetName}</CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("targetName")))}
           name="targetDatasetName"
           rules={[
             { required: true },
@@ -118,15 +118,13 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
           ]}
           initialValue={`${datasetName}`}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item
-          label={t(p("cluster"))}
-        >
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("cluster")))}>
           {getI18nConfigCurrentText(cluster?.name, languageId)}
-        </Form.Item>
-        <Form.Item
-          label={t(p("versionName"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
             { required: true },
@@ -134,33 +132,27 @@ export const CopyPublicDatasetModal: React.FC<Props> = (
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item label={t(p("versionDescription"))} name="versionDescription">
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item
-          label={t(p("address"))}
-          name="targetPath"
-          rules={[{ required: true }]}
-        >
-          <TrimInput
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("versionDescription")))} name="versionDescription">
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("address")))} name="targetPath" rules={[{ required: true }]}>
+          <RoundedInput
             disabled={true}
             suffix={
-              (
-                <FileSelectModal
-                  allowedFileType={["DIR"]}
-                  onSubmit={(path: string) => {
-                    form.setFields([{ name: "targetPath", value: path, touched: true }]);
-                    form.validateFields(["targetPath"]);
-                  }}
-                  clusterId={cluster?.id ?? ""}
-                />
-              )
+              <FileSelectModal
+                allowedFileType={["DIR"]}
+                onSubmit={(path: string) => {
+                  form.setFields([{ name: "targetPath", value: path, touched: true }]);
+                  form.validateFields(["targetPath"]);
+                }}
+                clusterId={cluster?.id ?? ""}
+              />
             }
           />
-        </Form.Item>
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

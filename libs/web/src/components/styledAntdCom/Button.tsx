@@ -10,14 +10,19 @@ const WaveDisabledButton = forwardRef<HTMLButtonElement, ButtonProps>((props, re
 
 WaveDisabledButton.displayName = "WaveDisabledButton";
 
-export const RoundedButton = styled(WaveDisabledButton)<{
+export interface RoundedButtonOwnProps {
   $selected?: boolean;
   $width?: string;
   $height?: string;
   $color?: string;
-}>`
+}
+
+// 完整 Props 类型 = Ant Design ButtonProps + RoundedButton 专属 Props
+export type RoundedButtonProps = ButtonProps & RoundedButtonOwnProps;
+
+export const RoundedButton = styled(WaveDisabledButton)<RoundedButtonOwnProps>`
   ${({ $width }) => ($width ? `width: ${$width};` : "")}
-  height: ${({ $height }) => $height ?? "36px"};
+  height: ${({ $height }) => $height ?? "36px"} !important;
   font-size: 14px;
   line-height: 22px;
   padding: 7px 24px;

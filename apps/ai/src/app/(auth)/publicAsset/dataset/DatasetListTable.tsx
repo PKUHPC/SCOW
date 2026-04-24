@@ -1,12 +1,14 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Button, Form, Input, Modal, Select, Space, Table, Tooltip } from "antd";
+import { App, Button, Form, Modal, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateEditDatasetModal } from "src/components/assets/dataset/CreateEditDatasetModal";
 import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
+import { TableExpandIcon } from "src/components/assets/TableExpandIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
@@ -19,6 +21,7 @@ import { AppRouter } from "src/server/trpc/router";
 import { formatDateTime } from "src/utils/datetime";
 import { trpc } from "src/utils/trpc";
 
+import { PublicAssetTableContainer } from "../common";
 import { DatasetVersionList } from "./DatasetVersionList";
 
 interface Props {
@@ -35,9 +38,9 @@ const FilterTypeForKeys = {
 type FilterTypeKeys = Extract<keyof typeof FilterTypeForKeys, string>;
 
 interface FilterForm {
-  cluster?: Cluster | undefined,
-  type?: FilterTypeKeys | undefined,
-  nameOrDesc?: string | undefined,
+  cluster?: Cluster | undefined;
+  type?: FilterTypeKeys | undefined;
+  nameOrDesc?: string | undefined;
 }
 
 interface PageInfo {
@@ -66,11 +69,11 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
   } as Record<string, string>;
 
   const SceneTypeText: Record<string, string> = {
-    CWS:t(pModel("ces")),
-    DA:t(pModel("da")),
-    IC:t(pModel("ic")),
-    OD:t(pModel("od")),
-    OTHER:t(pModel("other")),
+    CWS: t(pModel("ces")),
+    DA: t(pModel("da")),
+    IC: t(pModel("ic")),
+    OD: t(pModel("od")),
+    OTHER: t(pModel("other")),
   };
   const DatasetTypeTextTrans: Record<string, string> = {
     IMAGE: getDatasetTexts(t).image,
@@ -95,7 +98,11 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
 
   const { data, refetch, isFetching, error } = trpc.dataset.list.useQuery({
-    ...pageInfo, ...query, clusterId: query.cluster?.id, isPublic: "true", isPlatformOwned: true,
+    ...pageInfo,
+    ...query,
+    clusterId: query.cluster?.id,
+    isPublic: "true",
+    isPlatformOwned: true,
   }); // 保留isPublic获取已发布的数据集数量
   if (error) {
     message.error(t(p("notFound")));
@@ -116,33 +123,34 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
     },
   });
 
-  const deleteDataset = useCallback(
-    (id: number) => {
-      confirm({
-        title: t(p("delete")),
-        onOk: async () => {
-          await deleteDatasetMutation.mutateAsync({ id, isPlatformOwned: true });
-        },
-      });
+  const deleteDataset = useCallback((id: number) => {
+    confirm({
+      title: t(p("delete")),
+      onOk: async () => {
+        await deleteDatasetMutation.mutateAsync({ id, isPlatformOwned: true });
+      },
+    });
+  }, []);
+
+  const getCurrentCluster = useCallback(
+    (clusterId: string | undefined) => {
+      if (clusterId) {
+        return clusters.find((c) => c.id === clusterId);
+      }
     },
-    [],
+    [clusters],
   );
 
-  const getCurrentCluster = useCallback((clusterId: string | undefined) => {
-    if (clusterId) {
-      return clusters.find((c) => c.id === clusterId);
-    }
-  }, [clusters]);
-
   return (
-    <div>
-      <FilterFormContainer style={{
-        display: "flex",
-        justifyContent: "space-between",
-        paddingLeft: 0,
-        paddingTop: 0,
-        marginLeft: "-2px",
-      }}
+    <PublicAssetTableContainer>
+      <FilterFormContainer
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          paddingLeft: 0,
+          paddingTop: 0,
+          marginLeft: "-2px",
+        }}
       >
         <Form<FilterForm>
           layout="inline"
@@ -158,7 +166,9 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
           <Form.Item label={t(p("cluster"))} name="cluster">
             <SingleClusterSelector
               allowClear={true}
-              onChange={(value) => { setQuery({ ...query, cluster: value }); }}
+              onChange={(value) => {
+                setQuery({ ...query, cluster: value });
+              }}
             />
           </Form.Item>
           <Form.Item label={t(p("type"))} name="type">
@@ -170,16 +180,15 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
               }}
               placeholder={t(p("selectType"))}
               defaultValue={FilterType.ALL}
-              options={
-                Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))}
+              options={Object.entries(FilterType).map(([key, value]) => ({ label: value, value: key }))}
             />
           </Form.Item>
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDesc"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {t("button.searchButton")}
+          </Button>
         </Form>
         <Space>
           <CreateDatasetModalButton
@@ -194,12 +203,14 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
         </Space>
       </FilterFormContainer>
       <Table
+        className="public-asset-list-table"
         rowKey="id"
         dataSource={data?.items}
         loading={isFetching}
         tableLayout="fixed"
         columns={[
-          { dataIndex: "name",
+          {
+            dataIndex: "name",
             title: t(p("name")),
             onCell: () => ({
               style: {
@@ -210,21 +221,35 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
               },
             }),
           },
-          { dataIndex: "clusterId", title: t(p("cluster")),
-            render: (_, r) =>
-              getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
-          { dataIndex: "type", title: t(p("datasetType")),
-            render: (_, r) => DatasetTypeTextTrans[r.type] },
-          { dataIndex: "description", title: t(p("description")) },
-          { dataIndex: "scene", title: t(p("scene")),
-            render: (_, r) => SceneTypeText[r.scene] },
-          { dataIndex: "versionsCount", title: t(p("versions")),
-            render: (_, r) => r.versionsCount },
-          { dataIndex: "versions", title: t(pCommon("publicVersions")),
-            render: (_, r) => r.versions.length },
-          { dataIndex: "updateTime", title: t(p("updatedTime")),
-            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-          { dataIndex: "action", title: t(p("action")),
+          {
+            dataIndex: "clusterId",
+            title: t(p("cluster")),
+            render: (_, r) => getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId,
+          },
+          { dataIndex: "type", title: t(p("datasetType")), render: (_, r) => DatasetTypeTextTrans[r.type] },
+          {
+            dataIndex: "description",
+            title: t(p("description")),
+            onCell: () => ({
+              style: {
+                maxWidth: 200,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              },
+            }),
+          },
+          { dataIndex: "scene", title: t(p("scene")), render: (_, r) => SceneTypeText[r.scene] },
+          { dataIndex: "versionsCount", title: t(p("versions")), render: (_, r) => r.versionsCount },
+          { dataIndex: "versions", title: t(pCommon("publicVersions")), render: (_, r) => r.versions.length },
+          {
+            dataIndex: "updateTime",
+            title: t(p("updatedTime")),
+            render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+          },
+          {
+            dataIndex: "action",
+            title: t(p("action")),
             render: (_: any, r: DatasetInterface) => {
               return (
                 <Space direction="horizontal">
@@ -255,9 +280,10 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
                     </Tooltip>
                   </EditDatasetModalButton>
                   <Tooltip title={t("button.deleteButton")}>
-                    <DeleteIcon onClick={() => {
-                      deleteDataset(r.id);
-                    }}
+                    <DeleteIcon
+                      onClick={() => {
+                        deleteDataset(r.id);
+                      }}
                     />
                   </Tooltip>
                 </Space>
@@ -265,31 +291,38 @@ export const DatasetListTable: React.FC<Props> = ({ clusters, currentClusterIds 
             },
           },
         ]}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: 10,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.count,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: 10,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.count,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         expandable={{
           expandedRowRender: (record) => {
             const cluster = getCurrentCluster(record.clusterId);
-            return cluster && (
-              <DatasetVersionList
-                datasets={data?.items ?? []}
-                datasetId={record.id}
-                datasetName={record.name}
-                cluster={cluster}
-              ></DatasetVersionList>
+            return (
+              cluster && (
+                <DatasetVersionList
+                  datasets={data?.items ?? []}
+                  datasetId={record.id}
+                  datasetName={record.name}
+                  cluster={cluster}
+                ></DatasetVersionList>
+              )
             );
           },
+          expandIcon: (props) => <TableExpandIcon {...props} />,
         }}
         scroll={{ x: true }}
       />
       {/* antd中modal组件 */}
       {confirmModalHolder}
-    </div>
+    </PublicAssetTableContainer>
   );
 };

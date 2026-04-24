@@ -1,3 +1,4 @@
+import type { InputNumberProps } from "antd";
 import { RuleObject } from "antd/lib/form/index";
 
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
@@ -65,7 +66,7 @@ export const createInterdependentValidator = <T>(
   },
 });
 
-export const inputNumberFloorConfig = {
-  formatter: (value: number | undefined) => `${Math.floor(value ?? 0)}`,
+export const inputNumberFloorConfig: InputNumberProps<number> = {
+  formatter: (value) => `${Math.floor(Number(value ?? 0))}`,
   parser: (value: string | undefined) => Math.floor(value ? +value : 0),
 };

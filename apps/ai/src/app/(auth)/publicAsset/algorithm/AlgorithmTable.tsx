@@ -1,11 +1,13 @@
 "use client";
 
 import { PlusOutlined } from "@ant-design/icons";
+import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Button, Form, Input, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Form, Modal, Select, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateAndEditAlgorithmModal } from "src/components/assets/algorithm/CreateAndEditAlgorithmModal";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
+import { TableExpandIcon } from "src/components/assets/TableExpandIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
@@ -16,12 +18,12 @@ import { Cluster } from "src/server/trpc/route/config";
 import { formatDateTime } from "src/utils/datetime";
 import { trpc } from "src/utils/trpc";
 
+import { PublicAssetTableContainer } from "../common";
 import { AlgorithmVersionList } from "./AlgorithmVersionList";
 
 interface Props {
   clusters: Cluster[];
 }
-
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FilterTypeForKeys = {
@@ -29,13 +31,12 @@ const FilterTypeForKeys = {
   ...AlgorithmTypeText,
 } as const;
 
-
 type FilterTypeKeys = keyof typeof FilterTypeForKeys;
 
 interface FilterForm {
-  framework?: FilterTypeKeys,
-  nameOrDesc?: string,
-  clusterId?: string,
+  framework?: FilterTypeKeys;
+  nameOrDesc?: string;
+  clusterId?: string;
 }
 
 interface PageInfo {
@@ -43,10 +44,11 @@ interface PageInfo {
   pageSize?: number;
 }
 
-const CreateAlgorithmModalButton =
-  ModalButton(CreateAndEditAlgorithmModal, { type: "primary", icon: <PlusOutlined /> });
-const EditAlgorithmModalButton =
-  ModalLink(CreateAndEditAlgorithmModal);
+const CreateAlgorithmModalButton = ModalButton(CreateAndEditAlgorithmModal, {
+  type: "primary",
+  icon: <PlusOutlined />,
+});
+const EditAlgorithmModalButton = ModalLink(CreateAndEditAlgorithmModal);
 const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 
 export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
@@ -58,37 +60,36 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
   const FilterType = {
     ALL: getAlgorithmTexts(t).all,
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   } as const;
 
   const AlgorithmTypeTextTrans = {
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   };
 
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
 
-
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
       nameOrDesc: undefined,
       framework: undefined,
-      clusterId:undefined,
+      clusterId: undefined,
     };
   });
 
   const [form] = Form.useForm<FilterForm>();
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
 
-  const { data, isFetching, refetch, error } = trpc.algorithm.getAlgorithms.useQuery(
-    { ...pageInfo,
-      framework:query.framework === "ALL" ? undefined : query.framework,
-      nameOrDesc:query.nameOrDesc,
-      clusterId:query.clusterId,
-      isPublic: "true", // 保留获取已发布的算法数量
-      isPlatformOwned: true,
-    });
+  const { data, isFetching, refetch, error } = trpc.algorithm.getAlgorithms.useQuery({
+    ...pageInfo,
+    framework: query.framework === "ALL" ? undefined : query.framework,
+    nameOrDesc: query.nameOrDesc,
+    clusterId: query.clusterId,
+    isPublic: "true", // 保留获取已发布的算法数量
+    isPlatformOwned: true,
+  });
   if (error) {
     message.error(t(p("notFound")));
   }
@@ -100,26 +101,29 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
     },
     onError() {
       message.error(t(p("deleteFailed")));
-    } });
-
-  const deleteAlgorithm = useCallback(
-    (id: number) => {
-      confirm({
-        title: t(p("delete")),
-        onOk:async () => {
-          await deleteAlgorithmMutation.mutateAsync({ id, isPlatformOwned: true });
-        },
-      });
     },
-    [],
+  });
+
+  const deleteAlgorithm = useCallback((id: number) => {
+    confirm({
+      title: t(p("delete")),
+      onOk: async () => {
+        await deleteAlgorithmMutation.mutateAsync({ id, isPlatformOwned: true });
+      },
+    });
+  }, []);
+
+  const getCurrentCluster = useCallback(
+    (clusterId: string) => {
+      return clusters.find((c) => c.id === clusterId);
+    },
+    [clusters],
   );
 
-  const getCurrentCluster = useCallback((clusterId: string) => {
-    return clusters.find((c) => c.id === clusterId);
-  }, [clusters]);
-
   const columns: TableColumnsType<AlgorithmInterface> = [
-    { dataIndex: "name", title: t(p("name")),
+    {
+      dataIndex: "name",
+      title: t(p("name")),
       onCell: () => ({
         style: {
           maxWidth: 200,
@@ -129,24 +133,34 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
         },
       }),
     },
-    { dataIndex: "clusterId", title: t(p("cluster")),
-      render: (_, r) =>
-        getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
-    { dataIndex: "framework", title: t(p("framework")), render:(framework: Framework) =>
-      AlgorithmTypeTextTrans[framework] },
+    {
+      dataIndex: "clusterId",
+      title: t(p("cluster")),
+      render: (_, r) => getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId,
+    },
+    {
+      dataIndex: "framework",
+      title: t(p("framework")),
+      render: (framework: Framework) => AlgorithmTypeTextTrans[framework],
+    },
     { dataIndex: "description", title: t(p("description")) },
-    { dataIndex: "versionsCount", title: t(p("versions")),
-      render: (_, r) => r.versionsCount },
-    { dataIndex: "versions", title: t(pCommon("publicVersions")),
-      render: (_, r) => r.versions.length },
-    { dataIndex: "updateTime", title: t(p("updatedTime")),
-      render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-    { dataIndex: "action", title:  t(p("action")),
+    { dataIndex: "versionsCount", title: t(p("versions")), render: (_, r) => r.versionsCount },
+    { dataIndex: "versions", title: t(pCommon("publicVersions")), render: (_, r) => r.versions.length },
+    {
+      dataIndex: "updateTime",
+      title: t(p("updatedTime")),
+      render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+    },
+    {
+      dataIndex: "action",
+      title: t(p("action")),
       render: (_: any, r: AlgorithmInterface) => {
         return (
           <Space direction="horizontal">
             <CreateVersionModalButton
-              refetch={ () => { refetch(); }}
+              refetch={() => {
+                refetch();
+              }}
               algorithmId={r.id}
               algorithmName={r.name}
               cluster={getCurrentCluster(r.clusterId)}
@@ -161,11 +175,11 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
               refetch={refetch}
               isPlatformOwned={true}
               editData={{
-                cluster:getCurrentCluster(r.clusterId),
-                algorithmName:r.name,
-                algorithmId:r.id,
-                algorithmFramework:r.framework,
-                algorithmDescription:r.description,
+                cluster: getCurrentCluster(r.clusterId),
+                algorithmName: r.name,
+                algorithmId: r.id,
+                algorithmFramework: r.framework,
+                algorithmDescription: r.description,
               }}
             >
               <Tooltip title={t("button.editButton")}>
@@ -173,9 +187,10 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
               </Tooltip>
             </EditAlgorithmModalButton>
             <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon onClick={() => {
-                deleteAlgorithm(r.id);
-              }}
+              <DeleteIcon
+                onClick={() => {
+                  deleteAlgorithm(r.id);
+                }}
               />
             </Tooltip>
           </Space>
@@ -185,14 +200,15 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
   ];
 
   return (
-    <div>
-      <FilterFormContainer style={{
-        display: "flex",
-        justifyContent: "space-between",
-        paddingLeft: 0,
-        paddingTop: 0,
-        marginLeft: "-2px",
-      }}
+    <PublicAssetTableContainer>
+      <FilterFormContainer
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          paddingLeft: 0,
+          paddingTop: 0,
+          marginLeft: "-2px",
+        }}
       >
         <Form<FilterForm>
           layout="inline"
@@ -209,7 +225,7 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
             <SingleClusterSelector
               allowClear={true}
               onChange={(val) => {
-                setQuery({ ...query, clusterId:val.id });
+                setQuery({ ...query, clusterId: val.id });
               }}
             />
           </Form.Item>
@@ -218,22 +234,19 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
               style={{ minWidth: "120px" }}
               allowClear
               onChange={(val: FilterTypeKeys) => {
-                setQuery({ ...query, framework:val });
+                setQuery({ ...query, framework: val });
               }}
               placeholder={t(p("selectFramework"))}
               defaultValue={"ALL"}
-              options={
-                Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))
-              }
-            >
-            </Select>
+              options={Object.entries(FilterType).map(([key, value]) => ({ label: value, value: key }))}
+            ></Select>
           </Form.Item>
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDesc"))} />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit"> {t("button.searchButton")} </Button>
-          </Form.Item>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {t("button.searchButton")}
+          </Button>
         </Form>
         <Space>
           <CreateAlgorithmModalButton refetch={refetch} isPlatformOwned={true}>
@@ -242,6 +255,7 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
         </Space>
       </FilterFormContainer>
       <Table
+        className="public-asset-list-table"
         rowKey="id"
         dataSource={data?.items}
         loading={isFetching}
@@ -258,20 +272,23 @@ export const AlgorithmTable: React.FC<Props> = ({ clusters }) => {
         expandable={{
           expandedRowRender: (record) => {
             const cluster = getCurrentCluster(record.clusterId);
-            return cluster && (
-              <AlgorithmVersionList
-                algorithms={data?.items ?? []}
-                algorithmName={record.name}
-                algorithmId={record.id}
-                cluster={cluster}
-              ></AlgorithmVersionList>
+            return (
+              cluster && (
+                <AlgorithmVersionList
+                  algorithms={data?.items ?? []}
+                  algorithmName={record.name}
+                  algorithmId={record.id}
+                  cluster={cluster}
+                ></AlgorithmVersionList>
+              )
             );
           },
+          expandIcon: (props) => <TableExpandIcon {...props} />,
         }}
         scroll={{ x: true }}
       />
       {/* antd中modal组件 */}
       {confirmModalHolder}
-    </div>
+    </PublicAssetTableContainer>
   );
 };

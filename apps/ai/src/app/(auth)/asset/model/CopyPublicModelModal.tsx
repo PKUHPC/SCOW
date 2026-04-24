@@ -1,6 +1,9 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal } from "antd";
+import { App, Form } from "antd";
 import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -20,15 +23,21 @@ export interface Props {
 }
 
 interface FormFields {
-  targetModelName: string
-  versionName: string,
-  versionDescription?: string,
-  path: string,
+  targetModelName: string;
+  versionName: string;
+  versionDescription?: string;
+  path: string;
 }
 
-export const CopyPublicModelModal: React.FC<Props> = (
-  { open, onClose, modelId, modelVersionId, cluster, modelName, data },
-) => {
+export const CopyPublicModelModal: React.FC<Props> = ({
+  open,
+  onClose,
+  modelId,
+  modelVersionId,
+  cluster,
+  modelName,
+  data,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.copyPublicModelModal.");
   const pCommon = prefix("common.");
@@ -64,9 +73,6 @@ export const CopyPublicModelModal: React.FC<Props> = (
     },
   });
 
-
-
-
   const onOk = async () => {
     const { targetModelName, versionName, versionDescription, path } = await form.validateFields();
     copyMutation.mutate({
@@ -80,9 +86,10 @@ export const CopyPublicModelModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 120 : 160;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={t(p("copy"))}
       open={open}
       onOk={form.submit}
@@ -96,6 +103,8 @@ export const CopyPublicModelModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -106,13 +115,9 @@ export const CopyPublicModelModal: React.FC<Props> = (
           },
         }}
       >
-        <Form.Item
-          label={t(p("sourceName"))}
-        >
-          {modelName}
-        </Form.Item>
-        <Form.Item
-          label={t(p("targetName"))}
+        <CustomFormItem label={renderLabel(t(p("sourceName")))}>{modelName}</CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("targetName")))}
           name="targetModelName"
           rules={[
             { required: true },
@@ -121,15 +126,13 @@ export const CopyPublicModelModal: React.FC<Props> = (
           ]}
           initialValue={`${modelName}`}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item
-          label={t(p("cluster"))}
-        >
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("cluster")))}>
           {getI18nConfigCurrentText(cluster?.name, languageId)}
-        </Form.Item>
-        <Form.Item
-          label={t(p("versionName"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
             { required: true },
@@ -138,36 +141,34 @@ export const CopyPublicModelModal: React.FC<Props> = (
           ]}
           initialValue={data?.versionName}
         >
-          <TrimInput />
-        </Form.Item>
-        <Form.Item label={t(p("versionDescription"))} name="versionDescription" initialValue={data.versionDescription}>
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item label={t(p("algorithmVersion"))} name="algorithmVersion">
-          {data.algorithmVersion}
-        </Form.Item>
-        <Form.Item
-          label={t(p("address"))}
-          name="path"
-          rules={[{ required: true }]}
+          <RoundedInput />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionDescription")))}
+          name="versionDescription"
+          initialValue={data.versionDescription}
         >
-          <TrimInput
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("algorithmVersion")))} name="algorithmVersion">
+          {data.algorithmVersion}
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("address")))} name="path" rules={[{ required: true }]}>
+          <RoundedInput
             disabled={true}
             suffix={
-              (
-                <FileSelectModal
-                  allowedFileType={["DIR"]}
-                  onSubmit={(path: string) => {
-                    form.setFields([{ name: "path", value: path, touched: true }]);
-                    form.validateFields(["path"]);
-                  }}
-                  clusterId={cluster?.id ?? ""}
-                />
-              )
+              <FileSelectModal
+                allowedFileType={["DIR"]}
+                onSubmit={(path: string) => {
+                  form.setFields([{ name: "path", value: path, touched: true }]);
+                  form.validateFields(["path"]);
+                }}
+                clusterId={cluster?.id ?? ""}
+              />
             }
           />
-        </Form.Item>
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

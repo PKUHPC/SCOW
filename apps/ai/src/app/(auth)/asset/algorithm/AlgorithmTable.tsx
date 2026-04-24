@@ -7,6 +7,7 @@ import { App, Button, Form, Modal, Select, Space, Table, TableColumnsType, Toolt
 import { useCallback, useState } from "react";
 import { CreateAndEditAlgorithmModal } from "src/components/assets/algorithm/CreateAndEditAlgorithmModal";
 import { CreateAndEditVersionModal } from "src/components/assets/algorithm/CreateAndEditVersionModal";
+import { TableExpandIcon } from "src/components/assets/TableExpandIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
@@ -28,20 +29,18 @@ interface Props {
   clusters: Cluster[];
 }
 
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const FilterTypeForKeys = {
   ALL: "全部",
   ...AlgorithmTypeText,
 } as const;
 
-
 type FilterTypeKeys = keyof typeof FilterTypeForKeys;
 
 interface FilterForm {
-  framework?: FilterTypeKeys,
-  nameOrDesc?: string,
-  clusterId?: string,
+  framework?: FilterTypeKeys;
+  nameOrDesc?: string;
+  clusterId?: string;
 }
 
 interface PageInfo {
@@ -49,10 +48,11 @@ interface PageInfo {
   pageSize?: number;
 }
 
-const CreateAlgorithmModalButton =
-  ModalButton(CreateAndEditAlgorithmModal, { type: "primary", icon: <PlusOutlined /> });
-const EditAlgorithmModalButton =
-  ModalLink(CreateAndEditAlgorithmModal);
+const CreateAlgorithmModalButton = ModalButton(CreateAndEditAlgorithmModal, {
+  type: "primary",
+  icon: <PlusOutlined />,
+});
+const EditAlgorithmModalButton = ModalLink(CreateAndEditAlgorithmModal);
 const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 
 export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
@@ -66,36 +66,35 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const FilterType = {
     ALL: getAlgorithmTexts(t).all,
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   } as const;
 
   const AlgorithmTypeTextTrans = {
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   };
 
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
 
-
   const [query, setQuery] = useState<FilterForm>(() => {
     return {
       nameOrDesc: undefined,
       framework: undefined,
-      clusterId:undefined,
+      clusterId: undefined,
     };
   });
 
   const [form] = Form.useForm<FilterForm>();
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
 
-  const { data, isFetching, refetch, error } = trpc.algorithm.getAlgorithms.useQuery(
-    { ...pageInfo,
-      framework:query.framework === "ALL" ? undefined : query.framework,
-      nameOrDesc:query.nameOrDesc,
-      clusterId:query.clusterId,
-      isPublic: parseBooleanParam(isPublic),
-    });
+  const { data, isFetching, refetch, error } = trpc.algorithm.getAlgorithms.useQuery({
+    ...pageInfo,
+    framework: query.framework === "ALL" ? undefined : query.framework,
+    nameOrDesc: query.nameOrDesc,
+    clusterId: query.clusterId,
+    isPublic: parseBooleanParam(isPublic),
+  });
   if (error) {
     message.error(t(p("notFound")));
   }
@@ -107,26 +106,29 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
     onError() {
       message.error(t(p("deleteFailed")));
-    } });
-
-  const deleteAlgorithm = useCallback(
-    (id: number) => {
-      confirm({
-        title: t(p("delete")),
-        onOk:async () => {
-          await deleteAlgorithmMutation.mutateAsync({ id });
-        },
-      });
     },
-    [],
+  });
+
+  const deleteAlgorithm = useCallback((id: number) => {
+    confirm({
+      title: t(p("delete")),
+      onOk: async () => {
+        await deleteAlgorithmMutation.mutateAsync({ id });
+      },
+    });
+  }, []);
+
+  const getCurrentCluster = useCallback(
+    (clusterId: string) => {
+      return clusters.find((c) => c.id === clusterId);
+    },
+    [clusters],
   );
 
-  const getCurrentCluster = useCallback((clusterId: string) => {
-    return clusters.find((c) => c.id === clusterId);
-  }, [clusters]);
-
   const columns: TableColumnsType<AlgorithmInterface> = [
-    { dataIndex: "name", title: t(p("name")),
+    {
+      dataIndex: "name",
+      title: t(p("name")),
       onCell: () => ({
         style: {
           maxWidth: 200,
@@ -136,12 +138,19 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
         },
       }),
     },
-    { dataIndex: "clusterId", title: t(p("cluster")),
-      render: (_, r) =>
-        getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
-    { dataIndex: "framework", title: t(p("framework")), render:(framework: Framework) =>
-      AlgorithmTypeTextTrans[framework] },
-    { dataIndex: "description", title: t(p("description")),
+    {
+      dataIndex: "clusterId",
+      title: t(p("cluster")),
+      render: (_, r) => getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId,
+    },
+    {
+      dataIndex: "framework",
+      title: t(p("framework")),
+      render: (framework: Framework) => AlgorithmTypeTextTrans[framework],
+    },
+    {
+      dataIndex: "description",
+      title: t(p("description")),
       onCell: () => ({
         style: {
           maxWidth: 200,
@@ -151,66 +160,83 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
         },
       }),
     },
-    { dataIndex: "versions", title: t(p("versions")),
+    {
+      dataIndex: "versions",
+      title: t(p("versions")),
       render: (_, r) => {
         return r.versions.length;
-      } },
-    ...(isPublic
-      ? [{
-        dataIndex: "shareUser",
-        title: t(pCommon("publishUser")),
-        // @ts-ignore
-        render: (_, r) =>
-          r.isPlatformOwned ? (
-            <PlatformTag color={theme.token.colorPrimary}>
-              <span>{t(pCommon("platform"))}</span>
-              <PlatformIcon />
-            </PlatformTag>
-          ) : (
-            `${r.ownerName}（ID:${r.owner}）`
-          ),
-      } as const]
-      : []),
-    { dataIndex: "updateTime", title: t(p("updatedTime")),
-      render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-    ...!isPublic ? [{ dataIndex: "action", title:  t(p("action")),
-      render: (_: any, r: AlgorithmInterface) => {
-        return (
-          <Space direction="horizontal">
-            <CreateVersionModalButton
-              refetch={ () => { refetch(); }}
-              algorithmId={r.id}
-              algorithmName={r.name}
-              cluster={getCurrentCluster(r.clusterId)}
-            >
-              <Tooltip title={t(p("createNewVersion"))}>
-                <CreateNewVersionIcon />
-              </Tooltip>
-            </CreateVersionModalButton>
-            <EditAlgorithmModalButton
-              refetch={refetch}
-              editData={{
-                cluster:getCurrentCluster(r.clusterId),
-                algorithmName:r.name,
-                algorithmId:r.id,
-                algorithmFramework:r.framework,
-                algorithmDescription:r.description,
-              }}
-            >
-              <Tooltip title={t("button.editButton")}>
-                <EditIcon />
-              </Tooltip>
-            </EditAlgorithmModalButton>
-            <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon onClick={() => {
-                deleteAlgorithm(r.id);
-              }}
-              />
-            </Tooltip>
-          </Space>
-        );
       },
-    }] : [],
+    },
+    ...(isPublic
+      ? [
+          {
+            dataIndex: "shareUser",
+            title: t(pCommon("publishUser")),
+            // @ts-ignore
+            render: (_, r) =>
+              r.isPlatformOwned ? (
+                <PlatformTag color={theme.token.colorPrimary}>
+                  <span>{t(pCommon("platform"))}</span>
+                  <PlatformIcon />
+                </PlatformTag>
+              ) : (
+                `${r.ownerName}（ID:${r.owner}）`
+              ),
+          } as const,
+        ]
+      : []),
+    {
+      dataIndex: "updateTime",
+      title: t(p("updatedTime")),
+      render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+    },
+    ...(!isPublic
+      ? [
+          {
+            dataIndex: "action",
+            title: t(p("action")),
+            render: (_: any, r: AlgorithmInterface) => {
+              return (
+                <Space direction="horizontal">
+                  <CreateVersionModalButton
+                    refetch={() => {
+                      refetch();
+                    }}
+                    algorithmId={r.id}
+                    algorithmName={r.name}
+                    cluster={getCurrentCluster(r.clusterId)}
+                  >
+                    <Tooltip title={t(p("createNewVersion"))}>
+                      <CreateNewVersionIcon />
+                    </Tooltip>
+                  </CreateVersionModalButton>
+                  <EditAlgorithmModalButton
+                    refetch={refetch}
+                    editData={{
+                      cluster: getCurrentCluster(r.clusterId),
+                      algorithmName: r.name,
+                      algorithmId: r.id,
+                      algorithmFramework: r.framework,
+                      algorithmDescription: r.description,
+                    }}
+                  >
+                    <Tooltip title={t("button.editButton")}>
+                      <EditIcon />
+                    </Tooltip>
+                  </EditAlgorithmModalButton>
+                  <Tooltip title={t("button.deleteButton")}>
+                    <DeleteIcon
+                      onClick={() => {
+                        deleteAlgorithm(r.id);
+                      }}
+                    />
+                  </Tooltip>
+                </Space>
+              );
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -239,7 +265,7 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
             <SingleClusterSelector
               allowClear={true}
               onChange={(val) => {
-                setQuery({ ...query, clusterId:val.id });
+                setQuery({ ...query, clusterId: val.id });
               }}
             />
           </Form.Item>
@@ -248,19 +274,19 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
               style={{ minWidth: "120px" }}
               allowClear
               onChange={(val: FilterTypeKeys) => {
-                setQuery({ ...query, framework:val });
+                setQuery({ ...query, framework: val });
               }}
               placeholder={t(p("selectFramework"))}
-              options={
-                Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))
-              }
-            >
-            </Select>
+              options={Object.entries(FilterType).map(([key, value]) => ({ label: value, value: key }))}
+            ></Select>
           </Form.Item>
           <Form.Item name="nameOrDesc">
             <Input allowClear placeholder={t(p("nameOrDesc"))} />
           </Form.Item>
-          <Button className="ant-form-item" type="primary" htmlType="submit"> {t("button.searchButton")} </Button>
+          <Button className="ant-form-item" type="primary" htmlType="submit">
+            {" "}
+            {t("button.searchButton")}{" "}
+          </Button>
         </Form>
         {!isPublic && (
           <Space>
@@ -286,16 +312,19 @@ export const AlgorithmTable: React.FC<Props> = ({ isPublic, clusters }) => {
         expandable={{
           expandedRowRender: (record) => {
             const cluster = getCurrentCluster(record.clusterId);
-            return cluster && (
-              <AlgorithmVersionList
-                isPublic={isPublic}
-                algorithms={data?.items ?? []}
-                algorithmName={record.name}
-                algorithmId={record.id}
-                cluster={cluster}
-              ></AlgorithmVersionList>
+            return (
+              cluster && (
+                <AlgorithmVersionList
+                  isPublic={isPublic}
+                  algorithms={data?.items ?? []}
+                  algorithmName={record.name}
+                  algorithmId={record.id}
+                  cluster={cluster}
+                ></AlgorithmVersionList>
+              )
             );
           },
+          expandIcon: (props) => <TableExpandIcon {...props} />,
         }}
         scroll={{ x: true }}
       />

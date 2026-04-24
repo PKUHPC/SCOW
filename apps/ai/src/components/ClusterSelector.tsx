@@ -12,13 +12,13 @@
 
 "use client";
 
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Select } from "antd";
+import { Select, type SelectProps } from "antd";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
 import { useI18n, useI18nTranslateToString } from "src/i18n";
 import { Cluster } from "src/server/trpc/route/config";
-
 
 interface Props {
   value?: Cluster[];
@@ -26,22 +26,25 @@ interface Props {
 }
 
 export const ClusterSelector: React.FC<Props> = ({ value, onChange }) => {
-
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
-  const currentClusters = publicConfig.CLUSTERS.filter((cluster) => (currentAvailableClusterIds.includes(cluster.id)));
+  const currentClusters = publicConfig.CLUSTERS.filter((cluster) => currentAvailableClusterIds.includes(cluster.id));
 
   return (
     <Select
       mode="multiple"
       placeholder={t("component.clusterSelector.select")}
       value={value?.map((v) => v.id)}
-      onChange={(values) => onChange?.(values.map((x) => ({
-        id: x,
-        name: currentClusters.find((cluster) => cluster.id === x)?.name ?? x })))}
-      options={currentClusters.map((x) => ({ value: x.id, label:
-        getI18nConfigCurrentText(x.name, languageId) }))}
+      onChange={(values) =>
+        onChange?.(
+          values.map((x) => ({
+            id: x,
+            name: currentClusters.find((cluster) => cluster.id === x)?.name ?? x,
+          })),
+        )
+      }
+      options={currentClusters.map((x) => ({ value: x.id, label: getI18nConfigCurrentText(x.name, languageId) }))}
       key={languageId}
     />
   );
@@ -55,44 +58,49 @@ interface SingleSelectionProps {
   allowClear?: boolean;
 }
 
-export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
-  defaultValue,
-  onChange,
-  label,
-  clusterIds,
-  allowClear,
-}) => {
-
+const SingleClusterSelectorBase: React.FC<
+  SingleSelectionProps & { SelectComponent: React.ComponentType<SelectProps> }
+> = ({ SelectComponent, defaultValue, onChange, label, clusterIds, allowClear }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
-  const { setDefaultCluster, currentClusters }
-   = defaultClusterContext(publicConfig.CLUSTERS, currentAvailableClusterIds);
+  const { setDefaultCluster, currentClusters } = defaultClusterContext(
+    publicConfig.CLUSTERS,
+    currentAvailableClusterIds,
+  );
 
   return (
-    <Select
+    <SelectComponent
       placeholder={t("component.clusterSelector.select")}
       defaultValue={defaultValue?.id}
-      onChange={(value) => {
+      onChange={(value: unknown) => {
+        const clusterId = value as string;
         onChange?.({
-          id: value,
-          name: currentClusters.find((cluster) => cluster.id === value)?.name ?? value });
+          id: clusterId,
+          name: currentClusters.find((cluster) => cluster.id === clusterId)?.name ?? clusterId,
+        });
         setDefaultCluster({
-          id: value,
-          name: currentClusters.find((cluster) => cluster.id === value)?.name ?? value });
-      }
-      }
-      options={
-        (label ? [{ value: label, label, disabled: true }] : [])
-          .concat((currentClusters.filter((x) => clusterIds?.includes(x.id) ?? true) || [])
-            .map((x) => ({
-              value: x.id,
-              label:  getI18nConfigCurrentText(x.name, languageId),
-              disabled: false,
-            })))
-      }
+          id: clusterId,
+          name: currentClusters.find((cluster) => cluster.id === clusterId)?.name ?? clusterId,
+        });
+      }}
+      options={(label ? [{ value: label, label, disabled: true }] : []).concat(
+        (currentClusters.filter((x) => clusterIds?.includes(x.id) ?? true) || []).map((x) => ({
+          value: x.id,
+          label: getI18nConfigCurrentText(x.name, languageId),
+          disabled: false,
+        })),
+      )}
       popupMatchSelectWidth={false}
       allowClear={allowClear}
     />
   );
 };
+
+export const SingleClusterSelector: React.FC<SingleSelectionProps> = (props) => (
+  <SingleClusterSelectorBase {...props} SelectComponent={Select} />
+);
+
+export const RoundedSingleClusterSelector: React.FC<SingleSelectionProps> = (props) => (
+  <SingleClusterSelectorBase {...props} SelectComponent={RoundedSelect} />
+);

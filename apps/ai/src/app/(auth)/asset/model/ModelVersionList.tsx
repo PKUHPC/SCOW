@@ -1,8 +1,9 @@
 import { TRPCClientError } from "@trpc/client";
-import { App, Modal, Space,Table, Tooltip } from "antd";
+import { App, Modal, Space, Table, Tooltip } from "antd";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
+import { ExpandedTableContainer } from "src/components/assets/ExpandedTableContainer";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
 import { VersionShareAction } from "src/components/assets/VersionShareAction";
 import { ModalLink } from "src/components/ModalLink";
@@ -30,9 +31,7 @@ export interface Props {
 const EditVersionModalButton = ModalLink(CreateAndEditVersionModal);
 const CopyPublicModelModalButton = ModalLink(CopyPublicModelModal);
 
-export const ModelVersionList: React.FC<Props> = (
-  { models, isPublic, modelId, modelName, cluster },
-) => {
+export const ModelVersionList: React.FC<Props> = ({ models, isPublic, modelId, modelName, cluster }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.modelVersionList.");
   const pCommon = prefix("app.common.");
@@ -43,11 +42,15 @@ export const ModelVersionList: React.FC<Props> = (
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const router = useRouter();
 
-  const { data: versionData, isFetching, refetch, error: versionError } =
-    trpc.model.versionList.useQuery({
-      modelId,
-      isPublic: isPublic !== undefined ? parseBooleanParam(isPublic) : undefined,
-    });
+  const {
+    data: versionData,
+    isFetching,
+    refetch,
+    error: versionError,
+  } = trpc.model.versionList.useQuery({
+    modelId,
+    isPublic: isPublic !== undefined ? parseBooleanParam(isPublic) : undefined,
+  });
   if (versionError) {
     message.error(t(p("notFound")));
   }
@@ -101,13 +104,14 @@ export const ModelVersionList: React.FC<Props> = (
     },
     onError() {
       message.error(t(p("deleteFailed")));
-    } });
+    },
+  });
 
   const deleteModelVersion = useCallback(
     (versionId: number, isConfirmed?: boolean) => {
       confirm({
         title: isConfirmed ? t(p("confirmedText")) : t(p("delete")),
-        onOk:async () => {
+        onOk: async () => {
           await deleteModelVersionMutation.mutateAsync({ versionId, modelId });
         },
       });
@@ -117,40 +121,44 @@ export const ModelVersionList: React.FC<Props> = (
 
   return (
     <>
-      <Table
-        rowKey="id"
-        dataSource={versionData?.items ?? []}
-        loading={isFetching}
-        pagination={false}
-        scroll={{ y:275 }}
-        columns={[
-          { dataIndex: "versionName", title: t(p("versionName")) },
-          { dataIndex: "versionDescription", title: t(p("versionDescription")) },
-          { dataIndex: "algorithmVersion", title: t(p("algorithmVersion")) },
-          {
-            dataIndex: "updateTime", title: t(p("updatedTime")),
-            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-",
-          },
-          { dataIndex: "action", title: t(p("action")),
-            ...isPublic ? {} : { width: 350 },
-            render: (_, r) => {
-              const shareConfirmTitle = r.sharedStatus === SharedStatus.SHARED
-                ? t(p("cancelShareTitle"))
-                : t(p("share"));
-              return isPublic ? (
-                <CopyPublicModelModalButton
-                  modelId={modelId}
-                  modelName={modelName}
-                  modelVersionId={r.id}
-                  data={r}
-                  cluster={cluster}
-                >
-                  <Tooltip title={t("button.copyButton")}>
-                    <CopyIcon />
-                  </Tooltip>
-                </CopyPublicModelModalButton>
-              ) :
-                (
+      <ExpandedTableContainer>
+        <Table
+          rowKey="id"
+          dataSource={versionData?.items ?? []}
+          loading={isFetching}
+          pagination={false}
+          tableLayout="fixed"
+          scroll={{ y: 275 }}
+          columns={[
+            { dataIndex: "versionName", title: t(p("versionName")), width: isPublic ? "18%" : "16%" },
+            { dataIndex: "versionDescription", title: t(p("versionDescription")), width: isPublic ? "22%" : "18%" },
+            { dataIndex: "algorithmVersion", title: t(p("algorithmVersion")), width: isPublic ? "20%" : "18%" },
+            ...(isPublic ? [] : [{ dataIndex: "privatePath", title: t(p("path")), width: "20%" }]),
+            {
+              dataIndex: "updateTime",
+              title: t(p("updatedTime")),
+              width: isPublic ? "18%" : "12%",
+              render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+            },
+            {
+              dataIndex: "action",
+              title: t(p("action")),
+              render: (_, r) => {
+                const shareConfirmTitle =
+                  r.sharedStatus === SharedStatus.SHARED ? t(p("cancelShareTitle")) : t(p("share"));
+                return isPublic ? (
+                  <CopyPublicModelModalButton
+                    modelId={modelId}
+                    modelName={modelName}
+                    modelVersionId={r.id}
+                    data={r}
+                    cluster={cluster}
+                  >
+                    <Tooltip title={t("button.copyButton")}>
+                      <CopyIcon />
+                    </Tooltip>
+                  </CopyPublicModelModalButton>
+                ) : (
                   <Space direction="horizontal">
                     <EditVersionModalButton
                       modelId={modelId}
@@ -158,32 +166,34 @@ export const ModelVersionList: React.FC<Props> = (
                       cluster={cluster}
                       refetch={refetch}
                       editData={{
-                        versionId:r.id,
-                        versionName:r.versionName,
-                        versionDescription:r.versionDescription,
-                        algorithmVersion:r.algorithmVersion,
+                        versionId: r.id,
+                        versionName: r.versionName,
+                        versionDescription: r.versionDescription,
+                        algorithmVersion: r.algorithmVersion,
                       }}
-
                     >
                       <Tooltip title={t("button.editButton")}>
                         <EditIcon />
                       </Tooltip>
                     </EditVersionModalButton>
                     <Tooltip title={t(p("check"))}>
-                      <ViewFileIcon onClick={async () => {
-                        try {
-                          const checkExistRes =
-                            await checkFileExist.mutateAsync({ clusterId:cluster.id, path:r.privatePath });
-                          if (checkExistRes?.exists) {
-                            router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
-                          } else {
-                            deleteModelVersion(r.id, true);
+                      <ViewFileIcon
+                        onClick={async () => {
+                          try {
+                            const checkExistRes = await checkFileExist.mutateAsync({
+                              clusterId: cluster.id,
+                              path: r.privatePath,
+                            });
+                            if (checkExistRes?.exists) {
+                              router.push(`/files${r.privatePath}?cluster=${cluster.id}`);
+                            } else {
+                              deleteModelVersion(r.id, true);
+                            }
+                          } catch {
+                            // onError 已经处理了 UI 提示
+                            return null;
                           }
-                        } catch {
-                          // onError 已经处理了 UI 提示
-                          return null;
-                        }
-                      }}
+                        }}
                       />
                     </Tooltip>
                     {isUserShareEnabled ? (
@@ -210,8 +220,7 @@ export const ModelVersionList: React.FC<Props> = (
                     ) : null}
                     <Tooltip title={t("button.deleteButton")}>
                       <DeleteIcon
-                        disabled={r.sharedStatus === SharedStatus.SHARING
-                            || r.sharedStatus === SharedStatus.UNSHARING}
+                        disabled={r.sharedStatus === SharedStatus.SHARING || r.sharedStatus === SharedStatus.UNSHARING}
                         onClick={() => {
                           deleteModelVersion(r.id);
                         }}
@@ -219,13 +228,13 @@ export const ModelVersionList: React.FC<Props> = (
                     </Tooltip>
                   </Space>
                 );
+              },
             },
-          },
-        ]}
-      />
+          ]}
+        />
+      </ExpandedTableContainer>
       {/* antd中modal组件 */}
       {confirmModalHolder}
     </>
-
   );
 };

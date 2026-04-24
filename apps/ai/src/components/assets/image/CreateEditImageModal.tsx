@@ -1,16 +1,29 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import {
+  RoundedInput,
+  RoundedInputNumber,
+  RoundedPasswordInput,
+  RoundedTextArea,
+} from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { TRPCClientError } from "@trpc/client";
-import { App, Form, Input, InputNumber, Modal, Select } from "antd";
-import React, { useEffect } from "react";
-import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { App, Form, type InputNumberProps } from "antd";
+import React, { type ComponentType, useEffect } from "react";
+import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getImageTexts, getImageTypeText, ImageInterface, ImageType, Source } from "src/models/Image";
 import { Cluster } from "src/server/trpc/route/config";
 import { AppRouter } from "src/server/trpc/router";
-import { createInterdependentValidator, imageNameValidation, imageTagValidation,
-  inputNumberFloorConfig } from "src/utils/form";
+import {
+  createInterdependentValidator,
+  imageNameValidation,
+  imageTagValidation,
+  inputNumberFloorConfig,
+} from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 export interface Props {
@@ -25,19 +38,21 @@ export interface Props {
 }
 
 interface FormFields {
-  id?: number | undefined,
-  cluster: Cluster,
-  name: string,
-  tag: string,
-  description?: string,
-  source: Source,
-  sourcePath: string,
-  userName?: string,
-  password?: string,
-  types: ImageType[],
-  inferServicePort?: number,
-  startCommand?: string,
+  id?: number | undefined;
+  cluster: Cluster;
+  name: string;
+  tag: string;
+  description?: string;
+  source: Source;
+  sourcePath: string;
+  userName?: string;
+  password?: string;
+  types: ImageType[];
+  inferServicePort?: number;
+  startCommand?: string;
 }
+
+const NumberRoundedInput = RoundedInputNumber as ComponentType<InputNumberProps<number>>;
 
 export const CreateEditImageModal: React.FC<Props> = ({
   open,
@@ -157,13 +172,14 @@ export const CreateEditImageModal: React.FC<Props> = ({
         startCommand,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
-    };
+    }
   };
 
-  const labelWidth = languageId === "zh_cn" ? 70 : 130;
+  const labelWidth = languageId === "zh_cn" ? 96 : 130;
+  const renderLabel = (label: string) => <FormLabel style={{ whiteSpace: "nowrap" }}>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={isEdit ? t(p("editImage")) : t(p("addImage"))}
       open={open}
       onOk={form.submit}
@@ -176,6 +192,8 @@ export const CreateEditImageModal: React.FC<Props> = ({
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -185,89 +203,54 @@ export const CreateEditImageModal: React.FC<Props> = ({
             marginLeft: "16px",
           },
         }}
-        initialValues={(isEdit && editData) ? editData : { cluster:  "" }}
+        initialValues={isEdit && editData ? editData : { cluster: "" }}
       >
-        { (isEdit && editData) ? (
+        {isEdit && editData ? (
           <>
-            <Form.Item
-              label={t(p("imageName"))}
-              name="name"
-            >
+            <CustomFormItem label={renderLabel(t(p("imageName")))} name="name">
               {editData.name}
-            </Form.Item>
-            <Form.Item
-              label={t(p("imageTag"))}
-              name="tag"
-            >
+            </CustomFormItem>
+            <CustomFormItem label={renderLabel(t(p("imageTag")))} name="tag">
               {editData.tag}
-            </Form.Item>
-            <Form.Item
-              label={t(p("cluster"))}
-            >
-              {getI18nConfigCurrentText(
-                clusters.find((x) => (x.id === editData.clusterId))?.name, languageId)
-                      ?? editData.clusterId }
-            </Form.Item>
-            <Form.Item
-              label={t(p("source"))}
-            >
-              {sourceText[editData.source]}
-            </Form.Item>
+            </CustomFormItem>
+            <CustomFormItem label={renderLabel(t(p("cluster")))}>
+              {getI18nConfigCurrentText(clusters.find((x) => x.id === editData.clusterId)?.name, languageId) ??
+                editData.clusterId}
+            </CustomFormItem>
+            <CustomFormItem label={renderLabel(t(p("source")))}>{sourceText[editData.source]}</CustomFormItem>
           </>
-
         ) : (
           <>
-            <Form.Item
-              label={t(p("imageName"))}
+            <CustomFormItem
+              label={renderLabel(t(p("imageName")))}
               name="name"
-              rules={[
-                { required: true },
-                { validator: imageNameValidation },
-              ]}
+              rules={[{ required: true }, { validator: imageNameValidation }]}
             >
-              <TrimInput allowClear />
-            </Form.Item>
-            <Form.Item
-              label={t(p("imageTag"))}
+              <RoundedInput allowClear />
+            </CustomFormItem>
+            <CustomFormItem
+              label={renderLabel(t(p("imageTag")))}
               name="tag"
-              rules={[
-                { required: true },
-                { validator: imageTagValidation },
-              ]}
+              rules={[{ required: true }, { validator: imageTagValidation }]}
             >
-              <TrimInput />
-            </Form.Item>
-            <Form.Item
-              label={t(p("cluster"))}
-              name="cluster"
-              rules={[
-                { required: true },
-              ]}
-            >
-              <SingleClusterSelector />
-            </Form.Item>
+              <RoundedInput />
+            </CustomFormItem>
+            <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+              <RoundedSingleClusterSelector />
+            </CustomFormItem>
           </>
-        )
-        }
-        <Form.Item
-          label={t(p("type"))}
-          name="types"
-          rules={[
-            { required: true },
-          ]}
-        >
-          <Select
+        )}
+        <CustomFormItem label={renderLabel(t(p("type")))} name="types" rules={[{ required: true }]}>
+          <RoundedSelect
             style={{ minWidth: "100px" }}
             mode="multiple"
             allowClear
-            options={
-              Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))
-            }
+            options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
           />
-        </Form.Item>
+        </CustomFormItem>
         {types?.includes(ImageType.INFER) && (
-          <Form.Item
-            label={t(p("inferServicePort"))}
+          <CustomFormItem
+            label={renderLabel(t(p("inferServicePort")))}
             name="inferServicePort"
             rules={[
               {
@@ -277,36 +260,24 @@ export const CreateEditImageModal: React.FC<Props> = ({
               },
             ]}
           >
-            <InputNumber
-              min={1}
-              max={65535}
-              style={{ width: "100%" }}
-              {...inputNumberFloorConfig}
-            />
-          </Form.Item>
+            <NumberRoundedInput min={1} max={65535} style={{ width: "100%" }} {...inputNumberFloorConfig} />
+          </CustomFormItem>
         )}
-        { !isEdit && (
-          <Form.Item
-            label={t(p("source"))}
-            name="source"
-            rules={[
-              { required: true },
-            ]}
-          >
-            <Select
+        {!isEdit && (
+          <CustomFormItem label={renderLabel(t(p("source")))} name="source" rules={[{ required: true }]}>
+            <RoundedSelect
               style={{ minWidth: "100px" }}
               onChange={() => {
                 form.setFieldsValue({ sourcePath: "" });
               }}
-              options={
-                Object.entries(sourceText).map(([key, value]) => ({ label:value, value:key }))}
+              options={Object.entries(sourceText).map(([key, value]) => ({ label: value, value: key }))}
             />
-          </Form.Item>
+          </CustomFormItem>
         )}
         {!isEdit && (
           <>
-            <Form.Item
-              label={source === Source.INTERNAL ? t(p("selectImage")) : t(p("imageAddress")) }
+            <CustomFormItem
+              label={renderLabel(source === Source.INTERNAL ? t(p("selectImage")) : t(p("imageAddress")))}
               name="sourcePath"
               rules={[
                 { required: true },
@@ -315,11 +286,10 @@ export const CreateEditImageModal: React.FC<Props> = ({
                     if (!value) return Promise.resolve(); // 为空时交由 required 校验处理
 
                     if (source !== Source.INTERNAL) {
-
                       const ImageAddressRegex = new RegExp(
                         "^(?:[a-zA-Z0-9.-]+(?::\\d+)?\\/)?" + // 可选的 registry（如 docker.io, myregistry.com:5000）
-                        "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
-                        "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
+                          "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
+                          "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
                       );
 
                       if (!ImageAddressRegex.test(value)) {
@@ -332,10 +302,10 @@ export const CreateEditImageModal: React.FC<Props> = ({
                 }),
               ]}
             >
-              <TrimInput
+              <RoundedInput
                 disabled={source === Source.INTERNAL}
-                suffix={ source === Source.INTERNAL ?
-                  (
+                suffix={
+                  source === Source.INTERNAL ? (
                     <FileSelectModal
                       allowedFileType={["FILE"]}
                       allowedExtensions={["tar"]}
@@ -348,41 +318,40 @@ export const CreateEditImageModal: React.FC<Props> = ({
                     />
                   ) : undefined
                 }
-                placeholder={source === Source.INTERNAL ?
-                  t(p("selectImagePlaceHolder")) : t(p("inputImagePlaceHolder"))}
+                placeholder={
+                  source === Source.INTERNAL ? t(p("selectImagePlaceHolder")) : t(p("inputImagePlaceHolder"))
+                }
               />
-            </Form.Item>
-            {
-              source === Source.EXTERNAL ? (
-                <>
-                  <Form.Item
-                    label={t(p("userName"))}
-                    name="userName"
-                    dependencies={["password"]}
-                    rules={[createInterdependentValidator<FormFields>("password", t(p("userNamePlaceholder")))]}
-                  >
-                    <TrimInput placeholder={t(p("userNameAndPassword"))} />
-                  </Form.Item>
-                  <Form.Item
-                    label={t(p("password"))}
-                    name="password"
-                    dependencies={["userName"]}
-                    rules={[createInterdependentValidator<FormFields>("userName", t(p("passwordPlaceholder")))]}
-                  >
-                    <Input.Password placeholder={t(p("userNameAndPassword"))} />
-                  </Form.Item>
-                </>
-              ) : undefined
-            }
+            </CustomFormItem>
+            {source === Source.EXTERNAL ? (
+              <>
+                <CustomFormItem
+                  label={renderLabel(t(p("userName")))}
+                  name="userName"
+                  dependencies={["password"]}
+                  rules={[createInterdependentValidator<FormFields>("password", t(p("userNamePlaceholder")))]}
+                >
+                  <RoundedInput placeholder={t(p("userNameAndPassword"))} />
+                </CustomFormItem>
+                <CustomFormItem
+                  label={renderLabel(t(p("password")))}
+                  name="password"
+                  dependencies={["userName"]}
+                  rules={[createInterdependentValidator<FormFields>("userName", t(p("passwordPlaceholder")))]}
+                >
+                  <RoundedPasswordInput placeholder={t(p("userNameAndPassword"))} />
+                </CustomFormItem>
+              </>
+            ) : undefined}
           </>
-        ) }
-        <Form.Item label={t(p("startCommand"))} name="startCommand">
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item label={t(p("description"))} name="description">
-          <Input.TextArea />
-        </Form.Item>
+        )}
+        <CustomFormItem label={renderLabel(t(p("startCommand")))} name="startCommand">
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("description")))} name="description">
+          <RoundedTextArea />
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

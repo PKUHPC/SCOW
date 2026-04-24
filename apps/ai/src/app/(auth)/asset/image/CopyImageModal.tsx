@@ -1,6 +1,10 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { App, Form, Input, InputNumber, Modal, Select } from "antd";
-import React from "react";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedInputNumber, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
+import { App, Form, type InputNumberProps } from "antd";
+import React, { type ComponentType } from "react";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getImageTypeText, ImageType } from "src/models/Image";
 import { imageNameValidation, imageTagValidation, inputNumberFloorConfig } from "src/utils/form";
@@ -25,31 +29,31 @@ export interface Props {
 }
 
 interface FormFields {
-  newName: string,
-  newTag: string,
-  newTypes: ImageType[],
-  newInferServicePort?: number,
-  newStartCommand?: string,
-  newDescription?: string,
+  newName: string;
+  newTag: string;
+  newTypes: ImageType[];
+  newInferServicePort?: number;
+  newStartCommand?: string;
+  newDescription?: string;
 }
 
-export const CopyImageModal: React.FC<Props> = (
-  { open,
-    onClose,
-    refetch,
-    imageProps:
-      {
-        copiedId,
-        copiedName,
-        copiedTag,
-        copiedClusterId,
-        copiedTypes,
-        copiedInferServicePort,
-        copiedStartCommand,
-        copiedDescription,
-      },
+const NumberRoundedInput = RoundedInputNumber as ComponentType<InputNumberProps<number>>;
+
+export const CopyImageModal: React.FC<Props> = ({
+  open,
+  onClose,
+  refetch,
+  imageProps: {
+    copiedId,
+    copiedName,
+    copiedTag,
+    copiedClusterId,
+    copiedTypes,
+    copiedInferServicePort,
+    copiedStartCommand,
+    copiedDescription,
   },
-) => {
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.copyImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
@@ -89,23 +93,25 @@ export const CopyImageModal: React.FC<Props> = (
 
   const onOk = async () => {
     form.validateFields();
-    const { newName, newTag,newTypes,newInferServicePort,newStartCommand,newDescription } = await form.validateFields();
+    const { newName, newTag, newTypes, newInferServicePort, newStartCommand, newDescription } =
+      await form.validateFields();
     copyMutation.mutate({
       id: copiedId,
       newName,
       newTag,
-      clusterId:copiedClusterId,
+      clusterId: copiedClusterId,
       newTypes,
-      newInferServicePort:newInferServicePort?.toString(),
+      newInferServicePort: newInferServicePort?.toString(),
       newStartCommand,
       newDescription,
     });
   };
 
   const labelWidth = languageId === "zh_cn" ? 90 : 130;
+  const renderLabel = (label: string) => <FormLabel style={{ whiteSpace: "nowrap" }}>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={t(p("copy"))}
       open={open}
       onOk={form.submit}
@@ -118,6 +124,8 @@ export const CopyImageModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -129,44 +137,31 @@ export const CopyImageModal: React.FC<Props> = (
         }}
         initialValues={{ ...initialValues }}
       >
-        <Form.Item
-          label={t(p("name"))}
+        <CustomFormItem
+          label={renderLabel(t(p("name")))}
           name="newName"
-          rules={[
-            { required: true },
-            { validator: imageNameValidation },
-          ]}
+          rules={[{ required: true }, { validator: imageNameValidation }]}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item
-          label={t(p("tag"))}
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("tag")))}
           name="newTag"
-          rules={[
-            { required: true },
-            { validator: imageTagValidation },
-          ]}
+          rules={[{ required: true }, { validator: imageTagValidation }]}
         >
-          <TrimInput />
-        </Form.Item>
-        <Form.Item
-          label={t(pCreate("type"))}
-          name="newTypes"
-          rules={[
-            { required: true },
-          ]}
-        >
-          <Select
+          <RoundedInput />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(pCreate("type")))} name="newTypes" rules={[{ required: true }]}>
+          <RoundedSelect
             style={{ minWidth: "100px" }}
             mode="multiple"
             allowClear
-            options={
-              Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
+            options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
           />
-        </Form.Item>
+        </CustomFormItem>
         {newTypes?.includes(ImageType.INFER) && (
-          <Form.Item
-            label={t(pCreate("inferServicePort"))}
+          <CustomFormItem
+            label={renderLabel(t(pCreate("inferServicePort")))}
             name="newInferServicePort"
             rules={[
               {
@@ -176,21 +171,16 @@ export const CopyImageModal: React.FC<Props> = (
               },
             ]}
           >
-            <InputNumber
-              min={1}
-              max={65535}
-              style={{ width: "100%" }}
-              {...inputNumberFloorConfig}
-            />
-          </Form.Item>
+            <NumberRoundedInput min={1} max={65535} style={{ width: "100%" }} {...inputNumberFloorConfig} />
+          </CustomFormItem>
         )}
-        <Form.Item label={t(pCreate("startCommand"))} name="newStartCommand">
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item label={t(pCreate("description"))} name="newDescription">
-          <Input.TextArea />
-        </Form.Item>
+        <CustomFormItem label={renderLabel(t(pCreate("startCommand")))} name="newStartCommand">
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(pCreate("description")))} name="newDescription">
+          <RoundedTextArea />
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

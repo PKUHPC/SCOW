@@ -1,12 +1,15 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal } from "antd";
+import { App, Form } from "antd";
 import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmVersionInterface } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
-import { createNoChineseValidator,createResourceNameValidator } from "src/utils/form";
+import { createNoChineseValidator, createResourceNameValidator } from "src/utils/form";
 import { trpc } from "src/utils/trpc";
 
 export interface Props {
@@ -21,14 +24,20 @@ export interface Props {
 
 interface FormFields {
   targetAlgorithmName: string;
-  versionName: string,
-  versionDescription?: string,
-  path: string,
+  versionName: string;
+  versionDescription?: string;
+  path: string;
 }
 
-export const CopyPublicAlgorithmModal: React.FC<Props> = (
-  { open, onClose, algorithmId, algorithmVersionId, algorithmName, cluster, data },
-) => {
+export const CopyPublicAlgorithmModal: React.FC<Props> = ({
+  open,
+  onClose,
+  algorithmId,
+  algorithmVersionId,
+  algorithmName,
+  cluster,
+  data,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.copyPublicAlgorithmModal.");
   const pCommon = prefix("common.");
@@ -77,9 +86,10 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 120 : 160;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={t(p("copy"))}
       open={open}
       onOk={form.submit}
@@ -93,6 +103,8 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -103,13 +115,9 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
           },
         }}
       >
-        <Form.Item
-          label={t(p("sourceName"))}
-        >
-          {algorithmName}
-        </Form.Item>
-        <Form.Item
-          label={t(p("targetName"))}
+        <CustomFormItem label={renderLabel(t(p("sourceName")))}>{algorithmName}</CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("targetName")))}
           name="targetAlgorithmName"
           rules={[
             { required: true },
@@ -118,15 +126,13 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
           ]}
           initialValue={`${algorithmName}`}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item
-          label={t(p("cluster"))}
-        >
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("cluster")))}>
           {getI18nConfigCurrentText(cluster?.name, languageId)}
-        </Form.Item>
-        <Form.Item
-          label={t(p("versionName"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
             { required: true },
@@ -135,33 +141,31 @@ export const CopyPublicAlgorithmModal: React.FC<Props> = (
           ]}
           initialValue={data?.versionName}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item label={t(p("versionDescription"))} name="versionDescription" initialValue={data?.versionDescription}>
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item
-          label={t(p("address"))}
-          name="path"
-          rules={[{ required: true }]}
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionDescription")))}
+          name="versionDescription"
+          initialValue={data?.versionDescription}
         >
-          <TrimInput
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("address")))} name="path" rules={[{ required: true }]}>
+          <RoundedInput
             disabled={true}
             suffix={
-              (
-                <FileSelectModal
-                  allowedFileType={["DIR"]}
-                  onSubmit={(path: string) => {
-                    form.setFields([{ name: "path", value: path, touched: true }]);
-                    form.validateFields(["path"]);
-                  }}
-                  clusterId={cluster?.id ?? ""}
-                />
-              )
+              <FileSelectModal
+                allowedFileType={["DIR"]}
+                onSubmit={(path: string) => {
+                  form.setFields([{ name: "path", value: path, touched: true }]);
+                  form.validateFields(["path"]);
+                }}
+                clusterId={cluster?.id ?? ""}
+              />
             }
           />
-        </Form.Item>
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

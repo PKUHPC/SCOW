@@ -1,8 +1,12 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal, Select } from "antd";
+import { App, Form } from "antd";
 import React from "react";
-import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
@@ -26,16 +30,14 @@ export interface Props {
 }
 
 interface FormFields {
-  modelName: string,
-  cluster: Cluster,
-  algorithmName: string,
-  algorithmFramework: Framework,
-  modalDescription: string,
+  modelName: string;
+  cluster: Cluster;
+  algorithmName: string;
+  algorithmFramework: Framework;
+  modalDescription: string;
 }
 
-export const CreateAndEditModalModal: React.FC<Props> = (
-  { open, onClose, refetch, editData, isPlatformOwned },
-) => {
+export const CreateAndEditModalModal: React.FC<Props> = ({ open, onClose, refetch, editData, isPlatformOwned }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.createAndEditModelModal.");
   const pCommon = prefix("common.");
@@ -43,7 +45,7 @@ export const CreateAndEditModalModal: React.FC<Props> = (
 
   const AlgorithmTypeTextTrans = {
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   };
 
   const [form] = Form.useForm<FormFields>();
@@ -68,7 +70,8 @@ export const CreateAndEditModalModal: React.FC<Props> = (
         return;
       }
       message.error(t(p("addFailed")));
-    } });
+    },
+  });
 
   const updateModelMutation = trpc.model.updateModel.useMutation({
     onSuccess() {
@@ -85,49 +88,51 @@ export const CreateAndEditModalModal: React.FC<Props> = (
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-      }
-      else if (e.data?.code === "NOT_FOUND") {
+      } else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      }
-      else if (e.data?.code === "PRECONDITION_FAILED") {
+      } else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      }
-      else {
+      } else {
         message.error(t(p("editFailed")));
-
       }
-    } });
+    },
+  });
 
   const onOk = async () => {
-    const { modelName:formModalName, cluster, algorithmName:formAlgorithmName,
-      algorithmFramework:formAlgorithmFramework, modalDescription:formModalDescription } =
-    await form.validateFields();
+    const {
+      modelName: formModalName,
+      cluster,
+      algorithmName: formAlgorithmName,
+      algorithmFramework: formAlgorithmFramework,
+      modalDescription: formModalDescription,
+    } = await form.validateFields();
 
     if (editData?.modelId) {
       updateModelMutation.mutate({
-        id:editData.modelId,
-        name:formModalName,
-        algorithmName:formAlgorithmName,
-        algorithmFramework:formAlgorithmFramework,
-        description:formModalDescription,
+        id: editData.modelId,
+        name: formModalName,
+        algorithmName: formAlgorithmName,
+        algorithmFramework: formAlgorithmFramework,
+        description: formModalDescription,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     } else {
       createModelMutation.mutate({
-        name:formModalName,
-        algorithmName:formAlgorithmName,
-        algorithmFramework:formAlgorithmFramework,
-        description:formModalDescription,
-        clusterId:cluster.id,
+        name: formModalName,
+        algorithmName: formAlgorithmName,
+        algorithmFramework: formAlgorithmFramework,
+        description: formModalDescription,
+        clusterId: cluster.id,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
 
   const labelWidth = languageId === "zh_cn" ? 80 : 160;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={editData?.modelName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
@@ -140,6 +145,8 @@ export const CreateAndEditModalModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -150,8 +157,8 @@ export const CreateAndEditModalModal: React.FC<Props> = (
           },
         }}
       >
-        <Form.Item
-          label={t(p("name"))}
+        <CustomFormItem
+          label={renderLabel(t(p("name")))}
           name="modelName"
           rules={[
             { required: true },
@@ -160,52 +167,42 @@ export const CreateAndEditModalModal: React.FC<Props> = (
           ]}
           initialValue={editData?.modelName}
         >
-          <TrimInput />
-        </Form.Item>
+          <RoundedInput />
+        </CustomFormItem>
         {editData?.cluster ? (
-          <Form.Item
-            label={t(p("cluster"))}
-          >
+          <CustomFormItem label={renderLabel(t(p("cluster")))}>
             {getI18nConfigCurrentText(editData?.cluster?.name, languageId)}
-          </Form.Item>
+          </CustomFormItem>
         ) : (
-          <Form.Item
-            label={t(p("cluster"))}
-            name="cluster"
-            rules={[
-              { required: true },
-            ]}
-          >
-            <SingleClusterSelector />
-          </Form.Item>
+          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+            <RoundedSingleClusterSelector />
+          </CustomFormItem>
         )}
-        <Form.Item
-          label={t(p("algorithmName"))}
+        <CustomFormItem
+          label={renderLabel(t(p("algorithmName")))}
           name="algorithmName"
           initialValue={editData?.algorithmName}
         >
-          <TrimInput />
-        </Form.Item>
-        <Form.Item
-          label={t(p("algorithmFramework"))}
+          <RoundedInput />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("algorithmFramework")))}
           name="algorithmFramework"
           initialValue={editData?.algorithmFramework}
         >
-          <Select
+          <RoundedSelect
             style={{ minWidth: "120px" }}
-            options={
-              Object.entries(AlgorithmTypeTextTrans).map(([key, value]) => ({ label:value, value:key }))}
-          >
-          </Select>
-        </Form.Item>
-        <Form.Item
-          label={t(p("description"))}
+            options={Object.entries(AlgorithmTypeTextTrans).map(([key, value]) => ({ label: value, value: key }))}
+          ></RoundedSelect>
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("description")))}
           name="modalDescription"
           initialValue={editData?.modalDescription}
         >
-          <Input.TextArea />
-        </Form.Item>
+          <RoundedTextArea />
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

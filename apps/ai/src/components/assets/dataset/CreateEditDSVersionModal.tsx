@@ -1,6 +1,9 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal } from "antd";
+import { App, Form } from "antd";
 import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -118,9 +121,10 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 80 : 140;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={isEdit ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
@@ -133,6 +137,8 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -144,18 +150,18 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
         }}
         initialValues={editData}
       >
-        <Form.Item
-          label={t(p("name"))}
+        <CustomFormItem
+          label={renderLabel(t(p("name")))}
         >
           {datasetName}
-        </Form.Item>
-        <Form.Item
-          label={t(p("cluster"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("cluster")))}
         >
           {getI18nConfigCurrentText(cluster?.name, languageId)}
-        </Form.Item>
-        <Form.Item
-          label={t(p("versionName"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
             { required: true },
@@ -163,20 +169,20 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <TrimInput allowClear />
-        </Form.Item>
-        <Form.Item label={t(p("description"))} name="versionDescription">
-          <Input.TextArea />
-        </Form.Item>
+          <RoundedInput allowClear />
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("description")))} name="versionDescription">
+          <RoundedTextArea />
+        </CustomFormItem>
         {
           !isEdit && (
             <>
-              <Form.Item
-                label={t(p("select"))}
+              <CustomFormItem
+                label={renderLabel(t(p("select")))}
                 name="path"
                 rules={[{ required: true }]}
               >
-                <TrimInput
+                <RoundedInput
                   disabled={true}
                   placeholder={t(p("selectDatasetFolder"))}
                   suffix={
@@ -193,11 +199,11 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
                     )
                   }
                 />
-              </Form.Item>
+              </CustomFormItem>
             </>
           )
         }
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

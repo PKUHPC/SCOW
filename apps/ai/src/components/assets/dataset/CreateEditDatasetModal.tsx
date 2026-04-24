@@ -1,9 +1,13 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal, Select } from "antd";
+import { App, Form } from "antd";
 import React, { useEffect } from "react";
 import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
-import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getDatasetTexts } from "src/models/Dateset";
 import { Cluster } from "src/server/trpc/route/config";
@@ -23,17 +27,24 @@ export interface Props {
 }
 
 interface FormFields {
-  id?: number | undefined,
-  name: string,
-  cluster: Cluster,
-  type: string,
-  scene: string,
-  description?: string,
+  id?: number | undefined;
+  name: string;
+  cluster: Cluster;
+  type: string;
+  scene: string;
+  description?: string;
 }
 
-export const CreateEditDatasetModal: React.FC<Props> = (
-  { open, onClose, refetch, isEdit, editData, clusters, currentClusterIds, isPlatformOwned },
-) => {
+export const CreateEditDatasetModal: React.FC<Props> = ({
+  open,
+  onClose,
+  refetch,
+  isEdit,
+  editData,
+  clusters,
+  currentClusterIds,
+  isPlatformOwned,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.createEditDatasetModal.");
   const pCommon = prefix("common.");
@@ -112,14 +123,11 @@ export const CreateEditDatasetModal: React.FC<Props> = (
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-      }
-      else if (e.data?.code === "NOT_FOUND") {
+      } else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      }
-      else if (e.data?.code === "PRECONDITION_FAILED") {
+      } else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      }
-      else {
+      } else {
         message.error(t(p("editFailed")));
       }
     },
@@ -128,7 +136,6 @@ export const CreateEditDatasetModal: React.FC<Props> = (
   const onOk = async () => {
     const { name, type, description, scene, cluster } = await form.validateFields();
     if (isEdit && editData) {
-
       editMutation.mutate({
         id: editData.id,
         name,
@@ -150,9 +157,10 @@ export const CreateEditDatasetModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 80 : 140;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={isEdit ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
@@ -165,6 +173,8 @@ export const CreateEditDatasetModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -176,8 +186,8 @@ export const CreateEditDatasetModal: React.FC<Props> = (
         }}
         initialValues={isEdit && editData ? editData : { cluster: defaultCluster }}
       >
-        <Form.Item
-          label={t(p("name"))}
+        <CustomFormItem
+          label={renderLabel(t(p("name")))}
           name="name"
           rules={[
             { required: true },
@@ -185,54 +195,42 @@ export const CreateEditDatasetModal: React.FC<Props> = (
             createResourceNameValidator(t(pCommon("resourceNameRuleTips"))),
           ]}
         >
-          <TrimInput allowClear />
-        </Form.Item>
+          <RoundedInput allowClear />
+        </CustomFormItem>
         {isEdit && editData ? (
-          <Form.Item
-            label={t(p("cluster"))}
-          >
-            {getI18nConfigCurrentText(
-              clusters.find((x) => (x.id === editData.clusterId))?.name, languageId)
-              ?? editData.clusterId}
-          </Form.Item>
+          <CustomFormItem label={renderLabel(t(p("cluster")))}>
+            {getI18nConfigCurrentText(clusters.find((x) => x.id === editData.clusterId)?.name, languageId) ??
+              editData.clusterId}
+          </CustomFormItem>
         ) : (
-          <Form.Item
-            label={t(p("cluster"))}
-            name="cluster"
-            rules={[
-              { required: true },
-            ]}
-          >
-            <SingleClusterSelector />
-          </Form.Item>
-        )
-        }
-        <Form.Item
-          label={t(p("type"))}
+          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+            <RoundedSingleClusterSelector />
+          </CustomFormItem>
+        )}
+        <CustomFormItem
+          label={renderLabel(t(p("type")))}
           name="type"
           rules={[{ required: true, message: t(p("selectType")) }]}
         >
-          <Select
+          <RoundedSelect
             style={{ minWidth: "100px" }}
-            options={
-              Object.entries(DatasetTypeTextTrans).map(([key, value]) => ({ label:value, value:key }))}
+            options={Object.entries(DatasetTypeTextTrans).map(([key, value]) => ({ label: value, value: key }))}
           />
-        </Form.Item>
-        <Form.Item
-          label={t(p("scene"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("scene")))}
           name="scene"
           rules={[{ required: true, message: t(p("selectScene")) }]}
         >
-          <Select
+          <RoundedSelect
             style={{ minWidth: "100px" }}
-            options={
-              Object.entries(SceneTypeTextTrans).map(([key, value]) => ({ label:value, value:key }))}
+            options={Object.entries(SceneTypeTextTrans).map(([key, value]) => ({ label: value, value: key }))}
           />
-        </Form.Item>
-        <Form.Item label={t(p("description"))} name="description">
-          <Input.TextArea />
-        </Form.Item>
+        </CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("description")))} name="description">
+          <RoundedTextArea />
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

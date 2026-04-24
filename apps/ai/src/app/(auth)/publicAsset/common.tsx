@@ -1,12 +1,12 @@
 import { styled } from "styled-components";
 
-export const TableContainer = styled.div`
-  .dataset-list-table .ant-table-tbody > tr > td {
+export const PublicAssetTableContainer = styled.div`
+  .public-asset-list-table .ant-table-tbody > tr > td {
     padding: 8px 16px;
     height: 56px;
   }
 
-  .dataset-list-table
+  .public-asset-list-table
     > .ant-spin-nested-loading
     > .ant-spin-container
     > .ant-table
@@ -16,7 +16,7 @@ export const TableContainer = styled.div`
     > .ant-table-thead
     > tr
     > th:nth-child(2),
-  .dataset-list-table
+  .public-asset-list-table
     > .ant-spin-nested-loading
     > .ant-spin-container
     > .ant-table
@@ -30,7 +30,7 @@ export const TableContainer = styled.div`
     text-align: left;
   }
 
-  .dataset-list-table .ant-table-expanded-row > td.ant-table-cell {
+  .ant-table-expanded-row > td.ant-table-cell {
     padding: 0 !important;
   }
 `;

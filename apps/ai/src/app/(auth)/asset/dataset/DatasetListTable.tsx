@@ -8,6 +8,7 @@ import { App, Button, Form, Modal, Select, Space, Table, Tooltip } from "antd";
 import { useCallback, useState } from "react";
 import { CreateEditDatasetModal } from "src/components/assets/dataset/CreateEditDatasetModal";
 import { CreateEditDSVersionModal } from "src/components/assets/dataset/CreateEditDSVersionModal";
+import { TableExpandIcon } from "src/components/assets/TableExpandIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
@@ -41,9 +42,9 @@ const FilterTypeForKeys = {
 type FilterTypeKeys = Extract<keyof typeof FilterTypeForKeys, string>;
 
 interface FilterForm {
-  cluster?: Cluster | undefined,
-  type?: FilterTypeKeys | undefined,
-  nameOrDesc?: string | undefined,
+  cluster?: Cluster | undefined;
+  type?: FilterTypeKeys | undefined;
+  nameOrDesc?: string | undefined;
 }
 
 interface PageInfo {
@@ -74,11 +75,11 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
   } as Record<string, string>;
 
   const SceneTypeText: Record<string, string> = {
-    CWS:t(pModel("ces")),
-    DA:t(pModel("da")),
-    IC:t(pModel("ic")),
-    OD:t(pModel("od")),
-    OTHER:t(pModel("other")),
+    CWS: t(pModel("ces")),
+    DA: t(pModel("da")),
+    IC: t(pModel("ic")),
+    OD: t(pModel("od")),
+    OTHER: t(pModel("other")),
   };
   const DatasetTypeTextTrans: Record<string, string> = {
     IMAGE: getDatasetTexts(t).image,
@@ -103,7 +104,10 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
 
   const { data, refetch, isFetching, error } = trpc.dataset.list.useQuery({
-    ...pageInfo, ...query, clusterId: query.cluster?.id, isPublic: parseBooleanParam(isPublic),
+    ...pageInfo,
+    ...query,
+    clusterId: query.cluster?.id,
+    isPublic: parseBooleanParam(isPublic),
   });
   if (error) {
     message.error(t(p("notFound")));
@@ -124,23 +128,23 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
     },
   });
 
-  const deleteDataset = useCallback(
-    (id: number) => {
-      confirm({
-        title: t(p("delete")),
-        onOk: async () => {
-          await deleteDatasetMutation.mutateAsync({ id });
-        },
-      });
-    },
-    [],
-  );
+  const deleteDataset = useCallback((id: number) => {
+    confirm({
+      title: t(p("delete")),
+      onOk: async () => {
+        await deleteDatasetMutation.mutateAsync({ id });
+      },
+    });
+  }, []);
 
-  const getCurrentCluster = useCallback((clusterId: string | undefined) => {
-    if (clusterId) {
-      return clusters.find((c) => c.id === clusterId);
-    }
-  }, [clusters]);
+  const getCurrentCluster = useCallback(
+    (clusterId: string | undefined) => {
+      if (clusterId) {
+        return clusters.find((c) => c.id === clusterId);
+      }
+    },
+    [clusters],
+  );
 
   return (
     <TableContainer>
@@ -167,7 +171,9 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
           <Form.Item label={t(p("cluster"))} name="cluster">
             <SingleClusterSelector
               allowClear={true}
-              onChange={(value) => { setQuery({ ...query, cluster: value }); }}
+              onChange={(value) => {
+                setQuery({ ...query, cluster: value });
+              }}
             />
           </Form.Item>
           <Form.Item label={t(p("type"))} name="type">
@@ -178,8 +184,7 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                 setQuery({ ...query, type: value === "ALL" ? undefined : value });
               }}
               placeholder={t(p("selectType"))}
-              options={
-                Object.entries(FilterType).map(([key, value]) => ({ label:value, value:key }))}
+              options={Object.entries(FilterType).map(([key, value]) => ({ label: value, value: key }))}
             />
           </Form.Item>
           <Form.Item name="nameOrDesc">
@@ -203,13 +208,14 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
         )}
       </FilterFormContainer>
       <Table
-        className="dataset-list-table"
+        className="dataset-list-table dataset-asset-list-table"
         rowKey="id"
         dataSource={data?.items}
         loading={isFetching}
         tableLayout="fixed"
         columns={[
-          { dataIndex: "name",
+          {
+            dataIndex: "name",
             title: t(p("name")),
             onCell: () => ({
               style: {
@@ -220,12 +226,15 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
               },
             }),
           },
-          { dataIndex: "clusterId", title: t(p("cluster")),
-            render: (_, r) =>
-              getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
-          { dataIndex: "type", title: t(p("datasetType")),
-            render: (_, r) => DatasetTypeTextTrans[r.type] },
-          { dataIndex: "description", title: t(p("description")),
+          {
+            dataIndex: "clusterId",
+            title: t(p("cluster")),
+            render: (_, r) => getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId,
+          },
+          { dataIndex: "type", title: t(p("datasetType")), render: (_, r) => DatasetTypeTextTrans[r.type] },
+          {
+            dataIndex: "description",
+            title: t(p("description")),
             onCell: () => ({
               style: {
                 maxWidth: 200,
@@ -235,87 +244,104 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
               },
             }),
           },
-          { dataIndex: "scene", title: t(p("scene")),
-            render: (_, r) => SceneTypeText[r.scene] },
-          { dataIndex: "versions", title: t(p("versions")),
-            render: (_, r) => r.versions.length },
+          { dataIndex: "scene", title: t(p("scene")), render: (_, r) => SceneTypeText[r.scene] },
+          { dataIndex: "versions", title: t(p("versions")), render: (_, r) => r.versions.length },
           ...(isPublic
-            ? [{
-              dataIndex: "shareUser",
-              title: t(pCommon("publishUser")),
-              // @ts-ignore
-              render: (_, r) =>
-                r.isPlatformOwned ? (
-                  <PlatformTag color={theme.token.colorPrimary}>
-                    <span>{t(pCommon("platform"))}</span>
-                    <PlatformIcon />
-                  </PlatformTag>
-                ) : (
-                  `${r.ownerName}（ID:${r.owner}）`
-                ),
-            } as const]
+            ? [
+                {
+                  dataIndex: "shareUser",
+                  title: t(pCommon("publishUser")),
+                  // @ts-ignore
+                  render: (_, r) =>
+                    r.isPlatformOwned ? (
+                      <PlatformTag color={theme.token.colorPrimary}>
+                        <span>{t(pCommon("platform"))}</span>
+                        <PlatformIcon />
+                      </PlatformTag>
+                    ) : (
+                      `${r.ownerName}（ID:${r.owner}）`
+                    ),
+                } as const,
+              ]
             : []),
-          { dataIndex: "updateTime", title: t(p("updatedTime")),
-            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-          ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
-            render: (_: any, r: DatasetInterface) => {
-              return (
-                <Space direction="horizontal">
-                  <CreateEditVersionModalButton
-                    datasetId={r.id}
-                    datasetName={r.name}
-                    cluster={getCurrentCluster(r.clusterId)}
-                    refetch={() => {
-                      refetch();
-                    }}
-                  >
-                    <Tooltip title={t(p("createNewVersion"))}>
-                      <CreateNewVersionIcon />
-                    </Tooltip>
-                  </CreateEditVersionModalButton>
-                  <EditDatasetModalButton
-                    refetch={refetch}
-                    isEdit={true}
-                    editData={r}
-                    clusters={clusters}
-                    currentClusterIds={currentClusterIds}
-                  >
-                    <Tooltip title={t("button.editButton")}>
-                      <EditIcon />
-                    </Tooltip>
-                  </EditDatasetModalButton>
-                  <Tooltip title={t("button.deleteButton")}>
-                    <DeleteIcon onClick={() => {
-                      deleteDataset(r.id);
-                    }}
-                    />
-                  </Tooltip>
-                </Space>
-              );
-            },
-          }] : [],
+          {
+            dataIndex: "updateTime",
+            title: t(p("updatedTime")),
+            render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+          },
+          ...(!isPublic
+            ? [
+                {
+                  dataIndex: "action",
+                  title: t(p("action")),
+                  render: (_: any, r: DatasetInterface) => {
+                    return (
+                      <Space direction="horizontal">
+                        <CreateEditVersionModalButton
+                          datasetId={r.id}
+                          datasetName={r.name}
+                          cluster={getCurrentCluster(r.clusterId)}
+                          refetch={() => {
+                            refetch();
+                          }}
+                        >
+                          <Tooltip title={t(p("createNewVersion"))}>
+                            <CreateNewVersionIcon />
+                          </Tooltip>
+                        </CreateEditVersionModalButton>
+                        <EditDatasetModalButton
+                          refetch={refetch}
+                          isEdit={true}
+                          editData={r}
+                          clusters={clusters}
+                          currentClusterIds={currentClusterIds}
+                        >
+                          <Tooltip title={t("button.editButton")}>
+                            <EditIcon />
+                          </Tooltip>
+                        </EditDatasetModalButton>
+                        <Tooltip title={t("button.deleteButton")}>
+                          <DeleteIcon
+                            onClick={() => {
+                              deleteDataset(r.id);
+                            }}
+                          />
+                        </Tooltip>
+                      </Space>
+                    );
+                  },
+                },
+              ]
+            : []),
         ]}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: 10,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.count,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: 10,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.count,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         expandable={{
           expandedRowRender: (record) => {
             const cluster = getCurrentCluster(record.clusterId);
-            return cluster && (
-              <DatasetVersionList
-                isPublic={isPublic}
-                datasets={data?.items ?? []}
-                datasetId={record.id}
-                datasetName={record.name}
-                cluster={cluster}
-              ></DatasetVersionList>
+            return (
+              cluster && (
+                <DatasetVersionList
+                  isPublic={isPublic}
+                  datasets={data?.items ?? []}
+                  datasetId={record.id}
+                  datasetName={record.name}
+                  cluster={cluster}
+                ></DatasetVersionList>
+              )
             );
           },
+          expandIcon: (props) => <TableExpandIcon {...props} />,
         }}
         scroll={{ x: true }}
       />

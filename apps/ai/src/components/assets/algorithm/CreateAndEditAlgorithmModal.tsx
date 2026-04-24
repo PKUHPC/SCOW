@@ -1,8 +1,12 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
+import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal, Select } from "antd";
+import { App, Form } from "antd";
 import React from "react";
-import { SingleClusterSelector } from "src/components/ClusterSelector";
+import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
 import { Cluster } from "src/server/trpc/route/config";
@@ -26,15 +30,13 @@ export interface Props {
 type AlgorithmType = keyof typeof AlgorithmTypeText;
 
 interface FormFields {
-  name: string,
-  type: AlgorithmType,
-  cluster: Cluster,
-  description?: string,
+  name: string;
+  type: AlgorithmType;
+  cluster: Cluster;
+  description?: string;
 }
 
-export const CreateAndEditAlgorithmModal: React.FC<Props> = (
-  { open, onClose, refetch, editData, isPlatformOwned },
-) => {
+export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, refetch, editData, isPlatformOwned }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.algorithm.createAndEditAlgorithmModal.");
   const pCommon = prefix("common.");
@@ -42,7 +44,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
 
   const AlgorithmTypeTextTrans = {
     ...AlgorithmTypeText,
-    [Framework.OTHER]:getAlgorithmTexts(t).other,
+    [Framework.OTHER]: getAlgorithmTexts(t).other,
   };
 
   const [form] = Form.useForm<FormFields>();
@@ -67,7 +69,8 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
       } else {
         message.error(t(p("addFailed")));
       }
-    } });
+    },
+  });
 
   const updateAlgorithmMutation = trpc.algorithm.updateAlgorithm.useMutation({
     onSuccess() {
@@ -91,34 +94,36 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
       } else {
         message.error(t(p("editFailed")));
       }
-    } });
+    },
+  });
 
   const onOk = async () => {
     const { name, type, description, cluster } = await form.validateFields();
 
     if (editData?.algorithmName) {
       updateAlgorithmMutation.mutate({
-        id:editData.algorithmId,
+        id: editData.algorithmId,
         name,
-        framework:type,
+        framework: type,
         description,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     } else {
       createAlgorithmMutation.mutate({
         name,
-        framework:type,
+        framework: type,
         description,
-        clusterId:cluster.id,
+        clusterId: cluster.id,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
     }
   };
 
   const labelWidth = languageId === "zh_cn" ? 80 : 160;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={editData?.algorithmName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
@@ -131,6 +136,8 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -141,8 +148,8 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
           },
         }}
       >
-        <Form.Item
-          label={t(p("name"))}
+        <CustomFormItem
+          label={renderLabel(t(p("name")))}
           name="name"
           rules={[
             { required: true },
@@ -151,49 +158,37 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = (
           ]}
           initialValue={editData?.algorithmName}
         >
-          <TrimInput />
-        </Form.Item>
+          <RoundedInput />
+        </CustomFormItem>
         {editData?.cluster ? (
-          <Form.Item
-            label={t(p("cluster"))}
-          >
+          <CustomFormItem label={renderLabel(t(p("cluster")))}>
             {getI18nConfigCurrentText(editData?.cluster?.name, languageId)}
-          </Form.Item>
+          </CustomFormItem>
         ) : (
-          <Form.Item
-            label={t(p("cluster"))}
-            name="cluster"
-            rules={[
-              { required: true },
-            ]}
-          >
-            <SingleClusterSelector />
-          </Form.Item>
+          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+            <RoundedSingleClusterSelector />
+          </CustomFormItem>
         )}
 
-        <Form.Item
-          label={t(p("framework"))}
+        <CustomFormItem
+          label={renderLabel(t(p("framework")))}
           name="type"
-          rules={[
-            { required: true },
-          ]}
+          rules={[{ required: true }]}
           initialValue={editData?.algorithmFramework}
         >
-          <Select
+          <RoundedSelect
             style={{ minWidth: "120px" }}
-            options={
-              Object.entries(AlgorithmTypeTextTrans).map(([key, value]) => ({ label:value, value:key }))}
-          >
-          </Select>
-        </Form.Item>
-        <Form.Item
-          label={t(p("description"))}
+            options={Object.entries(AlgorithmTypeTextTrans).map(([key, value]) => ({ label: value, value: key }))}
+          ></RoundedSelect>
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("description")))}
           name="description"
           initialValue={editData?.algorithmDescription}
         >
-          <Input.TextArea />
-        </Form.Item>
+          <RoundedTextArea />
+        </CustomFormItem>
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

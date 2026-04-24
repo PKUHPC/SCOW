@@ -36,6 +36,49 @@ export const DisableIconContainer = styled.div`
   color: #8c8c8c;
 `;
 
+const TableRowIconContainer = styled.span<{ $active: boolean }>`
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 0;
+  cursor: pointer;
+
+  .table-row-icon-background {
+    fill: ${({ theme, $active }) =>
+      $active ? theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder : "#F0F0F0"};
+    transition: fill 0.2s ease;
+  }
+
+  .table-row-icon-border {
+    stroke: ${({ theme, $active }) =>
+      $active ? theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder : "#F0F0F0"};
+    transition: stroke 0.2s ease;
+  }
+
+  .table-row-icon-foreground {
+    fill: ${({ theme, $active }) =>
+      $active ? theme.token.colorPrimary : "#434343"};
+    transition: fill 0.2s ease;
+  }
+
+  &:hover {
+    .table-row-icon-background {
+      fill: ${({ theme }) => theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder};
+    }
+
+    .table-row-icon-border {
+      stroke: ${({ theme }) => theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder};
+    }
+
+    .table-row-icon-foreground {
+      fill: ${({ theme }) => theme.token.colorPrimary};
+    }
+  }
+`;
+
 export const Icon = styled(InitIcon)`
   flex: 1;
   justify-content: center;
@@ -58,12 +101,13 @@ const createNewVersionSVG = () => (
   </svg>
 );
 
-export const CreateNewVersionIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CreateNewVersionIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={createNewVersionSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 编辑图标
 const editSVG = () => (
@@ -83,7 +127,7 @@ const editSVG = () => (
 );
 
 export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={editSVG} {...props} ref={ref} />
@@ -92,8 +136,7 @@ export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwar
       <IconContainer>
         <Icon component={editSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 删除图标
@@ -116,12 +159,13 @@ const deleteSVG = () => (
   </svg>
 );
 
-export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={deleteSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 进入目录图标
 const enterDirectorySVG = () => (
@@ -142,12 +186,13 @@ const enterDirectorySVG = () => (
   </svg>
 );
 
-export const EnterDirectoryIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const EnterDirectoryIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={enterDirectorySVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 详情图标
 const detailSVG = () => (
@@ -198,12 +243,13 @@ const viewFileSVG = () => (
   </svg>
 );
 
-export const ViewFileIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ViewFileIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={viewFileSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 分享图标
 const shareSVG = () => (
@@ -230,8 +276,8 @@ const shareSVG = () => (
   </svg>
 );
 
-export const ShareIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ShareIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={shareSVG} {...props} ref={ref} />
@@ -240,8 +286,8 @@ export const ShareIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={shareSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 取消分享图标
 const cancelShareSVG = () => (
@@ -269,8 +315,8 @@ const cancelShareSVG = () => (
   </svg>
 );
 
-export const CancelShareIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CancelShareIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={cancelShareSVG} {...props} ref={ref} />
@@ -279,8 +325,8 @@ export const CancelShareIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={cancelShareSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 复制图标
 const copySVG = () => (
@@ -301,12 +347,13 @@ const copySVG = () => (
   </svg>
 );
 
-export const CopyIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CopyIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={copySVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 取消图标
 const cancelSVG = () => (
@@ -328,12 +375,13 @@ const cancelSVG = () => (
   </svg>
 );
 
-export const CancelIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CancelIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={cancelSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 再次提交图标
 const submitAgainSVG = () => (
@@ -360,19 +408,21 @@ const submitAgainSVG = () => (
   </svg>
 );
 
-export const SubmitAgainIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const SubmitAgainIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={submitAgainSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
-export const NoHoverSubmitAgainIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const NoHoverSubmitAgainIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <NoHoverIconContainer>
       <Icon component={submitAgainSVG} {...props} ref={ref} />
     </NoHoverIconContainer>
-  ));
+  ),
+);
 
 // 重命名图标
 const renameSVG = () => (
@@ -401,14 +451,13 @@ const renameSVG = () => (
   </svg>
 );
 
-export const RenameIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const RenameIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={renameSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
-
-
+  ),
+);
 
 // 下载图标
 const downloadSVG = () => (
@@ -428,12 +477,13 @@ const downloadSVG = () => (
   </svg>
 );
 
-export const DownloadIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const DownloadIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={downloadSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 结束图标
 const endSVG = () => (
@@ -490,8 +540,8 @@ const connectSVG = () => (
   </svg>
 );
 
-export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
@@ -500,8 +550,8 @@ export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 事件图标
 const eventSVG = () => (
@@ -558,7 +608,7 @@ const enterContainerSVG = () => (
 );
 
 export const EnterContainerIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={enterContainerSVG} {...props} ref={ref} />
@@ -567,8 +617,7 @@ export const EnterContainerIcon: React.ForwardRefExoticComponent<IconProps> = Re
       <IconContainer>
         <Icon component={enterContainerSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 日志图标
@@ -675,8 +724,8 @@ const publishSVG = () => (
   </svg>
 );
 
-export const PublishIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const PublishIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={publishSVG} {...props} ref={ref} />
@@ -685,8 +734,8 @@ export const PublishIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={publishSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 取消发布图标
 const cancelPublishSVG = () => (
@@ -715,8 +764,8 @@ const cancelPublishSVG = () => (
   </svg>
 );
 
-export const CancelPublishIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CancelPublishIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={cancelPublishSVG} {...props} ref={ref} />
@@ -725,8 +774,8 @@ export const CancelPublishIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={cancelPublishSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 取消发布图标
 const platformSVG = () => (
@@ -749,12 +798,62 @@ const platformSVG = () => (
     />
     <path d="M8 4.79999L5.25 7.19999L4 6.10908" stroke="white" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
-
 );
 
 export const PlatformIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => <Icon component={platformSVG} {...props} ref={ref} />,
+);
+
+// 表格收起图标
+const collapseTableRowSVG = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect className="table-row-icon-border" x="0.5" y="0.5" width="17" height="17" rx="3.5" />
+    <path
+      className="table-row-icon-foreground"
+      d="M12.5 8.49512C12.7761 8.49512 13 8.71897 13 8.99512C13 9.27126 12.7761 9.49512
+      12.5 9.49512H5.5C5.22386 9.49512 5 9.27126 5 8.99512C5 8.71897 5.22386 8.49512
+      5.5 8.49512H12.5Z"
+    />
+  </svg>
+);
+
+export const CollapseTableRowIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
   (props, ref: Ref<HTMLSpanElement> | undefined) => (
-    <Icon component={platformSVG} {...props} ref={ref} />
+    <TableRowIconContainer $active={true} onClick={props.onClick} ref={ref}>
+      {collapseTableRowSVG()}
+    </TableRowIconContainer>
+  ),
+);
+
+// 表格展开图标
+const expandTableRowSVG = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      className="table-row-icon-background"
+      d="M14 0C16.2091 0 18 1.79086 18 4V14C18 16.14 16.3194 17.8879 14.2061 17.9951L14
+      18H4L3.79395 17.9951C1.7488 17.8913 0.108652 16.2512 0.00488281 14.2061L0 14V4C0
+      1.79086 1.79086 1.61064e-08 4 0H14ZM4 1.2002C2.4536 1.2002 1.2002 2.4536 1.2002 4V14C1.2002
+      15.5464 2.4536 16.7998 4 16.7998H14C15.5464 16.7998 16.7998 15.5464 16.7998 14V4C16.7998
+      2.4536 15.5464 1.2002 14 1.2002H4Z"
+    />
+    <path
+      className="table-row-icon-foreground"
+      d="M9.00587 5.14942C9.33717 5.15127 9.60743 5.42167 9.60938 5.75294L9.62403
+      8.44239L12.3145 8.45802C12.6458 8.45993 12.9161 8.73021 12.918 9.06153C12.9198
+      9.39275 12.6525 9.65892 12.3213 9.65724L9.62989 9.64161L9.64552 12.3203C9.64736
+      12.6517 9.3802 12.9188 9.04884 12.917C8.71766 12.9149 8.44814 12.6447 8.4463
+      12.3135L8.43067 9.63575L5.75392 9.6211C5.42266 9.61926 5.15242 9.34978 5.1504
+      9.01856C5.14856 8.6872 5.41571 8.42004 5.74708 8.42188L8.42481 8.43653L8.41017
+      5.7461C8.40853 5.41497 8.67471 5.14768 9.00587 5.14942Z"
+    />
+  </svg>
+);
+
+export const ExpandTableRowIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+    <TableRowIconContainer $active={false} onClick={props.onClick} ref={ref}>
+      {expandTableRowSVG()}
+    </TableRowIconContainer>
   ),
 );
 

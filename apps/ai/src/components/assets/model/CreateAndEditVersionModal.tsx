@@ -1,6 +1,9 @@
-import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
+import { CustomFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
+import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput, RoundedTextArea } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { AppRouterStyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { App, Form, Input, Modal } from "antd";
+import { App, Form } from "antd";
 import React from "react";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -27,15 +30,23 @@ export interface Props {
 }
 
 interface FormFields {
-  versionName: string,
-  versionDescription?: string,
-  algorithmVersion?: string,
-  path: string,
+  versionName: string;
+  versionDescription?: string;
+  algorithmVersion?: string;
+  path: string;
 }
 
-export const CreateAndEditVersionModal: React.FC<Props> = (
-  { open, onClose, modelId, cluster, modelName, refetch, editData, isPlatformOwned, usePublicPath },
-) => {
+export const CreateAndEditVersionModal: React.FC<Props> = ({
+  open,
+  onClose,
+  modelId,
+  cluster,
+  modelName,
+  refetch,
+  editData,
+  isPlatformOwned,
+  usePublicPath,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.model.createAndEditVersionModal.");
   const pCommon = prefix("common.");
@@ -90,14 +101,11 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
             errors: [t(p("alreadyExisted"))],
           },
         ]);
-      }
-      else if (e.data?.code === "NOT_FOUND") {
+      } else if (e.data?.code === "NOT_FOUND") {
         message.error(t(p("notFound")));
-      }
-      else if (e.data?.code === "PRECONDITION_FAILED") {
+      } else if (e.data?.code === "PRECONDITION_FAILED") {
         message.error(t(p("tryLater")));
-      }
-      else {
+      } else {
         message.error(e.message);
       }
     },
@@ -115,8 +123,7 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
         modelId,
         ...(isPlatformOwned ? { isPlatformOwned: true } : {}),
       });
-    }
-    else {
+    } else {
       createModelVersionMutation.mutate({
         versionName,
         versionDescription,
@@ -129,9 +136,10 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
   };
 
   const labelWidth = languageId === "zh_cn" ? 80 : 140;
+  const renderLabel = (label: string) => <FormLabel>{label}</FormLabel>;
 
   return (
-    <Modal
+    <AppRouterStyledModal
       title={editData?.versionName ? t(p("edit")) : t(p("add"))}
       open={open}
       onOk={form.submit}
@@ -145,6 +153,8 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
         onFinish={onOk}
         layout="horizontal"
         labelAlign="left"
+        colon={false}
+        requiredMark={false}
         labelCol={{
           flex: `0 0 ${labelWidth}px`,
         }}
@@ -155,18 +165,12 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
           },
         }}
       >
-        <Form.Item
-          label={t(p("name"))}
-        >
-          {modelName}
-        </Form.Item>
-        <Form.Item
-          label={t(p("cluster"))}
-        >
+        <CustomFormItem label={renderLabel(t(p("name")))}>{modelName}</CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("cluster")))}>
           {getI18nConfigCurrentText(cluster?.name, languageId)}
-        </Form.Item>
-        <Form.Item
-          label={t(p("versionName"))}
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("versionName")))}
           name="versionName"
           rules={[
             { required: true },
@@ -175,43 +179,42 @@ export const CreateAndEditVersionModal: React.FC<Props> = (
           ]}
           initialValue={editData?.versionName}
         >
-          <TrimInput />
-        </Form.Item>
-        <Form.Item label={t(p("description"))} name="versionDescription" initialValue={editData?.versionDescription}>
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item label={t(p("algorithmVersion"))} name="algorithmVersion" initialValue={editData?.algorithmVersion}>
-          <Input.TextArea />
-        </Form.Item>
-        {
-          !editData?.versionId ? (
-            <Form.Item
-              label={t(p("select"))}
-              name="path"
-              rules={[{ required: true }]}
-            >
-              <TrimInput
-                disabled={true}
-                placeholder={t(p("selectModelFolder"))}
-                suffix={
-                  (
-                    <FileSelectModal
-                      allowedFileType={["DIR"]}
-                      onSubmit={(path: string) => {
-                        form.setFields([{ name: "path", value: path, touched: true }]);
-                        form.validateFields(["path"]);
-                      }}
-                      clusterId={cluster?.id ?? ""}
-                      usePublicPath={usePublicPath}
-                    />
-                  )
-                }
-              />
-            </Form.Item>
-          ) : undefined
-        }
-
+          <RoundedInput />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("description")))}
+          name="versionDescription"
+          initialValue={editData?.versionDescription}
+        >
+          <RoundedTextArea />
+        </CustomFormItem>
+        <CustomFormItem
+          label={renderLabel(t(p("algorithmVersion")))}
+          name="algorithmVersion"
+          initialValue={editData?.algorithmVersion}
+        >
+          <RoundedTextArea />
+        </CustomFormItem>
+        {!editData?.versionId ? (
+          <CustomFormItem label={renderLabel(t(p("select")))} name="path" rules={[{ required: true }]}>
+            <RoundedInput
+              disabled={true}
+              placeholder={t(p("selectModelFolder"))}
+              suffix={
+                <FileSelectModal
+                  allowedFileType={["DIR"]}
+                  onSubmit={(path: string) => {
+                    form.setFields([{ name: "path", value: path, touched: true }]);
+                    form.validateFields(["path"]);
+                  }}
+                  clusterId={cluster?.id ?? ""}
+                  usePublicPath={usePublicPath}
+                />
+              }
+            />
+          </CustomFormItem>
+        ) : undefined}
       </Form>
-    </Modal>
+    </AppRouterStyledModal>
   );
 };

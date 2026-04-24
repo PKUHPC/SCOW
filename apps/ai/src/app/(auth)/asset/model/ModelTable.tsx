@@ -7,6 +7,7 @@ import { App, Button, Form, Modal, Space, Table, TableColumnsType, Tooltip } fro
 import { useCallback, useState } from "react";
 import { CreateAndEditModalModal } from "src/components/assets/model/CreateAndEditModelModal";
 import { CreateAndEditVersionModal } from "src/components/assets/model/CreateAndEditVersionModal";
+import { TableExpandIcon } from "src/components/assets/TableExpandIcon";
 import { SingleClusterSelector } from "src/components/ClusterSelector";
 import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { ModalButton, ModalLink } from "src/components/ModalLink";
@@ -29,8 +30,8 @@ interface Props {
 }
 
 interface FilterForm {
-  nameOrDesc?: string,
-  clusterId?: string,
+  nameOrDesc?: string;
+  clusterId?: string;
 }
 
 interface PageInfo {
@@ -38,10 +39,8 @@ interface PageInfo {
   pageSize?: number;
 }
 
-const CreateModalModalButton =
-ModalButton(CreateAndEditModalModal, { type: "primary", icon: <PlusOutlined /> });
-const EditModalModalButton =
-ModalLink(CreateAndEditModalModal);
+const CreateModalModalButton = ModalButton(CreateAndEditModalModal, { type: "primary", icon: <PlusOutlined /> });
+const EditModalModalButton = ModalLink(CreateAndEditModalModal);
 const CreateVersionModalButton = ModalLink(CreateAndEditVersionModal);
 
 export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
@@ -51,7 +50,6 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const languageId = useI18n().currentLanguage.id;
   const theme = useTheme();
 
-
   const [{ confirm }, confirmModalHolder] = Modal.useModal();
   const { message } = App.useApp();
 
@@ -59,19 +57,19 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     return {
       nameOrDesc: undefined,
       framework: undefined,
-      clusterId:undefined,
+      clusterId: undefined,
     };
   });
 
   const [form] = Form.useForm<FilterForm>();
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
 
-  const { data, isFetching, refetch, error } = trpc.model.list.useQuery(
-    { ...pageInfo,
-      nameOrDesc:query.nameOrDesc,
-      clusterId:query.clusterId,
-      isPublic: parseBooleanParam(isPublic),
-    });
+  const { data, isFetching, refetch, error } = trpc.model.list.useQuery({
+    ...pageInfo,
+    nameOrDesc: query.nameOrDesc,
+    clusterId: query.clusterId,
+    isPublic: parseBooleanParam(isPublic),
+  });
   if (error) {
     message.error(t(p("notFound")));
   }
@@ -86,24 +84,25 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
   });
 
-  const deleteModel = useCallback(
-    async (id: number) => {
-      confirm({
-        title: t(p("delete")),
-        onOk:async () => {
-          await deleteModelMutation.mutateAsync({ id });
-        },
-      });
+  const deleteModel = useCallback(async (id: number) => {
+    confirm({
+      title: t(p("delete")),
+      onOk: async () => {
+        await deleteModelMutation.mutateAsync({ id });
+      },
+    });
+  }, []);
+
+  const getCurrentCluster = useCallback(
+    (clusterId: string) => {
+      return clusters.find((c) => c.id === clusterId);
     },
-    [],
+    [clusters],
   );
 
-  const getCurrentCluster = useCallback((clusterId: string) => {
-    return clusters.find((c) => c.id === clusterId);
-  }, [clusters]);
-
   const columns: TableColumnsType<ModelInterface> = [
-    { dataIndex: "name",
+    {
+      dataIndex: "name",
       title: t(p("name")),
       onCell: () => ({
         style: {
@@ -114,10 +113,14 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
         },
       }),
     },
-    { dataIndex: "clusterId", title: t(p("cluster")),
-      render: (_, r) =>
-        getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId },
-    { dataIndex: "description", title: t(p("description")),
+    {
+      dataIndex: "clusterId",
+      title: t(p("cluster")),
+      render: (_, r) => getI18nConfigCurrentText(getCurrentCluster(r.clusterId)?.name, languageId) ?? r.clusterId,
+    },
+    {
+      dataIndex: "description",
+      title: t(p("description")),
       onCell: () => ({
         style: {
           maxWidth: 200,
@@ -129,64 +132,78 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
     },
     { dataIndex: "algorithmName", title: t(p("algorithmName")) },
     { dataIndex: "algorithmFramework", title: t(p("algorithmFramework")) },
-    { dataIndex: "versions", title: t(p("versions")), render:(versions) => versions.length },
+    { dataIndex: "versions", title: t(p("versions")), render: (versions) => versions.length },
     ...(isPublic
-      ? [{
-        dataIndex: "shareUser",
-        title: t(pCommon("publishUser")),
-        // @ts-ignore
-        render: (_, r) =>
-          r.isPlatformOwned ? (
-            <PlatformTag color={theme.token.colorPrimary}>
-              <span>{t(pCommon("platform"))}</span>
-              <PlatformIcon />
-            </PlatformTag>
-          ) : (
-            `${r.ownerName}（ID:${r.owner}）`
-          ),
-      } as const]
+      ? [
+          {
+            dataIndex: "shareUser",
+            title: t(pCommon("publishUser")),
+            // @ts-ignore
+            render: (_, r) =>
+              r.isPlatformOwned ? (
+                <PlatformTag color={theme.token.colorPrimary}>
+                  <span>{t(pCommon("platform"))}</span>
+                  <PlatformIcon />
+                </PlatformTag>
+              ) : (
+                `${r.ownerName}（ID:${r.owner}）`
+              ),
+          } as const,
+        ]
       : []),
-    { dataIndex: "updateTime", title: t(p("updatedTime")),
-      render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-    ...!isPublic ? [{ dataIndex: "action", title: t(p("action")),
-      render: (_: any, r: ModelInterface) => {
-        return (
-          <Space>
-            <CreateVersionModalButton
-              refetch={() => { refetch(); } }
-              modelId={r.id}
-              modelName={r.name}
-              cluster={getCurrentCluster(r.clusterId)}
-            >
-              <Tooltip title={t(p("createNewVersion"))}>
-                <CreateNewVersionIcon />
-              </Tooltip>
-            </CreateVersionModalButton>
-            <EditModalModalButton
-              refetch={refetch}
-              editData={{
-                cluster:getCurrentCluster(r.clusterId),
-                modelId:r.id,
-                modelName:r.name,
-                algorithmName:r.algorithmName,
-                algorithmFramework:r.algorithmFramework,
-                modalDescription:r.description,
-              }}
-            >
-              <Tooltip title={t("button.editButton")}>
-                <EditIcon />
-              </Tooltip>
-            </EditModalModalButton>
-            <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon onClick={() => {
-                deleteModel(r.id);
-              }}
-              />
-            </Tooltip>
-          </Space>
-        );
-      },
-    }] : [],
+    {
+      dataIndex: "updateTime",
+      title: t(p("updatedTime")),
+      render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+    },
+    ...(!isPublic
+      ? [
+          {
+            dataIndex: "action",
+            title: t(p("action")),
+            render: (_: any, r: ModelInterface) => {
+              return (
+                <Space>
+                  <CreateVersionModalButton
+                    refetch={() => {
+                      refetch();
+                    }}
+                    modelId={r.id}
+                    modelName={r.name}
+                    cluster={getCurrentCluster(r.clusterId)}
+                  >
+                    <Tooltip title={t(p("createNewVersion"))}>
+                      <CreateNewVersionIcon />
+                    </Tooltip>
+                  </CreateVersionModalButton>
+                  <EditModalModalButton
+                    refetch={refetch}
+                    editData={{
+                      cluster: getCurrentCluster(r.clusterId),
+                      modelId: r.id,
+                      modelName: r.name,
+                      algorithmName: r.algorithmName,
+                      algorithmFramework: r.algorithmFramework,
+                      modalDescription: r.description,
+                    }}
+                  >
+                    <Tooltip title={t("button.editButton")}>
+                      <EditIcon />
+                    </Tooltip>
+                  </EditModalModalButton>
+                  <Tooltip title={t("button.deleteButton")}>
+                    <DeleteIcon
+                      onClick={() => {
+                        deleteModel(r.id);
+                      }}
+                    />
+                  </Tooltip>
+                </Space>
+              );
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -215,7 +232,7 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
             <SingleClusterSelector
               allowClear={true}
               onChange={(val) => {
-                setQuery({ ...query, clusterId:val.id });
+                setQuery({ ...query, clusterId: val.id });
               }}
             />
           </Form.Item>
@@ -250,20 +267,22 @@ export const ModalTable: React.FC<Props> = ({ isPublic, clusters }) => {
         expandable={{
           expandedRowRender: (record) => {
             const cluster = getCurrentCluster(record.clusterId);
-            return cluster && (
-              <ModelVersionList
-                isPublic={isPublic}
-                models={data?.items ?? []}
-                modelId={record.id}
-                modelName={record.name}
-                cluster={cluster}
-              ></ModelVersionList>
+            return (
+              cluster && (
+                <ModelVersionList
+                  isPublic={isPublic}
+                  models={data?.items ?? []}
+                  modelId={record.id}
+                  modelName={record.name}
+                  cluster={cluster}
+                ></ModelVersionList>
+              )
             );
           },
+          expandIcon: (props) => <TableExpandIcon {...props} />,
         }}
         scroll={{ x: true }}
       />
-
 
       {/* antd中modal组件 */}
       {confirmModalHolder}

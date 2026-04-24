@@ -1,3 +1,4 @@
+import type { TextAreaProps } from "antd/es/input";
 import type { ComponentType } from "react";
 
 import { Input, InputNumber, type InputNumberProps, Select, type SelectProps } from "antd";
@@ -68,6 +69,29 @@ export const RoundedSearch = styled(Input.Search)`
     .ant-btn-icon {
       color: ${({ theme }) => theme.palette.primary[6]};
     }
+  }
+`;
+
+export const RoundedTextArea: ComponentType<TextAreaProps> = styled(Input.TextArea)`
+  font-size: 14px !important;
+  font-weight: lighter;
+  border-radius: 8px !important;
+  width: 100%;
+  min-height: 54px;
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid ${({ theme }) => theme.palette.gray[4]} !important;
+
+  ${focusedBorderAndShadowStyle}
+
+  &::placeholder {
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
+    opacity: 1 !important;
+  }
+
+  &:disabled,
+  &.ant-input-disabled {
+    color: ${({ theme }) => theme.palette.gray[4]} !important;
+    background-color: ${({ theme }) => theme.palette.gray[1]} !important;
   }
 `;
 

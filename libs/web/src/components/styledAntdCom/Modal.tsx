@@ -1,12 +1,19 @@
+"use client";
 import { Modal } from "antd";
-import { styled } from "styled-components";
+import { css, styled } from "styled-components";
 
+import { createModalButton } from "../profile/ModalLink";
+import { RoundedButton, type RoundedButtonProps } from "./Button";
 import { InlineFormItem } from "./CustomFormItem";
 
-export const StyledModal = styled(Modal)`
+const modalBaseStyles = css`
   .ant-modal-content {
     border-radius: 12px;
     padding: 24px;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 撑满父容器高度 */
+    overflow: hidden; /* 防止内容溢出 */
   }
 
   .ant-modal-close {
@@ -35,10 +42,15 @@ export const StyledModal = styled(Modal)`
 
   .ant-modal-body {
     padding-top: 24px;
+    flex: 1; /* 占满剩余空间 */
+    min-height: 0; /* flex 子元素必须设置，否则不收缩 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 交给内部自己滚动 */
   }
 
   .ant-modal-footer .ant-btn-default {
-    border-color: ${(props) => props.theme.palette.gray[3]};
+    border-color: ${(props) => props.theme.palette.gray[4]};
     color: ${(props) => props.theme.palette.gray[6]};
     border-radius: 8px;
     height: 36px;
@@ -53,6 +65,42 @@ export const StyledModal = styled(Modal)`
   }
 `;
 
+export const StyledModal = styled(Modal)`
+  ${modalBaseStyles}
+`;
+
+// 由于 Next.js App Router 默认的样式注入机制（CSS-in-JS 兼容性）
+// 与 Page Router 不同，或者是 Ant Design 的全局样式重置（Reset CSS） 在 App Router 下生效范围不同
+// 单独定义 AppRouter 下的 StyledModal 以确保样式正确应用，避免全局样式冲突
+export const AppRouterStyledModal = styled(Modal)`
+  /* 使用 && 提升 CSS 权重，确保在 App Router 下能盖住 Antd 的默认样式 */
+  && {
+    ${modalBaseStyles}
+
+    /* App Router 下 Antd 可能会在 body 里多渲染一层包裹器 div */
+    /* 让这个包裹器也继承 flex，否则高度就会塌陷 */
+    .ant-modal-body > div {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .ant-form-item-row {
+      align-items: center;
+    }
+
+    .ant-form-item-label {
+      display: flex;
+      align-items: center;
+    }
+
+    .ant-form-item-label > label {
+      height: auto;
+    }
+  }
+`;
+
 export const CompactInlineFormItem = styled(InlineFormItem)`
   .ant-form-item-row {
     gap: 6px;
@@ -62,3 +110,5 @@ export const CompactInlineFormItem = styled(InlineFormItem)`
     width: 72px;
   }
 `;
+
+export const RoundedModalButton = createModalButton<RoundedButtonProps>(RoundedButton);
