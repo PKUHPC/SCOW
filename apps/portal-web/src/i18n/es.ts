@@ -336,7 +336,6 @@ export default {
             " válida como directorio de trabajo. Si no se especifica, se usará el directorio del archivo script",
           submitConfirmContent: "¿Confirmas el envío de {} a {}?",
           submitConfirmOk: "Confirmar",
-          submitSuccessMessage: "¡Enviado correctamente! Tu nuevo ID de trabajo es: {}",
           submitFailedMessage: "Envío fallido",
           downloadSelected: "Descargar",
           showHiddenFiles: "Mostrar archivos ocultos: ",

@@ -336,7 +336,6 @@ export default {
             " Ohne Angabe wird das Verzeichnis der Skriptdatei verwendet",
           submitConfirmContent: "{} nach {} senden?",
           submitConfirmOk: "Bestätigen",
-          submitSuccessMessage: "Erfolgreich gesendet! Neue Job-ID: {}",
           submitFailedMessage: "Senden fehlgeschlagen",
           downloadSelected: "Herunterladen",
           showHiddenFiles: "Versteckte Dateien anzeigen: ",

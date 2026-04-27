@@ -335,7 +335,6 @@ export default {
             " diretório de trabalho. Caso contrário, usa-se o diretório do próprio script.",
           submitConfirmContent: "Confirmar submissão de {} para {}?",
           submitConfirmOk: "Confirmar",
-          submitSuccessMessage: "Submetido com sucesso! O novo ID da tarefa é: {}",
           submitFailedMessage: "Falha na submissão",
           downloadSelected: "Transferir",
           showHiddenFiles: "Mostrar ficheiros ocultos: ",

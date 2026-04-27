@@ -327,7 +327,6 @@ export default {
             "スクリプトの作業ディレクトリとして有効な絶対パスを指定してください。指定がない場合はスクリプトの所在ディレクトリが既定になります",
           submitConfirmContent: "{} を {} に送信しますか?",
           submitConfirmOk: "確認",
-          submitSuccessMessage: "送信しました。新しいジョブID: {}",
           submitFailedMessage: "送信に失敗しました",
           downloadSelected: "ダウンロード",
           showHiddenFiles: "隠しファイルを表示: ",

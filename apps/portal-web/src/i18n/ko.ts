@@ -326,7 +326,6 @@ export default {
             "스크립트 파일이 유효한 절대 경로를 작업 디렉토리로 지정했는지 확인하세요. 지정하지 않으면 스크립트 파일의 디렉토리가 기본 작업 디렉토리로 사용됩니다",
           submitConfirmContent: "{} 를 {} 에 제출하시겠습니까?",
           submitConfirmOk: "확인",
-          submitSuccessMessage: "제출 성공! 새 작업 ID: {}",
           submitFailedMessage: "제출 실패",
           downloadSelected: "다운로드",
           showHiddenFiles: "숨김 파일 표시: ",

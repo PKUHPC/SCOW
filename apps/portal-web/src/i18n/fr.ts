@@ -340,7 +340,6 @@ export default {
             " comme répertoire de travail ; sinon, le répertoire du fichier script sera utilisé par défaut",
           submitConfirmContent: "Confirmer la soumission de {} à {} ?",
           submitConfirmOk: "Confirmer",
-          submitSuccessMessage: "Soumis avec succès ! Nouvel ID de job : {}",
           submitFailedMessage: "Soumission échouée",
           downloadSelected: "Télécharger",
           showHiddenFiles: "Afficher les fichiers cachés : ",

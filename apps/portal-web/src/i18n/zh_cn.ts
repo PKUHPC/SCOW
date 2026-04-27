@@ -398,6 +398,9 @@ export default {
         failedResolveSymlink: "解析软链接失败",
         noAccessPermission: "无访问权限",
         noPath: "找不到该路径，请检查",
+        submitSuccessTitle: "提交成功",
+        submitSuccessJobIdLabel: "您的新作业ID为：",
+        viewJobList: "查看作业列表",
         preview: {
           fileTooLarge: "该文件大小超标（最大{}），请下载后查看",
           unsupportedFileType: "该文件类型不支持预览，请下载后查看",
@@ -447,7 +450,6 @@ export default {
 
           submitConfirmContent: "确认提交{}至{}?",
           submitConfirmOk: "确认",
-          submitSuccessMessage: "提交成功！您的新作业ID为：{}",
           submitFailedMessage: "提交失败",
           downloadSelected: "下载",
           showHiddenFiles: "显示隐藏文件: ",

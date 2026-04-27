@@ -337,7 +337,6 @@ export default {
             " Если не указано, будет использован каталог, содержащий скрипт.",
           submitConfirmContent: "Подтвердить отправку {} в {}?",
           submitConfirmOk: "Подтвердить",
-          submitSuccessMessage: "Успешно отправлено! Новый ID задания: {}",
           submitFailedMessage: "Ошибка отправки",
           downloadSelected: "Скачать",
           showHiddenFiles: "Показывать скрытые файлы: ",

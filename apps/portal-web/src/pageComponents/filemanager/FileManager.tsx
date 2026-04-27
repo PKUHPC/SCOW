@@ -1,4 +1,5 @@
 import {
+  CheckCircleFilled, ExclamationCircleFilled,
   CompressOutlined,
   CopyOutlined,
   DatabaseOutlined,
@@ -7,6 +8,7 @@ import {
   QuestionCircleOutlined,
   ScissorOutlined, SnippetsOutlined, UploadOutlined, UpOutlined,
 } from "@ant-design/icons";
+import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { formatBytesToGB } from "@scow/lib-web/build/utils/sizeFormatter";
@@ -15,7 +17,7 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { App, Button, Divider, Dropdown, MenuProps, Select, Space, Switch, Tooltip } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { basename,dirname, join } from "path";
+import { basename, dirname, join } from "path";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -166,6 +168,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const [operation, setOperation] = useState<Operation | undefined>(undefined);
   const [compression, setCompression] = useState<Compression>({ started: [], completed: []});
   const [showHiddenFile, setShowHiddenFile] = useState(false);
+  const [submitSuccessJobId, setSubmitSuccessJobId] = useState<number | null>(null);
+  const [submitConfirmInfo, setSubmitConfirmInfo] = useState<{
+    fileName: string; fullPath: string; targetClusterId: string; targetClusterName: string;
+  } | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [decompression, setDecompression] = useState<DeCompression>({
     decompressionStarted: [], decompressionCompleted: [],
   });
@@ -453,56 +460,54 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     const targetClusterId = clusterIdOverride ?? currentClusterRef.current.id;
     const fullPath = filePathOverride ?? join(path, fileName);
     const targetCluster = currentClusters.find((c) => c.id === targetClusterId) || currentClusterRef.current;
-
-    modal.confirm({
-      title: t(p("tableInfo.submitConfirmTitle")),
-      content: (
-        <>
-          <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
-          <p>
-            {t(p("tableInfo.submitConfirmContent"),
-              [fileName, getI18nConfigCurrentText(targetCluster.name, languageId)])}
-          </p>
-        </>
-      ),
-      okText: t(p("tableInfo.submitConfirmOk")),
-      onOk: async () => {
-        await api.submitFileAsJob({
-          body: {
-            cluster: targetClusterId,
-            filePath: fullPath,
-          },
-        })
-          .httpError(500, (e) => {
-            if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
-            || e.code === "UNIMPLEMENTED") {
-              modal.error({
-                title: t(p("tableInfo.submitFailedMessage")),
-                content: e.message,
-              });
-            } else {
-              message.error(e.message);
-              throw e;
-            }
-          })
-          .httpError(400, (e) => {
-            if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
-              modal.error({
-                title: t(p("tableInfo.submitFailedMessage")),
-                content: e.message,
-              });
-            } else {
-              message.error(e.message);
-              throw e;
-            }
-          })
-          .then((result) => {
-            message.success(t(p("tableInfo.submitSuccessMessage"), [result.jobId]));
-            resetSelectedAndOperation();
-            reload();
-          });
-      },
+    setSubmitConfirmInfo({
+      fileName, fullPath, targetClusterId,
+      targetClusterName: getI18nConfigCurrentText(targetCluster.name, languageId),
     });
+  };
+
+  const handleSubmitConfirmOk = async () => {
+    if (!submitConfirmInfo) return;
+    const { targetClusterId, fullPath } = submitConfirmInfo;
+    setSubmitLoading(true);
+    try {
+      await api.submitFileAsJob({
+        body: { cluster: targetClusterId, filePath: fullPath },
+      })
+        .httpError(500, (e) => {
+          if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
+          || e.code === "UNIMPLEMENTED") {
+            setSubmitConfirmInfo(null);
+            modal.error({
+              title: t(p("tableInfo.submitFailedMessage")),
+              content: e.message,
+            });
+          } else {
+            message.error(e.message);
+            throw e;
+          }
+        })
+        .httpError(400, (e) => {
+          if (e.code === "INVALID_ARGUMENT" || e.code === "INVALID_PATH") {
+            setSubmitConfirmInfo(null);
+            modal.error({
+              title: t(p("tableInfo.submitFailedMessage")),
+              content: e.message,
+            });
+          } else {
+            message.error(e.message);
+            throw e;
+          }
+        })
+        .then((result) => {
+          setSubmitConfirmInfo(null);
+          setSubmitSuccessJobId(result.jobId);
+          resetSelectedAndOperation();
+          reload();
+        });
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   // 递归解析符号链接的最终目标
@@ -1074,6 +1079,48 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         reload={reload}
         scowdEnabled={scowdEnabled}
       />
+      <StyledModal
+        open={submitConfirmInfo !== null}
+        title={(
+          <span>
+            <ExclamationCircleFilled style={{ color: theme.token.colorWarning, marginRight: 8 }} />
+            {t(p("tableInfo.submitConfirmTitle"))}
+          </span>
+        )}
+        okText={t(p("tableInfo.submitConfirmOk"))}
+        onOk={handleSubmitConfirmOk}
+        confirmLoading={submitLoading}
+        onCancel={() => setSubmitConfirmInfo(null)}
+        maskClosable={false}
+      >
+        <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
+        <p>
+          {t(p("tableInfo.submitConfirmContent"),
+            [submitConfirmInfo?.fileName, submitConfirmInfo?.targetClusterName])}
+        </p>
+      </StyledModal>
+      <StyledModal
+        open={submitSuccessJobId !== null}
+        title={(
+          <span>
+            <CheckCircleFilled style={{ color: "green", marginRight: 8 }} />
+            {t(p("submitSuccessTitle"))}
+          </span>
+        )}
+        onOk={() => {
+          setSubmitSuccessJobId(null);
+          router.push("/jobs/runningJobs");
+        }}
+        onCancel={() => setSubmitSuccessJobId(null)}
+        maskClosable={false}
+        okText={t(p("viewJobList"))}
+        cancelText={t("button.confirmButton")}
+      >
+        <span>
+          {t(p("submitSuccessJobIdLabel"))}
+          <span style={{ color: theme.token.colorPrimary }}>{submitSuccessJobId}</span>
+        </span>
+      </StyledModal>
     </div>
   );
 };

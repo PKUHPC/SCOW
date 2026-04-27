@@ -407,6 +407,9 @@ export default {
         failedResolveSymlink: "Failed to resolve symbolic link",
         noAccessPermission: "No access permission",
         noPath: "Path not found, please check",
+        submitSuccessTitle: "Submitted Successfully",
+        submitSuccessJobIdLabel: "Your new job ID is: ",
+        viewJobList: "View Job List",
         preview: {
           fileTooLarge: "File size exceeds the maximum limit ({}), please download to view",
           unsupportedFileType: "Unsupported file type, please download to view",
@@ -458,7 +461,6 @@ export default {
             "the script file will be designated as the default working directory.",
           submitConfirmContent: "Confirm submission of {} to {}?",
           submitConfirmOk: "Confirm",
-          submitSuccessMessage: "Submitted successfully! Your new job ID is: {}",
           submitFailedMessage: "Submitted Failed",
           downloadSelected: "Download",
           showHiddenFiles: "Show hidden files: ",
@@ -510,7 +512,7 @@ export default {
         checking: "Checking...",
         resumeUploadTitle: "Unfinished Upload Task",
         resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-        + "Do you want to clear the uploaded data and start this upload?",
+          + "Do you want to clear the uploaded data and start this upload?",
         resumeUploadOk: "Clear and Restart",
         resumeUploadCancel: "Cancel",
         completeUploadErrorText: "Failed to complete upload for file {}. {}",
@@ -541,7 +543,7 @@ export default {
         checking: "Checking...",
         resumeUploadTitle: "Unfinished Upload Task",
         resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-        + "Do you want to clear the uploaded data and start this upload?",
+          + "Do you want to clear the uploaded data and start this upload?",
         resumeUploadOk: "Clear and Restart",
         resumeUploadCancel: "Cancel",
         completeUploadErrorText: "Failed to complete upload for file {}. {}",

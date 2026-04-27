@@ -18,6 +18,7 @@ const modalBaseStyles = css`
 
   .ant-modal-close {
     color: ${(props) => props.theme.token.colorPrimary};
+    margin-top: 8px;
   }
 
   .ant-modal-close:hover {
@@ -50,7 +51,6 @@ const modalBaseStyles = css`
   }
 
   .ant-modal-footer .ant-btn-default {
-    border-color: ${(props) => props.theme.palette.gray[4]};
     color: ${(props) => props.theme.palette.gray[6]};
     border-radius: 8px;
     height: 36px;
