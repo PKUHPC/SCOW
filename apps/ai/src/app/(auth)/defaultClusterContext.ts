@@ -1,3 +1,4 @@
+import { usePublicConfig } from "src/app/(auth)/context";
 import { Cluster } from "src/server/trpc/route/config";
 
 
@@ -23,4 +24,9 @@ export function defaultClusterContext(clusters: Cluster[], currentClusterIds: st
 
   return { defaultCluster, setDefaultCluster, removeDefaultCluster, currentClusters };
 
+}
+
+export function useDefaultCluster() {
+  const { publicConfig: { CLUSTERS }, currentAvailableClusterIds } = usePublicConfig();
+  return defaultClusterContext(CLUSTERS, currentAvailableClusterIds ?? []);
 }

@@ -12,6 +12,7 @@ import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLangua
 import { TRPCClientError } from "@trpc/client";
 import { App, Form, type InputNumberProps } from "antd";
 import React, { type ComponentType, useEffect } from "react";
+import { useDefaultCluster } from "src/app/(auth)/defaultClusterContext";
 import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { FileSelectModal } from "src/components/FileSelectModal";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
@@ -93,6 +94,8 @@ export const CreateEditImageModal: React.FC<Props> = ({
   const cluster = Form.useWatch("cluster", form);
   const source = Form.useWatch("source", form);
   const types = Form.useWatch("types", form);
+
+  const { defaultCluster } = useDefaultCluster();
 
   const createMutation = trpc.image.createImage.useMutation({
     onSuccess() {
@@ -203,7 +206,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
             marginLeft: "16px",
           },
         }}
-        initialValues={isEdit && editData ? editData : { cluster: "" }}
+        initialValues={isEdit && editData ? editData : {}}
       >
         {isEdit && editData ? (
           <>
@@ -235,7 +238,7 @@ export const CreateEditImageModal: React.FC<Props> = ({
             >
               <RoundedInput />
             </CustomFormItem>
-            <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+            <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]} initialValue={defaultCluster}>
               <RoundedSingleClusterSelector />
             </CustomFormItem>
           </>

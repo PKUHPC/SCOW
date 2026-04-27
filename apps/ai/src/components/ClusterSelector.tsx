@@ -51,6 +51,7 @@ export const ClusterSelector: React.FC<Props> = ({ value, onChange }) => {
 };
 
 interface SingleSelectionProps {
+  value?: Cluster;
   defaultValue?: Cluster;
   onChange?: (cluster: Cluster) => void;
   label?: string;
@@ -60,7 +61,7 @@ interface SingleSelectionProps {
 
 const SingleClusterSelectorBase: React.FC<
   SingleSelectionProps & { SelectComponent: React.ComponentType<SelectProps> }
-> = ({ SelectComponent, defaultValue, onChange, label, clusterIds, allowClear }) => {
+> = ({ value, SelectComponent, defaultValue, onChange, label, clusterIds, allowClear }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
@@ -72,6 +73,7 @@ const SingleClusterSelectorBase: React.FC<
   return (
     <SelectComponent
       placeholder={t("component.clusterSelector.select")}
+      value={value?.id}
       defaultValue={defaultValue?.id}
       onChange={(value: unknown) => {
         const clusterId = value as string;

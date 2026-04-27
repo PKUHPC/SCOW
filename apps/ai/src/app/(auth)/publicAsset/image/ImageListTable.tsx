@@ -25,7 +25,6 @@ import { PublicAssetTableContainer } from "../common";
 
 interface Props {
   clusters: Cluster[];
-  currentClusterIds: string[];
 }
 
 interface FilterForm {

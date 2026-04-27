@@ -6,7 +6,7 @@ import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Sele
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form } from "antd";
 import React, { useEffect } from "react";
-import { defaultClusterContext } from "src/app/(auth)/defaultClusterContext";
+import { useDefaultCluster } from "src/app/(auth)/defaultClusterContext";
 import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { getDatasetTexts } from "src/models/Dateset";
@@ -22,7 +22,6 @@ export interface Props {
   isEdit: boolean;
   editData?: DatasetInterface;
   clusters: Cluster[];
-  currentClusterIds: string[];
   isPlatformOwned?: boolean;
 }
 
@@ -42,7 +41,6 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
   isEdit,
   editData,
   clusters,
-  currentClusterIds,
   isPlatformOwned,
 }) => {
   const t = useI18nTranslateToString();
@@ -69,7 +67,7 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
 
-  const { defaultCluster } = defaultClusterContext(clusters, currentClusterIds);
+  const { defaultCluster } = useDefaultCluster();
 
   useEffect(() => {
     resetForm();
@@ -184,7 +182,7 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
             marginLeft: "16px",
           },
         }}
-        initialValues={isEdit && editData ? editData : { cluster: defaultCluster }}
+        initialValues={isEdit && editData ? editData : {}}
       >
         <CustomFormItem
           label={renderLabel(t(p("name")))}
@@ -203,7 +201,7 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
               editData.clusterId}
           </CustomFormItem>
         ) : (
-          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]} initialValue={defaultCluster}>
             <RoundedSingleClusterSelector />
           </CustomFormItem>
         )}

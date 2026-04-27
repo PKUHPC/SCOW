@@ -12,7 +12,7 @@ import { AssetContainer } from "../AssetContainer";
 import { DatasetListTable } from "./DatasetListTable";
 
 export default function Page() {
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig } = usePublicConfig();
   const t = useI18nTranslateToString();
   useDocumentTitle(t("routes.publicAsset.dataTitle"));
 
@@ -24,16 +24,10 @@ export default function Page() {
   }
   return (
     <>
-      <PageTitle
-        titleText={t("routes.publicAsset.dataTitle")}
-      />
+      <PageTitle titleText={t("routes.publicAsset.dataTitle")} />
       <AssetContainer>
-        <DatasetListTable
-          clusters={publicConfig.CLUSTERS}
-          currentClusterIds={currentAvailableClusterIds}
-        />
+        <DatasetListTable clusters={publicConfig.CLUSTERS} />
       </AssetContainer>
     </>
-
   );
 }

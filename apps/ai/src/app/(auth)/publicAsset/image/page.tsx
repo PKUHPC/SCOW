@@ -12,7 +12,7 @@ import { AssetContainer } from "../AssetContainer";
 import { ImageListTable } from "./ImageListTable";
 
 export default function Page() {
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig } = usePublicConfig();
   const t = useI18nTranslateToString();
   useDocumentTitle(t("routes.publicAsset.imageTitle"));
 
@@ -25,14 +25,9 @@ export default function Page() {
 
   return (
     <>
-      <PageTitle
-        titleText={t("routes.publicAsset.imageTitle")}
-      />
+      <PageTitle titleText={t("routes.publicAsset.imageTitle")} />
       <AssetContainer>
-        <ImageListTable
-          clusters={publicConfig.CLUSTERS}
-          currentClusterIds={currentAvailableClusterIds}
-        />
+        <ImageListTable clusters={publicConfig.CLUSTERS} />
       </AssetContainer>
     </>
   );

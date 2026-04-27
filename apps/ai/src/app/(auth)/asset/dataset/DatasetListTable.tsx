@@ -30,7 +30,6 @@ import { DatasetVersionList } from "./DatasetVersionList";
 interface Props {
   isPublic: boolean;
   clusters: Cluster[];
-  currentClusterIds: string[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -56,7 +55,7 @@ const CreateDatasetModalButton = ModalButton(CreateEditDatasetModal, { type: "pr
 const EditDatasetModalButton = ModalLink(CreateEditDatasetModal);
 const CreateEditVersionModalButton = ModalLink(CreateEditDSVersionModal);
 
-export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentClusterIds }) => {
+export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const t = useI18nTranslateToString();
   const pModel = prefix("app.dataset.model.");
   const p = prefix("app.dataset.datasetListTable.");
@@ -196,12 +195,7 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
         </Form>
         {!isPublic && (
           <Space>
-            <CreateDatasetModalButton
-              refetch={refetch}
-              isEdit={false}
-              clusters={clusters}
-              currentClusterIds={currentClusterIds}
-            >
+            <CreateDatasetModalButton refetch={refetch} isEdit={false} clusters={clusters}>
               {t("button.addButton")}
             </CreateDatasetModalButton>
           </Space>
@@ -289,13 +283,7 @@ export const DatasetListTable: React.FC<Props> = ({ isPublic, clusters, currentC
                             <CreateNewVersionIcon />
                           </Tooltip>
                         </CreateEditVersionModalButton>
-                        <EditDatasetModalButton
-                          refetch={refetch}
-                          isEdit={true}
-                          editData={r}
-                          clusters={clusters}
-                          currentClusterIds={currentClusterIds}
-                        >
+                        <EditDatasetModalButton refetch={refetch} isEdit={true} editData={r} clusters={clusters}>
                           <Tooltip title={t("button.editButton")}>
                             <EditIcon />
                           </Tooltip>

@@ -11,7 +11,7 @@ import { DatasetListTable } from "./DatasetListTable";
 export default function Page() {
   const t = useI18nTranslateToString();
 
-  const { publicConfig, currentAvailableClusterIds } = usePublicConfig();
+  const { publicConfig } = usePublicConfig();
 
   useDocumentTitle(t("app.dataset.title"));
 
@@ -21,11 +21,7 @@ export default function Page() {
       label: t("app.dataset.private"),
       children: (
         <div>
-          <DatasetListTable
-            isPublic={false}
-            clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAvailableClusterIds}
-          />
+          <DatasetListTable isPublic={false} clusters={publicConfig.CLUSTERS} />
         </div>
       ),
     },
@@ -34,11 +30,7 @@ export default function Page() {
       label: t("app.dataset.public"),
       children: (
         <div>
-          <DatasetListTable
-            isPublic={true}
-            clusters={publicConfig.CLUSTERS}
-            currentClusterIds={currentAvailableClusterIds}
-          />
+          <DatasetListTable isPublic={true} clusters={publicConfig.CLUSTERS} />
         </div>
       ),
     },

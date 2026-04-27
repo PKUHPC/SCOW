@@ -6,6 +6,7 @@ import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Sele
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Form } from "antd";
 import React from "react";
+import { useDefaultCluster } from "src/app/(auth)/defaultClusterContext";
 import { RoundedSingleClusterSelector } from "src/components/ClusterSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AlgorithmTypeText, Framework, getAlgorithmTexts } from "src/models/Algorithm";
@@ -49,6 +50,8 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
 
   const [form] = Form.useForm<FormFields>();
   const { message } = App.useApp();
+
+  const { defaultCluster } = useDefaultCluster();
 
   const createAlgorithmMutation = trpc.algorithm.createAlgorithm.useMutation({
     onSuccess() {
@@ -165,7 +168,7 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
             {getI18nConfigCurrentText(editData?.cluster?.name, languageId)}
           </CustomFormItem>
         ) : (
-          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]}>
+          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]} initialValue={defaultCluster}>
             <RoundedSingleClusterSelector />
           </CustomFormItem>
         )}
