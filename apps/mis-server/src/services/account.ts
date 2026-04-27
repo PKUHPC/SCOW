@@ -9,13 +9,12 @@ import { createAccount } from "@scow/lib-auth";
 import { removeUserFromAccount } from "@scow/lib-auth";
 import { Decimal, decimalToMoney, moneyToNumber } from "@scow/lib-decimal";
 import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
-import { checkSchedulerApiVersion } from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
-import { Account as AccountProto, account_AccountStateFromJSON, Account_DisplayedAccountState,
+import {
+  Account as AccountProto, account_AccountStateFromJSON, Account_DisplayedAccountState,
   AccountServiceServer, AccountServiceService, BlockAccountResponse_Result,
 } from "@scow/protos/build/server/account";
-import { ApiVersion } from "@scow/utils/build/version";
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { authUrl } from "src/config";
@@ -26,7 +25,7 @@ import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
 import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemovedList";
 import { User, UserState } from "src/entities/User";
-import { UserAccount, UserRole as EntityUserRole, UserRole,UserStatus } from "src/entities/UserAccount";
+import { UserAccount, UserRole as EntityUserRole, UserRole, UserStatus } from "src/entities/UserAccount";
 import { InternalMessageType } from "src/models/messageType";
 import { CLUSTEROPS_ERROR_CODE } from "src/plugins/clusters";
 import { callHook } from "src/plugins/hookClient";
@@ -60,7 +59,7 @@ export const accountServiceServer = plugin((server) => {
       const result = await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
           accountName,
-        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"]});
+        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] });
 
         if (!account) {
           logger.warn("Account %s not found during blockAccount", accountName);
@@ -86,7 +85,7 @@ export const accountServiceServer = plugin((server) => {
             return await asyncClientCall(client.job, "getJobs", {
               jobTypes: [],
               fields,
-              filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"]},
+              filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
             });
           },
         );
@@ -100,7 +99,7 @@ export const accountServiceServer = plugin((server) => {
         }
 
         const blockThresholdAmount =
-        account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
         const result = await blockAccount(account,
           currentActivatedClusters,
@@ -166,7 +165,7 @@ export const accountServiceServer = plugin((server) => {
       const result = await em.transactional(async (em) => {
         const account = await em.findOne(Account, {
           accountName,
-        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"]});
+        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] });
 
         if (!account) {
           logger.warn("Account %s not found during unblockAccount", accountName);
@@ -187,7 +186,7 @@ export const accountServiceServer = plugin((server) => {
         account.state = AccountState.NORMAL;
 
         const blockThresholdAmount =
-        account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
         // 判断解除封锁之后账户是否仍需保持封锁状态
         const shouldBlockInCluster = getAccountStateInfo(
@@ -402,7 +401,7 @@ export const accountServiceServer = plugin((server) => {
       if (commonConfig.allowAppAuthorization) {
         const affiliatedTenantBlackAppList = await em.find(TenantDefaultAppRemovedList, {
           tenant: tenant,
-        }, { populate: ["tenant"]});
+        }, { populate: ["tenant"] });
 
         const accountDisabledApps = affiliatedTenantBlackAppList.map((t) => {
           return new AccountAppBlacklist({
@@ -480,7 +479,7 @@ export const accountServiceServer = plugin((server) => {
           logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
           await rollback(e);
         });
-      // 如果判断为要在集群中解封时
+        // 如果判断为要在集群中解封时
       } else {
         // 条件1：如果配置了资源管理服务，则调用适配器的 unblockAccountWithPartitions 接口
         if (commonConfig.scowResource?.enabled) {
@@ -539,7 +538,7 @@ export const accountServiceServer = plugin((server) => {
 
           }
 
-        // 条件2：如果没有配置资源管理服务，则调用适配器的 unblockAccount接口进行解封
+          // 条件2：如果没有配置资源管理服务，则调用适配器的 unblockAccount接口进行解封
         } else {
           await server.ext.clusters.callOnAll(
             currentActivatedClusters,
@@ -600,7 +599,7 @@ export const accountServiceServer = plugin((server) => {
       const owners = await em.find(UserAccount, {
         account: { accountName: results.map((x) => x.account.$.accountName), tenant: { name: tenantName } },
         role: EntityUserRole.OWNER,
-      }, { populate: ["user"]});
+      }, { populate: ["user"] });
 
       return [{
         accounts: results.map((x) => {
@@ -630,7 +629,7 @@ export const accountServiceServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "whitelist account task");
 
       const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } },
-        { populate: ["tenant"]});
+        { populate: ["tenant"] });
 
       if (!account) {
         logger.warn("Account %s not found during whitelistAccount", accountName);
@@ -663,7 +662,7 @@ export const accountServiceServer = plugin((server) => {
           operatorId,
           comment,
         );
-      // 如果移入白名单之前账户状态不为冻结，则账户状态变更为正常，账户在集群中为解封状态
+        // 如果移入白名单之前账户状态不为冻结，则账户状态变更为正常，账户在集群中为解封状态
       } else {
         if (account.state !== AccountState.NORMAL) {
           // 发送账户解封消息
@@ -732,7 +731,7 @@ export const accountServiceServer = plugin((server) => {
         );
 
         const blockThresholdAmount =
-        account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
         // 判断移出白名单后是否应在集群中封锁
         const shouldBlockInCluster = getAccountStateInfo(
@@ -811,7 +810,7 @@ export const accountServiceServer = plugin((server) => {
 
       if (!shouldBlockInCluster) {
         logger.info("The balance of Account %s is greater than the block threshold amount. "
-        + "Unblock the account.", account.accountName);
+          + "Unblock the account.", account.accountName);
         await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
       }
 
@@ -846,8 +845,10 @@ export const accountServiceServer = plugin((server) => {
         throw { code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
       }
 
-      const account = await em.findOne(Account, { accountName,
-        tenant: { name: tenantName } }, { populate: ["tenant","users","users.user"]});
+      const account = await em.findOne(Account, {
+        accountName,
+        tenant: { name: tenantName }
+      }, { populate: ["tenant", "users", "users.user"] });
 
       if (!account) {
         throw {
@@ -869,7 +870,7 @@ export const accountServiceServer = plugin((server) => {
           return await asyncClientCall(client.job, "getJobs", {
             fields,
             jobTypes: [],
-            filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"]},
+            filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
           });
         },
       );
@@ -885,26 +886,6 @@ export const accountServiceServer = plugin((server) => {
           message: JSON.stringify(runningJobsObj),
         } as ServiceError;
       }
-
-      // 当前接口要求的最低调度器接口版本
-      const minRequiredApiVersion: ApiVersion = { major: 1, minor: 7, patch: 0 };
-      await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        // 当前接口要求的最低调度器接口版本
-        // 检查调度器的 API 版本
-        await checkSchedulerApiVersion(client, minRequiredApiVersion);
-      }).catch(() => {
-
-        const details = "The method is not supported with the current scheduler adapter version. " +
-          "To use this method, the scheduler adapter must be upgraded to version " +
-          `${minRequiredApiVersion.major}.${minRequiredApiVersion.minor}.${minRequiredApiVersion.patch} or higher.`;
-
-        logger.error(details, "Scheduler API version mismatch.");
-
-        throw {
-          code: Status.UNIMPLEMENTED,
-          message: details,
-        } as ServiceError;
-      });
 
       // 处理用户账户关系表，删除账户与所有用户的关系
       const hasCapabilities = server.ext.capabilities.accountUserRelation;

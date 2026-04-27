@@ -5,16 +5,19 @@ import { ServiceError, status } from "@grpc/grpc-js";
 import { getLoginNode } from "@scow/config/build/cluster";
 import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { NodeInfo_NodeState, nodeInfo_NodeStateFromJSON } from "@scow/protos/build/common/config";
-import { ClusterRuntimeInfo_LastActivationOperation, ConfigServiceServer,
-  ConfigServiceService, MigrateNodeInfo_MigratableCluster, NodeStatus } from "@scow/protos/build/server/config";
-import { ApiVersion } from "@scow/utils/build/version";
+import {
+  ClusterRuntimeInfo_LastActivationOperation, ConfigServiceServer,
+  ConfigServiceService, MigrateNodeInfo_MigratableCluster, NodeStatus
+} from "@scow/protos/build/server/config";
 import { getActivatedClusters, getClustersRuntimeInfo } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
 import { rootKeyPair } from "src/config/env";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
-import { getUniqueMigrationGroups, handleValidationErrors,NodeClusterStatus,
+import {
+  getUniqueMigrationGroups, handleValidationErrors, NodeClusterStatus,
   NodeClusterStatusWithPartitions, normalizeNodeName, performClusterChecks
-  ,validateMigratableClustersConfig } from "src/utils/migrateNode";
+  , validateMigratableClustersConfig
+} from "src/utils/migrateNode";
 import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const misConfigServiceServer = plugin((server) => {
@@ -42,7 +45,7 @@ export const misConfigServiceServer = plugin((server) => {
         return { cluster: x.cluster, partitions: x.result.partitions };
       });
 
-      return [{ clusterPartitions: wrappedResult } ];
+      return [{ clusterPartitions: wrappedResult }];
     },
 
 
@@ -240,16 +243,12 @@ export const misConfigServiceServer = plugin((server) => {
 
       logger.info(`Loaded ${uniqueGroups.length} eligible migration targets for cluster ${uniqueGroups.join(", ")}`);
 
-      // 3. 判断各适配器接口版本
-      const minRequiredApiVersion: ApiVersion = { major: 1, minor: 9, patch: 0 };
-
       const clusterArr = [...uniqueGroups, cluster];
 
       // 检查集群状态和版本
-      const { clusterErrors, versionErrors } = await performClusterChecks(
+      const { clusterErrors } = await performClusterChecks(
         {
           clusters: clusterArr,
-          minVersion: { major: 1, minor: 9, patch: 0 },
           operationName: "getClusterMigrateNodesInfo",
         },
         logger,
@@ -259,8 +258,6 @@ export const misConfigServiceServer = plugin((server) => {
       // 整理前述报错
       handleValidationErrors({
         clusterErrors,
-        versionErrors,
-        minVersion: minRequiredApiVersion,
         logger,
       });
 
@@ -286,7 +283,7 @@ export const misConfigServiceServer = plugin((server) => {
           const message = errDetailsArr[1].split(": ")[1];
 
           if (message) {
-            return { nodes: []};
+            return { nodes: [] };
           }
         }
         logger.error(JSON.stringify(e));
@@ -415,7 +412,8 @@ export const misConfigServiceServer = plugin((server) => {
               logger.error("Node migration status unknown. ", JSON.stringify(node));
               throw {
                 code: status.UNKNOWN,
-                message: "Node migration status unknown." } as ServiceError;
+                message: "Node migration status unknown."
+              } as ServiceError;
             }
           }
         }
@@ -460,9 +458,6 @@ export const misConfigServiceServer = plugin((server) => {
 
       logger.info(`Loaded ${uniqueGroups.length} eligible migration targets for cluster ${uniqueGroups.join(", ")}`);
 
-      // 3. 判断涉及集群的适配器接口版本以及适配器是否存在
-      const minRequiredApiVersion: ApiVersion = { major: 1, minor: 9, patch: 0 };
-
       const clusterArr = [destinationCluster, ...uniqueGroups]; // 需要校验的集群列表
 
       if (originCluster) {
@@ -470,10 +465,9 @@ export const misConfigServiceServer = plugin((server) => {
       }
 
       // 检查集群状态和版本
-      const { clusterErrors, versionErrors } = await performClusterChecks(
+      const { clusterErrors } = await performClusterChecks(
         {
           clusters: clusterArr,
-          minVersion: { major: 1, minor: 9, patch: 0 },
           operationName: "migrateNode",
         },
         logger,
@@ -483,8 +477,6 @@ export const misConfigServiceServer = plugin((server) => {
       // 整理前述报错
       handleValidationErrors({
         clusterErrors,
-        versionErrors,
-        minVersion: minRequiredApiVersion,
         logger,
       });
 
@@ -583,7 +575,7 @@ export const misConfigServiceServer = plugin((server) => {
 
       if (nodeActiveArr.length) {
         const message =
-        `node ${nodeName} is already active on cluster ${nodeActiveArr.map((item) => item.cluster).join(", ")}`;
+          `node ${nodeName} is already active on cluster ${nodeActiveArr.map((item) => item.cluster).join(", ")}`;
 
         logger.error(message);
 

@@ -3,10 +3,8 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
-import { checkSchedulerApiVersion } from "@scow/lib-server";
 import { TimeUnit } from "@scow/protos/build/portal/job";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { ApiVersion } from "@scow/utils/build/version";
 import path, { join } from "path";
 import { JobOps, JobTemplate, JobTemplateInfo } from "src/clusterops/api/job";
 import { portalConfig } from "src/config/portal";
@@ -60,7 +58,7 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
       const { exists } = await client.file.exists({ userId, path: join(userHomeDir, portalConfig.savedJobsDir) });
 
       if (!exists) {
-        return { results: []};
+        return { results: [] };
       }
 
       const { filesInfo } = await client.file.readDirectory({
@@ -77,7 +75,7 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
           data = JSON.parse(content.toString()) as JobMetadata;
         } catch (error) {
           logger.error("Parsing JSON file %s failed, the content is %s,the error is %o",
-            filePath, content.toString(),error);
+            filePath, content.toString(), error);
         }
 
         return {
@@ -316,12 +314,6 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
         cluster,
         logger,
         async (client) => {
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 5, patch: 0 };
-
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
-
           return await asyncClientCall(client.job, "submitScriptAsJob", {
             userId, script: content.toString(), scriptFileFullPath,
           }).catch((e) => {
@@ -372,7 +364,7 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
       const submitTime = Date.now();
       const id = `${jobInfo.jobName}-${submitTime}`;
       const filePath = join(userHomeDir, portalConfig.savedJobsDir, id);
-      const metadata: JobMetadata = { ...jobInfo, submitTime:submitTime.toString() };
+      const metadata: JobMetadata = { ...jobInfo, submitTime: submitTime.toString() };
 
       await client.file.writeFile({ userId, filePath, content: JSON.stringify(metadata) });
 

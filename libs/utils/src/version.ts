@@ -28,11 +28,3 @@ export function readVersionFile(versionJsonFileName = "version.json") {
 
   return jsonInfo;
 }
-
-
-// SemVer类型version
-export interface ApiVersion {
-  major: number;
-  minor: number;
-  patch: number;
-};

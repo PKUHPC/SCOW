@@ -4,14 +4,15 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { getClusterConfigs } from "@scow/config/build/cluster";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
-import { checkSchedulerApiVersion, convertClusterConfigsToServerProtoType, libGetAccounts,
-  libGetCurrentActivatedClusters, libGetUserInfo, NO_CLUSTERS } from "@scow/lib-server";
+import {
+  convertClusterConfigsToServerProtoType, libGetAccounts,
+  libGetCurrentActivatedClusters, libGetUserInfo, NO_CLUSTERS
+} from "@scow/lib-server";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { ConfigServiceServer, ConfigServiceService, Partition } from "@scow/protos/build/common/config";
 import { ConfigServiceServer as runTimeConfigServiceServer, ConfigServiceService as runTimeConfigServiceService }
   from "@scow/protos/build/portal/config";
 import { AccountStatusFilter } from "@scow/protos/build/portal/job";
-import { ApiVersion } from "@scow/utils/build/version";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { configClusters } from "src/config/clusters";
@@ -94,10 +95,6 @@ export const staticConfigServiceServer = plugin((server) => {
         cluster,
         logger,
         async (client) => {
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 6, patch: 0 };
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
           return await asyncClientCall(client.config, "getClusterNodesInfo", {
             nodeNames: nodeNames || [],
           });
@@ -119,10 +116,6 @@ export const runtimeConfigServiceServer = plugin((server) => {
         cluster,
         logger,
         async (client) => {
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 4, patch: 0 };
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
           return await asyncClientCall(client.config, "getClusterInfo", request);
         },
       );
@@ -138,10 +131,6 @@ export const runtimeConfigServiceServer = plugin((server) => {
         cluster,
         logger,
         async (client) => {
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 4, patch: 0 };
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
           return await asyncClientCall(client.config, "getSummaryClusterInfo", {
             accountNames: accountNames || [],
           });
@@ -164,10 +153,6 @@ export const runtimeConfigServiceServer = plugin((server) => {
         cluster,
         logger,
         async (client) => {
-          // 当前接口要求的最低调度器接口版本
-          const minRequiredApiVersion: ApiVersion = { major: 1, minor: 6, patch: 0 };
-          // 检验调度器的API版本是否符合要求，不符合要求报错
-          await checkSchedulerApiVersion(client, minRequiredApiVersion);
           return await asyncClientCall(client.config, "getClusterNodesInfo", {
             nodeNames: nodeNames || [],
           });
@@ -194,7 +179,7 @@ export const runtimeConfigServiceServer = plugin((server) => {
         .filter((clusterId) => Boolean(configClusters[clusterId]));
 
       if (currentClusterIds.length === 0) {
-        return [{ accountClusters: []}];
+        return [{ accountClusters: [] }];
       }
 
       const buildAccountClusters = async (

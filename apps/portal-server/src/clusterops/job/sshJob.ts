@@ -1,13 +1,12 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import { checkSchedulerApiVersion } from "@scow/lib-server";
 import {
   createDirectoriesRecursively,
-  sftpExists, sftpReaddir, sftpReadFile, sftpStat, sftpUnlink, sftpWriteFile } from "@scow/lib-ssh";
+  sftpExists, sftpReaddir, sftpReadFile, sftpStat, sftpUnlink, sftpWriteFile
+} from "@scow/lib-ssh";
 import { TimeUnit } from "@scow/protos/build/portal/job";
 import { ErrorInfo, parseErrorStatus } from "@scow/rich-error-model";
-import { ApiVersion } from "@scow/utils/build/version";
 import path, { join } from "path";
 import { JobOps, JobTemplate, JobTemplateInfo } from "src/clusterops/api/job";
 import { portalConfig } from "src/config/portal";
@@ -53,7 +52,7 @@ export const sshJobServices = (host: string): JobOps => ({
     return await sshConnect(host, userId, logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
 
-      if (!await sftpExists(sftp, portalConfig.savedJobsDir)) { return { results: []}; }
+      if (!await sftpExists(sftp, portalConfig.savedJobsDir)) { return { results: [] }; }
 
       const list = await sftpReaddir(sftp)(portalConfig.savedJobsDir);
 
@@ -64,7 +63,7 @@ export const sshJobServices = (host: string): JobOps => ({
         try {
           data = JSON.parse(content.toString()) as JobMetadata;
         } catch (error) {
-          logger.error("Parsing JSON failed, the content is %s,the error is %o",content.toString(),error);
+          logger.error("Parsing JSON failed, the content is %s,the error is %o", content.toString(), error);
         }
 
         return {
@@ -286,13 +285,6 @@ export const sshJobServices = (host: string): JobOps => ({
       cluster,
       logger,
       async (client) => {
-
-        // 当前接口要求的最低调度器接口版本
-        const minRequiredApiVersion: ApiVersion = { major: 1, minor: 5, patch: 0 };
-
-        // 检验调度器的API版本是否符合要求，不符合要求报错
-        await checkSchedulerApiVersion(client, minRequiredApiVersion);
-
         return await asyncClientCall(client.job, "submitScriptAsJob", {
           userId, script, scriptFileFullPath,
         }).catch((e) => {
