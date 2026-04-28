@@ -1,5 +1,26 @@
 # @scow/mis-web
 
+## 1.11.1
+
+### Patch Changes
+
+- 56979c6: 管理系统作业页面按规则在筛选框和作业列表增加用户与账户拥有者列，门户系统作业详情增加增加“用户 ID”和“用户姓名”字段
+- 263e5f5: 账户充值记录汇总计算错误修复
+- 8b2b13b: 优化消息系统管理员相关菜单页面
+- 0c8ffa0: 将 next 从 15.5.9 升级到 15.5.15
+- 64301b1: 导出功能优化，移除字段选择弹窗并补全时间金额字段单位
+- Updated dependencies [5082746]
+- Updated dependencies [56979c6]
+- Updated dependencies [b4f7dde]
+- Updated dependencies [8b2b13b]
+- Updated dependencies [b65945b]
+- Updated dependencies [f3a73f5]
+- Updated dependencies [0c8ffa0]
+  - @scow/lib-web@1.6.1
+  - @scow/protos@1.1.0
+  - @scow/lib-operation-log@2.2.15
+  - @scow/rich-error-model@2.0.3
+
 ## 1.11.0
 
 ### Patch Changes

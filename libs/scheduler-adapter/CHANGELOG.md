@@ -1,5 +1,12 @@
 # @scow/lib-scheduler-adapter
 
+## 1.1.38
+
+### Patch Changes
+
+- Updated dependencies [56979c6]
+  - @scow/protos@1.1.0
+
 ## 1.1.37
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @scow/cli
 
+## 1.11.1
+
+### Patch Changes
+
+- 92b2766: CLI 支持按模块启用/禁用 portal,ai,mis,quantum 模块。
+
+  install.yaml 的`portal/mis/ai/quantum`新增`enabled`配置（默认为 true）
+
+- 66a7a39: 修复 docker compose 命令可用性检测不准确的问题
+  - @scow/lib-scowd@1.2.8
+  - @scow/lib-scheduler-adapter@1.1.38
+
 ## 1.11.0
 
 ### Patch Changes

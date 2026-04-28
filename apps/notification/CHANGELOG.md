@@ -1,5 +1,24 @@
 # @scow/notification
 
+## 0.2.27
+
+### Patch Changes
+
+- 8b2b13b: 优化消息系统管理员相关菜单页面
+- 421f94b: 优化消息系统用户相关页面
+- 0c8ffa0: 将 next 从 15.5.9 升级到 15.5.15
+- Updated dependencies [5082746]
+- Updated dependencies [56979c6]
+- Updated dependencies [b4f7dde]
+- Updated dependencies [8b2b13b]
+- Updated dependencies [b65945b]
+- Updated dependencies [f3a73f5]
+- Updated dependencies [0c8ffa0]
+  - @scow/lib-web@1.6.1
+  - @scow/protos@1.1.0
+  - @scow/lib-scheduler-adapter@1.1.38
+  - @scow/lib-server@1.5.1
+
 ## 0.2.26
 
 ### Patch Changes

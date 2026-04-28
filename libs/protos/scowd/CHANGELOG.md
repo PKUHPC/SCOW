@@ -1,5 +1,11 @@
 # @scow/scowd-protos
 
+## 0.6.0
+
+### Minor Changes
+
+- 5082746: 新增 completeMultipartUpload 接口，废弃 mergeFileChunks 接口，修改 initMultipartUpload 接口参数
+
 ## 0.5.0
 
 ### Minor Changes

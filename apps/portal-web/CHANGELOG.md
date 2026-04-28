@@ -1,5 +1,26 @@
 # @scow/portal-web
 
+## 1.11.1
+
+### Patch Changes
+
+- 56979c6: 管理系统作业页面按规则在筛选框和作业列表增加用户与账户拥有者列，门户系统作业详情增加增加“用户 ID”和“用户姓名”字段
+- 5082746: 优化文件上传逻辑
+- b65945b: 各系统仪表盘页面滚轴样式优化
+- f3a73f5: 从文件管理提交作业提示优化
+- 0c8ffa0: 将 next 从 15.5.9 升级到 15.5.15
+- Updated dependencies [5082746]
+- Updated dependencies [56979c6]
+- Updated dependencies [b4f7dde]
+- Updated dependencies [8b2b13b]
+- Updated dependencies [b65945b]
+- Updated dependencies [f3a73f5]
+- Updated dependencies [0c8ffa0]
+  - @scow/lib-web@1.6.1
+  - @scow/protos@1.1.0
+  - @scow/lib-operation-log@2.2.15
+  - @scow/rich-error-model@2.0.3
+
 ## 1.11.0
 
 ### Minor Changes

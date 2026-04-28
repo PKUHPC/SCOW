@@ -1,6 +1,6 @@
 {
   "name": "@scow/lib-server",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Server libraries",
   "private": true,
   "main": "build/index.js",

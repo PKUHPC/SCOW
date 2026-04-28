@@ -1,5 +1,19 @@
 # @scow/portal-server
 
+## 1.11.1
+
+### Patch Changes
+
+- 5082746: 优化文件上传逻辑
+- Updated dependencies [5082746]
+- Updated dependencies [56979c6]
+  - @scow/scowd-protos@0.6.0
+  - @scow/protos@1.1.0
+  - @scow/lib-scowd@1.2.8
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-scheduler-adapter@1.1.38
+  - @scow/lib-server@1.5.1
+
 ## 1.11.0
 
 ### Minor Changes

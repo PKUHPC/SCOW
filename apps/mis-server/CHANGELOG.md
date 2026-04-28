@@ -1,5 +1,18 @@
 # @scow/mis-server
 
+## 1.11.1
+
+### Patch Changes
+
+- 56979c6: 管理系统作业页面按规则在筛选框和作业列表增加用户与账户拥有者列，门户系统作业详情增加增加“用户 ID”和“用户姓名”字段
+- 263e5f5: 账户充值记录汇总计算错误修复
+- Updated dependencies [56979c6]
+  - @scow/protos@1.1.0
+  - @scow/lib-scowd@1.2.8
+  - @scow/lib-hook@1.0.40
+  - @scow/lib-scheduler-adapter@1.1.38
+  - @scow/lib-server@1.5.1
+
 ## 1.11.0
 
 ### Patch Changes

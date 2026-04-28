@@ -1,5 +1,38 @@
 # @scow/ai
 
+## 0.5.4
+
+### Patch Changes
+
+- 1e4ac8c: 智算平台作业详情显示挂载点
+- 92b2766: CLI 支持按模块启用/禁用 portal,ai,mis,quantum 模块。
+
+  install.yaml 的`portal/mis/ai/quantum`新增`enabled`配置（默认为 true）
+
+- 5082746: 优化文件上传逻辑
+- 7647059: 添加数据资产时，默认选中集群
+- 5bd3bb5: 补充 completeMultipartUpload 接口的 noCheckPermission 逻辑
+- b4f7dde: 智算平台 UI 走查修改，主要涉及数据资产和公共数据资产页面的统一样式组件替换和按钮表格样式优化
+- c8908df: 优化 AI 推理作业详情中 AI 推理应用的访问
+- b65945b: 各系统仪表盘页面滚轴样式优化
+- 0c8ffa0: 将 next 从 15.5.9 升级到 15.5.15
+- Updated dependencies [5082746]
+- Updated dependencies [5082746]
+- Updated dependencies [56979c6]
+- Updated dependencies [b4f7dde]
+- Updated dependencies [8b2b13b]
+- Updated dependencies [b65945b]
+- Updated dependencies [f3a73f5]
+- Updated dependencies [0c8ffa0]
+  - @scow/scowd-protos@0.6.0
+  - @scow/lib-web@1.6.1
+  - @scow/protos@1.1.0
+  - @scow/lib-scowd@1.2.8
+  - @scow/lib-operation-log@2.2.15
+  - @scow/rich-error-model@2.0.3
+  - @scow/lib-scheduler-adapter@1.1.38
+  - @scow/lib-server@1.5.1
+
 ## 0.5.3
 
 ### Patch Changes

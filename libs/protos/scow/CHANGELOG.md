@@ -1,5 +1,16 @@
 # @scow/protos
 
+## 1.1.0
+
+### Minor Changes
+
+- 56979c6: 作业属性增加用户名、账户拥有者姓名和 ID，导出和获得作业接口增加账户拥有者 ID 或姓名以及用户 ID 和姓名请求字段。
+
+### Patch Changes
+
+- Updated dependencies [5082746]
+  - @scow/grpc-api@1.34.0
+
 ## 1.0.39
 
 ### Patch Changes
