@@ -1137,6 +1137,8 @@ export default {
       newPassword: "Nouveau mot de passe",
       confirmPassword: "Confirmer le mot de passe",
       selectCluster: "Sélectionner le cluster",
+      allClustersTooltip: "Si aucun cluster n'est spécifié, les jobs de tous les clusters, y compris ceux dont l'autorisation a été retirée, peuvent être recherchés.",
+
       partitionFullName:"Nom complet de la partition",
       nodes: "Nombre de nœuds de la partition",
       cores: "Nombre de cœurs par nœud",

@@ -811,6 +811,8 @@ export const mockApi: MockApi<typeof api> = {
   getClusterConfig: async () => ({
     partitions:[],
   }),
+  getUserAssociatedClusters: async () => ({ clusterIds: []}),
+  getAccountsAssociatedClusters: async () => ({ clusterIds: []}),
 };
 
 export const MOCK_USER_INFO = {
@@ -846,4 +848,3 @@ export const MOCK_USER_STATUS: GetUserStatusResponse = {
     },
   },
 };
-

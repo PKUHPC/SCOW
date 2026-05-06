@@ -11,13 +11,13 @@ export default {
     operation: "Operation",
     tenant: "Tenant",
     tenantName: "Tenant",
-    tenantFullName:"Tenant",
+    tenantFullName: "Tenant",
     tenantRole: "Tenant Role",
     user: "User",
     userId: "User ID",
-    ownerIdOrName:"ownerId Or Name",
+    ownerIdOrName: "ownerId Or Name",
     userName: "Username",
-    userFullName:"Name",
+    userFullName: "Name",
     import: "Import",
     fresh: "Refresh",
     account: "Account",
@@ -29,7 +29,7 @@ export default {
     amount: "Amount",
     unit: "CNY",
     comment: "Comment",
-    expirationTime:"expirationTime",
+    expirationTime: "expirationTime",
     submit: "Submit",
     time: "Time",
     type: "Type",
@@ -43,7 +43,7 @@ export default {
     modify: "Modify",
     cancel: "Cancel",
     cluster: "Cluster",
-    clusterName:"Cluster Name",
+    clusterName: "Cluster Name",
     workId: "Job ID",
     minute: "Minutes",
     name: "Name",
@@ -60,7 +60,7 @@ export default {
     reason: "Reason",
     timeUsed: "Job Execution Time",
     timeWait: "Job Wait Time",
-    lastUpdated:"Last Updated",
+    lastUpdated: "Last Updated",
     more: "More",
     detail: "Details",
     price: "Fee",
@@ -108,15 +108,16 @@ export default {
     exportNoDataErrorMsg: "Export is empty, please reselect",
     blockThresholdAmount: "Block Threshold Amount",
     other: "Other",
-    noAvailableClusters: "There are currently no available clusters."
-    + " Please try again later or contact the administrator.",
+    noAvailableClusters:
+      "There are currently no available clusters." + " Please try again later or contact the administrator.",
     serialNumber: "Serial Number",
     phone: "Phone",
     organization: "Organization",
     adjustBill: "Adjust Job Billing",
     failedGetTenantAssignedClustersAndPartitions: "Failed to retrieve authorized cluster partition information",
-    accountUserSyncRunning: "Account user information is currently being synchronized. Please wait for the "
-    + "synchronization to complete before trying again.",
+    accountUserSyncRunning:
+      "Account user information is currently being synchronized. Please wait for the " +
+      "synchronization to complete before trying again.",
     finalError: "Request failed, please try again later",
     edit: "edit",
     idOrName: "User ID/Name",
@@ -140,7 +141,7 @@ export default {
       state: "Status",
       balance: "Available Balance",
       alert: "You do not belong to any account.",
-      unlimited:"Unlimited",
+      unlimited: "Unlimited",
     },
     job: {
       title: "Running Job List",
@@ -262,40 +263,44 @@ export default {
         blockedAccount: "Blocked ",
         frozenAccount: "Frozen ",
         normalAccount: "Available ",
-        deletedAccount:"Deleted",
+        deletedAccount: "Deleted",
         account: "Account",
         accountName: "Account Name",
         owner: "Primary Admin",
         ownerIdOrName: "Primary Admin ID or Name",
         tenant: "Tenant",
         blockThresholdAmount: "Block Threshold",
-        blockThresholdAmountTooltip: "The account will be blocked "
-        + "when the balance is less than the block threshold.",
+        blockThresholdAmountTooltip:
+          "The account will be blocked " + "when the balance is less than the block threshold.",
         comment: "Comment",
-        expirationTime:"expirationTime",
+        expirationTime: "expirationTime",
         status: "Status",
         statusTooltip: "Status:",
-        statusFrozenTooltip: "Frozen: The account has been frozen by the account administrator "
-        + "and cannot submit jobs through this account.",
-        statusBlockedTooltip: "Blocked: The account has been blocked by the tenant administrator or "
-        + "platform administrator and cannot submit jobs through this account.",
-        statusDebtTooltip: "Debt: The account balance is less than or equal to the blocking threshold, "
-        + "and jobs cannot be submitted through this account.",
-        statusNormalTooltip: "Available: The account status is not blocked or frozen, and the account "
-        + "balance is greater than the blocking threshold; or the account is already in the whitelist.",
+        statusFrozenTooltip:
+          "Frozen: The account has been frozen by the account administrator " +
+          "and cannot submit jobs through this account.",
+        statusBlockedTooltip:
+          "Blocked: The account has been blocked by the tenant administrator or " +
+          "platform administrator and cannot submit jobs through this account.",
+        statusDebtTooltip:
+          "Debt: The account balance is less than or equal to the blocking threshold, " +
+          "and jobs cannot be submitted through this account.",
+        statusNormalTooltip:
+          "Available: The account status is not blocked or frozen, and the account " +
+          "balance is greater than the blocking threshold; or the account is already in the whitelist.",
         mangerMember: "Manage Members",
         blocked: "Blocked",
-        frozen:"Frozen",
+        frozen: "Frozen",
         debt: "Debt",
         normal: "Available",
-        deleted:"Deleted",
+        deleted: "Deleted",
         unit: "CNY",
         unblockConfirmTitle: "Confirm Unblock of User?",
         unblockConfirmContent: "Do you wish to unblock account {1} within tenant {0}?",
         unblockSuccess: "Account unblocking successful!",
         unblockFail: "Account unblocking failed!",
-        unblockError: "Account {} has insufficient balance. "
-        + "You can add it to the whitelist or unblock by adding funds.",
+        unblockError:
+          "Account {} has insufficient balance. " + "You can add it to the whitelist or unblock by adding funds.",
         block: "Block",
         unblock: "Unblock",
         blockConfirmTitle: "Confirm Account Block?",
@@ -303,21 +308,20 @@ export default {
         blockSuccess: "Account blocking successful!",
         blockFail: "Account blocking failed!",
 
-        delete:"Delete",
+        delete: "Delete",
         deleteSuccess: "Account deleting successful!",
         deleteFail: "Failed to delete the account. Please contact the administrator.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "Set Successfully",
         setFail: "Set Failed",
-        setAmount:"Set block threshold",
+        setAmount: "Set block threshold",
         blockThresholdAmount: "Block Threshold",
         defaultBlockThresholdAmount: "Default Block Threshold Amount",
         curBlockThresholdAmount: "Current Block Threshold: ",
         curDefaultBlockThresholdAmount: "Current Tenant Default Block Threshold",
         useDefaultBlockThresholdAmount: "Use tenant default block threshold",
-        confirmUseDefaultBlockThresholdAmount:
-        "Are you sure you want to use the tenant default block threshold?",
+        confirmUseDefaultBlockThresholdAmount: "Are you sure you want to use the tenant default block threshold?",
       },
     },
     admin: {
@@ -367,11 +371,12 @@ export default {
         userType: "User Type",
         newUser: "New User",
         existingUser: "Existing User",
-        createTenantByExistUserWarningInfo: "After successful creation, the user will be automatically removed"
-        + "from the original tenant and joined this tenant. "
-        + "Please ensure that the user has no associated accounts and is not the tenant administrator"
-        + "or financial personnel of the original tenant",
-        createTenantByNewUserWarningInfo:"After successful creation, the user will automatically join this tenant",
+        createTenantByExistUserWarningInfo:
+          "After successful creation, the user will be automatically removed" +
+          "from the original tenant and joined this tenant. " +
+          "Please ensure that the user has no associated accounts and is not the tenant administrator" +
+          "or financial personnel of the original tenant",
+        createTenantByNewUserWarningInfo: "After successful creation, the user will automatically join this tenant",
       },
       ImportUsersTable: {
         selectAccount: "Please select an account!",
@@ -413,10 +418,11 @@ export default {
         userStillMaintainsAccountRelationship: "User still maintains account relationship",
         userStillMaintainsTenantRoles: "User still maintains tenant roles",
         userAlreadyExistInThisTenant: "User already exists in this tenant",
-        createTenantWarningInfo: "Please ensure that the user has no associated accounts "
-        + "and is not the tenant administrator or financial personnel of the original tenant",
+        createTenantWarningInfo:
+          "Please ensure that the user has no associated accounts " +
+          "and is not the tenant administrator or financial personnel of the original tenant",
       },
-      shellCard:{
+      shellCard: {
         defaultDescription: "The administrator has not added a description yet",
         clusterName: "Cluster",
         loginNode: "Login Node",
@@ -433,17 +439,17 @@ export default {
       paymentTable: {
         total: "Total",
         sum: "Sum",
-        paymentTime:"Payment time",
+        paymentTime: "Payment time",
         topUpAmount: "Top-up amount (CNY)",
         ipAddress: "IP Address",
         operatorId: "Operator ID",
-        searchTypePlaceholder:"Multiple, please separate with commas",
-        accountHolder:"account holder",
-        accountHolderPlaceholder:"Primary Admin ID or name",
-        operator:"operator",
-        operatorPlaceholder:"Operator ID or name",
-        topUpTime:"top up time",
-        yuan:"yuan",
+        searchTypePlaceholder: "Multiple, please separate with commas",
+        accountHolder: "account holder",
+        accountHolderPlaceholder: "Primary Admin ID or name",
+        operator: "operator",
+        operatorPlaceholder: "Operator ID or name",
+        topUpTime: "top up time",
+        yuan: "yuan",
       },
       billTable: {
         statisticalCycle: "Statistical Cycle",
@@ -505,13 +511,14 @@ export default {
             },
             unauthorize: {
               title: "Revoke Authorization Confirmation",
-              tenantContent: "Are you sure you want to revoke authorization of application {1} "
-              + "on cluster {0} for tenant {2}?",
-              accountContent: "Are you sure you want to revoke authorization of application {1} "
-              + "on cluster {0} for account {2}?",
-              tenantWarning: "After revocation, if it is a default authorized application, "
-              + "it will be synchronized and removed. all accounts under this tenant will synchronously have "
-              + "their authorization for this application canceled.",
+              tenantContent:
+                "Are you sure you want to revoke authorization of application {1} " + "on cluster {0} for tenant {2}?",
+              accountContent:
+                "Are you sure you want to revoke authorization of application {1} " + "on cluster {0} for account {2}?",
+              tenantWarning:
+                "After revocation, if it is a default authorized application, " +
+                "it will be synchronized and removed. all accounts under this tenant will synchronously have " +
+                "their authorization for this application canceled.",
             },
           },
           messages: {
@@ -543,13 +550,13 @@ export default {
         charging: "Charging...",
         notFound: "Account not found.",
         chargeFinished: "Charging finished!",
-        deleted:"Account has been deleted",
+        deleted: "Account has been deleted",
         financePayFailed: "Charging failed",
       },
       chargeTable: {
         time: "Deduction Time",
         amount: "Deduction Amount(CNY)",
-        ownerIdOrName:"ownerId Or Name",
+        ownerIdOrName: "ownerId Or Name",
       },
     },
     init: {
@@ -558,20 +565,24 @@ export default {
         cannotAdd: "User already exists in the SCOW and cannot be added again.",
         notExist: "User does not exist in the authentication system.",
         confirm: "User does not exist. Please confirm if the user ID is correct.",
-        existText: "The user already exists in the authentication system. The password you enter "
-        + "here will not be used; the new user's password will be the current password in the "
-        + "authentication system. Confirm adding as the initial administrator?",
-        notExistText: "User does not exist in the authentication system. Confirm creating this user "
-        + "and adding as the initial administrator?",
-        cannotConfirmText1: "Unable to confirm whether the user exists in the authentication system. "
-        + "An attempt will be made to create the user in the authentication system. "
-        + "If the user already exists in the authentication system, the password you enter here "
-        + "will not be used; the new user's password will be the current password in the authentication system. ",
-        cannotConfirmText2: "Unable to confirm whether the user exists in the authentication system, "
-        + "and the current authentication system does not support user creation. "
-        + "Please confirm that the user already exists in the authentication system. "
-        + "Confirmation will directly add the user to the database, and the password you enter "
-        + "here will not be used; the new user's password will be the current password in the authentication system. ",
+        existText:
+          "The user already exists in the authentication system. The password you enter " +
+          "here will not be used; the new user's password will be the current password in the " +
+          "authentication system. Confirm adding as the initial administrator?",
+        notExistText:
+          "User does not exist in the authentication system. Confirm creating this user " +
+          "and adding as the initial administrator?",
+        cannotConfirmText1:
+          "Unable to confirm whether the user exists in the authentication system. " +
+          "An attempt will be made to create the user in the authentication system. " +
+          "If the user already exists in the authentication system, the password you enter here " +
+          "will not be used; the new user's password will be the current password in the authentication system. ",
+        cannotConfirmText2:
+          "Unable to confirm whether the user exists in the authentication system, " +
+          "and the current authentication system does not support user creation. " +
+          "Please confirm that the user already exists in the authentication system. " +
+          "Confirmation will directly add the user to the database, and the password you enter " +
+          "here will not be used; the new user's password will be the current password in the authentication system. ",
         addFail: "Add failed.",
         userExist: "This user exists in the SCOW database.",
         addSuccess: "Add successfully.",
@@ -579,29 +590,34 @@ export default {
         addFinish: "Add completed!",
         createFail: "Failed to create user.",
         initAdmin: "You can create an initial administrator user here. ",
-        addAdmin: "The users added here are initial administrators, located in the default tenant, "
-        + "and will automatically have the platform administrator and default tenant tenant administrator roles. ",
+        addAdmin:
+          "The users added here are initial administrators, located in the default tenant, " +
+          "and will automatically have the platform administrator and default tenant tenant administrator roles. ",
         platFormAdmin: "Platform Administrator ",
         and: " and ",
         defaultTenant: "Default Tenant Tenant Administrator ",
-        createText1: "The current authentication system supports user creation. You can choose to add "
-        + "an existing user from the authentication system or create a completely new user. "
-        + "The system will create this user in the authentication system.",
-        createText2: "The current authentication system does not support user creation. Please confirm "
-        + "that the user to be added must already exist in the authentication system, and the user ID "
-        + "must match the user ID in the authentication system.",
+        createText1:
+          "The current authentication system supports user creation. You can choose to add " +
+          "an existing user from the authentication system or create a completely new user. " +
+          "The system will create this user in the authentication system.",
+        createText2:
+          "The current authentication system does not support user creation. Please confirm " +
+          "that the user to be added must already exist in the authentication system, and the user ID " +
+          "must match the user ID in the authentication system.",
       },
       initImportUsersTable: {
         importUser: "You can import existing users here. See the ",
         document: "document ",
         learn: "to learn about the system user model and how to import user information.",
-        useMore: "If you use SCOW to manage multiple clusters, SCOW system requires that multiple "
-        + "clusters have identical user account information. You only need to import user information "
-        + "from one cluster.",
+        useMore:
+          "If you use SCOW to manage multiple clusters, SCOW system requires that multiple " +
+          "clusters have identical user account information. You only need to import user information " +
+          "from one cluster.",
       },
       initJobBillingTable: {
-        set: "You can set the default job pricing table here. You must set prices for all items "
-        + "to complete the initialization.",
+        set:
+          "You can set the default job pricing table here. You must set prices for all items " +
+          "to complete the initialization.",
       },
       initLayout: {
         importUser: "Import Users",
@@ -621,8 +637,9 @@ export default {
         platformRole: "Platform Role",
         tenantRole: "Tenant Role",
         accountAffiliation: "Affiliated Account",
-        defaultTenant: "You can manage users and accounts under the default tenant in the current system here, "
-        + "and set a user as ",
+        defaultTenant:
+          "You can manage users and accounts under the default tenant in the current system here, " +
+          "and set a user as ",
         initAdmin: "Initial Administrator",
         set: " who serves as both a tenant administrator and a platform administrator.",
         idOrName: "User ID or Name",
@@ -700,8 +717,9 @@ export default {
         notExpanded: "Hide Historical Billing Items",
         expanded: "Show Historical Billing Items",
         priceItem: "Billing Item",
-        text: "A cluster, partition, and QOS collectively constitute a billing item. Billing methods "
-        + "and prices can be set for billing items.",
+        text:
+          "A cluster, partition, and QOS collectively constitute a billing item. Billing methods " +
+          "and prices can be set for billing items.",
         executing: "Executing",
         unset: "Not Set",
         alreadyUsed: "This ID has already been used!",
@@ -759,8 +777,8 @@ export default {
       oldPassword: "Old Password",
       newPassword: "New Password",
       confirmPassword: "Confirm Password",
-      userNotExist:"The user does not exist or has been deleted",
-      unavailable:"This feature is not available in the current configuration",
+      userNotExist: "The user does not exist or has been deleted",
+      unavailable: "This feature is not available in the current configuration",
     },
     tenant: {
       accountWhitelistTable: {
@@ -774,18 +792,18 @@ export default {
         confirmRemoveWhiteText2: " from the whitelist?",
         removeWhiteSuccess: "Successfully removed from the whitelist!",
         removeWhite: "Remove from Whitelist",
-        expirationTime:"expirationTime",
+        expirationTime: "expirationTime",
       },
       addWhitelistedAccountButton: {
         notExist: "Account does not exist!",
         addSuccess: "Added successfully!",
         addWhiteList: "Add Whitelisted Account",
-        expirationTime:"expirationTime",
-        custom:"Custom",
-        oneWeek:"One Week",
-        oneMonth:"One Month",
-        oneYear:"One Year",
-        permanent:"Permanent",
+        expirationTime: "expirationTime",
+        custom: "Custom",
+        oneWeek: "One Week",
+        oneMonth: "One Month",
+        oneYear: "One Year",
+        permanent: "Permanent",
       },
       adminJobTable: {
         batch: "Batch Search",
@@ -799,7 +817,7 @@ export default {
         jobNumber: "Number of Jobs: ",
         tenantPriceSum: "Total Job Billing: ",
         platformPriceSum: "Total Platform Billing: ",
-        searchTypePlaceholder:"Multiple, please separate with commas",
+        searchTypePlaceholder: "Multiple, please separate with commas",
         onlyNumbersAndCommas: "Only numbers and commas are allowed",
       },
       adminUserTable: {
@@ -807,7 +825,7 @@ export default {
         tenantAdmin: "Tenant Administrator",
         tenantFinance: "Financial Staff",
         idOrName: "User ID or Name",
-        name:"Name",
+        name: "Name",
         tenantRole: "Tenant Role",
         affiliatedAccountName: "Affiliated Accounts",
         notExist: "User does not exist",
@@ -816,7 +834,7 @@ export default {
         changeSuccess: "Modification successful",
         changeFail: "Modification failed",
         changePassword: "Change Password",
-        delete:"Delete",
+        delete: "Delete",
         deleteFail: "Deletion failed. Please contact the administrator.",
         deleteSuccess: "Deletion successful",
         featureUnavailable: "This feature is temporarily unavailable",
@@ -836,10 +854,11 @@ export default {
         job: "Jobs",
         jobSummaryEllipsis: " etc. ({} jobs in total)",
         priceSummaryEllipsis: " etc. ({} values in total)",
-        annotation:"When the new billing amount exceeds the current billing amount, "
-        + "the difference will be deducted and can be viewed in the account's consumption records;"
-        + "when the new billing amount is less than the current billing amount, "
-        + "the difference will be refunded and can be viewed in the account's top-up records.",
+        annotation:
+          "When the new billing amount exceeds the current billing amount, " +
+          "the difference will be deducted and can be viewed in the account's consumption records;" +
+          "when the new billing amount is less than the current billing amount, " +
+          "the difference will be refunded and can be viewed in the account's top-up records.",
       },
       tenantSelector: {
         fresh: "Refresh Tenant List",
@@ -854,10 +873,12 @@ export default {
           operation: "Operation",
           removeFromDefaultApps: {
             title: "Remove Default Authorized Application",
-            confirmContent: "Confirm removing application {2} from default authorized "
-            + "applications for tenant {0} in cluster {1}?",
-            confirmWarn: "After removing from default authorized applications, all accounts "
-            + "under this tenant will synchronously cancel the authorization of this application",
+            confirmContent:
+              "Confirm removing application {2} from default authorized " +
+              "applications for tenant {0} in cluster {1}?",
+            confirmWarn:
+              "After removing from default authorized applications, all accounts " +
+              "under this tenant will synchronously cancel the authorization of this application",
             removeSuccessMessage: "Removed from default authorized applications",
             removeFailedMessage: "Failed to remove default authorized application",
           },
@@ -865,8 +886,9 @@ export default {
             title: "Add Default Authorized Application",
             tenant: "Tenant",
             cluster: "Cluster",
-            modalWarn: "After adding to default authorized applications, all accounts under this tenant "
-            + "will synchronously add the authorization of this application",
+            modalWarn:
+              "After adding to default authorized applications, all accounts under this tenant " +
+              "will synchronously add the authorization of this application",
             app: "Application",
             appDefaultPlaceholder: "Please select an application",
             noAppsPlaceholder: "No available applications",
@@ -885,8 +907,8 @@ export default {
         will: "Will be in",
         createModal: "seconds to open the create user interface",
         createFirst: "User does not exist. Please create a user first",
-        blockAccount:"User has been blocked. Please unblock first",
-        arrearsAccount:"Failed to obtain user arrears status",
+        blockAccount: "User has been blocked. Please unblock first",
+        arrearsAccount: "Failed to obtain user arrears status",
         addSuccess: "Added Successfully!",
         userDeleted: "The user has been deleted and cannot be added",
       },
@@ -905,8 +927,8 @@ export default {
       createUserModal: {
         alreadyExist: "This user ID already exists!",
         createUser: "Create User",
-        notExist: "User does not exist. Please enter new user information to create the user and add it "
-        + "to the account.",
+        notExist:
+          "User does not exist. Please enter new user information to create the user and add it " + "to the account.",
         email: "User Email",
         password: "User Password",
         confirm: "Confirm Password",
@@ -920,28 +942,28 @@ export default {
       },
       jobChargeLimitModal: {
         setSuccess: "Set Successfully",
-        batchSetSuccess:"Batch set Successfully",
+        batchSetSuccess: "Batch set Successfully",
         batchLimitCompleted: "Batch limit setting completed, where {} operation failed",
         batchCancleCompleted: "Batch limit cancle completed, where {} operation failed",
         priceLimited: "User Job Charge Limit",
         alreadyUsed: "Currently Used/Total Limit",
         cancelPriceLimited: "Cancel Job Charge Limit",
         confirmCancelLimited: "Are you sure you want to cancel the job charge limit for this user in this account?",
-        confirmCancelSelectLimited:"Are you sure you want to cancel the job charge limit"
-         + "for Selectd user in this account?",
+        confirmCancelSelectLimited:
+          "Are you sure you want to cancel the job charge limit" + "for Selectd user in this account?",
         cancelAndNotBlock: "Cancel limit while unblocking",
         cancelSuccess: "Cancellation Limit Successful!",
-        batchCancelSuccess:"Batch cancellation Limit Successful!",
+        batchCancelSuccess: "Batch cancellation Limit Successful!",
         cancelLimited: "Cancel Limit",
         unset: "Unset",
         changeLimited: "Change Limit to",
         setLimited: "Set Limit",
-        batchChangeLimiteFailed :"Batch change of limit failed",
+        batchChangeLimiteFailed: "Batch change of limit failed",
         changeLimiteFailed: "Failed to modify the limit",
-        batchCleLimiteFailed :"Batch cancellation of limit failed",
-        cancleLimiteFailed :"Failed to cancle the limit",
-        andOtherUsers:"and {} other users",
-        andOtherValues:"and {0} other values",
+        batchCleLimiteFailed: "Batch cancellation of limit failed",
+        cancleLimiteFailed: "Failed to cancle the limit",
+        andOtherUsers: "and {} other users",
+        andOtherValues: "and {0} other values",
       },
       userTable: {
         block: "Block",
@@ -949,12 +971,15 @@ export default {
         normal: "Available",
         quotaExceeded: "Quota Exceeded",
         statusExplanation: "Status:",
-        blockedExplanation: "Blocked: The user has been blocked by the account administrator or the account primary admin, "
-          + "preventing the selection of this account for job submission.",
-        quotaExceededExplanation: "Quota Exceeded: The user is not blocked, but the used quota is greater than or "
-        + "equal to the user's quota limit, preventing the selection of this account for job submission.",
-        normalExplanation: "Available: The user is not blocked, and the used quota is less than the user's "
-        + "quota limit, allowing the selection of this account to submit jobs.",
+        blockedExplanation:
+          "Blocked: The user has been blocked by the account administrator or the account primary admin, " +
+          "preventing the selection of this account for job submission.",
+        quotaExceededExplanation:
+          "Quota Exceeded: The user is not blocked, but the used quota is greater than or " +
+          "equal to the user's quota limit, preventing the selection of this account for job submission.",
+        normalExplanation:
+          "Available: The user is not blocked, and the used quota is less than the user's " +
+          "quota limit, allowing the selection of this account to submit jobs.",
         admin: "Admin",
         user: "Regular User",
         role: "Role",
@@ -986,23 +1011,24 @@ export default {
         confirmRemoveText: "Confirm removing user from account",
         removeSuccess: "User removed successfully!",
         removerUser: "Remove User",
-        cannotRemoverUserWhoHaveRunningJobFromAccount: "The user still has a job running, "
-          + " and the user has been blocked. Please wait for the job to end or end the job manually before moving out."
-          + " Or there is a Account/User synchronization running. Please try again after synchronization completion.",
+        cannotRemoverUserWhoHaveRunningJobFromAccount:
+          "The user still has a job running, " +
+          " and the user has been blocked. Please wait for the job to end or end the job manually before moving out." +
+          " Or there is a Account/User synchronization running. Please try again after synchronization completion.",
 
         blockUserInAccountFailed: "Block user in account failed.",
         unblockUserInAccountFailed: "Unblock user in account failed.",
         batchOperation: "Batch operation",
         batchUnsealCompleted: "Batch unblocking completed, with {} operation failed",
         batchBlockCompleted: "Batch blocking user operation completed, with {} operation failed",
-        batchBlockSuccess:"Batch blocking of users succeeded!",
-        batchBlockFailed:"Batch blocking of users failed!",
-        batchUnsealSuccess:"Batch unblocked users successfully!",
-        batchUnsealFailed:"Batch unblocking of users failed!",
+        batchBlockSuccess: "Batch blocking of users succeeded!",
+        batchBlockFailed: "Batch blocking of users failed!",
+        batchUnsealSuccess: "Batch unblocked users successfully!",
+        batchUnsealFailed: "Batch unblocking of users failed!",
         batchRemoveCompleted: "Batch removing user operation completed, with {} operation failed",
-        batchRemoveSuccess:"Batch remove users successfully!",
-        batchRemoveFailed:"Batch remove users failed!",
-        andOtherUsers:"and {} other users",
+        batchRemoveSuccess: "Batch remove users successfully!",
+        batchRemoveFailed: "Batch remove users failed!",
+        andOtherUsers: "and {} other users",
       },
       tenantUserInfoDrawer: {
         id: "User ID",
@@ -1015,7 +1041,7 @@ export default {
         createTime: "Creation Time",
         detail: "User Details",
         tenantRoles: "Tenant Roles",
-        affiliatedAccounts:"Affiliated Accounts",
+        affiliatedAccounts: "Affiliated Accounts",
       },
       adminUserInfoDrawer: {
         id: "User ID",
@@ -1044,8 +1070,9 @@ export default {
         operation: "Operation",
         modifyQuota: "Modify Quota",
         clusterNotEnabledStorageManager: "Storage management is not enabled for the available cluster yet",
-        storageQuotaTooltip: "The current file system has backup settings which will take up additional storage "
-          + "space, so the actual storage available to the user will be less than the storage quota. ",
+        storageQuotaTooltip:
+          "The current file system has backup settings which will take up additional storage " +
+          "space, so the actual storage available to the user will be less than the storage quota. ",
         syncStorage: "Update Now",
         syncSuccess: "Sync Successful",
         syncFailed: "Sync Failed",
@@ -1057,12 +1084,14 @@ export default {
         modifyDefaultQuota: "Modify Default Storage Quota",
         confirm: "Confirm",
         modifyUserDeulatQuotaSuccess: "Successfully modified user default storage quota",
-        modifyPartialSuccess: "Successfully modified the default storage quota; an exception occurred " +
+        modifyPartialSuccess:
+          "Successfully modified the default storage quota; an exception occurred " +
           "while adjusting the quota for {}, …—{} users in total.",
         cluster: "Cluster",
-        tip: "Changes take effect immediately. "
-          + "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. "
-          + "Please proceed with caution",
+        tip:
+          "Changes take effect immediately. " +
+          "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. " +
+          "Please proceed with caution",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "Modify Storage Quota",
@@ -1071,8 +1100,8 @@ export default {
         modifyUserQuotaSuccess: "Successfully modified user storage quota",
         modifyUserQuotaFailed: "Failed to modify user storage quota, please try again later",
         batchModifyUserQuotaSuccess: "Successfully batch modified user storage quota",
-        batchModifyUserQuotaPartialSuccess: "Batch modification of user storage quotas succeeded for {} items"
-          + " and failed for {} items.",
+        batchModifyUserQuotaPartialSuccess:
+          "Batch modification of user storage quotas succeeded for {} items" + " and failed for {} items.",
         batchModifyUserQuotaFailed: "Failed to batch modify user storage quota",
         cluster: "Cluster",
         user: "User",
@@ -1088,18 +1117,19 @@ export default {
         alreadyUsedDefault: "User already uses tenant default value, please do not modify repeatedly",
         useDefaultValue: "Use Default Value",
         setStorageQuota: "Set Storage Quota",
-        tip: "Changes take effect immediately. " +
+        tip:
+          "Changes take effect immediately. " +
           "Reducing quotas may cause users to exceed storage limits and prevent running jobs from writing data. " +
           "Please proceed with caution",
         userNotFound: "User {} does not exist",
       },
     },
-    quantumJob:{
-      historyJobTable:{
+    quantumJob: {
+      historyJobTable: {
         qits: "Qits",
         billing: "Billing",
-        runDur:"Duration",
-        state:"State",
+        runDur: "Duration",
+        state: "State",
         device: "Execution Device",
         noAuth: "You do not have permission to view this information.",
       },
@@ -1117,45 +1147,51 @@ export default {
       pageNotExist: "The page you requested does not exist.",
       serverWrong: "Server Error",
       sorry: "Sorry, there was a server error. Please refresh and try again.",
-      clusterNotAvailable: "The cluster you are currently accessing is unavailable or there are no available clusters. "
-      + " Please try again later or contact the administrator.",
+      clusterNotAvailable:
+        "The cluster you are currently accessing is unavailable or there are no available clusters. " +
+        " Please try again later or contact the administrator.",
     },
-    deleteModals:{
-      deleteUser:"Delete User",
-      userId:"User ID",
-      userName:"User Name",
-      comments:"Comments",
+    deleteModals: {
+      deleteUser: "Delete User",
+      userId: "User ID",
+      userName: "User Name",
+      comments: "Comments",
       confirmPermanentDeleteUser: "Please confirm if you want to delete the user with ID <b>{}</b> and name <b>{}</b>?",
-      confirmDeleteUserPrompt1: "If deleting a user, please confirm that the user is no longer in use" +
-      "and enter the user ID and name below.",
-      confirmDeleteUserPrompt2: "<span style='color:red'>Warning: This action is irreversible, and the user " +
-      "will be unavailable!</span>",
+      confirmDeleteUserPrompt1:
+        "If deleting a user, please confirm that the user is no longer in use" +
+        "and enter the user ID and name below.",
+      confirmDeleteUserPrompt2:
+        "<span style='color:red'>Warning: This action is irreversible, and the user " + "will be unavailable!</span>",
       cannotDeleteSelf: "Deleting the current user is not allowed",
-      platformAdmin:"Platform administrators cannot be deleted",
+      platformAdmin: "Platform administrators cannot be deleted",
       userIdRequired: "Please enter the user ID",
       userNameRequired: "Please enter the user name",
       incorrectUserIdOrName: "The user ID or name you entered does not match",
       userDeleted: "The user has been deleted and cannot be operated",
       deleteFailed: "Delete failed",
-      accountsOwnerPrompt: "The user <b>{}</b> is the primary admin of account(s) <b>{}</b>." +
-      "You need to delete the above account(s) before deleting this user.",
+      accountsOwnerPrompt:
+        "The user <b>{}</b> is the primary admin of account(s) <b>{}</b>." +
+        "You need to delete the above account(s) before deleting this user.",
       userRunningJobsPrompt: "The user has unfinished jobs and cannot be deleted.",
-      delete:"Delete",
+      delete: "Delete",
 
-      deleteAccount:"Delete Account",
-      accountName:"Account Name",
-      accountOwnerId:"Account Primary Admin ID",
-      accountNameRequired:"Please enter the account name",
-      ownerIdRequired:"Please enter the account primary admin ID",
+      deleteAccount: "Delete Account",
+      accountName: "Account Name",
+      accountOwnerId: "Account Primary Admin ID",
+      accountNameRequired: "Please enter the account name",
+      ownerIdRequired: "Please enter the account primary admin ID",
       invalidAccountNameOrOwnerId: "The account name or primary admin ID you entered does not match.",
-      confirmPermanentDeleteAccount:"Please confirm whether to delete the account with " +
-      "account name <b>{}</b> and account primary admin ID <b>{}</b>.",
-      confirmDeleteAccountPrompt1:"If you delete the account, please confirm that it is no longer in use" +
-      ", and enter the account name and primary admin ID below.",
-      confirmDeleteAccountPrompt2:"<span style='color:red'>Note: This action is irreversible." +
-      "The account will be unusable after deletion!</span>",
+      confirmPermanentDeleteAccount:
+        "Please confirm whether to delete the account with " +
+        "account name <b>{}</b> and account primary admin ID <b>{}</b>.",
+      confirmDeleteAccountPrompt1:
+        "If you delete the account, please confirm that it is no longer in use" +
+        ", and enter the account name and primary admin ID below.",
+      confirmDeleteAccountPrompt2:
+        "<span style='color:red'>Note: This action is irreversible." +
+        "The account will be unusable after deletion!</span>",
       accountRunningJobsPrompt: "The account has unfinished jobs and cannot be deleted.",
-      accountDeleted:"The account has been deleted and cannot be operated",
+      accountDeleted: "The account has been deleted and cannot be operated",
     },
     editUserProfileModal: {
       title: "Modify user {} (ID: {}) information",
@@ -1179,7 +1215,9 @@ export default {
       newPassword: "New Password",
       confirmPassword: "Confirm Password",
       selectCluster: "Select Cluster",
-      partitionFullName:"Full Name of Partition",
+      allClustersTooltip:
+        "Leave the cluster unspecified to search jobs across all clusters, including deauthorized ones.",
+      partitionFullName: "Full Name of Partition",
       nodes: "Number of Partition Nodes",
       cores: "Number of Cores per Node",
       gpus: "Number of Accelerator Cards per Node",
@@ -1194,7 +1232,7 @@ export default {
       operationTime: "Operation Time",
       operationCode: "Operation Code",
       operationDetail: "Operation Object",
-      keywordsPlaceholder:"e.g. file name, job ID, etc.",
+      keywordsPlaceholder: "e.g. file name, job ID, etc.",
       operatorIp: "Operator IP",
       alreadyIs: "User is already in this role",
       notExist: "The user does not exist or has been deleted",
@@ -1213,13 +1251,14 @@ export default {
     },
     _app: {
       multiClusterOpErrorTitle: "Operation Failed",
-      multiClusterOpErrorContent: "Multiple cluster operations encountered errors, and some clusters were not "
-      + "synchronized with the modifications.",
+      multiClusterOpErrorContent:
+        "Multiple cluster operations encountered errors, and some clusters were not " +
+        "synchronized with the modifications.",
       adapterConnErrorContent: "The {} cluster is currently unreachable. Please try again later. ",
       effectErrorMessage: "Server error occurred!",
       noActivatedClusters: "No available clusters. Please try again after refreshing the page.",
-      notExistInActivatedClusters: "The cluster(s) being queried may have been deactivated. "
-      + "Please try again after refreshing the page.",
+      notExistInActivatedClusters:
+        "The cluster(s) being queried may have been deactivated. " + "Please try again after refreshing the page.",
       noClusters: "Unable to find cluster configuration files. Please contact the system administrator.",
     },
     profile: {
@@ -1230,8 +1269,8 @@ export default {
     },
     user: {
       partitions: {
-        getBillingTableErrorMessage: "Failed to retrieve cluster and partition information. "
-        + "Please contact the administrator.",
+        getBillingTableErrorMessage:
+          "Failed to retrieve cluster and partition information. " + "Please contact the administrator.",
         partitionInfo: "Partition Information",
         loading: "Loading partitions...",
       },
@@ -1281,15 +1320,16 @@ export default {
           userExistAuth: "User already exists in the authentication system",
           userNotExistAuth: "User does not exist in the authentication system",
           unableDetermineUserExistAuth: "Unable to determine if the user exists in the authentication system",
-          userExistAuthMessage: "The user already exists in the authentication system. The password you enter "
-          + "here will not be effective, and the new user's password will be the current password of the "
-          + "existing user in the authentication system. Click 'Confirm' to add this user directly to the SCOW "
-          + "database.",
-          userNotExistAuthMessage: "Click 'Confirm' to create this user in both the SCOW  and the "
-          + "authentication system.",
+          userExistAuthMessage:
+            "The user already exists in the authentication system. The password you enter " +
+            "here will not be effective, and the new user's password will be the current password of the " +
+            "existing user in the authentication system. Click 'Confirm' to add this user directly to the SCOW " +
+            "database.",
+          userNotExistAuthMessage:
+            "Click 'Confirm' to create this user in both the SCOW  and the " + "authentication system.",
           userExistInSCOWDatabaseMessage: "This user already exists in the SCOW",
-          userExistAndAddToSCOWDatabaseMessage: "This user already exists in the authentication system "
-          + "and has been successfully added to the SCOW",
+          userExistAndAddToSCOWDatabaseMessage:
+            "This user already exists in the authentication system " + "and has been successfully added to the SCOW",
           createUserFail: "Failed to create user",
           addCompleted: "Added Successfully!",
           crateUser: "Create User",
@@ -1353,10 +1393,11 @@ export default {
       permissionManagement: {
         defaultApps: {
           title: "Default Authorized Application",
-          explanation: "Adding or removing a default authorized application will synchronize the "
-          + "application's authorization changes across all accounts under the tenant. When a new account "
-          + "is created, the default authorized application will be automatically added to the "
-          + "account's authorized applications.",
+          explanation:
+            "Adding or removing a default authorized application will synchronize the " +
+            "application's authorization changes across all accounts under the tenant. When a new account " +
+            "is created, the default authorized application will be automatically added to the " +
+            "account's authorized applications.",
         },
       },
     },
@@ -1402,14 +1443,15 @@ export default {
         userUnlock: "User login unlocking",
         userNotFound: "User not found",
         unlockSuccess: "Login unlocked successfully",
-        unlockFail:"Login unlocked failed",
+        unlockFail: "Login unlocked failed",
         unlockLogin: "Unlock login",
         confirmUlock: "Confirm to unlock user login?",
         confirmUlockText1: "Confirm to unlock user",
         confirmUlockText2: "login lock?",
         lockedTime: "Locked time",
-        oneChancetoLogin: "After unblocking the login, the user has one chance to log in and needs to"
-        + "successfully log in before fully restoring normal login status",
+        oneChancetoLogin:
+          "After unblocking the login, the user has one chance to log in and needs to" +
+          "successfully log in before fully restoring normal login status",
       },
       tenants: {
         create: {
@@ -1417,28 +1459,33 @@ export default {
           adminExistMessage: "The admin user already exists in the SCOW database and cannot be added again.",
           adminNotExistAuth: "Admin user does not exist in the authentication system",
           adminNotExistAuthMessage: "Admin user does not exist. Please confirm that the admin user ID is correct.",
-          adminExistAuthMessage: "The admin user already exists in the authentication system. The password you enter "
-          + "here will not be effective, and the new user's password will be the current password of the existing user "
-          + "in the authentication system. Confirm adding as a new tenant administrator?",
-          adminNotExistAuthAndConfirmCreateMessage: "Admin user does not exist in the authentication system. "
-          + "Do you want to confirm creating this user and adding as a new tenant administrator?",
-          unableConfirmAdminExistInAuthMessage: "Unable to confirm whether the admin user exists in the authentication "
-          + "system and will attempt to create it in the authentication system."
-          + "If the user already exists in the authentication system, the password you enter here will not "
-          + "be effective, and the new user's password will be the current password of the existing user "
-          + "in the authentication system.",
-          unableConfirmAdminExistInAuthAndUnableCreateMessage: "Unable to confirm whether the admin user exists "
-          + "in the authentication system, and the current authentication system does not support creating users. "
-          + "Please confirm that this user already exists in the authentication system. "
-          + "Confirmation will add it directly to the database, and the password you enter here will not be effective. "
-          + "The new user's password will be the current password of the existing user in the authentication system.",
+          adminExistAuthMessage:
+            "The admin user already exists in the authentication system. The password you enter " +
+            "here will not be effective, and the new user's password will be the current password of the existing user " +
+            "in the authentication system. Confirm adding as a new tenant administrator?",
+          adminNotExistAuthAndConfirmCreateMessage:
+            "Admin user does not exist in the authentication system. " +
+            "Do you want to confirm creating this user and adding as a new tenant administrator?",
+          unableConfirmAdminExistInAuthMessage:
+            "Unable to confirm whether the admin user exists in the authentication " +
+            "system and will attempt to create it in the authentication system." +
+            "If the user already exists in the authentication system, the password you enter here will not " +
+            "be effective, and the new user's password will be the current password of the existing user " +
+            "in the authentication system.",
+          unableConfirmAdminExistInAuthAndUnableCreateMessage:
+            "Unable to confirm whether the admin user exists " +
+            "in the authentication system, and the current authentication system does not support creating users. " +
+            "Please confirm that this user already exists in the authentication system. " +
+            "Confirmation will add it directly to the database, and the password you enter here will not be effective. " +
+            "The new user's password will be the current password of the existing user in the authentication system.",
           existInSCOWDatabase: "This {} already exists in the SCOW database",
-          createTenantSuccessMessage: "Tenant created successfully, and the admin user exists in the authentication "
-          + "system and has been successfully added to the SCOW database",
+          createTenantSuccessMessage:
+            "Tenant created successfully, and the admin user exists in the authentication " +
+            "system and has been successfully added to the SCOW database",
           addCompleted: "Added Successfully!",
           createTenantFailMessage: "Failed to create tenant",
           createTenant: "Create Tenant",
-          unavailable:"This feature is not available in the current configuration",
+          unavailable: "This feature is not available in the current configuration",
           userNotFound: "User Not Exist",
           tenantExist: "Tenant Already Exists",
           userStillMaintainsAccountRelationship: "User still maintains account relationship",
@@ -1448,8 +1495,9 @@ export default {
       systemDebug: {
         slurmBlockStatus: {
           syncUserAccountBlockingStatus: "Synchronize User Account Blocking Status",
-          alertInfo: "SCOW will regularly synchronize the blocking status of accounts and users to the scheduler. "
-          + "You can click Sync Now to perform a manual synchronization.",
+          alertInfo:
+            "SCOW will regularly synchronize the blocking status of accounts and users to the scheduler. " +
+            "You can click Sync Now to perform a manual synchronization.",
           periodicSyncUserAccountBlockStatusInfo: "Periodically Synchronize Scheduler Account And User Blocked Status",
           syncAlreadyStarted:
             "Synchronization is already started. Please wait for its completion before starting a new run.",
@@ -1469,15 +1517,18 @@ export default {
         },
         syncClusterAccountUser: {
           syncUserAccount: "Account User Synchronization",
-          alertInfo: "SCOW will regularly synchronize the information of accounts and users to the scheduler. "
-          + "You can click Sync Now to perform a manual synchronization.",
-          maxSyncDurationExplanation: "During synchronization, SCOW cannot modify account-related information. "
-          + "To prevent extended synchronization times from affecting normal user experience, SCOW provides"
-          + " a \" Maximum Processing Time for a Single Synchronization \" parameter to control the "
-          + " processing duration. When this time limit is exceeded, the current synchronization will be "
-          + "terminated while preserving all information that has already been synchronized.",
-          syncAlreadyStarted: "Account User Synchronization or Job fetching is already started. "
-          + "Please wait for its completion before starting a new run.",
+          alertInfo:
+            "SCOW will regularly synchronize the information of accounts and users to the scheduler. " +
+            "You can click Sync Now to perform a manual synchronization.",
+          maxSyncDurationExplanation:
+            "During synchronization, SCOW cannot modify account-related information. " +
+            "To prevent extended synchronization times from affecting normal user experience, SCOW provides" +
+            ' a " Maximum Processing Time for a Single Synchronization " parameter to control the ' +
+            " processing duration. When this time limit is exceeded, the current synchronization will be " +
+            "terminated while preserving all information that has already been synchronized.",
+          syncAlreadyStarted:
+            "Account User Synchronization or Job fetching is already started. " +
+            "Please wait for its completion before starting a new run.",
           periodicSyncUserAccountInfo: "Periodically Synchronize Account and User Information",
           turnedOn: "Turned On",
           paused: "Turned Off",
@@ -1489,8 +1540,8 @@ export default {
           syncSuccess: "Refreshed Successfully",
           syncSchedulerUserAccountNow: "Sync Now",
           maxSyncDurationMinutes: "Maximum Processing Time for a Single Synchronization",
-          maxSyncDurationMinutesModalLabel: "Maximum Processing Time for a Single Synchronization"
-          + " (Only effective for the current operation)",
+          maxSyncDurationMinutesModalLabel:
+            "Maximum Processing Time for a Single Synchronization" + " (Only effective for the current operation)",
           minuteUnit: "MINUTE",
           syncStatusUnknown: "UNKNOWN",
           syncStatusRunning: "RUNNING",
@@ -1542,8 +1593,8 @@ export default {
             hasSyncDataWhenException: "Data synchronized: ",
             syncCountDetailsSucceed: "Successfully synchronized: {}.",
             syncFailedCount: "Failed: {}",
-            syncTotallySucceed:  "Data fully synchronized, ",
-            syncTotallySucceedCount:"completed {} differences.",
+            syncTotallySucceed: "Data fully synchronized, ",
+            syncTotallySucceedCount: "completed {} differences.",
             drawerTitle: "Synchronization Details",
             drawerSucceedTitle: "Success Information",
             drawerFailedTitle: "Failure Information",
@@ -1555,8 +1606,9 @@ export default {
         },
         fetchJobs: {
           jobInfoSync: "Job Information Synchronization",
-          alertMessage: "SCOW will periodically synchronize job information from the cluster. "
-          + "You can click 'Sync Now' to manually synchronize immediately.",
+          alertMessage:
+            "SCOW will periodically synchronize job information from the cluster. " +
+            "You can click 'Sync Now' to manually synchronize immediately.",
           periodicSyncJobInfo: "Periodic Job Info Synchronization",
           turnedOn: "Turned On",
           paused: "Turned Off",
@@ -1567,8 +1619,9 @@ export default {
           notSynced: "Not Synchronized",
           jobSyncSuccessMessage: "Job synchronization completed, synchronized to {} new records.",
           syncJobNow: "Sync Now",
-          accountUserSyncRunning: "Account User Synchronization is running. "
-           + "Please wait for its completion before starting a job synchronization.",
+          accountUserSyncRunning:
+            "Account User Synchronization is running. " +
+            "Please wait for its completion before starting a job synchronization.",
         },
       },
       resourceManagement: {
@@ -1602,10 +1655,11 @@ export default {
           deactivateModal: {
             title: "Deactivate Cluster",
             content: "Please confirm if you want to deactivate the cluster with Cluster ID {}, named {}?",
-            contentInputNotice: "If you confirm the deactivation of the cluster, "
-            + "please re-enter the cluster ID and name below.",
-            contentAttention: "Attention: After deactivation, the cluster will not be available, "
-            + "and all data updates for the cluster will cease!",
+            contentInputNotice:
+              "If you confirm the deactivation of the cluster, " + "please re-enter the cluster ID and name below.",
+            contentAttention:
+              "Attention: After deactivation, the cluster will not be available, " +
+              "and all data updates for the cluster will cease!",
             clusterNameForm: "Cluster Name",
             clusterIdForm: "Cluster ID",
             comment: "Deactivation Comment",
@@ -1684,7 +1738,7 @@ export default {
         topTenPortalFeatureUsageCount: "Portal Feature Usage Count Top Ten",
         topTenMisFeatureUsageCount: "MIS Feature Usage Count Top Ten",
         jobCount: "Job Count",
-        usageCount:"count",
+        usageCount: "count",
         userName: "User Name",
         accountName: "Account Name",
         amount: "Amount",
@@ -1694,8 +1748,9 @@ export default {
       },
       shell: {
         shell: "Shell",
-        alertInfo: "This page grants ROOT access to the cluster. Please proceed with caution."
-        + " For routine operations, it is still recommended to use the cluster login page within the portal system.",
+        alertInfo:
+          "This page grants ROOT access to the cluster. Please proceed with caution." +
+          " For routine operations, it is still recommended to use the cluster login page within the portal system.",
       },
     },
     accounts: {
@@ -1755,35 +1810,35 @@ export default {
       copyFileItem: "Copy File/Directory",
       compressFiles: "Compress File/Directory",
       setJobTimeLimit: "Set Job Time Limit",
-      createImage:"Create Image",
-      updateImage:"Update Image",
-      shareImage:"Share Image",
-      deleteImage:"Delete Image",
-      copyImage:"Copy Image",
-      createDataset:"Create Dataset",
-      updateDataset:"Update Dataset",
-      deleteDataset:"Delete Dataset",
-      createDatasetVersion:"Create DatasetVersion",
-      updateDatasetVersion:"Update DatasetVersion",
-      shareDatasetVersion:"Share DatasetVersion",
-      copyDatasetVersion:"Copy DatasetVersion",
-      deleteDatasetVersion:"Delete DatasetVersion",
-      createAlgorithm:"Create Algorithm",
-      updateAlgorithm:"Update Algorithm",
-      deleteAlgorithm:"Delete Algorithm",
-      createAlgorithmVersion:"Create AlgorithmVersion",
-      updateAlgorithmVersion:"Update AlgorithmVersion",
-      shareAlgorithmVersion:"Share AlgorithmVersion",
-      deleteAlgorithmVersion:"Delete AlgorithmVersion",
-      copyAlgorithmVersion:"Copy AlgorithmVersion",
-      createModel:"Create Model",
-      updateModel:"Update Model",
-      deleteModel:"Delete Model",
-      createModelVersion:"Create ModelVersion",
-      updateModelVersion:"Update ModelVersion",
-      shareModelVersion:"Share ModelVersion",
-      deleteModelVersion:"Delete ModelVersion",
-      copyModelVersion:"Copy ModelVersion",
+      createImage: "Create Image",
+      updateImage: "Update Image",
+      shareImage: "Share Image",
+      deleteImage: "Delete Image",
+      copyImage: "Copy Image",
+      createDataset: "Create Dataset",
+      updateDataset: "Update Dataset",
+      deleteDataset: "Delete Dataset",
+      createDatasetVersion: "Create DatasetVersion",
+      updateDatasetVersion: "Update DatasetVersion",
+      shareDatasetVersion: "Share DatasetVersion",
+      copyDatasetVersion: "Copy DatasetVersion",
+      deleteDatasetVersion: "Delete DatasetVersion",
+      createAlgorithm: "Create Algorithm",
+      updateAlgorithm: "Update Algorithm",
+      deleteAlgorithm: "Delete Algorithm",
+      createAlgorithmVersion: "Create AlgorithmVersion",
+      updateAlgorithmVersion: "Update AlgorithmVersion",
+      shareAlgorithmVersion: "Share AlgorithmVersion",
+      deleteAlgorithmVersion: "Delete AlgorithmVersion",
+      copyAlgorithmVersion: "Copy AlgorithmVersion",
+      createModel: "Create Model",
+      updateModel: "Update Model",
+      deleteModel: "Delete Model",
+      createModelVersion: "Create ModelVersion",
+      updateModelVersion: "Update ModelVersion",
+      shareModelVersion: "Share ModelVersion",
+      deleteModelVersion: "Delete ModelVersion",
+      copyModelVersion: "Copy ModelVersion",
       createUser: "Create User",
       addUserToAccount: "Add User to Account",
       removeUserFromAccount: "Remove User from Account",
@@ -1832,8 +1887,8 @@ export default {
       mergeFileChunks: "Merge and upload temporary file blocks",
       initMultipartUpload: "Initial multipart upload file",
       markMessageRead: "Mark message as read",
-      deleteUser:"Delete User",
-      deleteAccount:"Delete Account",
+      deleteUser: "Delete User",
+      deleteAccount: "Delete Account",
       editUserProfile: "Edit User Information",
       changePassword: "Modify password",
       changeEmail: "Modify email",
@@ -1896,25 +1951,25 @@ export default {
       createDatasetVersion: "DatasetName: {}, DatasetVersionName: {}",
       updateDatasetVersion: "DatasetName: {}, DatasetVersionName: {}",
       shareDatasetVersion: "DatasetName: {}, DatasetVersionName: {}",
-      copyDatasetVersion: "Source DatasetName: {}, Source VersionName: {};" +
-      "Target DatasetName: {}, Target VersionName: {}",
+      copyDatasetVersion:
+        "Source DatasetName: {}, Source VersionName: {};" + "Target DatasetName: {}, Target VersionName: {}",
       deleteDatasetVersion: "DatasetName: {}, DatasetVersionName: {}",
-      createAlgorithm:"Cluster: {}, AlgorithmName: {}",
-      updateAlgorithm:"AlgorithmName: {}",
-      deleteAlgorithm:"AlgorithmName: {}",
-      createAlgorithmVersion:"AlgorithmName: {}, AlgorithmVersionName: {}",
-      updateAlgorithmVersion:"AlgorithmName: {}, AlgorithmVersionName: {}",
-      shareAlgorithmVersion:"AlgorithmName: {}, AlgorithmVersionName: {}",
-      deleteAlgorithmVersion:"AlgorithmName: {}, AlgorithmVersionName: {}",
-      copyAlgorithmVersion: "Source AlgorithmName: {}, Source VersionName: {}; " +
-      "Target AlgorithmName: {}, Target VersionName: {}",
-      createModel:"Cluster: {}, ModelName: {}",
-      updateModel:"ModelName: {}",
-      deleteModel:"ModelName: {}",
-      createModelVersion:"ModelName: {}, ModelVersionName: {}",
-      updateModelVersion:"ModelName: {}, ModelVersionName: {}",
-      shareModelVersion:"ModelName: {}, ModelVersionName: {}",
-      deleteModelVersion:"ModelName: {}, ModelVersionName: {}",
+      createAlgorithm: "Cluster: {}, AlgorithmName: {}",
+      updateAlgorithm: "AlgorithmName: {}",
+      deleteAlgorithm: "AlgorithmName: {}",
+      createAlgorithmVersion: "AlgorithmName: {}, AlgorithmVersionName: {}",
+      updateAlgorithmVersion: "AlgorithmName: {}, AlgorithmVersionName: {}",
+      shareAlgorithmVersion: "AlgorithmName: {}, AlgorithmVersionName: {}",
+      deleteAlgorithmVersion: "AlgorithmName: {}, AlgorithmVersionName: {}",
+      copyAlgorithmVersion:
+        "Source AlgorithmName: {}, Source VersionName: {}; " + "Target AlgorithmName: {}, Target VersionName: {}",
+      createModel: "Cluster: {}, ModelName: {}",
+      updateModel: "ModelName: {}",
+      deleteModel: "ModelName: {}",
+      createModelVersion: "ModelName: {}, ModelVersionName: {}",
+      updateModelVersion: "ModelName: {}, ModelVersionName: {}",
+      shareModelVersion: "ModelName: {}, ModelVersionName: {}",
+      deleteModelVersion: "ModelName: {}, ModelVersionName: {}",
       copyModelVersion: "Source ModelName: {}, Source VersionName: {}; Target ModelName: {}, Target VersionName: {}",
       createUser: "User: {}",
       deleteUser: "User: {}",
@@ -1933,7 +1988,7 @@ export default {
       unsetTenantFinance: "Tenant: {1}, User: {0}",
       tenantChangePassword: "User: {}",
       createAccount: "Account: {}, Primary Admin: {}",
-      deleteAccount:"Account: {}, Primary Admin: {}",
+      deleteAccount: "Account: {}, Primary Admin: {}",
       addAccountToWhitelist: "Tenant: {1}, Account: {0}",
       removeAccountFromWhitelist: "Tenant: {1}, Account: {0}",
       accountPay: "Account: {}, Amount (CNY): {}",
@@ -1966,7 +2021,7 @@ export default {
       exportAccountsPayRecordOfTenant: "Tenant: {}, Accounts: {}",
       exportAllAccountsPayRecordOfTenant: "Tenant: {}, Accounts: All Accounts",
       exportTenantPayRecord: "Tenant: {}",
-      exportTenantsPayRecordOfAdmin:"Tenants: All Tenants in Platform",
+      exportTenantsPayRecordOfAdmin: "Tenants: All Tenants in Platform",
       exportJobsOfAccountAndUser: "Tenant: {0}, Account: {2}, User: {1}",
       exportJobsOfUser: "Tenant: {}, User: {}",
       exportJobsOfAccount: "Tenant: {}, Account: {}",

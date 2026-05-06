@@ -1,6 +1,7 @@
 import type { GetJobInfoSchema } from "src/pages/api/job/jobInfo";
 import type { Cluster } from "src/utils/cluster";
 
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
@@ -9,10 +10,22 @@ import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, AutoComplete, Button, DatePicker, Divider, Form, InputNumber, Space, Table, Tooltip } from "antd";
+import {
+  App,
+  AutoComplete,
+  Button,
+  DatePicker,
+  Divider,
+  Form,
+  InputNumber,
+  Popover,
+  Space,
+  Table,
+  Tooltip,
+} from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
@@ -27,8 +40,10 @@ import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import { getClusterName, getSortedClusterValues } from "src/utils/cluster";
+import { getClusterName } from "src/utils/cluster";
+import { publicConfig } from "src/utils/config";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
+import { useAuthorizedClusters } from "src/utils/useAuthorizedClusters";
 
 interface FilterForm {
   jobEndTime: [dayjs.Dayjs, dayjs.Dayjs];
@@ -75,11 +90,19 @@ const priceText = {
 } as const;
 
 export const JobTable: React.FC<Props> = ({
-  userId, accountNames, filterAccountName = true, filterUser = true,
-  showAccount, showUser, showOwner = false, showedPrices, priceTexts,
+  userId,
+  accountNames,
+  filterAccountName = true,
+  filterUser = true,
+  showAccount,
+  showUser,
+  showOwner = false,
+  showedPrices,
+  priceTexts,
 }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
+  const resourceEnabled = publicConfig.SCOW_RESOURCE_ENABLED;
 
   const { message } = App.useApp();
 
@@ -91,20 +114,19 @@ export const JobTable: React.FC<Props> = ({
   // 防止用户切换批量/精确搜索、修改账户条件，但还没点击搜索时，导出结果已经跟随条件变化的情况。
   const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
 
-  const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
-  const sortedClusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList).filter((x) =>
-    Object.keys(activatedClusters).includes(x.id),
-  );
+  const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
       jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
       jobId: undefined,
-      clusters: sortedClusters,
+      clusters: [],
       accountName: typeof accountNames === "string" ? accountNames : undefined,
     };
   });
+
+  const [form] = Form.useForm<FilterForm>();
 
   useDidUpdateEffect(() => {
     setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
@@ -114,10 +136,26 @@ export const JobTable: React.FC<Props> = ({
     }));
   }, [accountNames]);
 
-  const [form] = Form.useForm<FilterForm>();
+  const fetchAuthorizedClusterIds = useCallback(async () => {
+    // 用户空间：按用户授权集群；账户/租户页面：按账户授权集群
+    if (!filterAccountName && typeof accountNames === "string") {
+      const { clusterIds } = await api.getAccountsAssociatedClusters({ query: { accountNames: [accountNames] } });
+      return clusterIds;
+    }
+
+    const { clusterIds } = await api.getUserAssociatedClusters({});
+    return clusterIds;
+  }, [accountNames, filterAccountName]);
+
+  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, resourceEnabled, fetchAuthorizedClusterIds);
 
   // 定义排序状态
   const [sorter, setSorter] = useState<Sorter>({ field: undefined, order: undefined });
+
+  const clusterIds = useMemo(
+    () => (!query.clusters || query.clusters.length === 0 ? [] : query.clusters.map((x) => x.id)),
+    [query.clusters],
+  );
 
   const promiseFn = useCallback(async () => {
     // userId 仅作为页面上下文约束，不是前端搜索框字段。
@@ -125,18 +163,20 @@ export const JobTable: React.FC<Props> = ({
 
     // 根据 rangeSearch.current来判断是批量/精确搜索，
     // accountName 根据accountNames是否数组来判断顶部导航类型，如是用户空间用输入值，账户管理则用props中的accountNames限制搜索范围
-    const diffQuery = rangeSearch.current ? {
-      ...fixedUserQuery,
-      ...(!userId ? { userIdOrName: query.userIdOrName || undefined } : {}),
-      ownerIdOrName: query.ownerIdOrName || undefined,
-      accountName: Array.isArray(accountNames) ? selectedAccountName : accountNames,
-      jobEndTimeStart: query.jobEndTime[0].toISOString(),
-      jobEndTimeEnd: query.jobEndTime[1].toISOString(),
-    } : {
-      ...fixedUserQuery,
-      jobId: query.jobId,
-      accountName: Array.isArray(accountNames) ? undefined : accountNames,
-    };
+    const diffQuery = rangeSearch.current
+      ? {
+          ...fixedUserQuery,
+          ...(!userId ? { userIdOrName: query.userIdOrName || undefined } : {}),
+          ownerIdOrName: query.ownerIdOrName || undefined,
+          accountName: Array.isArray(accountNames) ? selectedAccountName : accountNames,
+          jobEndTimeStart: query.jobEndTime[0].toISOString(),
+          jobEndTimeEnd: query.jobEndTime[1].toISOString(),
+        }
+      : {
+          ...fixedUserQuery,
+          jobId: query.jobId,
+          accountName: Array.isArray(accountNames) ? undefined : accountNames,
+        };
 
     setCurrentDiffQuery(diffQuery);
 
@@ -148,7 +188,7 @@ export const JobTable: React.FC<Props> = ({
           sortOrder: sorter.order,
           page: pageInfo.page,
           pageSize: pageInfo.pageSize,
-          clusters: query.clusters?.map((x) => x.id),
+          clusters: clusterIds,
         },
       })
       .catch((e: HttpError) => {
@@ -159,7 +199,7 @@ export const JobTable: React.FC<Props> = ({
           throw e;
         }
       });
-  }, [pageInfo, query, sorter]);
+  }, [pageInfo, query, sorter, clusterIds]);
 
   const { data, isLoading } = useAsync({ promiseFn });
 
@@ -188,7 +228,7 @@ export const JobTable: React.FC<Props> = ({
         query: {
           ...currentDiffQuery,
           searchType: SearchType.NORMAL,
-          clusters: query.clusters?.map((x) => x.id),
+          clusters: clusterIds,
           finalPriceText: JSON.stringify(
             Object.fromEntries(Object.entries(finalPriceText).map(([k, v]) => [k, `${v} (${t(pCommon("unit"))})`])),
           ),
@@ -226,20 +266,32 @@ export const JobTable: React.FC<Props> = ({
             }
             onChange={(a) => (rangeSearch.current = a === "range")}
             tabs={[
-              { title: t(p("batchSearch")), key: "range", node: (
-                <>
-                  <Form.Item label={t(pCommon("cluster"))} name="clusters">
-                    <ClusterSelector />
-                  </Form.Item>
-                  {
-                    filterUser ? (
+              {
+                title: t(p("batchSearch")),
+                key: "range",
+                node: (
+                  <>
+                    <Form.Item
+                      label={
+                        <Space>
+                          {t(pCommon("cluster"))}
+                          {resourceEnabled ? (
+                            <Popover title={t("component.others.allClustersTooltip")}>
+                              <QuestionCircleOutlined />
+                            </Popover>
+                          ) : null}
+                        </Space>
+                      }
+                      name="clusters"
+                    >
+                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
+                    </Form.Item>
+                    {filterUser ? (
                       <Form.Item label={t(pCommon("user"))} name="userIdOrName">
                         <Input placeholder={t(p("userIdOrNamePlaceholder"))} />
                       </Form.Item>
-                    ) : undefined
-                  }
-                  {
-                    filterAccountName ? (
+                    ) : undefined}
+                    {filterAccountName ? (
                       <Form.Item label={t("common.account")} name="name">
                         <AutoComplete
                           style={{ minWidth: 150 }}
@@ -262,10 +314,8 @@ export const JobTable: React.FC<Props> = ({
                           }}
                         />
                       </Form.Item>
-                    ) : undefined
-                  }
-                  {
-                    showOwner ? (
+                    ) : undefined}
+                    {showOwner ? (
                       <Form.Item label={t(pCommon("accountOwner"))} name="ownerIdOrName">
                         <Input placeholder={t(p("ownerIdOrNamePlaceholder"))} />
                       </Form.Item>
@@ -281,8 +331,20 @@ export const JobTable: React.FC<Props> = ({
                 key: "precision",
                 node: (
                   <>
-                    <Form.Item label={t(pCommon("cluster"))} name="clusters">
-                      <ClusterSelector />
+                    <Form.Item
+                      label={
+                        <Space>
+                          {t(pCommon("cluster"))}
+                          {resourceEnabled ? (
+                            <Popover title={t("component.others.allClustersTooltip")}>
+                              <QuestionCircleOutlined />
+                            </Popover>
+                          ) : null}
+                        </Space>
+                      }
+                      name="clusters"
+                    >
+                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
                     </Form.Item>
                     <Form.Item label={t(pCommon("workId"))} name="jobId">
                       <InputNumber style={{ minWidth: "160px" }} min={1} />
@@ -325,8 +387,16 @@ interface JobInfoTableProps {
 }
 
 export const JobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, pageInfo, setPageInfo, setSorter, isLoading,
-  showAccount, showUser, showOwner = false, showedPrices, priceTexts,
+  data,
+  pageInfo,
+  setPageInfo,
+  setSorter,
+  isLoading,
+  showAccount,
+  showUser,
+  showOwner = false,
+  showedPrices,
+  priceTexts,
 }) => {
   const router = useRouter();
   const t = useI18nTranslateToString();
@@ -402,53 +472,31 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         tableLayout="fixed"
         scroll={{ x: data?.jobs?.length ? 1450 : true }}
       >
-        <Table.Column<JobInfo>
-          dataIndex="idJob"
-          width="7%"
-          title={t(pCommon("clusterWorkId"))}
-          sorter={true}
-        />
-        <Table.Column<JobInfo>
-          dataIndex="jobName"
-          ellipsis
-          title={t(pCommon("workName"))}
-          sorter={true}
-        />
-        {
-          showUser ? (
-            <Table.Column<JobInfo>
-              dataIndex="user"
-              width="13%"
-              ellipsis
-              title={t(pCommon("user"))}
-              render={(user,record) => `${record.userName} (ID:${user})`}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        {
-          showAccount ? (
-            <Table.Column<JobInfo>
-              dataIndex="account"
-              width="9%"
-              ellipsis
-              title={t(pCommon("account"))}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        {
-          showOwner ? (
-            <Table.Column<JobInfo>
-              dataIndex="accountOwnerName"
-              width="10%"
-              ellipsis
-              title={t(pCommon("accountOwner"))}
-              render={(_, record) => `${record.accountOwnerName ?? "-"} (ID:${record.accountOwnerId ?? "-"})`}
-              sorter={true}
-            />
-          ) : undefined
-        }
+        <Table.Column<JobInfo> dataIndex="idJob" width="7%" title={t(pCommon("clusterWorkId"))} sorter={true} />
+        <Table.Column<JobInfo> dataIndex="jobName" ellipsis title={t(pCommon("workName"))} sorter={true} />
+        {showUser ? (
+          <Table.Column<JobInfo>
+            dataIndex="user"
+            width="13%"
+            ellipsis
+            title={t(pCommon("user"))}
+            render={(user, record) => `${record.userName} (ID:${user})`}
+            sorter={true}
+          />
+        ) : undefined}
+        {showAccount ? (
+          <Table.Column<JobInfo> dataIndex="account" width="9%" ellipsis title={t(pCommon("account"))} sorter={true} />
+        ) : undefined}
+        {showOwner ? (
+          <Table.Column<JobInfo>
+            dataIndex="accountOwnerName"
+            width="10%"
+            ellipsis
+            title={t(pCommon("accountOwner"))}
+            render={(_, record) => `${record.accountOwnerName ?? "-"} (ID:${record.accountOwnerId ?? "-"})`}
+            sorter={true}
+          />
+        ) : undefined}
         <Table.Column<JobInfo>
           dataIndex="cluster"
           title={t(pCommon("clusterName"))}

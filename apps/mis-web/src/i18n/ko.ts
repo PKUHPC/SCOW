@@ -1096,6 +1096,8 @@ export default {
       newPassword: "새 비밀번호",
       confirmPassword: "비밀번호 확인",
       selectCluster: "클러스터 선택",
+      allClustersTooltip: "클러스터를 지정하지 않으면 권한이 해제된 클러스터를 포함한 모든 클러스터의 작업을 조회할 수 있습니다.",
+
       partitionFullName:"파티션 전체 이름",
       nodes: "파티션 노드 수",
       cores: "노드당 코어 수",

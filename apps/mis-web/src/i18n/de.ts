@@ -1149,6 +1149,8 @@ export default {
       newPassword: "New Password",
       confirmPassword: "Confirm Password",
       selectCluster: "Select Cluster",
+      allClustersTooltip: "Wenn kein Cluster angegeben ist, können Jobs in allen Clustern gesucht werden, einschließlich bereits entzogener Cluster.",
+
       partitionFullName:"Full Name of Partition",
       nodes: "Number of Partition Nodes",
       cores: "Number of Cores per Node",

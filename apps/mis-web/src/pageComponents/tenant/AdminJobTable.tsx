@@ -1,12 +1,14 @@
 import type { GetJobFilter, GetJobInfoSchema } from "src/pages/api/job/jobInfo";
 import type { FilterForm } from "src/utils/jobIds";
+
+import { QuestionCircleOutlined } from "@ant-design/icons";
 import { TrimInput } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime, getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Money } from "@scow/protos/build/common/money";
 import { Static } from "@sinclair/typebox";
-import { App, Button, DatePicker, Divider, Form, Input, Space, Table } from "antd";
+import { App, Button, DatePicker, Divider, Form, Input, Popover, Space, Table } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useAsync } from "react-async";
@@ -23,9 +25,11 @@ import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { HistoryJobDrawer } from "src/pageComponents/job/HistoryJobDrawer";
 import { JobPriceChangeModal } from "src/pageComponents/tenant/JobPriceChangeModal";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import { getClusterName, getSortedClusterValues } from "src/utils/cluster";
+import { getClusterName } from "src/utils/cluster";
+import { publicConfig } from "src/utils/config";
 import { useJobIdsInput, validateJobIds } from "src/utils/jobIds";
 import { moneyToString, nullableMoneyToString } from "src/utils/money";
+import { useAuthorizedClusters } from "src/utils/useAuthorizedClusters";
 
 interface PageInfo {
   page: number;
@@ -76,14 +80,12 @@ export const AdminJobTable: React.FC<Props> = () => {
   const languageId = useI18n().currentLanguage.id;
 
   const { message } = App.useApp();
+  const resourceEnabled = publicConfig.SCOW_RESOURCE_ENABLED;
 
   const rangeSearch = useRef(true);
   const [currentDiffQuery, setCurrentDiffQuery] = useState<DiffQuery | undefined>(undefined);
 
-  const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
-  const sortedClusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList).filter((x) =>
-    Object.keys(activatedClusters).includes(x.id),
-  );
+  const { publicConfigClusters } = useStore(ClusterInfoStore);
 
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
@@ -93,15 +95,30 @@ export const AdminJobTable: React.FC<Props> = () => {
       ownerIdOrName: "",
       accountName: "",
       jobEndTime: [now.subtract(1, "week").startOf("day"), now.endOf("day")],
-      clusters: sortedClusters,
+      clusters: [],
     };
   });
   const [form] = Form.useForm<FilterForm>();
 
+  const fetchAuthorizedClusterIds = useCallback(async () => {
+    const resp = await api.getTenantAssignedClustersAndPartitions({});
+    return Object.keys(resp.assignedClusterPartitions ?? {});
+  }, []);
+
+  const authorizedClusterIds = useAuthorizedClusters(form, setQuery, resourceEnabled, fetchAuthorizedClusterIds);
+
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
+  const clusterIds = useMemo(
+    () => (!query.clusters || query.clusters.length === 0 ? [] : query.clusters.map((x) => x.id)),
+    [query.clusters],
+  );
+
   const promiseFn = useCallback(async () => {
-    const diffQuery = filterFormToQuery(query, rangeSearch.current);
+    const diffQuery = {
+      ...filterFormToQuery(query, rangeSearch.current),
+      clusters: clusterIds,
+    };
     setCurrentDiffQuery(diffQuery);
     return await api.getJobInfo({
       query: {
@@ -110,7 +127,7 @@ export const AdminJobTable: React.FC<Props> = () => {
         pageSize: pageInfo.pageSize,
       },
     });
-  }, [pageInfo, query]);
+  }, [pageInfo, query, clusterIds]);
 
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
@@ -182,8 +199,20 @@ export const AdminJobTable: React.FC<Props> = () => {
                 key: "range",
                 node: (
                   <>
-                    <Form.Item label={t(pCommon("cluster"))} name="clusters">
-                      <ClusterSelector />
+                    <Form.Item
+                      label={
+                        <Space>
+                          {t(pCommon("cluster"))}
+                          {resourceEnabled ? (
+                            <Popover title={t("component.others.allClustersTooltip")}>
+                              <QuestionCircleOutlined />
+                            </Popover>
+                          ) : null}
+                        </Space>
+                      }
+                      name="clusters"
+                    >
+                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
                     </Form.Item>
                     <Form.Item label={t(pCommon("user"))} name="userIdOrName">
                       <TrimInput placeholder={t(p("userIdOrNamePlaceholder"))} />
@@ -205,8 +234,20 @@ export const AdminJobTable: React.FC<Props> = () => {
                 key: "precision",
                 node: (
                   <>
-                    <Form.Item label={t(pCommon("cluster"))} name="clusters">
-                      <ClusterSelector />
+                    <Form.Item
+                      label={
+                        <Space>
+                          {t(pCommon("cluster"))}
+                          {resourceEnabled ? (
+                            <Popover title={t("component.others.allClustersTooltip")}>
+                              <QuestionCircleOutlined />
+                            </Popover>
+                          ) : null}
+                        </Space>
+                      }
+                      name="clusters"
+                    >
+                      <ClusterSelector authorizedClusterIds={resourceEnabled ? authorizedClusterIds : undefined} />
                     </Form.Item>
                     <Form.Item
                       label={t(pCommon("clusterWorkId"))}

@@ -1140,6 +1140,8 @@ export default {
       newPassword: "Nova senha",
       confirmPassword: "Confirmar senha",
       selectCluster: "Selecionar cluster",
+      allClustersTooltip: "Se nenhum cluster for especificado, é possível buscar trabalhos em todos os clusters, incluindo os que já tiveram a autorização removida.",
+
       partitionFullName:"Nome completo da partição",
       nodes: "Número de nós da partição",
       cores: "Número de núcleos por nó",

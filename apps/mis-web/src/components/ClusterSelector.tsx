@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Select } from "antd";
 import { useStore } from "simstate";
@@ -24,21 +12,26 @@ interface Props {
   // true: use config clusters
   // false or not exist： use current activated clusters from db
   isUsingAllConfigClusters?: boolean;
+  authorizedClusterIds?: string[];
 }
-
 
 const p = prefix("component.others.");
 
-export const ClusterSelector: React.FC<Props> = ({ value, onChange, isUsingAllConfigClusters }) => {
-
+export const ClusterSelector: React.FC<Props> = ({
+  value,
+  onChange,
+  isUsingAllConfigClusters,
+  authorizedClusterIds,
+}) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const { publicConfigClusters, clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
   const clusters = isUsingAllConfigClusters ? publicConfigClusters : activatedClusters;
 
-  const sortedIds =
-    clusterSortedIdList.filter((id) => Object.keys(clusters)?.includes(id));
+  const sortedIds = clusterSortedIdList
+    .filter((id) => Object.keys(clusters)?.includes(id))
+    .filter((id) => !authorizedClusterIds || authorizedClusterIds.includes(id));
 
   return (
     <Select
@@ -47,10 +40,10 @@ export const ClusterSelector: React.FC<Props> = ({ value, onChange, isUsingAllCo
       value={value?.map((v) => v.id)}
       onChange={(values) => onChange?.(values.map((x) => ({ id: x, name: clusters[x]?.name })))}
       options={sortedIds.map((x) => ({
-        value: x, label:
-          getI18nConfigCurrentText(clusters[x]?.name, languageId),
+        value: x,
+        label: getI18nConfigCurrentText(clusters[x]?.name, languageId),
       }))}
-      style={{ minWidth: "96px" }}
+      style={{ minWidth: "108px" }}
     />
   );
 };
@@ -71,7 +64,6 @@ interface ClearableSingleSelectionProps extends CommonSingleSelectionProps {
   onChange?: (cluster: Cluster | undefined) => void;
 }
 
-
 export type SingleSelectionProps = NonClearableSingleSelectionProps | ClearableSingleSelectionProps;
 
 export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
@@ -85,8 +77,7 @@ export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
   const languageId = useI18n().currentLanguage.id;
 
   const { clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
-  const sortedIds =
-    clusterSortedIdList.filter((id) => Object.keys(activatedClusters)?.includes(id));
+  const sortedIds = clusterSortedIdList.filter((id) => Object.keys(activatedClusters)?.includes(id));
 
   return (
     <Select
@@ -102,16 +93,14 @@ export const SingleClusterSelector: React.FC<SingleSelectionProps> = ({
         } else {
           (onChange as ClearableSingleSelectionProps["onChange"])?.(undefined);
         }
-      }
-      }
-      options={
-        (label ? [{ value: label, label, disabled: true }] : [])
-          .concat(sortedIds.map((x) => ({
-            value: x,
-            label: getI18nConfigCurrentText(activatedClusters[x]?.name, languageId),
-            disabled: false,
-          })))
-      }
+      }}
+      options={(label ? [{ value: label, label, disabled: true }] : []).concat(
+        sortedIds.map((x) => ({
+          value: x,
+          label: getI18nConfigCurrentText(activatedClusters[x]?.name, languageId),
+          disabled: false,
+        })),
+      )}
       popupMatchSelectWidth={false}
       allowClear={allowClear}
       showSearch={!!showSearch}

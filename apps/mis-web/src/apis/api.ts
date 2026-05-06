@@ -61,6 +61,8 @@ import type { UpdatePasswordResetFlagSchema } from "src/pages/api/admin/updatePa
 import type { AuthCallbackSchema } from "src/pages/api/auth/callback";
 import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
+import type { GetAccountsAssociatedClustersSchema } from "src/pages/api/cluster/getAccountsAssociatedClusters";
+import type { GetUserAssociatedClustersSchema } from "src/pages/api/cluster/getUserAssociatedClusters";
 import type { GetUserStatusSchema } from "src/pages/api/dashboard/status";
 import type { ExportAccountSchema } from "src/pages/api/file/exportAccount";
 import type { ExportBillSchema } from "src/pages/api/file/exportBill";
@@ -197,6 +199,8 @@ export const api = {
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
+  getUserAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClustersSchema>("GET", "/api/cluster/getUserAssociatedClusters"),
+  getAccountsAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetAccountsAssociatedClustersSchema>("GET", "/api/cluster/getAccountsAssociatedClusters"),
   getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof GetClusterConfigFilesSchema>("GET", "/api//clusterConfigsInfo"),
   getUserStatus: apiClient.fromTypeboxRoute<typeof GetUserStatusSchema>("GET", "/api/dashboard/status"),
   exportAccount: apiClient.fromTypeboxRoute<typeof ExportAccountSchema>("GET", "/api/file/exportAccount"),

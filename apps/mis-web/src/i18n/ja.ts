@@ -1094,6 +1094,8 @@ export default {
       newPassword: "新しいパスワード",
       confirmPassword: "パスワード確認",
       selectCluster: "クラスタを選択",
+      allClustersTooltip: "クラスタを指定しない場合、権限解除済みクラスタを含むすべてのクラスタのジョブを検索できます。",
+
       partitionFullName:"パーティションの正式名称",
       nodes: "パーティションのノード数",
       cores: "ノードあたりのコア数",
