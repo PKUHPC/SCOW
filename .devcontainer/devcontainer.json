@@ -17,7 +17,8 @@
         "EditorConfig.EditorConfig",
         "hediet.vscode-drawio",
         "drblury.protobuf-vsc",
-        "oxc.oxc-vscode"
+        "oxc.oxc-vscode",
+        "golang.go"
       ]
     }
   }
