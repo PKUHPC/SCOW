@@ -4,10 +4,11 @@ import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { join } from "path";
 import { useI18nTranslateToString } from "src/i18n";
 import {
-  AllJobsIcon, ApplicationIcon, AppSessionsIcon, ClusterFileManagerIcon
-  , CreateAppIcon, DashBoardIcon, FileManagerIcon,
-  FileTransferIcon, FileTransferInfoIcon,JobIcon, LoginClusterIcon,
-  RunningJobsIcon, SubmitJobIcon } from "src/icons/headerIcons/headerIcons";
+  AllJobsIcon, ApplicationIcon, AppSessionsIcon, ClusterFileManagerIcon,
+  CreateAppIcon, DashBoardIcon, FileManagerIcon,
+  FileTransferIcon, FileTransferInfoIcon, JobIcon, LoginClusterIcon,
+  RunningJobsIcon, SubmitJobIcon
+} from "src/icons/headerIcons/headerIcons";
 import { User } from "src/stores/UserStore";
 import { Cluster, LoginNode } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -33,7 +34,7 @@ export const userRoutes: (
       text: t("routes.dashboard"),
       path: "/dashboard",
     },
-    ...(publicConfig.ENABLE_JOB_MANAGEMENT ? [{
+    ...(publicConfig.ENABLE_JOB_MANAGEMENT && currentClusters.length > 0 ? [{
       Icon: JobIcon,
       text: t("routes.job.title"),
       path: "/jobs",

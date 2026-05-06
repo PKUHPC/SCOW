@@ -20,14 +20,15 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
+import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAvailablePage";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { TimeUnit } from "src/models/job";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
-import { useTheme } from "styled-components";
 import { formatSize } from "src/utils/format";
+import { useTheme } from "styled-components";
 
 import { BaseInfoSection } from "./submitJobCom/BaseInfoSection";
 import { JobConfigSection } from "./submitJobCom/JobConfigSection";
@@ -75,6 +76,12 @@ interface UnavailableParamRow {
 }
 
 export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
+  const { currentClusters, setDefaultCluster, defaultCluster } = useStore(ClusterInfoStore);
+
+  if (!defaultCluster && currentClusters.length === 0) {
+    return <ClusterNotAvailablePage />;
+  }
+
   const { message, modal } = App.useApp();
   const theme = useTheme();
   const gray = theme.palette.gray;
@@ -125,7 +132,6 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
 
   const t = useI18nTranslateToString();
   const { user } = useStore(UserStore);
-  const { currentClusters, setDefaultCluster, defaultCluster } = useStore(ClusterInfoStore);
   const languageId = useI18n().currentLanguage.id;
   const isFullDisplayMode = useMemo(() => {
     return user?.isAdmin || publicConfig.DASHBOARD_USER_DISPLAY_MODE === "full";
