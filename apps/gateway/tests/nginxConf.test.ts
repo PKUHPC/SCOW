@@ -45,3 +45,15 @@ it("generates static files location", async () => {
     autoindex: "off",
   });
 });
+
+it("generates VNC proxy location when VNC_ENABLED is true", async () => {
+  const nginxConf = parseNginxConfig({ ...config, VNC_ENABLED: true });
+
+  expect(nginxConf.server[`location ${config.VNC_PATH}`]).toBeDefined();
+});
+
+it("does not generate VNC proxy location when VNC_ENABLED is false", async () => {
+  const nginxConf = parseNginxConfig({ ...config, VNC_ENABLED: false });
+
+  expect(nginxConf.server[`location ${config.VNC_PATH}`]).toBeUndefined();
+});

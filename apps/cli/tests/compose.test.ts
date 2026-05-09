@@ -129,6 +129,62 @@ it("deploy ai", async () => {
   expect(composeConfig.services["mis-web"].environment).toContain("AI_URL=/ai");
 });
 
+describe("VNC (novnc) service", () => {
+
+  it("is present when portal is enabled", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    expect(spec.services["novnc"]).toBeDefined();
+    expect(spec.services.gateway.environment).toContain("VNC_ENABLED=true");
+  });
+
+  it("is present when only ai is enabled and portal is disabled", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: false, basePath: "/", novncClientImage: "" };
+    config.ai = { enabled: true, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    expect(spec.services["novnc"]).toBeDefined();
+    expect(spec.services.gateway.environment).toContain("VNC_ENABLED=true");
+  });
+
+  it("is absent when both portal and ai are disabled", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: false, basePath: "/", novncClientImage: "" };
+    config.ai = { enabled: false, basePath: "/ai", dbPassword: "must!chang3this", mysqlImage: "" };
+    config.mis = { enabled: true, basePath: "/mis", dbPassword: "must!chang3this", mysqlImage: "" };
+
+    const spec = createComposeSpec(config);
+
+    expect(spec.services["novnc"]).toBeUndefined();
+    expect(spec.services.gateway.environment).toContain("VNC_ENABLED=false");
+  });
+
+  it("uses novnc.novncClientImage over portal.novncClientImage", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "portal-novnc:v1" };
+    config.novnc = { novncClientImage: "top-level-novnc:v2" };
+
+    const spec = createComposeSpec(config);
+
+    expect(spec.services["novnc"].image).toBe("top-level-novnc:v2");
+  });
+
+  it("falls back to portal.novncClientImage when novnc is not configured", async () => {
+    const config = getInstallConfig(configPath);
+    config.portal = { enabled: true, basePath: "/", novncClientImage: "portal-novnc:v1" };
+    config.novnc = undefined;
+
+    const spec = createComposeSpec(config);
+
+    expect(spec.services["novnc"].image).toBe("portal-novnc:v1");
+  });
+});
+
 describe("module enabled=false", () => {
 
   it("portal disabled: services absent and env vars correct", async () => {
@@ -142,7 +198,8 @@ describe("module enabled=false", () => {
     // portal services should not be present
     expect(spec.services["portal-server"]).toBeUndefined();
     expect(spec.services["portal-web"]).toBeUndefined();
-    expect(spec.services["novnc"]).toBeUndefined();
+    // novnc is still present because ai is enabled
+    expect(spec.services["novnc"]).toBeDefined();
 
     // gateway should report portal as disabled
     expect(spec.services.gateway.environment).toContain("PORTAL_ENABLED=false");

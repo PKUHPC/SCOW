@@ -42,6 +42,8 @@ export const config = envConfig({
   QUANTUM_PATH: str({ desc: "量子计算系统路径", default: "/quantum" }),
   QUANTUM_PATH_INTERNAL_URL: str({ desc: "量子计算系统内部路径", default: "http://quantum:3000" }),
 
+  // 根据启动的子系统是否包含 AI 或 portal 推算
+  VNC_ENABLED: bool({ desc: "是否启用VNC代理", default: false }),
   VNC_PATH: str({ desc: "VNC客户端路径", default: "/vnc/" }),
   NOVNC_INTERNAL_URL: str({ desc: "NOVNC内部地址", default: "http://novnc:80/" }),
 

@@ -7,7 +7,8 @@ import { AuthCustomType, InstallConfigSchema } from "src/config/install";
 import { logger } from "src/log";
 import { prepareUchipHostDirAndPragmaFiles } from "src/utils/uchip";
 
-const IMAGE: string = "mirrors.pku.edu.cn/pkuhpc-icode/scow";
+const IMAGE: string = "ccrepo.pku.edu.cn/scow/scow";
+const DEFAULT_NOVNC_CLIENT_IMAGE: string = "ghcr.io/pkuhpc/novnc-client-docker:master";
 
 function checkPathFormat(configKey: string, value: string) {
   if (value !== "/" && value.endsWith("/")) {
@@ -207,6 +208,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     t12v7: "tianji_s2v7",
   });
 
+  const vncEnabled = !!(config.portal?.enabled || config.ai?.enabled);
   // GATEWAY
   addService("gateway", {
     image: scowImage,
@@ -223,6 +225,7 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       "NOTIFICATION_PATH": NOTIFICATION_PATH,
       "QUANTUM_ENABLED": String(config.quantum?.enabled ?? false),
       "QUANTUM_PATH": QUANTUM_PATH,
+      "VNC_ENABLED": String(vncEnabled),
       "CLIENT_MAX_BODY_SIZE": config.gateway.uploadFileSizeLimit,
       "PROXY_READ_TIMEOUT": config.gateway.proxyReadTimeout,
       "PUBLIC_PATH": publicPath,
@@ -314,13 +317,23 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
     }
   } else {
     const portalBasePath = join(BASE_PATH, PORTAL_PATH);
+    // 根据已启动的子系统决定默认首页路径
+    // 如果 portal/ai/mis都没有启用那么按照原始逻辑仍然指定默认的portalBasePath
+    const defaultSetupHomePath = config.portal?.enabled
+      ? portalBasePath
+      : config.ai?.enabled
+        ? join(BASE_PATH, AI_PATH)
+        : config.mis?.enabled
+          ? join(BASE_PATH, MIS_PATH)
+          : portalBasePath;
+
 
     addService("auth", {
       image: scowImage,
       environment: {
         "SCOW_LAUNCH_APP": "auth",
         "BASE_PATH": BASE_PATH,
-        "PORTAL_BASE_PATH": portalBasePath,
+        "DEFAULT_SETUP_HOME_PATH": defaultSetupHomePath,
         ...serviceLogEnv,
         ...nodeOptions ? { NODE_OPTIONS: nodeOptions } : {},
       },
@@ -394,13 +407,6 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
         "/etc/hosts": "/etc/hosts",
         "./config": configPath,
       },
-    });
-
-    addService("novnc", {
-      image: config.portal.novncClientImage,
-      environment: {},
-      ports: {},
-      volumes: {},
     });
   }
 
@@ -620,6 +626,21 @@ export const createComposeSpec = (config: InstallConfigSchema) => {
       volumes: {
         "./config/quantum/uchip": "/app/uchip",
       },
+    });
+  }
+
+  // NOVNC
+  // portal 或 AI 启用时都需要 novnc 服务
+  // 同时作为 gateway 新增的环境变量
+  if (vncEnabled) {
+    // 如果install.yaml在没有配置novnc的情况下，检查portal下是否有配置，都没有配置则使用默认novncClientImage
+    const novncClientImage = config.novnc?.novncClientImage || config.portal?.novncClientImage || DEFAULT_NOVNC_CLIENT_IMAGE;
+
+    addService("novnc", {
+      image: novncClientImage,
+      environment: {},
+      ports: {},
+      volumes: {},
     });
   }
 

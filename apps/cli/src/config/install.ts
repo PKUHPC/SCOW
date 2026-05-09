@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getConfig } from "@scow/lib-config/build/fileConfig";
 import { Static, Type } from "@sinclair/typebox";
 import { join } from "path";
@@ -23,7 +11,7 @@ export enum AuthCustomType {
 export const InstallConfigSchema = Type.Object({
   port: Type.Integer({ description: "端口号", default: 80 }),
   basePath: Type.String({ description: "整个系统的部署路径", default: "/" }),
-  image: Type.Optional(Type.String({ description: "镜像", default: "mirrors.pku.edu.cn/pkuhpc-icode/scow" })),
+  image: Type.Optional(Type.String({ description: "镜像", default: "ccrepo.pku.edu.cn/scow/scow" })),
   imageTag: Type.String({ description: "镜像tag", default: "master" }),
 
   scowd: Type.Optional(Type.Object({
@@ -95,7 +83,10 @@ export const InstallConfigSchema = Type.Object({
   portal: Type.Optional(Type.Object({
     enabled: Type.Boolean({ description: "是否启用门户系统", default: true }),
     basePath: Type.String({ description: "门户系统的部署路径，相对于整个系统的basePath", default: "/" }),
-    novncClientImage: Type.String({ description: "novnc客户端镜像", default: "ghcr.io/pkuhpc/novnc-client-docker:master" }),
+    novncClientImage: Type.String({
+      description: "novnc客户端镜像地址，优先使用 novnc 配置中的novncClientImage，如果未配置 novnc 中的 novncClientImage，会在 portal 启动时使用此镜像地址",
+      default: "ghcr.io/pkuhpc/novnc-client-docker:master"
+    }),
 
     portMappings: Type.Optional(Type.Object({
       portalServer: Type.Optional(Type.Union([Type.String(), Type.Integer()], {
@@ -171,7 +162,7 @@ export const InstallConfigSchema = Type.Object({
         description: "audit-server映射出来的端口",
       })),
     })),
-  })),
+  }, { description: "审计系统部署选项，如果不设置，则不部署审计系统" })),
 
   ai: Type.Optional(Type.Object({
     enabled: Type.Boolean({ description: "是否启用AI系统", default: true }),
@@ -196,15 +187,25 @@ export const InstallConfigSchema = Type.Object({
   resource: Type.Optional(Type.Object({
     basePath: Type.String({ description: "资源管理系统的部署路径，相对于整个系统的basePath", default: "/resource" }),
   })),
+
   notification: Type.Optional(Type.Object({
     basePath: Type.String({ description: "消息系统的部署路径，相对于整个系统的basePath", default: "/notification" }),
   })),
 
   misc: Type.Optional(Type.Object({
-    nodeOptions:  Type.Optional(Type.String({ description: "传递给node服务的参数" })),
+    nodeOptions: Type.Optional(Type.String({ description: "传递给node服务的参数" })),
   }, { description: "多个不好分类的配置参数参数" })),
 
-}, { description: "审计系统部署选项，如果不设置，则不部署审计系统" });
+  novnc: Type.Optional(Type.Object({
+    // novncClientImage配置的最高优先级
+    // 如果配置此处镜像值，在启动AI/PORTAL时会使用此镜像启动novnc服务
+    novncClientImage: Type.String({
+      description: "novnc客户端镜像，portal或AI启用时需要。如果portal下也同时配置novncClientImage，则忽略 portal中的配置，优先使用此处镜像地址",
+      default: "ghcr.io/pkuhpc/novnc-client-docker:master",
+    }),
+  }, { description: "NOVNC客户端镜像配置，portal或AI启用时需要。" })),
+
+});
 
 export type InstallConfigSchema = Static<typeof InstallConfigSchema>;
 

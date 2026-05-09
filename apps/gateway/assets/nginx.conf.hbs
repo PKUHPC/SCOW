@@ -91,11 +91,15 @@ server {
     include includes/websocket;
   }
 
+  {{#if VNC_ENABLED}}
   location {{ BASE_PATH }}{{ VNC_PATH }} {
-    proxy_pass {{ NOVNC_INTERNAL_URL }};
+    set $novnc_url {{ NOVNC_INTERNAL_URL }};
+    proxy_pass $novnc_url;
 
     include includes/headers;
+    include includes/websocket;
   }
+  {{/if}}
 
   location {{ BASE_PATH }}{{ PUBLIC_PATH }} {
     alias {{ PUBLIC_DIR }};

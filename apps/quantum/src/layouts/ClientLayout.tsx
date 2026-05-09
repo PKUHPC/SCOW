@@ -55,6 +55,7 @@ const ClientLayoutLoaded = ({
   const { useToken } = theme;
   const { token } = useToken();
 
+  // 量子系统服务启动时, PORTAL 和 MIS 一定已经启动
   const navbarLinks: HeaderNavbarLink[] = [
     {
       icon: <MisIcon style={{ paddingRight: 2 }} />,
@@ -88,8 +89,10 @@ const ClientLayoutLoaded = ({
 
   return (
     <LibBaseLayout
-      logout={() => { logoutMutation.mutateAsync()
-        .then(() => { window.location.href = join(BASE_PATH, "/api/auth"); }); }}
+      logout={() => {
+        logoutMutation.mutateAsync()
+          .then(() => { window.location.href = join(BASE_PATH, "/api/auth"); });
+      }}
       user={user}
       routes={routes}
       footerText={footerText}
@@ -146,7 +149,7 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
     ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
 
   const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname])
-  ?? primaryColor?.darkModeColor ?? color;
+    ?? primaryColor?.darkModeColor ?? color;
 
   return (
     <DarkModeProvider initial={dark}>

@@ -19,6 +19,7 @@
 #   # basePath: /
 
 #   # novnc web客户端镜像地址
+#   # 优先使用 novnc 配置中的novncClientImage, 如果未配置 novnc 中的 novncClientImage，会在 portal 启动时使用此镜像地址
 #   # novncClientImage: ghcr.io/pkuhpc/novnc-client-docker:master
 
 #   # 端口映射。如果不进行二次开发，请勿开放
@@ -189,6 +190,7 @@
 # 量子系统设置
 # quantum:
 #   # 是否启用量子系统。默认为true
+#   # 量子系统依赖管理系统与门户系统，如果启用量子系统，管理系统和门户系统必须启用
 #   # enabled: true
 
 #   # 量子系统的子路径
@@ -206,3 +208,9 @@
 # 是否启用资源管理服务
 # resource:
 #   basePath: /resource
+
+# novnc 可选配置
+# novnc:
+#   # novnc web客户端镜像地址，portal或AI启用时需要
+#   # 如果portal下也同时配置novncClientImage，则忽略 portal中的配置，优先使用此处镜像地址
+#   novncClientImage: ghcr.io/pkuhpc/novnc-client-docker:master

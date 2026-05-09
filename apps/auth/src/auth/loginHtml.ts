@@ -56,46 +56,46 @@ export async function serveLoginHtml(
 
   const footerText = (authUiHostnameConfig?.footerText === undefined && authUiDefaultConfig?.footerText === undefined) ?
     undefined : getI18nConfigCurrentText(authUiHostnameConfig?.footerText ??
-    authUiDefaultConfig?.footerText, languageId);
+      authUiDefaultConfig?.footerText, languageId);
 
   return rep.status(
     verifyCaptchaFail ? 400 : errParamrs.err ? 401 : 200).view("login.liquid", {
-    authTexts: authTexts,
-    cssUrl: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/tailwind.min.css"),
-    eyeImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye.png"),
-    eyeCloseImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye-close.png"),
-    backgroundDefaultImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/background.png"),
-    backgroundImagePath: join(config.BASE_PATH, config.PUBLIC_PATH,
-      authUiHostnameConfig?.backgroundImagePath
-      ?? authUiDefaultConfig?.backgroundImagePath ?? "./assets/background.png"),
-    backgroundFallbackColor: authUiHostnameConfig?.backgroundFallbackColor
-      || authUiDefaultConfig?.backgroundFallbackColor || "#8c8c8c",
-    faviconUrl: join(config.BASE_PATH, FAVICON_URL),
-    logoUrl: !!(authUiHostnameConfig?.logo?.customLogoPath || authUiDefaultConfig?.logo.customLogoPath) === false ?
-      join(config.PORTAL_BASE_PATH, LOGO_URL + logoPreferDarkParam) : join(config.BASE_PATH, config.PUBLIC_PATH,
-        (authUiHostnameConfig?.logo?.customLogoPath || authUiDefaultConfig?.logo.customLogoPath) ?? ""),
-    logoLink: authUiHostnameConfig?.logo?.customLogoLink ?? authUiDefaultConfig?.logo.customLogoLink ?? "",
-    callbackUrl,
-    sloganColor: authUiHostnameConfig?.slogan?.color || authUiDefaultConfig?.slogan?.color,
-    sloganTitle: sloganTitle || "",
-    sloganTextArr: sloganTextArr || [],
-    footerTextColor: authUiHostnameConfig?.footerTextColor || authUiDefaultConfig?.footerTextColor || "#434343",
-    footerText,
-    themeColor: (hostname && uiConfig.primaryColor?.hostnameMap?.[hostname])
-      ?? uiConfig.primaryColor?.defaultColor ?? DEFAULT_PRIMARY_COLOR,
-    titleTag: uiConfig.titleTag || "- SCOW",
-    errParamrs:errParamrs || {},
-    ...captchaInfo,
-    verifyCaptchaFail,
-    enableCaptcha,
-    enableTotp,
-    showBindOtpButton,
-    verifyOtpFail,
-    remainCount,
-    changePasswordPamars: changePasswordPamars || {},
-    otpBasePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/otp"),
-    refreshCaptchaPath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/refreshCaptcha"),
-    changePasswordUserSelf: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/passwordUserSelf"),
-  });
+      authTexts: authTexts,
+      cssUrl: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/tailwind.min.css"),
+      eyeImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye.png"),
+      eyeCloseImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/icons/eye-close.png"),
+      backgroundDefaultImagePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/assets/background.png"),
+      backgroundImagePath: join(config.BASE_PATH, config.PUBLIC_PATH,
+        authUiHostnameConfig?.backgroundImagePath
+        ?? authUiDefaultConfig?.backgroundImagePath ?? "./assets/background.png"),
+      backgroundFallbackColor: authUiHostnameConfig?.backgroundFallbackColor
+        || authUiDefaultConfig?.backgroundFallbackColor || "#8c8c8c",
+      faviconUrl: join(config.BASE_PATH, FAVICON_URL),
+      logoUrl: !!(authUiHostnameConfig?.logo?.customLogoPath || authUiDefaultConfig?.logo.customLogoPath) === false ?
+        join(config.DEFAULT_SETUP_HOME_PATH, LOGO_URL + logoPreferDarkParam) : join(config.BASE_PATH, config.PUBLIC_PATH,
+          (authUiHostnameConfig?.logo?.customLogoPath || authUiDefaultConfig?.logo.customLogoPath) ?? ""),
+      logoLink: authUiHostnameConfig?.logo?.customLogoLink ?? authUiDefaultConfig?.logo.customLogoLink ?? "",
+      callbackUrl,
+      sloganColor: authUiHostnameConfig?.slogan?.color || authUiDefaultConfig?.slogan?.color,
+      sloganTitle: sloganTitle || "",
+      sloganTextArr: sloganTextArr || [],
+      footerTextColor: authUiHostnameConfig?.footerTextColor || authUiDefaultConfig?.footerTextColor || "#434343",
+      footerText,
+      themeColor: (hostname && uiConfig.primaryColor?.hostnameMap?.[hostname])
+        ?? uiConfig.primaryColor?.defaultColor ?? DEFAULT_PRIMARY_COLOR,
+      titleTag: uiConfig.titleTag || "- SCOW",
+      errParamrs: errParamrs || {},
+      ...captchaInfo,
+      verifyCaptchaFail,
+      enableCaptcha,
+      enableTotp,
+      showBindOtpButton,
+      verifyOtpFail,
+      remainCount,
+      changePasswordPamars: changePasswordPamars || {},
+      otpBasePath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/otp"),
+      refreshCaptchaPath: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/refreshCaptcha"),
+      changePasswordUserSelf: join(config.BASE_PATH, config.AUTH_BASE_PATH, "/public/passwordUserSelf"),
+    });
 
 }
