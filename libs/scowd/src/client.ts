@@ -30,6 +30,12 @@ Omit<
 > & Http2SessionOptions
 ;
 
+// HTTP/2 keepalive 配置，用于检测半开连接（如 scowd 被 OOM kill 后 TCP RST 未送达的场景）
+// connect-node 默认 pingIntervalMs=Infinity 且 pingIdleConnection=false，即永不主动探测连接存活性
+const DEFAULT_PING_INTERVAL_MS = 30_000; // 每 30 秒发送 PING 帧探测连接是否存活
+const DEFAULT_PING_TIMEOUT_MS = 5_000; // PING 发出后 5 秒内无响应则判定连接已死，触发重连
+const DEFAULT_IDLE_CONNECTION_TIMEOUT_MS = 5 * 60_000; // 连接空闲 5 分钟后主动关闭（默认 15 分钟）
+
 export function getClient<TService extends GenServiceMethods>(
   scowdUrl: string,
   service: GenService<TService>,
@@ -39,6 +45,10 @@ export function getClient<TService extends GenServiceMethods>(
   const transport = createConnectTransport({
     baseUrl: scowdUrl,
     httpVersion: "2",
+    pingIntervalMs: DEFAULT_PING_INTERVAL_MS,
+    pingTimeoutMs: DEFAULT_PING_TIMEOUT_MS,
+    pingIdleConnection: true,
+    idleConnectionTimeoutMs: DEFAULT_IDLE_CONNECTION_TIMEOUT_MS,
     nodeOptions: {
       ...certificates,
     },
