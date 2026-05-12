@@ -160,6 +160,45 @@ jobMonitor:
     memory: 26
     network: 46
 ```
+
+### AI 用户信息映射功能
+
+支持在集群的 AI 配置中自定义配置**用户信息映射功能**，开启后，SCOW 在提交应用、训练、推理和开发机作业时，会同时传递 CSI 挂载策略参数及用户映射信息。
+
+如需启用 AI 作业用户信息映射功能，需要同时满足以下条件：
+
+1. 集群配置中已开启 `scowd.enabled`，并且 scowd 支持 `GetUserIdentityInfo` 接口。
+2. K8S 调度器适配器支持接收 `userIdmapInfo` 参数。
+3. 在集群配置文件的 `ai.idmap` 中开启该功能，并选择与集群 CSI 挂载方式匹配的 `mode`。
+
+`ai.idmap.mode` 可选值说明如下：
+
+| 值 | 说明 |
+| --- | --- |
+| `notSet` | 未指定挂载策略。默认值，通常用于保持兼容或由适配器自行决定。 |
+| `plain` | 不启用 idmap，仅作为回退模式传递用户 uid/gid。 |
+| `idmap` | 使用 Linux kernel idmap 挂载模式。SCOW 会传递 uid/gid，适配器按该模式使用所需字段。 |
+| `bindfs` | 使用 bindfs 挂载模式。SCOW 会传递 uid/gid，适配器按该模式使用所需字段。 |
+
+```yaml title="config/clusters/{K8S集群的ID}.yml"
+# 其他配置省略
+# ...
+scowd:
+  enabled: true
+
+ai:
+  enabled: true
+
+  # 选配：是否开启 AI 作业用户 ID 映射功能，默认关闭。
+  # 开启后，SCOW 在提交应用、训练、推理和开发机作业时，会通过 scowd 获取当前登录用户的 uid/gid，
+  # 并将 uid/gid 和这里配置的 mode 传给 K8S 调度器适配器，由适配器按不同模式处理挂载策略。
+  idmap:
+    enabled: false
+    #   # 可选值：notSet、plain、idmap、bindfs。未配置时默认为 notSet。
+    mode: notSet
+```
+
+
 ### 修改安装配置文件
 
 修改安装配置文件：

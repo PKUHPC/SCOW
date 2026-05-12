@@ -51,6 +51,15 @@ ai:
   # sharedTopDir: "/nfs"
   # 公共数据资产目录路径，若AI可用则必填，配置时需同步在集群中创建该目录, 该路径配置之后请勿随意修改，否则已有的公共数据资产将无法正常使用
   # clusterPublicPath: "/nfs/.public"
+    # 选配：是否开启 AI 作业用户 ID 映射功能，默认关闭。
+
+  # idmap 功能
+  # 开启后，SCOW 在提交应用、训练、推理和开发机作业时，会通过 scowd 获取当前登录用户的用户映射信息
+  # idmap:
+  #   # 是否开启，默认关闭
+  #   enabled: false
+  #   # 可选值：notSet、plain、idmap、bindfs。未配置时默认为 notSet。
+  #   mode: notSet
 
 # # 可选，默认不开启
 # storage:

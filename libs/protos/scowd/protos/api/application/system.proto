@@ -7,7 +7,18 @@ option go_package = "scowd/protos/gen/api/application;apiv1";
 message CheckHealthRequest {}
 message CheckHealthResponse {}
 
+message GetUserIdentityInfoRequest {
+  string user_id = 1;
+}
+
+// SCOWD OS级系统调用、用于系统用户自身提交AI作业任务时获取自身映射信息、调用时注意权限控制
+message GetUserIdentityInfoResponse {
+  uint32 uid = 1; // 用户主ID
+  uint32 gid = 2; // 用户主组ID
+  repeated uint32 groups = 3; // 用户所属的所有组ID
+}
 
 service SystemService {
     rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse) {}
+    rpc GetUserIdentityInfo(GetUserIdentityInfoRequest) returns (GetUserIdentityInfoResponse) {}
 }

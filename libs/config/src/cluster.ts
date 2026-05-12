@@ -110,6 +110,19 @@ const TurboVncConfigSchema = Type.String({ description: "TurboVNC的安装路径
 export type LoginDeskopConfigSchema = Static<typeof LoginDeskopConfigSchema>;
 type TurboVncConfigSchema = Static<typeof TurboVncConfigSchema>;
 
+export enum IdmapMode {
+  notSet = "notSet",
+  plain = "plain",
+  idmap = "idmap",
+  bindfs = "bindfs",
+}
+
+const AIIdmapConfigSchema = Type.Object({
+  enabled: Type.Boolean({ description: "是否开启AI用户ID映射功能，默认关闭", default: false }),
+  mode: Type.Enum(IdmapMode, { description: "CSI的挂载模式，如果没有设置认为是 notSet", default: IdmapMode.notSet }),
+});
+export type AIIdmapConfigSchema = Static<typeof AIIdmapConfigSchema>;
+
 export const ClusterConfigSchema = Type.Object({
   displayName: createI18nStringSchema({ description: "集群的显示名称" }),
   priority: Type.Number({
@@ -174,6 +187,8 @@ export const ClusterConfigSchema = Type.Object({
       ),
 
       sharedTopDir: Type.Optional(Type.String({ description: "分享数据资产的文件夹所在的目录" })),
+
+      idmap: Type.Optional(AIIdmapConfigSchema)
     },
     { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } },
   ),

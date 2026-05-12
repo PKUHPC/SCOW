@@ -1,11 +1,13 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
+import { IdmapMode } from "@scow/config/build/cluster";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { getClusterIdFromSessionId, getEnvVariables, isCurrentClusterSession as isCurrentClusterSessionUtil }
   from "@scow/lib-server";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
-import { JobInfo, JobType as ProtoJobType } from "@scow/scheduler-adapter-protos/build/job";
+import { JobInfo, JobType as ProtoJobType, UserIdmapInfo, UserIdmapMode }
+  from "@scow/scheduler-adapter-protos/build/job";
 import { FileType } from "@scow/scowd-protos/build/storage/file_pb";
 import { TRPCError } from "@trpc/server";
 import dayjs from "dayjs";
@@ -16,16 +18,20 @@ import { aiConfig } from "src/server/config/ai";
 import { clusters } from "src/server/config/clusters";
 import { config } from "src/server/config/env";
 import { CreateDevHostInput } from "src/server/trpc/route/devHost/devHost";
-import { AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
-  SESSION_METADATA_NAME,SessionMetadata, TENSORBOARD_ENTRY_COMMAND,
+import {
+  AppSession, CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
+  SESSION_METADATA_NAME, SessionMetadata, TENSORBOARD_ENTRY_COMMAND,
   TOTAL_SESSIONS,
-  VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema }
+  VNC_ENTRY_COMMAND
+} from "src/server/trpc/route/jobs/apps";
+import { InferenceJobInput, InferenceJobInputSchema }
   from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
 import { getScowdClient, wrap } from "src/server/trpc/scowd/scowd";
-import { genPublicOrPrivateDataJsonString, getClusterAppConfigs, scowdFetchJobInputParams,
-  validateUniquePaths } from "src/server/utils/app";
+import {
+  genPublicOrPrivateDataJsonString, getClusterAppConfigs, scowdFetchJobInputParams,
+  validateUniquePaths
+} from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
 import { formatTime } from "src/utils/datetime";
@@ -34,8 +40,10 @@ import { BASE_PATH } from "src/utils/processEnv";
 import { Logger } from "ts-log";
 import { z } from "zod";
 
-import { ConnectToAppResponse, CreateAppExtraParams, CreateDevHostExtraParams, JobDriver,
-  SubmitInferJobExtraParams, SubmitTrainJobExtraParams } from "./jobDriver";
+import {
+  ConnectToAppResponse, CreateAppExtraParams, CreateDevHostExtraParams, JobDriver,
+  SubmitInferJobExtraParams, SubmitTrainJobExtraParams
+} from "./jobDriver";
 
 const ImageSchema = z.object({
   name: z.string(),
@@ -103,6 +111,20 @@ function parseImageUrl(imageUrl: string): { name: string; tag: string } {
 export const getPublicMountPoints = (clusterId: string) =>
   clusters[clusterId].publicMountPoints ?? aiConfig.publicMountPoints ?? [];
 
+const toAdapterUserIdmapMode = (mode: IdmapMode): UserIdmapMode => {
+  switch (mode) {
+    case IdmapMode.plain:
+      return UserIdmapMode.MODE_PLAIN;
+    case IdmapMode.idmap:
+      return UserIdmapMode.MODE_IDMAP;
+    case IdmapMode.bindfs:
+      return UserIdmapMode.MODE_BINDFS;
+    case IdmapMode.notSet:
+    default:
+      return UserIdmapMode.MODE_NOT_SET;
+  }
+};
+
 export class ScowdJobDriver implements JobDriver {
 
   private client: ScowdClient;
@@ -126,6 +148,38 @@ export class ScowdJobDriver implements JobDriver {
 
   private isStrictCurrentClusterSession(sessionId?: string) {
     return getClusterIdFromSessionId(sessionId, clusters) === this.clusterId;
+  }
+
+  private async getCurrentUserIdmapInfo(): Promise<UserIdmapInfo | undefined> {
+    const idmapConfig = clusters[this.clusterId]?.ai.idmap;
+    if (!idmapConfig?.enabled) {
+      return undefined;
+    }
+
+    this.logger.debug("Fetching user idmap info %s with mode %s", this.userId, idmapConfig.mode);
+
+    try {
+      const { uid, gid } = await wrap(
+        this.client.system.getUserIdentityInfo({ userId: this.userId }),
+        this.logger,
+      );
+
+      return {
+        mode: toAdapterUserIdmapMode(idmapConfig.mode),
+        uid,
+        gid,
+      };
+    } catch {
+      this.logger.error(
+        "Failed to fetch idmap identity for user %s on cluster %s",
+        this.userId, this.clusterId,
+      );
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Can not fetch user identity of user ${this.userId} for current cluster idmap mode ${idmapConfig.mode}.`,
+      });
+    }
+
   }
 
   // 只有当这个 jobId 也有匹配当前集群的记录时，才要求 sessionId 必须严格匹配当前集群；否则不过滤
@@ -152,9 +206,7 @@ export class ScowdJobDriver implements JobDriver {
   private dedupeSessions(sessions: TotalSessionMetadata[]): TotalSessionMetadata[] {
     const sessionMap = new Map<string, TotalSessionMetadata>();
     sessions.forEach((session) => {
-      console.log("out",session.sessionId);
       if (this.isCurrentClusterSession(session?.sessionId)) {
-        console.log("in ",session.sessionId);
         sessionMap.set(session.sessionId, session);
       }
     });
@@ -371,7 +423,7 @@ export class ScowdJobDriver implements JobDriver {
 
     const sessionMetadatas = [] as TotalSessionMetadata[];
 
-    await Promise.all(appJobsDirectoryResp.filesInfo.map(async ({ name:filename,fileType }) => {
+    await Promise.all(appJobsDirectoryResp.filesInfo.map(async ({ name: filename, fileType }) => {
       // 跳过是文件的目录
       if (fileType === FileType.FILE) {
         return;
@@ -415,18 +467,18 @@ export class ScowdJobDriver implements JobDriver {
   }
 
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
-    const { workingDirectory,mountPoints = [],clusterId,appId,customAttributes,
-      startCommand,appJobName,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,qos,envVariables = [], privateImageRepositoryCredentials,
+    const { workingDirectory, mountPoints = [], clusterId, appId, customAttributes,
+      startCommand, appJobName, account, partition, coreCount, nodeCount, gpuCount, memory, maxTime,
+      remoteImageUrl, gpuType, qos, envVariables = [], privateImageRepositoryCredentials,
     } = inputParams;
-    const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
-      modelVersions,app,proxyBasePath,existImage } = extraParams;
+    const { isAlgorithmPrivates, isDatasetPrivates, isModelPrivates, algorithmVersions, datasetVersions,
+      modelVersions, app, proxyBasePath, existImage } = extraParams;
 
     const normalizedMountPoints = mountPoints
       .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -455,7 +507,7 @@ export class ScowdJobDriver implements JobDriver {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath:path,
+          filePath: path,
         }),
         this.logger,
       );
@@ -472,13 +524,13 @@ export class ScowdJobDriver implements JobDriver {
     // 确保所有映射到容器的路径都不重复
     validateUniquePaths([
       workingDirectory ?? join(homeDir, appJobsDirectory),
-      ...isAlgorithmPrivates.map((isAlgorithmPrivate,idx) =>
+      ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
         isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path)
       ,
-      ...isDatasetPrivates.map((isDatasetPrivate,idx) =>
+      ...isDatasetPrivates.map((isDatasetPrivate, idx) =>
         isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path)
       ,
-      ...isModelPrivates.map((isModelPrivate,idx) =>
+      ...isModelPrivates.map((isModelPrivate, idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
       ...mountPathList,
@@ -548,7 +600,7 @@ export class ScowdJobDriver implements JobDriver {
       const beforeScript = app.vnc!.beforeScript || "";
 
       entryScript = VNC_ENTRY_COMMAND + runtimeVariables + customAttributesExport + beforeScript
-                + sessionInfo + xstartupScript;
+        + sessionInfo + xstartupScript;
 
     } else {
       throw new TRPCError({
@@ -566,9 +618,10 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const userIdmapInfo = await this.getCurrentUserIdmapInfo();
     const client = getAdapterClient(clusterId);
     const reply = await asyncClientCall(client.job, "submitJob", {
-      userId:this.userId,
+      userId: this.userId,
       jobName: appJobName,
       account,
       partition: partition!,
@@ -583,6 +636,7 @@ export class ScowdJobDriver implements JobDriver {
       script: remoteEntryPath,
       envVariables,
       privateImageRepositoryCredentials,
+      userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数确定是创建应用or训练任务，
       // 第二个参数为创建应用时的appId
@@ -598,26 +652,26 @@ export class ScowdJobDriver implements JobDriver {
         app.type,
         // 优先用户填写的远程镜像地址
         remoteImageUrl
-          ?? (existImage?.path
+        ?? (existImage?.path
           ?? (app.image ? `${app.image.name}:${app.image.tag || "latest"}` : "")),
         JSON.stringify(
-          algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
+          algorithmVersions.map((algorithmVersion, idx) => isAlgorithmPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
           ))
         ,
 
         JSON.stringify(
-          datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
+          datasetVersions.map((datasetVersion, idx) => isDatasetPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
           ))
         ,
 
         JSON.stringify(
-          modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(modelVersion.path,true),
+          modelVersions.map((modelVersion, idx) => isModelPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(modelVersion.path, true),
           ))
         ,
         JSON.stringify(normalizedMountPoints),
@@ -645,7 +699,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,appJobsDirectory, SESSION_METADATA_NAME),
+        filePath: join(homeDir, appJobsDirectory, SESSION_METADATA_NAME),
         content: JSON.stringify(metadata),
       }),
       this.logger,
@@ -655,7 +709,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,appJobsDirectory, `${reply.jobId}-input.json`),
+        filePath: join(homeDir, appJobsDirectory, `${reply.jobId}-input.json`),
         content: JSON.stringify(inputParams),
       }),
       this.logger,
@@ -664,7 +718,7 @@ export class ScowdJobDriver implements JobDriver {
     return reply.jobId;
   }
   async getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput> {
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -674,7 +728,7 @@ export class ScowdJobDriver implements JobDriver {
     const jobsDirectory = join(aiConfig.appJobsDir, sessionId);
 
     // 读取作业信息
-    const metadataPath = join(homeDir,jobsDirectory, SESSION_METADATA_NAME);
+    const metadataPath = join(homeDir, jobsDirectory, SESSION_METADATA_NAME);
 
     const metadataPathExists = await wrap(
       this.client.file.exists({
@@ -687,7 +741,7 @@ export class ScowdJobDriver implements JobDriver {
     if (!metadataPathExists.exists) {
       this.logger.error("metadataPath %s not exists", metadataPath);
       throw new TRPCError({
-        code:"NOT_FOUND",
+        code: "NOT_FOUND",
         message: `metadataPath ${metadataPath} not exists`,
       });
     }
@@ -712,22 +766,22 @@ export class ScowdJobDriver implements JobDriver {
     const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
     return await scowdFetchJobInputParams<CreateAppInput>(
-      this.userId,inputParamsPath, this.client, CreateAppInputSchema, this.logger,
+      this.userId, inputParamsPath, this.client, CreateAppInputSchema, this.logger,
     );
   }
 
   async getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
     const apps = getClusterAppConfigs(clusterId);
     const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
-      "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT","CANCELED"];
+      "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT", "CANCELED"];
 
-    const runningStates = ["RUNNING", "PENDING","QUEUED"];
+    const runningStates = ["RUNNING", "PENDING", "QUEUED"];
 
     // If a job is not running, it cannot be ready
     const client = getAdapterClient(clusterId);
     const jobsInfo = await asyncClientCall(client.job, "getJobs", {
-      fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason","partition","gpus_alloc",
-        "cpus_alloc","mem_alloc_mb","nodes_alloc","gpus_req", "cpus_req","mem_req_mb","nodes_req",
+      fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason", "partition", "gpus_alloc",
+        "cpus_alloc", "mem_alloc_mb", "nodes_alloc", "gpus_req", "cpus_req", "mem_req_mb", "nodes_req",
       ],
       filter: {
         users: [this.userId], accounts: [],
@@ -743,7 +797,7 @@ export class ScowdJobDriver implements JobDriver {
       return prev;
     }, {} as Record<number, JobInfo>);
 
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -782,7 +836,7 @@ export class ScowdJobDriver implements JobDriver {
         return;
       }
 
-      const statesNeedReason = new Set(["PENDING", "QUEUED",...terminatedStates]);
+      const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
       const needReason = statesNeedReason.has(runningJobInfo.state);
       const jobDir = join(appJobsDirectory, sessionMetadata.sessionId);
       const appId = "appId" in sessionMetadata ? sessionMetadata.appId : undefined;
@@ -803,15 +857,15 @@ export class ScowdJobDriver implements JobDriver {
           ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
         timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
         reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
-        partition:runningJobInfo.partition,
-        cpusAlloc:runningJobInfo.cpusAlloc ?? 0,
-        gpusAlloc:runningJobInfo.gpusAlloc ?? 0,
-        memAlloc:runningJobInfo.memAllocMb ?? 0,
-        nodesAlloc:runningJobInfo.nodesAlloc ?? 0,
-        cpusReq:runningJobInfo.cpusReq,
-        gpusReq:runningJobInfo.gpusReq,
-        memReq:runningJobInfo.memReqMb,
-        nodesReq:runningJobInfo.nodesReq,
+        partition: runningJobInfo.partition,
+        cpusAlloc: runningJobInfo.cpusAlloc ?? 0,
+        gpusAlloc: runningJobInfo.gpusAlloc ?? 0,
+        memAlloc: runningJobInfo.memAllocMb ?? 0,
+        nodesAlloc: runningJobInfo.nodesAlloc ?? 0,
+        cpusReq: runningJobInfo.cpusReq,
+        gpusReq: runningJobInfo.gpusReq,
+        memReq: runningJobInfo.memReqMb,
+        nodesReq: runningJobInfo.nodesReq,
       });
     });
 
@@ -845,7 +899,7 @@ export class ScowdJobDriver implements JobDriver {
   }
 
   async connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse> {
-    const { path:userHomeDir } = await wrap(
+    const { path: userHomeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -914,17 +968,17 @@ export class ScowdJobDriver implements JobDriver {
   }
 
   async submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number> {
-    const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
-      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = [],
+    const { mountPoints = [], clusterId, command, InferenceJobName, account, partition, coreCount, nodeCount,
+      gpuCount, memory, maxTime, remoteImageUrl, gpuType, containerServicePort, qos, envVariables = [],
       privateImageRepositoryCredentials,
     } = inputParams;
-    const { isModelPrivates,modelVersions,existImage } = extraParams;
+    const { isModelPrivates, modelVersions, existImage } = extraParams;
 
     const normalizedMountPoints = mountPoints
       .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -946,7 +1000,7 @@ export class ScowdJobDriver implements JobDriver {
     // 确保所有映射到容器的路径都不重复
     validateUniquePaths([
       inferJobsDirectory,
-      ...isModelPrivates.map((isModelPrivate,idx) =>
+      ...isModelPrivates.map((isModelPrivate, idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
       ...mountPathList,
@@ -957,7 +1011,7 @@ export class ScowdJobDriver implements JobDriver {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath:path,
+          filePath: path,
         }),
         this.logger,
       );
@@ -989,9 +1043,10 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const userIdmapInfo = await this.getCurrentUserIdmapInfo();
     const client = getAdapterClient(clusterId);
     const reply = await asyncClientCall(client.job, "submitInferJob", {
-      userId:this.userId,
+      userId: this.userId,
       jobName: InferenceJobName,
       account,
       partition: partition!,
@@ -1003,9 +1058,10 @@ export class ScowdJobDriver implements JobDriver {
       timeLimitMinutes: maxTime,
       workingDirectory: join(homeDir, inferJobsDirectory),
       // 当运行命令为空时，直接传""，不传脚本路径
-      script: entryScript ? remoteEntryPath : "" ,
+      script: entryScript ? remoteEntryPath : "",
       envVariables,
       privateImageRepositoryCredentials,
+      userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数为镜像地址
       // 第二个参数为模型版本地址
@@ -1015,9 +1071,9 @@ export class ScowdJobDriver implements JobDriver {
       extraOptions: [
         remoteImageUrl || existImage?.path || "",
         JSON.stringify(
-          modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(modelVersion.path,true),
+          modelVersions.map((modelVersion, idx) => isModelPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(modelVersion.path, true),
           ))
         ,
         JSON.stringify(normalizedMountPoints),
@@ -1036,7 +1092,7 @@ export class ScowdJobDriver implements JobDriver {
     // Save session metadata
     const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
-      jobName:InferenceJobName,
+      jobName: InferenceJobName,
       sessionId: scowWorkDirectoryName,
       submitTime: new Date().toISOString(),
       image: {
@@ -1050,7 +1106,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,inferJobsDirectory, SESSION_METADATA_NAME),
+        filePath: join(homeDir, inferJobsDirectory, SESSION_METADATA_NAME),
         content: JSON.stringify(metadata),
       }),
       this.logger,
@@ -1060,7 +1116,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,inferJobsDirectory, `${reply.jobId}-input.json`),
+        filePath: join(homeDir, inferJobsDirectory, `${reply.jobId}-input.json`),
         content: JSON.stringify(inputParams),
       }),
       this.logger,
@@ -1069,7 +1125,7 @@ export class ScowdJobDriver implements JobDriver {
     return reply.jobId;
   }
   async getInferParams(sessionId: string, jobId: number): Promise<InferenceJobInput> {
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -1078,7 +1134,7 @@ export class ScowdJobDriver implements JobDriver {
     const jobsDirectory = join(aiConfig.appJobsDir, sessionId);
 
     // 读取作业信息
-    const metadataPath = join(homeDir,jobsDirectory, SESSION_METADATA_NAME);
+    const metadataPath = join(homeDir, jobsDirectory, SESSION_METADATA_NAME);
 
     const metadataPathExists = await wrap(
       this.client.file.exists({
@@ -1091,7 +1147,7 @@ export class ScowdJobDriver implements JobDriver {
     if (!metadataPathExists.exists) {
       this.logger.error("metadataPath %s not exists", metadataPath);
       throw new TRPCError({
-        code:"NOT_FOUND",
+        code: "NOT_FOUND",
         message: `metadataPath ${metadataPath} not exists`,
       });
     }
@@ -1115,23 +1171,23 @@ export class ScowdJobDriver implements JobDriver {
     const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
     return await scowdFetchJobInputParams<InferenceJobInput>(
-      this.userId,inputParamsPath, this.client, InferenceJobInputSchema, this.logger,
+      this.userId, inputParamsPath, this.client, InferenceJobInputSchema, this.logger,
     );
   }
 
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
-    const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
-      tensorBoardDataPath,privateImageRepositoryCredentials,
+    const { mountPoints = [], clusterId, account, partition, coreCount, nodeCount, gpuCount, memory, maxTime,
+      remoteImageUrl, gpuType, command, trainJobName, framework, psNodes, workerNodes, qos, envVariables = [],
+      tensorBoardDataPath, privateImageRepositoryCredentials,
     } = inputParams;
-    const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
+    const { isAlgorithmPrivates, isDatasetPrivates, isModelPrivates, algorithmVersions, datasetVersions,
       modelVersions, existImage } = extraParams;
 
     const normalizedMountPoints = mountPoints
       .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -1153,13 +1209,13 @@ export class ScowdJobDriver implements JobDriver {
     // 确保所有映射到容器的路径都不重复
     validateUniquePaths([
       trainJobsDirectory,
-      ...isAlgorithmPrivates.map((isAlgorithmPrivate,idx) =>
+      ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
         isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path)
       ,
-      ...isDatasetPrivates.map((isDatasetPrivate,idx) =>
+      ...isDatasetPrivates.map((isDatasetPrivate, idx) =>
         isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path)
       ,
-      ...isModelPrivates.map((isModelPrivate,idx) =>
+      ...isModelPrivates.map((isModelPrivate, idx) =>
         isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
       ,
       ...mountPathList,
@@ -1170,7 +1226,7 @@ export class ScowdJobDriver implements JobDriver {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath:path,
+          filePath: path,
         }),
         this.logger,
       );
@@ -1204,9 +1260,9 @@ export class ScowdJobDriver implements JobDriver {
 
     // TensorBoard的命令
     const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
-    const tensorBoardPathPrefix = join(BASE_PATH,`/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`);
+    const tensorBoardPathPrefix = join(BASE_PATH, `/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`);
     const tensorBoardScript = "tensorboard --logdir /output/training_logs --host 0.0.0.0 " +
-    `--path_prefix ${tensorBoardPathPrefix}`;
+      `--path_prefix ${tensorBoardPathPrefix}`;
     const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
 
     await wrap(
@@ -1218,9 +1274,10 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const userIdmapInfo = await this.getCurrentUserIdmapInfo();
     const client = getAdapterClient(clusterId);
     const reply = await asyncClientCall(client.job, "submitJob", {
-      userId:this.userId,
+      userId: this.userId,
       jobName: trainJobName,
       account,
       partition: partition!,
@@ -1232,9 +1289,10 @@ export class ScowdJobDriver implements JobDriver {
       timeLimitMinutes: maxTime,
       workingDirectory: join(homeDir, trainJobsDirectory),
       // 当运行命令为空时，直接传""，不传脚本路径
-      script: entryScript ? remoteEntryPath : "" ,
+      script: entryScript ? remoteEntryPath : "",
       envVariables,
       privateImageRepositoryCredentials,
+      userIdmapInfo,
       // 对于AI模块，需要传递的额外参数
       // 第一个参数确定是创建应用or训练任务，
       // 第二个参数为创建应用时的appId
@@ -1251,21 +1309,21 @@ export class ScowdJobDriver implements JobDriver {
         "",
         remoteImageUrl || existImage?.path || "",
         JSON.stringify(
-          algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
+          algorithmVersions.map((algorithmVersion, idx) => isAlgorithmPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
           ))
         ,
         JSON.stringify(
-          datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
+          datasetVersions.map((datasetVersion, idx) => isDatasetPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
           ))
         ,
         JSON.stringify(
-          modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-            : genPublicOrPrivateDataJsonString(modelVersion.path,true),
+          modelVersions.map((modelVersion, idx) => isModelPrivates[idx]
+            ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+            : genPublicOrPrivateDataJsonString(modelVersion.path, true),
           ))
         ,
         JSON.stringify(normalizedMountPoints),
@@ -1275,8 +1333,8 @@ export class ScowdJobDriver implements JobDriver {
         (nodeCount === 1 && !gpuType?.startsWith("huawei.com")) ? "" : framework || "",
         getPublicMountPoints(clusterId).join(","),
       ],
-      psNodeCount:psNodes,
-      workerNodeCount:workerNodes,
+      psNodeCount: psNodes,
+      workerNodeCount: workerNodes,
       tensorBoardDataPath,
     }).catch((e) => {
       const ex = e as ServiceError;
@@ -1293,7 +1351,7 @@ export class ScowdJobDriver implements JobDriver {
 
     const metadata: TotalSessionMetadata = {
       jobId: reply.jobId,
-      jobName:trainJobName,
+      jobName: trainJobName,
       sessionId: scowWorkDirectoryName,
       submitTime: new Date().toISOString(),
       image: imageInfo,
@@ -1303,7 +1361,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,trainJobsDirectory, SESSION_METADATA_NAME),
+        filePath: join(homeDir, trainJobsDirectory, SESSION_METADATA_NAME),
         content: JSON.stringify(metadata),
       }),
       this.logger,
@@ -1313,7 +1371,7 @@ export class ScowdJobDriver implements JobDriver {
     await wrap(
       this.client.file.writeFile({
         userId: this.userId,
-        filePath: join(homeDir,trainJobsDirectory, `${reply.jobId}-input.json`),
+        filePath: join(homeDir, trainJobsDirectory, `${reply.jobId}-input.json`),
         content: JSON.stringify(inputParams),
       }),
       this.logger,
@@ -1323,7 +1381,7 @@ export class ScowdJobDriver implements JobDriver {
   }
 
   async getTrainParams(sessionId: string, jobId: number): Promise<TrainJobInput> {
-    const { path:homeDir } = await wrap(
+    const { path: homeDir } = await wrap(
       this.client.file.getHomeDirectory({
         userId: this.userId,
       }),
@@ -1332,7 +1390,7 @@ export class ScowdJobDriver implements JobDriver {
     const jobsDirectory = join(aiConfig.appJobsDir, sessionId);
 
     // 读取作业信息
-    const metadataPath = join(homeDir,jobsDirectory, SESSION_METADATA_NAME);
+    const metadataPath = join(homeDir, jobsDirectory, SESSION_METADATA_NAME);
 
     const metadataPathExists = await wrap(
       this.client.file.exists({
@@ -1345,7 +1403,7 @@ export class ScowdJobDriver implements JobDriver {
     if (!metadataPathExists.exists) {
       this.logger.error("metadataPath %s not exists", metadataPath);
       throw new TRPCError({
-        code:"NOT_FOUND",
+        code: "NOT_FOUND",
         message: `metadataPath ${metadataPath} not exists`,
       });
     }
@@ -1367,14 +1425,14 @@ export class ScowdJobDriver implements JobDriver {
     const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
     return await scowdFetchJobInputParams<TrainJobInput>(
-      this.userId,inputParamsPath, this.client, TrainJobInputSchema, this.logger,
+      this.userId, inputParamsPath, this.client, TrainJobInputSchema, this.logger,
     );
   }
 
   async createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number> {
     const {
       mountPoints = [], clusterId, devHostName, account, partition, coreCount,
-      gpuCount, memory, maxTimeMinutes, remoteImageUrl, qos,privateImageRepositoryCredentials,
+      gpuCount, memory, maxTimeMinutes, remoteImageUrl, qos, privateImageRepositoryCredentials,
     } = inputParams;
 
 
@@ -1419,7 +1477,7 @@ export class ScowdJobDriver implements JobDriver {
       const { isSymlink } = await wrap(
         this.client.file.getFileMetadata({
           userId: this.userId,
-          filePath:path,
+          filePath: path,
         }),
         this.logger,
       );
@@ -1438,6 +1496,7 @@ export class ScowdJobDriver implements JobDriver {
       this.logger,
     );
 
+    const userIdmapInfo = await this.getCurrentUserIdmapInfo();
     const client = getAdapterClient(clusterId);
     const reply = await asyncClientCall(client.job, "createDevHost", {
       userId: this.userId, jobName: devHostName,
@@ -1447,6 +1506,7 @@ export class ScowdJobDriver implements JobDriver {
       workingDirectory: join(homeDir, devHostDir),
       image: remoteImageUrl || existImage?.path || "",
       privateImageRepositoryCredentials,
+      userIdmapInfo,
       mounts: normalizedMountPoints,
       publicMounts: getPublicMountPoints(clusterId),
       vscodeInfo: {
