@@ -83,12 +83,17 @@ export default route(ExportPayRecordSchema, async (req, res) => {
   targetNames = emptyStringArrayToUndefined(targetNames);
   types = emptyStringArrayToUndefined(types);
 
+  if (searchType === SearchType.selfAccount && (!targetNames || targetNames.length === 0)) {
+    res.status(400).end();
+    return;
+  }
+
   let user;
   if (searchType === SearchType.tenant) {
     user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
       i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
   } else {
-    if (targetNames) {
+    if (targetNames && targetNames.length > 0) {
       user = await authenticate((i) =>
         i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
         i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||

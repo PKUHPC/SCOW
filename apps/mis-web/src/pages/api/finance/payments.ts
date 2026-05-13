@@ -117,12 +117,17 @@ export default route(GetPaymentsSchema, async (req, res) => {
   const { endTime, startTime, accountNames, searchType, types, ownerIdOrName,
     operatorIdOrName, page, pageSize, sortBy, sortOrder } = req.query;
 
+  if (searchType === SearchType.selfAccount && (!accountNames || accountNames.length === 0)) {
+    res.status(400).end();
+    return;
+  }
+
   const client = getClient(ChargingServiceClient);
 
   let user: UserInfo | undefined;
 
   // check whether the user can access the account
-  if (accountNames) {
+  if (accountNames && accountNames.length > 0) {
     user = await authenticate((i) =>
       i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
       i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||

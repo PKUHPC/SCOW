@@ -128,7 +128,13 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
       if (searchType === SearchType.tenant) {
         return api.getTenantPayments({ query: { ...param, tenantName: query.names ? query.names[0] : undefined } });
       } else {
-        return api.getPayments({ query: { ...param, accountNames: query.names, searchType } });
+        return api.getPayments({ query: {
+          ...param,
+          accountNames: searchType === SearchType.selfAccount
+            ? (query.accountName ? [query.accountName] : undefined)
+            : query.names,
+          searchType,
+        } });
       }
     }, [query, pageInfo]),
   });
@@ -141,7 +147,7 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
   const handleExport = async (encoding: Encoding) => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const total = data?.results?.length ?? 0;
+    const total = data?.totalCount ?? 0;
 
     if (total > MAX_EXPORT_COUNT) {
       message.error(t(pCommon("exportMaxDataErrorMsg"), [MAX_EXPORT_COUNT]));
@@ -157,7 +163,9 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
         query: {
           startTime: query.time[0].clone().startOf("day").toISOString(),
           endTime: query.time[1].clone().endOf("day").toISOString(),
-          targetNames: query.names,
+          targetNames: searchType === SearchType.selfAccount
+            ? (query.accountName ? [query.accountName] : undefined)
+            : query.names,
           searchType: searchType,
           types: query.types,
           operatorIdOrName: query.operatorIdOrName,
