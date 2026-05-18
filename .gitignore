@@ -1,7 +1,10 @@
 **/node_modules
 **/.next
 **/generated
+**/gen
 **/db
+apps/scow-adapters/gen/go
+!apps/scow-adapters/**/db
 **/build/
 **/coverage/
 .eslintcache
@@ -14,4 +17,5 @@ version.json
 .DS_Store
 
 .next.backup
+.idea
 

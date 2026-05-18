@@ -1,0 +1,156 @@
+package client
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/yaml.v2"
+
+	craneProtos "scow-adapters/gen/crane-ai"
+)
+
+var (
+	CraneCtld     craneProtos.CraneCtldClient
+	CConfig       *CraneConfig
+	MongoDBClient *mongo.Client
+	MongoDBConfig *DatabaseConfig
+
+	DefaultConfigPath  = "/etc/crane/config.yaml"
+	DefaultMongoDBPath = "/etc/crane/database.yaml"
+)
+
+type CraneConfig struct {
+	ClusterName         string `yaml:"ClusterName"`
+	ControlMachine      string `yaml:"ControlMachine"`
+	CraneCtldListenPort string `yaml:"CraneCtldListenPort"`
+
+	UseTls             bool        `yaml:"UseTls"`
+	ServerCertFilePath string      `yaml:"ServerCertFilePath"`
+	ServerKeyFilePath  string      `yaml:"ServerKeyFilePath"`
+	CaCertFilePath     string      `yaml:"CaCertFilePath"`
+	DomainSuffix       string      `yaml:"DomainSuffix"`
+	Partitions         []Partition `yaml:"Partitions"`
+}
+
+type Partition struct {
+	Name  string `yaml:"name"`
+	Nodes string `yaml:"nodes"`
+}
+
+// DatabaseConfig MongoDB 配置结构体
+type DatabaseConfig struct {
+	CraneEmbeddedDbBackend string `yaml:"CraneEmbeddedDbBackend"`
+	CraneCtldDbPath        string `yaml:"CraneCtldDbPath"`
+	DbUser                 string `yaml:"DbUser"`
+	DbPassword             string `yaml:"DbPassword"`
+	DbHost                 string `yaml:"DbHost"`
+	DbPort                 int    `yaml:"DbPort"`
+	DbReplSetName          string `yaml:"DbReplSetName"`
+	DbName                 string `yaml:"DbName"`
+}
+
+// InitClient 为初始化CraneCtld客户端及MongoDB客户端
+func InitClient() {
+	CConfig = parseConfig(DefaultConfigPath)
+	serverAddr := fmt.Sprintf("%s:%s", CConfig.ControlMachine, CConfig.CraneCtldListenPort)
+	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("Cannot connect to CraneCtld: " + err.Error())
+	}
+	CraneCtld = craneProtos.NewCraneCtldClient(conn)
+
+	// 加载配置
+	MongoDBConfig, err = loadDBConfig(DefaultMongoDBPath)
+	if err != nil {
+		log.Fatalf("Loading configuration failed: %v", err)
+	}
+
+	// 创建 MongoDB 客户端
+	client, err := createMongoClient(MongoDBConfig)
+	if err != nil {
+		log.Fatalf("Failed to create MongoDB client: %v", err)
+	}
+
+	MongoDBClient = client
+}
+
+// 创建 MongoDB 客户端
+func createMongoClient(config *DatabaseConfig) (*mongo.Client, error) {
+	// 构建连接字符串
+	uri := fmt.Sprintf("mongodb://%s:%s@%s:%d",
+		config.DbUser,
+		config.DbPassword,
+		config.DbHost,
+		config.DbPort)
+
+	// 设置客户端选项
+	clientOptions := options.Client().ApplyURI(uri)
+
+	// 如果配置了副本集名称
+	if config.DbReplSetName != "" {
+		clientOptions.SetReplicaSet(config.DbReplSetName)
+	}
+
+	// 连接到 MongoDB
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to MongoDB: %v", err)
+	}
+
+	// 检查连接
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("MongoDB connection test failed: %v", err)
+	}
+
+	return client, nil
+}
+
+// 读取MongoDB配置文件
+func loadDBConfig(configPath string) (*DatabaseConfig, error) {
+	// 获取绝对路径
+	absPath, err := filepath.Abs(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain absolute path: %v", err)
+	}
+
+	// 检查文件是否存在
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("the configuration file does not exist: %v", absPath)
+	}
+
+	// 读取文件内容
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read configuration file: %v", err)
+	}
+
+	// 解析 YAML
+	config := &DatabaseConfig{}
+	if err := yaml.Unmarshal(data, config); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML: %v", err)
+	}
+
+	return config, nil
+}
+
+// 解析crane配置文件
+func parseConfig(configFilePath string) *CraneConfig {
+	confFile, err := os.ReadFile(configFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &CraneConfig{}
+	err = yaml.Unmarshal(confFile, config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return config
+}

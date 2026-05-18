@@ -1,0 +1,127 @@
+/**
+   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+   * SCOW is licensed under Mulan PSL v2.
+   * You can use this software according to the terms and conditions of the Mulan PSL v2.
+   * You may obtain a copy of Mulan PSL v2 at:
+   *          http://license.coscl.org.cn/MulanPSL2
+   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+   * See the Mulan PSL v2 for more details.
+*/
+
+syntax = "proto3";
+
+package scow.scheduler_adapter;
+
+message AddUserToAccountRequest {
+  string user_id = 1;
+  string account_name = 2;
+}
+
+message AddUserToAccountResponse {
+}
+
+message RemoveUserFromAccountRequest {
+  string user_id = 1;
+  string account_name = 2;
+}
+
+message RemoveUserFromAccountResponse {
+}
+
+message BlockUserInAccountRequest {
+  string user_id = 1;
+  string account_name = 2;
+}
+
+message BlockUserInAccountResponse {
+}
+
+message UnblockUserInAccountRequest {
+  string user_id = 1;
+  string account_name = 2;
+}
+
+message UnblockUserInAccountResponse {
+}
+
+message QueryUserInAccountBlockStatusRequest {
+  string user_id = 1;
+  string account_name = 2;
+}
+
+message QueryUserInAccountBlockStatusResponse {
+  bool blocked = 1;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+}
+
+message DeleteUserResponse {
+}
+
+service UserService {
+  /*
+   * description: add user to account
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * - user already exists in account
+   *   ALREADY_EXISTS, USER_ACCOUNT_ALREADY_EXISTS, {}
+   */
+  rpc AddUserToAccount(AddUserToAccountRequest) returns (AddUserToAccountResponse);
+
+  /*
+   * description: remove user from account
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * - user not exist in account
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {}
+   */
+  rpc RemoveUserFromAccount(RemoveUserFromAccountRequest) returns (RemoveUserFromAccountResponse);
+
+  /*
+   * description: block user in account
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * - user not exist in account
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   * special case:
+   * - already blocked, don't throw error
+   */
+  rpc BlockUserInAccount(BlockUserInAccountRequest) returns (BlockUserInAccountResponse);
+
+  /*
+   * description: unblock user in account
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * - user not exist in account
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   * special case:
+   * - already unblocked, don't throw error
+   */
+  rpc UnblockUserInAccount(UnblockUserInAccountRequest) returns (UnblockUserInAccountResponse);
+
+  /*
+   * description: query if a user is blocked in an account
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * - user not exist in account
+   *   NOT_FOUND, USER_ACCOUNT_NOT_FOUND, {} 
+   */
+  rpc QueryUserInAccountBlockStatus(QueryUserInAccountBlockStatusRequest) returns (QueryUserInAccountBlockStatusResponse);
+
+  /*
+   * description: delete user
+   * errors: 
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   */
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}

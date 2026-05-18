@@ -1,0 +1,50 @@
+log:
+  level: "info"
+
+dbconfig:
+  host: 127.0.0.1              # 数据库服务器地址
+  port: 3306                   # 数据库端口
+  dbname: ai_db                # 数据库库名
+  username: root               # 连接数据库用户
+  password: 81SLURM@@rabGTjN7  # 数据库密码
+
+adapterport: 8972              # 自定义适配器端口
+clusterName: dev-k8s           # 集群名字
+kubeconfig: /root/.kube/config # k8s集群配置文件路径
+prometheusAddr: http://10.129.227.66:32001 # prometheus 地址
+tensorboardImage: "crpi-u0hdpwcobdb87rnx.cn-beijing.personal.cr.aliyuncs.com/qsx/tensorboard:latest"
+
+ssl:
+  enabled: false # 是否启用 SSL，默认为 false
+  caCertPath: /adapter/certs/ca.crt # CA根证书路径, 相对适配器 config 的同级 certs目录。
+  adapterCertPath: /adapter/certs/adapter.crt # CA签名的 adapter 证书路径， 相对适配器 config 的同级 certs 目录。
+  adapterPrivateKeyPath: /adapter/certs/adapter.key # CA签名的 adapter 私钥路径， 相对适配器 config 的同级 certs目录。
+
+dns:  # k8s 中Pod的DNS策略设置
+  enabled: false  # 是否给pod配置自有DNS，默认为 false
+  nameServers: #自有DNS的地址, 如果policy配置为true，pod使用该地址作为dns解析地址
+    - 162.105.129.88
+
+accelerator:
+  - nvidia.com/gpu
+  - volcano.sh/vgpu-number
+  - huawei.com/Ascend910
+
+vgpu:  # gpu 虚拟化
+  enabled: true  # 是否开启虚拟化
+  cores: 800     # gpu总core
+  memory: 196608 # gpu 显存
+  number: 40     # gpu 数量
+
+quota:
+  gpu: 0       # 账户的gpu配额，超过该配额，提交的作业设为queued状态，默认值为0，表示不限制。
+
+# 以下是rdma相关的配置，若需要使用rdma则打开如下的rdma_config注释
+#rdma_config:
+#  nvidia-k8s:   # 队列名称，该队列的作业才会配置rdma信息
+#    cni-networks: default/wm2-roce     # rdma网络名称
+#    rdma_device:
+#      rdma.scow.ai.pku.edu.cn/hca_cx5: 1   # 作业申请的rdma网卡型号及数量
+
+monitor:
+  port: 8973

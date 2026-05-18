@@ -1,0 +1,16 @@
+{
+  "name": "@scow/scow-adapters",
+  "version": "1.11.1",
+  "private": true,
+  "files": [
+    "build",
+    "config",
+    "docs",
+    "README.md"
+  ],
+  "scripts": {
+    "prepareDev": "make protos",
+    "build": "make build",
+    "lint": "make lint"
+  }
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=crane adapter service
+After=network.target
+
+[Service]
+User=root
+Type=simple
+WorkingDirectory=/adapter/
+ExecStart=/adapter/scow-crane-adapter
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

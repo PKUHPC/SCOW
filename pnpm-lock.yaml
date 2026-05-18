@@ -2063,6 +2063,8 @@ importers:
         specifier: 1.171.0
         version: 1.171.0
 
+  apps/scow-adapters: {}
+
   dev/test-adapter:
     dependencies:
       '@ddadaal/tsgrpc-common':

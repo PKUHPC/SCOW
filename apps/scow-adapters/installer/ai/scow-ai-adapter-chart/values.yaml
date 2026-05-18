@@ -1,0 +1,140 @@
+# 如果你希望 Helm 创建 namespace：true
+namespace:
+  create: true
+  name: scow-ai-adapter
+
+serviceAccount:
+  create: true
+  name: scow-ai-adapter-sa
+  imagePullSecrets:
+    - ccrepo-registry
+
+rbac:
+  create: true
+  # 认证角色 cluster-admin
+  clusterRoleName: cluster-admin
+  clusterRoleBindingName: scow-ai-adapter-sa-cluster-admin
+
+rolloutTrigger: 202508081110
+
+image:
+  repository: ccrepo.pku.edu.cn/scow/scow-ai-adapter
+  tag: master
+  pullPolicy: Always
+
+command:
+  - /bin/sh
+  - -c
+args:
+  - /adapter/scow-ai-adapter
+
+replicaCount: 1
+
+containerPort: 8972
+
+resources:
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+  limits:
+    cpu: "4"
+    memory: "8Gi"
+
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 2
+    periodSeconds: 10
+  readiness:
+    enabled: true
+    initialDelaSeconds: 2
+    periodSeconds: 10
+
+# 是否挂 hostPath（模版挂了 /etc/hosts, /etc/localtime ）
+hostPathMounts:
+  enabled: true
+  logPath: /data/server.log  # 用于适配器日志映射到宿主机，优先填写共享存储路径
+
+service:
+  type: NodePort
+  port: 8972
+  targetPort: 8972
+  nodePort: 30072
+  name: scow-ai-adapter-port
+
+configMap:
+  name: scow-ai-adapter-config
+
+  # 这里把 config.yaml 做成“结构化 values 渲染成 YAML”
+  config:
+    log:
+      level: "info"
+
+    dbconfig:
+      host: 127.0.0.1
+      port: 3306
+      dbname: ai_db
+      username: root
+      password: "81SLURM@@rabGTjN7"
+
+    adapterport: 8972
+    clusterName: dev-k8s
+    prometheusAddr: http://10.129.227.66:32001
+    tensorboardImage: "crpi-u0hdpwcobdb87rnx.cn-beijing.personal.cr.aliyuncs.com/qsx/tensorboard:latest"
+
+    ssl:
+      enabled: false
+      caCertPath: /adapter/certs/ca.crt
+      adapterCertPath: /adapter/certs/adapter.crt
+      adapterPrivateKeyPath: /adapter/certs/adapter.key
+
+    dns:
+      enabled: false
+      nameServers:
+        - 162.105.129.88
+
+    accelerator:
+      - nvidia.com/gpu
+      - volcano.sh/vgpu-number
+      - huawei.com/Ascend910
+
+    vgpu:
+      enabled: true
+      cores: 800
+      memory: 196608
+      number: 40
+
+    quota:
+      gpu: 0
+
+  # 队列配置信息
+  partitionInfo:
+    cpu: |
+      cpu: 7
+        memory: 14Gi
+        nodes: "k8s-master"
+        # cpu 型号
+        cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+    nvidia: |
+        card-type: nvidia.com/gpu:1
+        cpu: 6
+        memory: 28Gi
+        nodes: "k8s-node[01-02]"
+        # 加速卡描述，驱动和cuda信息，用逗号分隔
+        accelerator_descriptions: "driver version  470.239.06, cuda version 11.4"
+        # cpu 型号
+        cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+        # 显存大小
+        vram_mb: "11441"
+        # 加速卡型号
+        gpu_model: "Tesla K80"
+        # 单pod最大加速卡卡数
+        max_accelerators_per_pod: 1
+
+registrySecret:
+  create: true
+  name: ccrepo-registry
+  server: ccrepo.pku.edu.cn
+  username: "****"
+  password: "****"
+

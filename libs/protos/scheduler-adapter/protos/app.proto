@@ -1,0 +1,53 @@
+/**
+   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+   * SCOW is licensed under Mulan PSL v2.
+   * You can use this software according to the terms and conditions of the Mulan PSL v2.
+   * You may obtain a copy of Mulan PSL v2 at:
+   *          http://license.coscl.org.cn/MulanPSL2
+   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+   * See the Mulan PSL v2 for more details.
+*/
+
+syntax = "proto3";
+
+package scow.scheduler_adapter;
+
+enum AppType {
+  APP_TYPE_UNSPECIFIED = 0;
+  APP_TYPE_JUPYTER_LAB = 1;
+  APP_TYPE_VSCODE = 2;
+}
+
+message GetAppConnectionInfoRequest {
+  uint32 job_id = 1;
+  optional AppType app_type = 2;
+}
+
+message GetAppConnectionInfoResponse {
+  message UseJobScriptGenerated {}
+  message AppConnectionInfo {
+    string host = 1;
+    uint32 port = 2;
+    string password = 3;
+  }
+  oneof response {
+    UseJobScriptGenerated use_job_script_generated = 1;
+    AppConnectionInfo app_connection_info = 2;
+  }
+}
+
+service AppService {
+  /*
+   * description: get real connection config when connecting to an app
+   * special case: 
+   * - For interactive applications running on bare metal:
+   *   Directly use the configuration recorded in scow, so all fields can be empty.
+   * - For interactive applications running in containers:
+   *   This interface needs to provide the host and port information of the host machine to ensure scow can connect to the correct address.
+   *   Sometimes it needs to provide password for app
+   */
+  rpc GetAppConnectionInfo(GetAppConnectionInfoRequest) returns (GetAppConnectionInfoResponse);
+
+}

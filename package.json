@@ -4,8 +4,9 @@
   "version": "1.11.1",
   "scripts": {
     "build": "turbo run build",
+    "build:adapters": "turbo run build --filter \"@scow/scow-adapters\"",
     "build:cli": "turbo run build --filter \"@scow/cli\"",
-    "build:scow": "turbo run build --filter=\"!@scow/docs\" --filter=\"!@scow/cli\" --filter=\"!./dev/**\"",
+    "build:scow": "turbo run build --filter=\"!@scow/docs\" --filter=\"!@scow/cli\" --filter=\"!@scow/scow-adapters\" --filter=\"!./dev/**\"",
     "build:libs": "turbo run build --filter \"./libs/**\"",
     "build:images": "docker build -f docker/Dockerfile.scow -t scow .",
     "build:protos": "turbo run build --filter \"./libs/protos/**\"",
@@ -17,7 +18,7 @@
     "test": "turbo run test",
     "test:ci": "pnpm run -r test --ci --coverage --runInBand",
     "prepare": "node -e \"try { import('husky').then((d) => console.log(d.default())) } catch (e) {if (e.code !== 'MODULE_NOT_FOUND' && !e.message.startsWith('.git')) throw e}\"",
-    "lint": "oxlint .",
+    "lint": "oxlint . && turbo run lint",
     "ci:version": "node scripts/version.mjs",
     "ci:publish": "pnpm publish -r",
     "api:breaking": "cd protos && pnpm exec buf breaking --against '../.git#subdir=protos'"

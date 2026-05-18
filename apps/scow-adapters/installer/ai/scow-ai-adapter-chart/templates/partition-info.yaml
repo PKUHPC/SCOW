@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: partition-info
+  namespace: {{ .Values.namespace.name }}
+data:
+  {{- toYaml .Values.configMap.partitionInfo | nindent 2 }}

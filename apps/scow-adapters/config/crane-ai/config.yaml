@@ -1,0 +1,11 @@
+bind-port: 8972
+log-level: trace
+
+ssl:
+  enabled: false # 是否启用 SSL，默认为 false
+  caCertPath: certs/ca.crt # CA根证书路径, 相对适配器 config 的同级 certs目录。
+  adapterCertPath: certs/adapter.crt # CA签名的 adapter 证书路径， 相对适配器 config 的同级 certs 目录。
+  adapterPrivateKeyPath: certs/adapter.key # CA签名的 adapter 私钥路径， 相对适配器 config 的同级 certs目录。
+
+monitor:
+  port: 8973

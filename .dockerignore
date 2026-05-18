@@ -1,5 +1,9 @@
 **/build
 **/db
+!apps/scow-adapters/pkg/ai/db
+!apps/scow-adapters/pkg/ai/db/**
+!apps/scow-adapters/pkg/slurm/db
+!apps/scow-adapters/pkg/slurm/db/**
 **/node_modules
 **/generated
 **/.next

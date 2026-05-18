@@ -1,0 +1,20 @@
+bind-port: 8972
+log-level: trace
+
+ssl:
+  enabled: false # 是否启用 SSL，默认为 false
+  caCertPath: certs/ca.crt # CA根证书路径, 相对适配器 config 的同级 certs目录。
+  adapterCertPath: certs/adapter.crt # CA签名的 adapter 证书路径， 相对适配器 config 的同级 certs 目录。
+  adapterPrivateKeyPath: certs/adapter.key # CA签名的 adapter 私钥路径， 相对适配器 config 的同级 certs目录。
+
+monitor:
+  port: 8973
+
+# 如果不填写partitions，则通过调度器获取分区信息，且没有分区描述信息
+# 如果配置分区信息，适配器则返回分区描述信息，其中name及desc为必填
+# 其他没有填写的分区，即使在调度器里有，也不返回分区描述信息
+partitions:
+  - name: compute               # 计算分区名,需要与鹤思配置的分区信息保持一致
+    desc: "cpu型号: Intel(R) Xeon(R) CPU E5-2660 v4 @ 2.00GHz" # 分区描述信息，以\n进行换行
+  - name: A100                    # 计算分区名
+    desc: "驱动版本: 470.239.06 \n加速卡型号: Tesla K80" # 分区描述信息，以\n进行换行

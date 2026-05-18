@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scow-ai-adapter
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    name: scow-ai-adapter
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+{{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.nodePort }}
+{{- end }}
+      name: {{ .Values.service.name }}
+  selector:
+    name: scow-ai-adapter
+

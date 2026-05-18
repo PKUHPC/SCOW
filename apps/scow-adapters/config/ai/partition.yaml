@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: partition-info
+data:
+  cpu: |
+    cpu: 8
+    memory: 30Gi
+    nodes: "k8s-master"
+    # cpu 型号
+    cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+  nvidia: |
+    card-type: nvidia.com/gpu:1
+    cpu: 8
+    memory: 30Gi
+    nodes: "k8s-node[01-02]"
+    # 加速卡描述，驱动和cuda信息，用逗号分隔
+    accelerator_descriptions: "driver version  470.239.06, cuda version 11.4"
+    # cpu 型号
+    cpu_model: "Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz"
+    # 显存大小
+    vram_mb: "11441"  
+    # 加速卡型号
+    gpu_model: "Tesla K80"
+    # 单pod最大加速卡卡数
+    max_accelerators_per_pod: 2

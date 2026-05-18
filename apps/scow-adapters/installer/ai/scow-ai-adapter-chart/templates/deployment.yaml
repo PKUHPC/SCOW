@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scow-ai-adapter
+  namespace: {{ .Values.namespace.name }}
+  labels:
+{{ include "scow-ai-adapter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      name: scow-ai-adapter
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      annotations:
+        rollout-trigger: {{ .Values.rolloutTrigger | quote }}
+      labels:
+        name: scow-ai-adapter
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: true
+      containers:
+        - name: {{ include "scow-ai-adapter.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{ toYaml .Values.command | nindent 12 }}
+          args: {{ toYaml .Values.args | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+
+          volumeMounts:
+{{- if .Values.hostPathMounts.enabled }}
+            - mountPath: /etc/hosts
+              name: hosts
+              readOnly: true
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+            - mountPath: /adapter/server.log
+              name: log-data
+{{- end }}
+            - name: scow-ai-adapter-config
+              mountPath: /adapter/config/
+
+{{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+{{- end }}
+
+{{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+{{- end }}
+
+          resources:
+{{- toYaml .Values.resources | nindent 12 }}
+
+      restartPolicy: Always
+      volumes:
+{{- if .Values.hostPathMounts.enabled }}
+        - name: hosts
+          hostPath:
+            path: /etc/hosts
+            type: File
+        - name: localtime
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+            type: File
+        - name: log-data
+          hostPath:
+            path: {{.Values.hostPathMounts.logPath}}
+            type: FileOrCreate
+{{- end }}
+        - name: scow-ai-adapter-config
+          configMap:
+            name: {{ .Values.configMap.name }}
+

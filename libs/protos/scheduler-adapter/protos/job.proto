@@ -1,0 +1,631 @@
+/**
+   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+   * SCOW is licensed under Mulan PSL v2.
+   * You can use this software according to the terms and conditions of the Mulan PSL v2.
+   * You may obtain a copy of Mulan PSL v2 at:
+   *          http://license.coscl.org.cn/MulanPSL2
+   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+   * See the Mulan PSL v2 for more details.
+*/
+
+syntax = "proto3";
+
+package scow.scheduler_adapter;
+
+import "google/protobuf/timestamp.proto";
+
+enum JobType {
+  JOB_TYPE_UNSPECIFIED = 0;
+  JOB_TYPE_APP = 1;
+  JOB_TYPE_TRAIN = 2;
+  JOB_TYPE_INFER = 3;
+  JOB_TYPE_DEV_HOST = 4;
+}
+
+message PodEvent {
+    optional string obj_name = 1;  // 事件名
+    optional string obj_namespace = 2; // 事件命名空间
+    string obj_kind = 3; // 事件资源
+    string type = 4; // 事件类型
+    string message = 5; // 事件信息
+    string reason = 6; // 事件原因
+    string reporting_component = 7; //事件上报组件
+    optional int32 count = 8; // 累计次数
+    google.protobuf.Timestamp time = 9; // 事件发生时间
+}
+
+message JobInfo {
+
+  enum PodStatus {
+    UNKNOWN = 0;
+    PENDING = 1;
+    RUNNING = 2;
+    SUCCEEDED = 3;
+    FAILED = 4;
+    CANCELED = 5;
+    TIMEOUT = 6;
+    CONTAINER_CREATING = 7;
+  }
+
+  message PodInfo {
+    // 应用运行的节点
+    string node_name = 1;
+    // 应用运行的容器ID
+    string container_id = 2;
+    // 应用运行的podName
+    string pod_name = 3;
+    // 应用运行的namespace
+    string namespace = 4;
+    // 应用运行的podUid
+    string pod_id = 5;
+    // 应用运行的podIp
+    string pod_ip = 6;
+    // 应用运行的pod状态
+    PodStatus pod_status = 7;
+    // pod拉取镜像及容器启动等的事件列表
+    repeated PodEvent events = 8;
+    google.protobuf.Timestamp pod_created_time = 9;
+    optional google.protobuf.Timestamp pod_end_time = 10;
+    // 应用运行的pod原因 indicates why is the pod in this pod_status
+    optional string pod_reason = 11;
+  }
+
+  message TensorboardInfo {
+    string node = 1;
+    int32 port = 2;
+  }
+
+  uint32 job_id = 1;
+  string name = 2;
+  string account = 3;
+  string user = 4;
+  string partition = 5;
+  string qos = 6;
+  /**
+   * The job state field must include the following states:
+   * PENDING, RUNNING, CANCELED, COMPLETED
+   * - PENDING: 
+   *   A state indicating that a job has been submitted 
+   *   and is waiting for further action before it can be started.
+   * - RUNNING:
+   *   A state indicating that a job is currently in progress 
+   *   and is actively being worked on or executed.
+   * - CANCELED:
+   *   A state indicating that a job has been terminated prematurely 
+   *   and will not be completed as originally intended.
+   * - COMPLETED:
+   *   A state indicating that a job has been successfully finished 
+   *   and has reached its intended conclusion.
+   * Other possible states should be represented in uppercase letters.
+   */
+  string state = 7;
+  // the number of CPUs requested by job
+  int32 cpus_req = 8;
+  // memory requested by job
+  int64 mem_req_mb = 9;
+  // the number of nodes requested by job
+  int32 nodes_req = 10;
+  int64 time_limit_minutes = 11;
+  google.protobuf.Timestamp submit_time = 12;
+  string working_directory = 13;
+  // name of the file that stdout outputs to, relative to the working directory.
+  optional string stdout_path = 14;
+  // name of the file that stderr outputs to, relative to the working directory.
+  optional string stderr_path = 15;
+  optional google.protobuf.Timestamp start_time = 16;
+  optional int64 elapsed_seconds = 17;
+  // indicates why is the job in this state
+  optional string reason = 18;
+  optional string node_list = 19;
+  // the number of GPUs used by job
+  optional int32 gpus_alloc = 20;
+  // the number of CPUs used by job
+  optional int32 cpus_alloc = 21;
+  // memory used by job
+  optional int64 mem_alloc_mb = 22;
+  // the number of nodes used by job
+  optional int32 nodes_alloc = 23;
+  optional google.protobuf.Timestamp end_time = 24;
+
+  // 容器化作业特有的信息
+  repeated PodInfo pods = 25;
+
+  // 任务调度事件列表
+  repeated PodEvent events = 26;
+
+  // the number of GPUs requested by job
+  int32 gpus_req = 27;
+  TensorboardInfo tensor_board_info = 28;
+
+  // 适配器数据库中的作业名称，是唯一的
+  string unique_job_name = 29;
+}
+
+message TimeRange {
+  optional google.protobuf.Timestamp start_time = 1;
+  optional google.protobuf.Timestamp end_time = 2;
+}
+message PageInfo {
+  uint32 page = 1;
+  uint64 page_size = 2;
+}
+
+message SortInfo {
+  enum SortOrder {
+    ASC = 0;
+    DESC = 1;
+  }
+
+  string field = 1;
+  SortOrder order = 2;
+}
+
+message GetJobsRequest {
+  // required JobInfo fields
+  // The value of the string corresponds to the name of each field in JobInfo
+  repeated string fields = 1;
+
+  // filter options. The logical relationship between multiple filtering options is "AND". 
+  message Filter {
+    repeated string users = 1;
+    repeated string accounts = 2;
+    repeated string states = 3;
+    // if set this field, return jobs that submitted between the time range(both endpoints included)
+    optional TimeRange submit_time = 4;
+    // if set this field, return jobs that ended between the time range(both endpoints included)
+    optional TimeRange end_time = 5;
+
+    optional uint32 job_id = 6;
+    optional string job_name = 7;
+  }
+  // specify filter options
+  optional Filter filter = 2;
+
+  // 'page' number with a 'pagesize' pagination.
+  // if not set, no pagination
+  optional PageInfo page_info = 3;
+
+  // returned jobs should be sorted if set
+  optional SortInfo sort = 4;
+
+  // AI job types. Not used for HPC
+  // an empty array returns jobs of all types
+  repeated JobType job_types = 5;
+
+}
+
+message GetJobsResponse {
+  repeated JobInfo jobs = 1;
+  // page total count
+  // if no pagination, don't set this field
+  optional uint32 total_count = 2;
+}
+
+message GetJobByIdRequest {
+  // required JobInfo fields
+  // The value of the string corresponds to the name of each field in JobInfo
+  repeated string fields = 1;
+  uint32 job_id = 2;
+}
+
+message GetJobByIdResponse {
+  JobInfo job = 1;
+}
+
+message ChangeJobTimeLimitRequest {
+  uint32 job_id = 1;
+  // increase or decrease time limit
+  int64 delta_minutes = 2;
+}
+
+message ChangeJobTimeLimitResponse {
+}
+
+message QueryJobTimeLimitRequest {
+  uint32 job_id = 1;
+}
+
+message QueryJobTimeLimitResponse {
+  uint64 time_limit_minutes = 1;
+}
+
+message EnvVariable {
+  string key = 1;
+  string value = 2;
+}
+
+message PrivateImageRepositoryCredentials {
+  string user_name = 1;
+  string password = 2;
+}
+
+// 定义 CSI 的挂载策略
+enum UserIdmapMode {
+  // NotSet
+  MODE_NOT_SET = 0;
+  // 无 idmap 模式，作为回退， 无需修改 uid,gid
+  MODE_PLAIN = 1;
+  // Linux kernel idmap 模式, 只需 uid   
+  MODE_IDMAP = 2;
+  // bindfs 模式  
+  MODE_BINDFS = 3;
+}
+
+// 用户 ID 映射信息，包含当前 CSI 的挂载策略
+message UserIdmapInfo {
+  // 指定使用的模式
+  UserIdmapMode mode = 1; 
+  optional uint32 uid = 2;         
+  optional uint32 gid = 3;         
+}
+
+
+message SubmitJobRequest {
+  string user_id = 1;
+  string job_name = 2;
+  string account = 3;
+  // if not set, use a default partition
+  string partition = 4;
+  optional string qos = 5;
+  uint32 node_count = 6;
+  uint32 gpu_count = 7;
+  // if not set, use default memory size
+  optional uint64 memory_mb = 8;
+  uint32 core_count = 9;
+  optional uint32 time_limit_minutes = 10;
+  string script = 11;
+  string working_directory = 12;
+  // relative to working directory
+  optional string stdout = 13;
+  // relative to working directory
+  optional string stderr = 14;
+  // extra options when submitting job
+  // 当提交HPC作业时，这个字段可被作为传给调度器的参数
+  // 当提交AI作业时，参数解释如下：
+  // [0]: "app"或者"train"，分别表示是应用任务还是训练任务
+  // [1]: 如果[0]是"app"，则[1]是应用类型，为"web"或者"vnc"；如果[0]是"train"，则无意义
+  // [2]: 镜像地址
+  // [3]: 算法版本地址
+  // [4]: 数据集版本地址
+  // [5]: 模型版本地址
+  // [6]: 可读可写的多挂载点地址，以逗号分隔
+  // [7]: gpuType，表示训练时硬件卡的类型，由getClusterConfig接口获取
+  // [8]: 如果[0]是"app"，则[8]是只读的多挂载点地址，以逗号分隔；如果[0]是"train"，则是该镜像对应的AI训练框架，如tensorflow, pytorch
+  // [9]: 如果[0]是"app"，则不存在[9]；如果[0]是"train"，则[9]是只读的多挂载点地址，以逗号分隔
+  repeated string extra_options = 15;
+  // NVIDIA 的 TensorFlow 框架训练特有的 parameter server 数 
+  optional uint32 ps_node_count = 16;
+  // NVIDIA 的 TensorFlow 框架训练特有的 worker 数 
+  optional uint32 worker_node_count = 17;
+  // AI作业环境变量
+  repeated EnvVariable env_variables = 18;  
+  // 训练中TensorBoard的数据源路径
+  optional string tensor_board_data_path = 19;
+  // 镜像私仓的用户名和密码
+  optional PrivateImageRepositoryCredentials private_image_repository_credentials = 20;
+  // 用户 ID 映射信息，包含当前 CSI 的挂载策略
+  optional UserIdmapInfo user_idmap_info = 21;
+}
+
+message SubmitJobResponse {
+  uint32 job_id = 1;
+  string generated_script = 2;
+}
+
+message SubmitInferJobRequest {
+  string user_id = 1;
+  string job_name = 2;
+  string account = 3;
+  // if not set, use a default partition
+  string partition = 4;
+  optional string qos = 5;
+  uint32 node_count = 6;
+  uint32 gpu_count = 7;
+  // if not set, use default memory size
+  optional uint64 memory_mb = 8;
+  uint32 core_count = 9;
+  optional uint32 time_limit_minutes = 10;
+  string script = 11;
+  string working_directory = 12;
+  // relative to working directory
+  optional string stdout = 13;
+  // relative to working directory
+  optional string stderr = 14;
+  // extra options when submitting job
+  // [0]: 镜像地址
+  // [1]: 模型版本地址
+  // [2]: 多挂载点地址，以逗号分隔
+  // [3]: gpuType, 表示训练时硬件卡的类型，由getClusterConfig接口获取
+  // [4]: 多挂载点地址，以逗号分隔 (此挂载点是只读的)
+  repeated string extra_options = 15;
+  // 容器中暴露的服务端口
+  uint32 container_service_port = 16;
+  // 作业环境变量
+  repeated EnvVariable env_variables = 18;  
+  // 镜像私仓的用户名和密码
+  optional PrivateImageRepositoryCredentials private_image_repository_credentials = 19;
+  // 用户 ID 映射信息，包含当前 CSI 的挂载策略
+  optional UserIdmapInfo user_idmap_info = 20;
+}
+
+message SubmitInferJobResponse {
+  uint32 job_id = 1;
+}
+
+
+message CancelJobRequest {
+  string user_id = 1;
+  uint32 job_id = 2;
+}
+
+message CancelJobResponse {
+}
+
+message SubmitScriptAsJobRequest {
+  string user_id = 1;
+  string script = 2;
+  // absolute path of the script file, used as job's work directory when not specified in script 
+  optional string script_file_full_path = 3;
+}
+
+message SubmitScriptAsJobResponse {
+  uint32 job_id = 1;
+}
+
+message RunCommandOnJobNodesRequest {
+  uint32 job_id = 1;
+  string command = 2;
+  uint32 timeout_seconds = 3;
+  repeated string nodes = 4;
+}
+
+message RunCommandOnJobNodesResponse {
+  string stdout = 1;
+  string stderr = 2;
+}
+
+// pod日志信息
+message GetPodLogsResponse {
+  string log = 1; // 日志内容
+}
+
+message GetPodLogsRequest {
+  string user_id = 1;
+  string pod_id= 2;   
+  optional uint32 row_limit= 3;   
+}
+
+// pod监控信息
+message GetPodMonitorInfoRequest {
+  string pod_name = 1; // pod 名
+  uint32 step_seconds = 2; // 时间步长, represented in seconds
+  google.protobuf.Timestamp start = 3; // 开始时间
+  google.protobuf.Timestamp end = 4; // 结束时间
+}
+
+message TimeSeriesData {
+  map<string, string> metrics = 1; // 标签键值对
+  
+  repeated DataPoint values = 2;
+
+  message DataPoint {
+    int64 timestamp_millisecond = 1; // UNIX 时间戳（毫秒）
+    double value = 2; // 数值（统一用 double）
+  }
+}
+
+message GetPodMonitorInfoResponse {
+  repeated TimeSeriesData monitor_data = 1;
+}
+
+message CreateDevHostRequest {
+  
+  message VscodeInfo {
+    string vscode_bin_path = 1;
+  }
+
+  message JupyterLabInfo {
+    string proxy_base_path = 1;
+  }
+
+  message MountInfo {
+    string path = 1;
+    string target = 2;
+  }
+
+  string user_id = 1;
+  string job_name = 2;
+  string account = 3;
+  string partition = 4;
+  string qos = 5;
+  uint32 core_count = 6;
+  uint32 gpu_count = 7;
+  // if not set, use default memory size
+  optional uint64 memory_mb = 8;
+  optional uint32 time_limit_minutes = 9;
+  string working_directory = 10;
+
+  VscodeInfo vscode_info = 11;
+  JupyterLabInfo jupyter_lab_info = 12;
+
+  repeated MountInfo mounts = 13;
+  repeated string public_mounts = 14;
+  string image = 15;
+  // 镜像私仓的用户名和密码
+  optional PrivateImageRepositoryCredentials private_image_repository_credentials = 16;
+  // 用户 ID 映射信息，包含当前 CSI 的挂载策略
+  optional UserIdmapInfo user_idmap_info = 17;
+}
+
+message CreateDevHostResponse {
+  uint32 job_id = 1;
+}
+
+message StreamJobShellRequest {
+
+  message Connect {
+    string job_id = 1;            // 作业ID
+    string namespace = 2;         // Pod命名空间
+    string pod_name = 3;          // Pod名称
+    string container_name = 4;    // 容器名称
+  }
+
+  // 数据输入
+  message DataInput {
+    string data = 1;
+  }
+
+  // 终端大小调整
+  message ResizeInput {
+    int32 cols = 1;
+    int32 rows = 2;
+  }
+
+  // 主动断开
+  message DisconnectInput {
+  }
+
+  // 交互类型
+  oneof payload {
+    Connect connect = 1;
+    DataInput data = 2;         // 输入数据（如命令行字符）
+    ResizeInput resize = 3;     // 终端大小调整
+    DisconnectInput disconnect = 4; // 主动断开
+  }
+}
+
+// 服务端返回的消息
+message StreamJobShellResponse {
+
+  // 输出数据
+  message DataOutput {
+    bytes data = 1;
+  }
+
+  // 退出信息
+  message ExitOutput {
+    int32 code = 1;
+    string signal = 2;
+  }
+
+  oneof payload {
+    DataOutput data = 1;        // 输出数据（stdout/stderr）
+    ExitOutput exit = 2;        // 退出信息
+  }
+}
+
+service JobService {
+  
+  /*
+   * description: get jobs with filter options
+   * special case: 
+   * - some of fields not exist, discard them
+   */
+  rpc GetJobs(GetJobsRequest) returns (GetJobsResponse);
+
+  /*
+   * description: get job info by id
+   * special case: 
+   * - job id not exist, don't throw
+   * - some of fields not exist, discard them
+   */
+  rpc GetJobById (GetJobByIdRequest) returns (GetJobByIdResponse);
+
+  /*
+   * description: change a job's time limit 
+   * errors: 
+   * - job not found
+   *   NOT_FOUND, JOB_NOT_FOUND, {}
+   */
+  rpc ChangeJobTimeLimit(ChangeJobTimeLimitRequest) returns (ChangeJobTimeLimitResponse);
+
+  /*
+   * description: query time limit
+   * errors: 
+   * - job not found
+   *   NOT_FOUND, JOB_NOT_FOUND, {}
+   */
+  rpc QueryJobTimeLimit(QueryJobTimeLimitRequest) returns (QueryJobTimeLimitResponse);
+
+  /*
+   * description: submit job 
+   * errors: 
+   * - sbatch failed
+   *   UNKNOWN, SBATCH_FAILED, {
+   *     reason: string
+   *   }
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   */
+  rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
+
+
+  /*
+   * description: cancel a job
+   * errors: 
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   * - job not found
+   *   NOT_FOUND, JOB_NOT_FOUND, {}
+   */
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+
+  /*
+   * description: submit a script  as a job 
+   * errors: 
+   * - sbatch failed
+   *   UNKNOWN, SBATCH_FAILED, {
+   *     reason: string
+   *   }
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   */
+  rpc SubmitScriptAsJob(SubmitScriptAsJobRequest) returns (SubmitScriptAsJobResponse);
+
+  /*
+   * description: run a command on job nodes
+   * errors: 
+   * - job not found
+   *   NOT_FOUND, JOB_NOT_FOUND, {}
+   */
+  rpc RunCommandOnJobNodes(RunCommandOnJobNodesRequest) returns (RunCommandOnJobNodesResponse);
+   /*
+   * description: submit infer job 
+   * errors: 
+   * - sbatch failed
+   *   UNKNOWN, SBATCH_FAILED, {
+   *     reason: string
+   *   }
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   */
+  rpc SubmitInferJob(SubmitInferJobRequest) returns (SubmitInferJobResponse);
+
+  /*
+   * description: get pod log
+   * errors: 
+   * - pod not found
+   *   NOT_FOUND, POD_NOT_FOUND, {}
+   */
+  rpc GetPodLogs(GetPodLogsRequest) returns (stream GetPodLogsResponse);
+
+  /*
+   * description: get pod monitor info
+   * errors: 
+   * - pod not found
+   *   NOT_FOUND, POD_NOT_FOUND, {}
+   */
+  rpc GetPodMonitorInfo(GetPodMonitorInfoRequest) returns (GetPodMonitorInfoResponse);
+
+  /*
+    * description: create a dev host job
+    */
+  rpc CreateDevHost(CreateDevHostRequest) returns (CreateDevHostResponse);
+
+  /*
+    * description: job shell
+    */
+  rpc StreamJobShell (stream StreamJobShellRequest) returns (stream StreamJobShellResponse);
+}

@@ -1,0 +1,54 @@
+log:
+  level: "info"
+
+# slurm 数据库配置
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  dbname: slurm_acct_db
+  password: 81SLURM@@rabGTjN7
+  clustername: cluster
+  databaseencode: latin1
+
+# 服务端口设置
+service:
+  addr: 0.0.0.0:8972
+
+# slurm 默认Qos设置
+slurm:
+  defaultqos: normal
+  slurmpath: /usr       (比如slurm的bin路径为/usr/local/bin/sinfo，该值为/usr/local)
+
+# 如果不填写partitions，则通过调度器获取分区信息，且没有分区描述信息
+# 如果partitions填写了，适配器返回已经填写的分区的信息，其他没有填写的分区，即使在调度器里有，也不返回
+# 除了name之外的配置都是可选的。如果不填desc，则描述为空；如果不填其他信息，则从调度器中获取
+# 使用云资源的场景，才需要配置nodes、cpuPerNode、memPerNode
+partitions:
+  - name: compute               # 计算分区名
+    desc: "cpu型号: Intel(R) Xeon(R) CPU E5-2660 v4 @ 2.00GHz" # 分区描述信息，以\n进行换行
+#    nodes: 50                  # 分区节点个数上限
+#    cpuPerNode: 32             # 分区每个节点核心数
+#    memPerNode: 64G            # 分区每个节点内存数，支持K、M、G、T单位
+  - name: A100                    # 计算分区名
+    desc: "驱动版本: 470.239.06 \n加速卡型号: Tesla K80" # 分区描述信息，以\n进行换行
+#    nodes: 100                    # 分区节点个数上限
+#    gpuPerNode: 8                 # 分区每个节点GPU数
+#    cpuPerNode: 32                # 分区每个节点核心数
+#    memPerNode: 64G               # 分区每个节点内存数，支持K、M、G、T单位
+
+ssl:
+  enabled: false # 是否启用 SSL，默认为 false
+  caCertPath: /adapter/certs/ca.crt # CA根证书路径, 相对适配器 config 的同级 certs目录。
+  adapterCertPath: /adapter/certs/adapter.crt # CA签名的 adapter 证书路径， 相对适配器 config 的同级 certs 目录。
+  adapterPrivateKeyPath: /adapter/certs/adapter.key # CA签名的 adapter 私钥路径， 相对适配器 config 的同级 certs目录。
+
+slurmConfCache:
+  refreshInterval: 300
+  slurmConfigPath: "/etc/slurm/slurm.conf"
+
+#monitor:
+#  port: 8973
+
+json:
+  enabled: false

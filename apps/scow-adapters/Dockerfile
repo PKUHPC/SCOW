@@ -1,0 +1,51 @@
+# 使用指定的 ccrepo 镜像作为基础镜像(支持双架构)
+FROM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS builder
+
+RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' \
+    -e 's|^#baseurl=http://dl.rockylinux.org/$contentdir|baseurl=https://mirrors.pku.edu.cn/rocky|g' \
+    -i.bak \
+    /etc/yum.repos.d/[Rr]ocky*.repo
+
+ARG TARGETARCH
+ARG VERSION=dev
+ARG BUF_VERSION=1.59.0
+
+WORKDIR /app
+
+RUN dnf install -y wget tar gzip make git gcc ca-certificates && \
+    dnf clean all
+
+ENV GOVERSION=1.25.10
+
+RUN curl -LO https://mirrors.aliyun.com/golang/go${GOVERSION}.linux-${TARGETARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GOVERSION}.linux-${TARGETARCH}.tar.gz && \
+    rm go${GOVERSION}.linux-${TARGETARCH}.tar.gz
+
+ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+ENV GO111MODULE=on
+ENV GOPROXY=https://goproxy.cn,direct
+
+COPY apps/scow-adapters/ .
+COPY libs/protos/scheduler-adapter /libs/protos/scheduler-adapter
+
+RUN go install github.com/bufbuild/buf/cmd/buf@v${BUF_VERSION}
+
+RUN make protos && go mod tidy
+
+RUN make build ARCH=${TARGETARCH} VERSION=${VERSION}
+
+FROM scratch AS output
+COPY --from=builder /app /app
+
+FROM builder AS ai-runtime-builder
+ARG TARGETARCH
+ARG VERSION=dev
+RUN make build-ai ARCH=${TARGETARCH} VERSION=${VERSION}
+
+FROM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS runtime
+WORKDIR /adapter
+COPY --from=ai-runtime-builder /app/build/bin/scow-ai-adapter /adapter/scow-adapter
+RUN dnf install -y ca-certificates vim && \
+    dnf clean all
+ENTRYPOINT ["/adapter/scow-adapter"]

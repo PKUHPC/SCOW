@@ -1,0 +1,253 @@
+/**
+   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+   * SCOW is licensed under Mulan PSL v2.
+   * You can use this software according to the terms and conditions of the Mulan PSL v2.
+   * You may obtain a copy of Mulan PSL v2 at:
+   *          http://license.coscl.org.cn/MulanPSL2
+   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+   * See the Mulan PSL v2 for more details.
+*/
+
+syntax = "proto3";
+
+package scow.scheduler_adapter;
+
+message GetClusterConfigRequest {
+
+}
+
+// static configuration of partition
+message Partition {
+  string name = 1;
+  // mem: memory size in M
+  uint64 mem_mb = 2;
+  // cores: number of cores
+  uint32 cores = 3;
+  // gpus: number of gpu
+  uint32 gpus = 4;
+  // nodes: number of nodes
+  uint32 nodes = 5;
+  // list that stores qos. the list can be empty.
+  repeated string qos = 6;
+  // price item description
+  optional string comment = 7;
+  // gpu_type: 目前可能的值为 "nvidia" 、 "huawei.com/Ascend910"
+  // AI在gpu分区用gpu训练时必填gpu_type
+  // 华为的gpu卡支持特殊的框架 mindspore
+  optional string gpu_type = 8;
+  // vram: vram size in M
+  optional uint64 vram_mb = 9;
+
+  // accelerator_descriptions: 加速器描述，如cuda 版本, 驱动版本等
+  // 当前最多只允许设置两个值
+  repeated string accelerator_descriptions = 10;
+  // gpu_model: 具体的 gpu 型号，如 "RTX3090" 等
+  optional string gpu_model = 11;
+
+  // 适配器配置的，每个Pod加速卡数量限额
+  optional uint32 max_accelerators_per_pod = 12;
+  // cpu_model: 具体的 cpu 型号，如 "Intel(R) Xeon(R) Platinum 81633090" 等
+  optional string cpu_model = 13;
+  // description: 配置的分区描述
+  optional string description = 14;
+}
+
+message GetClusterConfigResponse {
+  repeated Partition partitions = 1;
+  string scheduler_name = 2;
+}
+
+message GetAvailablePartitionsRequest {
+  string account_name = 1;
+  string user_id = 2;
+}
+
+message GetAvailablePartitionsResponse {
+  repeated Partition partitions = 1;
+}
+
+// the runtime state of the partition
+message PartitionInfo {
+
+  enum PartitionStatus {
+    NOT_AVAILABLE = 0;
+    AVAILABLE = 1;
+  }
+
+  string partition_name = 1;
+  uint32 node_count = 2;
+  uint32 running_node_count = 3;
+  uint32 idle_node_count = 4;
+  uint32 not_available_node_count = 5;
+  uint32 cpu_core_count =6;
+  uint32 running_cpu_count = 7;
+  uint32 idle_cpu_count = 8;
+  uint32 not_available_cpu_count = 9;
+  uint32 gpu_core_count = 10;
+  uint32 running_gpu_count = 11;
+  uint32 idle_gpu_count = 12;
+  uint32 not_available_gpu_count = 13;
+  uint32 job_count = 14;
+  uint32 running_job_count = 15;
+  uint32 pending_job_count = 16;
+  // node utilization rate
+  uint32 usage_rate_percentage = 17;
+  PartitionStatus partition_status = 18;
+
+  uint32 total_mem_mb = 19;
+  uint32 alloc_mem_mb = 20;
+
+  // accelerator_descriptions: 加速器描述，如cuda 版本, 驱动版本等
+  // 当前最多只允许设置两个值
+  repeated string accelerator_descriptions = 21;
+  // gpu_model: 具体的 gpu 型号，如 "RTX3090" 等
+  optional string gpu_model = 22;
+}
+
+message GetClusterInfoRequest {
+}
+
+message GetClusterInfoResponse {
+  string cluster_name = 1;
+  repeated PartitionInfo partitions = 2;
+  // 3-17 Newly added parameters
+  // only returns in version later than 1.7.0
+  uint32 node_count = 3;
+  uint32 running_node_count = 4;
+  uint32 idle_node_count = 5;
+  uint32 not_available_node_count = 6;
+  uint32 cpu_core_count =7;
+  uint32 running_cpu_count = 8;
+  uint32 idle_cpu_count = 9;
+  uint32 not_available_cpu_count = 10;
+  uint32 gpu_core_count = 11;
+  uint32 running_gpu_count = 12;
+  uint32 idle_gpu_count = 13;
+  uint32 not_available_gpu_count = 14;
+  uint32 job_count = 15;
+  uint32 running_job_count = 16;
+  uint32 pending_job_count = 17;
+}
+
+message SummaryPartitionInfo {
+  enum PartitionStatus {
+    UNKNOWN = 0;
+    NOT_AVAILABLE = 1;
+    AVAILABLE = 2;
+  }
+
+  string partition_name = 1;
+  uint32 node_count = 2;
+  float node_usage = 3;
+  uint32 cpu_core_count =4;
+  float cpu_usage = 5;
+  uint32 gpu_core_count = 6;
+  float gpu_usage = 7;
+  uint32 pending_job_count = 8;
+  PartitionStatus partition_status = 9;
+}
+
+message GetSummaryClusterInfoRequest {
+  // 关联账户 用于筛选已授权集群分区
+  repeated string account_names = 1;
+}
+
+message GetSummaryClusterInfoResponse {
+  string cluster_name = 1;
+  repeated SummaryPartitionInfo partitions = 2;
+  // 3-17 Newly added parameters
+  // only returns in version later than 1.7.0
+  uint32 node_count = 3;
+  uint32 running_node_count = 4;
+  uint32 idle_node_count = 5;
+  uint32 not_available_node_count = 6;
+  uint32 cpu_core_count =7;
+  uint32 running_cpu_count = 8;
+  uint32 idle_cpu_count = 9;
+  uint32 not_available_cpu_count = 10;
+  uint32 gpu_core_count = 11;
+  uint32 running_gpu_count = 12;
+  uint32 idle_gpu_count = 13;
+  uint32 not_available_gpu_count = 14;
+  uint32 running_job_count = 15;
+  uint32 pending_job_count = 16;
+
+  float node_usage = 17;
+  float cpu_usage = 18;
+  float gpu_usage = 19;
+}
+
+message NodeInfo {
+
+  enum NodeState {
+    UNKNOWN = 0;
+    IDLE = 1;
+    RUNNING = 2;
+    NOT_AVAILABLE = 3;
+  }
+
+  string node_name = 1;
+  repeated string partitions = 2;
+  NodeState state = 3;
+  uint32 cpu_core_count = 4;
+  uint32 alloc_cpu_core_count = 5;
+  uint32 idle_cpu_core_count = 6;
+  uint32 total_mem_mb = 7;
+  uint32 alloc_mem_mb = 8;
+  uint32 idle_mem_mb = 9;
+  uint32 gpu_count = 10;
+  uint32 alloc_gpu_count = 11;
+  uint32 idle_gpu_count = 12;
+  // node migration flag
+  bool removable = 13;
+} 
+
+message GetClusterNodesInfoRequest {
+  // if the value of node_names = [], request all nodes info
+  repeated string node_names = 1;
+}
+
+message GetClusterNodesInfoResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+message ListImplementedOptionalFeaturesRequest {}
+
+enum OptionalFeatures {
+  UNKNOWN = 0;
+  RESOURCE_MANAGEMENT = 1;
+}
+
+message ListImplementedOptionalFeaturesResponse {
+  repeated OptionalFeatures features = 1;
+}
+
+service ConfigService { 
+  /*
+   * description: get cluster config
+   */
+  rpc GetClusterConfig(GetClusterConfigRequest) returns (GetClusterConfigResponse);
+  /*
+   * description: get available partitions and qos by user id and account name
+   */
+  rpc GetAvailablePartitions(GetAvailablePartitionsRequest) returns (GetAvailablePartitionsResponse);
+   /*
+   * description: get cluster information
+   */
+  rpc GetClusterInfo(GetClusterInfoRequest) returns (GetClusterInfoResponse);
+   /*
+   * description: get calculated cluster information
+   */
+  rpc GetSummaryClusterInfo(GetSummaryClusterInfoRequest) returns (GetSummaryClusterInfoResponse);
+   /*
+   * description: get cluster nodes information
+   */
+  rpc GetClusterNodesInfo(GetClusterNodesInfoRequest) returns (GetClusterNodesInfoResponse);
+
+   /*
+   * description: List optional features implemented by this scheduler adapter
+   */
+  rpc ListImplementedOptionalFeatures(ListImplementedOptionalFeaturesRequest) returns (ListImplementedOptionalFeaturesResponse);
+}

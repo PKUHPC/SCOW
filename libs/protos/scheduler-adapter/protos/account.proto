@@ -1,0 +1,376 @@
+/**
+   * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
+   * SCOW is licensed under Mulan PSL v2.
+   * You can use this software according to the terms and conditions of the Mulan PSL v2.
+   * You may obtain a copy of Mulan PSL v2 at:
+   *          http://license.coscl.org.cn/MulanPSL2
+   * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+   * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+   * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+   * See the Mulan PSL v2 for more details.
+*/
+
+syntax = "proto3";
+
+package scow.scheduler_adapter;
+
+message ListAccountsRequest {
+  string user_id = 1;
+}
+
+message ListAccountsResponse {
+  repeated string accounts = 1;
+}
+
+message CreateAccountRequest {
+  string account_name = 1;
+  string owner_user_id = 2;
+}
+
+message CreateAccountResponse {
+}
+
+message BlockAccountRequest {
+  string account_name = 1;
+}
+
+message BlockAccountResponse {
+}
+
+message UnblockAccountRequest {
+  string account_name = 1;
+}
+
+message UnblockAccountResponse {
+}
+
+message ClusterAccountInfo {
+  message UserInAccount {
+    string user_id = 1;
+    string user_name = 2;
+    bool blocked = 3;
+  }
+  string account_name = 1;
+  repeated UserInAccount users = 2;
+  optional string owner = 3;
+  bool blocked = 4;
+}
+
+message GetAllAccountsWithUsersRequest {
+
+}
+
+message GetAllAccountsWithUsersResponse {
+  repeated ClusterAccountInfo accounts = 1;
+}
+
+message QueryAccountBlockStatusRequest {
+  string account_name = 1;
+}
+
+message AccountStatusInPartition {
+  string partition  = 1;
+  bool blocked = 2;
+}
+
+message QueryAccountBlockStatusResponse {
+  // In versions 1.7.0 and earlier:
+  // - The account's status is uniformly consistent across all partitions by default.
+  // - false: The queried account is unblocked in all partitions.
+  // - true: The queried account has no available partitions.
+
+  // In versions later than 1.7.0:
+  // - The field "blocked" represents whether the account is completely blocked across all partitions:
+  // - true: The account is fully blocked in all partitions.
+  // - false: The account has one or more partitions where it is not blocked.
+  bool blocked = 1;
+
+  // the details of account blocked status in every partition
+  // only returns in version later than 1.7.0
+  repeated AccountStatusInPartition account_blocked_details = 2;
+}
+
+message DeleteAccountRequest {
+  string account_name = 1;
+}
+
+message DeleteAccountResponse {
+}
+
+message SyncAccountUserInfoRequest {
+  // session id during one same data sync operation
+  // the scheduler can only process the same data once with the same session_id.
+  string session_id = 1;
+  repeated SyncAccountInfo sync_accounts = 2;
+  // maximum execution time for this request in milliseconds
+  optional uint32 timeout_milliseconds = 3;
+}
+
+
+
+
+// ************ Below is the interfaces for optional feature: RESOURCE_MANAGEMENT ***************
+message BlockAccountWithPartitionsRequest {
+  string account_name = 1;
+  // when the value exists: block specified partition(s) of the account
+  repeated string blocked_partitions = 2;
+}
+
+message BlockAccountWithPartitionsResponse {
+}
+
+message UnblockAccountWithPartitionsRequest {
+  string account_name = 1;
+  // specify the available partition(s) when executing unblock
+  repeated string unblocked_partitions = 2;
+}
+
+message UnblockAccountWithPartitionsResponse {
+}
+
+message QueryAccountBlockStatusWithPartitionsRequest {
+  string account_name = 1;
+  // query in specified partition(s)
+  // when the value is [] or undefined, return all partitions blocked details
+  repeated string queried_partitions = 2;
+}
+
+message QueryAccountBlockStatusWithPartitionsResponse {
+  // return the overall blocked_status in all partitions
+  // false: when the queried account has on or more available partitions
+  // true: when the queried account has no available partitions
+  bool blocked = 1;
+  // the details of account blocked status in every partition
+  repeated AccountStatusInPartition account_blocked_details = 2;
+}
+
+message ClusterAccountInfoWithBlockedDetails {
+  message UserInAccount {
+    string user_id = 1;
+    string user_name = 2;
+    bool blocked = 3;
+  }
+  string account_name = 1;
+  repeated UserInAccount users = 2;
+  optional string owner = 3;
+  // return the overall blocked_status in all partitions
+  // false: when the queried account has one or more available partitions
+  // true: when the queried account has no available partitions
+  bool blocked = 4;
+  // the details of account blocked status in every partition
+  repeated AccountStatusInPartition account_blocked_details = 5;
+}
+
+message GetAllAccountsWithUsersAndBlockedDetailsRequest {
+
+}
+
+message GetAllAccountsWithUsersAndBlockedDetailsResponse {
+  repeated ClusterAccountInfoWithBlockedDetails accounts = 1;
+}
+// ********** Above is the interfaces for optional feature: RESOURCE_MANAGEMENT ***************
+
+
+message SyncAccountInfo {
+  message UserInAccount {
+    string user_id = 1;
+    bool blocked = 2;
+    optional bool deleted = 3;
+  }
+  string account_name = 1;
+  repeated UserInAccount users = 2;
+  optional string owner_id = 3;
+  bool blocked_in_cluster = 4;
+  optional uint32 whitelist_id = 5;
+
+  message AssignedPartitions {
+    repeated string partitions = 1;
+  }
+  // use assigned partitions or all partitions
+  oneof unblocked_partitions {
+    AssignedPartitions assigned_partitions = 6;
+    bool use_all_partitions = 7;
+  }
+
+  optional bool deleted = 8;
+}
+
+message SyncAccountUserInfoResponse {
+  
+  message CreateAccountOperation {
+    string account_name = 1;
+  }
+  message BlockAccountOperation {
+    string account_name = 1;
+  }
+  message UnblockAccountOperation {
+    string account_name = 1;
+  }
+  message AddUserToAccountOperation {
+    string account_name = 1;
+    string user_id = 2;
+  }
+  message RemoveUserFromAccountOperation {
+    string account_name = 1;
+    string user_id = 2;
+  }
+  message BlockUserInAccountOperation {
+    string account_name = 1;
+    string user_id = 2;
+  }
+  message UnblockUserInAccountOperation {
+    string account_name = 1;
+    string user_id = 2;
+  }
+  message DeleteAccountOperation {
+    string account_name = 1;
+  }
+  message DeleteUserOperation {
+    string user_id = 1;
+  }
+
+  message SyncOperationResult {
+    oneof sync_operation {
+      CreateAccountOperation create_account = 1;
+      BlockAccountOperation block_account = 2;
+      UnblockAccountOperation unblock_account = 3;
+      AddUserToAccountOperation add_user_to_account = 4;
+      RemoveUserFromAccountOperation remove_user_from_account = 5;
+      BlockUserInAccountOperation block_user_in_account = 6;
+      UnblockUserInAccountOperation unblock_user_in_account = 7;
+      DeleteAccountOperation delete_account = 8;
+      DeleteUserOperation delete_user = 9;
+    }
+    bool success = 10;
+    // if success = false, return the failure message
+    optional string failure_message = 11;
+  }
+  repeated SyncOperationResult sync_results = 1;
+  // true: The entire request was processed successfully and all data was handled within the specified timeout_seconds.
+  // false: The request processing was interrupted due to timeout_seconds limit.
+  bool completely_executed = 2;
+}
+
+service AccountService {
+  
+  /**
+   * description: list accounts for a user
+   * errors: 
+   * - user not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {}
+   */
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+
+  /*
+   * description: create account and specify owner
+   * errors:
+   * - account exist
+   *   ALREADY_EXISTS, ACCOUNT_ALREADY_EXISTS, {}
+   * - owner id not exist
+   *   NOT_FOUND, USER_NOT_FOUND, {} 
+   */
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+
+  /*
+   * description: block an account 
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * special case:
+   * - account already blocked, don't throw error
+   */
+  rpc BlockAccount(BlockAccountRequest) returns (BlockAccountResponse);
+
+  /*
+   * description: unblock an account 
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * special case:
+   * - account already unblocked, don't throw error
+   */
+  rpc UnblockAccount(UnblockAccountRequest) returns (UnblockAccountResponse);
+
+  /*
+   * description: get all accounts and all associated users
+   * special case:
+   * - account no users, exclude this account
+   */
+  rpc GetAllAccountsWithUsers(GetAllAccountsWithUsersRequest) returns (GetAllAccountsWithUsersResponse);
+
+  /*
+   * description: query if an account is blocked
+   * Version differences:
+   * - In versions 1.7.0 and earlier:
+   * - The response's 'blocked' field indicates a uniform status across all partitions.
+   * - The 'account_blocked_details' field is not returned.
+   * - In versions after 1.7.0:
+   * - The 'blocked' field indicates whether the account is completely blocked across all partitions.
+   * - The 'account_blocked_details' field provides detailed status information for each partition.
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   */
+  rpc QueryAccountBlockStatus(QueryAccountBlockStatusRequest) returns (QueryAccountBlockStatusResponse);
+
+  /*
+   * description: delete account
+   * errors:
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   */
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+
+  // ********** Below is the rpcs for optional feature: RESOURCE_MANAGEMENT ***************
+  /*  
+   * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
+   * description: block an account with specified partitions
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * special case:
+   * - account already blocked, don't throw error
+   */
+   rpc BlockAccountWithPartitions(BlockAccountWithPartitionsRequest) returns (BlockAccountWithPartitionsResponse);
+  /*
+
+   * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
+
+   * description: unblock an account with specified partitions
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   * special case:
+   * - account already unblocked, don't throw error
+   */
+   rpc UnblockAccountWithPartitions(UnblockAccountWithPartitionsRequest) returns (UnblockAccountWithPartitionsResponse);
+ 
+  /*
+   * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
+   * description: query if an account is blocked with specified partitions
+   * errors: 
+   * - account not exist
+   *   NOT_FOUND, ACCOUNT_NOT_FOUND, {}
+   */
+   rpc QueryAccountBlockStatusWithPartitions(QueryAccountBlockStatusWithPartitionsRequest) returns (QueryAccountBlockStatusWithPartitionsResponse);
+   
+  /*
+   * FOR OPTIONAL FEATURE: RESOURCE_MANAGEMENT
+   * description: get all accounts with blocked partitions' detail and all associated users 
+   * special case:
+   * - account no users, exclude this account
+   */
+   rpc GetAllAccountsWithUsersAndBlockedDetails(GetAllAccountsWithUsersAndBlockedDetailsRequest) returns (GetAllAccountsWithUsersAndBlockedDetailsResponse);
+   // ********** Above is the interfaces for optional feature: RESOURCE_MANAGEMENT ***************
+
+  /*
+   * description: sync accounts and related users
+   * special case:
+   * - If processing time exceeds timeout_milliseconds specified in the request:
+   * the operation will be terminated
+   * only data processed before timeout will be returned
+   * the completely_executed field in the response will be set to false
+   */
+   rpc SyncAccountUserInfo(SyncAccountUserInfoRequest) returns (SyncAccountUserInfoResponse);
+}

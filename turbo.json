@@ -76,7 +76,8 @@
     },
     "@scow/scheduler-adapter-protos#generate": {
       "inputs": [
-        "node_modules/@scow/grpc-adapter/**/*.proto",
+        "protos/**/*.proto",
+        "buf.yaml",
         "buf.gen.yaml"
       ],
       "outputs": [
@@ -96,6 +97,9 @@
     },
     "lint": {
       "inputs": [
+        "**/*.go",
+        "**/go.mod",
+        "**/go.sum",
         "**/*.proto",
         "**/*.tsx",
         "**/*.ts"
