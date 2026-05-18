@@ -150,6 +150,7 @@ message AppCustomAttribute {
     SELECT = 2;
     FILE = 3;
     COMMAND_SELECT = 4;
+    PASSWORD = 5;
   }
   AttributeType type = 1;
   I18nStringProtoType label = 2;

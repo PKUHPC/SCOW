@@ -66,7 +66,7 @@ export const AppConfigSchema = Type.Object({
   vnc: Type.Optional(VncAppConfigSchema),
   attributes: Type.Optional(Type.Array(
     Type.Object({
-      type:  Type.Enum({ number: "number", text: "text", select: "select" }, { description: "表单类型" }),
+      type:  Type.Enum({ number: "number", text: "text", select: "select", password: "password" }, { description: "表单类型" }),
       label: createI18nStringSchema({ description: "表单标签" }),
       name: Type.String({ description: "表单字段名" }),
       required: Type.Boolean({ description: "是必填项", default: true }),

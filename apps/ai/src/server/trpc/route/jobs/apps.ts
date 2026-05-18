@@ -152,6 +152,7 @@ const AppCustomAttributeSchema = z.object({
     z.literal("NUMBER"),
     z.literal("SELECT"),
     z.literal("TEXT"),
+    z.literal("PASSWORD"),
   ]),
   label: I18nStringSchema,
   name: z.string(),
@@ -167,7 +168,7 @@ const AppCustomAttributeSchema = z.object({
 export type AppCustomAttribute = z.infer<typeof AppCustomAttributeSchema>;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const AttributeTypeSchema = z.enum(["TEXT", "NUMBER", "SELECT"]);
+const AttributeTypeSchema = z.enum(["TEXT", "NUMBER", "SELECT", "PASSWORD"]);
 
 export type AttributeType = z.infer<typeof AttributeTypeSchema>;
 
@@ -649,6 +650,9 @@ export const createAppSession = procedure
         case "text":
           break;
 
+        case "password":
+          break;
+
         case "select":
         // check the option selected by user is in select attributes as the config defined
           if (customAttributes[attribute.name]
@@ -666,7 +670,7 @@ export const createAppSession = procedure
         default:
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `the custom form attributes type in ${appId} config should be one of number, text or select,
+            message: `the custom form attributes type in ${appId} config should be one of number, text, select or password,
           but the type of ${attribute.name} is ${attribute.type as string}`,
           });
       }

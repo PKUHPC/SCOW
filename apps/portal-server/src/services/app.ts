@@ -185,9 +185,12 @@ export const appServiceServer = plugin((server) => {
           case AttributeType.commandSelect:
             break;
 
+          case AttributeType.password:
+            break;
+
           default:
             throw new Error(`
-              the custom form attributes type in ${appId} config should be one of number, text, select or commandSelect,
+              the custom form attributes type in ${appId} config should be one of number, text, select, commandSelect or password,
               but the type of ${attribute.name} is ${attribute.type as string}`);
         }
       });

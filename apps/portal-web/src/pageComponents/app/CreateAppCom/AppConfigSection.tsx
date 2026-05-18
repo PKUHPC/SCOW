@@ -1,9 +1,9 @@
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { RoundedInput, RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { SectionTitle,TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { RoundedInput, RoundedInputNumber, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
-import { Form, type FormInstance,Select } from "antd";
+import { Form, type FormInstance, Select } from "antd";
 import { Rule } from "antd/es/form";
 import { useMemo } from "react";
 import { useStore } from "simstate";
@@ -83,6 +83,8 @@ export const AppConfigSection = ({
             placeholder={getI18nConfigCurrentText(placeholder, languageId)}
           />
         );
+      } else if (item.type === "PASSWORD") {
+        return (<RoundedPasswordInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} />);
       } else if (item.type === "COMMAND_SELECT") {
         return (
           <CommandSelect

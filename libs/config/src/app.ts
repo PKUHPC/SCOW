@@ -38,6 +38,7 @@ export enum AttributeType {
   select = "select",
   file = "file",
   commandSelect = "commandSelect",
+  password = "password",
 }
 
 export const WebAppConfigSchema = Type.Object({

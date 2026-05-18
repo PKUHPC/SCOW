@@ -12,7 +12,7 @@ import {
   PaddedCard,
 } from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { RoundedInput, RoundedInputNumber } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { RoundedInput, RoundedInputNumber, RoundedPasswordInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { PageContainer } from "@scow/lib-web/build/layouts/base/PageContainer";
@@ -567,6 +567,11 @@ export const LaunchAppForm = ({
             />
           ) : item.type === "TEXT" ? (
             <RoundedInput placeholder={getI18nConfigCurrentText(placeholder, languageId)} style={{ width: "480px" }} />
+          ) : item.type === "PASSWORD" ? (
+            <RoundedPasswordInput
+              placeholder={getI18nConfigCurrentText(placeholder, languageId)}
+              style={{ width: "480px" }}
+            />
           ) : (
             <RoundedSelect
               options={selectOptions.map((x) => ({

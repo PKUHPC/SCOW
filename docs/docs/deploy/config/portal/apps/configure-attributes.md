@@ -115,7 +115,7 @@ attributes:
 
 | 属性         | 类型                           | 是否必填 | 解释                                                                        |
 |------------|------------------------------|------|---------------------------------------------------------------------------|
-| `type`     | `number`, `text`, `select`, `file` 或者 `commandSelect` | 是    | 在HTML表单元素中输入的内容的类型                                                        |
+| `type`     | `number`, `text`, `select`, `file`, `commandSelect` 或者 `password` | 是    | 在HTML表单元素中输入的内容的类型                                                        |
 | `name`     | 字符串                          | 是    | HTML表单的name属性，在编程中使用，并且会作为计算节点环境变量名，可以在Web应用的`script`或者VNC应用的`xstartup`使用 |
 | `label`    | 字符串 或 [i18n国际化类型](../../customization/custom-config-i18n.md)                          | 是    | HTML表单的label属性，输入框左侧显示的标签                                                 |
 | `required` | 布尔类型                         | 否    | 如果设置为`true`，用户必须填写此项，如果为`false`，用户可以不填，默认为`true`。                        |
@@ -246,6 +246,21 @@ attributes:
 
 如果用户输入了`/user/test/new-script.sh`，且用户具有该绝对路径的读权限，那么计算节点的环境变量`fileDir=/user/test/new-script.sh`可以在应用启动时被读取。
 
+
+### 配置输入类型为密码的HTML表单
+
+配置一个输入内容为密码类型的表单，需要指定`type`为`password`。密码输入框中的内容会被隐藏（显示为掩码），适用于需要用户输入敏感信息的场景，示例如下：
+
+```yaml
+attributes:
+  - type: password
+    name: userPassword
+    label: 密码
+    required: true
+    placeholder: 请输入密码
+```
+
+如果用户输入了`my-secret`，计算节点的环境变量`userPassword=my-secret`可以在应用启动时被读取。
 
 ### 配置其他sbatch参数
 

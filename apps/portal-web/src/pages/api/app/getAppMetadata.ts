@@ -49,6 +49,7 @@ export const AppCustomAttribute = Type.Object({
     Type.Literal("TEXT"),
     Type.Literal("FILE"),
     Type.Literal("COMMAND_SELECT"),
+    Type.Literal("PASSWORD"),
   ]),
   label: I18nStringSchemaType,
   name: Type.String(),
