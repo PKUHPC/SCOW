@@ -4,6 +4,11 @@ map $http_accept $proxy_accept_encoding {
       "~*text/stream" "";
 }
 
+map $http_upgrade $proxy_connection {
+      default upgrade;
+      "" "";
+}
+
 server {
 
   server_name {{ ALLOWED_SERVER_NAME }};
@@ -135,5 +140,3 @@ server {
 }
 
 {{ DEFAULT_SERVER_BLOCK }}
-
-
