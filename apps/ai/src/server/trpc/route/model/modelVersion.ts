@@ -75,28 +75,31 @@ export const versionList = procedure
     const [items, count] = await em.findAndCount(ModelVersion,
       {
         model: { id: input.modelId },
-        ...input.isPublic ? { sharedStatus:SharedStatus.SHARED } : {},
+        ...input.isPublic ? { sharedStatus: SharedStatus.SHARED } : {},
       },
       {
         ...paginationProps(input.page, input.pageSize),
         orderBy: { createTime: "desc" },
       });
 
-    return { items: items.map((x) => {
-      const createTime = x.createTime ? x.createTime.toISOString() : undefined;
-      const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
-      return {
-        id: x.id,
-        modelId: x.model.id,
-        versionName: x.versionName,
-        versionDescription: x.versionDescription,
-        algorithmVersion:x.algorithmVersion,
-        path: x.path,
-        privatePath: x.privatePath,
-        sharedStatus: x.sharedStatus,
-        createTime,
-        updateTime: updateTime ?? createTime,
-      }; }), count };
+    return {
+      items: items.map((x) => {
+        const createTime = x.createTime ? x.createTime.toISOString() : undefined;
+        const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
+        return {
+          id: x.id,
+          modelId: x.model.id,
+          versionName: x.versionName,
+          versionDescription: x.versionDescription,
+          algorithmVersion: x.algorithmVersion,
+          path: x.path,
+          privatePath: x.privatePath,
+          sharedStatus: x.sharedStatus,
+          createTime,
+          updateTime: updateTime ?? createTime,
+        };
+      }), count
+    };
   });
 
 export const getMultipleModelVersions = procedure
@@ -114,12 +117,12 @@ export const getMultipleModelVersions = procedure
     isPublic: booleanQueryParam().optional(),
   }))
   .output(z.array(z.object({ items: z.array(VersionListSchema), count: z.number() })))
-  .query(async ({ input:{ modelIds, isPublic, page, pageSize } }) => {
+  .query(async ({ input: { modelIds, isPublic, page, pageSize } }) => {
     const em = await forkEntityManager();
     const items = await em.find(ModelVersion,
       {
         model: { $in: modelIds },
-        ...isPublic ? { sharedStatus:SharedStatus.SHARED } : {},
+        ...isPublic ? { sharedStatus: SharedStatus.SHARED } : {},
       },
       {
         ...paginationProps(page, pageSize),
@@ -265,7 +268,7 @@ export const createModelVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ modelId,versionName }, ctx, next }) => {
+  .use(async ({ input: { modelId, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -282,26 +285,28 @@ export const createModelVersion = procedure
     }
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
-          versionId:(res.data as any).id,
-          modelName:model.name,
+          versionId: (res.data as any).id,
+          modelName: model.name,
           modelVersionName: versionName,
         },
       },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
-          modelName:model.name,
+          modelName: model.name,
           modelVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -360,8 +365,8 @@ export const createModelVersion = procedure
 
     // 检查用户是否有读写权限
     await driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
+      clusterId: model.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.checkCreateResourcePath(input.path, noCheckPermission);
     }, logger);
@@ -389,7 +394,7 @@ export const updateModelVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ modelId,versionId,versionName }, ctx, next }) => {
+  .use(async ({ input: { modelId, versionId, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -406,27 +411,29 @@ export const updateModelVersion = procedure
     }
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
+          modelName: model.name,
           modelVersionName: versionName,
         },
       },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
+          modelName: model.name,
           modelVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -479,16 +486,16 @@ export const updateModelVersion = procedure
     }
 
     const needUpdateSharedPath = modelVersion.sharedStatus === SharedStatus.SHARED
-    && versionName !== modelVersion.versionName;
+      && versionName !== modelVersion.versionName;
 
     // 更新已分享目录下的版本路径名称
     if (needUpdateSharedPath && !isPlatformOwned) {
       // 获取更新后的已分享版本路径
       const newVersionSharedPath = await driver.withFileDriver({
-        clusterId:model.clusterId,
-        user:user.identityId,
+        clusterId: model.clusterId,
+        user: user.identityId,
       }, async (fileDriver) => {
-        return await fileDriver.getUpdatedSharedPath(versionName,dirname(modelVersion.path));
+        return await fileDriver.getUpdatedSharedPath(versionName, dirname(modelVersion.path));
       }, logger);
 
       const baseFolderName = basename(modelVersion.path);
@@ -519,7 +526,7 @@ export const deleteModelVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ success: z.boolean() }))
-  .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
+  .use(async ({ input: { modelId, versionId }, ctx, next }) => {
 
     const { user, req } = ctx;
     const logInfo = {
@@ -541,27 +548,29 @@ export const deleteModelVersion = procedure
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
-          modelVersionName:modelVersion.versionName,
+          modelName: model.name,
+          modelVersionName: modelVersion.versionName,
         },
       },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
-          modelVersionName:modelVersion.versionName,
+          modelName: model.name,
+          modelVersionName: modelVersion.versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -576,7 +585,7 @@ export const deleteModelVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${input.versionId} not found` });
 
     const model = await em.findOne(Model, { id: input.modelId },
-      { populate: ["versions", "versions.sharedStatus"]});
+      { populate: ["versions", "versions.sharedStatus"] });
     if (!model) {
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${input.modelId} not found` });
     }
@@ -605,8 +614,10 @@ export const deleteModelVersion = procedure
     if (modelVersion.sharedStatus === SharedStatus.SHARING
       || modelVersion.sharedStatus === SharedStatus.UNSHARING) {
       throw new TRPCError(
-        { code: "PRECONDITION_FAILED",
-          message: `ModelVersion (id:${input.versionId}) is currently being shared or unshared` });
+        {
+          code: "PRECONDITION_FAILED",
+          message: `ModelVersion (id:${input.versionId}) is currently being shared or unshared`
+        });
     }
 
     // 如果是已分享的模型版本，则删除分享; 如果是公共数据资产则不删除分享文件夹
@@ -619,23 +630,23 @@ export const deleteModelVersion = procedure
 
         try {
           await driver.withFileDriver({
-            clusterId:model.clusterId,
-            user:user.identityId,
+            clusterId: model.clusterId,
+            user: user.identityId,
           }, async (fileDriver) => {
             await fileDriver.checkSharePermission(modelVersion.privatePath);
           }, logger);
 
           const pathToUnshare
-        = model.versions.filter((v) => (v.id !== input.versionId && v.sharedStatus === SharedStatus.SHARED))
-          .length > 0 ?
-          // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-          dirname(modelVersion.path)
-          // 除了此版本以外没有其他已分享的版本则取消分享整个模型
-          : dirname(dirname(modelVersion.path));
+            = model.versions.filter((v) => (v.id !== input.versionId && v.sharedStatus === SharedStatus.SHARED))
+              .length > 0 ?
+              // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
+              dirname(modelVersion.path)
+              // 除了此版本以外没有其他已分享的版本则取消分享整个模型
+              : dirname(dirname(modelVersion.path));
 
           await driver.withFileDriver({
-            clusterId:model.clusterId,
-            user:user.identityId,
+            clusterId: model.clusterId,
+            user: user.identityId,
           }, async (fileDriver) => {
             await fileDriver.unShareFileOrDir(pathToUnshare);
           }, logger);
@@ -670,7 +681,7 @@ export const shareModelVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .use(async ({ input:{ modelId,versionId }, ctx, next }) => {
+  .use(async ({ input: { modelId, versionId }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -691,32 +702,34 @@ export const shareModelVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
-          modelVersionName:modelVersion.versionName,
+          modelName: model.name,
+          modelVersionName: modelVersion.versionName,
         },
       },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           modelId,
           versionId,
-          modelName:model.name,
-          modelVersionName:modelVersion.versionName,
+          modelName: model.name,
+          modelVersionName: modelVersion.versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
   })
-  .mutation(async ({ input:{ modelId, versionId, isPlatformOwned }, ctx: { user } }) => {
+  .mutation(async ({ input: { modelId, versionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     ensureAiUserShareEnabled(isPlatformOwned);
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
@@ -767,8 +780,8 @@ export const shareModelVersion = procedure
     }
 
     await driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
+      clusterId: model.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.checkSharePermission(modelVersion.privatePath, isPlatformOwned);
     }, logger);
@@ -796,8 +809,8 @@ export const shareModelVersion = procedure
     }
 
     const homeDir = await driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
+      clusterId: model.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       return await fileDriver.getHomeDirectory();
     }, logger);
@@ -835,14 +848,14 @@ export const shareModelVersion = procedure
     };
 
     driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
+      clusterId: model.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.shareFileOrDir({
-        sourceFilePath:modelVersion.privatePath ,
-        sharedTarget:SHARED_TARGET.MODEL,
-        targetName:model.name,
-        targetSubName:modelVersion.versionName,
+        sourceFilePath: modelVersion.privatePath,
+        sharedTarget: SHARED_TARGET.MODEL,
+        targetName: model.name,
+        targetSubName: modelVersion.versionName,
         sharedTopDir,
       }, successCallback, failureCallback);
     }, logger);
@@ -865,7 +878,7 @@ export const unShareModelVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .mutation(async ({ input:{ versionId, modelId, isPlatformOwned }, ctx: { user } }) => {
+  .mutation(async ({ input: { versionId, modelId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     ensureAiUserShareEnabled(isPlatformOwned);
     const modelVersion = await em.findOne(ModelVersion, { id: versionId });
@@ -946,15 +959,15 @@ export const unShareModelVersion = procedure
     }
 
     const sharedModelVersionPath =
-    model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-    // 如果还有其他的已分享版本则只取消此版本的分享
-      dirname(modelVersion.path)
-    // 如果没有其他的已分享版本则取消整个算法的分享
-      : dirname(dirname(modelVersion.path));
+      model.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+        // 如果还有其他的已分享版本则只取消此版本的分享
+        dirname(modelVersion.path)
+        // 如果没有其他的已分享版本则取消整个算法的分享
+        : dirname(dirname(modelVersion.path));
 
     driver.withFileDriver({
-      clusterId:model.clusterId,
-      user:user.identityId,
+      clusterId: model.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.unShareFileOrDir(sharedModelVersionPath, successCallback, failureCallback);
     }, logger);
@@ -979,8 +992,8 @@ export const copyPublicModelVersion = procedure
     versionDescription: z.string(),
     path: z.string(),
   }))
-  .output(z.object({ targetModelId:z.number(),targetModelVersionId:z.number() }))
-  .use(async ({ input:{ modelId,versionId,modelName,versionName }, ctx, next }) => {
+  .output(z.object({ targetModelId: z.number(), targetModelVersionId: z.number() }))
+  .use(async ({ input: { modelId, versionId, modelName, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -1001,33 +1014,35 @@ export const copyPublicModelVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `ModelVersion ${versionId} not found` });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
-          sourceModelId:modelId,
-          sourceModelVersionId:versionId,
+          sourceModelId: modelId,
+          sourceModelVersionId: versionId,
           targetModelId: (res.data as any).targetModelId,
           targetModelVersionId: (res.data as any).targetModelVersionId,
-          sourceModelName:model.name,
-          sourceModelVersionName:modelVersion.versionName,
-          targetModelName:modelName,
-          targetModelVersionName:versionName,
+          sourceModelName: model.name,
+          sourceModelVersionName: modelVersion.versionName,
+          targetModelName: modelName,
+          targetModelVersionName: versionName,
         },
       },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
-          sourceModelId:modelId,
-          sourceModelVersionId:versionId,
-          sourceModelName:model.name,
-          sourceModelVersionName:modelVersion.versionName,
-          targetModelName:modelName,
-          targetModelVersionName:versionName,
+          sourceModelId: modelId,
+          sourceModelVersionId: versionId,
+          sourceModelName: model.name,
+          sourceModelVersionName: modelVersion.versionName,
+          targetModelName: modelName,
+          targetModelVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -1038,7 +1053,7 @@ export const copyPublicModelVersion = procedure
     // 1. 检查模型版本是否为公开版本
     const modelVersion = await em.findOne(ModelVersion,
       { id: input.versionId, sharedStatus: SharedStatus.SHARED },
-      { populate: ["model"]});
+      { populate: ["model"] });
 
     if (!modelVersion) {
       throw new TRPCError({
@@ -1063,10 +1078,10 @@ export const copyPublicModelVersion = procedure
     checkClusterAvailable(currentClusterIds, modelVersion.model.$.clusterId);
     // 3. 检查用户是否能将源模型拷贝至目标目录
     await driver.withFileDriver({
-      clusterId:modelVersion.model.$.clusterId,
-      user:user.identityId,
+      clusterId: modelVersion.model.$.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkCopyFilePath(input.path,path.basename(modelVersion.path));
+      await fileDriver.checkCopyFilePath(input.path, path.basename(modelVersion.path));
     }, logger);
 
     // 3. 写入数据
@@ -1079,12 +1094,13 @@ export const copyPublicModelVersion = procedure
       clusterId: modelVersion.model.$.clusterId,
     });
 
+    const targetCopiedPath = path.join(input.path, path.basename(modelVersion.path));
     const newModelVersion = new ModelVersion({
       versionName: input.versionName,
       versionDescription: input.versionDescription,
-      path: input.path,
-      privatePath: input.path,
-      algorithmVersion:modelVersion.algorithmVersion,
+      path: targetCopiedPath,
+      privatePath: targetCopiedPath,
+      algorithmVersion: modelVersion.algorithmVersion,
       model: newModel,
     });
 
@@ -1103,12 +1119,12 @@ export const copyPublicModelVersion = procedure
 
     try {
       await withFileDriver(
-        { clusterId:modelVersion.model.$.clusterId, user:user.identityId },
+        { clusterId: modelVersion.model.$.clusterId, user: user.identityId },
         async (driver) => {
           const cluster = clusters[modelVersion.model.$.clusterId];
 
           await driver.copy(modelVersion.path,
-            cluster.scowd?.enabled ? path.join(input.path,path.basename(modelVersion.path)) : input.path,
+            cluster.scowd?.enabled ? targetCopiedPath : input.path,
             checkIsPublicPathsResult,
           );
         },
@@ -1116,9 +1132,9 @@ export const copyPublicModelVersion = procedure
       );
       // 递归修改文件权限和拥有者
       await withFileDriver(
-        { clusterId:modelVersion.model.$.clusterId, user: user.identityId },
+        { clusterId: modelVersion.model.$.clusterId, user: user.identityId },
         async (driver) => {
-          await driver.chmod(input.path,"0750");
+          await driver.chmod(targetCopiedPath, "0750");
         },
         logger,
       );
@@ -1131,5 +1147,5 @@ export const copyPublicModelVersion = procedure
       });
     }
 
-    return { targetModelId: newModel.id,targetModelVersionId: newModelVersion.id };
+    return { targetModelId: newModel.id, targetModelVersionId: newModelVersion.id };
   });

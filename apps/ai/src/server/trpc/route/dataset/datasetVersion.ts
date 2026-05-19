@@ -230,15 +230,15 @@ export const getAllDatasetVersions = procedure
     const versions =
       datasetIds.length > 0
         ? await em.find(
-            DatasetVersion,
-            {
-              dataset: { $in: datasetIds },
-            },
-            {
-              populate: ["dataset"],
-              orderBy: { createTime: "desc" },
-            },
-          )
+          DatasetVersion,
+          {
+            dataset: { $in: datasetIds },
+          },
+          {
+            populate: ["dataset"],
+            orderBy: { createTime: "desc" },
+          },
+        )
         : [];
 
     const versionMap = buildVersionMap(versions, (version) => version.dataset.id);
@@ -687,11 +687,11 @@ export const deleteDatasetVersion = procedure
 
           const pathToUnshare =
             dataset.versions.filter((v) => v.id !== datasetVersionId && v.sharedStatus === SharedStatus.SHARED).length >
-            0
+              0
               ? // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-                dirname(datasetVersion.path)
+              dirname(datasetVersion.path)
               : // 除了此版本以外没有其他已分享的版本则取消分享整个数据集
-                dirname(dirname(datasetVersion.path));
+              dirname(dirname(datasetVersion.path));
 
           await driver.withFileDriver(
             {
@@ -1068,9 +1068,9 @@ export const unShareDatasetVersion = procedure
     const sharedDatasetVersionPath =
       dataset.versions.filter((v) => v.sharedStatus === SharedStatus.SHARED).length > 0
         ? // 如果还有其他的已分享版本则只取消此版本的分享
-          dirname(datasetVersion.path)
+        dirname(datasetVersion.path)
         : // 如果没有其他的已分享版本则取消整个数据集的分享
-          dirname(dirname(datasetVersion.path));
+        dirname(dirname(datasetVersion.path));
 
     driver.withFileDriver(
       {
@@ -1211,6 +1211,7 @@ export const copyPublicDatasetVersion = procedure
       logger,
     );
 
+    const targetCopiedPath = path.join(input.path, path.basename(datasetVersion.path));
     // 4. 写入数据
     const newDataset = new Dataset({
       name: input.datasetName,
@@ -1224,8 +1225,8 @@ export const copyPublicDatasetVersion = procedure
     const newDatasetVersion = new DatasetVersion({
       versionName: input.versionName,
       versionDescription: input.versionDescription,
-      path: input.path,
-      privatePath: input.path,
+      path: targetCopiedPath,
+      privatePath: targetCopiedPath,
       dataset: newDataset,
     });
 
@@ -1248,7 +1249,7 @@ export const copyPublicDatasetVersion = procedure
           // scowd复制需要再路径最后加上文件夹名
           await driver.copy(
             datasetVersion.path,
-            cluster.scowd?.enabled ? path.join(input.path, path.basename(datasetVersion.path)) : input.path,
+            cluster.scowd?.enabled ? targetCopiedPath : input.path,
             checkIsPublicPathsResult,
           );
         },
@@ -1258,7 +1259,7 @@ export const copyPublicDatasetVersion = procedure
       await withFileDriver(
         { clusterId: datasetVersion.dataset.$.clusterId, user: user.identityId },
         async (driver) => {
-          await driver.chmod(input.path, "0750");
+          await driver.chmod(targetCopiedPath, "0750");
         },
         logger,
       );

@@ -50,24 +50,26 @@ export const getAlgorithmVersions = procedure
   .input(z.object({
     ...paginationSchema.shape,
     algorithmId: z.number(),
-    isPublic:booleanQueryParam().optional(),
+    isPublic: booleanQueryParam().optional(),
   }))
-  .output(z.object({ items: z.array(z.object({
-    id:z.number(),
-    versionName:z.string(),
-    versionDescription:z.string().optional(),
-    path:z.string(),
-    privatePath: z.string(),
-    sharedStatus:z.enum(SharedStatus),
-    createTime:z.string().optional(),
-    updateTime: z.string().optional(),
-  })), count: z.number() }))
-  .query(async ({ input:{ algorithmId, page, pageSize, isPublic } }) => {
+  .output(z.object({
+    items: z.array(z.object({
+      id: z.number(),
+      versionName: z.string(),
+      versionDescription: z.string().optional(),
+      path: z.string(),
+      privatePath: z.string(),
+      sharedStatus: z.enum(SharedStatus),
+      createTime: z.string().optional(),
+      updateTime: z.string().optional(),
+    })), count: z.number()
+  }))
+  .query(async ({ input: { algorithmId, page, pageSize, isPublic } }) => {
     const em = await forkEntityManager();
     const [items, count] = await em.findAndCount(AlgorithmVersion,
       {
         algorithm: algorithmId,
-        ...isPublic ? { sharedStatus:SharedStatus.SHARED } : {},
+        ...isPublic ? { sharedStatus: SharedStatus.SHARED } : {},
       },
       {
         populate: ["algorithm"],
@@ -75,20 +77,22 @@ export const getAlgorithmVersions = procedure
         orderBy: { createTime: "desc" },
       });
 
-    return { items:items.map((x) => {
-      const createTime = x.createTime ? x.createTime.toISOString() : undefined;
-      const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
-      return {
-        id:x.id,
-        versionName:x.versionName,
-        versionDescription:x.versionDescription,
-        sharedStatus:x.sharedStatus,
-        createTime,
-        path:x.path,
-        privatePath: x.privatePath,
-        updateTime: updateTime ?? createTime,
-      };
-    }), count };
+    return {
+      items: items.map((x) => {
+        const createTime = x.createTime ? x.createTime.toISOString() : undefined;
+        const updateTime = x.updateTime ? x.updateTime.toISOString() : undefined;
+        return {
+          id: x.id,
+          versionName: x.versionName,
+          versionDescription: x.versionDescription,
+          sharedStatus: x.sharedStatus,
+          createTime,
+          path: x.path,
+          privatePath: x.privatePath,
+          updateTime: updateTime ?? createTime,
+        };
+      }), count
+    };
   });
 
 export const getMultipleAlgorithmVersions = procedure
@@ -103,23 +107,25 @@ export const getMultipleAlgorithmVersions = procedure
   .input(z.object({
     ...paginationSchema.shape,
     algorithmIds: z.array(z.number()),
-    isPublic:booleanQueryParam().optional(),
+    isPublic: booleanQueryParam().optional(),
   }))
   .output(
     z.array(
-      z.object({ items: z.array(z.object({
-        id:z.number(),
-        versionName:z.string(),
-        versionDescription:z.string().optional(),
-        path:z.string(),
-        privatePath: z.string(),
-        sharedStatus:z.enum(SharedStatus),
-        createTime:z.string().optional(),
-        updateTime: z.string().optional(),
-      })), count: z.number() }),
+      z.object({
+        items: z.array(z.object({
+          id: z.number(),
+          versionName: z.string(),
+          versionDescription: z.string().optional(),
+          path: z.string(),
+          privatePath: z.string(),
+          sharedStatus: z.enum(SharedStatus),
+          createTime: z.string().optional(),
+          updateTime: z.string().optional(),
+        })), count: z.number()
+      }),
     ),
   )
-  .query(async ({ input:{ algorithmIds, isPublic, page, pageSize } }) => {
+  .query(async ({ input: { algorithmIds, isPublic, page, pageSize } }) => {
     const em = await forkEntityManager();
 
     const items = await em.find(AlgorithmVersion,
@@ -166,7 +172,7 @@ const AlgorithmGroupSchema = z.object({
   versions: z.array(AlgorithmVersionItemSchema),
   ownerName: z.string().optional(),
   ownerId: z.string().optional(),
-  isPlatformOwned:z.boolean(),
+  isPlatformOwned: z.boolean(),
 });
 
 export const getAllAlgorithmVersions = procedure
@@ -185,7 +191,7 @@ export const getAllAlgorithmVersions = procedure
     personal: z.array(AlgorithmGroupSchema),
     public: z.array(AlgorithmGroupSchema),
   }))
-  .query(async ({ input:{ clusterId },ctx: { user } }) => {
+  .query(async ({ input: { clusterId }, ctx: { user } }) => {
     const em = await forkEntityManager();
 
     const personalAlgorithms = await em.find(Algorithm, {
@@ -264,7 +270,7 @@ export const createAlgorithmVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ algorithmId,versionName }, ctx, next }) => {
+  .use(async ({ input: { algorithmId, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -279,25 +285,27 @@ export const createAlgorithmVersion = procedure
     if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not Found` });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId,
-        versionId:(res.data as any).id,
-        algorithmName:algorithm.name,
-        algorithmVersionName:versionName,
+      await callLog({
+        ...logInfo, operationTypePayload: {
+          algorithmId,
+          versionId: (res.data as any).id,
+          algorithmName: algorithm.name,
+          algorithmVersionName: versionName,
+        },
       },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           algorithmId,
-          algorithmName:algorithm.name,
-          algorithmVersionName:versionName,
+          algorithmName: algorithm.name,
+          algorithmVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -342,8 +350,8 @@ export const createAlgorithmVersion = procedure
 
     // 检查目录是否存在
     await driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
+      clusterId: algorithm.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.checkCreateResourcePath(path, noCheckPermission);
     }, logger);
@@ -379,7 +387,7 @@ export const updateAlgorithmVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.object({ id: z.number() }))
-  .use(async ({ input:{ algorithmId,algorithmVersionId,versionName }, ctx, next }) => {
+  .use(async ({ input: { algorithmId, algorithmVersionId, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -395,26 +403,28 @@ export const updateAlgorithmVersion = procedure
     if (!algorithm) throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} not found` });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId,
-        versionId:algorithmVersionId,
-        algorithmName:algorithm.name,
-        algorithmVersionName: versionName,
-      },
-      },
-      OperationResult.SUCCESS);
-    }
-
-    if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-        {
+      await callLog({
+        ...logInfo, operationTypePayload: {
           algorithmId,
-          versionId:algorithmVersionId,
-          algorithmName:algorithm.name,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
           algorithmVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.SUCCESS);
+    }
+
+    if (!res.ok) {
+      await callLog({
+        ...logInfo, operationTypePayload:
+        {
+          algorithmId,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
+          algorithmVersionName: versionName,
+        },
+      },
+        OperationResult.FAIL);
     }
 
     return res;
@@ -467,16 +477,16 @@ export const updateAlgorithmVersion = procedure
     }
 
     const needUpdateSharedPath = algorithmVersion.sharedStatus === SharedStatus.SHARED
-    && versionName !== algorithmVersion.versionName;
+      && versionName !== algorithmVersion.versionName;
 
     // 更新已分享目录下的版本路径名称
     if (needUpdateSharedPath && !isPlatformOwned) {
       // 获取更新后的已分享版本路径
       const newVersionSharedPath = await driver.withFileDriver({
-        clusterId:algorithm.clusterId,
-        user:user.identityId,
+        clusterId: algorithm.clusterId,
+        user: user.identityId,
       }, async (fileDriver) => {
-        return await fileDriver.getUpdatedSharedPath(versionName,dirname(algorithmVersion.path));
+        return await fileDriver.getUpdatedSharedPath(versionName, dirname(algorithmVersion.path));
       }, logger);
 
       const baseFolderName = basename(algorithmVersion.path);
@@ -502,11 +512,11 @@ export const deleteAlgorithmVersion = procedure
   })
   .input(z.object({
     algorithmVersionId: z.number(),
-    algorithmId:z.number(),
+    algorithmId: z.number(),
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
+  .use(async ({ input: { algorithmId, algorithmVersionId }, ctx, next }) => {
 
     const { user, req } = ctx;
     const logInfo = {
@@ -516,7 +526,7 @@ export const deleteAlgorithmVersion = procedure
     };
 
     const em = await forkEntityManager();
-    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
 
     const algorithm = await em.findOne(Algorithm, { id: algorithmId });
@@ -526,37 +536,39 @@ export const deleteAlgorithmVersion = procedure
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId,
-        versionId:algorithmVersionId,
-        algorithmName:algorithm.name,
-        algorithmVersionName:algorithmVersion.versionName,
+      await callLog({
+        ...logInfo, operationTypePayload: {
+          algorithmId,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
+          algorithmVersionName: algorithmVersion.versionName,
+        },
       },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           algorithmId,
-          versionId:algorithmVersionId,
-          algorithmName:algorithm.name,
-          algorithmVersionName:algorithmVersion.versionName,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
+          algorithmVersionName: algorithmVersion.versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
   })
-  .mutation(async ({ input:{ algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
+  .mutation(async ({ input: { algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
-    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
 
     const algorithm = await em.findOne(Algorithm, { id: algorithmId },
-      { populate: ["versions.sharedStatus"]});
+      { populate: ["versions.sharedStatus"] });
     if (!algorithm)
       throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
 
@@ -584,8 +596,10 @@ export const deleteAlgorithmVersion = procedure
     if (!isPlatformOwned && algorithmVersion.sharedStatus === SharedStatus.SHARING
       || algorithmVersion.sharedStatus === SharedStatus.UNSHARING) {
       throw new TRPCError(
-        { code: "PRECONDITION_FAILED",
-          message: `AlgorithmVersion (id:${algorithmVersionId}) is currently being shared or unshared` });
+        {
+          code: "PRECONDITION_FAILED",
+          message: `AlgorithmVersion (id:${algorithmVersionId}) is currently being shared or unshared`
+        });
     }
 
     // 如果是已分享的算法版本，则删除分享; 如果是公共数据资产则不删除分享文件夹
@@ -597,23 +611,23 @@ export const deleteAlgorithmVersion = procedure
       if (!isPlatformOwned) {
         try {
           await driver.withFileDriver({
-            clusterId:algorithm.clusterId,
-            user:user.identityId,
+            clusterId: algorithm.clusterId,
+            user: user.identityId,
           }, async (fileDriver) => {
             await fileDriver.checkSharePermission(algorithmVersion.privatePath);
           }, logger);
 
           const pathToUnshare
-          = algorithm.versions.filter((v) =>
-            (v.id !== algorithmVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-          // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
-            dirname(algorithmVersion.path)
-          // 除了此版本以外没有其他已分享的版本则取消分享整个算法
-            : dirname(dirname(algorithmVersion.path));
+            = algorithm.versions.filter((v) =>
+              (v.id !== algorithmVersionId && v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+              // 除了此版本以外仍有其他已分享的版本则取消分享当前版本
+              dirname(algorithmVersion.path)
+              // 除了此版本以外没有其他已分享的版本则取消分享整个算法
+              : dirname(dirname(algorithmVersion.path));
 
           await driver.withFileDriver({
-            clusterId:algorithm.clusterId,
-            user:user.identityId,
+            clusterId: algorithm.clusterId,
+            user: user.identityId,
           }, async (fileDriver) => {
             await fileDriver.unShareFileOrDir(pathToUnshare);
           }, logger);
@@ -649,7 +663,7 @@ export const shareAlgorithmVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .use(async ({ input:{ algorithmId,algorithmVersionId }, ctx, next }) => {
+  .use(async ({ input: { algorithmId, algorithmVersionId }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -660,7 +674,7 @@ export const shareAlgorithmVersion = procedure
     };
 
     const em = await forkEntityManager();
-    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
 
     const algorithm = await em.findOne(Algorithm, { id: algorithmId });
@@ -669,31 +683,33 @@ export const shareAlgorithmVersion = procedure
 
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId,
-        versionId:algorithmVersionId,
-        algorithmName:algorithm.name,
-        algorithmVersionName:algorithmVersion.versionName,
+      await callLog({
+        ...logInfo, operationTypePayload: {
+          algorithmId,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
+          algorithmVersionName: algorithmVersion.versionName,
+        },
       },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
           algorithmId,
-          versionId:algorithmVersionId,
-          algorithmName:algorithm.name,
-          algorithmVersionName:algorithmVersion.versionName,
+          versionId: algorithmVersionId,
+          algorithmName: algorithm.name,
+          algorithmVersionName: algorithmVersion.versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
   })
-  .mutation(async ({ input:{ algorithmId, algorithmVersionId, isPlatformOwned }, ctx: { user } }) => {
+  .mutation(async ({ input: { algorithmId, algorithmVersionId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     ensureAiUserShareEnabled(isPlatformOwned);
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
@@ -744,8 +760,8 @@ export const shareAlgorithmVersion = procedure
     }
 
     await driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
+      clusterId: algorithm.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.checkSharePermission(algorithmVersion.privatePath, isPlatformOwned);
     }, logger);
@@ -774,8 +790,8 @@ export const shareAlgorithmVersion = procedure
     }
 
     const homeDir = await driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
+      clusterId: algorithm.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       return await fileDriver.getHomeDirectory();
     }, logger);
@@ -812,14 +828,14 @@ export const shareAlgorithmVersion = procedure
     };
 
     driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
+      clusterId: algorithm.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.shareFileOrDir({
-        sourceFilePath:algorithmVersion.privatePath ,
-        sharedTarget:SHARED_TARGET.ALGORITHM,
-        targetName:algorithm.name,
-        targetSubName:algorithmVersion.versionName,
+        sourceFilePath: algorithmVersion.privatePath,
+        sharedTarget: SHARED_TARGET.ALGORITHM,
+        targetName: algorithm.name,
+        targetSubName: algorithmVersion.versionName,
         sharedTopDir,
       }, successCallback, failureCallback);
     }, logger);
@@ -842,7 +858,7 @@ export const unShareAlgorithmVersion = procedure
     isPlatformOwned: z.boolean().optional(),
   }))
   .output(z.void())
-  .mutation(async ({ input:{ algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
+  .mutation(async ({ input: { algorithmVersionId, algorithmId, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     ensureAiUserShareEnabled(isPlatformOwned);
     const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
@@ -926,15 +942,15 @@ export const unShareAlgorithmVersion = procedure
     }
 
     const sharedAlgorithmVersionPath =
-    algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
-    // 如果还有其他的已分享版本则只取消此版本的分享
-      dirname(algorithmVersion.path)
-    // 如果没有其他的已分享版本则取消整个算法的分享
-      : dirname(dirname(algorithmVersion.path));
+      algorithm.versions.filter((v) => (v.sharedStatus === SharedStatus.SHARED)).length > 0 ?
+        // 如果还有其他的已分享版本则只取消此版本的分享
+        dirname(algorithmVersion.path)
+        // 如果没有其他的已分享版本则取消整个算法的分享
+        : dirname(dirname(algorithmVersion.path));
 
     driver.withFileDriver({
-      clusterId:algorithm.clusterId,
-      user:user.identityId,
+      clusterId: algorithm.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
       await fileDriver.unShareFileOrDir(sharedAlgorithmVersionPath, successCallback, failureCallback);
     }, logger);
@@ -958,8 +974,8 @@ export const copyPublicAlgorithmVersion = procedure
     versionDescription: z.string(),
     path: z.string(),
   }))
-  .output(z.object({ targetAlgorithmId:z.number(),targetAlgorithmVersionId:z.number() }))
-  .use(async ({ input:{ algorithmId,algorithmVersionId,algorithmName,versionName }, ctx, next }) => {
+  .output(z.object({ targetAlgorithmId: z.number(), targetAlgorithmVersionId: z.number() }))
+  .use(async ({ input: { algorithmId, algorithmVersionId, algorithmName, versionName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -970,7 +986,7 @@ export const copyPublicAlgorithmVersion = procedure
     };
 
     const em = await forkEntityManager();
-    const algorithmVersion = await em.findOne(AlgorithmVersion, { id:algorithmVersionId });
+    const algorithmVersion = await em.findOne(AlgorithmVersion, { id: algorithmVersionId });
     if (!algorithmVersion) throw new Error(`AlgorithmVersion id:${algorithmVersionId} not found`);
 
     const algorithm = await em.findOne(Algorithm, { id: algorithmId });
@@ -978,31 +994,34 @@ export const copyPublicAlgorithmVersion = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `Algorithm id:${algorithmId} is not found` });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        sourceAlgorithmId:algorithmId,
-        sourceAlgorithmVersionId:algorithmVersionId,
-        targetAlgorithmId: (res.data as any).targetAlgorithmId,
-        targetAlgorithmVersionId: (res.data as any).targetAlgorithmVersionId,
-        sourceAlgorithmName:algorithm.name,
-        sourceAlgorithmVersionName:algorithmVersion.versionName,
-        targetAlgorithmName:algorithmName,
-        targetAlgorithmVersionName:versionName,
-      } },
-      OperationResult.SUCCESS);
+      await callLog({
+        ...logInfo, operationTypePayload: {
+          sourceAlgorithmId: algorithmId,
+          sourceAlgorithmVersionId: algorithmVersionId,
+          targetAlgorithmId: (res.data as any).targetAlgorithmId,
+          targetAlgorithmVersionId: (res.data as any).targetAlgorithmVersionId,
+          sourceAlgorithmName: algorithm.name,
+          sourceAlgorithmVersionName: algorithmVersion.versionName,
+          targetAlgorithmName: algorithmName,
+          targetAlgorithmVersionName: versionName,
+        }
+      },
+        OperationResult.SUCCESS);
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog({
+        ...logInfo, operationTypePayload:
         {
-          sourceAlgorithmId:algorithmId,
-          sourceAlgorithmVersionId:algorithmVersionId,
-          sourceAlgorithmName:algorithm.name,
-          sourceAlgorithmVersionName:algorithmVersion.versionName,
-          targetAlgorithmName:algorithmName,
-          targetAlgorithmVersionName:versionName,
+          sourceAlgorithmId: algorithmId,
+          sourceAlgorithmVersionId: algorithmVersionId,
+          sourceAlgorithmName: algorithm.name,
+          sourceAlgorithmVersionName: algorithmVersion.versionName,
+          targetAlgorithmName: algorithmName,
+          targetAlgorithmVersionName: versionName,
         },
       },
-      OperationResult.FAIL);
+        OperationResult.FAIL);
     }
 
     return res;
@@ -1013,7 +1032,7 @@ export const copyPublicAlgorithmVersion = procedure
     // 1. 检查算法版本是否为公开版本
     const algorithmVersion = await em.findOne(AlgorithmVersion,
       { id: input.algorithmVersionId, sharedStatus: SharedStatus.SHARED },
-      { populate: ["algorithm"]});
+      { populate: ["algorithm"] });
 
     if (!algorithmVersion) {
       throw new TRPCError({
@@ -1039,12 +1058,13 @@ export const copyPublicAlgorithmVersion = procedure
     // 3. 检查用户是否可以将源算法拷贝至目标目录
 
     await driver.withFileDriver({
-      clusterId:algorithmVersion.algorithm.$.clusterId,
-      user:user.identityId,
+      clusterId: algorithmVersion.algorithm.$.clusterId,
+      user: user.identityId,
     }, async (fileDriver) => {
-      await fileDriver.checkCopyFilePath(input.path,path.basename(algorithmVersion.path));
+      await fileDriver.checkCopyFilePath(input.path, path.basename(algorithmVersion.path));
     }, logger);
 
+    const targetCopiedPath = path.join(input.path, path.basename(algorithmVersion.path));
     // 4. 写入数据
     const newAlgorithm = new Algorithm({
       name: input.algorithmName,
@@ -1057,8 +1077,8 @@ export const copyPublicAlgorithmVersion = procedure
     const newAlgorithmVersion = new AlgorithmVersion({
       versionName: input.versionName,
       versionDescription: input.versionDescription,
-      path: input.path,
-      privatePath: input.path,
+      path: targetCopiedPath,
+      privatePath: targetCopiedPath,
       algorithm: newAlgorithm,
     });
 
@@ -1075,24 +1095,25 @@ export const copyPublicAlgorithmVersion = procedure
       });
     }
 
+
     try {
       await withFileDriver(
-        { clusterId:algorithmVersion.algorithm.$.clusterId, user:user.identityId },
+        { clusterId: algorithmVersion.algorithm.$.clusterId, user: user.identityId },
         async (driver) => {
           const cluster = clusters[algorithmVersion.algorithm.$.clusterId];
 
           // scowd复制需要再路径最后加上文件夹名
           await driver.copy(algorithmVersion.path,
-            cluster.scowd?.enabled ? path.join(input.path,path.basename(algorithmVersion.path)) : input.path,
+            cluster.scowd?.enabled ? targetCopiedPath : input.path,
             checkIsPublicPathsResult);
         },
         logger,
       );
       // 递归修改文件权限和拥有者
       await withFileDriver(
-        { clusterId:algorithmVersion.algorithm.$.clusterId, user: user.identityId },
+        { clusterId: algorithmVersion.algorithm.$.clusterId, user: user.identityId },
         async (driver) => {
-          await driver.chmod(input.path,"0750");
+          await driver.chmod(targetCopiedPath, "0750");
         },
         logger,
       );
@@ -1105,5 +1126,5 @@ export const copyPublicAlgorithmVersion = procedure
       });
     }
 
-    return { targetAlgorithmId:newAlgorithm.id, targetAlgorithmVersionId:newAlgorithmVersion.id };
+    return { targetAlgorithmId: newAlgorithm.id, targetAlgorithmVersionId: newAlgorithmVersion.id };
   });
