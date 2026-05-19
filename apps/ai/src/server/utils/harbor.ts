@@ -92,6 +92,16 @@ export class HarborClient {
     return artifacts;
   }
 
+  async projectExists(projectName: string): Promise<boolean> {
+    const res = await fetch(`${this.base}/projects/${projectName}`, {
+      headers: { Authorization: this.authHeader, Accept: "application/json" },
+    });
+    if (res.ok) return true;
+    if (res.status === 404) return false;
+    const msg = await res.text().catch(() => "");
+    throw new Error(`Failed to check project ${projectName}: ${res.status} ${msg}`);
+  }
+
   async ensureProjectExists(projectName: string) {
     logger.info(`[Harbor] ensure project ${projectName}`);
     const head = await fetch(`${this.base}/projects/${projectName}`, {

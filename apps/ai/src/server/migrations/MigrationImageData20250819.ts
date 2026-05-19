@@ -56,6 +56,12 @@ export class MigrationImageData20250819 extends Migration {
 
     logger.info("=== [Harbor Copy] Start ===");
     const harbor = new HarborClient(harborConfig);
+
+    if (!await harbor.projectExists(project)) {
+      logger.info(`[SKIP] Harbor project "${project}" does not exist. Skip migration.`);
+      return;
+    }
+
     await runHarborCopy(harbor, project); // 任意非 409 错误会 throw，中断迁移（DB 不改）
     logger.info("=== [Harbor Copy] Done. Proceed to DB UPDATE ===");
 
