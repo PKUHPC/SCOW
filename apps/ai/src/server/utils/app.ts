@@ -22,7 +22,6 @@ import { TrainJobInput } from "../trpc/route/jobs/jobs";
 import { wrap } from "../trpc/scowd/scowd";
 
 export const getClusterAppConfigs = (cluster: string) => {
-
   const commonApps = getAiAppConfigs();
 
   const clusterAppsConfigs = getAiAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
@@ -38,16 +37,14 @@ export const getClusterAppConfigs = (cluster: string) => {
   }
 
   return apps;
-
 };
 
 type AppConfigWithClusterSpecific = AppConfigSchema & {
   clusterSpecificConfigs?: {
-    cluster: string,
-    config: AppConfigSchema,
-  }[]
+    cluster: string;
+    config: AppConfigSchema;
+  }[];
 };
-
 
 export const getAllAppConfigs = (clusters: Record<string, ClusterConfigSchema>) => {
   const commonApps = getAiAppConfigs();
@@ -58,11 +55,9 @@ export const getAllAppConfigs = (clusters: Record<string, ClusterConfigSchema>) 
     apps[key] = value;
   }
 
-
   Object.keys(clusters).forEach((cluster) => {
     const clusterAppsConfigs = getAiAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
     for (const [key, value] of Object.entries(clusterAppsConfigs)) {
-
       const specificConfig = {
         cluster,
         config: value,
@@ -83,7 +78,6 @@ export const getAllAppConfigs = (clusters: Record<string, ClusterConfigSchema>) 
 };
 
 export const allApps = getAllAppConfigs(clusters);
-
 
 // 获取所有应用的标签集合
 export const getAllTags = (allApps: Record<string, AppConfigWithClusterSpecific>): string[] => {
@@ -120,10 +114,7 @@ const getVersions = async <T>(
   const uniqueIds = [...new Set(ids)];
 
   // 批量查询版本
-  const versions = await em.find(entity,
-    { id: { $in: uniqueIds } },
-    { populate },
-  );
+  const versions = await em.find(entity, { id: { $in: uniqueIds } }, { populate });
 
   // 检查是否所有版本都存在
   const missingIds = uniqueIds.filter((id) => !versions.some((version: any) => version.id === id));
@@ -157,37 +148,28 @@ const getVersions = async <T>(
  * @returns datasetVersion, algorithmVersion, modelVersion, image
  * @throws TRPCError if dataset, algorithm, image, model is not found
  */
-export const checkCreateAppEntity = async ({ em, datasets, algorithms, image, models }: {
-  em: EntityManager,
-  datasets: number[] | undefined,
-  algorithms: number[] | undefined,
-  image: number | undefined,
-  models: number[] | undefined
+export const checkCreateAppEntity = async ({
+  em,
+  datasets,
+  algorithms,
+  image,
+  models,
+}: {
+  em: EntityManager;
+  datasets: number[] | undefined;
+  algorithms: number[] | undefined;
+  image: number | undefined;
+  models: number[] | undefined;
 }) => {
+  const algorithmVersions = algorithms
+    ? await getVersions<AlgorithmVersion>(em, AlgorithmVersion, algorithms, ["algorithm"], "algorithm")
+    : [];
 
-  const algorithmVersions = algorithms ? await getVersions<AlgorithmVersion>(
-    em,
-    AlgorithmVersion,
-    algorithms,
-    ["algorithm"],
-    "algorithm",
-  ) : [];
+  const datasetVersions = datasets
+    ? await getVersions<DatasetVersion>(em, DatasetVersion, datasets, ["dataset"], "dataset")
+    : [];
 
-  const datasetVersions = datasets ? await getVersions<DatasetVersion>(
-    em,
-    DatasetVersion,
-    datasets,
-    ["dataset"],
-    "dataset",
-  ) : [];
-
-  const modelVersions = models ? await getVersions<ModelVersion>(
-    em,
-    ModelVersion,
-    models,
-    ["model"],
-    "model",
-  ) : [];
+  const modelVersions = models ? await getVersions<ModelVersion>(em, ModelVersion, models, ["model"], "model") : [];
 
   let imageOutput: ImageEntity | undefined;
   if (image !== undefined) {
@@ -210,9 +192,7 @@ export const checkCreateAppEntity = async ({ em, datasets, algorithms, image, mo
   };
 };
 
-
 export const checkAppExist = (apps: Record<string, AppConfigSchema>, appId: string) => {
-
   const app = apps[appId];
   if (!app) {
     throw new TRPCError({
@@ -223,15 +203,13 @@ export const checkAppExist = (apps: Record<string, AppConfigSchema>, appId: stri
   return app;
 };
 
-
-export const sshFetchJobInputParams = async<T> (
+export const sshFetchJobInputParams = async <T>(
   inputParamsPath: string,
   sftp: SFTPWrapper,
   schema: z.ZodSchema<T>,
   logger: Logger,
 ): Promise<T> => {
-
-  if (!await sftpExists(sftp, inputParamsPath)) {
+  if (!(await sftpExists(sftp, inputParamsPath))) {
     throw new TRPCError({
       code: "NOT_FOUND",
       message: `Input params file ${inputParamsPath} is not found`,
@@ -244,7 +222,6 @@ export const sshFetchJobInputParams = async<T> (
     const normalizedContent = normalizeLegacyMountPoints(parsedContent);
     return schema.parse(normalizedContent);
   } catch (e) {
-
     logger.error(`Failed to parse input params file ${inputParamsPath}: ${e as any}`);
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -280,14 +257,13 @@ const normalizeLegacyMountPoints = (input: unknown) => {
   };
 };
 
-export const scowdFetchJobInputParams = async<T> (
+export const scowdFetchJobInputParams = async <T>(
   userId: string,
   inputParamsPath: string,
   scowdClient: ScowdClient,
   schema: z.ZodSchema<T>,
   logger: Logger,
 ): Promise<T> => {
-
   const inputContent = await wrap(
     scowdClient.file.readFile({
       userId,
@@ -301,7 +277,6 @@ export const scowdFetchJobInputParams = async<T> (
 };
 
 export const validateUniquePaths = (paths: (string | undefined)[]) => {
-
   // 移除尾随斜杠并返回规范化的路径
   const normalizedPaths = paths.map((path) => path?.replace(/\/+$/, ""));
   const pathSet = new Set();
@@ -319,8 +294,8 @@ export const validateUniquePaths = (paths: (string | undefined)[]) => {
   }
 };
 
-export const genPublicOrPrivateDataJsonString = (path: string | undefined,isPublic: boolean) =>
-  JSON.stringify({ path,isPublic });
+export const genPublicOrPrivateDataJsonString = (path: string | undefined, isPublic: boolean) =>
+  JSON.stringify({ path, isPublic });
 
 const checkEntityAccess = ({
   entity,
@@ -341,14 +316,19 @@ const checkEntityAccess = ({
   }
 };
 
-export const checkEntityAuth = ({ datasetVersions, algorithmVersions,modelVersions, image, userId }: {
-  datasetVersions: DatasetVersion [],
-  algorithmVersions: AlgorithmVersion[],
-  modelVersions: ModelVersion [],
-  image: ImageEntity | undefined,
-  userId: string,
+export const checkEntityAuth = ({
+  datasetVersions,
+  algorithmVersions,
+  modelVersions,
+  image,
+  userId,
+}: {
+  datasetVersions: DatasetVersion[];
+  algorithmVersions: AlgorithmVersion[];
+  modelVersions: ModelVersion[];
+  image: ImageEntity | undefined;
+  userId: string;
 }) => {
-
   datasetVersions.forEach((datasetVersion) => {
     checkEntityAccess({
       entity: datasetVersion.dataset.getEntity(),
@@ -389,62 +369,52 @@ export function formatJobDetailsExtraInputs(
   inputParams: CreateAppInput | TrainJobInput | InferenceJobInput,
   extraDisplayInputs: ExtraDisplayInputs,
 ): ExtraDisplayInputs {
-
   const result = {
     ...extraDisplayInputs,
     ...inputParams,
-    isDefaultImage: (!inputParams.remoteImageUrl && !inputParams.image),
+    isDefaultImage: !inputParams.remoteImageUrl && !inputParams.image,
     imageNameOrUrl: inputParams.image ? inputParams.localImageName : inputParams.remoteImageUrl,
-    modelNames:
-    inputParams.models ?
-      inputParams.models
-        .filter((x) => x.currentNameVersion !== undefined)
-        .map((m) => m.currentNameVersion)
+    modelNames: inputParams.models
+      ? inputParams.models.filter((x) => x.currentNameVersion !== undefined).map((m) => m.currentNameVersion)
       : [],
-    startCommand: "startCommand" in inputParams
-      ? inputParams.startCommand
-      : "command" in inputParams
-        ? inputParams.command
+    startCommand:
+      "startCommand" in inputParams
+        ? inputParams.startCommand
+        : "command" in inputParams
+          ? inputParams.command
+          : undefined,
+    mountPoints:
+      "mountPoints" in inputParams
+        ? (inputParams.mountPoints ?? []).map((point) => {
+            const path = point?.path ?? "";
+            const target = point?.target ?? "";
+            return {
+              path,
+              target,
+            };
+          })
         : undefined,
-    mountPoints: "mountPoints" in inputParams
-      ? (inputParams.mountPoints ?? []).map((point) => {
-        const path = point?.path ?? "";
-        const target = point?.target ?? "";
-        return {
-          path,
-          target,
-        };
-      })
-      : undefined,
   };
 
   if ("datasets" in inputParams && "algorithms" in inputParams) {
     return {
-      ... result,
-      datasetNames:
-      inputParams.datasets ?
-        inputParams.datasets
-          .filter((x) => x.currentNameVersion !== undefined)
-          .map((d) => d.currentNameVersion)
+      ...result,
+      datasetNames: inputParams.datasets
+        ? inputParams.datasets.filter((x) => x.currentNameVersion !== undefined).map((d) => d.currentNameVersion)
         : [],
-      algorithmNames:
-        inputParams.algorithms ?
-          inputParams.algorithms
-            .filter((x) => x.currentNameVersion !== undefined)
-            .map((a) => a.currentNameVersion)
-          : [],
+      algorithmNames: inputParams.algorithms
+        ? inputParams.algorithms.filter((x) => x.currentNameVersion !== undefined).map((a) => a.currentNameVersion)
+        : [],
     };
   }
 
   return result;
-
 }
 
 const NON_UTF8_PREFIX = "scow-enc-";
 
-export const hasNonUtf8Segment = (targetPath: string) => (
+export const hasNonUtf8Segment = (targetPath: string) =>
   targetPath
     .split("/")
     .filter(Boolean)
-    .some((segment) => segment.startsWith(NON_UTF8_PREFIX))
-);
+    .some((segment) => segment.startsWith(NON_UTF8_PREFIX));

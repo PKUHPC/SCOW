@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -67,7 +55,8 @@ it("sets job charge limit", async () => {
   expect(ua.jobChargeLimit).toBeUndefined();
 
   await asyncClientCall(client, "setJobChargeLimit", {
-    ...params(ua), limit: decimalToMoney(limit),
+    ...params(ua),
+    limit: decimalToMoney(limit),
   });
 
   await reloadEntity(em, ua);
@@ -96,7 +85,6 @@ it("changes job charge limit", async () => {
 });
 
 it("cannot change job charge limit when the limit < usedJobCharge", async () => {
-
   const limit = new Decimal(100);
 
   ua.jobChargeLimit = limit;
@@ -109,7 +97,9 @@ it("cannot change job charge limit when the limit < usedJobCharge", async () => 
   const newLimit = new Decimal(20);
 
   const reply = await asyncClientCall(client, "setJobChargeLimit", {
-    ...params(ua), limit: decimalToMoney(newLimit) }).catch((e) => e);
+    ...params(ua),
+    limit: decimalToMoney(newLimit),
+  }).catch((e) => e);
 
   expect(reply.code).toBe(Status.INVALID_ARGUMENT);
 });
@@ -145,10 +135,14 @@ it("unlocking user while cancels job charge limit and state is NORMAL", async ()
 
   await asyncClientCall(client, "cancelJobChargeLimit", { ...params(ua) });
 
-  const ua1 = await em.fork().findOneOrFail(UserAccount, {
-    account: ua.account,
-    user: ua.user,
-  }, { populate: ["user", "account"]});
+  const ua1 = await em.fork().findOneOrFail(
+    UserAccount,
+    {
+      account: ua.account,
+      user: ua.user,
+    },
+    { populate: ["user", "account"] },
+  );
 
   expect(ua1.jobChargeLimit).toBeUndefined();
   expect(ua1.usedJobCharge).toBeUndefined();
@@ -169,10 +163,14 @@ it("still block user while cancels job charge limit and state is BLOCKED_BY_ADMI
 
   await asyncClientCall(client, "cancelJobChargeLimit", { ...params(ua) });
 
-  const ua1 = await em.fork().findOneOrFail(UserAccount, {
-    account: ua.account,
-    user: ua.user,
-  }, { populate: ["user", "account"]});
+  const ua1 = await em.fork().findOneOrFail(
+    UserAccount,
+    {
+      account: ua.account,
+      user: ua.user,
+    },
+    { populate: ["user", "account"] },
+  );
 
   expect(ua1.jobChargeLimit).toBeUndefined();
   expect(ua1.usedJobCharge).toBeUndefined();
@@ -250,7 +248,6 @@ it("unblocked user if limit is changed to > used", async () => {
   await reloadEntity(em, ua);
   expectDecimalEqual(ua.jobChargeLimit, newLimit);
   expect(ua.blockedInCluster).toBe(UserStatus.UNBLOCKED);
-
 });
 
 it("unblocks user if limit > used is positive and state is normal", async () => {
@@ -294,9 +291,7 @@ it("still block user if limit > used is positive and state is BLOCKED_BY_ADMIN",
   expect(ua.state).toBe(UserStateInAccount.BLOCKED_BY_ADMIN);
 });
 
-
 it("does nothing if no limit", async () => {
-
   const charge = new Decimal(120.4);
 
   const currentActivatedClusters = await getActivatedClusters(em, server.logger);

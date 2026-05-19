@@ -18,7 +18,6 @@ export const TaskStateSchema = z.union([
   z.literal("hold"),
 ]);
 
-
 // 这是/task/submit 接口提交的任务信息
 export const SubmittedTaskSchema = z.object({
   id: z.string().optional(),
@@ -49,19 +48,21 @@ export type SubmittedTask = z.infer<typeof SubmittedTaskSchema>;
 // jupyter调用提交作业时处理后的数据格式
 export const SubmitTaskRequestSchema = z.object({
   accountName: z.string(),
-  tasks: z.array(z.object({
-    name: z.string().optional(),
-    device: z.string(),
-    shots: z.number(),
-    group: z.string().optional().nullable(),
-    tags: z.string().optional(),
-    source: z.string(),
-    version: z.string().optional(),
-    lang: z.string().optional(),
-    remarks: z.string().optional().nullable(),
-    result: z.record(z.string(), z.any()).optional(),
-    qubits: z.number().optional(),
-  })),
+  tasks: z.array(
+    z.object({
+      name: z.string().optional(),
+      device: z.string(),
+      shots: z.number(),
+      group: z.string().optional().nullable(),
+      tags: z.string().optional(),
+      source: z.string(),
+      version: z.string().optional(),
+      lang: z.string().optional(),
+      remarks: z.string().optional().nullable(),
+      result: z.record(z.string(), z.any()).optional(),
+      qubits: z.number().optional(),
+    }),
+  ),
 });
 
 export type SubmitTaskRequest = z.infer<typeof SubmitTaskRequestSchema>;
@@ -85,14 +86,20 @@ export type FoundTask = z.infer<typeof FoundTaskSchema>;
 
 // 这是/task/detail 接口返回的任务信息
 export const DetailTaskSchema = FoundTaskSchema.extend({
-  optimization: z.object({
-    progs: z.array(z.object({
-      code: z.string().optional(),
-      lang: z.string().optional(),
-    })).optional(),
-    pairs: z.record(z.string(), z.number()).optional(),
-    depth: z.number().optional(),
-  }).optional(),
+  optimization: z
+    .object({
+      progs: z
+        .array(
+          z.object({
+            code: z.string().optional(),
+            lang: z.string().optional(),
+          }),
+        )
+        .optional(),
+      pairs: z.record(z.string(), z.number()).optional(),
+      depth: z.number().optional(),
+    })
+    .optional(),
 });
 
 export type DetailTask = z.infer<typeof DetailTaskSchema>;

@@ -18,11 +18,13 @@ interface Props {
   user: ClientUserInfo;
   cluster: string;
   podId: string;
-  rowLimit?: number
+  rowLimit?: number;
 }
 
 export const JobLogs: React.FC<Props> = ({ user, cluster, podId, rowLimit }) => {
-  const { publicConfig: { BASE_PATH } } = usePublicConfig();
+  const {
+    publicConfig: { BASE_PATH },
+  } = usePublicConfig();
 
   const container = useRef<HTMLDivElement>(null);
   const terminalInitialized = useRef<boolean>(false);
@@ -69,9 +71,11 @@ export const JobLogs: React.FC<Props> = ({ user, cluster, podId, rowLimit }) => 
         eventSource.close();
       };
 
-      const resizeObserver = new ResizeObserver(debounce(() => {
-        fitAddon.fit();
-      }));
+      const resizeObserver = new ResizeObserver(
+        debounce(() => {
+          fitAddon.fit();
+        }),
+      );
 
       resizeObserver.observe(container.current);
 
@@ -81,10 +85,7 @@ export const JobLogs: React.FC<Props> = ({ user, cluster, podId, rowLimit }) => 
         terminalInitialized.current = false;
       };
     }
-  }, [container.current,rowLimit]);
+  }, [container.current, rowLimit]);
 
-  return (
-    <TerminalContainer ref={container} />
-  );
+  return <TerminalContainer ref={container} />;
 };
-

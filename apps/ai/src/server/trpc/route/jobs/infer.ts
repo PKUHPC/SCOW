@@ -19,14 +19,9 @@ import { driver } from "../../Driver";
 import { EnvVariableSchema, IdPrivateSchema, MAX_JOB_NAME_LENGTH } from "./jobs";
 
 // 分布式训练框架
-export const Framework = z.union([
-  z.literal("tensorflow"),
-  z.literal("pytorch"),
-  z.literal("mindspore"),
-]);
+export const Framework = z.union([z.literal("tensorflow"), z.literal("pytorch"), z.literal("mindspore")]);
 
 export type FrameworkType = z.infer<typeof Framework>;
-
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ImageSchema = z.object({
@@ -55,13 +50,17 @@ export const InferenceJobInputSchema = z.object({
   localImageName: z.string().optional(),
   remoteImageUrl: z.string().optional(),
   models: z.array(IdPrivateSchema).optional(),
-  mountPoints: z.array(z.object({
-    path:z.string(),
-    target:z.string(),
-  })).optional(),
+  mountPoints: z
+    .array(
+      z.object({
+        path: z.string(),
+        target: z.string(),
+      }),
+    )
+    .optional(),
   account: z.string(),
   partition: z.string().optional(),
-  qos:z.string().optional(),
+  qos: z.string().optional(),
   coreCount: z.number(),
   nodeCount: z.number(),
   gpuCount: z.number().optional(),
@@ -70,18 +69,19 @@ export const InferenceJobInputSchema = z.object({
   command: z.string(),
   gpuType: z.string().optional(),
   // 容器内服务端口
-  containerServicePort:z.number(),
-  envVariables:z.array(EnvVariableSchema).optional(),
-  privateImageRepositoryCredentials: z.object({
-    userName: z.string(),
-    password: z.string(),
-  }).optional(),
+  containerServicePort: z.number(),
+  envVariables: z.array(EnvVariableSchema).optional(),
+  privateImageRepositoryCredentials: z
+    .object({
+      userName: z.string(),
+      password: z.string(),
+    })
+    .optional(),
 });
 
 export type InferenceJobInput = z.infer<typeof InferenceJobInputSchema>;
 
-export const submitInferJob =
-procedure
+export const submitInferJob = procedure
   .meta({
     openapi: {
       method: "POST",
@@ -91,10 +91,12 @@ procedure
     },
   })
   .input(InferenceJobInputSchema)
-  .output(z.object({
-    jobId: z.number(),
-  }))
-  .use(async ({ input:{ clusterId }, ctx, next }) => {
+  .output(
+    z.object({
+      jobId: z.number(),
+    }),
+  )
+  .use(async ({ input: { clusterId }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -105,98 +107,98 @@ procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-      { clusterId, jobId:(res.data as any).jobId } },
-      OperationResult.SUCCESS);
+      await callLog(
+        { ...logInfo, operationTypePayload: { clusterId, jobId: (res.data as any).jobId } },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-      { clusterId } },
-      OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload: { clusterId } }, OperationResult.FAIL);
     }
 
     return res;
   })
-  .mutation(
-    async ({ input, ctx: { user } }) => {
-      if (aiConfig.inferConfig?.enabled === false) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI inference function is not enabled.",
-        });
-      }
-
-      const { clusterId, InferenceJobName , image, models, account, partition, mountPoints } = input;
-
-      const { ids:modelIds, isPrivates:isModelPrivates } = getIdPrivate(models);
-
-      if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `The length of InferenceJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
-        });
-      }
-
-      if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Files or folders with non-UTF-8 names cannot be selected",
-        });
-      }
-
-      const userId = user.identityId;
-
-      const currentClusterIds = await getCurrentClusters(userId);
-      checkClusterAvailable(currentClusterIds, clusterId);
-
-      // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
-      if (config.MIS_DEPLOYED) {
-        await validateSubmitAiJobInfoUnderMis({
-          userId,
-          accountName: account,
-          clusterId,
-          logger,
-          partitionName: partition,
-          checkAccountApp: false,
-        });
-      }
-
-      const em = await forkEntityManager();
-      const {
-        modelVersions,
-        image: existImage,
-      } = await checkCreateAppEntity({
-        em,
-        datasets:undefined,
-        algorithms:undefined,
-        image,
-        models:modelIds,
+  .mutation(async ({ input, ctx: { user } }) => {
+    if (aiConfig.inferConfig?.enabled === false) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "AI inference function is not enabled.",
       });
+    }
 
-      // 检查数据集、算法、模型和镜像是否有权限使用
-      checkEntityAuth({
-        algorithmVersions:[], datasetVersions:[], modelVersions, image:existImage, userId,
+    const { clusterId, InferenceJobName, image, models, account, partition, mountPoints } = input;
+
+    const { ids: modelIds, isPrivates: isModelPrivates } = getIdPrivate(models);
+
+    if (InferenceJobName.length > MAX_JOB_NAME_LENGTH) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `The length of InferenceJobName should not exceed ${MAX_JOB_NAME_LENGTH}`,
       });
+    }
 
-      const jobId = await driver.withJobDriver({
+    if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Files or folders with non-UTF-8 names cannot be selected",
+      });
+    }
+
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, clusterId);
+
+    // 管理系统存在时，增加用户账户封锁状态，授权集群分区等鉴权
+    if (config.MIS_DEPLOYED) {
+      await validateSubmitAiJobInfoUnderMis({
+        userId,
+        accountName: account,
         clusterId,
-        user:userId,
-      }, async (jobDriver) => {
-        return await jobDriver.submitInferJob(input,{
+        logger,
+        partitionName: partition,
+        checkAccountApp: false,
+      });
+    }
+
+    const em = await forkEntityManager();
+    const { modelVersions, image: existImage } = await checkCreateAppEntity({
+      em,
+      datasets: undefined,
+      algorithms: undefined,
+      image,
+      models: modelIds,
+    });
+
+    // 检查数据集、算法、模型和镜像是否有权限使用
+    checkEntityAuth({
+      algorithmVersions: [],
+      datasetVersions: [],
+      modelVersions,
+      image: existImage,
+      userId,
+    });
+
+    const jobId = await driver.withJobDriver(
+      {
+        clusterId,
+        user: userId,
+      },
+      async (jobDriver) => {
+        return await jobDriver.submitInferJob(input, {
           isModelPrivates,
           modelVersions,
           existImage,
         });
       },
-      logger);
+      logger,
+    );
 
-      return { jobId };
-    },
-  );
+    return { jobId };
+  });
 
-export const getSubmitInferenceParams =
-procedure
+export const getSubmitInferenceParams = procedure
   .meta({
     openapi: {
       method: "GET",
@@ -205,11 +207,13 @@ procedure
       summary: "Get Submit Infer Job Parameters",
     },
   })
-  .input(z.object({
-    clusterId: z.string(),
-    jobId: z.number(),
-    sessionId: z.string(),
-  }))
+  .input(
+    z.object({
+      clusterId: z.string(),
+      jobId: z.number(),
+      sessionId: z.string(),
+    }),
+  )
   .output(InferenceJobInputSchema)
   .query(async ({ input, ctx: { user } }) => {
     const { clusterId, jobId, sessionId } = input;
@@ -218,11 +222,14 @@ procedure
     const currentClusterIds = await getCurrentClusters(userId);
     checkClusterAvailable(currentClusterIds, clusterId);
 
-    return await driver.withJobDriver({
-      clusterId,
-      user:userId,
-    }, async (jobDriver) => {
-      return await jobDriver.getInferParams(sessionId,jobId);
-    },
-    logger);
+    return await driver.withJobDriver(
+      {
+        clusterId,
+        user: userId,
+      },
+      async (jobDriver) => {
+        return await jobDriver.getInferParams(sessionId, jobId);
+      },
+      logger,
+    );
   });

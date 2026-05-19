@@ -26,10 +26,7 @@ export const SubmitFileAsJobSchema = typeboxRouteSchema({
     }),
 
     400: Type.Object({
-      code: Type.Union([
-        Type.Literal("INVALID_ARGUMENT"),
-        Type.Literal("INVALID_PATH"),
-      ]),
+      code: Type.Union([Type.Literal("INVALID_ARGUMENT"), Type.Literal("INVALID_PATH")]),
       message: Type.String(),
     }),
 
@@ -47,10 +44,11 @@ export const SubmitFileAsJobSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(SubmitFileAsJobSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, filePath } = req.body;
 
@@ -59,40 +57,56 @@ export default route(SubmitFileAsJobSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypePayload:{
-      clusterId: cluster, path: filePath,
+    operationTypePayload: {
+      clusterId: cluster,
+      path: filePath,
     },
   };
 
   return await asyncUnaryCall(client, "submitFileAsJob", {
-    cluster, userId: info.identityId, filePath
-    ,
+    cluster,
+    userId: info.identityId,
+    filePath,
   })
     .then(async ({ jobId }) => {
       await callLog(
-        { ...logInfo,
+        {
+          ...logInfo,
           operationTypeName: OperationType.submitFileItemAsJob,
-          operationTypePayload: { ... logInfo.operationTypePayload } },
+          operationTypePayload: { ...logInfo.operationTypePayload },
+        },
         OperationResult.SUCCESS,
       );
       return { 201: { jobId } } as const;
     })
-    .catch(handlegRPCError({
-      [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED" as const, message: err.details } }),
-      [status.FAILED_PRECONDITION]: () => ({ 500: {
-        code: "FAILED_PRECONDITION" as const,
-        message: "The method submitScriptAsJob is not supported with your current scheduler adapter version." } }),
-      [status.UNIMPLEMENTED]: () => ({ 500: {
-        code: "UNIMPLEMENTED" as const,
-        message: "The scheduler API version can not be confirmed." } }),
-      [status.INVALID_ARGUMENT]: (err) => ({ 400: { code: "INVALID_ARGUMENT" as const, message: err.details } }),
-      [status.PERMISSION_DENIED]: (err) => ({ 400: { code: "INVALID_PATH" as const, message: err.details } }),
-    },
-    async () => await callLog(
-      { ...logInfo,
-        operationTypeName: OperationType.submitFileItemAsJob,
-        operationTypePayload: { ... logInfo.operationTypePayload },
-      },
-      OperationResult.FAIL,
-    )));
+    .catch(
+      handlegRPCError(
+        {
+          [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED" as const, message: err.details } }),
+          [status.FAILED_PRECONDITION]: () => ({
+            500: {
+              code: "FAILED_PRECONDITION" as const,
+              message: "The method submitScriptAsJob is not supported with your current scheduler adapter version.",
+            },
+          }),
+          [status.UNIMPLEMENTED]: () => ({
+            500: {
+              code: "UNIMPLEMENTED" as const,
+              message: "The scheduler API version can not be confirmed.",
+            },
+          }),
+          [status.INVALID_ARGUMENT]: (err) => ({ 400: { code: "INVALID_ARGUMENT" as const, message: err.details } }),
+          [status.PERMISSION_DENIED]: (err) => ({ 400: { code: "INVALID_PATH" as const, message: err.details } }),
+        },
+        async () =>
+          await callLog(
+            {
+              ...logInfo,
+              operationTypeName: OperationType.submitFileItemAsJob,
+              operationTypePayload: { ...logInfo.operationTypePayload },
+            },
+            OperationResult.FAIL,
+          ),
+      ),
+    );
 });

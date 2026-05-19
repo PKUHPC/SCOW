@@ -3,8 +3,11 @@
 import { getExtensionRouteQuery } from "@scow/lib-web/build/extensions/common";
 import { fromNavItemProps, rewriteNavigationsRoute, toNavItemProps } from "@scow/lib-web/build/extensions/navigations";
 import { callExtensionRoute } from "@scow/lib-web/build/extensions/routes";
-import { ExtensionManifestWithUrl, fetchManifestsWithErrorHandling, UiExtensionStoreData }
-  from "@scow/lib-web/build/extensions/UiExtensionStore";
+import {
+  ExtensionManifestWithUrl,
+  fetchManifestsWithErrorHandling,
+  UiExtensionStoreData,
+} from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { calcActiveKeys } from "@scow/lib-web/build/layouts/base/common";
 import { Footer } from "@scow/lib-web/build/layouts/base/Footer";
 import { SideNav } from "@scow/lib-web/build/layouts/base/SideNav";
@@ -25,7 +28,6 @@ import { ClientUserInfo } from "src/server/trpc/route/auth";
 import { trpc } from "src/utils/trpc";
 import { styled } from "styled-components";
 
-
 const { useBreakpoint } = Grid;
 
 const Root = styled.div`
@@ -42,11 +44,11 @@ const ContentPart = styled.div`
   overflow: hidden;
 `;
 
-const Content = styled(Layout.Content) <{ $isDashboard: boolean }>`
-  margin: ${(props) => props.$isDashboard ? "8px 8px 0px" : "8px"};
+const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
+  margin: ${(props) => (props.$isDashboard ? "8px 8px 0px" : "8px")};
   padding: 16px;
   flex: 1;
-  display: ${(props) => props.$isDashboard ? "flex" : "block"};
+  display: ${(props) => (props.$isDashboard ? "flex" : "block")};
   flex-direction: column;
   background: ${({ theme }) => theme.token.colorBgLayout};
   max-height: calc(100vh - 78px);
@@ -69,9 +71,11 @@ type Props = PropsWithChildren<{
 }>;
 
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
-  routes = [], children, user = undefined, headerRightContent,
+  routes = [],
+  children,
+  user = undefined,
+  headerRightContent,
 }) => {
-
   const router = useRouter();
   const [uiExtensionData, setUiExtensionData] = useState<UiExtensionStoreData | undefined>(undefined);
 
@@ -91,8 +95,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const { hostname, uiConfig } = useUiConfig();
   const footerConfig = uiConfig.config?.footer;
-  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
-    ?? footerConfig?.defaultText;
+  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname]) ?? footerConfig?.defaultText;
 
   useLayoutEffect(() => {
     if (pathname === "/dashboard") {
@@ -105,17 +108,16 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     }
   }, [pathname]);
 
-  const extensions = useMemo(() =>
-    (Array.isArray(uiExtensionData)
-      ? uiExtensionData
-      : uiExtensionData ? [uiExtensionData] : []).filter((x) => x),
-  [uiExtensionData]);
+  const extensions = useMemo(
+    () =>
+      (Array.isArray(uiExtensionData) ? uiExtensionData : uiExtensionData ? [uiExtensionData] : []).filter((x) => x),
+    [uiExtensionData],
+  );
 
-  const routeQuery = useMemo(() => getExtensionRouteQuery(
-    dark,
-    languageId,
-    user?.token,
-  ), [dark, languageId, user?.token]);
+  const routeQuery = useMemo(
+    () => getExtensionRouteQuery(dark, languageId, user?.token),
+    [dark, languageId, user?.token],
+  );
 
   useEffect(() => {
     fetchUiExtension();
@@ -130,9 +132,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
     let result: UiExtensionStoreData;
     if (Array.isArray(uiExtensionConfig)) {
-      const promises = uiExtensionConfig.map((config) =>
-        fetchManifestsWithErrorHandling(config.url, config.name),
-      );
+      const promises = uiExtensionConfig.map((config) => fetchManifestsWithErrorHandling(config.url, config.name));
       const results = await Promise.all(promises);
       result = results.filter(Boolean) as (ExtensionManifestWithUrl & { name: string })[];
     } else {
@@ -143,19 +143,27 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     setUiExtensionData(result);
   }, [uiExtensionConfig]);
 
-
   const { data: finalRoutesData } = useAsync({
     promiseFn: useCallback(async () => {
-      if (extensions.length === 0) { return routes; }
+      if (extensions.length === 0) {
+        return routes;
+      }
 
       let newRoutes = routes;
 
       for (const extension of extensions) {
-        if (!extension.manifests.ai?.rewriteNavigations) { continue; }
+        if (!extension.manifests.ai?.rewriteNavigations) {
+          continue;
+        }
 
-        const resp = await callExtensionRoute(rewriteNavigationsRoute("ai"), routeQuery, {
-          navs: fromNavItemProps(newRoutes),
-        }, extension.url).catch((e) => {
+        const resp = await callExtensionRoute(
+          rewriteNavigationsRoute("ai"),
+          routeQuery,
+          {
+            navs: fromNavItemProps(newRoutes),
+          },
+          extension.url,
+        ).catch((e) => {
           console.warn(`Failed to call rewriteNavigations of extension ${extension.name ?? extension.url}. Error: `, e);
           return { 200: { navs: newRoutes } };
         });
@@ -171,11 +179,10 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const finalRoutes = finalRoutesData ?? routes;
 
-  const activeKeys = useMemo(() =>
-    finalRoutes
-      ? [...calcActiveKeys(finalRoutes, pathname)]
-      : []
-  , [finalRoutes, pathname]);
+  const activeKeys = useMemo(
+    () => (finalRoutes ? [...calcActiveKeys(finalRoutes, pathname)] : []),
+    [finalRoutes, pathname],
+  );
 
   const firstLevelRoute = finalRoutes.find((x) => activeKeys.includes(x.path));
 
@@ -206,21 +213,17 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         right={headerRightContent}
       />
       <StyledLayout>
-        {
-          (hasSidebar) ? (
-            <SideNav
-              activeKeys={activeKeys}
-              pathname={pathname}
-              routes={sidebarRoutes}
-              appRouter={router}
-            />
-          ) : undefined
-        }
+        {hasSidebar ? (
+          <SideNav activeKeys={activeKeys} pathname={pathname} routes={sidebarRoutes} appRouter={router} />
+        ) : undefined}
         <ContentPart>
           <Content $isDashboard={pathname === "/dashboard"}>
             {children}
-            {pathname === "/dashboard" ?
-              <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} /> : ""}
+            {pathname === "/dashboard" ? (
+              <Footer text={footerText} versionTag={usePublicConfig()?.publicConfig?.VERSION_TAG} />
+            ) : (
+              ""
+            )}
           </Content>
         </ContentPart>
       </StyledLayout>

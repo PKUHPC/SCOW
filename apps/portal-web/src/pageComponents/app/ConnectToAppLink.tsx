@@ -1,5 +1,6 @@
-import { parsePlaceholder } from "@scow/lib-config/build/parse";
 import type { AppSession } from "@scow/protos/build/portal/app";
+
+import { parsePlaceholder } from "@scow/lib-config/build/parse";
 import { Static } from "@sinclair/typebox";
 import { App } from "antd";
 import { join } from "path";
@@ -20,71 +21,85 @@ export interface Props {
 
 const p = prefix("pageComp.app.connectToAppLink.");
 
-export const ConnectTopAppLink: React.FC<Props> = ({
-  session, clusterId, refreshToken,
-}) => {
-
+export const ConnectTopAppLink: React.FC<Props> = ({ session, clusterId, refreshToken }) => {
   const { message } = App.useApp();
 
   const t = useI18nTranslateToString();
 
-  const replyRef = useRef<Static<typeof ConnectToAppSchema["responses"]["200"]> | undefined>(undefined);
+  const replyRef = useRef<Static<(typeof ConnectToAppSchema)["responses"]["200"]> | undefined>(undefined);
 
   // 保存是否已经检查到可以连接的状态
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  const checkConnectivityPromiseFn = useCallback(async (signal: AbortSignal) => {
-
-    if (!session.host || !session.port) { return false; }
-
-    // 判断是否已经检查为可以连接的状态，如果是，直接返回true不再进行下方检查
-    if (isConnected) { return true; }
-
-
-    if (session.appType?.toLowerCase() === "shadowdesk") {
-      // 如果缺少任何必要的信息，直接返回不可连接
-      if (!session.user || !session.proxyServer || !session.connectPath) { return false; }
-
-      return api.checkShadowDeskConnectivity({ query: {
-        id: session.user,
-        proxyServer: session.proxyServer,
-        connectPath: session.connectPath,
-      } }, signal).then((x) => x.ok);
-    }
-
-    // 先通过ConnectToApp获取后端返回的host，port，proxyType
-    const response = await api.connectToApp({ body:
-        { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } }, signal)
-      .httpError(404, () => {
+  const checkConnectivityPromiseFn = useCallback(
+    async (signal: AbortSignal) => {
+      if (!session.host || !session.port) {
         return false;
-      })
-      .httpError(409, () => {
+      }
+
+      // 判断是否已经检查为可以连接的状态，如果是，直接返回true不再进行下方检查
+      if (isConnected) {
+        return true;
+      }
+
+      if (session.appType?.toLowerCase() === "shadowdesk") {
+        // 如果缺少任何必要的信息，直接返回不可连接
+        if (!session.user || !session.proxyServer || !session.connectPath) {
+          return false;
+        }
+
+        return api
+          .checkShadowDeskConnectivity(
+            {
+              query: {
+                id: session.user,
+                proxyServer: session.proxyServer,
+                connectPath: session.connectPath,
+              },
+            },
+            signal,
+          )
+          .then((x) => x.ok);
+      }
+
+      // 先通过ConnectToApp获取后端返回的host，port，proxyType
+      const response = await api
+        .connectToApp({ body: { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } }, signal)
+        .httpError(404, () => {
+          return false;
+        })
+        .httpError(409, () => {
+          return false;
+        });
+
+      // 保存获取的 response 信息连接时使用
+      replyRef.current = response;
+
+      if (response.type === "web" || response.type === "vnc") {
+        // 对于 web或vnc 应用，模拟到端口的http请求
+        return await api
+          .checkAppConnectivity(
+            {
+              query: {
+                cluster: clusterId,
+                host: response.host,
+                port: response.port,
+                appType: response.type,
+                proxyType: response.type === "web" ? response.proxyType : undefined,
+              },
+            },
+            signal,
+          )
+          .then((x) => x.ok);
+
+        // 此检验方法不支持 web 和 vnc 以外类型的应用
+      } else {
+        message.error(t(p("notConnectableMessage")));
         return false;
-      });
-
-    // 保存获取的 response 信息连接时使用
-    replyRef.current = response;
-
-    if (response.type === "web" || response.type === "vnc") {
-
-      // 对于 web或vnc 应用，模拟到端口的http请求
-      return await api.checkAppConnectivity({
-        query: {
-          cluster: clusterId,
-          host: response.host,
-          port: response.port,
-          appType: response.type,
-          proxyType: response.type === "web" ? response.proxyType : undefined,
-        } }, signal)
-        .then((x) => x.ok);
-
-      // 此检验方法不支持 web 和 vnc 以外类型的应用
-    } else {
-      message.error(t(p("notConnectableMessage")));
-      return false;
-    }
-
-  }, [session.host, session.port, clusterId, isConnected]);
+      }
+    },
+    [session.host, session.port, clusterId, isConnected],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -127,10 +142,8 @@ export const ConnectTopAppLink: React.FC<Props> = ({
   };
 
   const onClick = async () => {
-
     // 如果是web应用直接使用已保存的信息提交表单, 不再发送connectToApp请求
     if (replyRef?.current?.type === "web") {
-
       const { connect, host, password, port, proxyType, customFormData } = replyRef.current;
       const interpolatedValues = { HOST: host, PASSWORD: password, PORT: port, ...customFormData };
       const path = parsePlaceholder(connect.path, interpolatedValues);
@@ -151,14 +164,16 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       } else {
         submitForm(url, formData);
       }
-
     } else {
-
       // 如果不是web应用需要重新发起 connectToApp的请求
-      const res = await api.connectToApp({ body:
-        { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } })
-        .httpError(404, () => { message.error(t(p("notFoundMessage"))); })
-        .httpError(409, () => { message.error(t(p("notConnectableMessage"))); });
+      const res = await api
+        .connectToApp({ body: { cluster: clusterId, sessionId: session.sessionId, jobId: session.jobId } })
+        .httpError(404, () => {
+          message.error(t(p("notFoundMessage")));
+        })
+        .httpError(409, () => {
+          message.error(t(p("notConnectableMessage")));
+        });
 
       if (res.type === "shadowDesk") {
         // shadowDesk
@@ -175,9 +190,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
         const pathname = join(publicConfig.BASE_PATH, connect.path);
 
         submitForm(pathname, formData);
-
       } else {
-
         // vnc 应用需要点击连接时 发送connectToApp请求实时刷新密码
         const { host, port, password } = res;
         // vnc应用一定有密码
@@ -193,9 +206,7 @@ export const ConnectTopAppLink: React.FC<Props> = ({
       message={session.appType?.toLowerCase() === "shadowdesk" ? t(p("notReady")) : t(p("portNotOpen"))}
       abledMessage={t(p("connect"))}
     >
-      { isConnected ? (
-        <ConnectIcon />
-      ) : <ConnectIcon disabled />}
+      {isConnected ? <ConnectIcon /> : <ConnectIcon disabled />}
     </DisabledA>
   );
 };

@@ -27,14 +27,7 @@ const TemplateSchema = z.object({
 });
 
 export const AnyJsonSchema: z.ZodType<AnyJson> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(AnyJsonSchema),
-    z.record(z.string(), AnyJsonSchema),
-  ]),
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(AnyJsonSchema), z.record(z.string(), AnyJsonSchema)]),
 );
 const MetadataMapSchema = z.record(z.string(), AnyJsonSchema);
 
@@ -60,8 +53,7 @@ const UnreadMessageSchema = z.object({
 });
 
 export const notification = router({
-
-  getUnreadMessages:authProcedure
+  getUnreadMessages: authProcedure
     .meta({
       openapi: {
         method: "GET",
@@ -71,16 +63,16 @@ export const notification = router({
         description: "获取当前用户的未读通知消息",
       },
     })
-    .input(z.object({
-      // Deprecated: use messageTypes instead.
-      messageType: z.string().optional(),
-      messageTypes: z.array(z.string()).optional(),
-      page: z.number().optional(),
-      pageSize: z.number().optional(),
-    }))
-    .output(
-      z.object({ results: UnreadMessageSchema.optional() }),
+    .input(
+      z.object({
+        // Deprecated: use messageTypes instead.
+        messageType: z.string().optional(),
+        messageTypes: z.array(z.string()).optional(),
+        page: z.number().optional(),
+        pageSize: z.number().optional(),
+      }),
     )
+    .output(z.object({ results: UnreadMessageSchema.optional() }))
     .query(async ({ input, ctx: { user, req, res } }) => {
       const { messageType, messageTypes, page, pageSize } = input;
 
@@ -93,9 +85,10 @@ export const notification = router({
         });
       }
 
-      const notifClient = commonConfig?.notification?.enabled && commonConfig?.notification?.address
-        ? getNotificationNodeClient(commonConfig.notification.address)
-        : undefined;
+      const notifClient =
+        commonConfig?.notification?.enabled && commonConfig?.notification?.address
+          ? getNotificationNodeClient(commonConfig.notification.address)
+          : undefined;
 
       if (!notifClient) {
         subLogger.error("Notification service unavailable", {
@@ -142,7 +135,7 @@ export const notification = router({
       }
     }),
 
-  markMessageRead:authProcedure
+  markMessageRead: authProcedure
     .meta({
       openapi: {
         method: "POST",
@@ -151,9 +144,11 @@ export const notification = router({
         summary: "标记消息为已读",
       },
     })
-    .input(z.object({
-      messageId: z.number(),
-    }))
+    .input(
+      z.object({
+        messageId: z.number(),
+      }),
+    )
     .output(z.void())
     .mutation(async ({ input: { messageId }, ctx }) => {
       const { user, req } = ctx;
@@ -161,9 +156,8 @@ export const notification = router({
       const subLogger = logger.child({ user: user.identityId });
 
       const notifConfig = commonConfig?.notification;
-      const notifClient = notifConfig?.enabled && notifConfig?.address
-        ? getNotificationNodeClient(notifConfig.address)
-        : undefined;
+      const notifClient =
+        notifConfig?.enabled && notifConfig?.address ? getNotificationNodeClient(notifConfig.address) : undefined;
 
       if (!notifClient) {
         subLogger.error("Notification service unavailable", {
@@ -183,19 +177,22 @@ export const notification = router({
         operationTypePayload: { messageId },
       };
 
-      await notifClient.scowMessage.markMessageRead({
-        userId: user.identityId,
-        messageId: BigInt(messageId),
-      }).then(async () => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return;
-      }).catch(async (e) => {
-        subLogger.error(e, "Error marking message %d read", messageId);
-        await callLog(logInfo, OperationResult.FAIL);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "MARK_MESSAGE_READ_ERROR",
+      await notifClient.scowMessage
+        .markMessageRead({
+          userId: user.identityId,
+          messageId: BigInt(messageId),
+        })
+        .then(async () => {
+          await callLog(logInfo, OperationResult.SUCCESS);
+          return;
+        })
+        .catch(async (e) => {
+          subLogger.error(e, "Error marking message %d read", messageId);
+          await callLog(logInfo, OperationResult.FAIL);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "MARK_MESSAGE_READ_ERROR",
+          });
         });
-      });
     }),
 });

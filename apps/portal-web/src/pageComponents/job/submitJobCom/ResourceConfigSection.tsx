@@ -1,17 +1,20 @@
+import type { ColumnsType } from "antd/es/table";
+
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { RoundedInputNumber, RoundedInputNumberWithAddonAfter }
-  from "@scow/lib-web/build/components/styledAntdCom/Input";
+import {
+  RoundedInputNumber,
+  RoundedInputNumberWithAddonAfter,
+} from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { AddonAfterSelect } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { RoundedSelect } from "@scow/lib-web/build/components/styledAntdCom/Select";
 import { StyledTable } from "@scow/lib-web/build/components/styledAntdCom/Table";
 import { StyledTabs } from "@scow/lib-web/build/components/styledAntdCom/Tabs";
-import { SectionTitle,TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
+import { SectionTitle, TitledSectionCard } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
 import { Tooltip } from "@scow/lib-web/build/components/styledAntdCom/Tooltip";
 import { Form, type FormInstance, Select, Space } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { type ReactNode,useEffect,useMemo,useRef } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { TimeUnit } from "src/models/job";
 
@@ -44,7 +47,6 @@ export interface PartitionRow {
   pendingJobs: string | number;
   kind: PartitionTabKey;
 }
-
 
 interface ResourceConfigSectionProps {
   form: FormInstance<ResourceFormValues>;
@@ -134,30 +136,15 @@ export const ResourceConfigSection = ({
     ...baseColumns.slice(4),
   ];
 
-  const gpuRows = useMemo(
-    () => partitionRows.filter((row) => row.kind === "gpu"),
-    [partitionRows],
-  );
-  const cpuRows = useMemo(
-    () => partitionRows.filter((row) => row.kind === "cpu"),
-    [partitionRows],
-  );
-  const sortedGpuRows = useMemo(
-    () => [...gpuRows].sort(sortPartitionRows),
-    [gpuRows],
-  );
-  const sortedCpuRows = useMemo(
-    () => [...cpuRows].sort(sortPartitionRows),
-    [cpuRows],
-  );
+  const gpuRows = useMemo(() => partitionRows.filter((row) => row.kind === "gpu"), [partitionRows]);
+  const cpuRows = useMemo(() => partitionRows.filter((row) => row.kind === "cpu"), [partitionRows]);
+  const sortedGpuRows = useMemo(() => [...gpuRows].sort(sortPartitionRows), [gpuRows]);
+  const sortedCpuRows = useMemo(() => [...cpuRows].sort(sortPartitionRows), [cpuRows]);
 
   const selectedKeyInTab = (rows: PartitionRow[]) =>
-    selectedPartitionKey && rows.some((row) => row.key === selectedPartitionKey)
-      ? [selectedPartitionKey]
-      : [];
-  const getTableScroll = (rows: PartitionRow[]) => rows.length > PARTITION_TABLE_MAX_VISIBLE_ROWS
-    ? { y: PARTITION_TABLE_SCROLL_Y }
-    : undefined;
+    selectedPartitionKey && rows.some((row) => row.key === selectedPartitionKey) ? [selectedPartitionKey] : [];
+  const getTableScroll = (rows: PartitionRow[]) =>
+    rows.length > PARTITION_TABLE_MAX_VISIBLE_ROWS ? { y: PARTITION_TABLE_SCROLL_Y } : undefined;
 
   const cpuTab = {
     key: "cpu",
@@ -176,7 +163,7 @@ export const ResourceConfigSection = ({
           selectedRowKeys: activePartitionTab === "cpu" ? selectedKeyInTab(sortedCpuRows) : [],
           onChange: (keys) => onPartitionSelect(keys[0] as string),
         }}
-        rowClassName={(record) => record.key === selectedPartitionKey ? "selected-row" : ""}
+        rowClassName={(record) => (record.key === selectedPartitionKey ? "selected-row" : "")}
       />
     ),
   };
@@ -198,7 +185,7 @@ export const ResourceConfigSection = ({
           selectedRowKeys: activePartitionTab === "gpu" ? selectedKeyInTab(sortedGpuRows) : [],
           onChange: (keys) => onPartitionSelect(keys[0] as string),
         }}
-        rowClassName={(record) => record.key === selectedPartitionKey ? "selected-row" : ""}
+        rowClassName={(record) => (record.key === selectedPartitionKey ? "selected-row" : "")}
       />
     ),
   };
@@ -276,12 +263,7 @@ export const ResourceConfigSection = ({
 
   return (
     <TitledSectionCard title={<SectionTitle>{t(p("sectionTitle"))}</SectionTitle>}>
-      <Form
-        form={form}
-        colon={false}
-        requiredMark={false}
-        initialValues={{}}
-      >
+      <Form form={form} colon={false} requiredMark={false} initialValues={{}}>
         <InlineFormItem
           name="account"
           label={<FormLabel>{t(p("accountLabel"))}</FormLabel>}
@@ -312,7 +294,9 @@ export const ResourceConfigSection = ({
                   $selected={selectedCluster === id}
                   disabled={disabled}
                   onClick={() => {
-                    if (disabled) { return; }
+                    if (disabled) {
+                      return;
+                    }
                     form.setFieldValue("cluster", id);
                   }}
                 >
@@ -325,12 +309,7 @@ export const ResourceConfigSection = ({
               }
 
               return (
-                <Tooltip
-                  key={id}
-                  title={t(p("clusterUnauthorized"))}
-                  arrow={false}
-                  align={{ offset: [0, -12]}}
-                >
+                <Tooltip key={id} title={t(p("clusterUnauthorized"))} arrow={false} align={{ offset: [0, -12] }}>
                   <span>{button}</span>
                 </Tooltip>
               );
@@ -355,17 +334,13 @@ export const ResourceConfigSection = ({
               if (!hasValidSelection) {
                 onPartitionSelect(nextOptions[0]?.key);
               }
-            } }
+            }}
             type="line"
             items={[cpuTab, gpuTab]}
           />
         </InlineFormItem>
 
-        <InlineFormItem
-          name="qos"
-          label={<FormLabel>{t(p("qosLabel"))}</FormLabel>}
-          rules={[{ required: true }]}
-        >
+        <InlineFormItem name="qos" label={<FormLabel>{t(p("qosLabel"))}</FormLabel>} rules={[{ required: true }]}>
           <RoundedSelect
             size="large"
             options={qosOptions.map((qos) => ({ label: qos, value: qos }))}
@@ -460,7 +435,7 @@ export const ResourceConfigSection = ({
             precision={0}
             style={{ width: "calc(50% - 72px)", minWidth: "130px" }}
             disabled={inputsDisabled}
-            addonAfter={(
+            addonAfter={
               <AddonAfterSelect
                 style={{ minWidth: "72px" }}
                 value={maxTimeUnit}
@@ -472,7 +447,7 @@ export const ResourceConfigSection = ({
                 <Select.Option value={TimeUnit.HOURS}>{t(p("hours"))}</Select.Option>
                 <Select.Option value={TimeUnit.DAYS}>{t(p("days"))}</Select.Option>
               </AddonAfterSelect>
-            )}
+            }
           />
         </InlineFormItem>
       </Form>

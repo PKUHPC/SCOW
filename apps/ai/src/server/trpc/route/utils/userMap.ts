@@ -8,8 +8,11 @@ export const buildUserMap = async (ownerIds: string[]): Promise<Record<string, s
   const ids = Array.from(new Set(ownerIds.filter(Boolean)));
   if (ids.length === 0) return {};
   const users = await getUsersName(ids);
-  return users.reduce((acc, u) => {
-    acc[u.userId] = u.userName;
-    return acc;
-  }, {} as Record<string, string>);
+  return users.reduce(
+    (acc, u) => {
+      acc[u.userId] = u.userName;
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
 };

@@ -1,4 +1,3 @@
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { ClusterConfigSchema, SimpleClusterSchema } from "@scow/config/build/cluster";
 import { createI18nStringSchema } from "@scow/config/build/i18n";
@@ -38,15 +37,22 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
 
       initialLanguageId: Type.String(),
 
-      darkModeCookieValue: Type.Optional(Type.Object({ dark: Type.Boolean(), mode: Type.Union([
-        Type.Literal("system"), Type.Literal("dark"), Type.Literal("light"),
-      ]) })),
-
+      darkModeCookieValue: Type.Optional(
+        Type.Object({
+          dark: Type.Boolean(),
+          mode: Type.Union([Type.Literal("system"), Type.Literal("dark"), Type.Literal("light")]),
+        }),
+      ),
 
       clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
 
-      initialActivatedClusters: Type.Record(Type.String(), Type.Object({
-        id: Type.String(), name: ClusterNameI18nSchema })),
+      initialActivatedClusters: Type.Record(
+        Type.String(),
+        Type.Object({
+          id: Type.String(),
+          name: ClusterNameI18nSchema,
+        }),
+      ),
 
       initialSimpleClustersInfo: Type.Record(Type.String(), SimpleClusterSchema),
       titleTag: Type.Optional(Type.String()),
@@ -54,92 +60,87 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
   },
 });
 
-export type AppInitialConfig = Static<typeof GetAppInitialConfigSchema["responses"]["200"]>;
+export type AppInitialConfig = Static<(typeof GetAppInitialConfigSchema)["responses"]["200"]>;
 
-export default route(GetAppInitialConfigSchema,
-  async (req) => {
+export default route(GetAppInitialConfigSchema, async (req) => {
+  const extra: AppInitialConfig = {
+    userInfo: undefined,
+    footerText: undefined,
+    primaryColor: { defaultColor: "#94070A" },
+    darkModeCookieValue: getDarkModeCookieValue(req),
+    initialLanguageId: "",
+    clusterConfigs: {},
+    initialActivatedClusters: {},
+    initialSimpleClustersInfo: {},
+    titleTag: "",
+  };
 
-    const extra: AppInitialConfig = {
-      userInfo: undefined,
-      footerText: undefined,
-      primaryColor: { defaultColor:"#94070A" },
-      darkModeCookieValue: getDarkModeCookieValue(req),
-      initialLanguageId: "",
-      clusterConfigs: {},
-      initialActivatedClusters: {},
-      initialSimpleClustersInfo: {},
-      titleTag: "",
-    };
+  const token = USE_MOCK ? "123" : getTokenFromCookie({ req });
 
+  if (token) {
+    const result = await validateToken(token);
 
-    const token = USE_MOCK ? "123" : getTokenFromCookie({ req });
-
-    if (token) {
-      const result = await validateToken(token);
-
-      if (result) {
-        extra.userInfo = {
-          ...result,
-          token,
-          state: UserState.NORMAL,
-        };
-
-      }
-    }
-
-    const clustersRuntimeInfo = await getClustersRuntimeInfo();
-    const clusters = await getClusterConfigFiles();
-
-    if (Object.keys(clusters).length > 0) {
-      extra.clusterConfigs = clusters;
-    }
-
-    const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};
-
-    Object.keys(clusters).forEach((key) => {
-      simpleClustersInfo[key] = {
-        clusterId: key,
-        displayName: clusters[key].displayName,
-        priority: clusters[key].priority,
+    if (result) {
+      extra.userInfo = {
+        ...result,
+        token,
+        state: UserState.NORMAL,
       };
-    });
-    extra.initialSimpleClustersInfo = simpleClustersInfo;
+    }
+  }
 
+  const clustersRuntimeInfo = await getClustersRuntimeInfo();
+  const clusters = await getClusterConfigFiles();
 
-    const publicConfigClusters = extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0
+  if (Object.keys(clusters).length > 0) {
+    extra.clusterConfigs = clusters;
+  }
+
+  const simpleClustersInfo: Record<string, SimpleClusterSchema> = {};
+
+  Object.keys(clusters).forEach((key) => {
+    simpleClustersInfo[key] = {
+      clusterId: key,
+      displayName: clusters[key].displayName,
+      priority: clusters[key].priority,
+    };
+  });
+  extra.initialSimpleClustersInfo = simpleClustersInfo;
+
+  const publicConfigClusters =
+    extra.clusterConfigs && Object.keys(extra.clusterConfigs).length > 0
       ? getPublicConfigClusters(extra.clusterConfigs)
-      : getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {};
+      : (getPublicConfigClusters(extra.initialSimpleClustersInfo) ?? {});
 
-    const activatedClusters
-    = formatActivatedClusters({
-      clustersRuntimeInfo: clustersRuntimeInfo,
-      misConfigClusters: publicConfigClusters,
-
-    });
-
-    extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
-
-    const hostname = getHostname(req);
-
-    const defaultColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ?? runtimeConfig.DEFAULT_PRIMARY_COLOR;
-
-    const darkModeColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ?? defaultColor;
-
-    extra.primaryColor = { defaultColor,darkModeColor };
-
-    extra.footerText = (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname])
-    ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
-
-    extra.initialLanguageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
-
-    extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
-
-    return { 200: extra };
-
+  const activatedClusters = formatActivatedClusters({
+    clustersRuntimeInfo: clustersRuntimeInfo,
+    misConfigClusters: publicConfigClusters,
   });
 
+  extra.initialActivatedClusters = activatedClusters.misActivatedClusters ?? {};
 
+  const hostname = getHostname(req);
 
+  const defaultColor =
+    (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ??
+    runtimeConfig.DEFAULT_PRIMARY_COLOR;
+
+  const darkModeColor =
+    (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ??
+    defaultColor;
+
+  extra.primaryColor = { defaultColor, darkModeColor };
+
+  extra.footerText =
+    (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname]) ??
+    (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.footer?.defaultText;
+
+  extra.initialLanguageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
+
+  extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
+
+  return { 200: extra };
+});

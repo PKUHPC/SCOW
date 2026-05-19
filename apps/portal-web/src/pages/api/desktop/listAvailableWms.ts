@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { DesktopServiceClient } from "@scow/protos/build/portal/desktop";
@@ -47,9 +35,7 @@ export const ListAvailableWmsSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(ListAvailableWmsSchema, async (req, res) => {
-
-
+export default /* #__PURE__*/ route(ListAvailableWmsSchema, async (req, res) => {
   const { cluster } = req.query;
 
   const clusterConfigs = await getClusterConfigFiles();
@@ -61,8 +47,9 @@ export default /* #__PURE__*/route(ListAvailableWmsSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
-
+  if (!info) {
+    return;
+  }
 
   const client = getClient(DesktopServiceClient);
 

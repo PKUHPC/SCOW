@@ -41,7 +41,7 @@ export async function validateSubmitAiJobInfoUnderMis({
   if (!isUserAvailableInAccount) {
     throw new DetailedTRPCError({
       code: "FORBIDDEN",
-      message:  `User ${userId} is not available in account ${accountName}`,
+      message: `User ${userId} is not available in account ${accountName}`,
       detail: {
         type: "account_user_not_available",
         userId,
@@ -61,8 +61,9 @@ export async function validateSubmitAiJobInfoUnderMis({
     if (!isClusterPartitionAuthorized) {
       throw new DetailedTRPCError({
         code: "FORBIDDEN",
-        message:  `Account ${accountName} is not authorized in cluster ${clusterId}`
-                  + (partitionName ? ` and partition ${partitionName}` : ""),
+        message:
+          `Account ${accountName} is not authorized in cluster ${clusterId}` +
+          (partitionName ? ` and partition ${partitionName}` : ""),
         detail: {
           type: "cluster_partition_not_available",
           accountName,

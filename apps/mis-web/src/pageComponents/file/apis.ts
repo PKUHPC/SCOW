@@ -13,14 +13,13 @@ export const urlToExport = ({
   encoding,
   timeZone,
 }: {
-  exportApi: string
-  columns: string[],
-  count: number,
-  query: Record<string, string | number | boolean | string[] | undefined>
-  encoding: Encoding
-  timeZone: string | undefined
-},
-) => {
+  exportApi: string;
+  columns: string[];
+  count: number;
+  query: Record<string, string | number | boolean | string[] | undefined>;
+  encoding: Encoding;
+  timeZone: string | undefined;
+}) => {
   const params = new URLSearchParams();
   columns.forEach((column) => {
     params.append("columns", column);
@@ -44,9 +43,8 @@ export const urlToExport = ({
   });
   params.append("count", count.toString());
   params.append("encoding", encoding);
-  params.append("timeZone",timeZone ?? "UTC");
+  params.append("timeZone", timeZone ?? "UTC");
   const queryString = params.toString();
   const fullPath = join(publicConfig.BASE_PATH, `/api/file/${exportApi}?${queryString}`);
   return fullPath;
 };
-

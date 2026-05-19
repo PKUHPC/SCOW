@@ -37,10 +37,11 @@ export const CompleteMultipartUploadSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(CompleteMultipartUploadSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, path, name } = req.body;
 
@@ -50,24 +51,31 @@ export default route(CompleteMultipartUploadSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.uploadFile,
-    operationTypePayload:{
-      clusterId: cluster, path: join(path, name),
+    operationTypePayload: {
+      clusterId: cluster,
+      path: join(path, name),
     },
   };
 
   return asyncUnaryCall(client, "completeMultipartUpload", {
-    cluster, path, userId: info.identityId, name,
-  }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "FILE_NOT_EXISTS" as const } }),
-    [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
-    [status.UNKNOWN]: (err) => ({ 520: { code: "COMPLETE_FAILED" as const, error: err.details } }),
-    [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
-    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
-  },
-  async () => await callLog(logInfo, OperationResult.FAIL),
-  ));
-
+    cluster,
+    path,
+    userId: info.identityId,
+    name,
+  }).then(
+    async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.NOT_FOUND]: () => ({ 404: { code: "FILE_NOT_EXISTS" as const } }),
+        [status.PERMISSION_DENIED]: () => ({ 403: { code: "PERMISSION_DENIED" as const } }),
+        [status.UNKNOWN]: (err) => ({ 520: { code: "COMPLETE_FAILED" as const, error: err.details } }),
+        [status.UNIMPLEMENTED]: () => ({ 501: { code: "UNIMPLEMENTED" as const } }),
+        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+      },
+      async () => await callLog(logInfo, OperationResult.FAIL),
+    ),
+  );
 });

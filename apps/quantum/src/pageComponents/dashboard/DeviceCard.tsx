@@ -23,7 +23,7 @@ const DeviceCardWrapper = styled(Card)`
   overflow: hidden;
   border-radius: 8px;
   position: relative;
-  box-shadow: #0000000D 0px 4px 4px 0px;
+  box-shadow: #0000000d 0px 4px 4px 0px;
   .ant-card-body {
     padding: 0 !important;
   }
@@ -116,38 +116,27 @@ export default function DeviceCard({ id, path, name, description, status, update
       <InfoSection>
         <Header>
           <NameText>{name}</NameText>
-          {
-            status !== undefined && (
-              <StatusTag color={statusColor}>{
-                DisplayedStateI18nTexts[status]
-              }</StatusTag>
-            )}
+          {status !== undefined && <StatusTag color={statusColor}>{DisplayedStateI18nTexts[status]}</StatusTag>}
         </Header>
         <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
           {description}
         </Text>
-        {
-          gateFidelity && id !== "simulator:tc" && (
-            <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
-              {gateFidelity}
-            </Text>
-          )
-        }
-        {
-          updateTime && (
-            <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
-              {t(p("updateTime"))}: {formatTime}
-            </Text>
-          )
-        }
+        {gateFidelity && id !== "simulator:tc" && (
+          <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
+            {gateFidelity}
+          </Text>
+        )}
+        {updateTime && (
+          <Text type="secondary" style={{ display: "block", marginBottom: 4 }}>
+            {t(p("updateTime"))}: {formatTime}
+          </Text>
+        )}
       </InfoSection>
-      {
-        id !== "simulator:tc" && (
-          <DetailsButton type="primary" size="small" onClick={handleDetailsClick}>
-            {t(p("viewDetail"))}
-          </DetailsButton>
-        )
-      }
+      {id !== "simulator:tc" && (
+        <DetailsButton type="primary" size="small" onClick={handleDetailsClick}>
+          {t(p("viewDetail"))}
+        </DetailsButton>
+      )}
     </DeviceCardWrapper>
   );
 }

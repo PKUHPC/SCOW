@@ -4,11 +4,8 @@ import { OpenApiMeta } from "trpc-to-openapi";
 
 import type { GlobalContext } from "./context";
 
-export const trpc = initTRPC.context<GlobalContext>()
-  .meta<OpenApiMeta>()
-  .create({
-    transformer: Superjson,
-  });
+export const trpc = initTRPC.context<GlobalContext>().meta<OpenApiMeta>().create({
+  transformer: Superjson,
+});
 
 export const { middleware, procedure, router, mergeRouters } = trpc;
-

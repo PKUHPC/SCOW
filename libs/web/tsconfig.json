@@ -2,28 +2,16 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "outDir": "build",
     "rootDir": "./src",
     "jsx": "react-jsx",
     "module": "ESNext",
     "paths": {
-      "src/*": [
-        "./src/*"
-      ],
-      "tests/*": [
-        "./tests/*"
-      ]
-    },
+      "src/*": ["./src/*"],
+      "tests/*": ["./tests/*"]
+    }
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "src/**/*",
-  ]
+  "exclude": ["node_modules"],
+  "include": ["src/**/*"]
 }

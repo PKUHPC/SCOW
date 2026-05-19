@@ -26,7 +26,6 @@ export const ApiKeySchema = z.object({
 export default (router: ConnectRouter) => {
   router.service(ApiKeyService, {
     async listApiKeys(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {

@@ -1,16 +1,25 @@
 import type { MikroORM } from "@mikro-orm/core";
+
 import { raw } from "@mikro-orm/core";
 import { TRPCError } from "@trpc/server";
 import {
-  EstimateTaskSchema, FindTaskSchema, GetTaskDetailSchema, GetTaskResultSchema,
-  SubmitTaskRequestSchema, SubmitTaskResponse, SubmitTaskResponseSchema, TaskStateSchema,
+  EstimateTaskSchema,
+  FindTaskSchema,
+  GetTaskDetailSchema,
+  GetTaskResultSchema,
+  SubmitTaskRequestSchema,
+  SubmitTaskResponse,
+  SubmitTaskResponseSchema,
+  TaskStateSchema,
 } from "src/models/task";
 import { QuantumJob } from "src/server/entities/QuantumJob";
 import { router } from "src/server/trpc/def";
 import { backendApiProcedure, callBackendApi } from "src/server/trpc/route/backend/common";
 import {
-  checkDeviceAvailability, checkUserAccountPermission,
-  estimateAccountCanAfford, getAccountInfo,
+  checkDeviceAvailability,
+  checkUserAccountPermission,
+  estimateAccountCanAfford,
+  getAccountInfo,
 } from "src/server/trpc/route/utils";
 import { logger } from "src/server/utils/logger";
 import { calculateDuration } from "src/server/utils/time";
@@ -28,7 +37,6 @@ async function handleSubmitTaskRecord(
   accountName: string,
   tenantName: string,
 ) {
-
   // 记录下用户提交的作业信息
   const em = orm.em.fork();
   const submitTime = new Date();
@@ -60,7 +68,6 @@ async function handleSubmitTaskRecord(
   return b.data;
 }
 
-
 export const task = router({
   submitTask: backendApiProcedure
     .meta({
@@ -69,26 +76,27 @@ export const task = router({
         path: "/tc/{accountName}/task/submit",
       },
     })
-    .input(z.preprocess((val) => {
+    .input(
+      z.preprocess((val) => {
+        if (val === undefined) return;
+        if (typeof val !== "object" || val == null || !("accountName" in val)) {
+          logger.error(`Invalid input format ${JSON.stringify(val)}`);
+          throw new Error("Invalid input format");
+        }
 
-      if (val === undefined) return;
-      if (typeof val !== "object" || val == null || !("accountName" in val)) {
-        logger.error(`Invalid input format ${JSON.stringify(val)}`);
-        throw new Error("Invalid input format");
-      }
+        const { accountName, ...restOfVal } = val as Record<string, any>;
 
-      const { accountName, ...restOfVal } = val as Record<string, any>;
+        if ("0" in restOfVal) {
+          // jupyter提交多个作业
+          const tasks = Object.values(restOfVal);
+          return { tasks, accountName };
+        }
 
-      if ("0" in restOfVal) { // jupyter提交多个作业
-        const tasks = Object.values(restOfVal);
-        return { tasks, accountName };
-      }
-
-      return { tasks: [restOfVal], accountName };
-    }, SubmitTaskRequestSchema))
+        return { tasks: [restOfVal], accountName };
+      }, SubmitTaskRequestSchema),
+    )
     .output(SubmitTaskResponseSchema)
     .mutation(async ({ input, ctx: { orm, user } }) => {
-
       const userAccountPermission = await checkUserAccountPermission(user.identityId, input.accountName);
 
       if (!userAccountPermission) {
@@ -138,30 +146,34 @@ export const task = router({
         path: "/tc/{accountName}/task/find",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.number().optional(),
-      states: z.array(TaskStateSchema).optional(),
-      device: z.string().optional(),
-      at: z.tuple([z.number(), z.number()]).optional(),
-      group: z.string().optional(),
-      tags: z.string().optional(),
-      name: z.string().optional(),
-      md5: z.string().optional(),
-      qubits: z.number().optional(),
-      shots: z.number().optional(),
-      page: z.number().optional(),
-      pageSize: z.number().optional(),
-      tenantName: z.string().optional(),
-      userId: z.string().optional(),
-      sortBy: z.string().optional(),
-      sortOrder: z.string().optional(),
-      querySelf: z.boolean().optional(),
-    }))
-    .output(z.object({
-      totalCount: z.number(),
-      tasks: z.array(FindTaskSchema),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.number().optional(),
+        states: z.array(TaskStateSchema).optional(),
+        device: z.string().optional(),
+        at: z.tuple([z.number(), z.number()]).optional(),
+        group: z.string().optional(),
+        tags: z.string().optional(),
+        name: z.string().optional(),
+        md5: z.string().optional(),
+        qubits: z.number().optional(),
+        shots: z.number().optional(),
+        page: z.number().optional(),
+        pageSize: z.number().optional(),
+        tenantName: z.string().optional(),
+        userId: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.string().optional(),
+        querySelf: z.boolean().optional(),
+      }),
+    )
+    .output(
+      z.object({
+        totalCount: z.number(),
+        tasks: z.array(FindTaskSchema),
+      }),
+    )
     .query(async ({ input, ctx: { orm, user } }) => {
       const em = orm.em.fork();
       const qb = em.createQueryBuilder(QuantumJob, "qj");
@@ -227,7 +239,6 @@ export const task = router({
         }
       }
 
-
       const page = input.page ?? 1; // 默认页码为 1
       const pageSize = input.pageSize ?? 50; // 默认每页 50 条记录
       const offset = (page - 1) * pageSize;
@@ -287,17 +298,19 @@ export const task = router({
 
       return {
         totalCount,
-        tasks: tasks.map((job) => FindTaskSchema.parse({
-          ...job.info,
-          jobId: job.id,
-          submitTime: new Date(job.submitTime.getTime()).toString(),
-          lastSyncTime: job.lastSyncTime,
-          account: job.accountName,
-          duration: calculateDuration(job.info.ts),
-          qits: job.qits ? job.qits.toNumber() : undefined,
-          amount: job.amount ? job.amount.toNumber() : undefined,
-          user: job.userId,
-        })),
+        tasks: tasks.map((job) =>
+          FindTaskSchema.parse({
+            ...job.info,
+            jobId: job.id,
+            submitTime: new Date(job.submitTime.getTime()).toString(),
+            lastSyncTime: job.lastSyncTime,
+            account: job.accountName,
+            duration: calculateDuration(job.info.ts),
+            qits: job.qits ? job.qits.toNumber() : undefined,
+            amount: job.amount ? job.amount.toNumber() : undefined,
+            user: job.userId,
+          }),
+        ),
       };
     }),
 
@@ -308,15 +321,18 @@ export const task = router({
         path: "/tc/{accountName}/task/detail",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
-    .output(z.object({
-      task: GetTaskDetailSchema,
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
+    .output(
+      z.object({
+        task: GetTaskDetailSchema,
+      }),
+    )
     .query(async ({ input, ctx: { user, orm } }) => {
-
       const task = await orm.em.fork().findOne(QuantumJob, {
         userId: user.identityId,
         jobId: input.id,
@@ -348,13 +364,14 @@ export const task = router({
         path: "/tc/{accountName}/task/start",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(SubmitTaskResponseSchema)
     .mutation(async ({ input, ctx: { orm, user } }) => {
-
       const userAccountPermission = await checkUserAccountPermission(user.identityId, input.accountName);
 
       if (!userAccountPermission) {
@@ -382,11 +399,13 @@ export const task = router({
 
       const accountInfo = await getAccountInfo(accountName);
 
-      const isAccountCanAfford = await estimateAccountCanAfford(accountInfo, [{
-        source: task.info.source,
-        shots: task.info.shots,
-        device: task.info.device,
-      }]);
+      const isAccountCanAfford = await estimateAccountCanAfford(accountInfo, [
+        {
+          source: task.info.source,
+          shots: task.info.shots,
+          device: task.info.device,
+        },
+      ]);
 
       if (!isAccountCanAfford) {
         throw new TRPCError({
@@ -418,13 +437,14 @@ export const task = router({
         path: "/tc/{accountName}/task/stop",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(SubmitTaskResponseSchema)
     .mutation(async ({ input, ctx: { user } }) => {
-
       const userAccountPermission = await checkUserAccountPermission(user.identityId, input.accountName);
 
       if (!userAccountPermission) {
@@ -456,13 +476,14 @@ export const task = router({
         path: "/tc/{accountName}/task/remove",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(SubmitTaskResponseSchema)
     .mutation(async ({ input, ctx: { user } }) => {
-
       const userAccountPermission = await checkUserAccountPermission(user.identityId, input.accountName);
 
       if (!userAccountPermission) {
@@ -494,10 +515,12 @@ export const task = router({
         path: "/tc/{accountName}/task/status",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(SubmitTaskResponseSchema)
     .query(async ({ input }) => {
       const resp = await callBackendApi("/task/status", {
@@ -522,13 +545,14 @@ export const task = router({
         path: "/tc/{accountName}/task/bill",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(SubmitTaskResponseSchema)
     .query(async ({ input, ctx: { user } }) => {
-
       const userAccountPermission = await checkUserAccountPermission(user.identityId, input.accountName);
 
       if (!userAccountPermission) {
@@ -560,10 +584,12 @@ export const task = router({
         path: "/tc/{accountName}/task/result",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        accountName: z.string(),
+        id: z.string(),
+      }),
+    )
     .output(GetTaskResultSchema)
     .query(async ({ input }) => {
       const resp = await callBackendApi("/task/result", {
@@ -588,18 +614,21 @@ export const task = router({
         path: "/tc/{accountName}/task/estimate",
       },
     })
-    .input(z.object({
-      accountName: z.string(),
-      device: z.string().optional(),
-      tasks: z.array(z.object({
+    .input(
+      z.object({
+        accountName: z.string(),
         device: z.string().optional(),
-        qubits: z.number(),
-        shots: z.number(),
-      })),
-    }))
+        tasks: z.array(
+          z.object({
+            device: z.string().optional(),
+            qubits: z.number(),
+            shots: z.number(),
+          }),
+        ),
+      }),
+    )
     .output(EstimateTaskSchema)
     .mutation(async ({ input }) => {
-
       if (input.device) {
         checkDeviceAvailability(input.device);
       }
@@ -619,6 +648,4 @@ export const task = router({
 
       return parsed.data;
     }),
-
-
 });

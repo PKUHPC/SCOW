@@ -11,26 +11,25 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
 export const GetDailyPayResponse = Type.Object({
-  results: Type.Array(Type.Object({
-    date: DateSchema,
-    amount: Money,
-  })),
+  results: Type.Array(
+    Type.Object({
+      date: DateSchema,
+      amount: Money,
+    }),
+  ),
 });
 
 export type GetDailyPayResponse = Static<typeof GetDailyPayResponse>;
-
 
 export const GetDailyPaySchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-
     startTime: Type.String({ format: "date-time" }),
 
     endTime: Type.String({ format: "date-time" }),
 
     timeZone: Type.String(),
-
   }),
 
   responses: {
@@ -40,29 +39,25 @@ export const GetDailyPaySchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetDailyPaySchema,
-  async (req, res) => {
+export default route(GetDailyPaySchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { startTime, endTime, timeZone } = req.query;
 
-    const { startTime, endTime, timeZone } = req.query;
+  const client = getClient(ChargingServiceClient);
 
-    const client = getClient(ChargingServiceClient);
-
-    const { results } = await asyncClientCall(client, "getDailyPay", {
-      startTime,
-      endTime,
-      timeZone,
-    });
-
-    return {
-      200: {
-        results: results
-          .filter((x) => x.date !== undefined)
-          .map((x) => ensureNotUndefined(x, ["date", "amount"])),
-      },
-    };
+  const { results } = await asyncClientCall(client, "getDailyPay", {
+    startTime,
+    endTime,
+    timeZone,
   });
+
+  return {
+    200: {
+      results: results.filter((x) => x.date !== undefined).map((x) => ensureNotUndefined(x, ["date", "amount"])),
+    },
+  };
+});

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import {
@@ -32,18 +20,18 @@ interface StyledTrProps {
 }
 // 定义样式组件
 const WhiteRow = styled.tr<StyledTrProps>`
-  background-color: ${({ isDark }) => isDark ? "#121212" : "#ffffff"};
+  background-color: ${({ isDark }) => (isDark ? "#121212" : "#ffffff")};
 
   &:hover {
-    background-color: ${({ isDark }) => isDark ? "#1D262C" : "#E9EDEE"};
+    background-color: ${({ isDark }) => (isDark ? "#1D262C" : "#E9EDEE")};
   }
 `;
 
 const GrayRow = styled.tr<StyledTrProps>`
-  background-color: ${({ isDark }) => isDark ? "#1D1D1D" : "#f7f7f7"};
+  background-color: ${({ isDark }) => (isDark ? "#1D1D1D" : "#f7f7f7")};
 
   &:hover {
-    background-color: ${({ isDark }) => isDark ? "#1D262C" : "#E9EDEE"};
+    background-color: ${({ isDark }) => (isDark ? "#1D262C" : "#E9EDEE")};
   }
 `;
 
@@ -53,28 +41,34 @@ export interface FormValues {
 
 const noticeTypeNumbers = Object.values(NoticeType).filter((v): v is NoticeType => typeof v === "number");
 
-const defaultAllTrue = noticeTypeNumbers.reduce((acc, noticeType) => {
-  acc[noticeType] = true;
-  return acc;
-}, {} as Record<NoticeType, boolean>);
+const defaultAllTrue = noticeTypeNumbers.reduce(
+  (acc, noticeType) => {
+    acc[noticeType] = true;
+    return acc;
+  },
+  {} as Record<NoticeType, boolean>,
+);
 
-const defaultNoticeTypesPartialChecked = noticeTypeNumbers.reduce((acc, noticeType) => {
-  acc[noticeType] = false;
-  return acc;
-}, {} as Record<NoticeType, boolean>);
+const defaultNoticeTypesPartialChecked = noticeTypeNumbers.reduce(
+  (acc, noticeType) => {
+    acc[noticeType] = false;
+    return acc;
+  },
+  {} as Record<NoticeType, boolean>,
+);
 
 export const UserSubscriptionTable: React.FC = () => {
-
   const { scowLangId, scowDark } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
   const compLang = language.subscription.subscriptionTable;
 
   const [form] = Form.useForm<FormValues>();
 
-  const [noticeTypeAllChecked, setNoticeTypeAllChecked]
-      = useState<Partial<Record<NoticeType, boolean>>>(defaultAllTrue);
-  const [noticeTypePartialChecked, setNoticeTypePartialChecked]
-      = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesPartialChecked);
+  const [noticeTypeAllChecked, setNoticeTypeAllChecked] =
+    useState<Partial<Record<NoticeType, boolean>>>(defaultAllTrue);
+  const [noticeTypePartialChecked, setNoticeTypePartialChecked] = useState<Partial<Record<NoticeType, boolean>>>(
+    defaultNoticeTypesPartialChecked,
+  );
   const [checkAllDisabled, setCheckAllDisabled] = useState(defaultAllTrue);
   const [hasChange, setHasChange] = useState(false);
 
@@ -89,10 +83,15 @@ export const UserSubscriptionTable: React.FC = () => {
   });
 
   const columns = useSubscriptionColumns({
-    form, messageConfigs: data?.configs, checkAllDisabled,
-    noticeTypeAllChecked, setNoticeTypeAllChecked,
-    noticeTypePartialChecked, setNoticeTypePartialChecked,
-    setHasChange, lang: language,
+    form,
+    messageConfigs: data?.configs,
+    checkAllDisabled,
+    noticeTypeAllChecked,
+    setNoticeTypeAllChecked,
+    noticeTypePartialChecked,
+    setNoticeTypePartialChecked,
+    setHasChange,
+    lang: language,
   });
 
   const initFormFromData = (configs: MessageConfig[]) => {
@@ -151,13 +150,12 @@ export const UserSubscriptionTable: React.FC = () => {
       const values = form.getFieldsValue();
 
       const parsedValues = Object.keys(values.noticeConfigs).map((messageType) => {
-
         const messageConfig = data?.configs.find((config) => config.messageType === messageType);
 
         if (!messageConfig) {
           message.error(compLang.formError);
           throw Error("Unable to find the corresponding MessageConfig");
-        };
+        }
 
         const noticeConfigs = Object.keys(values.noticeConfigs[messageType])
           .filter((noticeType) => values.noticeConfigs[messageType][noticeType] !== undefined)
@@ -165,12 +163,13 @@ export const UserSubscriptionTable: React.FC = () => {
             const enumNoticeType = Number(noticeType) as unknown as NoticeType;
 
             const originalNoticeConfig = messageConfig?.noticeConfigs.find(
-              (config) => config.noticeType === enumNoticeType);
+              (config) => config.noticeType === enumNoticeType,
+            );
 
             if (!originalNoticeConfig) {
               message.error(compLang.formError);
               throw Error("Unable to find the corresponding NoticeType");
-            };
+            }
 
             return {
               noticeType: enumNoticeType,
@@ -185,12 +184,13 @@ export const UserSubscriptionTable: React.FC = () => {
         };
       });
 
-      await mutateAsync({ configs: parsedValues.map((x) => ({
-        ...x,
-        $typeName: "notification.MessageConfig",
-        noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
-      })) });
-
+      await mutateAsync({
+        configs: parsedValues.map((x) => ({
+          ...x,
+          $typeName: "notification.MessageConfig",
+          noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
+        })),
+      });
     } catch {
       message.error(compLang.saveError);
     }

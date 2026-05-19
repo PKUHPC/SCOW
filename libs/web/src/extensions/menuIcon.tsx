@@ -27,10 +27,9 @@ const defaultClustersSVG = () => (
   </svg>
 );
 
-export const DefaultClustersIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={defaultClustersSVG} {...props} ref={ref} />
-));
+export const DefaultClustersIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={defaultClustersSVG} {...props} ref={ref} />,
+);
 
 // 默认授权分区
 const defaultPartitionsSVG = () => (
@@ -53,13 +52,13 @@ const defaultPartitionsSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const DefaultPartitionsIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={defaultPartitionsSVG} {...props} ref={ref} />
-));
+export const DefaultPartitionsIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={defaultPartitionsSVG} {...props} ref={ref} />
+  ),
+);
 
 // 授权集群分区
 const accountPartitionsSVG = () => (
@@ -86,10 +85,11 @@ const accountPartitionsSVG = () => (
   </svg>
 );
 
-export const AccountPartitionsIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={accountPartitionsSVG} {...props} ref={ref} />
-));
+export const AccountPartitionsIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={accountPartitionsSVG} {...props} ref={ref} />
+  ),
+);
 
 // 我的消息图标
 const notificationSVG = () => (
@@ -102,13 +102,11 @@ const notificationSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const NotificationIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={notificationSVG} {...props} ref={ref} />
-));
+export const NotificationIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={notificationSVG} {...props} ref={ref} />,
+);
 
 // 消息订阅图标
 const subscriptionSVG = () => (
@@ -137,10 +135,9 @@ const subscriptionSVG = () => (
   </svg>
 );
 
-export const SubscriptionIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={subscriptionSVG} {...props} ref={ref} />
-));
+export const SubscriptionIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={subscriptionSVG} {...props} ref={ref} />,
+);
 
 // 消息设置图标
 const messageConfigSVG = () => (
@@ -163,10 +160,9 @@ const messageConfigSVG = () => (
   </svg>
 );
 
-export const MessageConfigIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={messageConfigSVG} {...props} ref={ref} />
-));
+export const MessageConfigIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={messageConfigSVG} {...props} ref={ref} />,
+);
 
 // 发送消息图标
 const sendMessageSVG = () => (
@@ -186,10 +182,9 @@ const sendMessageSVG = () => (
   </svg>
 );
 
-export const SendMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={sendMessageSVG} {...props} ref={ref} />
-));
+export const SendMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={sendMessageSVG} {...props} ref={ref} />,
+);
 
 // 创建自定义消息图标
 const createCustomMessageSVG = () => (
@@ -207,7 +202,8 @@ const createCustomMessageSVG = () => (
   </svg>
 );
 
-export const CreateCustomMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={createCustomMessageSVG} {...props} ref={ref} />
-));
+export const CreateCustomMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={createCustomMessageSVG} {...props} ref={ref} />
+  ),
+);

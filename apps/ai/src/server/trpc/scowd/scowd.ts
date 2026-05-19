@@ -10,13 +10,12 @@ import { scowdClientNotFound } from "src/server/utils/errors";
 import { logger } from "src/server/utils/logger";
 import { Logger } from "ts-log";
 
-
 export const certificates = createScowdCertificates(config);
 
 export function generateScowdUrl(address: string, scowdPort: number | undefined) {
   return config.SCOWD_SSL_ENABLED
-    ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
-
+    ? `https://${removePort(address)}:${scowdPort}`
+    : `http://${removePort(address)}:${scowdPort}`;
 }
 
 export function getLoginNodeScowdUrl(cluster: string, host: string): string | undefined {
@@ -28,7 +27,6 @@ export function getLoginNodeScowdUrl(cluster: string, host: string): string | un
 
   return generateScowdUrl(address, scowdPort);
 }
-
 
 // Cache for ScowdClient instances
 const getClientByCluster = createBalancedScowdClientGetter({
@@ -123,8 +121,7 @@ export function mapConnectErrorToTRPCError(err: any): TRPCError {
   });
 }
 
-
-export async function wrap<T>(p: Promise<T>,logger: Logger): Promise<T> {
+export async function wrap<T>(p: Promise<T>, logger: Logger): Promise<T> {
   try {
     return await p;
   } catch (err: any) {

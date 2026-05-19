@@ -1,7 +1,6 @@
 import { TimeUnit } from "@scow/protos/build/portal/job";
 import { Logger } from "ts-log";
 
-
 export interface JobTemplate {
   // 之前的模板的的展示名称，现在模板名继续沿用这个字段
   jobName: string;
@@ -43,7 +42,7 @@ export interface GetJobTemplateRequest {
 
 export interface GetJobTemplateReply {
   template: JobTemplate;
-};
+}
 
 export interface SaveJobTemplateRequest {
   userId: string;
@@ -51,19 +50,14 @@ export interface SaveJobTemplateRequest {
   jobInfo: JobTemplate;
 }
 
-export interface SaveJobTemplateReply {
-
-}
+export interface SaveJobTemplateReply {}
 
 export interface DeleteJobTemplateRequest {
   userId: string;
   id: string;
 }
 
-export interface DeleteJobTemplateReply {
-
-}
-
+export interface DeleteJobTemplateReply {}
 
 export interface RenameJobTemplateRequest {
   userId: string;
@@ -71,9 +65,7 @@ export interface RenameJobTemplateRequest {
   jobName: string;
 }
 
-export interface RenameJobTemplateReply {
-
-}
+export interface RenameJobTemplateReply {}
 
 export interface SubmitJobRequest {
   userId: string;
@@ -129,7 +121,6 @@ export interface SaveAsJobTemplateRequest {
 }
 
 interface SaveAsJobTemplateRequestReply {}
-
 
 export interface JobOps {
   listJobTemplates(req: ListJobTemplatesRequest, logger: Logger): Promise<ListJobTemplatesReply>;

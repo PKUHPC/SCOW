@@ -39,10 +39,7 @@ const buildInterpolatedValues = (
   return values;
 };
 
-const interpolateValues = (
-  obj: Record<string, string>,
-  valueMap: Record<string, string>,
-): Record<string, string> => {
+const interpolateValues = (obj: Record<string, string>, valueMap: Record<string, string>): Record<string, string> => {
   return Object.entries(obj).reduce<Record<string, string>>((acc, [key, val]) => {
     acc[key] = parsePlaceholder(val, valueMap);
     return acc;
@@ -71,19 +68,25 @@ interface WebTypeProps {
 
 export type ConnectToAppResponse = BaseConnection & WebTypeProps;
 
-export const DevHostConnectLink: React.FC<Props> = ({
-  session, cluster, appName, refreshToken,
-}) => {
+export const DevHostConnectLink: React.FC<Props> = ({ session, cluster, appName, refreshToken }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.devHost.listPage.");
-  const { publicConfig: { BASE_PATH } } = usePublicConfig();
+  const {
+    publicConfig: { BASE_PATH },
+  } = usePublicConfig();
   const { message } = App.useApp();
 
-  const { data, refetch } = trpc.jobs.checkDevHostAppConnectivity.useQuery({
-    clusterId: cluster, jobId: session.jobId, sessionId: session.sessionId, appName,
-  }, {
-    enabled: !!session.jobId && session.state === "RUNNING",
-  });
+  const { data, refetch } = trpc.jobs.checkDevHostAppConnectivity.useQuery(
+    {
+      clusterId: cluster,
+      jobId: session.jobId,
+      sessionId: session.sessionId,
+      appName,
+    },
+    {
+      enabled: !!session.jobId && session.state === "RUNNING",
+    },
+  );
 
   const connectMutation = trpc.jobs.connectToDevHostApp.useMutation({
     onError(e) {

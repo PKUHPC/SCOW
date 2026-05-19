@@ -1,6 +1,10 @@
 import { CloseOutlined } from "@ant-design/icons";
 import {
-  ArchiveIcon, FolderIcon, ImageIcon, SupportedFileIcon, SymlinkIcon,
+  ArchiveIcon,
+  FolderIcon,
+  ImageIcon,
+  SupportedFileIcon,
+  SymlinkIcon,
   UnrecognizedFileIcon,
 } from "@scow/lib-web/build/icons/FileIcon";
 import { isExecutableScriptFilename, isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
@@ -21,25 +25,31 @@ export const TopBar = styled(FilterFormContainer)`
   display: flex;
   flex-direction: row;
   padding-bottom: 8px;
-  &>button {
+  & > button {
     margin: 0px 4px;
   }
 `;
 
 export const baseTypeIcons = {
-  "DIR": FolderIcon,
-  "SYMLINK": SymlinkIcon,
-  "ERROR": CloseOutlined,
+  DIR: FolderIcon,
+  SYMLINK: SymlinkIcon,
+  ERROR: CloseOutlined,
 } as Record<Exclude<FileType, "FILE">, React.ComponentType>;
 
 export const iconFor = (file: FileInfo): React.ComponentType => {
   if (file.type === "FILE") {
     const name = file.name || "";
-    if (isDecompressibleFile(name)) { return ArchiveIcon; }
-    if (isImage(name)) { return ImageIcon; }
+    if (isDecompressibleFile(name)) {
+      return ArchiveIcon;
+    }
+    if (isImage(name)) {
+      return ImageIcon;
+    }
     const editable = !isNonEditableFilename(name, publicConfig.NON_EDITABLE_FILENAME_POSTFIXES);
     const excutable = isExecutableScriptFilename(name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES);
-    if (editable || excutable) { return SupportedFileIcon; }
+    if (editable || excutable) {
+      return SupportedFileIcon;
+    }
     return UnrecognizedFileIcon;
   }
   return baseTypeIcons[file.type] || CloseOutlined;
@@ -59,4 +69,3 @@ export const nodeModeToString = (mode: number) => {
 export const openPreviewLink = (href: string) => {
   window.open(href, "ViewFile", "location=yes,resizable=yes,scrollbars=yes,status=yes");
 };
-

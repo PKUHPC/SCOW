@@ -5,7 +5,7 @@ import { OperationType } from "@scow/lib-operation-log";
 import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
 import { Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { AppAuthTargetType,AuthorizeAction } from "src/models/app";
+import { AppAuthTargetType, AuthorizeAction } from "src/models/app";
 import { OperationResult } from "src/models/operationLog";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { callLog } from "src/server/operationLog";
@@ -40,22 +40,23 @@ export default route(AuthorizeAppSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: action === AuthorizeAction.UNAUTHORIZE
-      ? OperationType.unauthorizeApp
-      : OperationType.authorizeApp,
-    operationTypePayload:{
+    operationTypeName:
+      action === AuthorizeAction.UNAUTHORIZE ? OperationType.unauthorizeApp : OperationType.authorizeApp,
+    operationTypePayload: {
       clusterId,
       appName,
-      target: targetType === AppAuthTargetType.TENANT ?
-        { $case: "tenantName", tenantName: targetName } :
-        { $case: "accountName", accountName: targetName },
+      target:
+        targetType === AppAuthTargetType.TENANT
+          ? { $case: "tenantName", tenantName: targetName }
+          : { $case: "accountName", accountName: targetName },
     },
   };
 
   const auth = authenticate((u) => {
-    return targetType === AppAuthTargetType.TENANT ?
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) :
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN); });
+    return targetType === AppAuthTargetType.TENANT
+      ? u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
+      : u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  });
   const info = await auth(req, res);
   if (info) {
     logInfo.operatorUserId = info.identityId;
@@ -70,20 +71,24 @@ export default route(AuthorizeAppSchema, async (req, res) => {
     appId,
     operatorId: logInfo.operatorUserId,
     action,
-    target: targetType === AppAuthTargetType.TENANT ?
-      { $case: "tenantName", tenantName: targetName } :
-      { $case: "accountName", accountName: targetName },
+    target:
+      targetType === AppAuthTargetType.TENANT
+        ? { $case: "tenantName", tenantName: targetName }
+        : { $case: "accountName", accountName: targetName },
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
-      [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.message } }),
-      [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.message } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.INVALID_ARGUMENT]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.UNAVAILABLE]: (e) => ({ 200: { executed: false, reason: e.message } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

@@ -1,3 +1,5 @@
+import type { getLayoutMap } from "src/utils/chip";
+
 import { Typography } from "antd";
 import { max, min } from "d3-array";
 import { scaleLinear } from "d3-scale";
@@ -7,7 +9,6 @@ import { QubitData } from "src/models/device";
 import { BackgroundGrid } from "src/pageComponents/chip/BackgroundGrid";
 import { ColorLegend } from "src/pageComponents/chip/ColorLegend";
 import { HorizontalColorLegend } from "src/pageComponents/chip/HorizontalColorLegend";
-import type { getLayoutMap } from "src/utils/chip";
 
 interface Props {
   qubits: QubitData[];
@@ -23,8 +24,16 @@ interface Props {
 // 单比特方块间距
 const SQ_NODE_GAP = 0;
 
-export const SingleQubitFidelityMap: React.FC<Props> =
-({ qubits, coords, maxX, maxY, isFullWidth, nodeSize, fontSize, legendBelowChart }) => {
+export const SingleQubitFidelityMap: React.FC<Props> = ({
+  qubits,
+  coords,
+  maxX,
+  maxY,
+  isFullWidth,
+  nodeSize,
+  fontSize,
+  legendBelowChart,
+}) => {
   if (Object.keys(coords).length === 0) {
     return null;
   }
@@ -32,14 +41,12 @@ export const SingleQubitFidelityMap: React.FC<Props> =
   // 构建一个 qubits 数据的 Map 以便快速查找
   const qubitsMap = new Map(qubits.map((q) => [q.Q, q]));
   const fids = qubits.map((q) => 1 - q.Err.SQ);
-  const originalMinF = min(fids) ?? 0.9980;
+  const originalMinF = min(fids) ?? 0.998;
   const originalMaxF = max(fids) ?? 1;
   const minF = Math.floor(originalMinF * 1000) / 1000;
   const maxF = Math.ceil(originalMaxF * 1000) / 1000;
 
-  const color = scaleLinear<string, string>()
-    .domain([minF, maxF])
-    .range(["#f5d270", "#0a1162"]);
+  const color = scaleLinear<string, string>().domain([minF, maxF]).range(["#f5d270", "#0a1162"]);
 
   const SQ_NODE_SIZE = isFullWidth ? nodeSize * 1.2 : nodeSize;
   const SQ_FONT_SIZE = isFullWidth ? fontSize * 1.1 : fontSize;
@@ -58,26 +65,31 @@ export const SingleQubitFidelityMap: React.FC<Props> =
   const p = prefix("page.chip.");
 
   const topTextY = -(SQ_FONT_SIZE * 0.5);
-  const bottomTextY = (SQ_FONT_SIZE * 1.2);
+  const bottomTextY = SQ_FONT_SIZE * 1.2;
 
   return (
-    <div style={{
-      background: "#fff",
-      width: isFullWidth && legendBelowChart ? "90%" : "100%",
-      margin: isFullWidth ? "0 auto" : "0",
-    }}
+    <div
+      style={{
+        background: "#fff",
+        width: isFullWidth && legendBelowChart ? "90%" : "100%",
+        margin: isFullWidth ? "0 auto" : "0",
+      }}
     >
       <div style={{ marginBottom: "12px" }}>
         <Text>{t(p("SQFidelity"))}</Text>
       </div>
 
-      <div style={{ overflowX: legendBelowChart ? "auto" : "visible",
-        ...(legendBelowChart ? {} : {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }),
-      }}
+      <div
+        style={{
+          overflowX: legendBelowChart ? "auto" : "visible",
+          ...(legendBelowChart
+            ? {}
+            : {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }),
+        }}
       >
         <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
           <BackgroundGrid width={width} height={height} step={SQ_NODE_SIZE + SQ_NODE_GAP} />
@@ -98,12 +110,7 @@ export const SingleQubitFidelityMap: React.FC<Props> =
                       height={SQ_NODE_SIZE}
                       fill={fill}
                     />
-                    <text
-                      y={topTextY}
-                      textAnchor="middle"
-                      fontSize={SQ_FONT_SIZE}
-                      fill="#fff"
-                    >
+                    <text y={topTextY} textAnchor="middle" fontSize={SQ_FONT_SIZE} fill="#fff">
                       {(fid * 100).toFixed(2)}%
                     </text>
                     <text
@@ -152,14 +159,9 @@ export const SingleQubitFidelityMap: React.FC<Props> =
             </g>
           )}
         </svg>
-
       </div>
       {legendBelowChart && (
-        <div style={{ marginTop: "16px",
-          width: "100%",
-          textAlign: "center",
-        }}
-        >
+        <div style={{ marginTop: "16px", width: "100%", textAlign: "center" }}>
           <svg width={window.innerWidth * 0.6 + 40} height={40}>
             <HorizontalColorLegend
               id="sqLegend"

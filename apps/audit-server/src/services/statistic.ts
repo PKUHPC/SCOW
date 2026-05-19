@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { QueryOrder, raw } from "@mikro-orm/core";
 import { OperationType } from "@scow/lib-operation-log";
@@ -17,13 +5,9 @@ import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date
 import { StatisticServiceServer, StatisticServiceService } from "@scow/protos/build/audit/statistic";
 import { OperationLog } from "src/entities/OperationLog";
 
-
 export const statisticServiceServer = plugin((server) => {
-
   server.addService<StatisticServiceServer>(StatisticServiceService, {
-
     getActiveUserCount: async ({ request, em, logger }) => {
-
       const { startTime, endTime, timeZone = "UTC" } = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       checkTimeZone(timeZone);
@@ -39,14 +23,16 @@ export const statisticServiceServer = plugin((server) => {
         .groupBy(raw("date"))
         .orderBy({ [raw("date")]: QueryOrder.DESC });
 
-      const records: { date: string, userCount: number }[] = await qb.execute();
+      const records: { date: string; userCount: number }[] = await qb.execute();
 
-      return [{
-        results: records.map((record) => ({
-          date: convertToDateMessage(record.date, logger),
-          count: record.userCount,
-        })),
-      }];
+      return [
+        {
+          results: records.map((record) => ({
+            date: convertToDateMessage(record.date, logger),
+            count: record.userCount,
+          })),
+        },
+      ];
     },
 
     getPortalUsageCount: async ({ request, em }) => {
@@ -81,13 +67,13 @@ export const statisticServiceServer = plugin((server) => {
         .groupBy(raw("operationType"))
         .orderBy({ [raw("count")]: QueryOrder.DESC });
 
-      const results: { operationType: string, count: number }[] = await qb.execute();
+      const results: { operationType: string; count: number }[] = await qb.execute();
 
-      return [{
-        results,
-      }];
-
-
+      return [
+        {
+          results,
+        },
+      ];
     },
     getMisUsageCount: async ({ request, em }) => {
       const { startTime, endTime } = ensureNotUndefined(request, ["startTime", "endTime"]);
@@ -148,14 +134,13 @@ export const statisticServiceServer = plugin((server) => {
         .groupBy(raw("operationType"))
         .orderBy({ [raw("count")]: QueryOrder.DESC });
 
-      const results: { operationType: string, count: number }[] = await qb.execute();
+      const results: { operationType: string; count: number }[] = await qb.execute();
 
-      return [{
-        results,
-      }];
-
-
+      return [
+        {
+          results,
+        },
+      ];
     },
   });
-
 });

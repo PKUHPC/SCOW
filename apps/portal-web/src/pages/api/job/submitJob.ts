@@ -29,8 +29,8 @@ export const SubmitJobInfo = Type.Object({
   memory: Type.Optional(Type.String()),
   comment: Type.Optional(Type.String()),
   save: Type.Boolean(),
-  scriptOutput:Type.Optional(Type.String()),
-  maxTimeUnit:Type.Optional(Type.Enum(TimeUnit)),
+  scriptOutput: Type.Optional(Type.String()),
+  maxTimeUnit: Type.Optional(Type.Enum(TimeUnit)),
 });
 
 export type SubmitJobInfo = Static<typeof SubmitJobInfo>;
@@ -75,28 +75,47 @@ export const SubmitJobSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(SubmitJobSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
-  const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit, save,
-    nodeCount, partition, qos, account, comment
-    , workingDirectory, output, errorOutput, scriptOutput, memory } = req.body;
+  const {
+    cluster,
+    command,
+    jobName,
+    coreCount,
+    gpuCount,
+    maxTime,
+    maxTimeUnit,
+    save,
+    nodeCount,
+    partition,
+    qos,
+    account,
+    comment,
+    workingDirectory,
+    output,
+    errorOutput,
+    scriptOutput,
+    memory,
+  } = req.body;
 
   const client = getClient(JobServiceClient);
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypePayload:{
+    operationTypePayload: {
       accountName: "",
       clusterId: cluster,
     },
   };
 
   return await asyncUnaryCall(client, "submitJob", {
-    cluster, userId: info.identityId,
+    cluster,
+    userId: info.identityId,
     jobName,
     coreCount,
     gpuCount,
@@ -112,14 +131,16 @@ export default route(SubmitJobSchema, async (req, res) => {
     workingDirectory,
     output,
     errorOutput,
-    scriptOutput:scriptOutput === undefined || scriptOutput.trim() === "" ? undefined : scriptOutput.trim(),
+    scriptOutput: scriptOutput === undefined || scriptOutput.trim() === "" ? undefined : scriptOutput.trim(),
     saveAsTemplate: save,
   })
     .then(async ({ jobId }) => {
       await callLog(
-        { ...logInfo,
+        {
+          ...logInfo,
           operationTypeName: OperationType.submitJob,
-          operationTypePayload: { ... logInfo.operationTypePayload, jobId } },
+          operationTypePayload: { ...logInfo.operationTypePayload, jobId },
+        },
         OperationResult.SUCCESS,
       );
       if (save) {
@@ -127,37 +148,43 @@ export default route(SubmitJobSchema, async (req, res) => {
           {
             ...logInfo,
             operationTypeName: OperationType.addJobTemplate,
-            operationTypePayload: { ... logInfo.operationTypePayload, jobTemplateId: `${jobName}-${jobId}` },
+            operationTypePayload: { ...logInfo.operationTypePayload, jobTemplateId: `${jobName}-${jobId}` },
           },
           OperationResult.SUCCESS,
         );
       }
       return { 201: { jobId } } as const;
     })
-    .catch(handlegRPCError({
-      [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED", message: err.details } } as const),
-      [status.PERMISSION_DENIED]: (err) => {
-        const { findDetails } = parseErrorStatus(err.metadata);
-        const errors = findDetails(ErrorInfo);
-        if (errors[0]) {
-          switch (errors[0].reason) {
-            case "USER_ACCOUNT_NOT_AVAILABLE":
-              return { 403: { code: "USER_ACCOUNT_NOT_AVAILABLE" as const, message: err.details } };
-            case "CLUSTER_PARTITION_NOT_AVAILABLE":
-              return { 403: { code: "CLUSTER_PARTITION_NOT_AVAILABLE" as const, message: err.details } };
-            default:
-              return { 403: { code: "PERMISSION_DENIED" as const, message: err.details } };
-          }
-        }
-      },
-      [status.NOT_FOUND]: (err) => ({ 404: { code: "NOT_FOUND", message: err.details } } as const),
-      [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
-    },
-    async () => await callLog(
-      { ...logInfo,
-        operationTypeName: OperationType.submitJob,
-        operationTypePayload: { ... logInfo.operationTypePayload },
-      },
-      OperationResult.FAIL,
-    )));
+    .catch(
+      handlegRPCError(
+        {
+          [status.INTERNAL]: (err) => ({ 500: { code: "SCHEDULER_FAILED", message: err.details } }) as const,
+          [status.PERMISSION_DENIED]: (err) => {
+            const { findDetails } = parseErrorStatus(err.metadata);
+            const errors = findDetails(ErrorInfo);
+            if (errors[0]) {
+              switch (errors[0].reason) {
+                case "USER_ACCOUNT_NOT_AVAILABLE":
+                  return { 403: { code: "USER_ACCOUNT_NOT_AVAILABLE" as const, message: err.details } };
+                case "CLUSTER_PARTITION_NOT_AVAILABLE":
+                  return { 403: { code: "CLUSTER_PARTITION_NOT_AVAILABLE" as const, message: err.details } };
+                default:
+                  return { 403: { code: "PERMISSION_DENIED" as const, message: err.details } };
+              }
+            }
+          },
+          [status.NOT_FOUND]: (err) => ({ 404: { code: "NOT_FOUND", message: err.details } }) as const,
+          [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+        },
+        async () =>
+          await callLog(
+            {
+              ...logInfo,
+              operationTypeName: OperationType.submitJob,
+              operationTypePayload: { ...logInfo.operationTypePayload },
+            },
+            OperationResult.FAIL,
+          ),
+      ),
+    );
 });

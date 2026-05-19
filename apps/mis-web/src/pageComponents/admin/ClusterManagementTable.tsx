@@ -23,7 +23,6 @@ interface Props {
   reload: () => void;
 }
 
-
 interface FilterForm {
   clusters: Cluster[];
 }
@@ -31,10 +30,7 @@ interface FilterForm {
 const p = prefix("page.admin.resourceManagement.clusterManagement.");
 const pCommon = prefix("common.");
 
-export const ClusterManagementTable: React.FC<Props> = ({
-  data, isLoading, reload,
-}) => {
-
+export const ClusterManagementTable: React.FC<Props> = ({ data, isLoading, reload }) => {
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<FilterForm>();
 
@@ -44,29 +40,25 @@ export const ClusterManagementTable: React.FC<Props> = ({
   const { publicConfigClusters, clusterSortedIdList } = useStore(ClusterInfoStore);
 
   const [query, setQuery] = useState<FilterForm>(() => {
-
     return {
       clusters: getSortedClusterValues(publicConfigClusters, clusterSortedIdList),
     };
   });
 
   const filteredData = useMemo(() => {
-
     if (!data) return undefined;
 
     if (!query.clusters || query.clusters.length === 0) {
       return data;
     }
 
-    const filteredValues = data
-      .filter((cluster) => query.clusters.some((c) => c.id === cluster.clusterId));
+    const filteredValues = data.filter((cluster) => query.clusters.some((c) => c.id === cluster.clusterId));
 
     return filteredValues;
-
   }, [data, query]);
 
   const getStatusWeight = (r: CombinedClusterInfo): number => {
-  // 连接错误
+    // 连接错误
     if (r.connectionStatus === ClusterConnectionStatus.ERROR) {
       return 0;
     }
@@ -77,7 +69,6 @@ export const ClusterManagementTable: React.FC<Props> = ({
     // 正常
     return 2;
   };
-
 
   return (
     <div>
@@ -95,7 +86,9 @@ export const ClusterManagementTable: React.FC<Props> = ({
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{tArgs(pCommon("search"))}</Button>
+              <Button type="primary" htmlType="submit">
+                {tArgs(pCommon("search"))}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -121,10 +114,14 @@ export const ClusterManagementTable: React.FC<Props> = ({
             return getI18nConfigCurrentText(clusterName ?? r.clusterId, languageId);
           }}
           sorter={(a, b) => {
-            const clusterA =
-              getI18nConfigCurrentText(publicConfigClusters[a.clusterId].name ?? a.clusterId, languageId);
-            const clusterB =
-              getI18nConfigCurrentText(publicConfigClusters[b.clusterId].name ?? b.clusterId, languageId);
+            const clusterA = getI18nConfigCurrentText(
+              publicConfigClusters[a.clusterId].name ?? a.clusterId,
+              languageId,
+            );
+            const clusterB = getI18nConfigCurrentText(
+              publicConfigClusters[b.clusterId].name ?? b.clusterId,
+              languageId,
+            );
             return compareNullableString(clusterA, clusterB);
           }}
         />
@@ -158,15 +155,15 @@ export const ClusterManagementTable: React.FC<Props> = ({
         <Table.Column<CombinedClusterInfo>
           dataIndex="connectionStatus"
           title={tArgs(p("table.clusterState"))}
-          render={(_, r) => (
+          render={(_, r) =>
             r.connectionStatus === ClusterConnectionStatus.ERROR ? (
               <Tag color="red">{tArgs(p("table.errorState"))}</Tag>
+            ) : r.activationStatus === ClusterActivationStatus.DEACTIVATED ? (
+              <Tag color="red">{tArgs(p("table.deactivatedState"))}</Tag>
             ) : (
-              r.activationStatus === ClusterActivationStatus.DEACTIVATED ?
-                <Tag color="red">{tArgs(p("table.deactivatedState"))}</Tag> :
-                <Tag color="green">{tArgs(p("table.normalState"))}</Tag>
+              <Tag color="green">{tArgs(p("table.normalState"))}</Tag>
             )
-          )}
+          }
           sorter={(a, b) => compareNullableNumber(getStatusWeight(a), getStatusWeight(b))}
         />
         <Table.Column<CombinedClusterInfo>
@@ -196,84 +193,82 @@ export const ClusterManagementTable: React.FC<Props> = ({
           fixed="right"
           width="10%"
           render={(_, r) => {
-            const clusterName
-            = getI18nConfigCurrentText(publicConfigClusters[r.clusterId].name, languageId);
+            const clusterName = getI18nConfigCurrentText(publicConfigClusters[r.clusterId].name, languageId);
             return (
               <>
-                {
-                  r.activationStatus === ClusterActivationStatus.DEACTIVATED
-                  && (
-                    <>
-                      <a
-                        onClick={() => {
-                          modal.confirm({
-                            title: tArgs(p("activateModal.title")),
-                            icon: <ExclamationCircleOutlined />,
-                            content: (
-                              <>
-                                <p>
-                                  {tArgs(p("activateModal.content"), [
-                                    <strong key="clusterId">{r.clusterId}</strong>,
-                                    <strong key="clusterName">{clusterName}</strong>,
-                                  ])}
-                                </p>
-                                <p style={{ color: "red" }}>{tArgs(p("activateModal.contentAttention"))}</p>
-                              </>
-                            ),
-                            onOk: async () => {
-                              await api.activateCluster({
+                {r.activationStatus === ClusterActivationStatus.DEACTIVATED && (
+                  <>
+                    <a
+                      onClick={() => {
+                        modal.confirm({
+                          title: tArgs(p("activateModal.title")),
+                          icon: <ExclamationCircleOutlined />,
+                          content: (
+                            <>
+                              <p>
+                                {tArgs(p("activateModal.content"), [
+                                  <strong key="clusterId">{r.clusterId}</strong>,
+                                  <strong key="clusterName">{clusterName}</strong>,
+                                ])}
+                              </p>
+                              <p style={{ color: "red" }}>{tArgs(p("activateModal.contentAttention"))}</p>
+                            </>
+                          ),
+                          onOk: async () => {
+                            await api
+                              .activateCluster({
                                 body: {
                                   clusterId: r.clusterId,
                                 },
                               })
-                                .then((res) => {
-                                  if (res.executed) {
-                                    message.success(tArgs(p("activateModal.successMessage")));
-                                    reload();
-                                  } else {
-                                    message.error(res.reason || tArgs(p("activateModal.failureMessage")));
-                                    reload();
-                                  }
-                                });
-                            },
-                          });
-
-                        }}
-                      >
-                        {tArgs(p("table.activate"))}
-                      </a>
-                    </>
-                  )
-                }
-                { r.activationStatus === ClusterActivationStatus.ACTIVATED && (
+                              .then((res) => {
+                                if (res.executed) {
+                                  message.success(tArgs(p("activateModal.successMessage")));
+                                  reload();
+                                } else {
+                                  message.error(res.reason || tArgs(p("activateModal.failureMessage")));
+                                  reload();
+                                }
+                              });
+                          },
+                        });
+                      }}
+                    >
+                      {tArgs(p("table.activate"))}
+                    </a>
+                  </>
+                )}
+                {r.activationStatus === ClusterActivationStatus.ACTIVATED && (
                   <>
                     <DeactivateClusterModalLink
                       clusterId={r.clusterId}
                       clusterName={clusterName}
                       onComplete={async (confirmedClusterId, deactivationComment) => {
-
-                        return await api.deactivateCluster({ body:{
-                          clusterId: confirmedClusterId,
-                          deactivationComment,
-                        } }).then((res) => {
-                          if (res.executed) {
-                            message.success(tArgs(p("deactivateModal.successMessage")));
-                            reload();
-                          } else {
-                            message.error(tArgs(p("deactivateModal.failureMessage")));
-                            reload();
-                          }
-                        });
-
+                        return await api
+                          .deactivateCluster({
+                            body: {
+                              clusterId: confirmedClusterId,
+                              deactivationComment,
+                            },
+                          })
+                          .then((res) => {
+                            if (res.executed) {
+                              message.success(tArgs(p("deactivateModal.successMessage")));
+                              reload();
+                            } else {
+                              message.error(tArgs(p("deactivateModal.failureMessage")));
+                              reload();
+                            }
+                          });
                       }}
                     >
                       {tArgs(p("table.deactivate"))}
                     </DeactivateClusterModalLink>
                   </>
-                )
-                }
+                )}
               </>
-            ); }}
+            );
+          }}
         />
       </Table>
     </div>

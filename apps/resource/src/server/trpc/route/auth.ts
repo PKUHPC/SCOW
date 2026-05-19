@@ -18,7 +18,6 @@ export const ClientUserInfoSchema = z.object({
 export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
 
 export const auth = router({
-
   getUserInfo: procedure
     .meta({
       openapi: {
@@ -29,12 +28,12 @@ export const auth = router({
       },
     })
     .input(z.void())
-    .output(z.object({
-      user: ClientUserInfoSchema,
-    }))
+    .output(
+      z.object({
+        user: ClientUserInfoSchema,
+      }),
+    )
     .query(async ({ ctx: { req, res } }) => {
-
-
       if (process.env.NODE_ENV === "test" || USE_MOCK) {
         return { user: MOCK_USER };
       }

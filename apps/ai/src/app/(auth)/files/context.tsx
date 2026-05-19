@@ -4,14 +4,14 @@ import { FileInfo } from "src/models/File";
 
 export interface Operation {
   op: "copy" | "move";
-  originalPath: string
+  originalPath: string;
   started: boolean;
   selected: FileInfo[];
   completed: FileInfo[];
 }
 
 export const FileManagerContext = React.createContext<{
-  operation: Operation | undefined,
+  operation: Operation | undefined;
   setOperation: Dispatch<SetStateAction<Operation | undefined>>;
   filePrevPath: string | undefined;
   setFilePrevPath: Dispatch<SetStateAction<string | undefined>>;

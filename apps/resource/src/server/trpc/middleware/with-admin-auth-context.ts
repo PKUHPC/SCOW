@@ -7,7 +7,6 @@ import { isResourceAdmin, UserForbiddenError } from "src/utils/auth/utils";
 import { USE_MOCK } from "src/utils/processEnv";
 
 export const withAdminAuthContext = middleware(async ({ ctx, next }) => {
-
   if (USE_MOCK) {
     return next({
       ctx: {
@@ -51,5 +50,4 @@ export const withAdminAuthContext = middleware(async ({ ctx, next }) => {
       user: validatedUser,
     },
   });
-
 });

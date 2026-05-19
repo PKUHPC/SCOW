@@ -88,10 +88,7 @@
       "indexes": [
         {
           "keyName": "admin_message_configs_notice_type_message_type_index",
-          "columnNames": [
-            "notice_type",
-            "message_type"
-          ],
+          "columnNames": ["notice_type", "message_type"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -102,9 +99,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -181,9 +176,7 @@
       "name": "api_keys",
       "indexes": [
         {
-          "columnNames": [
-            "key"
-          ],
+          "columnNames": ["key"],
           "composite": false,
           "keyName": "api_keys_key_unique",
           "constraint": true,
@@ -192,9 +185,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -292,9 +283,7 @@
       "name": "custom_message_types",
       "indexes": [
         {
-          "columnNames": [
-            "type"
-          ],
+          "columnNames": ["type"],
           "composite": false,
           "keyName": "custom_message_types_type_index",
           "constraint": false,
@@ -302,9 +291,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "type"
-          ],
+          "columnNames": ["type"],
           "composite": false,
           "keyName": "custom_message_types_type_unique",
           "constraint": true,
@@ -312,9 +299,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "category"
-          ],
+          "columnNames": ["category"],
           "composite": false,
           "keyName": "custom_message_types_category_index",
           "constraint": false,
@@ -323,9 +308,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -452,9 +435,7 @@
       "name": "messages",
       "indexes": [
         {
-          "columnNames": [
-            "sender_type"
-          ],
+          "columnNames": ["sender_type"],
           "composite": false,
           "keyName": "messages_sender_type_index",
           "constraint": false,
@@ -462,9 +443,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "sender_id"
-          ],
+          "columnNames": ["sender_id"],
           "composite": false,
           "keyName": "messages_sender_id_index",
           "constraint": false,
@@ -472,9 +451,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "message_type"
-          ],
+          "columnNames": ["message_type"],
           "composite": false,
           "keyName": "messages_message_type_index",
           "constraint": false,
@@ -482,9 +459,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "expired_at"
-          ],
+          "columnNames": ["expired_at"],
           "composite": false,
           "keyName": "messages_expired_at_index",
           "constraint": false,
@@ -492,9 +467,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "created_at"
-          ],
+          "columnNames": ["created_at"],
           "composite": false,
           "keyName": "messages_created_at_index",
           "constraint": false,
@@ -503,9 +476,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -592,9 +563,7 @@
       "name": "message_targets",
       "indexes": [
         {
-          "columnNames": [
-            "target_type"
-          ],
+          "columnNames": ["target_type"],
           "composite": false,
           "keyName": "message_targets_target_type_index",
           "constraint": false,
@@ -602,9 +571,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "target_id"
-          ],
+          "columnNames": ["target_id"],
           "composite": false,
           "keyName": "message_targets_target_id_index",
           "constraint": false,
@@ -612,9 +579,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "message_id"
-          ],
+          "columnNames": ["message_id"],
           "composite": false,
           "keyName": "message_targets_message_id_index",
           "constraint": false,
@@ -623,10 +588,7 @@
         },
         {
           "keyName": "target_type_target_id_idx",
-          "columnNames": [
-            "target_type",
-            "target_id"
-          ],
+          "columnNames": ["target_type", "target_id"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -634,9 +596,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -647,13 +607,9 @@
       "foreignKeys": {
         "message_targets_message_id_foreign": {
           "constraintName": "message_targets_message_id_foreign",
-          "columnNames": [
-            "message_id"
-          ],
+          "columnNames": ["message_id"],
           "localTableName": "message_targets",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "messages",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -748,9 +704,7 @@
       "name": "user_message_read",
       "indexes": [
         {
-          "columnNames": [
-            "message_id"
-          ],
+          "columnNames": ["message_id"],
           "composite": false,
           "keyName": "user_message_read_message_id_index",
           "constraint": false,
@@ -759,9 +713,7 @@
         },
         {
           "keyName": "idx_user_id",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "constraint": false,
           "primary": false,
@@ -769,10 +721,7 @@
         },
         {
           "keyName": "uniq_user_message",
-          "columnNames": [
-            "user_id",
-            "message_id"
-          ],
+          "columnNames": ["user_id", "message_id"],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -780,9 +729,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -793,13 +740,9 @@
       "foreignKeys": {
         "user_message_read_message_id_foreign": {
           "constraintName": "user_message_read_message_id_foreign",
-          "columnNames": [
-            "message_id"
-          ],
+          "columnNames": ["message_id"],
           "localTableName": "user_message_read",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "messages",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -884,10 +827,7 @@
       "indexes": [
         {
           "keyName": "user_subscriptions_notice_type_message_type_index",
-          "columnNames": [
-            "notice_type",
-            "message_type"
-          ],
+          "columnNames": ["notice_type", "message_type"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -898,9 +838,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

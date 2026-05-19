@@ -42,11 +42,7 @@ export interface ImageDriver {
   saveImage(params: saveImageParams): Promise<void>;
 }
 
-function createImageDriver(opts: {
-  clusterId: string;
-  userId: string;
-  logger: Logger;
-}): ImageDriver {
+function createImageDriver(opts: { clusterId: string; userId: string; logger: Logger }): ImageDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
   const host = getClusterLoginNode(clusterId);
@@ -55,15 +51,16 @@ function createImageDriver(opts: {
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) { throw clusterNotFound(clusterId); }
+  if (!host) {
+    throw clusterNotFound(clusterId);
+  }
 
   if (cluster.scowd?.enabled) {
     return new ScowdImageDriver(clusterId, userId, logger);
   }
 
-  return new SshImageDriver(clusterId,host, userId, logger);
+  return new SshImageDriver(clusterId, host, userId, logger);
 }
-
 
 export async function withImageDriver<T>(
   params: {
@@ -73,7 +70,6 @@ export async function withImageDriver<T>(
   handler: (driver: ImageDriver) => Promise<T>,
   logger: Logger,
 ) {
-
   const driver = createImageDriver({
     clusterId: params.clusterId,
     userId: params.user,
@@ -83,8 +79,10 @@ export async function withImageDriver<T>(
   try {
     return await handler(driver);
   } catch (err: any) {
-    logger.error(`Error in image operation by user ${params.user} in cluster ${params.clusterId}, `
-      + `executing handler, err:${err}`);
+    logger.error(
+      `Error in image operation by user ${params.user} in cluster ${params.clusterId}, ` +
+        `executing handler, err:${err}`,
+    );
     throw err;
   }
 }

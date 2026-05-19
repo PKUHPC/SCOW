@@ -752,12 +752,12 @@ const tenantStorageQuotaSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const TenantStorageQuotaIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) =>
-    <Icon component={tenantStorageQuotaSVG} {...props} ref={ref} />,
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={tenantStorageQuotaSVG} {...props} ref={ref} />
+  ),
 );
 
 // 平台管理图标
@@ -1118,9 +1118,7 @@ const nodeMigrationSVG = () => (
 );
 
 export const NodeMigrationIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={nodeMigrationSVG} {...props} ref={ref} />
-  ),
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={nodeMigrationSVG} {...props} ref={ref} />,
 );
 
 // 集群监控图标
@@ -1218,11 +1216,11 @@ const permissionManagementSVG = () => (
   </svg>
 );
 
-
-export const PermissionManagementIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={permissionManagementSVG} {...props} ref={ref} />
-));
+export const PermissionManagementIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={permissionManagementSVG} {...props} ref={ref} />
+  ),
+);
 
 // 授权应用图标
 const authorizeAppSVG = () => (
@@ -1247,11 +1245,9 @@ const authorizeAppSVG = () => (
   </svg>
 );
 
-export const AuthorizeAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={authorizeAppSVG} {...props} ref={ref} />
-));
-
+export const AuthorizeAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={authorizeAppSVG} {...props} ref={ref} />,
+);
 
 // 默认授权应用图标
 const defaultAuthorizedAppSVG = () => (
@@ -1272,21 +1268,15 @@ const defaultAuthorizedAppSVG = () => (
   </svg>
 );
 
-export const DefaultAuthorizedAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={defaultAuthorizedAppSVG} {...props} ref={ref} />
-));
+export const DefaultAuthorizedAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+    <Icon component={defaultAuthorizedAppSVG} {...props} ref={ref} />
+  ),
+);
 
 // shell图标
 const shellSVG = (style) => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={style}
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
     <path
       d="M18 12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0 12V6H18V12ZM4.27051
         8.37793C4.02144 8.25199 3.70933 8.31472 3.5293 8.54199C3.34971 8.76918 3.36076 9.08635 3.54004

@@ -19,14 +19,14 @@ export const TranspileOutputSchema = z.object({
   pairs: PairsSchema,
 });
 
-
 export const transpile = router({
-  transpile: backendApiProcedure.meta({
-    openapi: {
-      method: "POST",
-      path: "/tc/{accountName}/transpile",
-    },
-  })
+  transpile: backendApiProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/tc/{accountName}/transpile",
+      },
+    })
     .input(TranspileInputSchema)
     .output(TranspileOutputSchema)
     .mutation(async ({ input }) => {

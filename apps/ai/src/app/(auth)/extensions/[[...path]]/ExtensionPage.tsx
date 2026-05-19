@@ -2,7 +2,7 @@
 
 import { getExtensionRouteQuery } from "@scow/lib-web/build/extensions/common";
 import { extensionEvents } from "@scow/lib-web/build/extensions/events";
-import { ExtensionManifestWithUrl,UiExtensionStoreData } from "@scow/lib-web/build/extensions/UiExtensionStore";
+import { ExtensionManifestWithUrl, UiExtensionStoreData } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { joinWithUrl } from "@scow/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useRef } from "react";
@@ -40,14 +40,13 @@ export const ExtensionPage: React.FC<Props> = ({
   currentLanguageId,
   NotFoundPageComponent,
 }) => {
-
   const { data: useInfo } = useUserQuery();
 
   const router = useRouter();
 
   const rest = useSearchParams();
 
-  const pathParts = [...Array.isArray(path) ? path : (path === null || path === undefined) ? [] : [path]];
+  const pathParts = [...(Array.isArray(path) ? path : path === null || path === undefined ? [] : [path])];
 
   let config: ExtensionManifestWithUrl | undefined = undefined;
 
@@ -55,9 +54,7 @@ export const ExtensionPage: React.FC<Props> = ({
     const namePart = pathParts.shift();
 
     if (!namePart) {
-      return (
-        <NotFoundPageComponent />
-      );
+      return <NotFoundPageComponent />;
     }
     config = uiExtensionConfigData.find((x) => x?.name === namePart);
   } else {
@@ -79,12 +76,11 @@ export const ExtensionPage: React.FC<Props> = ({
   const extensionQuery = getExtensionRouteQuery(dark, currentLanguageId, useInfo.user?.token);
 
   const query = new URLSearchParams({
-    ...rest ? Object.fromEntries(rest.entries()) : {},
+    ...(rest ? Object.fromEntries(rest.entries()) : {}),
     ...extensionQuery,
   });
 
-  const url = joinWithUrl(config.url, "extensions", ...pathParts)
-    + "?" + query.toString();
+  const url = joinWithUrl(config.url, "extensions", ...pathParts) + "?" + query.toString();
 
   const ref = useRef<HTMLIFrameElement>(null);
 
@@ -92,7 +88,6 @@ export const ExtensionPage: React.FC<Props> = ({
 
   useEffect(() => {
     const messageHandler = (e: MessageEvent<any>) => {
-
       if (!ref.current) {
         return;
       }
@@ -122,13 +117,8 @@ export const ExtensionPage: React.FC<Props> = ({
   return (
     <>
       <FrameContainer>
-        <IFrame
-          ref={ref}
-          src={url}
-        />
+        <IFrame ref={ref} src={url} />
       </FrameContainer>
     </>
   );
-
 };
-

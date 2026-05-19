@@ -21,23 +21,21 @@ import { Head } from "src/utils/head";
 const p = prefix("page.admin.jobBilling.");
 const pCommon = prefix("common.");
 
-export const AdminJobBillingTablePage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
-    () => {
-      const t = useI18nTranslateToString();
+export const AdminJobBillingTablePage: NextPage = requireAuth((u) =>
+  u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+)(() => {
+  const t = useI18nTranslateToString();
 
-      return (
-        <div>
-          <Head title={t(p("jobBillingPriceTable"))} />
-          <PageTitle titleText={t(p("jobBillingPriceTable"))} />
-          <AdminJobBillingTable />
-        </div>
-      );
-    },
+  return (
+    <div>
+      <Head title={t(p("jobBillingPriceTable"))} />
+      <PageTitle titleText={t(p("jobBillingPriceTable"))} />
+      <AdminJobBillingTable />
+    </div>
   );
+});
 
 export const AdminJobBillingTable: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const [activeKey, setActiveKey] = useState<"platform" | "tenant">("platform");
@@ -104,19 +102,22 @@ export const AdminJobBillingTable: React.FC = () => {
   // 加载计费项 - 只依赖已提交的筛选条件
   const { data, isLoading, reload } = useAsync({
     promiseFn: useCallback(async () => {
-      return await api.getBillingItems({
-        query: {
-          tenant: currentTenant,
-          activeOnly: false,
-          currentActivatedClusterIds,
-          clusterSortedIdList: clusterSortedIdList,
-        },
-      }).httpError(409, () => {
-        message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
-        return undefined;
-      }).then((result) => {
-        return result;
-      });
+      return await api
+        .getBillingItems({
+          query: {
+            tenant: currentTenant,
+            activeOnly: false,
+            currentActivatedClusterIds,
+            clusterSortedIdList: clusterSortedIdList,
+          },
+        })
+        .httpError(409, () => {
+          message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
+          return undefined;
+        })
+        .then((result) => {
+          return result;
+        });
     }, [currentTenant, currentActivatedClusterIds, clusterSortedIdList]),
     defer: true,
   });
@@ -137,28 +138,31 @@ export const AdminJobBillingTable: React.FC = () => {
   }, [fetchedPartitions]);
 
   // 前端筛选逻辑 - 使用已提交的筛选条件
-  const filterBillingItem = useCallback((item: BillingItemType) => {
-    let passesCluster = true;
-    let passesPartition = true;
-    let passesQos = true;
+  const filterBillingItem = useCallback(
+    (item: BillingItemType) => {
+      let passesCluster = true;
+      let passesPartition = true;
+      let passesQos = true;
 
-    // 1. 集群筛选
-    if (submittedCluster) {
-      passesCluster = item.cluster === submittedCluster.id;
-    }
+      // 1. 集群筛选
+      if (submittedCluster) {
+        passesCluster = item.cluster === submittedCluster.id;
+      }
 
-    // 2. 分区筛选
-    if (submittedPartitionId) {
-      passesPartition = item.partition === submittedPartitionId;
-    }
+      // 2. 分区筛选
+      if (submittedPartitionId) {
+        passesPartition = item.partition === submittedPartitionId;
+      }
 
-    // 3. QoS 筛选
-    if (submittedQos) {
-      passesQos = item.qos === submittedQos;
-    }
+      // 3. QoS 筛选
+      if (submittedQos) {
+        passesQos = item.qos === submittedQos;
+      }
 
-    return passesCluster && passesPartition && passesQos;
-  }, [submittedCluster, submittedPartitionId, submittedQos]);
+      return passesCluster && passesPartition && passesQos;
+    },
+    [submittedCluster, submittedPartitionId, submittedQos],
+  );
 
   const filteredData = useMemo(() => {
     if (!data) return undefined;
@@ -197,9 +201,9 @@ export const AdminJobBillingTable: React.FC = () => {
 
   return (
     <div>
-      {currentActivatedClusterIds.length === 0 &&
+      {currentActivatedClusterIds.length === 0 && (
         <div style={{ marginBottom: 20 }}>{t("common.noAvailableClusters")}</div>
-      }
+      )}
       <FilterFormContainer>
         <Tabs
           activeKey={activeKey}

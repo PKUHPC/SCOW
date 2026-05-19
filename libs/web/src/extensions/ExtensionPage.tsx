@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { joinWithUrl } from "@scow/utils";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef } from "react";
@@ -57,7 +45,6 @@ export const ExtensionPage: React.FC<Props> = ({
   NotFoundPageComponent,
   titleTag,
 }) => {
-
   const router = useRouter();
 
   const { path, ...rest } = router.query;
@@ -70,9 +57,7 @@ export const ExtensionPage: React.FC<Props> = ({
     const namePart = pathParts.shift();
 
     if (!namePart) {
-      return (
-        <NotFoundPageComponent />
-      );
+      return <NotFoundPageComponent />;
     }
     config = uiExtensionStoreConfig.find((x) => x?.name === namePart);
   } else {
@@ -87,7 +72,6 @@ export const ExtensionPage: React.FC<Props> = ({
     return <Redirect url="/api/auth" />;
   }
 
-
   const [title, setTitle] = React.useState(config?.name ?? "Extension");
 
   const darkMode = useDarkMode();
@@ -99,14 +83,12 @@ export const ExtensionPage: React.FC<Props> = ({
     ...extensionQuery,
   });
 
-  const url = joinWithUrl(config.url, "extensions", ...pathParts)
-    + "?" + query.toString();
+  const url = joinWithUrl(config.url, "extensions", ...pathParts) + "?" + query.toString();
 
   const ref = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const messageHandler = (e: MessageEvent<any>) => {
-
       if (!ref.current) {
         return;
       }
@@ -139,13 +121,8 @@ export const ExtensionPage: React.FC<Props> = ({
     <>
       <Head title={title} titleTag={titleTag} />
       <FrameContainer>
-        <IFrame
-          ref={ref}
-          src={url}
-        />
+        <IFrame ref={ref} src={url} />
       </FrameContainer>
     </>
   );
-
 };
-

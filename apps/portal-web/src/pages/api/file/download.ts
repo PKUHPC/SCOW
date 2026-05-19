@@ -23,7 +23,7 @@ export const DownloadFileSchema = typeboxRouteSchema({
     download: Type.Optional(Type.Boolean()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
@@ -55,31 +55,42 @@ const auth = authenticate(() => true);
 export default route(DownloadFileSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, path, download } = req.query;
 
   const client = getClient(FileServiceClient);
 
-  const filename = basename(path).replace("\"", "\\\"");
+  const filename = basename(path).replace('"', '\\"');
   const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
   const reply = await asyncUnaryCall(client, "getFileMetadata", {
-    userId: info.identityId, cluster, path,
+    userId: info.identityId,
+    cluster,
+    path,
   });
 
-  res.writeHead(200, download ? {
-    "Content-Type": getContentType(filename, "application/octet-stream"),
-    "Content-Disposition": `attachment; ${dispositionParm}`,
-    "Content-Length": reply.size,
-  } : {
-    "Content-Type": getContentType(filename, "text/plain; charset=utf-8"),
-    "Content-Disposition": `inline; ${dispositionParm}`,
-    "Content-Length": reply.size,
-  });
+  res.writeHead(
+    200,
+    download
+      ? {
+          "Content-Type": getContentType(filename, "application/octet-stream"),
+          "Content-Disposition": `attachment; ${dispositionParm}`,
+          "Content-Length": reply.size,
+        }
+      : {
+          "Content-Type": getContentType(filename, "text/plain; charset=utf-8"),
+          "Content-Disposition": `inline; ${dispositionParm}`,
+          "Content-Length": reply.size,
+        },
+  );
 
   const stream = asyncReplyStreamCall(client, "download", {
-    cluster, path, userId: info.identityId,
+    cluster,
+    path,
+    userId: info.identityId,
   });
 
   // Handle client disconnection

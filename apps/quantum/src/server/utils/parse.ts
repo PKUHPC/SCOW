@@ -9,13 +9,16 @@ import { NextRequest } from "next/server";
  * @returns dict
  */
 export function parseKeyValue(input: string): Record<string, string> {
-  return input.split(",").reduce((prev, curr) => {
-    const [key, value] = curr.split("=").map((x) => x.trim());
-    if (key) {
-      prev[key] = value ?? "";
-    }
-    return prev;
-  }, {} as Record<string, string>);
+  return input.split(",").reduce(
+    (prev, curr) => {
+      const [key, value] = curr.split("=").map((x) => x.trim());
+      if (key) {
+        prev[key] = value ?? "";
+      }
+      return prev;
+    },
+    {} as Record<string, string>,
+  );
 }
 
 /**
@@ -42,7 +45,6 @@ export function parseArray(str: string): string[] {
 }
 
 export const parseIp = (req: NextApiRequest | NextRequest): string | undefined => {
-
   let forwardedFor: string | string[] | undefined | null = undefined;
 
   if ("headers" in req && typeof req.headers.get === "function") {

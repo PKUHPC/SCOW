@@ -6,4 +6,3 @@ export const baseProcedure = trpc.procedure;
 
 export const authProcedure = baseProcedure.use(withAuthContext);
 export const procedure = baseProcedure.use(withOrmContext.unstable_pipe(withAuthContext));
-

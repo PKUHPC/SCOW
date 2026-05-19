@@ -11,10 +11,9 @@ type Props = PropsWithChildren<{ Component: React.ComponentType<ErrorBoundaryCon
 
 interface State {
   error?: Error;
-};
+}
 
 export class ErrorBoundary extends React.Component<Props, State> {
-
   constructor(props: Props) {
     super(props);
 
@@ -42,12 +41,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return (
-        <this.props.Component
-          error={this.state.error}
-          reset={this.reset}
-        />
-      );
+      return <this.props.Component error={this.state.error} reset={this.reset} />;
     }
 
     return this.props.children;

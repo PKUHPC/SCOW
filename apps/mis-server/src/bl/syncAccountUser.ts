@@ -1,9 +1,11 @@
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { ScowResourcePlugin } from "@scow/lib-scow-resource";
-import { ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as ClusterTotalSyncResultProto,
+import {
+  ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as ClusterTotalSyncResultProto,
   ListAccountUserSynchronizationsResponse_SyncExceptionType as SyncExceptionTypeProto,
   ListAccountUserSynchronizationsResponse_SyncResult as SyncResultProto,
-  ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatusProto } from "@scow/protos/build/server/admin";
+  ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatusProto,
+} from "@scow/protos/build/server/admin";
 import { randomUUID } from "crypto";
 import { Logger } from "pino";
 import { commonConfig } from "src/config/common";
@@ -12,8 +14,11 @@ import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/Acco
 import { MessageStatus } from "src/models/messageType";
 import { ClusterPlugin } from "src/plugins/clusters";
 import { FetchPlugin } from "src/plugins/fetch";
-import { checkRunningSyncTask, processSynchronization,
-  sendAccountUserSyncMessage } from "src/utils/synchronizationUtils";
+import {
+  checkRunningSyncTask,
+  processSynchronization,
+  sendAccountUserSyncMessage,
+} from "src/utils/synchronizationUtils";
 
 import { getActivatedClusters } from "./clustersUtils";
 
@@ -23,7 +28,9 @@ import { getActivatedClusters } from "./clustersUtils";
  * @returns  sync session id during one synchronization task
  **/
 export async function startAccountUserSynchronization(
-  em: SqlEntityManager<MySqlDriver>, clusterPlugin: ClusterPlugin["clusters"], logger: Logger,
+  em: SqlEntityManager<MySqlDriver>,
+  clusterPlugin: ClusterPlugin["clusters"],
+  logger: Logger,
   scowResourcePlugin?: ScowResourcePlugin["resource"],
   operatorId?: string,
   maxSyncDurationMinutes?: number,
@@ -66,8 +73,9 @@ export async function startAccountUserSynchronization(
     syncOperatorId: operatorId,
     sessionId,
     syncStatus: SyncStatus.RUNNING,
-    maxSyncDurationMinutes: maxSyncDurationMinutes ? maxSyncDurationMinutes :
-      misConfig.syncAccountUser.maxSyncDurationMinutes,
+    maxSyncDurationMinutes: maxSyncDurationMinutes
+      ? maxSyncDurationMinutes
+      : misConfig.syncAccountUser.maxSyncDurationMinutes,
   });
   await em.persistAndFlush(newAccountUserSync);
   logger.trace("A synchronization started: %o", newAccountUserSync);
@@ -93,10 +101,12 @@ export async function startAccountUserSynchronization(
         clusterSyncResult: SyncResultProto.FAILED,
         executedChunkCount: 0,
         isAllChunkExecuted: true,
-        clusterSyncExceptions: [{
-          exceptionType: SyncExceptionTypeProto.CLUSTER_UNEXECUTED,
-          exceptionMessage: "Error occurred during the synchronization task.",
-        }],
+        clusterSyncExceptions: [
+          {
+            exceptionType: SyncExceptionTypeProto.CLUSTER_UNEXECUTED,
+            exceptionMessage: "Error occurred during the synchronization task.",
+          },
+        ],
         successfulTotalSyncCount: 0,
         completedTotalSyncCount: 0,
       };
@@ -109,9 +119,7 @@ export async function startAccountUserSynchronization(
     await em.persistAndFlush(newAccountUserSync);
 
     // 发送结果异常通知
-    await sendAccountUserSyncMessage(em, MessageStatus.EXCEPTION, 0, 0,
-      Object.keys(currentActivatedClusters), logger);
-
+    await sendAccountUserSyncMessage(em, MessageStatus.EXCEPTION, 0, 0, Object.keys(currentActivatedClusters), logger);
   });
 
   return sessionId.toString();

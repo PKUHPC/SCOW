@@ -29,8 +29,7 @@ export function isParentOrSameFolder(potentialParentFolderPath: string, childFol
     ? normalizedParentPath
     : `${normalizedParentPath}${sep}`;
 
-  return normalizedChildPath === normalizedParentPath ||
-         normalizedChildPath.startsWith(parentPathWithTrailingSlash);
+  return normalizedChildPath === normalizedParentPath || normalizedChildPath.startsWith(parentPathWithTrailingSlash);
 }
 
 export function getFilePathWithoutExtension(fileName: string) {
@@ -38,14 +37,16 @@ export function getFilePathWithoutExtension(fileName: string) {
 }
 
 export const generateFilesTree = (path: string, files: FileInfo[]): TreeDataNode[] => {
-  return [{
-    title: `${path}`,
-    key: "root",
-    children: files.map((f) => ({
-      title: f.name,
-      key: f.name,
-    })),
-  }];
+  return [
+    {
+      title: `${path}`,
+      key: "root",
+      children: files.map((f) => ({
+        title: f.name,
+        key: f.name,
+      })),
+    },
+  ];
 };
 
 export const fileInfoKey = (f: FileInfo, path: string): React.Key => join(path, f.name);

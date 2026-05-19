@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { DownOutlined } from "@ant-design/icons";
 import { Dropdown, theme, Typography } from "antd";
 import Link from "next/link";
@@ -33,7 +21,7 @@ interface Props {
 const Container = styled.div`
   white-space: nowrap;
   .ant-dropdown-open {
-    color: ${({ theme }) => theme.token.colorPrimary } !important;
+    color: ${({ theme }) => theme.token.colorPrimary} !important;
   }
 `;
 
@@ -53,59 +41,53 @@ const HiddenOnSmallScreen = styled.span`
   }
 `;
 
-export const UserIndicator: React.FC<Props> = ({
-  user, logout, userLinks, languageId,
-}) => {
+export const UserIndicator: React.FC<Props> = ({ user, logout, userLinks, languageId }) => {
   const { token } = useToken();
 
   return (
     <Container>
-      {
-        user ? (
-          <Dropdown
-            trigger={["click"]}
-            overlayClassName="head-navigation-user-indicator"
-            menu={{
-              items: [
-                { key: "profileLink", label: <Link href="/profile">
-                  {getCurrentLangLibWebText(languageId, "userIndicatorInfo")}
-                </Link> },
-                ...userLinks ? userLinks.map((link) => {
-                  return ({
-                    key: link.text,
-                    label: EXTERNAL_URL_PREFIX.some((pref) => link.url.startsWith(pref)) ? (
-                      <Typography.Link
-                        href={`${link.url}?token=${user.token}`}
-                        target={link.openInNewPage ? "_blank" : "_self"}
-                      >{link.text}</Typography.Link>
-                    ) : (
-                      <Link
-                        href={`${link.url}?token=${user.token}`}
-                        target={link.openInNewPage ? "_blank" : "_self"}
-                      >{link.text}</Link>
-                    ),
-                  });
-                }) : [],
-                { key: "logout",
-                  onClick: logout,
-                  label: getCurrentLangLibWebText(languageId, "userIndicatorLogout") },
-              ],
-            }}
-          >
-            <InlineBlockA>
-              <UserIcon style={{ color: token.colorPrimary }} />
-              <HiddenOnSmallScreen>
-                {user.name ?? user.identityId}
-              </HiddenOnSmallScreen>
-              <DownOutlined style={{ fontSize: "13px", marginLeft: "12px" }} />
-            </InlineBlockA>
-          </Dropdown>
-        ) : (
-          <Link href="/api/auth">
-            {getCurrentLangLibWebText(languageId, "userIndicatorLogin")}
-          </Link>
-        )
-      }
+      {user ? (
+        <Dropdown
+          trigger={["click"]}
+          overlayClassName="head-navigation-user-indicator"
+          menu={{
+            items: [
+              {
+                key: "profileLink",
+                label: <Link href="/profile">{getCurrentLangLibWebText(languageId, "userIndicatorInfo")}</Link>,
+              },
+              ...(userLinks
+                ? userLinks.map((link) => {
+                    return {
+                      key: link.text,
+                      label: EXTERNAL_URL_PREFIX.some((pref) => link.url.startsWith(pref)) ? (
+                        <Typography.Link
+                          href={`${link.url}?token=${user.token}`}
+                          target={link.openInNewPage ? "_blank" : "_self"}
+                        >
+                          {link.text}
+                        </Typography.Link>
+                      ) : (
+                        <Link href={`${link.url}?token=${user.token}`} target={link.openInNewPage ? "_blank" : "_self"}>
+                          {link.text}
+                        </Link>
+                      ),
+                    };
+                  })
+                : []),
+              { key: "logout", onClick: logout, label: getCurrentLangLibWebText(languageId, "userIndicatorLogout") },
+            ],
+          }}
+        >
+          <InlineBlockA>
+            <UserIcon style={{ color: token.colorPrimary }} />
+            <HiddenOnSmallScreen>{user.name ?? user.identityId}</HiddenOnSmallScreen>
+            <DownOutlined style={{ fontSize: "13px", marginLeft: "12px" }} />
+          </InlineBlockA>
+        </Dropdown>
+      ) : (
+        <Link href="/api/auth">{getCurrentLangLibWebText(languageId, "userIndicatorLogin")}</Link>
+      )}
     </Container>
   );
 };

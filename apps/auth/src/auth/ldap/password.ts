@@ -1,16 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-
 import { BerWriter } from "asn1";
 import { FastifyBaseLogger } from "fastify";
 import ldapjs from "ldapjs";
@@ -27,7 +14,10 @@ function handleIfInvalidCredentials(e: any) {
 }
 
 export async function modifyPasswordBase(
-  userId: string, oldPassword: string | undefined, newPassword: string, client: ldapjs.Client,
+  userId: string,
+  oldPassword: string | undefined,
+  newPassword: string,
+  client: ldapjs.Client,
 ): Promise<boolean> {
   /** Must bind as the user whose password is to be changed and then password can be changed */
   try {
@@ -46,7 +36,6 @@ export async function modifyPasswordBase(
   } catch (e: any) {
     return handleIfInvalidCredentials(e);
   }
-
 }
 
 export async function checkPassword(
@@ -80,21 +69,25 @@ export async function modifyPassword(
 // Login as self and modify self password
 
 export async function modifyForceFlagBase(
-  userId: string, forceFlag: boolean, client: ldapjs.Client, ldap: LdapConfigSchema,
+  userId: string,
+  forceFlag: boolean,
+  client: ldapjs.Client,
+  ldap: LdapConfigSchema,
 ): Promise<boolean> {
-
   try {
     const modify = promisify(client.modify.bind(client));
     if (ldap.ppolicy?.pwdMustChangeAtFirstLoginOrResetByAdmin || !forceFlag) {
-      await modify(userId, new ldapjs.Change({
-        operation: "replace",
-        modification: {
-          "pwdReset": forceFlag ? "TRUE" : "FALSE",
-        },
-      }));
+      await modify(
+        userId,
+        new ldapjs.Change({
+          operation: "replace",
+          modification: {
+            pwdReset: forceFlag ? "TRUE" : "FALSE",
+          },
+        }),
+      );
     }
     return true;
-
   } catch (e: any) {
     return handleIfInvalidCredentials(e);
   }
@@ -103,10 +96,14 @@ export async function modifyForceFlagBase(
 export async function modifyForceFlag(
   log: FastifyBaseLogger,
   ldap: LdapConfigSchema,
-  userDn: string, forceFlag: boolean,
+  userDn: string,
+  forceFlag: boolean,
 ): Promise<boolean> {
   try {
-    return await useLdap(log, ldap)(async (client) => {
+    return await useLdap(
+      log,
+      ldap,
+    )(async (client) => {
       await modifyForceFlagBase(userDn, forceFlag, client, ldap);
       return true;
     });

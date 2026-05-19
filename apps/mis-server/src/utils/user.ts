@@ -6,14 +6,15 @@ export async function getUserIdsByUserIdOrName(
   em: SqlEntityManager<MySqlDriver>,
   userIdOrName: string,
 ): Promise<string[]> {
-  const users = await em.find(User, {
-    $or: [
-      { userId: { $like: `%${userIdOrName}%` } },
-      { name: { $like: `%${userIdOrName}%` } },
-    ],
-  }, {
-    fields: ["userId"],
-  });
+  const users = await em.find(
+    User,
+    {
+      $or: [{ userId: { $like: `%${userIdOrName}%` } }, { name: { $like: `%${userIdOrName}%` } }],
+    },
+    {
+      fields: ["userId"],
+    },
+  );
 
   return users.map((user) => user.userId);
 }
@@ -27,9 +28,13 @@ export async function getUserNameMap(
     return new Map();
   }
 
-  const users = await em.find(User, { userId: { $in: userIds } }, {
-    fields: ["userId", "name"],
-  });
+  const users = await em.find(
+    User,
+    { userId: { $in: userIds } },
+    {
+      fields: ["userId", "name"],
+    },
+  );
 
   return new Map(users.map((user) => [user.userId, user.name]));
 }

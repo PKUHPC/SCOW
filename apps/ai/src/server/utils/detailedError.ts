@@ -5,11 +5,14 @@ import { TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 // type: 用于前端识别自定义错误分类
 // 其他参数: 用于前端显示等进一步处理
 export type DetailedError =
-  | { type: "account_user_not_available", userId: string, accountName: string }
-  | { type: "cluster_partition_not_available",
-    clusterId: string, accountName: string, partitionName: string | undefined }
-  | { type: "app_not_available", appId: string | undefined, accountName: string };
-
+  | { type: "account_user_not_available"; userId: string; accountName: string }
+  | {
+      type: "cluster_partition_not_available";
+      clusterId: string;
+      accountName: string;
+      partitionName: string | undefined;
+    }
+  | { type: "app_not_available"; appId: string | undefined; accountName: string };
 
 // 包含详细信息的自定义TRPCError
 export class DetailedTRPCError extends TRPCError {
@@ -34,6 +37,3 @@ export class DetailedTRPCError extends TRPCError {
     this.detail = detail;
   }
 }
-
-
-

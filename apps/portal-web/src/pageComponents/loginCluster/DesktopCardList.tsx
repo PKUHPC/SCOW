@@ -70,7 +70,6 @@ interface DesktopCardListProps {
 }
 
 export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) => {
-
   const t = useI18nTranslateToString();
   const [openNewDesktopModal, setOpenNewDesktopModal] = useState(false);
   const { loginNodes } = useStore(LoginNodeStore);
@@ -103,7 +102,11 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
   });
 
   // 获取所有集群的listDesktops信息
-  const { data: allDesktops, isLoading: isAllDesktopsLoading, reload } = useAsync({
+  const {
+    data: allDesktops,
+    isLoading: isAllDesktopsLoading,
+    reload,
+  } = useAsync({
     promiseFn: useCallback(async () => {
       const desktopsPromises = clusters.map(async (cluster) => {
         try {
@@ -113,9 +116,9 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
           });
 
           // 处理返回的数据，将其扁平化为DesktopItem数组
-          const desktopItems = desktopData.userDesktops.map(
-            (userDesktop) => userDesktop.desktops.map(
-              (x) => {
+          const desktopItems = desktopData.userDesktops
+            .map((userDesktop) =>
+              userDesktop.desktops.map((x) => {
                 const dataSource = x.data;
 
                 const item: APIDerivedDesktop = {
@@ -131,9 +134,9 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
                 };
 
                 return item;
-              },
-            ),
-          ).flat();
+              }),
+            )
+            .flat();
 
           return {
             clusterId: cluster.id,
@@ -162,42 +165,38 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
   };
 
   // 将所有集群的桌面数据合并为一个数组，并添加完整的信息用于展示
-  const desktopData: DesktopItem[] = (allDesktops?.flatMap((item) => item.desktops) || [])
-    .map((desktop) => {
+  const desktopData: DesktopItem[] = (allDesktops?.flatMap((item) => item.desktops) || []).map((desktop) => {
+    // 查找对应集群的WM信息
+    const clusterWms = allAvailableWms?.find((wmsItem) => wmsItem.clusterId === desktop.clusterId)?.wms || [];
 
-      // 查找对应集群的WM信息
-      const clusterWms = allAvailableWms?.find((wmsItem) => wmsItem.clusterId === desktop.clusterId)?.wms || [];
+    // 查找集群名称
+    const clusterName = clusters.find((c) => c.id === desktop.clusterId)!.name;
 
-      // 查找集群名称
-      const clusterName = clusters.find((c) => c.id === desktop.clusterId)!.name;
+    // 查找登录节点名称
+    const loginNodeInfo = loginNodes[desktop.clusterId]?.find((ln) => ln.address === desktop.addr);
 
-      // 查找登录节点名称
-      const loginNodeInfo = loginNodes[desktop.clusterId]?.find((ln) => ln.address === desktop.addr);
+    // 查找桌面类型
+    const wmInfo = clusterWms.find((wm) => wm.wm === desktop.wm);
+    const desktopType = wmInfo?.name || desktop.wm;
 
-      // 查找桌面类型
-      const wmInfo = clusterWms.find((wm) => wm.wm === desktop.wm);
-      const desktopType = wmInfo?.name || desktop.wm;
+    // 远程控制工具名称
+    const remoteTool = desktop.remoteControlTool === RemoteControlTool.SHADOWDESK ? "shadowdesk" : "vnc";
 
-      // 远程控制工具名称
-      const remoteTool = desktop.remoteControlTool === RemoteControlTool.SHADOWDESK ? "shadowdesk" : "vnc";
+    // 创建时间格式化
+    const creationTime = desktop.createTime ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss") : "";
 
-      // 创建时间格式化
-      const creationTime = desktop.createTime
-        ? dayjs(desktop.createTime).format("YYYY-MM-DD HH:mm:ss")
-        : "";
-
-      return {
-        ...desktop,
-        wmName: wmInfo?.name || desktop.wm,
-        iconPath: wmInfo?.iconPath,
-        clusterName,
-        loginNodeName: loginNodeInfo?.name || desktop.addr,
-        title: desktop.desktopName,
-        desktopType,
-        remoteTool,
-        creationTime,
-      } as DesktopItem;
-    });
+    return {
+      ...desktop,
+      wmName: wmInfo?.name || desktop.wm,
+      iconPath: wmInfo?.iconPath,
+      clusterName,
+      loginNodeName: loginNodeInfo?.name || desktop.addr,
+      title: desktop.desktopName,
+      desktopType,
+      remoteTool,
+      creationTime,
+    } as DesktopItem;
+  });
 
   return (
     <>
@@ -213,11 +212,7 @@ export const DesktopCardList: React.FC<DesktopCardListProps> = ({ clusters }) =>
       </HeaderContainer>
       <CardContainer>
         {desktopData.map((item) => (
-          <DesktopCard
-            key={item.id || `${item.clusterId}-${item.desktopId}`}
-            data={item}
-            reload={handleReload}
-          />
+          <DesktopCard key={item.id || `${item.clusterId}-${item.desktopId}`} data={item} reload={handleReload} />
         ))}
       </CardContainer>
       <NewDesktopCardModal

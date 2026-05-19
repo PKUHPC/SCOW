@@ -7,7 +7,6 @@ import { misConfig } from "src/config/mis";
 
 // 检查节点迁移的misConfig配置
 export const validateMigratableClustersConfig = () => {
-
   if (!misConfig.nodeMigration?.enabled) {
     throw {
       code: status.FAILED_PRECONDITION,
@@ -16,7 +15,8 @@ export const validateMigratableClustersConfig = () => {
   }
   const { migratableClusterGroups } = misConfig.nodeMigration;
 
-  const isValidConfig = migratableClusterGroups &&
+  const isValidConfig =
+    migratableClusterGroups &&
     migratableClusterGroups.length > 0 &&
     migratableClusterGroups.every((c) => c.group?.length > 1);
 
@@ -34,17 +34,20 @@ interface MigratableClusterGroups {
   group: string[];
 }
 
-export const getUniqueMigrationGroups =
-  (migratableClusterGroups: MigratableClusterGroups[], cluster: string): string[] => {
-    const clusterGroups = migratableClusterGroups.reduce((acc, curr) => {
-      if (curr.group?.includes(cluster)) { // 空值安全判断
-        curr.group.forEach((g) => g !== cluster && acc.add(g)); // 直接操作Set去重
-      }
-      return acc;
-    }, new Set<string>());
+export const getUniqueMigrationGroups = (
+  migratableClusterGroups: MigratableClusterGroups[],
+  cluster: string,
+): string[] => {
+  const clusterGroups = migratableClusterGroups.reduce((acc, curr) => {
+    if (curr.group?.includes(cluster)) {
+      // 空值安全判断
+      curr.group.forEach((g) => g !== cluster && acc.add(g)); // 直接操作Set去重
+    }
+    return acc;
+  }, new Set<string>());
 
-    return Array.from(clusterGroups);
-  };
+  return Array.from(clusterGroups);
+};
 
 export interface NodeClusterStatus {
   cluster: string; // 节点所属的集群
@@ -80,15 +83,11 @@ export async function performClusterChecks(
   const results = await Promise.allSettled(
     clusters.map(async (cluster) => {
       try {
-        await server.ext.clusters.callOnOne(
-          cluster,
-          logger,
-          async (client) => {
-            return await asyncClientCall(client.config, "getClusterNodesInfo", {
-              nodeNames: [],
-            });
-          },
-        );
+        await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+          return await asyncClientCall(client.config, "getClusterNodesInfo", {
+            nodeNames: [],
+          });
+        });
       } catch (err) {
         handleClusterError(err, cluster, clusterErrors);
         throw err; // 保持错误传播
@@ -107,15 +106,9 @@ export async function performClusterChecks(
 }
 
 // 记录不存在集群和适配器版本错误
-function handleClusterError(
-  error: unknown,
-  cluster: string,
-  clusterErrors: string[],
-) {
+function handleClusterError(error: unknown, cluster: string, clusterErrors: string[]) {
   const serviceError = error as ServiceError;
-  const errorMessage = [serviceError.message, serviceError.details]
-    .join(" ")
-    .toLowerCase();
+  const errorMessage = [serviceError.message, serviceError.details].join(" ").toLowerCase();
 
   if (errorMessage.includes("calling actions on non-existing cluster")) {
     clusterErrors.push(cluster);
@@ -149,7 +142,6 @@ function processCheckResults(
   });
 }
 
-
 interface ErrorParams {
   clusterErrors: string[];
   logger: Logger;
@@ -176,5 +168,4 @@ export function handleValidationErrors(params: ErrorParams): void {
       message: combinedMessage,
     } as ServiceError;
   }
-
 }

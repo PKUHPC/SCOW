@@ -1,4 +1,3 @@
-
 import { InlineFormItem } from "@scow/lib-web/build/components/styledAntdCom/CustomFormItem";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -6,8 +5,12 @@ import { Select } from "antd";
 import { NamePath } from "antd/es/form/interface";
 import { FormInstance } from "antd/lib";
 import { useEffect } from "react";
-import { CommandSelectReservedConfig, FixedValueConfig,
-  SelectConfig, SelectConfigOption, SelectOption,
+import {
+  CommandSelectReservedConfig,
+  FixedValueConfig,
+  SelectConfig,
+  SelectConfigOption,
+  SelectOption,
 } from "src/pages/api/app/getAppMetadata";
 import { formatMinutesToI18nDayHours, TransType } from "src/utils/format";
 
@@ -54,13 +57,11 @@ function ensureNumberValue(value: string | number): number {
   }
 }
 
-
 // 判断选项类型的默认初始值是默认值还是选项的默认第一项
 export const getSelectAttributeInitalValue = (
   defaultValue: string | number | undefined,
   selectOptions: SelectOption[] | SelectConfigOption[],
 ): string | number | undefined => {
-
   if (defaultValue && selectOptions?.some((option) => option.value === defaultValue)) {
     return defaultValue;
   } else {
@@ -75,16 +76,27 @@ export const getSelectAttributeInitalValue = (
  * 2.如果配置为select选项形式，显示下拉框
  */
 export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = ({
-  form, languageId, t, name, label, rules, dependencies, reservedConfig, children,
-  isNumberAttribute, ignoreDependenciesWhenFixed, currentPartitionIsWithGpu,
-  onChange, appId, clusterId,
+  form,
+  languageId,
+  t,
+  name,
+  label,
+  rules,
+  dependencies,
+  reservedConfig,
+  children,
+  isNumberAttribute,
+  ignoreDependenciesWhenFixed,
+  currentPartitionIsWithGpu,
+  onChange,
+  appId,
+  clusterId,
 }) => {
-
   // 当系统保留字段被配置为固定值时，直接渲染固定值
   if (reservedConfig?.type === "fixedValue" && reservedConfig?.fixedValue?.value !== undefined) {
-
-    const value =
-      isNumberAttribute ? ensureNumberValue(reservedConfig.fixedValue.value) : reservedConfig.fixedValue.value;
+    const value = isNumberAttribute
+      ? ensureNumberValue(reservedConfig.fixedValue.value)
+      : reservedConfig.fixedValue.value;
 
     useEffect(() => {
       const currentValue = form.getFieldValue(name);
@@ -104,26 +116,27 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
         dependencies={ignoreDependenciesWhenFixed ? undefined : dependencies}
       >
         <div>
-          { name === "maxTime" ?
-            formatMinutesToI18nDayHours(typeof value === "string" ?
-              parseInt(value, 10) : value, t) : reservedConfig.fixedValue.value
-          }
+          {name === "maxTime"
+            ? formatMinutesToI18nDayHours(typeof value === "string" ? parseInt(value, 10) : value, t)
+            : reservedConfig.fixedValue.value}
         </div>
       </InlineFormItem>
     );
-  // 当系统保留字段被配置为下拉框选项时
+    // 当系统保留字段被配置为下拉框选项时
   } else if (reservedConfig?.type === "select") {
-
     // 筛选选项：若没有配置requireGpu直接使用，配置了requireGpu项使用与否则看改分区有无GPU
-    const selectOptions =
-      reservedConfig?.select.filter((x) => !x.requireGpu || (x.requireGpu && currentPartitionIsWithGpu));
+    const selectOptions = reservedConfig?.select.filter(
+      (x) => !x.requireGpu || (x.requireGpu && currentPartitionIsWithGpu),
+    );
 
     // 使用单个useEffect处理所有逻辑
     useEffect(() => {
-
       const selectInitialValue = getSelectAttributeInitalValue(reservedConfig.defaultValue, reservedConfig.select);
-      const initialFormValue = selectInitialValue ?
-        (isNumberAttribute ? ensureNumberValue(selectInitialValue) : selectInitialValue) : undefined;
+      const initialFormValue = selectInitialValue
+        ? isNumberAttribute
+          ? ensureNumberValue(selectInitialValue)
+          : selectInitialValue
+        : undefined;
 
       // 判断是否配置了requireGpu选项
       const hasRequireGpuOption = reservedConfig?.select.some((i) => i.requireGpu !== undefined);
@@ -131,20 +144,26 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
       const currentValue = form.getFieldValue(name);
 
       // 检查当前值是否在可选项中
-      const isValueInOptions = currentValue && selectOptions.some((option) => {
-        const optionValue = isNumberAttribute ? ensureNumberValue(option.value) : option.value;
-        return optionValue === currentValue;
-      });
+      const isValueInOptions =
+        currentValue &&
+        selectOptions.some((option) => {
+          const optionValue = isNumberAttribute ? ensureNumberValue(option.value) : option.value;
+          return optionValue === currentValue;
+        });
 
       // 需要设置新值的情况：
       // 1. 当前值不存在
       // 2. 当前值不在可选项列表中
       // 3. 有requireGpu配置且当前值不在筛选后的选项中
-      const needsNewValue = !currentValue || !isValueInOptions ||
-        (currentPartitionIsWithGpu && hasRequireGpuOption && !selectOptions.some((o) => {
-          const optionValue = isNumberAttribute ? ensureNumberValue(o.value) : o.value;
-          return optionValue === currentValue;
-        }));
+      const needsNewValue =
+        !currentValue ||
+        !isValueInOptions ||
+        (currentPartitionIsWithGpu &&
+          hasRequireGpuOption &&
+          !selectOptions.some((o) => {
+            const optionValue = isNumberAttribute ? ensureNumberValue(o.value) : o.value;
+            return optionValue === currentValue;
+          }));
 
       if (needsNewValue) {
         form.setFieldsValue({ [name]: initialFormValue });
@@ -152,14 +171,12 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
 
       // 无论如何都进行验证
       form.validateFields([name]);
-
     });
 
     const getAttributeElement = (): JSX.Element => {
       return (
         <Select
           options={selectOptions.map((x) => {
-
             if (name === "maxTime" && !x.label) {
               return {
                 label: formatMinutesToI18nDayHours(ensureNumberValue(x.value), t),
@@ -170,7 +187,6 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
               label: `${x.label ? getI18nConfigCurrentText(x.label, languageId) : x.value}`,
               value: isNumberAttribute ? ensureNumberValue(x.value) : x.value,
             };
-
           })}
           onChange={onChange}
         />
@@ -187,7 +203,6 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
         {getAttributeElement()}
       </InlineFormItem>
     );
-
   } else if (reservedConfig?.type === "commandSelect") {
     return (
       <InlineFormItem
@@ -209,12 +224,7 @@ export const FixedOrEditableFormItem: React.FC<FixedOrEditableFormItemProps> = (
 
   // 没有特殊保留配置时，渲染 InlineFormItem 和动态子组件
   return (
-    <InlineFormItem
-      name={name}
-      label={<FormLabel>{label}</FormLabel>}
-      rules={rules}
-      dependencies={dependencies}
-    >
+    <InlineFormItem name={name} label={<FormLabel>{label}</FormLabel>} rules={rules} dependencies={dependencies}>
       {children}
     </InlineFormItem>
   );

@@ -9,16 +9,19 @@ const StyledTable = styled.table`
   width: 100%;
   text-align: left;
 
-  th, td {
+  th,
+  td {
     padding: 8px;
     border: 1px solid #e0e0e0;
   }
 
-  th:first-child, td:first-child {
+  th:first-child,
+  td:first-child {
     text-align: right;
   }
 
-  th:nth-child(even), td:nth-child(even) {
+  th:nth-child(even),
+  td:nth-child(even) {
     background-color: #f0f2f5;
   }
 `;
@@ -32,7 +35,6 @@ export const GateFidelityTable = ({
   deviceInfo?: DeviceDetailInfo;
   averages: AveragesState;
 }) => {
-
   const { Text } = Typography;
 
   const t = useI18nTranslateToString();
@@ -70,7 +72,9 @@ export const GateFidelityTable = ({
             <tr>
               <th></th>
               <th>AVG</th>
-              {deviceInfo?.bits?.map((bit) => <th key={bit.Qubit}>Q{bit.Qubit}</th>)}
+              {deviceInfo?.bits?.map((bit) => (
+                <th key={bit.Qubit}>Q{bit.Qubit}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -90,12 +94,14 @@ export const GateFidelityTable = ({
             <tr>
               <th></th>
               <th>AVG</th>
-              {deviceInfo?.links?.map((link, i) => <th key={i}>Q{link.A},{link.B}</th>)}
+              {deviceInfo?.links?.map((link, i) => (
+                <th key={i}>
+                  Q{link.A},{link.B}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
-            {renderCZRow("CZ.Err", averages.czErrAvg, "CZErrRate", 3)}
-          </tbody>
+          <tbody>{renderCZRow("CZ.Err", averages.czErrAvg, "CZErrRate", 3)}</tbody>
         </StyledTable>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { getNotificationNodeClient } from "@scow/lib-notification/build/index";
 import { replaceTemplate } from "@scow/lib-web/build/utils/renderingMessage";
-import { NoticeType,SenderType, TargetType } from "@scow/notification-protos/build/common_pb";
+import { NoticeType, SenderType, TargetType } from "@scow/notification-protos/build/common_pb";
 import { BridgeMessage } from "@scow/notification-protos/build/message_bridge_pb";
 import { notificationConfig } from "src/server/config/notification";
 
@@ -20,8 +20,8 @@ interface AdminSendMsgToBridge {
   title: string;
   content: string;
   messageType: string;
-  category: string
-  noticeTypes: NoticeType[]
+  category: string;
+  noticeTypes: NoticeType[];
 }
 
 export interface SystemSendMsgToBridge {
@@ -54,12 +54,16 @@ export async function adminSendMsgToBridge(info: AdminSendMsgToBridge) {
         messageInfo: { title, content },
         messageTypeInfo: { type: messageType, category },
         senderInfo: { senderType, senderId },
-        targetInfo: { targetType, userInfo: {
-          userId: info?.identityId, name: info?.name, email: info?.email,
-        } },
+        targetInfo: {
+          targetType,
+          userInfo: {
+            userId: info?.identityId,
+            name: info?.name,
+            email: info?.email,
+          },
+        },
         noticeTypes,
       });
-
     });
   } else {
     await client.messageBridge.sendMessage({
@@ -70,7 +74,6 @@ export async function adminSendMsgToBridge(info: AdminSendMsgToBridge) {
       noticeTypes,
     });
   }
-
 }
 
 export async function systemSendMsgToBridge(em: SqlEntityManager, info: SystemSendMsgToBridge) {
@@ -97,14 +100,20 @@ export async function systemSendMsgToBridge(em: SqlEntityManager, info: SystemSe
       messageInfo: {
         title: messageTypeData.titleTemplate.default ?? "",
         content: messageTypeData.contentTemplate
-          ? replaceTemplate(metadata, messageTypeData.contentTemplate.default) : "",
+          ? replaceTemplate(metadata, messageTypeData.contentTemplate.default)
+          : "",
         metadata,
       },
       messageTypeInfo: { type: messageType, category },
       senderInfo: { senderType, senderId },
-      targetInfo: { targetType, userInfo: {
-        userId: info?.identityId, name: info?.name, email: info?.email,
-      } },
+      targetInfo: {
+        targetType,
+        userInfo: {
+          userId: info?.identityId,
+          name: info?.name,
+          email: info?.email,
+        },
+      },
       noticeTypes,
     });
   });
@@ -136,14 +145,20 @@ export async function systemBatchSendMsgsToBridge(em: SqlEntityManager, infos: S
         messageInfo: {
           title: messageTypeData.titleTemplate.default ?? "",
           content: messageTypeData.contentTemplate
-            ? replaceTemplate(metadata, messageTypeData.contentTemplate.default) : "",
+            ? replaceTemplate(metadata, messageTypeData.contentTemplate.default)
+            : "",
           metadata,
         },
         messageTypeInfo: { type: messageType, category },
         senderInfo: { senderType, senderId },
-        targetInfo: { targetType, userInfo: {
-          userId: info?.identityId, name: info?.name, email: info?.email,
-        } },
+        targetInfo: {
+          targetType,
+          userInfo: {
+            userId: info?.identityId,
+            name: info?.name,
+            email: info?.email,
+          },
+        },
         noticeTypes,
       } as BridgeMessage);
     }

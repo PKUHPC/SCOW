@@ -3,12 +3,14 @@ import { plugin } from "@ddadaal/tsgrpc-server";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { raw } from "@mikro-orm/core";
 import { getI18nSeverTypeFormat, libCheckActivatedClusters, libCheckAppIdInClusterApps } from "@scow/lib-server";
-import { AppAuthorizationInfo, AppAuthorizationServiceServer,
+import {
+  AppAuthorizationInfo,
+  AppAuthorizationServiceServer,
   AppAuthorizationServiceService,
   GetTargetAppAuthorizationsRequest_TargetType,
   GetTenantAppsResponse_TenantApp,
-  UpdateDefaultAppRequest_UpdateAction }
-  from "@scow/protos/build/server/app_authorization";
+  UpdateDefaultAppRequest_UpdateAction,
+} from "@scow/protos/build/server/app_authorization";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
@@ -21,16 +23,19 @@ import { TenantDefaultAppRemovedList } from "src/entities/TenantDefaultAppRemove
 import { User, UserState } from "src/entities/User";
 import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { getAiClusterAppConfigs, getClusterAppConfigs } from "src/utils/app";
-import { addToTenantDefaultApps, authorizeAccountApp,
-  authorizeTenantApp, formatTargetAppInfoList,
-  removeFromTenantDefaultApps } from "src/utils/appAuthorization";
+import {
+  addToTenantDefaultApps,
+  authorizeAccountApp,
+  authorizeTenantApp,
+  formatTargetAppInfoList,
+  removeFromTenantDefaultApps,
+} from "src/utils/appAuthorization";
 import { logger } from "src/utils/logger";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 
 export const appAuthorizationServiceServer = plugin((server) => {
   server.addService<AppAuthorizationServiceServer>(AppAuthorizationServiceService, {
     getTargetAppAuthorizations: async ({ request, em }) => {
-
       // 验证功能是否开启
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
@@ -39,8 +44,8 @@ export const appAuthorizationServiceServer = plugin((server) => {
         });
       }
 
-      const { pageSize, page, clusterId, targetType,
-        tenantName, filterTargetName, filterAccountOwnerIdOrName } = request;
+      const { pageSize, page, clusterId, targetType, tenantName, filterTargetName, filterAccountOwnerIdOrName } =
+        request;
       if (targetType === GetTargetAppAuthorizationsRequest_TargetType.UNKNOWN) {
         throw new ServiceError({
           code: Status.INVALID_ARGUMENT,
@@ -72,22 +77,24 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
       // ************************查询租户对象的交互式应用列表**********************************
       if (targetType === GetTargetAppAuthorizationsRequest_TargetType.TENANT) {
-
         logger.trace("Start query tenants' app lists");
-        const [tenants, count] = await em.findAndCount(Tenant,
-          filterTargetName
-            ? { name: { $like: `%${filterTargetName}%` } }
-            : {},
+        const [tenants, count] = await em.findAndCount(
+          Tenant,
+          filterTargetName ? { name: { $like: `%${filterTargetName}%` } } : {},
           { ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE) },
         );
 
         const tenantNames = tenants.map((t) => t.name);
-        const tenantsBlacklist = await em.find(TenantAppBlacklist, {
-          ...clusterSearchParam,
-          tenant: { name: { $in: tenantNames } },
-        }, {
-          populate: ["cluster", "tenant"],
-        });
+        const tenantsBlacklist = await em.find(
+          TenantAppBlacklist,
+          {
+            ...clusterSearchParam,
+            tenant: { name: { $in: tenantNames } },
+          },
+          {
+            populate: ["cluster", "tenant"],
+          },
+        );
         logger.trace("Current tenants' blacklist: %s", tenantsBlacklist.map((t) => t.appId).join(", "));
 
         const formatResult = formatTargetAppInfoList(
@@ -102,19 +109,17 @@ export const appAuthorizationServiceServer = plugin((server) => {
         );
         return [formatResult];
 
-      // ************************查询账户对象的交互式应用列表**********************************
+        // ************************查询账户对象的交互式应用列表**********************************
       } else {
-
         interface RawAccountWithOwner {
-          accountName: string,
-          tenantName: string,
-          accountOwnerId: string | undefined,
-          accountOwnerName: string | undefined,
+          accountName: string;
+          tenantName: string;
+          accountOwnerId: string | undefined;
+          accountOwnerName: string | undefined;
         }
 
         const qb = em.createQueryBuilder(Account, "a");
-        qb
-          .leftJoin("a.tenant", "t")
+        qb.leftJoin("a.tenant", "t")
           .leftJoin("a.users", "ua", { "ua.role": UserRole.OWNER })
           .leftJoin("ua.user", "u")
           .select([
@@ -157,7 +162,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
         }
         const associatedTenant = accountsRaw[0].tenantName;
         const accountNames = accountsRaw.map((a) => a.accountName);
-        const accountOwnerMap = new Map<string, { ownerId?: string, ownerName?: string }>();
+        const accountOwnerMap = new Map<string, { ownerId?: string; ownerName?: string }>();
         accountsRaw.forEach((r) => {
           accountOwnerMap.set(r.accountName, {
             ownerId: r.accountOwnerId || undefined,
@@ -166,14 +171,22 @@ export const appAuthorizationServiceServer = plugin((server) => {
         });
 
         const [accountBlacklist, associatedTenantBlacklist] = await Promise.all([
-          em.find(AccountAppBlacklist, {
-            ...clusterSearchParam,
-            account: { accountName: { $in: accountNames } },
-          }, { populate: ["cluster", "account"]}),
-          em.find(TenantAppBlacklist, {
-            ...clusterSearchParam,
-            tenant: { name: associatedTenant },
-          }, { populate: ["cluster", "tenant"]}),
+          em.find(
+            AccountAppBlacklist,
+            {
+              ...clusterSearchParam,
+              account: { accountName: { $in: accountNames } },
+            },
+            { populate: ["cluster", "account"] },
+          ),
+          em.find(
+            TenantAppBlacklist,
+            {
+              ...clusterSearchParam,
+              tenant: { name: associatedTenant },
+            },
+            { populate: ["cluster", "tenant"] },
+          ),
         ]);
 
         const formatResult = formatTargetAppInfoList(
@@ -190,11 +203,9 @@ export const appAuthorizationServiceServer = plugin((server) => {
         );
         return [formatResult];
       }
-
     },
 
     authorizeApp: async ({ request, em }) => {
-
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
@@ -212,7 +223,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
       }
 
       return await em.transactional(async (em) => {
-
         const [foundCluster, foundOperator] = await Promise.all([
           em.findOne(Cluster, { clusterId: clusterId }),
           em.findOne(User, { userId: operatorId }),
@@ -245,20 +255,34 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
         if (target.$case === "accountName") {
           await authorizeAccountApp(
-            em, target.accountName, clusterId, appId, action, foundCluster, foundOperator, logger);
+            em,
+            target.accountName,
+            clusterId,
+            appId,
+            action,
+            foundCluster,
+            foundOperator,
+            logger,
+          );
           // ************************************对租户执行授权/取消授权APP操作************************************************
         } else {
           await authorizeTenantApp(
-            em, target.tenantName, clusterId, appId, action, foundCluster, foundOperator, logger);
+            em,
+            target.tenantName,
+            clusterId,
+            appId,
+            action,
+            foundCluster,
+            foundOperator,
+            logger,
+          );
         }
 
         return [{ executed: true }];
-
       });
     },
 
     getUserAvailableClusterApps: async ({ request, em }) => {
-
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
@@ -272,7 +296,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
       libCheckActivatedClusters({ clusterIds: clusterId, activatedClusters: currentActivatedClusters, logger });
 
       return await em.transactional(async (em) => {
-
         const foundUser = await em.findOne(User, { userId: userId });
         if (!foundUser || foundUser.state === UserState.DELETED) {
           throw new ServiceError({
@@ -296,29 +319,33 @@ export const appAuthorizationServiceServer = plugin((server) => {
 
         // 查询当前用户关联的未删除的账户列表
         const qb = em.createQueryBuilder(UserAccount, "ua");
-        const accounts: { accountName: string, accountsBlockedInCluster: boolean,
-          blockedInCluster: UserStatus }[] = await qb
-          .join("ua.user", "u")
-          .join("ua.account", "a")
-          .select([
-            "a.account_name AS accountName",
-            "a.blocked_in_cluster AS accountsBlockedInCluster",
-            "ua.blockedInCluster",
-          ])
-          .where({ "u.userId": userId })
-          .andWhere({ "a.state": { $ne: AccountState.DELETED } })
-          .execute();
+        const accounts: { accountName: string; accountsBlockedInCluster: boolean; blockedInCluster: UserStatus }[] =
+          await qb
+            .join("ua.user", "u")
+            .join("ua.account", "a")
+            .select([
+              "a.account_name AS accountName",
+              "a.blocked_in_cluster AS accountsBlockedInCluster",
+              "ua.blockedInCluster",
+            ])
+            .where({ "u.userId": userId })
+            .andWhere({ "a.state": { $ne: AccountState.DELETED } })
+            .execute();
 
         const accountNames = accounts.map((a) => a.accountName);
 
-        const accountsBlacklist = await em.find(AccountAppBlacklist, {
-          cluster: { clusterId: clusterId },
-          account: {
-            accountName: { $in: accountNames },
+        const accountsBlacklist = await em.find(
+          AccountAppBlacklist,
+          {
+            cluster: { clusterId: clusterId },
+            account: {
+              accountName: { $in: accountNames },
+            },
           },
-        }, {
-          populate: ["cluster", "account"],
-        });
+          {
+            populate: ["cluster", "account"],
+          },
+        );
 
         // 创建 { accountName: appId[] } 的映射
         const accountBlackAppsMap = new Map<string, Set<string>>();
@@ -331,43 +358,42 @@ export const appAuthorizationServiceServer = plugin((server) => {
         });
 
         // 当用户所有关联账户都被禁用此APP时，则从可用应用列表中移除
-        const availableApps = currentClusterAppIds.filter((appId) => {
-          // 如果没有账户，直接返回true
-          if (accountNames.length === 0) return true;
-          return !accountNames.every((accountName) =>
-            accountBlackAppsMap.get(accountName)?.has(appId) || false);
-        }).map((id) => {
-          const appConfig = clusterApps[id];
-          const imageConfig = (appConfig as { image?: { name: string; tag?: string } }).image;
-          const webStartCommand =
-            (appConfig.web as { startCommand?: string } | undefined)?.startCommand;
+        const availableApps = currentClusterAppIds
+          .filter((appId) => {
+            // 如果没有账户，直接返回true
+            if (accountNames.length === 0) return true;
+            return !accountNames.every((accountName) => accountBlackAppsMap.get(accountName)?.has(appId) || false);
+          })
+          .map((id) => {
+            const appConfig = clusterApps[id];
+            const imageConfig = (appConfig as { image?: { name: string; tag?: string } }).image;
+            const webStartCommand = (appConfig.web as { startCommand?: string } | undefined)?.startCommand;
 
-          const availableAccounts = accounts
-            .filter((account) =>
-              !accountBlackAppsMap.get(account.accountName)?.has(id) && !account.accountsBlockedInCluster
-            && account.blockedInCluster !== UserStatus.BLOCKED,
+            const availableAccounts = accounts.filter(
+              (account) =>
+                !accountBlackAppsMap.get(account.accountName)?.has(id) &&
+                !account.accountsBlockedInCluster &&
+                account.blockedInCluster !== UserStatus.BLOCKED,
             );
 
-          return {
-            id,
-            name: appConfig.name,
-            logoPath: appConfig.logoPath,
-            comment: appConfig.appComment ? getI18nSeverTypeFormat(appConfig.appComment) : undefined,
-            image: imageConfig ? `${imageConfig.name}:${imageConfig.tag ?? "latest"}` : undefined,
-            startCommand: webStartCommand ?? appConfig.vnc?.xstartup,
-            availableAccounts: availableAccounts.map((a) => a.accountName),
-          };
-        });
+            return {
+              id,
+              name: appConfig.name,
+              logoPath: appConfig.logoPath,
+              comment: appConfig.appComment ? getI18nSeverTypeFormat(appConfig.appComment) : undefined,
+              image: imageConfig ? `${imageConfig.name}:${imageConfig.tag ?? "latest"}` : undefined,
+              startCommand: webStartCommand ?? appConfig.vnc?.xstartup,
+              availableAccounts: availableAccounts.map((a) => a.accountName),
+            };
+          });
 
         logger.trace("Available apps: %o for user: %s in cluster: %s", availableApps, userId, clusterId);
 
-        return [ { apps: availableApps } ];
-
+        return [{ apps: availableApps }];
       });
     },
 
     getAppForbiddenAccounts: async ({ request, em }) => {
-
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
@@ -404,8 +430,7 @@ export const appAuthorizationServiceServer = plugin((server) => {
         .execute();
 
       const accountNames = accounts.map((a) => a.accountName);
-      logger.trace("Forbidden accounts: %s for appId: %s in cluster: %s",
-        accountNames.join(","), appId, clusterId);
+      logger.trace("Forbidden accounts: %s for appId: %s in cluster: %s", accountNames.join(","), appId, clusterId);
 
       return [{ accountNames }];
     },
@@ -435,19 +460,22 @@ export const appAuthorizationServiceServer = plugin((server) => {
         });
       }
       libCheckAppIdInClusterApps({ appId, appIds: currentClusterAppIds, clusterId, logger });
-      const found = await em.findOne(AccountAppBlacklist, {
-        cluster: { clusterId: clusterId },
-        appId: appId,
-        account: { accountName: accountName },
-      }, {
-        populate: ["cluster", "account"],
-      });
+      const found = await em.findOne(
+        AccountAppBlacklist,
+        {
+          cluster: { clusterId: clusterId },
+          appId: appId,
+          account: { accountName: accountName },
+        },
+        {
+          populate: ["cluster", "account"],
+        },
+      );
 
       return [{ isDisabled: !!found }];
     },
 
-    getTenantApps: async ({ request , em }) => {
-
+    getTenantApps: async ({ request, em }) => {
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
@@ -466,21 +494,28 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const currentClusterAppIds = Object.keys(clusterApps);
       if (currentClusterAppIds.length === 0) {
         // 该集群下没有可以使用的交互式应用
-        return [{ tenantApps: []}];
+        return [{ tenantApps: [] }];
       }
 
       return await em.transactional(async (em) => {
-
         const [tenantBlackApps, tenantDefaultRemovedApps] = await Promise.all([
-          em.find(TenantAppBlacklist, {
-            cluster: { clusterId },
-            tenant: { name: tenantName },
-          }, { populate: ["tenant", "cluster"]}),
+          em.find(
+            TenantAppBlacklist,
+            {
+              cluster: { clusterId },
+              tenant: { name: tenantName },
+            },
+            { populate: ["tenant", "cluster"] },
+          ),
 
-          em.find(TenantDefaultAppRemovedList, {
-            cluster: { clusterId },
-            tenant: { name: tenantName },
-          }, { populate: ["tenant", "cluster"]}),
+          em.find(
+            TenantDefaultAppRemovedList,
+            {
+              cluster: { clusterId },
+              tenant: { name: tenantName },
+            },
+            { populate: ["tenant", "cluster"] },
+          ),
         ]);
 
         // 提取ID集合
@@ -497,14 +532,11 @@ export const appAuthorizationServiceServer = plugin((server) => {
             isDefault: !removedAppIds.has(appId),
           }));
 
-        return [ { tenantApps } ];
-
+        return [{ tenantApps }];
       });
     },
 
-
     updateDefaultApp: async ({ request, em }) => {
-
       if (!commonConfig.allowAppAuthorization) {
         throw new ServiceError({
           code: Status.FAILED_PRECONDITION,
@@ -529,7 +561,6 @@ export const appAuthorizationServiceServer = plugin((server) => {
       const appIsNotInConfig = !currentClusterAppIds.includes(appId);
 
       return await em.transactional(async (em) => {
-
         const [
           foundTenant,
           foundCluster,
@@ -542,15 +573,23 @@ export const appAuthorizationServiceServer = plugin((server) => {
           em.findOne(Tenant, { name: tenantName }),
           em.findOne(Cluster, { clusterId: clusterId }),
           em.findOne(User, { userId: operatorId }),
-          em.findOne(TenantDefaultAppRemovedList, {
-            cluster: { clusterId: clusterId },
-            tenant: { name: tenantName },
-            appId: appId,
-          }, { populate: ["cluster", "tenant"]}),
-          em.find(TenantAppBlacklist, {
-            cluster: { clusterId: clusterId },
-            tenant: { name: tenantName },
-          }, { populate: ["tenant", "cluster"]}),
+          em.findOne(
+            TenantDefaultAppRemovedList,
+            {
+              cluster: { clusterId: clusterId },
+              tenant: { name: tenantName },
+              appId: appId,
+            },
+            { populate: ["cluster", "tenant"] },
+          ),
+          em.find(
+            TenantAppBlacklist,
+            {
+              cluster: { clusterId: clusterId },
+              tenant: { name: tenantName },
+            },
+            { populate: ["tenant", "cluster"] },
+          ),
         ]);
 
         if (!foundTenant) {
@@ -579,25 +618,30 @@ export const appAuthorizationServiceServer = plugin((server) => {
         if (appIsNotInConfig || appIsInTenantBlacklist) {
           throw new ServiceError({
             code: Status.NOT_FOUND,
-            message:
-              `App ${appId} is not in apps config of cluster ${clusterId} or is blocked to tenant ${tenantName}.`,
+            message: `App ${appId} is not in apps config of cluster ${clusterId} or is blocked to tenant ${tenantName}.`,
           });
         }
-
 
         // 添加应用到默认授权应用时
         if (updateAction === UpdateDefaultAppRequest_UpdateAction.ADD_TO_DEFAULT_APPS) {
           await addToTenantDefaultApps(em, clusterId, tenantName, appId, foundCluster, logger, foundRemovedApp);
 
-        // 从默认授权应用中移除时
+          // 从默认授权应用中移除时
         } else {
-          await removeFromTenantDefaultApps(em, clusterId, tenantName, appId,
-            foundTenant, foundCluster, foundOperator, logger, foundRemovedApp);
+          await removeFromTenantDefaultApps(
+            em,
+            clusterId,
+            tenantName,
+            appId,
+            foundTenant,
+            foundCluster,
+            foundOperator,
+            logger,
+            foundRemovedApp,
+          );
         }
         return [{ executed: true }];
       });
     },
-
-
   });
 });

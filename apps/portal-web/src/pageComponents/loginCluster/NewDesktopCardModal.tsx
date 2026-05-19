@@ -65,11 +65,8 @@ export const NewDesktopCardModal: React.FC<Props> = ({
   const hasShadowdeskConfig = selectedCluster?.hasShadowdeskConfig;
   const shadowdeskEnabled = selectedCluster?.shadowdeskEnabled;
   const hasShadowDesk = (hasShadowdeskConfig ? shadowdeskEnabled : publicConfig.SHADOW_DESK_ENABLED) || false;
-  const shadowdeskAvailableWms = (
-    hasShadowdeskConfig
-      ? selectedCluster?.shadowdeskAvailableWms
-      : publicConfig.SHADOW_DESK_WMS
-  ) || [];
+  const shadowdeskAvailableWms =
+    (hasShadowdeskConfig ? selectedCluster?.shadowdeskAvailableWms : publicConfig.SHADOW_DESK_WMS) || [];
 
   // 从传入的allAvailableWms中查找当前选中集群的WM信息
   const availableWms = allAvailableWms.find((item) => item.clusterId === selectedClusterId)?.wms || [];
@@ -79,37 +76,40 @@ export const NewDesktopCardModal: React.FC<Props> = ({
     setSubmitting(true);
 
     // Create new desktop
-    await api.createDesktop({
-      body: {
-        cluster: values.cluster,
-        loginNode: values.loginNode,
-        wm: values.wm,
-        desktopName: values.desktopName,
-        remoteControlTool: values.remoteControlTool ?? "vnc",
-      },
-    }).httpError(409, (e) => {
-      const { code } = e;
-      if (code === "TOO_MANY_DESKTOPS") {
-        modal.error({
-          title: t(p("error.createDesktopError")),
-          content: t(p("error.tooManyVncContent")),
-        });
-      } else {
-        throw e;
-      }
-    }).httpError(500, (e) => {
-      if (e?.message.includes("desktop name already exists")) {
-        modal.error({
-          title: t(p("error.createDesktopError")),
-          content: `${values.desktopName} ${t(p("error.desktopNameAlreadyExists"))}`,
-        });
-      } else {
-        modal.error({
-          title: t(p("error.createDesktopError")),
-          content: t(p("error.createDesktopError")),
-        });
-      }
-    })
+    await api
+      .createDesktop({
+        body: {
+          cluster: values.cluster,
+          loginNode: values.loginNode,
+          wm: values.wm,
+          desktopName: values.desktopName,
+          remoteControlTool: values.remoteControlTool ?? "vnc",
+        },
+      })
+      .httpError(409, (e) => {
+        const { code } = e;
+        if (code === "TOO_MANY_DESKTOPS") {
+          modal.error({
+            title: t(p("error.createDesktopError")),
+            content: t(p("error.tooManyVncContent")),
+          });
+        } else {
+          throw e;
+        }
+      })
+      .httpError(500, (e) => {
+        if (e?.message.includes("desktop name already exists")) {
+          modal.error({
+            title: t(p("error.createDesktopError")),
+            content: `${values.desktopName} ${t(p("error.desktopNameAlreadyExists"))}`,
+          });
+        } else {
+          modal.error({
+            title: t(p("error.createDesktopError")),
+            content: t(p("error.createDesktopError")),
+          });
+        }
+      })
       .then((resp) => {
         if (resp.type === "shadowdesk") {
           window.open(resp.shadowdesk?.shadowdeskUrl);
@@ -119,7 +119,9 @@ export const NewDesktopCardModal: React.FC<Props> = ({
         onClose();
         reload();
       })
-      .finally(() => { setSubmitting(false); });
+      .finally(() => {
+        setSubmitting(false);
+      });
   };
 
   // 设置远程控制工具的默认值
@@ -129,7 +131,6 @@ export const NewDesktopCardModal: React.FC<Props> = ({
       form.setFieldsValue({ remoteControlTool: defaultTool });
     }
   }, [hasShadowDesk, selectedClusterId]);
-
 
   // 设置 loginNode 和 wm 的默认值
   useEffect(() => {
@@ -150,14 +151,13 @@ export const NewDesktopCardModal: React.FC<Props> = ({
     // 设置默认 WM
     if (currentRemoteControlTool === "shadowdesk") {
       newDefaults.wm = shadowdeskAvailableWms[0];
-    } else { // VNC
+    } else {
+      // VNC
       newDefaults.wm = availableWms[0]?.wm;
     }
 
     form.setFieldsValue(newDefaults);
-
   }, [selectedClusterId, loginNodes, availableWms, shadowdeskAvailableWms, currentRemoteControlTool]);
-
 
   // 模态框打开时设置默认集群和桌面名称
   useEffect(() => {
@@ -195,16 +195,13 @@ export const NewDesktopCardModal: React.FC<Props> = ({
         wrapperCol={{ span: 17 }}
         labelCol={{ span: 6, style: { whiteSpace: "normal", lineHeight: "16px" } }}
       >
-        <Form.Item
-          label={t(p("modal.clusterName"))}
-          name="cluster"
-          rules={[{ required: true }]}
-        >
+        <Form.Item label={t(p("modal.clusterName"))} name="cluster" rules={[{ required: true }]}>
           <Select
             showSearch
             optionFilterProp="children"
             options={clusters.map((cluster) => ({
-              label: cluster.name, value: cluster.id,
+              label: cluster.name,
+              value: cluster.id,
             }))}
             onChange={handleClusterChange}
           />
@@ -214,16 +211,22 @@ export const NewDesktopCardModal: React.FC<Props> = ({
           <>
             <Form.Item label={t(p("modal.loginNode"))} name="loginNode" rules={[{ required: true }]}>
               <Select
-                options={loginNodes[selectedClusterId]?.map((loginNode) => ({
-                  label: loginNode.name, value: loginNode.address,
-                })) || []}
+                options={
+                  loginNodes[selectedClusterId]?.map((loginNode) => ({
+                    label: loginNode.name,
+                    value: loginNode.address,
+                  })) || []
+                }
               />
             </Form.Item>
 
             {hasShadowDesk && (
               <Form.Item label={t(p("modal.remoteControlTool"))} name="remoteControlTool" required>
                 <Select
-                  options={[{ label: "ShadowDesk", value: "shadowdesk" }, { label: "vnc", value: "vnc" }]}
+                  options={[
+                    { label: "ShadowDesk", value: "shadowdesk" },
+                    { label: "vnc", value: "vnc" },
+                  ]}
                   onChange={(value) => {
                     form.setFieldValue("remoteControlTool", value);
                   }}

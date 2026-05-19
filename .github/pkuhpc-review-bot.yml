@@ -1,11 +1,15 @@
 stages:
   - name: Code1
     reviewers: ["piccaSun"]
-    fileReviewers:
-      - paths: ["apps/scow-adapeters/**", "libs/protos/scheduler-adapter/**"]
-        reviewers: ["283713406"]
 
   - name: Code2
+    reviewers: []
+    optional: true
+    fileReviewers:
+      - paths: ["apps/scow-adapters/**", "libs/protos/scheduler-adapter/**"]
+        reviewers: ["283713406"]
+
+  - name: Code3
     reviewers: ["Miracle575"]
 
   - name: E2E

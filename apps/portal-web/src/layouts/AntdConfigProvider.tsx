@@ -1,11 +1,10 @@
 import "dayjs/locale/zh-cn";
-
 import { generate } from "@ant-design/colors";
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
 import { PrimaryColor } from "@scow/config/build/ui";
 import { AntdConfigProvider as LibAntdConfigProvider } from "@scow/lib-web/build/layouts/AntdConfigProvider";
 import { useDarkMode } from "@scow/lib-web/build/layouts/darkMode";
-import { darkGray,lightGray } from "@scow/lib-web/build/styles/constants";
+import { darkGray, lightGray } from "@scow/lib-web/build/styles/constants";
 import { App, ConfigProvider, theme } from "antd";
 import { Locale } from "antd/lib/locale";
 import deDElocale from "antd/locale/de_DE";
@@ -21,7 +20,6 @@ import React, { useMemo } from "react";
 import { useI18n } from "src/i18n";
 import { ThemeProvider } from "styled-components";
 
-
 type Props = React.PropsWithChildren<{
   color: string;
   locale: string;
@@ -36,23 +34,19 @@ type StyledThemeProviderProps = React.PropsWithChildren<{
 const StyledComponentsThemeProvider: React.FC<StyledThemeProviderProps> = ({ children, color, grayPalette }) => {
   const { token } = theme.useToken();
 
-  const primaryPalette = useMemo(
-    () => generate(color ?? token.colorPrimary),
-    [color, token.colorPrimary],
+  const primaryPalette = useMemo(() => generate(color ?? token.colorPrimary), [color, token.colorPrimary]);
+  const styledTheme = useMemo(
+    () => ({
+      token,
+      palette: {
+        primary: primaryPalette,
+        gray: grayPalette,
+      },
+    }),
+    [grayPalette, primaryPalette, token],
   );
-  const styledTheme = useMemo(() => ({
-    token,
-    palette: {
-      primary: primaryPalette,
-      gray: grayPalette,
-    },
-  }), [grayPalette, primaryPalette, token]);
 
-  return (
-    <ThemeProvider theme={styledTheme}>
-      {children}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={styledTheme}>{children}</ThemeProvider>;
 };
 
 export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, locale }) => {
@@ -68,18 +62,16 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, lo
     <LibAntdConfigProvider color={currentPrimaryColor} locale={locale}>
       <ConfigProvider
         locale={localizedLang}
-        theme={{ token: {
-          colorPrimary: currentPrimaryColor,
-          colorInfo: currentPrimaryColor,
-        }, algorithm: dark ? theme.darkAlgorithm : undefined }}
+        theme={{
+          token: {
+            colorPrimary: currentPrimaryColor,
+            colorInfo: currentPrimaryColor,
+          },
+          algorithm: dark ? theme.darkAlgorithm : undefined,
+        }}
       >
-        <StyledComponentsThemeProvider
-          color={currentPrimaryColor}
-          grayPalette={grayPalette}
-        >
-          <App>
-            {children}
-          </App>
+        <StyledComponentsThemeProvider color={currentPrimaryColor} grayPalette={grayPalette}>
+          <App>{children}</App>
         </StyledComponentsThemeProvider>
       </ConfigProvider>
     </LibAntdConfigProvider>

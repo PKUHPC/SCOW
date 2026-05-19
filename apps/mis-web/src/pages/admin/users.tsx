@@ -7,27 +7,22 @@ import { PlatformRole } from "src/models/User";
 import { AllUsersTable } from "src/pageComponents/admin/AllUsersTable";
 import { Head } from "src/utils/head";
 
+export const ShowUsersPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(({
+  userStore: { user },
+}) => {
+  const t = useI18nTranslateToString();
+  const languageId = useI18n().currentLanguage.id;
+  const [refreshToken, update] = useRefreshToken();
 
-
-export const ShowUsersPage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(({ userStore: { user } }) => {
-
-    const t = useI18nTranslateToString();
-    const languageId = useI18n().currentLanguage.id;
-    const [refreshToken, update] = useRefreshToken();
-
-    return (
-      <div>
-        <Head title={t("common.userList")} />
-        <PageTitle titleText={t("common.userList")}>
-          <RefreshLink refresh={update} languageId={languageId} />
-        </PageTitle>
-        <AllUsersTable
-          refreshToken={refreshToken}
-          user={user}
-        />
-      </div>
-    );
-  });
+  return (
+    <div>
+      <Head title={t("common.userList")} />
+      <PageTitle titleText={t("common.userList")}>
+        <RefreshLink refresh={update} languageId={languageId} />
+      </PageTitle>
+      <AllUsersTable refreshToken={refreshToken} user={user} />
+    </div>
+  );
+});
 
 export default ShowUsersPage;

@@ -1,5 +1,6 @@
-import { Avatar, Card, Space } from "antd";
 import type { ReactNode } from "react";
+
+import { Avatar, Card, Space } from "antd";
 import { styled } from "styled-components";
 
 import { SectionTitle } from "./TitledSectionCard";
@@ -11,28 +12,16 @@ export interface DualTitleCardProps {
   children?: ReactNode;
 }
 
-export const DualTitleCard = ({
-  mainTitle,
-  subTitle,
-  logoSrc,
-  children,
-}: DualTitleCardProps) => (
+export const DualTitleCard = ({ mainTitle, subTitle, logoSrc, children }: DualTitleCardProps) => (
   <PaddedCard
-    title={(
+    title={
       <HeaderRow align="center" size={16}>
-        {logoSrc ? (
-          <HeaderAvatar
-            size={32}
-            src={logoSrc}
-          />
-        ) : null}
+        {logoSrc ? <HeaderAvatar size={32} src={logoSrc} /> : null}
         <HeaderTitle>{mainTitle}</HeaderTitle>
       </HeaderRow>
-    )}
+    }
   >
-    <BorderlessCard title={<SectionTitle>{subTitle}</SectionTitle>}>
-      {children}
-    </BorderlessCard>
+    <BorderlessCard title={<SectionTitle>{subTitle}</SectionTitle>}>{children}</BorderlessCard>
   </PaddedCard>
 );
 
@@ -86,4 +75,3 @@ export const BorderlessCard = styled(Card)`
     padding: 26px 0 0 0 !important;
   }
 `;
-

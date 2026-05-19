@@ -44,23 +44,24 @@ export const CreateTenantWithExistingUserAsAdminSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(CreateTenantWithExistingUserAsAdminSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(CreateTenantWithExistingUserAsAdminSchema, async (req, res) => {
   const { tenantName, userId, userName } = req.body;
 
-  const auth = authenticate((u) =>
-    u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+  const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createTenant,
-    operationTypePayload:{
-      tenantName, tenantAdmin: userId,
+    operationTypePayload: {
+      tenantName,
+      tenantAdmin: userId,
     },
   };
 
@@ -69,31 +70,34 @@ export default /* #__PURE__*/route(CreateTenantWithExistingUserAsAdminSchema, as
     tenantName: tenantName,
     userId: userId,
     userName: userName,
-
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(handlegRPCError({
-      [status.FAILED_PRECONDITION]: (e) => {
-        return {
-          422: e.details === "USER_STILL_MAINTAINS_TENANT_ROLES"
-            ? { code: "USER_STILL_MAINTAINS_TENANT_ROLES" as const }
-            : { code: "USER_STILL_MAINTAINS_ACCOUNT_RELATIONSHIP" as const },
-        };
-      },
-      [status.NOT_FOUND]: () => ({
-        404:{
-          code: "USER_NOT_FOUND" as const,
+    .catch(
+      handlegRPCError(
+        {
+          [status.FAILED_PRECONDITION]: (e) => {
+            return {
+              422:
+                e.details === "USER_STILL_MAINTAINS_TENANT_ROLES"
+                  ? { code: "USER_STILL_MAINTAINS_TENANT_ROLES" as const }
+                  : { code: "USER_STILL_MAINTAINS_ACCOUNT_RELATIONSHIP" as const },
+            };
+          },
+          [status.NOT_FOUND]: () => ({
+            404: {
+              code: "USER_NOT_FOUND" as const,
+            },
+          }),
+          [status.ALREADY_EXISTS]: () => ({
+            409: {
+              code: "TENANT_ALREADY_EXISTS" as const,
+            },
+          }),
         },
-      }),
-      [status.ALREADY_EXISTS]: () => ({
-        409:{
-          code: "TENANT_ALREADY_EXISTS" as const,
-        },
-      }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

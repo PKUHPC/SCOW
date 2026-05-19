@@ -45,10 +45,7 @@ export const CreateUserSchema = typeboxRouteSchema({
     }),
 
     400: Type.Object({
-      code: Type.Union([
-        Type.Literal("PASSWORD_NOT_VALID"),
-        Type.Literal("USERID_NOT_VALID"),
-      ]),
+      code: Type.Union([Type.Literal("PASSWORD_NOT_VALID"), Type.Literal("USERID_NOT_VALID")]),
     }),
 
     /** 用户已经存在 */
@@ -61,30 +58,30 @@ export const CreateUserSchema = typeboxRouteSchema({
 
 const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
 
-export default /* #__PURE__*/route(CreateUserSchema, async (req, res) => {
-
-  if (!useBuiltinCreateUser()) { return { 501: null }; }
-
+export default /* #__PURE__*/ route(CreateUserSchema, async (req, res) => {
+  if (!useBuiltinCreateUser()) {
+    return { 501: null };
+  }
 
   const { email, identityId, name, password, phone, organization, adminComment } = req.body;
 
-  const auth = authenticate((u) =>
-    u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-    (
-      u.accountAffiliations.some((x) => x.role !== UserRole.USER) &&
-      publicConfig.ADD_USER_TO_ACCOUNT.accountAdmin.createUserIfNotExist
-    ) ||
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+  const auth = authenticate(
+    (u) =>
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (u.accountAffiliations.some((x) => x.role !== UserRole.USER) &&
+        publicConfig.ADD_USER_TO_ACCOUNT.accountAdmin.createUserIfNotExist) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
   );
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
 
   const userIdRule = getUserIdRule(languageId);
-
 
   if (userIdRule && !userIdRule.pattern.test(identityId)) {
     return { 400: { code: "USERID_NOT_VALID" as const } };
@@ -98,7 +95,7 @@ export default /* #__PURE__*/route(CreateUserSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createUser,
-    operationTypePayload:{
+    operationTypePayload: {
       userId: identityId,
     },
   };
@@ -112,15 +109,20 @@ export default /* #__PURE__*/route(CreateUserSchema, async (req, res) => {
     name: name,
     password,
     tenantName: info.tenant,
-    phone, organization, adminComment,
+    phone,
+    organization,
+    adminComment,
   })
     .then(async (res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { createdInAuth: res.createdInAuth } };
     })
-    .catch(handlegRPCError({
-      [status.ALREADY_EXISTS]: () => ({ 409: null }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [status.ALREADY_EXISTS]: () => ({ 409: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

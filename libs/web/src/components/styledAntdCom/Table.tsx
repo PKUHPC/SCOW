@@ -8,12 +8,7 @@ import { doubleCircleForTableIcon } from "../../icons/commonIcons";
 type StyledTableComponent = ComponentType<TableProps<any>>;
 const DoubleCircleForTableIcon = doubleCircleForTableIcon;
 
-const defaultRadioSelectionCell = (
-  checked: boolean,
-  _record: unknown,
-  _index: number,
-  originNode: ReactNode,
-) => {
+const defaultRadioSelectionCell = (checked: boolean, _record: unknown, _index: number, originNode: ReactNode) => {
   if (!checked) {
     return originNode;
   }
@@ -27,11 +22,7 @@ const defaultRadioSelectionCell = (
   );
 };
 
-const TableWrapper = ({
-  className,
-  rowSelection,
-  ...tableProps
-}: TableProps<any> & { className?: string }) => {
+const TableWrapper = ({ className, rowSelection, ...tableProps }: TableProps<any> & { className?: string }) => {
   const mergedRowSelection: TableProps<any>["rowSelection"] =
     rowSelection?.type === "radio"
       ? {

@@ -30,7 +30,6 @@ export default function Page() {
     setActiveKey(searchParamKey);
   }, [searchParamKey]);
 
-
   const items: TabsProps["items"] = [
     {
       key: "1",

@@ -664,8 +664,7 @@ export const LaunchAppForm = ({
   const buildOwnerText = (isPlatformOwned: boolean, ownerName?: string, ownerId?: string) => {
     if (isPlatformOwned) return t(pPublicOption("sharedBy"), [t(pPublicOption("platformName"))]);
     const ownerDisplay = ownerName ?? ownerId ?? "-";
-    return t(pPublicOption("sharedBy"), [ownerDisplay])
-      + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
+    return t(pPublicOption("sharedBy"), [ownerDisplay]) + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
   };
 
   // 构造算法/数据集/模型的级联选项结构

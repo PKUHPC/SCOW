@@ -168,7 +168,12 @@ export const CreateAndEditAlgorithmModal: React.FC<Props> = ({ open, onClose, re
             {getI18nConfigCurrentText(editData?.cluster?.name, languageId)}
           </CustomFormItem>
         ) : (
-          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]} initialValue={defaultCluster}>
+          <CustomFormItem
+            label={renderLabel(t(p("cluster")))}
+            name="cluster"
+            rules={[{ required: true }]}
+            initialValue={defaultCluster}
+          >
             <RoundedSingleClusterSelector />
           </CustomFormItem>
         )}

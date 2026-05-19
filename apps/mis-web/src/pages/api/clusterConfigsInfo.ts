@@ -6,7 +6,6 @@ import { validateToken } from "src/auth/token";
 import { getClusterConfigFiles } from "src/server/clusterConfig";
 import { route } from "src/utils/route";
 
-
 export const GetClusterConfigFilesSchema = typeboxRouteSchema({
   method: "GET",
 
@@ -16,27 +15,27 @@ export const GetClusterConfigFilesSchema = typeboxRouteSchema({
   }),
 
   responses: {
-
     200: Type.Object({
-      clusterConfigs:  Type.Record(Type.String(), ClusterConfigSchema) }),
+      clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
+    }),
   },
 });
 
 const auth = authenticate(() => true);
 
-export default route(GetClusterConfigFilesSchema,
-  async (req, res) => {
+export default route(GetClusterConfigFilesSchema, async (req, res) => {
+  const { token } = req.query;
 
-    const { token } = req.query;
+  // when firstly used in getInitialProps, check the token
+  // when logged in, use auth()
+  const info = token ? await validateToken(token) : await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    // when firstly used in getInitialProps, check the token
-    // when logged in, use auth()
-    const info = token ? await validateToken(token) : await auth(req, res);
-    if (!info) { return; }
+  const modifiedClusters: Record<string, ClusterConfigSchema> = await getClusterConfigFiles();
 
-    const modifiedClusters: Record<string, ClusterConfigSchema> = await getClusterConfigFiles();
-
-    return {
-      200: { clusterConfigs: modifiedClusters },
-    };
-  });
+  return {
+    200: { clusterConfigs: modifiedClusters },
+  };
+});

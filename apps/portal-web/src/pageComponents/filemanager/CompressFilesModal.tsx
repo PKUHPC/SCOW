@@ -25,14 +25,16 @@ interface FormProps {
 const fileSuffix = ".zip";
 
 export const generateFilesTree = (path: string, files: FileInfo[]): TreeDataNode[] => {
-  return [{
-    title: `${path}`,
-    key: "root",
-    children: files.map((f) => ({
-      title: f.name,
-      key: f.name,
-    })),
-  }];
+  return [
+    {
+      title: `${path}`,
+      key: "root",
+      children: files.map((f) => ({
+        title: f.name,
+        key: f.name,
+      })),
+    },
+  ];
 };
 
 const fileManagerP = prefix("pageComp.fileManagerComp.fileManager.");
@@ -41,8 +43,14 @@ const p = prefix("pageComp.fileManagerComp.compressFilesModal.");
 const pCommon = prefix("common.");
 
 export const CompressFilesModal: React.FC<Props> = ({
-  open, onClose, reload, setCompression, path, files, cluster }) => {
-
+  open,
+  onClose,
+  reload,
+  setCompression,
+  path,
+  files,
+  cluster,
+}) => {
   const { message, modal } = App.useApp();
 
   const [loading, setLoading] = useState(false);
@@ -53,34 +61,45 @@ export const CompressFilesModal: React.FC<Props> = ({
 
   const handleCompress = async (zipFileName: string) => {
     setCompression((compression) => ({
-      ...compression, started: compression.started.concat(zipFileName + fileSuffix),
+      ...compression,
+      started: compression.started.concat(zipFileName + fileSuffix),
     }));
 
-    await api.compressFiles({ body: {
-      cluster, paths: files.map((f) => join(path, f.name)), archivePath: join(path, zipFileName + fileSuffix) },
-    }).httpError(415, ({ error }) => {
-      modal.error({
-        title: t(p("compressFailed")),
-        content: error,
-      });
-      throw error;
-    }).httpError(429, () => {
-      message.error(t(pCommon("noSpaceError")));
-    }).then(() => {
-      reload();
-      message.success(t(p("compressSuccess")));
-    }).catch((e) => {
-      throw e;
-    }).finally(() => {
-      setCompression((compression) => {
-        // 如果所有开始的任务都已经完成则清空
-        if (compression.completed.length + 1 === compression.started.length) {
-          return { completed: [], started: []};
-        }
+    await api
+      .compressFiles({
+        body: {
+          cluster,
+          paths: files.map((f) => join(path, f.name)),
+          archivePath: join(path, zipFileName + fileSuffix),
+        },
+      })
+      .httpError(415, ({ error }) => {
+        modal.error({
+          title: t(p("compressFailed")),
+          content: error,
+        });
+        throw error;
+      })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      })
+      .then(() => {
+        reload();
+        message.success(t(p("compressSuccess")));
+      })
+      .catch((e) => {
+        throw e;
+      })
+      .finally(() => {
+        setCompression((compression) => {
+          // 如果所有开始的任务都已经完成则清空
+          if (compression.completed.length + 1 === compression.started.length) {
+            return { completed: [], started: [] };
+          }
 
-        return { ...compression, completed: compression.completed.concat(zipFileName) };
+          return { ...compression, completed: compression.completed.concat(zipFileName) };
+        });
       });
-    });
   };
 
   const onSubmit = async () => {
@@ -99,7 +118,9 @@ export const CompressFilesModal: React.FC<Props> = ({
             onClose();
             form.resetFields();
           },
-          onCancel: async () => { res(); },
+          onCancel: async () => {
+            res();
+          },
         });
       });
     } else {

@@ -12,9 +12,6 @@ export const PaymentSortBy = Type.Union([
 
 export type PaymentSortBy = Static<typeof PaymentSortBy>;
 
-export const PaymentSortOrder = Type.Union([
-  Type.Literal("descend"),
-  Type.Literal("ascend"),
-]);
+export const PaymentSortOrder = Type.Union([Type.Literal("descend"), Type.Literal("ascend")]);
 
 export type PaymentSortOrder = Static<typeof PaymentSortOrder>;

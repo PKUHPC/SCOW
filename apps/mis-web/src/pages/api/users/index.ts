@@ -23,20 +23,23 @@ export const GetAccountUsersSchema = typeboxRouteSchema({
 });
 
 export default route(GetAccountUsersSchema, async (req, res) => {
-
   const { accountName } = req.query;
 
   const auth = authenticate((u) => {
     const accountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          (accountBelonged && accountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (accountBelonged && accountBelonged.role !== UserRole.USER) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(UserServiceClient);
 
@@ -50,5 +53,4 @@ export default route(GetAccountUsersSchema, async (req, res) => {
       results: reply.results,
     },
   };
-
 });

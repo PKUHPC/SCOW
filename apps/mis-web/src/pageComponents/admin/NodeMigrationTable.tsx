@@ -3,8 +3,8 @@ import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom
 import { compareNullableNumber, compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
-import { App, Button, Divider,Form, Space, Table } from "antd";
-import { Popover,Tag } from "antd";
+import { App, Button, Divider, Form, Space, Table } from "antd";
+import { Popover, Tag } from "antd";
 import { useCallback } from "react";
 import React, { useState } from "react";
 import { useAsync } from "react-async";
@@ -17,7 +17,7 @@ import { MigrateSingleClusterSelector } from "src/components/MigrateClusterSelec
 import { MigrateNodeModalLink } from "src/components/MigrateNodeModal";
 import { UploadNodeModalLink } from "src/components/UploadNodeModal";
 import { prefix, useI18nTranslate, useI18nTranslateToString } from "src/i18n";
-import { getDisplayedNodeStatusI18nTexts,MigrateNodeInfo, NodeStatus } from "src/models/cluster";
+import { getDisplayedNodeStatusI18nTexts, MigrateNodeInfo, NodeStatus } from "src/models/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 
@@ -31,9 +31,7 @@ const pTable = prefix("page.admin.resourceManagement.nodeMigrationPage.table.");
 const pModal = prefix("page.admin.resourceManagement.nodeMigrationModal.");
 const pCommon = prefix("common.");
 
-
 export const NodeMigrationTable: React.FC = () => {
-
   const [form] = Form.useForm<FilterForm>();
 
   const { message } = App.useApp();
@@ -49,7 +47,6 @@ export const NodeMigrationTable: React.FC = () => {
     return <ClusterNotAvailablePage />;
   }
 
-
   const [query, setQuery] = useState<{
     cluster: Cluster;
     nodeNames: string[];
@@ -59,23 +56,25 @@ export const NodeMigrationTable: React.FC = () => {
   }));
 
   const promiseFn = useCallback(async () => {
-
-    const migrateNodesInfo = await api.getClusterMigrateNodesInfo({
-      query: {
-        cluster: query.cluster.id,
-        nodeNames: query.nodeNames || [],
-      },
-    }).httpError(409, (e) => {
-      message.error({
-        content: e.message,
-        duration: 4,
+    const migrateNodesInfo = await api
+      .getClusterMigrateNodesInfo({
+        query: {
+          cluster: query.cluster.id,
+          nodeNames: query.nodeNames || [],
+        },
+      })
+      .httpError(409, (e) => {
+        message.error({
+          content: e.message,
+          duration: 4,
+        });
+      })
+      .httpError(500, (e) => {
+        message.error({
+          content: e.message,
+          duration: 4,
+        });
       });
-    }).httpError(500, (e) => {
-      message.error({
-        content: e.message,
-        duration: 4,
-      });
-    });
 
     return migrateNodesInfo?.nodes ?? [];
   }, [query]);
@@ -109,12 +108,7 @@ export const NodeMigrationTable: React.FC = () => {
   return (
     <div>
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
-        <Form<FilterForm>
-          layout="inline"
-          form={form}
-          initialValues={query}
-          onFinish={handleSearch}
-        >
+        <Form<FilterForm> layout="inline" form={form} initialValues={query} onFinish={handleSearch}>
           <Form.Item label={tArgs(p("clusterFilter"))} name="cluster" style={{ minWidth: "200px" }}>
             <MigrateSingleClusterSelector />
           </Form.Item>
@@ -142,7 +136,9 @@ export const NodeMigrationTable: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{tArgs(pCommon("search"))}</Button>
+              <Button type="primary" htmlType="submit">
+                {tArgs(pCommon("search"))}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -175,12 +171,12 @@ export const NodeMigrationTable: React.FC = () => {
         />
         <Table.Column<MigrateNodeInfo>
           dataIndex="nodeStatus"
-          title={(
+          title={
             <Space>
               {tArgs(pTable("status"))}
               <Popover
                 title={tArgs(pTable("statusTooltip"))}
-                content={(
+                content={
                   <>
                     <span>{tArgs(pTable("statusIdleTooltip"))}</span>
                     <br />
@@ -188,16 +184,21 @@ export const NodeMigrationTable: React.FC = () => {
                     <br />
                     <span>{tArgs(pTable("statusOfflineTooltip"))}</span>
                   </>
-                )}
+                }
               >
                 <QuestionCircleOutlined />
               </Popover>
             </Space>
-          )}
+          }
           render={(_, r) => (
-            <Tag color={ r.nodeStatus === NodeStatus.OCCUPIED_BY_JOBS ? "orange"
-              : r.nodeStatus === NodeStatus.OFFLINE_RECOVERABLE ? "red"
-                : "green"}
+            <Tag
+              color={
+                r.nodeStatus === NodeStatus.OCCUPIED_BY_JOBS
+                  ? "orange"
+                  : r.nodeStatus === NodeStatus.OFFLINE_RECOVERABLE
+                    ? "red"
+                    : "green"
+              }
             >
               {DisplayedStatusI18nTexts[r.nodeStatus]}
             </Tag>
@@ -211,90 +212,93 @@ export const NodeMigrationTable: React.FC = () => {
             const { cluster, nodeName, nodeStatus, partitions, migratableClusterList } = r;
             return (
               <Space split={<Divider type="vertical" />}>
-                {
-                  nodeStatus === NodeStatus.ACTIVE_MIGRATABLE ?
-                    (
-                      <MigrateNodeModalLink
-                        nodeName={nodeName}
-                        clusterId={cluster}
-                        partitions={partitions}
-                        migratableClusterList={migratableClusterList}
-                        onComplete={async (destinationCluster) => {
+                {nodeStatus === NodeStatus.ACTIVE_MIGRATABLE ? (
+                  <MigrateNodeModalLink
+                    nodeName={nodeName}
+                    clusterId={cluster}
+                    partitions={partitions}
+                    migratableClusterList={migratableClusterList}
+                    onComplete={async (destinationCluster) => {
+                      message.open({
+                        type: "loading",
+                        content: tArgs("common.waitingMessage"),
+                        duration: 0,
+                        key: "migrateNode",
+                      });
 
-                          message.open({
-                            type: "loading",
-                            content: tArgs("common.waitingMessage"),
-                            duration: 0,
-                            key: "migrateNode" });
-
-                          return await api.migrateNode({ body:{
+                      return await api
+                        .migrateNode({
+                          body: {
                             nodeName,
                             originCluster: cluster,
                             destinationCluster,
-                          } }).httpError(409, (e) => handleError(e, "migrateNode"))
-                            .httpError(500, (e) => handleError(e, "migrateNode"))
-                            .httpError(501, (e) => handleError(e, "migrateNode"))
-                            .then(() => {
-                              message.destroy("migrateNode");
-                              message.success(tArgs(pModal("successMessage")));
-                              reload();
-                            }).catch(() => {
-                              message.destroy("migrateNode");
-                              message.error(tArgs(pModal("migrateFail")));
-                              reload();
-                            }); ;
+                          },
+                        })
+                        .httpError(409, (e) => handleError(e, "migrateNode"))
+                        .httpError(500, (e) => handleError(e, "migrateNode"))
+                        .httpError(501, (e) => handleError(e, "migrateNode"))
+                        .then(() => {
+                          message.destroy("migrateNode");
+                          message.success(tArgs(pModal("successMessage")));
+                          reload();
+                        })
+                        .catch(() => {
+                          message.destroy("migrateNode");
+                          message.error(tArgs(pModal("migrateFail")));
+                          reload();
+                        });
+                    }}
+                  >
+                    {tArgs(pTable("migrate"))}
+                  </MigrateNodeModalLink>
+                ) : (
+                  <DisabledA message={tArgs(pTable("unmetMigrationCondition"))} disabled={true}>
+                    {tArgs(pTable("migrate"))}
+                  </DisabledA>
+                )}
+                {nodeStatus === NodeStatus.OFFLINE_RECOVERABLE ? (
+                  <UploadNodeModalLink
+                    nodeName={nodeName}
+                    clusterId={cluster}
+                    partitions={partitions}
+                    onComplete={async () => {
+                      message.open({
+                        type: "loading",
+                        content: tArgs("common.waitingMessage"),
+                        duration: 0,
+                        key: "activateNode",
+                      });
 
-                        }}
-                      >
-                        {tArgs(pTable("migrate"))}
-                      </MigrateNodeModalLink>
-                    ) : (
-                      <DisabledA message={tArgs(pTable("unmetMigrationCondition"))} disabled={true}>
-                        {tArgs(pTable("migrate"))}
-                      </DisabledA>
-                    )
-                }
-                {
-                  nodeStatus === NodeStatus.OFFLINE_RECOVERABLE ? (
-                    <UploadNodeModalLink
-                      nodeName={nodeName}
-                      clusterId={cluster}
-                      partitions={partitions}
-                      onComplete={async () => {
+                      return await api
+                        .activateNode({
+                          body: {
+                            nodeName,
+                            destinationCluster: cluster,
+                          },
+                        })
+                        .httpError(409, (e) => handleError(e, "activateNode"))
+                        .httpError(500, (e) => handleError(e, "activateNode"))
+                        .httpError(501, (e) => handleError(e, "activateNode"))
+                        .then(() => {
+                          message.destroy("activateNode");
+                          message.success(tArgs(pModal("successMessage2")));
+                          reload();
+                        })
+                        .catch(() => {
+                          message.destroy("activateNode");
+                          message.error(tArgs(pModal("activateNodeFail")));
 
-                        message.open({
-                          type: "loading",
-                          content: tArgs("common.waitingMessage"),
-                          duration: 0,
-                          key: "activateNode" });
-
-                        return await api.activateNode({ body:{
-                          nodeName,
-                          destinationCluster: cluster,
-                        } }).httpError(409, (e) => handleError(e, "activateNode"))
-                          .httpError(500, (e) => handleError(e, "activateNode"))
-                          .httpError(501, (e) => handleError(e, "activateNode"))
-                          .then(() => {
-                            message.destroy("activateNode");
-                            message.success(tArgs(pModal("successMessage2")));
-                            reload();
-                          }).catch(() => {
-                            message.destroy("activateNode");
-                            message.error(tArgs(pModal("activateNodeFail")));
-
-                            reload();
-                          }); ;
-
-                      }}
-                    >
-                      {tArgs(pTable("activate"))}
-                    </UploadNodeModalLink>
-                  ) : (
-                    <DisabledA message={tArgs(pTable("unmetOnlineCondition"))} disabled={true}>
-                      {tArgs(pTable("activate"))}
-                    </DisabledA>
-                  )
-                }
+                          reload();
+                        });
+                    }}
+                  >
+                    {tArgs(pTable("activate"))}
+                  </UploadNodeModalLink>
+                ) : (
+                  <DisabledA message={tArgs(pTable("unmetOnlineCondition"))} disabled={true}>
+                    {tArgs(pTable("activate"))}
+                  </DisabledA>
+                )}
               </Space>
             );
           }}

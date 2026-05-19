@@ -1,6 +1,5 @@
 "use client";
 import "src/styles/globals.css";
-
 import { legacyLogicalPropertiesTransformer, StyleProvider } from "@ant-design/cssinjs";
 import { useQuery } from "@connectrpc/connect-query";
 import { getUiConfig } from "@scow/notification-protos/build/config-ConfigService_connectquery";
@@ -17,24 +16,24 @@ import { UiConfigSchema } from "src/models/ui";
 import { UiConfigContext } from "./ui-context";
 
 const useReportHeightToScow = () => {
-
   useEffect(() => {
     // postIframeMessage();
     const sendMessage = (height: number) => {
-      window.parent?.postMessage({
-        type: "scow.extensionPageHeightChanged", // 发送信息的类型，不允许更改
-        payload: {
-          height: height,
+      window.parent?.postMessage(
+        {
+          type: "scow.extensionPageHeightChanged", // 发送信息的类型，不允许更改
+          payload: {
+            height: height,
+          },
         },
-      }, "*");
+        "*",
+      );
     };
 
     const observer = new ResizeObserver((entries) => {
-
       const e = entries[0];
       sendMessage(e.contentRect.height);
     });
-
 
     const htmlElement = document.querySelector("html")!;
 
@@ -45,32 +44,30 @@ const useReportHeightToScow = () => {
     return () => {
       observer.disconnect();
     };
-
   }, []);
 };
 
-export function ClientLayout(props: {
-  children: React.ReactNode,
-  basePath: string,
-}) {
+export function ClientLayout(props: { children: React.ReactNode; basePath: string }) {
   useReportHeightToScow();
 
   const { data, isLoading } = useQuery(getUiConfig);
 
+  const uiConfig = data?.config || ({} as UiConfigSchema);
 
-  const uiConfig = data?.config || {} as UiConfigSchema;
-
-  const host = (typeof window === "undefined") ? "" : location.host;
+  const host = typeof window === "undefined" ? "" : location.host;
   const hostname = host?.includes(":") ? host?.split(":")[0] : host;
   const primaryColor = uiConfig?.primaryColor;
   const color = useMemo(() => {
-    return (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.defaultColor ?? data?.defaultPrimaryColor ?? "#94070A";
+    return (
+      (hostname && primaryColor?.hostnameMap?.[hostname]) ??
+      primaryColor?.defaultColor ??
+      data?.defaultPrimaryColor ??
+      "#94070A"
+    );
   }, [data]);
 
   const darkModeColor = useMemo(() => {
-    return (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.darkModeColor ?? color;
+    return (hostname && primaryColor?.hostnameMap?.[hostname]) ?? primaryColor?.darkModeColor ?? color;
   }, [data]);
 
   return (
@@ -80,35 +77,30 @@ export function ClientLayout(props: {
           <StyledComponentsRegistry>
             <AntdStyleRegistry>
               <>
-                {
-                  isLoading ? (
-                    <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
-                      <Loading />
+                {isLoading ? (
+                  <AntdConfigProvider color={color} primaryColor={{ defaultColor: color, darkModeColor }}>
+                    <Loading />
+                  </AntdConfigProvider>
+                ) : (
+                  <DarkModeProvider>
+                    <AntdConfigProvider color={color} primaryColor={{ defaultColor: color, darkModeColor }}>
+                      <GlobalStyle />
+                      <UiConfigContext.Provider
+                        value={{
+                          hostname,
+                          uiConfig,
+                        }}
+                      >
+                        {props.children}
+                      </UiConfigContext.Provider>
                     </AntdConfigProvider>
-                  ) : (
-                    <DarkModeProvider>
-                      <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
-                        <GlobalStyle />
-                        <UiConfigContext.Provider
-                          value={{
-                            hostname,
-                            uiConfig,
-                          }}
-                        >
-
-                          {props.children}
-
-                        </UiConfigContext.Provider>
-                      </AntdConfigProvider>
-                    </DarkModeProvider>
-                  )
-                }
+                  </DarkModeProvider>
+                )}
               </>
             </AntdStyleRegistry>
           </StyledComponentsRegistry>
         </StyleProvider>
       </ScowParamsProvider>
     </Suspense>
-
   );
 }

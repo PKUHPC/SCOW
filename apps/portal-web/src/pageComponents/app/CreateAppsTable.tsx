@@ -1,6 +1,7 @@
 import { PictureOutlined } from "@ant-design/icons";
 import { RoundedButton } from "@scow/lib-web/build/components/styledAntdCom/Button";
 import { RoundedSearch } from "@scow/lib-web/build/components/styledAntdCom/Input";
+import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Avatar, Card, Col, Form, Row, Space, Spin, Tooltip } from "antd";
 import { join } from "path";
 import { useEffect, useMemo, useState } from "react";
@@ -9,9 +10,12 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { publicConfig } from "src/utils/config";
 import { styled } from "styled-components";
-import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 
-interface App { id: string; name: string; logoPath?: string; };
+interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+}
 
 const CardContainer = styled.div`
   flex: 1;
@@ -37,19 +41,19 @@ const NameContainer = styled.div`
 `;
 
 const SearchContainer = styled(Space)`
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    background: ${({ theme }) => theme.token.colorBgContainer};
-    border-radius: 12px;
-    padding: 12px 10px 12px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  background: ${({ theme }) => theme.token.colorBgContainer};
+  border-radius: 12px;
+  padding: 12px 10px 12px 20px;
 `;
 
 const AppListContainer = styled.div`
-    background: ${({ theme }) => theme.token.colorBgContainer};
-    padding: 20px 30px 10px;
-    border-radius: 8px;
-    min-height: calc(100vh - 236px);
+  background: ${({ theme }) => theme.token.colorBgContainer};
+  padding: 20px 30px 10px;
+  border-radius: 8px;
+  min-height: calc(100vh - 236px);
 `;
 
 interface FilterForm {
@@ -68,9 +72,13 @@ type ImageErrorMap = Record<string, boolean>;
 
 const p = prefix("pageComp.app.createApps.");
 
-export const CreateAppsTable: React.FC<Props> = ({ allApps, isLoading,
-  selectedCluster, setSelectedCluster, setSelectedAppInfo }) => {
-
+export const CreateAppsTable: React.FC<Props> = ({
+  allApps,
+  isLoading,
+  selectedCluster,
+  setSelectedCluster,
+  setSelectedAppInfo,
+}) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -90,15 +98,12 @@ export const CreateAppsTable: React.FC<Props> = ({ allApps, isLoading,
 
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
-
     if (!allApps) return [];
     if (!query.appName) {
       return allApps;
     }
-    const filteredValues = allApps
-      .filter((app) => app.name.toLowerCase().includes(query.appName?.toLowerCase() || ""));
+    const filteredValues = allApps.filter((app) => app.name.toLowerCase().includes(query.appName?.toLowerCase() || ""));
     return filteredValues;
-
   }, [allApps, query]);
 
   useEffect(() => {
@@ -137,30 +142,20 @@ export const CreateAppsTable: React.FC<Props> = ({ allApps, isLoading,
             );
 
             return (
-              <Tooltip
-                key={cluster.id}
-                arrow={false}
-                align={{ offset: [0, -12]}}
-              >
+              <Tooltip key={cluster.id} arrow={false} align={{ offset: [0, -12] }}>
                 <span>{button}</span>
               </Tooltip>
             );
           })}
         </Space>
-        <Form<FilterForm>
-          layout="inline"
-          form={filterForm}
-          initialValues={initialFilterQuery}
-        >
+        <Form<FilterForm> layout="inline" form={filterForm} initialValues={initialFilterQuery}>
           <Form.Item name="appName">
             <RoundedSearch
               placeholder={t(p("searchPlaceholder"))}
-              onSearch={
-                async () => {
-                  const { appName } = await filterForm.validateFields();
-                  setQuery({ appName: appName === "" ? undefined : appName?.trim() });
-                }
-              }
+              onSearch={async () => {
+                const { appName } = await filterForm.validateFields();
+                setQuery({ appName: appName === "" ? undefined : appName?.trim() });
+              }}
               size="large"
               enterButton
             />
@@ -183,35 +178,37 @@ export const CreateAppsTable: React.FC<Props> = ({ allApps, isLoading,
                     }}
                   >
                     <Tooltip title={`${t(p("create"))}${app.name}`} placement="bottom">
-                      <div onClick={() => { setSelectedAppInfo(app); }}>
+                      <div
+                        onClick={() => {
+                          setSelectedAppInfo(app);
+                        }}
+                      >
                         <AvatarContainer>
-                          {
-                            (app.logoPath && imageErrorMap[app.id] !== true) ? (
-                              <img
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  objectFit: "contain",
-                                  width: "150px",
-                                  height: "150px",
-                                }}
-                                src={join(publicConfig.PUBLIC_PATH, app.logoPath)}
-                                onError={() => handleImageError(app.id)}
-                              />
-                            ) : (
-                              <Avatar
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  borderRadius: "0",
-                                }}
-                                size={150}
-                                icon={<PictureOutlined />}
-                              />
-                            )
-                          }
+                          {app.logoPath && imageErrorMap[app.id] !== true ? (
+                            <img
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                objectFit: "contain",
+                                width: "150px",
+                                height: "150px",
+                              }}
+                              src={join(publicConfig.PUBLIC_PATH, app.logoPath)}
+                              onError={() => handleImageError(app.id)}
+                            />
+                          ) : (
+                            <Avatar
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: "0",
+                              }}
+                              size={150}
+                              icon={<PictureOutlined />}
+                            />
+                          )}
                         </AvatarContainer>
                         <NameContainer>{app.name}</NameContainer>
                       </div>

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Card, Tag } from "antd";
 import React, { useMemo } from "react";
 import { styled } from "styled-components";
@@ -65,7 +53,7 @@ interface Props {
 }
 
 const Container = styled.div`
-margin: 0px 0;
+  margin: 0px 0;
 `;
 
 export const PieChartContainer = styled.div`
@@ -74,7 +62,6 @@ export const PieChartContainer = styled.div`
 `;
 
 export const InfoPane: React.FC<Props> = ({ tag, paneData, loading }) => {
-
   const notEmptyData = useMemo(() => {
     return paneData.some((x) => x.num > 0);
   }, [paneData]);
@@ -84,7 +71,7 @@ export const InfoPane: React.FC<Props> = ({ tag, paneData, loading }) => {
       <Card
         loading={loading}
         type="inner"
-        title={ (
+        title={
           <TitleContainer
             name={tag.itemName}
             subName={tag.subName}
@@ -92,21 +79,22 @@ export const InfoPane: React.FC<Props> = ({ tag, paneData, loading }) => {
             available={paneData[1].num}
             display={tag.itemName == "GPU" ? notEmptyData : true}
           ></TitleContainer>
-        )}
-        style={{ maxHeight:"310px", boxShadow: "0px 2px 10px 0px #1C01011A" }}
+        }
+        style={{ maxHeight: "310px", boxShadow: "0px 2px 10px 0px #1C01011A" }}
       >
         <PieChartContainer>
           <PieChartCom
-            pieData={paneData.map((item) => ({ value:isNaN(item.num) ? 0 : item.num,
-              color:item.color, itemName:item.itemName }))}
-            range={Math.round((paneData[0].num / paneData.reduce((a, b) => a + b.num, 0)) * 100) }
+            pieData={paneData.map((item) => ({
+              value: isNaN(item.num) ? 0 : item.num,
+              color: item.color,
+              itemName: item.itemName,
+            }))}
+            range={Math.round((paneData[0].num / paneData.reduce((a, b) => a + b.num, 0)) * 100)}
             display={tag.itemName == "GPU" ? notEmptyData : true}
             total={paneData.reduce((a, b) => a + b.num, 0)}
           ></PieChartCom>
         </PieChartContainer>
       </Card>
-
     </Container>
-
   );
 };

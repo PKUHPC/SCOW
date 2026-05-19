@@ -1,22 +1,17 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncDuplexStreamCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials } from "@grpc/grpc-js";
 import { ShellResponse, ShellServiceClient } from "@scow/protos/build/portal/shell";
 import { createServer } from "src/app";
-import { cluster, collectInfo, connectToTestServer,
-  createTestItems, resetTestServer, target, TestSshServer, userId,
+import {
+  cluster,
+  collectInfo,
+  connectToTestServer,
+  createTestItems,
+  resetTestServer,
+  target,
+  TestSshServer,
+  userId,
 } from "tests/file/utils";
 
 let ssh: TestSshServer;
@@ -74,7 +69,4 @@ it.skip("tests shell interaction", async () => {
   const expectedString = Buffer.concat(expected).toString();
 
   expect(actualString).toEqual(expectedString);
-
-
-
 });

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -41,19 +29,18 @@ export const SetBlockThresholdSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(SetBlockThresholdSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(SetBlockThresholdSchema, async (req, res) => {
   const { accountName, blockThresholdAmount } = req.body;
 
   const auth = authenticate((u) => {
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
-
+  if (!info) {
+    return;
+  }
 
   const client = getClient(AccountServiceClient);
 
@@ -61,28 +48,34 @@ export default /* #__PURE__*/route(SetBlockThresholdSchema, async (req, res) => 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setAccountBlockThreshold,
-    operationTypePayload:{
+    operationTypePayload: {
       accountName,
-      thresholdAmount: (blockThresholdAmount !== undefined) ? numberToMoney(blockThresholdAmount) : undefined,
+      thresholdAmount: blockThresholdAmount !== undefined ? numberToMoney(blockThresholdAmount) : undefined,
     },
   };
 
   return await asyncClientCall(client, "setBlockThreshold", {
     accountName,
-    blockThresholdAmount: (blockThresholdAmount !== undefined) ? numberToMoney(blockThresholdAmount) : undefined,
+    blockThresholdAmount: blockThresholdAmount !== undefined ? numberToMoney(blockThresholdAmount) : undefined,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
-      return { 200: {
-        executed: true,
-      } };
+      return {
+        200: {
+          executed: true,
+        },
+      };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.FAILED_PRECONDITION]: (e) => {
-        console.dir(e, { depth: null });
-        return { 200 : { executed: false, reason: e.details } }; },
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => {
+            console.dir(e, { depth: null });
+            return { 200: { executed: false, reason: e.details } };
+          },
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

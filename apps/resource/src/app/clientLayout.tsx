@@ -19,23 +19,24 @@ import { PublicConfigContext } from "./publicConfigContext";
 import { UiConfigContext } from "./uiContext";
 
 const useReportHeightToScow = () => {
-
   useEffect(() => {
     // postIframeMessage();
     const sendMessage = (height: number) => {
-      window.parent?.postMessage({
-        type: "scow.extensionPageHeightChanged", // 发送信息的类型，不允许更改
-        payload: {
-          height: height,
+      window.parent?.postMessage(
+        {
+          type: "scow.extensionPageHeightChanged", // 发送信息的类型，不允许更改
+          payload: {
+            height: height,
+          },
         },
-      }, "*");
+        "*",
+      );
     };
 
     const observer = new ResizeObserver((entries) => {
       const e = entries[0];
       sendMessage(e.contentRect.height < 800 ? 800 : e.contentRect.height);
     });
-
 
     const htmlElement = document.querySelector("html")!;
 
@@ -46,14 +47,10 @@ const useReportHeightToScow = () => {
     return () => {
       observer.disconnect();
     };
-
   }, []);
 };
 
-export function ClientLayout(props: {
-  defaultPrimaryColor: string;
-  children: React.ReactNode,
-}) {
+export function ClientLayout(props: { defaultPrimaryColor: string; children: React.ReactNode }) {
   const pathname = usePathname();
 
   useReportHeightToScow();
@@ -71,17 +68,16 @@ export function ClientLayout(props: {
   const useUiConfig = useConfigQuery();
   const usePublicConfig = usePublicConfigQuery();
 
-  const uiConfig = useUiConfig.data || {} as UiConfig;
-  const publicConfig = usePublicConfig.data || {} as PublicConfig;
+  const uiConfig = useUiConfig.data || ({} as UiConfig);
+  const publicConfig = usePublicConfig.data || ({} as PublicConfig);
 
-  const host = (typeof window === "undefined") ? "" : location.host;
+  const host = typeof window === "undefined" ? "" : location.host;
   const hostname = host?.includes(":") ? host?.split(":")[0] : host;
   const primaryColor = uiConfig.config?.primaryColor;
-  const color = (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
+  const color =
+    (hostname && primaryColor?.hostnameMap?.[hostname]) ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
 
-  const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.darkModeColor ?? color;
+  const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname]) ?? primaryColor?.darkModeColor ?? color;
 
   return (
     <Suspense>
@@ -89,38 +85,36 @@ export function ClientLayout(props: {
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
           <StyledComponentsRegistry>
             <AntdStyleRegistry>
-              {
-                useUiConfig.isLoading || usePublicConfig.isLoading ? (
-                  <AntdConfigProvider
-                    color={props.defaultPrimaryColor}
-                    primaryColor={{ defaultColor: color,darkModeColor }}
-                  >
-                    <Loading />
-                  </AntdConfigProvider>
-                ) : (
-                  <DarkModeProvider>
-                    <AntdConfigProvider color={color} primaryColor={{ defaultColor: color,darkModeColor }}>
-                      <GlobalStyle />
-                      <ErrorBoundary Component={ServerErrorPage} pathname={pathname ?? ""}>
-                        <UiConfigContext.Provider
+              {useUiConfig.isLoading || usePublicConfig.isLoading ? (
+                <AntdConfigProvider
+                  color={props.defaultPrimaryColor}
+                  primaryColor={{ defaultColor: color, darkModeColor }}
+                >
+                  <Loading />
+                </AntdConfigProvider>
+              ) : (
+                <DarkModeProvider>
+                  <AntdConfigProvider color={color} primaryColor={{ defaultColor: color, darkModeColor }}>
+                    <GlobalStyle />
+                    <ErrorBoundary Component={ServerErrorPage} pathname={pathname ?? ""}>
+                      <UiConfigContext.Provider
+                        value={{
+                          hostname,
+                          uiConfig,
+                        }}
+                      >
+                        <PublicConfigContext.Provider
                           value={{
-                            hostname,
-                            uiConfig,
+                            clusterSortedIdList: publicConfig?.CLUSTER_SORTED_ID_LIST ?? [],
                           }}
                         >
-                          <PublicConfigContext.Provider
-                            value={{
-                              clusterSortedIdList: publicConfig?.CLUSTER_SORTED_ID_LIST ?? [],
-                            }}
-                          >
-                            {props.children}
-                          </PublicConfigContext.Provider>
-                        </UiConfigContext.Provider>
-                      </ErrorBoundary>
-                    </AntdConfigProvider>
-                  </DarkModeProvider>
-                )
-              }
+                          {props.children}
+                        </PublicConfigContext.Provider>
+                      </UiConfigContext.Provider>
+                    </ErrorBoundary>
+                  </AntdConfigProvider>
+                </DarkModeProvider>
+              )}
             </AntdStyleRegistry>
           </StyledComponentsRegistry>
         </StyleProvider>

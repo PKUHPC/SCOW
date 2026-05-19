@@ -362,11 +362,7 @@ export const FileSelectModal: React.FC<Props> = ({
       return t(p("selectFolder"));
     }
 
-    if (
-      allowedFileType.length === 1
-      && allowedFileType[0] === "FILE"
-      && isTarOnly
-    ) {
+    if (allowedFileType.length === 1 && allowedFileType[0] === "FILE" && isTarOnly) {
       return t(p("selectTarImage"));
     }
 

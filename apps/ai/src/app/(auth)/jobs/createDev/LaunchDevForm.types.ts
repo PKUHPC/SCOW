@@ -1,6 +1,4 @@
-import type {
-  ImageSourceKey,
-} from "../LaunchJobForm.types";
+import type { ImageSourceKey } from "../LaunchJobForm.types";
 
 export type DevImageSourceKey = Exclude<ImageSourceKey, "preset">;
 

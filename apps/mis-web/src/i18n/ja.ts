@@ -12,13 +12,13 @@ export default {
     operation: "操作",
     tenant: "テナント",
     tenantName: "テナント",
-    tenantFullName:"テナント",
+    tenantFullName: "テナント",
     tenantRole: "テナントロール",
     user: "ユーザー",
     userId: "ユーザーID",
-    ownerIdOrName:"主管理者IDまたは氏名",
+    ownerIdOrName: "主管理者IDまたは氏名",
     userName: "ユーザー名",
-    userFullName:"氏名",
+    userFullName: "氏名",
     import: "インポート",
     fresh: "更新",
     account: "アカウント",
@@ -30,7 +30,7 @@ export default {
     amount: "金額",
     unit: "CNY",
     comment: "備考",
-    expirationTime:"有効期限",
+    expirationTime: "有効期限",
     submit: "送信",
     time: "時間",
     type: "種類",
@@ -44,7 +44,7 @@ export default {
     modify: "修正",
     cancel: "キャンセル",
     cluster: "クラスタ",
-    clusterName:"クラスタ名",
+    clusterName: "クラスタ名",
     workId: "ジョブID",
     minute: "分",
     name: "名称",
@@ -61,7 +61,7 @@ export default {
     reason: "理由",
     timeUsed: "ジョブ実行時間",
     timeWait: "ジョブ待機時間",
-    lastUpdated:"最終更新",
+    lastUpdated: "最終更新",
     more: "詳細",
     detail: "詳細",
     price: "料金",
@@ -109,15 +109,13 @@ export default {
     exportNoDataErrorMsg: "エクスポート対象が空です。再選択してください",
     blockThresholdAmount: "ブロック閾値金額",
     other: "その他",
-    noAvailableClusters: "現在利用可能なクラスタはありません。"
-    + " 後でもう一度試すか、管理者に連絡してください。",
+    noAvailableClusters: "現在利用可能なクラスタはありません。" + " 後でもう一度試すか、管理者に連絡してください。",
     serialNumber: "連番",
     phone: "電話",
     organization: "所属",
     adjustBill: "テナントの課金を調整",
     failedGetTenantAssignedClustersAndPartitions: "許可されたクラスタのパーティション情報の取得に失敗しました",
-    accountUserSyncRunning: "アカウント/ユーザー情報の同期を実行中です。"
-    + " 完了までお待ちください。",
+    accountUserSyncRunning: "アカウント/ユーザー情報の同期を実行中です。" + " 完了までお待ちください。",
     finalError: "リクエストに失敗しました。後で再試行してください",
     edit: "編集",
     idOrName: "ユーザーID/氏名",
@@ -141,7 +139,7 @@ export default {
       state: "ステータス",
       balance: "利用可能残高",
       alert: "いずれのアカウントにも所属していません。",
-      unlimited:"無制限",
+      unlimited: "無制限",
     },
     job: {
       title: "実行中ジョブ一覧",
@@ -262,7 +260,7 @@ export default {
         blockedAccount: "ブロック ",
         frozenAccount: "凍結 ",
         normalAccount: "利用可能 ",
-        deletedAccount:"削除済み",
+        deletedAccount: "削除済み",
         account: "アカウント",
         accountName: "アカウント名",
         owner: "主管理者",
@@ -271,19 +269,21 @@ export default {
         blockThresholdAmount: "ブロック閾値",
         blockThresholdAmountTooltip: "残高がブロック閾値より少ない場合、アカウントはブロックされます。",
         comment: "備考",
-        expirationTime:"有効期限",
+        expirationTime: "有効期限",
         status: "ステータス",
         statusTooltip: "ステータス:",
         statusFrozenTooltip: "凍結：アカウント管理者により凍結されており、このアカウントでジョブを投入できません。",
-        statusBlockedTooltip: "ブロック：テナント管理者またはプラットフォーム管理者によりブロックされ、このアカウントでジョブを投入できません。",
+        statusBlockedTooltip:
+          "ブロック：テナント管理者またはプラットフォーム管理者によりブロックされ、このアカウントでジョブを投入できません。",
         statusDebtTooltip: "負債：残高がブロック閾値以下のため、このアカウントではジョブを投入できません。",
-        statusNormalTooltip: "利用可能：アカウントがブロック・凍結されておらず、残高がブロック閾値より大きい、またはホワイトリストに登録されています。",
+        statusNormalTooltip:
+          "利用可能：アカウントがブロック・凍結されておらず、残高がブロック閾値より大きい、またはホワイトリストに登録されています。",
         mangerMember: "メンバー管理",
         blocked: "ブロック",
-        frozen:"凍結",
+        frozen: "凍結",
         debt: "負債",
         normal: "利用可能",
-        deleted:"削除済み",
+        deleted: "削除済み",
         unit: "CNY",
         unblockConfirmTitle: "ユーザーのブロック解除を確認",
         unblockConfirmContent: "テナント {0} のアカウント {1} をブロック解除しますか？",
@@ -297,21 +297,20 @@ export default {
         blockSuccess: "アカウントのブロックに成功しました！",
         blockFail: "アカウントのブロックに失敗しました！",
 
-        delete:"削除",
+        delete: "削除",
         deleteSuccess: "アカウントの削除に成功しました！",
         deleteFail: "アカウントの削除に失敗しました。管理者に連絡してください。",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "設定に成功しました",
         setFail: "設定に失敗しました",
-        setAmount:"ブロック閾値を設定",
+        setAmount: "ブロック閾値を設定",
         blockThresholdAmount: "ブロック閾値",
         defaultBlockThresholdAmount: "デフォルトのブロック閾値",
         curBlockThresholdAmount: "現在のブロック閾値：",
         curDefaultBlockThresholdAmount: "現在のテナントのデフォルトブロック閾値",
         useDefaultBlockThresholdAmount: "テナントのデフォルトブロック閾値を使用",
-        confirmUseDefaultBlockThresholdAmount:
-        "テナントのデフォルトブロック閾値を使用しますか？",
+        confirmUseDefaultBlockThresholdAmount: "テナントのデフォルトブロック閾値を使用しますか？",
       },
     },
     admin: {
@@ -361,9 +360,10 @@ export default {
         userType: "ユーザー種別",
         newUser: "新規ユーザー",
         existingUser: "既存ユーザー",
-        createTenantByExistUserWarningInfo: "作成に成功すると、ユーザーは元のテナントから自動的に削除され、このテナントに参加します。"
-        + " ユーザーに関連するアカウントがなく、元のテナントの管理者または財務担当でないことを確認してください",
-        createTenantByNewUserWarningInfo:"作成に成功すると、ユーザーはこのテナントに自動的に参加します",
+        createTenantByExistUserWarningInfo:
+          "作成に成功すると、ユーザーは元のテナントから自動的に削除され、このテナントに参加します。" +
+          " ユーザーに関連するアカウントがなく、元のテナントの管理者または財務担当でないことを確認してください",
+        createTenantByNewUserWarningInfo: "作成に成功すると、ユーザーはこのテナントに自動的に参加します",
       },
       ImportUsersTable: {
         selectAccount: "アカウントを選択してください！",
@@ -405,7 +405,8 @@ export default {
         userStillMaintainsAccountRelationship: "ユーザーはアカウントとの関係を維持しています",
         userStillMaintainsTenantRoles: "ユーザーはテナントロールを維持しています",
         userAlreadyExistInThisTenant: "ユーザーはすでにこのテナントに存在します",
-        createTenantWarningInfo: "ユーザーに関連するアカウントがなく、元のテナントの管理者または財務担当でないことを確認してください",
+        createTenantWarningInfo:
+          "ユーザーに関連するアカウントがなく、元のテナントの管理者または財務担当でないことを確認してください",
       },
     },
     commonComponent: {
@@ -422,7 +423,7 @@ export default {
         paymentAmount: "支払金額",
         ipAddress: "IP アドレス",
         operatorId: "オペレーターID",
-        searchTypePlaceholder:"複数指定はカンマ区切り",
+        searchTypePlaceholder: "複数指定はカンマ区切り",
       },
       billTable: {
         statisticalCycle: "統計サイクル",
@@ -482,7 +483,8 @@ export default {
               title: "許可取り消しの確認",
               tenantContent: "クラスタ {0} のテナント {2} のアプリ {1} の許可を取り消しますか？",
               accountContent: "クラスタ {0} のアカウント {2} のアプリ {1} の許可を取り消しますか？",
-              tenantWarning: "取り消し後、既定の許可済みアプリの場合、同期されて削除されます。このテナント配下のすべてのアカウントで当該アプリの許可が取り消されます。",
+              tenantWarning:
+                "取り消し後、既定の許可済みアプリの場合、同期されて削除されます。このテナント配下のすべてのアカウントで当該アプリの許可が取り消されます。",
             },
           },
           messages: {
@@ -514,13 +516,13 @@ export default {
         charging: "チャージ中...",
         notFound: "アカウントが見つかりません。",
         chargeFinished: "チャージ完了！",
-        deleted:"アカウントは削除されています",
+        deleted: "アカウントは削除されています",
         financePayFailed: "チャージに失敗しました",
       },
       chargeTable: {
         time: "控除日",
         amount: "控除金額",
-        ownerIdOrName:"主管理者IDまたは氏名",
+        ownerIdOrName: "主管理者IDまたは氏名",
       },
     },
     init: {
@@ -529,10 +531,13 @@ export default {
         cannotAdd: "ユーザーは既にSCOWに存在し、再追加はできません。",
         notExist: "ユーザーは認証システムに存在しません。",
         confirm: "ユーザーが存在しません。ユーザーIDが正しいか確認してください。",
-        existText: "ユーザーは認証システムに既に存在します。ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。初期管理者として追加しますか？",
+        existText:
+          "ユーザーは認証システムに既に存在します。ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。初期管理者として追加しますか？",
         notExistText: "ユーザーは認証システムに存在しません。このユーザーを作成し、初期管理者として追加しますか？",
-        cannotConfirmText1: "認証システムにユーザーが存在するか確認できません。認証システムでの作成を試みます。既に存在する場合、ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。",
-        cannotConfirmText2: "認証システムにユーザーが存在するか確認できず、現在の認証システムはユーザー作成をサポートしていません。追加対象のユーザーが認証システムに既に存在し、ユーザーIDが一致していることを確認してください。確認すると、このユーザーは直接データベースに追加され、ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。",
+        cannotConfirmText1:
+          "認証システムにユーザーが存在するか確認できません。認証システムでの作成を試みます。既に存在する場合、ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。",
+        cannotConfirmText2:
+          "認証システムにユーザーが存在するか確認できず、現在の認証システムはユーザー作成をサポートしていません。追加対象のユーザーが認証システムに既に存在し、ユーザーIDが一致していることを確認してください。確認すると、このユーザーは直接データベースに追加され、ここで入力するパスワードは使用されません。新規ユーザーのパスワードは認証システムの現パスワードになります。",
         addFail: "追加に失敗しました。",
         userExist: "このユーザーはSCOWデータベースに存在します。",
         addSuccess: "追加に成功しました。",
@@ -540,18 +545,22 @@ export default {
         addFinish: "追加が完了しました！",
         createFail: "ユーザーの作成に失敗しました。",
         initAdmin: "ここで初期管理者ユーザーを作成できます。",
-        addAdmin: "ここで追加されたユーザーは初期管理者で、デフォルトテナントに追加され、プラットフォーム管理者およびデフォルトテナントのテナント管理者ロールが自動的に付与されます。",
+        addAdmin:
+          "ここで追加されたユーザーは初期管理者で、デフォルトテナントに追加され、プラットフォーム管理者およびデフォルトテナントのテナント管理者ロールが自動的に付与されます。",
         platFormAdmin: "プラットフォーム管理者",
         and: " と ",
         defaultTenant: "デフォルトテナントのテナント管理者",
-        createText1: "現在の認証システムはユーザー作成をサポートしています。認証システムの既存ユーザーを追加するか、完全に新規のユーザーを作成できます。システムはこのユーザーを認証システムに作成します。",
-        createText2: "現在の認証システムはユーザー作成をサポートしていません。追加対象のユーザーは認証システムに既に存在している必要があり、ユーザーIDは認証システムのユーザーIDと一致している必要があります。",
+        createText1:
+          "現在の認証システムはユーザー作成をサポートしています。認証システムの既存ユーザーを追加するか、完全に新規のユーザーを作成できます。システムはこのユーザーを認証システムに作成します。",
+        createText2:
+          "現在の認証システムはユーザー作成をサポートしていません。追加対象のユーザーは認証システムに既に存在している必要があり、ユーザーIDは認証システムのユーザーIDと一致している必要があります。",
       },
       initImportUsersTable: {
         importUser: "ここで既存ユーザーをインポートできます。下記の",
         document: "ドキュメント",
         learn: "を参照して、システムのユーザーモデルとユーザー情報のインポート方法を確認してください。",
-        useMore: "SCOW で複数クラスタを管理する場合、複数クラスタ間でユーザーアカウント情報を同一にする必要があります。ユーザー情報のインポートは1つのクラスタから行えば十分です。",
+        useMore:
+          "SCOW で複数クラスタを管理する場合、複数クラスタ間でユーザーアカウント情報を同一にする必要があります。ユーザー情報のインポートは1つのクラスタから行えば十分です。",
       },
       initJobBillingTable: {
         set: "ここでデフォルトのジョブ課金表を設定できます。初期化を完了する前に、すべての項目に価格を設定してください。",
@@ -574,8 +583,8 @@ export default {
         platformRole: "プラットフォームロール",
         tenantRole: "テナントロール",
         accountAffiliation: "所属アカウント",
-        defaultTenant: "ここでは、現在のシステムのデフォルトテナント配下のユーザーとアカウントを管理でき、"
-        + "ユーザーを",
+        defaultTenant:
+          "ここでは、現在のシステムのデフォルトテナント配下のユーザーとアカウントを管理でき、" + "ユーザーを",
         initAdmin: "初期管理者",
         set: " として設定できます（テナント管理者およびプラットフォーム管理者を兼任）。",
         idOrName: "ユーザーIDまたは氏名",
@@ -653,8 +662,9 @@ export default {
         notExpanded: "履歴課金項目を非表示",
         expanded: "履歴課金項目を表示",
         priceItem: "課金項目",
-        text: "クラスタ・パーティション・QOSは合わせて課金項目を構成します。課金方式"
-        + "と価格は課金項目に対して設定できます。",
+        text:
+          "クラスタ・パーティション・QOSは合わせて課金項目を構成します。課金方式" +
+          "と価格は課金項目に対して設定できます。",
         executing: "実行中",
         unset: "未設定",
         alreadyUsed: "このIDはすでに使用されています！",
@@ -712,8 +722,8 @@ export default {
       oldPassword: "旧パスワード",
       newPassword: "新パスワード",
       confirmPassword: "パスワード確認",
-      userNotExist:"ユーザーが存在しないか削除されています",
-      unavailable:"現在の構成ではこの機能は利用できません",
+      userNotExist: "ユーザーが存在しないか削除されています",
+      unavailable: "現在の構成ではこの機能は利用できません",
     },
     tenant: {
       accountWhitelistTable: {
@@ -727,18 +737,18 @@ export default {
         confirmRemoveWhiteText2: " をホワイトリストから削除しますか？",
         removeWhiteSuccess: "ホワイトリストから削除しました！",
         removeWhite: "ホワイトリストから削除",
-        expirationTime:"有効期限",
+        expirationTime: "有効期限",
       },
       addWhitelistedAccountButton: {
         notExist: "アカウントが存在しません！",
         addSuccess: "追加に成功しました！",
         addWhiteList: "ホワイトリストアカウントを追加",
-        expirationTime:"有効期限",
-        custom:"カスタム",
-        oneWeek:"1週間",
-        oneMonth:"1か月",
-        oneYear:"1年",
-        permanent:"永久",
+        expirationTime: "有効期限",
+        custom: "カスタム",
+        oneWeek: "1週間",
+        oneMonth: "1か月",
+        oneYear: "1年",
+        permanent: "永久",
       },
       adminJobTable: {
         batch: "バッチ検索",
@@ -753,7 +763,7 @@ export default {
         jobNumber: "ジョブ数: ",
         tenantPriceSum: "テナント課金合計: ",
         platformPriceSum: "プラットフォーム課金合計: ",
-        searchTypePlaceholder:"複数の場合はカンマで区切ってください",
+        searchTypePlaceholder: "複数の場合はカンマで区切ってください",
         onlyNumbersAndCommas: "数字とカンマのみ入力できます",
       },
       adminUserTable: {
@@ -761,7 +771,7 @@ export default {
         tenantAdmin: "テナント管理者",
         tenantFinance: "財務担当",
         idOrName: "ユーザーIDまたは氏名",
-        name:"氏名",
+        name: "氏名",
         tenantRole: "テナントロール",
         affiliatedAccountName: "所属アカウント",
         notExist: "ユーザーは存在しません",
@@ -770,7 +780,7 @@ export default {
         changeSuccess: "変更に成功しました",
         changeFail: "変更に失敗しました",
         changePassword: "パスワードを変更",
-        delete:"削除",
+        delete: "削除",
         deleteFail: "削除に失敗しました。管理者に連絡してください。",
         deleteSuccess: "削除に成功しました",
         featureUnavailable: "この機能は一時的に利用できません",
@@ -789,8 +799,9 @@ export default {
         modifyButton: "変更 ",
         currentPrice: "当該ジョブの現在のテナント課金",
         job: "ジョブ",
-        annotation:"新しい課金額が現在の課金額を上回る場合、その差額は差し引かれ、アカウントの消費記録で確認できます；"
-        + "新しい課金額が現在の課金額を下回る場合、その差額は返金され、アカウントのチャージ記録で確認できます。",
+        annotation:
+          "新しい課金額が現在の課金額を上回る場合、その差額は差し引かれ、アカウントの消費記録で確認できます；" +
+          "新しい課金額が現在の課金額を下回る場合、その差額は返金され、アカウントのチャージ記録で確認できます。",
       },
       tenantSelector: {
         fresh: "テナント一覧を更新",
@@ -806,7 +817,8 @@ export default {
           removeFromDefaultApps: {
             title: "デフォルト認可アプリを削除",
             confirmContent: "クラスタ {1} でテナント {0} のデフォルト認可アプリからアプリ {2} を削除しますか？",
-            confirmWarn: "デフォルト認可アプリから削除すると、このテナント配下のすべてのアカウントで当該アプリの認可が同期的に取り消されます",
+            confirmWarn:
+              "デフォルト認可アプリから削除すると、このテナント配下のすべてのアカウントで当該アプリの認可が同期的に取り消されます",
             removeSuccessMessage: "デフォルト認可アプリから削除しました",
             removeFailedMessage: "デフォルト認可アプリの削除に失敗しました",
           },
@@ -814,7 +826,8 @@ export default {
             title: "デフォルト認可アプリを追加",
             tenant: "テナント",
             cluster: "クラスタ",
-            modalWarn: "デフォルト認可アプリに追加すると、このテナント配下のすべてのアカウントで当該アプリの認可が同期的に追加されます",
+            modalWarn:
+              "デフォルト認可アプリに追加すると、このテナント配下のすべてのアカウントで当該アプリの認可が同期的に追加されます",
             app: "アプリケーション",
             appDefaultPlaceholder: "アプリケーションを選択してください",
             noAppsPlaceholder: "利用可能なアプリはありません",
@@ -833,8 +846,8 @@ export default {
         will: "",
         createModal: "秒後にユーザー作成画面を開きます",
         createFirst: "ユーザーが存在しません。まずユーザーを作成してください",
-        blockAccount:"ユーザーはブロックされています。先に解除してください",
-        arrearsAccount:"ユーザーの延滞状態を取得できませんでした",
+        blockAccount: "ユーザーはブロックされています。先に解除してください",
+        arrearsAccount: "ユーザーの延滞状態を取得できませんでした",
         addSuccess: "追加に成功しました！",
         userDeleted: "ユーザーは削除されているため追加できません",
       },
@@ -853,7 +866,8 @@ export default {
       createUserModal: {
         alreadyExist: "このユーザーIDは既に存在します！",
         createUser: "ユーザー作成",
-        notExist: "ユーザーは存在しません。新しいユーザー情報を入力してユーザーを作成し、アカウントに追加してください。",
+        notExist:
+          "ユーザーは存在しません。新しいユーザー情報を入力してユーザーを作成し、アカウントに追加してください。",
         email: "ユーザーのメール",
         password: "ユーザーのパスワード",
         confirm: "パスワード確認",
@@ -884,9 +898,12 @@ export default {
         normal: "利用可能",
         quotaExceeded: "クォータ超過",
         statusExplanation: "状態：",
-        blockedExplanation: "ブロック済み：ユーザーはアカウント管理者またはアカウント主管理者によりブロックされており、ジョブ提出時にこのアカウントを選択できません。",
-        quotaExceededExplanation: "クォータ超過：ユーザーはブロックされていませんが、使用済みクォータがユーザーのクォータ上限以上のため、このアカウントを選択してジョブ提出できません。",
-        normalExplanation: "利用可能：ユーザーはブロックされておらず、使用済みクォータがユーザーのクォータ上限未満のため、このアカウントを選択してジョブ提出できます。",
+        blockedExplanation:
+          "ブロック済み：ユーザーはアカウント管理者またはアカウント主管理者によりブロックされており、ジョブ提出時にこのアカウントを選択できません。",
+        quotaExceededExplanation:
+          "クォータ超過：ユーザーはブロックされていませんが、使用済みクォータがユーザーのクォータ上限以上のため、このアカウントを選択してジョブ提出できません。",
+        normalExplanation:
+          "利用可能：ユーザーはブロックされておらず、使用済みクォータがユーザーのクォータ上限未満のため、このアカウントを選択してジョブ提出できます。",
         admin: "管理者",
         user: "一般ユーザー",
         role: "ロール",
@@ -918,7 +935,8 @@ export default {
         confirmRemoveText: "アカウントからユーザーを削除することを確認",
         removeSuccess: "ユーザーの削除に成功しました！",
         removerUser: "ユーザーを削除",
-        cannotRemoverUserWhoHaveRunningJobFromAccount: "ユーザーにはまだ実行中のジョブがあり、 ユーザーはブロックされています。ジョブが終了するまで待つか、手動で終了してから移動してください。またはアカウント/ユーザーの同期が実行中です。同期完了後に再試行してください。",
+        cannotRemoverUserWhoHaveRunningJobFromAccount:
+          "ユーザーにはまだ実行中のジョブがあり、 ユーザーはブロックされています。ジョブが終了するまで待つか、手動で終了してから移動してください。またはアカウント/ユーザーの同期が実行中です。同期完了後に再試行してください。",
 
         blockUserInAccountFailed: "アカウントでのユーザーブロックに失敗しました。",
         unblockUserInAccountFailed: "アカウントでのユーザーブロック解除に失敗しました。",
@@ -934,7 +952,7 @@ export default {
         createTime: "作成日時",
         detail: "ユーザー詳細",
         tenantRoles: "テナントロール",
-        affiliatedAccounts:"所属アカウント",
+        affiliatedAccounts: "所属アカウント",
       },
       adminUserInfoDrawer: {
         id: "ユーザーID",
@@ -963,7 +981,8 @@ export default {
         operation: "操作",
         modifyQuota: "クォータを変更",
         clusterNotEnabledStorageManager: "利用可能なクラスタでストレージ管理がまだ有効化されていません",
-        storageQuotaTooltip: "現在のファイルシステムにはバックアップ設定があり、追加のストレージ領域を消費します。そのため、ユーザーが実際に利用できるストレージはクォータより少なくなります。",
+        storageQuotaTooltip:
+          "現在のファイルシステムにはバックアップ設定があり、追加のストレージ領域を消費します。そのため、ユーザーが実際に利用できるストレージはクォータより少なくなります。",
         syncStorage: "今すぐ更新",
         syncSuccess: "同期に成功しました",
         syncFailed: "同期に失敗しました",
@@ -975,11 +994,13 @@ export default {
         modifyDefaultQuota: "デフォルトのストレージクォータを変更",
         confirm: "確認",
         modifyUserDeulatQuotaSuccess: "ユーザーのデフォルトストレージクォータを変更しました",
-        modifyPartialSuccess: "デフォルトストレージクォータの変更は成功しましたが、クォータ調整中に例外が発生しました（対象: {}, …—{} ユーザーの合計）。",
+        modifyPartialSuccess:
+          "デフォルトストレージクォータの変更は成功しましたが、クォータ調整中に例外が発生しました（対象: {}, …—{} ユーザーの合計）。",
         cluster: "クラスタ",
-        tip: "変更は即時反映されます。"
-          + "クォータを減らすと、ユーザーがストレージ制限を超えて実行中のジョブがデータを書き込めない可能性があります。"
-          + "慎重に操作してください",
+        tip:
+          "変更は即時反映されます。" +
+          "クォータを減らすと、ユーザーがストレージ制限を超えて実行中のジョブがデータを書き込めない可能性があります。" +
+          "慎重に操作してください",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "ストレージクォータを変更",
@@ -1004,18 +1025,19 @@ export default {
         alreadyUsedDefault: "ユーザーは既にテナントのデフォルト値を使用しています。繰り返し変更しないでください",
         useDefaultValue: "デフォルト値を使用",
         setStorageQuota: "ストレージクォータを設定",
-        tip: "変更は即時反映されます。" +
+        tip:
+          "変更は即時反映されます。" +
           "クォータを減らすと、ユーザーがストレージ制限を超えて実行中ジョブが書き込みできない可能性があります。" +
           "慎重に操作してください",
         userNotFound: "ユーザー {} は存在しません",
       },
     },
-    quantumJob:{
-      historyJobTable:{
+    quantumJob: {
+      historyJobTable: {
         qits: "Qits",
         billing: "課金",
-        runDur:"実行時間",
-        state:"状態",
+        runDur: "実行時間",
+        state: "状態",
         device: "実行デバイス",
         noAuth: "この情報を閲覧する権限がありません。",
       },
@@ -1033,44 +1055,48 @@ export default {
       pageNotExist: "要求されたページは存在しません。",
       serverWrong: "サーバーエラー",
       sorry: "申し訳ありません。サーバーエラーが発生しました。更新して再試行してください。",
-      clusterNotAvailable: "現在アクセス中のクラスタは利用できないか、利用可能なクラスタがありません。"
-      + " 後でもう一度試すか、管理者に連絡してください。",
+      clusterNotAvailable:
+        "現在アクセス中のクラスタは利用できないか、利用可能なクラスタがありません。" +
+        " 後でもう一度試すか、管理者に連絡してください。",
     },
-    deleteModals:{
-      deleteUser:"ユーザー削除",
-      userId:"ユーザーID",
-      userName:"ユーザー名",
-      comments:"コメント",
+    deleteModals: {
+      deleteUser: "ユーザー削除",
+      userId: "ユーザーID",
+      userName: "ユーザー名",
+      comments: "コメント",
       confirmPermanentDeleteUser: "ID <b>{}</b>、名前 <b>{}</b> のユーザーを削除しますか？",
-      confirmDeleteUserPrompt1: "ユーザーを削除する場合、当該ユーザーが使用されていないことを確認し" +
-      "、下にユーザーIDと名前を入力してください。",
-      confirmDeleteUserPrompt2: "<span style='color:red'>警告：この操作は元に戻せません。ユーザーは" +
-      "利用不可になります！</span>",
+      confirmDeleteUserPrompt1:
+        "ユーザーを削除する場合、当該ユーザーが使用されていないことを確認し" +
+        "、下にユーザーIDと名前を入力してください。",
+      confirmDeleteUserPrompt2:
+        "<span style='color:red'>警告：この操作は元に戻せません。ユーザーは" + "利用不可になります！</span>",
       cannotDeleteSelf: "現在のユーザーは削除できません",
-      platformAdmin:"プラットフォーム管理者は削除できません",
+      platformAdmin: "プラットフォーム管理者は削除できません",
       userIdRequired: "ユーザーIDを入力してください",
       userNameRequired: "ユーザー名を入力してください",
       incorrectUserIdOrName: "入力したユーザーIDまたは名前が一致しません",
       userDeleted: "ユーザーは削除されており操作できません",
       deleteFailed: "削除に失敗しました",
-      accountsOwnerPrompt: "ユーザー <b>{}</b> はアカウント <b>{}</b> の主管理者です。" +
-      " このユーザーを削除する前に上記のアカウントを削除してください。",
+      accountsOwnerPrompt:
+        "ユーザー <b>{}</b> はアカウント <b>{}</b> の主管理者です。" +
+        " このユーザーを削除する前に上記のアカウントを削除してください。",
       userRunningJobsPrompt: "ユーザーには未完了のジョブがあり、削除できません。",
-      delete:"削除",
+      delete: "削除",
 
-      deleteAccount:"アカウント削除",
-      accountName:"アカウント名",
-      accountOwnerId:"アカウント主管理者ID",
-      accountNameRequired:"アカウント名を入力してください",
-      ownerIdRequired:"アカウント主管理者IDを入力してください",
+      deleteAccount: "アカウント削除",
+      accountName: "アカウント名",
+      accountOwnerId: "アカウント主管理者ID",
+      accountNameRequired: "アカウント名を入力してください",
+      ownerIdRequired: "アカウント主管理者IDを入力してください",
       invalidAccountNameOrOwnerId: "入力したアカウント名または主管理者IDが一致しません。",
-      confirmPermanentDeleteAccount:"アカウント名 <b>{}</b>、アカウント主管理者ID <b>{}</b> のアカウントを削除しますか？",
-      confirmDeleteAccountPrompt1:"アカウントを削除する場合、使用されていないことを確認し" +
-      "、下にアカウント名と主管理者IDを入力してください。",
-      confirmDeleteAccountPrompt2:"<span style='color:red'>注意：この操作は元に戻せません。" +
-      "削除後、アカウントは利用不可になります！</span>",
+      confirmPermanentDeleteAccount:
+        "アカウント名 <b>{}</b>、アカウント主管理者ID <b>{}</b> のアカウントを削除しますか？",
+      confirmDeleteAccountPrompt1:
+        "アカウントを削除する場合、使用されていないことを確認し" + "、下にアカウント名と主管理者IDを入力してください。",
+      confirmDeleteAccountPrompt2:
+        "<span style='color:red'>注意：この操作は元に戻せません。" + "削除後、アカウントは利用不可になります！</span>",
       accountRunningJobsPrompt: "アカウントには未完了のジョブがあり、削除できません。",
-      accountDeleted:"アカウントは削除されており操作できません",
+      accountDeleted: "アカウントは削除されており操作できません",
     },
     editUserProfileModal: {
       title: "ユーザー {}（ID: {}）の情報を変更",
@@ -1094,9 +1120,10 @@ export default {
       newPassword: "新しいパスワード",
       confirmPassword: "パスワード確認",
       selectCluster: "クラスタを選択",
-      allClustersTooltip: "クラスタを指定しない場合、権限解除済みクラスタを含むすべてのクラスタのジョブを検索できます。",
+      allClustersTooltip:
+        "クラスタを指定しない場合、権限解除済みクラスタを含むすべてのクラスタのジョブを検索できます。",
 
-      partitionFullName:"パーティションの正式名称",
+      partitionFullName: "パーティションの正式名称",
       nodes: "パーティションのノード数",
       cores: "ノードあたりのコア数",
       gpus: "ノードあたりのアクセラレータカード数",
@@ -1111,7 +1138,7 @@ export default {
       operationTime: "操作時間",
       operationCode: "操作コード",
       operationDetail: "対象オブジェクト",
-      keywordsPlaceholder:"例：ファイル名、ジョブIDなど",
+      keywordsPlaceholder: "例：ファイル名、ジョブIDなど",
       operatorIp: "オペレーターIP",
       alreadyIs: "ユーザーは既にこのロールです",
       notExist: "ユーザーが存在しないか削除されています",
@@ -1134,8 +1161,8 @@ export default {
       adapterConnErrorContent: "{} クラスタに現在接続できません。後ほど再試行してください。 ",
       effectErrorMessage: "サーバーエラーが発生しました！",
       noActivatedClusters: "利用可能なクラスタがありません。ページを更新後に再試行してください。",
-      notExistInActivatedClusters: "照会対象のクラスタは無効化されている可能性があります。"
-      + " ページを更新後に再試行してください。",
+      notExistInActivatedClusters:
+        "照会対象のクラスタは無効化されている可能性があります。" + " ページを更新後に再試行してください。",
       noClusters: "クラスタ設定ファイルが見つかりません。システム管理者に連絡してください。",
     },
     profile: {
@@ -1146,8 +1173,8 @@ export default {
     },
     user: {
       partitions: {
-        getBillingTableErrorMessage: "クラスタとパーティション情報の取得に失敗しました。"
-        + " 管理者に連絡してください。",
+        getBillingTableErrorMessage:
+          "クラスタとパーティション情報の取得に失敗しました。" + " 管理者に連絡してください。",
         partitionInfo: "パーティション情報",
         loading: "パーティションを読み込み中...",
       },
@@ -1190,9 +1217,10 @@ export default {
           userExistAuth: "ユーザーは認証システムに既に存在します",
           userNotExistAuth: "ユーザーは認証システムに存在しません",
           unableDetermineUserExistAuth: "認証システムにユーザーが存在するか判断できません",
-          userExistAuthMessage: "ユーザーは認証システムに既に存在します。ここで入力するパスワードは有効になりません。"
-          + " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。"
-          + " 『確認』をクリックすると、このユーザーをSCOWデータベースに直接追加します。",
+          userExistAuthMessage:
+            "ユーザーは認証システムに既に存在します。ここで入力するパスワードは有効になりません。" +
+            " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。" +
+            " 『確認』をクリックすると、このユーザーをSCOWデータベースに直接追加します。",
           userNotExistAuthMessage: "『確認』をクリックすると、このユーザーをSCOWと認証システムの両方に作成します。",
           userExistInSCOWDatabaseMessage: "このユーザーは既にSCOWに存在します",
           userExistAndAddToSCOWDatabaseMessage: "このユーザーは既に認証システムに存在し、SCOWに正常に追加されました",
@@ -1259,9 +1287,10 @@ export default {
       permissionManagement: {
         defaultApps: {
           title: "既定の許可済みアプリケーション",
-          explanation: "既定の許可済みアプリケーションを追加または削除すると、テナント配下のすべてのアカウントで"
-          + "アプリケーションの許可変更が同期されます。新しいアカウントが作成されたとき、既定の許可済みアプリケーションは"
-          + "そのアカウントの許可済みアプリケーションに自動的に追加されます。",
+          explanation:
+            "既定の許可済みアプリケーションを追加または削除すると、テナント配下のすべてのアカウントで" +
+            "アプリケーションの許可変更が同期されます。新しいアカウントが作成されたとき、既定の許可済みアプリケーションは" +
+            "そのアカウントの許可済みアプリケーションに自動的に追加されます。",
         },
       },
     },
@@ -1301,14 +1330,15 @@ export default {
         userUnlock: "ユーザーログインのロック解除",
         userNotFound: "ユーザーが見つかりません",
         unlockSuccess: "ログインのロック解除に成功しました",
-        unlockFail:"ログインのロック解除に失敗しました",
+        unlockFail: "ログインのロック解除に失敗しました",
         unlockLogin: "ログインのロック解除",
         confirmUlock: "ユーザーログインのロックを解除しますか？",
         confirmUlockText1: "ユーザーのロック解除を",
         confirmUlockText2: "確認しますか？",
         lockedTime: "ロック時刻",
-        oneChancetoLogin: "ログインのロックを解除後、ユーザーは1回ログインが可能です。"
-        + " 正常なログイン状態に完全に復帰するには、成功したログインが必要です",
+        oneChancetoLogin:
+          "ログインのロックを解除後、ユーザーは1回ログインが可能です。" +
+          " 正常なログイン状態に完全に復帰するには、成功したログインが必要です",
       },
       tenants: {
         create: {
@@ -1316,26 +1346,31 @@ export default {
           adminExistMessage: "管理者ユーザーは既にSCOWデータベースに存在し、再追加はできません。",
           adminNotExistAuth: "管理者ユーザーは認証システムに存在しません",
           adminNotExistAuthMessage: "管理者ユーザーが存在しません。管理者ユーザーIDが正しいか確認してください。",
-          adminExistAuthMessage: "管理者ユーザーは認証システムに既に存在します。ここで入力するパスワードは有効になりません。"
-          + " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。"
-          + " 新しいテナント管理者として追加しますか？",
-          adminNotExistAuthAndConfirmCreateMessage: "管理者ユーザーは認証システムに存在しません。"
-          + " このユーザーを作成して新しいテナント管理者として追加しますか？",
-          unableConfirmAdminExistInAuthMessage: "管理者ユーザーが認証システムに存在するか確認できません。"
-          + " 認証システムでの作成を試みます。"
-          + " 既に存在する場合、ここで入力するパスワードは有効にならず、新規ユーザーのパスワードは認証システムでの"
-          + " 既存ユーザーの現パスワードになります。",
-          unableConfirmAdminExistInAuthAndUnableCreateMessage: "管理者ユーザーが認証システムに存在するか確認できず、"
-          + " 現在の認証システムはユーザー作成をサポートしていません。"
-          + " このユーザーが認証システムに既に存在することを確認してください。"
-          + " 確認すると直接データベースに追加され、ここで入力するパスワードは有効になりません。"
-          + " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。",
+          adminExistAuthMessage:
+            "管理者ユーザーは認証システムに既に存在します。ここで入力するパスワードは有効になりません。" +
+            " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。" +
+            " 新しいテナント管理者として追加しますか？",
+          adminNotExistAuthAndConfirmCreateMessage:
+            "管理者ユーザーは認証システムに存在しません。" +
+            " このユーザーを作成して新しいテナント管理者として追加しますか？",
+          unableConfirmAdminExistInAuthMessage:
+            "管理者ユーザーが認証システムに存在するか確認できません。" +
+            " 認証システムでの作成を試みます。" +
+            " 既に存在する場合、ここで入力するパスワードは有効にならず、新規ユーザーのパスワードは認証システムでの" +
+            " 既存ユーザーの現パスワードになります。",
+          unableConfirmAdminExistInAuthAndUnableCreateMessage:
+            "管理者ユーザーが認証システムに存在するか確認できず、" +
+            " 現在の認証システムはユーザー作成をサポートしていません。" +
+            " このユーザーが認証システムに既に存在することを確認してください。" +
+            " 確認すると直接データベースに追加され、ここで入力するパスワードは有効になりません。" +
+            " 新規ユーザーのパスワードは認証システムでの既存ユーザーの現パスワードになります。",
           existInSCOWDatabase: "この {} はすでにSCOWデータベースに存在します",
-          createTenantSuccessMessage: "テナントの作成に成功しました。管理者ユーザーは認証システムに存在し、SCOWデータベースに追加されました",
+          createTenantSuccessMessage:
+            "テナントの作成に成功しました。管理者ユーザーは認証システムに存在し、SCOWデータベースに追加されました",
           addCompleted: "追加に成功しました！",
           createTenantFailMessage: "テナントの作成に失敗しました",
           createTenant: "テナント作成",
-          unavailable:"現在の構成ではこの機能は利用できません",
+          unavailable: "現在の構成ではこの機能は利用できません",
           userNotFound: "ユーザーが存在しません",
           tenantExist: "テナントは既に存在します",
           userStillMaintainsAccountRelationship: "ユーザーはアカウントとの関係を維持しています",
@@ -1345,11 +1380,11 @@ export default {
       systemDebug: {
         slurmBlockStatus: {
           syncUserAccountBlockingStatus: "アカウント/ユーザーのブロック状態を同期",
-          alertInfo: "SCOWは定期的にアカウントとユーザーのブロック状態をスケジューラに同期します。"
-          + " 『今すぐ同期』をクリックして手動で同期できます。",
+          alertInfo:
+            "SCOWは定期的にアカウントとユーザーのブロック状態をスケジューラに同期します。" +
+            " 『今すぐ同期』をクリックして手動で同期できます。",
           periodicSyncUserAccountBlockStatusInfo: "スケジューラのアカウント/ユーザーのブロック状態を定期的に同期",
-          syncAlreadyStarted:
-            "同期はすでに開始されています。完了までお待ちください。",
+          syncAlreadyStarted: "同期はすでに開始されています。完了までお待ちください。",
           turnedOn: "有効",
           paused: "一時停止",
           stopSync: "同期を停止",
@@ -1366,13 +1401,15 @@ export default {
         },
         syncClusterAccountUser: {
           syncUserAccount: "アカウント/ユーザー情報の同期",
-          alertInfo: "SCOWは定期的にアカウントとユーザーの情報をスケジューラに同期します。"
-          + " 『今すぐ同期』をクリックして手動で同期できます。",
-          maxSyncDurationExplanation: "同期中、SCOWはアカウント関連情報を変更できません。"
-          + " ユーザー体験への影響を避けるため、SCOWは『1回の同期の最大処理時間』パラメータで処理時間を制御します。"
-          + " 時間を超過すると、現在の同期は終了し、すでに同期された情報は保持されます。",
-          syncAlreadyStarted: "アカウント/ユーザー同期またはジョブ取得はすでに開始されています。"
-          + " 完了までお待ちください。",
+          alertInfo:
+            "SCOWは定期的にアカウントとユーザーの情報をスケジューラに同期します。" +
+            " 『今すぐ同期』をクリックして手動で同期できます。",
+          maxSyncDurationExplanation:
+            "同期中、SCOWはアカウント関連情報を変更できません。" +
+            " ユーザー体験への影響を避けるため、SCOWは『1回の同期の最大処理時間』パラメータで処理時間を制御します。" +
+            " 時間を超過すると、現在の同期は終了し、すでに同期された情報は保持されます。",
+          syncAlreadyStarted:
+            "アカウント/ユーザー同期またはジョブ取得はすでに開始されています。" + " 完了までお待ちください。",
           periodicSyncUserAccountInfo: "アカウントとユーザー情報を定期的に同期",
           turnedOn: "有効",
           paused: "無効",
@@ -1418,10 +1455,9 @@ export default {
             noException: "例外は発生しませんでした。",
             unknownException: "不明な例外",
             noSyncData: "データは一致しており、同期は不要です。",
-            syncCountDetails: "同期が必要なデータ差分は {0} 件。"
-            + " 成功：{1}、",
+            syncCountDetails: "同期が必要なデータ差分は {0} 件。" + " 成功：{1}、",
             syncFailedCount: "失敗：{}",
-            syncTotallySucceed:  "データは完全に同期され、{0} 件の差分を完了",
+            syncTotallySucceed: "データは完全に同期され、{0} 件の差分を完了",
             failedDetailDrawerTitle: "同期失敗の詳細",
             noSyncDetailsException: "データ例外により、同期データを取得できません",
             timeoutException: "一部データの同期（タイムアウト）",
@@ -1430,8 +1466,9 @@ export default {
         },
         fetchJobs: {
           jobInfoSync: "ジョブ情報の同期",
-          alertMessage: "SCOWは定期的にクラスタからジョブ情報を同期します。"
-          + " 『今すぐ同期』をクリックすると手動で即時同期できます。",
+          alertMessage:
+            "SCOWは定期的にクラスタからジョブ情報を同期します。" +
+            " 『今すぐ同期』をクリックすると手動で即時同期できます。",
           periodicSyncJobInfo: "ジョブ情報の定期同期",
           turnedOn: "有効",
           paused: "無効",
@@ -1442,8 +1479,8 @@ export default {
           notSynced: "未同期",
           jobSyncSuccessMessage: "ジョブ同期が完了しました。新規 {} 件のレコードを同期しました。",
           syncJobNow: "今すぐ同期",
-          accountUserSyncRunning: "アカウント/ユーザーの同期が実行中です。"
-           + " ジョブ同期の開始前に完了までお待ちください。",
+          accountUserSyncRunning:
+            "アカウント/ユーザーの同期が実行中です。" + " ジョブ同期の開始前に完了までお待ちください。",
         },
       },
       resourceManagement: {
@@ -1557,7 +1594,7 @@ export default {
         topTenPortalFeatureUsageCount: "ポータル機能使用回数上位10",
         topTenMisFeatureUsageCount: "MIS機能使用回数上位10",
         jobCount: "ジョブ数",
-        usageCount:"回数",
+        usageCount: "回数",
         userName: "ユーザー名",
         accountName: "アカウント名",
         amount: "金額",
@@ -1623,35 +1660,35 @@ export default {
       copyFileItem: "ファイル/フォルダーをコピー",
       compressFiles: "ファイル/フォルダーを圧縮",
       setJobTimeLimit: "ジョブの時間制限を設定",
-      createImage:"イメージを作成",
-      updateImage:"イメージを更新",
-      shareImage:"イメージを共有",
-      deleteImage:"イメージを削除",
-      copyImage:"イメージをコピー",
-      createDataset:"データセットを作成",
-      updateDataset:"データセットを更新",
-      deleteDataset:"データセットを削除",
-      createDatasetVersion:"データセットバージョンを作成",
-      updateDatasetVersion:"データセットバージョンを更新",
-      shareDatasetVersion:"データセットバージョンを共有",
-      copyDatasetVersion:"データセットバージョンをコピー",
-      deleteDatasetVersion:"データセットバージョンを削除",
-      createAlgorithm:"アルゴリズムを作成",
-      updateAlgorithm:"アルゴリズムを更新",
-      deleteAlgorithm:"アルゴリズムを削除",
-      createAlgorithmVersion:"アルゴリズムバージョンを作成",
-      updateAlgorithmVersion:"アルゴリズムバージョンを更新",
-      shareAlgorithmVersion:"アルゴリズムバージョンを共有",
-      deleteAlgorithmVersion:"アルゴリズムバージョンを削除",
-      copyAlgorithmVersion:"アルゴリズムバージョンをコピー",
-      createModel:"モデルを作成",
-      updateModel:"モデルを更新",
-      deleteModel:"モデルを削除",
-      createModelVersion:"モデルバージョンを作成",
-      updateModelVersion:"モデルバージョンを更新",
-      shareModelVersion:"モデルバージョンを共有",
-      deleteModelVersion:"モデルバージョンを削除",
-      copyModelVersion:"モデルバージョンをコピー",
+      createImage: "イメージを作成",
+      updateImage: "イメージを更新",
+      shareImage: "イメージを共有",
+      deleteImage: "イメージを削除",
+      copyImage: "イメージをコピー",
+      createDataset: "データセットを作成",
+      updateDataset: "データセットを更新",
+      deleteDataset: "データセットを削除",
+      createDatasetVersion: "データセットバージョンを作成",
+      updateDatasetVersion: "データセットバージョンを更新",
+      shareDatasetVersion: "データセットバージョンを共有",
+      copyDatasetVersion: "データセットバージョンをコピー",
+      deleteDatasetVersion: "データセットバージョンを削除",
+      createAlgorithm: "アルゴリズムを作成",
+      updateAlgorithm: "アルゴリズムを更新",
+      deleteAlgorithm: "アルゴリズムを削除",
+      createAlgorithmVersion: "アルゴリズムバージョンを作成",
+      updateAlgorithmVersion: "アルゴリズムバージョンを更新",
+      shareAlgorithmVersion: "アルゴリズムバージョンを共有",
+      deleteAlgorithmVersion: "アルゴリズムバージョンを削除",
+      copyAlgorithmVersion: "アルゴリズムバージョンをコピー",
+      createModel: "モデルを作成",
+      updateModel: "モデルを更新",
+      deleteModel: "モデルを削除",
+      createModelVersion: "モデルバージョンを作成",
+      updateModelVersion: "モデルバージョンを更新",
+      shareModelVersion: "モデルバージョンを共有",
+      deleteModelVersion: "モデルバージョンを削除",
+      copyModelVersion: "モデルバージョンをコピー",
       createUser: "ユーザーを作成",
       addUserToAccount: "ユーザーをアカウントに追加",
       removeUserFromAccount: "ユーザーをアカウントから削除",
@@ -1700,8 +1737,8 @@ export default {
       mergeFileChunks: "一時ファイルブロックを結合してアップロード",
       initMultipartUpload: "マルチパートアップロードの初期化",
       markMessageRead: "メッセージを既読にする",
-      deleteUser:"ユーザーを削除",
-      deleteAccount:"アカウントを削除",
+      deleteUser: "ユーザーを削除",
+      deleteAccount: "アカウントを削除",
       editUserProfile: "ユーザー情報を編集",
       changePassword: "パスワードを変更",
       changeEmail: "メールを変更",
@@ -1757,21 +1794,21 @@ export default {
       shareDatasetVersion: "データセット名: {}, バージョン名: {}",
       copyDatasetVersion: "元データセット名: {}, 元バージョン名: {}; 先データセット名: {}, 先バージョン名: {}",
       deleteDatasetVersion: "データセット名: {}, バージョン名: {}",
-      createAlgorithm:"クラスタ: {}, アルゴリズム名: {}",
-      updateAlgorithm:"アルゴリズム名: {}",
-      deleteAlgorithm:"アルゴリズム名: {}",
-      createAlgorithmVersion:"アルゴリズム名: {}, バージョン名: {}",
-      updateAlgorithmVersion:"アルゴリズム名: {}, バージョン名: {}",
-      shareAlgorithmVersion:"アルゴリズム名: {}, バージョン名: {}",
-      deleteAlgorithmVersion:"アルゴリズム名: {}, バージョン名: {}",
+      createAlgorithm: "クラスタ: {}, アルゴリズム名: {}",
+      updateAlgorithm: "アルゴリズム名: {}",
+      deleteAlgorithm: "アルゴリズム名: {}",
+      createAlgorithmVersion: "アルゴリズム名: {}, バージョン名: {}",
+      updateAlgorithmVersion: "アルゴリズム名: {}, バージョン名: {}",
+      shareAlgorithmVersion: "アルゴリズム名: {}, バージョン名: {}",
+      deleteAlgorithmVersion: "アルゴリズム名: {}, バージョン名: {}",
       copyAlgorithmVersion: "元アルゴリズム名: {}, 元バージョン名: {}; 先アルゴリズム名: {}, 先バージョン名: {}",
-      createModel:"クラスタ: {}, モデル名: {}",
-      updateModel:"モデル名: {}",
-      deleteModel:"モデル名: {}",
-      createModelVersion:"モデル名: {}, バージョン名: {}",
-      updateModelVersion:"モデル名: {}, バージョン名: {}",
-      shareModelVersion:"モデル名: {}, バージョン名: {}",
-      deleteModelVersion:"モデル名: {}, バージョン名: {}",
+      createModel: "クラスタ: {}, モデル名: {}",
+      updateModel: "モデル名: {}",
+      deleteModel: "モデル名: {}",
+      createModelVersion: "モデル名: {}, バージョン名: {}",
+      updateModelVersion: "モデル名: {}, バージョン名: {}",
+      shareModelVersion: "モデル名: {}, バージョン名: {}",
+      deleteModelVersion: "モデル名: {}, バージョン名: {}",
       copyModelVersion: "元モデル名: {}, 元バージョン名: {}; 先モデル名: {}, 先バージョン名: {}",
       createUser: "ユーザー: {}",
       deleteUser: "ユーザー: {}",
@@ -1790,7 +1827,7 @@ export default {
       unsetTenantFinance: "テナント: {1}, ユーザー: {0}",
       tenantChangePassword: "ユーザー: {}",
       createAccount: "アカウント: {}, 主管理者: {}",
-      deleteAccount:"アカウント: {}, 主管理者: {}",
+      deleteAccount: "アカウント: {}, 主管理者: {}",
       addAccountToWhitelist: "テナント: {1}, アカウント: {0}",
       removeAccountFromWhitelist: "テナント: {1}, アカウント: {0}",
       accountPay: "アカウント: {}, 金額(CNY): {}",
@@ -1823,7 +1860,7 @@ export default {
       exportAccountsPayRecordOfTenant: "テナント: {}, アカウント: {}",
       exportAllAccountsPayRecordOfTenant: "テナント: {}, アカウント: 全アカウント",
       exportTenantPayRecord: "テナント: {}",
-      exportTenantsPayRecordOfAdmin:"テナント: プラットフォームの全テナント",
+      exportTenantsPayRecordOfAdmin: "テナント: プラットフォームの全テナント",
       exportJobsOfAccountAndUser: "テナント: {0}, アカウント: {2}, ユーザー: {1}",
       exportJobsOfUser: "テナント: {}, ユーザー: {}",
       exportJobsOfAccount: "テナント: {}, アカウント: {}",
@@ -1850,8 +1887,10 @@ export default {
       changeEmail: "ユーザー: {}",
       editUserProfile: "ユーザー: {}",
       decompressFile: "パス: {0} , ファイル {1}",
-      setTenantUserQuota: "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
-      batchSetTenantUsersQuota: "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
+      setTenantUserQuota:
+        "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
+      batchSetTenantUsersQuota:
+        "ユーザー: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}, テナントデフォルトを使用: {4}",
       setTenantUserDefaultQuota: "テナント: {0}, クラスタ: {1}, パス: {2}, ストレージクォータ: {3}",
       syncTenantUsersStorageUsage: "テナント: {0}, クラスタ: {1}, パス: {2}",
       tenantAppAuthorizationLog: "クラスタ: {0}, アプリケーション: {1}, テナント: {2}",
@@ -1878,7 +1917,8 @@ export default {
     descriptionGpu: "アクセラレータカードの割り当て",
     descriptionCpus: "CPU の割り当て",
     algorithmMaxCpusMem: "max(cpusAlloc, ceil(memReq / (partitionMemory/partitionCores)))",
-    algorithmMaxGpuCpus: "max(アクセラレータカード, ceil(cpusAlloc / (partitionCores/パーティションのアクセラレータカード)))",
+    algorithmMaxGpuCpus:
+      "max(アクセラレータカード, ceil(cpusAlloc / (partitionCores/パーティションのアクセラレータカード)))",
     algorithmGpu: "アクセラレータカード",
     algorithmCpus: "cpusAlloc",
   },

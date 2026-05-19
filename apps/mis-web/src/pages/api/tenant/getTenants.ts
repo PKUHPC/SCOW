@@ -17,18 +17,21 @@ export const GetTenantsSchema = typeboxRouteSchema({
   },
 });
 
-const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
-  || info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE));
+const auth = authenticate(
+  (info) =>
+    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+    info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
+);
 
-export default route(GetTenantsSchema,
-  async (req, res) => {
+export default route(GetTenantsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const client = getClient(TenantServiceClient);
 
-    const client = getClient(TenantServiceClient);
+  const { names } = await asyncClientCall(client, "getTenants", {});
 
-    const { names } = await asyncClientCall(client, "getTenants", {});
-
-    return { 200: { names } };
-  });
+  return { 200: { names } };
+});

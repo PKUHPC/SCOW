@@ -24,8 +24,8 @@ const codes: Record<UnlockUserResult, number> = {
  */
 export const unlockUserRoute = fp(async (f) => {
   f.patch<{
-    Body: Static<typeof BodySchema>
-    Responses: Static<typeof ResponsesSchema>,
+    Body: Static<typeof BodySchema>;
+    Responses: Static<typeof ResponsesSchema>;
   }>(
     "/lockUser/unlock",
     {

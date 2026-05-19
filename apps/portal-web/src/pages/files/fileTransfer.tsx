@@ -20,12 +20,13 @@ import { Head } from "src/utils/head";
 
 type FileInfoKey = React.Key;
 
-
-type Props = {
-  error: AuthResultError;
-} | {
-  scowdEnabledClusters: string[];
-};
+type Props =
+  | {
+      error: AuthResultError;
+    }
+  | {
+      scowdEnabledClusters: string[];
+    };
 
 interface ButtonProps {
   icon: React.ReactNode;
@@ -40,20 +41,17 @@ interface ButtonProps {
 const p = prefix("pages.files.fileTransfer.");
 
 const OperationButton: React.FC<ButtonProps> = (props) => {
-
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
   const { message, modal } = App.useApp();
 
-  const {
-    icon, disabled, srcCluster, dstCluster, selectedKeys, toPath, scowdEnabledClusters,
-  } = props;
+  const { icon, disabled, srcCluster, dstCluster, selectedKeys, toPath, scowdEnabledClusters } = props;
 
   return (
     <Button
       icon={icon}
       disabled={disabled}
-      onClick={ async () => {
+      onClick={async () => {
         if (srcCluster && dstCluster) {
           const srcClusterName = getI18nConfigCurrentText(srcCluster.name, languageId);
           const dstClusterName = getI18nConfigCurrentText(dstCluster.name, languageId);
@@ -64,26 +62,29 @@ const OperationButton: React.FC<ButtonProps> = (props) => {
             onOk: async () => {
               // scowd 跨集群文件传输无需检查 key
               if (!scowdEnabledClusters.includes(srcCluster.id)) {
-                await api.checkTransferKey({ body: { fromCluster:srcCluster.id, toCluster: dstCluster.id } });
+                await api.checkTransferKey({ body: { fromCluster: srcCluster.id, toCluster: dstCluster.id } });
               }
-              Promise.all(selectedKeys.map(async (key) => {
-                await api.startFileTransfer({ body: {
-                  fromCluster: srcCluster.id,
-                  toCluster: dstCluster.id,
-                  fromPath: String(key),
-                  toPath: toPath,
-                } })
-                  .then(() => {
-                    message.success(t(p("transferStartInfo")));
-                  });
-              }));
+              Promise.all(
+                selectedKeys.map(async (key) => {
+                  await api
+                    .startFileTransfer({
+                      body: {
+                        fromCluster: srcCluster.id,
+                        toCluster: dstCluster.id,
+                        fromPath: String(key),
+                        toPath: toPath,
+                      },
+                    })
+                    .then(() => {
+                      message.success(t(p("transferStartInfo")));
+                    });
+                }),
+              );
             },
           });
-
         }
       }}
     />
-
   );
 };
 
@@ -116,18 +117,17 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
       <Row justify="space-around" align="top">
         <Col span={11}>
           <ClusterFileTable
-            selectedCluster={ clusterLeft }
-            setSelectedCluster={ setClusterLeft }
-            path={ pathLeft }
-            setPath={ setPathLeft }
-            selectedKeys={ selectedKeysLeft }
-            setSelectedKeys={ setSelectedKeysLeft }
-            excludeCluster={ clusterRight }
+            selectedCluster={clusterLeft}
+            setSelectedCluster={setClusterLeft}
+            path={pathLeft}
+            setPath={setPathLeft}
+            selectedKeys={selectedKeysLeft}
+            setSelectedKeys={setSelectedKeysLeft}
+            excludeCluster={clusterRight}
           />
         </Col>
 
         <Col span={0.5}>
-
           <Row justify="center">
             <OperationButton
               icon={<ArrowRightOutlined />}
@@ -151,29 +151,25 @@ export const FileTransferPage: NextPage<Props> = requireAuth(() => true)((props:
               scowdEnabledClusters={props.scowdEnabledClusters}
             />
           </Row>
-
         </Col>
 
         <Col span={11}>
           <ClusterFileTable
-            selectedCluster={ clusterRight }
-            setSelectedCluster={ setClusterRight }
-            path={ pathRight }
-            setPath={ setPathRight }
-            selectedKeys={ selectedKeysRight }
-            setSelectedKeys={ setSelectedKeysRight }
-            excludeCluster={ clusterLeft }
+            selectedCluster={clusterRight}
+            setSelectedCluster={setClusterRight}
+            path={pathRight}
+            setPath={setPathRight}
+            selectedKeys={selectedKeysRight}
+            setSelectedKeys={setSelectedKeysRight}
+            excludeCluster={clusterLeft}
           />
         </Col>
-
       </Row>
     </>
   );
 });
 
-
 export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => {
-
   const auth = ssrAuthenticate(() => true);
 
   const info = await auth(req);
@@ -186,7 +182,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
   if (USE_MOCK) {
     return {
       props: {
-        scowdEnabledClusters: [ "hpc01" ],
+        scowdEnabledClusters: ["hpc01"],
       },
     };
   }

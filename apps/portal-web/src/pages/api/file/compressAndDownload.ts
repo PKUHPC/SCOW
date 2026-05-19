@@ -18,7 +18,7 @@ export const CompressAndDownloadFileSchema = typeboxRouteSchema({
     paths: Type.Array(Type.String()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     400: Type.Object({ code: Type.Literal("INVALID_CLUSTER") }),
@@ -51,7 +51,9 @@ const auth = authenticate(() => true);
 
 export default route(CompressAndDownloadFileSchema, async (req, res) => {
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, paths } = req.query;
 
@@ -66,7 +68,9 @@ export default route(CompressAndDownloadFileSchema, async (req, res) => {
   });
 
   const stream = asyncReplyStreamCall(client, "compressAndDownload", {
-    cluster, paths, userId: info.identityId,
+    cluster,
+    paths,
+    userId: info.identityId,
   });
 
   const onClose = () => {

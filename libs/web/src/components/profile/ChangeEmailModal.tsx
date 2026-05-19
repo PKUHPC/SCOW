@@ -22,10 +22,14 @@ interface FormInfo {
 }
 
 export const ChangeEmailModal: React.FC<Props> = ({
-  open, onClose, setEmail, languageId, api, email,
+  open,
+  onClose,
+  setEmail,
+  languageId,
+  api,
+  email,
   aiChangeEmail,
 }) => {
-
   const [form] = Form.useForm<FormInfo>();
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
@@ -52,10 +56,17 @@ export const ChangeEmailModal: React.FC<Props> = ({
     if (aiChangeEmail) {
       changeEmailMutation?.mutate({ newEmail });
     } else {
-      await api.changeEmail({ body: { newEmail } })
-        .httpError(404, () => { message.error(getCurrentLangLibWebText(languageId, "userNotExist")); })
-        .httpError(500, () => { message.error(getCurrentLangLibWebText(languageId, "changeEmailFail")); })
-        .httpError(501, () => { message.error(getCurrentLangLibWebText(languageId, "unavailable")); })
+      await api
+        .changeEmail({ body: { newEmail } })
+        .httpError(404, () => {
+          message.error(getCurrentLangLibWebText(languageId, "userNotExist"));
+        })
+        .httpError(500, () => {
+          message.error(getCurrentLangLibWebText(languageId, "changeEmailFail"));
+        })
+        .httpError(501, () => {
+          message.error(getCurrentLangLibWebText(languageId, "unavailable"));
+        })
         .then(() => {
           form.resetFields();
           onClose();
@@ -77,17 +88,8 @@ export const ChangeEmailModal: React.FC<Props> = ({
       onCancel={onClose}
       destroyOnClose
     >
-      <Form
-        initialValues={undefined}
-        layout="vertical"
-        form={form}
-        onFinish={onFinish}
-      >
-        <Form.Item
-          label={getCurrentLangLibWebText(languageId, "oldEmail")}
-          name="oldEmail"
-          initialValue={email}
-        >
+      <Form initialValues={undefined} layout="vertical" form={form} onFinish={onFinish}>
+        <Form.Item label={getCurrentLangLibWebText(languageId, "oldEmail")} name="oldEmail" initialValue={email}>
           <Input disabled />
         </Form.Item>
         <Form.Item
@@ -101,5 +103,3 @@ export const ChangeEmailModal: React.FC<Props> = ({
     </Modal>
   );
 };
-
-

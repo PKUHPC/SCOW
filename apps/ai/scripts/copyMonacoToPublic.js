@@ -7,7 +7,8 @@ const targetPath = path.join(__dirname, "../public/monaco-assets/vs");
 // Check if the source directory exists
 if (!fs.existsSync(sourcePath)) {
   console.error(
-    `Error: Source directory ${sourcePath} does not exist. Ensure the target package is correctly installed.`);
+    `Error: Source directory ${sourcePath} does not exist. Ensure the target package is correctly installed.`,
+  );
   process.exit(1);
 }
 

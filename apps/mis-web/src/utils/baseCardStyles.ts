@@ -21,7 +21,6 @@ export const StyledCard = styled(Card)<{
   }
 `;
 
-
 // 2. 标题和操作区域
 
 export const CardTitleContainer = styled.div`
@@ -44,7 +43,7 @@ export const StyledButton = styled(Button)`
     color: ${(props) => props.theme.token.colorPrimary} !important;
     border-color: ${(props) => props.theme.token.colorPrimary} !important;
     font-weight: 330;
-    }
+  }
 `;
 
 // 4. 信息区域的基础样式

@@ -16,24 +16,22 @@ import { getClusterLoginNode } from "src/utils/ssh";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
 export const jobServiceServer = plugin((server) => {
-
   server.addService<JobServiceServer>(JobServiceService, {
-
     cancelJob: async ({ request, logger }) => {
-
       const { cluster, jobId, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       await callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.job, "cancelJob", {
-          userId, jobId,
-        }),
+        async (client) =>
+          await asyncClientCall(client.job, "cancelJob", {
+            userId,
+            jobId,
+          }),
       );
 
       return [{}];
-
     },
 
     listAccounts: async ({ request, logger }) => {
@@ -42,13 +40,8 @@ export const jobServiceServer = plugin((server) => {
 
       // 如果已部署了管理系统和资源管理系统，获取集群下已授权的账户 与管理系统数据的交集
       if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled) {
-
         // 获取用户在scow中的信息
-        const userInfo = await libGetUserInfo(logger,
-          userId,
-          config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token,
-        );
+        const userInfo = await libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
         const tenantName = userInfo.tenantName;
         // 获取资源管理中的这个集群和租户下授权的账户名信息
         const clusterAssignedAccountNames = await getClusterAssignedAccounts(
@@ -57,39 +50,45 @@ export const jobServiceServer = plugin((server) => {
           tenantName,
         );
         // 获取scow数据库中账户数据
-        const misAccounts = await libGetAccounts(logger,
+        const misAccounts = await libGetAccounts(
+          logger,
           userId,
           statusFilter,
           config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token);
+          commonConfig.scowApi?.auth?.token,
+        );
 
-        const filteredAccounts
-               = misAccounts.accounts.filter((account) => clusterAssignedAccountNames.includes(account));
+        const filteredAccounts = misAccounts.accounts.filter((account) =>
+          clusterAssignedAccountNames.includes(account),
+        );
 
         return [{ accounts: filteredAccounts }];
       }
 
       // 如果已部署了管理系统，从管理系统数据库中获取账户数据
       if (config.MIS_DEPLOYED) {
-        const result = await libGetAccounts(logger,
+        const result = await libGetAccounts(
+          logger,
           userId,
           statusFilter,
           config.MIS_SERVER_URL,
-          commonConfig.scowApi?.auth?.token);
+          commonConfig.scowApi?.auth?.token,
+        );
         return [result];
       }
 
       const reply = await callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.account, "listAccounts", {
-          userId,
-        }),
+        async (client) =>
+          await asyncClientCall(client.account, "listAccounts", {
+            userId,
+          }),
       );
 
       const accounts = reply.accounts;
 
-      if ((statusFilter === undefined) || statusFilter === AccountStatusFilter.ALL) {
+      if (statusFilter === undefined || statusFilter === AccountStatusFilter.ALL) {
         return [{ accounts: accounts }];
       }
 
@@ -104,28 +103,37 @@ export const jobServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      const reply = await clusterops.job.getJobTemplate({
-        id: templateId, userId,
-      }, logger);
+      const reply = await clusterops.job.getJobTemplate(
+        {
+          id: templateId,
+          userId,
+        },
+        logger,
+      );
 
       return [{ template: reply.template }];
-
     },
 
     listJobTemplates: async ({ request, logger }) => {
-
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      const reply = await clusterops.job.listJobTemplates({
-        userId,
-      }, logger);
+      const reply = await clusterops.job.listJobTemplates(
+        {
+          userId,
+        },
+        logger,
+      );
 
       const results = reply.results.map((x) => {
         if (!x.submitTime) {
@@ -147,7 +155,6 @@ export const jobServiceServer = plugin((server) => {
       });
 
       return [{ results }];
-
     },
 
     deleteJobTemplate: async ({ request, logger }) => {
@@ -156,11 +163,17 @@ export const jobServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      await clusterops.job.deleteJobTemplate({
-        id: templateId, userId,
-      }, logger);
+      await clusterops.job.deleteJobTemplate(
+        {
+          id: templateId,
+          userId,
+        },
+        logger,
+      );
 
       return [{}];
     },
@@ -171,33 +184,59 @@ export const jobServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      await clusterops.job.renameJobTemplate({
-        id: templateId, userId, jobName,
-      }, logger);
+      await clusterops.job.renameJobTemplate(
+        {
+          id: templateId,
+          userId,
+          jobName,
+        },
+        logger,
+      );
 
       return [{}];
     },
 
     listRunningJobs: async ({ request, logger }) => {
-
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const reply = await callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.job, "getJobs", {
-          fields: [
-            "job_id", "partition", "name", "user", "state", "elapsed_seconds", "nodes_req", "nodes_alloc",
-            "node_list", "reason", "account", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc",
-            "qos", "submit_time", "time_limit_minutes", "working_directory", "mem_req_mb", "mem_alloc_mb",
-            "start_time", "end_time",
-          ],
-          jobTypes: [],
-          filter: { users: [userId], accounts: [], states: ["PENDING", "RUNNING"]},
-        }),
+        async (client) =>
+          await asyncClientCall(client.job, "getJobs", {
+            fields: [
+              "job_id",
+              "partition",
+              "name",
+              "user",
+              "state",
+              "elapsed_seconds",
+              "nodes_req",
+              "nodes_alloc",
+              "node_list",
+              "reason",
+              "account",
+              "cpus_req",
+              "cpus_alloc",
+              "gpus_req",
+              "gpus_alloc",
+              "qos",
+              "submit_time",
+              "time_limit_minutes",
+              "working_directory",
+              "mem_req_mb",
+              "mem_alloc_mb",
+              "start_time",
+              "end_time",
+            ],
+            jobTypes: [],
+            filter: { users: [userId], accounts: [], states: ["PENDING", "RUNNING"] },
+          }),
       );
 
       return [{ results: reply.jobs.map(jobInfoToRunningjob) }];
@@ -210,22 +249,43 @@ export const jobServiceServer = plugin((server) => {
       const reply = await callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.job, "getJobs", {
-          fields: [
-            "job_id", "name", "account", "partition", "qos", "state", "working_directory", "nodes_req", "nodes_alloc",
-            "node_list", "reason", "elapsed_seconds", "time_limit_minutes", "submit_time",
-            "start_time", "end_time", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc", "mem_req_mb", "mem_alloc_mb",
-          ],
-          jobTypes: [],
-          filter: {
-            users: [userId], accounts: [], states: [],
-            submitTime: { startTime, endTime },
-          },
-        }),
+        async (client) =>
+          await asyncClientCall(client.job, "getJobs", {
+            fields: [
+              "job_id",
+              "name",
+              "account",
+              "partition",
+              "qos",
+              "state",
+              "working_directory",
+              "nodes_req",
+              "nodes_alloc",
+              "node_list",
+              "reason",
+              "elapsed_seconds",
+              "time_limit_minutes",
+              "submit_time",
+              "start_time",
+              "end_time",
+              "cpus_req",
+              "cpus_alloc",
+              "gpus_req",
+              "gpus_alloc",
+              "mem_req_mb",
+              "mem_alloc_mb",
+            ],
+            jobTypes: [],
+            filter: {
+              users: [userId],
+              accounts: [],
+              states: [],
+              submitTime: { startTime, endTime },
+            },
+          }),
       );
 
       return [{ results: reply.jobs.map(jobInfoToPortalJobInfo) }];
-
     },
 
     submitJob: async ({ request, logger }) => {
@@ -245,23 +305,28 @@ export const jobServiceServer = plugin((server) => {
       }
 
       const clusterOps = getClusterOps(cluster);
-      if (!clusterOps) { throw clusterNotFound(cluster); }
+      if (!clusterOps) {
+        throw clusterNotFound(cluster);
+      }
 
       const { jobId } = await clusterOps.job.submitJob({ ...request }, logger);
 
       return [{ jobId }];
     },
 
-
     submitFileAsJob: async ({ request, logger }) => {
       const { cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterOps = getClusterOps(cluster);
-      if (!clusterOps) { throw clusterNotFound(cluster); }
+      if (!clusterOps) {
+        throw clusterNotFound(cluster);
+      }
 
       const { jobId } = await clusterOps.job.submitFileAsJob({ ...request }, logger);
 
@@ -298,13 +363,13 @@ export const jobServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
       await clusterops.job.saveAsJobTemplate(request, logger);
 
       return [{}];
     },
-
   });
-
 });

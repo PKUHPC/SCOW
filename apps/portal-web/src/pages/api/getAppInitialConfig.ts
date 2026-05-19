@@ -43,19 +43,33 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
         darkModeColor: Type.Optional(Type.String()),
       }),
       footerText: Type.Optional(Type.String()),
-      loginNodes: Type.Record(Type.String(), Type.Array(Type.Object({
-        name: NodeNameI18nSchema,
-        address: Type.String(),
-      }))), // { clusterId: LoginNode[] }
-      darkModeCookieValue: Type.Optional(Type.Object({ dark: Type.Boolean(), mode: Type.Union([
-        Type.Literal("system"), Type.Literal("dark"), Type.Literal("light"),
-      ]) })),
+      loginNodes: Type.Record(
+        Type.String(),
+        Type.Array(
+          Type.Object({
+            name: NodeNameI18nSchema,
+            address: Type.String(),
+          }),
+        ),
+      ), // { clusterId: LoginNode[] }
+      darkModeCookieValue: Type.Optional(
+        Type.Object({
+          dark: Type.Boolean(),
+          mode: Type.Union([Type.Literal("system"), Type.Literal("dark"), Type.Literal("light")]),
+        }),
+      ),
 
       initialLanguageId: Type.String(),
       clusterConfigs: Type.Record(Type.String(), ClusterConfigSchema),
 
-      initialCurrentClusters: Type.Optional(Type.Array(Type.Object({
-        id: Type.String(), name: ClusterNameI18nSchema }))),
+      initialCurrentClusters: Type.Optional(
+        Type.Array(
+          Type.Object({
+            id: Type.String(),
+            name: ClusterNameI18nSchema,
+          }),
+        ),
+      ),
 
       initialPortalRuntimeDesktopEnabled: Type.Boolean(),
 
@@ -66,14 +80,13 @@ export const GetAppInitialConfigSchema = typeboxRouteSchema({
   },
 });
 
-export type AppInitialConfig = Static<typeof GetAppInitialConfigSchema["responses"]["200"]>;
+export type AppInitialConfig = Static<(typeof GetAppInitialConfigSchema)["responses"]["200"]>;
 
 export default route(GetAppInitialConfigSchema, async (req) => {
-
   const extra: AppInitialConfig = {
     userInfo: undefined,
     footerText: undefined,
-    primaryColor: { defaultColor:"#94070A" },
+    primaryColor: { defaultColor: "#94070A" },
     darkModeCookieValue: getDarkModeCookieValue(req),
     loginNodes: {},
     initialLanguageId: "",
@@ -93,10 +106,12 @@ export default route(GetAppInitialConfigSchema, async (req) => {
 
     if (userInfo) {
       const misUserInfo = await libWebGetUserInfo(
-        userInfo.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+        userInfo.identityId,
+        publicConfig.MIS_SERVER_URL,
+        runtimeConfig.SCOW_API_AUTH_TOKEN,
+      );
 
       if (misUserInfo) {
-
         const isTenantAdmin = misUserInfo.tenantRoles?.includes(0) ?? false;
         const isPlatformAdmin = misUserInfo.platformRoles?.includes(0) ?? false;
 
@@ -120,7 +135,6 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           );
 
           extra.userAssociatedClusterIds = userAssociatedClusterIds;
-
         }
 
         const clusters = await getClusterConfigFiles();
@@ -131,7 +145,9 @@ export default route(GetAppInitialConfigSchema, async (req) => {
           const publicConfigClusters = Object.values(getPublicConfigClusters(clusters));
 
           const runtimeClusters = await libGetClustersRuntimeInfo(
-            publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+            publicConfig.MIS_SERVER_URL,
+            runtimeConfig.SCOW_API_AUTH_TOKEN,
+          );
 
           const initialActivatedClusters = formatActivatedClusters({
             clustersRuntimeInfo: runtimeClusters,
@@ -162,17 +178,22 @@ export default route(GetAppInitialConfigSchema, async (req) => {
 
   const hostname = getHostname(req);
 
-  const defaultColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-      ?? runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ?? runtimeConfig.DEFAULT_PRIMARY_COLOR;
+  const defaultColor =
+    (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.primaryColor?.defaultColor ??
+    runtimeConfig.DEFAULT_PRIMARY_COLOR;
 
-  const darkModeColor = (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname])
-    ?? runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ?? defaultColor;
+  const darkModeColor =
+    (hostname && runtimeConfig.UI_CONFIG?.primaryColor?.hostnameMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.primaryColor?.darkModeColor ??
+    defaultColor;
 
-  extra.primaryColor = { defaultColor,darkModeColor };
+  extra.primaryColor = { defaultColor, darkModeColor };
 
-  extra.footerText = (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname])
-      ?? (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname])
-      ?? runtimeConfig.UI_CONFIG?.footer?.defaultText;
+  extra.footerText =
+    (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameMap?.[hostname]) ??
+    (hostname && runtimeConfig.UI_CONFIG?.footer?.hostnameTextMap?.[hostname]) ??
+    runtimeConfig.UI_CONFIG?.footer?.defaultText;
 
   extra.titleTag = runtimeConfig.UI_CONFIG?.titleTag;
   // 从Cookies或header中获取语言id

@@ -25,9 +25,14 @@ const p = prefix("pageComp.storage.userDefaultQuotaChangeModal.");
 const pCommon = prefix("common.");
 
 export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
-  open, onClose, reload, cluster, path, defaultQuotaBytes, totalQuotaBytes,
+  open,
+  onClose,
+  reload,
+  cluster,
+  path,
+  defaultQuotaBytes,
+  totalQuotaBytes,
 }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -49,23 +54,24 @@ export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
         const { quotaGB } = await form.validateFields();
 
         setLoading(true);
-        await api.setTenantUserDefaultQuota({ body: {
-          cluster: cluster.id, path, userQuotaBytes: formatGBToBytes(quotaGB),
-        } })
+        await api
+          .setTenantUserDefaultQuota({
+            body: {
+              cluster: cluster.id,
+              path,
+              userQuotaBytes: formatGBToBytes(quotaGB),
+            },
+          })
           .then((res) => {
             if (res.failures === 0) {
               message.success(t(p("modifyUserDeulatQuotaSuccess")));
             } else {
-              message.error(t(
-                p("modifyPartialSuccess"),
-                [res.failedUserIds.slice(0, 3).join(", "), res.failures],
-              ));
+              message.error(t(p("modifyPartialSuccess"), [res.failedUserIds.slice(0, 3).join(", "), res.failures]));
             }
             reload();
             onClose();
           })
           .finally(() => setLoading(false));
-
       }}
     >
       <Form
@@ -78,23 +84,18 @@ export const UserDefaultQuotaChangeModal: React.FC<Props> = ({
           <span>{getI18nConfigCurrentText(cluster.name, languageId)}</span>
         </Form.Item>
         <Form.Item
-          label={(
+          label={
             <div>
               {t(p("modifyDefaultQuota"))}
               <Tooltip title={t(p("tip"))}>
                 <QuestionCircleOutlined style={{ marginLeft: 5 }} />
               </Tooltip>
             </div>
-          )}
+          }
           name="quotaGB"
           rules={[{ required: true }]}
         >
-          <InputNumber
-            min={0.01}
-            max={formatBytesToGB(totalQuotaBytes)}
-            precision={2}
-            addonAfter={"GB"}
-          />
+          <InputNumber min={0.01} max={formatBytesToGB(totalQuotaBytes)} precision={2} addonAfter={"GB"} />
         </Form.Item>
       </Form>
     </Modal>

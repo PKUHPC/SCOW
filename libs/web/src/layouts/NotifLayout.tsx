@@ -19,8 +19,12 @@ interface NotificationLayoutProps {
 }
 
 const NotificationLayout: React.FC<NotificationLayoutProps> = ({
-  children, languageId, onMarkMessageRead, fetchUnreadMessages, interval = 60000 }) => {
-
+  children,
+  languageId,
+  onMarkMessageRead,
+  fetchUnreadMessages,
+  interval = 60000,
+}) => {
   const [notifApi, contextHolder] = notification.useNotification();
   const notifiedIdsRef = useRef<Set<number>>(new Set()); // 用于追踪已通知的ID
   const readIdsRef = useRef<Set<number>>(new Set()); // 用于追踪已标记为已读的 ID
@@ -37,12 +41,7 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({
     const key = content.id;
     const btn = (
       <Space>
-        <Button
-          style={{ boxShadow: "none" }}
-          type="primary"
-          size="small"
-          onClick={() => close(key)}
-        >
+        <Button style={{ boxShadow: "none" }} type="primary" size="small" onClick={() => close(key)}>
           {getCurrentLangLibWebText(languageId, "read")}
         </Button>
       </Space>
@@ -59,7 +58,6 @@ const NotificationLayout: React.FC<NotificationLayoutProps> = ({
 
   useEffect(() => {
     const fetchNotifications = async () => {
-
       const unreadMessages = await fetchUnreadMessages();
       if (unreadMessages) {
         for (const msg of unreadMessages.messages) {

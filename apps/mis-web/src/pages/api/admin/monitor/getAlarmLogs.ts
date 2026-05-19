@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { Static, Type } from "@sinclair/typebox";
 import dayjs from "dayjs";
@@ -21,10 +9,13 @@ import { DEFAULT_GRAFANA_URL } from "src/utils/constants";
 import { route } from "src/utils/route";
 
 interface GrafanaApiResponse {
-  results: Record<string, {
-    status: number;
-    frames: GrafanaFrame[];
-  }>;
+  results: Record<
+    string,
+    {
+      status: number;
+      frames: GrafanaFrame[];
+    }
+  >;
 }
 
 interface GrafanaFrame {
@@ -58,15 +49,17 @@ interface TransformedRow {
   endsAt: number | null;
 }
 
-const GetAlarmLogsResponse = Type.Array(Type.Object({
-  id: Type.Number(),
-  status: Type.String(),
-  severity: Type.String(),
-  fingerprint: Type.String(),
-  description: Type.String(),
-  startsAt: Type.Number(),
-  endsAt: Type.Union([Type.Number(), Type.Null()]),
-}));
+const GetAlarmLogsResponse = Type.Array(
+  Type.Object({
+    id: Type.Number(),
+    status: Type.String(),
+    severity: Type.String(),
+    fingerprint: Type.String(),
+    description: Type.String(),
+    startsAt: Type.Number(),
+    endsAt: Type.Union([Type.Number(), Type.Null()]),
+  }),
+);
 
 type GetAlarmLogsResponse = Static<typeof GetAlarmLogsResponse>;
 
@@ -118,47 +111,49 @@ export const GetAlarmLogsSchema = typeboxRouteSchema({
   },
 });
 
-const auth = authenticate((info) =>
-  info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default /* #__PURE__*/route(GetAlarmLogsSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(GetAlarmLogsSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const querySql =
-    "SELECT t2.* FROM"
-    + " (SELECT fingerprint, MAX(ID) AS tid, startsAt FROM Alert GROUP BY startsAt, fingerprint) AS t1"
-    + " INNER JOIN ("
-      + " SELECT a.ID AS id, a.fingerprint, a.status,"
-      + " a.startsAt, a.endsAt, aa.value AS description, al.Value AS severity"
-      + " FROM Alert AS a"
-      + " LEFT JOIN AlertAnnotation AS aa ON a.ID = aa.AlertID"
-      + " LEFT JOIN AlertLabel al ON a.ID = al.AlertID"
-      + " WHERE aa.Annotation = 'description' AND al.Label = 'severity'"
-        + ` AND a.startsAt BETWEEN '${dayjs(req.query.from).format("YYYY-MM-DD HH:mm:ss")}'`
-          + ` AND '${dayjs(req.query.to).format("YYYY-MM-DD HH:mm:ss")}'`
-        + (req.query.status !== "" ? ` AND a.status = '${req.query.status}'` : "")
-    + " ) AS t2 ON t1.tid = t2.id"
-    + ` LIMIT ${req.query.pageSize} OFFSET ${(req.query.page - 1) * req.query.pageSize};`;
+    "SELECT t2.* FROM" +
+    " (SELECT fingerprint, MAX(ID) AS tid, startsAt FROM Alert GROUP BY startsAt, fingerprint) AS t1" +
+    " INNER JOIN (" +
+    " SELECT a.ID AS id, a.fingerprint, a.status," +
+    " a.startsAt, a.endsAt, aa.value AS description, al.Value AS severity" +
+    " FROM Alert AS a" +
+    " LEFT JOIN AlertAnnotation AS aa ON a.ID = aa.AlertID" +
+    " LEFT JOIN AlertLabel al ON a.ID = al.AlertID" +
+    " WHERE aa.Annotation = 'description' AND al.Label = 'severity'" +
+    ` AND a.startsAt BETWEEN '${dayjs(req.query.from).format("YYYY-MM-DD HH:mm:ss")}'` +
+    ` AND '${dayjs(req.query.to).format("YYYY-MM-DD HH:mm:ss")}'` +
+    (req.query.status !== "" ? ` AND a.status = '${req.query.status}'` : "") +
+    " ) AS t2 ON t1.tid = t2.id" +
+    ` LIMIT ${req.query.pageSize} OFFSET ${(req.query.page - 1) * req.query.pageSize};`;
 
   // 发送请求
   const queryData = {
     from: req.query.from.toString(),
     to: req.query.to.toString(),
-    queries: [{
-      datasource: {
-        "type": req.query.type,
-        "uid": req.query.uid,
+    queries: [
+      {
+        datasource: {
+          type: req.query.type,
+          uid: req.query.uid,
+        },
+        datasourceId: req.query.id,
+        refId: "A",
+        intervalMs: 60000,
+        maxDataPoints: 681,
+        rawSql: querySql,
+        format: "table",
       },
-      datasourceId: req.query.id,
-      refId: "A",
-      intervalMs: 60000,
-      maxDataPoints: 681,
-      rawSql: querySql,
-      format: "table",
-    }],
+    ],
   };
 
   return await fetch(join(publicConfig.CLUSTER_MONITOR.grafanaUrl ?? DEFAULT_GRAFANA_URL, "/api/ds/query"), {
@@ -174,9 +169,11 @@ export default /* #__PURE__*/route(GetAlarmLogsSchema, async (req, res) => {
       if (!data?.results?.A || data.results.A.status !== 200) {
         return { 400: null };
       }
-      return { 200: {
-        results: transformGrafanaData(data),
-      } };
+      return {
+        200: {
+          results: transformGrafanaData(data),
+        },
+      };
     })
     .catch(() => ({ 500: null }));
 });

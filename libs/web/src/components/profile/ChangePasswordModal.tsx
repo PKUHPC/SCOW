@@ -21,10 +21,15 @@ interface FormInfo {
   newPassword: string;
 }
 
-
 export const ChangePasswordModal: React.FC<Props> = ({
-  open, onClose, publicConfig, languageId, api, userId,
-  passwordPatternMessage, aiChangePassword,
+  open,
+  onClose,
+  publicConfig,
+  languageId,
+  api,
+  userId,
+  passwordPatternMessage,
+  aiChangePassword,
 }) => {
   const [form] = Form.useForm<FormInfo>();
   const { message } = App.useApp();
@@ -46,11 +51,9 @@ export const ChangePasswordModal: React.FC<Props> = ({
       setLoading(false);
       if (e.data?.code === "BAD_REQUEST") {
         message.error(getCurrentLangLibWebText(languageId, "failMessage"));
-      }
-      else if (e.data?.code === "CONFLICT") {
+      } else if (e.data?.code === "CONFLICT") {
         message.error(getCurrentLangLibWebText(languageId, "errorMessage"));
-      }
-      else {
+      } else {
         message.error(getCurrentLangLibWebText(languageId, "failMessage"));
       }
     },
@@ -62,7 +65,8 @@ export const ChangePasswordModal: React.FC<Props> = ({
     if (aiChangePassword) {
       changePasswordMutation?.mutate({ identityId: userId, oldPassword, newPassword });
     } else {
-      api.checkPassword({ query: { password: oldPassword } })
+      api
+        .checkPassword({ query: { password: oldPassword } })
         .httpError(404, () => {
           message.error(getCurrentLangLibWebText(languageId, "userNotExist"));
         })
@@ -71,11 +75,12 @@ export const ChangePasswordModal: React.FC<Props> = ({
         })
         .then((result) => {
           if (result.success) {
-            return api.changePassword({ body: { newPassword } })
+            return api
+              .changePassword({ body: { newPassword } })
               .httpError(400, (e) => {
                 if (e.code === "PASSWORD_NOT_VALID") {
                   message.error(passwordPatternMessage);
-                };
+                }
               })
               .httpError(404, () => {
                 message.error(getCurrentLangLibWebText(languageId, "userNotExist"));
@@ -88,8 +93,7 @@ export const ChangePasswordModal: React.FC<Props> = ({
                 onClose();
                 message.success(getCurrentLangLibWebText(languageId, "successMessage"));
               });
-          }
-          else {
+          } else {
             message.error(getCurrentLangLibWebText(languageId, "errorMessage"));
           }
         })
@@ -112,8 +116,7 @@ export const ChangePasswordModal: React.FC<Props> = ({
         form={form}
         onFinish={onFinish}
         wrapperCol={{ span: 20 }}
-        labelCol={{ span:4, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
-
+        labelCol={{ span: 4, style: { whiteSpace: "normal", textAlign: "left", lineHeight: "16px" } }}
       >
         <Form.Item
           rules={[{ required: true }]}
@@ -141,5 +144,3 @@ export const ChangePasswordModal: React.FC<Props> = ({
     </Modal>
   );
 };
-
-

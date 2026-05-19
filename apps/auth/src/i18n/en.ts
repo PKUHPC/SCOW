@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 export default {
   login: {
     login: "Log In",
@@ -29,7 +17,7 @@ export default {
     invalidPassword: "Password is invalid, please re-enter",
     invalidOtp: "Invalid OTP Verification Code, please re-enter.",
     bindOtp: "Bind OTP",
-    platformSystem : "Computing Power Platform System",
+    platformSystem: "Computing Power Platform System",
   },
   bindOtp: {
     bindOtp: "Bind OTP",
@@ -65,7 +53,8 @@ export default {
       "password must contain letters, numbers, and symbols, with a length greater than or equal to 8 digits",
     invalidUserNamePassword: "Invalid username/password. Please check.",
     submitting: "submitting",
-    forcePasswordChange: "This account is logging in for the first time or has had its password reset by the system." +
+    forcePasswordChange:
+      "This account is logging in for the first time or has had its password reset by the system." +
       "Please change the initial password before using it",
   },
 };

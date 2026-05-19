@@ -69,13 +69,18 @@ const auth = authenticate(() => true);
 export default route(GetAllSummaryClustersInfoSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const reply = await libWebGetUserInfo(
-    info.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+    info.identityId,
+    publicConfig.MIS_SERVER_URL,
+    runtimeConfig.SCOW_API_AUTH_TOKEN,
+  );
 
-  const accountNames = reply?.affiliations.filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
-    .map((a) => (a.accountName)) || [];
+  const accountNames =
+    reply?.affiliations.filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED).map((a) => a.accountName) || [];
 
   const { clusterIds, isFullDisplayMode } = req.query;
 
@@ -108,9 +113,7 @@ export default route(GetAllSummaryClustersInfoSchema, async (req, res) => {
   const allResults = await Promise.allSettled(clusterInfoPromises);
 
   const results = allResults
-    .filter((result): result is PromiseFulfilledResult<SummaryClusterInfo> =>
-      result.status === "fulfilled",
-    )
+    .filter((result): result is PromiseFulfilledResult<SummaryClusterInfo> => result.status === "fulfilled")
     .map((result) => result.value);
 
   const errors = allResults
@@ -121,8 +124,10 @@ export default route(GetAllSummaryClustersInfoSchema, async (req, res) => {
     }));
 
   errors.forEach(({ clusterId, error }) => {
-    console.error(`Failed to get cluster info for ${clusterId}:`,
-      error instanceof Error ? error.message : "Unknown error");
+    console.error(
+      `Failed to get cluster info for ${clusterId}:`,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   });
 
   return { 200: { results } };

@@ -25,7 +25,6 @@ export default function Page() {
       passwordPatternMessage={t(p("newPwPlaceholder"))}
       aiChangePassword={trpc.auth.changePassword}
       aiChangeEmail={trpc.auth.changeEmail}
-    >
-    </Profile>
+    ></Profile>
   );
 }

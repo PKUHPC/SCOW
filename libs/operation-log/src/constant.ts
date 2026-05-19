@@ -3,13 +3,13 @@ export enum OperationResult {
   UNKNOWN = 0,
   SUCCESS = 1,
   FAIL = 2,
-};
+}
 
 type ExtractCases<T> = T extends { $case: infer U } ? U : never;
 
 export type OperationType = ExtractCases<OperationLog["operationEvent"]>;
 
-export type OperationTypeEnum = {[K in OperationType]: K };
+export type OperationTypeEnum = { [K in OperationType]: K };
 
 export const OperationType: OperationTypeEnum = {
   login: "login",
@@ -34,7 +34,7 @@ export const OperationType: OperationTypeEnum = {
   copyFileItem: "copyFileItem",
   setJobTimeLimit: "setJobTimeLimit",
   createUser: "createUser",
-  deleteUser:"deleteUser",
+  deleteUser: "deleteUser",
   addUserToAccount: "addUserToAccount",
   removeUserFromAccount: "removeUserFromAccount",
   setAccountAdmin: "setAccountAdmin",
@@ -50,7 +50,7 @@ export const OperationType: OperationTypeEnum = {
   unsetTenantFinance: "unsetTenantFinance",
   tenantChangePassword: "tenantChangePassword",
   createAccount: "createAccount",
-  deleteAccount:"deleteAccount",
+  deleteAccount: "deleteAccount",
   addAccountToWhitelist: "addAccountToWhitelist",
   removeAccountFromWhitelist: "removeAccountFromWhitelist",
   accountPay: "accountPay",
@@ -116,7 +116,7 @@ export const OperationType: OperationTypeEnum = {
   editUserProfile: "editUserProfile",
   changePassword: "changePassword",
   changeEmail: "changeEmail",
-  createAiInferenceJob:"createAiInferenceJob",
+  createAiInferenceJob: "createAiInferenceJob",
   decompressFile: "decompressFile",
   compressFiles: "compressFiles",
   unlockUser: "unlockUser",
@@ -124,8 +124,8 @@ export const OperationType: OperationTypeEnum = {
   setTenantUserQuota: "setTenantUserQuota",
   authorizeApp: "authorizeApp",
   unauthorizeApp: "unauthorizeApp",
-  migrateNode:"migrateNode",
-  activateNode:"activateNode",
+  migrateNode: "migrateNode",
+  activateNode: "activateNode",
   addToDefaultApps: "addToDefaultApps",
   removeFromDefaultApps: "removeFromDefaultApps",
   batchSetTenantUsersQuota: "batchSetTenantUsersQuota",

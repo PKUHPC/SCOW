@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Entity, Index, PrimaryKey, Property } from "@mikro-orm/core";
 import { Decimal } from "@scow/lib-decimal";
 import { JobInfo as ClusterJobInfo } from "@scow/scheduler-adapter-protos/build/job";
@@ -18,13 +6,12 @@ import { DECIMAL_DEFAULT_RAW, DecimalType } from "src/utils/decimal";
 const UNKNOWN_PRICE_ITEM = "UNKNOWN";
 
 export interface JobPriceInfo {
-  tenant: { billingItemId: string; price: Decimal; } | undefined;
-  account: { billingItemId: string; price: Decimal; } | undefined;
+  tenant: { billingItemId: string; price: Decimal } | undefined;
+  account: { billingItemId: string; price: Decimal } | undefined;
 }
 
 @Entity()
 export class JobInfo {
-
   @PrimaryKey()
   biJobIndex!: number;
 
@@ -115,12 +102,7 @@ export class JobInfo {
   @Property({ type: DecimalType, defaultRaw: DECIMAL_DEFAULT_RAW })
   accountPrice: Decimal = new Decimal(0);
 
-
-  constructor(
-    job: { cluster: string } & ClusterJobInfo,
-    tenant: string | undefined,
-    jobPriceInfo: JobPriceInfo,
-  ) {
+  constructor(job: { cluster: string } & ClusterJobInfo, tenant: string | undefined, jobPriceInfo: JobPriceInfo) {
     this.idJob = job.jobId;
 
     this.account = job.account;
@@ -140,8 +122,9 @@ export class JobInfo {
     this.nodesAlloc = job.nodesAlloc!;
     this.timelimit = job.timeLimitMinutes;
     this.timeUsed = job.elapsedSeconds!;
-    this.timeWait = job.startTime ? ((new Date(job.startTime)).getTime() - (new Date(job.submitTime!)).getTime()) / 1000
-      : ((new Date(job.endTime!)).getTime() - (new Date(job.submitTime!)).getTime()) / 1000;
+    this.timeWait = job.startTime
+      ? (new Date(job.startTime).getTime() - new Date(job.submitTime!).getTime()) / 1000
+      : (new Date(job.endTime!).getTime() - new Date(job.submitTime!).getTime()) / 1000;
     this.qos = job.qos;
 
     this.tenantPrice = jobPriceInfo.tenant?.price ?? new Decimal(0);

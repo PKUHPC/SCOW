@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -17,11 +5,18 @@ import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded } from "@mikro-orm/core";
 import { createUser } from "@scow/lib-auth";
 import { dayjsToDateMessage } from "@scow/lib-server/build/date";
-import { AccountUserInfo_DisplayedUserState as DisplayedUserState,
+import {
+  AccountUserInfo_DisplayedUserState as DisplayedUserState,
   AccountUserInfo_UserStateInAccount as UserStateInAccount,
-  GetAllUsersRequest_UsersSortField, PlatformRole, platformRoleFromJSON,
-  SortDirection, TenantRole, UserRole as UserRoleProtoType, UserServiceClient,
-  UserStatus as UserStatusProtoType } from "@scow/protos/build/server/user";
+  GetAllUsersRequest_UsersSortField,
+  PlatformRole,
+  platformRoleFromJSON,
+  SortDirection,
+  TenantRole,
+  UserRole as UserRoleProtoType,
+  UserServiceClient,
+  UserStatus as UserStatusProtoType,
+} from "@scow/protos/build/server/user";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { createServer } from "src/app";
@@ -56,7 +51,6 @@ beforeEach(async () => {
   await server.ext.orm.em.fork().persistAndFlush(tenant);
 
   client = new UserServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 });
 
 afterEach(async () => {
@@ -65,13 +59,11 @@ afterEach(async () => {
 });
 
 it("creates user", async () => {
-
   const name = "123";
   const userId = "2";
   const email = "test@test.com";
 
-  await asyncClientCall(client, "createUser",
-    { name, identityId: userId, email, tenantName: tenant.name, password });
+  await asyncClientCall(client, "createUser", { name, identityId: userId, email, tenantName: tenant.name, password });
 
   const em = server.ext.orm.em.fork();
 
@@ -94,20 +86,17 @@ it("creates user", async () => {
 });
 
 it("add user only in database", async () => {
-
   const name = "123";
   const userId = "2";
   const email = "test@test.com";
 
-  await asyncClientCall(client, "addUser",
-    { name, identityId: userId, email, tenantName: tenant.name });
+  await asyncClientCall(client, "addUser", { name, identityId: userId, email, tenantName: tenant.name });
 
   const em = server.ext.orm.em.fork();
 
   const user = await em.findOneOrFail(User, { userId });
 
   expect(user.name).toBe(name);
-
 });
 
 it("cannot create user if userId exists", async () => {
@@ -119,7 +108,11 @@ it("cannot create user if userId exists", async () => {
   await server.ext.orm.em.fork().persistAndFlush(user);
 
   const reply = await asyncClientCall(client, "createUser", {
-    name, identityId: userId, email, tenantName: tenant.name, password,
+    name,
+    identityId: userId,
+    email,
+    tenantName: tenant.name,
+    password,
   }).catch((e) => e);
   expect(reply.code).toBe(Status.ALREADY_EXISTS);
 });
@@ -158,7 +151,7 @@ it("when removing a user from an account, the account and user cannot be deleted
     accountName: "account_remove",
     comment: "",
     blockedInCluster: false,
-    tenant:data.tenant,
+    tenant: data.tenant,
   }) as Loaded<Account, "tenant">;
 
   const uaA = new UserAccount({
@@ -184,8 +177,8 @@ it("when removing a user from an account, the account and user cannot be deleted
     userIds: [],
   });
 
-  const accountA = await em.findOneOrFail(Account, { id:account.id });
-  const userB = await em.findOneOrFail(User, { id:data.userB.id });
+  const accountA = await em.findOneOrFail(Account, { id: account.id });
+  const userB = await em.findOneOrFail(User, { id: data.userB.id });
 
   expect(accountA).toBeTruthy();
   expect(userB).toBeTruthy();
@@ -242,7 +235,6 @@ it("deletes user", async () => {
   expect(finalUserCount).toBe(2);
 });
 
-
 it("cannot delete owner", async () => {
   const data = await insertInitialData(server.ext.orm.em.fork());
 
@@ -284,14 +276,16 @@ it("get all users", async () => {
   });
 
   expect(users.totalCount).toBe(3);
-  expect(users.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userA.userId,
       name: data.userA.name,
@@ -325,35 +319,41 @@ it("get all users with idOrName", async () => {
 
   // insert a user for fuzzy search in ids
   const user = new User({
-    name: "test", userId: "aa", email: "test@test.com",
+    name: "test",
+    userId: "aa",
+    email: "test@test.com",
     tenant: data.tenant,
   });
-  data.accountA.users.add(new UserAccount({
-    user,
-    account: data.accountA,
-    role: UserRole.USER,
-    blockedInCluster: UserStatus.BLOCKED,
-  }));
+  data.accountA.users.add(
+    new UserAccount({
+      user,
+      account: data.accountA,
+      role: UserRole.USER,
+      blockedInCluster: UserStatus.BLOCKED,
+    }),
+  );
 
   await em.persistAndFlush([user]);
   em.clear();
 
   // with id
   const users1 = await asyncClientCall(client, "getAllUsers", {
-    page:1,
-    pageSize:10,
+    page: 1,
+    pageSize: 10,
     idOrName: "c",
   });
 
   expect(users1.totalCount).toBe(1);
-  expect(users1.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users1.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userC.userId,
       name: data.userC.name,
@@ -366,20 +366,22 @@ it("get all users with idOrName", async () => {
 
   // with name
   const users2 = await asyncClientCall(client, "getAllUsers", {
-    page:1,
-    pageSize:10,
+    page: 1,
+    pageSize: 10,
     idOrName: "BName",
   });
 
   expect(users2.totalCount).toBe(1);
-  expect(users2.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users2.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userB.userId,
       name: data.userB.name,
@@ -392,20 +394,22 @@ it("get all users with idOrName", async () => {
 
   // with id Or name
   const users3 = await asyncClientCall(client, "getAllUsers", {
-    page:1,
-    pageSize:10,
+    page: 1,
+    pageSize: 10,
     idOrName: "A",
   });
 
   expect(users3.totalCount).toBe(4);
-  expect(users3.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users3.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userA.userId,
       name: data.userA.name,
@@ -452,14 +456,16 @@ it("get all users with sorter", async () => {
   });
 
   expect(users.totalCount).toBe(3);
-  expect(users.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userC.userId,
       name: data.userC.name,
@@ -503,14 +509,16 @@ it("get all users with platform role", async () => {
   });
 
   expect(users.totalCount).toBe(1);
-  expect(users.platformUsers.map((x) => ({
-    userId: x.userId,
-    name: x.name,
-    availableAccounts: x.availableAccounts,
-    tenantName: x.tenantName,
-    createTime: x.createTime,
-    platformRoles: x.platformRoles,
-  }))).toIncludeSameMembers([
+  expect(
+    users.platformUsers.map((x) => ({
+      userId: x.userId,
+      name: x.name,
+      availableAccounts: x.availableAccounts,
+      tenantName: x.tenantName,
+      createTime: x.createTime,
+      platformRoles: x.platformRoles,
+    })),
+  ).toIncludeSameMembers([
     {
       userId: data.userA.userId,
       name: data.userA.name,
@@ -572,7 +580,6 @@ it("manage tenant role", async () => {
 });
 
 it("get platform role users Count", async () => {
-
   const em = server.ext.orm.em.fork();
   const data = await insertInitialData(em);
 
@@ -585,8 +592,7 @@ it("get platform role users Count", async () => {
     roleType: PlatformRole.PLATFORM_FINANCE,
   });
 
-  const counts = await asyncClientCall(client, "getPlatformUsersCounts", {
-  });
+  const counts = await asyncClientCall(client, "getPlatformUsersCounts", {});
 
   expect(counts.totalCount).toBe(3);
   expect(counts.totalAdminCount).toBe(1);
@@ -604,7 +610,7 @@ it("change user email", async () => {
 
   await asyncClientCall(client, "changeEmail", {
     userId: "test",
-    newEmail:newEmail,
+    newEmail: newEmail,
   });
   const em = server.ext.orm.em.fork();
 
@@ -617,49 +623,53 @@ it("change an inexistent user email", async () => {
 
   const reply = await asyncClientCall(client, "changeEmail", {
     userId: "test",
-    newEmail:newEmail,
+    newEmail: newEmail,
   }).catch((e) => e);
 
   expect(reply.code).toBe(Status.NOT_FOUND);
 });
 
 it("get new user count in UTC+8 timezone", async () => {
-
   const em = server.ext.orm.em.fork();
   const today = dayjs();
   const yesterday = today.clone().subtract(1, "day");
   const twoDaysBefore = today.clone().subtract(2, "day");
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
-  const todayNewUsers = range(0, 30).map((i) => new User({
-    name: `user0${i}`,
-    userId: `user0${i}`,
-    email: `user0${i}@gmail.com`,
-    tenant,
-    createTime: today.toDate(),
-  }));
+  const todayNewUsers = range(0, 30).map(
+    (i) =>
+      new User({
+        name: `user0${i}`,
+        userId: `user0${i}`,
+        email: `user0${i}@gmail.com`,
+        tenant,
+        createTime: today.toDate(),
+      }),
+  );
 
-  const yesterdayNewUsers = range(0, 20).map((i) => new User({
-    name: `user1${i}`,
-    userId: `user1${i}`,
-    email: `user1${i}@gmail.com`,
-    tenant,
-    createTime: yesterday.toDate(),
-  }));
+  const yesterdayNewUsers = range(0, 20).map(
+    (i) =>
+      new User({
+        name: `user1${i}`,
+        userId: `user1${i}`,
+        email: `user1${i}@gmail.com`,
+        tenant,
+        createTime: yesterday.toDate(),
+      }),
+  );
 
-  const twoDaysBeforeNewUsers = range(0, 10).map((i) => new User({
-    name: `user2${i}`,
-    userId: `user2${i}`,
-    email: `user2${i}@gmail.com`,
-    tenant,
-    createTime: twoDaysBefore.toDate(),
-  }));
+  const twoDaysBeforeNewUsers = range(0, 10).map(
+    (i) =>
+      new User({
+        name: `user2${i}`,
+        userId: `user2${i}`,
+        email: `user2${i}@gmail.com`,
+        tenant,
+        createTime: twoDaysBefore.toDate(),
+      }),
+  );
 
-  await em.persistAndFlush([
-    ...todayNewUsers,
-    ...yesterdayNewUsers,
-    ...twoDaysBeforeNewUsers,
-  ]);
+  await em.persistAndFlush([...todayNewUsers, ...yesterdayNewUsers, ...twoDaysBeforeNewUsers]);
 
   const info = await asyncClientCall(client, "getNewUserCount", {
     startTime: twoDaysBefore.startOf("day").toISOString(),
@@ -675,10 +685,9 @@ it("get new user count in UTC+8 timezone", async () => {
 
   expect(info.results).toMatchObject([
     { date: dayjsToDateMessage(todyInUtcPlus8), count: 30 },
-    { date:dayjsToDateMessage(yesterdayInUtcPlus8), count: 20 },
-    { date:dayjsToDateMessage(twoDaysBeforeInUtcPlus8), count: 10 },
+    { date: dayjsToDateMessage(yesterdayInUtcPlus8), count: 20 },
+    { date: dayjsToDateMessage(twoDaysBeforeInUtcPlus8), count: 10 },
   ]);
-
 });
 
 it("get account users", async () => {

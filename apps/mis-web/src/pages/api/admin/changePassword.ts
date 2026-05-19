@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { changePassword as libChangePassword, getCapabilities } from "@scow/lib-auth";
 import { OperationType } from "@scow/lib-operation-log";
@@ -25,7 +13,6 @@ import { parseIp } from "src/utils/server";
 // 此API用于账户管理员修改其他任意用户的密码。
 // 没有权限返回undefined
 export const ChangePasswordAsPlatformAdminSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -56,50 +43,51 @@ export const ChangePasswordAsPlatformAdminSchema = typeboxRouteSchema({
   },
 });
 
+export default /* #__PURE__*/ route(ChangePasswordAsPlatformAdminSchema, async (req, res) => {
+  if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
+    return { 501: null };
+  }
 
-export default /* #__PURE__*/route(
-  ChangePasswordAsPlatformAdminSchema, async (req, res) => {
+  const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
+  if (!ldapCapabilities.changePassword) {
+    return { 501: null };
+  }
 
-    if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
-      return { 501: null };
-    }
+  const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-    const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
-    if (!ldapCapabilities.changePassword) {
-      return { 501: null };
-    }
+  const info = await auth(req, res);
 
-    const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
+  const { identityId, newPassword } = req.body;
 
-    if (!info) { return; }
-
-    const { identityId, newPassword } = req.body;
-
-    const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
-    if (passwordPattern && !passwordPattern.test(newPassword)) {
-      return { 400: {
+  const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
+  if (passwordPattern && !passwordPattern.test(newPassword)) {
+    return {
+      400: {
         code: "PASSWORD_NOT_VALID" as const,
-      } };
-    }
-
-    const logInfo = {
-      operatorUserId: info.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.platformChangePassword,
-      operationTypePayload:{
-        userId: identityId,
       },
     };
+  }
 
-    return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, { identityId, newPassword }, console)
-      .then(async () => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return { 204: null };
-      })
-      .catch(async (e) => {
-        await callLog(logInfo, OperationResult.FAIL);
-        return { [e.status]: null };
-      });
-  });
+  const logInfo = {
+    operatorUserId: info.identityId,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.platformChangePassword,
+    operationTypePayload: {
+      userId: identityId,
+    },
+  };
+
+  return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, { identityId, newPassword }, console)
+    .then(async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    })
+    .catch(async (e) => {
+      await callLog(logInfo, OperationResult.FAIL);
+      return { [e.status]: null };
+    });
+});

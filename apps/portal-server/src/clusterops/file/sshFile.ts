@@ -1,7 +1,18 @@
 import { createWriterExtensions } from "@ddadaal/tsgrpc-common";
 import { ServiceError, status } from "@grpc/grpc-js";
-import { loggedExec, sftpExists, sftpLstat, sftpMkdir, sftpReaddir,
-  sftpRealPath, sftpRename, sftpStat, sftpUnlink, sftpWriteFile, sshRmrf } from "@scow/lib-ssh";
+import {
+  loggedExec,
+  sftpExists,
+  sftpLstat,
+  sftpMkdir,
+  sftpReaddir,
+  sftpRealPath,
+  sftpRename,
+  sftpStat,
+  sftpUnlink,
+  sftpWriteFile,
+  sshRmrf,
+} from "@scow/lib-ssh";
 import { FileInfo, FileType as protoFileType } from "@scow/protos/build/portal/file";
 import { join } from "path";
 import { FileOps, FileType, TransferInfo } from "src/clusterops/api/file";
@@ -29,11 +40,9 @@ export const sshFileServices = (host: string): FileOps => ({
   },
 
   createFile: async (request, logger) => {
-
     const { userId, path } = request;
 
     return await sshConnect(host, userId, logger, async (ssh) => {
-
       const sftp = await ssh.requestSFTP();
 
       if (await sftpExists(sftp, path)) {
@@ -50,7 +59,6 @@ export const sshFileServices = (host: string): FileOps => ({
     const { userId, path } = request;
 
     return await sshConnect(host, userId, logger, async (ssh) => {
-
       await sshRmrf(ssh, path);
 
       return {};
@@ -58,11 +66,9 @@ export const sshFileServices = (host: string): FileOps => ({
   },
 
   deleteFile: async (request, logger) => {
-
     const { userId, path } = request;
 
     return await sshConnect(host, userId, logger, async (ssh) => {
-
       const sftp = await ssh.requestSFTP();
 
       await sftpUnlink(sftp)(path);
@@ -87,7 +93,6 @@ export const sshFileServices = (host: string): FileOps => ({
     const { userId, path } = request;
 
     return await sshConnect(host, userId, logger, async (ssh) => {
-
       const sftp = await ssh.requestSFTP();
 
       if (await sftpExists(sftp, path)) {
@@ -98,7 +103,6 @@ export const sshFileServices = (host: string): FileOps => ({
 
       return {};
     });
-
   },
 
   move: async (request, logger) => {
@@ -124,14 +128,16 @@ export const sshFileServices = (host: string): FileOps => ({
       const stat = await sftpStat(sftp)(path).catch((e) => {
         logger.error(e, "stat %s as %s failed", path, userId);
         throw {
-          code: status.PERMISSION_DENIED, message: `${path} is not accessible`,
+          code: status.PERMISSION_DENIED,
+          message: `${path} is not accessible`,
         } as ServiceError;
       });
 
       if (!stat.isDirectory()) {
         throw {
           code: status.INVALID_ARGUMENT,
-          message: `${path} is not directory or not exists` } as ServiceError;
+          message: `${path} is not directory or not exists`,
+        } as ServiceError;
       }
 
       const files = await sftpReaddir(sftp)(path);
@@ -141,7 +147,6 @@ export const sshFileServices = (host: string): FileOps => ({
       const pureFiles = files.filter((file) => !file.longname.startsWith("d"));
 
       if (pureFiles.length > 0 && updateAccessTime) {
-
         // 避免目录下文件过多导致 touch -a 命令报错，采用分批异步执行的方式
         // 一次执行 500 个文件是根据经验设置的安全值，可修改
         // 根据一般系统 getconf ARG_MAX 的值为 2097152 字节，linux 下带有文件路径的文件名最长 4096 字节 设置安全值为500
@@ -154,16 +159,16 @@ export const sshFileServices = (host: string): FileOps => ({
           execFilePathsList.push(slicedExecFilesPaths);
         }
 
-        await Promise.allSettled(execFilePathsList.map(async (execFilePaths) => {
-          return loggedExec(ssh, logger, false, "touch -a", execFilePaths).catch((err) => {
-            logger.error(err, "touch -a %s failed as %s", execFilePaths, userId);
-          });
-        }));
-
+        await Promise.allSettled(
+          execFilePathsList.map(async (execFilePaths) => {
+            return loggedExec(ssh, logger, false, "touch -a", execFilePaths).catch((err) => {
+              logger.error(err, "touch -a %s failed as %s", execFilePaths, userId);
+            });
+          }),
+        );
       }
 
       for (const file of files) {
-
         const isDir = file.longname.startsWith("d");
 
         list.push({
@@ -189,7 +194,6 @@ export const sshFileServices = (host: string): FileOps => ({
       // we don't want to forwards error
       // because the error has code property, conflicting with gRPC'S ServiceError
       try {
-
         await pipeline(
           readStream,
           async (chunk) => {
@@ -243,10 +247,7 @@ export const sshFileServices = (host: string): FileOps => ({
 
         for await (const req of call.iter()) {
           if (!req.message) {
-            throw new RequestError(
-              status.INVALID_ARGUMENT,
-              "Request is received but message is undefined",
-            );
+            throw new RequestError(status.INVALID_ARGUMENT, "Request is received but message is undefined");
           }
 
           if (req.message.$case !== "chunk") {
@@ -273,11 +274,7 @@ export const sshFileServices = (host: string): FileOps => ({
         if (e instanceof RequestError) {
           throw e.toServiceError();
         } else {
-          throw new RequestError(
-            status.INTERNAL,
-            "Error when writing file",
-            e.message,
-          ).toServiceError();
+          throw new RequestError(status.INTERNAL, "Error when writing file", e.message).toServiceError();
         }
       }
     });
@@ -353,32 +350,36 @@ export const sshFileServices = (host: string): FileOps => ({
       const stat = await sftpStat(sftp)(path).catch((e) => {
         logger.error(e, "stat %s as %s failed", path, userId);
         throw {
-          code: status.PERMISSION_DENIED, message: `${path} is not accessible`,
+          code: status.PERMISSION_DENIED,
+          message: `${path} is not accessible`,
         } as ServiceError;
       });
 
       const lstat = await sftpLstat(sftp)(path).catch(() => undefined);
       const isSymlink = !!(lstat && typeof lstat.isSymbolicLink === "function" && lstat.isSymbolicLink());
 
-      const linkTargetPath = isSymlink
-        ? await sftpRealPath(sftp)(path).catch(() => undefined)
-        : undefined;
+      const linkTargetPath = isSymlink ? await sftpRealPath(sftp)(path).catch(() => undefined) : undefined;
 
-      const targetLstat = linkTargetPath
-        ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined)
-        : undefined;
+      const targetLstat = linkTargetPath ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
 
-      const targetStat = linkTargetPath &&
-        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()) ?
-        await sftpStat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
+      const targetStat =
+        linkTargetPath &&
+        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink())
+          ? await sftpStat(sftp)(linkTargetPath).catch(() => undefined)
+          : undefined;
 
-      const linkTargetType = targetLstat && typeof targetLstat.isSymbolicLink === "function" &&
-      targetLstat.isSymbolicLink() ?
-        FileType.SYMLINK : (targetStat ? (targetStat.isDirectory() ? FileType.DIR : FileType.FILE) : undefined);
+      const linkTargetType =
+        targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()
+          ? FileType.SYMLINK
+          : targetStat
+            ? targetStat.isDirectory()
+              ? FileType.DIR
+              : FileType.FILE
+            : undefined;
 
       return {
         size: stat.size,
-        type: isSymlink ? FileType.SYMLINK : (stat.isDirectory() ? FileType.DIR : FileType.FILE),
+        type: isSymlink ? FileType.SYMLINK : stat.isDirectory() ? FileType.DIR : FileType.FILE,
         isSymlink,
         linkTargetPath,
         linkTargetType,
@@ -397,14 +398,10 @@ export const sshFileServices = (host: string): FileOps => ({
   },
 
   startFileTransfer: async (request, logger) => {
-
     const { fromCluster, toCluster, userId, fromPath, toPath } = request;
 
     const fromTransferNodeAddress = getClusterTransferNode(fromCluster).address;
-    const {
-      host: toTransferNodeHost,
-      port: toTransferNodePort,
-    } = getClusterTransferNode(toCluster);
+    const { host: toTransferNodeHost, port: toTransferNodePort } = getClusterTransferNode(toCluster);
 
     // 执行scow-sync-start
     return await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
@@ -415,13 +412,20 @@ export const sshFileServices = (host: string): FileOps => ({
 
       const cmd = "scow-sync-start";
       const args = [
-        "-a", toTransferNodeHost,
-        "-u", userId,
-        "-s", fromPath,
-        "-d", toPath,
-        "-m", "2",
-        "-p", toTransferNodePort.toString(),
-        "-k", privateKeyPath,
+        "-a",
+        toTransferNodeHost,
+        "-u",
+        userId,
+        "-s",
+        fromPath,
+        "-d",
+        toPath,
+        "-m",
+        "2",
+        "-p",
+        toTransferNodePort.toString(),
+        "-k",
+        privateKeyPath,
       ];
 
       const resp = await loggedExec(ssh, logger, true, cmd, args);
@@ -437,7 +441,6 @@ export const sshFileServices = (host: string): FileOps => ({
   },
 
   queryFileTransfer: async (request, logger) => {
-
     const { cluster, userId } = request;
 
     const transferNodeAddress = getClusterTransferNode(cluster).address;
@@ -455,12 +458,12 @@ export const sshFileServices = (host: string): FileOps => ({
       }
 
       interface TransferInfosJson {
-        recvAddress: string,
-        filePath: string,
-        transferSize: string,
-        progress: string,
-        speed: string,
-        leftTime: string
+        recvAddress: string;
+        filePath: string;
+        transferSize: string;
+        progress: string;
+        speed: string;
+        leftTime: string;
       }
 
       // 解析scow-sync-query返回的json数组
@@ -478,8 +481,7 @@ export const sshFileServices = (host: string): FileOps => ({
             if (clusterHost === info.recvAddress) {
               toCluster = key;
             }
-          }
-          else {
+          } else {
             continue;
           }
         }
@@ -517,7 +519,7 @@ export const sshFileServices = (host: string): FileOps => ({
         });
       });
 
-      return { transferInfos:transferInfos };
+      return { transferInfos: transferInfos };
     });
   },
 
@@ -528,13 +530,8 @@ export const sshFileServices = (host: string): FileOps => ({
     const toTransferNodeHost = getClusterTransferNode(toCluster).host;
 
     return await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
-
       const cmd = "scow-sync-terminate";
-      const args = [
-        "-a", toTransferNodeHost,
-        "-u", userId,
-        "-s", fromPath,
-      ];
+      const args = ["-a", toTransferNodeHost, "-u", userId, "-s", fromPath];
 
       const resp = await loggedExec(ssh, logger, true, cmd, args);
 

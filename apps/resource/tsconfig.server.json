@@ -1,15 +1,11 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-      "outDir": "build",
-      "noEmit": false,
-      "paths": {
-        "src/*": [
-          "src/*"
-        ],
-        "server/*": [
-          "server/*"
-        ]
-      },
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "build",
+    "noEmit": false,
+    "paths": {
+      "src/*": ["src/*"],
+      "server/*": ["server/*"]
     }
   }
+}

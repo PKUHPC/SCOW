@@ -1,23 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { parseTime } from "@scow/lib-web/build/utils/datetime";
 import type { RunningJob } from "@scow/protos/build/common/job";
-import dayjs from "dayjs";
 import type { Cluster } from "src/utils/cluster";
 
+import { parseTime } from "@scow/lib-web/build/utils/datetime";
+import dayjs from "dayjs";
 
-export type RunningJobInfo = RunningJob
-& { cluster: Cluster; runningOrQueueTime: string, elapsed?: string; submitTime: string; };
+export type RunningJobInfo = RunningJob & {
+  cluster: Cluster;
+  runningOrQueueTime: string;
+  elapsed?: string;
+  submitTime: string;
+};
 
 export const RunningJobInfo = {
   fromGrpc: (info: RunningJob, cluster: Cluster): RunningJobInfo => ({
@@ -48,8 +40,12 @@ export function runningJobId(r: RunningJobInfo) {
 
 export function compareState(a: string, b: string): -1 | 0 | 1 {
   const endState = "ENDED";
-  if (a === b || (a !== endState && b !== endState)) { return 0; }
-  if (a === endState) { return -1; }
+  if (a === b || (a !== endState && b !== endState)) {
+    return 0;
+  }
+  if (a === endState) {
+    return -1;
+  }
   return 1;
 }
 
@@ -86,14 +82,13 @@ export enum AccountStatusFilter {
   ALL = 0,
   BLOCKED_ONLY = 1,
   UNBLOCKED_ONLY = 2,
-};
+}
 
 export enum TimeUnit {
   MINUTES = 0,
   HOURS = 1,
   DAYS = 2,
 }
-
 
 export enum ReservedAppAttributeName {
   APP_JOB_NAME = "APP_JOB_NAME",

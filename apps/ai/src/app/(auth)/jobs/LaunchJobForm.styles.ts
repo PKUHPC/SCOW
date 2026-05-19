@@ -1,7 +1,6 @@
 import { Avatar, Segmented, Typography } from "antd";
 import styled from "styled-components";
 
-
 export const HeaderAvatar = styled(Avatar)`
   background-color: rgba(240, 240, 240, 1) !important;
 `;
@@ -62,4 +61,3 @@ export const ImageDescriptionBox = styled.div`
 export const AllocationLine = styled(Typography.Text)`
   display: block;
 `;
-

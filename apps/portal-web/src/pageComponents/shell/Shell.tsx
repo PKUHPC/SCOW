@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { debounce } from "@scow/lib-web/build/utils/debounce";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
@@ -30,7 +18,7 @@ const TerminalContainer = styled.div`
 interface Props {
   userId: string;
   cluster: string;
-  loginNode: string
+  loginNode: string;
   path: string;
   useRootEnabled: boolean;
 }
@@ -43,7 +31,6 @@ const EDIT_FILE_SUFFIX = " in directory ";
 const UPLOAD_FILE_PREFIX = "SCOW is uploading files in directory ";
 
 const processShellOutput = (dataString: string) => {
-
   const result = dataString.trim().split("\r\n")[0];
 
   const pathStartIndex = result.search("/");
@@ -52,9 +39,7 @@ const processShellOutput = (dataString: string) => {
   return { result, path };
 };
 
-
 export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRootEnabled }) => {
-
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -78,12 +63,16 @@ export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRo
 
       term.write(
         `\r\n*** Connecting to cluster ${payload.cluster} as ${userId} to ` +
-        `${path ? "path " + path : "home path"} ***\r\n`,
+          `${path ? "path " + path : "home path"} ***\r\n`,
       );
 
       const socket = new WebSocket(
-        (location.protocol === "http:" ? "ws" : "wss") + "://" + location.host +
-        join(publicConfig.BASE_PATH, "/api/shell") + "?" + new URLSearchParams(payload).toString(),
+        (location.protocol === "http:" ? "ws" : "wss") +
+          "://" +
+          location.host +
+          join(publicConfig.BASE_PATH, "/api/shell") +
+          "?" +
+          new URLSearchParams(payload).toString(),
       );
 
       socket.onopen = () => {
@@ -93,10 +82,12 @@ export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRo
           socket.send(JSON.stringify(data));
         };
 
-        const resizeObserver = new ResizeObserver(debounce(() => {
-          fitAddon.fit();
-          send({ $case: "resize", resize: { cols: term.cols, rows: term.rows } });
-        }));
+        const resizeObserver = new ResizeObserver(
+          debounce(() => {
+            fitAddon.fit();
+            send({ $case: "resize", resize: { cols: term.cols, rows: term.rows } });
+          }),
+        );
 
         resizeObserver.observe(container.current!);
 
@@ -108,8 +99,6 @@ export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRo
           send({ $case: "resize", resize: { cols, rows } });
         });
       };
-
-
 
       socket.onmessage = (e) => {
         const message = JSON.parse(e.data) as ShellOutputData;
@@ -154,8 +143,5 @@ export const Shell: React.FC<Props> = ({ userId, cluster, loginNode, path, useRo
     }
   }, [container.current]);
 
-  return (
-    <TerminalContainer ref={container} />
-  );
+  return <TerminalContainer ref={container} />;
 };
-

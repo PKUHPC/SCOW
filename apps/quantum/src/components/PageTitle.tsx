@@ -24,9 +24,7 @@ export const TitleText = styled(Typography.Title)`
   }
 `;
 
-export const PageTitle: React.FC<PageTitleProps> = ({
-  beforeTitle, titleText, reload, children,
-}) => {
+export const PageTitle: React.FC<PageTitleProps> = ({ beforeTitle, titleText, reload, children }) => {
   const languageId = useI18n().currentLanguage.id;
   return (
     <Container>
@@ -35,8 +33,7 @@ export const PageTitle: React.FC<PageTitleProps> = ({
         {titleText}
       </TitleText>
       {children}
-      { reload ? <RefreshLink refresh={reload} languageId={languageId} /> : undefined}
+      {reload ? <RefreshLink refresh={reload} languageId={languageId} /> : undefined}
     </Container>
   );
-
 };

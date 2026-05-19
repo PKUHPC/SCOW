@@ -11,7 +11,6 @@ import { Head } from "src/utils/head";
 const p = prefix("pages.files.currentTransferInfo.");
 
 export const FileTransferPage: NextPage = requireAuth(() => true)(() => {
-
   const t = useI18nTranslateToString();
 
   const { crossClusterFileTransferEnabled } = useStore(ClusterInfoStore);
@@ -27,7 +26,6 @@ export const FileTransferPage: NextPage = requireAuth(() => true)(() => {
       <TransferInfoTable />
     </div>
   );
-
 });
 
 export default FileTransferPage;

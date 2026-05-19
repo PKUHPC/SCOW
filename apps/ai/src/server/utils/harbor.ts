@@ -2,11 +2,13 @@ import { aiConfig } from "../config/ai";
 import { getUserHarborProjectName } from "./image";
 import { logger } from "./logger";
 
-export const { protocol:harborProtocol,
+export const {
+  protocol: harborProtocol,
   url: harborUrl,
   user: harborUser,
   password: harborPassword,
-  project:harborProject } = aiConfig.harborConfig;
+  project: harborProject,
+} = aiConfig.harborConfig;
 
 function doubleEncode(str: string) {
   return encodeURIComponent(encodeURIComponent(str));
@@ -26,8 +28,7 @@ export class HarborClient {
 
   constructor(private cfg: HarborConfig) {
     this.base = `${cfg.protocol}://${cfg.url.replace(/\/+$/, "")}/api/v2.0`;
-    this.authHeader =
-      "Basic " + Buffer.from(`${cfg.username}:${cfg.password}`).toString("base64");
+    this.authHeader = "Basic " + Buffer.from(`${cfg.username}:${cfg.password}`).toString("base64");
   }
 
   /** 约定：除 409 以外的非 ok 都抛错；409 视为“已存在/成功” */
@@ -126,17 +127,9 @@ export class HarborClient {
     throw new Error(`Failed to check project ${projectName}: ${head.status} ${msg}`);
   }
 
-  async copyArtifact(p: {
-    srcProject: string;
-    srcRepo: string;
-    tag: string;
-    destProject: string;
-    destRepo: string;
-  }) {
+  async copyArtifact(p: { srcProject: string; srcRepo: string; tag: string; destProject: string; destRepo: string }) {
     const fromRef = `${p.srcProject}/${p.srcRepo}:${p.tag}`;
-    const url = new URL(
-      `${this.base}/projects/${p.destProject}/repositories/${doubleEncode(p.destRepo)}/artifacts`,
-    );
+    const url = new URL(`${this.base}/projects/${p.destProject}/repositories/${doubleEncode(p.destRepo)}/artifacts`);
     url.searchParams.set("from", fromRef);
 
     const res = await this.harborFetch(url.href, { method: "POST" });
@@ -147,52 +140,42 @@ export class HarborClient {
     }
   }
 
-  async getReference(p: {
-    userId: string,
-    imageName: string,
-    isPlatformOwned?: boolean,
-  }) {
-    const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}/artifacts`;
+  async getReference(p: { userId: string; imageName: string; isPlatformOwned?: boolean }) {
+    const url =
+      `${this.base}/projects` +
+      `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}/artifacts`;
 
     return await this.harborFetch(url);
   }
 
-  async deleteRepository(p: {
-    userId: string,
-    imageName: string,
-    isPlatformOwned?: boolean,
-  }) {
-
-    const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}`;
+  async deleteRepository(p: { userId: string; imageName: string; isPlatformOwned?: boolean }) {
+    const url =
+      `${this.base}/projects` + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}`;
 
     return await this.harborFetch(url, { method: "DELETE" });
   }
 
   async deleteTag(p: {
-    userId: string,
-    imageName: string,
-    reference: string,
-    imageTag: string,
-    imageTagPostfix: string,
-    isPlatformOwned?: boolean,
+    userId: string;
+    imageName: string;
+    reference: string;
+    imageTag: string;
+    imageTagPostfix: string;
+    isPlatformOwned?: boolean;
   }) {
-    const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}`
-        + `/artifacts/${p.reference}/tags/${p.imageTag + (p.imageTagPostfix ?? "")}`;
+    const url =
+      `${this.base}/projects` +
+      `/${getUserHarborProjectName(p.userId, p.isPlatformOwned)}/repositories/${p.imageName}` +
+      `/artifacts/${p.reference}/tags/${p.imageTag + (p.imageTagPostfix ?? "")}`;
 
     return await this.harborFetch(url, { method: "DELETE" });
   }
 
-  async deleteArtifact(p: {
-    userId: string,
-    imageName: string,
-    reference: string,
-  }) {
-    const url = `${this.base}/projects`
-        + `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}`
-        + `/artifacts/${p.reference}`;
+  async deleteArtifact(p: { userId: string; imageName: string; reference: string }) {
+    const url =
+      `${this.base}/projects` +
+      `/${getUserHarborProjectName(p.userId)}/repositories/${p.imageName}` +
+      `/artifacts/${p.reference}`;
 
     return await this.harborFetch(url, { method: "DELETE" });
   }
@@ -216,7 +199,6 @@ export class HarborClient {
     return await this.harborFetch(url, { headers: { "X-Is-Resource-Name": "true" } });
   }
 
-
   async createProject(projectName: string) {
     const url = `${this.base}/projects`;
 
@@ -231,11 +213,10 @@ export class HarborClient {
   }
 }
 
-
 export function getHarborConfig(): HarborConfig {
   return {
-    protocol:harborProtocol,
-    project:harborProject,
+    protocol: harborProtocol,
+    project: harborProject,
     url: harborUrl,
     username: harborUser,
     password: harborPassword,

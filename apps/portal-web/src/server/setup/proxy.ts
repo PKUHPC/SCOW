@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ClusterConfigSchema, getLoginNode } from "@scow/config/build/cluster";
 import { normalizePathnameWithQuery } from "@scow/utils";
 import httpProxy from "http-proxy";
@@ -31,7 +19,6 @@ export function parseProxyTarget(
   urlIncludesBasePath: boolean,
   clusterConfigs: Record<string, ClusterConfigSchema>,
 ): string | Error {
-
   const normalizedUrl = normalizePathnameWithQuery(url);
 
   const basePath = publicConfig.BASE_PATH;
@@ -49,7 +36,7 @@ export function parseProxyTarget(
     return new Error("Invalid clusterId");
   }
 
-  const fullUri = `${(urlIncludesBasePath || basePath === "/") ? "" : basePath}${url}`;
+  const fullUri = `${urlIncludesBasePath || basePath === "/" ? "" : basePath}${url}`;
 
   const proxyGateway = clusterConfigs[clusterId].proxyGateway;
   const loginNodes = clusterConfigs[clusterId].loginNodes.map((x) => getLoginNode(x).address);
@@ -73,7 +60,6 @@ export function parseProxyTarget(
 
 export const proxy = httpProxy.createServer();
 
-
 /**
  * Node的原生http服务器（http.Server）在收到WebSocket连接的时候将会触发一个`upgrade`事件，而且并不走正常的HTTP请求响应流程
  * 所以整个系统第一次启动后，在以HTTP形式访问此代理地址之前，到本地址的WebSocket将会失败
@@ -83,7 +69,6 @@ export const proxy = httpProxy.createServer();
  */
 export const setupWssProxy = (req: NextApiRequest) => {
   (req.socket as any).server.on("upgrade", async (req, socket, head) => {
-
     const url = normalizePathnameWithQuery(req.url);
 
     if (!url.startsWith(join(publicConfig.BASE_PATH, "/api/proxy"))) {
@@ -118,8 +103,5 @@ export const setupWssProxy = (req: NextApiRequest) => {
       console.error(err, "Error when proxing WS requests");
       writeError("500 Internal Server Error", "Error when proxing WS requests");
     });
-
   });
-
 };
-

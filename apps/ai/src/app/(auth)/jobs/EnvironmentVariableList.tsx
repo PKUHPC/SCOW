@@ -1,15 +1,13 @@
 "use client";
 
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { Form } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { styled, useTheme } from "styled-components";
 
-import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
-
 import { validateEnvKeyFormat } from "./common";
 import { AddButton, RemoveButton } from "./ResourceSelectorList";
-
 
 const EnvListContainer = styled.div`
   display: flex;
@@ -76,10 +74,7 @@ export const EnvironmentVariableList = () => {
             </EnvRow>
           ))}
 
-          <AddButton
-            icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />}
-            onClick={() => add({})}
-          >
+          <AddButton icon={<PlusOutlined style={{ color: theme.token.colorPrimary }} />} onClick={() => add({})}>
             {t(p("addButton"))}
           </AddButton>
         </EnvListContainer>

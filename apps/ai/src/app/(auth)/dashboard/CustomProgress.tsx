@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import React from "react";
 import styled, { useTheme } from "styled-components";
 
@@ -21,7 +9,7 @@ interface CustomProgressProps {
   progressColor?: string; // 进度条颜色
 }
 
-const ProgressBarContainer = styled.div<{ width: string, height: string, $bgColor: string }>`
+const ProgressBarContainer = styled.div<{ width: string; height: string; $bgColor: string }>`
   display: flex;
   align-items: center;
   width: ${(props) => props.width};
@@ -30,7 +18,7 @@ const ProgressBarContainer = styled.div<{ width: string, height: string, $bgColo
   border-radius: 5px;
 `;
 
-const ProgressBar = styled.div<{ percent: number, $progressColor: string }>`
+const ProgressBar = styled.div<{ percent: number; $progressColor: string }>`
   height: 100%;
   background-color: ${(props) => props.$progressColor};
   border-radius: 5px;
@@ -44,8 +32,6 @@ const ProgressLabel = styled.div`
   text-align: right;
   font-size: 0.9rem;
 `;
-
-
 
 export const CustomProgress: React.FC<CustomProgressProps> = ({
   percent,
@@ -64,9 +50,7 @@ export const CustomProgress: React.FC<CustomProgressProps> = ({
       <ProgressBarContainer width={width} height={height} $bgColor={bgColor ?? theme.token.colorBorderBg}>
         <ProgressBar percent={percent} $progressColor={progressColor ?? theme.token["blue-4"]} />
       </ProgressBarContainer>
-      <ProgressLabel>
-        {percent === 100 ? "100%" : `${normalizedPercent}%`}
-      </ProgressLabel>
+      <ProgressLabel>{percent === 100 ? "100%" : `${normalizedPercent}%`}</ProgressLabel>
     </div>
   );
 };

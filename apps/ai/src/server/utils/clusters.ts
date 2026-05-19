@@ -18,8 +18,7 @@ import { config } from "src/server/config/env";
 import { logger } from "src/server/utils/logger";
 import { isParentOrSameFolder } from "src/utils/file";
 
-type ClientConstructor<TClient> =
-  new (address: string, credentials: ChannelCredentials) => TClient;
+type ClientConstructor<TClient> = new (address: string, credentials: ChannelCredentials) => TClient;
 
 export interface SchedulerAdapterClient {
   account: AccountServiceClient;
@@ -30,20 +29,12 @@ export interface SchedulerAdapterClient {
   app: AppServiceClient;
 }
 
-export function getClient<TClient>(
-  address: string, sslConfig: SslConfig, ctor: ClientConstructor<TClient>,
-): TClient {
+export function getClient<TClient>(address: string, sslConfig: SslConfig, ctor: ClientConstructor<TClient>): TClient {
   if (sslConfig.enabled) {
-    return new ctor(
-      address,
-      ChannelCredentials.createSsl(sslConfig.ca, sslConfig.key, sslConfig.cert),
-    );
+    return new ctor(address, ChannelCredentials.createSsl(sslConfig.ca, sslConfig.key, sslConfig.cert));
   }
 
-  return new ctor(
-    address,
-    ChannelCredentials.createInsecure(),
-  );
+  return new ctor(address, ChannelCredentials.createInsecure());
 }
 
 export const certificates = createAdapterCertificates(config);
@@ -59,11 +50,14 @@ export const getSchedulerAdapterClient = (address: string, sslConfig: SslConfig)
   } as SchedulerAdapterClient;
 };
 
-const adapterClientForClusters = Object.entries(clusters).reduce((prev, [cluster, c]) => {
-  const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
-  prev[cluster] = client;
-  return prev;
-}, {} as Record<string, SchedulerAdapterClient>);
+const adapterClientForClusters = Object.entries(clusters).reduce(
+  (prev, [cluster, c]) => {
+    const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+    prev[cluster] = client;
+    return prev;
+  },
+  {} as Record<string, SchedulerAdapterClient>,
+);
 
 export const getAdapterClient = (cluster: string) => {
   return adapterClientForClusters[cluster];
@@ -74,7 +68,6 @@ export const getAdapterClient = (cluster: string) => {
 // (2) 如果部署了管理系统，没有部署资源管理，则返回管理系统在线集群ID
 // (3) 如果部署了管理系统和资源管理，则返回已授权的在线集群ID
 export async function getCurrentClusters(userId: string): Promise<string[]> {
-
   const commonConfig = getCommonConfig();
 
   if (!commonConfig.scowResource?.enabled) {
@@ -85,12 +78,12 @@ export async function getCurrentClusters(userId: string): Promise<string[]> {
         logger.warn("No cluster config is found.");
       }
       return configClusterIds;
-    // 如果部署了管理系统，没有部署资源管理
+      // 如果部署了管理系统，没有部署资源管理
     } else {
-      const currentClusters = await libGetClustersRuntimeInfo(config.MIS_SERVER_URL,
-        commonConfig.scowApi?.auth?.token);
-      const activatedClusterIds = currentClusters.filter((c) =>
-        (c.activationStatus === ClusterActivationStatus.ACTIVATED)).map((c) => (c.clusterId));
+      const currentClusters = await libGetClustersRuntimeInfo(config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      const activatedClusterIds = currentClusters
+        .filter((c) => c.activationStatus === ClusterActivationStatus.ACTIVATED)
+        .map((c) => c.clusterId);
       if (activatedClusterIds.length === 0) {
         logger.warn("No available activated clusters.");
       }
@@ -99,18 +92,16 @@ export async function getCurrentClusters(userId: string): Promise<string[]> {
   }
 
   // 如果部署了管理系统且部署了资源管理
-  const userAffliction
-    = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+  const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
-  const accountNames = userAffliction?.affiliations.map((a) => (a.accountName));
+  const accountNames = userAffliction?.affiliations.map((a) => a.accountName);
   const tenantName = userAffliction?.tenantName;
 
   if (!tenantName) {
     logger.warn(`Afflicted tenant of user id: ${userId} is not found.`);
     return [];
   }
-  const results
-       = await getUserAccountsClusterIds(commonConfig.scowResource, accountNames, tenantName);
+  const results = await getUserAccountsClusterIds(commonConfig.scowResource, accountNames, tenantName);
 
   if (results.length === 0) {
     logger.warn(`Can not find authorized clusters for the user id: ${userId}.`);
@@ -119,13 +110,12 @@ export async function getCurrentClusters(userId: string): Promise<string[]> {
   return results;
 }
 
-
 export const checkClusterAvailable = (clusterIds: string[], clusterId: string) => {
-
   if (!clusterIds.includes(clusterId)) {
     throw new TRPCError({
       code: "NOT_FOUND",
-      message: `Cluster id ${clusterId} is not found. ` +
+      message:
+        `Cluster id ${clusterId} is not found. ` +
         "Please confirm whether the cluster is activated or has been authorized for the login user.",
     });
   }
@@ -136,7 +126,6 @@ export const shouldPathsSkipPermissionCheck = (
   paths: string[],
   isPlatformAdmin: boolean,
 ): boolean => {
-
   const cluster = clusters[clusterId];
   const clusterPublicPath = cluster.ai.clusterPublicPath;
 
@@ -147,11 +136,7 @@ export const shouldPathsSkipPermissionCheck = (
   return paths.every((path) => isParentOrSameFolder(clusterPublicPath, path));
 };
 
-export const checkIsPublicPaths = (
-  clusterId: string,
-  paths: string[],
-): boolean => {
-
+export const checkIsPublicPaths = (clusterId: string, paths: string[]): boolean => {
   const cluster = clusters[clusterId];
   const clusterPublicPath = cluster.ai.clusterPublicPath;
 

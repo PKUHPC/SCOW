@@ -12,35 +12,29 @@ import { Head } from "src/utils/head";
 
 const p = prefix("page.tenant.users.list.");
 
-export const AdminUsersPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
-  ({ userStore: { user } }) => {
+export const AdminUsersPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(({
+  userStore: { user },
+}) => {
+  const t = useI18nTranslateToString();
+  const languageId = useI18n().currentLanguage.id;
 
-    const t = useI18nTranslateToString();
-    const languageId = useI18n().currentLanguage.id;
+  const promiseFn = useCallback(async () => {
+    return await api.getTenantUsers({});
+  }, []);
 
-    const promiseFn = useCallback(async () => {
-      return await api.getTenantUsers({ });
-    }, []);
+  const [refreshToken, update] = useRefreshToken();
 
-    const [refreshToken, update] = useRefreshToken();
+  const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
 
-    const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
-
-    return (
-      <div>
-        <Head title={t(p("title"))} />
-        <PageTitle titleText={t(p("title"))}>
-          <RefreshLink refresh={update} languageId={languageId} />
-        </PageTitle>
-        <AdminUserTable
-          data={data}
-          isLoading={isLoading}
-          reload={reload}
-          user={user}
-        />
-      </div>
-    );
-
-  });
+  return (
+    <div>
+      <Head title={t(p("title"))} />
+      <PageTitle titleText={t(p("title"))}>
+        <RefreshLink refresh={update} languageId={languageId} />
+      </PageTitle>
+      <AdminUserTable data={data} isLoading={isLoading} reload={reload} user={user} />
+    </div>
+  );
+});
 
 export default AdminUsersPage;

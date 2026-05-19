@@ -7,11 +7,15 @@ import { UserAccount, UserRole, UserStatus } from "src/entities/UserAccount";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 
 export async function insertInitialData(em: SqlEntityManager) {
-
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
-  const userA = new User({ name: "AName", userId: "a", email: "a@a.com", tenant,
-    tenantRoles: [TenantRole.TENANT_ADMIN]});
+  const userA = new User({
+    name: "AName",
+    userId: "a",
+    email: "a@a.com",
+    tenant,
+    tenantRoles: [TenantRole.TENANT_ADMIN],
+  });
   const userB = new User({ name: "BName", userId: "b", email: "b@b.com", tenant });
 
   const accountA = new Account({
@@ -52,7 +56,7 @@ export async function insertInitialData(em: SqlEntityManager) {
   await em.persistAndFlush([userA, userB, accountA, accountB, uaAA, uaAB, uaBB]);
 
   // insert another tenant. every test should work just fine
-  const anotherTenant = await em.findOne(Tenant, { name: "another" }) ?? new Tenant({ name: "another" });
+  const anotherTenant = (await em.findOne(Tenant, { name: "another" })) ?? new Tenant({ name: "another" });
   const userC = new User({ tenant: anotherTenant, email: "123", name: "cName", userId: "c" });
   const accountC = new Account({
     tenant: anotherTenant,
@@ -69,20 +73,21 @@ export async function insertInitialData(em: SqlEntityManager) {
 
   await em.persistAndFlush([anotherTenant, userC, accountC, uaCC]);
 
-  return { tenant, userA, userB, userC, accountA, accountB, accountC, uaAA, uaAB, uaBB,
-    uaCC, anotherTenant };
-
+  return { tenant, userA, userB, userC, accountA, accountB, accountC, uaAA, uaAB, uaBB, uaCC, anotherTenant };
 }
 
 export type InitialData = Awaited<ReturnType<typeof insertInitialData>>;
 
-
 export async function insertBlockedData(em: SqlEntityManager) {
-
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
-  const blockedUserA = new User({ name: "BlockedA", userId: "a", email: "a@a.com", tenant,
-    tenantRoles: [TenantRole.TENANT_ADMIN]});
+  const blockedUserA = new User({
+    name: "BlockedA",
+    userId: "a",
+    email: "a@a.com",
+    tenant,
+    tenantRoles: [TenantRole.TENANT_ADMIN],
+  });
   const unblockedUserB = new User({ name: "BlockedB", userId: "b", email: "b@b.com", tenant });
 
   const unblockedAccountA = new Account({
@@ -122,17 +127,20 @@ export async function insertBlockedData(em: SqlEntityManager) {
   await em.persistAndFlush([uaAA, uaAB, uaBB]);
 
   return { tenant, blockedUserA, unblockedUserB, unblockedAccountA, blockedAccountB, uaAA, uaAB, uaBB };
-
 }
 
 export type BlockedData = Awaited<ReturnType<typeof insertBlockedData>>;
 
 export async function insertSyncAccountUserData(em: SqlEntityManager) {
-
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
-  const blockedUserA = new User({ name: "BlockedA", userId: "a", email: "a@a.com", tenant,
-    tenantRoles: [TenantRole.TENANT_ADMIN]});
+  const blockedUserA = new User({
+    name: "BlockedA",
+    userId: "a",
+    email: "a@a.com",
+    tenant,
+    tenantRoles: [TenantRole.TENANT_ADMIN],
+  });
   const unblockedUserB = new User({ name: "BlockedB", userId: "b", email: "b@b.com", tenant });
   const addUserNew = new User({ name: "AddNew", userId: "new", email: "new@new.com", tenant });
 
@@ -192,9 +200,20 @@ export async function insertSyncAccountUserData(em: SqlEntityManager) {
 
   await em.persistAndFlush([uaAA, uaAB, uaBB, uaNewNew]);
 
-  return { tenant, blockedUserA, unblockedUserB, addUserNew,
-    unblockedAccountA, blockedAccountB, addAccountNew,
-    uaAA, uaAB, uaANew, uaBB, uaNewNew };
+  return {
+    tenant,
+    blockedUserA,
+    unblockedUserB,
+    addUserNew,
+    unblockedAccountA,
+    blockedAccountB,
+    addAccountNew,
+    uaAA,
+    uaAB,
+    uaANew,
+    uaBB,
+    uaNewNew,
+  };
 }
 
 export type SyncAccountUserData = Awaited<ReturnType<typeof insertSyncAccountUserData>>;

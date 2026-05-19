@@ -1,18 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import type { Logger } from "ts-log";
 
 import { NodeSSH, SSHExecCommandOptions, SSHExecCommandResponse } from "node-ssh";
 import { quote } from "shell-quote";
-import type { Logger } from "ts-log";
 
 import { insertKeyAsRoot, KeyPair } from "./key";
 import { SftpError } from "./sftp";
@@ -77,18 +66,19 @@ export async function sshRawConnectByPassword(address: string, username: string,
   const [host, port] = address.split(":");
   const ssh = new NodeSSH();
 
-  await ssh.connect({ host, port: port ? +port : undefined, username, password: password })
-    .catch((e) => {
-      logger.info("Login to %s as %s by password failed.", host, username);
-      throw new SshConnectError({ cause: e });
-    });
+  await ssh.connect({ host, port: port ? +port : undefined, username, password: password }).catch((e) => {
+    logger.info("Login to %s as %s by password failed.", host, username);
+    throw new SshConnectError({ cause: e });
+  });
 
   return ssh;
 }
 
-
 export async function sshConnect<T>(
-  address: string, username: string, rootKeyPair: KeyPair, logger: Logger,
+  address: string,
+  username: string,
+  rootKeyPair: KeyPair,
+  logger: Logger,
   run: (ssh: NodeSSH) => Promise<T>,
 ) {
   const ssh = await sshRawConnect(address, username, rootKeyPair, logger);
@@ -98,22 +88,28 @@ export async function sshConnect<T>(
       // 若在run回调函数中有具体抛错，直接抛出
       if (e.code !== undefined) {
         throw e;
-      }
-      else {
+      } else {
         logger.info("Running ssh failed.");
         throw new SshConnectError({ cause: e.message });
       }
     })
-    .finally(() => { ssh.dispose(); });
+    .finally(() => {
+      ssh.dispose();
+    });
 }
 
 export async function sshConnectByPassword<T>(
-  address: string, username: string, password: string, logger: Logger,
+  address: string,
+  username: string,
+  password: string,
+  logger: Logger,
   run: (ssh: NodeSSH) => Promise<T>,
 ) {
   const ssh = await sshRawConnectByPassword(address, username, password, logger);
 
-  return run(ssh).finally(() => { ssh.dispose(); });
+  return run(ssh).finally(() => {
+    ssh.dispose();
+  });
 }
 
 /**
@@ -124,7 +120,9 @@ export async function sshConnectByPassword<T>(
  * @returns string to be added in front of the command
  */
 export function getEnvPrefix(env: Record<string, string>) {
-  return Object.keys(env).map((x) => `${x}=${quote([env[x] ?? ""])} `).join("");
+  return Object.keys(env)
+    .map((x) => `${x}=${quote([env[x] ?? ""])} `)
+    .join("");
 }
 
 /**
@@ -137,8 +135,7 @@ export function getEnvPrefix(env: Record<string, string>) {
  * @returns command with env prefixes
  */
 export function constructCommand(cmd: string, parameters: readonly string[], env?: Record<string, string>) {
-
-  const command = cmd + (parameters.length > 0 ? (" " + quote(parameters)) : "");
+  const command = cmd + (parameters.length > 0 ? " " + quote(parameters) : "");
 
   const envPrefix = env ? getEnvPrefix(env) : "";
 
@@ -146,7 +143,10 @@ export function constructCommand(cmd: string, parameters: readonly string[], env
 }
 
 export class SSHExecError extends Error {
-  constructor(public response: SSHExecCommandResponse, options?: ErrorOptions) {
+  constructor(
+    public response: SSHExecCommandResponse,
+    options?: ErrorOptions,
+  ) {
     super("Error when executing command", options);
   }
 }
@@ -155,9 +155,14 @@ export class SSHExecError extends Error {
  *  注意: parameters 中的空字符串参数会在 SSH 参数构造前被过滤掉以防止 SSH 命令格式错误
  *  如果后期出现需要单独向 SSH 参数中传递空字符串的形式，需要进行兼容性修改
  */
-export async function loggedExec(ssh: NodeSSH, logger: Logger, throwIfFailed: boolean,
-  cmd: string, parameters: string[], options?: SSHExecCommandOptions) {
-
+export async function loggedExec(
+  ssh: NodeSSH,
+  logger: Logger,
+  throwIfFailed: boolean,
+  cmd: string,
+  parameters: string[],
+  options?: SSHExecCommandOptions,
+) {
   const env = options?.execOptions?.env as Record<string, string>;
 
   const filteredParameters = parameters.filter((param) => param !== "");
@@ -190,19 +195,25 @@ export async function loggedExec(ssh: NodeSSH, logger: Logger, throwIfFailed: bo
  * @param options exec options
  */
 export async function executeAsUser(
-  ssh: NodeSSH, user: string, logger: Logger, throwIfFailed: boolean,
-  command: string, parameters: readonly string[], options?: SSHExecCommandOptions,
+  ssh: NodeSSH,
+  user: string,
+  logger: Logger,
+  throwIfFailed: boolean,
+  command: string,
+  parameters: readonly string[],
+  options?: SSHExecCommandOptions,
 ) {
-
   const env = options?.execOptions?.env;
   const envOption = env ? `--preserve-env=${Object.keys(env).join(",")}` : "";
 
-  return await loggedExec(ssh, logger, throwIfFailed,
-    "sudo", [
-      envOption,
-      "-u", user,
-      "-s", command, ...parameters,
-    ], options);
+  return await loggedExec(
+    ssh,
+    logger,
+    throwIfFailed,
+    "sudo",
+    [envOption, "-u", user, "-s", command, ...parameters],
+    options,
+  );
 }
 
 /**
@@ -231,13 +242,9 @@ export const getUserHomedir = async (ssh: NodeSSH, username: string, logger: Log
   return resp.stdout.trim();
 };
 
-
-
 export async function sshRmrf(ssh: NodeSSH, path: string) {
   await ssh.exec("rm", ["-rf", path]).catch((e) => {
     // rm -rf 并非sftp命令，属于Linux命令，但其操作的是文件夹，且报错形式与sftp报错一致，故使用SftpError
     throw new SftpError(e);
   });
 }
-
-

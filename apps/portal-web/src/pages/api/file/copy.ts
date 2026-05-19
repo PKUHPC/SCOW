@@ -27,10 +27,7 @@ export const CopyFileItemSchema = typeboxRouteSchema({
     }),
     429: Type.Object({ code: Type.Literal("NO_SPACE") }),
     400: Type.Object({
-      code: Type.Union([
-        Type.Literal("INVALID_CLUSTER"),
-        Type.Literal("INVALID_ARGUMENT"),
-      ]),
+      code: Type.Union([Type.Literal("INVALID_CLUSTER"), Type.Literal("INVALID_ARGUMENT")]),
       error: Type.Optional(Type.String()),
     }),
   },
@@ -39,10 +36,11 @@ export const CopyFileItemSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(CopyFileItemSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, fromPath, toPath } = req.body;
 
@@ -52,22 +50,31 @@ export default route(CopyFileItemSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.copyFileItem,
-    operationTypePayload:{
-      clusterId: "", fromPath, toPath,
+    operationTypePayload: {
+      clusterId: "",
+      fromPath,
+      toPath,
     },
   };
 
   return asyncUnaryCall(client, "copy", {
-    cluster, fromPath, toPath, userId: info.identityId,
-  }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.INTERNAL]: (e) => ({ 415: { code: "CP_CMD_FAILED" as const, error: e.details } }),
-    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
-    [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
-  },
-  async () => await callLog(logInfo, OperationResult.FAIL),
-  ));
+    cluster,
+    fromPath,
+    toPath,
+    userId: info.identityId,
+  }).then(
+    async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.INTERNAL]: (e) => ({ 415: { code: "CP_CMD_FAILED" as const, error: e.details } }),
+        [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+        [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
+      },
+      async () => await callLog(logInfo, OperationResult.FAIL),
+    ),
+  );
 });

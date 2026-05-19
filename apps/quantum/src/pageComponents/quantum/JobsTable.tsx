@@ -44,8 +44,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
 
   const { data, refetch, isLoading, isFetching } = trpc.backend.task.findTask.useQuery(
     {
-      accountName: (query.accountName?.trim() && query.accountName.trim() !== "") ?
-        query.accountName.trim() : "_",
+      accountName: query.accountName?.trim() && query.accountName.trim() !== "" ? query.accountName.trim() : "_",
       page: isDashboard ? 1 : query.page,
       pageSize: isDashboard ? 10 : query.pageSize,
       id: query.jobId ?? undefined,
@@ -117,7 +116,7 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       title: t(p("runDur")),
       dataIndex: "duration",
       width: "60px",
-      render: (duration: number) => duration ? formatTime(duration) : EMPTY_STRING,
+      render: (duration: number) => (duration ? formatTime(duration) : EMPTY_STRING),
     },
     {
       title: t(p("qits")),
@@ -129,34 +128,31 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
       title: t(p("billing")),
       dataIndex: "amount",
       width: "60px",
-      render: (amount?: number) => amount !== undefined
-        ? amount.toFixed(2)
-        : EMPTY_STRING,
+      render: (amount?: number) => (amount !== undefined ? amount.toFixed(2) : EMPTY_STRING),
     },
     {
       title: t(p("state")),
       dataIndex: "state",
       width: "30px",
       render: (state: string) => (
-        <span style={{ color: statusColors[state.toUpperCase()] }}>
-          {state.toUpperCase()}</span>
+        <span style={{ color: statusColors[state.toUpperCase()] }}>{state.toUpperCase()}</span>
       ),
     },
     ...(isDashboard
       ? []
       : [
-        {
-          title: t(p("action")),
-          width: "30px",
-          render: (r: FindTask) => (
-            <Link href={{ pathname: `/quantum/${r.id}/detail` }}>
-              <Tooltip title={t(p("detail"))}>
-                <DetailIcon />
-              </Tooltip>
-            </Link>
-          ),
-        },
-      ]),
+          {
+            title: t(p("action")),
+            width: "30px",
+            render: (r: FindTask) => (
+              <Link href={{ pathname: `/quantum/${r.id}/detail` }}>
+                <Tooltip title={t(p("detail"))}>
+                  <DetailIcon />
+                </Tooltip>
+              </Link>
+            ),
+          },
+        ]),
   ];
 
   const jobsData = useMemo(() => {
@@ -178,50 +174,55 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
 
   return (
     <>
-      {
-        !isDashboard && (
-          <FilterFormContainer>
-            <Form<FilterForm>
-              layout="inline"
-              form={form}
-              initialValues={{
-                jobId: query.jobId, qubits: query.qubits, shots: query.shots, accountName: query.accountName,
-              }}
-              onFinish={async () => {
-                const values = await form.validateFields();
-                setQuery({
-                  ...values,
-                  page: 1,
-                  pageSize: query.pageSize,
-                });
-              }}
-            >
-              <Form.Item label={t(p("jobId"))} name="jobId">
-                <InputNumber style={{ minWidth: "160px" }} min={1} />
-              </Form.Item>
-              <Form.Item label={t(p("account"))} name="accountName">
-                <Input style={{ minWidth: "160px" }} />
-              </Form.Item>
-              <Form.Item label="Qubits" name="qubits">
-                <InputNumber style={{ minWidth: "160px" }} min={1} />
-              </Form.Item>
-              <Form.Item label="Shots" name="shots">
-                <InputNumber style={{ minWidth: "160px" }} min={1} />
-              </Form.Item>
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
-                </Space>
-              </Form.Item>
-              <Form.Item>
-                <Space>
-                  <Button loading={isLoading} onClick={() => reloadTable()}>{t("button.refreshButton")}</Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </FilterFormContainer>
-        )
-      }
+      {!isDashboard && (
+        <FilterFormContainer>
+          <Form<FilterForm>
+            layout="inline"
+            form={form}
+            initialValues={{
+              jobId: query.jobId,
+              qubits: query.qubits,
+              shots: query.shots,
+              accountName: query.accountName,
+            }}
+            onFinish={async () => {
+              const values = await form.validateFields();
+              setQuery({
+                ...values,
+                page: 1,
+                pageSize: query.pageSize,
+              });
+            }}
+          >
+            <Form.Item label={t(p("jobId"))} name="jobId">
+              <InputNumber style={{ minWidth: "160px" }} min={1} />
+            </Form.Item>
+            <Form.Item label={t(p("account"))} name="accountName">
+              <Input style={{ minWidth: "160px" }} />
+            </Form.Item>
+            <Form.Item label="Qubits" name="qubits">
+              <InputNumber style={{ minWidth: "160px" }} min={1} />
+            </Form.Item>
+            <Form.Item label="Shots" name="shots">
+              <InputNumber style={{ minWidth: "160px" }} min={1} />
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit">
+                  {t("button.searchButton")}
+                </Button>
+              </Space>
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button loading={isLoading} onClick={() => reloadTable()}>
+                  {t("button.refreshButton")}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </FilterFormContainer>
+      )}
       <Table
         tableLayout="fixed"
         dataSource={jobsData}
@@ -233,18 +234,18 @@ export const JobsTable: React.FC<Props> = ({ isDashboard }) => {
           isDashboard
             ? false
             : {
-              total: data?.totalCount ?? 0,
-              current: query.page,
-              pageSize: query.pageSize,
-              showSizeChanger: true,
-              onChange: (page, pageSize) => {
-                setQuery({
-                  ...query,
-                  page,
-                  pageSize,
-                });
-              },
-            }
+                total: data?.totalCount ?? 0,
+                current: query.page,
+                pageSize: query.pageSize,
+                showSizeChanger: true,
+                onChange: (page, pageSize) => {
+                  setQuery({
+                    ...query,
+                    page,
+                    pageSize,
+                  });
+                },
+              }
         }
       />
     </>

@@ -23,62 +23,62 @@ export const PartitionSchema = z.object({
 });
 
 export const configRouter = router({
+  publicConfig: trpc.procedure.input(z.void()).query(async ({ ctx: { req } }) => {
+    const systemLanguageConfig = getSystemLanguageConfig(getCommonConfig().systemLanguage);
 
-  publicConfig: trpc.procedure
-    .input(z.void())
-    .query(async ({ ctx: { req } }) => {
+    const darkModeCookie = req.cookies["scow-dark"];
+    const languageCookie = req.cookies.language;
 
-      const systemLanguageConfig = getSystemLanguageConfig(getCommonConfig().systemLanguage);
+    const hostname = getHostname(req);
 
+    const footerText =
+      (hostname && uiConfig.footer?.hostnameMap?.[hostname]) ??
+      (hostname && uiConfig.footer?.hostnameTextMap?.[hostname]) ??
+      uiConfig.footer?.defaultText;
 
-      const darkModeCookie = req.cookies["scow-dark"];
-      const languageCookie = req.cookies.language;
+    const capabilities =
+      process.env.NODE_ENV === "development"
+        ? { changePassword: false }
+        : await getCapabilities(config.AUTH_INTERNAL_URL);
 
-      const hostname = getHostname(req);
+    return {
+      ENABLE_CHANGE_PASSWORD: capabilities.changePassword ?? false,
+      PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 
-      const footerText = (hostname && uiConfig.footer?.hostnameMap?.[hostname])
-        ?? (hostname && uiConfig.footer?.hostnameTextMap?.[hostname])
-        ?? uiConfig.footer?.defaultText;
+      uiConfig: {
+        config: uiConfig,
+        defaultPrimaryColor: DEFAULT_PRIMARY_COLOR,
+      },
+      systemLanguageConfig: systemLanguageConfig,
+      basePath: config.NEXT_PUBLIC_RUNTIME_BASE_PATH,
+      portalUrl: config.PORTAL_URL,
+      misUrl: config.MIS_URL,
+      aiUrl: config.AI_DEPLOYED ? config.AI_URL : "",
+      versionTag: readVersionFile()?.tag,
 
-      const capabilities = process.env.NODE_ENV === "development" ? { changePassword: false } :
-        await getCapabilities(config.AUTH_INTERNAL_URL);
+      footerText,
 
-      return {
-        ENABLE_CHANGE_PASSWORD: capabilities.changePassword ?? false,
-        PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
-
-        uiConfig: {
-          config: uiConfig,
-          defaultPrimaryColor: DEFAULT_PRIMARY_COLOR,
-        },
-        systemLanguageConfig: systemLanguageConfig,
-        basePath: config.NEXT_PUBLIC_RUNTIME_BASE_PATH,
-        portalUrl: config.PORTAL_URL,
-        misUrl: config.MIS_URL,
-        aiUrl: config.AI_DEPLOYED ? config.AI_URL : "",
-        versionTag: readVersionFile()?.tag,
-
-        footerText,
-
-        acceptLanguageHeader: req.headers["accept-language"] || null,
-        darkModeCookie: darkModeCookie,
-        languageCookie: languageCookie,
-      };
-    }),
+      acceptLanguageHeader: req.headers["accept-language"] || null,
+      darkModeCookie: darkModeCookie,
+      languageCookie: languageCookie,
+    };
+  }),
 
   getOffsetDegree: trpc.procedure
-    .input(z.object({
-      chipId: z.string(),
-    }))
-    .output(z.object({
-      offsetDegree: z.number(),
-    }))
+    .input(
+      z.object({
+        chipId: z.string(),
+      }),
+    )
+    .output(
+      z.object({
+        offsetDegree: z.number(),
+      }),
+    )
     .query(async ({ input }) => {
-
       const { chipId } = input;
       const offsetDegree = quantumConfig.offsetDegree?.[chipId] ?? 0;
 
       return { offsetDegree };
-
     }),
 });

@@ -25,14 +25,9 @@ export default function Page() {
 
   return (
     <>
-      <PageTitle
-        titleText={t("routes.publicAsset.modelTitle")}
-      />
+      <PageTitle titleText={t("routes.publicAsset.modelTitle")} />
       <AssetContainer>
-        <ModalTable
-          clusters={publicConfig.CLUSTERS}
-        />
-
+        <ModalTable clusters={publicConfig.CLUSTERS} />
       </AssetContainer>
     </>
   );

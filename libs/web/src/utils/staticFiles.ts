@@ -2,7 +2,6 @@ import { executableScriptExtensions } from "src/utils/executableExtensions";
 import { languageMap } from "src/utils/languageMap";
 import { nonEditableExtensions } from "src/utils/nonEditableExtensions";
 
-
 export function basename(path: string) {
   const parts = path.split(/[/\\]/);
   return parts[parts.length - 1];
@@ -52,7 +51,9 @@ export function isExecutableScriptFilename(filename: string, executableFilenameP
   // 优先使用用户配置的后缀白名单
   if (executableFilenamePostfixes && executableFilenamePostfixes.length > 0) {
     return executableFilenamePostfixes.some((suffix) => {
-      if (!suffix || suffix.length === 0) { return false; }
+      if (!suffix || suffix.length === 0) {
+        return false;
+      }
       return filename.toLowerCase().endsWith(suffix);
     });
   }

@@ -6,9 +6,13 @@ import { ConfigServiceClient as CommonConfigClient } from "@scow/protos/build/co
 import { ClusterActivationStatus, ConfigServiceClient } from "@scow/protos/build/server/config";
 import { getScowActivatedClusters } from "src/server/mis-server/cluster";
 import { authProcedure } from "src/server/trpc/procedure/base";
-import { mock,MOCK_ACTIVATED_CLUSTER_INFO, MOCK_CLUSTER_PARTITIONS_INFO } from "src/server/trpc/route/mock";
-import { checkClusterIdAvailable, isResourceAdmin,
-  NoAvailableClustersError, UserForbiddenError } from "src/utils/auth/utils";
+import { mock, MOCK_ACTIVATED_CLUSTER_INFO, MOCK_CLUSTER_PARTITIONS_INFO } from "src/server/trpc/route/mock";
+import {
+  checkClusterIdAvailable,
+  isResourceAdmin,
+  NoAvailableClustersError,
+  UserForbiddenError,
+} from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { logger } from "src/utils/logger";
 import { getScowClient } from "src/utils/scowClient";
@@ -44,22 +48,22 @@ export const currentClusters = authProcedure
   .input(z.void())
   .output(z.object({ results: z.array(ClusterSchema) }))
   .query(async () => {
-
     return mock(
       async () => {
-
         const commonConfigClient = getScowClient(CommonConfigClient);
         const serverConfigClient = getScowClient(ConfigServiceClient);
 
         const clusterConfigFilesInfo = await asyncClientCall(commonConfigClient, "getClusterConfigFiles", {});
 
-        const modifiedClustersInfo: Record<string, ClusterConfigSchema>
-        = getClusterConfigsTypeFormat(clusterConfigFilesInfo.clusterConfigs);
+        const modifiedClustersInfo: Record<string, ClusterConfigSchema> = getClusterConfigsTypeFormat(
+          clusterConfigFilesInfo.clusterConfigs,
+        );
 
         const clustersRuntimeInfo = await asyncClientCall(serverConfigClient, "getClustersRuntimeInfo", {});
 
-        const activatedRuntimeInfo = clustersRuntimeInfo.results.
-          filter((x) => x.activationStatus === ClusterActivationStatus.ACTIVATED);
+        const activatedRuntimeInfo = clustersRuntimeInfo.results.filter(
+          (x) => x.activationStatus === ClusterActivationStatus.ACTIVATED,
+        );
         const activatedClusters: Cluster[] = activatedRuntimeInfo.map((item) => {
           return {
             id: item.clusterId,
@@ -73,9 +77,7 @@ export const currentClusters = authProcedure
         return { results: MOCK_ACTIVATED_CLUSTER_INFO };
       },
     );
-
   });
-
 
 export const PartitionInfoSchema = z.object({
   name: z.string(),
@@ -97,18 +99,20 @@ export const clusterPartitionsInfo = authProcedure
       summary: "从适配器获取当前集群的分区信息",
     },
   })
-  .input(z.object({
-    clusterId: z.string(),
-  }))
-  .output(z.object({
-    schedulerName: z.string(),
-    partitions: z.array(PartitionInfoSchema),
-  }))
+  .input(
+    z.object({
+      clusterId: z.string(),
+    }),
+  )
+  .output(
+    z.object({
+      schedulerName: z.string(),
+      partitions: z.array(PartitionInfoSchema),
+    }),
+  )
   .query(async ({ input }) => {
-
     return mock(
       async () => {
-
         const { clusterId } = input;
 
         // 检查当前请求集群是否可用
@@ -116,13 +120,9 @@ export const clusterPartitionsInfo = authProcedure
 
         const clustersUtil = await getClusterUtils();
 
-        const result = await clustersUtil.callOnOne(
-          clusterId,
-          logger,
-          async (adapterClient) => {
-            return await asyncClientCall(adapterClient.config, "getClusterConfig", {});
-          },
-        );
+        const result = await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
+          return await asyncClientCall(adapterClient.config, "getClusterConfig", {});
+        });
 
         return [result];
       },
@@ -130,7 +130,6 @@ export const clusterPartitionsInfo = authProcedure
         return MOCK_CLUSTER_PARTITIONS_INFO as any;
       },
     );
-
   });
 
 export const ClusterPartition = z.object({
@@ -151,10 +150,8 @@ export const currentClustersPartitionsInfo = authProcedure
   .input(z.void())
   .output(z.array(ClusterPartition))
   .query(async ({ ctx: { user } }) => {
-
     return mock(
       async () => {
-
         if (!isResourceAdmin(user)) {
           throw new UserForbiddenError(user.identityId);
         }
@@ -168,15 +165,11 @@ export const currentClustersPartitionsInfo = authProcedure
 
         const clusterPartitions: ClusterPartition[] = [];
         const clustersUtil = await getClusterUtils();
-        const results =
-          await Promise.allSettled(currentClusterIds.map(async (clusterId) => {
-            const configInfo = await clustersUtil.callOnOne(
-              clusterId,
-              logger,
-              async (client) => {
-                return await asyncClientCall(client.config, "getClusterConfig", {});
-              },
-            );
+        const results = await Promise.allSettled(
+          currentClusterIds.map(async (clusterId) => {
+            const configInfo = await clustersUtil.callOnOne(clusterId, logger, async (client) => {
+              return await asyncClientCall(client.config, "getClusterConfig", {});
+            });
 
             if (configInfo) {
               const partitions: ClusterPartition[] = configInfo.partitions.map((x) => ({
@@ -185,7 +178,8 @@ export const currentClustersPartitionsInfo = authProcedure
               }));
               clusterPartitions.push(...partitions);
             }
-          }));
+          }),
+        );
 
         const errors = results.reduce((acc: { clusterId: string; reason: any }[], result, index) => {
           if (result.status === "rejected") {
@@ -195,10 +189,13 @@ export const currentClustersPartitionsInfo = authProcedure
         }, []);
 
         if (errors.length > 0) {
-          const errorDetails = errors.map((error) => {
-            return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.message
-              || error?.reason.details || error?.reason}`;
-          }).join("; ");
+          const errorDetails = errors
+            .map((error) => {
+              return `Cluster: ${error?.clusterId}, Reason: ${
+                error?.reason.message || error?.reason.details || error?.reason
+              }`;
+            })
+            .join("; ");
           logger.warn(`Failed to get cluster partitions for some clusters: ${errorDetails}`);
         }
 
@@ -215,5 +212,4 @@ export const currentClustersPartitionsInfo = authProcedure
         ] as any;
       },
     );
-
   });

@@ -3,7 +3,7 @@
 import { arrayContainsElement } from "@scow/utils";
 import { Layout, Menu } from "antd";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import React, { useCallback, useEffect, useLayoutEffect,useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createMenuItems } from "src/layouts/base/common";
 import { antdBreakpoints } from "src/layouts/base/constants";
 import { CollapseMenuIcon, ExpandMenuIcon } from "src/layouts/base/header/icons";
@@ -26,10 +26,11 @@ interface Props {
 const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
   height: 100%;
 
-  @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
+  @media (max-width: ${antdBreakpoints[breakpoint]}px) {
     z-index: 1000;
 
-    body, html {
+    body,
+    html {
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -59,7 +60,7 @@ const StyledSider = styled(Sider)<{ collapsed?: boolean }>`
     width: 100% !important;
   }
 
-   &.ant-layout-sider-collapsed {
+  &.ant-layout-sider-collapsed {
     .ant-menu-item,
     .ant-menu-submenu-title {
       /* 这里的 9px 对应 18px 宽度的图标中心点 */
@@ -86,46 +87,45 @@ const Container = styled.div<{ $width?: number }>`
     background: initial !important;
     max-height: calc(100vh - 110px);
     overflow: auto;
-    ${(props) => props.$width !== undefined && css`
-      width: ${props.$width}px !important;
-      max-width: ${props.$width}px !important;
-  `}
+    ${(props) =>
+      props.$width !== undefined &&
+      css`
+        width: ${props.$width}px !important;
+        max-width: ${props.$width}px !important;
+      `}
   }
 `;
 
 const SidebarIconContainer = styled.div<{ $sidebarCollapsed: boolean }>`
-  @media (max-width: ${antdBreakpoints[breakpoint]}px ) {
+  @media (max-width: ${antdBreakpoints[breakpoint]}px) {
     position: relative;
     z-index: 1000;
     height: 54px;
     background: ${({ theme }) => theme.token.colorBgContainer};
   }
   border-top: 1px #f0f0f0 solid;
-  padding-left: ${(props) => props.$sidebarCollapsed ? 26 : 24}px;
+  padding-left: ${(props) => (props.$sidebarCollapsed ? 26 : 24)}px;
   padding-top: 17px;
 `;
 
 function getAllParentKeys(routes: NavItemProps[]): string[] {
-  return routes.map((x) => {
-    if (arrayContainsElement(x.children)) {
-      return [...getAllParentKeys(x.children), x.path];
-    } else {
-      return [];
-    }
-  }).flat();
+  return routes
+    .map((x) => {
+      if (arrayContainsElement(x.children)) {
+        return [...getAllParentKeys(x.children), x.path];
+      } else {
+        return [];
+      }
+    })
+    .flat();
 }
 
-export const SideNav: React.FC<Props> = ({
-  routes, pathname, activeKeys, appRouter,
-}) => {
-
+export const SideNav: React.FC<Props> = ({ routes, pathname, activeKeys, appRouter }) => {
   const parentKeys = useMemo(() => getAllParentKeys(routes), [routes]);
 
   // 初始值：展开当前激活路由对应的所有父节点
   const [openKeys, setOpenKeys] = useState<string[]>(() => {
-    return parentKeys.filter((key) =>
-      activeKeys.some((activeKey) => activeKey.startsWith(key)),
-    );
+    return parentKeys.filter((key) => activeKeys.some((activeKey) => activeKey.startsWith(key)));
   });
 
   // 初始值读取窗口宽度
@@ -147,9 +147,9 @@ export const SideNav: React.FC<Props> = ({
 
   useEffect(() => {
     /**
-    * 点击菜单，收起其他展开的所有菜单，保持菜单聚焦简洁。
-    * 仅在账户管理页面有效，且用户管理的账户数量超过三个
-    */
+     * 点击菜单，收起其他展开的所有菜单，保持菜单聚焦简洁。
+     * 仅在账户管理页面有效，且用户管理的账户数量超过三个
+     */
     menuFocusedRef.current = parentKeys.length > 3 && parentKeys[0].startsWith("/accounts");
     if (menuFocusedRef.current) {
       const activeParentKey = activeKeys.find((key) => parentKeys.includes(key));
@@ -160,26 +160,29 @@ export const SideNav: React.FC<Props> = ({
     }
   }, [activeKeys, parentKeys]);
 
-  const onBreakpoint = useCallback((broken: boolean) => {
-    // if broken, big to small. collapse the sidebar
-    // if not, small to big, expand the sidebar
-    setSidebarCollapsed(broken);
-  }, [setSidebarCollapsed]);
+  const onBreakpoint = useCallback(
+    (broken: boolean) => {
+      // if broken, big to small. collapse the sidebar
+      // if not, small to big, expand the sidebar
+      setSidebarCollapsed(broken);
+    },
+    [setSidebarCollapsed],
+  );
 
-  const onOpenChange = useCallback((keys) => {
-    if (menuFocusedRef.current) {
-      const latestOpenKey = keys.find((key) => !openKeysRef.current.includes(key));
-      const nextKeys = !parentKeys.includes(latestOpenKey)
-        ? keys
-        : latestOpenKey ? [latestOpenKey] : [];
-      setOpenKeys(nextKeys);
-      openKeysRef.current = nextKeys;
-    }
-    else {
-      setOpenKeys(keys);
-      openKeysRef.current = keys;
-    }
-  }, [parentKeys]);
+  const onOpenChange = useCallback(
+    (keys) => {
+      if (menuFocusedRef.current) {
+        const latestOpenKey = keys.find((key) => !openKeysRef.current.includes(key));
+        const nextKeys = !parentKeys.includes(latestOpenKey) ? keys : latestOpenKey ? [latestOpenKey] : [];
+        setOpenKeys(nextKeys);
+        openKeysRef.current = nextKeys;
+      } else {
+        setOpenKeys(keys);
+        openKeysRef.current = keys;
+      }
+    },
+    [parentKeys],
+  );
 
   if (!arrayContainsElement(routes)) {
     return null;
@@ -198,23 +201,16 @@ export const SideNav: React.FC<Props> = ({
           mode="inline"
           inlineIndent={12}
           selectedKeys={activeKeys}
-          {
-            ...sidebarCollapsed
-              ? undefined
-              : { openKeys }
-          }
+          {...(sidebarCollapsed ? undefined : { openKeys })}
           onOpenChange={onOpenChange}
           items={createMenuItems(routes, pathname, false, appRouter)}
-        >
-        </Menu>
+        ></Menu>
       </StyledSider>
       <SidebarIconContainer $sidebarCollapsed={sidebarCollapsed}>
         <a onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
-          {React.createElement(
-            sidebarCollapsed ? ExpandMenuIcon : CollapseMenuIcon)}
+          {React.createElement(sidebarCollapsed ? ExpandMenuIcon : CollapseMenuIcon)}
         </a>
       </SidebarIconContainer>
     </Container>
   );
 };
-

@@ -19,7 +19,6 @@ import { setupProxyGateway } from "src/utils/proxy";
 import { initShellFile } from "src/utils/shell";
 
 export async function createServer() {
-
   const server = new Server({
     host: config.HOST,
     port: config.PORT,
@@ -55,16 +54,19 @@ export async function createServer() {
       server.logger,
       configClusters,
       config.MIS_SERVER_URL,
-      commonConfig.scowApi?.auth?.token);
+      commonConfig.scowApi?.auth?.token,
+    );
 
     await checkClusters(server.logger, activatedClusters);
-    await Promise.all(Object.entries(activatedClusters).map(async ([id, config]) => {
-      if (config.scowd?.enabled) {
-        server.logger.info(`The scowd of cluster ${id} is already enabled, skipping initShellFile.`);
-        return;
-      }
-      await initShellFile(id, server.logger);
-    }));
+    await Promise.all(
+      Object.entries(activatedClusters).map(async ([id, config]) => {
+        if (config.scowd?.enabled) {
+          server.logger.info(`The scowd of cluster ${id} is already enabled, skipping initShellFile.`);
+          return;
+        }
+        await initShellFile(id, server.logger);
+      }),
+    );
     await setupProxyGateway(server.logger, activatedClusters);
   }
 

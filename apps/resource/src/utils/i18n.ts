@@ -6,7 +6,6 @@ import { I18nDicType, languageDic, optionalLanguageDic } from "src/models/i18n";
 const fallbackLanguage = languageDic.en;
 
 export const getLanguage = (languageId: string | undefined | null): I18nDicType => {
-
   if (!languageId) {
     languageId = "zh_cn";
   }

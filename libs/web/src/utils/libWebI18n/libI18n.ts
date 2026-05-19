@@ -23,11 +23,7 @@ export const libWebLanguages: Record<string, LibWebTextsType> = {
   de: libWebDe,
 };
 
-export const getCurrentLangLibWebText = (
-  languageId: string,
-  key: LibWebTextsKeys,
-): string | undefined => {
-
+export const getCurrentLangLibWebText = (languageId: string, key: LibWebTextsKeys): string | undefined => {
   const currentLibWebTexts = libWebLanguages[languageId];
   const value = currentLibWebTexts[key];
 
@@ -36,8 +32,4 @@ export const getCurrentLangLibWebText = (
   } else {
     return undefined as any;
   }
-
 };
-
-
-

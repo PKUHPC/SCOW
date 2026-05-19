@@ -17,10 +17,18 @@ import {
   listTags,
   saveImage,
 } from "./apps";
-import { getSubmitInferenceParams,submitInferJob } from "./infer";
-import { calculateJobPrice,cancelJob, downloadPodLog, getJobSchedulingAndStartupLogs,
-  getPodLogs, getPodMonitorInfo, getPodsByJobId, getSubmitTrainParams,
-  trainJob } from "./jobs";
+import { getSubmitInferenceParams, submitInferJob } from "./infer";
+import {
+  calculateJobPrice,
+  cancelJob,
+  downloadPodLog,
+  getJobSchedulingAndStartupLogs,
+  getPodLogs,
+  getPodMonitorInfo,
+  getPodsByJobId,
+  getSubmitTrainParams,
+  trainJob,
+} from "./jobs";
 
 export const jobsRouter = router({
   listAllAvailableAppsFromAllClusters,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Col,Row } from "antd";
+import { Col, Row } from "antd";
 import React from "react";
 import { styled } from "styled-components";
 
@@ -31,7 +31,7 @@ export function MonitorGrid({ sources }: Props) {
     <GridWrap>
       <Row gutter={[12, 12]}>
         {sources.map((src) => (
-          <Col key={src} span={12} style={{ paddingLeft:0 }}>
+          <Col key={src} span={12} style={{ paddingLeft: 0 }}>
             <FrameContainer>
               <IFrame src={src} />
             </FrameContainer>

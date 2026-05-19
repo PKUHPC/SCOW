@@ -21,7 +21,6 @@ const p = prefix("pageComp.fileManagerComp.mkDirModal.");
 const pCommon = prefix("common.");
 
 export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
-
   const { message } = App.useApp();
 
   const [form] = Form.useForm<FormProps>();
@@ -32,8 +31,11 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
   const onSubmit = async () => {
     const { newFileName } = await form.validateFields();
     setLoading(true);
-    await api.mkdir({ body: { cluster, path: join(path, newFileName) } })
-      .httpError(409, () => { message.error(t(p("existedErrorMessage"))); })
+    await api
+      .mkdir({ body: { cluster, path: join(path, newFileName) } })
+      .httpError(409, () => {
+        message.error(t(p("existedErrorMessage")));
+      })
       .httpError(429, () => {
         message.error(t(pCommon("noSpaceError")));
       })

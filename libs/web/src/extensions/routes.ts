@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { joinWithUrl } from "@scow/utils";
 import { AnyZodObject, z } from "zod";
 
@@ -23,7 +11,7 @@ export interface ExtensionRoute<
   query?: z.ZodSchema<TQuery>;
   body?: z.ZodSchema<TBody>;
   responses: TResponses;
-};
+}
 
 export function defineExtensionRoute<
   TQuery extends Record<string, string | undefined>,
@@ -43,7 +31,6 @@ export class ExtensionRouteError extends Error {
   }
 }
 
-
 export const callExtensionRoute = async <
   TQuery extends Record<string, string | undefined>,
   TBody,
@@ -53,8 +40,7 @@ export const callExtensionRoute = async <
   query: TQuery,
   body: TBody,
   extensionUrl: string,
-): Promise<Partial<{[code in keyof TResponses & number]: z.infer<TResponses[code]> }>> => {
-
+): Promise<Partial<{ [code in keyof TResponses & number]: z.infer<TResponses[code]> }>> => {
   let url = joinWithUrl(extensionUrl, "api", route.path);
 
   const search = new URLSearchParams();
@@ -72,7 +58,7 @@ export const callExtensionRoute = async <
 
   const response = await fetch(url, {
     method: route.method,
-    ...route.method !== "GET" ? { body: JSON.stringify(body) } : {},
+    ...(route.method !== "GET" ? { body: JSON.stringify(body) } : {}),
     mode: "cors",
     headers: {
       "Content-Type": "application/json",

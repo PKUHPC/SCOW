@@ -20,7 +20,6 @@ export const CheckPasswordSchema = typeboxRouteSchema({
     /** 本功能在当前配置下不可用。 */
     501: Type.Null(),
   },
-
 });
 
 export default route(CheckPasswordSchema, async (req, res) => {
@@ -28,7 +27,9 @@ export default route(CheckPasswordSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
   if (!ldapCapabilities.checkPassword) {
@@ -37,20 +38,22 @@ export default route(CheckPasswordSchema, async (req, res) => {
 
   const { password } = req.query;
 
-  return await libCheckPassword(runtimeConfig.AUTH_INTERNAL_URL, {
-    identityId: info.identityId,
-    password: password,
-  }, console)
+  return await libCheckPassword(
+    runtimeConfig.AUTH_INTERNAL_URL,
+    {
+      identityId: info.identityId,
+      password: password,
+    },
+    console,
+  )
     .then((result) => {
       if (!result) {
         return { 404: null };
-      }
-      else {
+      } else {
         return { 200: { success: result.success } };
       }
     })
     .catch(async (e) => {
-
       if (e instanceof HttpError) {
         switch (e.status) {
           case 501:
@@ -58,10 +61,8 @@ export default route(CheckPasswordSchema, async (req, res) => {
           default:
             throw e;
         }
-
       } else {
         throw e;
       }
-
     });
 });

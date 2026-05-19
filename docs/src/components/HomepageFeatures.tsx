@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import Link from "@docusaurus/Link";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import clsx from "clsx";
@@ -27,33 +15,28 @@ const FeatureList: FeatureItem[] = [
   {
     title: "方便使用",
     image: "/img/undraw_docusaurus_react.svg",
-    description: (
-      <>
-        SCOW让超算用户和运维人员都可以在浏览器中完成日常科研和运维任务。
-      </>
-    ),
+    description: <>SCOW让超算用户和运维人员都可以在浏览器中完成日常科研和运维任务。</>,
   },
   {
     title: "方便部署",
     image: "/img/undraw_docusaurus_tree.svg",
-    description: (
-      <>
-        SCOW使用模块化结构，可以根据自己的需求部署全部或者部分功能。
-      </>
-    ),
+    description: <>SCOW使用模块化结构，可以根据自己的需求部署全部或者部分功能。</>,
   },
   {
     title: "方便扩展",
     image: "/img/undraw_docusaurus_mountain.svg",
     description: (
       <p>
-        使用任何语言，<br/>
+        使用任何语言，
+        <br />
         通过
         <Link href="/docs/integration/scow-api-hook/api">SCOW API</Link>
-        调用SCOW API，<br/>
+        调用SCOW API，
+        <br />
         通过
         <Link href="/docs/integration/scow-api-hook/hook">SCOW Hook</Link>
-        监听SCOW事件，<br/>
+        监听SCOW事件，
+        <br />
         使用
         <Link href="/docs/integration/ui-extension">UI扩展</Link>
         将您的系统集成进SCOW。

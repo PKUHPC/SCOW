@@ -20,7 +20,6 @@ interface FormProps {
 const p = prefix("page.admin.resourceManagement.clusterManagement.deactivateModal.");
 
 const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClose, onComplete, open }) => {
-
   const tArgs = useI18nTranslate();
 
   const [form] = Form.useForm<FormProps>();
@@ -40,13 +39,7 @@ const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClo
   const languageId = useI18n().currentLanguage.id;
 
   return (
-    <Modal
-      title={tArgs(p("title"))}
-      open={open}
-      onOk={onOK}
-      confirmLoading={loading}
-      onCancel={onClose}
-    >
+    <Modal title={tArgs(p("title"))} open={open} onOk={onOK} confirmLoading={loading} onCancel={onClose}>
       <Divider type="vertical" />
       <p>
         {tArgs(p("content"), [
@@ -57,12 +50,7 @@ const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClo
       <p> {tArgs(p("contentInputNotice"))} </p>
       <p style={{ color: "red" }}> {tArgs(p("contentAttention"))} </p>
 
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={undefined}
-        preserve={false}
-      >
+      <Form form={form} layout="vertical" initialValues={undefined} preserve={false}>
         <Form.Item
           name="confirmedClusterId"
           label={tArgs(p("clusterIdForm"))}
@@ -81,10 +69,7 @@ const DeactivateClusterModal: React.FC<Props> = ({ clusterId, clusterName, onClo
           {/* 需满足完全一致校验, 无需考虑trim */}
           <Input onPaste={(e) => e.preventDefault()} />
         </Form.Item>
-        <Form.Item
-          name="comment"
-          label={tArgs(p("comment"))}
-        >
+        <Form.Item name="comment" label={tArgs(p("comment"))}>
           <Input.TextArea />
         </Form.Item>
       </Form>

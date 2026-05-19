@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Cluster } from "@scow/config/build/type";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Card, Col, Row } from "antd";
@@ -29,33 +17,30 @@ interface Props {
   currentClusters: Cluster[];
 }
 
-const InfoPaneContainer = styled.div`
-`;
+const InfoPaneContainer = styled.div``;
 
 const colors = {
   // 节点使用率颜色
-  nodeUtilizationAvailable:"#ABA2E1",
-  nodeUtilizationNotavailable:"#CFCAEE",
-  nodeUtilizationRunning:"#6959CA",
+  nodeUtilizationAvailable: "#ABA2E1",
+  nodeUtilizationNotavailable: "#CFCAEE",
+  nodeUtilizationRunning: "#6959CA",
 
   // CPU核心使用率颜色
-  cpuAvailable:"#78BAC3",
-  cpunotAvailable:"#B0D6DC",
-  cpuRunning:"#4DA2AE",
+  cpuAvailable: "#78BAC3",
+  cpunotAvailable: "#B0D6DC",
+  cpuRunning: "#4DA2AE",
 
   // GPU核心使用率颜色
-  gpuRunning:"#BED32A",
-  gpuAvailable:"#D2E269",
-  gpunotAvailable:"#EBF1BE",
+  gpuRunning: "#BED32A",
+  gpuAvailable: "#D2E269",
+  gpunotAvailable: "#EBF1BE",
 
   // 作业字体颜色
-  runningJob:"#D1CB5B",
-  queuing:"#A58E74",
+  runningJob: "#D1CB5B",
+  queuing: "#A58E74",
 };
 const p = prefix("pageComp.dashboard.infoPanes.");
-export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
-  onTabChange, currentClusters }) => {
-
+export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey, onTabChange, currentClusters }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -74,38 +59,56 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
   let clusterCardsList;
   // card的每一项
   if (!showPlatformOverview) {
-    clusterCardsList = currentClusters.map((x) => ({
-      key:x.id,
-      tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
-    })) ?? [];
+    clusterCardsList =
+      currentClusters.map((x) => ({
+        key: x.id,
+        tab: typeof x.name == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
+      })) ?? [];
   } else {
     clusterCardsList = [
       {
-        key:"platformOverview",
-        tab:
-        <div style={{ width:"max-content", height:"40px",
-          textAlign: "center", lineHeight:"40px",
-          color:`${activeTabKey === "platformOverview" ? "#FFF" : "#000"}`,
-          background:`${activeTabKey === "platformOverview" ? theme.token.colorPrimary : "transparent"}`,
-          borderRadius:"5px",
-          fontWeight:"700",
-          paddingLeft:"20px",
-          paddingRight:"20px",
-        }}
-        >
-          {t(p("platformOverview"))}
-        </div>,
+        key: "platformOverview",
+        tab: (
+          <div
+            style={{
+              width: "max-content",
+              height: "40px",
+              textAlign: "center",
+              lineHeight: "40px",
+              color: `${activeTabKey === "platformOverview" ? "#FFF" : "#000"}`,
+              background: `${activeTabKey === "platformOverview" ? theme.token.colorPrimary : "transparent"}`,
+              borderRadius: "5px",
+              fontWeight: "700",
+              paddingLeft: "20px",
+              paddingRight: "20px",
+            }}
+          >
+            {t(p("platformOverview"))}
+          </div>
+        ),
       },
       ...currentClusters.map((x) => ({
-        key:x.id,
-        tab:typeof (x.name) == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
+        key: x.id,
+        tab: typeof x.name == "string" ? x.name : getI18nConfigCurrentText(x.name, languageId),
       })),
     ];
   }
 
-  const { nodeCount, runningNodeCount, idleNodeCount, notAvailableNodeCount,
-    cpuCoreCount, runningCpuCount, idleCpuCount, notAvailableCpuCount,
-    gpuCoreCount, runningGpuCount, idleGpuCount, notAvailableGpuCount, runningJobCount, pendingJobCount,
+  const {
+    nodeCount,
+    runningNodeCount,
+    idleNodeCount,
+    notAvailableNodeCount,
+    cpuCoreCount,
+    runningCpuCount,
+    idleCpuCount,
+    notAvailableCpuCount,
+    gpuCoreCount,
+    runningGpuCount,
+    idleGpuCount,
+    notAvailableGpuCount,
+    runningJobCount,
+    pendingJobCount,
   } = selectItem ?? {
     nodeCount: 0,
     runningNodeCount: 0,
@@ -125,7 +128,7 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
 
   return (
     <Card
-      style={{ width:"100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
+      style={{ width: "100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
       tabList={clusterCardsList}
       activeTabKey={activeTabKey}
       onTabChange={onTabChange}
@@ -135,11 +138,16 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
           <InfoPaneContainer>
             <InfoPane
               loading={loading}
-              tag={{ itemName:t(p("node")), num:nodeCount, subName:t(p("totalNodes")) }}
-              paneData={ [{ itemName:t(p("running")), num:runningNodeCount, color:colors.nodeUtilizationRunning },
-                { itemName:t(p("idle")), num:idleNodeCount, color:colors.nodeUtilizationAvailable },
-                { itemName:t(p("notAvailable")), num:notAvailableNodeCount || 0,
-                  color:colors.nodeUtilizationNotavailable }]}
+              tag={{ itemName: t(p("node")), num: nodeCount, subName: t(p("totalNodes")) }}
+              paneData={[
+                { itemName: t(p("running")), num: runningNodeCount, color: colors.nodeUtilizationRunning },
+                { itemName: t(p("idle")), num: idleNodeCount, color: colors.nodeUtilizationAvailable },
+                {
+                  itemName: t(p("notAvailable")),
+                  num: notAvailableNodeCount || 0,
+                  color: colors.nodeUtilizationNotavailable,
+                },
+              ]}
             ></InfoPane>
           </InfoPaneContainer>
         </Col>
@@ -147,11 +155,11 @@ export const InfoPanes: React.FC<Props> = ({ selectItem, loading, activeTabKey,
           <InfoPaneContainer>
             <InfoPane
               loading={loading}
-              tag={ { itemName:"CPU", num:cpuCoreCount, subName:t(p("totalCores")) } }
+              tag={{ itemName: "CPU", num: cpuCoreCount, subName: t(p("totalCores")) }}
               paneData={[
-                { itemName:t(p("running")), num:runningCpuCount, color:colors.cpuRunning },
-                { itemName:t(p("idle")), num:idleCpuCount, color:colors.cpuAvailable },
-                { itemName:t(p("notAvailable")), num:notAvailableCpuCount || 0, color:colors.cpunotAvailable },
+                { itemName: t(p("running")), num: runningCpuCount, color: colors.cpuRunning },
+                { itemName: t(p("idle")), num: idleCpuCount, color: colors.cpuAvailable },
+                { itemName: t(p("notAvailable")), num: notAvailableCpuCount || 0, color: colors.cpunotAvailable },
               ]}
             ></InfoPane>
           </InfoPaneContainer>

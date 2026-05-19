@@ -52,7 +52,7 @@ export const UserInfoSchema = Type.Object({
   tenantRoles: Type.Array(Type.Enum(TenantRole)),
   platformRoles: Type.Array(Type.Enum(PlatformRole)),
   email: Type.Optional(Type.String()),
-  createTime:Type.Optional(Type.String()),
+  createTime: Type.Optional(Type.String()),
 });
 
 export type UserInfo = Static<typeof UserInfoSchema>;

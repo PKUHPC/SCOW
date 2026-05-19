@@ -5,29 +5,46 @@ import { useMemo } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useI18n } from "src/i18n";
-import { AlgorithmIcon, CreateAppIcon, DatasetIcon, FileIcon, HistoryJobsIcon, ImageIcon, InferIcon,
-  ModelIcon, RunningJobsIcon,
-  TrainJobIcon } from "src/icons/menuIcons";
+import {
+  AlgorithmIcon,
+  CreateAppIcon,
+  DatasetIcon,
+  FileIcon,
+  HistoryJobsIcon,
+  ImageIcon,
+  InferIcon,
+  ModelIcon,
+  RunningJobsIcon,
+  TrainJobIcon,
+} from "src/icons/menuIcons";
 import { Cluster } from "src/server/trpc/route/config";
 import { EntryListSchema } from "src/server/trpc/route/dashboard";
 import { trpc } from "src/utils/trpc";
 
-interface App { id: string; name: string; logoPath?: string; };
+interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+}
 
-type ClusterLoginNodes = Record<string, { name: I18nStringType, address: string; }[]>;
+type ClusterLoginNodes = Record<string, { name: I18nStringType; address: string }[]>;
 
-type AppWithCluster = Record<string, {
-  app: App;
-  clusters: Cluster[];
-}>;
+type AppWithCluster = Record<
+  string,
+  {
+    app: App;
+    clusters: Cluster[];
+  }
+>;
 
 export const QuickEntry: React.FC = () => {
-
   const t = useI18nTranslateToString();
   const p = prefix("app.dashboard.quickEntry.");
 
-  const { publicConfig: { CLUSTERS: currentClusters,
-    PUBLIC_PATH: publicPath, BASE_PATH: basePath }, currentAvailableClusterIds } = usePublicConfig();
+  const {
+    publicConfig: { CLUSTERS: currentClusters, PUBLIC_PATH: publicPath, BASE_PATH: basePath },
+    currentAvailableClusterIds,
+  } = usePublicConfig();
 
   const languageId = useI18n().currentLanguage.id;
 
@@ -38,114 +55,114 @@ export const QuickEntry: React.FC = () => {
   const entryItems = {
     defaultEntries: [
       {
-        id:"dataset",
-        name:"dataset",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "dataset",
+        name: "dataset",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "asset/dataset",
-            icon:"DatasetIcon",
+            icon: "DatasetIcon",
           },
         },
       },
       {
-        id:"image",
-        name:"image",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "image",
+        name: "image",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "asset/image",
-            icon:"ImageIcon",
+            icon: "ImageIcon",
           },
         },
       },
       {
-        id:"algorithm",
-        name:"algorithm",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "algorithm",
+        name: "algorithm",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "asset/algorithm",
-            icon:"AlgorithmIcon",
+            icon: "AlgorithmIcon",
           },
         },
       },
       {
-        id:"model",
-        name:"model",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "model",
+        name: "model",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "asset/model",
-            icon:"ModelIcon",
+            icon: "ModelIcon",
           },
         },
       },
     ],
-    staticEntries:[
+    staticEntries: [
       {
-        id:"app",
-        name:"app",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "app",
+        name: "app",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/createApp",
-            icon:"CreateAppIcon",
+            icon: "CreateAppIcon",
           },
         },
       },
       {
-        id:"trainJobs",
-        name:"trainJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "trainJobs",
+        name: "trainJobs",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/createTrain",
-            icon:"TrainJobIcon",
+            icon: "TrainJobIcon",
           },
         },
       },
       {
-        id:"inference",
-        name:"inference",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "inference",
+        name: "inference",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/createInfer",
-            icon:"InferIcon",
+            icon: "InferIcon",
           },
         },
       },
       {
-        id:"runningJobs",
-        name:"runningJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "runningJobs",
+        name: "runningJobs",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "jobs/jobList",
-            icon:"RunningJobsIcon",
+            icon: "RunningJobsIcon",
           },
         },
       },
       {
-        id:"historyJobs",
-        name:"historyJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "historyJobs",
+        name: "historyJobs",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "jobs/jobList?jobType=historyJobs",
-            icon:"HistoryJobsIcon",
+            icon: "HistoryJobsIcon",
           },
         },
       },
       {
-        id:"file",
-        name:"file",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "file",
+        name: "file",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "files/~",
-            icon:"FileIcon",
+            icon: "FileIcon",
           },
         },
       },
@@ -153,16 +170,16 @@ export const QuickEntry: React.FC = () => {
   };
 
   const iconMap = {
-    "DatasetIcon": <DatasetIcon />,
-    "ImageIcon": <ImageIcon />,
-    "ModelIcon": <ModelIcon />,
-    "AlgorithmIcon": <AlgorithmIcon />,
-    "CreateAppIcon": <CreateAppIcon />,
-    "TrainJobIcon": <TrainJobIcon />,
-    "InferIcon": <InferIcon />,
-    "RunningJobsIcon": <RunningJobsIcon />,
-    "FileIcon": <FileIcon />,
-    "HistoryJobsIcon": <HistoryJobsIcon />,
+    DatasetIcon: <DatasetIcon />,
+    ImageIcon: <ImageIcon />,
+    ModelIcon: <ModelIcon />,
+    AlgorithmIcon: <AlgorithmIcon />,
+    CreateAppIcon: <CreateAppIcon />,
+    TrainJobIcon: <TrainJobIcon />,
+    InferIcon: <InferIcon />,
+    RunningJobsIcon: <RunningJobsIcon />,
+    FileIcon: <FileIcon />,
+    HistoryJobsIcon: <HistoryJobsIcon />,
   };
 
   const { data: scowClusterConfigData } = trpc.config.getScowClusterConfig.useQuery();
@@ -178,8 +195,10 @@ export const QuickEntry: React.FC = () => {
     const result: ClusterLoginNodes = {};
     for (const [clusterName, clusterData] of Object.entries(scowClusterConfigData || {})) {
       result[clusterName] = clusterData.loginNodes.map((node) => {
-        return { name: typeof node === "string" ? node : node.name,
-          address: typeof node === "string" ? node : node.address };
+        return {
+          name: typeof node === "string" ? node : node.name,
+          address: typeof node === "string" ? node : node.address,
+        };
       });
     }
     return result;
@@ -225,7 +244,6 @@ export const QuickEntry: React.FC = () => {
     });
   };
 
-
   return (
     <LibQuickEntry
       isLoading={getQuickEntriesLoading}
@@ -238,8 +256,7 @@ export const QuickEntry: React.FC = () => {
       entryItems={entryItems}
       iconMap={iconMap}
       loginNodes={loginNodes}
-      quickEntriesData={quickEntriesData?.length ?
-        quickEntriesData : entryItems.defaultEntries}
+      quickEntriesData={quickEntriesData?.length ? quickEntriesData : entryItems.defaultEntries}
       availableApps={availableApps}
       onSaveQuickEntries={onSaveQuickEntries}
     />

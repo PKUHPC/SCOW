@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -60,7 +48,7 @@ it("unblocks account when added to whitelist", async () => {
     accountName: a.accountName,
     comment: "test",
     operatorId: "123",
-    expirationTime:new Date("2125-01-01T00:00:00.000Z").toISOString(),
+    expirationTime: new Date("2125-01-01T00:00:00.000Z").toISOString(),
   });
 
   await reloadEntity(em, a);
@@ -69,12 +57,11 @@ it("unblocks account when added to whitelist", async () => {
 });
 
 it("blocks account when it is dewhitelisted and balance is < 0", async () => {
-
   const whitelist = new AccountWhitelist({
     account: a,
     comment: "",
     operatorId: "123",
-    expirationTime:new Date("2125-01-01T00:00:00.000Z"),
+    expirationTime: new Date("2125-01-01T00:00:00.000Z"),
   });
 
   await em.persistAndFlush(whitelist);
@@ -100,12 +87,11 @@ it("blocks account when it is dewhitelisted and balance is < 0", async () => {
 });
 
 it("blocks account when it is dewhitelisted and balance is = 0", async () => {
-
   const whitelist = new AccountWhitelist({
     account: a,
     comment: "",
     operatorId: "123",
-    expirationTime:new Date("2125-01-01T00:00:00.000Z"),
+    expirationTime: new Date("2125-01-01T00:00:00.000Z"),
   });
 
   await em.persistAndFlush(whitelist);
@@ -134,23 +120,31 @@ it("charges user but don't block account if account is whitelist", async () => {
   a.balance = new Decimal(1);
 
   a.blockedInCluster = false;
-  a.whitelist = toRef(new AccountWhitelist({
-    account : a,
-    comment: "123",
-    operatorId: "123",
-    expirationTime:new Date("2125-01-01T00:00:00.000Z"),
-  }));
+  a.whitelist = toRef(
+    new AccountWhitelist({
+      account: a,
+      comment: "123",
+      operatorId: "123",
+      expirationTime: new Date("2125-01-01T00:00:00.000Z"),
+    }),
+  );
 
   await em.flush();
 
   const currentActivatedClusters = await getActivatedClusters(em, server.logger);
 
-  const { currentBalance, previousBalance } = await charge({
-    amount: new Decimal(2),
-    comment: "",
-    target: a,
-    type: "haha",
-  }, em.fork(), currentActivatedClusters, server.logger, server.ext);
+  const { currentBalance, previousBalance } = await charge(
+    {
+      amount: new Decimal(2),
+      comment: "",
+      target: a,
+      type: "haha",
+    },
+    em.fork(),
+    currentActivatedClusters,
+    server.logger,
+    server.ext,
+  );
 
   await reloadEntity(em, a);
 
@@ -158,17 +152,15 @@ it("charges user but don't block account if account is whitelist", async () => {
   expect(previousBalance.toNumber()).toBe(1);
 
   expect(a.blockedInCluster).toBeFalsy();
-
 });
 
 it("get whitelisted accounts", async () => {
-
   const whitelist = new AccountWhitelist({
     account: a,
     comment: "",
     operatorId: "123",
     time: new Date("2023-01-01T00:00:00.000Z"),
-    expirationTime:new Date("2125-01-01T00:00:00.000Z"),
+    expirationTime: new Date("2125-01-01T00:00:00.000Z"),
   });
 
   await em.persistAndFlush(whitelist);
@@ -184,17 +176,16 @@ it("get whitelisted accounts", async () => {
 
   expect(resp.accounts).toIncludeSameMembers([
     {
-      "accountName": "hpca",
-      "ownerId": "a",
-      "ownerName": "AName",
-      "operatorId": "123",
-      "comment": "",
-      "addTime": "2023-01-01T00:00:00.000Z",
+      accountName: "hpca",
+      ownerId: "a",
+      ownerName: "AName",
+      operatorId: "123",
+      comment: "",
+      addTime: "2023-01-01T00:00:00.000Z",
       balance: decimalToMoney(data.accountA.balance),
-      "expirationTime":"2125-01-01T00:00:00.000Z",
+      expirationTime: "2125-01-01T00:00:00.000Z",
     },
   ]);
 
   em.clear();
-
 });

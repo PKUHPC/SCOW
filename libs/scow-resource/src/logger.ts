@@ -23,8 +23,8 @@ const loggerOptions: pino.LoggerOptions = {
   timestamp: pino.stdTimeFunctions.isoTime,
   ...(logConfig.pretty
     ? {
-      transport: { target: "pino-pretty" },
-    }
+        transport: { target: "pino-pretty" },
+      }
     : {}),
 };
 

@@ -25,9 +25,7 @@ import { createUserInDatabase, insertKeyToNewUser } from "src/utils/createUser";
 import { getScowdClient } from "src/utils/scowd";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
-
 export const tenantServiceServer = plugin((server) => {
-
   server.addService<TenantServiceServer>(TenantServiceService, {
     getTenantInfo: async ({ request, em }) => {
       const { tenantName } = request;
@@ -38,44 +36,56 @@ export const tenantServiceServer = plugin((server) => {
       }
       const accountCount = await em.count(Account, { tenant });
       const userCount = await em.count(User, { tenant });
-      const admins = await em.find(User, { tenant, tenantRoles: { $like: `%${TenantRole.TENANT_ADMIN}%` } }, {
-        fields: ["userId", "name"],
-      });
-      const financialStaff = await em.find(User, { tenant, tenantRoles: { $like: `%${TenantRole.TENANT_FINANCE}%` } }, {
-        fields: ["userId", "name"],
-      });
+      const admins = await em.find(
+        User,
+        { tenant, tenantRoles: { $like: `%${TenantRole.TENANT_ADMIN}%` } },
+        {
+          fields: ["userId", "name"],
+        },
+      );
+      const financialStaff = await em.find(
+        User,
+        { tenant, tenantRoles: { $like: `%${TenantRole.TENANT_FINANCE}%` } },
+        {
+          fields: ["userId", "name"],
+        },
+      );
 
-      return [{
-        accountCount,
-        admins: admins.map((a) => ({ userId: a.userId, userName: a.name })),
-        userCount,
-        balance: decimalToMoney(tenant.balance),
-        defaultAccountBlockThreshold: decimalToMoney(tenant.defaultAccountBlockThreshold),
-        financialStaff: financialStaff.map((f) => ({ userId: f.userId, userName: f.name })),
-      }];
+      return [
+        {
+          accountCount,
+          admins: admins.map((a) => ({ userId: a.userId, userName: a.name })),
+          userCount,
+          balance: decimalToMoney(tenant.balance),
+          defaultAccountBlockThreshold: decimalToMoney(tenant.defaultAccountBlockThreshold),
+          financialStaff: financialStaff.map((f) => ({ userId: f.userId, userName: f.name })),
+        },
+      ];
     },
 
     getTenants: async ({ em }) => {
-      const tenants = await em.find(Tenant, {}, { fields: ["name"]});
+      const tenants = await em.find(Tenant, {}, { fields: ["name"] });
 
       return [{ names: tenants.map((x) => x.name) }];
     },
 
     getAllTenants: async ({ em }) => {
       const tenants = await em.find(Tenant, {});
-      const userCountObjectArray: { tCount: number, tId: number }[]
-        = await em.createQueryBuilder(User, "u")
-          .select([raw("count(u.user_id) as tCount"), raw("u.tenant_id as tId")])
-          .groupBy("u.tenant_id").execute("all");
+      const userCountObjectArray: { tCount: number; tId: number }[] = await em
+        .createQueryBuilder(User, "u")
+        .select([raw("count(u.user_id) as tCount"), raw("u.tenant_id as tId")])
+        .groupBy("u.tenant_id")
+        .execute("all");
       // 将获查询得的对象数组userCountObjectArray转换为{"tenant_id":"userCountOfTenant"}形式
       const userCount = {};
       userCountObjectArray.map((x) => {
         userCount[x.tId] = x.tCount;
       });
-      const accountCountObjectArray: { tCount: number, tId: number }[]
-        = await em.createQueryBuilder(Account, "a")
-          .select([raw("count(a.id) as tCount"), raw("a.tenant_id as tId")])
-          .groupBy("a.tenant_id").execute("all");
+      const accountCountObjectArray: { tCount: number; tId: number }[] = await em
+        .createQueryBuilder(Account, "a")
+        .select([raw("count(a.id) as tCount"), raw("a.tenant_id as tId")])
+        .groupBy("a.tenant_id")
+        .execute("all");
       // 将获查询得的对象数组accountCountObjectArray转换为{"tenant_id":"accountCountOfTenant"}形式
       const accountCount = {};
       accountCountObjectArray.map((x) => {
@@ -93,7 +103,8 @@ export const tenantServiceServer = plugin((server) => {
             balance: decimalToMoney(x.balance),
             createTime: x.createTime.toISOString(),
           })),
-        }];
+        },
+      ];
     },
 
     createTenant: async ({ request, em, logger }) => {
@@ -102,7 +113,9 @@ export const tenantServiceServer = plugin((server) => {
       const tenant = await em.findOne(Tenant, { name: tenantName });
       if (tenant) {
         throw {
-          code: Status.ALREADY_EXISTS, message: "The tenant already exists", details: "TENANT_ALREADY_EXISTS",
+          code: Status.ALREADY_EXISTS,
+          message: "The tenant already exists",
+          details: "TENANT_ALREADY_EXISTS",
         } as ServiceError;
       }
       logger.info(`start to create tenant: ${tenantName} `);
@@ -113,7 +126,9 @@ export const tenantServiceServer = plugin((server) => {
         await em.persistAndFlush(newTenant).catch((e) => {
           if (e instanceof UniqueConstraintViolationException) {
             throw {
-              code: Status.ALREADY_EXISTS, message: "The tenant already exists", details: "TENANT_ALREADY_EXISTS",
+              code: Status.ALREADY_EXISTS,
+              message: "The tenant already exists",
+              details: "TENANT_ALREADY_EXISTS",
             } as ServiceError;
           }
           throw { code: Status.INTERNAL, message: "Error creating tenant in database." } as ServiceError;
@@ -137,7 +152,7 @@ export const tenantServiceServer = plugin((server) => {
                 message: `Cluster (ID: ${clusterId}) for authorizing application is not found`,
                 details: "CLUSTER_NOT_FOUND",
               } as ServiceError;
-            };
+            }
 
             for (const appId of Object.keys(clusterApps)) {
               const newItem = new TenantDefaultAppRemovedList({
@@ -153,38 +168,40 @@ export const tenantServiceServer = plugin((server) => {
         }
 
         // 在数据库中创建user
-        const user =
-         await createUserInDatabase(userId, userName, userEmail, tenantName, logger, em)
-           .then(async (user) => {
-             user.tenantRoles = [TenantRole.TENANT_ADMIN];
-             await em.persistAndFlush(user);
-             return user;
-           }).catch((e) => {
-             if (e.code === Status.ALREADY_EXISTS) {
-               throw {
-                 code: Status.ALREADY_EXISTS,
-                 message: `User with userId ${userId} already exists in scow.`,
-                 details: "USER_ALREADY_EXISTS",
-               } as ServiceError;
-             }
-             throw {
-               code: Status.INTERNAL,
-               message: `Error creating user with userId ${userId} in database.`,
-             } as ServiceError;
-           });
+        const user = await createUserInDatabase(userId, userName, userEmail, tenantName, logger, em)
+          .then(async (user) => {
+            user.tenantRoles = [TenantRole.TENANT_ADMIN];
+            await em.persistAndFlush(user);
+            return user;
+          })
+          .catch((e) => {
+            if (e.code === Status.ALREADY_EXISTS) {
+              throw {
+                code: Status.ALREADY_EXISTS,
+                message: `User with userId ${userId} already exists in scow.`,
+                details: "USER_ALREADY_EXISTS",
+              } as ServiceError;
+            }
+            throw {
+              code: Status.INTERNAL,
+              message: `Error creating user with userId ${userId} in database.`,
+            } as ServiceError;
+          });
         // call auth
-        const createdInAuth = await createUser(authUrl,
+        const createdInAuth = await createUser(
+          authUrl,
           { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password: userPassword },
-          logger)
+          logger,
+        )
           .then(async () => {
             // 插入公钥失败也认为是创建用户成功
             // 在所有集群下执行
             // 如果 SCOWD 开启则不需要插入公钥
             const filterClusterConfig = Object.fromEntries(
-              Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true));
+              Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true),
+            );
 
-            await insertKeyToNewUser(userId, userPassword, logger, filterClusterConfig)
-              .catch(() => {});
+            await insertKeyToNewUser(userId, userPassword, logger, filterClusterConfig).catch(() => {});
 
             return true;
           })
@@ -197,16 +214,22 @@ export const tenantServiceServer = plugin((server) => {
 
                 const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
                 if (quotaBytes === undefined) {
-                  const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
-                    path: config.storage.paths[0],
-                  })).totalStorageBytes;
+                  const totalStorageBytes = (
+                    await scowdClient.storageQuota.getFilesystemStorageUsage({
+                      path: config.storage.paths[0],
+                    })
+                  ).totalStorageBytes;
 
                   await scowdClient.storageQuota.setUserStorageQuota({
-                    userId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+                    userId,
+                    path: config.storage.paths[0],
+                    quotaBytes: totalStorageBytes,
                   });
                 } else {
                   await scowdClient.storageQuota.setUserStorageQuota({
-                    userId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+                    userId,
+                    path: config.storage.paths[0],
+                    quotaBytes: BigInt(quotaBytes),
                   });
                 }
               }
@@ -234,12 +257,10 @@ export const tenantServiceServer = plugin((server) => {
           });
         await callHook("userCreated", { tenantName, userId: user.userId }, logger);
         return [{ tenantId: newTenant.id, userId: user.id, createdInAuth: createdInAuth }];
-      },
-      );
+      });
     },
 
     setDefaultAccountBlockThreshold: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "set tenant block threshold task");
 
@@ -252,9 +273,13 @@ export const tenantServiceServer = plugin((server) => {
       tenant.defaultAccountBlockThreshold = new Decimal(moneyToNumber(blockThresholdAmount));
 
       // 判断租户下各账户是否使用该租户封锁阈值，使用后是否需要在集群中进行封锁
-      const accounts = await em.find(Account, { tenant: tenant, blockThresholdAmount : undefined }, {
-        populate: ["tenant"],
-      });
+      const accounts = await em.find(
+        Account,
+        { tenant: tenant, blockThresholdAmount: undefined },
+        {
+          populate: ["tenant"],
+        },
+      );
 
       const blockedAccounts: string[] = [];
       const blockedFailedAccounts: string[] = [];
@@ -263,8 +288,8 @@ export const tenantServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       if (accounts.length > 0) {
-        await Promise.allSettled(accounts
-          .map(async (account) => {
+        await Promise.allSettled(
+          accounts.map(async (account) => {
             // 判断设置封锁阈值后是否应该在集群中封锁
             const shouldBlockInCluster = getAccountStateInfo(
               account.whitelist?.id,
@@ -274,8 +299,11 @@ export const tenantServiceServer = plugin((server) => {
             ).shouldBlockInCluster;
 
             if (shouldBlockInCluster) {
-              logger.info("Account %s may be out of balance when using default tenant block threshold amount. "
-              + "Block the account.", account.accountName);
+              logger.info(
+                "Account %s may be out of balance when using default tenant block threshold amount. " +
+                  "Block the account.",
+                account.accountName,
+              );
 
               try {
                 await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
@@ -284,32 +312,34 @@ export const tenantServiceServer = plugin((server) => {
                 logger.warn("Failed to block account %s in slurm: %o", account.accountName, error);
                 blockedFailedAccounts.push(account.accountName);
               }
-
             }
 
             if (!shouldBlockInCluster) {
-              logger.info("The balance of Account %s is greater than the default tenant block threshold amount. "
-              + "Unblock the account.", account.accountName);
+              logger.info(
+                "The balance of Account %s is greater than the default tenant block threshold amount. " +
+                  "Unblock the account.",
+                account.accountName,
+              );
 
               try {
-                await unblockAccount(account,
+                await unblockAccount(
+                  account,
                   currentActivatedClusters,
                   server.ext.clusters,
                   logger,
-                  server.ext.resource);
+                  server.ext.resource,
+                );
                 unBlockedAccounts.push(account.accountName);
               } catch (error) {
                 logger.warn("Failed to unBlock account %s in slurm: %o", account.accountName, error);
                 unBlockedFailedAccounts.push(account.accountName);
               }
-
             }
           }),
         ).catch((e) => {
           logger.error("Block or unblock account failed when set a new default tenant threshold amount.", e);
         });
       }
-
 
       logger.info("Updated block status in slurm of the following accounts: %o", blockedAccounts);
       logger.info("Updated block status failed in slurm of the following accounts: %o", blockedFailedAccounts);
@@ -324,28 +354,28 @@ export const tenantServiceServer = plugin((server) => {
       }
 
       return [{}];
-
     },
 
     createTenantWithExistingUserAsAdmin: async ({ request, em }) => {
-
       const { tenantName, userId, userName } = request;
 
       const tenant = await em.findOne(Tenant, { name: tenantName });
       if (tenant) {
         throw {
-          code: Status.ALREADY_EXISTS, message: "The tenant already exists", details: "TENANT_ALREADY_EXISTS",
+          code: Status.ALREADY_EXISTS,
+          message: "The tenant already exists",
+          details: "TENANT_ALREADY_EXISTS",
         } as ServiceError;
       }
 
       const newTenant = new Tenant({ name: tenantName });
 
-
       const user = await em.findOne(User, { userId, name: userName });
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User with userId ${userId} and name ${userName}
+          code: Status.NOT_FOUND,
+          message: `User with userId ${userId} and name ${userName}
           is either not found or has been deleted.`,
         } as ServiceError;
       }
@@ -374,12 +404,12 @@ export const tenantServiceServer = plugin((server) => {
 
       await em.persistAndFlush([user, newTenant]);
 
-      return [{
-        tenantName: newTenant.name,
-        adminUserId: user.userId,
-      }];
-
+      return [
+        {
+          tenantName: newTenant.name,
+          adminUserId: user.userId,
+        },
+      ];
     },
-
   });
 });

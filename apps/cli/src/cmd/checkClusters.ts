@@ -41,14 +41,10 @@ interface ClusterCheckResult {
 }
 
 function generateScowdUrl(address: string, scowdPort: number | undefined, sslEnabled: boolean) {
-  return sslEnabled
-    ? `https://${removePort(address)}:${scowdPort}`
-    : `http://${removePort(address)}:${scowdPort}`;
+  return sslEnabled ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
 }
 
-export const checkClusters = async ({
-  configPath, scowConfigPath, continueOnError,
-}: Options) => {
+export const checkClusters = async ({ configPath, scowConfigPath, continueOnError }: Options) => {
   logger.info("Starting cluster connectivity check...");
 
   let hasError = false;
@@ -166,8 +162,8 @@ export const checkClusters = async ({
   // 检查每个集群
   logger.info("Checking all clusters...");
 
-  const checkPromises = Object.entries(clusters)
-    .map(async ([clusterId, clusterConfig]: [string, ClusterConfigSchema]): Promise<ClusterCheckResult> => {
+  const checkPromises = Object.entries(clusters).map(
+    async ([clusterId, clusterConfig]: [string, ClusterConfigSchema]): Promise<ClusterCheckResult> => {
       const result: ClusterCheckResult = {
         clusterId,
         adapterCheck: {
@@ -250,7 +246,8 @@ export const checkClusters = async ({
       }
 
       return result;
-    });
+    },
+  );
 
   const results = await Promise.all(checkPromises);
   const failedClusters = results.filter((result) => result.hasError).length;
@@ -271,10 +268,12 @@ export const checkClusters = async ({
     if (result.adapterCheck.success) {
       logger.info("  Status: ✓ Connected");
       if (result.adapterCheck.version) {
-        logger.info("  Version: %d.%d.%d",
+        logger.info(
+          "  Version: %d.%d.%d",
           result.adapterCheck.version.major,
           result.adapterCheck.version.minor,
-          result.adapterCheck.version.patch);
+          result.adapterCheck.version.patch,
+        );
       }
     } else {
       logger.error("  Status: ✗ Failed");

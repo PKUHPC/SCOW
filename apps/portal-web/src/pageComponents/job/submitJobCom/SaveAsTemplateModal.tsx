@@ -1,8 +1,10 @@
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { CompactInlineFormItem, StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
-import { createNonEmptyValidator as createJobNameValidator, createNonEmptyValidator }
-  from "@scow/lib-web/build/utils/form";
+import {
+  createNonEmptyValidator as createJobNameValidator,
+  createNonEmptyValidator,
+} from "@scow/lib-web/build/utils/form";
 import { Form } from "antd";
 import React, { useState } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -20,12 +22,7 @@ interface SaveAsTemplateFormValues {
 const p = prefix("pageComp.job.submitJobForm.");
 const pBaseInfo = prefix("pageComp.submitJobCom.baseInfoSection.");
 
-
-export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({
-  open,
-  onClose,
-  onSave,
-}) => {
+export const SaveAsTemplateModal: React.FC<SaveAsTemplateModalProps> = ({ open, onClose, onSave }) => {
   const [form] = Form.useForm<SaveAsTemplateFormValues>();
   const [loading, setLoading] = useState(false);
   const t = useI18nTranslateToString();

@@ -25,9 +25,8 @@ export const GetClusterConfigSchema = typeboxRouteSchema({
 
 export default route(GetClusterConfigSchema, async (req, res) => {
   if (await queryIfInitialized()) {
-    const auth = authenticate((u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    const auth = authenticate(
+      (u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
     );
     const info = await auth(req, res);
     if (!info) return;
@@ -37,12 +36,14 @@ export default route(GetClusterConfigSchema, async (req, res) => {
 
   const client = getClient(ConfigServiceClient);
 
-  const partitions = await asyncClientCall(client, "getClusterConfig", { cluster }).then((resp) => {
-    return resp.partitions;
-  }).catch((e) => {
-    console.error(`Cluster ops fails at ${cluster}, error details: ${e}`);
-    throw e;
-  });
+  const partitions = await asyncClientCall(client, "getClusterConfig", { cluster })
+    .then((resp) => {
+      return resp.partitions;
+    })
+    .catch((e) => {
+      console.error(`Cluster ops fails at ${cluster}, error details: ${e}`);
+      throw e;
+    });
 
   return {
     200: { partitions },

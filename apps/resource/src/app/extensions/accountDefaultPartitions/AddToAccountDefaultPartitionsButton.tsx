@@ -11,15 +11,15 @@ import { ClusterPartition } from "src/models/partition";
 import { trpc } from "src/server/trpc/api";
 
 interface FormProps {
-  cluster: Cluster | undefined,
-  partition: string,
+  cluster: Cluster | undefined;
+  partition: string;
 }
 
 interface ModalProps {
   tenantName: string;
-  defaultPartitions: ClusterPartition[] | undefined,
-  defaultClusterIds?: string[],
-  currentClusters: Cluster[],
+  defaultPartitions: ClusterPartition[] | undefined;
+  defaultClusterIds?: string[];
+  currentClusters: Cluster[];
   open: boolean;
   close: () => void;
   refresh: () => void;
@@ -28,14 +28,25 @@ interface ModalProps {
 }
 
 const NewPartitionModal: React.FC<ModalProps> = ({
-  tenantName, defaultPartitions, defaultClusterIds, currentClusters, open, close, refresh, language, languageId,
+  tenantName,
+  defaultPartitions,
+  defaultClusterIds,
+  currentClusters,
+  open,
+  close,
+  refresh,
+  language,
+  languageId,
 }) => {
-
   const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
-  const { data, refetch, isFetching, error: tenantPartitionsListError }
-   = trpc.partitions.tenantAssignedPartitions.useQuery({ tenantName });
+  const {
+    data,
+    refetch,
+    isFetching,
+    error: tenantPartitionsListError,
+  } = trpc.partitions.tenantAssignedPartitions.useQuery({ tenantName });
 
   if (tenantPartitionsListError) {
     message.error(language.globalMessage.noPartitionsMessage);
@@ -47,12 +58,14 @@ const NewPartitionModal: React.FC<ModalProps> = ({
 
   // 可选分区为 租户已授权分区排除已经添加到默认分区的分区与当前在线集群和已经添加到默认集群的交集
   const selectableClusterPartitionList = useMemo(() => {
-    const currentDefaultPartitionsSet
-      = new Set(defaultPartitions?.map((item) => `${item.clusterId}-${item.partition}`));
+    const currentDefaultPartitionsSet = new Set(
+      defaultPartitions?.map((item) => `${item.clusterId}-${item.partition}`),
+    );
 
-    const currentAvailableClusterIds = defaultClusterIds?.length && defaultClusterIds?.length > 0
-      ? currentClusters?.filter((x) => (defaultClusterIds?.includes(x.id)))?.map((x) => (x.id))
-      : [];
+    const currentAvailableClusterIds =
+      defaultClusterIds?.length && defaultClusterIds?.length > 0
+        ? currentClusters?.filter((x) => defaultClusterIds?.includes(x.id))?.map((x) => x.id)
+        : [];
     const currentClusterIdsSet = new Set(currentAvailableClusterIds);
 
     const selectableClusterPartitions = data?.assignedPartitions.filter((x) => {
@@ -62,17 +75,18 @@ const NewPartitionModal: React.FC<ModalProps> = ({
       return isInAssignedPartitions && isInCurrentClusterIds && isNotInDefaultPartitions;
     });
 
-    const clusterPartitionsMap: Record<string, string[]> | undefined
-     = selectableClusterPartitions?.reduce((acc, { clusterId, partition }) => {
-       if (!acc[clusterId]) {
-         acc[clusterId] = [];
-       }
-       acc[clusterId].push(partition);
-       return acc;
-     }, {} as Record<string, string[]>);
+    const clusterPartitionsMap: Record<string, string[]> | undefined = selectableClusterPartitions?.reduce(
+      (acc, { clusterId, partition }) => {
+        if (!acc[clusterId]) {
+          acc[clusterId] = [];
+        }
+        acc[clusterId].push(partition);
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
 
     return clusterPartitionsMap ?? {};
-
   }, [defaultPartitions, data, currentClusters]);
 
   useEffect(() => {
@@ -86,8 +100,9 @@ const NewPartitionModal: React.FC<ModalProps> = ({
       if (data?.failedAssignedAccounts.length > 0) {
         modal.success({
           title: language.accountDefaultPartitions.addModal.successMessage,
-          content: getCurrentLangTextArgs(
-            language.accountDefaultPartitions.addModal.successExplanation, [data.failedAssignedAccounts.join(", ")]),
+          content: getCurrentLangTextArgs(language.accountDefaultPartitions.addModal.successExplanation, [
+            data.failedAssignedAccounts.join(", "),
+          ]),
         });
       } else {
         message.success(language.accountDefaultPartitions.addModal.successMessage);
@@ -111,10 +126,7 @@ const NewPartitionModal: React.FC<ModalProps> = ({
     },
   });
 
-  const addToDefaultPartitions = async (
-    clusterId: string,
-    partition: string,
-  ) => {
+  const addToDefaultPartitions = async (clusterId: string, partition: string) => {
     await addToDefaultPartitionsMutation.mutateAsync({
       clusterId,
       partition,
@@ -136,26 +148,15 @@ const NewPartitionModal: React.FC<ModalProps> = ({
       confirmLoading={isFetching || addToDefaultPartitionsMutation.isPending}
     >
       <>
-        <p style={{ color: "red" }}>
-          {language.accountDefaultPartitions.addModal.addWarn}
-        </p>
+        <p style={{ color: "red" }}>{language.accountDefaultPartitions.addModal.addWarn}</p>
       </>
-      {
-        Object.keys(selectableClusterPartitionList).length === 0
-        && (
-          <Space style={{ marginBottom: "20px" }}>
-            {language.accountDefaultPartitions.noDataText}
-          </Space>
-        )}
+      {Object.keys(selectableClusterPartitionList).length === 0 && (
+        <Space style={{ marginBottom: "20px" }}>{language.accountDefaultPartitions.noDataText}</Space>
+      )}
       <Form form={form}>
-        <Form.Item
-          name="cluster"
-          rules={[{ required: true }]}
-          label={language.common.cluster}
-        >
+        <Form.Item name="cluster" rules={[{ required: true }]} label={language.common.cluster}>
           <SingleClusterSelector
-            currentClusters={
-              currentClusters?.filter((x) => (Object.keys(selectableClusterPartitionList).includes(x.id)))}
+            currentClusters={currentClusters?.filter((x) => Object.keys(selectableClusterPartitionList).includes(x.id))}
             languageId={languageId}
           />
         </Form.Item>
@@ -180,16 +181,14 @@ const NewPartitionModal: React.FC<ModalProps> = ({
 };
 
 interface Props {
-  tenantName?: string,
-  defaultPartitions: ClusterPartition[] | undefined,
-  defaultClusterIds?: string[],
-  currentClusters: Cluster[],
+  tenantName?: string;
+  defaultPartitions: ClusterPartition[] | undefined;
+  defaultClusterIds?: string[];
+  currentClusters: Cluster[];
   refresh: () => void;
   language: I18nDicType;
   languageId?: string;
 }
-
-
 
 export const AddToAccountDefaultPartitionsButton: React.FC<Props> = ({
   tenantName,
@@ -200,7 +199,6 @@ export const AddToAccountDefaultPartitionsButton: React.FC<Props> = ({
   language,
   languageId,
 }) => {
-
   const [modalShow, setModalShow] = useState(false);
 
   return (

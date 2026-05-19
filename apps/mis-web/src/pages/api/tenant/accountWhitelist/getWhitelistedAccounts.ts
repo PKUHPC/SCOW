@@ -12,7 +12,7 @@ import { route } from "src/utils/route";
 export const GetWhitelistedAccountsSchema = typeboxRouteSchema({
   method: "GET",
 
-  responses:{
+  responses: {
     200: Type.Object({
       results: Type.Array(WhitelistedAccount),
     }),
@@ -21,23 +21,25 @@ export const GetWhitelistedAccountsSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN));
 
-export default route(GetWhitelistedAccountsSchema,
-  async (req, res) => {
+export default route(GetWhitelistedAccountsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const client = getClient(AccountServiceClient);
 
-    const client = getClient(AccountServiceClient);
+  const reply = await asyncClientCall(client, "getWhitelistedAccounts", {
+    tenantName: info.tenant,
+  });
 
-    const reply = await asyncClientCall(client, "getWhitelistedAccounts", {
-      tenantName: info.tenant,
-    });
-
-    return { 200: {
+  return {
+    200: {
       results: reply.accounts.map((x) => ({
         ...x,
         ownerId: safeGetStringProperty(x.ownerId),
         ownerName: safeGetStringProperty(x.ownerName),
       })),
-    } };
-  });
+    },
+  };
+});

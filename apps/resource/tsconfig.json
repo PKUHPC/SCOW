@@ -14,15 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "paths": {
-      "src/*": [
-        "./src/*"
-      ]
+      "src/*": ["./src/*"]
     },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": false,
     "jsx": "preserve",
     "plugins": [
@@ -38,11 +32,9 @@
     "**/*.ts",
     "**/*.tsx",
     "src/**/*.ts",
-    ".next/types/**/*.ts", 
-    "../../libs/web/src/layouts/ErrorBoundary.tsx", 
-    "../../libs/web/src/layouts/Loading.tsx"  
+    ".next/types/**/*.ts",
+    "../../libs/web/src/layouts/ErrorBoundary.tsx",
+    "../../libs/web/src/layouts/Loading.tsx"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

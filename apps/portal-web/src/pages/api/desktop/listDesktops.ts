@@ -19,20 +19,26 @@ export const ListDesktopsSchema = typeboxRouteSchema({
 
   responses: {
     200: Type.Object({
-      userDesktops: Type.Array(Type.Object({
-        host: Type.String(),
-        desktops: Type.Array(Type.Object({
-          type: Type.Union([Type.Literal("vnc"), Type.Literal("shadowdesk")]),
-          data: Type.Optional(Type.Object({
-            id: Type.Number(),
-            displayId: Type.Number(),
-            desktopName: Type.String(),
-            wm: Type.String(),
-            createTime: Type.Optional(Type.String()),
-            isActive: Type.Optional(Type.Boolean()),
-          })),
-        })),
-      })),
+      userDesktops: Type.Array(
+        Type.Object({
+          host: Type.String(),
+          desktops: Type.Array(
+            Type.Object({
+              type: Type.Union([Type.Literal("vnc"), Type.Literal("shadowdesk")]),
+              data: Type.Optional(
+                Type.Object({
+                  id: Type.Number(),
+                  displayId: Type.Number(),
+                  desktopName: Type.String(),
+                  wm: Type.String(),
+                  createTime: Type.Optional(Type.String()),
+                  isActive: Type.Optional(Type.Boolean()),
+                }),
+              ),
+            }),
+          ),
+        }),
+      ),
     }),
 
     // 功能没有启用
@@ -42,8 +48,7 @@ export const ListDesktopsSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(ListDesktopsSchema, async (req, res) => {
   const { cluster, loginNode } = req.query;
 
   const clusterConfigs = await getClusterConfigFiles();
@@ -55,12 +60,16 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(DesktopServiceClient);
 
   const { userDesktops } = await asyncUnaryCall(client, "listUserDesktops", {
-    cluster, loginNode, userId: info.identityId,
+    cluster,
+    loginNode,
+    userId: info.identityId,
   });
 
   return {
@@ -69,8 +78,8 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
         host: userDesktop.host,
         desktops: userDesktop.desktops?.map((desktop) => {
           return {
-            type: desktop.remoteControlTool === RemoteControlTool.SHADOWDESK
-              ? "shadowdesk" as const : "vnc" as const,
+            type:
+              desktop.remoteControlTool === RemoteControlTool.SHADOWDESK ? ("shadowdesk" as const) : ("vnc" as const),
             data: {
               // scowd 模式下返回的数据一定包含 id
               id: desktop.id || desktop.displayId,
@@ -85,5 +94,4 @@ export default /* #__PURE__*/route(ListDesktopsSchema, async (req, res) => {
       })),
     },
   };
-
 });

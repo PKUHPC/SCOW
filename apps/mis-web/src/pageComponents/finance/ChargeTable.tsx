@@ -268,9 +268,7 @@ export const ChargeTable: React.FC<Props> = ({
               </Button>
             </Form.Item>
             <Form.Item>
-              <ExportFileModaLButton onExport={handleExport}>
-                {t(pCommon("export"))}
-              </ExportFileModaLButton>
+              <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
             </Form.Item>
           </Form>
         </FilterFormContainer>

@@ -23,12 +23,14 @@ export const RemoveUserFromAccountSchema = typeboxRouteSchema({
   responses: {
     200: Type.Object({
       success: Type.Boolean(),
-      results: Type.Optional(Type.Array(
-        Type.Object({
-          success: Type.Boolean(),
-          userId: Type.String(),
-        }),
-      )),
+      results: Type.Optional(
+        Type.Array(
+          Type.Object({
+            success: Type.Boolean(),
+            userId: Type.String(),
+          }),
+        ),
+      ),
     }),
     // 用户不存在
     404: Type.Null(),
@@ -45,20 +47,24 @@ export const RemoveUserFromAccountSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(RemoveUserFromAccountSchema, async (req, res) => {
+export default /* #__PURE__*/ route(RemoveUserFromAccountSchema, async (req, res) => {
   const { userIds, accountName } = req.query;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   // call ua service to add user
   const client = getClient(UserServiceClient);
@@ -68,8 +74,9 @@ export default /* #__PURE__*/route(RemoveUserFromAccountSchema, async (req, res)
       operatorUserId: info.identityId,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.removeUserFromAccount,
-      operationTypePayload:{
-        accountName, userId,
+      operationTypePayload: {
+        accountName,
+        userId,
       },
     };
   });
@@ -95,15 +102,19 @@ export default /* #__PURE__*/route(RemoveUserFromAccountSchema, async (req, res)
       }
       return { 200: res };
     })
-    .catch(handlegRPCError({
-      [Status.UNAVAILABLE]: (e) => ({ 400: { message: e.details } }),
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.OUT_OF_RANGE]: () => ({ 406: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
-      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-    },
-    async () => logInfos.forEach(async (logInfo) => {
-      await callLog(logInfo, OperationResult.FAIL);
-    }),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.UNAVAILABLE]: (e) => ({ 400: { message: e.details } }),
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.OUT_OF_RANGE]: () => ({ 406: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+          [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+        },
+        async () =>
+          logInfos.forEach(async (logInfo) => {
+            await callLog(logInfo, OperationResult.FAIL);
+          }),
+      ),
+    );
 });

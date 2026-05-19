@@ -2,11 +2,17 @@ import { Timestamp, timestampDate, timestampFromDate } from "@bufbuild/protobuf/
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Knex } from "@mikro-orm/mysql";
+import { AlertmanagerRole } from "@scow/config/build/notification";
 import { checkScowApiToken } from "@scow/lib-server";
 import { NoticeType, ReadStatus } from "@scow/notification-protos/build/common_pb";
 import { MessageService } from "@scow/notification-protos/build/message_pb";
-import { PlatformRole as ProtoPlatformRole, RoleFilter, TenantRole as ProtoTenantRole,
-  UserRole as ProtoUserRole, UserServiceClient } from "@scow/protos/build/server/user";
+import {
+  PlatformRole as ProtoPlatformRole,
+  RoleFilter,
+  TenantRole as ProtoTenantRole,
+  UserRole as ProtoUserRole,
+  UserServiceClient,
+} from "@scow/protos/build/server/user";
 import { InternalMessageType, adminMessageTypesMap } from "src/models/message-type";
 import { PlatformRole } from "src/models/user";
 import { commonConfig } from "src/server/config/common";
@@ -22,22 +28,19 @@ import { toCamelCaseArray } from "src/utils/camelCase";
 import { ensureNotUndefined } from "src/utils/ensure-not-undefined";
 import { forkEntityManager } from "src/utils/get-orm";
 import { logger } from "src/utils/logger";
-import {
-  adminSendMsgToBridge, systemBatchSendMsgsToBridge, SystemSendMsgToBridge,
-} from "src/utils/message-bridge";
+import { adminSendMsgToBridge, systemBatchSendMsgsToBridge, SystemSendMsgToBridge } from "src/utils/message-bridge";
 import { getMessageConfigWithDefault } from "src/utils/message-config";
 import { getMessagesTypeData } from "src/utils/message-type";
 import { checkAdminMessageTypeExist } from "src/utils/rendering-message";
-import { AlertmanagerRole } from "@scow/config/build/notification";
 import { getScowClient } from "src/utils/scow-client";
 
 const alertmanagerRoleToFilter: Record<AlertmanagerRole, RoleFilter> = {
-  PLATFORM_ADMIN:  { role: { $case: "platformRole", platformRole: ProtoPlatformRole.PLATFORM_ADMIN } },
+  PLATFORM_ADMIN: { role: { $case: "platformRole", platformRole: ProtoPlatformRole.PLATFORM_ADMIN } },
   PLATFORM_FINANCE: { role: { $case: "platformRole", platformRole: ProtoPlatformRole.PLATFORM_FINANCE } },
-  TENANT_ADMIN:    { role: { $case: "tenantRole",   tenantRole: ProtoTenantRole.TENANT_ADMIN } },
-  TENANT_FINANCE:  { role: { $case: "tenantRole",   tenantRole: ProtoTenantRole.TENANT_FINANCE } },
-  ACCOUNT_ADMIN:   { role: { $case: "accountRole",  accountRole: ProtoUserRole.ADMIN } },
-  ACCOUNT_OWNER:   { role: { $case: "accountRole",  accountRole: ProtoUserRole.OWNER } },
+  TENANT_ADMIN: { role: { $case: "tenantRole", tenantRole: ProtoTenantRole.TENANT_ADMIN } },
+  TENANT_FINANCE: { role: { $case: "tenantRole", tenantRole: ProtoTenantRole.TENANT_FINANCE } },
+  ACCOUNT_ADMIN: { role: { $case: "accountRole", accountRole: ProtoUserRole.ADMIN } },
+  ACCOUNT_OWNER: { role: { $case: "accountRole", accountRole: ProtoUserRole.OWNER } },
 };
 
 async function resolveRoleUsers(roles: AlertmanagerRole[]): Promise<string[]> {
@@ -62,26 +65,20 @@ export default (router: ConnectRouter) => {
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to send message.`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to send message.`, Code.PermissionDenied);
       }
 
       const em = await forkEntityManager();
 
       const messageTypeData = checkAdminMessageTypeExist(messageType);
       if (!messageTypeData) {
-        throw new ConnectError(
-          `Message type ${messageType} does't exists.`,
-          Code.InvalidArgument,
-        );
+        throw new ConnectError(`Message type ${messageType} does't exists.`, Code.InvalidArgument);
       }
 
       if (title.length > 50 || content.length > 500) {
         throw new ConnectError(
-          "The title length should be less than 50 characters, "
-            + "and the content length should be less than 500 characters.",
+          "The title length should be less than 50 characters, " +
+            "and the content length should be less than 500 characters.",
           Code.InvalidArgument,
         );
       }
@@ -124,9 +121,15 @@ export default (router: ConnectRouter) => {
 
       if (notificationConfig.messageBridge) {
         adminSendMsgToBridge({
-          senderType: SenderType.PLATFORM_ADMIN, senderId: user.identityId,
-          category: messageTypeData.category, messageType: messageTypeData.type,
-          targetType, targetIds, noticeTypes, title, content,
+          senderType: SenderType.PLATFORM_ADMIN,
+          senderId: user.identityId,
+          category: messageTypeData.category,
+          messageType: messageTypeData.type,
+          targetType,
+          targetIds,
+          noticeTypes,
+          title,
+          content,
         });
       }
 
@@ -143,10 +146,7 @@ export default (router: ConnectRouter) => {
           "User %s is not a platform admin and cannot display messages sent by the administrator.",
           user.identityId,
         );
-        throw new ConnectError(
-          `User ${user.identityId} unable to list admin messages.`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to list admin messages.`, Code.PermissionDenied);
       }
 
       const em = await forkEntityManager();
@@ -163,27 +163,19 @@ export default (router: ConnectRouter) => {
             const messageTypeData = checkAdminMessageTypeExist(messageType);
             if (!messageTypeData) {
               logger.error("Invalid admin message type: %s", messageType);
-              throw new ConnectError(
-                `Invalid admin message type: ${messageType}`,
-                Code.InvalidArgument,
-              );
+              throw new ConnectError(`Invalid admin message type: ${messageType}`, Code.InvalidArgument);
             }
           }
         }
 
         // 验证传入的categories是否属于管理员消息分类
         if (categories && categories.length > 0) {
-          const validAdminCategories = new Set(
-            Array.from(adminMessageTypesMap.values()).map((info) => info.category),
-          );
+          const validAdminCategories = new Set(Array.from(adminMessageTypesMap.values()).map((info) => info.category));
 
           for (const category of categories) {
             if (!validAdminCategories.has(category)) {
               logger.error("Invalid admin message category: %s", category);
-              throw new ConnectError(
-                `Invalid admin message category: ${category}`,
-                Code.InvalidArgument,
-              );
+              throw new ConnectError(`Invalid admin message category: ${category}`, Code.InvalidArgument);
             }
           }
         }
@@ -206,8 +198,8 @@ export default (router: ConnectRouter) => {
         if (keyword) {
           const likeValue = `%${keyword.trim()}%`;
           qb.andWhere(
-            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR "
-            + "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
+            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR " +
+              "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
             [likeValue, likeValue],
           );
         }
@@ -232,8 +224,8 @@ export default (router: ConnectRouter) => {
         if (keyword) {
           const likeValue = `%${keyword.trim()}%`;
           qbCount.andWhere(
-            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR "
-            + "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
+            "(JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.title')) LIKE ? OR " +
+              "JSON_UNQUOTE(JSON_EXTRACT(m.metadata, '$.content')) LIKE ?)",
             [likeValue, likeValue],
           );
         }
@@ -242,10 +234,14 @@ export default (router: ConnectRouter) => {
         const messagesTypeDataMap = await getMessagesTypeData(em, messages);
 
         // 关联查询 messageTarget，获取每条消息的通知方式（取一条即可）
-        const messageTargets = await em.find(MessageTarget, { message: { $in: messages.map((mm) => mm.id) } }, {
-          orderBy: { id: "ASC" },
-          populate: ["message"],
-        });
+        const messageTargets = await em.find(
+          MessageTarget,
+          { message: { $in: messages.map((mm) => mm.id) } },
+          {
+            orderBy: { id: "ASC" },
+            populate: ["message"],
+          },
+        );
         const noticeTypesByMessageId = new Map<bigint, NoticeType[]>();
         for (const mt of messageTargets) {
           const msgId = mt.message.id;
@@ -269,7 +265,6 @@ export default (router: ConnectRouter) => {
               noticeTypes: noticeTypesByMessageId.get(BigInt(m.id)) ?? [],
             })),
         };
-
       } catch (error) {
         if (error instanceof ConnectError) {
           logger.error("Error in adminListMessages %s, user %s", error.message, user.identityId);
@@ -283,9 +278,7 @@ export default (router: ConnectRouter) => {
     async listMessages(req, ctx) {
       const { userId, category, noticeType, messageType, messageTypes, readStatus, page, pageSize } = req;
       // messageTypes takes precedence over messageType when non-empty
-      const effectiveMessageTypes = messageTypes.length > 0
-        ? messageTypes
-        : messageType ? [messageType] : [];
+      const effectiveMessageTypes = messageTypes.length > 0 ? messageTypes : messageType ? [messageType] : [];
 
       if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
 
@@ -294,30 +287,27 @@ export default (router: ConnectRouter) => {
         throw new ConnectError(`user ${userId} does not exists.`, Code.InvalidArgument);
       }
 
-
       const em = await forkEntityManager();
       const knex = em.getConnection().getKnex();
 
       // 构建子查询：从 message_targets 表获取符合条件的 message_id
       const mtSubquery = knex("message_targets as mt")
         .select("mt.message_id")
-        .where(function() {
-          this.where("mt.notice_types", "like", `%${noticeType}%`)
-            .andWhere(function() {
-              this.where("mt.target_type", TargetType.FULL_SITE)
-                // .orWhere(function() {
-                //   this.where("mt.target_type", TargetType.TENANT)
-                //     .andWhere("mt.target_id", user.tenant);
-                // })
-                // .orWhere(function() {
-                //   this.where("mt.target_type", TargetType.ACCOUNT)
-                //     .andWhere("mt.target_id", "in", user.accountAffiliations.map((a) => a.accountName));
-                // })
-                .orWhere(function() {
-                  this.where("mt.target_type", TargetType.USER)
-                    .andWhere("mt.target_id", user.identityId);
-                });
-            });
+        .where(function () {
+          this.where("mt.notice_types", "like", `%${noticeType}%`).andWhere(function () {
+            this.where("mt.target_type", TargetType.FULL_SITE)
+              // .orWhere(function() {
+              //   this.where("mt.target_type", TargetType.TENANT)
+              //     .andWhere("mt.target_id", user.tenant);
+              // })
+              // .orWhere(function() {
+              //   this.where("mt.target_type", TargetType.ACCOUNT)
+              //     .andWhere("mt.target_id", "in", user.accountAffiliations.map((a) => a.accountName));
+              // })
+              .orWhere(function () {
+                this.where("mt.target_type", TargetType.USER).andWhere("mt.target_id", user.identityId);
+              });
+          });
         });
 
       // 构建子查询：从 messages 表获取 sender_type = PLATFORM_ADMIN 的 message_id
@@ -326,38 +316,30 @@ export default (router: ConnectRouter) => {
         .where("m.sender_type", SenderType.PLATFORM_ADMIN);
 
       // 使用 UNION 合并两个子查询
-      const unionSubquery = knex.union([
-        mtSubquery,
-        mSubquery,
-      ], true).as("message_ids");
+      const unionSubquery = knex.union([mtSubquery, mSubquery], true).as("message_ids");
 
       // 构建读取状态的查询条件
       let readConditions;
       switch (readStatus) {
         case ReadStatus.UNREAD:
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
-              this.select("umr.message_id as message_id")
-                .where("umr.status", EntityReadStatus.READ);
-            })
-              .orWhere(function(this: Knex.QueryBuilder) {
-                this.where("umr.status", EntityReadStatus.UNREAD)
-                  .andWhere("umr.is_deleted", false);
-              });
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.whereNotIn("m.id", function (this: Knex.QueryBuilder) {
+              this.select("umr.message_id as message_id").where("umr.status", EntityReadStatus.READ);
+            }).orWhere(function (this: Knex.QueryBuilder) {
+              this.where("umr.status", EntityReadStatus.UNREAD).andWhere("umr.is_deleted", false);
+            });
           };
           break;
         case ReadStatus.READ:
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.where("umr.status", EntityReadStatus.READ)
-              .andWhere("umr.is_deleted", false);
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.where("umr.status", EntityReadStatus.READ).andWhere("umr.is_deleted", false);
           };
           break;
         default:
           // 如果是 ALL 或未指定 readStatus，则不添加额外条件
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
-              this.select("umr.message_id as message_id")
-                .where("umr.is_deleted", true);
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.whereNotIn("m.id", function (this: Knex.QueryBuilder) {
+              this.select("umr.message_id as message_id").where("umr.is_deleted", true);
             });
           };
           break;
@@ -370,17 +352,16 @@ export default (router: ConnectRouter) => {
 
       // 构建最终查询
       const query = knex("messages as m")
-        .leftJoin("user_message_read as umr", function() {
-          this.on("m.id", "=", "umr.message_id")
-            .andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
+        .leftJoin("user_message_read as umr", function () {
+          this.on("m.id", "=", "umr.message_id").andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
         })
         .whereIn("m.id", knex.select("message_id").from(unionSubquery))
         .andWhere(readConditions)
-        .andWhere(function() {
+        .andWhere(function () {
           this.where("m.expired_at", ">", new Date()) // expired_at 大于当前时间
             .orWhereNull("m.expired_at"); // 或者 expired_at 为 null
         })
-        .modify(function(queryBuilder) {
+        .modify(function (queryBuilder) {
           if (category) {
             queryBuilder.andWhere("m.category", category);
           }
@@ -398,17 +379,16 @@ export default (router: ConnectRouter) => {
         query,
         knex("messages as m")
           .countDistinct("m.id as total")
-          .leftJoin("user_message_read as umr", function() {
-            this.on("m.id", "=", "umr.message_id")
-              .andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
+          .leftJoin("user_message_read as umr", function () {
+            this.on("m.id", "=", "umr.message_id").andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
           })
           .whereIn("m.id", knex.select("message_id").from(unionSubquery))
           .andWhere(readConditions)
-          .andWhere(function() {
+          .andWhere(function () {
             this.where("m.expired_at", ">", new Date()) // expired_at 大于当前时间
               .orWhereNull("m.expired_at"); // 或者 expired_at 为 null
           })
-          .modify(function(queryBuilder) {
+          .modify(function (queryBuilder) {
             if (category) {
               queryBuilder.andWhere("m.category", category);
             }
@@ -423,9 +403,13 @@ export default (router: ConnectRouter) => {
 
       // 查询每条消息的通知方式（取第一条 message_target 的 notice_types）
       const messageIds = camelCaseMessage.map((m) => BigInt(m.id));
-      const messageTargets = await em.find(MessageTarget, { message: { $in: messageIds } }, {
-        populate: ["message"],
-      });
+      const messageTargets = await em.find(
+        MessageTarget,
+        { message: { $in: messageIds } },
+        {
+          populate: ["message"],
+        },
+      );
       const noticeTypesByMessageId = new Map<bigint, NoticeType[]>();
       for (const mt of messageTargets) {
         const msgId = mt.message.id as unknown as bigint;
@@ -436,17 +420,19 @@ export default (router: ConnectRouter) => {
 
       return {
         totalCount: BigInt(total),
-        messages: camelCaseMessage.filter((m) => messagesTypeDataMap.has(m.messageType)).map((m) => ({
-          ...m,
-          id: BigInt(m.id),
-          metadata: m.metadata,
-          messageType: messagesTypeDataMap.get(m.messageType)!,
-          isRead: m.umrStatus === ReadStatus.READ ? true : false,
-          createdAt: new Date(m.createdAt).toISOString(),
-          updatedAt: new Date(m.updatedAt).toISOString(),
-          expiredAt: m.expiredAt ? timestampFromDate(new Date(m.expiredAt)) : undefined,
-          noticeTypes: noticeTypesByMessageId.get(BigInt(m.id)) ?? [],
-        })),
+        messages: camelCaseMessage
+          .filter((m) => messagesTypeDataMap.has(m.messageType))
+          .map((m) => ({
+            ...m,
+            id: BigInt(m.id),
+            metadata: m.metadata,
+            messageType: messagesTypeDataMap.get(m.messageType)!,
+            isRead: m.umrStatus === ReadStatus.READ ? true : false,
+            createdAt: new Date(m.createdAt).toISOString(),
+            updatedAt: new Date(m.updatedAt).toISOString(),
+            expiredAt: m.expiredAt ? timestampFromDate(new Date(m.expiredAt)) : undefined,
+            noticeTypes: noticeTypesByMessageId.get(BigInt(m.id)) ?? [],
+          })),
       };
     },
 
@@ -475,15 +461,19 @@ export default (router: ConnectRouter) => {
       });
 
       if (!message) {
-        throw new ConnectError(
-          `User ${user.identityId} can't read message ${messageId}`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} can't read message ${messageId}`, Code.PermissionDenied);
       }
 
-      await em.upsert(UserMessageRead, {
-        userId: user.identityId, message, readTime: new Date(), status: EntityReadStatus.READ,
-      }, { onConflictFields: ["userId", "message"]});
+      await em.upsert(
+        UserMessageRead,
+        {
+          userId: user.identityId,
+          message,
+          readTime: new Date(),
+          status: EntityReadStatus.READ,
+        },
+        { onConflictFields: ["userId", "message"] },
+      );
 
       return {
         // ...readRecord,
@@ -515,8 +505,8 @@ export default (router: ConnectRouter) => {
       // 构建子查询：从 message_targets 表获取符合条件的 message_id
       const mtSubquery = knex("message_targets as mt")
         .select("mt.message_id")
-        .where(function() {
-          this.where(function() {
+        .where(function () {
+          this.where(function () {
             this.where("mt.target_type", TargetType.FULL_SITE)
               // .orWhere(function() {
               //   this.where("mt.target_type", TargetType.TENANT)
@@ -526,9 +516,8 @@ export default (router: ConnectRouter) => {
               //   this.where("mt.target_type", TargetType.ACCOUNT)
               //     .andWhere("mt.target_id", "in", user.accountAffiliations.map((a) => a.accountName));
               // })
-              .orWhere(function() {
-                this.where("mt.target_type", TargetType.USER)
-                  .andWhere("mt.target_id", user.identityId);
+              .orWhere(function () {
+                this.where("mt.target_type", TargetType.USER).andWhere("mt.target_id", user.identityId);
               });
           });
         });
@@ -539,17 +528,14 @@ export default (router: ConnectRouter) => {
         .where("m.sender_type", SenderType.PLATFORM_ADMIN);
 
       // 使用 UNION 合并两个子查询
-      const unionSubquery = knex.union([
-        mtSubquery,
-        mSubquery,
-      ], true).as("message_ids");
+      const unionSubquery = knex.union([mtSubquery, mSubquery], true).as("message_ids");
 
       while (hasMoreMessages) {
         // 查询一个批次的消息
         // 构建最终查询
         const query = knex("messages as m")
           .whereIn("m.id", knex.select("message_id").from(unionSubquery))
-          .modify(function(queryBuilder) {
+          .modify(function (queryBuilder) {
             if (lastProcessedId) {
               queryBuilder.andWhereRaw(`m.id > ${lastProcessedId}`);
             }
@@ -568,12 +554,16 @@ export default (router: ConnectRouter) => {
         try {
           const upsertPromises = messages.map((message) => {
             const messageRef = em.getReference(Message, message.id);
-            return em.upsert(UserMessageRead, {
-              userId: user.identityId,
-              message: messageRef,
-              readTime: new Date(),
-              status: EntityReadStatus.READ,
-            }, { onConflictFields: ["userId", "message"]});
+            return em.upsert(
+              UserMessageRead,
+              {
+                userId: user.identityId,
+                message: messageRef,
+                readTime: new Date(),
+                status: EntityReadStatus.READ,
+              },
+              { onConflictFields: ["userId", "message"] },
+            );
           });
 
           // 等待所有更新操作完成
@@ -632,14 +622,12 @@ export default (router: ConnectRouter) => {
 
       await em.flush();
 
-
       // await deleteKeys([`${unreadMessageCountPrefixKey}${user.identityId}`]);
 
       return {};
     },
 
     async deleteAllReadMessages(req, ctx) {
-
       const { userId } = req;
 
       if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
@@ -658,18 +646,22 @@ export default (router: ConnectRouter) => {
       // 执行分页查询并批量删除
       while (hasMoreMessages) {
         // 查询批次的消息，按照 ID 排序以便分页
-        const messages = await em.find(Message, {
-          userMessageRead: { userId: user.identityId, status: ReadStatus.READ, isDeleted: false },
-          $or: [
-            { messageTarget: { targetType: TargetType.FULL_SITE } },
-            { messageTarget: { targetType: TargetType.USER, targetId: user.identityId } },
-          ],
-          ...(lastProcessedId ? { id: { $gt: lastProcessedId } } : {}), // 分页：只查询大于上次处理的 ID
-        }, {
-          fields: ["id"],
-          limit: batchSize,
-          orderBy: { id: 1 }, // 按照 ID 排序
-        });
+        const messages = await em.find(
+          Message,
+          {
+            userMessageRead: { userId: user.identityId, status: ReadStatus.READ, isDeleted: false },
+            $or: [
+              { messageTarget: { targetType: TargetType.FULL_SITE } },
+              { messageTarget: { targetType: TargetType.USER, targetId: user.identityId } },
+            ],
+            ...(lastProcessedId ? { id: { $gt: lastProcessedId } } : {}), // 分页：只查询大于上次处理的 ID
+          },
+          {
+            fields: ["id"],
+            limit: batchSize,
+            orderBy: { id: 1 }, // 按照 ID 排序
+          },
+        );
 
         if (messages.length === 0) {
           hasMoreMessages = false; // 没有更多消息，退出循环
@@ -680,10 +672,14 @@ export default (router: ConnectRouter) => {
         const messageIds = messages.map((message) => message.id);
 
         // 执行批量更新，标记这些消息为已删除
-        await em.nativeUpdate(UserMessageRead, {
-          userId: user.identityId,
-          message: { id: { $in: messageIds } },
-        }, { isDeleted: true });
+        await em.nativeUpdate(
+          UserMessageRead,
+          {
+            userId: user.identityId,
+            message: { id: { $in: messageIds } },
+          },
+          { isDeleted: true },
+        );
 
         // 更新分页的起始 ID，为下一批次查询做准备
         lastProcessedId = messages[messages.length - 1].id;
@@ -694,14 +690,10 @@ export default (router: ConnectRouter) => {
     },
 
     async changeMessageExpirationTime(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to modify message config`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to modify message config`, Code.PermissionDenied);
       }
 
       const { messageType, expiredAfterSeconds } = req;
@@ -729,29 +721,26 @@ export default (router: ConnectRouter) => {
       return {};
     },
     async getMessageExpirationTime(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to modify message config`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to modify message config`, Code.PermissionDenied);
       }
 
       const { messageType } = req;
 
       const em = await forkEntityManager();
 
-      const messageConfigs = await em.find(AdminMessageConfig, {
-        ...messageType ? { messageType } : {},
-      }, { limit: 1 });
+      const messageConfigs = await em.find(
+        AdminMessageConfig,
+        {
+          ...(messageType ? { messageType } : {}),
+        },
+        { limit: 1 },
+      );
 
       if (messageConfigs.length === 0) {
-        throw new ConnectError(
-          `Message type ${messageType} does not exist`,
-          Code.InvalidArgument,
-        );
+        throw new ConnectError(`Message type ${messageType} does not exist`, Code.InvalidArgument);
       }
 
       return {
@@ -762,9 +751,7 @@ export default (router: ConnectRouter) => {
     async receiveMonitorAlert(req, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
 
-      const clientIp = ctx.requestHeader.get("x-forwarded-for")
-        ?? ctx.requestHeader.get("x-real-ip")
-        ?? "unknown";
+      const clientIp = ctx.requestHeader.get("x-forwarded-for") ?? ctx.requestHeader.get("x-real-ip") ?? "unknown";
 
       logger.info(
         {
@@ -810,7 +797,10 @@ export default (router: ConnectRouter) => {
 
         const formatTs = (ts: Timestamp | undefined): string => {
           if (!ts || (ts.seconds === 0n && ts.nanos === 0)) return "";
-          return timestampDate(ts).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+          return timestampDate(ts)
+            .toISOString()
+            .replace("T", " ")
+            .replace(/\.\d{3}Z$/, " UTC");
         };
         const startsAtStr = formatTs(alert.startsAt);
         const endsAtStr = formatTs(alert.endsAt);
@@ -831,12 +821,11 @@ export default (router: ConnectRouter) => {
         );
 
         const contentEn = replaceTimestamps(alert.annotations["description"] || "");
-        const contentZhCn = replaceTimestamps(alert.annotations["description_zh"] || alert.annotations["description"] || "");
-
-        logger.debug(
-          { alertname, contentEn, contentZhCn },
-          "alertmanager webhook: timestamp substitution result",
+        const contentZhCn = replaceTimestamps(
+          alert.annotations["description_zh"] || alert.annotations["description"] || "",
         );
+
+        logger.debug({ alertname, contentEn, contentZhCn }, "alertmanager webhook: timestamp substitution result");
 
         const metadata: Record<string, string> = {
           contentEn,
@@ -847,9 +836,7 @@ export default (router: ConnectRouter) => {
         };
 
         const directUsers = mapping.users ?? [];
-        const roleUsers = mapping.roles?.length
-          ? await resolveRoleUsers(mapping.roles as AlertmanagerRole[])
-          : [];
+        const roleUsers = mapping.roles?.length ? await resolveRoleUsers(mapping.roles as AlertmanagerRole[]) : [];
         const targetIds = [...new Set([...directUsers, ...roleUsers])];
 
         if (targetIds.length === 0) {
@@ -889,12 +876,14 @@ export default (router: ConnectRouter) => {
           }
 
           if (messageEnabled) {
-            messageTargets.push(new MessageTarget({
-              noticeTypes: [NoticeType.SITE_MESSAGE],
-              targetId: userId,
-              targetType: TargetType.USER,
-              message,
-            }));
+            messageTargets.push(
+              new MessageTarget({
+                noticeTypes: [NoticeType.SITE_MESSAGE],
+                targetId: userId,
+                targetType: TargetType.USER,
+                message,
+              }),
+            );
           }
         }
 

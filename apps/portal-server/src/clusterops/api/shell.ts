@@ -20,8 +20,7 @@ interface Data {
   data: Uint8Array;
 }
 
-interface Disconnect {
-}
+interface Disconnect {}
 
 interface ShellRequest {
   cluster: string;
@@ -30,12 +29,16 @@ interface ShellRequest {
   path?: string;
   rows?: number;
   cols?: number;
-  call: AugmentedCall<ServerDuplexStream<ShellRequest_ReadStream, ShellRequest_WriteStream>>
+  call: AugmentedCall<ServerDuplexStream<ShellRequest_ReadStream, ShellRequest_WriteStream>>;
 }
 
 interface ShellRequest_ReadStream {
-  message?: { $case: "connect"; connect: Connect } | { $case: "resize"; resize: Resize }
-  | { $case: "data"; data: Data } | { $case: "disconnect"; disconnect: Disconnect } | undefined;
+  message?:
+    | { $case: "connect"; connect: Connect }
+    | { $case: "resize"; resize: Resize }
+    | { $case: "data"; data: Data }
+    | { $case: "disconnect"; disconnect: Disconnect }
+    | undefined;
 }
 
 interface ShellRequest_WriteStream {
@@ -48,7 +51,6 @@ interface Exit {
 }
 
 export interface ShellReply {}
-
 
 export interface ShellOps {
   shell(req: ShellRequest, logger: Logger): Promise<ShellReply>;

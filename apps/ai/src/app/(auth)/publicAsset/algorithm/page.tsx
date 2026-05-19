@@ -26,13 +26,9 @@ export default function Page() {
 
   return (
     <>
-      <PageTitle
-        titleText={t("routes.publicAsset.algorithmTitle")}
-      />
+      <PageTitle titleText={t("routes.publicAsset.algorithmTitle")} />
       <AssetContainer>
-        <AlgorithmTable
-          clusters={publicConfig.CLUSTERS}
-        />
+        <AlgorithmTable clusters={publicConfig.CLUSTERS} />
       </AssetContainer>
     </>
   );

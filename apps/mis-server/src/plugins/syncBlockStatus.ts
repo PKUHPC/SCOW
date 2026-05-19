@@ -47,7 +47,6 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
    * @returns
    */
   const trigger = async () => {
-
     const sublogger = logger.child({ time: new Date() });
 
     if (synchronizeIsRunning) {
@@ -66,7 +65,6 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
   };
 
   const syncAccountUserTrigger = async (maxSyncDurationMinutes?: number, operatorId?: string) => {
-
     const sublogger = logger.child({ time: new Date() });
 
     if (synchronizeIsRunning) {
@@ -85,8 +83,15 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     sublogger.info("Account user synchronization starts to run.");
 
     try {
-      return await synchronizeAccountUser(f.ext.orm.em.fork(),
-        sublogger, f.ext, f.ext, operatorId, maxSyncDurationMinutes, f.ext);
+      return await synchronizeAccountUser(
+        f.ext.orm.em.fork(),
+        sublogger,
+        f.ext,
+        f.ext,
+        operatorId,
+        maxSyncDurationMinutes,
+        f.ext,
+      );
     } finally {
       synchronizeIsRunning = false;
     }
@@ -94,7 +99,9 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
 
   const task = cron.schedule(
     synchronizeCron,
-    () => { void syncAccountUserTrigger(maxSyncDurationMinConfigValue); },
+    () => {
+      void syncAccountUserTrigger(maxSyncDurationMinConfigValue);
+    },
     {
       timezone: "Asia/Shanghai",
       scheduled: synchronizeEnabled,
@@ -108,7 +115,7 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
 
   // Deprecated
   // 同步封锁状态功能已升级为同步账户用户数据功能
-  f.addExtension("syncBlockStatus", ({
+  f.addExtension("syncBlockStatus", {
     started: () => synchronizeEnabled,
     start: () => {
       logger.info("Sync is started");
@@ -123,9 +130,9 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     schedule: synchronizeCron,
     lastSyncTime: () => lastSyncTime,
     run: trigger,
-  } satisfies SyncBlockStatusPlugin["syncBlockStatus"]));
+  } satisfies SyncBlockStatusPlugin["syncBlockStatus"]);
 
-  f.addExtension("syncAccountUser", ({
+  f.addExtension("syncAccountUser", {
     started: () => synchronizeEnabled,
     start: () => {
       logger.info("Account user synchronization is started");
@@ -140,7 +147,7 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     schedule: synchronizeCron,
     lastSyncTime: () => lastSyncTime,
     run: (maxSyncDurationMinutes, operatorId) => syncAccountUserTrigger(maxSyncDurationMinutes, operatorId),
-  } satisfies SyncBlockStatusPlugin["syncAccountUser"]));
+  } satisfies SyncBlockStatusPlugin["syncAccountUser"]);
 
   // 启动时不更新账户用户信息
   // 启动时检查数据库中是否有异常停止在RUNNING的同步记录
@@ -149,7 +156,7 @@ export const syncBlockStatusPlugin = plugin(async (f) => {
     sublogger.info("Checking whether running account user synchronization exists.");
     await checkRunningSyncTask(f.ext.orm.em.fork(), logger, true);
   } catch (error) {
-  // 记录错误但不影响系统启动
+    // 记录错误但不影响系统启动
     logger.error("Failed to check and fix stuck account user synchronization record during startup: %o", error);
     logger.warn("System will continue to start. Stuck record will be handled during next synchronization attempt.");
   }

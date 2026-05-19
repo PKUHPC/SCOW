@@ -9,10 +9,11 @@ const headerName = "grpc-status-details-bin";
 const typeUrlPrefix = "scow.com/";
 
 export const parseErrorStatus = (metadata: Metadata) => {
-
   const data = metadata.get(headerName)[0];
 
-  if (!data) { return { status: null, findDetails: () => []}; }
+  if (!data) {
+    return { status: null, findDetails: () => [] };
+  }
 
   const status = Status.decode(Uint8Array.from(Buffer.from(data)));
 
@@ -38,7 +39,7 @@ interface MessageType<T> {
   fromPartial(_: DeepPartial<T>): T;
   encode: (message: T, writer?: Writer) => Writer;
   decode: (input: Uint8Array) => T;
-};
+}
 
 export const encodeMessage = <T>(type: MessageType<T>, message: T) => {
   return Any.fromPartial({
@@ -48,16 +49,15 @@ export const encodeMessage = <T>(type: MessageType<T>, message: T) => {
 };
 
 export class DetailedError extends Error implements StatusObject {
-
   code: status;
   details: string;
   metadata: Metadata;
 
   constructor(
     error: {
-      code: status,
-      message: string,
-      details: Any[],
+      code: status;
+      message: string;
+      details: Any[];
     },
     options?: ErrorOptions,
   ) {
@@ -75,4 +75,3 @@ export class DetailedError extends Error implements StatusObject {
     this.metadata.set(headerName, Buffer.from(Status.encode(status).finish()));
   }
 }
-

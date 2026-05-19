@@ -2,15 +2,9 @@
   "name": "@scow/mis-web",
   "version": "1.11.1",
   "private": true,
-  "scripts": {
-    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev --turbopack",
-    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev --turbopack",
-    "serve": "node start.mjs",
-    "serve:next": "next start",
-    "build": "npm run build:next",
-    "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build --turbopack",
-    "client": "ntar client"
-  },
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "files": [
     ".next",
     "public",
@@ -21,9 +15,15 @@
     "!**/*.map",
     "start.mjs"
   ],
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow",
+  "scripts": {
+    "dev": "cross-env NEXT_PUBLIC_USE_MOCK=1 next dev --turbopack",
+    "dev:server": "cross-env NEXT_PUBLIC_USE_MOCK=0 next dev --turbopack",
+    "serve": "node start.mjs",
+    "serve:next": "next start",
+    "build": "npm run build:next",
+    "build:next": "rimraf .next.backup && cross-env BUILDING=1 BASE_PATH=/@BASE_PATH@ next build --turbopack",
+    "client": "ntar client"
+  },
   "dependencies": {
     "@ant-design/colors": "7.2.0",
     "@ant-design/cssinjs": "1.22.1",

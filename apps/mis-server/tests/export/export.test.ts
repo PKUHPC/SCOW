@@ -15,11 +15,7 @@ import {
   ExportServiceClient,
   ExportUserResponse,
 } from "@scow/protos/build/server/export";
-import {
-  GetAllUsersRequest_UsersSortField,
-  SortDirection,
-  tenantRoleFromJSON,
-} from "@scow/protos/build/server/user";
+import { GetAllUsersRequest_UsersSortField, SortDirection, tenantRoleFromJSON } from "@scow/protos/build/server/user";
 import { createServer } from "src/app";
 import { ChargeRecord } from "src/entities/ChargeRecord";
 import { JobInfo } from "src/entities/JobInfo";
@@ -31,10 +27,7 @@ let server: Server;
 let em: SqlEntityManager;
 let data: InitialData;
 
-async function collectData<T, R>(
-  stream: AsyncIterable<T>,
-  handler: (response: T) => R[],
-): Promise<R[]> {
+async function collectData<T, R>(stream: AsyncIterable<T>, handler: (response: T) => R[]): Promise<R[]> {
   const collectedData: R[] = [];
 
   for await (const response of stream) {
@@ -46,7 +39,6 @@ async function collectData<T, R>(
 }
 
 beforeEach(async () => {
-
   server = await createServer();
 
   em = server.ext.orm.em.fork();
@@ -54,7 +46,6 @@ beforeEach(async () => {
   data = await insertInitialData(em);
 
   await server.start();
-
 });
 
 afterEach(async () => {
@@ -62,47 +53,48 @@ afterEach(async () => {
   await server.close();
 });
 
-const mockOriginalJobData = (
-  account: string,
-  user: string,
-  jobId?: number,
-  cluster?: string,
-  endTime?: Date,
-) => new JobInfo({ cluster: cluster ?? "pkuhpc", ...{
-  pods: [],
-  events: [],
-  uniqueJobName: "",
-  "jobId": jobId ?? 5119061,
-  "account": account,
-  "user": user,
-  "partition": "C032M0128G",
-  "nodeList": "a5u15n01",
-  "name": "CoW",
-  "state": "COMPLETED",
-  "workingDirectory": "",
-  "submitTime": "2020-04-23T22:23:00.000Z",
-  "startTime": "2020-04-23T22:25:12.000Z",
-  "endTime": endTime ? endTime.toISOString() : "2020-04-23T23:18:02.000Z",
-  "gpusAlloc": 0,
-  "cpusReq": 32,
-  "memReqMb": 124000,
-  "nodesReq": 1,
-  "cpusAlloc": 32,
-  "memAllocMb": 124000,
-  "nodesAlloc": 1,
-  "timeLimitMinutes": 7200,
-  "elapsedSeconds": 3170,
-  "timeWait": endTime ? 0 : 132,
-  "qos": "normal",
-  "recordTime": new Date("2020-04-23T23:49:50.000Z"),
-  "gpusReq": 0,
-} }, data.tenant.name, {
-  tenant: { billingItemId: "", price: new Decimal(20) },
-  account: { billingItemId: "", price: new Decimal(10) },
-});
+const mockOriginalJobData = (account: string, user: string, jobId?: number, cluster?: string, endTime?: Date) =>
+  new JobInfo(
+    {
+      cluster: cluster ?? "pkuhpc",
+      ...{
+        pods: [],
+        events: [],
+        uniqueJobName: "",
+        jobId: jobId ?? 5119061,
+        account: account,
+        user: user,
+        partition: "C032M0128G",
+        nodeList: "a5u15n01",
+        name: "CoW",
+        state: "COMPLETED",
+        workingDirectory: "",
+        submitTime: "2020-04-23T22:23:00.000Z",
+        startTime: "2020-04-23T22:25:12.000Z",
+        endTime: endTime ? endTime.toISOString() : "2020-04-23T23:18:02.000Z",
+        gpusAlloc: 0,
+        cpusReq: 32,
+        memReqMb: 124000,
+        nodesReq: 1,
+        cpusAlloc: 32,
+        memAllocMb: 124000,
+        nodesAlloc: 1,
+        timeLimitMinutes: 7200,
+        elapsedSeconds: 3170,
+        timeWait: endTime ? 0 : 132,
+        qos: "normal",
+        recordTime: new Date("2020-04-23T23:49:50.000Z"),
+        gpusReq: 0,
+      },
+    },
+    data.tenant.name,
+    {
+      tenant: { billingItemId: "", price: new Decimal(20) },
+      account: { billingItemId: "", price: new Decimal(10) },
+    },
+  );
 
 it("export users", async () => {
-
   const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
   const stream = asyncReplyStreamCall(client, "exportUser", {
@@ -119,21 +111,20 @@ it("export users", async () => {
   };
   const users = await collectData(stream, handleUserResponse);
 
-  expect(users).toMatchObject([{
-    userId: data.userA.userId,
-    name: data.userA.name,
-    availableAccounts: [data.uaAA.account.getEntity().accountName],
-    tenantName: data.tenant.name,
-    tenantRoles: [tenantRoleFromJSON(data.userA.tenantRoles[0])],
-    email: data.userA.email,
-  }]);
-
+  expect(users).toMatchObject([
+    {
+      userId: data.userA.userId,
+      name: data.userA.name,
+      availableAccounts: [data.uaAA.account.getEntity().accountName],
+      tenantName: data.tenant.name,
+      tenantRoles: [tenantRoleFromJSON(data.userA.tenantRoles[0])],
+      email: data.userA.email,
+    },
+  ]);
 });
 
 it("export accounts", async () => {
-
   const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 
   const stream = asyncReplyStreamCall(client, "exportAccount", {
     count: 3,
@@ -146,35 +137,34 @@ it("export accounts", async () => {
 
   const accounts = await collectData(stream, handleAccountResponse);
 
-  expect(accounts).toMatchObject([{
-    accountName: data.accountA.accountName,
-    tenantName: data.tenant.name,
-    userCount: 2,
-    ownerId: data.userA.userId,
-    ownerName: data.userA.name,
-    comment: data.accountA.comment,
-    blocked: data.accountA.blockedInCluster,
-    balance: decimalToMoney(new Decimal(0)),
-    displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
-  }, {
-    accountName: data.accountB.accountName,
-    tenantName: data.tenant.name,
-    userCount: 1,
-    ownerId: data.userB.userId,
-    ownerName: data.userB.name,
-    comment: data.accountB.comment,
-    blocked: data.accountB.blockedInCluster,
-    balance: decimalToMoney(new Decimal(0)),
-    displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
-  },
+  expect(accounts).toMatchObject([
+    {
+      accountName: data.accountA.accountName,
+      tenantName: data.tenant.name,
+      userCount: 2,
+      ownerId: data.userA.userId,
+      ownerName: data.userA.name,
+      comment: data.accountA.comment,
+      blocked: data.accountA.blockedInCluster,
+      balance: decimalToMoney(new Decimal(0)),
+      displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+    },
+    {
+      accountName: data.accountB.accountName,
+      tenantName: data.tenant.name,
+      userCount: 1,
+      ownerId: data.userB.userId,
+      ownerName: data.userB.name,
+      comment: data.accountB.comment,
+      blocked: data.accountB.blockedInCluster,
+      balance: decimalToMoney(new Decimal(0)),
+      displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+    },
   ]);
-
 });
 
 it("export dept accounts", async () => {
-
   const client = new ExportServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 
   const stream = asyncReplyStreamCall(client, "exportAccount", {
     count: 3,
@@ -189,24 +179,22 @@ it("export dept accounts", async () => {
 
   const accounts = await collectData(stream, handleAccountResponse);
 
-  expect(accounts).toMatchObject([{
-    accountName: data.accountA.accountName,
-    tenantName: data.tenant.name,
-    userCount: 2,
-    ownerId: data.userA.userId,
-    ownerName: data.userA.name,
-    comment: data.accountA.comment,
-    blocked: data.accountA.blockedInCluster,
-    balance: decimalToMoney(new Decimal(0)),
-    displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
-  },
+  expect(accounts).toMatchObject([
+    {
+      accountName: data.accountA.accountName,
+      tenantName: data.tenant.name,
+      userCount: 2,
+      ownerId: data.userA.userId,
+      ownerName: data.userA.name,
+      comment: data.accountA.comment,
+      blocked: data.accountA.blockedInCluster,
+      balance: decimalToMoney(new Decimal(0)),
+      displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+    },
   ]);
-
 });
 
-
 it("export charge Records", async () => {
-
   const amount = new Decimal(10);
 
   const chargeRecord1 = new ChargeRecord({
@@ -281,8 +269,11 @@ it("export charge Records", async () => {
     count: 3,
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountOfTenant", accountOfTenant:{ accountName: data.accountA.accountName,
-      tenantName: data.accountA.tenant.getProperty("name") } }, types:[chargeRecord1.type],
+    target: {
+      $case: "accountOfTenant",
+      accountOfTenant: { accountName: data.accountA.accountName, tenantName: data.accountA.tenant.getProperty("name") },
+    },
+    types: [chargeRecord1.type],
     userIds: [data.userA.userId],
     idsOrNames: [data.userA.userId],
   });
@@ -316,11 +307,9 @@ it("export charge Records", async () => {
       userId: data.userA.userId,
     },
   ]);
-
 });
 
 it("export charge records keeps account scope for idsOrNames filter", async () => {
-
   const amount = new Decimal(10);
 
   const accountCharge = new ChargeRecord({
@@ -357,7 +346,7 @@ it("export charge records keeps account scope for idsOrNames filter", async () =
     count: 10,
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
     types: ["scopeType"],
     userIds: [],
     idsOrNames: [data.userA.userId],
@@ -379,10 +368,7 @@ it("export charge records keeps account scope for idsOrNames filter", async () =
   });
 });
 
-
-
 it("export pay Records", async () => {
-
   const amount = new Decimal(10);
 
   const payRecord1 = new PayRecord({
@@ -443,10 +429,14 @@ it("export pay Records", async () => {
     count: 2,
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfTenant", accountsOfTenant:{
-      accountNames: [data.accountA.accountName, data.accountB.accountName],
-      tenantName: data.accountA.tenant.getProperty("name"),
-    } }, types:[payRecord1.type],
+    target: {
+      $case: "accountsOfTenant",
+      accountsOfTenant: {
+        accountNames: [data.accountA.accountName, data.accountB.accountName],
+        tenantName: data.accountA.tenant.getProperty("name"),
+      },
+    },
+    types: [payRecord1.type],
   });
   const handlePaymentResponse = (response: ExportPayRecordResponse): PaymentRecord[] => {
     return response.payRecords;
@@ -479,17 +469,14 @@ it("export pay Records", async () => {
       ipAddress: payRecord3.ipAddress,
     },
   ]);
-
 });
 
 it("export job Records", async () => {
-
   const accountA = data.accountA.accountName,
     accountB = data.accountB.accountName;
 
   const userA = data.userA.userId,
     userB = data.userB.userId;
-
 
   const jobs = [
     mockOriginalJobData(accountA, userA),
@@ -515,10 +502,15 @@ it("export job Records", async () => {
     count: 3,
     jobEndTimeStart: jobEndTimeStart.toISOString(),
     jobEndTimeEnd: jobEndTimeEnd.toISOString(),
-    target:{ $case: "jobsOfAccountAndUser",
-      jobsOfAccountAndUser: { accountName: accountA, userId: userA,
-        tenantName: data.accountA.tenant.getProperty("name") },
-    }, clusters:["pkuhpc"],
+    target: {
+      $case: "jobsOfAccountAndUser",
+      jobsOfAccountAndUser: {
+        accountName: accountA,
+        userId: userA,
+        tenantName: data.accountA.tenant.getProperty("name"),
+      },
+    },
+    clusters: ["pkuhpc"],
   });
 
   const handlePaymentResponse = (response: ExportJobRecordResponse): JobInfoProto[] => {
@@ -551,10 +543,11 @@ it("export job Records", async () => {
     count: 4,
     jobEndTimeStart: jobEndTimeStart.toISOString(),
     jobEndTimeEnd: jobEndTimeEnd.toISOString(),
-    target:{ $case: "jobsOfUser",
-      jobsOfUser: { userId: userA,
-        tenantName: data.accountA.tenant.getProperty("name") },
-    }, clusters:["pkuhpc","cuchpc"],
+    target: {
+      $case: "jobsOfUser",
+      jobsOfUser: { userId: userA, tenantName: data.accountA.tenant.getProperty("name") },
+    },
+    clusters: ["pkuhpc", "cuchpc"],
   });
 
   const records2 = await collectData(stream2, handlePaymentResponse);
@@ -584,21 +577,24 @@ it("export job Records", async () => {
     count: 1,
     jobEndTimeStart: jobEndTimeStart.toISOString(),
     jobEndTimeEnd: jobEndTimeEnd.toISOString(),
-    target:{ $case: "jobsOfJobId",
-      jobsOfJobId: { jobId: 5119061,
-        tenantName: data.accountA.tenant.getProperty("name") },
-    }, clusters:["cuchpc"],
+    target: {
+      $case: "jobsOfJobId",
+      jobsOfJobId: { jobId: 5119061, tenantName: data.accountA.tenant.getProperty("name") },
+    },
+    clusters: ["cuchpc"],
   });
 
   const records3 = await collectData(stream3, handlePaymentResponse);
 
   expect(records3).toHaveLength(1);
 
-  expect(records3).toMatchObject([{
-    idJob: 5119061,
-    account: accountA,
-    user: userA,
-    cluster: "cuchpc",
-    timeEnd: "2020-04-23T23:18:02.000Z",
-  }]);
+  expect(records3).toMatchObject([
+    {
+      idJob: 5119061,
+      account: accountA,
+      user: userA,
+      cluster: "cuchpc",
+      timeEnd: "2020-04-23T23:18:02.000Z",
+    },
+  ]);
 });

@@ -27,7 +27,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
   },
 
   createFile: async (request, logger) => {
-
     const { userId, path } = request;
     const client = getClient(userId);
     logger.info("Creating file %s for user %s", path, userId);
@@ -66,7 +65,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
   },
 
   deleteFile: async (request, logger) => {
-
     const { userId, path } = request;
     const client = getClient(userId);
     logger.info("Deleting file %s for user %s", path, userId);
@@ -150,8 +148,7 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
           mode: info.mode,
           size: Number(info.sizeByte),
           linkTargetPath: info.linkTargetPath,
-          linkTargetType: info.linkTargetType !== undefined ?
-            fileTypeFromJSON(info.linkTargetType) : undefined,
+          linkTargetType: info.linkTargetType !== undefined ? fileTypeFromJSON(info.linkTargetType) : undefined,
         };
       });
       return { results };
@@ -188,11 +185,16 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
     call.on("error", onCallError);
 
     try {
-      readStream = client.file.download({
-        userId, path, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
-      }, {
-        signal: abortController.signal,
-      });
+      readStream = client.file.download(
+        {
+          userId,
+          path,
+          chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
 
       for await (const response of readStream) {
         if (clientDisconnected || call.destroyed) {
@@ -246,7 +248,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
         logger.info(`Download of ${path} was interrupted. Ensuring call is ended.`);
         call.end();
       }
-
     } catch (err) {
       logger.error(`Unhandled error during download of ${path}:`, err);
       clientDisconnected = true;
@@ -288,24 +289,27 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
     logger.info("Upload file started");
 
     try {
-      const res = await client.file.upload((async function* () {
-        yield { message: {
-          case: "info",
-          value: { path, userId, chunkIdx: chunkIdx !== undefined ? BigInt(chunkIdx) : undefined },
-        } };
+      const res = await client.file.upload(
+        (async function* () {
+          yield {
+            message: {
+              case: "info",
+              value: { path, userId, chunkIdx: chunkIdx !== undefined ? BigInt(chunkIdx) : undefined },
+            },
+          };
 
-        for await (const data of call.iter()) {
-          if (data.message?.$case !== "chunk") {
-            throw new RequestError(
-              status.INVALID_ARGUMENT,
-              `Expect receive chunk but received message of type ${data.message?.$case}`,
-            );
+          for await (const data of call.iter()) {
+            if (data.message?.$case !== "chunk") {
+              throw new RequestError(
+                status.INVALID_ARGUMENT,
+                `Expect receive chunk but received message of type ${data.message?.$case}`,
+              );
+            }
+            yield { message: { case: "chunk", value: data.message.chunk } };
           }
-          yield { message: { case: "chunk", value: data.message.chunk } };
-        }
-      })());
+        })(),
+      );
       return { writtenBytes: Number(res.writtenBytes) };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -319,14 +323,18 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
     const client = getClient(userId);
 
     try {
-      const { sizeByte, type, isSymlink, linkTargetPath, linkTargetType }
-        = await client.file.getFileMetadata({ userId, filePath: path });
+      const { sizeByte, type, isSymlink, linkTargetPath, linkTargetType } = await client.file.getFileMetadata({
+        userId,
+        filePath: path,
+      });
 
       return {
-        size: Number(sizeByte), type: fileTypeFromJSON(type), isSymlink, linkTargetPath,
+        size: Number(sizeByte),
+        type: fileTypeFromJSON(type),
+        isSymlink,
+        linkTargetPath,
         linkTargetType: linkTargetType !== undefined ? fileTypeFromJSON(linkTargetType) : undefined,
       };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -343,7 +351,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
       const res = await client.file.exists({ userId, path: path });
 
       return { exists: res.exists };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -359,7 +366,9 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
 
     try {
       await client.file.decompressFile({
-        userId, filePath, decompressionPath,
+        userId,
+        filePath,
+        decompressionPath,
       });
     } catch (err) {
       if (err instanceof ConnectError) {
@@ -372,7 +381,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
   },
 
   startFileTransfer: async (request) => {
-
     const { fromCluster, toCluster, userId, fromPath, toPath } = request;
 
     const { host: fromHost, port: fromPort } = getClusterTransferNode(fromCluster);
@@ -382,10 +390,13 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
     const scowdClient = getScowdClientByUrl(scowdUrl);
     try {
       await scowdClient.fileTransfer.startFileTransfer({
-        userId, destAddress: toAddress, destPath: toPath, sourcePath: fromPath });
+        userId,
+        destAddress: toAddress,
+        destPath: toPath,
+        sourcePath: fromPath,
+      });
 
       return {};
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -395,7 +406,6 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
   },
 
   queryFileTransfer: async (request) => {
-
     const { cluster, userId } = request;
     try {
       const { host: fromHost, port: fromPort } = getClusterTransferNode(cluster);
@@ -407,28 +417,28 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
 
       // 根据host确定clusterId
       const clusters = configClusters;
-      return { transferInfos: transferInfos.map((info) => {
-        let toCluster = info.toCluster;
-        for (const key in clusters) {
-          const transferNode = tryGetClusterTransferNode(key);
-          if (transferNode) {
-            const clusterHost = transferNode.address;
-            if (clusterHost === info.toCluster) {
-              toCluster = key;
+      return {
+        transferInfos: transferInfos.map((info) => {
+          let toCluster = info.toCluster;
+          for (const key in clusters) {
+            const transferNode = tryGetClusterTransferNode(key);
+            if (transferNode) {
+              const clusterHost = transferNode.address;
+              if (clusterHost === info.toCluster) {
+                toCluster = key;
+              }
+            } else {
+              continue;
             }
           }
-          else {
-            continue;
-          }
-        }
-        return {
-          ...info,
-          toCluster,
-          transferSizeKb: Number(info.transferSizeKb),
-          remainingTimeSeconds: Number(info.remainingTimeSeconds),
-        };
-      }) };
-
+          return {
+            ...info,
+            toCluster,
+            transferSizeKb: Number(info.transferSizeKb),
+            remainingTimeSeconds: Number(info.remainingTimeSeconds),
+          };
+        }),
+      };
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -448,7 +458,10 @@ export const scowdFileServices = (getClient: (userId: string) => ScowdClient): F
 
     try {
       await scowdClient.fileTransfer.terminateFileTransfer({
-        userId, destAddress: toAddress, sourcePath: fromPath });
+        userId,
+        destAddress: toAddress,
+        sourcePath: fromPath,
+      });
 
       return {};
     } catch (err) {

@@ -6,9 +6,7 @@ import { getClusterLoginNode } from "src/utils/ssh";
 import { scowdAppServices } from "./scowdApp";
 import { sshAppServices } from "./sshApp";
 
-
 export const appOps = (cluster: string): AppOps => {
-
   const clusterInfo = configClusters[cluster];
   if (clusterInfo.scowd?.enabled) {
     const getClient = (userId: string) => getScowdClient(cluster, userId);
@@ -19,7 +17,9 @@ export const appOps = (cluster: string): AppOps => {
   } else {
     const host = getClusterLoginNode(cluster);
 
-    if (!host) { throw new Error(`Cluster ${cluster} has no login node`); }
+    if (!host) {
+      throw new Error(`Cluster ${cluster} has no login node`);
+    }
 
     return {
       ...sshAppServices(cluster, host),

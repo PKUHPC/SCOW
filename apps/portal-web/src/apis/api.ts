@@ -1,6 +1,5 @@
 /* eslint-disable @stylistic/max-len */
 
-import { apiClient } from "src/apis/client";
 import type { GetClusterInfoSchema } from "src/pages/api//cluster";
 import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
 import type { getClusterConfigFilesSchema } from "src/pages/api//getClusterConfigFiles";
@@ -80,37 +79,77 @@ import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword"
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
 import type { getUserStorageInfoSchema } from "src/pages/api/storage/getUserStorageUsage";
 
+import { apiClient } from "src/apis/client";
 
 export const api = {
-  checkAppConnectivity: apiClient.fromTypeboxRoute<typeof CheckAppConnectivitySchema>("GET", "/api/app/checkConnectivity"),
-  checkShadowDeskConnectivity: apiClient.fromTypeboxRoute<typeof CheckShadowDeskConnectivitySchema>("GET", "/api/app/checkShadowDeskConnectivity"),
+  checkAppConnectivity: apiClient.fromTypeboxRoute<typeof CheckAppConnectivitySchema>(
+    "GET",
+    "/api/app/checkConnectivity",
+  ),
+  checkShadowDeskConnectivity: apiClient.fromTypeboxRoute<typeof CheckShadowDeskConnectivitySchema>(
+    "GET",
+    "/api/app/checkShadowDeskConnectivity",
+  ),
   connectToApp: apiClient.fromTypeboxRoute<typeof ConnectToAppSchema>("POST", "/api/app/connectToApp"),
   createAppSession: apiClient.fromTypeboxRoute<typeof CreateAppSessionSchema>("POST", "/api/app/createAppSession"),
-  getAllClustersAvailableApps: apiClient.fromTypeboxRoute<typeof GetAllClustersAvailableAppsSchema>("GET", "/api/app/getAllClustersAvailableApps"),
-  getAppLastSubmission: apiClient.fromTypeboxRoute<typeof GetAppLastSubmissionSchema>("GET", "/api/app/getAppLastSubmission"),
+  getAllClustersAvailableApps: apiClient.fromTypeboxRoute<typeof GetAllClustersAvailableAppsSchema>(
+    "GET",
+    "/api/app/getAllClustersAvailableApps",
+  ),
+  getAppLastSubmission: apiClient.fromTypeboxRoute<typeof GetAppLastSubmissionSchema>(
+    "GET",
+    "/api/app/getAppLastSubmission",
+  ),
   getAppMetadata: apiClient.fromTypeboxRoute<typeof GetAppMetadataSchema>("GET", "/api/app/getAppMetadata"),
   getAppSessions: apiClient.fromTypeboxRoute<typeof GetAppSessionsSchema>("GET", "/api/app/getAppSessions"),
-  getDynamicFormOptions: apiClient.fromTypeboxRoute<typeof GetDynamicFormOptionsSchema>("GET", "/api/app/getDynamicFromOptions"),
+  getDynamicFormOptions: apiClient.fromTypeboxRoute<typeof GetDynamicFormOptionsSchema>(
+    "GET",
+    "/api/app/getDynamicFromOptions",
+  ),
   listAvailableApps: apiClient.fromTypeboxRoute<typeof ListAvailableAppsSchema>("GET", "/api/app/listAvailableApps"),
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
   getClusterInfo: apiClient.fromTypeboxRoute<typeof GetClusterInfoSchema>("GET", "/api//cluster"),
-  getAllClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetAllClusterNodesInfoSchema>("GET", "/api/dashboard/getAllClusterNodesInfo"),
-  getAllClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllClustersInfoSchema>("GET", "/api/dashboard/getAllClustersInfo"),
-  getAllSummaryClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllSummaryClustersInfoSchema>("GET", "/api/dashboard/getAllSummaryClustersInfo"),
-  getClusterRunningInfo: apiClient.fromTypeboxRoute<typeof GetClusterRunningInfoSchema>("GET", "/api/dashboard/getClusterInfo"),
-  getClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterNodesInfoSchema>("GET", "/api/dashboard/getClusterNodesInfo"),
+  getAllClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetAllClusterNodesInfoSchema>(
+    "GET",
+    "/api/dashboard/getAllClusterNodesInfo",
+  ),
+  getAllClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllClustersInfoSchema>(
+    "GET",
+    "/api/dashboard/getAllClustersInfo",
+  ),
+  getAllSummaryClustersInfo: apiClient.fromTypeboxRoute<typeof GetAllSummaryClustersInfoSchema>(
+    "GET",
+    "/api/dashboard/getAllSummaryClustersInfo",
+  ),
+  getClusterRunningInfo: apiClient.fromTypeboxRoute<typeof GetClusterRunningInfoSchema>(
+    "GET",
+    "/api/dashboard/getClusterInfo",
+  ),
+  getClusterNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterNodesInfoSchema>(
+    "GET",
+    "/api/dashboard/getClusterNodesInfo",
+  ),
   getQuickEntries: apiClient.fromTypeboxRoute<typeof GetQuickEntriesSchema>("GET", "/api/dashboard/getQuickEntries"),
-  saveQuickEntries: apiClient.fromTypeboxRoute<typeof SaveQuickEntriesSchema>("POST", "/api/dashboard/saveQuickEntries"),
+  saveQuickEntries: apiClient.fromTypeboxRoute<typeof SaveQuickEntriesSchema>(
+    "POST",
+    "/api/dashboard/saveQuickEntries",
+  ),
   createDesktop: apiClient.fromTypeboxRoute<typeof CreateDesktopSchema>("POST", "/api/desktop/createDesktop"),
   killDesktop: apiClient.fromTypeboxRoute<typeof KillDesktopSchema>("POST", "/api/desktop/killDesktop"),
   launchDesktop: apiClient.fromTypeboxRoute<typeof LaunchDesktopSchema>("POST", "/api/desktop/launchDesktop"),
   listAvailableWms: apiClient.fromTypeboxRoute<typeof ListAvailableWmsSchema>("GET", "/api/desktop/listAvailableWms"),
   listDesktops: apiClient.fromTypeboxRoute<typeof ListDesktopsSchema>("GET", "/api/desktop/listDesktops"),
   checkTransferKey: apiClient.fromTypeboxRoute<typeof CheckTransferKeySchema>("POST", "/api/file/checkTransferKey"),
-  completeMultipartUpload: apiClient.fromTypeboxRoute<typeof CompleteMultipartUploadSchema>("POST", "/api/file/completeMultipartUpload"),
-  compressAndDownloadFile: apiClient.fromTypeboxRoute<typeof CompressAndDownloadFileSchema>("GET", "/api/file/compressAndDownload"),
+  completeMultipartUpload: apiClient.fromTypeboxRoute<typeof CompleteMultipartUploadSchema>(
+    "POST",
+    "/api/file/completeMultipartUpload",
+  ),
+  compressAndDownloadFile: apiClient.fromTypeboxRoute<typeof CompressAndDownloadFileSchema>(
+    "GET",
+    "/api/file/compressAndDownload",
+  ),
   compressFiles: apiClient.fromTypeboxRoute<typeof CompressFilesSchema>("PATCH", "/api/file/compressFiles"),
   copyFileItem: apiClient.fromTypeboxRoute<typeof CopyFileItemSchema>("PATCH", "/api/file/copy"),
   createFile: apiClient.fromTypeboxRoute<typeof CreateFileSchema>("POST", "/api/file/createFile"),
@@ -122,31 +161,67 @@ export const api = {
   getFileMetadata: apiClient.fromTypeboxRoute<typeof GetFileMetadataSchema>("GET", "/api/file/getFileMetadata"),
   getFileType: apiClient.fromTypeboxRoute<typeof GetFileTypeSchema>("GET", "/api/file/getFileType"),
   getHomeDirectory: apiClient.fromTypeboxRoute<typeof GetHomeDirectorySchema>("GET", "/api/file/getHome"),
-  initMultipartUpload: apiClient.fromTypeboxRoute<typeof InitMultipartUploadSchema>("POST", "/api/file/initMultipartUpload"),
+  initMultipartUpload: apiClient.fromTypeboxRoute<typeof InitMultipartUploadSchema>(
+    "POST",
+    "/api/file/initMultipartUpload",
+  ),
   listFile: apiClient.fromTypeboxRoute<typeof ListFileSchema>("GET", "/api/file/list"),
-  listAvailableTransferClusters: apiClient.fromTypeboxRoute<typeof ListAvailableTransferClustersSchema>("GET", "/api/file/listAvailableTransferClusters"),
+  listAvailableTransferClusters: apiClient.fromTypeboxRoute<typeof ListAvailableTransferClustersSchema>(
+    "GET",
+    "/api/file/listAvailableTransferClusters",
+  ),
   mergeFileChunks: apiClient.fromTypeboxRoute<typeof MergeFileChunksSchema>("POST", "/api/file/mergeFileChunks"),
   mkdir: apiClient.fromTypeboxRoute<typeof MkdirSchema>("POST", "/api/file/mkdir"),
   moveFileItem: apiClient.fromTypeboxRoute<typeof MoveFileItemSchema>("PATCH", "/api/file/move"),
-  queryFileTransferProgress: apiClient.fromTypeboxRoute<typeof QueryFileTransferProgressSchema>("GET", "/api/file/queryFileTransferProgress"),
+  queryFileTransferProgress: apiClient.fromTypeboxRoute<typeof QueryFileTransferProgressSchema>(
+    "GET",
+    "/api/file/queryFileTransferProgress",
+  ),
   startFileTransfer: apiClient.fromTypeboxRoute<typeof StartFileTransferSchema>("POST", "/api/file/startFileTransfer"),
-  terminateFileTransfer: apiClient.fromTypeboxRoute<typeof TerminateFileTransferSchema>("POST", "/api/file/terminateFileTransfer"),
+  terminateFileTransfer: apiClient.fromTypeboxRoute<typeof TerminateFileTransferSchema>(
+    "POST",
+    "/api/file/terminateFileTransfer",
+  ),
   uploadFile: apiClient.fromTypeboxRoute<typeof UploadFileSchema>("POST", "/api/file/upload"),
   getAppInitialConfig: apiClient.fromTypeboxRoute<typeof GetAppInitialConfigSchema>("GET", "/api//getAppInitialConfig"),
-  getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof getClusterConfigFilesSchema>("GET", "/api//getClusterConfigFiles"),
-  getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>("GET", "/api//getClustersRuntimeInfo"),
-  getIsUserEnabledRootShell: apiClient.fromTypeboxRoute<typeof GetIsUserEnabledRootShellSchema>("GET", "/api//getIsUserEnabledRootShell"),
-  getUserAssociatedClusterIds: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterIdsSchema>("GET", "/api//getUserAssociatedClusterIds"),
-  getUserAssociatedClusterPartitions: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterPartitionsSchema>("GET", "/api//getUserAssociatedClusterPartitions"),
-  getUserAvailableClusterApps: apiClient.fromTypeboxRoute<typeof GetUserAvailableClusterAppsSchema>("GET", "/api//getUserAvalableClusterApps"),
+  getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof getClusterConfigFilesSchema>(
+    "GET",
+    "/api//getClusterConfigFiles",
+  ),
+  getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>(
+    "GET",
+    "/api//getClustersRuntimeInfo",
+  ),
+  getIsUserEnabledRootShell: apiClient.fromTypeboxRoute<typeof GetIsUserEnabledRootShellSchema>(
+    "GET",
+    "/api//getIsUserEnabledRootShell",
+  ),
+  getUserAssociatedClusterIds: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterIdsSchema>(
+    "GET",
+    "/api//getUserAssociatedClusterIds",
+  ),
+  getUserAssociatedClusterPartitions: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClusterPartitionsSchema>(
+    "GET",
+    "/api//getUserAssociatedClusterPartitions",
+  ),
+  getUserAvailableClusterApps: apiClient.fromTypeboxRoute<typeof GetUserAvailableClusterAppsSchema>(
+    "GET",
+    "/api//getUserAvalableClusterApps",
+  ),
   getUserInfo: apiClient.fromTypeboxRoute<typeof GetUserInfoSchema>("GET", "/api//getUserInfo"),
   calculateJobPrice: apiClient.fromTypeboxRoute<typeof CalculateJobPriceSchema>("GET", "/api/job/calculateJobPrice"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
   deleteJobTemplate: apiClient.fromTypeboxRoute<typeof DeleteJobTemplateSchema>("DELETE", "/api/job/deleteJobTemplate"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/job/getAccounts"),
   getAllJobs: apiClient.fromTypeboxRoute<typeof GetAllJobsSchema>("GET", "/api/job/getAllJobs"),
-  getAvailableAccountsAndClusters: apiClient.fromTypeboxRoute<typeof GetAvailableAccountsAndClustersSchema>("GET", "/api/job/getAvailableAccountsAndClusters"),
-  getAvailablePartitionsForCluster: apiClient.fromTypeboxRoute<typeof GetAvailablePartitionsForClusterSchema>("GET", "/api/job/getAvailablePartitionsForCluster"),
+  getAvailableAccountsAndClusters: apiClient.fromTypeboxRoute<typeof GetAvailableAccountsAndClustersSchema>(
+    "GET",
+    "/api/job/getAvailableAccountsAndClusters",
+  ),
+  getAvailablePartitionsForCluster: apiClient.fromTypeboxRoute<typeof GetAvailablePartitionsForClusterSchema>(
+    "GET",
+    "/api/job/getAvailablePartitionsForCluster",
+  ),
   getJobTemplate: apiClient.fromTypeboxRoute<typeof GetJobTemplateSchema>("GET", "/api/job/getJobTemplate"),
   getRunningJobs: apiClient.fromTypeboxRoute<typeof GetRunningJobsSchema>("GET", "/api/job/getRunningJobs"),
   listJobTemplates: apiClient.fromTypeboxRoute<typeof ListJobTemplatesSchema>("GET", "/api/job/listJobTemplates"),
@@ -154,10 +229,19 @@ export const api = {
   saveAsJobTemplate: apiClient.fromTypeboxRoute<typeof SaveAsJobTemplateSchema>("POST", "/api/job/saveAsJobTemplate"),
   submitFileAsJob: apiClient.fromTypeboxRoute<typeof SubmitFileAsJobSchema>("POST", "/api/job/submitFileAsJob"),
   submitJob: apiClient.fromTypeboxRoute<typeof SubmitJobSchema>("POST", "/api/job/submitJob"),
-  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>("GET", "/api/notification/getUnreadMessages"),
-  markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
+  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>(
+    "GET",
+    "/api/notification/getUnreadMessages",
+  ),
+  markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>(
+    "POST",
+    "/api/notification/markMessageRead",
+  ),
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
-  getUserStorageInfo: apiClient.fromTypeboxRoute<typeof getUserStorageInfoSchema>("GET", "/api/storage/getUserStorageUsage"),
+  getUserStorageInfo: apiClient.fromTypeboxRoute<typeof getUserStorageInfoSchema>(
+    "GET",
+    "/api/storage/getUserStorageUsage",
+  ),
 };

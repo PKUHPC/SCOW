@@ -20,20 +20,19 @@ export enum SHARED_TARGET {
   DATASET = "/dataset",
   ALGORITHM = "/algorithm",
   MODEL = "/model",
-};
-
+}
 
 export interface ShareParams {
   // 分享源绝对路径
-  sourceFilePath: string,
+  sourceFilePath: string;
   // 分享的类别目录：/dataset, /algorithm, /model
-  sharedTarget: SHARED_TARGET,
+  sharedTarget: SHARED_TARGET;
   // 分享的目标名称：数据集，算法，模型的名称
-  targetName: string,
+  targetName: string;
   // 分享的目标子级名称：数据集版本，算法版本，模型版本的名称
-  targetSubName: string,
+  targetSubName: string;
   // 默认是用户家目录/nfs/home/{userId}的上上级目录/nfs，配置了sharedTopDir则直接使用
-  sharedTopDir: string,
+  sharedTopDir: string;
 }
 
 export interface FileDriver {
@@ -46,7 +45,12 @@ export interface FileDriver {
   move(fromPath: string, toPath: string, noCheckPermission?: boolean): Promise<void>;
   readDirectory(path: string, noCheckPermission?: boolean): Promise<ListDirectoryOutput[]>;
   download(path: string, download: string, res: NextApiResponse<any>, noCheckPermission?: boolean): Promise<void>;
-  upload(path: string, uploadedFile: File, chunkIdx?: number, noCheckPermission?: boolean): Promise<NextResponse<{ message: string; }>>;
+  upload(
+    path: string,
+    uploadedFile: File,
+    chunkIdx?: number,
+    noCheckPermission?: boolean,
+  ): Promise<NextResponse<{ message: string }>>;
   getFileMetadata(path: string, noCheckPermission?: boolean): Promise<FileMeta>;
   exists(path: string, noCheckPermission?: boolean): Promise<boolean>;
   chmod(path: string, mode: string): Promise<void>;
@@ -54,31 +58,31 @@ export interface FileDriver {
   compressFiles(paths: string[], archivePath: string, noCheckPermission?: boolean): Promise<void>;
 
   /**
- * 取消分享时删除相应的文件夹
- * @param sharedPath 需要取消分享的已分享主表绝对路径或子表绝对路径
- */
-  unShareFileOrDir(sharedPath: string,successCallback?: callback, failureCallback?: callback): Promise<void>;
+   * 取消分享时删除相应的文件夹
+   * @param sharedPath 需要取消分享的已分享主表绝对路径或子表绝对路径
+   */
+  unShareFileOrDir(sharedPath: string, successCallback?: callback, failureCallback?: callback): Promise<void>;
 
-  shareFileOrDir(shareParams: ShareParams,successCallback?: shareOkCallback, failureCallback?: callback): Promise<void>;
+  shareFileOrDir(
+    shareParams: ShareParams,
+    successCallback?: shareOkCallback,
+    failureCallback?: callback,
+  ): Promise<void>;
 
   /**
- *
- * @param newName 变更后的名称
- * @param oldPath 需要变更的原主表绝对路径或者原子表绝对路径
- *
- */
-  getUpdatedSharedPath(newName: string,oldPath: string): Promise<string>;
+   *
+   * @param newName 变更后的名称
+   * @param oldPath 需要变更的原主表绝对路径或者原子表绝对路径
+   *
+   */
+  getUpdatedSharedPath(newName: string, oldPath: string): Promise<string>;
 
-  checkCopyFilePath(toPath: string,fileName: string): Promise<void>;
+  checkCopyFilePath(toPath: string, fileName: string): Promise<void>;
   checkCreateResourcePath(toPath: string, noCheckPermission?: boolean): Promise<void>;
   checkSharePermission(sourcePath: string, noCheckPermission?: boolean): Promise<void>;
 }
 
-function createFileDriver(opts: {
-  clusterId: string;
-  userId: string;
-  logger: Logger;
-}): FileDriver {
+function createFileDriver(opts: { clusterId: string; userId: string; logger: Logger }): FileDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
   const host = getClusterLoginNode(clusterId);
@@ -87,7 +91,9 @@ function createFileDriver(opts: {
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) { throw clusterNotFound(clusterId); }
+  if (!host) {
+    throw clusterNotFound(clusterId);
+  }
 
   if (cluster.scowd?.enabled) {
     return new ScowdFileDriver(clusterId, userId, logger);
@@ -95,7 +101,6 @@ function createFileDriver(opts: {
 
   return new SshFileDriver(host, userId, logger);
 }
-
 
 export async function withFileDriver<T>(
   params: {
@@ -105,7 +110,6 @@ export async function withFileDriver<T>(
   handler: (driver: FileDriver) => Promise<T>,
   logger: Logger,
 ) {
-
   const driver = createFileDriver({
     clusterId: params.clusterId,
     userId: params.user,

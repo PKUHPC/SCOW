@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { inferRouterOutputs } from "@trpc/server";
 import { Lang } from "react-typed-i18n";
 import { prefix } from "src/i18n";
@@ -25,7 +13,7 @@ export enum Framework {
   KERAS = "KERAS",
   MINDSPORE = "MINDSPORE",
   OTHER = "OTHER",
-};
+}
 
 export const AlgorithmTypeText = {
   [Framework.TENSORFLOW]: "TensorFlow",
@@ -39,10 +27,8 @@ export type TextsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => 
 const p = prefix("app.algorithm.model.");
 
 export const getAlgorithmTexts = (t: TextsTransType) => {
-
   return {
-    all:t(p("all")),
-    other:t(p("other")),
+    all: t(p("all")),
+    other: t(p("other")),
   };
-
 };

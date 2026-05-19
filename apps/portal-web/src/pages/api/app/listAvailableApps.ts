@@ -52,24 +52,25 @@ export const ListAvailableAppsSchema = typeboxRouteSchema({
 // ~~ For now, the API requires token from query ~~
 // ~~ and authenticate manually ~~
 
-
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(ListAvailableAppsSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(ListAvailableAppsSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster } = req.query;
 
   const client = getClient(AppServiceClient);
 
-  return asyncUnaryCall(client, "listAvailableApps", { cluster, userId: info.identityId }).then((reply) => {
-    return { 200: { apps: reply.apps } };
-  }, handlegRPCError({
-    [status.UNKNOWN]: (e) => ({ 500: { code: "APP_CONFIG_ERROR" as const,
-      error: e.details } }),
-  }));
-
+  return asyncUnaryCall(client, "listAvailableApps", { cluster, userId: info.identityId }).then(
+    (reply) => {
+      return { 200: { apps: reply.apps } };
+    },
+    handlegRPCError({
+      [status.UNKNOWN]: (e) => ({ 500: { code: "APP_CONFIG_ERROR" as const, error: e.details } }),
+    }),
+  );
 });

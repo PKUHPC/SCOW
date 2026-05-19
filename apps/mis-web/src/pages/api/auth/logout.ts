@@ -18,9 +18,7 @@ export const LogoutSchema = typeboxRouteSchema({
   },
 });
 
-
 export default route(LogoutSchema, async (req) => {
-
   const token = getTokenFromCookie({ req });
 
   if (token) {
@@ -36,5 +34,4 @@ export default route(LogoutSchema, async (req) => {
     await deleteToken(token, runtimeConfig.AUTH_INTERNAL_URL);
   }
   return { 204: null };
-
 });

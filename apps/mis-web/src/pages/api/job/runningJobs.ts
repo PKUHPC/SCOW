@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { GetRunningJobsRequest, JobServiceClient } from "@scow/protos/build/server/job";
@@ -57,19 +45,19 @@ export const RunningJob = Type.Object({
   submitTime: Type.String(),
   accountPrice: Type.Optional(Money),
   tenantPrice: Type.Optional(Money),
-  chargingPeriod: Type.Optional(Type.Object({
-    startTime: Type.Optional(Type.String()),
-    endTime: Type.Optional(Type.String()),
-  })),
+  chargingPeriod: Type.Optional(
+    Type.Object({
+      startTime: Type.Optional(Type.String()),
+      endTime: Type.Optional(Type.String()),
+    }),
+  ),
 });
 export type RunningJob = Static<typeof RunningJob>;
 
 export const GetRunningJobsSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
-
     /**
       如果是租户管理员，只看当前租户的
       如果userId是自己，或者（设置了accountName，而且当前用户是accountName账户的管理员或者拥有者），那么
@@ -89,13 +77,11 @@ export const GetRunningJobsSchema = typeboxRouteSchema({
       results: Type.Array(RunningJob),
     }),
 
-
     403: Type.Null(),
   },
 });
 
 export const getRunningJobs = async (request: GetRunningJobsRequest) => {
-
   const client = getClient(JobServiceClient);
 
   const reply = await asyncClientCall(client, "getRunningJobs", request);
@@ -111,16 +97,18 @@ export const getRunningJobs = async (request: GetRunningJobsRequest) => {
   }));
 };
 
-
-export default /* #__PURE__*/route(GetRunningJobsSchema, async (req, res) => {
-  const auth = authenticate((u) =>
-    // u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-    u.accountAffiliations.length > 0);
+export default /* #__PURE__*/ route(GetRunningJobsSchema, async (req, res) => {
+  const auth = authenticate(
+    (u) =>
+      // u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0,
+  );
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, userId, userIdOrName, ownerIdOrName, accountName } = req.query;
 
@@ -131,9 +119,10 @@ export default /* #__PURE__*/route(GetRunningJobsSchema, async (req, res) => {
     ownerIdOrName,
   };
 
-  if (info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-    || userId === info.identityId
-    || (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+  if (
+    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+    userId === info.identityId ||
+    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
   ) {
     filter.tenantName = info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ? info.tenant : undefined;
     filter.userId = userId;

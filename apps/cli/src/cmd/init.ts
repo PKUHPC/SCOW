@@ -1,25 +1,12 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { existsSync, promises as fsp } from "fs";
 import { basename, join } from "path";
 import prompt from "prompts";
 import { logger } from "src/log";
 
-
 interface Options {
   outputPath: string;
   // 是否展示所有配置项
-  full: boolean
+  full: boolean;
 }
 
 // For pkg executables, assets are in the snapshot filesystem
@@ -48,7 +35,6 @@ const initAssets = [
 
 // fs.promise.cp throws error for config dir
 async function copyWithWarning(src: string, dest: string) {
-
   const stat = await fsp.lstat(src);
   const destPath = join(dest, basename(src));
 
@@ -81,7 +67,6 @@ async function copyWithWarning(src: string, dest: string) {
 }
 
 export const init = async (options: Options) => {
-
   const fullPath = join(process.cwd(), options.outputPath);
 
   logger.info("Output path is %s. ", fullPath);

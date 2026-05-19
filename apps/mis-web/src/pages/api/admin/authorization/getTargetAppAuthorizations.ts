@@ -4,7 +4,7 @@ import { status } from "@grpc/grpc-js";
 import { AppAuthorizationServiceClient } from "@scow/protos/build/server/app_authorization";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { AppAuthTargetType,AppAuthTargetTypeProto } from "src/models/app";
+import { AppAuthTargetType, AppAuthTargetTypeProto } from "src/models/app";
 import { PlatformRole, TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { safeGetStringProperty } from "src/utils/format";
@@ -17,7 +17,6 @@ export const AppAuthorizationInfo = Type.Object({
   isDisabled: Type.Boolean(),
 });
 export type AppAuthorizationInfo = Static<typeof AppAuthorizationInfo>;
-
 
 export const TargetAppList = Type.Object({
   targetName: Type.String(),
@@ -86,13 +85,15 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
   const { page, pageSize, clusterId, targetType, filterTargetName, filterAccountOwnerIdOrName } = req.query;
 
   const auth = authenticate((info) => {
-    return targetType === AppAuthTargetType.TENANT ?
-      info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
+    return targetType === AppAuthTargetType.TENANT
+      ? info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
       : info.tenantRoles.includes(TenantRole.TENANT_ADMIN);
   });
 
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(AppAuthorizationServiceClient);
 
@@ -109,18 +110,28 @@ export default route(GetTargetAppAuthorizationsSchema, async (req, res) => {
       200: {
         appLists: reply.appLists.map((x) => ({
           ...x,
-          accountOwnerId: targetType === AppAuthTargetType.ACCOUNT ?
-            safeGetStringProperty(x.accountOwnerId) : undefined,
-          accountOwnerName: targetType === AppAuthTargetType.ACCOUNT ?
-            safeGetStringProperty(x.accountOwnerName) : undefined,
+          accountOwnerId:
+            targetType === AppAuthTargetType.ACCOUNT ? safeGetStringProperty(x.accountOwnerId) : undefined,
+          accountOwnerName:
+            targetType === AppAuthTargetType.ACCOUNT ? safeGetStringProperty(x.accountOwnerName) : undefined,
         })),
         totalCount: reply.totalCount,
       },
     }))
-    .catch(handlegRPCError({
-      [status.FAILED_PRECONDITION]: (e) => ({ 409: {
-        code: "FAILED_PRECONDITION" as const, message: e.message } }),
-      [status.INVALID_ARGUMENT]: (e) => ({ 400: {
-        code: "INVALID_ARGUMENT" as const, message: e.message } }),
-    }));
+    .catch(
+      handlegRPCError({
+        [status.FAILED_PRECONDITION]: (e) => ({
+          409: {
+            code: "FAILED_PRECONDITION" as const,
+            message: e.message,
+          },
+        }),
+        [status.INVALID_ARGUMENT]: (e) => ({
+          400: {
+            code: "INVALID_ARGUMENT" as const,
+            message: e.message,
+          },
+        }),
+      }),
+    );
 });

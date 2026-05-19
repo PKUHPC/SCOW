@@ -1,22 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { bool, envConfig, num, str } from "@scow/lib-config";
 import { getKeyPair } from "@scow/lib-ssh";
 import { homedir } from "os";
 import { join } from "path";
 
 const specs = {
-
   LOG_LEVEL: str({
     default: "info",
     desc: "日志等级",
@@ -37,16 +24,28 @@ const specs = {
   MOCK_USER_ID: str({ desc: "开发和测试的时候所使用的user id", default: undefined }),
 
   PORTAL_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
-  PORTAL_URL: str({ desc: "如果部署了HPC门户系统，HPC门户系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署HPC门户系统", default: "" }),
+  PORTAL_URL: str({
+    desc: "如果部署了HPC门户系统，HPC门户系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署HPC门户系统",
+    default: "",
+  }),
 
   MIS_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
-  MIS_URL: str({ desc: "如果部署了管理系统，管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署管理系统", default: "" }),
+  MIS_URL: str({
+    desc: "如果部署了管理系统，管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署管理系统",
+    default: "",
+  }),
   MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端服务的路径", default: "" }),
 
   QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
-  QUANTUM_URL: str({ desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统", default: "" }),
+  QUANTUM_URL: str({
+    desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统",
+    default: "",
+  }),
 
-  CLIENT_MAX_BODY_SIZE: str({ desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值", default: "1G" }),
+  CLIENT_MAX_BODY_SIZE: str({
+    desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值",
+    default: "1G",
+  }),
 
   PUBLIC_PATH: str({ desc: "SCOW公共文件的路径，需已包含SCOW的base path", default: "/public/" }),
 
@@ -63,7 +62,10 @@ const specs = {
   ADAPTER_SSL_ENABLED: bool({ desc: "到适配器的连接是否启动SSL", default: false }),
   ADAPTER_SSL_CA_CERT_PATH: str({ desc: "适配器 CA根证书路径", default: "./adapter/certs/ca.crt" }),
   ADAPTER_SSL_SCOW_CERT_PATH: str({ desc: "适配器 CA签名的 SCOW 证书路径", default: "./adapter/certs/scow.crt" }),
-  ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({ desc: "适配器 CA签名的 SCOW 私钥路径", default: "./adapter/certs/scow.key" }),
+  ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({
+    desc: "适配器 CA签名的 SCOW 私钥路径",
+    default: "./adapter/certs/scow.key",
+  }),
 
   SCOWD_SSL_ENABLED: bool({ desc: "到 SCOWD 的连接是否启动SSL", default: false }),
   SCOWD_SSL_CA_CERT_PATH: str({ desc: "SCOWD CA根证书路径", default: "./scowd/certs/ca.crt" }),
@@ -74,7 +76,9 @@ const specs = {
 export const config = envConfig(specs);
 
 const building = process.env.BUILDING === "1";
-export const rootKeyPair = building ? {
-  publicKey: "",
-  privateKey: "",
-} : getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);
+export const rootKeyPair = building
+  ? {
+      publicKey: "",
+      privateKey: "",
+    }
+  : getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);

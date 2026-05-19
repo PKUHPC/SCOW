@@ -14,13 +14,13 @@ import { styled } from "styled-components";
 import { SelectAppTable } from "./SelectAppTable";
 
 const SearchContainer = styled(Space)`
-    width: 100%;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: flex-end;
-    background: ${({ theme }) => theme.token.colorBgContainer};
-    border-radius: 12px;
-    padding: 12px 10px 12px 20px;
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+  background: ${({ theme }) => theme.token.colorBgContainer};
+  border-radius: 12px;
+  padding: 12px 10px 12px 20px;
 `;
 
 interface FilterForm {
@@ -49,7 +49,6 @@ export default function Page() {
 
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
-
     if (!data?.apps || isLoading) return undefined;
 
     // 确保 query.appName 是有效的字符串
@@ -57,10 +56,8 @@ export default function Page() {
     if (!searchTerm) {
       return data;
     }
-    const filteredValues = data.apps
-      .filter((app) => app.name.toLowerCase().includes(searchTerm));
+    const filteredValues = data.apps.filter((app) => app.name.toLowerCase().includes(searchTerm));
     return { apps: filteredValues };
-
   }, [data, isLoading, query.appName]);
 
   useEffect(() => {
@@ -69,22 +66,14 @@ export default function Page() {
   }, [filterForm]);
 
   if (isError) {
-    return (
-      <ServerErrorPage />
-    );
+    return <ServerErrorPage />;
   }
 
   return (
     <Spin spinning={isLoading} tip={isLoading ? t(p("loading")) : ""} style={{ marginTop: "150px" }}>
-      <PageTitle
-        titleText={t(p("title"))}
-      />
+      <PageTitle titleText={t(p("title"))} />
       <SearchContainer>
-        <Form<FilterForm>
-          layout="inline"
-          form={filterForm}
-          initialValues={initialFilterQuery}
-        >
+        <Form<FilterForm> layout="inline" form={filterForm} initialValues={initialFilterQuery}>
           <Form.Item name="appName">
             <RoundedSearch
               placeholder={t(p("searchPlaceholder"))}
@@ -98,18 +87,13 @@ export default function Page() {
           </Form.Item>
         </Form>
       </SearchContainer>
-      {
-        !isLoading && (!filteredData?.apps || filteredData.apps.length === 0) ? (
-          <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
-            {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("appNotFoundMessage"))}
-          </div>
-        ) : (
-          <SelectAppTable
-            publicPath={publicConfig.PUBLIC_PATH}
-            apps={filteredData?.apps ?? []}
-          />
-        )
-      }
+      {!isLoading && (!filteredData?.apps || filteredData.apps.length === 0) ? (
+        <div style={{ textAlign: "center", marginTop: "100px", fontSize: "16px" }}>
+          {query.appName ? t(p("noSearchResult"), [query.appName]) : t(p("appNotFoundMessage"))}
+        </div>
+      ) : (
+        <SelectAppTable publicPath={publicConfig.PUBLIC_PATH} apps={filteredData?.apps ?? []} />
+      )}
     </Spin>
   );
 }

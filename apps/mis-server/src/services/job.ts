@@ -8,11 +8,7 @@ import { jobInfoToRunningjob } from "@scow/lib-scheduler-adapter";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
 import { ChargeRecord } from "@scow/protos/build/server/charging";
-import {
-  JobBillingItem,
-  JobFilter,
-  JobServiceServer, JobServiceService,
-} from "@scow/protos/build/server/job";
+import { JobBillingItem, JobFilter, JobServiceServer, JobServiceService } from "@scow/protos/build/server/job";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
 import { createPriceMap, getBillingItems, JobInfo } from "src/bl/PriceMap";
@@ -34,63 +30,77 @@ import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateGetJobsOptions } from "src/utils/queryOptions";
 import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
-function filterJobs({
-  clusters, accountName, jobEndTimeEnd, tenantName,
-  jobEndTimeStart, jobId, userId, startBiJobIndex, biJobIndexs, jobIds,
-}: JobFilter, ownerMatchedAccountNames?: string[], userMatchedUserIds?: string[]) {
+function filterJobs(
+  {
+    clusters,
+    accountName,
+    jobEndTimeEnd,
+    tenantName,
+    jobEndTimeStart,
+    jobId,
+    userId,
+    startBiJobIndex,
+    biJobIndexs,
+    jobIds,
+  }: JobFilter,
+  ownerMatchedAccountNames?: string[],
+  userMatchedUserIds?: string[],
+) {
   const accountFilter = ownerMatchedAccountNames
     ? {
-      account: {
-        $in: ownerMatchedAccountNames,
-      },
-    }
-    : accountName ? { account: accountName } : {};
+        account: {
+          $in: ownerMatchedAccountNames,
+        },
+      }
+    : accountName
+      ? { account: accountName }
+      : {};
   const userFilter = userMatchedUserIds
     ? {
-      user: {
-        $in: userMatchedUserIds,
-      },
-    }
-    : userId ? { user: userId } : {};
+        user: {
+          $in: userMatchedUserIds,
+        },
+      }
+    : userId
+      ? { user: userId }
+      : {};
 
   return {
-    ...startBiJobIndex ? { biJobIndex: { $gte: startBiJobIndex } } : {},
+    ...(startBiJobIndex ? { biJobIndex: { $gte: startBiJobIndex } } : {}),
     ...userFilter,
-    ...clusters.length > 0 ? { cluster: { $in: clusters } } : {},
-    ...biJobIndexs?.length > 0 ? { biJobIndex: { $in: biJobIndexs } } : {},
+    ...(clusters.length > 0 ? { cluster: { $in: clusters } } : {}),
+    ...(biJobIndexs?.length > 0 ? { biJobIndex: { $in: biJobIndexs } } : {}),
     // 优先使用 jobIds
-    ...jobIds.length > 0
+    ...(jobIds.length > 0
       ? {
-        idJob: { $in: jobIds },
-        ...accountFilter,
-      }
-      // 其次使用 jobId
-      : jobId
-        ? {
-          idJob: jobId,
+          idJob: { $in: jobIds },
           ...accountFilter,
         }
+      : // 其次使用 jobId
+        jobId
+        ? {
+            idJob: jobId,
+            ...accountFilter,
+          }
         : {
-          ...accountFilter,
-          ...(jobEndTimeEnd || jobEndTimeStart) ? {
-            timeEnd: {
-              ...jobEndTimeStart ? { $gte: jobEndTimeStart } : {},
-              ...jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {},
-            },
-          } : {},
-        },
+            ...accountFilter,
+            ...(jobEndTimeEnd || jobEndTimeStart
+              ? {
+                  timeEnd: {
+                    ...(jobEndTimeStart ? { $gte: jobEndTimeStart } : {}),
+                    ...(jobEndTimeEnd ? { $lte: jobEndTimeEnd } : {}),
+                  },
+                }
+              : {}),
+          }),
     tenant: tenantName,
   } as FilterQuery<JobInfoEntity>;
 }
 
 export const jobServiceServer = plugin((server) => {
-
   server.addService<JobServiceServer>(JobServiceService, {
-
     getJobs: async ({ request, em, logger }) => {
-
-      const { filter, page, pageSize, sortBy, sortOrder } =
-        ensureNotUndefined(request, ["filter"]);
+      const { filter, page, pageSize, sortBy, sortOrder } = ensureNotUndefined(request, ["filter"]);
 
       const trimmedUserIdOrName = filter.userIdOrName?.trim();
       const trimmedOwnerIdOrName = filter.ownerIdOrName?.trim();
@@ -99,16 +109,20 @@ export const jobServiceServer = plugin((server) => {
       if (trimmedUserIdOrName) {
         const matchedUsers = await getUserIdsMatchedByUserIdOrName(em, trimmedUserIdOrName);
         userMatchedUserIds = filter.userId
-          ? (matchedUsers.includes(filter.userId) ? [filter.userId] : [])
+          ? matchedUsers.includes(filter.userId)
+            ? [filter.userId]
+            : []
           : matchedUsers;
 
         if (userMatchedUserIds.length === 0) {
-          return [{
-            totalCount: 0,
-            jobs: [],
-            totalAccountPrice: decimalToMoney(new Decimal(0)),
-            totalTenantPrice: decimalToMoney(new Decimal(0)),
-          }];
+          return [
+            {
+              totalCount: 0,
+              jobs: [],
+              totalAccountPrice: decimalToMoney(new Decimal(0)),
+              totalTenantPrice: decimalToMoney(new Decimal(0)),
+            },
+          ];
         }
       }
 
@@ -116,16 +130,20 @@ export const jobServiceServer = plugin((server) => {
       if (trimmedOwnerIdOrName) {
         const matchedAccounts = await getAccountNamesMatchedByOwner(em, trimmedOwnerIdOrName);
         ownerMatchedAccountNames = filter.accountName
-          ? (matchedAccounts.includes(filter.accountName) ? [filter.accountName] : [])
+          ? matchedAccounts.includes(filter.accountName)
+            ? [filter.accountName]
+            : []
           : matchedAccounts;
 
         if (ownerMatchedAccountNames.length === 0) {
-          return [{
-            totalCount: 0,
-            jobs: [],
-            totalAccountPrice: decimalToMoney(new Decimal(0)),
-            totalTenantPrice: decimalToMoney(new Decimal(0)),
-          }];
+          return [
+            {
+              totalCount: 0,
+              jobs: [],
+              totalAccountPrice: decimalToMoney(new Decimal(0)),
+              totalTenantPrice: decimalToMoney(new Decimal(0)),
+            },
+          ];
         }
       }
 
@@ -155,11 +173,15 @@ export const jobServiceServer = plugin((server) => {
         jobUserAndAccountOwnerDetailsMap = await getJobUserAndAccountOwnerDetailsMap(em, jobIds);
       }
 
-      const { total_account_price, total_tenant_price }: { total_account_price: string, total_tenant_price: string } =
-       await em.createQueryBuilder(JobInfoEntity, "j")
-         .where(sqlFilter)
-         .select([raw("sum(j.account_price) as total_account_price"), raw("sum(j.tenant_price) as total_tenant_price")])
-         .execute("get");
+      const { total_account_price, total_tenant_price }: { total_account_price: string; total_tenant_price: string } =
+        await em
+          .createQueryBuilder(JobInfoEntity, "j")
+          .where(sqlFilter)
+          .select([
+            raw("sum(j.account_price) as total_account_price"),
+            raw("sum(j.tenant_price) as total_tenant_price"),
+          ])
+          .execute("get");
 
       const reply = {
         totalCount: count,
@@ -179,19 +201,18 @@ export const jobServiceServer = plugin((server) => {
     },
 
     changeJobPrice: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "change job price task");
 
-      const { filter, accountPrice, tenantPrice, reason, operatorId, ipAddress } =
-        ensureNotUndefined(request, ["filter"]);
+      const { filter, accountPrice, tenantPrice, reason, operatorId, ipAddress } = ensureNotUndefined(request, [
+        "filter",
+      ]);
 
       const type = misConfig.changeJobPriceType;
       const newAccountPrice = accountPrice ? new Decimal(moneyToNumber(accountPrice)) : undefined;
       const newTenantPrice = tenantPrice ? new Decimal(moneyToNumber(tenantPrice)) : undefined;
 
       return await em.transactional(async (em) => {
-
         const jobs = await em.find(JobInfoEntity, filterJobs(filter), {});
 
         const record = new JobPriceChange({
@@ -207,11 +228,15 @@ export const jobServiceServer = plugin((server) => {
         await em.persistAndFlush(record);
 
         const accountNames = Array.from(new Set(jobs.map((x) => x.account)));
-        const accounts = await em.find(Account, { accountName: accountNames }, {
-          populate: ["tenant"],
-        });
+        const accounts = await em.find(
+          Account,
+          { accountName: accountNames },
+          {
+            populate: ["tenant"],
+          },
+        );
 
-        const accountMap: Record<string, typeof accounts[0]> = accounts.reduce((prev, curr) => {
+        const accountMap: Record<string, (typeof accounts)[0]> = accounts.reduce((prev, curr) => {
           prev[curr.accountName] = curr;
           return prev;
         }, {});
@@ -220,93 +245,113 @@ export const jobServiceServer = plugin((server) => {
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-        await Promise.all(jobs.map(async (x) => {
-          logger.info("Change the prices of job %s from %s(tenant), $s(account) -> %s(tenant), %s(account)",
-            x.biJobIndex, x.tenantPrice.toFixed(2), x.accountPrice.toFixed(2),
-            newTenantPrice?.toFixed(2) ?? "not changed", newAccountPrice?.toFixed(2) ?? "not changed",
-          );
+        await Promise.all(
+          jobs.map(async (x) => {
+            logger.info(
+              "Change the prices of job %s from %s(tenant), $s(account) -> %s(tenant), %s(account)",
+              x.biJobIndex,
+              x.tenantPrice.toFixed(2),
+              x.accountPrice.toFixed(2),
+              newTenantPrice?.toFixed(2) ?? "not changed",
+              newAccountPrice?.toFixed(2) ?? "not changed",
+            );
 
-          // change the price of the account
-          const account = accountMap[x.account];
+            // change the price of the account
+            const account = accountMap[x.account];
 
-          if (!account) {
-            throw {
-              code: status.NOT_FOUND,
-              message: `Unknown account ${x.account} of job ${x.biJobIndex}`,
-            } as ServiceError;
-          }
-
-          if (account.state === AccountState.DELETED) {
-            throw {
-              code: status.NOT_FOUND,
-              message: `Account ${x.account} for job ${x.biJobIndex} has been deleted.`,
-            } as ServiceError;
-          }
-
-          const comment = `job biJobIndex ${x.biJobIndex}`;
-
-          const metadataMap: ChargeRecord["metadata"] = {};
-          savedFields?.forEach((field) => {
-            metadataMap[field] = x[field];
-          });
-
-          if (newTenantPrice) {
-            if (x.tenantPrice.lt(newTenantPrice)) {
-              await charge({
-                target: account.tenant.$,
-                comment,
-                type,
-                amount: newTenantPrice.minus(x.tenantPrice),
-                metadata: metadataMap,
-              }, em, currentActivatedClusters, logger, server.ext);
-            } else if (x.tenantPrice.gt(newTenantPrice)) {
-              await pay({
-                target: account.tenant.$,
-                comment: comment + `, job user ${x.user}`,
-                amount: x.tenantPrice.minus(newTenantPrice),
-                operatorId,
-                type,
-                ipAddress,
-              }, em,
-              currentActivatedClusters,
-              logger,
-              server.ext,
-              server.ext,
-              );
+            if (!account) {
+              throw {
+                code: status.NOT_FOUND,
+                message: `Unknown account ${x.account} of job ${x.biJobIndex}`,
+              } as ServiceError;
             }
-            x.tenantPrice = newTenantPrice;
-          }
 
-          if (newAccountPrice) {
-            if (x.accountPrice.lt(newAccountPrice)) {
-              await charge({
-                target: account,
-                comment,
-                type,
-                amount: newAccountPrice.minus(x.accountPrice),
-                userId: x.user,
-                metadata: metadataMap,
-              }, em, currentActivatedClusters, logger, server.ext);
-            } else if (x.accountPrice.gt(newAccountPrice)) {
-              await pay({
-                target: account,
-                comment: comment + `, job user ${x.user}`,
-                amount: x.accountPrice.minus(newAccountPrice),
-                operatorId,
-                type,
-                ipAddress,
-              },
-              em,
-              currentActivatedClusters,
-              logger,
-              server.ext,
-              server.ext,
-              );
+            if (account.state === AccountState.DELETED) {
+              throw {
+                code: status.NOT_FOUND,
+                message: `Account ${x.account} for job ${x.biJobIndex} has been deleted.`,
+              } as ServiceError;
             }
-            x.accountPrice = newAccountPrice;
-          }
-        }));
 
+            const comment = `job biJobIndex ${x.biJobIndex}`;
+
+            const metadataMap: ChargeRecord["metadata"] = {};
+            savedFields?.forEach((field) => {
+              metadataMap[field] = x[field];
+            });
+
+            if (newTenantPrice) {
+              if (x.tenantPrice.lt(newTenantPrice)) {
+                await charge(
+                  {
+                    target: account.tenant.$,
+                    comment,
+                    type,
+                    amount: newTenantPrice.minus(x.tenantPrice),
+                    metadata: metadataMap,
+                  },
+                  em,
+                  currentActivatedClusters,
+                  logger,
+                  server.ext,
+                );
+              } else if (x.tenantPrice.gt(newTenantPrice)) {
+                await pay(
+                  {
+                    target: account.tenant.$,
+                    comment: comment + `, job user ${x.user}`,
+                    amount: x.tenantPrice.minus(newTenantPrice),
+                    operatorId,
+                    type,
+                    ipAddress,
+                  },
+                  em,
+                  currentActivatedClusters,
+                  logger,
+                  server.ext,
+                  server.ext,
+                );
+              }
+              x.tenantPrice = newTenantPrice;
+            }
+
+            if (newAccountPrice) {
+              if (x.accountPrice.lt(newAccountPrice)) {
+                await charge(
+                  {
+                    target: account,
+                    comment,
+                    type,
+                    amount: newAccountPrice.minus(x.accountPrice),
+                    userId: x.user,
+                    metadata: metadataMap,
+                  },
+                  em,
+                  currentActivatedClusters,
+                  logger,
+                  server.ext,
+                );
+              } else if (x.accountPrice.gt(newAccountPrice)) {
+                await pay(
+                  {
+                    target: account,
+                    comment: comment + `, job user ${x.user}`,
+                    amount: x.accountPrice.minus(newAccountPrice),
+                    operatorId,
+                    type,
+                    ipAddress,
+                  },
+                  em,
+                  currentActivatedClusters,
+                  logger,
+                  server.ext,
+                  server.ext,
+                );
+              }
+              x.accountPrice = newAccountPrice;
+            }
+          }),
+        );
 
         return [{ count: jobs.length }];
       });
@@ -319,7 +364,8 @@ export const jobServiceServer = plugin((server) => {
 
       if (!job) {
         throw {
-          code: Status.NOT_FOUND, message: `Job ${biJobIndex} is not found`,
+          code: Status.NOT_FOUND,
+          message: `Job ${biJobIndex} is not found`,
         } as ServiceError;
       }
 
@@ -331,61 +377,82 @@ export const jobServiceServer = plugin((server) => {
       const trimmedUserIdOrName = userIdOrName?.trim();
       const trimmedOwnerIdOrName = ownerIdOrName?.trim();
 
-      const tenantAccounts = tenantName !== undefined
-        ? (await em.find(Account, { tenant: { name: tenantName } }, { fields: ["accountName"]}))
-          .map((x) => x.accountName) : [];
+      const tenantAccounts =
+        tenantName !== undefined
+          ? (await em.find(Account, { tenant: { name: tenantName } }, { fields: ["accountName"] })).map(
+              (x) => x.accountName,
+            )
+          : [];
 
       if (tenantAccounts.length > 0 && !!accountName && !tenantAccounts.includes(accountName)) {
-        return [{ jobs: []}];
+        return [{ jobs: [] }];
       }
 
-      const accountNames = accountName !== undefined
-        ? [accountName]
-        : tenantName !== undefined
-          ? tenantAccounts : [];
+      const accountNames = accountName !== undefined ? [accountName] : tenantName !== undefined ? tenantAccounts : [];
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
       const isAiCluster = configClusters[cluster].ai?.enabled;
 
-      const reply = await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          const fields = [
-            "job_id", "partition", "name", "user", "state", "elapsed_seconds", "nodes_req", "nodes_alloc",
-            "node_list", "reason", "account", "cpus_req", "cpus_alloc", "gpus_req", "gpus_alloc",
-            "qos", "submit_time", "time_limit_minutes", "working_directory", "mem_req_mb", "mem_alloc_mb",
-            "start_time", "end_time",
-          ];
+      const reply = await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+        const fields = [
+          "job_id",
+          "partition",
+          "name",
+          "user",
+          "state",
+          "elapsed_seconds",
+          "nodes_req",
+          "nodes_alloc",
+          "node_list",
+          "reason",
+          "account",
+          "cpus_req",
+          "cpus_alloc",
+          "gpus_req",
+          "gpus_alloc",
+          "qos",
+          "submit_time",
+          "time_limit_minutes",
+          "working_directory",
+          "mem_req_mb",
+          "mem_alloc_mb",
+          "start_time",
+          "end_time",
+        ];
 
-          const runningJobs = await asyncClientCall(client.job, "getJobs", {
-            fields,
-            jobTypes: [],
-            filter: { users: userId ? [userId] : [], accounts: accountNames,
-              // ai集群中才有 QUEUED 状态的作业
-              states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])]},
-          }).then((x) => x.jobs);
+        const runningJobs = await asyncClientCall(client.job, "getJobs", {
+          fields,
+          jobTypes: [],
+          filter: {
+            users: userId ? [userId] : [],
+            accounts: accountNames,
+            // ai集群中才有 QUEUED 状态的作业
+            states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])],
+          },
+        }).then((x) => x.jobs);
 
-          if (jobIdList.length > 0) {
-            const filteredJobs = runningJobs.filter((job) => jobIdList.includes(job.jobId.toString()));
-            return filteredJobs;
-          } else {
-            return runningJobs;
-          }
-        },
-      );
+        if (jobIdList.length > 0) {
+          const filteredJobs = runningJobs.filter((job) => jobIdList.includes(job.jobId.toString()));
+          return filteredJobs;
+        } else {
+          return runningJobs;
+        }
+      });
 
       const runningJobIds = reply.map((job) => Number(job.jobId)).filter((x) => !Number.isNaN(x));
 
-      const runningJobChargeRecordMap = runningJobIds.length > 0
-        ? (await em.find(RunningJobChargeRecord, { cluster, jobId: { $in: runningJobIds } }))
-          .reduce((map, record) => {
-            map.set(record.jobId, record);
-            return map;
-          }, new Map<number, RunningJobChargeRecord>())
-        : new Map<number, RunningJobChargeRecord>();
+      const runningJobChargeRecordMap =
+        runningJobIds.length > 0
+          ? (await em.find(RunningJobChargeRecord, { cluster, jobId: { $in: runningJobIds } })).reduce(
+              (map, record) => {
+                map.set(record.jobId, record);
+                return map;
+              },
+              new Map<number, RunningJobChargeRecord>(),
+            )
+          : new Map<number, RunningJobChargeRecord>();
 
       const runningJobs = reply.map((job) => {
         const runningJob = jobInfoToRunningjob(job);
@@ -408,7 +475,7 @@ export const jobServiceServer = plugin((server) => {
 
       const userNameMap = new Map<string, string>();
       if (runningUsers.length > 0) {
-        const users = await em.find(User, { userId: { $in: runningUsers } }, { fields: ["userId", "name"]});
+        const users = await em.find(User, { userId: { $in: runningUsers } }, { fields: ["userId", "name"] });
         for (const user of users) {
           userNameMap.set(user.userId, user.name);
         }
@@ -416,10 +483,14 @@ export const jobServiceServer = plugin((server) => {
 
       const accountOwnerMap = new Map<string, { accountOwnerId: string; accountOwnerName: string }>();
       if (runningAccounts.length > 0) {
-        const ownerRelations = await em.find(UserAccount, {
-          account: { accountName: { $in: runningAccounts } },
-          role: UserRole.OWNER,
-        }, { populate: ["account", "user"]});
+        const ownerRelations = await em.find(
+          UserAccount,
+          {
+            account: { accountName: { $in: runningAccounts } },
+            role: UserRole.OWNER,
+          },
+          { populate: ["account", "user"] },
+        );
 
         for (const relation of ownerRelations) {
           const runningAccountName = relation.account.$.accountName;
@@ -443,24 +514,25 @@ export const jobServiceServer = plugin((server) => {
 
       const filteredByUser = trimmedUserIdOrName
         ? jobsWithExtraInfo.filter((job) => {
-          const matchedByUserId = job.user.includes(trimmedUserIdOrName);
-          const matchedByUserName = job.userName?.includes(trimmedUserIdOrName) ?? false;
-          return matchedByUserId || matchedByUserName;
-        })
+            const matchedByUserId = job.user.includes(trimmedUserIdOrName);
+            const matchedByUserName = job.userName?.includes(trimmedUserIdOrName) ?? false;
+            return matchedByUserId || matchedByUserName;
+          })
         : jobsWithExtraInfo;
 
       const jobs = trimmedOwnerIdOrName
         ? filteredByUser.filter((job) => {
-          const matchedByOwnerId = job.accountOwnerId?.includes(trimmedOwnerIdOrName) ?? false;
-          const matchedByOwnerName = job.accountOwnerName?.includes(trimmedOwnerIdOrName) ?? false;
-          return matchedByOwnerId || matchedByOwnerName;
-        })
+            const matchedByOwnerId = job.accountOwnerId?.includes(trimmedOwnerIdOrName) ?? false;
+            const matchedByOwnerName = job.accountOwnerName?.includes(trimmedOwnerIdOrName) ?? false;
+            return matchedByOwnerId || matchedByOwnerName;
+          })
         : filteredByUser;
 
-      return [{
-        jobs,
-      }];
-
+      return [
+        {
+          jobs,
+        },
+      ];
     },
 
     changeJobTimeLimit: async ({ request, em, logger }) => {
@@ -469,31 +541,25 @@ export const jobServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          const { timeLimitMinutes } = await asyncClientCall(client.job, "queryJobTimeLimit", { jobId: Number(jobId) });
-          await asyncClientCall(client.job, "changeJobTimeLimit", {
-            jobId: Number(jobId), deltaMinutes: limitMinutes - timeLimitMinutes,
-          });
-        },
-      );
+      await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+        const { timeLimitMinutes } = await asyncClientCall(client.job, "queryJobTimeLimit", { jobId: Number(jobId) });
+        await asyncClientCall(client.job, "changeJobTimeLimit", {
+          jobId: Number(jobId),
+          deltaMinutes: limitMinutes - timeLimitMinutes,
+        });
+      });
 
       return [{}];
     },
 
     queryJobTimeLimit: async ({ request, em, logger }) => {
-
       const { cluster, jobId } = request;
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      const reply = await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => asyncClientCall(client.job, "queryJobTimeLimit", { jobId: Number(jobId) }),
+      const reply = await server.ext.clusters.callOnOne(cluster, logger, async (client) =>
+        asyncClientCall(client.job, "queryJobTimeLimit", { jobId: Number(jobId) }),
       );
 
       return [{ limit: reply.timeLimitMinutes * 60 }];
@@ -511,50 +577,60 @@ export const jobServiceServer = plugin((server) => {
         }
       }
 
-      const billingItems = await em.find(JobPriceItem, { $or: [{ tenant: null }, { tenant }]},
+      const billingItems = await em.find(
+        JobPriceItem,
+        { $or: [{ tenant: null }, { tenant }] },
         {
           populate: ["tenant"],
           orderBy: { createTime: "ASC" },
-        });
+        },
+      );
       logger.info("billingItems ：%o", billingItems);
-      const priceItemToGrpc = (item: JobPriceItem) => ({
-        id: item.itemId,
-        path: item.path.join("."),
-        tenantName: item.tenant?.getProperty("name"),
-        price: decimalToMoney(item.price),
-        createTime: item.createTime.toISOString(),
-        amountStrategy: item.amount,
-      } as JobBillingItem);
+      const priceItemToGrpc = (item: JobPriceItem) =>
+        ({
+          id: item.itemId,
+          path: item.path.join("."),
+          tenantName: item.tenant?.getProperty("name"),
+          price: decimalToMoney(item.price),
+          createTime: item.createTime.toISOString(),
+          amountStrategy: item.amount,
+        }) as JobBillingItem;
 
       const { defaultPrices, tenantSpecificPrices } = getBillingItems(billingItems);
 
       const activePrices = tenantName
         ? Object.values({ ...defaultPrices, ...tenantSpecificPrices[tenantName] })
         : [
-          ...Object.values(defaultPrices),
-          ...Object.values(tenantSpecificPrices).map((x) => Object.values(x)).flat(),
-        ];
+            ...Object.values(defaultPrices),
+            ...Object.values(tenantSpecificPrices)
+              .map((x) => Object.values(x))
+              .flat(),
+          ];
 
-      return [{
-        activeItems: activePrices.map(priceItemToGrpc),
-        historyItems: activeOnly ? [] : billingItems.filter((x) => !activePrices.includes(x)).map(priceItemToGrpc) }];
+      return [
+        {
+          activeItems: activePrices.map(priceItemToGrpc),
+          historyItems: activeOnly ? [] : billingItems.filter((x) => !activePrices.includes(x)).map(priceItemToGrpc),
+        },
+      ];
     },
 
     getMissingDefaultPriceItems: async ({ em }) => {
-
       // check price map completeness
       const priceMap = await createPriceMap(em, server.ext.clusters, logger);
       const missingItems = priceMap.getMissingDefaultPriceItems();
 
       return [{ items: missingItems }];
-
     },
 
-    calculateJobPrice: async ({ request,em }) => {
-
-      const account = await em.findOne(Account, {
-        accountName: request.account,
-      }, { populate: ["tenant"]});
+    calculateJobPrice: async ({ request, em }) => {
+      const account = await em.findOne(
+        Account,
+        {
+          accountName: request.account,
+        },
+        { populate: ["tenant"] },
+      );
 
       if (!account?.tenant) {
         throw { code: status.NOT_FOUND, message: "Account's tenant is not found." } as ServiceError;
@@ -578,11 +654,12 @@ export const jobServiceServer = plugin((server) => {
       const priceMap = await createPriceMap(em, server.ext.clusters, logger);
       const price = await priceMap.calculatePrice(mockJobInfo);
 
-      return [{
-        tenantPrice: price.tenant ? decimalToMoney(price.tenant.price) : undefined,
-        accountPrice: price.account ? decimalToMoney(price.account.price) : undefined,
-      }];
-
+      return [
+        {
+          tenantPrice: price.tenant ? decimalToMoney(price.tenant.price) : undefined,
+          accountPrice: price.account ? decimalToMoney(price.account.price) : undefined,
+        },
+      ];
     },
 
     addBillingItem: async ({ request, em }) => {
@@ -590,7 +667,7 @@ export const jobServiceServer = plugin((server) => {
 
       let tenant: Tenant | undefined = undefined;
       if (tenantName) {
-        tenant = await em.findOne(Tenant, { name: tenantName }) ?? undefined;
+        tenant = (await em.findOne(Tenant, { name: tenantName })) ?? undefined;
 
         if (!tenant) {
           throw { code: status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
@@ -624,7 +701,6 @@ export const jobServiceServer = plugin((server) => {
           throw e;
         }
       }
-
     },
 
     getTopSubmitJobUsers: async ({ request, em }) => {
@@ -646,7 +722,7 @@ export const jobServiceServer = plugin((server) => {
         queryExecutor: qb,
       });
 
-      const results: { userId: string, count: number }[] = queryResult.result;
+      const results: { userId: string; count: number }[] = queryResult.result;
 
       return [
         {
@@ -667,12 +743,8 @@ export const jobServiceServer = plugin((server) => {
       // 直接使用Knex查询构建器
       const knex = em.getKnex();
 
-      const results: { userName: string, userId: string, count: number }[] = await knex("job_info as j")
-        .select([
-          "u.name as userName",
-          "j.user as userId",
-          knex.raw("COUNT(*) as count"),
-        ])
+      const results: { userName: string; userId: string; count: number }[] = await knex("job_info as j")
+        .select(["u.name as userName", "j.user as userId", knex.raw("COUNT(*) as count")])
         .join("user as u", "u.user_id", "=", "j.user")
         .where("j.time_submit", ">=", startTime)
         .andWhere("j.time_submit", "<=", endTime)
@@ -688,7 +760,6 @@ export const jobServiceServer = plugin((server) => {
       ];
     },
 
-
     getNewJobCount: async ({ request, em }) => {
       const { startTime, endTime, timeZone = "UTC" } = ensureNotUndefined(request, ["startTime", "endTime"]);
 
@@ -696,9 +767,7 @@ export const jobServiceServer = plugin((server) => {
 
       const qb = em.createQueryBuilder(JobInfoEntity, "j");
       void qb
-        .select([
-          raw("DATE(CONVERT_TZ(j.time_submit, 'UTC', ?)) as date", [timeZone]),
-          raw("COUNT(*) as count")])
+        .select([raw("DATE(CONVERT_TZ(j.time_submit, 'UTC', ?)) as date", [timeZone]), raw("COUNT(*) as count")])
         .where({ timeSubmit: { $gte: startTime } })
         .andWhere({ timeSubmit: { $lte: endTime } })
         .groupBy(raw("date"))
@@ -710,7 +779,7 @@ export const jobServiceServer = plugin((server) => {
         queryExecutor: qb,
       });
 
-      const results: { date: string, count: number }[] = queryResult.result;
+      const results: { date: string; count: number }[] = queryResult.result;
 
       return [
         {
@@ -723,9 +792,7 @@ export const jobServiceServer = plugin((server) => {
     },
 
     getJobTotalCount: async ({ em }) => {
-
-      const { result, refreshTime }
-        = await getJobTotalCountCached(em);
+      const { result, refreshTime } = await getJobTotalCountCached(em);
 
       return [{ ...result, refreshTime: refreshTime.toISOString() }];
     },
@@ -736,15 +803,12 @@ export const jobServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          await asyncClientCall(client.job, "cancelJob", {
-            userId, jobId,
-          });
-        },
-      );
+      await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+        await asyncClientCall(client.job, "cancelJob", {
+          userId,
+          jobId,
+        });
+      });
 
       return [{}];
     },

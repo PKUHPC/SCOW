@@ -25,11 +25,11 @@ export class TenantAppBlacklist {
   operator?: Ref<User>;
 
   constructor(init: {
-    appId: string,
-    cluster: EntityOrRef<Cluster>,
-    tenant: EntityOrRef<Tenant>,
-    operator?: EntityOrRef<User>,
-    disabledAt?: Date,
+    appId: string;
+    cluster: EntityOrRef<Cluster>;
+    tenant: EntityOrRef<Tenant>;
+    operator?: EntityOrRef<User>;
+    disabledAt?: Date;
   }) {
     this.tenant = toRef(init.tenant);
     this.appId = init.appId;

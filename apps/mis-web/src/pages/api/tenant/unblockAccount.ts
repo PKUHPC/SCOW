@@ -26,22 +26,21 @@ export const UnblockAccountSchema = typeboxRouteSchema({
       executed: Type.Boolean(),
       reason: Type.Optional(Type.String()),
     }),
-
   },
 });
 
-export default /* #__PURE__*/route(UnblockAccountSchema, async (req, res) => {
+export default /* #__PURE__*/ route(UnblockAccountSchema, async (req, res) => {
   const { tenantName, accountName } = req.body;
 
   const auth = authenticate((u) => {
-    return (u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN));
+    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
-
+  if (!info) {
+    return;
+  }
 
   const client = getClient(AccountServiceClient);
 
@@ -49,8 +48,10 @@ export default /* #__PURE__*/route(UnblockAccountSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.unblockAccount,
-    operationTypePayload:{
-      tenantName, accountName, userId: "",
+    operationTypePayload: {
+      tenantName,
+      accountName,
+      userId: "",
     },
   };
 
@@ -62,12 +63,15 @@ export default /* #__PURE__*/route(UnblockAccountSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.UNIMPLEMENTED]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.INTERNAL]: (e) => ({ 200: { executed: false, reason: e.details } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.UNIMPLEMENTED]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.INTERNAL]: (e) => ({ 200: { executed: false, reason: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

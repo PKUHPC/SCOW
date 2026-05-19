@@ -1,6 +1,5 @@
 "use client";
 
-
 import React, { useContext } from "react";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
 

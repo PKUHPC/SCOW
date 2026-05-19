@@ -1,6 +1,7 @@
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
+import type { AppContext, AppProps } from "next/app";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
@@ -12,7 +13,6 @@ import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/model
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App as AntdApp } from "antd";
-import type { AppContext, AppProps } from "next/app";
 import NextApp from "next/app";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -45,7 +45,6 @@ const FailEventHandler: React.FC = () => {
   // 所以不需要每次userStore变化时来重新注册handler
   useEffect(() => {
     failEvent.register((e) => {
-
       if (e.status === 401) {
         userStore.logout();
         return;
@@ -64,24 +63,27 @@ const FailEventHandler: React.FC = () => {
       }
 
       if (e.data?.code === "SFTP_ERROR") {
-        message.error(e.data?.details.length > 150 ? e.data?.details.substring(0, 150) + "..." :
-          e.data?.details || tArgs("pages._app.sftpError"));
+        message.error(
+          e.data?.details.length > 150
+            ? e.data?.details.substring(0, 150) + "..."
+            : e.data?.details || tArgs("pages._app.sftpError"),
+        );
         return;
       }
 
       if (e.data?.code === "ADAPTER_CALL_ON_ONE_ERROR") {
-
         const clusterId = e.data.clusterErrorsArray[0].clusterId;
-        const clusterName = clusterId ?
-          (publicConfigClusters.find((c) => c.id === clusterId)?.name ?? clusterId) : undefined;
+        const clusterName = clusterId
+          ? (publicConfigClusters.find((c) => c.id === clusterId)?.name ?? clusterId)
+          : undefined;
 
-        message.error(`${tArgs("pages._app.adapterConnectionError",
-          [getI18nConfigCurrentText(clusterName, languageId)]) as string}(${
-          e.data.details
-        })`);
+        message.error(
+          `${
+            tArgs("pages._app.adapterConnectionError", [getI18nConfigCurrentText(clusterName, languageId)]) as string
+          }(${e.data.details})`,
+        );
         return;
       }
-
 
       if (e.data?.code === "NO_ACTIVATED_CLUSTERS") {
         message.error(tArgs("pages._app.noActivatedClusters"));
@@ -118,7 +120,6 @@ const FailEventHandler: React.FC = () => {
   return <></>;
 };
 
-
 const TopProgressBar = dynamic(
   () => {
     return import("src/components/TopProgressBar");
@@ -126,26 +127,20 @@ const TopProgressBar = dynamic(
   { ssr: false },
 );
 
-
 function MyAppRoot(appProps: AppProps) {
   return (
     <>
       <Head>
         <meta name="format-detection" content="telephone=no" />
         <link href={join(publicConfig.BASE_PATH, "/manifest.json")} rel="manifest" id="manifest" />
-        <link
-          rel="icon"
-          type="image/x-icon"
-          href={join(publicConfig.BASE_PATH, "/api/icon?type=favicon")}
-        ></link>
+        <link rel="icon" type="image/x-icon" href={join(publicConfig.BASE_PATH, "/api/icon?type=favicon")}></link>
         <script
           id="__CONFIG__"
           dangerouslySetInnerHTML={{
             __html: `
-              window.__CONFIG__ = ${
-    JSON.stringify({
-      BASE_PATH: publicConfig.BASE_PATH === "/" ? "" : publicConfig.BASE_PATH,
-    })};
+              window.__CONFIG__ = ${JSON.stringify({
+                BASE_PATH: publicConfig.BASE_PATH === "/" ? "" : publicConfig.BASE_PATH,
+              })};
             `,
           }}
         />
@@ -157,7 +152,7 @@ function MyAppRoot(appProps: AppProps) {
 
 function MyAppLoader(appProps: AppProps) {
   const promiseFn = useCallback(async () => {
-    return api.getAppInitialConfig({ });
+    return api.getAppInitialConfig({});
   }, []);
 
   const { data, isLoading } = useAsync({ promiseFn });
@@ -171,17 +166,13 @@ function MyAppLoader(appProps: AppProps) {
   }
 
   return <MyApp appProps={appProps} extra={data} />;
-
-
 }
 
-function MyApp({ appProps: { pageProps, Component }, extra }: {
-  appProps: AppProps;
-  extra: AppInitialConfig;
-}) {
-
+function MyApp({ appProps: { pageProps, Component }, extra }: { appProps: AppProps; extra: AppInitialConfig }) {
   // remembers extra props from first load
-  const { current: { userInfo, primaryColor, footerText, loginNodes } } = useRef(extra);
+  const {
+    current: { userInfo, primaryColor, footerText, loginNodes },
+  } = useRef(extra);
 
   // 未持有身份信息时防止UI闪烁，重定向至登录API
   const isUnauthenticated = !userInfo?.identityId;
@@ -199,16 +190,19 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   const fetchUnreadMessages = async (): Promise<UnreadMessage | undefined> => {
     if (!publicConfig.NOTIF_ENABLED) return undefined;
 
-    const result = await api.getUnreadMessages({
-      query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
-    }).httpError(500, () => {})
+    const result = await api
+      .getUnreadMessages({
+        query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
+      })
+      .httpError(500, () => {})
       .then((res) => res)
       .catch(() => undefined);
     return result?.results;
   };
 
   const clusterInfoStore = useConstant(() => {
-    return createStore(ClusterInfoStore,
+    return createStore(
+      ClusterInfoStore,
       extra.clusterConfigs,
       extra.initialCurrentClusters,
       extra.initialPortalRuntimeDesktopEnabled,
@@ -216,8 +210,7 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
     );
   });
 
-  const loginNodeStore = useConstant(() => createStore(LoginNodeStore, loginNodes,
-    extra.initialLanguageId));
+  const loginNodeStore = useConstant(() => createStore(LoginNodeStore, loginNodes, extra.initialLanguageId));
 
   const uiExtensionStore = useConstant(() => createStore(UiExtensionStore, publicConfig.UI_EXTENSION));
 
@@ -232,28 +225,25 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   }
 
   if (!initialLanguageDefinitionQuery.data) {
-    return (
-      <ServerErrorPage />
-    );
+    return <ServerErrorPage />;
   }
 
   // Use the layout defined at the page level, if available
   return (
-    <Provider initialLanguage={{
-      id: extra.initialLanguageId,
-      definitions: initialLanguageDefinitionQuery.data,
-    }}
+    <Provider
+      initialLanguage={{
+        id: extra.initialLanguageId,
+        definitions: initialLanguageDefinitionQuery.data,
+      }}
     >
-      <StoreProvider
-        stores={[userStore, clusterInfoStore, loginNodeStore, uiExtensionStore]}
-      >
+      <StoreProvider stores={[userStore, clusterInfoStore, loginNodeStore, uiExtensionStore]}>
         <DarkModeProvider initial={extra.darkModeCookieValue}>
           <AntdConfigProvider
             primaryColor={primaryColor}
             locale={extra.initialLanguageId}
             color={primaryColor.defaultColor}
           >
-            <FloatButtons languageId={ extra.initialLanguageId } />
+            <FloatButtons languageId={extra.initialLanguageId} />
             <GlobalStyle />
             <FailEventHandler />
             <TopProgressBar />
@@ -273,8 +263,9 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
                 >
                   <Component {...pageProps} />
                 </NotificationLayout>
-              )
-                : <Component {...pageProps} />}
+              ) : (
+                <Component {...pageProps} />
+              )}
             </BaseLayout>
           </AntdConfigProvider>
         </DarkModeProvider>

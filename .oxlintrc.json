@@ -1,8 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript"
-  ],
+  "plugins": ["typescript"],
   "categories": {
     "correctness": "off"
   },
@@ -1202,10 +1200,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "**/*.ts",
-        "**/*.tsx"
-      ],
+      "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
         "constructor-super": "off",
         "no-const-assign": "off",
@@ -1285,7 +1280,7 @@
             "ignoreRestSiblings": true
           }
         ]
-      },
+      }
     }
   ],
   "options": {

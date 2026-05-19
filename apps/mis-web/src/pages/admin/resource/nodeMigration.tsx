@@ -9,21 +9,19 @@ import { Head } from "src/utils/head";
 
 const nodeMigrationEnabled = publicConfig.NODE_MIGRATION?.enabled ? true : false;
 
-export const NodeMigrationPage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && nodeMigrationEnabled)(() => {
+export const NodeMigrationPage: NextPage = requireAuth(
+  (u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) && nodeMigrationEnabled,
+)(() => {
+  const t = useI18nTranslateToString();
+  const p = prefix("page.admin.resourceManagement.nodeMigrationPage.");
 
-    const t = useI18nTranslateToString();
-    const p = prefix("page.admin.resourceManagement.nodeMigrationPage.");
-
-    return (
-      <div>
-        <Head title={t(p("title"))} />
-        <PageTitle titleText={t(p("title"))}>
-        </PageTitle>
-        <NodeMigrationTable />
-      </div>
-    );
-
-  });
+  return (
+    <div>
+      <Head title={t(p("title"))} />
+      <PageTitle titleText={t(p("title"))}></PageTitle>
+      <NodeMigrationTable />
+    </div>
+  );
+});
 
 export default NodeMigrationPage;

@@ -24,12 +24,14 @@ export const BlockUserInAccountSchema = typeboxRouteSchema({
     200: Type.Object({
       reason: Type.Optional(Type.String()),
       success: Type.Boolean(),
-      results: Type.Optional(Type.Array(
-        Type.Object({
-          success: Type.Boolean(),
-          userId: Type.String(),
-        }),
-      )),
+      results: Type.Optional(
+        Type.Array(
+          Type.Object({
+            success: Type.Boolean(),
+            userId: Type.String(),
+          }),
+        ),
+      ),
     }),
     // 用户不存在
     404: Type.Null(),
@@ -39,24 +41,26 @@ export const BlockUserInAccountSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) => {
+export default /* #__PURE__*/ route(BlockUserInAccountSchema, async (req, res) => {
   const { userIds, accountName } = req.body;
-
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
   // 检查操作者是否已经被Block，若果是直接返回
 
-  if (!info) { return; }
-
+  if (!info) {
+    return;
+  }
 
   const client = getClient(UserServiceClient);
 
@@ -65,8 +69,9 @@ export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) =>
       operatorUserId: info.identityId,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.blockUser,
-      operationTypePayload:{
-        accountName, userId,
+      operationTypePayload: {
+        accountName,
+        userId,
       },
     };
   });
@@ -92,14 +97,18 @@ export default /* #__PURE__*/route(BlockUserInAccountSchema, async (req, res) =>
       }
       return { 200: res };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { success: false, reason: e.details } }),
-      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-    },
-    async () => logInfos.forEach(async (logInfo) => {
-      await callLog(logInfo, OperationResult.FAIL);
-    }),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { success: false, reason: e.details } }),
+          [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+        },
+        async () =>
+          logInfos.forEach(async (logInfo) => {
+            await callLog(logInfo, OperationResult.FAIL);
+          }),
+      ),
+    );
 });

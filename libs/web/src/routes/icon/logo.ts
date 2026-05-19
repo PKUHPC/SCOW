@@ -13,20 +13,23 @@ const QuerySchema = z.object({
 const exts = ["svg", "png", "jpg"];
 
 export const serveLogo = async (
-  req: NextApiRequest, res: NextApiResponse,
-  builtinLogoPath: string, configBasePath: string, primaryColor?: string,
+  req: NextApiRequest,
+  res: NextApiResponse,
+  builtinLogoPath: string,
+  configBasePath: string,
+  primaryColor?: string,
 ) => {
-
   const query = validatePayload(QuerySchema, req.query, res);
 
-  if (!query) { return; }
+  if (!query) {
+    return;
+  }
 
   const configLogoPath = join(configBasePath, "logo");
 
   const { type, preferDark } = query;
 
   async function trySend(basePath: string) {
-
     if (preferDark === "true") {
       for (const ext of exts) {
         const darkFilePath = join(basePath, type + ".dark." + ext);
@@ -56,7 +59,6 @@ export const serveLogo = async (
   const domain = getHost(req);
 
   if (domain) {
-
     const domainPath = join(configLogoPath, domain);
 
     if (await trySend(domainPath)) {
@@ -74,4 +76,3 @@ export const serveLogo = async (
 
   res.status(404).send("Image file Not Found");
 };
-

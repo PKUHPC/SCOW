@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { DEFAULT_CONFIG_BASE_PATH } from "@scow/config/build/constants";
 import { Decimal } from "@scow/lib-decimal";
@@ -20,7 +8,6 @@ import { configClusters } from "src/config/clusters";
 import { misConfig } from "src/config/mis";
 import { JobPriceInfo } from "src/entities/JobInfo";
 import { AmountStrategy, JobPriceItem } from "src/entities/JobPriceItem";
-
 
 type AmountStrategyFunc = (info: JobInfo, partition: Partition) => Decimal;
 type CustomAmountStrategyFunc = (info: JobInfo) => number;
@@ -43,35 +30,26 @@ const amountStrategyFuncs: Record<AmountStrategy, AmountStrategyFunc> = {
   [AmountStrategy.MAX_GPU_CPUSALLOC]: (info, partition) => {
     const { gpu, cpusAlloc } = info;
     const { cores, gpus } = partition;
-    return Decimal.max(
-      gpu,
-      new Decimal(cpusAlloc).div(
-        new Decimal(cores).div(gpus),
-      ).integerValue(Decimal.ROUND_CEIL),
-    );
+    return Decimal.max(gpu, new Decimal(cpusAlloc).div(new Decimal(cores).div(gpus)).integerValue(Decimal.ROUND_CEIL));
   },
   [AmountStrategy.MAX_CPUSALLOC_MEM]: (info, partition) => {
-
     const { memMb, cores } = partition;
     return Decimal.max(
       // 核心数
       info.cpusAlloc,
 
       // 申请内存总数/(分区内容/分区核心数)
-      new Decimal(info.memReq).div(
-        new Decimal(memMb).div(cores),
-      ).integerValue(Decimal.ROUND_CEIL),
+      new Decimal(info.memReq).div(new Decimal(memMb).div(cores)).integerValue(Decimal.ROUND_CEIL),
     );
   },
-
 };
-
 
 export async function calculateJobPrice(
   partitionsForClusters: Record<string, Partition[]>,
-  info: JobInfo, getPriceItem: PriceMap["getPriceItem"],
-  logger: Logger): Promise<JobPriceInfo> {
-
+  info: JobInfo,
+  getPriceItem: PriceMap["getPriceItem"],
+  logger: Logger,
+): Promise<JobPriceInfo> {
   logger.trace(`Calculating price for job ${info.jobId} in cluster ${info.cluster}`);
 
   // use all clusters from config files
@@ -92,7 +70,6 @@ export async function calculateJobPrice(
   const path = [info.cluster, info.partition, info.qos] as [string, string, string];
 
   async function calculatePrice(priceItem: JobPriceItem, partition: Partition) {
-
     const time = new Decimal(info.timeUsed).div(3600); // 秒到小时
 
     const amountFn = amountStrategyFuncs[priceItem.amount] || customAmountStrategyFuncs[priceItem.amount];
@@ -110,7 +87,8 @@ export async function calculateJobPrice(
     // 如果单价大于0，且运行时间大于0，若结果算下来金额小于默认最低消费金额，按最低消费金额计算价格
     if (priceItem.price.gt(0) && time.gt(0)) {
       if (priceItem.price.multipliedBy(amount).gt(new Decimal(misConfig.jobMinCharge))) {
-        return priceItem.price.multipliedBy(amount)
+        return priceItem.price
+          .multipliedBy(amount)
           .decimalPlaces(misConfig.jobChargeDecimalPrecision, Decimal.ROUND_HALF_CEIL);
       }
       return new Decimal(misConfig.jobMinCharge);

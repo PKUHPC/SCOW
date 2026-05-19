@@ -5,15 +5,15 @@ import { getScowAccounts } from "src/server/mis-server/tenantAccount";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 
 export interface UnassignResult {
-  failedBlockedAccounts: string[],
-  successfullyBlockedAccounts: string[],
-};
+  failedBlockedAccounts: string[];
+  successfullyBlockedAccounts: string[];
+}
 
 export interface AssignResult {
-  failedUnblockedAccounts: string[],
-  successfullyUnblockedAccounts: string[],
-  accountsToProcessInEm: string[],
-};
+  failedUnblockedAccounts: string[];
+  successfullyUnblockedAccounts: string[];
+  accountsToProcessInEm: string[];
+}
 
 export type UnassignResultType = UnassignResult;
 export type AssignResultType = AssignResult;
@@ -45,13 +45,10 @@ export async function unAssignTenantAccountsThroughCluster(
   let blockedPartitions: string[];
 
   const clustersUtil = await getClusterUtils();
-  await clustersUtil.callOnOne(
-    clusterId,
-    logger,
-    async (adapterClient) => {
-      await Promise.allSettled(accountNameList.map(async (accountName) => {
+  await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
+    await Promise.allSettled(
+      accountNameList.map(async (accountName) => {
         try {
-
           if (!partitionName) {
             const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
             // 获取当前集群下所有分区
@@ -73,21 +70,23 @@ export async function unAssignTenantAccountsThroughCluster(
             }
           }
         } catch (e) {
-          logger.info("Can not unassign account (accountName : %s) in cluster (ClusterId: %s) with error details: %o",
-            accountName, clusterId, e);
+          logger.info(
+            "Can not unassign account (accountName : %s) in cluster (ClusterId: %s) with error details: %o",
+            accountName,
+            clusterId,
+            e,
+          );
           failedBlockedAccounts.push(accountName);
-        };
-      }));
-    },
-  );
+        }
+      }),
+    );
+  });
 
   return {
     failedBlockedAccounts,
     successfullyBlockedAccounts,
   };
-
 }
-
 
 /**
  * 在添加默认授权集群或者添加默认分区时
@@ -111,19 +110,16 @@ export async function assignTenantAccountsPartitionThroughCluster(
   existedAccountNames: string[],
   logger: Logger,
 ): Promise<AssignResult> {
-
   // 在 scow 下获取租户 tenantName 下的所有账户
   const scowTenantAccounts = await getScowAccounts(tenantName);
-  const unblockedAccountNameList
-        = scowTenantAccounts.results.filter((x) => (!x.blocked)).map((x) => (x.accountName));
+  const unblockedAccountNameList = scowTenantAccounts.results.filter((x) => !x.blocked).map((x) => x.accountName);
   const accountNameList = scowTenantAccounts.results.map((a) => a.accountName);
-
 
   // 获取本次需要更新的账户列表
   const existedAccountSet = new Set(existedAccountNames);
   const unblockedAccountsToProcess = unblockedAccountNameList.filter(
-    (accountName) => (!existedAccountSet.has(accountName)));
-
+    (accountName) => !existedAccountSet.has(accountName),
+  );
 
   const failedUnblockedAccounts: string[] = [];
   const successfullyUnblockedAccounts: string[] = [];
@@ -135,11 +131,9 @@ export async function assignTenantAccountsPartitionThroughCluster(
   // scow在账户解封时同时还会再次传输在scow保存的分区信息，此时会处理未授权和授权的分区信息
   if (unblockedAccountsToProcess.length > 0) {
     const clustersUtil = await getClusterUtils();
-    await clustersUtil.callOnOne(
-      clusterId,
-      logger,
-      async (adapterClient) => {
-        await Promise.allSettled(unblockedAccountsToProcess.map(async (accountName) => {
+    await clustersUtil.callOnOne(clusterId, logger, async (adapterClient) => {
+      await Promise.allSettled(
+        unblockedAccountsToProcess.map(async (accountName) => {
           try {
             const result = await asyncClientCall(adapterClient.account, "unblockAccountWithPartitions", {
               accountName,
@@ -152,28 +146,24 @@ export async function assignTenantAccountsPartitionThroughCluster(
           } catch (e) {
             logger.info(
               "Can not assign account (accountName : %s) in cluster (ClusterId: %s) with error details: %s",
-              accountName, clusterId, e);
+              accountName,
+              clusterId,
+              e,
+            );
             failedUnblockedAccounts.push(accountName);
-          };
-        }));
-      },
-    );
+          }
+        }),
+      );
+    });
   }
 
-  const accountsToProcessInEm = accountNameList.filter(
-    (accountName) => (!existedAccountSet.has(accountName)),
-  ).filter((x) => (!failedUnblockedAccounts.includes(x)));
-
+  const accountsToProcessInEm = accountNameList
+    .filter((accountName) => !existedAccountSet.has(accountName))
+    .filter((x) => !failedUnblockedAccounts.includes(x));
 
   return {
     failedUnblockedAccounts,
     successfullyUnblockedAccounts,
     accountsToProcessInEm,
   };
-
 }
-
-
-
-
-

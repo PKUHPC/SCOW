@@ -30,4 +30,3 @@ export const GlobalStyle = createGlobalStyle`
     white-space: nowrap;
   }
 `;
-

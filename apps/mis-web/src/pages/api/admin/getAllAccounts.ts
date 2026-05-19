@@ -51,18 +51,18 @@ export async function getAllAccounts(req: GetAccountsRequest) {
   });
 }
 
-const auth = authenticate((info) =>
-  info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-  info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE));
+const auth = authenticate(
+  (info) =>
+    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+    info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
+);
 
-export default route(GetAllAccountsSchema,
-  async (req, res) => {
+export default route(GetAllAccountsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+  const results = await getAllAccounts({});
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-    const results = await getAllAccounts({});
-
-    return { 200: { results } };
-  });
+  return { 200: { results } };
+});

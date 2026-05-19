@@ -14,7 +14,6 @@ import { mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { JobMetadata } from "./index";
 
 export const scowdJobServices = (getClient: (userId: string) => ScowdClient): JobOps => ({
-
   getJobTemplate: async (request, logger) => {
     const { id, userId } = request;
     const client = getClient(userId);
@@ -62,32 +61,38 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
       }
 
       const { filesInfo } = await client.file.readDirectory({
-        userId, dirPath: join(userHomeDir, portalConfig.savedJobsDir),
+        userId,
+        dirPath: join(userHomeDir, portalConfig.savedJobsDir),
       });
 
-      const results = await Promise.all(filesInfo.map(async ({ name }) => {
-        const filePath = join(userHomeDir, portalConfig.savedJobsDir, name);
-        const { content } = await client.file.readFile({ userId, filePath });
+      const results = await Promise.all(
+        filesInfo.map(async ({ name }) => {
+          const filePath = join(userHomeDir, portalConfig.savedJobsDir, name);
+          const { content } = await client.file.readFile({ userId, filePath });
 
-        let data: JobMetadata | object = {};
+          let data: JobMetadata | object = {};
 
-        try {
-          data = JSON.parse(content.toString()) as JobMetadata;
-        } catch (error) {
-          logger.error("Parsing JSON file %s failed, the content is %s,the error is %o",
-            filePath, content.toString(), error);
-        }
+          try {
+            data = JSON.parse(content.toString()) as JobMetadata;
+          } catch (error) {
+            logger.error(
+              "Parsing JSON file %s failed, the content is %s,the error is %o",
+              filePath,
+              content.toString(),
+              error,
+            );
+          }
 
-        return {
-          id: name,
-          submitTime: ("submitTime" in data && data.submitTime) ? new Date(data.submitTime) : new Date(),
-          comment: ("comment" in data && data.comment) ? data.comment : "",
-          jobName: ("jobName" in data && data.jobName) ? data.jobName : "unknown",
-        } as JobTemplateInfo;
-      }));
+          return {
+            id: name,
+            submitTime: "submitTime" in data && data.submitTime ? new Date(data.submitTime) : new Date(),
+            comment: "comment" in data && data.comment ? data.comment : "",
+            jobName: "jobName" in data && data.jobName ? data.jobName : "unknown",
+          } as JobTemplateInfo;
+        }),
+      );
 
       return { results };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -188,9 +193,26 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
   },
 
   submitJob: async (request, logger) => {
-    const { cluster, command, jobName, coreCount, gpuCount, maxTime, maxTimeUnit = TimeUnit.MINUTES,
-      saveAsTemplate, userId, nodeCount, partition, qos, account, workingDirectory, output
-      , errorOutput, memory, scriptOutput } = request;
+    const {
+      cluster,
+      command,
+      jobName,
+      coreCount,
+      gpuCount,
+      maxTime,
+      maxTimeUnit = TimeUnit.MINUTES,
+      saveAsTemplate,
+      userId,
+      nodeCount,
+      partition,
+      qos,
+      account,
+      workingDirectory,
+      output,
+      errorOutput,
+      memory,
+      scriptOutput,
+    } = request;
     const client = getClient(userId);
     logger.info("Submitting job %s for user %s in cluster %s", jobName, userId, cluster);
 
@@ -203,34 +225,46 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
         [TimeUnit.HOURS]: 60,
         [TimeUnit.DAYS]: 60 * 24,
       };
-      const maxTimeConversion = maxTime * (timeUnitConversion[maxTimeUnit]);
+      const maxTimeConversion = maxTime * timeUnitConversion[maxTimeUnit];
       const reply = await callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.job, "submitJob", {
-          userId, jobName, account, partition: partition, qos, nodeCount, gpuCount: gpuCount ?? 0,
-          memoryMb: Number(memory?.split("M")[0]), coreCount, timeLimitMinutes: maxTimeConversion,
-          script: command, workingDirectory, stdout: output, stderr: errorOutput, extraOptions: [],
-          envVariables: [],
-        }).catch((e) => {
-          const ex = e as ServiceError;
+        async (client) =>
+          await asyncClientCall(client.job, "submitJob", {
+            userId,
+            jobName,
+            account,
+            partition: partition,
+            qos,
+            nodeCount,
+            gpuCount: gpuCount ?? 0,
+            memoryMb: Number(memory?.split("M")[0]),
+            coreCount,
+            timeLimitMinutes: maxTimeConversion,
+            script: command,
+            workingDirectory,
+            stdout: output,
+            stderr: errorOutput,
+            extraOptions: [],
+            envVariables: [],
+          }).catch((e) => {
+            const ex = e as ServiceError;
 
-          const { findDetails } = parseErrorStatus(ex.metadata);
+            const { findDetails } = parseErrorStatus(ex.metadata);
 
-          const errors = findDetails(ErrorInfo);
+            const errors = findDetails(ErrorInfo);
 
-          if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
-            throw {
-              code: Status.INTERNAL,
-              message: "sbatch failed",
-              details: ex.details,
-            } as ServiceError;
-          } else {
-            throw e;
-          }
-        }),
+            if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
+              throw {
+                code: Status.INTERNAL,
+                message: "sbatch failed",
+                details: ex.details,
+              } as ServiceError;
+            } else {
+              throw e;
+            }
+          }),
       );
-
 
       // 保存作业脚本
       if (scriptOutput) {
@@ -281,7 +315,6 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
     }
   },
 
-
   submitFileAsJob: async (request, logger) => {
     const { cluster, userId, filePath } = request;
     const client = getClient(userId);
@@ -294,7 +327,8 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
       // 文件SIZE大于1M不能提交sbatch执行
       if (Number(sizeByte) / (1024 * 1024) > 1) {
         throw {
-          code: Status.INVALID_ARGUMENT, message: `${filePath} is too large. Maximum file size is 1M`,
+          code: Status.INVALID_ARGUMENT,
+          message: `${filePath} is too large. Maximum file size is 1M`,
         } as ServiceError;
       }
 
@@ -302,7 +336,8 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
       // 文件不是文本文件不能提交Sbatch执行
       if (!isTextFile) {
         throw {
-          code: Status.INVALID_ARGUMENT, message: `${filePath} is not a text file`,
+          code: Status.INVALID_ARGUMENT,
+          message: `${filePath} is not a text file`,
         } as ServiceError;
       }
 
@@ -310,31 +345,28 @@ export const scowdJobServices = (getClient: (userId: string) => ScowdClient): Jo
 
       const scriptFileFullPath = path.dirname(filePath);
 
-      const reply = await callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          return await asyncClientCall(client.job, "submitScriptAsJob", {
-            userId, script: content.toString(), scriptFileFullPath,
-          }).catch((e) => {
-            const ex = e as ServiceError;
-            const { findDetails } = parseErrorStatus(ex.metadata);
+      const reply = await callOnOne(cluster, logger, async (client) => {
+        return await asyncClientCall(client.job, "submitScriptAsJob", {
+          userId,
+          script: content.toString(),
+          scriptFileFullPath,
+        }).catch((e) => {
+          const ex = e as ServiceError;
+          const { findDetails } = parseErrorStatus(ex.metadata);
 
-            const errors = findDetails(ErrorInfo);
+          const errors = findDetails(ErrorInfo);
 
-            if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
-              throw {
-                code: Status.INTERNAL,
-                message: "sbatch failed",
-                details: ex.details,
-              } as ServiceError;
-            } else {
-              throw e;
-            }
-          });
-        },
-
-      );
+          if (errors.find((x) => x.reason === "SBATCH_FAILED")) {
+            throw {
+              code: Status.INTERNAL,
+              message: "sbatch failed",
+              details: ex.details,
+            } as ServiceError;
+          } else {
+            throw e;
+          }
+        });
+      });
 
       return { jobId: reply.jobId };
     } catch (err) {

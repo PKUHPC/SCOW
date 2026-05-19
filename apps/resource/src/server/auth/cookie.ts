@@ -1,8 +1,6 @@
-
 import { NextApiResponse } from "next";
 import { destroyCookie, parseCookies, setCookie } from "nookies";
 import { RequestType } from "src/utils/type";
-
 
 export const SCOW_COOKIE_KEY = "SCOW_USER";
 
@@ -15,7 +13,6 @@ export function deleteUserToken(res?: NextApiResponse) {
 }
 
 export function getUserToken(req: RequestType): string | undefined {
-
   if (req instanceof Request) {
     return req.cookies.get(SCOW_COOKIE_KEY)?.value;
   }

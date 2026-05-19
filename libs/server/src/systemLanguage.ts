@@ -1,19 +1,22 @@
-import { HEADER_ACCEPT_VALID_LANGUAGES,
-  I18nStringType, SYSTEM_VALID_LANGUAGES, SystemLanguageConfig } from "@scow/config/build/i18n";
+import {
+  HEADER_ACCEPT_VALID_LANGUAGES,
+  I18nStringType,
+  SYSTEM_VALID_LANGUAGES,
+  SystemLanguageConfig,
+} from "@scow/config/build/i18n";
 import { IncomingMessage } from "http";
 import { parseCookies } from "nookies";
 
-
-
 export function getI18nConfigCurrentText(
-  i18nConfigText: I18nStringType | undefined, languageId: string | undefined): string {
+  i18nConfigText: I18nStringType | undefined,
+  languageId: string | undefined,
+): string {
   if (!i18nConfigText) {
     return "";
   }
   if (typeof i18nConfigText === "string") {
     return i18nConfigText;
   } else {
-
     // 当语言id或者对应的配置文本中某种语言不存在时，显示default的值
     if (!languageId) return i18nConfigText.i18n.default;
     switch (languageId) {
@@ -39,7 +42,7 @@ export function getI18nConfigCurrentText(
         return i18nConfigText.i18n.default;
     }
   }
-};
+}
 
 /**
  * 返回系统当前语言
@@ -48,8 +51,10 @@ export function getI18nConfigCurrentText(
  * @param systemLanguageConfig
  * @returns
  */
-export function getCurrentLanguageId(req: IncomingMessage | undefined,
-  systemLanguageConfig: SystemLanguageConfig): string {
+export function getCurrentLanguageId(
+  req: IncomingMessage | undefined,
+  systemLanguageConfig: SystemLanguageConfig,
+): string {
   // 如果系统不使用i18n，则直接使用defaultLanguage
   if (!systemLanguageConfig.isUsingI18n) {
     return systemLanguageConfig.defaultLanguage;
@@ -69,7 +74,7 @@ export function getCurrentLanguageId(req: IncomingMessage | undefined,
     if (acceptLanguageHeader) {
       const preferredLanguages = acceptLanguageHeader.split(",");
       if (preferredLanguages.length > 0) {
-      // 遍历语言偏好列表
+        // 遍历语言偏好列表
         for (const lang of preferredLanguages) {
           const preferredLanguage = lang.split(";")[0];
           // 判断偏好语言中的语言是否合法
@@ -112,5 +117,4 @@ export function getCurrentLanguageId(req: IncomingMessage | undefined,
   }
   // 如果判断不出，或者autoDetectWhenUserNotSet为false则直接使用默认语言
   return systemLanguageConfig.defaultLanguage;
-};
-
+}

@@ -43,17 +43,17 @@ export const GetClusterInfoSchema = typeboxRouteSchema({
     }),
 
     403: Type.Null(),
-
   },
 });
 
 const auth = authenticate(() => true);
 
 export default route(GetClusterInfoSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster } = req.query;
 
@@ -63,12 +63,15 @@ export default route(GetClusterInfoSchema, async (req, res) => {
     cluster,
   });
 
-  return { 200: { clusterInfo: {
-    submitJobDirTemplate: runtimeConfig.SUBMIT_JOB_WORKING_DIR,
-    scheduler: {
-      name: reply.schedulerName,
-      partitions: reply.partitions,
+  return {
+    200: {
+      clusterInfo: {
+        submitJobDirTemplate: runtimeConfig.SUBMIT_JOB_WORKING_DIR,
+        scheduler: {
+          name: reply.schedulerName,
+          partitions: reply.partitions,
+        },
+      },
     },
-  } } };
-
+  };
 });

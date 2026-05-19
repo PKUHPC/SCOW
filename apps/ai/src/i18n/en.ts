@@ -1413,8 +1413,9 @@ export default {
       fileUploadError: "File upload failed: {}",
       isChecking: "Checking...",
       resumeUploadTitle: "Unfinished Upload Task",
-      resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-      + "Do you want to clear the uploaded data and start this upload?",
+      resumeUploadContent:
+        "There is an unfinished upload task with the same name in the current path. " +
+        "Do you want to clear the uploaded data and start this upload?",
       resumeUploadOk: "Clear and Restart",
       resumeUploadCancel: "Cancel",
       isNotFile: "Please drag files to upload",
@@ -1443,8 +1444,9 @@ export default {
       completeMultipartUploadErrorText: "Failed to complete multipart upload file {}: {}",
       isChecking: "Checking...",
       resumeUploadTitle: "Unfinished Upload Task",
-      resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-      + "Do you want to clear the uploaded data and start this upload?",
+      resumeUploadContent:
+        "There is an unfinished upload task with the same name in the current path. " +
+        "Do you want to clear the uploaded data and start this upload?",
       resumeUploadOk: "Clear and Restart",
       resumeUploadCancel: "Cancel",
       isNotDir: "Please drag folders to upload",

@@ -1,60 +1,68 @@
 import { SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 
 export interface Cluster {
-  name: (string | {
-    i18n: {
-      default: string;
-      en?: string | undefined;
-      zh_cn?: string | undefined;
-    };
-  }) & (string | {
-    i18n: {
-      default: string;
-      en?: string | undefined;
-      zh_cn?: string | undefined;
-    };
-  } | undefined);
+  name: (
+    | string
+    | {
+        i18n: {
+          default: string;
+          en?: string | undefined;
+          zh_cn?: string | undefined;
+        };
+      }
+  ) &
+    (
+      | string
+      | {
+          i18n: {
+            default: string;
+            en?: string | undefined;
+            zh_cn?: string | undefined;
+          };
+        }
+      | undefined
+    );
   id: string;
 }
 
 export interface ClusterOverview {
-  clusterId: string,
-  partitionName: string,
-  nodeCount: number,
-  runningNodeCount: number,
-  idleNodeCount: number,
-  notAvailableNodeCount: number,
-  cpuCoreCount: number,
-  runningCpuCount: number,
-  idleCpuCount: number,
-  notAvailableCpuCount: number,
-  gpuCoreCount: number,
-  runningGpuCount: number,
-  idleGpuCount: number,
-  notAvailableGpuCount: number,
-  jobCount: number,
-  runningJobCount: number,
-  pendingJobCount: number,
-  partitionStatus: number,
+  clusterId: string;
+  partitionName: string;
+  nodeCount: number;
+  runningNodeCount: number;
+  idleNodeCount: number;
+  notAvailableNodeCount: number;
+  cpuCoreCount: number;
+  runningCpuCount: number;
+  idleCpuCount: number;
+  notAvailableCpuCount: number;
+  gpuCoreCount: number;
+  runningGpuCount: number;
+  idleGpuCount: number;
+  notAvailableGpuCount: number;
+  jobCount: number;
+  runningJobCount: number;
+  pendingJobCount: number;
+  partitionStatus: number;
 }
 
 export interface PlatformOverview {
-  nodeCount: number,
-  runningNodeCount: number,
-  idleNodeCount: number,
-  notAvailableNodeCount: number,
-  cpuCoreCount: number,
-  runningCpuCount: number,
-  idleCpuCount: number,
-  notAvailableCpuCount: number,
-  gpuCoreCount: number,
-  runningGpuCount: number,
-  idleGpuCount: number,
-  notAvailableGpuCount: number,
-  jobCount: number,
-  runningJobCount: number,
-  pendingJobCount: number,
-  partitionStatus: number,
+  nodeCount: number;
+  runningNodeCount: number;
+  idleNodeCount: number;
+  notAvailableNodeCount: number;
+  cpuCoreCount: number;
+  runningCpuCount: number;
+  idleCpuCount: number;
+  notAvailableCpuCount: number;
+  gpuCoreCount: number;
+  runningGpuCount: number;
+  idleGpuCount: number;
+  notAvailableGpuCount: number;
+  jobCount: number;
+  runningJobCount: number;
+  pendingJobCount: number;
+  partitionStatus: number;
 }
 
 export interface SummaryPartition {

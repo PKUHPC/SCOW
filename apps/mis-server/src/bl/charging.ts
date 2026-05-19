@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { Loaded } from "@mikro-orm/core";
 import { SqlEntityManager } from "@mikro-orm/mysql";
@@ -41,38 +29,40 @@ interface PayRequest {
 }
 
 export function checkShouldBlockAccount(account: Loaded<Account, "tenant">) {
+  const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
-  const blockThresholdAmount =
-  account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
-
-  const accountStateInfo =
-  getAccountStateInfo(account.whitelist?.id, account.state, account.balance, blockThresholdAmount);
+  const accountStateInfo = getAccountStateInfo(
+    account.whitelist?.id,
+    account.state,
+    account.balance,
+    blockThresholdAmount,
+  );
 
   return accountStateInfo.shouldBlockInCluster;
 }
 
 export function checkShouldUnblockAccount(account: Loaded<Account, "tenant">) {
+  const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
-  const blockThresholdAmount =
-  account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
-
-  const accountStateInfo =
-  getAccountStateInfo(account.whitelist?.id, account.state, account.balance, blockThresholdAmount);
+  const accountStateInfo = getAccountStateInfo(
+    account.whitelist?.id,
+    account.state,
+    account.balance,
+    blockThresholdAmount,
+  );
 
   return !accountStateInfo.shouldBlockInCluster;
 }
 
 export async function pay(
-  request: PayRequest, em: SqlEntityManager,
+  request: PayRequest,
+  em: SqlEntityManager,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
-  logger: Logger, 
+  logger: Logger,
   clusterPlugin: ClusterPlugin,
   scowResourcePlugin?: ScowResourcePlugin,
 ) {
-  const {
-    target, amount, comment, operatorId, ipAddress, type,
-  } = request;
-
+  const { target, amount, comment, operatorId, ipAddress, type } = request;
 
   const record = new PayRecord({
     time: new Date(),
@@ -90,42 +80,49 @@ export async function pay(
   target.balance = target.balance.plus(amount);
 
   if (target instanceof Account) {
-    await callHook("accountPaid", {
-      accountName: target.accountName, amount: decimalToMoney(amount), type, comment }, logger);
+    await callHook(
+      "accountPaid",
+      {
+        accountName: target.accountName,
+        amount: decimalToMoney(amount),
+        type,
+        comment,
+      },
+      logger,
+    );
 
     // 给账户充值时发送消息
     const ownerAndAdmin = await getAccountOwnerAndAdmin(target.accountName, logger, em);
-    await sendMessage({
-      messageType: InternalMessageType.AccountRechargeSuccess,
-      targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-      metadata: {
-        time: (new Date()).toISOString(),
-        accountName: target.accountName,
-        chargeAmount: amount.toString(),
-        amount: target.balance.toString(),
+    await sendMessage(
+      {
+        messageType: InternalMessageType.AccountRechargeSuccess,
+        targetType: TargetType.USER,
+        targetIds: ownerAndAdmin.map((x) => x.userId),
+        metadata: {
+          time: new Date().toISOString(),
+          accountName: target.accountName,
+          chargeAmount: amount.toString(),
+          amount: target.balance.toString(),
+        },
       },
-    }, logger);
+      logger,
+    );
   } else {
     await callHook("tenantPaid", { tenantName: target.name, amount: decimalToMoney(amount), type, comment }, logger);
   }
 
-  if (
-    target instanceof Account
-    && checkShouldUnblockAccount(target)
-  ) {
+  if (target instanceof Account && checkShouldUnblockAccount(target)) {
     logger.info("Unblock account %s", target.accountName);
-    await unblockAccount(target, 
-      currentActivatedClusters, 
-      clusterPlugin.clusters, 
-      logger, 
+    await unblockAccount(
+      target,
+      currentActivatedClusters,
+      clusterPlugin.clusters,
+      logger,
       scowResourcePlugin?.resource,
     );
   }
 
-  if (
-    target instanceof Account
-    && checkShouldBlockAccount(target)
-  ) {
+  if (target instanceof Account && checkShouldBlockAccount(target)) {
     logger.info("Block account %s", target.accountName);
     await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger);
   }
@@ -146,9 +143,11 @@ interface ChargeRequest {
 }
 
 export async function charge(
-  request: ChargeRequest, em: SqlEntityManager,
+  request: ChargeRequest,
+  em: SqlEntityManager,
   currentActivatedClusters: Record<string, ClusterConfigSchema>,
-  logger: Logger, clusterPlugin: ClusterPlugin,
+  logger: Logger,
+  clusterPlugin: ClusterPlugin,
 ) {
   const { target, amount, comment, type, userId, metadata } = request;
 
@@ -168,46 +167,57 @@ export async function charge(
   target.balance = target.balance.minus(amount);
 
   if (target instanceof Account) {
-
     const ownerAndAdmin = await getAccountOwnerAndAdmin(target.accountName, logger, em);
-    await sendMessage({
-      messageType: InternalMessageType.AccountBalance,
-      targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-      metadata: {
-        accountName: target.accountName,
-        amount: amount.toString(),
-        balance: target.balance.toString(),
+    await sendMessage(
+      {
+        messageType: InternalMessageType.AccountBalance,
+        targetType: TargetType.USER,
+        targetIds: ownerAndAdmin.map((x) => x.userId),
+        metadata: {
+          accountName: target.accountName,
+          amount: amount.toString(),
+          balance: target.balance.toString(),
+        },
       },
-    }, logger);
+      logger,
+    );
 
     if (target.balance.lt(target.blockThresholdAmount ?? 0)) {
-      await sendMessage({
-        messageType: InternalMessageType.AccountOverdue,
-        targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-        metadata: {
-          time: (new Date()).toISOString(),
-          accountName: target.accountName,
-          amount: target.balance.minus(target.blockThresholdAmount ?? 0).abs().toString(),
+      await sendMessage(
+        {
+          messageType: InternalMessageType.AccountOverdue,
+          targetType: TargetType.USER,
+          targetIds: ownerAndAdmin.map((x) => x.userId),
+          metadata: {
+            time: new Date().toISOString(),
+            accountName: target.accountName,
+            amount: target.balance
+              .minus(target.blockThresholdAmount ?? 0)
+              .abs()
+              .toString(),
+          },
         },
-      }, logger);
+        logger,
+      );
     }
 
     if (target.balance.lt(20)) {
-      await sendMessage({
-        messageType: InternalMessageType.AccountLowBalance,
-        targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-        metadata: {
-          time: (new Date()).toISOString(),
-          accountName: target.accountName,
+      await sendMessage(
+        {
+          messageType: InternalMessageType.AccountLowBalance,
+          targetType: TargetType.USER,
+          targetIds: ownerAndAdmin.map((x) => x.userId),
+          metadata: {
+            time: new Date().toISOString(),
+            accountName: target.accountName,
+          },
         },
-      }, logger);
+        logger,
+      );
     }
   }
 
-  if (
-    target instanceof Account
-    && checkShouldBlockAccount(target)
-  ) {
+  if (target instanceof Account && checkShouldBlockAccount(target)) {
     logger.info("Block account %s due to out of balance.", target.accountName);
     await blockAccount(target, currentActivatedClusters, clusterPlugin.clusters, logger);
   }
@@ -253,7 +263,6 @@ export async function setJobCharge(
   if (!ua.usedJobCharge) {
     ua.usedJobCharge = new Decimal(0);
   } else {
-
     const shouldBlockUserInCluster = getUserStateInfo(
       ua.state,
       ua.jobChargeLimit,

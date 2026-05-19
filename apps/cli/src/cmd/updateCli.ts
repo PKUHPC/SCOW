@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Octokit } from "@octokit/rest";
 import fs, { existsSync } from "fs";
 import { chmod, unlink } from "fs/promises";
@@ -61,9 +49,7 @@ async function download(...params: Parameters<typeof fetch>) {
   return res.arrayBuffer();
 }
 
-
 export const updateCli = async (options: Options) => {
-
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
   const outputPath = options.downloadPath ? options.downloadPath : process.execPath;
@@ -95,9 +81,7 @@ export const updateCli = async (options: Options) => {
   const octokit = new Octokit({ auth: GITHUB_TOKEN, request: { agent, fetch } });
 
   if (options.pr || options.branch) {
-
     if (!GITHUB_TOKEN) {
-
       logger.info(`
 Download CLI from PR or branch requires GitHub authentication,
 and the authenticated user/token must have actions scope.
@@ -123,7 +107,6 @@ Please provide your GitHub personal access token via GITHUB_TOKEN in env or .env
 
     logger.debug("Latest run: %s. Run URL: %s", String(latestRun.id), latestRun.html_url);
 
-
     logger.debug("Architecture: %s", arch);
 
     const artifacts = await octokit.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: latestRun.id });
@@ -140,7 +123,10 @@ Please provide your GitHub personal access token via GITHUB_TOKEN in env or .env
 
     logger.info("Downloading...");
     const content = await octokit.rest.actions.downloadArtifact({
-      owner, repo, artifact_id: artifact.id, archive_format: "zip",
+      owner,
+      repo,
+      artifact_id: artifact.id,
+      archive_format: "zip",
     });
 
     if (!(content.data instanceof ArrayBuffer)) {
@@ -171,8 +157,7 @@ Please provide your GitHub personal access token via GITHUB_TOKEN in env or .env
     return;
   }
 
-
-  const release = await (async function() {
+  const release = await (async function () {
     if (!options.release) {
       logger.info("Neither --pr, --release nor --branch is specified. Downloading latest release.");
       const resp = await octokit.rest.repos.getLatestRelease({ owner, repo });
@@ -204,5 +189,3 @@ Please provide your GitHub personal access token via GITHUB_TOKEN in env or .env
 
   logger.info("Downloaded release %s", release.name ?? "");
 };
-
-

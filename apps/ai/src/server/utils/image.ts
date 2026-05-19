@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { loggedExec } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { NodeSSH } from "node-ssh";
@@ -26,8 +14,13 @@ export function getUserHarborProjectName(userId: string, isPlatformOwned?: boole
 }
 
 // 创建要上传到harbor的镜像地址
-export async function createHarborImageUrl(imageName: string, imageTag: string,
-  userId: string,logger: Logger, isPlatformOwned?: boolean): Promise<string> {
+export async function createHarborImageUrl(
+  imageName: string,
+  imageTag: string,
+  userId: string,
+  logger: Logger,
+  isPlatformOwned?: boolean,
+): Promise<string> {
   const projectName = getUserHarborProjectName(userId, isPlatformOwned);
 
   const harborConfig = getHarborConfig();
@@ -37,7 +30,6 @@ export async function createHarborImageUrl(imageName: string, imageTag: string,
     await harbor.getProjectInfo(projectName);
 
     return `${harborUrl}/${projectName}/${imageName}:${imageTag}`;
-
   } catch (e: any) {
     if (e.message.includes("404")) {
       // 项目不存在 ⇒ 创建
@@ -60,7 +52,7 @@ export async function createHarborImageUrl(imageName: string, imageTag: string,
       message: `Failed to check/create project ${projectName} ⇒ ${e.message}`,
     });
   }
-};
+}
 
 export enum k8sRuntime {
   docker = "docker",
@@ -97,11 +89,10 @@ export async function getLoadedImage({
   logger,
   sourcePath,
 }: {
-  ssh: NodeSSH,
-  logger: Logger,
-  sourcePath: string,
+  ssh: NodeSSH;
+  logger: Logger;
+  sourcePath: string;
 }): Promise<string | undefined> {
-
   const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
@@ -110,10 +101,9 @@ export async function getLoadedImage({
   return match && match.length > 1 ? match[1] : undefined;
 }
 
-
 export interface LoginInfo {
-  userName?: string,
-  password?: string,
+  userName?: string;
+  password?: string;
 }
 // 拉取远程镜像
 export async function getPulledImage({
@@ -122,12 +112,11 @@ export async function getPulledImage({
   sourcePath,
   loginInfo,
 }: {
-  ssh: NodeSSH,
-  logger: Logger,
-  sourcePath: string,
-  loginInfo?: LoginInfo,
+  ssh: NodeSSH;
+  logger: Logger;
+  sourcePath: string;
+  loginInfo?: LoginInfo;
 }): Promise<string | undefined> {
-
   const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
@@ -160,12 +149,11 @@ export async function pushImageToHarbor({
   localImageUrl,
   harborImageUrl,
 }: {
-  ssh: NodeSSH,
-  logger: Logger,
-  localImageUrl: string,
-  harborImageUrl: string,
+  ssh: NodeSSH;
+  logger: Logger;
+  localImageUrl: string;
+  harborImageUrl: string;
 }): Promise<void> {
-
   const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
 
@@ -176,20 +164,21 @@ export async function pushImageToHarbor({
   await loggedExec(ssh, logger, true, command, ["tag", localImageUrl, harborImageUrl]);
 
   // push 镜像至harbor
-  await loggedExec(ssh, logger, true, command, ["push", harborImageUrl])
-    .catch(async (e) => {
-
-      logger.error(e, "Can not push image to the external repository. "
-        + "Please verify if the image list includes unnecessary multi-platform image data.");
-      // 为了避免可能由于错误镜像缓存引起的问题，清除localImage,taggedImage
-      logger.info("Deleting the locally pulled image and the tagged image ...");
-      await loggedExec(ssh, logger, true, command, ["rmi", localImageUrl]);
-      await loggedExec(ssh, logger, true, command, ["rmi", harborImageUrl]);
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: `Can not push image to the external repository. : ${e}`,
-      });
-    }); ;
+  await loggedExec(ssh, logger, true, command, ["push", harborImageUrl]).catch(async (e) => {
+    logger.error(
+      e,
+      "Can not push image to the external repository. " +
+        "Please verify if the image list includes unnecessary multi-platform image data.",
+    );
+    // 为了避免可能由于错误镜像缓存引起的问题，清除localImage,taggedImage
+    logger.info("Deleting the locally pulled image and the tagged image ...");
+    await loggedExec(ssh, logger, true, command, ["rmi", localImageUrl]);
+    await loggedExec(ssh, logger, true, command, ["rmi", harborImageUrl]);
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: `Can not push image to the external repository. : ${e}`,
+    });
+  });
 
   // 清除本地镜像
   await loggedExec(ssh, logger, true, command, ["rmi", harborImageUrl]);
@@ -204,17 +193,18 @@ export async function commitContainerImage({
   formattedContainerId,
   localImageUrl,
 }: {
-  node: string,
-  ssh: NodeSSH,
-  logger: Logger,
-  formattedContainerId: string,
-  localImageUrl: string,
+  node: string;
+  ssh: NodeSSH;
+  logger: Logger;
+  formattedContainerId: string;
+  localImageUrl: string;
 }): Promise<void> {
-
   const runtime = getK8sRuntime();
   const command = getRuntimeCommand(runtime);
-  const resp = await loggedExec(ssh, logger, true, "sh",
-    ["-c", `${command} ps --no-trunc | grep ${formattedContainerId}`]);
+  const resp = await loggedExec(ssh, logger, true, "sh", [
+    "-c",
+    `${command} ps --no-trunc | grep ${formattedContainerId}`,
+  ]);
   if (!resp.stdout) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -223,10 +213,8 @@ export async function commitContainerImage({
   }
 
   // commit镜像
-  await loggedExec(ssh, logger, true, command,
-    ["commit", formattedContainerId, localImageUrl]);
+  await loggedExec(ssh, logger, true, command, ["commit", formattedContainerId, localImageUrl]);
 }
-
 
 export const formatContainerId = (containerId: string) => {
   const runtime = getK8sRuntime();
@@ -234,15 +222,14 @@ export const formatContainerId = (containerId: string) => {
   return containerId.replace(`${prefix}://`, "");
 };
 
-
 export function isValidImageAddress(imageAddress: string) {
   const ImageAddressRegex = new RegExp(
     "^(?:[a-zA-Z0-9.-]+(?::\\d+)?\\/)?" + // 可选的 registry（如 docker.io, myregistry.com:5000）
-    "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
-    "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
+      "[a-z0-9._-]+(?:\\/[a-z0-9._-]+)*" + // 镜像名称（支持多级路径）
+      "(?::[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$", // 可选的 tag 或 sha256 digest
   );
   return ImageAddressRegex.test(imageAddress);
 }
 
 // 把字节转 GB，保留 2 位
-export const bytesToGB = (n: number) => +(n / (1024 ** 3)).toFixed(2);
+export const bytesToGB = (n: number) => +(n / 1024 ** 3).toFixed(2);

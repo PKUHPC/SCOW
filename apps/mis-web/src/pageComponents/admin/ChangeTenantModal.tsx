@@ -7,7 +7,7 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 
 interface Props {
   tenantName: string;
-  name: string
+  name: string;
   userId: string;
   open: boolean;
   onClose: () => void;
@@ -21,7 +21,6 @@ const p = prefix("pageComp.admin.changeTenantModal.");
 const pCommon = prefix("common.");
 
 const ChangeTenantModal: React.FC<Props> = ({ tenantName, name, userId, onClose, reload, open }) => {
-
   const t = useI18nTranslateToString();
   const { message } = App.useApp();
 
@@ -31,11 +30,14 @@ const ChangeTenantModal: React.FC<Props> = ({ tenantName, name, userId, onClose,
   const onOK = async () => {
     const { newTenantName } = await form.validateFields();
     setLoading(true);
-    await api.changeTenant({ body:{
-      identityId: userId,
-      previousTenantName: tenantName,
-      tenantName: newTenantName,
-    } })
+    await api
+      .changeTenant({
+        body: {
+          identityId: userId,
+          previousTenantName: tenantName,
+          tenantName: newTenantName,
+        },
+      })
       .httpError(404, (e) => {
         switch (e.code) {
           case "USER_NOT_FOUND":
@@ -46,17 +48,18 @@ const ChangeTenantModal: React.FC<Props> = ({ tenantName, name, userId, onClose,
             break;
           default:
             message.error(t(pCommon("changeFail")));
-        } })
+        }
+      })
       .httpError(409, () => {
         message.error(t(p("userAlreadyExistInThisTenant")));
       })
       .httpError(422, (e) => {
         if (e.code === "USER_STILL_MAINTAINS_ACCOUNT_RELATIONSHIP") {
           message.error(t(p("userStillMaintainsAccountRelationship")));
-        };
+        }
         if (e.code === "USER_STILL_MAINTAINS_TENANT_ROLES") {
           message.error(t(p("userStillMaintainsTenantRoles")));
-        };
+        }
       })
       .then(() => {
         message.success(t(pCommon("changeSuccess")));
@@ -71,20 +74,9 @@ const ChangeTenantModal: React.FC<Props> = ({ tenantName, name, userId, onClose,
   };
 
   return (
-    <Modal
-      title={t(p("modifyTenant"))}
-      open={open}
-      onOk={onOK}
-      confirmLoading={loading}
-      onCancel={onClose}
-      width={550}
-    >
+    <Modal title={t(p("modifyTenant"))} open={open} onOk={onOK} confirmLoading={loading} onCancel={onClose} width={550}>
       <Alert banner message={t(p("createTenantWarningInfo"))} type="warning" showIcon />
-      <Form
-        form={form}
-        initialValues={undefined}
-        preserve={false}
-      >
+      <Form form={form} initialValues={undefined} preserve={false}>
         <Form.Item label={t(p("userId"))}>
           <span>{userId}</span>
         </Form.Item>
@@ -101,7 +93,6 @@ const ChangeTenantModal: React.FC<Props> = ({ tenantName, name, userId, onClose,
         >
           <Input />
         </Form.Item>
-
       </Form>
     </Modal>
   );

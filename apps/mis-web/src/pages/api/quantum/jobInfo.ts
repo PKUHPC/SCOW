@@ -2,12 +2,12 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import {
-  GetQuantumJobsRequest, GetQuantumJobsRequest_SortBy as SortBy,
-  QuantumJobFilter, QuantumServiceClient,
+  GetQuantumJobsRequest,
+  GetQuantumJobsRequest_SortBy as SortBy,
+  QuantumJobFilter,
+  QuantumServiceClient,
 } from "@scow/protos/build/server/quantum";
-import {
-  quantumJobStateToJSON,
-} from "@scow/protos/build/server/quantum";
+import { quantumJobStateToJSON } from "@scow/protos/build/server/quantum";
 import { Static, Type } from "@sinclair/typebox";
 import { getTokenFromCookie } from "src/auth/cookie";
 import { authenticate } from "src/auth/server";
@@ -18,23 +18,23 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
 export const mapJobSortByType = {
-  "jobId": SortBy.JOB_ID,
-  "account": SortBy.ACCOUNT,
-  "user": SortBy.USER,
-  "submitTime": SortBy.SUBMIT_TIME,
-  "lastSyncTime": SortBy.LAST_SYNC_TIME,
-  "qits": SortBy.QITS,
-  "amount": SortBy.AMOUNT,
+  jobId: SortBy.JOB_ID,
+  account: SortBy.ACCOUNT,
+  user: SortBy.USER,
+  submitTime: SortBy.SUBMIT_TIME,
+  lastSyncTime: SortBy.LAST_SYNC_TIME,
+  qits: SortBy.QITS,
+  amount: SortBy.AMOUNT,
   // "duration": SortBy.DURATION,
-  "shots": SortBy.SHOTS,
-  "device": SortBy.DEVICE,
-  "qubits": SortBy.QUBITS,
-  "state": SortBy.STATE,
+  shots: SortBy.SHOTS,
+  device: SortBy.DEVICE,
+  qubits: SortBy.QUBITS,
+  state: SortBy.STATE,
 } as Record<string, SortBy>;
 
 export const mapJobSortOrderType = {
-  "descend": SortOrder.DESCEND,
-  "ascend": SortOrder.ASCEND,
+  descend: SortOrder.DESCEND,
+  ascend: SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const GetJobFilter = Type.Object({
@@ -68,7 +68,6 @@ export const GetJobsResponse = Type.Object({
 export type GetJobsResponse = Static<typeof GetJobsResponse>;
 
 export const GetQuantumJobInfoSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
@@ -97,21 +96,20 @@ export const GetQuantumJobInfoSchema = typeboxRouteSchema({
 });
 
 export const getQuantumJobInfo = async (request: GetQuantumJobsRequest) => {
-
   const client = getClient(QuantumServiceClient);
 
   return await asyncClientCall(client, "getQuantumJobs", request);
 };
 
-
-export default /* #__PURE__*/route(GetQuantumJobInfoSchema, async (req, res) => {
-  const auth = authenticate((u) =>
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+export default /* #__PURE__*/ route(GetQuantumJobInfoSchema, async (req, res) => {
+  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
 
   const info = await auth(req, res);
   const userToken = getTokenFromCookie({ req });
 
-  if (!info || !userToken) { return; }
+  if (!info || !userToken) {
+    return;
+  }
 
   const { page = 1, accountName, userId, jobId, pageSize, sortBy, sortOrder, qubits, shots } = req.query;
 
@@ -125,9 +123,9 @@ export default /* #__PURE__*/route(GetQuantumJobInfoSchema, async (req, res) => 
   };
 
   if (
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-    || userId === info.identityId
-    || (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+    userId === info.identityId ||
+    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
   ) {
     filter.userId = userId;
     filter.accountName = accountName;
@@ -136,16 +134,16 @@ export default /* #__PURE__*/route(GetQuantumJobInfoSchema, async (req, res) => 
   }
 
   try {
-
     const { totalCount, jobs } = await getQuantumJobInfo({
       userToken,
       filter,
       page,
       pageSize,
-      ...(sortBy && sortOrder && {
-        sortBy: mapJobSortByType[sortBy],
-        sortOrder: mapJobSortOrderType[sortOrder],
-      }),
+      ...(sortBy &&
+        sortOrder && {
+          sortBy: mapJobSortByType[sortBy],
+          sortOrder: mapJobSortOrderType[sortOrder],
+        }),
     });
 
     const result = {
@@ -159,14 +157,10 @@ export default /* #__PURE__*/route(GetQuantumJobInfoSchema, async (req, res) => 
     return {
       200: result,
     };
-
   } catch (e) {
     console.error("get job info error", e);
     return {
       500: { message: "Internal server error" },
     };
   }
-
 });
-
-

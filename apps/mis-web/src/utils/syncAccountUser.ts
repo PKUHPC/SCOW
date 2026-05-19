@@ -1,4 +1,5 @@
-import { ListAccountUserSynchronizationsResponse_AccountOperationResult as AccountOperationResultProto,
+import {
+  ListAccountUserSynchronizationsResponse_AccountOperationResult as AccountOperationResultProto,
   ListAccountUserSynchronizationsResponse_ClusterSyncResults as ClusterSyncResultsProto,
   ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult as ClusterTotalSyncResultProto,
   ListAccountUserSynchronizationsResponse_SyncDetailsSummary as SyncDetailsSummaryProto,
@@ -15,21 +16,20 @@ type TransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string;
 
 const p = prefix("page.admin.systemDebug.syncClusterAccountUser.syncDetailsContent.");
 
-
 interface SyncResultDetail {
-  i18nSyncFailedResult?: Record<string, string>,
-  i18nSyncSucceedResult?: Record<string, string>,
-  i18nSyncFailedResultWithMsg?: Record<string, string>,
+  i18nSyncFailedResult?: Record<string, string>;
+  i18nSyncSucceedResult?: Record<string, string>;
+  i18nSyncFailedResultWithMsg?: Record<string, string>;
 }
 
 export interface DisplayedSyncDetail {
-  clusterId: string,
-  totalSyncCount: number,
-  totalSuccessfulCount: number,
-  totalFailedCount: number,
-  exceptionHappened?: boolean,
-  i18nExceptionMessage?: string,
-  i18nSyncDetails?: SyncResultDetail,
+  clusterId: string;
+  totalSyncCount: number;
+  totalSuccessfulCount: number;
+  totalFailedCount: number;
+  exceptionHappened?: boolean;
+  i18nExceptionMessage?: string;
+  i18nSyncDetails?: SyncResultDetail;
 }
 
 export function getSyncDetails(
@@ -37,40 +37,37 @@ export function getSyncDetails(
   syncResults: ClusterSyncResultsProto,
   clusterSortedIdList: string[],
 ): DisplayedSyncDetail[] | undefined {
-
   const operationFailedMessages: Record<string, string> = {
     [SyncAccountUserOperationType.CREATE_ACCOUNT]: t(p("createAccountFailure")),
-    [SyncAccountUserOperationType.BLOCK_ACCOUNT]:  t(p("blockAccountFailure")),
-    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]:  t(p("unblockAccountFailure")),
-    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]:  t(p("addUserToAccountFailure")),
-    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]:  t(p("blockUserInAccountFailure")),
-    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]:  t(p("unblockUserInAccountFailure")),
-    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]:  t(p("removeUserFromAccountFailure")),
+    [SyncAccountUserOperationType.BLOCK_ACCOUNT]: t(p("blockAccountFailure")),
+    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]: t(p("unblockAccountFailure")),
+    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]: t(p("addUserToAccountFailure")),
+    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]: t(p("blockUserInAccountFailure")),
+    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]: t(p("unblockUserInAccountFailure")),
+    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]: t(p("removeUserFromAccountFailure")),
   };
 
   const operationSucceedMessages: Record<string, string> = {
     [SyncAccountUserOperationType.CREATE_ACCOUNT]: t(p("createAccountSuccess")),
-    [SyncAccountUserOperationType.BLOCK_ACCOUNT]:  t(p("blockAccountSuccess")),
-    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]:  t(p("unblockAccountSuccess")),
-    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]:  t(p("addUserToAccountSuccess")),
-    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]:  t(p("blockUserInAccountSuccess")),
-    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]:  t(p("unblockUserInAccountSuccess")),
-    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]:  t(p("removeUserFromAccountSuccess")),
+    [SyncAccountUserOperationType.BLOCK_ACCOUNT]: t(p("blockAccountSuccess")),
+    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]: t(p("unblockAccountSuccess")),
+    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]: t(p("addUserToAccountSuccess")),
+    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]: t(p("blockUserInAccountSuccess")),
+    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]: t(p("unblockUserInAccountSuccess")),
+    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]: t(p("removeUserFromAccountSuccess")),
   };
 
   const operationFailedDetailMessages: Record<string, string> = {
     [SyncAccountUserOperationType.CREATE_ACCOUNT]: t(p("createAccountFailureDetail")),
-    [SyncAccountUserOperationType.BLOCK_ACCOUNT]:  t(p("blockAccountFailureDetail")),
-    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]:  t(p("unblockAccountFailureDetail")),
-    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]:  t(p("addUserToAccountFailureDetail")),
-    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]:  t(p("blockUserInAccountFailureDetail")),
-    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]:  t(p("unblockUserInAccountFailureDetail")),
-    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]:  t(p("removeUserFromAccountFailureDetail")),
+    [SyncAccountUserOperationType.BLOCK_ACCOUNT]: t(p("blockAccountFailureDetail")),
+    [SyncAccountUserOperationType.UNBLOCK_ACCOUNT]: t(p("unblockAccountFailureDetail")),
+    [SyncAccountUserOperationType.ADD_USER_TO_ACCOUNT]: t(p("addUserToAccountFailureDetail")),
+    [SyncAccountUserOperationType.BLOCK_USER_IN_ACCOUNT]: t(p("blockUserInAccountFailureDetail")),
+    [SyncAccountUserOperationType.UNBLOCK_USER_IN_ACCOUNT]: t(p("unblockUserInAccountFailureDetail")),
+    [SyncAccountUserOperationType.REMOVE_USER_FROM_ACCOUNT]: t(p("removeUserFromAccountFailureDetail")),
   };
 
-  const getExceptionMessage =
-  (exceptionType: SyncExceptionType | SyncExceptionTypeProto): string => {
-
+  const getExceptionMessage = (exceptionType: SyncExceptionType | SyncExceptionTypeProto): string => {
     switch (exceptionType) {
       case SyncExceptionType.MAX_EXECUTION_TIME_EXCEEDED:
         return t(p("timeoutException"));
@@ -94,51 +91,55 @@ export function getSyncDetails(
 
   let i18nSyncDetails: SyncResultDetail = {};
 
-  const result: DisplayedSyncDetail[] = syncResults.results.sort((a, b) => {
-    const aIndex = clusterSortedIdList.indexOf(a.clusterId);
-    const bIndex = clusterSortedIdList.indexOf(b.clusterId);
-    return aIndex - bIndex;
-  }).map((clusterResult: ClusterTotalSyncResultProto) => {
-
-    const { clusterId, completedTotalSyncCount,
-      successfulTotalSyncCount, clusterSyncExceptions, clusterSyncDetails } = clusterResult;
-
-    let i18nExceptionMessage: string = "";
-
-    // 如果有异常情况,展示异常详情，相同类别只展示一次
-    if (clusterSyncExceptions?.length > 0) {
-      const displayedExceptionTypes = new Set<SyncExceptionTypeProto>();
-      clusterSyncExceptions.forEach((exception) => {
-
-        if (displayedExceptionTypes.has(exception.exceptionType)) {
-          return;
-        }
-        displayedExceptionTypes.add(exception.exceptionType);
-        const exceptionText = getExceptionMessage(exception.exceptionType);
-        i18nExceptionMessage += `${exceptionText}；`;
-      });
-    }
-    // 无论是否发生异常，都封装已经同步数据的详细信息
-    if (clusterSyncDetails) {
-      i18nSyncDetails = getSyncDetailsDisplayedMessage(
+  const result: DisplayedSyncDetail[] = syncResults.results
+    .sort((a, b) => {
+      const aIndex = clusterSortedIdList.indexOf(a.clusterId);
+      const bIndex = clusterSortedIdList.indexOf(b.clusterId);
+      return aIndex - bIndex;
+    })
+    .map((clusterResult: ClusterTotalSyncResultProto) => {
+      const {
+        clusterId,
+        completedTotalSyncCount,
+        successfulTotalSyncCount,
+        clusterSyncExceptions,
         clusterSyncDetails,
-        operationFailedMessages,
-        operationSucceedMessages,
-        operationFailedDetailMessages,
-      );
-    }
+      } = clusterResult;
 
-    return {
-      clusterId,
-      totalSyncCount: completedTotalSyncCount,
-      totalSuccessfulCount: successfulTotalSyncCount,
-      totalFailedCount: completedTotalSyncCount - successfulTotalSyncCount,
-      exceptionHappened: clusterSyncExceptions?.length > 0,
-      i18nExceptionMessage,
-      i18nSyncDetails,
-    };
+      let i18nExceptionMessage: string = "";
 
-  });
+      // 如果有异常情况,展示异常详情，相同类别只展示一次
+      if (clusterSyncExceptions?.length > 0) {
+        const displayedExceptionTypes = new Set<SyncExceptionTypeProto>();
+        clusterSyncExceptions.forEach((exception) => {
+          if (displayedExceptionTypes.has(exception.exceptionType)) {
+            return;
+          }
+          displayedExceptionTypes.add(exception.exceptionType);
+          const exceptionText = getExceptionMessage(exception.exceptionType);
+          i18nExceptionMessage += `${exceptionText}；`;
+        });
+      }
+      // 无论是否发生异常，都封装已经同步数据的详细信息
+      if (clusterSyncDetails) {
+        i18nSyncDetails = getSyncDetailsDisplayedMessage(
+          clusterSyncDetails,
+          operationFailedMessages,
+          operationSucceedMessages,
+          operationFailedDetailMessages,
+        );
+      }
+
+      return {
+        clusterId,
+        totalSyncCount: completedTotalSyncCount,
+        totalSuccessfulCount: successfulTotalSyncCount,
+        totalFailedCount: completedTotalSyncCount - successfulTotalSyncCount,
+        exceptionHappened: clusterSyncExceptions?.length > 0,
+        i18nExceptionMessage,
+        i18nSyncDetails,
+      };
+    });
 
   return result ?? undefined;
 }
@@ -167,9 +168,9 @@ function getSyncDetailsDisplayedMessage(
     const displayedData =
       operationType === SyncAccountUserOperationType.CREATE_ACCOUNT ||
       operationType === SyncAccountUserOperationType.BLOCK_ACCOUNT ||
-      operationType === SyncAccountUserOperationType.UNBLOCK_ACCOUNT ?
-        filterFailedAccounts(operationData as AccountOperationResultProto[]) :
-        formatAccountUserDetails(operationData as UserAccountOperationResultProto[]);
+      operationType === SyncAccountUserOperationType.UNBLOCK_ACCOUNT
+        ? filterFailedAccounts(operationData as AccountOperationResultProto[])
+        : formatAccountUserDetails(operationData as UserAccountOperationResultProto[]);
 
     if (operationFailedMessages[operationType] && displayedData) {
       const failedTypeString = operationFailedMessages[operationType];
@@ -198,7 +199,6 @@ interface FilteredResult {
 }
 // 筛选账户操作失败的数据
 function filterFailedAccounts(data: AccountOperationResultProto[]): FilteredResult {
-
   const failedNamesArr: string[] = [];
   const succeedNamesArr: string[] = [];
   const failedNamesWithMsgArr: string[] = [];
@@ -242,9 +242,7 @@ function formatAccountUserDetails(data: UserAccountOperationResultProto[]): Filt
       // 失败数据聚合信息
       failedAccountUserMap[accountName].add(userId);
       // 带有失败信息详情的数组
-      failedNamesWithMsgArr.push(
-        `${accountName}: ${userId}, FailureMessage: ${failureMessage ?? "unknown error."}`,
-      );
+      failedNamesWithMsgArr.push(`${accountName}: ${userId}, FailureMessage: ${failureMessage ?? "unknown error."}`);
     }
   });
 
@@ -263,17 +261,12 @@ function formatAccountUserDetails(data: UserAccountOperationResultProto[]): Filt
   };
 }
 
-function transformSyncDetails(syncDetails: SyncDetailsSummaryProto):
-Record<string,
-  AccountOperationResultProto[] |
-  UserAccountOperationResultProto[] |
-  UserOperationResultProto[]
-> {
-
-  const transformedDetails: Record<string,
-    AccountOperationResultProto[] |
-    UserAccountOperationResultProto[] |
-    UserOperationResultProto[]
+function transformSyncDetails(
+  syncDetails: SyncDetailsSummaryProto,
+): Record<string, AccountOperationResultProto[] | UserAccountOperationResultProto[] | UserOperationResultProto[]> {
+  const transformedDetails: Record<
+    string,
+    AccountOperationResultProto[] | UserAccountOperationResultProto[] | UserOperationResultProto[]
   > = {};
   Object.entries(syncDetails).forEach(([key, value]) => {
     if (!value) return;

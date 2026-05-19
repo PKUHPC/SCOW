@@ -1,18 +1,21 @@
 {
   "name": "@scow/rich-error-model",
   "version": "2.0.3",
-  "description": "",
-  "main": "build/index.js",
   "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "files": [
+    "build",
+    "!**/*.map"
+  ],
+  "main": "build/index.js",
   "scripts": {
     "generate": "rimraf generated && buf generate --template buf.gen.yaml https://github.com/googleapis/googleapis.git#subdir=google/rpc",
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "test": "jest"
   },
-  "files": [
-    "build",
-    "!**/*.map"
-  ],
   "dependencies": {
     "@grpc/grpc-js": "1.14.3",
     "long": "5.2.4",
@@ -24,8 +27,5 @@
     "@ddadaal/tsgrpc-server": "0.19.8",
     "@scow/protos": "workspace:*",
     "ts-proto": "1.180.0"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }

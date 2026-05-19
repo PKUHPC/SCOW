@@ -1,4 +1,5 @@
 import type { InputNumberProps } from "antd";
+
 import { RuleObject } from "antd/lib/form/index";
 
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
@@ -9,11 +10,9 @@ export const noWhiteSpaceRule = {
   whitespace: true,
 };
 
-export const createNoChineseValidator = (
-  message?: string,
-) => () => ({
+export const createNoChineseValidator = (message?: string) => () => ({
   validator(_: RuleObject, value: string) {
-  // 使用正则表达式验证是否包含中文字符
+    // 使用正则表达式验证是否包含中文字符
     if (/[\u4e00-\u9fa5]/.test(value)) {
       return Promise.reject(message ?? "不能包含中文字符");
     }
@@ -39,32 +38,28 @@ export const imageNameValidation = (_: RuleObject, value: any) => {
   // 由字母（小写）、数字、"_"、"-"和"."组成，不能以符号开始或结束， 小于128字符
   if (/^[a-z0-9]([a-z0-9_\-.]{0,126}[a-z0-9])?$/.test(value)) {
     return Promise.resolve();
-
   }
-  return Promise.reject("由字母（小写）、数字、\"_\"、\"-\"和\".\"组成，不能以符号开始或结束"); ;
+  return Promise.reject('由字母（小写）、数字、"_"、"-"和"."组成，不能以符号开始或结束');
 };
 
 export const imageTagValidation = (_: RuleObject, value: any) => {
   // 由字母、数字、"_"、"-"和"."组成，不能以符号开始或结束， 小于128字符
   if (/^[a-zA-Z0-9]([a-zA-Z0-9_\-.]{0,126}[a-zA-Z0-9])?$/.test(value)) {
     return Promise.resolve();
-
   }
-  return Promise.reject("由字母、数字、\"_\"、\"-\"和\".\"组成，不能以符号开始或结束"); ;
+  return Promise.reject('由字母、数字、"_"、"-"和"."组成，不能以符号开始或结束');
 };
 
-
-export const createInterdependentValidator = <T>(
-  dependentField: keyof T,
-  message: string = "",
-) => ({ getFieldValue }: { getFieldValue: (name: keyof T) => any }) => ({
-  validator(_: RuleObject, value: string) {
-    if (!value && getFieldValue(dependentField)) {
-      return Promise.reject(new Error(message));
-    }
-    return Promise.resolve();
-  },
-});
+export const createInterdependentValidator =
+  <T>(dependentField: keyof T, message: string = "") =>
+  ({ getFieldValue }: { getFieldValue: (name: keyof T) => any }) => ({
+    validator(_: RuleObject, value: string) {
+      if (!value && getFieldValue(dependentField)) {
+        return Promise.reject(new Error(message));
+      }
+      return Promise.resolve();
+    },
+  });
 
 export const inputNumberFloorConfig: InputNumberProps<number> = {
   formatter: (value) => `${Math.floor(Number(value ?? 0))}`,

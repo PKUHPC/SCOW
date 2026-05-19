@@ -1,8 +1,7 @@
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { AppConfigSchema } from "@scow/config/build/app";
-import { DashboardServiceServer, DashboardServiceService, Entry }
-  from "@scow/protos/build/portal/dashboard";
+import { DashboardServiceServer, DashboardServiceService, Entry } from "@scow/protos/build/portal/dashboard";
 import { promises as fsPromises } from "fs";
 import path from "path";
 import { getClusterAppConfigs } from "src/utils/app";
@@ -12,7 +11,7 @@ const quickEntryPath = "/var/lib/scow/portal/quickEntries";
 // 在线集群单独处理
 export const dashboardServiceServer = plugin((server) => {
   return server.addService<DashboardServiceServer>(DashboardServiceService, {
-    getQuickEntries:async ({ request, logger }) => {
+    getQuickEntries: async ({ request, logger }) => {
       const { userId } = request;
       const filePath = path.join(quickEntryPath, userId, "quickEntries.json");
 
@@ -26,7 +25,7 @@ export const dashboardServiceServer = plugin((server) => {
       } catch (error) {
         // 如果文件不存在则返回空数组
         if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-          return [{ quickEntries:[]}];
+          return [{ quickEntries: [] }];
         }
 
         // 其他错误则抛错
@@ -67,12 +66,13 @@ export const dashboardServiceServer = plugin((server) => {
         return entry;
       });
 
-      return [{
-        quickEntries: mappedEntries,
-      }];
+      return [
+        {
+          quickEntries: mappedEntries,
+        },
+      ];
     },
-    saveQuickEntries:async ({ request, logger }) => {
-
+    saveQuickEntries: async ({ request, logger }) => {
       const { userId, quickEntries } = request;
       const jsonContent = JSON.stringify(quickEntries);
       const filePath = path.join(quickEntryPath, userId, "quickEntries.json");
@@ -89,10 +89,8 @@ export const dashboardServiceServer = plugin((server) => {
 
         return [{}];
       } catch (err) {
-
-        const errorMessage = err instanceof Error && "message" in err
-          ? `Error saving quick entry for user ${userId}: ${err.message}`
-          : "";
+        const errorMessage =
+          err instanceof Error && "message" in err ? `Error saving quick entry for user ${userId}: ${err.message}` : "";
 
         logger.info("Saving file failed with %o", err);
         throw {

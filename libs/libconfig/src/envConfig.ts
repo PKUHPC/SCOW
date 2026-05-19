@@ -1,17 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { customCleanEnv, EnvError, makeValidator, Spec,
-  strictProxyMiddleware, ValidatorSpec } from "envalid";
+import { customCleanEnv, EnvError, makeValidator, Spec, strictProxyMiddleware, ValidatorSpec } from "envalid";
 import * as envalid from "envalid";
 
 /**
@@ -24,7 +11,7 @@ export function parsePlaceholder(str: string, valueObj: object) {
   return str.replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, p1: string) => valueObj[p1] ?? "");
 }
 
-export type Validator<T> = readonly [((spec?: Spec<T>) => ValidatorSpec<T>), Spec<T>];
+export type Validator<T> = readonly [(spec?: Spec<T>) => ValidatorSpec<T>, Spec<T>];
 
 function parsePlaceholders(env: Record<string, any>, rawEnv: any) {
   for (const k in env) {
@@ -48,12 +35,8 @@ export const url = make(envalid.url, "url");
 export const num = make(envalid.num, "num");
 export const bool = make(envalid.bool, "bool");
 
-export const envConfig = <T extends object>(
-  specs: {[K in keyof T]: Validator<T[K]> },
-  envObject = process.env,
-) => {
-
-  const envalidSpecs = {} as {[ K in keyof T]: ValidatorSpec<T[K]> };
+export const envConfig = <T extends object>(specs: { [K in keyof T]: Validator<T[K]> }, envObject = process.env) => {
+  const envalidSpecs = {} as { [K in keyof T]: ValidatorSpec<T[K]> };
 
   for (const k in specs) {
     const [func, spec] = specs[k];
@@ -61,10 +44,8 @@ export const envConfig = <T extends object>(
   }
 
   return {
-    ...customCleanEnv(
-      envObject, envalidSpecs,
-      (env, rawEnv) =>
-        strictProxyMiddleware(parsePlaceholders(env, rawEnv) as T, rawEnv),
+    ...customCleanEnv(envObject, envalidSpecs, (env, rawEnv) =>
+      strictProxyMiddleware(parsePlaceholders(env, rawEnv) as T, rawEnv),
     ),
     _specs: specs,
   };
@@ -81,36 +62,24 @@ export function omitConfigSpec<T extends {}>(spec: T) {
 
 /** Custom validators */
 
-function makeCustomValidator<T>(
-  name: string,
-  parseFn: (input: string) => T,
-) {
+function makeCustomValidator<T>(name: string, parseFn: (input: string) => T) {
   const validator = makeValidator(parseFn);
   Object.defineProperty(validator, "name", { value: name });
   return make(validator, name);
 }
 
-export const port = makeCustomValidator(
-  "port",
-  (x) => {
-    const coerced = +x;
-    if (
-      Number.isNaN(coerced) ||
-        `${coerced}` !== `${x}` ||
-        coerced % 1 !== 0 ||
-        coerced < 0 ||
-        coerced > 65535
-    ) {
-      throw new EnvError(`Invalid port input: "${x}"`);
-    }
-    return coerced;
-  });
+export const port = makeCustomValidator("port", (x) => {
+  const coerced = +x;
+  if (Number.isNaN(coerced) || `${coerced}` !== `${x}` || coerced % 1 !== 0 || coerced < 0 || coerced > 65535) {
+    throw new EnvError(`Invalid port input: "${x}"`);
+  }
+  return coerced;
+});
 
-export const regex = makeCustomValidator(
-  "regex",
-  (x) => {
-    if (!x) { return x; }
-    new RegExp(x);
+export const regex = makeCustomValidator("regex", (x) => {
+  if (!x) {
     return x;
-  });
-
+  }
+  new RegExp(x);
+  return x;
+});

@@ -66,7 +66,8 @@ export default {
   addQuickEntry: "링크 추가",
   cancel: "취소",
   notExist: "존재하지 않습니다",
-  clusterNotAvailable: "현재 접근 중인 클러스터를 사용할 수 없거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요.",
+  clusterNotAvailable:
+    "현재 접근 중인 클러스터를 사용할 수 없거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요.",
   alreadyExist: "링크가 이미 존재합니다",
   cannotBeEmpty: "링크는 비워 둘 수 없습니다",
   exceedMaxSize: "바로가기는 최대 10개까지 추가할 수 있습니다",

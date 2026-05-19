@@ -4,12 +4,8 @@
     "outDir": "build",
     "noEmit": false,
     "paths": {
-      "src/*": [
-        "src/*"
-      ],
-      "server/*": [
-        "server/*"
-      ]
-    },
+      "src/*": ["src/*"],
+      "server/*": ["server/*"]
+    }
   }
 }

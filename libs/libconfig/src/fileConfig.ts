@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Static, TSchema } from "@sinclair/typebox";
 import fs from "fs";
 import { load } from "js-yaml";
@@ -19,9 +7,9 @@ import { Logger } from "ts-log";
 import { validateObject } from "./validation";
 
 const parsers = {
-  "yml": load,
-  "yaml": load,
-  "json": JSON.parse,
+  yml: load,
+  yaml: load,
+  json: JSON.parse,
 };
 
 const candidates = Object.entries(parsers);
@@ -33,9 +21,7 @@ const candidates = Object.entries(parsers);
  * @returns 配置对象
  * @throws 如果配置文件不存在，或者不匹配格式，抛出异常
  */
-export function getConfig<T extends TSchema>(
-  schema: T, filePath: string,
-): Static<T> {
+export function getConfig<T extends TSchema>(schema: T, filePath: string): Static<T> {
   // extname returns .yml
   const ext = extname(filePath).substring(1);
 
@@ -80,10 +66,7 @@ export class ConfigFileNotExistError extends Error {
  * @returns 配置对象
  * @throws 如果配置文件不存在，抛出异常
  */
-export function getConfigFromFile<T extends TSchema>(
-  schema: T, filename: string, basePath: string,
-): Static<T> {
-
+export function getConfigFromFile<T extends TSchema>(schema: T, filename: string, basePath: string): Static<T> {
   for (const [ext, loader] of candidates) {
     const path = join(basePath, filename + "." + ext);
     if (fs.existsSync(path)) {
@@ -117,7 +100,10 @@ export function getConfigFromFile<T extends TSchema>(
  * @returns 配置文件的ID到配置对象的映射
  */
 export function getDirConfig<T extends TSchema>(
-  schema: T, dir: string, basePath: string, logger?: Logger,
+  schema: T,
+  dir: string,
+  basePath: string,
+  logger?: Logger,
 ): Record<string, Static<T>> {
   const configDir = join(basePath, dir);
 
@@ -130,7 +116,6 @@ export function getDirConfig<T extends TSchema>(
   const result = {};
 
   for (const filename of files) {
-
     const fullPath = join(configDir, filename);
 
     const stat = fs.statSync(fullPath);
@@ -165,11 +150,9 @@ export function getDirConfig<T extends TSchema>(
       const config = getConfig(schema, fullPath);
       result[id] = config;
     }
-
   }
 
   return result;
 }
 
 export type GetConfigFn<T> = (baseConfigPath?: string, logger?: Logger) => T;
-

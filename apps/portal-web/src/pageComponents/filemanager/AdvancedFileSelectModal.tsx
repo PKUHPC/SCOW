@@ -1,6 +1,7 @@
+import type { DataNode, EventDataNode } from "antd/es/tree";
+
 import { DatabaseOutlined, ExpandOutlined, FolderAddOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, message, Modal, Tree } from "antd";
-import type { DataNode, EventDataNode } from "antd/es/tree";
 import Link from "next/link";
 import { join } from "path";
 import React, { Key, useCallback, useEffect, useState } from "react";
@@ -33,7 +34,7 @@ const TopBar = styled(FilterFormContainer)`
   flex-direction: row;
   padding-bottom: 8px;
   width: 100%;
-  &>button {
+  & > button {
     margin: 0px 4px;
   }
 `;
@@ -52,10 +53,9 @@ interface DirContent {
   mtime: string;
   size: number;
   mode: number;
-};
+}
 
 function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
-
   const sortedData = data.sort((a, b) => {
     if (a.type === "DIR" && b.type !== "DIR") {
       return -1;
@@ -73,11 +73,15 @@ function convertToDirTree(data: DirContent[], targetKey: string): DataNode[] {
   }));
 }
 
-function updateTreeData(treeData: DataNode[], homeDir: string,
-  targetKey: string, newChildren: DirContent[]): DataNode[] {
+function updateTreeData(
+  treeData: DataNode[],
+  homeDir: string,
+  targetKey: string,
+  newChildren: DirContent[],
+): DataNode[] {
   if (targetKey === homeDir) {
     return convertToDirTree(newChildren, homeDir);
-  };
+  }
   return treeData.map((node) => {
     // 如果找到了目标节点（即当前目录）
     if (node.key === targetKey) {
@@ -93,7 +97,7 @@ function updateTreeData(treeData: DataNode[], homeDir: string,
 
     return node;
   });
-};
+}
 
 // 处理path的特殊情况,比如为空或者不以"/"开头
 const formatPath = (path: string) => {
@@ -106,9 +110,13 @@ const formatPath = (path: string) => {
   return path;
 };
 
-
 export const AdvancedFileSelectModal: React.FC<Props> = ({
-  clusterId, allowedFileType, allowedExtensions, onSubmit, scowdEnabled }) => {
+  clusterId,
+  allowedFileType,
+  allowedExtensions,
+  onSubmit,
+  scowdEnabled,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.app.advancedFileSelectModal.");
 
@@ -120,12 +128,13 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [dirTree, setDirTree] = useState<DataNode[]>([]);
 
-  const DecompressionModalButton = ModalButton(DecompressFilesModal, { icon: <ExpandOutlined />,
-    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()) });
+  const DecompressionModalButton = ModalButton(DecompressFilesModal, {
+    icon: <ExpandOutlined />,
+    disabled: selectedKeys.length === 0 || !isDecompressibleFile(selectedKeys[0].toString()),
+  });
 
   const homeDirPromiseFn = useCallback(async () => {
-    return visible ?
-      await api.getHomeDirectory({ query: { cluster: clusterId } }) : { path: "~" };
+    return visible ? await api.getHomeDirectory({ query: { cluster: clusterId } }) : { path: "~" };
   }, [visible]);
 
   const { data: homeDir, isLoading: isHomeDirLoading } = useAsync({
@@ -142,10 +151,14 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   const listFilePromiseFn = useCallback(async () => {
     return visible && path !== "~"
       ? await api.listFile({ query: { cluster: clusterId, path: join("/", path) } })
-      : { items: []};
+      : { items: [] };
   }, [visible, path]);
 
-  const { data: curDirContent, isLoading: isDirContentLoading, reload: curDirContentReload } = useAsync({
+  const {
+    data: curDirContent,
+    isLoading: isDirContentLoading,
+    reload: curDirContentReload,
+  } = useAsync({
     promiseFn: listFilePromiseFn,
     onReject(_) {
       setPath(prevPath);
@@ -171,8 +184,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
     }
   }, [curDirContent]);
 
-  const onDirExpand = (expandDirs: Key[],
-    { node, expanded }: { node: EventDataNode<DataNode>, expanded: boolean }) => {
+  const onDirExpand = (expandDirs: Key[], { node, expanded }: { node: EventDataNode<DataNode>; expanded: boolean }) => {
     const expandDirSet = new Set(expandDirs);
     if (!expanded) {
       node.children?.forEach((children) => {
@@ -234,8 +246,10 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
   };
 
   const checkFileSelectability = (fileInfo: FileInfo) => {
-    return allowedFileType.includes(fileInfo.type)
-      && (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)));
+    return (
+      allowedFileType.includes(fileInfo.type) &&
+      (allowedExtensions === undefined || allowedExtensions.includes(getExtension(fileInfo.name)))
+    );
   };
 
   const keysToFiles = (keys: React.Key[]) => {
@@ -244,11 +258,20 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
 
   return (
     <>
-      <Button size="small" onClick={() => { setVisible(true); }}><FolderAddOutlined /></Button>
+      <Button
+        size="small"
+        onClick={() => {
+          setVisible(true);
+        }}
+      >
+        <FolderAddOutlined />
+      </Button>
       <Modal
         width={1000}
         open={visible}
-        onCancel={() => { closeModal(); }}
+        onCancel={() => {
+          closeModal();
+        }}
         title={t(p("select"))}
         centered
         footer={[
@@ -265,12 +288,7 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
               >
                 {t(p("upload"))}
               </UploadFileButton>
-              <MkdirButton
-                key="new"
-                cluster={clusterId}
-                path={join("/", path)}
-                reload={curDirContentReload}
-              >
+              <MkdirButton key="new" cluster={clusterId} path={join("/", path)} reload={curDirContentReload}>
                 {t(p("mkdir"))}
               </MkdirButton>
               <DecompressionModalButton
@@ -288,11 +306,15 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
             <div key="right" style={{ display: "flex", gap: "10px" }}>
               <Button
                 key="cancel"
-                onClick={() => { closeModal(); }}
+                onClick={() => {
+                  closeModal();
+                }}
               >
                 {t("button.cancelButton")}
               </Button>
-              <Button key="ok" type="primary" onClick={onOkClick}>{t("button.confirmButton")}</Button>
+              <Button key="ok" type="primary" onClick={onOkClick}>
+                {t("button.confirmButton")}
+              </Button>
             </div>
           </div>,
         ]}
@@ -311,30 +333,21 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
                 }
               }}
               breadcrumbItemRender={(segment, index, curPath) =>
-                index === 0
-                  ? (
-                    <Link
-                      href=""
-                      onClick={(e) => onClickLink(e, "/")}
-                    ><DatabaseOutlined /></Link>
-                  )
-                  : (
-                    <Link
-                      href=""
-                      onClick={(e) => onClickLink(e, curPath)}
-                    >
-                      {segment}
-                    </Link>
-                  )
+                index === 0 ? (
+                  <Link href="" onClick={(e) => onClickLink(e, "/")}>
+                    <DatabaseOutlined />
+                  </Link>
+                ) : (
+                  <Link href="" onClick={(e) => onClickLink(e, curPath)}>
+                    {segment}
+                  </Link>
+                )
               }
             />
           </TopBar>
-          <div style={{ display: "flex", flexDirection: "row",
-            width: "100%", alignItems: "flex-start" }}
-          >
+          <div style={{ display: "flex", flexDirection: "row", width: "100%", alignItems: "flex-start" }}>
             <DirectoryTree
-              style={{ width: 240, height: 541, overflow: "auto",
-                border: "1px solid #e0e0e0", borderRadius: "5px" }}
+              style={{ width: 240, height: 541, overflow: "auto", border: "1px solid #e0e0e0", borderRadius: "5px" }}
               showLine
               selectedKeys={[path]}
               expandedKeys={expandedKeys}
@@ -342,8 +355,16 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
               onExpand={onDirExpand}
               treeData={dirTree}
             />
-            <div style={{ width: "100%", overflowX: "auto", marginLeft: "6px",
-              display: "flex", flex: 1, border: "1px solid #e0e0e0", borderRadius: "5px" }}
+            <div
+              style={{
+                width: "100%",
+                overflowX: "auto",
+                marginLeft: "6px",
+                display: "flex",
+                flex: 1,
+                border: "1px solid #e0e0e0",
+                borderRadius: "5px",
+              }}
             >
               <FileTable
                 style={{ flex: 1, overflowX: "auto" }}
@@ -377,7 +398,6 @@ export const AdvancedFileSelectModal: React.FC<Props> = ({
                 scroll={{ x: true, y: 500 }}
               />
             </div>
-
           </div>
         </ModalContainer>
       </Modal>

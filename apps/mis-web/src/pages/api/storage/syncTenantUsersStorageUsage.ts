@@ -36,9 +36,8 @@ export const SyncTenantUsersStorageUsageSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(SyncTenantUsersStorageUsageSchema, async (req, res) => {
+export default /* #__PURE__*/ route(SyncTenantUsersStorageUsageSchema, async (req, res) => {
   const { cluster, path } = req.body;
-
 
   const auth = authenticate((u) => {
     return u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
@@ -46,7 +45,9 @@ export default /* #__PURE__*/route(SyncTenantUsersStorageUsageSchema, async (req
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && info.tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
@@ -60,8 +61,12 @@ export default /* #__PURE__*/route(SyncTenantUsersStorageUsageSchema, async (req
       }
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
-      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${info?.tenant} assigned Clusters and Partitions failed.` } };
+      return {
+        409: {
+          code: "RESOURCE_CONNECT_FAILED" as const,
+          message: `Get tenant ${info?.tenant} assigned Clusters and Partitions failed.`,
+        },
+      };
     }
   }
 
@@ -69,23 +74,32 @@ export default /* #__PURE__*/route(SyncTenantUsersStorageUsageSchema, async (req
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.syncTenantUsersStorageUsage,
-    operationTypePayload:{
-      cluster, path, tenant: info.tenant,
+    operationTypePayload: {
+      cluster,
+      path,
+      tenant: info.tenant,
     },
   };
 
   const client = getClient(StorageServiceClient);
 
   return await asyncClientCall(client, "syncTenantUsersStorageUsage", {
-    cluster, path, tenant: info.tenant,
+    cluster,
+    path,
+    tenant: info.tenant,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
 
       return { 200: {} };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 400: null }),
-      [Status.ALREADY_EXISTS]: () => ({ 304: null }),
-    }, async () => await callLog(logInfo, OperationResult.FAIL)));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 400: null }),
+          [Status.ALREADY_EXISTS]: () => ({ 304: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

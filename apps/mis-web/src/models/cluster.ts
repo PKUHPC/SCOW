@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Static, Type } from "@sinclair/typebox";
 import { ValueOf } from "next/dist/shared/lib/constants";
 
@@ -44,17 +32,13 @@ export const ClusterConnectionInfoSchema = Type.Object({
 
 export type ClusterConnectionInfo = Static<typeof ClusterConnectionInfoSchema>;
 
-
 export const PartitionNames = Type.Object({
   partitionNames: Type.Array(Type.String()),
 });
 export type PartitionNames = Static<typeof PartitionNames>;
 
 export const AssignedClusterPartitionsSchema = Type.Object({
-  assignedClusterPartitions: Type.Record(
-    Type.String(),
-    PartitionNames,
-  ),
+  assignedClusterPartitions: Type.Record(Type.String(), PartitionNames),
 });
 export type AssignedClusterPartitions = Static<typeof AssignedClusterPartitionsSchema>;
 
@@ -81,7 +65,8 @@ export const MigrateNodeInfoSchema = Type.Object({
 
 export type MigrateNodeInfo = Static<typeof MigrateNodeInfoSchema>;
 
-export const getDisplayedNodeStatusI18nTexts = (t: TransType) => { // LOCKED_BY_OTHER_CLUSTER暂时未实现
+export const getDisplayedNodeStatusI18nTexts = (t: TransType) => {
+  // LOCKED_BY_OTHER_CLUSTER暂时未实现
   return {
     [NodeStatus.ACTIVE_MIGRATABLE]: t("page.admin.resourceManagement.nodeMigrationPage.table.idle"),
     [NodeStatus.OCCUPIED_BY_JOBS]: t("page.admin.resourceManagement.nodeMigrationPage.table.running"),

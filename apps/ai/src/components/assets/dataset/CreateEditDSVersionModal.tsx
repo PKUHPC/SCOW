@@ -26,14 +26,23 @@ export interface Props {
 }
 
 interface FormFields {
-  versionName: string,
-  versionDescription?: string,
-  path: string,
+  versionName: string;
+  versionDescription?: string;
+  path: string;
 }
 
-export const CreateEditDSVersionModal: React.FC<Props> = (
-  { open, onClose, datasetId, datasetName, isEdit, editData, cluster, refetch, isPlatformOwned, usePublicPath },
-) => {
+export const CreateEditDSVersionModal: React.FC<Props> = ({
+  open,
+  onClose,
+  datasetId,
+  datasetName,
+  isEdit,
+  editData,
+  cluster,
+  refetch,
+  isPlatformOwned,
+  usePublicPath,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.dataset.createEditDSVersionModal.");
   const pCommon = prefix("common.");
@@ -150,14 +159,8 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
         }}
         initialValues={editData}
       >
-        <CustomFormItem
-          label={renderLabel(t(p("name")))}
-        >
-          {datasetName}
-        </CustomFormItem>
-        <CustomFormItem
-          label={renderLabel(t(p("cluster")))}
-        >
+        <CustomFormItem label={renderLabel(t(p("name")))}>{datasetName}</CustomFormItem>
+        <CustomFormItem label={renderLabel(t(p("cluster")))}>
           {getI18nConfigCurrentText(cluster?.name, languageId)}
         </CustomFormItem>
         <CustomFormItem
@@ -174,35 +177,27 @@ export const CreateEditDSVersionModal: React.FC<Props> = (
         <CustomFormItem label={renderLabel(t(p("description")))} name="versionDescription">
           <RoundedTextArea />
         </CustomFormItem>
-        {
-          !isEdit && (
-            <>
-              <CustomFormItem
-                label={renderLabel(t(p("select")))}
-                name="path"
-                rules={[{ required: true }]}
-              >
-                <RoundedInput
-                  disabled={true}
-                  placeholder={t(p("selectDatasetFolder"))}
-                  suffix={
-                    (
-                      <FileSelectModal
-                        allowedFileType={["DIR"]}
-                        onSubmit={(path: string) => {
-                          form.setFields([{ name: "path", value: path, touched: true }]);
-                          form.validateFields(["path"]);
-                        }}
-                        clusterId={cluster?.id ?? ""}
-                        usePublicPath={usePublicPath}
-                      />
-                    )
-                  }
-                />
-              </CustomFormItem>
-            </>
-          )
-        }
+        {!isEdit && (
+          <>
+            <CustomFormItem label={renderLabel(t(p("select")))} name="path" rules={[{ required: true }]}>
+              <RoundedInput
+                disabled={true}
+                placeholder={t(p("selectDatasetFolder"))}
+                suffix={
+                  <FileSelectModal
+                    allowedFileType={["DIR"]}
+                    onSubmit={(path: string) => {
+                      form.setFields([{ name: "path", value: path, touched: true }]);
+                      form.validateFields(["path"]);
+                    }}
+                    clusterId={cluster?.id ?? ""}
+                    usePublicPath={usePublicPath}
+                  />
+                }
+              />
+            </CustomFormItem>
+          </>
+        )}
       </Form>
     </AppRouterStyledModal>
   );

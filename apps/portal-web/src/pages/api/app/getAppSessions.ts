@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { AppServiceClient } from "@scow/protos/build/portal/app";
@@ -35,7 +23,7 @@ export const AppSession = Type.Object({
   host: Type.Optional(Type.String()),
   port: Type.Optional(Type.Number()),
   user: Type.Optional(Type.String()),
-  proxyServer:Type.Optional(Type.String()),
+  proxyServer: Type.Optional(Type.String()),
   appType: Type.Optional(Type.String()),
   connectPath: Type.Optional(Type.String()),
 });
@@ -57,21 +45,21 @@ export const GetAppSessionsSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(GetAppSessionsSchema, async (req, res) => {
-
-
+export default /* #__PURE__*/ route(GetAppSessionsSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusters } = req.query;
 
   const client = getClient(AppServiceClient);
 
   return asyncUnaryCall(client, "listAppSessions", {
-    clusters, userId: info.identityId,
+    clusters,
+    userId: info.identityId,
   }).then((reply) => {
     return { 200: { sessions: reply.sessions } };
   });
-
 });

@@ -1,4 +1,3 @@
-
 import { asyncDuplexStreamCall } from "@ddadaal/tsgrpc-client";
 import { getLoginNode } from "@scow/config/build/cluster";
 import { validateToken as authValidateToken } from "@scow/lib-auth";
@@ -30,23 +29,20 @@ export interface ShellQuery {
 
   cols?: string;
   rows?: string;
-};
+}
 
 export type ShellInputData =
-  | { $case: "resize", resize: { cols: number; rows: number } }
-  | { $case: "data", data: { data: string } }
-  | { $case: "disconnect" }
-  ;
+  | { $case: "resize"; resize: { cols: number; rows: number } }
+  | { $case: "data"; data: { data: string } }
+  | { $case: "disconnect" };
 export type ShellOutputData =
-  | { $case: "data", data: { data: string } }
-  | { $case: "exit", exit: { code?: number; signal?: string } }
-  ;
+  | { $case: "data"; data: { data: string } }
+  | { $case: "exit"; exit: { code?: number; signal?: string } };
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
 
 const wss = new WebSocketServer({ noServer: true });
 
@@ -73,7 +69,6 @@ wss.on("close", function close() {
 });
 
 wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
-
   const user = await checkCookie(() => true, req);
 
   if (typeof user === "number") {
@@ -83,8 +78,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   }
 
   const log = (message: string, ...optionalParams: any[]) => {
-    console.log(
-      `[${new Date().toISOString()}] [io] [${user.identityId}] ${message}`, optionalParams);
+    console.log(`[${new Date().toISOString()}] [io] [${user.identityId}] ${message}`, optionalParams);
   };
 
   const token = getTokenFromCookie({ req });
@@ -101,7 +95,10 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   if (useRoot === "true") {
     const { result: isUserEnabledRoot } = await libQueryIsUserEnabledRootShell(
-      user.identityId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+      user.identityId,
+      publicConfig.MIS_SERVER_URL,
+      runtimeConfig.SCOW_API_AUTH_TOKEN,
+    );
 
     isUserUseRoot = isUserEnabledRoot;
   }
@@ -112,9 +109,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     throw new Error(`Unknown cluster ${cluster}`);
   }
 
-  const loginNode = clusterConfigs[cluster].loginNodes.map(getLoginNode).find(
-    (x) => x.address === loginNodeAddress,
-  );
+  const loginNode = clusterConfigs[cluster].loginNodes.map(getLoginNode).find((x) => x.address === loginNodeAddress);
 
   // unknown login node
   if (!loginNode) {
@@ -136,8 +131,11 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   await stream.writeAsync({
     message: {
-      $case: "connect", connect: {
-        cluster, loginNode: loginNode.address, userId: isUserUseRoot ? "root" : user.identityId,
+      $case: "connect",
+      connect: {
+        cluster,
+        loginNode: loginNode.address,
+        userId: isUserUseRoot ? "root" : user.identityId,
         cols: queryToIntOrDefault(cols, 80),
         rows: queryToIntOrDefault(rows, 30),
         path,
@@ -147,14 +145,18 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   log("Connected to shell");
 
-  await callLog({
-    operatorUserId: user.identityId,
-    operatorIp: parseIp(req) ?? "",
-    operationTypeName: OperationType.shellLogin,
-    operationTypePayload: {
-      clusterId: cluster, loginNode: loginNode.address,
+  await callLog(
+    {
+      operatorUserId: user.identityId,
+      operatorIp: parseIp(req) ?? "",
+      operationTypeName: OperationType.shellLogin,
+      operationTypePayload: {
+        clusterId: cluster,
+        loginNode: loginNode.address,
+      },
     },
-  }, OperationResult.SUCCESS);
+    OperationResult.SUCCESS,
+  );
 
   const send = (data: ShellOutputData) => {
     ws.send(JSON.stringify(data));
@@ -165,7 +167,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   let authCheckInterval: NodeJS.Timeout | undefined;
   let isStreamWritable = true;
   let pendingMessages: Buffer[] = [];
-
 
   /* eslint-disable prefer-const */
   // 保存事件处理器引用以便正确清理
@@ -201,8 +202,10 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
         case "resize":
           writeSuccess = stream.write({
             message: {
-              $case: "resize", resize: {
-                cols: message.resize.cols, rows: message.resize.rows,
+              $case: "resize",
+              resize: {
+                cols: message.resize.cols,
+                rows: message.resize.rows,
               },
             },
           });
@@ -222,7 +225,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   };
 
   const cleanup = () => {
-    if (cleanedUp) { return; }
+    if (cleanedUp) {
+      return;
+    }
     cleanedUp = true;
 
     log("Cleaning up resources.");
@@ -283,7 +288,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   if (process.env.NODE_ENV !== "test" && !USE_MOCK && token) {
     authCheckInterval = setInterval(async () => {
-      if (closed || cleanedUp || authChecking) { return; }
+      if (closed || cleanedUp || authChecking) {
+        return;
+      }
       authChecking = true;
       const authResult = await authValidateToken(runtimeConfig.AUTH_INTERNAL_URL, token).catch(() => undefined);
       authChecking = false;
@@ -313,7 +320,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
   };
   stream.on("error", handleStreamError);
 
-
   handleStreamData = (chunk: ShellResponse) => {
     switch (chunk.message?.$case) {
       case "data":
@@ -328,7 +334,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
   // 保存事件处理器以便后续清理
   handleMessage = (data: RawData) => {
-
     // 如果流不可写，将消息加入待处理队列
     if (!isStreamWritable) {
       log("Stream not writable, queuing message.");
@@ -358,14 +363,18 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     closed = true;
     log("Error occurred from client. Disconnect.", err);
     // 不等待异步操作完成，避免阻塞清理流程
-    callLog({
-      operatorUserId: user.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.shellLogin,
-      operationTypePayload: {
-        clusterId: cluster, loginNode: loginNode.address,
+    callLog(
+      {
+        operatorUserId: user.identityId,
+        operatorIp: parseIp(req) ?? "",
+        operationTypeName: OperationType.shellLogin,
+        operationTypePayload: {
+          clusterId: cluster,
+          loginNode: loginNode.address,
+        },
       },
-    }, OperationResult.FAIL).catch((e) => log("Failed to log shell error:", e));
+      OperationResult.FAIL,
+    ).catch((e) => log("Failed to log shell error:", e));
     cleanup();
   };
 
@@ -376,7 +385,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 });
 
 export const setupShellServer = (req: NextApiRequest) => {
-
   (req.socket as any).server.on("upgrade", (request, socket, head) => {
     const url = normalizePathnameWithQuery(request.url);
     if (!url.startsWith(join(publicConfig.BASE_PATH, "/api/shell"))) {
@@ -386,6 +394,5 @@ export const setupShellServer = (req: NextApiRequest) => {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request);
     });
-
   });
 };

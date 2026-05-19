@@ -38,7 +38,7 @@ const createEmptyOverview = (): PlatformOverview => ({
 });
 
 const NotificationCol = styled(Col)`
-padding-bottom: 16px;
+  padding-bottom: 16px;
 `;
 
 const DashboardPageContent = styled.div`
@@ -77,8 +77,14 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
 
       const clusterIds = currentClusters.map((cluster) => cluster.id);
 
-      const summaryClusterInfoResponse = await api.getAllSummaryClustersInfo({ query: {
-        clusterIds, isFullDisplayMode } }).httpError(500, () => []);
+      const summaryClusterInfoResponse = await api
+        .getAllSummaryClustersInfo({
+          query: {
+            clusterIds,
+            isFullDisplayMode,
+          },
+        })
+        .httpError(500, () => []);
 
       const summaryClusterInfoResults = summaryClusterInfoResponse.results;
 
@@ -100,17 +106,17 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
         platformOverview.nodeCount += cluster.nodeCount;
         platformOverview.runningNodeCount += cluster.runningNodeCount;
         platformOverview.idleNodeCount += cluster.idleNodeCount;
-        platformOverview.notAvailableNodeCount += (cluster.notAvailableNodeCount || 0);
+        platformOverview.notAvailableNodeCount += cluster.notAvailableNodeCount || 0;
         platformOverview.runningJobCount += cluster.runningJobCount;
         platformOverview.pendingJobCount += cluster.pendingJobCount;
         platformOverview.cpuCoreCount += cluster.cpuCoreCount;
         platformOverview.runningCpuCount += cluster.runningCpuCount;
         platformOverview.idleCpuCount += cluster.idleCpuCount;
-        platformOverview.notAvailableCpuCount += (cluster.notAvailableCpuCount || 0);
+        platformOverview.notAvailableCpuCount += cluster.notAvailableCpuCount || 0;
         platformOverview.gpuCoreCount += cluster.gpuCoreCount;
         platformOverview.runningGpuCount += cluster.runningGpuCount;
         platformOverview.idleGpuCount += cluster.idleGpuCount;
-        platformOverview.notAvailableGpuCount += (cluster.notAvailableGpuCount || 0);
+        platformOverview.notAvailableGpuCount += cluster.notAvailableGpuCount || 0;
       });
 
       return {

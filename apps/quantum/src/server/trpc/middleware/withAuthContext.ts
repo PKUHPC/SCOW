@@ -12,7 +12,6 @@ export const withAuthContext = middleware(async ({ ctx, next }) => {
     throw new TRPCError({
       code: "UNAUTHORIZED",
     });
-
   }
 
   return next({
@@ -21,5 +20,4 @@ export const withAuthContext = middleware(async ({ ctx, next }) => {
       user,
     },
   });
-
 });

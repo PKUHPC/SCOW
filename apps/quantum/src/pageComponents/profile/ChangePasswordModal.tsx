@@ -16,11 +16,7 @@ interface FormInfo {
   newPassword: string;
 }
 
-export const ChangePasswordModal: React.FC<Props> = ({
-  open,
-  onClose,
-  identityId,
-}) => {
+export const ChangePasswordModal: React.FC<Props> = ({ open, onClose, identityId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("page.profile.");
 
@@ -37,11 +33,9 @@ export const ChangePasswordModal: React.FC<Props> = ({
     onError(e) {
       if (e.data?.code === "BAD_REQUEST") {
         message.error(`${t(p("cPFailed"))}: ${e.message}`);
-      }
-      else if (e.data?.code === "CONFLICT") {
+      } else if (e.data?.code === "CONFLICT") {
         message.error(t(p("originalPwError")));
-      }
-      else {
+      } else {
         message.error(t(p("cPFailed")));
       }
     },
@@ -65,21 +59,19 @@ export const ChangePasswordModal: React.FC<Props> = ({
         form={form}
         onFinish={onFinish}
         wrapperCol={{ span: 20 }}
-        labelCol={{ span:4, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
-
+        labelCol={{ span: 4, style: { whiteSpace: "normal", textAlign: "left", lineHeight: "16px" } }}
       >
-        <Form.Item
-          rules={[{ required: true }]}
-          label={t(p("originalPw"))}
-          name="oldPassword"
-        >
+        <Form.Item rules={[{ required: true }]} label={t(p("originalPw"))} name="oldPassword">
           <Input.Password />
         </Form.Item>
         <Form.Item
           rules={[
             { required: true },
-            { pattern: publicConfig.publicConfig.PASSWORD_PATTERN ?
-              new RegExp(publicConfig.publicConfig.PASSWORD_PATTERN) : undefined },
+            {
+              pattern: publicConfig.publicConfig.PASSWORD_PATTERN
+                ? new RegExp(publicConfig.publicConfig.PASSWORD_PATTERN)
+                : undefined,
+            },
           ]}
           label={t(p("newPw"))}
           name="newPassword"
@@ -98,4 +90,3 @@ export const ChangePasswordModal: React.FC<Props> = ({
     </Modal>
   );
 };
-

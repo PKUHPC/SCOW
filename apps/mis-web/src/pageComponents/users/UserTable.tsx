@@ -23,7 +23,7 @@ import { moneyToString } from "src/utils/money";
 import { BatchOperationButton } from "./BatchOperationButton";
 
 interface Props {
-  data: Static<typeof GetAccountUsersSchema["responses"]["200"]> | undefined;
+  data: Static<(typeof GetAccountUsersSchema)["responses"]["200"]> | undefined;
   isLoading: boolean;
   reload: () => void;
   update: () => void;
@@ -35,10 +35,7 @@ interface Props {
 const p = prefix("pageComp.user.userTable.");
 const pCommon = prefix("common.");
 
-export const UserTable: React.FC<Props> = ({
-  data, isLoading, reload, update, accountName, canSetAdmin,
-}) => {
-
+export const UserTable: React.FC<Props> = ({ data, isLoading, reload, update, accountName, canSetAdmin }) => {
   const { setUser, user } = useStore(UserStore);
   const t = useI18nTranslateToString();
 
@@ -50,10 +47,7 @@ export const UserTable: React.FC<Props> = ({
 
   const { message, modal } = App.useApp();
 
-  const filteredData = useMemo(
-    () => filterUsersByIdOrName(data, filters ?? {}),
-    [data, filters],
-  );
+  const filteredData = useMemo(() => filterUsersByIdOrName(data, filters ?? {}), [data, filters]);
 
   const DisplayedUserStateTexts = {
     [DisplayedUserState.DISPLAYED_NORMAL]: <Tag color="success">{t(p("normal"))}</Tag>,
@@ -74,8 +68,7 @@ export const UserTable: React.FC<Props> = ({
 
       return {
         ...prev,
-        accountAffiliations: prev.accountAffiliations
-          .filter((a) => a.accountName !== accountName),
+        accountAffiliations: prev.accountAffiliations.filter((a) => a.accountName !== accountName),
       };
     });
   };
@@ -84,15 +77,15 @@ export const UserTable: React.FC<Props> = ({
   const handleIfUnsetSelfAccountAdmin = (userId: string) => {
     setUser((prev) => {
       if (!prev || prev.identityId !== userId) return prev;
-      if (!prev.accountAffiliations
-        .some((a) => a.accountName === accountName && a.role === UserRole.ADMIN)) return prev;
+      if (!prev.accountAffiliations.some((a) => a.accountName === accountName && a.role === UserRole.ADMIN))
+        return prev;
 
       const updatedAffiliations = prev.accountAffiliations.map((a) =>
         a.accountName === accountName
           ? {
-            ...a,
-            role: UserRole.USER,
-          }
+              ...a,
+              role: UserRole.USER,
+            }
           : a,
       );
       return {
@@ -106,7 +99,7 @@ export const UserTable: React.FC<Props> = ({
     <>
       <UserSearchForm
         onSearch={setFilters}
-        extra={(
+        extra={
           <Space>
             <AddUserButton
               refresh={reload}
@@ -123,7 +116,7 @@ export const UserTable: React.FC<Props> = ({
             />
             <RefreshLink refresh={update} languageId={languageId} />
           </Space>
-        )}
+        }
       />
       <Table
         dataSource={filteredData?.results}
@@ -134,7 +127,8 @@ export const UserTable: React.FC<Props> = ({
           showSizeChanger: true,
           defaultPageSize: DEFAULT_PAGE_SIZE,
         }}
-        rowSelection={{ type: "checkbox",
+        rowSelection={{
+          type: "checkbox",
           onChange: (key, record) => {
             setSelectedKeys(key);
             setSelectedAccountUser(record);
@@ -161,12 +155,12 @@ export const UserTable: React.FC<Props> = ({
         />
         <Table.Column<AccountUserInfo>
           dataIndex="displayedUserState"
-          title={(
+          title={
             <Space>
               {t(pCommon("status"))}
               <Popover
                 title={t(p("statusExplanation"))}
-                content={(
+                content={
                   <>
                     <span>{t(p("blockedExplanation"))}</span>
                     <br />
@@ -174,140 +168,148 @@ export const UserTable: React.FC<Props> = ({
                     <br />
                     <span>{t(p("normalExplanation"))}</span>
                   </>
-                )}
+                }
               >
                 <ExclamationCircleOutlined />
               </Popover>
             </Space>
-          )}
+          }
           render={(s) => DisplayedUserStateTexts[s]}
           sorter={(a, b) => compareNullableNumber(a.status, b.status)}
         />
         <Table.Column<AccountUserInfo>
           dataIndex="jobChargeLimit"
           title={t(p("alreadyUsed"))}
-          render={(_, r) => r.jobChargeLimit && r.usedJobChargeLimit
-            ? `${moneyToString(r.usedJobChargeLimit)} / ${moneyToString(r.jobChargeLimit)} ${t(pCommon("unit"))}`
-            : t(p("none"))}
+          render={(_, r) =>
+            r.jobChargeLimit && r.usedJobChargeLimit
+              ? `${moneyToString(r.usedJobChargeLimit)} / ${moneyToString(r.jobChargeLimit)} ${t(pCommon("unit"))}`
+              : t(p("none"))
+          }
         />
         <Table.Column<AccountUserInfo>
           title={t(pCommon("operation"))}
           render={(_, r) => (
             <Space size="middle">
-              <SetJobChargeLimitLink
-                accountName={accountName}
-                reload={reload}
-                usersInfo={[r]}
-              >
+              <SetJobChargeLimitLink accountName={accountName} reload={reload} usersInfo={[r]}>
                 {t(p("limitManage"))}
               </SetJobChargeLimitLink>
-              {
-                r.userStateInAccount === UserStateInAccount.BLOCKED_BY_ADMIN
-                  ? (
-                    <a onClick={() => {
-                      modal.confirm({
-                        title: t(p("confirmNotBlock")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: `${t(p("confirmUnsealText1"))}${accountName}
+              {r.userStateInAccount === UserStateInAccount.BLOCKED_BY_ADMIN ? (
+                <a
+                  onClick={() => {
+                    modal.confirm({
+                      title: t(p("confirmNotBlock")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: `${t(p("confirmUnsealText1"))}${accountName}
                       ${t(p("confirmUnsealText2"))}${r.name}（ID：${r.userId}）${t(p("confirmUnsealText3"))}`,
-                        onOk: async () => {
-                          await api.unblockUserInAccount({ body: {
-                            userIds: [r.userId],
-                            accountName: accountName,
-                          } })
-                            .then((res) => {
-                              if (res.success) {
-                                message.success(t(p("unsealSuccess")));
-                              } else {
-                                message.error(res.reason || t(p("unblockUserInAccountFailed")));
-                              }
-                              reload();
-                            });
-                        },
-                      });
-                    }}
-                    >
-                      {t(p("unseal"))}
-                    </a>
-                  ) : (
-                    <a onClick={() => {
-                      modal.confirm({
-                        title: t(p("confirmBlock")),
-                        icon: <ExclamationCircleOutlined />,
-                        content: `${t(p("confirmBlockText1"))}${accountName}
+                      onOk: async () => {
+                        await api
+                          .unblockUserInAccount({
+                            body: {
+                              userIds: [r.userId],
+                              accountName: accountName,
+                            },
+                          })
+                          .then((res) => {
+                            if (res.success) {
+                              message.success(t(p("unsealSuccess")));
+                            } else {
+                              message.error(res.reason || t(p("unblockUserInAccountFailed")));
+                            }
+                            reload();
+                          });
+                      },
+                    });
+                  }}
+                >
+                  {t(p("unseal"))}
+                </a>
+              ) : (
+                <a
+                  onClick={() => {
+                    modal.confirm({
+                      title: t(p("confirmBlock")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: `${t(p("confirmBlockText1"))}${accountName}
                       ${t(p("confirmBlockText2"))}${r.name}（ID：${r.userId}）？`,
+                      onOk: async () => {
+                        await api
+                          .blockUserInAccount({
+                            body: {
+                              userIds: [r.userId],
+                              accountName: accountName,
+                            },
+                          })
+                          .then((res) => {
+                            if (res.success) {
+                              message.success(t(p("blockSuccess")));
+                            } else {
+                              message.error(res.reason || t(p("blockUserInAccountFailed")));
+                            }
+                            reload();
+                          });
+                      },
+                    });
+                  }}
+                >
+                  {t(p("block"))}
+                </a>
+              )}
+              {canSetAdmin ? (
+                r.role === UserRole.ADMIN ? (
+                  <a
+                    onClick={() => {
+                      modal.confirm({
+                        title: t(p("confirmCancelAdmin")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: `${t(p("confirmCancelAdminText1"))}${r.name} （ID：${r.userId}）
+                      ${t(p("confirmCancelAdminText2"))}${accountName}${t(p("confirmCancelAdminText3"))}`,
                         onOk: async () => {
-                          await api.blockUserInAccount({ body: {
-                            userIds: [r.userId],
-                            accountName: accountName,
-                          } })
-                            .then((res) => {
-                              if (res.success) {
-                                message.success(t(p("blockSuccess")));
-                              } else {
-                                message.error(res.reason || t(p("blockUserInAccountFailed")));
-                              }
+                          await api
+                            .unsetAdmin({
+                              body: {
+                                identityId: r.userId,
+                                accountName: accountName,
+                              },
+                            })
+                            .then(() => {
+                              message.success(t(p("operateSuccess")));
+                              handleIfUnsetSelfAccountAdmin(r.userId);
                               reload();
                             });
                         },
                       });
                     }}
-                    >
-                      {t(p("block"))}
-                    </a>
-                  )
-              }
-              {
-                canSetAdmin ? (
-                  r.role === UserRole.ADMIN
-                    ? (
-                      <a onClick={() => {
-                        modal.confirm({
-                          title: t(p("confirmCancelAdmin")),
-                          icon: <ExclamationCircleOutlined />,
-                          content: `${t(p("confirmCancelAdminText1"))}${r.name} （ID：${r.userId}）
-                      ${t(p("confirmCancelAdminText2"))}${accountName}${t(p("confirmCancelAdminText3"))}`,
-                          onOk: async () => {
-                            await api.unsetAdmin({ body: {
-                              identityId: r.userId,
-                              accountName: accountName,
-                            } })
-                              .then(() => {
-                                message.success(t(p("operateSuccess")));
-                                handleIfUnsetSelfAccountAdmin(r.userId);
-                                reload();
-                              });
-                          },
-                        });
-                      }}
-                      >
-                        {t(p("cancelAdmin"))}
-                      </a>
-                    ) : r.role === UserRole.USER ? (
-                      <a onClick={() => {
-                        modal.confirm({
-                          title: t(p("confirmGrantAdmin")),
-                          icon: <ExclamationCircleOutlined />,
-                          content: ` ${t(p("confirmGrantAdminText1"))}${r.name} （ID：${r.userId}）
+                  >
+                    {t(p("cancelAdmin"))}
+                  </a>
+                ) : r.role === UserRole.USER ? (
+                  <a
+                    onClick={() => {
+                      modal.confirm({
+                        title: t(p("confirmGrantAdmin")),
+                        icon: <ExclamationCircleOutlined />,
+                        content: ` ${t(p("confirmGrantAdminText1"))}${r.name} （ID：${r.userId}）
                         ${t(p("confirmGrantAdminText2"))}${accountName}${t(p("confirmCancelAdminText3"))}`,
-                          onOk: async () => {
-                            await api.setAdmin({ body: {
-                              identityId: r.userId,
-                              accountName: accountName,
-                            } })
-                              .then(() => {
-                                message.success(t(p("operateSuccess")));
-                                reload();
-                              });
-                          },
-                        });
-                      }}
-                      >
-                        {t(p("grantAdmin"))}
-                      </a>
-                    ) : undefined
+                        onOk: async () => {
+                          await api
+                            .setAdmin({
+                              body: {
+                                identityId: r.userId,
+                                accountName: accountName,
+                              },
+                            })
+                            .then(() => {
+                              message.success(t(p("operateSuccess")));
+                              reload();
+                            });
+                        },
+                      });
+                    }}
+                  >
+                    {t(p("grantAdmin"))}
+                  </a>
                 ) : undefined
-              }
+              ) : undefined}
               <DisabledA
                 disabled={r.role === UserRole.OWNER}
                 message={t(p("cannotRemove"))}
@@ -322,17 +324,19 @@ export const UserTable: React.FC<Props> = ({
                         type: "loading",
                         content: t("common.waitingMessage"),
                         duration: 0,
-                        key: "removeUser" });
-                      await api.removeUserFromAccount({ query: {
-                        userIds: [r.userId],
-                        accountName: accountName,
-                      } })
+                        key: "removeUser",
+                      });
+                      await api
+                        .removeUserFromAccount({
+                          query: {
+                            userIds: [r.userId],
+                            accountName: accountName,
+                          },
+                        })
                         .httpError(400, (e) => {
                           message.destroy("removeUser");
                           message.error({
-                            content: `${t("page._app.multiClusterOpErrorContent")}(${
-                              e.message
-                            })`,
+                            content: `${t("page._app.multiClusterOpErrorContent")}(${e.message})`,
                             duration: 4,
                           });
                         })

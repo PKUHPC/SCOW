@@ -2,10 +2,16 @@ import { ScowdClient } from "@scow/lib-scowd/build/client";
 import { TRPCError } from "@trpc/server";
 import { harborPassword, harborUrl, harborUser } from "src/server/utils/harbor";
 import { LoginInfo } from "src/server/utils/image";
-import { removeImageCreationAbortController,
-  setImageCreationAbortController } from "src/server/utils/imageCreationAbortController";
-import { appendImageCreationOutput, cleanupImageCreationOutput,
-  CreationOperation, truncateErrorMessage } from "src/server/utils/imageCreationManager";
+import {
+  removeImageCreationAbortController,
+  setImageCreationAbortController,
+} from "src/server/utils/imageCreationAbortController";
+import {
+  appendImageCreationOutput,
+  cleanupImageCreationOutput,
+  CreationOperation,
+  truncateErrorMessage,
+} from "src/server/utils/imageCreationManager";
 import { Logger } from "ts-log";
 
 export async function withAbortHandling<R>(
@@ -60,7 +66,6 @@ interface PushImageParams {
   node?: string;
 }
 
-
 // Pull 镜像公共函数
 export async function pullImageWithResStream({
   imageId,
@@ -83,11 +88,14 @@ export async function pullImageWithResStream({
   appendImageCreationOutput(imageId, CreationOperation.PULL_IMAGE, "", logger);
 
   try {
-    const pullResStream = customTimeoutClient.image.pullImage({
-      userId: "root",
-      sourcePath,
-      ...(loginInfo && { loginInfo }),
-    }, { signal: abortController.signal });
+    const pullResStream = customTimeoutClient.image.pullImage(
+      {
+        userId: "root",
+        sourcePath,
+        ...(loginInfo && { loginInfo }),
+      },
+      { signal: abortController.signal },
+    );
 
     // 处理流式响应
     for await (const response of pullResStream) {
@@ -112,7 +120,8 @@ export async function pullImageWithResStream({
         pullExitCode = response.message.value.exitCode;
         imageUrl = response.message.value.imageUrl;
         logger.info(
-          `Pull completed of image (ID:${imageId}, Name: ${imageName}:${imageTag}) with exit code: ${pullExitCode}.`);
+          `Pull completed of image (ID:${imageId}, Name: ${imageName}:${imageTag}) with exit code: ${pullExitCode}.`,
+        );
         break;
       }
     }
@@ -133,8 +142,9 @@ export async function pullImageWithResStream({
       cleanupImageCreationOutput(imageId, logger);
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Pull image (ID: ${imageId}, Name: ${imageName}:${imageTag}) `
-        + `failed while creating the image, ${truncatedError}`,
+        message:
+          `Pull image (ID: ${imageId}, Name: ${imageName}:${imageTag}) ` +
+          `failed while creating the image, ${truncatedError}`,
       });
     }
 
@@ -152,15 +162,14 @@ export async function pullImageWithResStream({
       } else {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Copy Image Error: "
-          + `Image (ID: ${imageId}, Name: ${imageName}:${imageTag}) create failed: localImage not found`,
+          message:
+            "Copy Image Error: " +
+            `Image (ID: ${imageId}, Name: ${imageName}:${imageTag}) create failed: localImage not found`,
         });
       }
-
     }
 
     return imageUrl;
-
   } catch (e: any) {
     cleanupImageCreationOutput(imageId, logger);
 
@@ -171,8 +180,9 @@ export async function pullImageWithResStream({
     logger.error(`Pull image (ID: ${imageId}, Name: ${imageName}:${imageTag}) failed: ${e.message}.`);
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Pull image (ID: ${imageId}, Name: ${imageName}:${imageTag}) `
-      + `failed while creating the image, ${e.message}`,
+      message:
+        `Pull image (ID: ${imageId}, Name: ${imageName}:${imageTag}) ` +
+        `failed while creating the image, ${e.message}`,
     });
   }
 }
@@ -196,19 +206,22 @@ export async function pushImageWithResStream({
   appendImageCreationOutput(imageId, CreationOperation.PUSH_IMAGE, "", logger);
 
   try {
-    const pushResStream = customTimeoutClient.image.pushImageToHarbor({
-      userId: "root",
-      localImageUrl,
-      harborImageUrl,
-      harborInfo: {
-        url: harborUrl,
-        user: harborUser,
-        password: harborPassword,
+    const pushResStream = customTimeoutClient.image.pushImageToHarbor(
+      {
+        userId: "root",
+        localImageUrl,
+        harborImageUrl,
+        harborInfo: {
+          url: harborUrl,
+          user: harborUser,
+          password: harborPassword,
+        },
+        node,
       },
-      node,
-    }, {
-      signal: abortController.signal,
-    });
+      {
+        signal: abortController.signal,
+      },
+    );
 
     // 处理流式响应
     for await (const response of pushResStream) {
@@ -217,8 +230,7 @@ export async function pushImageWithResStream({
         cleanupImageCreationOutput(imageId, logger);
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Push image failed due to abort. "
-          + `Image: (ID: ${imageId}, Image: ${localImageUrl}).`,
+          message: "Push image failed due to abort. " + `Image: (ID: ${imageId}, Image: ${localImageUrl}).`,
         });
       }
 
@@ -247,25 +259,28 @@ export async function pushImageWithResStream({
     }
 
     if (!isPushCompleted || pushExitCode !== 0) {
-
       const truncatedError = truncateErrorMessage(pushErrBuffer);
-      logger.error(`Push Image failed  (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) `
-        + `with error: ${truncatedError}.`);
+      logger.error(
+        `Push Image failed  (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) ` +
+          `with error: ${truncatedError}.`,
+      );
       cleanupImageCreationOutput(imageId, logger);
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) `
-        + `while creating the image, ${truncatedError}`,
+        message:
+          `Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) ` +
+          `while creating the image, ${truncatedError}`,
       });
     }
 
     // PUSH_IMAGE COMPLETED
     appendImageCreationOutput(imageId, CreationOperation.PUSH_IMAGE, "", logger, true, true);
-    logger.info("Push image to harbor completed successfully. "
-    + `ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}.`);
+    logger.info(
+      "Push image to harbor completed successfully. " +
+        `ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}.`,
+    );
 
     return true;
-
   } catch (e: any) {
     cleanupImageCreationOutput(imageId, logger);
 
@@ -274,12 +289,15 @@ export async function pushImageWithResStream({
       throw e;
     }
 
-    logger.error(`Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) `
-      + `while creating the image, ${e.message}`);
+    logger.error(
+      `Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) ` +
+        `while creating the image, ${e.message}`,
+    );
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) `
-      + `while creating the image, ${e.message}`,
+      message:
+        `Push image failed (ImageID: ${imageId}, from ${localImageUrl} to ${harborImageUrl}) ` +
+        `while creating the image, ${e.message}`,
     });
   }
 }

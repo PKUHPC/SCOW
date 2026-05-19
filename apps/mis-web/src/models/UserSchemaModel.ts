@@ -1,8 +1,18 @@
 import { Static, Type } from "@sinclair/typebox";
 import { MetadataMap } from "src/pages/api/finance/charges";
 
-import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, DisplayedUserState, PlatformRole,
-  TenantRole, UserRole, UserState, UserStateInAccount, UserStatus } from "./User";
+import {
+  AccountState,
+  ClusterAccountInfo_ImportStatus,
+  DisplayedAccountState,
+  DisplayedUserState,
+  PlatformRole,
+  TenantRole,
+  UserRole,
+  UserState,
+  UserStateInAccount,
+  UserStatus,
+} from "./User";
 
 // 这个Model重新用typebox定义了
 // 定义Schema时无法复用的@scow/protos/build/server中的interface
@@ -78,8 +88,8 @@ export const AccountStatus = Type.Object({
   usedJobCharge: Type.Optional(Money),
   balance: Type.Optional(Money),
   isInWhitelist: Type.Optional(Type.Boolean()),
-  blockThresholdAmount:Type.Optional(Money),
-  accountState:Type.Enum(AccountState),
+  blockThresholdAmount: Type.Optional(Money),
+  accountState: Type.Enum(AccountState),
 });
 export type AccountStatus = Static<typeof AccountStatus>;
 
@@ -132,7 +142,7 @@ export const WhitelistedAccount = Type.Object({
   operatorId: Type.String(),
   comment: Type.String(),
   balance: Type.Optional(Money),
-  expirationTime:Type.Optional(Type.String({ format: "date-time" })),
+  expirationTime: Type.Optional(Type.String({ format: "date-time" })),
 });
 export type WhitelistedAccount = Static<typeof WhitelistedAccount>;
 
@@ -144,11 +154,9 @@ export const AccountUserInfo = Type.Object({
   role: Type.Enum(UserRole),
   /** cluster and quota */
   storageQuotas: Type.Record(Type.String(), Type.Number()),
-  jobChargeLimit:Type.Optional(Money),
+  jobChargeLimit: Type.Optional(Money),
   usedJobChargeLimit: Type.Optional(Money),
   userStateInAccount: Type.Enum(UserStateInAccount),
   displayedUserState: Type.Enum(DisplayedUserState),
 });
 export type AccountUserInfo = Static<typeof AccountUserInfo>;
-
-

@@ -18,11 +18,7 @@ interface Options {
   scowConfigPath: string;
 }
 
-
-export const checkConfig = ({
-  configPath, continueOnError, scowConfigPath,
-}: Options) => {
-
+export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Options) => {
   const config = getInstallConfig(configPath);
 
   const tryRead = <T>(readFn: (path: string, logger: Logger) => T): T | null => {
@@ -36,7 +32,6 @@ export const checkConfig = ({
       return null;
     }
   };
-
 
   logger.debug("Checking common config");
   const commonConfig = tryRead(getCommonConfig);

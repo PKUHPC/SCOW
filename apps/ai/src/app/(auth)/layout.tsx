@@ -28,20 +28,19 @@ const useCurrentClusterIdsQuery = () => {
   return trpc.resource.getCurrentUserAssignedClusters.useQuery();
 };
 
-export default function Layout(
-  { children }:
-  { children: React.ReactNode },
-) {
-
+export default function Layout({ children }: { children: React.ReactNode }) {
   const userQuery = useUserQuery();
   const configQuery = useConfigQuery();
   const scowClusterConfigsQuery = useScowClusterConfigsQuery();
   const currentClusterIdsQuery = useCurrentClusterIdsQuery();
-  const unreadMessagesQuery = trpc.notification.getUnreadMessages.useQuery({
-    messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert],
-  }, {
-    enabled: !!configQuery.data?.NOTIF_ENABLED,
-  });
+  const unreadMessagesQuery = trpc.notification.getUnreadMessages.useQuery(
+    {
+      messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert],
+    },
+    {
+      enabled: !!configQuery.data?.NOTIF_ENABLED,
+    },
+  );
 
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
@@ -50,9 +49,7 @@ export default function Layout(
   const createAppSessionMutation = trpc.notification.markMessageRead.useMutation({});
 
   if (userQuery.isLoading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   if (userQuery.isError || !userQuery.isSuccess || !userQuery.data.user) {
@@ -60,15 +57,15 @@ export default function Layout(
   }
 
   if (configQuery.isLoading || currentClusterIdsQuery.isLoading || scowClusterConfigsQuery.isLoading) {
-    return (
-      <BaseLayout user={userQuery.data.user}>
-        {children}
-      </BaseLayout>
-    );
+    return <BaseLayout user={userQuery.data.user}>{children}</BaseLayout>;
   }
 
-  if (configQuery.isError || scowClusterConfigsQuery.isError ||
-    !configQuery.isSuccess || !scowClusterConfigsQuery.isSuccess) {
+  if (
+    configQuery.isError ||
+    scowClusterConfigsQuery.isError ||
+    !configQuery.isSuccess ||
+    !scowClusterConfigsQuery.isSuccess
+  ) {
     return (
       <BaseLayout>
         <ServerErrorPage />
@@ -78,45 +75,41 @@ export default function Layout(
 
   const publicConfig = configQuery.data;
   const scowClusterConfigs = scowClusterConfigsQuery.data;
-  const { currentClusters }
-   = defaultClusterContext(publicConfig.CLUSTERS, currentClusterIdsQuery?.data?.clusterIds ?? []);
-
-  const footerConfig = uiConfig.config?.footer;
-  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname])
-    ?? footerConfig?.defaultText;
-
-  const routes = userRoutes(
-    userQuery.data.user, publicConfig, scowClusterConfigs,
-    currentClusters, t,
+  const { currentClusters } = defaultClusterContext(
+    publicConfig.CLUSTERS,
+    currentClusterIdsQuery?.data?.clusterIds ?? [],
   );
 
+  const footerConfig = uiConfig.config?.footer;
+  const footerText = (hostname && footerConfig?.hostnameMap?.[hostname]) ?? footerConfig?.defaultText;
+
+  const routes = userRoutes(userQuery.data.user, publicConfig, scowClusterConfigs, currentClusters, t);
+
   return (
-    <PublicConfigContext.Provider value={{
-      user: userQuery.data.user,
-      publicConfig,
-      clusters: publicConfig.CLUSTERS,
-      scowClusterConfigs,
-      currentAvailableClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
-      defaultClusterContext:
-          defaultClusterContext(publicConfig.CLUSTERS ?? [], currentClusterIdsQuery?.data?.clusterIds ?? []),
-    }}
+    <PublicConfigContext.Provider
+      value={{
+        user: userQuery.data.user,
+        publicConfig,
+        clusters: publicConfig.CLUSTERS,
+        scowClusterConfigs,
+        currentAvailableClusterIds: currentClusterIdsQuery?.data?.clusterIds ?? [],
+        defaultClusterContext: defaultClusterContext(
+          publicConfig.CLUSTERS ?? [],
+          currentClusterIdsQuery?.data?.clusterIds ?? [],
+        ),
+      }}
     >
       <BaseLayout
         routes={routes}
         user={userQuery.data.user}
-        headerRightContent={(
+        headerRightContent={
           <>
-            <SystemSelect
-              user={userQuery.data.user}
-              publicConfig={publicConfig}
-            ></SystemSelect>
-            {
-              publicConfig.SYSTEM_LANGUAGE_CONFIG.isUsingI18n ? (
-                <LanguageSwitcher initialLanguage={languageId} />
-              ) : undefined
-            }
+            <SystemSelect user={userQuery.data.user} publicConfig={publicConfig}></SystemSelect>
+            {publicConfig.SYSTEM_LANGUAGE_CONFIG.isUsingI18n ? (
+              <LanguageSwitcher initialLanguage={languageId} />
+            ) : undefined}
           </>
-        )}
+        }
         versionTag={publicConfig.VERSION_TAG}
         footerText={footerText}
       >
@@ -131,8 +124,9 @@ export default function Layout(
           >
             {children}
           </NotificationLayout>
-        )
-          : children}
+        ) : (
+          children
+        )}
       </BaseLayout>
     </PublicConfigContext.Provider>
   );

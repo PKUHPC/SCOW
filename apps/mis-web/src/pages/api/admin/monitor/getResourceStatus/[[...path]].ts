@@ -11,7 +11,7 @@ const proxy = httpProxy.createProxyServer({
   changeOrigin: true,
 });
 
-proxy.on("proxyReq", function(proxyReq, req) {
+proxy.on("proxyReq", function (proxyReq, req) {
   if (req.body) {
     const bodyData = JSON.stringify(req.body);
 
@@ -26,7 +26,6 @@ proxy.on("proxyReq", function(proxyReq, req) {
 });
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-
   if (!publicConfig.CLUSTER_MONITOR.resourceStatus.enabled) {
     return res.status(404).send("Resource status is not enabled");
   }
@@ -63,11 +62,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       const [first, second, third] = segments;
-      if (
-        first !== "d-solo" ||
-        second !== jobMonitor.dashboardId ||
-        third !== jobMonitor.dashboardName
-      ) {
+      if (first !== "d-solo" || second !== jobMonitor.dashboardId || third !== jobMonitor.dashboardName) {
         return false;
       }
 
@@ -75,21 +70,25 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return allowedPanelIds.includes(String(targetPanelId));
     };
 
-    const aiMonitorMatched = isSoloDashboard && clusterId
-      ? matchJobMonitor(configClusters[clusterId]?.jobMonitor, pathSegments, panelId,varJobName)
-      : false;
+    const aiMonitorMatched =
+      isSoloDashboard && clusterId
+        ? matchJobMonitor(configClusters[clusterId]?.jobMonitor, pathSegments, panelId, varJobName)
+        : false;
 
-    const auth = authenticate((info) =>
-      info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || aiMonitorMatched);
+    const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || aiMonitorMatched);
     const info = await auth(req, res);
-    if (!info) { return; }
+    if (!info) {
+      return;
+    }
   }
   // 其它请求（/api/、/public/ 等静态资源）只验证是否登录
   else {
     const auth = authenticate(() => true);
     const info = await auth(req, res);
 
-    if (!info) { return; }
+    if (!info) {
+      return;
+    }
   }
 
   const grafanaPath = path ? (Array.isArray(path) ? path.join("/") : path) : "/";
@@ -100,13 +99,19 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const grafanaUrl = publicConfig.CLUSTER_MONITOR.grafanaUrl ?? DEFAULT_GRAFANA_URL;
   const target = joinWithUrl(grafanaUrl, grafanaPath) + urlWithQuery;
 
-  proxy.web(req, res, {
-    target, xfwd: true,
-    ignorePath: true,
-  }, (err) => {
-    if (err) {
-      console.error(err, "Error when proxing requests");
-      res.status(500).send(err);
-    }
-  });
+  proxy.web(
+    req,
+    res,
+    {
+      target,
+      xfwd: true,
+      ignorePath: true,
+    },
+    (err) => {
+      if (err) {
+        console.error(err, "Error when proxing requests");
+        res.status(500).send(err);
+      }
+    },
+  );
 };

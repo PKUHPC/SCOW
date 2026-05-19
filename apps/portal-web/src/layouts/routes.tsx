@@ -4,10 +4,19 @@ import { NavIcon } from "@scow/lib-web/build/layouts/icon";
 import { join } from "path";
 import { useI18nTranslateToString } from "src/i18n";
 import {
-  AllJobsIcon, ApplicationIcon, AppSessionsIcon, ClusterFileManagerIcon,
-  CreateAppIcon, DashBoardIcon, FileManagerIcon,
-  FileTransferIcon, FileTransferInfoIcon, JobIcon, LoginClusterIcon,
-  RunningJobsIcon, SubmitJobIcon
+  AllJobsIcon,
+  ApplicationIcon,
+  AppSessionsIcon,
+  ClusterFileManagerIcon,
+  CreateAppIcon,
+  DashBoardIcon,
+  FileManagerIcon,
+  FileTransferIcon,
+  FileTransferInfoIcon,
+  JobIcon,
+  LoginClusterIcon,
+  RunningJobsIcon,
+  SubmitJobIcon,
 } from "src/icons/headerIcons/headerIcons";
 import { User } from "src/stores/UserStore";
 import { Cluster, LoginNode } from "src/utils/cluster";
@@ -22,10 +31,16 @@ export const userRoutes: (
   crossClusterFileTransferEnabled: boolean,
   setDefaultCluster: (cluster: Cluster | undefined) => void,
 ) => NavItemProps[] = (
-  user, currentClusters, defaultCluster, loginNodes,
-  enableLoginDesktop, crossClusterFileTransfer) => {
-
-  if (!user) { return []; }
+  user,
+  currentClusters,
+  defaultCluster,
+  loginNodes,
+  enableLoginDesktop,
+  crossClusterFileTransfer,
+) => {
+  if (!user) {
+    return [];
+  }
   const t = useI18nTranslateToString();
 
   return [
@@ -34,120 +49,139 @@ export const userRoutes: (
       text: t("routes.dashboard"),
       path: "/dashboard",
     },
-    ...(publicConfig.ENABLE_JOB_MANAGEMENT && currentClusters.length > 0 ? [{
-      Icon: JobIcon,
-      text: t("routes.job.title"),
-      path: "/jobs",
-      clickToPath: "/jobs/runningJobs",
-      children: [
-        {
-          Icon: RunningJobsIcon,
-          text: t("routes.job.runningJobs"),
-          path: "/jobs/runningJobs",
-        },
-        {
-          Icon: AllJobsIcon,
-          text: t("routes.job.allJobs"),
-          path: "/jobs/allJobs",
-        },
-        {
-          Icon: SubmitJobIcon,
-          text: t("routes.job.submitJob"),
-          path: "/jobs/submit",
-        },
-      ],
-    }] : []),
-    ...((publicConfig.ENABLE_SHELL || enableLoginDesktop) && currentClusters.length > 0 ?
-      [{
-        Icon: LoginClusterIcon,
-        text: t("routes.loginCluster"),
-        path: "/loginCluster",
-      } as NavItemProps] : []),
-    ...(publicConfig.ENABLE_APPS && currentClusters.length > 0 ? [{
-      Icon: ApplicationIcon,
-      text: t("routes.apps.title"),
-      path: "/apps",
-      clickToPath: "/apps/sessions",
-      clickable: false,
-      children:
-    [
-      {
-        Icon: AppSessionsIcon,
-        text: t("routes.apps.appSessions"),
-        path: "/apps/sessions",
-      },
-      {
-        Icon: CreateAppIcon,
-        text: t("routes.apps.createApp"),
-        clickable: false,
-        path: "/apps/createApps",
-      },
-    ],
-    } as NavItemProps] : []),
-    ...(currentClusters.length > 0 ? [{
-      Icon: FileManagerIcon,
-      text: t("routes.file.fileManager"),
-      path: "/files",
-      clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
-      clickable: false,
-      children: [
-        {
-          Icon: ClusterFileManagerIcon,
-          text: t("routes.file.fileManager"),
-          path: "/files/",
-          clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
-          match: (spec: string, path: string) => {
-            if (/(^|\/)files\/(fileTransfer|currentTransferInfo)(\/|$)/.test(path)) {
-              return false;
-            }
-            return /(^|\/)files(\/|$)/.test(path);
-          },
-        },
-        ...(crossClusterFileTransfer ? [
+    ...(publicConfig.ENABLE_JOB_MANAGEMENT && currentClusters.length > 0
+      ? [
           {
-            Icon: FileTransferIcon,
-            text: t("routes.file.crossClusterFileTransfer"),
-            path: "/files/fileTransfer",
+            Icon: JobIcon,
+            text: t("routes.job.title"),
+            path: "/jobs",
+            clickToPath: "/jobs/runningJobs",
+            children: [
+              {
+                Icon: RunningJobsIcon,
+                text: t("routes.job.runningJobs"),
+                path: "/jobs/runningJobs",
+              },
+              {
+                Icon: AllJobsIcon,
+                text: t("routes.job.allJobs"),
+                path: "/jobs/allJobs",
+              },
+              {
+                Icon: SubmitJobIcon,
+                text: t("routes.job.submitJob"),
+                path: "/jobs/submit",
+              },
+            ],
           },
+        ]
+      : []),
+    ...((publicConfig.ENABLE_SHELL || enableLoginDesktop) && currentClusters.length > 0
+      ? [
           {
-            Icon: FileTransferInfoIcon,
-            text: t("routes.file.transferProgress"),
-            path: "/files/currentTransferInfo",
+            Icon: LoginClusterIcon,
+            text: t("routes.loginCluster"),
+            path: "/loginCluster",
+          } as NavItemProps,
+        ]
+      : []),
+    ...(publicConfig.ENABLE_APPS && currentClusters.length > 0
+      ? [
+          {
+            Icon: ApplicationIcon,
+            text: t("routes.apps.title"),
+            path: "/apps",
+            clickToPath: "/apps/sessions",
+            clickable: false,
+            children: [
+              {
+                Icon: AppSessionsIcon,
+                text: t("routes.apps.appSessions"),
+                path: "/apps/sessions",
+              },
+              {
+                Icon: CreateAppIcon,
+                text: t("routes.apps.createApp"),
+                clickable: false,
+                path: "/apps/createApps",
+              },
+            ],
+          } as NavItemProps,
+        ]
+      : []),
+    ...(currentClusters.length > 0
+      ? [
+          {
+            Icon: FileManagerIcon,
+            text: t("routes.file.fileManager"),
+            path: "/files",
+            clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
+            clickable: false,
+            children: [
+              {
+                Icon: ClusterFileManagerIcon,
+                text: t("routes.file.fileManager"),
+                path: "/files/",
+                clickToPath: `/files/${defaultCluster?.id ?? currentClusters[0].id}/~`,
+                match: (spec: string, path: string) => {
+                  if (/(^|\/)files\/(fileTransfer|currentTransferInfo)(\/|$)/.test(path)) {
+                    return false;
+                  }
+                  return /(^|\/)files(\/|$)/.test(path);
+                },
+              },
+              ...(crossClusterFileTransfer
+                ? [
+                    {
+                      Icon: FileTransferIcon,
+                      text: t("routes.file.crossClusterFileTransfer"),
+                      path: "/files/fileTransfer",
+                    },
+                    {
+                      Icon: FileTransferInfoIcon,
+                      text: t("routes.file.transferProgress"),
+                      path: "/files/currentTransferInfo",
+                    },
+                  ]
+                : []),
+            ],
           },
-        ] : []),
-      ]},
-    ] : []),
+        ]
+      : []),
     ...(publicConfig.NAV_LINKS && publicConfig.NAV_LINKS.length > 0
       ? publicConfig.NAV_LINKS.map((link) => {
-
-          const parentNavPath = link.url ? `${link.url}?token=${user.token}`
+          const parentNavPath = link.url
+            ? `${link.url}?token=${user.token}`
             : link.children?.length && link.children?.length > 0
-              ? `${link.children[0].url}?token=${user.token}` : "";
+              ? `${link.children[0].url}?token=${user.token}`
+              : "";
 
           return {
-            Icon: !link.iconPath ? DefaultNavLinkIcon : (
-              <NavIcon
-                src={join(publicConfig.PUBLIC_PATH, link.iconPath)}
-              />
-            ),
+            Icon: !link.iconPath ? DefaultNavLinkIcon : <NavIcon src={join(publicConfig.PUBLIC_PATH, link.iconPath)} />,
             text: link.text,
             path: parentNavPath,
             clickToPath: parentNavPath,
             clickable: link.clickable,
             openInNewPage: link.openInNewPage,
-            children: link.children?.length ? link.children?.map((childLink) => ({
-              Icon: !childLink.iconPath ? DefaultNavLinkIcon : (
-                <NavIcon
-                  src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)}
-                />
-              ),
-              text: childLink.text,
-              path: `${childLink.url}?token=${user.token}`,
-              clickToPath: `${childLink.url}?token=${user.token}`,
-              clickable: true,
-              openInNewPage: childLink.openInNewPage,
-            } as NavItemProps)) : [],
+            children: link.children?.length
+              ? link.children?.map(
+                  (childLink) =>
+                    ({
+                      Icon: !childLink.iconPath ? (
+                        DefaultNavLinkIcon
+                      ) : (
+                        <NavIcon src={join(publicConfig.PUBLIC_PATH, childLink.iconPath)} />
+                      ),
+                      text: childLink.text,
+                      path: `${childLink.url}?token=${user.token}`,
+                      clickToPath: `${childLink.url}?token=${user.token}`,
+                      clickable: true,
+                      openInNewPage: childLink.openInNewPage,
+                    }) as NavItemProps,
+                )
+              : [],
           } as NavItemProps;
-        }) : []),
-    ];
-  };
+        })
+      : []),
+  ];
+};

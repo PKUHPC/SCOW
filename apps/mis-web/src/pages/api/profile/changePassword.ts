@@ -11,7 +11,6 @@ import { parseIp } from "src/utils/server";
 
 // 此API用于用户修改自己的密码。
 export const ChangePasswordSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -36,8 +35,7 @@ export const ChangePasswordSchema = typeboxRouteSchema({
 
 const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
 
-export default /* #__PURE__*/route(ChangePasswordSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(ChangePasswordSchema, async (req, res) => {
   if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
     return { 501: null };
   }
@@ -51,29 +49,37 @@ export default /* #__PURE__*/route(ChangePasswordSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { newPassword } = req.body;
 
   if (passwordPattern && !passwordPattern.test(newPassword)) {
-    return { 400: {
-      code: "PASSWORD_NOT_VALID" as const,
-    } };
+    return {
+      400: {
+        code: "PASSWORD_NOT_VALID" as const,
+      },
+    };
   }
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.changePassword,
-    operationTypePayload:{
+    operationTypePayload: {
       userId: info.identityId,
     },
   };
 
-  return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, {
-    identityId: info.identityId,
-    newPassword,
-  }, console)
+  return await libChangePassword(
+    runtimeConfig.AUTH_INTERNAL_URL,
+    {
+      identityId: info.identityId,
+      newPassword,
+    },
+    console,
+  )
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
@@ -93,8 +99,5 @@ export default /* #__PURE__*/route(ChangePasswordSchema, async (req, res) => {
       } else {
         throw e;
       }
-
     });
-
-
 });

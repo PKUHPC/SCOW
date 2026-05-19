@@ -21,7 +21,6 @@ import { z } from "zod";
 import { driver } from "../../Driver";
 import { booleanQueryParam, clusterExist } from "../utils";
 
-
 export const getAlgorithms = procedure
   .meta({
     openapi: {
@@ -31,34 +30,44 @@ export const getAlgorithms = procedure
       summary: "get algorithms",
     },
   })
-  .input(z.object({
-    ...paginationSchema.shape,
-    framework: z.enum(Framework).optional(),
-    nameOrDesc: z.string().optional(),
-    clusterId: z.string().optional(),
-    isPublic: booleanQueryParam().optional(),
-    isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
-  }))
-  .output(z.object({ items: z.array(z.object({
-    id:z.number(),
-    name:z.string(),
-    owner:z.string(),
-    ownerName:z.string(),
-    framework:z.enum(Framework),
-    isShared:z.boolean(),
-    description:z.string().optional(),
-    clusterId:z.string(),
-    createTime:z.string().optional(),
-    versions:z.array(z.object({
-      id: z.number(),
-      path: z.string(),
-    })),
-    updateTime: z.string().optional(),
-    versionsCount: z.number(),
-    isPlatformOwned: z.boolean(),
-  })), count: z.number() }))
+  .input(
+    z.object({
+      ...paginationSchema.shape,
+      framework: z.enum(Framework).optional(),
+      nameOrDesc: z.string().optional(),
+      clusterId: z.string().optional(),
+      isPublic: booleanQueryParam().optional(),
+      isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
+    }),
+  )
+  .output(
+    z.object({
+      items: z.array(
+        z.object({
+          id: z.number(),
+          name: z.string(),
+          owner: z.string(),
+          ownerName: z.string(),
+          framework: z.enum(Framework),
+          isShared: z.boolean(),
+          description: z.string().optional(),
+          clusterId: z.string(),
+          createTime: z.string().optional(),
+          versions: z.array(
+            z.object({
+              id: z.number(),
+              path: z.string(),
+            }),
+          ),
+          updateTime: z.string().optional(),
+          versionsCount: z.number(),
+          isPlatformOwned: z.boolean(),
+        }),
+      ),
+      count: z.number(),
+    }),
+  )
   .query(async ({ input, ctx: { user } }) => {
-
     const { page, pageSize, framework, nameOrDesc, clusterId, isPublic, isPlatformOwned } = input;
     // 如果查询某一个集群
     if (clusterId) {
@@ -82,7 +91,8 @@ export const getAlgorithms = procedure
     // 构建查询条件
     let isPublicQuery: any;
 
-    if (isPlatformOwned) { // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
+    if (isPlatformOwned) {
+      // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
       isPublicQuery = { isPlatformOwned: true };
     } else if (isPublic) {
       isPublicQuery = {
@@ -96,56 +106,62 @@ export const getAlgorithms = procedure
       };
     }
 
-    const [items, count] = await em.findAndCount(Algorithm, {
-      $and:[
-        isPublicQuery,
-        framework ? { framework } : {},
-        clusterId ? { clusterId } : {},
-        nameOrDesc ?
-          { $or: [
-            { name: { $like: `%${nameOrDesc}%` } },
-            { description: { $like: `%${nameOrDesc}%` } },
-          ]} : {},
-      ],
-    },
-    {
-      ...paginationProps(page, pageSize),
-      populate: ["versions.sharedStatus", "versions.privatePath"],
-      orderBy: { createTime: "desc" },
-    });
+    const [items, count] = await em.findAndCount(
+      Algorithm,
+      {
+        $and: [
+          isPublicQuery,
+          framework ? { framework } : {},
+          clusterId ? { clusterId } : {},
+          nameOrDesc
+            ? { $or: [{ name: { $like: `%${nameOrDesc}%` } }, { description: { $like: `%${nameOrDesc}%` } }] }
+            : {},
+        ],
+      },
+      {
+        ...paginationProps(page, pageSize),
+        populate: ["versions.sharedStatus", "versions.privatePath"],
+        orderBy: { createTime: "desc" },
+      },
+    );
 
     const ownerIds = Array.from(new Set(items.map((x) => x.owner)));
 
     let userMap: Record<string, string> = {};
     if (ownerIds.length > 0) {
       const users = await getUsersName(ownerIds);
-      userMap = users.reduce((acc, user) => {
-        acc[user.userId] = user.userName;
-        return acc;
-      }, {} as Record<string, string>);
+      userMap = users.reduce(
+        (acc, user) => {
+          acc[user.userId] = user.userName;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
     }
 
-    return { items: items.map((x) => {
-      return {
-        id:x.id,
-        name:x.name,
-        owner:x.owner,
-        ownerName: userMap[x.owner] ?? x.owner,
-        framework:x.framework,
-        isShared:x.isShared,
-        description:x.description,
-        clusterId:x.clusterId,
-        createTime:x.createTime ? x.createTime.toISOString() : undefined,
-        versions: isPublic ?
-          x.versions.filter((x) => (x.sharedStatus === SharedStatus.SHARED)).map((y) => ({ id: y.id, path: y.path }))
-          : x.versions.map((y) => ({ id: y.id, path: y.privatePath })),
-        versionsCount: x.versions.length,
-        updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
-        isPlatformOwned: x.isPlatformOwned,
-      }; }), count };
-
+    return {
+      items: items.map((x) => {
+        return {
+          id: x.id,
+          name: x.name,
+          owner: x.owner,
+          ownerName: userMap[x.owner] ?? x.owner,
+          framework: x.framework,
+          isShared: x.isShared,
+          description: x.description,
+          clusterId: x.clusterId,
+          createTime: x.createTime ? x.createTime.toISOString() : undefined,
+          versions: isPublic
+            ? x.versions.filter((x) => x.sharedStatus === SharedStatus.SHARED).map((y) => ({ id: y.id, path: y.path }))
+            : x.versions.map((y) => ({ id: y.id, path: y.privatePath })),
+          versionsCount: x.versions.length,
+          updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
+          isPlatformOwned: x.isPlatformOwned,
+        };
+      }),
+      count,
+    };
   });
-
 
 export const createAlgorithm = procedure
   .meta({
@@ -156,15 +172,17 @@ export const createAlgorithm = procedure
       summary: "create a new algorithms",
     },
   })
-  .input(z.object({
-    name: z.string(),
-    framework: z.enum(Framework),
-    clusterId: z.string(),
-    description: z.string().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      name: z.string(),
+      framework: z.enum(Framework),
+      clusterId: z.string(),
+      description: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.number())
-  .use(async ({ input:{ clusterId,name }, ctx, next }) => {
+  .use(async ({ input: { clusterId, name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -175,29 +193,35 @@ export const createAlgorithm = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        clusterId,
-        algorithmId:res.data as number,
-        algorithmName:name,
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            algorithmId: res.data as number,
+            algorithmName: name,
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          algorithmName:name,
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            algorithmName: name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-
     const currentClusterIds = await getCurrentClusters(user.identityId);
 
     if (!clusterExist(input.clusterId, currentClusterIds)) {
@@ -219,9 +243,12 @@ export const createAlgorithm = procedure
     }
 
     const em = await forkEntityManager();
-    const algorithmExist = await em.findOne(Algorithm, isPlatformOwned
-      ? { name: input.name, isPlatformOwned: true }
-      : { name: input.name, owner: user.identityId, isPlatformOwned: false });
+    const algorithmExist = await em.findOne(
+      Algorithm,
+      isPlatformOwned
+        ? { name: input.name, isPlatformOwned: true }
+        : { name: input.name, owner: user.identityId, isPlatformOwned: false },
+    );
 
     if (algorithmExist) {
       throw new TRPCError({
@@ -244,15 +271,17 @@ export const updateAlgorithm = procedure
       summary: "update a algorithm",
     },
   })
-  .input(z.object({
-    id:z.number(),
-    name: z.string(),
-    framework: z.enum(Framework),
-    description: z.string().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      framework: z.enum(Framework),
+      description: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ id }, ctx, next }) => {
+  .use(async ({ input: { id }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -273,28 +302,34 @@ export const updateAlgorithm = procedure
     }
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId:id,
-        algorithmName:algorithm.name,
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            algorithmId: id,
+            algorithmName: algorithm.name,
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          algorithmId:id,
-          algorithmName:algorithm.name,
+          ...logInfo,
+          operationTypePayload: {
+            algorithmId: id,
+            algorithmName: algorithm.name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
   })
-  .mutation(async ({ input:{ name, framework, description, id, isPlatformOwned }, ctx: { user } }) => {
-
+  .mutation(async ({ input: { name, framework, description, id, isPlatformOwned }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const algorithm = await em.findOne(Algorithm, { id });
 
@@ -315,9 +350,10 @@ export const updateAlgorithm = procedure
       }
     }
 
-    const algorithmExist = await em.findOne(Algorithm, isPlatformOwned
-      ? { name, isPlatformOwned: true }
-      : { name, owner: user.identityId, isPlatformOwned: false });
+    const algorithmExist = await em.findOne(
+      Algorithm,
+      isPlatformOwned ? { name, isPlatformOwned: true } : { name, owner: user.identityId, isPlatformOwned: false },
+    );
 
     if (algorithmExist && algorithmExist !== algorithm) {
       throw new TRPCError({
@@ -326,9 +362,8 @@ export const updateAlgorithm = procedure
       });
     }
 
-    if (!isPlatformOwned && (algorithm.owner !== user.identityId)) {
-      const detailMessage =
-        `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage = `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -337,12 +372,10 @@ export const updateAlgorithm = procedure
     }
 
     // 存在正在分享或正在取消分享的算法版本，则不可更新名称
-    const changingVersions = await em.find(AlgorithmVersion, { algorithm,
-      $or: [
-        { sharedStatus: SharedStatus.SHARING },
-        { sharedStatus: SharedStatus.UNSHARING },
-      ]},
-    );
+    const changingVersions = await em.find(AlgorithmVersion, {
+      algorithm,
+      $or: [{ sharedStatus: SharedStatus.SHARING }, { sharedStatus: SharedStatus.UNSHARING }],
+    });
     if (changingVersions.length > 0) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
@@ -352,18 +385,21 @@ export const updateAlgorithm = procedure
 
     // 如果是已分享的个人算法且名称发生变化，则变更共享路径下的此算法名称为新名称
     if (algorithm.isShared && name !== algorithm.name && !isPlatformOwned) {
-
       const sharedVersions = await em.find(AlgorithmVersion, { algorithm, sharedStatus: SharedStatus.SHARED });
       const oldPath = dirname(dirname(sharedVersions[0].path));
 
       // 获取更新后的当前算法的共享路径名称
 
-      const newAlgorithmSharedPath = await driver.withFileDriver({
-        clusterId:algorithm.clusterId,
-        user:user.identityId,
-      }, async (fileDriver) => {
-        return await fileDriver.getUpdatedSharedPath(name,oldPath);
-      }, logger);
+      const newAlgorithmSharedPath = await driver.withFileDriver(
+        {
+          clusterId: algorithm.clusterId,
+          user: user.identityId,
+        },
+        async (fileDriver) => {
+          return await fileDriver.getUpdatedSharedPath(name, oldPath);
+        },
+        logger,
+      );
 
       // 更新已分享的版本的共享文件夹地址
       sharedVersions.map((v) => {
@@ -393,8 +429,7 @@ export const deleteAlgorithm = procedure
   })
   .input(z.object({ id: z.number(), isPlatformOwned: z.boolean().optional() }))
   .output(z.void())
-  .use(async ({ input:{ id }, ctx, next }) => {
-
+  .use(async ({ input: { id }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -415,27 +450,34 @@ export const deleteAlgorithm = procedure
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        algorithmId:id,
-        algorithmName:algorithm.name,
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            algorithmId: id,
+            algorithmName: algorithm.name,
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          algorithmId:id,
-          algorithmName:algorithm.name,
+          ...logInfo,
+          operationTypePayload: {
+            algorithmId: id,
+            algorithmName: algorithm.name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
   })
-  .mutation(async ({ input:{ id, isPlatformOwned = false }, ctx:{ user } }) => {
+  .mutation(async ({ input: { id, isPlatformOwned = false }, ctx: { user } }) => {
     const em = await forkEntityManager();
     const algorithm = await em.findOne(Algorithm, { id });
 
@@ -456,9 +498,8 @@ export const deleteAlgorithm = procedure
       }
     }
 
-    if (!isPlatformOwned && (algorithm.owner !== user.identityId)) {
-      const detailMessage =
-        `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+    if (!isPlatformOwned && algorithm.owner !== user.identityId) {
+      const detailMessage = `Algorithm id:${id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -469,16 +510,18 @@ export const deleteAlgorithm = procedure
     const algorithmVersions = await em.find(AlgorithmVersion, { algorithm });
 
     const sharingVersions = algorithmVersions.filter(
-      (v) => (v.sharedStatus === SharedStatus.SHARING || v.sharedStatus === SharedStatus.UNSHARING));
+      (v) => v.sharedStatus === SharedStatus.SHARING || v.sharedStatus === SharedStatus.UNSHARING,
+    );
 
     // 有正在分享中或取消分享中的版本，则不可删除
     if (sharingVersions.length > 0) {
-      throw new TRPCError(
-        { code: "PRECONDITION_FAILED",
-          message: `There is an algorithm version being shared or unshared of algorithm ${id}` });
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: `There is an algorithm version being shared or unshared of algorithm ${id}`,
+      });
     }
 
-    const sharedVersions = algorithmVersions.filter((v) => (v.sharedStatus === SharedStatus.SHARED));
+    const sharedVersions = algorithmVersions.filter((v) => v.sharedStatus === SharedStatus.SHARED);
 
     // 获取此算法的共享的算法绝对路径
     if (!isPlatformOwned && sharedVersions.length > 0) {
@@ -488,14 +531,20 @@ export const deleteAlgorithm = procedure
       checkClusterAvailable(currentClusterIds, algorithm.clusterId);
 
       const host = getClusterLoginNode(algorithm.clusterId);
-      if (!host) { throw clusterNotFound(algorithm.clusterId); }
+      if (!host) {
+        throw clusterNotFound(algorithm.clusterId);
+      }
 
-      await driver.withFileDriver({
-        clusterId:algorithm.clusterId,
-        user:user.identityId,
-      }, async (fileDriver) => {
-        await fileDriver.unShareFileOrDir(sharedAlgorithmPath);
-      }, logger);
+      await driver.withFileDriver(
+        {
+          clusterId: algorithm.clusterId,
+          user: user.identityId,
+        },
+        async (fileDriver) => {
+          await fileDriver.unShareFileOrDir(sharedAlgorithmPath);
+        },
+        logger,
+      );
     }
 
     await em.removeAndFlush([...algorithmVersions, algorithm]);

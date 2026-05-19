@@ -30,7 +30,6 @@ export const FileMetaSchema = z.object({
 
 export type FileMeta = z.infer<typeof FileMetaSchema>;
 
-
 export const InitMultipartUploadResponseSchema = z.object({
   chunkSizeByte: z.number(),
   fileSizeByte: z.number(),

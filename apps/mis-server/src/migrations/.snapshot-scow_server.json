@@ -126,9 +126,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -200,11 +198,7 @@
           "primary": false,
           "nullable": false,
           "default": "'RUNNING'",
-          "enumItems": [
-            "COMPLETED",
-            "RUNNING",
-            "UNEXECUTED"
-          ],
+          "enumItems": ["COMPLETED", "RUNNING", "UNEXECUTED"],
           "comment": "COMPLETED, RUNNING, UNEXECUTED",
           "mappedType": "enum"
         },
@@ -215,10 +209,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "enumItems": [
-            "SUCCESS",
-            "FAILED"
-          ],
+          "enumItems": ["SUCCESS", "FAILED"],
           "comment": "SUCCESS, FAILED",
           "mappedType": "enum"
         },
@@ -246,9 +237,7 @@
       "name": "account_user_sync_record",
       "indexes": [
         {
-          "columnNames": [
-            "start_time"
-          ],
+          "columnNames": ["start_time"],
           "composite": false,
           "keyName": "start_time",
           "constraint": false,
@@ -256,9 +245,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "sync_status"
-          ],
+          "columnNames": ["sync_status"],
           "composite": false,
           "keyName": "sync_status",
           "constraint": false,
@@ -267,9 +254,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -337,9 +322,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -447,9 +430,7 @@
       "name": "charge_record",
       "indexes": [
         {
-          "columnNames": [
-            "time"
-          ],
+          "columnNames": ["time"],
           "composite": false,
           "keyName": "time",
           "constraint": false,
@@ -457,9 +438,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "tenant_name"
-          ],
+          "columnNames": ["tenant_name"],
           "composite": false,
           "keyName": "charge_record_tenant_name_index",
           "constraint": false,
@@ -467,9 +446,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "account_name"
-          ],
+          "columnNames": ["account_name"],
           "composite": false,
           "keyName": "charge_record_account_name_index",
           "constraint": false,
@@ -477,9 +454,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "charge_record_user_id_index",
           "constraint": false,
@@ -487,9 +462,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "type"
-          ],
+          "columnNames": ["type"],
           "composite": false,
           "keyName": "charge_record_type_index",
           "constraint": false,
@@ -498,12 +471,7 @@
         },
         {
           "keyName": "idx_tenant_time_acc_amt",
-          "columnNames": [
-            "tenant_name",
-            "time",
-            "account_name",
-            "amount"
-          ],
+          "columnNames": ["tenant_name", "time", "account_name", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -511,12 +479,7 @@
         },
         {
           "keyName": "idx_user_time_type_amt",
-          "columnNames": [
-            "user_id",
-            "time",
-            "type",
-            "amount"
-          ],
+          "columnNames": ["user_id", "time", "type", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -524,12 +487,7 @@
         },
         {
           "keyName": "idx_type_time_acc_amt",
-          "columnNames": [
-            "type",
-            "time",
-            "account_name",
-            "amount"
-          ],
+          "columnNames": ["type", "time", "account_name", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -537,12 +495,7 @@
         },
         {
           "keyName": "idx_acc_time_type_amt",
-          "columnNames": [
-            "account_name",
-            "time",
-            "type",
-            "amount"
-          ],
+          "columnNames": ["account_name", "time", "type", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -550,11 +503,7 @@
         },
         {
           "keyName": "static_info",
-          "columnNames": [
-            "time",
-            "account_name",
-            "amount"
-          ],
+          "columnNames": ["time", "account_name", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -562,9 +511,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -605,10 +552,7 @@
           "primary": false,
           "nullable": false,
           "default": "'ACTIVATED'",
-          "enumItems": [
-            "ACTIVATED",
-            "DEACTIVATED"
-          ],
+          "enumItems": ["ACTIVATED", "DEACTIVATED"],
           "comment": "ACTIVATED, DEACTIVATED",
           "mappedType": "enum"
         },
@@ -646,9 +590,7 @@
       "name": "cluster",
       "indexes": [
         {
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "composite": false,
           "keyName": "cluster_cluster_id_unique",
           "constraint": true,
@@ -657,9 +599,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -975,9 +915,7 @@
       "name": "job_info",
       "indexes": [
         {
-          "columnNames": [
-            "id_job"
-          ],
+          "columnNames": ["id_job"],
           "composite": false,
           "keyName": "idJob",
           "constraint": false,
@@ -985,9 +923,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "account"
-          ],
+          "columnNames": ["account"],
           "composite": false,
           "keyName": "account",
           "constraint": false,
@@ -995,9 +931,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "user"
-          ],
+          "columnNames": ["user"],
           "composite": false,
           "keyName": "user",
           "constraint": false,
@@ -1005,9 +939,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "time_submit"
-          ],
+          "columnNames": ["time_submit"],
           "composite": false,
           "keyName": "time_submit",
           "constraint": false,
@@ -1015,9 +947,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "time_start"
-          ],
+          "columnNames": ["time_start"],
           "composite": false,
           "keyName": "time_start",
           "constraint": false,
@@ -1025,9 +955,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "time_end"
-          ],
+          "columnNames": ["time_end"],
           "composite": false,
           "keyName": "time_end",
           "constraint": false,
@@ -1035,9 +963,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "time_used"
-          ],
+          "columnNames": ["time_used"],
           "composite": false,
           "keyName": "time_used",
           "constraint": false,
@@ -1045,9 +971,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "time_wait"
-          ],
+          "columnNames": ["time_wait"],
           "composite": false,
           "keyName": "time_wait",
           "constraint": false,
@@ -1055,9 +979,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "record_time"
-          ],
+          "columnNames": ["record_time"],
           "composite": false,
           "keyName": "record_time",
           "constraint": false,
@@ -1066,9 +988,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "bi_job_index"
-          ],
+          "columnNames": ["bi_job_index"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1169,9 +1089,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1280,11 +1198,7 @@
       "indexes": [
         {
           "keyName": "static_info",
-          "columnNames": [
-            "time",
-            "account_name",
-            "amount"
-          ],
+          "columnNames": ["time", "account_name", "amount"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -1292,9 +1206,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1352,9 +1264,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1474,10 +1384,7 @@
       "indexes": [
         {
           "keyName": "query",
-          "columnNames": [
-            "cluster",
-            "job_id"
-          ],
+          "columnNames": ["cluster", "job_id"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -1485,9 +1392,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1525,9 +1430,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "key"
-          ],
+          "columnNames": ["key"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1599,9 +1502,7 @@
       "name": "tenant",
       "indexes": [
         {
-          "columnNames": [
-            "name"
-          ],
+          "columnNames": ["name"],
           "composite": false,
           "keyName": "tenant_name_unique",
           "constraint": true,
@@ -1610,9 +1511,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1712,9 +1611,7 @@
       "name": "job_price_item",
       "indexes": [
         {
-          "columnNames": [
-            "item_id"
-          ],
+          "columnNames": ["item_id"],
           "composite": false,
           "keyName": "job_price_item_item_id_unique",
           "constraint": true,
@@ -1722,9 +1619,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "job_price_item_tenant_id_index",
           "constraint": false,
@@ -1733,9 +1628,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1746,13 +1639,9 @@
       "foreignKeys": {
         "job_price_item_tenant_id_foreign": {
           "constraintName": "job_price_item_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "job_price_item",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "deleteRule": "set null",
           "updateRule": "cascade"
@@ -1854,12 +1743,7 @@
           "primary": false,
           "nullable": false,
           "default": "'NORMAL'",
-          "enumItems": [
-            "NORMAL",
-            "FROZEN",
-            "BLOCKED_BY_ADMIN",
-            "DELETED"
-          ],
+          "enumItems": ["NORMAL", "FROZEN", "BLOCKED_BY_ADMIN", "DELETED"],
           "comment": "NORMAL, FROZEN, BLOCKED_BY_ADMIN, DELETED",
           "mappedType": "enum"
         },
@@ -1877,9 +1761,7 @@
       "name": "account",
       "indexes": [
         {
-          "columnNames": [
-            "account_name"
-          ],
+          "columnNames": ["account_name"],
           "composite": false,
           "keyName": "account_account_name_unique",
           "constraint": true,
@@ -1887,9 +1769,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "account_tenant_id_index",
           "constraint": false,
@@ -1897,9 +1777,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "whitelist_id"
-          ],
+          "columnNames": ["whitelist_id"],
           "composite": false,
           "keyName": "account_whitelist_id_unique",
           "constraint": true,
@@ -1908,9 +1786,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1921,25 +1797,17 @@
       "foreignKeys": {
         "account_tenant_id_foreign": {
           "constraintName": "account_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "account",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "updateRule": "cascade"
         },
         "account_whitelist_id_foreign": {
           "constraintName": "account_whitelist_id_foreign",
-          "columnNames": [
-            "whitelist_id"
-          ],
+          "columnNames": ["whitelist_id"],
           "localTableName": "account",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "account_whitelist",
           "deleteRule": "set null",
           "updateRule": "cascade"
@@ -2004,9 +1872,7 @@
       "name": "tenant_default_app_removed_list",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "tenant_default_app_removed_list_tenant_id_index",
           "constraint": false,
@@ -2014,9 +1880,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "composite": false,
           "keyName": "tenant_default_app_removed_list_cluster_id_index",
           "constraint": false,
@@ -2025,9 +1889,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2038,25 +1900,17 @@
       "foreignKeys": {
         "tenant_default_app_removed_list_tenant_id_foreign": {
           "constraintName": "tenant_default_app_removed_list_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "tenant_default_app_removed_list",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "updateRule": "cascade"
         },
         "tenant_default_app_removed_list_cluster_id_foreign": {
           "constraintName": "tenant_default_app_removed_list_cluster_id_foreign",
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "localTableName": "tenant_default_app_removed_list",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "cluster",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -2122,9 +1976,7 @@
       "name": "tenant_storage_quota",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "tenant_storage_quota_tenant_id_index",
           "constraint": false,
@@ -2132,9 +1984,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "cluster"
-          ],
+          "columnNames": ["cluster"],
           "composite": false,
           "keyName": "idx_cluster",
           "constraint": false,
@@ -2142,9 +1992,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "path"
-          ],
+          "columnNames": ["path"],
           "composite": false,
           "keyName": "idx_path",
           "constraint": false,
@@ -2153,9 +2001,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2166,13 +2012,9 @@
       "foreignKeys": {
         "tenant_storage_quota_tenant_id_foreign": {
           "constraintName": "tenant_storage_quota_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "tenant_storage_quota",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -2291,10 +2133,7 @@
           "primary": false,
           "nullable": false,
           "length": null,
-          "enumItems": [
-            "TENANT_FINANCE",
-            "TENANT_ADMIN"
-          ],
+          "enumItems": ["TENANT_FINANCE", "TENANT_ADMIN"],
           "comment": "TENANT_FINANCE, TENANT_ADMIN",
           "mappedType": "text"
         },
@@ -2306,10 +2145,7 @@
           "primary": false,
           "nullable": false,
           "length": null,
-          "enumItems": [
-            "PLATFORM_FINANCE",
-            "PLATFORM_ADMIN"
-          ],
+          "enumItems": ["PLATFORM_FINANCE", "PLATFORM_ADMIN"],
           "comment": "PLATFORM_FINANCE, PLATFORM_ADMIN",
           "mappedType": "text"
         },
@@ -2321,10 +2157,7 @@
           "primary": false,
           "nullable": false,
           "default": "'NORMAL'",
-          "enumItems": [
-            "NORMAL",
-            "DELETED"
-          ],
+          "enumItems": ["NORMAL", "DELETED"],
           "comment": "NORMAL, DELETED",
           "mappedType": "enum"
         },
@@ -2342,9 +2175,7 @@
       "name": "user",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "user_tenant_id_index",
           "constraint": false,
@@ -2352,9 +2183,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "user_user_id_unique",
           "constraint": true,
@@ -2363,9 +2192,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2376,13 +2203,9 @@
       "foreignKeys": {
         "user_tenant_id_foreign": {
           "constraintName": "user_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "user",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "updateRule": "cascade"
         }
@@ -2458,9 +2281,7 @@
       "name": "tenant_user_storage_quota",
       "indexes": [
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "tenant_user_storage_quota_user_id_index",
           "constraint": false,
@@ -2468,9 +2289,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "cluster"
-          ],
+          "columnNames": ["cluster"],
           "composite": false,
           "keyName": "idx_cluster",
           "constraint": false,
@@ -2478,9 +2297,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "path"
-          ],
+          "columnNames": ["path"],
           "composite": false,
           "keyName": "idx_path",
           "constraint": false,
@@ -2489,11 +2306,7 @@
         },
         {
           "keyName": "tenant_user_storage_quota_cluster_user_id_path_unique",
-          "columnNames": [
-            "cluster",
-            "user_id",
-            "path"
-          ],
+          "columnNames": ["cluster", "user_id", "path"],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -2501,9 +2314,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2514,13 +2325,9 @@
       "foreignKeys": {
         "tenant_user_storage_quota_user_id_foreign": {
           "constraintName": "tenant_user_storage_quota_user_id_foreign",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "localTableName": "tenant_user_storage_quota",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "user",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -2595,9 +2402,7 @@
       "name": "tenant_app_blacklist",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "composite": false,
           "keyName": "tenant_app_blacklist_tenant_id_index",
           "constraint": false,
@@ -2605,9 +2410,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "composite": false,
           "keyName": "tenant_app_blacklist_cluster_id_index",
           "constraint": false,
@@ -2615,9 +2418,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "operator_id"
-          ],
+          "columnNames": ["operator_id"],
           "composite": false,
           "keyName": "tenant_app_blacklist_operator_id_index",
           "constraint": false,
@@ -2626,9 +2427,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2639,38 +2438,26 @@
       "foreignKeys": {
         "tenant_app_blacklist_tenant_id_foreign": {
           "constraintName": "tenant_app_blacklist_tenant_id_foreign",
-          "columnNames": [
-            "tenant_id"
-          ],
+          "columnNames": ["tenant_id"],
           "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "tenant",
           "updateRule": "cascade"
         },
         "tenant_app_blacklist_cluster_id_foreign": {
           "constraintName": "tenant_app_blacklist_cluster_id_foreign",
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "cluster",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "tenant_app_blacklist_operator_id_foreign": {
           "constraintName": "tenant_app_blacklist_operator_id_foreign",
-          "columnNames": [
-            "operator_id"
-          ],
+          "columnNames": ["operator_id"],
           "localTableName": "tenant_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "user",
           "deleteRule": "set null",
           "updateRule": "cascade"
@@ -2745,9 +2532,7 @@
       "name": "account_app_blacklist",
       "indexes": [
         {
-          "columnNames": [
-            "account_id"
-          ],
+          "columnNames": ["account_id"],
           "composite": false,
           "keyName": "account_app_blacklist_account_id_index",
           "constraint": false,
@@ -2755,9 +2540,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "composite": false,
           "keyName": "account_app_blacklist_cluster_id_index",
           "constraint": false,
@@ -2765,9 +2548,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "operator_id"
-          ],
+          "columnNames": ["operator_id"],
           "composite": false,
           "keyName": "account_app_blacklist_operator_id_index",
           "constraint": false,
@@ -2776,11 +2557,7 @@
         },
         {
           "keyName": "idx_cluster_account_app",
-          "columnNames": [
-            "cluster_id",
-            "account_id",
-            "app_id"
-          ],
+          "columnNames": ["cluster_id", "account_id", "app_id"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -2788,9 +2565,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2801,39 +2576,27 @@
       "foreignKeys": {
         "account_app_blacklist_account_id_foreign": {
           "constraintName": "account_app_blacklist_account_id_foreign",
-          "columnNames": [
-            "account_id"
-          ],
+          "columnNames": ["account_id"],
           "localTableName": "account_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "account",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "account_app_blacklist_cluster_id_foreign": {
           "constraintName": "account_app_blacklist_cluster_id_foreign",
-          "columnNames": [
-            "cluster_id"
-          ],
+          "columnNames": ["cluster_id"],
           "localTableName": "account_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "cluster",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "account_app_blacklist_operator_id_foreign": {
           "constraintName": "account_app_blacklist_operator_id_foreign",
-          "columnNames": [
-            "operator_id"
-          ],
+          "columnNames": ["operator_id"],
           "localTableName": "account_app_blacklist",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "user",
           "deleteRule": "set null",
           "updateRule": "cascade"
@@ -2925,10 +2688,7 @@
           "primary": false,
           "nullable": false,
           "default": "'NORMAL'",
-          "enumItems": [
-            "NORMAL",
-            "BLOCKED_BY_ADMIN"
-          ],
+          "enumItems": ["NORMAL", "BLOCKED_BY_ADMIN"],
           "comment": "NORMAL, BLOCKED_BY_ADMIN",
           "mappedType": "enum"
         }
@@ -2936,9 +2696,7 @@
       "name": "user_account",
       "indexes": [
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "user_account_user_id_index",
           "constraint": false,
@@ -2946,9 +2704,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "account_id"
-          ],
+          "columnNames": ["account_id"],
           "composite": false,
           "keyName": "user_account_account_id_index",
           "constraint": false,
@@ -2957,9 +2713,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -2970,26 +2724,18 @@
       "foreignKeys": {
         "user_account_user_id_foreign": {
           "constraintName": "user_account_user_id_foreign",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "localTableName": "user_account",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "user",
           "deleteRule": "cascade",
           "updateRule": "cascade"
         },
         "user_account_account_id_foreign": {
           "constraintName": "user_account_account_id_foreign",
-          "columnNames": [
-            "account_id"
-          ],
+          "columnNames": ["account_id"],
           "localTableName": "user_account",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "account",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -3121,9 +2867,7 @@
       "name": "user_bill",
       "indexes": [
         {
-          "columnNames": [
-            "account_bill_id"
-          ],
+          "columnNames": ["account_bill_id"],
           "composite": false,
           "keyName": "user_bill_account_bill_id_index",
           "constraint": false,
@@ -3132,9 +2876,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -3145,13 +2887,9 @@
       "foreignKeys": {
         "user_bill_account_bill_id_foreign": {
           "constraintName": "user_bill_account_bill_id_foreign",
-          "columnNames": [
-            "account_bill_id"
-          ],
+          "columnNames": ["account_bill_id"],
           "localTableName": "user_bill",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "account_bill",
           "deleteRule": "cascade",
           "updateRule": "cascade"

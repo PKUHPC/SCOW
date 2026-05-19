@@ -34,11 +34,11 @@ export const GetAccountsSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(GetAccountsSchema, async (req, res) => {
-
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, statusFilter, useForCreateApp, appId } = req.query;
 
@@ -47,25 +47,35 @@ export default route(GetAccountsSchema, async (req, res) => {
   let appForbiddenAccounts: string[] = [];
   // 如果部署了管理系统且开启了授权应用功能
   // 当在创建应用时查询可用账户时，需要过滤掉此应用未授权的账户
-  if (publicConfig.MIS_DEPLOYED &&
+  if (
+    publicConfig.MIS_DEPLOYED &&
     publicConfig.MIS_SERVER_URL &&
     publicConfig.ALLOW_APP_AUTHORIZATION &&
-    useForCreateApp && appId) {
+    useForCreateApp &&
+    appId
+  ) {
     appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
-      cluster, appId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+      cluster,
+      appId,
+      publicConfig.MIS_SERVER_URL,
+      runtimeConfig.SCOW_API_AUTH_TOKEN,
+    );
   }
 
   const result = asyncUnaryCall(client, "listAccounts", {
-    cluster, userId: info.identityId, statusFilter,
-  }).then(({ accounts }) => {
-    const filteredAccounts = accounts.filter((accountName) => !appForbiddenAccounts.includes(accountName));
-    return { 200: { accounts: filteredAccounts } };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: (err) => ({ 404: { code: "ACCOUNT_NOT_FOUND", message: err.details } } as const),
-    [status.INTERNAL]: (err) => ({ 404: { code: "ACCOUNT_NOT_FOUND", message: err.details } } as const),
-  }),
+    cluster,
+    userId: info.identityId,
+    statusFilter,
+  }).then(
+    ({ accounts }) => {
+      const filteredAccounts = accounts.filter((accountName) => !appForbiddenAccounts.includes(accountName));
+      return { 200: { accounts: filteredAccounts } };
+    },
+    handlegRPCError({
+      [status.NOT_FOUND]: (err) => ({ 404: { code: "ACCOUNT_NOT_FOUND", message: err.details } }) as const,
+      [status.INTERNAL]: (err) => ({ 404: { code: "ACCOUNT_NOT_FOUND", message: err.details } }) as const,
+    }),
   );
 
   return result;
-
 });

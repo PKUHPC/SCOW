@@ -10,22 +10,20 @@ import { trpc } from "src/utils/trpc";
 interface Props {
   open: boolean;
   onClose: () => void;
-  appSession: AppSession
-  clusterId: string
+  appSession: AppSession;
+  clusterId: string;
 }
 
 interface FormFields {
-  name: string,
-  tag: string,
-  types?: ImageType[],
-  inferServicePort?: number,
-  startCommand?: string,
-  description?: string,
+  name: string;
+  tag: string;
+  types?: ImageType[];
+  inferServicePort?: number;
+  startCommand?: string;
+  description?: string;
 }
 
-export const SaveImageModal: React.FC<Props> = (
-  { open, onClose, appSession, clusterId },
-) => {
+export const SaveImageModal: React.FC<Props> = ({ open, onClose, appSession, clusterId }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.saveImageModal.");
   const pCreate = prefix("app.image.createEditImageModal.");
@@ -37,13 +35,11 @@ export const SaveImageModal: React.FC<Props> = (
 
   const { message } = App.useApp();
 
-  const { data: jobParams, isLoading: isGetJobParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
-    {
-      clusterId,
-      jobId: appSession.jobId,
-      sessionId: appSession.sessionId,
-    },
-  );
+  const { data: jobParams, isLoading: isGetJobParamsLoading } = trpc.jobs.getCreateAppParams.useQuery({
+    clusterId,
+    jobId: appSession.jobId,
+    sessionId: appSession.sessionId,
+  });
 
   const imageId = jobParams?.image;
   const {
@@ -52,12 +48,12 @@ export const SaveImageModal: React.FC<Props> = (
     error: imageDataError,
   } = trpc.image.getImageById.useQuery(
     {
-      imageId:imageId!,
+      imageId: imageId!,
     },
     {
       // 作业参数获取完且使用的本地镜像
       enabled: !isGetJobParamsLoading && !!imageId,
-      retry:false,
+      retry: false,
       meta: {
         silent: true,
       },
@@ -76,8 +72,7 @@ export const SaveImageModal: React.FC<Props> = (
   });
 
   const handleFinish = async () => {
-
-    const { name, tag, description,types,inferServicePort,startCommand } = await form.validateFields();
+    const { name, tag, description, types, inferServicePort, startCommand } = await form.validateFields();
 
     await saveImageMutation.mutateAsync({
       jobId: appSession.jobId,
@@ -85,9 +80,9 @@ export const SaveImageModal: React.FC<Props> = (
       imageName: name,
       imageTag: tag,
       imageDesc: description?.trim(),
-      imageTypes:types ?? [],
-      imageInferServicePort:inferServicePort?.toString(),
-      imageStartCommand:startCommand,
+      imageTypes: types ?? [],
+      imageInferServicePort: inferServicePort?.toString(),
+      imageStartCommand: startCommand,
     });
   };
 
@@ -108,18 +103,17 @@ export const SaveImageModal: React.FC<Props> = (
         wrapperCol={{ span: 20 }}
         labelCol={{ span: 4 }}
         initialValues={{
-          types:imageData?.types,
+          types: imageData?.types,
           inferServicePort: Number(imageData?.inferServicePort),
           startCommand: jobParams?.startCommand ?? imageData?.startCommand,
         }}
       >
-        <Form.Item label={t(p("originalName"))}>
-          {appSession.image.name}
-        </Form.Item>
+        <Form.Item label={t(p("originalName"))}>{appSession.image.name}</Form.Item>
         <Form.Item
           label={t(p("originalTag"))}
-          help={imageDataError ? t(p("imageTips"),[`${appSession.image.name}:${appSession.image.tag || ""}`])
-            : undefined}
+          help={
+            imageDataError ? t(p("imageTips"), [`${appSession.image.name}:${appSession.image.tag || ""}`]) : undefined
+          }
           validateStatus="error"
         >
           {appSession.image.tag || ""}
@@ -127,36 +121,19 @@ export const SaveImageModal: React.FC<Props> = (
         <Form.Item
           label={t(p("imageName"))}
           name="name"
-          rules={[
-            { required: true },
-            { validator: imageNameValidation },
-          ]}
+          rules={[{ required: true }, { validator: imageNameValidation }]}
         >
           <TrimInput allowClear />
         </Form.Item>
-        <Form.Item
-          label={t(p("imageTag"))}
-          name="tag"
-          rules={[
-            { required: true },
-            { validator: imageTagValidation },
-          ]}
-        >
+        <Form.Item label={t(p("imageTag"))} name="tag" rules={[{ required: true }, { validator: imageTagValidation }]}>
           <TrimInput />
         </Form.Item>
-        <Form.Item
-          label={t(pCreate("type"))}
-          name="types"
-          rules={[
-            { required: true },
-          ]}
-        >
+        <Form.Item label={t(pCreate("type"))} name="types" rules={[{ required: true }]}>
           <Select
             style={{ minWidth: "100px" }}
             mode="multiple"
             allowClear
-            options={
-              Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
+            options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
           />
         </Form.Item>
         {types?.includes(ImageType.INFER) && (
@@ -171,12 +148,7 @@ export const SaveImageModal: React.FC<Props> = (
               },
             ]}
           >
-            <InputNumber
-              min={1}
-              max={65535}
-              style={{ width: "100%" }}
-              {...inputNumberFloorConfig}
-            />
+            <InputNumber min={1} max={65535} style={{ width: "100%" }} {...inputNumberFloorConfig} />
           </Form.Item>
         )}
         <Form.Item label={t(pCreate("startCommand"))} name="startCommand">

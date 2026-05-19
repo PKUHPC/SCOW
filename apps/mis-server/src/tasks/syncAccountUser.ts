@@ -17,10 +17,15 @@ export async function synchronizeAccountUser(
   maxSyncDurationMinutes?: number,
   fetchPlugin?: FetchPlugin,
 ) {
-
-  const sessionId =
-    await startAccountUserSynchronization(em, clusterPlugin.clusters, logger,
-      scowResourcePlugin?.resource, operatorId, maxSyncDurationMinutes, fetchPlugin?.fetch);
+  const sessionId = await startAccountUserSynchronization(
+    em,
+    clusterPlugin.clusters,
+    logger,
+    scowResourcePlugin?.resource,
+    operatorId,
+    maxSyncDurationMinutes,
+    fetchPlugin?.fetch,
+  );
 
   lastSyncTime = new Date();
 

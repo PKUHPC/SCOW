@@ -17,28 +17,24 @@ interface Props {
 export const Footer: React.FC<Props> = ({ text, versionTag }) => {
   return (
     <>
-      {
-        text === "" ? "" : (
-          <>
-            {
-              text === undefined ? (
-                <FooterContainer>
-                  <span>Powered by&nbsp;
-                    <a href="https://www.pkuscow.com" target="_blank">
-                      SCOW {versionTag || ""}
-                    </a>
-                  </span>
-                </FooterContainer>
-              ) : (
-                <FooterContainer
-                  dangerouslySetInnerHTML={{ __html: text }}
-                />
-              )
-            }
-          </>
-        )
-      }
+      {text === "" ? (
+        ""
+      ) : (
+        <>
+          {text === undefined ? (
+            <FooterContainer>
+              <span>
+                Powered by&nbsp;
+                <a href="https://www.pkuscow.com" target="_blank">
+                  SCOW {versionTag || ""}
+                </a>
+              </span>
+            </FooterContainer>
+          ) : (
+            <FooterContainer dangerouslySetInnerHTML={{ __html: text }} />
+          )}
+        </>
+      )}
     </>
   );
 };
-

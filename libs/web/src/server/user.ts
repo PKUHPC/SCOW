@@ -1,6 +1,10 @@
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { ChangeEmailResponse, GetUsersByIdsResponse, QueryIsUserEnabledRootShellResponse,
-  UserServiceClient } from "@scow/protos/build/server/user";
+import {
+  ChangeEmailResponse,
+  GetUsersByIdsResponse,
+  QueryIsUserEnabledRootShellResponse,
+  UserServiceClient,
+} from "@scow/protos/build/server/user";
 import { getClientFn } from "src/utils/api";
 
 export const libWebChangeEmail = async (
@@ -9,7 +13,6 @@ export const libWebChangeEmail = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<ChangeEmailResponse | undefined> => {
-
   // if mis is Deployed
   if (!misServerUrl) {
     console.log("Mis is not deployed, can not get userInfo from mis.");
@@ -36,7 +39,6 @@ export const libQueryIsUserEnabledRootShell = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<QueryIsUserEnabledRootShellResponse> => {
-
   // if mis is Deployed
   if (!misServerUrl) {
     console.log("Mis is not deployed, can not get userInfo from mis.");
@@ -63,7 +65,6 @@ export const libWebGetUsersByIds = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<GetUsersByIdsResponse | undefined> => {
-
   // if mis is Deployed
   if (!misServerUrl) {
     console.log("Mis is not deployed, can not get userInfo from mis.");
@@ -78,7 +79,7 @@ export const libWebGetUsersByIds = async (
   const client = getMisClient(UserServiceClient);
 
   if (!userIds || userIds.length === 0) {
-    return { users: []};
+    return { users: [] };
   }
 
   try {

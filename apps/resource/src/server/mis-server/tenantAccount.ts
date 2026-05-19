@@ -8,9 +8,8 @@ import { getScowClient } from "src/utils/scowClient";
 
 // 获取 scow 数据库中的所有租户信息
 export async function getScowTenants(): Promise<GetTenantsResponse> {
-
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return { names: ["default"]};
+    return { names: ["default"] };
   }
 
   const serverTenantClient = getScowClient(TenantServiceClient);
@@ -21,26 +20,22 @@ export async function getScowTenants(): Promise<GetTenantsResponse> {
   }
 
   return scowTenants;
-
 }
 
 // 获取 scow 数据库中的所有未删除账户的账户信息
 export async function getScowAccounts(tenantName?: string, accountName?: string): Promise<GetAccountsResponse> {
-
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
-    return { results: []};
+    return { results: [] };
   }
 
   const serverAccountClient = getScowClient(AccountServiceClient);
   const scowAccounts = await asyncClientCall(serverAccountClient, "getAccounts", { tenantName, accountName });
   if (!scowAccounts || scowAccounts.results.length === 0) {
     logger.info("Can not find accounts.");
-    return { results: []};
+    return { results: [] };
   }
 
   const filteredAccountsResult = scowAccounts.results.filter((a) => a.state !== Account_AccountState.DELETED);
 
   return { results: filteredAccountsResult };
-
 }
-

@@ -24,9 +24,7 @@ export const AuthCallbackSchema = typeboxRouteSchema({
   },
 });
 
-
 export default route(AuthCallbackSchema, async (req, res) => {
-
   const { token, fromAuth = false } = req.query;
 
   const info = await validateToken(token);
@@ -46,5 +44,4 @@ export default route(AuthCallbackSchema, async (req, res) => {
   } else {
     redirectToAuthLogin(req, res, runtimeConfig.PROTOCOL, publicConfig.BASE_PATH, runtimeConfig.AUTH_EXTERNAL_URL);
   }
-
 });

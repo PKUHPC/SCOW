@@ -1,7 +1,6 @@
 import { Migration } from "@mikro-orm/migrations";
 
 export class Migration20260108084447 extends Migration {
-
   override async up(): Promise<void> {
     this.addSql("alter table `algorithm` add `is_platform_owned` tinyint(1) not null default false;");
 
@@ -29,5 +28,4 @@ export class Migration20260108084447 extends Migration {
 
     this.addSql("alter table `model` drop column `is_platform_owned`;");
   }
-
 }

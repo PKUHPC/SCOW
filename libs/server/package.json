@@ -1,21 +1,21 @@
 {
   "name": "@scow/lib-server",
   "version": "1.5.1",
-  "description": "Server libraries",
   "private": true,
+  "description": "Server libraries",
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
+  "files": [
+    "build",
+    "!**/*.map"
+  ],
   "main": "build/index.js",
   "scripts": {
     "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
     "build": "rimraf build && tsc -p tsconfig.build.json",
     "test": "jest"
   },
-  "files": [
-    "build",
-    "!**/*.map"
-  ],
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@bufbuild/protobuf": "2.10.0",
     "@connectrpc/connect": "2.1.1",

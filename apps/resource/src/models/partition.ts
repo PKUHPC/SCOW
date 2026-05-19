@@ -14,8 +14,8 @@ export enum AssignmentState {
 }
 
 export interface ClusterPartition {
-  clusterId: string,
-  partition: string,
+  clusterId: string;
+  partition: string;
 }
 
 export enum AssignedInfoSortBy {

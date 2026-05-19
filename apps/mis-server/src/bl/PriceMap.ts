@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
@@ -52,7 +40,6 @@ export interface PriceMap {
 type PriceItemsByPath = Record<string, JobPriceItem[]>;
 type TenantSpecificPriceItems = Record<string, PriceItemsByPath>;
 
-
 export async function createPriceMap(
   em: SqlEntityManager<MySqlDriver>,
   clusterPlugin: ClusterPlugin["clusters"],
@@ -60,17 +47,17 @@ export async function createPriceMap(
 ): Promise<PriceMap> {
   // get all billing items
   // order by ASC so that items added later overrides items added before.
-  const billingItems = await em.find(JobPriceItem, {}, {
-    populate: ["tenant"],
-    orderBy: { createTime: "ASC" },
-  });
+  const billingItems = await em.find(
+    JobPriceItem,
+    {},
+    {
+      populate: ["tenant"],
+      orderBy: { createTime: "ASC" },
+    },
+  );
 
-  const {
-    defaultPrices,
-    tenantSpecificPrices,
-    defaultPricesHistory,
-    tenantSpecificPricesHistory,
-  } = getBillingItems(billingItems);
+  const { defaultPrices, tenantSpecificPrices, defaultPricesHistory, tenantSpecificPricesHistory } =
+    getBillingItems(billingItems);
 
   logger.info("Default Price Map: %o", defaultPrices);
   logger.info("Tenant specific prices %o", tenantSpecificPrices);
@@ -82,9 +69,13 @@ export async function createPriceMap(
     pathKey: string,
     submitTime: Date,
   ): JobPriceItem | undefined => {
-    if (!items) { return undefined; }
+    if (!items) {
+      return undefined;
+    }
     const priceHistory = items[pathKey];
-    if (!priceHistory || priceHistory.length === 0) { return undefined; }
+    if (!priceHistory || priceHistory.length === 0) {
+      return undefined;
+    }
     if (!submitTime) {
       return priceHistory[priceHistory.length - 1];
     }
@@ -98,19 +89,22 @@ export async function createPriceMap(
   };
 
   const getPriceItem = (path: [string, string, string], submitTime: Date, tenantName?: string) => {
-
     const [cluster, partition, qos] = path;
     const pathWithQos = [cluster, partition, qos].join(".");
     const pathWithoutQos = [cluster, partition].join(".");
 
     if (tenantName && tenantName in tenantSpecificPricesHistory) {
-      const specific = findPriceItemForPath(tenantSpecificPricesHistory[tenantName], pathWithQos, submitTime) ||
+      const specific =
+        findPriceItemForPath(tenantSpecificPricesHistory[tenantName], pathWithQos, submitTime) ||
         findPriceItemForPath(tenantSpecificPricesHistory[tenantName], pathWithoutQos, submitTime);
 
-      if (specific) { return specific; }
+      if (specific) {
+        return specific;
+      }
     }
 
-    const price = findPriceItemForPath(defaultPricesHistory, pathWithQos, submitTime) ||
+    const price =
+      findPriceItemForPath(defaultPricesHistory, pathWithQos, submitTime) ||
       findPriceItemForPath(defaultPricesHistory, pathWithoutQos, submitTime);
 
     if (!price) {
@@ -119,8 +113,6 @@ export async function createPriceMap(
 
     return price;
   };
-
-
 
   // call for all activated clusters
   const activatedClusters = await getActivatedClusters(em, logger).catch((e) => {
@@ -132,32 +124,32 @@ export async function createPriceMap(
   // partitions info for activated clusters
   const partitionsForClusters: Record<string, Partition[]> = {};
 
-  await Promise.allSettled(Object.keys(activatedClusters).map(async (cluster) => {
-    try {
-      const result = await clusterPlugin.callOnOne(
-        cluster,
-        logger,
-        async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
-      );
-      partitionsForClusters[cluster] = result.partitions;
-    } catch (error) {
-      logger.info(`Can not get cluster's (clusterId: ${cluster}) config info from adapter.`, error);
-    };
-  }));
+  await Promise.allSettled(
+    Object.keys(activatedClusters).map(async (cluster) => {
+      try {
+        const result = await clusterPlugin.callOnOne(
+          cluster,
+          logger,
+          async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
+        );
+        partitionsForClusters[cluster] = result.partitions;
+      } catch (error) {
+        logger.info(`Can not get cluster's (clusterId: ${cluster}) config info from adapter.`, error);
+      }
+    }),
+  );
 
   return {
-
     calculatePrice: (info) => calculateJobPrice(partitionsForClusters, info, getPriceItem, logger),
 
     getMissingDefaultPriceItems: () => {
-
       const missingPaths = [] as string[];
 
       for (const cluster in activatedClusters) {
-
         if (!partitionsForClusters[cluster]) {
           logger.info(
-            `Can not get missing default price items from partitions of cluster (clusterId: ${cluster}) currently.`);
+            `Can not get missing default price items from partitions of cluster (clusterId: ${cluster}) currently.`,
+          );
           continue;
         }
 
@@ -188,7 +180,7 @@ export async function createPriceMap(
     getPriceMap: (tenantName) => {
       return {
         ...defaultPrices,
-        ...(tenantName) ? tenantSpecificPrices[tenantName] : undefined,
+        ...(tenantName ? tenantSpecificPrices[tenantName] : undefined),
       };
     },
 
@@ -239,9 +231,10 @@ export function getBillingItems(items: JobPriceItem[]) {
 }
 
 // 检查用户使用的自定义计费id是否还存在配置文件中，对应的js文件是否能正常加载，如果不能，抛出异常并停止服务
-export function checkCustomAmountStrategy(defaultPrices: Record<string, JobPriceItem>,
-  tenantSpecificPrices: Record<string, Record<string, JobPriceItem>>) {
-
+export function checkCustomAmountStrategy(
+  defaultPrices: Record<string, JobPriceItem>,
+  tenantSpecificPrices: Record<string, Record<string, JobPriceItem>>,
+) {
   let activeCustomAmountStrategyNames: string[] = [];
   const amountStrategies: string[] = Object.values(AmountStrategy);
 

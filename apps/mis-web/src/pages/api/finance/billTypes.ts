@@ -18,7 +18,6 @@ export const GetBillTypesSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(GetBillTypesSchema, async (req, res) => {
-
   await auth(req, res);
   const client = getClient(BillServiceClient);
 

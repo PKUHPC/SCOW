@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 process.env.AUTH_TYPE = "ssh";
 
 import { FastifyInstance } from "fastify";
@@ -37,8 +25,6 @@ afterEach(async () => {
 const callbackUrl = allowedCallbackUrl;
 
 it("test to input a wrong verifyCaptcha", async () => {
-
-
   // login
   const { payload, headers } = createFormData({
     username: username,
@@ -58,7 +44,6 @@ it("test to input a wrong verifyCaptcha", async () => {
 });
 
 it("logs in to the ssh login", async () => {
-
   const { payload, headers } = createFormData({
     username: username,
     password: password,
@@ -80,7 +65,6 @@ it("logs in to the ssh login", async () => {
 });
 
 it("fails to login with wrong credentials", async () => {
-
   const { payload, headers } = createFormData({
     username: username,
     password: password + "a",
@@ -108,10 +92,12 @@ it("gets user info", async () => {
   });
 
   expect(resp.statusCode).toBe(200);
-  expect(resp.json()).toEqual({ user: {
-    identityId: username,
-    name: "Linux User",
-  } });
+  expect(resp.json()).toEqual({
+    user: {
+      identityId: username,
+      name: "Linux User",
+    },
+  });
 });
 
 it("returns 404 if user doesn't exist", async () => {

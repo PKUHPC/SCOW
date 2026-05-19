@@ -1,6 +1,11 @@
 import { I18nObjectType } from "@scow/config/build/i18n";
-import { AdminMessageType, adminMessageTypesMap,
-  CONTENT_FIELD_I18N_MAP, CustomMessageType, Template } from "src/models/notification";
+import {
+  AdminMessageType,
+  adminMessageTypesMap,
+  CONTENT_FIELD_I18N_MAP,
+  CustomMessageType,
+  Template,
+} from "src/models/notification";
 
 import { formatDateTime } from "./datetime";
 import { AnyJson } from "./type";
@@ -23,7 +28,7 @@ enum TemplateLang {
   fr = "fr",
   pt = "pt",
   ru = "ru",
-};
+}
 
 export interface Message {
   id: number;
@@ -39,9 +44,7 @@ export interface Message {
   updatedAt: string;
 }
 
-export const checkAdminMessageTypeExist = (
-  type: string,
-): CustomMessageType | undefined => {
+export const checkAdminMessageTypeExist = (type: string): CustomMessageType | undefined => {
   if (adminMessageTypesMap.has(type as AdminMessageType)) {
     return { type, ...adminMessageTypesMap.get(type as AdminMessageType) } as CustomMessageType;
   }
@@ -50,7 +53,6 @@ export const checkAdminMessageTypeExist = (
 };
 
 export function replaceTemplate(metadata: AnyJson, template: string, templateLang?: TemplateLang): string {
-
   if (!metadata) return "";
 
   return template.replace(/\{__(.*?)__\}/g, (match, p1) => {
@@ -58,7 +60,7 @@ export function replaceTemplate(metadata: AnyJson, template: string, templateLan
     let value: string;
     if (p1 === "time") {
       value = formatDateTime(metadata[p1] as string);
-    // 检查是否是需要国际化的字段
+      // 检查是否是需要国际化的字段
     } else if (CONTENT_FIELD_I18N_MAP[p1] && templateLang) {
       const rawValue = metadata[p1] as string;
       const i18nTemplate = CONTENT_FIELD_I18N_MAP[p1][rawValue];
@@ -73,7 +75,6 @@ export function replaceTemplate(metadata: AnyJson, template: string, templateLan
       const tempLangFiledValue = convertI18nStringToTemplate(fieldValue);
       // 根据语言获取对应翻译，如果没有则使用 default
       value = tempLangFiledValue[templateLang] || tempLangFiledValue.default;
-
     } else {
       // 普通字段，直接取值
       value = metadata[p1] as string;
@@ -112,7 +113,6 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
   if (checkAdminMessageTypeExist(message.messageType.type)) {
     return parseAdminMessage(message);
   } else if (checkTemplateNotUndefined(message)) {
-
     let templateLang: TemplateLang = TemplateLang.default;
     const map: Record<string, TemplateLang> = {
       en: TemplateLang.en,
@@ -129,10 +129,8 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
 
     // 对应语言模板没有设置时采用默认模板
     const messageType = message.messageType;
-    const titleTemplate =
-      messageType.titleTemplate?.[templateLang] || messageType.titleTemplate!.default;
-    const contentTemplate =
-      messageType.contentTemplate?.[templateLang] || messageType.contentTemplate!.default;
+    const titleTemplate = messageType.titleTemplate?.[templateLang] || messageType.titleTemplate!.default;
+    const contentTemplate = messageType.contentTemplate?.[templateLang] || messageType.contentTemplate!.default;
 
     return {
       id: message.id,

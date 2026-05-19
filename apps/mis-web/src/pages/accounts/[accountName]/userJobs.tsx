@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
@@ -23,11 +11,8 @@ import { Head } from "src/utils/head";
 
 const p = prefix("page.accounts.accountName.userJob.");
 
-export const UserJobsPage: NextPage = requireAuth(
-  (i) => i.accountAffiliations.some((x) => x.role !== UserRole.USER),
-)(
+export const UserJobsPage: NextPage = requireAuth((i) => i.accountAffiliations.some((x) => x.role !== UserRole.USER))(
   () => {
-
     const router = useRouter();
     const t = useI18nTranslateToString();
 
@@ -39,12 +24,7 @@ export const UserJobsPage: NextPage = requireAuth(
     return (
       <div>
         <Head title={title} />
-        <PageTitle
-          beforeTitle={(
-            <BackButton href={`/accounts/${accountName}/users`} />
-          )}
-          titleText={title}
-        />
+        <PageTitle beforeTitle={<BackButton href={`/accounts/${accountName}/users`} />} titleText={title} />
         <JobTable
           userId={userId}
           accountNames={accountName}
@@ -55,6 +35,7 @@ export const UserJobsPage: NextPage = requireAuth(
         />
       </div>
     );
-  });
+  },
+);
 
 export default UserJobsPage;

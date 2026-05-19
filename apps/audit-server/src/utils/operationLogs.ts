@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { FilterQuery } from "@mikro-orm/core";
@@ -18,33 +6,31 @@ import {
   CreateOperationLogRequest,
   OperationLog,
   OperationLogFilter,
-  operationResultFromJSON, operationResultToJSON } from "@scow/protos/build/audit/operation_log";
+  operationResultFromJSON,
+  operationResultToJSON,
+} from "@scow/protos/build/audit/operation_log";
 import { OperationLog as OperationLogEntity } from "src/entities/OperationLog";
-
 
 export type OperationEvent = CreateOperationLogRequest["operationEvent"];
 
-export async function filterOperationLogs(
-  {
-    operatorUserIds,
-    operationResult,
-    startTime,
-    endTime,
-    operationType,
-    operationTargetAccountName,
-    operationDetail,
-    customEventType,
-  }: OperationLogFilter,
-) {
-
+export async function filterOperationLogs({
+  operatorUserIds,
+  operationResult,
+  startTime,
+  endTime,
+  operationType,
+  operationTargetAccountName,
+  operationDetail,
+  customEventType,
+}: OperationLogFilter) {
   const sqlFilter: FilterQuery<OperationLogEntity> = {
     ...(operatorUserIds.length > 0 ? { operatorUserId: { $in: operatorUserIds } } : {}),
     $and: [
       ...(startTime ? [{ operationTime: { $gte: startTime } }] : []),
       ...(endTime ? [{ operationTime: { $lte: endTime } }] : []),
-      ...((operationType) ? [{ metaData: { $case: operationType } as OperationEvent }] : []),
-      ...((operationTargetAccountName) ? [{ metaData: { targetAccountName: operationTargetAccountName } }] : []),
-      ...(operationDetail ? [ { metaData: { $like: `%${operationDetail}%` } }] : []),
+      ...(operationType ? [{ metaData: { $case: operationType } as OperationEvent }] : []),
+      ...(operationTargetAccountName ? [{ metaData: { targetAccountName: operationTargetAccountName } }] : []),
+      ...(operationDetail ? [{ metaData: { $like: `%${operationDetail}%` } }] : []),
       ...(customEventType ? [{ customEventType }] : []),
     ],
     ...(operationResult ? { operation_result: operationResultToJSON(operationResult) } : {}),
@@ -59,10 +45,16 @@ export function toGrpcOperationLog(x: OperationLogEntity): OperationLog {
     operatorIp: x.operatorIp,
     operationTime: x.operationTime?.toISOString(),
     operationResult: operationResultFromJSON(x.operationResult),
-    operationEvent: x.metaData?.$case === "customEvent" ? { ...x.metaData, "customEvent": {
-      ... x.metaData.customEvent,
-      type: x.customEventType || "",
-    } } : (x.metaData),
+    operationEvent:
+      x.metaData?.$case === "customEvent"
+        ? {
+            ...x.metaData,
+            customEvent: {
+              ...x.metaData.customEvent,
+              type: x.customEventType || "",
+            },
+          }
+        : x.metaData,
   };
   return grpcOperationLog;
 }
@@ -78,9 +70,9 @@ export const getTargetAccountName = (operationEvent: OperationEvent): string | u
   const operationType = operationEvent?.$case;
   if (operationType === "exportChargeRecord" || operationType === "exportPayRecord") {
     switch (operationEvent[operationType].target.$case) {
-      case "accountOfTenant" :
+      case "accountOfTenant":
         return operationEvent[operationType].target.accountOfTenant.accountName;
-      case "accountsOfTenant" :
+      case "accountsOfTenant":
         return operationEvent[operationType].target.accountsOfTenant.accountNames;
       case "accountsOfAllTenants":
         return operationEvent[operationType].target.accountsOfAllTenants.accountNames;
@@ -94,22 +86,19 @@ export const getTargetAccountName = (operationEvent: OperationEvent): string | u
     }
   } else if (operationType === "exportJobRecord") {
     switch (operationEvent[operationType].target?.$case) {
-      case "jobsOfAccountAndUser" :
+      case "jobsOfAccountAndUser":
         return operationEvent[operationType].target.jobsOfAccountAndUser.accountName;
-      case "jobsOfAccount" :
+      case "jobsOfAccount":
         return operationEvent[operationType].target.jobsOfAccount.accountName;
-      case "jobsOfJobIdAndAccount" :
+      case "jobsOfJobIdAndAccount":
         return operationEvent[operationType].target.jobsOfJobIdAndAccount.accountName;
       default:
         return undefined;
     }
   } else {
-    return (operationEvent && operationType)
-      ? operationEvent[operationType].accountName
-      : undefined;
+    return operationEvent && operationType ? operationEvent[operationType].accountName : undefined;
   }
 };
-
 
 /**
  *
@@ -120,7 +109,6 @@ export const getTargetAccountName = (operationEvent: OperationEvent): string | u
  * 如果是自定义操作类型，检查是否存在相同类型的自定义操作，且其国际化名称对象是否一致
  */
 export const checkCustomEventType = async (em: SqlEntityManager<MySqlDriver>, operationEvent: OperationEvent) => {
-
   if (operationEvent?.$case !== "customEvent") {
     return;
   }
@@ -135,20 +123,21 @@ export const checkCustomEventType = async (em: SqlEntityManager<MySqlDriver>, op
   });
 
   if (
-    !existTypeLog
-    || !existTypeLog.metaData
-    || !existTypeLog.metaData.$case
-    || existTypeLog.metaData.$case !== "customEvent"
-    || !existTypeLog.metaData.customEvent?.name?.i18n
+    !existTypeLog ||
+    !existTypeLog.metaData ||
+    !existTypeLog.metaData.$case ||
+    existTypeLog.metaData.$case !== "customEvent" ||
+    !existTypeLog.metaData.customEvent?.name?.i18n
   ) {
     return;
   }
 
   const existNameI18n = existTypeLog.metaData.customEvent.name.i18n;
 
-  const isNameMatch = existNameI18n.default === nameI18n?.default &&
-  existNameI18n.en === nameI18n?.en &&
-  existNameI18n.zhCn === nameI18n?.zhCn;
+  const isNameMatch =
+    existNameI18n.default === nameI18n?.default &&
+    existNameI18n.en === nameI18n?.en &&
+    existNameI18n.zhCn === nameI18n?.zhCn;
 
   if (!isNameMatch) {
     throw new ServiceError({
@@ -156,7 +145,6 @@ export const checkCustomEventType = async (em: SqlEntityManager<MySqlDriver>, op
       message: "Custom event type name not match with exist type name.",
     });
   }
-
 };
 
 /**
@@ -180,7 +168,7 @@ export const addOperationLogAccountNames = (operationLog: OperationLog): Operati
     return logCopy;
   };
   switch (targetCase) {
-    case "accountsOfTenant" :
+    case "accountsOfTenant":
     case "accountsOfAllTenants":
       return caseObject.accountNames ? operationLog : addLogAccountNames();
     default:

@@ -7,9 +7,7 @@ let orm: MikroORM;
  * Creates the new if one does not exists, then caches it.
  */
 export async function getORM(): Promise<MikroORM> {
-
   if (orm === undefined) {
-
     orm = await MikroORM.init(ormConfigs);
 
     const schemaGenerator = orm.getSchemaGenerator();
@@ -25,4 +23,3 @@ export async function forkEntityManager(): Promise<EntityManager> {
 
   return orm.em.fork();
 }
-

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -40,8 +28,7 @@ export const SetDefaultAccountBlockThresholdSchema = typeboxRouteSchema({
     }),
   },
 });
-export default /* #__PURE__*/route(SetDefaultAccountBlockThresholdSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(SetDefaultAccountBlockThresholdSchema, async (req, res) => {
   const { tenantName, blockThresholdAmount } = req.body;
 
   const auth = authenticate((u) => {
@@ -50,7 +37,9 @@ export default /* #__PURE__*/route(SetDefaultAccountBlockThresholdSchema, async 
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(TenantServiceClient);
 
@@ -58,8 +47,9 @@ export default /* #__PURE__*/route(SetDefaultAccountBlockThresholdSchema, async 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setAccountDefaultBlockThreshold,
-    operationTypePayload:{
-      tenantName, thresholdAmount: numberToMoney(blockThresholdAmount),
+    operationTypePayload: {
+      tenantName,
+      thresholdAmount: numberToMoney(blockThresholdAmount),
     },
   };
 
@@ -69,14 +59,19 @@ export default /* #__PURE__*/route(SetDefaultAccountBlockThresholdSchema, async 
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
-      return { 200: {
-        executed: true,
-      } };
+      return {
+        200: {
+          executed: true,
+        },
+      };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

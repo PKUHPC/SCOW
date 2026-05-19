@@ -1,10 +1,7 @@
 import { join } from "path";
 import { UploadQuery } from "src/app/(auth)/files/upload/route";
 
-export const urlToDownload = (
-  clusterId: string, path: string, download: boolean, basePath: string,
-): string => {
-
+export const urlToDownload = (clusterId: string, path: string, download: boolean, basePath: string): string => {
   const searchParams = new URLSearchParams({
     path: path,
     clusterId,
@@ -21,7 +18,6 @@ export const urlToUpload = (
   originPath?: string,
   chunkIdx?: number,
 ): string => {
-
   const searchParams = new URLSearchParams({
     path: path,
     clusterId,

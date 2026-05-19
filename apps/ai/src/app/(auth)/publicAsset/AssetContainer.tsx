@@ -9,8 +9,8 @@ export const AssetContainer = styled.div`
   max-height: 1200px;
   overflow-y: auto;
 
-.ant-descriptions-item-label {
-  width: 150px !important;
-  display: inline-block;
-}
+  .ant-descriptions-item-label {
+    width: 150px !important;
+    display: inline-block;
+  }
 `;

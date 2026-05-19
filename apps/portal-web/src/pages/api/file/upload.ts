@@ -34,12 +34,13 @@ export const UploadFileSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(UploadFileSchema, async (req, res) => {
-
   const { cluster, path, chunkIdx, chunk, originPath } = req.query;
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const bb = busboy({ headers: req.headers });
 
@@ -49,8 +50,9 @@ export default route(UploadFileSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.uploadFile,
-    operationTypePayload:{
-      clusterId: cluster, path: originPath ? originPath : path,
+    operationTypePayload: {
+      clusterId: cluster,
+      path: originPath ? originPath : path,
     },
   };
 
@@ -62,27 +64,27 @@ export default route(UploadFileSchema, async (req, res) => {
   })) as Parameters<BusboyEvents["file"]>;
 
   return await asyncRequestStreamCall(client, "upload", async ({ writeAsync }, stream) => {
-    await writeAsync({ message: {
-      $case: "info", info: { cluster, path, userId: info.identityId, chunkIdx },
-    } });
+    await writeAsync({
+      message: {
+        $case: "info",
+        info: { cluster, path, userId: info.identityId, chunkIdx },
+      },
+    });
 
-    await pipeline(
-      file,
-      (chunk) => ({ message: { $case: "chunk" as const, chunk } }),
-      stream,
-    ).catch(async (e) => {
+    await pipeline(file, (chunk) => ({ message: { $case: "chunk" as const, chunk } }), stream).catch(async (e) => {
       await callLog(logInfo, OperationResult.FAIL);
       throw new Error("Error when writing stream", { cause: e });
     });
-
-  }).then(async () => {
-    if (!chunk) {
-      await callLog(logInfo, OperationResult.SUCCESS);
-    }
-    return { 204: null };
-  }).finally(() => {
-    bb.end();
-  });
+  })
+    .then(async () => {
+      if (!chunk) {
+        await callLog(logInfo, OperationResult.SUCCESS);
+      }
+      return { 204: null };
+    })
+    .finally(() => {
+      bb.end();
+    });
 });
 
 export const config = {

@@ -3,8 +3,7 @@
 const { envConfig, str, bool } = require("@scow/lib-config");
 const { join } = require("path");
 const { homedir } = require("os");
-const { PHASE_DEVELOPMENT_SERVER,
-  PHASE_PRODUCTION_SERVER, PHASE_TEST } = require("next/constants");
+const { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_SERVER, PHASE_TEST } = require("next/constants");
 
 const { readVersionFile } = require("@scow/utils/build/version");
 const { getCapabilities } = require("@scow/lib-auth");
@@ -19,7 +18,6 @@ const { getAuditConfig } = require("@scow/config/build/audit");
  * @param {string} phase the build phase
  */
 async function queryCapabilities(authUrl, phase) {
-
   if (phase === PHASE_PRODUCTION_SERVER) {
     // @ts-ignore
     return await getCapabilities(authUrl);
@@ -29,7 +27,6 @@ async function queryCapabilities(authUrl, phase) {
 }
 
 const specs = {
-
   AUTH_EXTERNAL_URL: str({ desc: "认证系统的URL。如果和本系统域名相同，可以只写完整路径", default: "/auth" }),
 
   AUTH_INTERNAL_URL: str({ desc: "认证服务内网地址", default: "http://auth:5000" }),
@@ -45,18 +42,30 @@ const specs = {
   MOCK_USER_ID: str({ desc: "开发和测试的时候所使用的user id", default: undefined }),
 
   MIS_DEPLOYED: bool({ desc: "是否部署了管理系统", default: false }),
-  MIS_URL: str({ desc: "如果部署了管理系统，管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署管理系统", default: "" }),
+  MIS_URL: str({
+    desc: "如果部署了管理系统，管理系统的URL。如果和本系统域名相同，可以只写完整的路径。将会覆盖配置文件。空字符串等价于未部署管理系统",
+    default: "",
+  }),
   MIS_SERVER_URL: str({ desc: "如果部署了管理系统，管理系统后端的路径", default: "" }),
 
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
-  AI_URL: str({ desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统", default: "" }),
+  AI_URL: str({
+    desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统",
+    default: "",
+  }),
 
   QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
-  QUANTUM_URL: str({ desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统", default: "" }),
+  QUANTUM_URL: str({
+    desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统",
+    default: "",
+  }),
 
   NOVNC_CLIENT_URL: str({ desc: "novnc客户端的URL。如果和本系统域名相同，可以只写完整路径", default: "/vnc" }),
 
-  CLIENT_MAX_BODY_SIZE: str({ desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值", default: "1G" }),
+  CLIENT_MAX_BODY_SIZE: str({
+    desc: "限制整个系统上传（请求）文件的大小，可接受的格式为nginx的client_max_body_size可接受的值",
+    default: "1G",
+  }),
 
   PUBLIC_PATH: str({ desc: "SCOW公共文件的路径，需已包含SCOW的base path", default: "/public/" }),
 
@@ -77,7 +86,6 @@ const config = { _specs: specs };
  * @returns RuntimeConfig
  */
 const buildRuntimeConfig = async (phase, basePath) => {
-
   // https://github.com/vercel/next.js/issues/57927
   // const building = phase === PHASE_PRODUCTION_BUILD;
   const building = process.env.BUILDING === "1";
@@ -120,7 +128,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     SERVER_URL: config.SERVER_URL,
     SUBMIT_JOB_WORKING_DIR: portalConfig.submitJobDefaultPwd,
     SCOW_API_AUTH_TOKEN: commonConfig.scowApi?.auth?.token,
-    AUDIT_CONFIG : config.AUDIT_DEPLOYED ? auditConfig : undefined,
+    AUDIT_CONFIG: config.AUDIT_DEPLOYED ? auditConfig : undefined,
 
     SERVER_I18N_CONFIG_TEXTS: {
       submitJopPromptText: portalConfig.submitJobPromptText,
@@ -140,7 +148,6 @@ const buildRuntimeConfig = async (phase, basePath) => {
    * @type {import("./src/utils/config").PublicRuntimeConfig}
    */
   const publicRuntimeConfig = {
-
     ENABLE_CHANGE_PASSWORD: capabilities.changePassword,
 
     ENABLE_SHELL: portalConfig.shell,
@@ -149,14 +156,14 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     ENABLE_APPS: portalConfig.apps,
 
-    MIS_URL: config.MIS_DEPLOYED ? (config.MIS_URL || portalConfig.misUrl) : undefined,
+    MIS_URL: config.MIS_DEPLOYED ? config.MIS_URL || portalConfig.misUrl : undefined,
 
     MIS_DEPLOYED: config.MIS_DEPLOYED,
     MIS_SERVER_URL: config.MIS_DEPLOYED ? config.MIS_SERVER_URL : undefined,
 
-    AI_URL: config.AI_DEPLOYED ? (config.AI_URL || portalConfig.aiUrl) : undefined,
+    AI_URL: config.AI_DEPLOYED ? config.AI_URL || portalConfig.aiUrl : undefined,
 
-    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || portalConfig.quantumUrl)  : undefined,
+    QUANTUM_URL: config.QUANTUM_DEPLOYED ? config.QUANTUM_URL || portalConfig.quantumUrl : undefined,
 
     NOVNC_CLIENT_URL: config.NOVNC_CLIENT_URL,
 
@@ -214,13 +221,14 @@ const buildRuntimeConfig = async (phase, basePath) => {
       const url = `http://localhost:${process.env.PORT || 3000}${join(basePath, "/api/setup")}`;
       console.log("Calling setup url to initialize proxy and shell server", url);
 
-      fetch(url).then(async (res) => {
-        console.log("Call completed. Response: ", await res.text());
-      }).catch((e) => {
-        console.error("Error when calling proxy url to initialize ws proxy server", e);
-      });
+      fetch(url)
+        .then(async (res) => {
+          console.log("Call completed. Response: ", await res.text());
+        })
+        .catch((e) => {
+          console.error("Error when calling proxy url to initialize ws proxy server", e);
+        });
     });
-
   }
 
   return {

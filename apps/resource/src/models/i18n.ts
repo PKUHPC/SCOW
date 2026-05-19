@@ -1,7 +1,7 @@
 // languageDic for partitionsManagement
 export const languageDic = {
   zh_cn: {
-    common : {
+    common: {
       tenant: "租户",
       account: "账户",
       accountOwner: "账户拥有者",
@@ -35,7 +35,8 @@ export const languageDic = {
         noTenantDisplayedClusters: "当前暂无可以授权的集群，请确认当前在线集群信息",
         noAccountDisplayedClusters: "当前暂无可以授权的集群，请确认当前在线集群信息以及是否已经在租户下授权了集群信息",
         noTenantDisplayedPartitions: "当前暂无可以授权的分区，请确认当前在线集群信息",
-        noAccountDisplayedPartitions: "当前暂无可以授权的分区，请确认当前在线集群信息以及是否已经在租户下授权了分区信息",
+        noAccountDisplayedPartitions:
+          "当前暂无可以授权的分区，请确认当前在线集群信息以及是否已经在租户下授权了分区信息",
         someClusterPartitionsFailed: "{} 集群分区数据获取失败，请检查集群连接是否正常",
         accountsAssignedInfoFetchFailed: "账户授权集群分区信息获取失败。",
         tenantsAssignedInfoFetchFailed: "租户授权集群分区信息获取失败。",
@@ -67,7 +68,7 @@ export const languageDic = {
         accountOwner: "账户拥有者",
         assignedClustersCount: "已授权集群数",
         assignedClusters: "已授权集群",
-        assignedPartitionsCount:"已授权分区数",
+        assignedPartitionsCount: "已授权分区数",
         assignedPartitions: "已授权分区",
       },
     },
@@ -161,18 +162,22 @@ export const languageDic = {
         assignPartition: "Assign Partition",
         assignedState: "Assigned",
         unAssignedState: "Unassigned",
-        noTenantDisplayedClusters: "There are currently no clusters available for authorization. "
-        + "Please verify the current online cluster information.",
-        noAccountDisplayedClusters: "There are currently no clusters available for authorization. "
-        + "Please verify the current online cluster information and whether any cluster information "
-        + "has already been authorized under the tenant.",
-        noTenantDisplayedPartitions: "There are currently no partitions available for authorization. "
-        + "Please verify the current online cluster information.",
-        noAccountDisplayedPartitions: "There are currently no partitions available for authorization. "
-        + "Please verify the current online cluster information and whether any partition information "
-        + "has already been authorized under the associated tenant.",
-        someClusterPartitionsFailed: "{} partition data retrieval failed. "
-        + "Please check the connectivity of clusters.",
+        noTenantDisplayedClusters:
+          "There are currently no clusters available for authorization. " +
+          "Please verify the current online cluster information.",
+        noAccountDisplayedClusters:
+          "There are currently no clusters available for authorization. " +
+          "Please verify the current online cluster information and whether any cluster information " +
+          "has already been authorized under the tenant.",
+        noTenantDisplayedPartitions:
+          "There are currently no partitions available for authorization. " +
+          "Please verify the current online cluster information.",
+        noAccountDisplayedPartitions:
+          "There are currently no partitions available for authorization. " +
+          "Please verify the current online cluster information and whether any partition information " +
+          "has already been authorized under the associated tenant.",
+        someClusterPartitionsFailed:
+          "{} partition data retrieval failed. " + "Please check the connectivity of clusters.",
         accountsAssignedInfoFetchFailed: "Failed to fetch account assigned cluster partition information.",
         tenantsAssignedInfoFetchFailed: "Failed to fetch tenant assigned cluster partition information.",
       },
@@ -183,10 +188,9 @@ export const languageDic = {
         accountAssignedSuccessMessage: "Successfully assigned account partition",
         accountUnassignedSuccessMessage: "Successfully unassigned account partition",
         assignContent: "Are you sure you want to assign the partition {1} of the cluster {0} to {2}?",
-        unAssignContent: "Are you sure you want to unassign"
-        + " the partition {1} of the cluster {0} from the {2}?",
-        unAssignTenantPartitionExplanation: "After revoking authorization, "
-        + "all accounts under this tenant will be unable to use this partition.",
+        unAssignContent: "Are you sure you want to unassign" + " the partition {1} of the cluster {0} from the {2}?",
+        unAssignTenantPartitionExplanation:
+          "After revoking authorization, " + "all accounts under this tenant will be unable to use this partition.",
       },
       setClusterAssignmentModal: {
         title: "Set Cluster Assignment",
@@ -196,10 +200,10 @@ export const languageDic = {
         accountUnassignedSuccessMessage: "Successfully unassigned account cluster",
         assignContent: "Are you sure you want to assign {1} in the cluster {0}?",
         unAssignContent: "Are you sure you want to unassign the {1} in the cluster {0}?",
-        unAssignTenantClusterExplanation: "After revoking authorization, "
-        + "all partitions of this cluster will be unauthorized for the tenant.",
-        unAssignAccountClusterExplanation: "After revoking authorization, "
-        + "all partitions of this cluster will be unauthorized for the account.",
+        unAssignTenantClusterExplanation:
+          "After revoking authorization, " + "all partitions of this cluster will be unauthorized for the tenant.",
+        unAssignAccountClusterExplanation:
+          "After revoking authorization, " + "all partitions of this cluster will be unauthorized for the account.",
       },
       details: {
         tenantName: "Tenant Name",
@@ -214,60 +218,74 @@ export const languageDic = {
     accountDefaultClusters: {
       title: "Default Assigned Clusters",
       defaultAccountClustersNotFoundError: "Unable to retrieve the default assigned clusters set for the tenant",
-      explanation1: "A default authorized cluster is a cluster group under the tenant that affects all accounts "
-      + "within the tenant, specifically as follows:",
-      explanation2: "When creating a new account, the initial authorized cluster for that account will be the "
-      + "default authorized cluster;",
-      explanation3: "When adding or removing a cluster from the default authorized cluster, the authorized "
-      + "clusters for all accounts will be synchronously added or removed accordingly;",
+      explanation1:
+        "A default authorized cluster is a cluster group under the tenant that affects all accounts " +
+        "within the tenant, specifically as follows:",
+      explanation2:
+        "When creating a new account, the initial authorized cluster for that account will be the " +
+        "default authorized cluster;",
+      explanation3:
+        "When adding or removing a cluster from the default authorized cluster, the authorized " +
+        "clusters for all accounts will be synchronously added or removed accordingly;",
       removeModal: {
         title: "Remove Default Cluster",
-        removeWarn: "After removing the default authorized cluster, all accounts under the tenant will "
-        + "synchronously have their authorization for the cluster and its partitions revoked.",
+        removeWarn:
+          "After removing the default authorized cluster, all accounts under the tenant will " +
+          "synchronously have their authorization for the cluster and its partitions revoked.",
         content: "Are you sure you want to remove cluster {1} from the default assigned clusters of tenant {0}?",
         removedSuccessMessage: "Successfully removed from the default assigned clusters",
-        successExplanation: "The following accounts {} failed to synchronously revoke authorization. "
-        + "Please confirm with the administrator.",
+        successExplanation:
+          "The following accounts {} failed to synchronously revoke authorization. " +
+          "Please confirm with the administrator.",
       },
       addModal: {
         title: "Add Default Cluster",
-        addWarn: "After adding the default authorized cluster, all accounts under the tenant "
-        + "will synchronously be granted authorization for the cluster.",
+        addWarn:
+          "After adding the default authorized cluster, all accounts under the tenant " +
+          "will synchronously be granted authorization for the cluster.",
         successMessage: "Successfully added to the default assigned clusters",
-        successExplanation: "The following accounts {} failed to synchronize authorization. "
-        + "Please confirm with the administrator.",
+        successExplanation:
+          "The following accounts {} failed to synchronize authorization. " + "Please confirm with the administrator.",
       },
-      noDataText: "No clusters are available to add at the moment. "
-      + "Please confirm if the tenant already has authorized clusters.",
+      noDataText:
+        "No clusters are available to add at the moment. " +
+        "Please confirm if the tenant already has authorized clusters.",
     },
     accountDefaultPartitions: {
       title: "Default Assigned Partitions",
       defaultAccountPartitionsNotFoundError: "Unable to retrieve the default assigned partitions set for the tenant",
-      explanation1: "A default authorized partition is a partition group under the tenant that affects all accounts "
-      + "within the tenant, specifically as follows:",
-      explanation2: "When creating a new account, the initial authorized partition for that account will be the "
-      + "default authorized partition;",
-      explanation3: "When adding or removing a partition from the default authorized partition, the authorized "
-      + "partitions for all accounts will be synchronously added or removed accordingly;",
+      explanation1:
+        "A default authorized partition is a partition group under the tenant that affects all accounts " +
+        "within the tenant, specifically as follows:",
+      explanation2:
+        "When creating a new account, the initial authorized partition for that account will be the " +
+        "default authorized partition;",
+      explanation3:
+        "When adding or removing a partition from the default authorized partition, the authorized " +
+        "partitions for all accounts will be synchronously added or removed accordingly;",
       addModal: {
         title: "Add Default Partition",
-        addWarn: "After adding the default authorized partition, all accounts under the tenant will synchronously be "
-        + "granted authorization for the partition and its parent cluster.",
+        addWarn:
+          "After adding the default authorized partition, all accounts under the tenant will synchronously be " +
+          "granted authorization for the partition and its parent cluster.",
         successMessage: "Successfully added to the default assigned partitions",
-        successExplanation: "The following accounts {} failed to synchronize authorization. "
-        + "Please confirm with the administrator.",
+        successExplanation:
+          "The following accounts {} failed to synchronize authorization. " + "Please confirm with the administrator.",
       },
       removeModal: {
         title: "Remove Default Partition",
-        removeWarn: "After removing the default authorized partition, all accounts under the tenant will "
-        + "synchronously have their authorization for the partition revoked.",
+        removeWarn:
+          "After removing the default authorized partition, all accounts under the tenant will " +
+          "synchronously have their authorization for the partition revoked.",
         content: "Are you sure you want to remove partition {1} from the default assigned partitions of tenant {0}?",
         successMessage: "Successfully removed from the tenant's default assigned partitions",
-        successExplanation: "The following accounts {} failed to synchronously revoke authorization. "
-        + "Please confirm with the administrator.",
+        successExplanation:
+          "The following accounts {} failed to synchronously revoke authorization. " +
+          "Please confirm with the administrator.",
       },
-      noDataText: "No partitions are available to add at the moment. "
-      + "Please confirm if the tenant already has authorized partitions.",
+      noDataText:
+        "No partitions are available to add at the moment. " +
+        "Please confirm if the tenant already has authorized partitions.",
     },
     globalMessage: {
       noPartitionsMessage: "Unable to retrieve tenant's assigned partitions. Please refresh and try again",
@@ -276,16 +294,17 @@ export const languageDic = {
       assignedPartitionsNotFoundMessage: "Unable to retrieve assigned partitions. Please refresh and try again",
       totalPartitionsNotFoundMessage: "Unable to retrieve all partitions. Please refresh and try again",
       currentClustersNotFoundError: "Unable to retrieve current online clusters. Please refresh and try again",
-      currentClusterPartitionsNotFoundError: "Unable to retrieve current online clusters and their partitions. "
-      + "Please refresh and try again",
+      currentClusterPartitionsNotFoundError:
+        "Unable to retrieve current online clusters and their partitions. " + "Please refresh and try again",
       clusterNotFoundError: "Cluster not found. Please refresh and try again",
       partitionNotFoundError: "Partition not found. Please refresh and try again",
       tenantNotFound: "Unable to retrieve tenant name. Please refresh and try again",
-      unassignPartitionWithoutAssignedClusterWarn: "Unable to assign partition "
-      + "if the cluster has not been authorized. Please authorize the cluster first.",
+      unassignPartitionWithoutAssignedClusterWarn:
+        "Unable to assign partition " + "if the cluster has not been authorized. Please authorize the cluster first.",
       tenantAssignedClustersNotFound: "Unable to retrieve tenant's assigned clusters. Please refresh and try again",
-      partitionsNotFound: "The partition data for the cluster {} could not be retrieved, and therefore, "
-      + "authorization-related operations for the partition cannot be performed.",
+      partitionsNotFound:
+        "The partition data for the cluster {} could not be retrieved, and therefore, " +
+        "authorization-related operations for the partition cannot be performed.",
     },
   },
 };
@@ -293,5 +312,3 @@ export const languageDic = {
 export type I18nDicType = typeof languageDic.zh_cn;
 
 export const optionalLanguageDic: Record<string, I18nDicType> = {};
-
-

@@ -1,9 +1,10 @@
+import type { RcFile } from "antd/es/upload";
+import type { UploadFile, UploadProps } from "antd/es/upload/interface";
+
 import { DeleteOutlined, InboxOutlined } from "@ant-design/icons";
 import { useUploadSpeedTracker } from "@scow/lib-web/build/utils/fileUpload/uploadSpeedHook";
 import { isFileEntry, PercentAndSpeedContainer } from "@scow/lib-web/build/utils/fileUpload/uploadUtils";
 import { App, Button, Modal, Upload } from "antd";
-import type { RcFile } from "antd/es/upload";
-import type { UploadFile, UploadProps } from "antd/es/upload/interface";
 import pLimit from "p-limit";
 import { dirname, join } from "path";
 import { useEffect, useRef, useState } from "react";
@@ -89,8 +90,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
     // Check if new files are added
     const isNewUpload =
-      previousFileList.length === 0 && currentFileList.length > 0 ||
-      previousFileList.length > 0 && currentFileList.length > previousFileList.length;
+      (previousFileList.length === 0 && currentFileList.length > 0) ||
+      (previousFileList.length > 0 && currentFileList.length > previousFileList.length);
 
     if (isNewUpload) {
       folderOverwriteSetRef.current.clear();
@@ -151,7 +152,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     return checkPromise;
   };
 
-
   /**
    * 确保目录存在，如果不存在则创建它
    * @param folderPath 目录路径
@@ -168,8 +168,9 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         const exists = await checkFolderExists(folderPath);
         if (!exists) {
           try {
-            await api.mkdir({ body: { cluster, path: folderPath } })
-              .httpError(409, () => { })
+            await api
+              .mkdir({ body: { cluster, path: folderPath } })
+              .httpError(409, () => {})
               .httpError(429, () => {
                 message.error(t(pCommon("noSpaceError")));
               });
@@ -231,7 +232,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           if (!folderDeletedSetRef.current.has(folderPath)) {
             let deletePromise = folderDeletePromisesRef.current.get(folderPath);
             if (!deletePromise) {
-              deletePromise = api.deleteDir({ query: { cluster, path: folderPath } })
+              deletePromise = api
+                .deleteDir({ query: { cluster, path: folderPath } })
                 .then(() => {})
                 .catch(() => {
                   message.error(t(p("deleteFolderFailed"), [folderName]));
@@ -316,12 +318,19 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     const folderName = relativePath.split("/").slice(0, -1).join("/");
     const folderPath = join(path, folderName);
 
-    let initData = await api.initMultipartUpload({
-      body: {
-        cluster, path: folderPath, name: file.name,
-        fileSizeByte: file.size, modificationTime: file.lastModified,
-      },
-    }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+    let initData = await api
+      .initMultipartUpload({
+        body: {
+          cluster,
+          path: folderPath,
+          name: file.name,
+          fileSizeByte: file.size,
+          modificationTime: file.lastModified,
+        },
+      })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      });
 
     if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
       await new Promise<void>((resolve, reject) => {
@@ -337,12 +346,19 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
               console.error("Failed to delete .uploading file", e);
             }
 
-            initData = await api.initMultipartUpload({
-              body: {
-                cluster, path: folderPath, name: file.name,
-                fileSizeByte: file.size, modificationTime: file.lastModified,
-              },
-            }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+            initData = await api
+              .initMultipartUpload({
+                body: {
+                  cluster,
+                  path: folderPath,
+                  name: file.name,
+                  fileSizeByte: file.size,
+                  modificationTime: file.lastModified,
+                },
+              })
+              .httpError(429, () => {
+                message.error(t(pCommon("noSpaceError")));
+              });
             resolve();
           },
           onCancel: () => {
@@ -361,14 +377,16 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     let loadedBytes = 0;
     uploadedChunkIndices.forEach((index) => {
       if (index === totalCount) {
-        loadedBytes += (file.size - (totalCount - 1) * chunkSizeByte);
+        loadedBytes += file.size - (totalCount - 1) * chunkSizeByte;
       } else {
         loadedBytes += chunkSizeByte;
       }
     });
 
     const uploadFile = uploadFileListRef.current.find((uploadFile) => uploadFile.uid === file.uid);
-    if (!uploadFile) { return; }
+    if (!uploadFile) {
+      return;
+    }
 
     speedTracker.initFileSpeed(uploadFile.uid, loadedBytes);
 
@@ -382,10 +400,10 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         return prevList.map((uploadFile) => {
           return uploadFile.uid === file.uid
             ? {
-              ...uploadFile,
-              percent: percentage,
-              status: "uploading" as const
-            }
+                ...uploadFile,
+                percent: percentage,
+                status: "uploading" as const,
+              }
             : uploadFile;
         });
       });
@@ -446,7 +464,9 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       if (!controller.signal.aborted) {
         await api
           .completeMultipartUpload({ body: { cluster, path: folderPath, name: file.name } })
-          .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
+          .httpError(429, () => {
+            message.error(t(pCommon("noSpaceError")));
+          })
           .httpError(520, (err) => {
             message.error(t(p("completeUploadErrorText"), [file.name, err?.error]));
           });
@@ -475,7 +495,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       ]}
     >
       <p>
-        {t(p("pathMention"))}<strong>{path}</strong>
+        {t(p("pathMention"))}
+        <strong>{path}</strong>
         {t(p("uploadRemark2"))}
       </p>
       {!scowdEnabled && (
@@ -508,17 +529,24 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           name="file"
           multiple
           withCredentials
-          {...(scowdEnabled ? {
-            customRequest: ({ file, onSuccess, onError, onProgress }) => {
-              const session = uploadSessionRef.current;
-              limit.current(async () => {
-                if (session !== uploadSessionRef.current) { return; }
-                await startMultipartUpload(file as RcFile, onProgress);
-              }).then(onSuccess).catch(onError);
-            },
-          } : {
-            action: async (file) => urlToUpload(cluster, join(path, file.webkitRelativePath)),
-          })}
+          {...(scowdEnabled
+            ? {
+                customRequest: ({ file, onSuccess, onError, onProgress }) => {
+                  const session = uploadSessionRef.current;
+                  limit
+                    .current(async () => {
+                      if (session !== uploadSessionRef.current) {
+                        return;
+                      }
+                      await startMultipartUpload(file as RcFile, onProgress);
+                    })
+                    .then(onSuccess)
+                    .catch(onError);
+                },
+              }
+            : {
+                action: async (file) => urlToUpload(cluster, join(path, file.webkitRelativePath)),
+              })}
           showUploadList={{
             removeIcon: (file) => {
               return file.status === "uploading" ? (
@@ -542,15 +570,16 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
 
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("checking"))
-              : speed?.speedText ?? "0 B/s";
+            const extraInfo = file.percent && file.percent === 100 ? t(p("checking")) : (speed?.speedText ?? "0 B/s");
             return (
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
                 {originNode}
                 <PercentAndSpeedContainer>
                   {file.status === "uploading" && (
-                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                    <span>
+                      {file.percent} % &nbsp;&nbsp; {extraInfo}
+                    </span>
                   )}
                 </PercentAndSpeedContainer>
               </div>

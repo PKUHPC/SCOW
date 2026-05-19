@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -34,38 +22,42 @@ let server: Server;
 let em: SqlEntityManager;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   em = server.ext.orm.em.fork();
 
   const tenant = new Tenant({ name: "test" });
 
-  const createAccount = (index: number) => new Account({
-    accountName: `top${index}`,
-    tenant,
-    blockedInCluster: false,
-    comment: `top${index}`,
-  });
+  const createAccount = (index: number) =>
+    new Account({
+      accountName: `top${index}`,
+      tenant,
+      blockedInCluster: false,
+      comment: `top${index}`,
+    });
 
   const accounts = Array.from({ length: 10 }, (_, i) => createAccount(i + 1));
 
   // 创建关联的USER
-  const createUser = (index: number) => new User({
-    userId:`${index}`,
-    name:`top${index}UserName`,
-    email:`user${index}@foxmail.com`,
-    tenant:tenant,
-  });
+  const createUser = (index: number) =>
+    new User({
+      userId: `${index}`,
+      name: `top${index}UserName`,
+      email: `user${index}@foxmail.com`,
+      tenant: tenant,
+    });
 
   // 创建UserAccount并插入数据库
   const users = accounts.map((_, index) => createUser(index + 1));
-  const userAccounts = users.map((user, index) => new UserAccount({
-    account: accounts[index],
-    user: user,
-    role: UserRole.OWNER,
-    blockedInCluster: UserStatus.UNBLOCKED,
-  }));
+  const userAccounts = users.map(
+    (user, index) =>
+      new UserAccount({
+        account: accounts[index],
+        user: user,
+        role: UserRole.OWNER,
+        blockedInCluster: UserStatus.UNBLOCKED,
+      }),
+  );
 
   const chargeRecords: ChargeRecord[] = [];
   const payRecords: PayRecord[] = [];
@@ -73,7 +65,7 @@ beforeEach(async () => {
 
   accounts.forEach((account, index) => {
     const topNumber = +account.accountName.replace("top", "");
-    const curDate = date.clone().subtract((topNumber - 1), "day");
+    const curDate = date.clone().subtract(topNumber - 1, "day");
     chargeRecords.push(
       new ChargeRecord({
         time: curDate.toDate(),
@@ -86,7 +78,7 @@ beforeEach(async () => {
     );
     payRecords.push(
       new PayRecord({
-        time:  curDate.toDate(),
+        time: curDate.toDate(),
         target: account,
         type: "test",
         comment: "test",
@@ -97,18 +89,15 @@ beforeEach(async () => {
     );
   });
 
-
   await em.persistAndFlush([tenant, ...accounts, ...users, ...userAccounts, ...chargeRecords, ...payRecords]);
 
   await server.start();
-
 });
 
 afterEach(async () => {
   await dropDatabase(server.ext.orm);
   await server.close();
 });
-
 
 it("correct get Top 10 Charge Account", async () => {
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -117,17 +106,19 @@ it("correct get Top 10 Charge Account", async () => {
 
   const tenDaysAgo = today.clone().subtract(9, "day");
 
-  const reply = await asyncClientCall(client, "getTopChargeAccount",
-    { startTime: tenDaysAgo.toISOString(), endTime: today.toISOString(), topRank: 10 });
+  const reply = await asyncClientCall(client, "getTopChargeAccount", {
+    startTime: tenDaysAgo.toISOString(),
+    endTime: today.toISOString(),
+    topRank: 10,
+  });
 
   const results = Array.from({ length: 10 }, (_, i) => ({
     accountName: `top${i + 1}`,
-    userName:`top${i + 1}UserName`,
+    userName: `top${i + 1}UserName`,
     chargedAmount: decimalToMoney(new Decimal(100 * (11 - (i + 1)))),
   }));
 
   expect(reply.results).toMatchObject(results);
-
 });
 
 it("correct get daily Charge Amount in UTC+8 timezone", async () => {
@@ -147,17 +138,14 @@ it("correct get daily Charge Amount in UTC+8 timezone", async () => {
 
   const results = Array.from({ length: 10 }, (_, i) => {
     const curDateInUtcPlus8 = todayInUtcPlus8.subtract(i, "day");
-    return ({
+    return {
       date: dayjsToDateMessage(curDateInUtcPlus8),
       amount: decimalToMoney(new Decimal(100 * (11 - (i + 1)))),
-    });
+    };
   });
 
   expect(reply.results).toMatchObject(results);
-
 });
-
-
 
 it("correct get Top 10 Pay Account", async () => {
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -166,17 +154,19 @@ it("correct get Top 10 Pay Account", async () => {
 
   const tenDaysAgo = today.clone().subtract(9, "day");
 
-  const reply = await asyncClientCall(client, "getTopPayAccount",
-    { startTime: tenDaysAgo.toISOString(), endTime: today.toISOString(), topRank: 10 });
+  const reply = await asyncClientCall(client, "getTopPayAccount", {
+    startTime: tenDaysAgo.toISOString(),
+    endTime: today.toISOString(),
+    topRank: 10,
+  });
 
   const results = Array.from({ length: 10 }, (_, i) => ({
     accountName: `top${i + 1}`,
-    userName:`top${i + 1}UserName`,
+    userName: `top${i + 1}UserName`,
     payAmount: decimalToMoney(new Decimal(100 * (11 - (i + 1)))),
   }));
 
   expect(reply.results).toMatchObject(results);
-
 });
 
 it("correct get daily Pay Amount in UTC+8 timezone", async () => {
@@ -196,13 +186,11 @@ it("correct get daily Pay Amount in UTC+8 timezone", async () => {
 
   const results = Array.from({ length: 10 }, (_, i) => {
     const curDateInUtcPlus8 = todayInUtcPlus8.subtract(i, "day");
-    return ({
+    return {
       date: dayjsToDateMessage(curDateInUtcPlus8),
       amount: decimalToMoney(new Decimal(100 * (11 - (i + 1)))),
-    });
+    };
   });
 
-
   expect(reply.results).toMatchObject(results);
-
 });

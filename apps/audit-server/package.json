@@ -1,8 +1,18 @@
 {
   "name": "@scow/audit-server",
   "version": "2.3.33",
-  "description": "",
   "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
+  "files": [
+    "scripts",
+    "build",
+    ".npmrc",
+    "!**/*.map"
+  ],
   "main": "build/index.js",
   "scripts": {
     "dev": "dotenv -e env/.env.dev -- node -r ts-node/register -r tsconfig-paths/register --watch src/index.ts",
@@ -11,16 +21,6 @@
     "test": "jest",
     "orm": "dotenv -e env/.env.dev -- npx mikro-orm"
   },
-  "files": [
-    "scripts",
-    "build",
-    ".npmrc",
-    "!**/*.map"
-  ],
-  "keywords": [],
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@ddadaal/tsgrpc-client": "0.17.9",
     "@ddadaal/tsgrpc-common": "0.2.7",
@@ -45,14 +45,14 @@
   "devDependencies": {
     "@types/google-protobuf": "3.15.12"
   },
+  "volta": {
+    "extends": "../../package.json"
+  },
   "mikro-orm": {
     "useTsNode": true,
     "configPaths": [
       "./src/mikro-orm.config.ts",
       "./src/mikro-orm.config.js"
     ]
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

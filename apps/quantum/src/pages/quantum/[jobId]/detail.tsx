@@ -5,8 +5,18 @@ import { useRouter } from "next/router";
 import { join } from "path";
 import React, { useMemo, useState } from "react";
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, PieLabelRenderProps, ResponsiveContainer,
-  Tooltip, XAxis, YAxis,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  PieLabelRenderProps,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { Head } from "src/components/head";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -91,7 +101,6 @@ export const JobDetailPage: NextPage = () => {
     return data.task.source;
   }, [data]);
 
-
   const formattedOutputData = useMemo(() => {
     if (!data?.task) {
       return "";
@@ -116,13 +125,14 @@ export const JobDetailPage: NextPage = () => {
     const total = entries.reduce((sum, [, value]) => sum + (typeof value === "number" ? value : 0), 0);
 
     // 生成频率分布
-    return entries.map(([key, value]) => ({
-      name: key,
-      frequency: value / total,
-      value: value / total, // 为PieChart添加value字段
-    })).sort((a, b) => parseInt(a.name, 2) - parseInt(b.name, 2));
+    return entries
+      .map(([key, value]) => ({
+        name: key,
+        frequency: value / total,
+        value: value / total, // 为PieChart添加value字段
+      }))
+      .sort((a, b) => parseInt(a.name, 2) - parseInt(b.name, 2));
   }, [data, formattedOutputData]);
-
 
   const formattedOptimizationData = useMemo(() => {
     // 检查 optimization 是否存在
@@ -134,9 +144,7 @@ export const JobDetailPage: NextPage = () => {
     const optimization = data.task.optimization;
 
     // 1. 查找 lang 为 "tqasm" 的 progs 对象
-    const tqasmProg = optimization.progs?.find((prog) =>
-      prog?.lang?.toLowerCase() === "tqasm",
-    );
+    const tqasmProg = optimization.progs?.find((prog) => prog?.lang?.toLowerCase() === "tqasm");
 
     // 2. 如果找到 tqasm 代码，返回其内容
     if (tqasmProg?.code) {
@@ -177,13 +185,7 @@ export const JobDetailPage: NextPage = () => {
     const numOuterRadius = typeof outerRadius === "string" ? parseFloat(outerRadius) : outerRadius;
 
     // 检查转换后的值是否有效
-    if (
-      isNaN(numCx) ||
-      isNaN(numCy) ||
-      isNaN(numMidAngle) ||
-      isNaN(numInnerRadius) ||
-      isNaN(numOuterRadius)
-    ) {
+    if (isNaN(numCx) || isNaN(numCy) || isNaN(numMidAngle) || isNaN(numInnerRadius) || isNaN(numOuterRadius)) {
       return null;
     }
 
@@ -193,19 +195,11 @@ export const JobDetailPage: NextPage = () => {
     const y = numCy + radius * Math.sin(-numMidAngle * RADIAN);
 
     return (
-      <text
-        x={x}
-        y={y}
-        fill="#333"
-        textAnchor={x > numCx ? "start" : "end"}
-        dominantBaseline="central"
-        fontSize={14}
-      >
+      <text x={x} y={y} fill="#333" textAnchor={x > numCx ? "start" : "end"} dominantBaseline="central" fontSize={14}>
         {name}
       </text>
     );
   };
-
 
   const descriptionItems: DescriptionsProps["items"] = [
     {
@@ -222,9 +216,9 @@ export const JobDetailPage: NextPage = () => {
       key: "3",
       label: t(p("device")),
       children: data?.task?.device
-        ? (data.task.device.includes("?o=")
+        ? data.task.device.includes("?o=")
           ? data.task.device.split("?o=")[0]
-          : data.task.device)
+          : data.task.device
         : EMPTY_STRING,
     },
     {
@@ -306,12 +300,7 @@ export const JobDetailPage: NextPage = () => {
             <Row gutter={16}>
               <Col span={24}>
                 {/* 详细描述区域 */}
-                <Descriptions
-                  column={1}
-                  size="middle"
-                  items={descriptionItems}
-                />
-
+                <Descriptions column={1} size="middle" items={descriptionItems} />
               </Col>
             </Row>
           </Col>
@@ -342,12 +331,7 @@ export const JobDetailPage: NextPage = () => {
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip
-                            formatter={(value: number, name) => [
-                              `${(value * 100).toFixed(2)}%`,
-                              `${name}`,
-                            ]}
-                          />
+                          <Tooltip formatter={(value: number, name) => [`${(value * 100).toFixed(2)}%`, `${name}`]} />
                         </PieChart>
                       </ResponsiveContainer>
                       <CenterLabel>
@@ -409,8 +393,7 @@ export const JobDetailPage: NextPage = () => {
                   ? [{ label: t(p("outputData")), key: "3", children: <pre>{formattedOutputData}</pre> }]
                   : []),
               ]}
-            >
-            </Tabs>
+            ></Tabs>
           </Col>
         </Row>
       </Container>

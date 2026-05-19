@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -23,7 +11,6 @@ let server: Server;
 let data: InitialData;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   const em = server.ext.orm.em.fork();
@@ -31,7 +18,6 @@ beforeEach(async () => {
   data = await insertInitialData(em);
 
   await server.start();
-
 });
 
 afterEach(async () => {
@@ -50,7 +36,7 @@ it("gets tenant info", async () => {
     balance: decimalToMoney(data.tenant.balance),
     defaultAccountBlockThreshold: decimalToMoney(data.tenant.defaultAccountBlockThreshold),
     admins: [data.userA].map((x) => ({ userId: x.userId, userName: x.name })),
-    financialStaff:[],
+    financialStaff: [],
   } as GetTenantInfoResponse);
 });
 

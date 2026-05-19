@@ -33,13 +33,9 @@ export default function Page({
   } = usePublicConfig();
 
   const clusterIdInSearch = searchParams?.get("cluster") || "";
-  const validateClusterIdInSearch =
-    clusterIdInSearch && clusters.find((x) => x.id === clusterIdInSearch);
+  const validateClusterIdInSearch = clusterIdInSearch && clusters.find((x) => x.id === clusterIdInSearch);
 
-  const { defaultCluster, currentClusters } = defaultClusterContext(
-    CLUSTERS,
-    currentAvailableClusterIds ?? [],
-  );
+  const { defaultCluster, currentClusters } = defaultClusterContext(CLUSTERS, currentAvailableClusterIds ?? []);
   const initialClusterId = validateClusterIdInSearch
     ? clusterIdInSearch
     : (defaultCluster?.id ?? currentClusters[0].id);
@@ -83,10 +79,7 @@ export default function Page({
 
   const i18n = useI18n();
 
-  const i18nClusterName = getI18nConfigCurrentText(
-    clusterObj?.name ?? clusterId,
-    i18n.currentLanguage.id,
-  );
+  const i18nClusterName = getI18nConfigCurrentText(clusterObj?.name ?? clusterId, i18n.currentLanguage.id);
 
   useDocumentTitle(`${i18nClusterName} ${t(p("fileManage"))}`);
 

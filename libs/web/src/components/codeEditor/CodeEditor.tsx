@@ -19,7 +19,6 @@ const Container = styled.div`
   border-radius: ${({ theme }) => theme.token.borderRadius};
 `;
 
-
 const extensions = [StreamLanguage.define(shell)];
 
 export const CodeEditor: React.FC<Props> = ({ value, onChange, height = "", placeholder = "", className }) => {
@@ -31,9 +30,12 @@ export const CodeEditor: React.FC<Props> = ({ value, onChange, height = "", plac
         height={height}
         placeholder={placeholder}
         theme={dark ? githubDark : githubLight}
-        onChange={useCallback((value: string) => {
-          onChange?.(value);
-        }, [onChange])}
+        onChange={useCallback(
+          (value: string) => {
+            onChange?.(value);
+          },
+          [onChange],
+        )}
         extensions={extensions}
       />
     </Container>

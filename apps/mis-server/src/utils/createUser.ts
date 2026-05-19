@@ -28,7 +28,13 @@ export async function createUserInDatabase(
 
   // new the user
   const user = new User({
-    email, name, tenant, userId, phone, organization, adminComment,
+    email,
+    name,
+    tenant,
+    userId,
+    phone,
+    organization,
+    adminComment,
   });
 
   try {
@@ -37,7 +43,7 @@ export async function createUserInDatabase(
     if (e instanceof UniqueConstraintViolationException) {
       throw {
         code: Status.ALREADY_EXISTS,
-        message:`User with userId ${userId} already exists.`,
+        message: `User with userId ${userId} already exists.`,
         details: "EXISTS_IN_SCOW",
       } as ServiceError;
     } else {
@@ -55,19 +61,19 @@ export async function insertKeyToNewUser(
 ) {
   // Making an ssh Request to the login node as the user created.
   if (process.env.NODE_ENV === "production") {
+    await Promise.all(
+      Object.values(currentClusters).map(async ({ displayName, loginNodes }) => {
+        const node = getLoginNode(loginNodes[0]);
+        logger.info("Checking if user can login to %s by login node %s", displayName, node.name);
 
-    await Promise.all(Object.values(currentClusters).map(async ({ displayName, loginNodes }) => {
-      const node = getLoginNode(loginNodes[0]);
-      logger.info("Checking if user can login to %s by login node %s", displayName, node.name);
-
-      const error = await insertKeyAsUser(node.address, userId, password, rootKeyPair, logger).catch((e) => e);
-      if (error) {
-        logger
-          .info("user %s cannot login to %s by login node %s. err: %o", userId, displayName, node.name, error);
-        throw error;
-      } else {
-        logger.info("user %s login to %s by login node %s", userId, displayName, node.name);
-      }
-    }));
+        const error = await insertKeyAsUser(node.address, userId, password, rootKeyPair, logger).catch((e) => e);
+        if (error) {
+          logger.info("user %s cannot login to %s by login node %s. err: %o", userId, displayName, node.name, error);
+          throw error;
+        } else {
+          logger.info("user %s login to %s by login node %s", userId, displayName, node.name);
+        }
+      }),
+    );
   }
 }

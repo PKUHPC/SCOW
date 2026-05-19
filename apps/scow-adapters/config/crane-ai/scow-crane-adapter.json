@@ -91,9 +91,7 @@
         "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -217,9 +215,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -307,9 +303,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -388,9 +382,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -494,9 +486,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -583,9 +573,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -669,9 +657,7 @@
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -755,9 +741,7 @@
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -845,9 +829,7 @@
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -932,9 +914,7 @@
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1018,9 +998,7 @@
         "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1221,9 +1199,7 @@
               "id": "byNames",
               "options": {
                 "mode": "exclude",
-                "names": [
-                  "Memory Usage"
-                ],
+                "names": ["Memory Usage"],
                 "prefix": "All except:",
                 "readOnly": true
               }
@@ -1340,9 +1316,7 @@
               "id": "byNames",
               "options": {
                 "mode": "exclude",
-                "names": [
-                  "Goroutines"
-                ],
+                "names": ["Goroutines"],
                 "prefix": "All except:",
                 "readOnly": true
               }
@@ -1457,11 +1431,7 @@
       "id": 4,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "last",
-            "max"
-          ],
+          "calcs": ["mean", "last", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1562,11 +1532,7 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "last",
-            "min"
-          ],
+          "calcs": ["mean", "last", "min"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1660,11 +1626,7 @@
       "id": 6,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "last",
-            "max"
-          ],
+          "calcs": ["mean", "last", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1758,11 +1720,7 @@
       "id": 324,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "last",
-            "max"
-          ],
+          "calcs": ["mean", "last", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1944,11 +1902,7 @@
       "id": 9,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "last",
-            "max"
-          ],
+          "calcs": ["mean", "last", "max"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -2032,9 +1986,7 @@
       "id": 10,
       "options": {
         "legend": {
-          "calcs": [
-            "last"
-          ],
+          "calcs": ["last"],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
@@ -2120,10 +2072,7 @@
     "from": "now-1h",
     "to": "now"
   },
-  "tags": [
-    "SCOW",
-    "适配器监控"
-  ],
+  "tags": ["SCOW", "适配器监控"],
   "timepicker": {},
   "timezone": "",
   "title": "鹤思AI集群适配器",

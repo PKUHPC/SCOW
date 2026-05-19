@@ -11,7 +11,6 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { convertToBytes } from "src/utils/format";
 import { styled } from "styled-components";
 
-
 const StyledTabs = styled(Tabs)`
   .ant-tabs-nav {
     margin: 0 !important;
@@ -21,7 +20,7 @@ const StyledTabs = styled(Tabs)`
 enum Mode {
   EDIT = "EDIT",
   PREVIEW = "PREVIEW",
-};
+}
 
 enum ExitType {
   EXIT_EDIT,
@@ -30,7 +29,9 @@ enum ExitType {
 
 const FullScreenModalStyle = styled.div`
   .ant-modal {
-    transition: width 0.3s ease, height 0.3s ease;
+    transition:
+      width 0.3s ease,
+      height 0.3s ease;
   }
 
   &.fullscreen {
@@ -83,7 +84,6 @@ const DEFAULT_FILE_EDIT_LIMIT_SIZE = "1m";
 const p = prefix("component.fileEditModal.");
 
 function ConfirmModal({ open, saving, onSave, onClose }: ConfirmModalProps) {
-
   const t = useI18nTranslateToString();
 
   const handleSave = async () => {
@@ -110,7 +110,6 @@ function ConfirmModal({ open, saving, onSave, onClose }: ConfirmModalProps) {
 }
 
 const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
-
   const t = useI18nTranslateToString();
 
   return (
@@ -118,7 +117,7 @@ const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
       <div>
         <Space size="small">
           <div>{filename}</div>
-          { isEdit && <Badge status="processing" /> }
+          {isEdit && <Badge status="processing" />}
         </Space>
       </div>
     </Tooltip>
@@ -126,10 +125,8 @@ const FilenameComponent: React.FC<FilenameProps> = ({ isEdit, filename }) => {
 };
 
 export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) => {
-
   const t = useI18nTranslateToString();
   const pCommon = prefix("common.");
-
 
   const { open, filename, fileSize, filePath, clusterId } = previewFile;
 
@@ -245,23 +242,25 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
     await fetch(urlToUpload(clusterId, filePath, publicConfig.BASE_PATH), {
       method: "POST",
       body: formData,
-    }).then(async (response) => {
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const errorCode = errorBody?.code || "Unknown code";
-        return Promise.reject(new Error(errorCode));
-
-      }
-      message.success(t(p("saveFileSuccess")));
-      setIsEdit(false);
-    }).catch((e) => {
-      message.error(t(p("saveFileFail")));
-      if (e.message === "TOO_MANY_REQUESTS") {
-        message.error(t(pCommon("noSpaceError")));
-      }
-    }).finally(() => {
-      setSaving(false);
-    });
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          const errorCode = errorBody?.code || "Unknown code";
+          return Promise.reject(new Error(errorCode));
+        }
+        message.success(t(p("saveFileSuccess")));
+        setIsEdit(false);
+      })
+      .catch((e) => {
+        message.error(t(p("saveFileFail")));
+        if (e.message === "TOO_MANY_REQUESTS") {
+          message.error(t(pCommon("noSpaceError")));
+        }
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 
   const downloadFile = () => {
@@ -337,55 +336,46 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
           onClick={() => setIsFullScreen(!isFullScreen)}
           icon={isFullScreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
         />
-        <Button
-          style={{ color: "#8c8c8c" }}
-          type="text"
-          onClick={handleClose}
-          icon={<CloseOutlined />}
-        />
+        <Button style={{ color: "#8c8c8c" }} type="text" onClick={handleClose} icon={<CloseOutlined />} />
       </div>
-
     </div>
   );
 
   const modalFooterRender = () => {
     const fileEditLimitSize = publicConfig.FILE_EDIT_SIZE || DEFAULT_FILE_EDIT_LIMIT_SIZE;
-    return (
-      mode === Mode.PREVIEW ? (
-        fileSize <= convertToBytes(fileEditLimitSize) && !downloading
-          ? (
-            <Button
-              type="primary"
-              onClick={() => {
-                setMode(Mode.EDIT);
-                setOptions({
-                  ...options,
-                  readOnly: false,
-                });
-              }}
-            >
-              {t(p("edit"))}
-            </Button>
-          )
-          : (
-            <Tooltip
-              title={downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])}
-            >
-              <Button disabled={true}>{t(p("edit"))}</Button>
-            </Tooltip>
-          )
+    return mode === Mode.PREVIEW ? (
+      fileSize <= convertToBytes(fileEditLimitSize) && !downloading ? (
+        <Button
+          type="primary"
+          onClick={() => {
+            setMode(Mode.EDIT);
+            setOptions({
+              ...options,
+              readOnly: false,
+            });
+          }}
+        >
+          {t(p("edit"))}
+        </Button>
       ) : (
-        <Space>
-          <Button type="primary" disabled={!isEdit} loading={saving} onClick={handleSave}>{t(p("save"))}</Button>
-          <Button
-            disabled={saving}
-            onClick={() => {
-              handleExitEditMode();
-            }}
-          >{t(p("exitEdit"))}</Button>
-        </Space>
-
+        <Tooltip title={downloading ? t(p("fileLoading")) : t(p("fileSizeExceeded"), [fileEditLimitSize])}>
+          <Button disabled={true}>{t(p("edit"))}</Button>
+        </Tooltip>
       )
+    ) : (
+      <Space>
+        <Button type="primary" disabled={!isEdit} loading={saving} onClick={handleSave}>
+          {t(p("save"))}
+        </Button>
+        <Button
+          disabled={saving}
+          onClick={() => {
+            handleExitEditMode();
+          }}
+        >
+          {t(p("exitEdit"))}
+        </Button>
+      </Space>
     );
   };
 
@@ -403,33 +393,37 @@ export const FileEditModal: React.FC<Props> = ({ previewFile, setPreviewFile }) 
       >
         <StyledTabs
           type="card"
-          items={[{
-            label: <FilenameComponent isEdit={isEdit} filename={filename} />,
-            key: `${filename}`,
-            children: (
-              <Spin spinning={loading}>
-                <Editor
-                  height={isFullScreen ? "78vh" : "60vh"}
-                  defaultLanguage={getLanguage(filename)}
-                  options={options}
-                  value={fileContent}
-                  onMount={(editor) => { editorRef.current = editor; }}
-                  onChange={(content) => {
-                    if (!downloading) {
-                      handleEdit(content);
-                    }
-                  }}
-                />
-              </Spin>
-            ),
-          }]}
+          items={[
+            {
+              label: <FilenameComponent isEdit={isEdit} filename={filename} />,
+              key: `${filename}`,
+              children: (
+                <Spin spinning={loading}>
+                  <Editor
+                    height={isFullScreen ? "78vh" : "60vh"}
+                    defaultLanguage={getLanguage(filename)}
+                    options={options}
+                    value={fileContent}
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+                    }}
+                    onChange={(content) => {
+                      if (!downloading) {
+                        handleEdit(content);
+                      }
+                    }}
+                  />
+                </Spin>
+              ),
+            },
+          ]}
         />
       </Modal>
       <ConfirmModal
         open={confirm}
         saving={saving}
         onSave={handleSave}
-        onClose={() => exitType === ExitType.CLOSE ? closeProcess() : exitEditModeProcess()}
+        onClose={() => (exitType === ExitType.CLOSE ? closeProcess() : exitEditModeProcess())}
       />
     </FullScreenModalStyle>
   );

@@ -14,49 +14,45 @@ import { DefaultAppsTable } from "src/pageComponents/tenant/DefaultAppsTable";
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-export const DefaultAppsPage: NextPage =
-  requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
+export const DefaultAppsPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
+  if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
+    return <NotFoundPage />;
+  }
 
-    if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
-      return <NotFoundPage />;
+  const t = useI18nTranslateToString();
+
+  const promiseFn = useCallback(async () => {
+    if (publicConfig.SCOW_RESOURCE_ENABLED) {
+      const tenantAssignedClusterPartitions = await api.getTenantAssignedClustersAndPartitions({});
+      return Object.keys(tenantAssignedClusterPartitions.assignedClusterPartitions);
     }
+    return undefined;
+  }, []);
 
-    const t = useI18nTranslateToString();
-
-    const promiseFn = useCallback(async () => {
-      if (publicConfig.SCOW_RESOURCE_ENABLED) {
-        const tenantAssignedClusterPartitions = await api.getTenantAssignedClustersAndPartitions({});
-        return Object.keys(tenantAssignedClusterPartitions.assignedClusterPartitions);
-      }
-      return undefined;
-    }, []);
-
-    const { data: availableClusterIds, isLoading, reload } = useAsync({
-      promiseFn,
-      skip: !publicConfig.SCOW_RESOURCE_ENABLED,
-    });
-
-    if (publicConfig.SCOW_RESOURCE_ENABLED && !isLoading && availableClusterIds?.length === 0) {
-      return <ClusterNotAvailablePage />;
-    }
-
-    return (
-      <div>
-        <Head title={t("page.tenant.permissionManagement.defaultApps.title")} />
-        <PageTitle titleText={t("page.tenant.permissionManagement.defaultApps.title")} />
-        <Space style={{ marginBottom: "20px" }}>
-          <ExclamationCircleOutlined />
-          <span>
-            {t("page.tenant.permissionManagement.defaultApps.explanation")}
-          </span>
-        </Space>
-        <DefaultAppsTable
-          tenantAvailableClusterIds={availableClusterIds}
-          loading={isLoading}
-          reload={reload}
-        />
-      </div>
-    );
+  const {
+    data: availableClusterIds,
+    isLoading,
+    reload,
+  } = useAsync({
+    promiseFn,
+    skip: !publicConfig.SCOW_RESOURCE_ENABLED,
   });
+
+  if (publicConfig.SCOW_RESOURCE_ENABLED && !isLoading && availableClusterIds?.length === 0) {
+    return <ClusterNotAvailablePage />;
+  }
+
+  return (
+    <div>
+      <Head title={t("page.tenant.permissionManagement.defaultApps.title")} />
+      <PageTitle titleText={t("page.tenant.permissionManagement.defaultApps.title")} />
+      <Space style={{ marginBottom: "20px" }}>
+        <ExclamationCircleOutlined />
+        <span>{t("page.tenant.permissionManagement.defaultApps.explanation")}</span>
+      </Space>
+      <DefaultAppsTable tenantAvailableClusterIds={availableClusterIds} loading={isLoading} reload={reload} />
+    </div>
+  );
+});
 
 export default DefaultAppsPage;

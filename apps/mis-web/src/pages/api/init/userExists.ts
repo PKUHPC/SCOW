@@ -23,7 +23,6 @@ export const UserExistsSchema = typeboxRouteSchema({
 });
 
 export default route(UserExistsSchema, async (req) => {
-
   const { identityId } = req.body;
 
   const client = getClient(InitServiceClient);
@@ -32,8 +31,7 @@ export default route(UserExistsSchema, async (req) => {
   });
 
   return {
-    200:
-    {
+    200: {
       existsInScow: result.existsInScow,
       existsInAuth: result.existsInAuth,
     },

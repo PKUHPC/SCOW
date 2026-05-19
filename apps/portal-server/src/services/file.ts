@@ -2,10 +2,7 @@ import { ConnectError } from "@connectrpc/connect";
 import { plugin } from "@ddadaal/tsgrpc-server";
 import { ServiceError, status } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
-import {
-  loggedExec, sftpAppendFile, sftpExists, sftpMkdir,
-  sftpReadFile, sftpRealPath, sshRmrf,
-} from "@scow/lib-ssh";
+import { loggedExec, sftpAppendFile, sftpExists, sftpMkdir, sftpReadFile, sftpRealPath, sshRmrf } from "@scow/lib-ssh";
 import { FileServiceServer, FileServiceService } from "@scow/protos/build/portal/file";
 import path from "path";
 import { getClusterOps } from "src/clusterops";
@@ -18,7 +15,6 @@ import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 import { getClusterLoginNode, getClusterTransferNode, sshConnect } from "src/utils/ssh";
 
 export const fileServiceServer = plugin((server) => {
-
   server.addService<FileServiceServer>(FileServiceService, {
     copy: async ({ request, logger }) => {
       const { userId, cluster, fromPath, toPath } = request;
@@ -38,7 +34,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -53,7 +51,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterInfo = configClusters[cluster];
 
@@ -75,17 +75,19 @@ export const fileServiceServer = plugin((server) => {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
         }
-        throw err; }
+        throw err;
+      }
     },
 
     createFile: async ({ request, logger }) => {
-
       const { userId, cluster, path } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -100,7 +102,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -110,13 +114,14 @@ export const fileServiceServer = plugin((server) => {
     },
 
     deleteFile: async ({ request, logger }) => {
-
       const { userId, cluster, path } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -131,7 +136,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -146,7 +153,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -173,7 +182,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -188,7 +199,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -198,12 +211,17 @@ export const fileServiceServer = plugin((server) => {
     },
 
     download: async (call) => {
-      const { logger, request: { cluster, path, userId } } = call;
+      const {
+        logger,
+        request: { cluster, path, userId },
+      } = call;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const subLogger = logger.child({ userId, path, cluster });
       subLogger.info("Download file started");
@@ -211,16 +229,20 @@ export const fileServiceServer = plugin((server) => {
       const clusterops = getClusterOps(cluster);
 
       await clusterops.file.download({ userId, path, call }, logger);
-
     },
 
     compressAndDownload: async (call) => {
-      const { logger, request: { cluster, paths, userId } } = call;
+      const {
+        logger,
+        request: { cluster, paths, userId },
+      } = call;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterInfo = configClusters[cluster];
 
@@ -250,11 +272,16 @@ export const fileServiceServer = plugin((server) => {
           abortController.abort();
         };
 
-        const readStream = client.file.compressAndDownload({
-          userId, paths, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
-        }, {
-          signal: abortController.signal,
-        });
+        const readStream = client.file.compressAndDownload(
+          {
+            userId,
+            paths,
+            chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+          },
+          {
+            signal: abortController.signal,
+          },
+        );
 
         call.on("close", onCallClose);
         call.on("error", onCallError);
@@ -300,7 +327,8 @@ export const fileServiceServer = plugin((server) => {
                 break; // Exit loop on drain error
               }
             }
-            if (clientDisconnected || call.destroyed) { // Re-check after potential async drain
+            if (clientDisconnected || call.destroyed) {
+              // Re-check after potential async drain
               subLogger.info("compressAndDownload aborted post-write/drain.");
               break;
             }
@@ -346,7 +374,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const logger = call.logger.child({ upload: { userId, path, cluster, host } });
 
@@ -359,7 +389,6 @@ export const fileServiceServer = plugin((server) => {
       const reply = await clusterops.file.upload({ userId, path, chunkIdx, call }, logger);
 
       return [{ ...reply }];
-
     },
 
     decompressFile: async ({ request, logger }) => {
@@ -368,7 +397,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(clusterId);
 
-      if (!host) { throw clusterNotFound(clusterId); }
+      if (!host) {
+        throw clusterNotFound(clusterId);
+      }
 
       const subLogger = logger.child({ userId, clusterId, filePath, decompressionPath });
       subLogger.info("Decompress file started");
@@ -378,17 +409,17 @@ export const fileServiceServer = plugin((server) => {
       await clusterops.file.decompressFile({ userId, filePath, decompressionPath }, logger);
 
       return [{}];
-
     },
 
     initMultipartUpload: async ({ request }) => {
-
       const { cluster, userId, path, name, fileSizeByte, modificationTime } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterInfo = configClusters[cluster];
 
@@ -403,17 +434,22 @@ export const fileServiceServer = plugin((server) => {
 
       try {
         const initData = await client.file.initMultipartUpload({
-          userId, path, name, fileSizeByte: BigInt(fileSizeByte), modificationTime: BigInt(modificationTime),
+          userId,
+          path,
+          name,
+          fileSizeByte: BigInt(fileSizeByte),
+          modificationTime: BigInt(modificationTime),
         });
 
-        return [{
-          ...initData,
-          chunkSizeByte: Number(initData.chunkSizeByte),
-          fileSizeByte: Number(initData.fileSizeByte),
-          modificationTime: Number(initData.modificationTime),
-          uploadedIndices: initData.uploadedIndices.map((i) => Number(i)),
-        }];
-
+        return [
+          {
+            ...initData,
+            chunkSizeByte: Number(initData.chunkSizeByte),
+            fileSizeByte: Number(initData.fileSizeByte),
+            modificationTime: Number(initData.modificationTime),
+            uploadedIndices: initData.uploadedIndices.map((i) => Number(i)),
+          },
+        ];
       } catch (err) {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -423,13 +459,14 @@ export const fileServiceServer = plugin((server) => {
     },
 
     completeMultipartUpload: async ({ request }) => {
-
       const { userId, cluster, path, name } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterInfo = configClusters[cluster];
 
@@ -445,7 +482,6 @@ export const fileServiceServer = plugin((server) => {
       try {
         await client.file.completeMultipartUpload({ userId, path, name });
         return [{}];
-
       } catch (err) {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -460,16 +496,20 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
       const reply = await clusterops.file.getFileMetadata({ userId, path }, logger);
 
-      return [{
-        ...reply,
-        type: reply.type === FileType.DIR ? "dir" : reply.type === FileType.SYMLINK ? "symlink" : "file",
-      }];
+      return [
+        {
+          ...reply,
+          type: reply.type === FileType.DIR ? "dir" : reply.type === FileType.SYMLINK ? "symlink" : "file",
+        },
+      ];
     },
 
     exists: async ({ request, logger }) => {
@@ -478,7 +518,9 @@ export const fileServiceServer = plugin((server) => {
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
       const clusterops = getClusterOps(cluster);
 
@@ -488,20 +530,26 @@ export const fileServiceServer = plugin((server) => {
     },
 
     startFileTransfer: async ({ request, logger }) => {
-
       const { fromCluster, toCluster, userId, fromPath, toPath } = request;
-      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster]});
+      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster] });
 
       const clusterops = getClusterOps(fromCluster);
 
-      await clusterops.file.startFileTransfer({
-        userId, fromCluster, toCluster, fromPath, toPath }, logger);
+      await clusterops.file.startFileTransfer(
+        {
+          userId,
+          fromCluster,
+          toCluster,
+          fromPath,
+          toPath,
+        },
+        logger,
+      );
 
       return [{}];
     },
 
     queryFileTransfer: async ({ request, logger }) => {
-
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -514,24 +562,31 @@ export const fileServiceServer = plugin((server) => {
 
     terminateFileTransfer: async ({ request, logger }) => {
       const { fromCluster, toCluster, userId, fromPath } = request;
-      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster]});
+      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster] });
 
       const clusterops = getClusterOps(fromCluster);
 
-      await clusterops.file.terminateFileTransfer({
-        userId, fromCluster, toCluster, fromPath,
-      }, logger);
+      await clusterops.file.terminateFileTransfer(
+        {
+          userId,
+          fromCluster,
+          toCluster,
+          fromPath,
+        },
+        logger,
+      );
 
       return [{}];
     },
 
     checkTransferKey: async ({ request, logger }) => {
-
       const { fromCluster, toCluster, userId } = request;
 
       const host = getClusterLoginNode(fromCluster);
 
-      if (!host) { throw clusterNotFound(fromCluster); }
+      if (!host) {
+        throw clusterNotFound(fromCluster);
+      }
 
       const clusterInfo = configClusters[fromCluster];
 
@@ -542,7 +597,7 @@ export const fileServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster]});
+      await checkActivatedClusters({ clusterIds: [fromCluster, toCluster] });
 
       const fromTransferNodeAddress = getClusterTransferNode(fromCluster).address;
 
@@ -554,7 +609,10 @@ export const fileServiceServer = plugin((server) => {
 
       // 检查fromTransferNode -> toTransferNode是否已经免密
       const { keyConfigured, scowDir, keyDir, privateKeyPath } = await sshConnect(
-        fromTransferNodeAddress, userId, logger, async (ssh) => {
+        fromTransferNodeAddress,
+        userId,
+        logger,
+        async (ssh) => {
           // 获取密钥路径
           const sftp = await ssh.requestSFTP();
           const homePath = await sftpRealPath(sftp)(".");
@@ -564,10 +622,14 @@ export const fileServiceServer = plugin((server) => {
 
           const cmd = "scow-sync-start";
           const args = [
-            "-a", toTransferNodeHost,
-            "-u", userId,
-            "-p", toTransferNodePort.toString(),
-            "-k", privateKeyPath,
+            "-a",
+            toTransferNodeHost,
+            "-u",
+            userId,
+            "-p",
+            toTransferNodePort.toString(),
+            "-k",
+            privateKeyPath,
             "-c", // -c,--check参数检查是否免密，并stdout返回true/false
           ];
 
@@ -589,7 +651,8 @@ export const fileServiceServer = plugin((server) => {
             keyDir: keyDir,
             privateKeyPath: privateKeyPath,
           };
-        });
+        },
+      );
 
       // 如果没有配置免密，则生成密钥并配置免密
       if (!keyConfigured) {
@@ -597,7 +660,7 @@ export const fileServiceServer = plugin((server) => {
         const publicKey = await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
           const sftp = await ssh.requestSFTP();
 
-          if (!await sftpExists(sftp, scowDir)) {
+          if (!(await sftpExists(sftp, scowDir))) {
             await sftpMkdir(sftp)(scowDir);
           }
           if (await sftpExists(sftp, keyDir)) {
@@ -605,14 +668,9 @@ export const fileServiceServer = plugin((server) => {
           }
           await sftpMkdir(sftp)(keyDir);
 
-          const genKeyArgs = [
-            "-t", "rsa",
-            "-b", "4096",
-            "-C", "for scow-sync",
-            "-f", privateKeyPath,
-          ];
+          const genKeyArgs = ["-t", "rsa", "-b", "4096", "-C", "for scow-sync", "-f", privateKeyPath];
 
-          const genKeyCmd = "ssh-keygen -N \"\"";
+          const genKeyCmd = 'ssh-keygen -N ""';
           await loggedExec(ssh, logger, true, genKeyCmd, genKeyArgs);
 
           // 读公钥
@@ -632,16 +690,18 @@ export const fileServiceServer = plugin((server) => {
         // 尽管copy了公钥，但第一次ssh连接时，会默认需要输入“yes”。以避免潜在的中间人攻击，但是这导致无法自动化，所以这里需要以非交互的方式ssh短连接一次。
         await sshConnect(fromTransferNodeAddress, userId, logger, async (ssh) => {
           const firstSshArgs = [
-            "-i", privateKeyPath,
-            "-o", "StrictHostKeyChecking=no",
-            "-p", toTransferNodePort.toString(),
+            "-i",
+            privateKeyPath,
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-p",
+            toTransferNodePort.toString(),
             toTransferNodeHost,
             ":",
           ];
           const firstSshCmd = "ssh";
           await loggedExec(ssh, logger, true, firstSshCmd, firstSshArgs);
         });
-
       }
       return [{}];
     },

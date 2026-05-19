@@ -17,11 +17,11 @@ export type PlatformRole = ValueOf<typeof PlatformRole>;
 export interface UserInfo {
   identityId: string;
   name?: string;
-  phone?: string,
-  email?: string,
-  tenantName?: string,
-  organization?: string,
+  phone?: string;
+  email?: string;
+  tenantName?: string;
+  organization?: string;
   tenantRoles?: TenantRole[];
   platformRoles?: PlatformRole[];
-  createTime?: string,
+  createTime?: string;
 }

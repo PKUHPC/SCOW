@@ -19,7 +19,6 @@ const p = prefix("pageComp.admin.ImportUsersTable.");
 const pCommon = prefix("common.");
 
 export const ImportUsersTable: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const { message, modal } = App.useApp();
@@ -33,9 +32,7 @@ export const ImportUsersTable: React.FC = () => {
   }
 
   const clusterParam = queryToString(qs.cluster);
-  const cluster = (activatedClusters[clusterParam]
-    ? activatedClusters[clusterParam]
-    : defaultCluster);
+  const cluster = activatedClusters[clusterParam] ? activatedClusters[clusterParam] : defaultCluster;
 
   if (!cluster) {
     return <ClusterNotAvailablePage />;
@@ -46,10 +43,12 @@ export const ImportUsersTable: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const promiseFn = useCallback(async () => {
-    return await api.getClusterUsers({ query: {
-      cluster: cluster.id,
-    },
-    })
+    return await api
+      .getClusterUsers({
+        query: {
+          cluster: cluster.id,
+        },
+      })
       .httpError(409, (e) => {
         if (e.code === "FAILED_PRECONDITION" || e.code === "UNIMPLEMENTED") {
           modal.error({
@@ -64,8 +63,10 @@ export const ImportUsersTable: React.FC = () => {
         accounts: data?.accounts?.map((account) => ({
           // 如果账户未导入，维持指定一个拥有者的逻辑确保导入用户时选择默认拥有者提交有效
           // 如果账户已导入，则获取数据库中的拥有者数据，如因特殊原因导致已没有拥有者，则显示“-”
-          owner: account.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING
-            ? account.users[0]?.userId : (account.owner ?? "-"),
+          owner:
+            account.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING
+              ? account.users[0]?.userId
+              : (account.owner ?? "-"),
           ...account,
         })),
       }));
@@ -84,7 +85,6 @@ export const ImportUsersTable: React.FC = () => {
 
   return (
     <div>
-
       <Form
         form={form}
         onFinish={async () => {
@@ -103,29 +103,37 @@ export const ImportUsersTable: React.FC = () => {
             return;
           }
 
-          if (!importData.every((account) =>
-            account.importStatus !== ClusterAccountInfo_ImportStatus.NOT_EXISTING ||
-            account.owner,
-          )) {
+          if (
+            !importData.every(
+              (account) => account.importStatus !== ClusterAccountInfo_ImportStatus.NOT_EXISTING || account.owner,
+            )
+          ) {
             message.error(t(p("specifyOwner")));
             setLoading(false);
             return;
           }
 
-          await api.importUsers({ body: {
-            data: {
-              accounts: importData?.map((x) => ({
-                accountName: x.accountName,
-                users: x.users,
-                // 导入时如果在SCOW中不存在的账户，必须指定owner
-                owner: x.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING ? x.owner! : undefined,
-                blocked: x.blocked,
-              })),
-            } as ImportUsersData,
-            whitelist,
-          } })
-            .httpError(400, () => { message.error(t(p("incorrectFormat"))); })
-            .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
+          await api
+            .importUsers({
+              body: {
+                data: {
+                  accounts: importData?.map((x) => ({
+                    accountName: x.accountName,
+                    users: x.users,
+                    // 导入时如果在SCOW中不存在的账户，必须指定owner
+                    owner: x.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING ? x.owner! : undefined,
+                    blocked: x.blocked,
+                  })),
+                } as ImportUsersData,
+                whitelist,
+              },
+            })
+            .httpError(400, () => {
+              message.error(t(p("incorrectFormat")));
+            })
+            .httpError(409, () => {
+              message.error(t("common.accountUserSyncRunning"));
+            })
             .then(() => {
               setSelectedAccounts([]);
               message.success(t(p("importSuccess")));
@@ -153,9 +161,7 @@ export const ImportUsersTable: React.FC = () => {
             <Button type="primary" htmlType="submit" loading={loading}>
               {t(pCommon("import"))}
             </Button>
-            <a onClick={reload}>
-              {t(pCommon("fresh"))}
-            </a>
+            <a onClick={reload}>{t(pCommon("fresh"))}</a>
           </Space>
         </FilterFormContainer>
         <Table
@@ -179,7 +185,7 @@ export const ImportUsersTable: React.FC = () => {
           }}
           loading={isLoading}
           dataSource={data?.accounts}
-          scroll={{ x:true }}
+          scroll={{ x: true }}
           pagination={{
             showSizeChanger: true,
             defaultPageSize: DEFAULT_PAGE_SIZE,
@@ -196,24 +202,25 @@ export const ImportUsersTable: React.FC = () => {
             dataIndex="owner"
             title={t(pCommon("owner"))}
             render={(_, r) => {
-              return r.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING
-                ? selectedAccounts?.includes(r)
-                  ? (
-                    // 管理系统导入账户时, 在没有拥有者的情况下账户拥有者默认选择账户的第一个用户
-                    <Select
-                      defaultValue={r.owner || r.users[0]?.userId}
-                      options={r.users.map((user) => ({ value: user.userId, label: user.userId }))}
-                      style={{ width: "100%" }}
-                      placeholder={t(p("selectOwner"))}
-                      onChange={(value) => {
-                        r.owner = value;
-                      }}
-                    />
-                  )
-                  : ""
-                : r.owner;
-            }
-            }
+              return r.importStatus === ClusterAccountInfo_ImportStatus.NOT_EXISTING ? (
+                selectedAccounts?.includes(r) ? (
+                  // 管理系统导入账户时, 在没有拥有者的情况下账户拥有者默认选择账户的第一个用户
+                  <Select
+                    defaultValue={r.owner || r.users[0]?.userId}
+                    options={r.users.map((user) => ({ value: user.userId, label: user.userId }))}
+                    style={{ width: "100%" }}
+                    placeholder={t(p("selectOwner"))}
+                    onChange={(value) => {
+                      r.owner = value;
+                    }}
+                  />
+                ) : (
+                  ""
+                )
+              ) : (
+                r.owner
+              );
+            }}
           />
           <Table.Column<ClusterAccountInfo>
             dataIndex="importStatus"
@@ -232,9 +239,7 @@ export const ImportUsersTable: React.FC = () => {
           <Table.Column<ClusterAccountInfo>
             dataIndex="users"
             title={t(p("userList"))}
-            render={(_, r) => (
-              <a onClick={() => setusersList(r.users)}>{t("common.view")}</a>
-            )}
+            render={(_, r) => <a onClick={() => setusersList(r.users)}>{t("common.view")}</a>}
           />
         </Table>
 
@@ -244,9 +249,7 @@ export const ImportUsersTable: React.FC = () => {
           open={usersList !== undefined}
           title={t(p("userList"))}
         >
-          <Table
-            dataSource={usersList}
-          >
+          <Table dataSource={usersList}>
             <Table.Column dataIndex="userId" title={t(pCommon("userId"))} />
           </Table>
         </Drawer>

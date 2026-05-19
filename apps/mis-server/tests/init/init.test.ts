@@ -1,20 +1,12 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials, status } from "@grpc/grpc-js";
-import { CreateInitAdminRequest, InitServiceClient,
-  SetAsInitAdminRequest, UnsetInitAdminRequest } from "@scow/protos/build/server/init";
+import {
+  CreateInitAdminRequest,
+  InitServiceClient,
+  SetAsInitAdminRequest,
+  UnsetInitAdminRequest,
+} from "@scow/protos/build/server/init";
 import { createServer } from "src/app";
 import { Tenant } from "src/entities/Tenant";
 import { PlatformRole, TenantRole, User } from "src/entities/User";
@@ -52,7 +44,6 @@ it("Test function userExist", async () => {
 });
 
 it("querys init state and updates if complete", async () => {
-
   const queryInitialized = async () => {
     const reply = await asyncClientCall(client, "querySystemInitialized", {});
     return reply.initialized;
@@ -73,7 +64,6 @@ it("fails to complete if already init", async () => {
   } catch (e) {
     expect(e).toMatchObject({ code: status.ALREADY_EXISTS });
   }
-
 });
 
 it("creates an init admin user", async () => {
@@ -98,9 +88,7 @@ it("creates an init admin user", async () => {
   expect(user.tenantRoles).toIncludeSameMembers([TenantRole.TENANT_ADMIN]);
 });
 
-
 it("sets an user as platforn admin and tenant admin", async () => {
-
   // create an user
   const em = server.ext.orm.em.fork();
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
@@ -121,13 +109,15 @@ it("sets an user as platforn admin and tenant admin", async () => {
 });
 
 it("unsets an user as platforn admin and tenant admin", async () => {
-
   // create an user
   const em = server.ext.orm.em.fork();
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
   const user = new User({
-    email: "test@test.com", name: "123", tenant: toRef(tenant), userId: "123",
+    email: "test@test.com",
+    name: "123",
+    tenant: toRef(tenant),
+    userId: "123",
     platformRoles: [PlatformRole.PLATFORM_ADMIN],
     tenantRoles: [TenantRole.TENANT_ADMIN],
   });
@@ -145,4 +135,3 @@ it("unsets an user as platforn admin and tenant admin", async () => {
   expect(user.platformRoles).not.toInclude(PlatformRole.PLATFORM_ADMIN);
   expect(user.tenantRoles).not.toInclude(TenantRole.TENANT_ADMIN);
 });
-

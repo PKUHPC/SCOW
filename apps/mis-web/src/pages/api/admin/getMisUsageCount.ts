@@ -8,24 +8,23 @@ import { getAuditClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
 export const GetMisUsageCountResponse = Type.Object({
-  results: Type.Array(Type.Object({
-    operationType: Type.String(),
-    count: Type.Number(),
-  })),
+  results: Type.Array(
+    Type.Object({
+      operationType: Type.String(),
+      count: Type.Number(),
+    }),
+  ),
 });
 
 export type GetMisUsageCountResponse = Static<typeof GetMisUsageCountResponse>;
-
 
 export const GetMisUsageCountSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-
     startTime: Type.String({ format: "date-time" }),
 
     endTime: Type.String({ format: "date-time" }),
-
   }),
 
   responses: {
@@ -35,32 +34,30 @@ export const GetMisUsageCountSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetMisUsageCountSchema,
-  async (req, res) => {
+export default route(GetMisUsageCountSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { startTime, endTime } = req.query;
 
-    const { startTime, endTime } = req.query;
+  const client = getAuditClient?.(StatisticServiceClient);
 
-    const client = getAuditClient?.(StatisticServiceClient);
-
-    if (client) {
-      const { results } = await asyncClientCall(client, "getMisUsageCount", {
-        startTime,
-        endTime,
-      });
-      return {
-        200: {
-          results,
-        },
-      };
-    }
+  if (client) {
+    const { results } = await asyncClientCall(client, "getMisUsageCount", {
+      startTime,
+      endTime,
+    });
     return {
       200: {
-        results: [],
+        results,
       },
     };
-  });
+  }
+  return {
+    200: {
+      results: [],
+    },
+  };
+});

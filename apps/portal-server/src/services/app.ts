@@ -4,7 +4,12 @@ import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AppType, AttributeType } from "@scow/config/build/app";
 import { getUserAccountsClusterPartitionsByAccount } from "@scow/lib-scow-resource/build/utils";
-import { getI18nSeverTypeFormat, libGetAccounts, libGetUserAvailableClusterApps, libGetUserInfo } from "@scow/lib-server";
+import {
+  getI18nSeverTypeFormat,
+  libGetAccounts,
+  libGetUserAvailableClusterApps,
+  libGetUserInfo,
+} from "@scow/lib-server";
 import {
   AppCustomAttribute,
   AppCustomAttribute_AttributeType,
@@ -32,14 +37,11 @@ import { clusterNotFound } from "src/utils/errors";
 import { logger } from "src/utils/logger";
 import { validateSubmitJobInfoUnderMis } from "src/utils/validation";
 
-const errorInfo = (reason: string) =>
-  encodeMessage(ErrorInfo, { domain: "", reason: reason, metadata: {} });
+const errorInfo = (reason: string) => encodeMessage(ErrorInfo, { domain: "", reason: reason, metadata: {} });
 
 export const appServiceServer = plugin((server) => {
-
   server.addService<AppServiceServer>(AppServiceService, {
     connectToApp: async ({ request, logger }) => {
-
       const { cluster, sessionId, userId, jobId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -47,11 +49,18 @@ export const appServiceServer = plugin((server) => {
 
       const clusterOps = getClusterOps(cluster);
 
-      if (!clusterOps) { throw clusterNotFound(cluster); }
+      if (!clusterOps) {
+        throw clusterNotFound(cluster);
+      }
 
-      const reply = await clusterOps.app.connectToApp({
-        sessionId, userId, jobId,
-      }, logger);
+      const reply = await clusterOps.app.connectToApp(
+        {
+          sessionId,
+          userId,
+          jobId,
+        },
+        logger,
+      );
 
       const app = apps[reply.appId];
 
@@ -76,9 +85,8 @@ export const appServiceServer = plugin((server) => {
               query: app.web!.connect.query ?? {},
               method: app.web!.connect.method,
               path: app.web!.connect.path,
-              proxyType: app.web!.proxyType === "absolute"
-                ? WebAppProps_ProxyType.ABSOLUTE
-                : WebAppProps_ProxyType.RELATIVE,
+              proxyType:
+                app.web!.proxyType === "absolute" ? WebAppProps_ProxyType.ABSOLUTE : WebAppProps_ProxyType.RELATIVE,
               customFormData: reply.customFormData ?? {},
             },
           };
@@ -99,18 +107,33 @@ export const appServiceServer = plugin((server) => {
           throw new Error(`Unknown app type ${app.type as string} of app id ${reply.appId}`);
       }
 
-      return [{
-        host: reply.host,
-        port: reply.port,
-        password: reply.password,
-        appProps,
-      }];
+      return [
+        {
+          host: reply.host,
+          port: reply.port,
+          password: reply.password,
+          appProps,
+        },
+      ];
     },
 
     createAppSession: async ({ request, logger }) => {
-
-      const { account, appId, appJobName, cluster, coreCount, nodeCount, gpuCount, memoryMb, maxTime,
-        proxyBasePath, partition, qos, userId, customAttributes } = request;
+      const {
+        account,
+        appId,
+        appJobName,
+        cluster,
+        coreCount,
+        nodeCount,
+        gpuCount,
+        memoryMb,
+        maxTime,
+        proxyBasePath,
+        partition,
+        qos,
+        userId,
+        customAttributes,
+      } = request;
 
       // 检查在线集群
       await checkActivatedClusters({ clusterIds: cluster });
@@ -169,9 +192,11 @@ export const appServiceServer = plugin((server) => {
             break;
 
           case AttributeType.select:
-          // check the option selected by user is in select attributes as the config defined
-            if (customAttributes[attribute.name]
-            && !(attribute.select!.some((optionItem) => optionItem.value === customAttributes[attribute.name]))) {
+            // check the option selected by user is in select attributes as the config defined
+            if (
+              customAttributes[attribute.name] &&
+              !attribute.select!.some((optionItem) => optionItem.value === customAttributes[attribute.name])
+            ) {
               throw new DetailedError({
                 code: Status.INVALID_ARGUMENT,
                 message: `
@@ -197,30 +222,33 @@ export const appServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      const reply = await clusterops.app.createApp({
-        appId,
-        appJobName,
-        userId,
-        coreCount,
-        nodeCount,
-        gpuCount,
-        memoryMb,
-        account,
-        maxTime,
-        partition,
-        qos,
-        customAttributes,
-        proxyBasePath,
-      }, logger);
+      const reply = await clusterops.app.createApp(
+        {
+          appId,
+          appJobName,
+          userId,
+          coreCount,
+          nodeCount,
+          gpuCount,
+          memoryMb,
+          account,
+          maxTime,
+          partition,
+          qos,
+          customAttributes,
+          proxyBasePath,
+        },
+        logger,
+      );
 
       return [{ jobId: reply.jobId, sessionId: reply.sessionId }];
-
     },
 
     listAppSessions: async ({ request, logger }) => {
-
       const { cluster, clusters, userId } = request;
       const targetClusters = (() => {
         if (clusters && Array.isArray(clusters) && clusters.length > 0) {
@@ -271,7 +299,6 @@ export const appServiceServer = plugin((server) => {
     },
 
     getAppMetadata: async ({ request }) => {
-
       const { appId, cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -307,17 +334,16 @@ export const appServiceServer = plugin((server) => {
                 $case: "selectConfig",
                 selectConfig: {
                   type: GetAppMetadataResponse_ReservedConfigType.SELECT,
-                  defaultInput: item.config.defaultValue ?
-                    convertToOneOfValue(item.config.defaultValue) : undefined,
-                  options: item.config.select?.map((x) => {
-                    return {
-                      value: convertToOneOfValue(x.value),
-                      label: x.label ? getI18nSeverTypeFormat(x.label) : undefined,
-                      requireGpu: x.requireGpu,
-                    };
-                  }) ?? [],
+                  defaultInput: item.config.defaultValue ? convertToOneOfValue(item.config.defaultValue) : undefined,
+                  options:
+                    item.config.select?.map((x) => {
+                      return {
+                        value: convertToOneOfValue(x.value),
+                        label: x.label ? getI18nSeverTypeFormat(x.label) : undefined,
+                        requireGpu: x.requireGpu,
+                      };
+                    }) ?? [],
                 },
-
               };
               break;
             case "commandSelect":
@@ -341,8 +367,9 @@ export const appServiceServer = plugin((server) => {
         app.attributes.forEach((item) => {
           const attributeType = camelToSnakeCase(item.type);
 
-          const defaultInput: AppCustomAttribute["defaultInput"] =
-            item.defaultValue ? convertToOneOfValue(item.defaultValue) : undefined;
+          const defaultInput: AppCustomAttribute["defaultInput"] = item.defaultValue
+            ? convertToOneOfValue(item.defaultValue)
+            : undefined;
 
           attributes.push({
             type: appCustomAttribute_AttributeTypeFromJSON(attributeType),
@@ -351,17 +378,19 @@ export const appServiceServer = plugin((server) => {
             // 不读取type为select的fixedValue的值
             fixedValue:
               appCustomAttribute_AttributeTypeFromJSON(attributeType) === AppCustomAttribute_AttributeType.SELECT
-                ? undefined : convertAttributesFixedValue(item.fixedValue),
+                ? undefined
+                : convertAttributesFixedValue(item.fixedValue),
             required: item.required,
             defaultInput: defaultInput,
             placeholder: item.placeholder ? getI18nSeverTypeFormat(item.placeholder) : undefined,
-            options: item.select?.map((x) => {
-              return {
-                value: x.value,
-                label: getI18nSeverTypeFormat(x.label),
-                requireGpu: x.requireGpu,
-              };
-            }) ?? [],
+            options:
+              item.select?.map((x) => {
+                return {
+                  value: x.value,
+                  label: getI18nSeverTypeFormat(x.label),
+                  requireGpu: x.requireGpu,
+                };
+              }) ?? [],
             commandSelect: {
               script: item.commandSelect?.script || "",
             },
@@ -375,7 +404,6 @@ export const appServiceServer = plugin((server) => {
     },
 
     listAvailableApps: async ({ request }) => {
-
       const { cluster, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -384,11 +412,18 @@ export const appServiceServer = plugin((server) => {
       if (config.MIS_DEPLOYED && commonConfig.scowResource?.enabled && userId) {
         const [userInfo, { accounts }] = await Promise.all([
           libGetUserInfo(logger, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token),
-          libGetAccounts(logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
-            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token),
+          libGetAccounts(
+            logger,
+            userId,
+            AccountStatusFilter.UNBLOCKED_ONLY,
+            config.MIS_SERVER_URL,
+            commonConfig.scowApi?.auth?.token,
+          ),
         ]);
         const assignedClusterPartitionsByAccount = await getUserAccountsClusterPartitionsByAccount(
-          commonConfig.scowResource, accounts, userInfo.tenantName,
+          commonConfig.scowResource,
+          accounts,
+          userInfo.tenantName,
         );
         resourceFilteredAccountSet = new Set(
           accounts.filter((account) => {
@@ -399,20 +434,25 @@ export const appServiceServer = plugin((server) => {
       }
 
       const applyResourceFilter = (accountList: string[]) =>
-        resourceFilteredAccountSet
-          ? accountList.filter((a) => resourceFilteredAccountSet!.has(a))
-          : accountList;
+        resourceFilteredAccountSet ? accountList.filter((a) => resourceFilteredAccountSet!.has(a)) : accountList;
 
       // 如果开启了管理系统的授权应用功能，仅返回关联账户下可用的应用
       if (config.MIS_DEPLOYED && commonConfig.allowAppAuthorization && userId) {
         const availableApps = await libGetUserAvailableClusterApps(
-          logger, cluster, userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-        return [{
-          apps: availableApps.apps.map((app) => ({
-            ...app,
-            availableAccounts: applyResourceFilter(app.availableAccounts ?? []),
-          })),
-        }];
+          logger,
+          cluster,
+          userId,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
+        return [
+          {
+            apps: availableApps.apps.map((app) => ({
+              ...app,
+              availableAccounts: applyResourceFilter(app.availableAccounts ?? []),
+            })),
+          },
+        ];
       }
 
       const apps = getClusterAppConfigs(cluster);
@@ -422,42 +462,68 @@ export const appServiceServer = plugin((server) => {
         // 开启resource 已预先获取并过滤了账户，直接复用；否则单独请求 MIS
         accountsResult = resourceFilteredAccountSet
           ? Array.from(resourceFilteredAccountSet)
-          : (await libGetAccounts(logger, userId, AccountStatusFilter.UNBLOCKED_ONLY,
-            config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token)).accounts;
+          : (
+              await libGetAccounts(
+                logger,
+                userId,
+                AccountStatusFilter.UNBLOCKED_ONLY,
+                config.MIS_SERVER_URL,
+                commonConfig.scowApi?.auth?.token,
+              )
+            ).accounts;
       } else if (!config.MIS_DEPLOYED && userId) {
         const reply = await callOnOne(
           cluster,
           logger,
-          async (client) => await asyncClientCall(client.account, "listAccounts", {
-            userId,
-          }),
+          async (client) =>
+            await asyncClientCall(client.account, "listAccounts", {
+              userId,
+            }),
         );
-        accountsResult = await filterAccountsByStatus(cluster, userId, reply.accounts,
-          AccountStatusFilter.UNBLOCKED_ONLY, logger);
+        accountsResult = await filterAccountsByStatus(
+          cluster,
+          userId,
+          reply.accounts,
+          AccountStatusFilter.UNBLOCKED_ONLY,
+          logger,
+        );
       }
 
-      return [{
-        apps: Object.keys(apps)
-          .map((x) => ({ id: x, name: apps[x].name, logoPath:
-            apps[x].logoPath, availableAccounts: accountsResult })) }];
+      return [
+        {
+          apps: Object.keys(apps).map((x) => ({
+            id: x,
+            name: apps[x].name,
+            logoPath: apps[x].logoPath,
+            availableAccounts: accountsResult,
+          })),
+        },
+      ];
     },
 
     getAppLastSubmission: async ({ request, logger }) => {
-
       const { userId, cluster, appId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
       const clusterops = getClusterOps(cluster);
 
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
-      const reply = await clusterops.app.getAppLastSubmission({
-        userId, appId,
-      }, logger);
+      const reply = await clusterops.app.getAppLastSubmission(
+        {
+          userId,
+          appId,
+        },
+        logger,
+      );
 
-      return [{
-        lastSubmissionInfo: reply.lastSubmissionInfo,
-      }];
+      return [
+        {
+          lastSubmissionInfo: reply.lastSubmissionInfo,
+        },
+      ];
     },
 
     runScript: async ({ request, logger }) => {
@@ -465,12 +531,13 @@ export const appServiceServer = plugin((server) => {
       await checkActivatedClusters({ clusterIds: cluster });
 
       const clusterops = getClusterOps(cluster);
-      if (!clusterops) { throw clusterNotFound(cluster); }
+      if (!clusterops) {
+        throw clusterNotFound(cluster);
+      }
 
       const { output } = await clusterops.app.runScript({ userId, script, timeoutSeconds }, logger);
 
       return [{ output }];
     },
   });
-
 });

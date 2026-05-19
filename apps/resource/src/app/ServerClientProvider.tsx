@@ -3,7 +3,6 @@ import { BASE_PATH } from "src/utils/processEnv";
 
 import { TrpcClientProvider } from "./TrpcClientProvider";
 
-
 export function getBaseUrl() {
   if (typeof window !== "undefined")
     // browser should use relative path

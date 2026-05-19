@@ -77,7 +77,6 @@ export const AccountAffiliationSchema = Type.Object({
   accountState: Type.Enum(AccountState),
 });
 
-
 export type AccountAffiliation = Static<typeof AccountAffiliationSchema>;
 
 export const UserState = {
@@ -96,7 +95,7 @@ export const UserInfoSchema = Type.Object({
   email: Type.Optional(Type.String()),
   phone: Type.Optional(Type.String()),
   organization: Type.Optional(Type.String()),
-  createTime:Type.Optional(Type.String()),
+  createTime: Type.Optional(Type.String()),
 });
 
 export type UserInfo = Static<typeof UserInfoSchema>;
@@ -112,15 +111,12 @@ export const FullUserInfo = Type.Object({
   createTime: Type.String(),
   accountAffiliations: Type.Array(AccountAffiliationSchema),
   tenantRoles: Type.Array(Type.Enum(TenantRole)),
-  state:Type.Enum(UserState),
+  state: Type.Enum(UserState),
   platformRoles: Type.Array(Type.Enum(PlatformRole)),
 });
 export type FullUserInfo = Static<typeof FullUserInfo>;
 
-export const SortDirectionType = Type.Union([
-  Type.Literal("ascend"),
-  Type.Literal("descend"),
-]);
+export const SortDirectionType = Type.Union([Type.Literal("ascend"), Type.Literal("descend")]);
 export type SortDirectionType = Static<typeof SortDirectionType>;
 
 // sort fields
@@ -150,7 +146,6 @@ export const DisplayedAccountState = {
 
 export type DisplayedAccountState = ValueOf<typeof DisplayedAccountState>;
 
-
 export const getDisplayedStateI18nTexts = (t: TransType) => {
   return {
     [DisplayedAccountState.DISPLAYED_NORMAL]: t("pageComp.accounts.accountTable.normal"),
@@ -170,10 +165,7 @@ export const ChargesSortBy = Type.Union([
 
 export type ChargesSortBy = Static<typeof ChargesSortBy>;
 
-export const ChargesSortOrder = Type.Union([
-  Type.Literal("descend"),
-  Type.Literal("ascend"),
-]);
+export const ChargesSortOrder = Type.Union([Type.Literal("descend"), Type.Literal("ascend")]);
 
 export type ChargesSortOrder = Static<typeof ChargesSortOrder>;
 

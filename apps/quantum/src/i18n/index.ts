@@ -1,6 +1,5 @@
 import { createI18n, Lang, languageDictionary, TextIdFromLangDict } from "react-typed-i18n";
 
-
 const zh_cn = () => import("./zh_cn").then((x) => x.default);
 const en = () => import("./en").then((x) => x.default);
 

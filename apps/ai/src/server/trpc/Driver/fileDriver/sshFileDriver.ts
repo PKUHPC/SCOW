@@ -1,6 +1,15 @@
 import {
-  sftpExists,sftpLstat,sftpMkdir, sftpReaddir,sftpRealPath, sftpRename, sftpStat, sftpUnlink,
-  sftpWriteFile,sshRmrf } from "@scow/lib-ssh";
+  sftpExists,
+  sftpLstat,
+  sftpMkdir,
+  sftpReaddir,
+  sftpRealPath,
+  sftpRename,
+  sftpStat,
+  sftpUnlink,
+  sftpWriteFile,
+  sshRmrf,
+} from "@scow/lib-ssh";
 import { loggedExec } from "@scow/lib-ssh";
 import { TRPCError } from "@trpc/server";
 import { contentType } from "mime-types";
@@ -47,10 +56,10 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
-  async copy(fromPath: string,toPath: string) {
+  async copy(fromPath: string, toPath: string) {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
-    // the SFTPWrapper doesn't supprt copy
-    // Use command to do it
+      // the SFTPWrapper doesn't supprt copy
+      // Use command to do it
       const resp = await loggedExec(ssh, this.logger, false, "cp", ["-r", fromPath, toPath]);
 
       if (resp.code !== 0) {
@@ -59,7 +68,7 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
-  async move(fromPath: string,toPath: string) {
+  async move(fromPath: string, toPath: string) {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
 
@@ -115,7 +124,6 @@ export class SshFileDriver implements FileDriver {
       const list: FileInfo[] = [];
 
       for (const file of files) {
-
         const isDir = file.longname.startsWith("d");
 
         list.push({
@@ -128,7 +136,7 @@ export class SshFileDriver implements FileDriver {
       }
       return list.map((x) => ({
         ...x,
-        type: x.type === "DIR" ? "DIR" as const : "FILE" as const,
+        type: x.type === "DIR" ? ("DIR" as const) : ("FILE" as const),
       }));
     });
   }
@@ -153,25 +161,28 @@ export class SshFileDriver implements FileDriver {
       const lstat = await sftpLstat(sftp)(path).catch(() => undefined);
       const isSymlink = !!(lstat && typeof lstat.isSymbolicLink === "function" && lstat.isSymbolicLink());
 
-      const linkTargetPath = isSymlink
-        ? await sftpRealPath(sftp)(path).catch(() => undefined)
-        : undefined;
+      const linkTargetPath = isSymlink ? await sftpRealPath(sftp)(path).catch(() => undefined) : undefined;
 
-      const targetLstat = linkTargetPath
-        ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined)
-        : undefined;
+      const targetLstat = linkTargetPath ? await sftpLstat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
 
-      const targetStat = linkTargetPath &&
-        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()) ?
-        await sftpStat(sftp)(linkTargetPath).catch(() => undefined) : undefined;
+      const targetStat =
+        linkTargetPath &&
+        !(targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink())
+          ? await sftpStat(sftp)(linkTargetPath).catch(() => undefined)
+          : undefined;
 
-      const linkTargetType = targetLstat && typeof targetLstat.isSymbolicLink === "function" &&
-        targetLstat.isSymbolicLink() ?
-        "SYMLINK" : (targetStat ? (targetStat.isDirectory() ? "DIR" : "FILE") : undefined);
+      const linkTargetType =
+        targetLstat && typeof targetLstat.isSymbolicLink === "function" && targetLstat.isSymbolicLink()
+          ? "SYMLINK"
+          : targetStat
+            ? targetStat.isDirectory()
+              ? "DIR"
+              : "FILE"
+            : undefined;
 
       return {
         size: stat.size,
-        type: isSymlink ? "SYMLINK" : (stat.isDirectory() ? "DIR" : "FILE"),
+        type: isSymlink ? "SYMLINK" : stat.isDirectory() ? "DIR" : "FILE",
         isSymlink,
         linkTargetPath,
         linkTargetType,
@@ -179,7 +190,7 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
-  async download(path: string,download: string,res: NextApiResponse<any>): Promise<void> {
+  async download(path: string, download: string, res: NextApiResponse<any>): Promise<void> {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
 
@@ -190,11 +201,13 @@ export class SshFileDriver implements FileDriver {
 
       const readStream = sftp.createReadStream(path, { highWaterMark: config.DOWNLOAD_CHUNK_SIZE });
 
-      const filename = basename(path).replace("\"", "\\\"");
+      const filename = basename(path).replace('"', '\\"');
       const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
-      const contentType = download === "true" ? getContentType(filename, "application/octet-stream") :
-        getContentType(filename, "text/plain; charset=utf-8");
+      const contentType =
+        download === "true"
+          ? getContentType(filename, "application/octet-stream")
+          : getContentType(filename, "text/plain; charset=utf-8");
       res.setHeader("Content-Type", contentType);
 
       res.setHeader("Content-Disposition", `${download === "true" ? "attachment" : "inline"}; ${dispositionParm}`);
@@ -202,7 +215,8 @@ export class SshFileDriver implements FileDriver {
       res.setHeader("Content-Length", String(stat.size));
 
       return new Promise<void>((resolve, reject) => {
-        readStream.pipe(res, { end: true })
+        readStream
+          .pipe(res, { end: true })
           .on("error", () => {
             reject(new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error when reading file" }));
           })
@@ -213,8 +227,7 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
-  async decompressFile(filePath: string,decompressionPath: string): Promise<void> {
-
+  async decompressFile(filePath: string, decompressionPath: string): Promise<void> {
     const getDecompressionCommand = () => {
       if (filePath.endsWith(".tar")) {
         return `tar -xf ${filePath} -C ${decompressionPath}`;
@@ -244,8 +257,10 @@ export class SshFileDriver implements FileDriver {
 
       const result = await ssh.execCommand(decompressionCommand);
       if (result.code !== 0) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to execute decompression command: ${result.stderr}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to execute decompression command: ${result.stderr}`,
+        });
       }
     });
   }
@@ -257,7 +272,7 @@ export class SshFileDriver implements FileDriver {
     });
   }
 
-  async upload(path: string, uploadedFile: File): Promise<NextResponse<{ message: string; }>> {
+  async upload(path: string, uploadedFile: File): Promise<NextResponse<{ message: string }>> {
     return sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
       const writeStream = sftp.createWriteStream(path);
@@ -283,7 +298,7 @@ export class SshFileDriver implements FileDriver {
   }
 
   // 以root身份删除取消分享的文件夹
-  async unShareFileOrDir(sharedPath: string,successCallback?: callback,failureCallback?: callback): Promise<void> {
+  async unShareFileOrDir(sharedPath: string, successCallback?: callback, failureCallback?: callback): Promise<void> {
     await sshConnect(this.host, "root", this.logger, async (ssh) => {
       const sftp = await ssh.requestSFTP();
       await sftpExists(sftp, sharedPath);
@@ -297,10 +312,10 @@ export class SshFileDriver implements FileDriver {
 
   // 以root身份分享的文件夹
   async shareFileOrDir(
-    { sourceFilePath,sharedTarget,targetName,targetSubName,sharedTopDir }: ShareParams,
+    { sourceFilePath, sharedTarget, targetName, targetSubName, sharedTopDir }: ShareParams,
     successCallback?: shareOkCallback,
-    failureCallback?: callback): Promise<void> {
-
+    failureCallback?: callback,
+  ): Promise<void> {
     try {
       await sshConnect(this.host, "root", this.logger, async (ssh) => {
         const sftp = await ssh.requestSFTP();
@@ -312,7 +327,7 @@ export class SshFileDriver implements FileDriver {
         const targetFullDir = path.join(targetDirectory, targetName, targetSubName);
 
         // 判断共享目录是否存在
-        if (!await sftpExists(sftp, targetDirectory)) {
+        if (!(await sftpExists(sftp, targetDirectory))) {
           await loggedExec(ssh, this.logger, false, "mkdir", ["-p", targetDirectory]);
           await loggedExec(ssh, this.logger, false, "chmod", ["-R", "555", targetDirectory]);
         }
@@ -344,7 +359,6 @@ export class SshFileDriver implements FileDriver {
             this.logger.error("Error changing permissions: %s", err);
             throw err;
           }
-
         } catch (e) {
           this.logger.error("Failed to share %s to %s with error %s", sourceFilePath, targetFullDir, e);
           throw e;
@@ -364,7 +378,7 @@ export class SshFileDriver implements FileDriver {
       const sftp = await ssh.requestSFTP();
 
       // 判断共享目录是否存在
-      if (!await sftpExists(sftp, oldPath)) {
+      if (!(await sftpExists(sftp, oldPath))) {
         throw new TRPCError({ code: "NOT_FOUND", message: `${oldPath} is not found` });
       }
 
@@ -415,8 +429,9 @@ export class SshFileDriver implements FileDriver {
       }
 
       // 尝试写入文件
-      const checkWritableResult
-            = await loggedExec(ssh, this.logger, false, "touch", [join(toPath, "test_write_permission_file")]);
+      const checkWritableResult = await loggedExec(ssh, this.logger, false, "touch", [
+        join(toPath, "test_write_permission_file"),
+      ]);
       if (checkWritableResult.code !== 0) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -425,10 +440,9 @@ export class SshFileDriver implements FileDriver {
         });
       } else {
         // 删除创建的测试文件
-        await loggedExec(ssh, this.logger, false, "rm", [join(toPath, "test_write_permission_file")])
-          .catch(() => {
-            this.logger.info("Failed to delete %s write permission test file.", toPath);
-          });
+        await loggedExec(ssh, this.logger, false, "rm", [join(toPath, "test_write_permission_file")]).catch(() => {
+          this.logger.info("Failed to delete %s write permission test file.", toPath);
+        });
       }
     });
   }
@@ -460,8 +474,9 @@ export class SshFileDriver implements FileDriver {
       }
 
       // 尝试写入文件
-      const checkWritableResult =
-      await loggedExec(ssh, this.logger, false, "touch", [join(toPath, "test_write_permission_file")]);
+      const checkWritableResult = await loggedExec(ssh, this.logger, false, "touch", [
+        join(toPath, "test_write_permission_file"),
+      ]);
 
       if (checkWritableResult.code !== 0) {
         throw new TRPCError({
@@ -470,7 +485,7 @@ export class SshFileDriver implements FileDriver {
           cause: ErrorCode.FILE_NOT_WRITABLE,
         });
       } else {
-      // 删除创建的测试文件
+        // 删除创建的测试文件
         await loggedExec(ssh, this.logger, false, "rm", [join(toPath, "test_write_permission_file")]).catch(() => {
           this.logger.info("Failed to delete %s write permission test file.", toPath);
         });

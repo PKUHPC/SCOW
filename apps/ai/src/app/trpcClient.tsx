@@ -23,73 +23,86 @@ declare module "@trpc/client" {
 }
 
 export function ClientProvider(props: { baseUrl: string; basePath: string; children: React.ReactNode }) {
-
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        retry(failureCount, error) {
-          const { data } = error as TRPCClientError<AppRouter>;
-          if (data?.code && data?.code === "UNAUTHORIZED") {
-            setIsRedirecting(true);
-            window.location.href = join(props.basePath, "/api/auth");
-            return false;
-          }
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            retry(failureCount, error) {
+              const { data } = error as TRPCClientError<AppRouter>;
+              if (data?.code && data?.code === "UNAUTHORIZED") {
+                setIsRedirecting(true);
+                window.location.href = join(props.basePath, "/api/auth");
+                return false;
+              }
 
-          if (failureCount >= MAX_RETRIES) {
-            return false;
-          }
+              if (failureCount >= MAX_RETRIES) {
+                return false;
+              }
 
-          return true;
+              return true;
+            },
+          },
         },
-      },
-    },
-    queryCache: new QueryCache({
-      onError: (error, query) => {
-        const { data, message: msg } = error as TRPCClientError<AppRouter>;
-        const silent = query?.meta?.silent;
+        queryCache: new QueryCache({
+          onError: (error, query) => {
+            const { data, message: msg } = error as TRPCClientError<AppRouter>;
+            const silent = query?.meta?.silent;
 
-        if (data?.code && data?.code === "UNAUTHORIZED") {
-          setIsRedirecting(true);
-          window.location.href = join(props.basePath, "/api/auth");
-        } else if (silent) {
-          return;
-        }
-        else if (msg) {
-          message.error(msg);
-        } else if (data?.code && query?.meta?.[data?.code]) {
-          const msg = query?.meta?.[data?.code] as string;
-          message.error(msg);
-        } else {
-          message.error("There have been some issues, please try again later!");
-        }
-      },
-    }),
-    mutationCache: new MutationCache({
-      onError: (error, variables, context, mutation) => {
-        const { data, message: errMessage } = error as TRPCClientError<AppRouter>;
-        const { onError } = mutation.options;
-        if (data?.code && data?.code === "UNAUTHORIZED") {
-          setIsRedirecting(true);
-          window.location.href = join(props.basePath, "/api/auth");
-        } else if (data?.path?.startsWith("file") && data?.code === "PRECONDITION_FAILED"
-         && errMessage.startsWith("SSH_ERROR:")) {
-          message.error("Unable to connect to the login node as a user. Please confirm if your home "
-            + "directory permissions are 700, 750, or 755, or if you have permission to perform operations here");
-        } else if (data?.path?.startsWith("file") && data?.code === "BAD_REQUEST"
-        && errMessage.startsWith("SFTP_ERROR:")) {
-          message.error(errMessage || "SFTP operation failed, please confirm if you have the permission to operate");
-        } else if (!onError) {
-          message.error("There have been some issues, please try again later!");
-        }
-      },
-    }),
-  }));
+            if (data?.code && data?.code === "UNAUTHORIZED") {
+              setIsRedirecting(true);
+              window.location.href = join(props.basePath, "/api/auth");
+            } else if (silent) {
+              return;
+            } else if (msg) {
+              message.error(msg);
+            } else if (data?.code && query?.meta?.[data?.code]) {
+              const msg = query?.meta?.[data?.code] as string;
+              message.error(msg);
+            } else {
+              message.error("There have been some issues, please try again later!");
+            }
+          },
+        }),
+        mutationCache: new MutationCache({
+          onError: (error, variables, context, mutation) => {
+            const { data, message: errMessage } = error as TRPCClientError<AppRouter>;
+            const { onError } = mutation.options;
+            if (data?.code && data?.code === "UNAUTHORIZED") {
+              setIsRedirecting(true);
+              window.location.href = join(props.basePath, "/api/auth");
+            } else if (
+              data?.path?.startsWith("file") &&
+              data?.code === "PRECONDITION_FAILED" &&
+              errMessage.startsWith("SSH_ERROR:")
+            ) {
+              message.error(
+                "Unable to connect to the login node as a user. Please confirm if your home " +
+                  "directory permissions are 700, 750, or 755, or if you have permission to perform operations here",
+              );
+            } else if (
+              data?.path?.startsWith("file") &&
+              data?.code === "BAD_REQUEST" &&
+              errMessage.startsWith("SFTP_ERROR:")
+            ) {
+              message.error(
+                errMessage || "SFTP operation failed, please confirm if you have the permission to operate",
+              );
+            } else if (!onError) {
+              message.error("There have been some issues, please try again later!");
+            }
+          },
+        }),
+      }),
+  );
 
   const apiUrl = {
-    url: typeof window === "undefined" ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
-      : join(props.basePath, "/api/trpc"),
+    url:
+      typeof window === "undefined"
+        ? joinWithUrl(props.baseUrl, props.basePath, "/api/trpc")
+        : join(props.basePath, "/api/trpc"),
     transformer: superjson,
   };
 
@@ -101,8 +114,7 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
         }),
         splitLink({
           // 条件：如果标了 noBatch，或者是特定路径，就走 httpLink（单发）
-          condition: (op) =>
-            ((op.context as { meta?: { noBatch?: boolean } }).meta?.noBatch === true),
+          condition: (op) => (op.context as { meta?: { noBatch?: boolean } }).meta?.noBatch === true,
           true: httpLink(apiUrl), // 单个请求
           false: httpBatchLink(apiUrl), // 仍然合并其它请求
         }),
@@ -111,16 +123,12 @@ export function ClientProvider(props: { baseUrl: string; basePath: string; child
   );
 
   if (isRedirecting) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {props.children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
     </trpc.Provider>
   );
 }

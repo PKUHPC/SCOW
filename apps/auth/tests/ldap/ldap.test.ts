@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FastifyInstance } from "fastify";
 import { Client, createClient, NoSuchObjectError, SearchEntry } from "ldapjs";
 import { buildApp } from "src/app";
@@ -52,8 +40,7 @@ if (!ldap.addUser) {
 
 const userDn = `${ldap.addUser.userIdDnKey}=${user.identityId},${ldap.addUser.userBase}`;
 const groupDn =
-  `${ldap.addUser.newGroupPerUser!.groupIdDnKey}=${user.identityId},`
-  + `${ldap.addUser.newGroupPerUser!.groupBase}`;
+  `${ldap.addUser.newGroupPerUser!.groupIdDnKey}=${user.identityId},` + `${ldap.addUser.newGroupPerUser!.groupBase}`;
 
 beforeEach(async () => {
   server = await buildApp();
@@ -92,7 +79,7 @@ async function performLogin(payload: string, headers: RequestHeaders) {
     payload,
     headers,
   });
-};
+}
 
 afterEach(async () => {
   await removeEvenNotExist(client, userDn);
@@ -114,7 +101,6 @@ const createUser = async () => {
   });
 
   expect(resp.statusCode).toBe(204);
-
 };
 
 it("locks and unlocks account after configured failed attempts", async () => {
@@ -140,11 +126,15 @@ it("locks and unlocks account after configured failed attempts", async () => {
   });
   expect(getUserResp.statusCode).toBe(200);
 
-  expect(getUserResp.json()).toEqual({ user: [expect.objectContaining({
-    identityId: user.identityId,
-    name: user.name,
-    mail: savedUserMail,
-  })]});
+  expect(getUserResp.json()).toEqual({
+    user: [
+      expect.objectContaining({
+        identityId: user.identityId,
+        name: user.name,
+        mail: savedUserMail,
+      }),
+    ],
+  });
 
   const unlockResp = await server.inject({
     method: "PATCH",
@@ -158,7 +148,7 @@ it("locks and unlocks account after configured failed attempts", async () => {
     url: "/lockUser/getLockedUsers",
     query: { identityId: user.identityId },
   });
-  expect(getUserAgainResp.json()).toEqual({ user: []});
+  expect(getUserAgainResp.json()).toEqual({ user: [] });
 });
 
 it("enforce password reset when pwdMustChangeAtFirstLoginOrResetByAdmin is active", async () => {
@@ -167,7 +157,7 @@ it("enforce password reset when pwdMustChangeAtFirstLoginOrResetByAdmin is activ
   const lockResp = await server.inject({
     method: "PATCH",
     url: "/updatePasswordResetFlag",
-    payload: { identityId:user.identityId, forceFlag: true },
+    payload: { identityId: user.identityId, forceFlag: true },
   });
   expect(lockResp.statusCode).toBe(204);
 
@@ -187,7 +177,7 @@ it("enforce password reset when pwdMustChangeAtFirstLoginOrResetByAdmin is activ
   const unlockResp = await server.inject({
     method: "PATCH",
     url: "/updatePasswordResetFlag",
-    payload: { identityId:user.identityId, forceFlag: false },
+    payload: { identityId: user.identityId, forceFlag: false },
   });
   expect(unlockResp.statusCode).toBe(204);
 
@@ -197,7 +187,6 @@ it("enforce password reset when pwdMustChangeAtFirstLoginOrResetByAdmin is activ
 });
 
 it("creates user and group if groupStrategy is newGroupPerUser", async () => {
-
   if (!ldap.addUser) {
     throw new ConfigNoAddUserError();
   }
@@ -217,7 +206,9 @@ it("creates user and group if groupStrategy is newGroupPerUser", async () => {
   });
 
   const ldapUser = await searchByDn(client, userDn);
-  if (!ldapUser) { fail("response user is not defined"); }
+  if (!ldapUser) {
+    fail("response user is not defined");
+  }
 
   const uid = ldap.addUser.uidStart + user.id + "";
 
@@ -228,15 +219,15 @@ it("creates user and group if groupStrategy is newGroupPerUser", async () => {
   expect(extractOne(ldapUser, "mail")).toBe(`mail is ${user.mail}`);
 
   const ldapGroup = await searchByDn(client, groupDn);
-  if (!ldapGroup) { fail("response group is not defined"); }
+  if (!ldapGroup) {
+    fail("response group is not defined");
+  }
 
   expect(ldapGroup.dn).toBe(groupDn);
   expect(extractOne(ldapGroup, "memberUid")).toBe(user.identityId);
-
 });
 
 it("creates only user if groupStrategy is oneGroupForAllUsers", async () => {
-
   if (!ldap.addUser) {
     throw new ConfigNoAddUserError();
   }
@@ -246,13 +237,14 @@ it("creates only user if groupStrategy is oneGroupForAllUsers", async () => {
   await createUser();
 
   const ldapUser = await searchByDn(client, userDn);
-  if (!ldapUser) { fail("response user is not defined"); }
+  if (!ldapUser) {
+    fail("response user is not defined");
+  }
 
   const uid = ldap.addUser.uidStart + user.id + "";
 
   expect(extractOne(ldapUser, "uidNumber")).toBe(uid);
   expect(extractOne(ldapUser, "gidNumber")).toBe(1000 + "");
-
 });
 
 it("returns correct error if user already exists", async () => {
@@ -265,7 +257,6 @@ it("returns correct error if user already exists", async () => {
   });
 
   expect(resp.statusCode).toBe(409);
-
 });
 
 it("test to input a wrong verifyCaptcha", async () => {
@@ -284,9 +275,7 @@ it("test to input a wrong verifyCaptcha", async () => {
 });
 
 it("should login with correct username and password", async () => {
-
   await createUser();
-
 
   // login
   const { payload, headers } = createFormData({
@@ -298,13 +287,11 @@ it("should login with correct username and password", async () => {
   });
   const resp = await performLogin(payload, headers);
 
-
   expect(resp.statusCode).toBe(302);
   expect(resp.headers.location).toStartWith(callbackUrl + "?");
 });
 
 it("should not login with wrong password", async () => {
-
   await createUser();
 
   // login
@@ -330,11 +317,13 @@ it("gets user info", async () => {
   });
 
   expect(resp.statusCode).toBe(200);
-  expect(resp.json()).toEqual({ user: {
-    identityId: user.identityId,
-    name: user.name,
-    mail: savedUserMail,
-  } });
+  expect(resp.json()).toEqual({
+    user: {
+      identityId: user.identityId,
+      name: user.name,
+      mail: savedUserMail,
+    },
+  });
 });
 
 it("returns 404 if user doesn't exist", async () => {
@@ -349,16 +338,14 @@ it("returns 404 if user doesn't exist", async () => {
 });
 
 it("change user email", async () => {
-
   await createUser();
 
   const newEmail = "test@123.com";
   const changeEmaiResp = await server.inject({
     method: "PATCH",
     url: "/user/email",
-    payload: { identityId:user.identityId, newEmail },
+    payload: { identityId: user.identityId, newEmail },
   });
-
 
   const getUserResp = await server.inject({
     method: "GET",
@@ -370,7 +357,6 @@ it("change user email", async () => {
 
   expect(getUserResp.statusCode).toBe(200);
   expect(getUserResp.json().user.mail).toEqual(newEmail);
-
 });
 it("check password", async () => {
   await createUser();
@@ -486,9 +472,11 @@ it("delete user", async () => {
   });
 
   expect(userInfo.statusCode).toBe(200);
-  expect(userInfo.json()).toEqual({ user: {
-    identityId: user.identityId,
-    name: user.name,
-    mail: savedUserMail,
-  } });
+  expect(userInfo.json()).toEqual({
+    user: {
+      identityId: user.identityId,
+      name: user.name,
+      mail: savedUserMail,
+    },
+  });
 });

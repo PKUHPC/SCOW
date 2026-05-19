@@ -12,7 +12,7 @@ interface Props {
 
 const Container = styled.div`
   white-space: nowrap;
-  .ant-dropdown-open span{
+  .ant-dropdown-open span {
     color: ${({ theme }) => theme.token.colorPrimary}!important;
   }
 `;
@@ -29,7 +29,7 @@ const InlineBlockSpan = styled.span`
     background-color: #59595914;
     border-radius: 8px;
   }
-  &:active{
+  &:active {
     background-color: #59595914;
     border-radius: 8px;
   }
@@ -41,18 +41,12 @@ const InlineTextSpan = styled.span<{ $active?: boolean }>`
   }
 `;
 
-export const SystemSelect: React.FC<Props> = ({
-  links,
-}) => {
+export const SystemSelect: React.FC<Props> = ({ links }) => {
   const menuItem = links?.map((item) => {
     return {
-      key: `${item?.href}`, label: (
-        <JumpToAnotherLink
-          icon={item?.icon}
-          href={item?.href}
-          text={item?.text}
-          crossSystem={ item?.crossSystem }
-        />
+      key: `${item?.href}`,
+      label: (
+        <JumpToAnotherLink icon={item?.icon} href={item?.href} text={item?.text} crossSystem={item?.crossSystem} />
       ),
     };
   });

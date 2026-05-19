@@ -6,7 +6,7 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #94070A;
+  --ifm-color-primary: #94070a;
 
   --ifm-color-primary-dark: rgb(241, 168, 63);
   --ifm-color-primary-darker: rgb(58, 49, 44);
@@ -19,7 +19,6 @@
   --ifm-color-success-contrast-background: rgb(249, 231, 212);
   --ifm-color-success-contrast-foreground: rgb(148, 7, 10);
   --ifm-alert-background-color-highlight: rgb(252, 209, 108);
-
 
   --ifm-code-font-size: 95%;
 }
@@ -35,11 +34,11 @@
   padding: 0 var(--ifm-pre-padding);
 }
 
-html[data-theme='dark'] .docusaurus-highlight-code-line {
+html[data-theme="dark"] .docusaurus-highlight-code-line {
   background-color: rgba(29, 29, 29, 0.3);
 }
 
-html[data-theme='dark']  .alert--success {
+html[data-theme="dark"] .alert--success {
   --ifm-alert-background-color: rgb(58, 49, 44);
   --ifm-color-success-contrast-foreground: rgb(255, 239, 225);
   --ifm-alert-background-color-highlight: rgb(94, 74, 68);

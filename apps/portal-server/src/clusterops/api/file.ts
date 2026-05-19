@@ -27,7 +27,6 @@ export interface ExistsReply {
   exists: boolean;
 }
 
-
 export interface CreateFileRequest {
   userId: string;
   path: string;
@@ -52,7 +51,7 @@ export interface DeleteFileReply {}
 export interface ReadDirectoryRequest {
   userId: string;
   path: string;
-  updateAccessTime?: boolean
+  updateAccessTime?: boolean;
 }
 
 export interface FileInfo {
@@ -75,7 +74,6 @@ export interface ReadDirectoryReply {
   results: FileInfo[];
 }
 
-
 export interface GetHomeDirectoryRequest {
   userId: string;
 }
@@ -94,7 +92,7 @@ export interface MakeDirectoryReply {}
 export interface DownloadRequest {
   userId: string;
   path: string;
-  call: ObjectWritable<{ chunk: Uint8Array }>
+  call: ObjectWritable<{ chunk: Uint8Array }>;
 }
 
 export interface DownloadReply {}
@@ -105,7 +103,7 @@ interface UploadRequest_Info {
 }
 
 interface UploadRequest_ReadStream {
-  message?: { $case: "info"; info: UploadRequest_Info } | { $case: "chunk"; chunk: Uint8Array } | undefined
+  message?: { $case: "info"; info: UploadRequest_Info } | { $case: "chunk"; chunk: Uint8Array } | undefined;
 }
 
 export interface UploadRequest {
@@ -148,8 +146,7 @@ export interface StartFileTransferRequest {
   toPath: string;
 }
 
-export interface StartFileTransferReply {
-}
+export interface StartFileTransferReply {}
 
 export interface QueryFileTransferRequest {
   cluster: string;
@@ -166,7 +163,7 @@ export interface TransferInfo {
 }
 
 export interface QueryFileTransferReply {
-  transferInfos: TransferInfo[]
+  transferInfos: TransferInfo[];
 }
 
 export interface TerminateFileTransferRequest {
@@ -176,9 +173,7 @@ export interface TerminateFileTransferRequest {
   fromPath: string;
 }
 
-export interface TerminateFileTransferReply {
-
-}
+export interface TerminateFileTransferReply {}
 
 // export interface CheckTransferKeyRequest {
 //   fromCluster: string;
@@ -197,8 +192,7 @@ export interface StartFileTransferRequest {
   toPath: string;
 }
 
-export interface StartFileTransferReply {
-}
+export interface StartFileTransferReply {}
 
 export interface QueryFileTransferRequest {
   cluster: string;
@@ -215,7 +209,7 @@ export interface TransferInfo {
 }
 
 export interface QueryFileTransferReply {
-  transferInfos: TransferInfo[]
+  transferInfos: TransferInfo[];
 }
 
 export interface TerminateFileTransferRequest {
@@ -225,9 +219,7 @@ export interface TerminateFileTransferRequest {
   fromPath: string;
 }
 
-export interface TerminateFileTransferReply {
-
-}
+export interface TerminateFileTransferReply {}
 
 // export interface CheckTransferKeyRequest {
 //   fromCluster: string;

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import Icon from "@ant-design/icons";
 import React, { LegacyRef } from "react";
 
@@ -20,13 +8,7 @@ interface IconProps {
 
 // 仪表盘图标
 const dashBoardSVG = () => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M14.5205 14.8135C14.794 14.8694 15 15.1114 15 15.4014C15 15.6914 14.794 15.9334 14.5205
         15.9893L14.3994 16.001H3.59961C3.26844 16.0007 3 15.7326 3 15.4014C3 15.0701 3.26844 14.802
@@ -45,20 +27,13 @@ const dashBoardSVG = () => (
   </svg>
 );
 
-export const DashBoardIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={dashBoardSVG} {...props} ref={ref} />
-  ));
+export const DashBoardIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={dashBoardSVG} {...props} ref={ref} />,
+);
 
 // 作业图标
 const jobSVG = () => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091
         0 12V4C0 1.79086 1.79086 1.61064e-08 4 0H14ZM4 7.40039C3.66863 7.40039 3.40039 7.66863 3.40039
@@ -72,21 +47,12 @@ const jobSVG = () => (
 );
 
 export const JobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={jobSVG} {...props} ref={ref} />
-  ),
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={jobSVG} {...props} ref={ref} />,
 );
 
 // shell图标
 const shellSVG = (style) => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={style}
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
     <path
       d="M18 12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0 12V6H18V12ZM4.27051
         8.37793C4.02144 8.25199 3.70933 8.31472 3.5293 8.54199C3.34971 8.76918 3.36076 9.08635 3.54004
@@ -116,14 +82,7 @@ export const ShellIcon: React.ForwardRefExoticComponent<IconProps> = React.forwa
 
 // 登陆集群图标
 const loginClusterSVG = (style) => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={style}
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
     <path
       d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086
          1.79086 1.61064e-08 4 0H14ZM6.70117 3C5.20945 3.0002 4.0002 4.20945 4 5.70117C4 6.6126 4.45314 7.41604 5.14453
@@ -149,7 +108,6 @@ const loginClusterSVG = (style) => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const LoginClusterIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -173,23 +131,15 @@ const applicationSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const ApplicationIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={applicationSVG} {...props} ref={ref} />
-  ));
+export const ApplicationIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={applicationSVG} {...props} ref={ref} />,
+);
 
 // 文件管理图标
 const fileManagerSVG = () => (
-  <svg
-    width="21"
-    height="16"
-    viewBox="0 0 21 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="21" height="16" viewBox="0 0 21 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M6.55859 0C7.41932 4.77956e-05 8.18376 0.550681 8.45605 1.36719L8.66699 2H18C19.1046 2 20 2.89543
       20 4V9.75781C19.2849 9.27917 18.4251 9 17.5 9C15.0147 9 13 11.0147 13 13.5C13 14.4253 13.28 15.2849
@@ -206,10 +156,9 @@ const fileManagerSVG = () => (
   </svg>
 );
 
-export const FileManagerIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={fileManagerSVG} {...props} ref={ref} />
-  ));
+export const FileManagerIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={fileManagerSVG} {...props} ref={ref} />,
+);
 
 // 文件传输图标
 const fileTransferSVG = () => (
@@ -228,10 +177,9 @@ const fileTransferSVG = () => (
   </svg>
 );
 
-export const FileTransferIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={fileTransferSVG} {...props} ref={ref} />
-  ));
+export const FileTransferIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={fileTransferSVG} {...props} ref={ref} />,
+);
 
 // 传输进度图标
 const fileTransferInfoSVG = () => (
@@ -256,10 +204,9 @@ const fileTransferInfoSVG = () => (
   </svg>
 );
 
-export const FileTransferInfoIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={fileTransferInfoSVG} {...props} ref={ref} />
-  ));
+export const FileTransferInfoIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={fileTransferInfoSVG} {...props} ref={ref} />,
+);
 
 // 所有作业图标
 const allJobsSVG = (style) => (
@@ -275,21 +222,15 @@ const allJobsSVG = (style) => (
     />
   </svg>
 );
-export const AllJobsIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const AllJobsIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => allJobsSVG(props.styles)} {...props} ref={ref} />
-  ));
+  ),
+);
 
 // 提交作业图标
 const submitJobSVG = (style) => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={style}
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
     <path
       d="M14 0C16.2091 0 18 1.79086 18 4V8.75781C17.2849 8.27917 16.4251 8 15.5 8C13.0147 8 11 10.0147
       11 12.5C11 13.9141 11.6528 15.175 12.6729 16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086
@@ -305,21 +246,15 @@ const submitJobSVG = (style) => (
     />
   </svg>
 );
-export const SubmitJobIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const SubmitJobIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => submitJobSVG(props.styles)} {...props} ref={ref} />
-  ));
+  ),
+);
 
 // 未结束作业图标
 const runningJobsSVG = (style) => (
-  <svg
-    width="19"
-    height="16"
-    viewBox="0 0 19 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={style}
-  >
+  <svg width="19" height="16" viewBox="0 0 19 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
     <path
       d="M13.5137 0C15.7227 8.59649e-05 17.5137 1.79091 17.5137 4V8.75781C16.8179 8.27912 15.9812 8
       15.0811 8C12.663 8.00001 10.7031 10.0147 10.7031 12.5C10.7031 13.914 11.3377 15.175 12.3301
@@ -345,20 +280,15 @@ const runningJobsSVG = (style) => (
     />
   </svg>
 );
-export const RunningJobsIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const RunningJobsIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => runningJobsSVG(props.styles)} {...props} ref={ref} />
-  ));
+  ),
+);
 
 // 集群文件管理图标
 const clusterFileManagerSVG = () => (
-  <svg
-    width="21"
-    height="16"
-    viewBox="0 0 21 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="21" height="16" viewBox="0 0 21 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M6.55859 0C7.41932 4.77956e-05 8.18376 0.550681 8.45605 1.36719L8.66699 2H18C19.1046 2 20 2.89543
       20 4V9.75781C19.2849 9.27917 18.4251 9 17.5 9C15.0147 9 13 11.0147 13 13.5C13 14.4253 13.28 15.2849
@@ -374,20 +304,15 @@ const clusterFileManagerSVG = () => (
     />
   </svg>
 );
-export const ClusterFileManagerIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const ClusterFileManagerIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={clusterFileManagerSVG} {...props} ref={ref} />
-  ));
+  ),
+);
 
 // 创建应用图标
 const createAppSVG = () => (
-  <svg
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -404,20 +329,13 @@ const createAppSVG = () => (
     />
   </svg>
 );
-export const CreateAppIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={createAppSVG} {...props} ref={ref} />
-  ));
+export const CreateAppIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={createAppSVG} {...props} ref={ref} />,
+);
 
 // 已创建APP图标
 const appSessionsSVG = () => (
-  <svg
-    width="18"
-    height="17"
-    viewBox="0 0 18 17"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -434,20 +352,13 @@ const appSessionsSVG = () => (
     />
   </svg>
 );
-export const AppSessionsIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={appSessionsSVG} {...props} ref={ref} />
-  ));
+export const AppSessionsIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={appSessionsSVG} {...props} ref={ref} />,
+);
 
 // 进入图标
 const inSVG = () => (
-  <svg
-    width="1em"
-    height="1em"
-    viewBox="0 0 17 17"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="1em" height="1em" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M10.5303 9.03033C10.8232 8.73744 10.8232 8.26256 10.5303 7.96967L5.75736 3.1967
     C5.46447 2.90381 4.98959 2.90381 4.6967 3.1967C4.40381 3.48959 4.40381 3.96447 4.6967 4.25736L8.93934 8.5
@@ -468,21 +379,12 @@ const inSVG = () => (
 );
 
 export const InIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={inSVG} {...props} ref={ref} />
-  ),
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={inSVG} {...props} ref={ref} />,
 );
 
 // 作业模板图标
 const templateJobSVG = (style) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    style={style}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 18 16" fill="none" style={style}>
     <path
       d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14
        16H4C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086 1.61064e-08
@@ -495,10 +397,11 @@ const templateJobSVG = (style) => (
   </svg>
 );
 
-export const TemplateJobIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const TemplateJobIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => templateJobSVG(props.styles)} {...props} ref={ref} />
-  ));
+  ),
+);
 
 // 快捷入口编辑图标
 const entryEditSVG = () => (
@@ -519,9 +422,7 @@ const entryEditSVG = () => (
 );
 
 export const EntryEditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={entryEditSVG} {...props} ref={ref} />
-  ),
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={entryEditSVG} {...props} ref={ref} />,
 );
 
 // 桌面卡片图标
@@ -530,14 +431,13 @@ const desktopCardSVG = (style) => (
     <rect x="6" y="1" width="23" height="18" rx="3" fill="currentColor" stroke="white" strokeWidth="2" />
     <rect x="1" y="8" width="23" height="18" rx="3" fill="currentColor" stroke="white" strokeWidth="2" />
   </svg>
-
 );
 
-export const DesktopCardIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const DesktopCardIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => desktopCardSVG(props.styles)} {...props} ref={ref} />
-  ));
-
+  ),
+);
 
 // 编辑图标
 const editSVG = (style) => (
@@ -557,7 +457,8 @@ const editSVG = (style) => (
   </svg>
 );
 
-export const EditIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <Icon component={() => editSVG(props.styles)} {...props} ref={ref} />
-  ));
+  ),
+);

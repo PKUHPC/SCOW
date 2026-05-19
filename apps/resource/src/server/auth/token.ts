@@ -8,12 +8,13 @@ import { ClientUserInfo } from "../trpc/route/auth";
 import { MOCK_USER_INFO } from "./server";
 
 export async function validateToken(token: string | undefined): Promise<ClientUserInfo | undefined> {
-
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return MOCK_USER_INFO;
   }
 
-  if (!token) { return undefined; }
+  if (!token) {
+    return undefined;
+  }
 
   const resp = await authValidateToken(AUTH_INTERNAL_URL, token).catch(() => undefined);
 

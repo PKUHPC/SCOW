@@ -19,7 +19,6 @@ interface FormProps {
 const p = prefix("component.others.");
 
 const ChangePasswordModal: React.FC<Props> = ({ name, userId, onClose, onComplete, open }) => {
-
   const t = useI18nTranslateToString();
 
   const [form] = Form.useForm<FormProps>();
@@ -46,12 +45,7 @@ const ChangePasswordModal: React.FC<Props> = ({ name, userId, onClose, onComplet
       confirmLoading={loading}
       onCancel={onClose}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={undefined}
-        preserve={false}
-      >
+      <Form form={form} layout="vertical" initialValues={undefined} preserve={false}>
         <Form.Item
           rules={[{ required: true, message: t(p("inputNewPassword")) }, passwordRule(languageId)]}
           label={t(p("newPassword"))}

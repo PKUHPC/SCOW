@@ -9,5 +9,5 @@ export interface ClusterOps {
   job: JobOps;
   desktop: DesktopOps;
   file: FileOps;
-  shell: ShellOps
+  shell: ShellOps;
 }

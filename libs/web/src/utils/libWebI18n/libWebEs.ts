@@ -67,7 +67,8 @@ export default {
   addQuickEntry: "Agregar enlaces",
   cancel: "Cancelar",
   notExist: "No existe",
-  clusterNotAvailable: "El clúster al que accede actualmente no está disponible o no hay clústeres disponibles. Intente más tarde o contacte al administrador.",
+  clusterNotAvailable:
+    "El clúster al que accede actualmente no está disponible o no hay clústeres disponibles. Intente más tarde o contacte al administrador.",
   alreadyExist: "El enlace ya existe",
   cannotBeEmpty: "El enlace no puede estar vacío",
   exceedMaxSize: "Se pueden agregar hasta 10 accesos rápidos",

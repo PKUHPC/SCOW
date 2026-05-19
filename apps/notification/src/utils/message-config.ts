@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Template } from "src/models/message-type";
 import { NoticeType } from "src/models/notice-type";
@@ -63,7 +51,7 @@ export const getMessageConfigsWithDefault = async (em: SqlEntityManager) => {
         });
       }
     }
-  };
+  }
 
   // 处理未存入数据库的消息设置，主要是未设置过的自定义消息及其通知方式
   const defaultNoticeConfig = { canUserModify: false, enabled: false };
@@ -101,15 +89,12 @@ export const getMessageConfigsWithDefault = async (em: SqlEntityManager) => {
   };
 };
 
-
-
-export const getMessageTypeAdminConfigsWithDefault = async (
-  em: SqlEntityManager,
-  messageType: string,
-) => {
-  const results = await Promise.all(enabledNoticeTypes.map(async (noticeType) => {
-    return getMessageConfigWithDefault(em, messageType, noticeType);
-  }));
+export const getMessageTypeAdminConfigsWithDefault = async (em: SqlEntityManager, messageType: string) => {
+  const results = await Promise.all(
+    enabledNoticeTypes.map(async (noticeType) => {
+      return getMessageConfigWithDefault(em, messageType, noticeType);
+    }),
+  );
 
   return results;
 };
@@ -120,9 +105,11 @@ export const getMessageConfigWithDefault = async (
   noticeType: NoticeType,
 ) => {
   const defaultNoticeConfig = { canUserModify: false, enabled: false };
-  return await em.findOne(AdminMessageConfig, { messageType, noticeType }) ?? {
-    messageType,
-    noticeType,
-    ...defaultNoticeConfig,
-  };
+  return (
+    (await em.findOne(AdminMessageConfig, { messageType, noticeType })) ?? {
+      messageType,
+      noticeType,
+      ...defaultNoticeConfig,
+    }
+  );
 };

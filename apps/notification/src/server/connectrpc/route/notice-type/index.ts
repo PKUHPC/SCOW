@@ -6,7 +6,6 @@ import { enabledNoticeTypes } from "src/utils/message/check-message";
 export default (router: ConnectRouter) => {
   router.service(NoticeTypeService, {
     async listNoticeTypes(_, context) {
-
       await checkAuth(context);
 
       return {

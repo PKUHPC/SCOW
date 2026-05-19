@@ -19,7 +19,6 @@ export async function getLockedUsers(
   params: { identityId?: string; name?: string },
   logger?: Logger,
 ): Promise<AuthUserInfo[] | undefined> {
-
   const searchParams = new URLSearchParams();
   if (params.identityId) {
     searchParams.append("identityId", params.identityId);

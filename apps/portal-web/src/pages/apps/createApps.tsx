@@ -13,10 +13,14 @@ import { LaunchAppForm } from "src/pageComponents/app/LaunchAppForm";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Head } from "src/utils/head";
 
-interface App { id: string; name: string; logoPath?: string; availableAccounts?: string[] };
+interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+  availableAccounts?: string[];
+}
 
 export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
-
   const router = useRouter();
   const clusterId = queryToString(router.query.clusterId);
   const appId = queryToString(router.query.appId);
@@ -31,12 +35,14 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
   const [allAvailableAccounts, setAllAvailableAccounts] = useState<string[]>([]);
   const [accountAppClusterMap, setAccountAppClusterMap] = useState<Map<string, string[]>>(new Map());
 
-  const { data: clusterAppsList, isLoading } = useAsync({ promiseFn: useCallback(async () => {
-    const clusterIds = currentClusters.map((cluster) => cluster.id);
-    const appsResponse = await api.getAllClustersAvailableApps({ query: { clusterIds } });
+  const { data: clusterAppsList, isLoading } = useAsync({
+    promiseFn: useCallback(async () => {
+      const clusterIds = currentClusters.map((cluster) => cluster.id);
+      const appsResponse = await api.getAllClustersAvailableApps({ query: { clusterIds } });
 
-    return appsResponse.results;
-  }, []) });
+      return appsResponse.results;
+    }, []),
+  });
 
   useEffect(() => {
     // 如果是带着appId从其它页面跳转过来的，直接到提交应用页面
@@ -44,8 +50,8 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
     const allApps: App[] = [];
 
     clusterAppsList?.forEach((clusterApp) => {
-      if(clusterId){
-          if(clusterId === clusterApp.clusterId) {
+      if (clusterId) {
+        if (clusterId === clusterApp.clusterId) {
           allApps.push(...clusterApp.apps);
         }
       } else {
@@ -61,9 +67,9 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
   }, [clusterAppsList]);
 
   useEffect(() => {
-    if(selectedCluster) {
+    if (selectedCluster) {
       const clusterData = clusterAppsList?.find((item) => item.clusterId === selectedCluster);
-      if(clusterData) {
+      if (clusterData) {
         const appInfo = clusterData.apps.find((app) => app.id === selectedAppInfo?.id);
         setSelectedAppInfo(appInfo);
       }
@@ -104,14 +110,13 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
     let result: App[] = [];
 
     if (selectedCluster) {
-    // 如果选择了集群，只返回该集群的 apps
+      // 如果选择了集群，只返回该集群的 apps
       const clusterData = clusterAppsList?.find((item) => item.clusterId === selectedCluster);
       if (clusterData) {
         result = clusterData.apps;
-
       }
     } else {
-    // 如果没有选择集群，返回所有去重的 apps
+      // 如果没有选择集群，返回所有去重的 apps
       const appMap = new Map<string, App>();
 
       clusterAppsList?.forEach((clusterData) => {
@@ -139,32 +144,28 @@ export const CreateAppsIndexPage: NextPage = requireAuth(() => true)(() => {
   return (
     <>
       <Head title={t("pages.apps.createApps.title")} />
-      {
-        selectedAppInfo ? (
-          <LaunchAppForm
-            appInfo={selectedAppInfo}
-            setSelectedAppInfo={setSelectedAppInfo}
-            preSelectedCluster={selectedCluster}
+      {selectedAppInfo ? (
+        <LaunchAppForm
+          appInfo={selectedAppInfo}
+          setSelectedAppInfo={setSelectedAppInfo}
+          preSelectedCluster={selectedCluster}
+          setSelectedCluster={setSelectedCluster}
+          availableAccounts={availableAccounts}
+          allAvailableAccounts={allAvailableAccounts}
+          accountAppClusterMap={accountAppClusterMap}
+        />
+      ) : (
+        <>
+          <PageTitle titleText={t("pages.apps.createApps.title")} />
+          <CreateAppsTable
+            allApps={filteredApps || []}
+            isLoading={isLoading}
+            selectedCluster={selectedCluster}
             setSelectedCluster={setSelectedCluster}
-            availableAccounts={availableAccounts}
-            allAvailableAccounts={allAvailableAccounts}
-            accountAppClusterMap={accountAppClusterMap}
+            setSelectedAppInfo={setSelectedAppInfo}
           />
-        ) : (
-          <>
-            <PageTitle
-              titleText={t("pages.apps.createApps.title")}
-            />
-            <CreateAppsTable
-              allApps={filteredApps || []}
-              isLoading={isLoading}
-              selectedCluster={selectedCluster}
-              setSelectedCluster={setSelectedCluster}
-              setSelectedAppInfo={setSelectedAppInfo}
-            />
-          </>
-        )
-      }
+        </>
+      )}
     </>
   );
 });

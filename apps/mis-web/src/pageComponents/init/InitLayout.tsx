@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { App, Button, Tabs, Typography } from "antd";
 import Link from "next/link";
 import Router, { useRouter } from "next/router";
@@ -22,7 +10,7 @@ import { styled } from "styled-components";
 
 interface DrawerProps {
   children: React.ReactNode;
-};
+}
 
 const Title = styled(Centered)`
   position: relative;
@@ -58,7 +46,6 @@ const ContentInside = styled.div`
 const p = prefix("pageComp.init.initLayout.");
 
 export const InitTab: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const router = useRouter();
@@ -67,9 +54,7 @@ export const InitTab: React.FC = () => {
     <TabsContainer>
       <Tabs
         centered
-        items={TabItems.map(({ label, href }) => (
-          { key: href, label: <Link href={href}>{t(label)}</Link> }
-        ))}
+        items={TabItems.map(({ label, href }) => ({ key: href, label: <Link href={href}>{t(label)}</Link> }))}
         activeKey={router.asPath}
       />
     </TabsContainer>
@@ -77,13 +62,11 @@ export const InitTab: React.FC = () => {
 };
 
 export const InitDrawer: React.FC<DrawerProps> = ({ children }) => {
-
   const t = useI18nTranslateToString();
 
   const { modal } = App.useApp();
 
   const onOk = async () => {
-
     // check price item completeness
     const missingPriceItems = await api.getMissingDefaultPriceItems({});
 
@@ -98,15 +81,16 @@ export const InitDrawer: React.FC<DrawerProps> = ({ children }) => {
     modal.confirm({
       title: t(p("confirm")),
       content: t(p("confirmText")),
-      onOk: () => api.completeInit({}).then(() => {
-        modal.success({
-          title: t(p("finish")),
-          content: t(p("goLogin")),
-          closable: false,
-          maskClosable: false,
-          onOk: () => Router.push("/api/auth"),
-        });
-      }),
+      onOk: () =>
+        api.completeInit({}).then(() => {
+          modal.success({
+            title: t(p("finish")),
+            content: t(p("goLogin")),
+            closable: false,
+            maskClosable: false,
+            onOk: () => Router.push("/api/auth"),
+          });
+        }),
     });
   };
 
@@ -117,19 +101,14 @@ export const InitDrawer: React.FC<DrawerProps> = ({ children }) => {
         <span />
         <Typography.Title>{t(p("init"))}</Typography.Title>
         <CompleteButtonContainer>
-          <Button
-            type="primary"
-            onClick={onOk}
-          >
+          <Button type="primary" onClick={onOk}>
             {t(p("complete"))}
           </Button>
         </CompleteButtonContainer>
       </Title>
       <InitTab />
       <Content>
-        <ContentInside>
-          {children}
-        </ContentInside>
+        <ContentInside>{children}</ContentInside>
       </Content>
     </div>
   );

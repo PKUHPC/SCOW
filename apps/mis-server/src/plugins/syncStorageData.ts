@@ -13,7 +13,7 @@ export interface SyncStorageDataPlugin {
     lastSync: (cluster?: string, path?: string, tenant?: string) => Date | null;
     run: (cluster?: string, path?: string, tenant?: string) => Promise<SyncError[]>;
     isRunning: boolean;
-  }
+  };
 }
 
 export const SyncStorageDataPlugin = plugin(async (f) => {
@@ -28,15 +28,18 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
     if (syncStorageDataIsRunning) return Promise.resolve([] as SyncError[]);
 
     syncStorageDataIsRunning = true;
-    return syncStorageUsage(f.ext.orm.em.fork(), logger, cluster, path, tenant).
-      finally(() => { syncStorageDataIsRunning = false; });
+    return syncStorageUsage(f.ext.orm.em.fork(), logger, cluster, path, tenant).finally(() => {
+      syncStorageDataIsRunning = false;
+    });
   };
 
   const task = cron.schedule(
     schedule,
-    () => { void trigger()?.catch((e) => {
-      logger.error("Error when fetching jobs. %o", e);
-    }); },
+    () => {
+      void trigger()?.catch((e) => {
+        logger.error("Error when fetching jobs. %o", e);
+      });
+    },
     {
       timezone: "Asia/Shanghai",
       scheduled: misConfig.periodicSyncStorageData?.enabled ?? false,
@@ -50,7 +53,7 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
     logger.info("Fetch info stopped.");
   });
 
-  f.addExtension("syncStorageUsage", ({
+  f.addExtension("syncStorageUsage", {
     started: () => syncStorageDataStarted,
     start: () => {
       if (syncStorageDataStarted) {
@@ -85,5 +88,5 @@ export const SyncStorageDataPlugin = plugin(async (f) => {
     },
     run: (cluster?: string, path?: string, tenant?: string) => trigger(cluster, path, tenant),
     isRunning: syncStorageDataIsRunning,
-  } as SyncStorageDataPlugin["syncStorageUsage"]));
+  } as SyncStorageDataPlugin["syncStorageUsage"]);
 });

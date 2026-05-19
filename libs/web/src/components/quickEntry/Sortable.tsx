@@ -1,20 +1,28 @@
 import { MinusOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import {
-  closestCenter, DndContext, DragEndEvent, DragOverlay, DragStartEvent,
-  MouseSensor, TouchSensor, useSensor, useSensors,
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  rectSortingStrategy,
-  SortableContext } from "@dnd-kit/sortable";
+import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { I18nStringType } from "@scow/config/build/i18n";
 import { message } from "antd";
 import { join } from "path";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Cluster } from "src/utils/cluster";
-import { formatEntryId, getEntryBaseName,
-  getEntryExtraInfo, getEntryIcon,
-  getEntryLogoPath } from "src/utils/dashboard";
+import {
+  formatEntryId,
+  getEntryBaseName,
+  getEntryExtraInfo,
+  getEntryIcon,
+  getEntryLogoPath,
+} from "src/utils/dashboard";
 import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 import { styled } from "styled-components";
 
@@ -32,23 +40,23 @@ const ItemsContainer = styled.div`
 `;
 
 interface Props {
-  isEditable: boolean,
-  isFinished: boolean,
-  quickEntryArray: Entry[],
-  apps: AppWithCluster,
-  currentClusters: Cluster[],
-  publicConfigClusters: Cluster[],
+  isEditable: boolean;
+  isFinished: boolean;
+  quickEntryArray: Entry[];
+  apps: AppWithCluster;
+  currentClusters: Cluster[];
+  publicConfigClusters: Cluster[];
   quickEntryType?: "ai" | "portal";
-  languageId: string,
+  languageId: string;
   iconMap: Record<string, React.ReactElement>;
   entryItems: {
     defaultEntries: Entry[];
     staticEntries: Entry[];
-  }
+  };
   basePath: string;
-  publicPath: string,
-  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
-  onSaveQuickEntries: (newItems: Entry[]) => void
+  publicPath: string;
+  loginNodes?: Record<string, { name: I18nStringType; address: string }[]>;
+  onSaveQuickEntries: (newItems: Entry[]) => void;
 }
 
 type itemEntry = Entry & {
@@ -57,7 +65,7 @@ type itemEntry = Entry & {
 
 const ItemContainer = styled.div`
   position: relative;
-  box-shadow: 0px 2px 10px 0px #1C01011A;
+  box-shadow: 0px 2px 10px 0px #1c01011a;
   border-radius: 10px;
 `;
 
@@ -72,14 +80,26 @@ const DeleteIconContainer = styled.div`
 `;
 
 export const Sortable: FC<Props> = ({
-  isEditable, isFinished, quickEntryArray, apps, currentClusters, publicConfigClusters, quickEntryType,
-  languageId, publicPath, basePath, iconMap, loginNodes, entryItems, onSaveQuickEntries }) => {
+  isEditable,
+  isFinished,
+  quickEntryArray,
+  apps,
+  currentClusters,
+  publicConfigClusters,
+  quickEntryType,
+  languageId,
+  publicPath,
+  basePath,
+  iconMap,
+  loginNodes,
+  entryItems,
+  onSaveQuickEntries,
+}) => {
   // 实际的快捷入口项
-  const [items, setItems] = useState<itemEntry []>(quickEntryArray);
+  const [items, setItems] = useState<itemEntry[]>(quickEntryArray);
   // 编辑时临时的快捷入口项
   // 处理id使其唯一，因为不同集群可以有相同的应用
-  const [temItems, setTemItems] = useState([...(items.map((x) => ({ ...x, id:formatEntryId(x) }),
-  ))]);
+  const [temItems, setTemItems] = useState([...items.map((x) => ({ ...x, id: formatEntryId(x) }))]);
 
   const [addEntryOpen, setAddEntryOpen] = useState(false);
 
@@ -102,7 +122,7 @@ export const Sortable: FC<Props> = ({
   };
 
   const addItem = (item: itemEntry) => {
-    item = { ...item, originalId: item.id, id:formatEntryId(item) };
+    item = { ...item, originalId: item.id, id: formatEntryId(item) };
     if (temItems.find((x) => x.id === item.id)) {
       message.error(getCurrentLangLibWebText(languageId, "alreadyExist"));
       return;
@@ -110,7 +130,6 @@ export const Sortable: FC<Props> = ({
 
     setTemItems([...temItems, item]);
   };
-
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id);
@@ -138,7 +157,6 @@ export const Sortable: FC<Props> = ({
     (item: Entry) => {
       if (!isEditable) {
         switch (item.entry?.$case) {
-
           case "pageLink": {
             window.open(join(basePath, item.entry.pageLink.path), "_blank");
             break;
@@ -158,12 +176,14 @@ export const Sortable: FC<Props> = ({
             if (quickEntryType === "ai") {
               window.open(
                 `${join(basePath, "/jobs/createApp", item.entry.app.appId)}` +
-                `?clusterId=${encodeURIComponent(savedAppClusterId)}`,
+                  `?clusterId=${encodeURIComponent(savedAppClusterId)}`,
                 "_blank",
               );
             } else {
-              window.open(join(basePath, "/apps",
-                `/createApps?appId=${item.entry.app.appId}&clusterId=${savedAppClusterId}`), "_blank");
+              window.open(
+                join(basePath, "/apps", `/createApps?appId=${item.entry.app.appId}&clusterId=${savedAppClusterId}`),
+                "_blank",
+              );
             }
             if (!currentClusters.some((x) => x.id === savedAppClusterId)) {
               return <ClusterNotAvailablePage />;
@@ -191,7 +211,7 @@ export const Sortable: FC<Props> = ({
 
   useEffect(() => {
     if (isFinished) {
-      const newItems = [...(temItems.map((x) => ({ ...x, id: x.originalId || "" })))];
+      const newItems = [...temItems.map((x) => ({ ...x, id: x.originalId || "" }))];
       setItems(newItems);
       onSaveQuickEntries(newItems);
     }
@@ -199,7 +219,7 @@ export const Sortable: FC<Props> = ({
 
   useEffect(() => {
     // 处理id使其唯一，因为不同集群可以有相同的交互式应用
-    setTemItems([...(items.map((x) => ({ ...x, originalId: x.id, id:formatEntryId(x) })))]);
+    setTemItems([...items.map((x) => ({ ...x, originalId: x.id, id: formatEntryId(x) }))]);
   }, [isEditable, items]);
 
   return (
@@ -214,15 +234,10 @@ export const Sortable: FC<Props> = ({
         <SortableContext items={temItems} strategy={rectSortingStrategy}>
           <ItemsContainer>
             {temItems.map((x) => (
-              <ItemContainer
-                key={x.id}
-              >
-                {(isEditable && activeItem === undefined) ? (
+              <ItemContainer key={x.id}>
+                {isEditable && activeItem === undefined ? (
                   <DeleteIconContainer>
-                    <MinusOutlined
-                      onClick={() => deleteFn(x.id)}
-                      size={8}
-                    />
+                    <MinusOutlined onClick={() => deleteFn(x.id)} size={8} />
                   </DeleteIconContainer>
                 ) : undefined}
                 <SortableItem
@@ -236,24 +251,28 @@ export const Sortable: FC<Props> = ({
                   icon={getEntryIcon(x)}
                   /** 如果是已授权应用图标直接使用，如果不是判断是否为已保存的快捷方式，是否有保存的可以展示的图标路径 */
                   logoPath={
-                    getEntryLogoPath(x, apps) || (x.entry?.$case === "app" ? x.entry.app?.appLogoPath : undefined) }
+                    getEntryLogoPath(x, apps) || (x.entry?.$case === "app" ? x.entry.app?.appLogoPath : undefined)
+                  }
                   onClick={() => onItemClick(x)}
                 />
               </ItemContainer>
             ))}
-            {
-              isEditable ? (
-                <div
-                  style={{
-                    display: "flex", justifyContent: "center", alignItems: "center",
-                    padding: "40px", cursor: "pointer",
-                  }}
-                  onClick={() => { setAddEntryOpen(true); }}
-                >
-                  <PlusCircleOutlined style={{ fontSize: "40px" }} />
-                </div>
-              ) : undefined
-            }
+            {isEditable ? (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  padding: "40px",
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setAddEntryOpen(true);
+                }}
+              >
+                <PlusCircleOutlined style={{ fontSize: "40px" }} />
+              </div>
+            ) : undefined}
           </ItemsContainer>
         </SortableContext>
         <DragOverlay adjustScale style={{ transformOrigin: "0 0" }}>
@@ -274,7 +293,9 @@ export const Sortable: FC<Props> = ({
       </DndContext>
       <AddEntryModal
         open={addEntryOpen}
-        onClose={() => { setAddEntryOpen(false); }}
+        onClose={() => {
+          setAddEntryOpen(false);
+        }}
         apps={apps}
         addItem={addItem}
         clusters={currentClusters}

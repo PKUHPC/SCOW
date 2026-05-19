@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -28,8 +16,12 @@ import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getBillCsvStringify, getContentTypeWithCharset,
-  getCsvObjTransform } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getBillCsvStringify,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+} from "src/utils/file";
 import { nullableMoneyToString } from "src/utils/money";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
@@ -49,12 +41,12 @@ export const ExportBillSchema = typeboxRouteSchema({
     termEnd: Type.Optional(Type.String()), // 账期结束，格式如 "202407"
     searchType: Type.Optional(Type.Enum(SearchType)),
 
-    types:Type.Optional(Type.Array(Type.String())),
+    types: Type.Optional(Type.Array(Type.String())),
     encoding: Type.Enum(Encoding),
-    timeZone:Type.Optional(Type.String()),
+    timeZone: Type.Optional(Type.String()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
@@ -62,35 +54,37 @@ export const ExportBillSchema = typeboxRouteSchema({
 });
 
 export default route(ExportBillSchema, async (req, res) => {
-
   const { query } = req;
 
-  const { columns, accountNames, userIdsOrNames, termStart, termEnd, type,
-    searchType, count, encoding, timeZone } = query;
+  const { columns, accountNames, userIdsOrNames, termStart, termEnd, type, searchType, count, encoding, timeZone } =
+    query;
   let user;
   if (searchType === SearchType.selfAccount) {
-    user = await authenticate((i) =>
-      accountNames?.length === 1 &&
+    user = await authenticate(
+      (i) =>
+        accountNames?.length === 1 &&
         i.accountAffiliations.some((x) => x.accountName === accountNames[0] && x.role !== UserRole.USER),
     )(req, res);
   } else if (searchType === SearchType.selfTenant) {
-    user = await authenticate((i) =>
-      i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-        i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
     )(req, res);
   } else {
-    user = await authenticate((i) =>
-      i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
+    user = await authenticate(
+      (i) =>
+        i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
         i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
     )(req, res);
   }
-  if (!user) { return; }
+  if (!user) {
+    return;
+  }
 
   const logInfo = {
     operatorUserId: user.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.exportBill,
-    operationTypePayload:{
+    operationTypePayload: {
       tenantName: searchType ? user.tenant : undefined,
       accountNames: accountNames ?? [],
     },
@@ -99,9 +93,7 @@ export default route(ExportBillSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
-
     const client = getClient(ExportServiceClient);
 
     const filename = `bill-${new Date().toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })}.csv`;
@@ -110,7 +102,7 @@ export default route(ExportBillSchema, async (req, res) => {
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
@@ -144,13 +136,10 @@ export default route(ExportBillSchema, async (req, res) => {
       accountOwnerName: t(pCommon("owner")),
       term: t(p("term")),
       amount: `${t(pCommon("amount"))} (${unit})`,
-      ...Object.fromEntries(
-        columns.filter((col) => !fixedColumns.has(col)).map((col) => [col, `${col} (${unit})`]),
-      ),
+      ...Object.fromEntries(columns.filter((col) => !fixedColumns.has(col)).map((col) => [col, `${col} (${unit})`])),
     };
 
     const csvStringify = getBillCsvStringify(headerColumns, columns);
-
 
     const transform = getCsvObjTransform("bills", formatBill);
     const encodingTransform = createEncodingTransform(encoding); // 创建编码转换流

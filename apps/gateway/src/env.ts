@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { bool, envConfig, str } from "@scow/lib-config";
 
 export const config = envConfig({
@@ -55,6 +43,8 @@ export const config = envConfig({
   PUBLIC_PATH: str({ desc: "静态文件路径前缀。以/开头，以/结尾", default: "/__public__/" }),
 
   ALLOWED_SERVER_NAME: str({ desc: "允许访问的域名或 IP，多个域名和 IP 间用空格隔开", default: "_" }),
-  DEFAULT_SERVER_BLOCK: str({ desc: "当配置了ALLOWED_SERVER_NAME为特定IP或域名时，设置默认服务块拒绝其他访问", default: "" }),
+  DEFAULT_SERVER_BLOCK: str({
+    desc: "当配置了ALLOWED_SERVER_NAME为特定IP或域名时，设置默认服务块拒绝其他访问",
+    default: "",
+  }),
 });
-

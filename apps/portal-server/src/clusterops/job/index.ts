@@ -12,7 +12,6 @@ export interface JobMetadata extends JobTemplate {
 }
 
 export const jobOps = (cluster: string): JobOps => {
-
   const clusterInfo = configClusters[cluster];
   if (clusterInfo.scowd?.enabled) {
     const getClient = (userId: string) => getScowdClient(cluster, userId);
@@ -23,7 +22,9 @@ export const jobOps = (cluster: string): JobOps => {
   } else {
     const host = getClusterLoginNode(cluster);
 
-    if (!host) { throw clusterNotFound(cluster); }
+    if (!host) {
+      throw clusterNotFound(cluster);
+    }
 
     return {
       ...sshJobServices(host),

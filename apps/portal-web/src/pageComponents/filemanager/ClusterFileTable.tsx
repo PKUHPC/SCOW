@@ -38,9 +38,14 @@ interface Props {
 }
 
 export const ClusterFileTable: React.FC<Props> = ({
-  selectedCluster, setSelectedCluster, path, setPath, selectedKeys, setSelectedKeys, excludeCluster,
+  selectedCluster,
+  setSelectedCluster,
+  path,
+  setPath,
+  selectedKeys,
+  setSelectedKeys,
+  excludeCluster,
 }) => {
-
   const setNewPath = (newPath: string) => {
     setPath(newPath);
     setSelectedKeys([]); // 每进入一个新的path，清空SelectedKeys
@@ -61,7 +66,8 @@ export const ClusterFileTable: React.FC<Props> = ({
     // 清空SelectedKeys
     setSelectedKeys([]);
     if (selectedCluster) {
-      await api.listFile({ query: { cluster: selectedCluster.id, path: path, updateAccessTime: true } })
+      await api
+        .listFile({ query: { cluster: selectedCluster.id, path: path, updateAccessTime: true } })
         .then((d) => {
           setFiles(d.items);
         })
@@ -88,10 +94,9 @@ export const ClusterFileTable: React.FC<Props> = ({
 
   const toHome = async () => {
     if (selectedCluster) {
-      await api.getHomeDirectory({ query: { cluster: selectedCluster.id } })
-        .then((d) => {
-          setNewPath(d.path);
-        });
+      await api.getHomeDirectory({ query: { cluster: selectedCluster.id } }).then((d) => {
+        setNewPath(d.path);
+      });
     }
   };
 
@@ -107,21 +112,17 @@ export const ClusterFileTable: React.FC<Props> = ({
             value={selectedCluster}
             onChange={async (cluster) => {
               if (cluster) {
-                await api.getHomeDirectory({ query: { cluster: cluster.id } })
-                  .then((d) => {
-                    setNewPath(d.path);
-                    setSelectedCluster(cluster);
-                  });
+                await api.getHomeDirectory({ query: { cluster: cluster.id } }).then((d) => {
+                  setNewPath(d.path);
+                  setSelectedCluster(cluster);
+                });
               }
             }}
-            exclude={ excludeCluster }
+            exclude={excludeCluster}
           />
         </Space>
         <Space wrap>
-          <Button
-            onClick={onHiddenClick}
-            icon={showHiddenFile ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-          >
+          <Button onClick={onHiddenClick} icon={showHiddenFile ? <EyeInvisibleOutlined /> : <EyeOutlined />}>
             {showHiddenFile ? t(p("notShowHiddenItem")) : t(p("showHiddenItem"))}
           </Button>
         </Space>
@@ -140,13 +141,18 @@ export const ClusterFileTable: React.FC<Props> = ({
             }
           }}
           breadcrumbItemRender={(pathSegment, index, path) =>
-            (index === 0 ? (
+            index === 0 ? (
               <DatabaseOutlined onClick={toHome} />
             ) : (
-              <a onClick={(e) => { e.stopPropagation(); setNewPath(join("/", path)); }}>
+              <a
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewPath(join("/", path));
+                }}
+              >
                 {pathSegment}
               </a>
-            ))
+            )
           }
         />
       </TopBar>
@@ -162,7 +168,9 @@ export const ClusterFileTable: React.FC<Props> = ({
         scroll={{ x: true }}
         rowSelection={{
           selectedRowKeys: selectedKeys,
-          onChange: (keys) => { setSelectedKeys(keys); },
+          onChange: (keys) => {
+            setSelectedKeys(keys);
+          },
         }}
         onRow={(r) => ({
           onClick: () => {
@@ -187,9 +195,7 @@ export const ClusterFileTable: React.FC<Props> = ({
           width={"32px"}
           defaultSortOrder={"ascend"}
           sorter={(a, b) => a.type.localeCompare(b.type)}
-          render={(_, r) => (
-            React.createElement(iconFor(r))
-          )}
+          render={(_, r) => React.createElement(iconFor(r))}
         />
 
         <Table.Column<FileInfo>
@@ -197,51 +203,57 @@ export const ClusterFileTable: React.FC<Props> = ({
           title={t(p("fileName"))}
           sorter={(a, b) => a.name.localeCompare(b.name)}
           sortDirections={["ascend", "descend"]}
-          render={(_, r) => (
+          render={(_, r) =>
             r.type === "DIR" ? (
-              <a onClick={(event) => {
-                event.stopPropagation(); // 阻止冒泡，防止点击文件夹进入新Path时选中
-                setNewPath(join(path, r.name));
-              }}
+              <a
+                onClick={(event) => {
+                  event.stopPropagation(); // 阻止冒泡，防止点击文件夹进入新Path时选中
+                  setNewPath(join(path, r.name));
+                }}
               >
                 {r.name}
               </a>
             ) : (
-              <a onClick={(event) => {
-                event.stopPropagation();
-                if (selectedCluster) {
-                  const href = urlToDownload(selectedCluster.id, join(path, r.name), false);
-                  openPreviewLink(href);
-                }
-              }}
+              <a
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (selectedCluster) {
+                    const href = urlToDownload(selectedCluster.id, join(path, r.name), false);
+                    openPreviewLink(href);
+                  }
+                }}
               >
                 {r.name}
               </a>
             )
-          )}
+          }
         />
 
         <Table.Column<FileInfo>
           dataIndex="mtime"
           title={t(p("modificationDate"))}
-          render={(mtime: string | undefined) => mtime ? formatDateTime(mtime) : ""}
-          sorter={(a, b) => a.type.localeCompare(b.type) === 0
-            ? compareDateTime(a.mtime, b.mtime) === 0
-              ? a.name.localeCompare(b.name)
-              : compareDateTime(a.mtime, b.mtime)
-            : a.type.localeCompare(b.type)}
+          render={(mtime: string | undefined) => (mtime ? formatDateTime(mtime) : "")}
+          sorter={(a, b) =>
+            a.type.localeCompare(b.type) === 0
+              ? compareDateTime(a.mtime, b.mtime) === 0
+                ? a.name.localeCompare(b.name)
+                : compareDateTime(a.mtime, b.mtime)
+              : a.type.localeCompare(b.type)
+          }
         />
 
         <Table.Column<FileInfo>
           dataIndex="size"
           title={t(p("size"))}
-          render={(size: number | undefined, file: FileInfo) => (size === undefined || file.type === "DIR")
-            ? ""
-            : (
-              <Tooltip title={Math.round((size) / 1024).toLocaleString() + "KB"} placement="topRight">
+          render={(size: number | undefined, file: FileInfo) =>
+            size === undefined || file.type === "DIR" ? (
+              ""
+            ) : (
+              <Tooltip title={Math.round(size / 1024).toLocaleString() + "KB"} placement="topRight">
                 <span>{formatSize(Math.round(size / 1024))}</span>
               </Tooltip>
-            )}
+            )
+          }
           sorter={(a, b) => {
             return a.type.localeCompare(b.type) === 0
               ? compareNumber(a.size, b.size) === 0
@@ -254,9 +266,8 @@ export const ClusterFileTable: React.FC<Props> = ({
         <Table.Column<FileInfo>
           dataIndex="mode"
           title={t(p("permission"))}
-          render={(mode: number | undefined) => mode === undefined ? "" : nodeModeToString(mode)}
+          render={(mode: number | undefined) => (mode === undefined ? "" : nodeModeToString(mode))}
         />
-
       </Table>
     </>
   );

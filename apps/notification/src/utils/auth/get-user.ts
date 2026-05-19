@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { GetUserInfoResponse, UserServiceClient } from "@scow/protos/build/server/user";
 import { Logger } from "pino";
@@ -28,11 +16,7 @@ export interface AuthUserInfo {
  * @param userId the identity id of the user
  * @returns the user info. undefined if user do not exist
  */
-export async function getUser(
-  userId: string,
-  logger: Logger,
-): Promise<UserInfo | undefined> {
-
+export async function getUser(userId: string, logger: Logger): Promise<UserInfo | undefined> {
   const client = getScowClient(UserServiceClient);
 
   try {
@@ -45,8 +29,8 @@ export async function getUser(
       platformRoles: userInfo.platformRoles,
       tenant: userInfo.tenantName,
       tenantRoles: userInfo.tenantRoles,
-      email:userInfo.email,
-      createTime:userInfo.createTime,
+      email: userInfo.email,
+      createTime: userInfo.createTime,
     };
   } catch {
     logger.error(`get user ${userId}'s info error`);

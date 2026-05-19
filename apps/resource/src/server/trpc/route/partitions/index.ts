@@ -3,7 +3,9 @@ import { router } from "src/server/trpc/def";
 import {
   accountsAssignedDetails,
   assignAccountCluster,
-  assignAccountPartition, unAssignAccountCluster, unAssignAccountPartition,
+  assignAccountPartition,
+  unAssignAccountCluster,
+  unAssignAccountPartition,
 } from "./accountClusterPartitions";
 import {
   accountDefaultClusters,
@@ -11,7 +13,9 @@ import {
   addToAccountDefaultClusters,
   addToAccountDefaultPartitions,
   assignTenantCluster,
-  assignTenantPartition, removeFromAccountDefaultClusters, removeFromAccountDefaultPartitions,
+  assignTenantPartition,
+  removeFromAccountDefaultClusters,
+  removeFromAccountDefaultPartitions,
   tenantAssignedClusters,
   tenantAssignedPartitions,
   tenantsAssignedDetails,
@@ -44,5 +48,4 @@ export const partitionRouter = router({
   unAssignAccountCluster,
   assignAccountPartition,
   unAssignAccountPartition,
-
 });

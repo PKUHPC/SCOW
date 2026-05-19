@@ -42,19 +42,21 @@ export const SetJobChargeLimitSchema = typeboxRouteSchema({
 });
 
 export default route(SetJobChargeLimitSchema, async (req, res) => {
-
   const { accountName, userIds, limit } = req.body;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(JobChargeLimitServiceClient);
 
@@ -63,15 +65,19 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
       operatorUserId: info.identityId,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.accountSetChargeLimit,
-      operationTypePayload:{
-        accountName, userId, limit: numberToMoney(limit),
+      operationTypePayload: {
+        accountName,
+        userId,
+        limit: numberToMoney(limit),
       },
     };
   });
 
   return await asyncClientCall(client, "setJobChargeLimit", {
     tenantName: info.tenant,
-    accountName, userIds, limit: numberToMoney(limit),
+    accountName,
+    userIds,
+    limit: numberToMoney(limit),
   })
     .then(async (res) => {
       if (res.success) {
@@ -90,14 +96,18 @@ export default route(SetJobChargeLimitSchema, async (req, res) => {
 
       return { 200: res };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_LIMIT_DATA" as const } }),
-      [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
-      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-    },
-    async () => logInfos.forEach(async (logInfo) => {
-      await callLog(logInfo, OperationResult.FAIL);
-    }),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_LIMIT_DATA" as const } }),
+          [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+          [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+        },
+        async () =>
+          logInfos.forEach(async (logInfo) => {
+            await callLog(logInfo, OperationResult.FAIL);
+          }),
+      ),
+    );
 });

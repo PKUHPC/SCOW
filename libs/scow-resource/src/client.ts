@@ -6,7 +6,7 @@ import { ClusterPartitionService } from "@scow/scow-resource-protos/build/partit
 import { join } from "path";
 
 export interface ScowResourceClient {
-  resource: Client<typeof ClusterPartitionService>
+  resource: Client<typeof ClusterPartitionService>;
 }
 
 const setAuthorization: Interceptor = (next) => async (req) => {
@@ -20,7 +20,8 @@ const setAuthorization: Interceptor = (next) => async (req) => {
 };
 
 export function getClient<TService extends GenServiceMethods>(
-  scowResourceUrl: string, service: GenService<TService>,
+  scowResourceUrl: string,
+  service: GenService<TService>,
 ): Client<GenService<TService>> {
   const transport = createConnectTransport({
     baseUrl: join(scowResourceUrl, "/api"),

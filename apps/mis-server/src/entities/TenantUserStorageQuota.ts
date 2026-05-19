@@ -27,18 +27,11 @@ export class TenantUserStorageQuota {
   @Property({ columnType: "bigint", comment: "租户下用户的存储使用量" })
   usage: bigint;
 
-  constructor(init: {
-    user: EntityOrRef<User>;
-    cluster: string,
-    path: string,
-    storageQuota?: bigint,
-    usage: bigint,
-  }) {
+  constructor(init: { user: EntityOrRef<User>; cluster: string; path: string; storageQuota?: bigint; usage: bigint }) {
     this.user = toRef(init.user);
     this.cluster = init.cluster;
     this.path = init.path;
     this.storageQuota = init.storageQuota;
     this.usage = init.usage;
   }
-
 }

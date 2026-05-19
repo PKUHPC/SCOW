@@ -8,7 +8,6 @@ import { getAssignedClusterPartitions, getUserAssignedResourceDetails } from "sr
 import { z } from "zod";
 
 export const resource = router({
-
   // 获取当前登录用户的可用 集群ID 列表
   // (1) 如果没有部署管理系统且资源管理系统为不可用，返回当前系统已配置集群ID
   // (2) 如果部署了管理系统，没有部署资源管理，则返回管理系统在线集群ID
@@ -23,11 +22,12 @@ export const resource = router({
       },
     })
     .input(z.void())
-    .output(z.object({
-      clusterIds: z.array(z.string()),
-    }))
+    .output(
+      z.object({
+        clusterIds: z.array(z.string()),
+      }),
+    )
     .query(async ({ ctx: { req, res } }) => {
-
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
         throw new TRPCError({
@@ -39,7 +39,6 @@ export const resource = router({
 
       return { clusterIds: results };
     }),
-
 
   // 获取资源管理系统中用户关联账户的已授权的集群分区信息
   // 未配置资源管理返回{clusterPartitions: undefined}
@@ -53,11 +52,12 @@ export const resource = router({
       },
     })
     .input(z.void())
-    .output(z.object({
-      clusterPartitions: z.record(z.string(), z.array(z.string())).optional(),
-    }))
+    .output(
+      z.object({
+        clusterPartitions: z.record(z.string(), z.array(z.string())).optional(),
+      }),
+    )
     .query(async ({ ctx: { req, res } }) => {
-
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
         throw new TRPCError({
@@ -81,20 +81,26 @@ export const resource = router({
         summary: "获取资源管理中用户关联的账户，账户已授权集群与分区信息",
       },
     })
-    .input(z.object({
-      accountStatusFilter: z.enum([
-        AccountStatusFilter.ALL,
-        AccountStatusFilter.BLOCKED_ONLY,
-        AccountStatusFilter.UNBLOCKED_ONLY]).optional(),
-    }))
-    .output(z.object({
-      results: z.array(z.object({
-        accountName: z.string(),
-        assignedClusterPartitions: z.record(z.string(), z.array(z.string())),
-      })).optional(),
-    }))
+    .input(
+      z.object({
+        accountStatusFilter: z
+          .enum([AccountStatusFilter.ALL, AccountStatusFilter.BLOCKED_ONLY, AccountStatusFilter.UNBLOCKED_ONLY])
+          .optional(),
+      }),
+    )
+    .output(
+      z.object({
+        results: z
+          .array(
+            z.object({
+              accountName: z.string(),
+              assignedClusterPartitions: z.record(z.string(), z.array(z.string())),
+            }),
+          )
+          .optional(),
+      }),
+    )
     .query(async ({ input, ctx: { req, res } }) => {
-
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
         throw new TRPCError({
@@ -106,5 +112,4 @@ export const resource = router({
 
       return { results };
     }),
-
 });

@@ -1,7 +1,7 @@
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { Descriptions, Drawer, Tag } from "antd";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import { AccountAffiliation,FullUserInfo, TenantRole } from "src/models/User";
+import { AccountAffiliation, FullUserInfo, TenantRole } from "src/models/User";
 
 interface Props {
   open: boolean;
@@ -12,7 +12,6 @@ interface Props {
 const p = prefix("pageComp.user.tenantUserInfoDrawer.");
 
 export const TenantUserInfoDrawer: React.FC<Props> = (props) => {
-
   const t = useI18nTranslateToString();
 
   const TenantRoleI18nTexts = {
@@ -23,9 +22,7 @@ export const TenantUserInfoDrawer: React.FC<Props> = (props) => {
   const formatTenantRoles = (tenantRoles?: (0 | 1)[]) => {
     if (!tenantRoles) return "";
 
-    return tenantRoles.map((role) => (
-      <Tag key={role}>{TenantRoleI18nTexts[role]}</Tag>
-    ));
+    return tenantRoles.map((role) => <Tag key={role}>{TenantRoleI18nTexts[role]}</Tag>);
   };
 
   const formatAccount = (accounts?: AccountAffiliation[]) => {
@@ -44,35 +41,23 @@ export const TenantUserInfoDrawer: React.FC<Props> = (props) => {
     [t(p("affiliatedAccounts")), "accountAffiliations", formatAccount],
     [t(p("comment")), "adminComment"],
     [t(p("createTime")), "createTime", formatDateTime],
-  ] as (
-  | [string, keyof FullUserInfo, (v: any) => string]
-  )[];
-
+  ] as [string, keyof FullUserInfo, (v: any) => string][];
 
   const { item, onClose, open } = props;
 
   return (
-    <Drawer
-      width={500}
-      placement="right"
-      onClose={onClose}
-      open={open}
-      title={t(p("detail"))}
-    >
-      {
-        item ? (
-          <Descriptions
-            column={1}
-            bordered
-            size="small"
-          >
-            {drawerItems.map((([label, key, format]) => (
+    <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>
+      {item ? (
+        <Descriptions column={1} bordered size="small">
+          {drawerItems
+            .map(([label, key, format]) => (
               <Descriptions.Item key={item.id} label={label}>
-                {format ? format(item[key]) : (item[key] ?? "") as string}
+                {format ? format(item[key]) : ((item[key] ?? "") as string)}
               </Descriptions.Item>
-            ))).filter((x) => x)}
-          </Descriptions>
-        ) : undefined }
+            ))
+            .filter((x) => x)}
+        </Descriptions>
+      ) : undefined}
     </Drawer>
   );
 };

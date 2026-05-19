@@ -21,10 +21,7 @@ export default function Page() {
       label: t(p("private")),
       children: (
         <div>
-          <ImageListTable
-            isPublic={false}
-            clusters={publicConfig.CLUSTERS}
-          />
+          <ImageListTable isPublic={false} clusters={publicConfig.CLUSTERS} />
         </div>
       ),
     },
@@ -33,10 +30,7 @@ export default function Page() {
       label: t(p("public")),
       children: (
         <div>
-          <ImageListTable
-            isPublic={true}
-            clusters={publicConfig.CLUSTERS}
-          />
+          <ImageListTable isPublic={true} clusters={publicConfig.CLUSTERS} />
         </div>
       ),
     },

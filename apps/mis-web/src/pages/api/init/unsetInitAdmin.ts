@@ -17,14 +17,15 @@ export const UnsetInitAdminSchema = typeboxRouteSchema({
     204: Type.Null(),
 
     409: Type.Object({ code: Type.Literal("ALREADY_INITIALIZED") }),
-
   },
 });
 
 export default route(UnsetInitAdminSchema, async (req) => {
   const result = await queryIfInitialized();
 
-  if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
+  if (result) {
+    return { 409: { code: "ALREADY_INITIALIZED" as const } };
+  }
 
   const { userId } = req.query;
 
@@ -35,6 +36,4 @@ export default route(UnsetInitAdminSchema, async (req) => {
   });
 
   return { 204: null };
-
 });
-

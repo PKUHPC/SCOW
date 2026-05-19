@@ -8,11 +8,7 @@ export const SystemInitialErrorPage: React.FC = () => {
   return (
     <>
       <Head title="Server Error" />
-      <Result
-        status={500}
-        title="500"
-        subTitle="Server Error Page"
-      />
+      <Result status={500} title="500" subTitle="Server Error Page" />
     </>
   );
 };

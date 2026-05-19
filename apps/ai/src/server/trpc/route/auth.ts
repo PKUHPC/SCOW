@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { changePassword, checkPassword, deleteToken } from "@scow/lib-auth";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { joinWithUrl } from "@scow/utils";
@@ -48,21 +36,16 @@ const ClientUserInfoSchema = z.object({
   email: z.optional(z.string()),
   tenantName: z.optional(z.string()),
   organization: z.optional(z.string()),
-  tenantRoles: z.optional(z.array(z.union([
-    z.literal(TenantRole.TENANT_ADMIN),
-    z.literal(TenantRole.TENANT_FINANCE),
-  ]))),
-  platformRoles: z.optional(z.array(z.union([
-    z.literal(PlatformRole.PLATFORM_ADMIN),
-    z.literal(PlatformRole.PLATFORM_FINANCE),
-  ]))),
+  tenantRoles: z.optional(z.array(z.union([z.literal(TenantRole.TENANT_ADMIN), z.literal(TenantRole.TENANT_FINANCE)]))),
+  platformRoles: z.optional(
+    z.array(z.union([z.literal(PlatformRole.PLATFORM_ADMIN), z.literal(PlatformRole.PLATFORM_FINANCE)])),
+  ),
   createTime: z.optional(z.string()),
 });
 
 export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
 
 export const auth = router({
-
   getUserInfo: authProcedure
     .meta({
       openapi: {
@@ -73,9 +56,11 @@ export const auth = router({
       },
     })
     .input(z.void())
-    .output(z.object({
-      user: ClientUserInfoSchema,
-    }))
+    .output(
+      z.object({
+        user: ClientUserInfoSchema,
+      }),
+    )
     .query(async ({ ctx: { req, res } }) => {
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
@@ -96,10 +81,12 @@ export const auth = router({
         summary: "登录后回调，写入cookie",
       },
     })
-    .input(z.object({
-      token:z.string(),
-      fromAuth: booleanQueryParam().optional(),
-    }))
+    .input(
+      z.object({
+        token: z.string(),
+        fromAuth: booleanQueryParam().optional(),
+      }),
+    )
     .output(z.void())
     .query(async ({ ctx: { req, res }, input }) => {
       const { token, fromAuth = false } = input;
@@ -124,7 +111,6 @@ export const auth = router({
       // set token cache
       setUserTokenCookie(token, res);
       res.redirect(BASE_PATH);
-
     }),
 
   login: baseProcedure
@@ -139,12 +125,12 @@ export const auth = router({
     .input(z.void())
     .output(z.void())
     .query(async ({ ctx: { req, res } }) => {
+      const callbackUrl = `${config.PROTOCOL || "http"}://${req.headers.host}` + join(BASE_PATH, "/api/auth/callback");
 
-      const callbackUrl = `${ config.PROTOCOL || "http"}://${req.headers.host}`
-       + join(BASE_PATH, "/api/auth/callback");
-
-      const target = joinWithUrl(config.AUTH_EXTERNAL_URL,
-        `public/auth?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      const target = joinWithUrl(
+        config.AUTH_EXTERNAL_URL,
+        `public/auth?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      );
 
       res.redirect(target);
     }),
@@ -161,7 +147,6 @@ export const auth = router({
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx: { req, res } }) => {
-
       const token = getUserToken(req) || "";
       if (token) {
         const identityId = await validateUserToken(token);
@@ -176,7 +161,6 @@ export const auth = router({
       }
       await deleteToken(token, config.AUTH_INTERNAL_URL);
       deleteUserToken(res);
-
     }),
 
   changePassword: authProcedure
@@ -188,17 +172,23 @@ export const auth = router({
         summary: "更改密码",
       },
     })
-    .input(z.object({
-      identityId:z.string(),
-      oldPassword:z.string(),
-      newPassword:z.string(),
-    }))
+    .input(
+      z.object({
+        identityId: z.string(),
+        oldPassword: z.string(),
+        newPassword: z.string(),
+      }),
+    )
     .output(z.void())
-    .mutation(async ({ ctx: { req },input:{ identityId, oldPassword, newPassword } }) => {
-      const checkRes = await checkPassword(config.AUTH_INTERNAL_URL, {
-        identityId,
-        password: oldPassword,
-      }, console);
+    .mutation(async ({ ctx: { req }, input: { identityId, oldPassword, newPassword } }) => {
+      const checkRes = await checkPassword(
+        config.AUTH_INTERNAL_URL,
+        {
+          identityId,
+          password: oldPassword,
+        },
+        console,
+      );
 
       const logInfo = {
         operatorUserId: identityId,
@@ -221,11 +211,14 @@ export const auth = router({
         });
       }
 
-      const changeRes = await changePassword(config.AUTH_INTERNAL_URL, {
-        identityId,
-        newPassword,
-      }, console)
-        .catch((e) => e.status);
+      const changeRes = await changePassword(
+        config.AUTH_INTERNAL_URL,
+        {
+          identityId,
+          newPassword,
+        },
+        console,
+      ).catch((e) => e.status);
 
       if (changeRes) {
         await callLog(logInfo, OperationResult.FAIL);
@@ -249,11 +242,13 @@ export const auth = router({
         summary: "更改邮箱",
       },
     })
-    .input(z.object({
-      newEmail:z.string(),
-    }))
+    .input(
+      z.object({
+        newEmail: z.string(),
+      }),
+    )
     .output(z.void())
-    .mutation(async ({ ctx: { req },input:{ newEmail } }) => {
+    .mutation(async ({ ctx: { req }, input: { newEmail } }) => {
       await changeEmail(req, newEmail).catch((error) => {
         throw new TRPCError({
           message: `Change email failed: ${error.message}`,

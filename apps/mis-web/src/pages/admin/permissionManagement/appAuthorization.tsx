@@ -9,9 +9,8 @@ import { AppAuthorizationTable } from "src/pageComponents/common/appAuthorizatio
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-export const AppAuthorizationPage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
-
+export const AppAuthorizationPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
+  () => {
     const t = useI18nTranslateToString();
 
     if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
@@ -22,12 +21,10 @@ export const AppAuthorizationPage: NextPage =
       <div>
         <Head title={t("pageComp.commonComponent.appAuthorization.appAuthorizationTable.title")} />
         <PageTitle titleText={t("pageComp.commonComponent.appAuthorization.appAuthorizationTable.title")} />
-        <AppAuthorizationTable
-          targetType={AppAuthTargetType.TENANT}
-          loading={false}
-        />
+        <AppAuthorizationTable targetType={AppAuthTargetType.TENANT} loading={false} />
       </div>
     );
-  });
+  },
+);
 
 export default AppAuthorizationPage;

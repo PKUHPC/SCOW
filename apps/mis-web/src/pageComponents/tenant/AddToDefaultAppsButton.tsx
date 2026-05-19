@@ -1,3 +1,5 @@
+import type { GetTenantAppsSchema } from "src/pages/api/tenant/authorization/getTenantApps";
+
 import { PlusOutlined } from "@ant-design/icons";
 import { Static } from "@sinclair/typebox";
 import { App, Button, Divider, Form, Modal, Select } from "antd";
@@ -6,7 +8,6 @@ import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { UpdateDefaultAppAction } from "src/models/app";
-import type { GetTenantAppsSchema } from "src/pages/api/tenant/authorization/getTenantApps";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 
@@ -17,7 +18,7 @@ interface FormProps {
 interface ModalProps {
   clusterId: string;
   tenantName: string;
-  defaultAppsData: Static<typeof GetTenantAppsSchema["responses"]["200"]> | undefined;
+  defaultAppsData: Static<(typeof GetTenantAppsSchema)["responses"]["200"]> | undefined;
   open: boolean;
   close: () => void;
   refresh: () => void;
@@ -27,7 +28,12 @@ interface ModalProps {
 const p = prefix("pageComp.tenant.defaultApps.defaultAppsTable.addToDefaultApps.");
 
 const NewAppModal: React.FC<ModalProps> = ({
-  clusterId, tenantName, defaultAppsData, open, close, onAdd: onAdding,
+  clusterId,
+  tenantName,
+  defaultAppsData,
+  open,
+  close,
+  onAdd: onAdding,
 }) => {
   const t = useI18nTranslateToString();
   const { publicConfigClusters } = useStore(ClusterInfoStore);
@@ -54,7 +60,6 @@ const NewAppModal: React.FC<ModalProps> = ({
     }
   }, [open, form]);
 
-
   return (
     <Modal
       title={t(p("title"))}
@@ -70,33 +75,25 @@ const NewAppModal: React.FC<ModalProps> = ({
       <>
         <div style={{ marginTop: "10px" }}>
           <span>
-            {t(p("tenant"))}：
-            <strong>{tenantName}</strong>
+            {t(p("tenant"))}：<strong>{tenantName}</strong>
           </span>
           <Divider type="vertical" />
           <span>
-            {t(p("cluster"))}：
-            <strong>{clusterName}</strong>
+            {t(p("cluster"))}：<strong>{clusterName}</strong>
           </span>
         </div>
-        <p style={{ color: "red" }}>
-          {t(p("modalWarn"))}
-        </p>
+        <p style={{ color: "red" }}>{t(p("modalWarn"))}</p>
       </>
       <Form form={form}>
-        <Form.Item
-          name="appId"
-          label={t(p("app"))}
-          rules={[
-            { required: true },
-          ]}
-        >
+        <Form.Item name="appId" label={t(p("app"))} rules={[{ required: true }]}>
           <Select placeholder={placeholder}>
-            {defaultAppsData?.tenantApps?.filter((x) => !x.isDefault)?.map((option) => (
-              <Select.Option key={option.id} value={option.id}>
-                {option.name}
-              </Select.Option>
-            ))}
+            {defaultAppsData?.tenantApps
+              ?.filter((x) => !x.isDefault)
+              ?.map((option) => (
+                <Select.Option key={option.id} value={option.id}>
+                  {option.name}
+                </Select.Option>
+              ))}
           </Select>
         </Form.Item>
       </Form>
@@ -107,27 +104,25 @@ const NewAppModal: React.FC<ModalProps> = ({
 interface Props {
   clusterId: string;
   tenantName: string;
-  defaultAppsData: Static<typeof GetTenantAppsSchema["responses"]["200"]> | undefined;
+  defaultAppsData: Static<(typeof GetTenantAppsSchema)["responses"]["200"]> | undefined;
   refresh: () => void;
 }
 
-export const AddToDefaultAppsButton: React.FC<Props> = ({
-  clusterId, tenantName, defaultAppsData, refresh }) => {
-
+export const AddToDefaultAppsButton: React.FC<Props> = ({ clusterId, tenantName, defaultAppsData, refresh }) => {
   const t = useI18nTranslateToString();
   const { message } = App.useApp();
   const [modalShow, setModalShow] = useState(false);
 
-
   const onAdd = async (clusterId: string, appId: string) => {
-    await api.updateDefaultApp({
-      body: {
-        clusterId,
-        appId,
-        appName: defaultAppsData?.tenantApps?.find((x) => x.id === appId)?.name ?? "",
-        updateAction: UpdateDefaultAppAction.ADD_TO_DEFAULT_APPS,
-      },
-    })
+    await api
+      .updateDefaultApp({
+        body: {
+          clusterId,
+          appId,
+          appName: defaultAppsData?.tenantApps?.find((x) => x.id === appId)?.name ?? "",
+          updateAction: UpdateDefaultAppAction.ADD_TO_DEFAULT_APPS,
+        },
+      })
       .then((res) => {
         if (res.executed) {
           message.success(t(p("addSuccessMessage")));

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -18,8 +6,10 @@ import { moneyToNumber, numberToMoney } from "@scow/lib-decimal";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
 import { AdminServiceClient } from "@scow/protos/build/server/admin";
 import { ChargingServiceClient } from "@scow/protos/build/server/charging";
-import { ClusterActivationStatus as ClusterActivationStatusProto,
-  ConfigServiceClient } from "@scow/protos/build/server/config";
+import {
+  ClusterActivationStatus as ClusterActivationStatusProto,
+  ConfigServiceClient,
+} from "@scow/protos/build/server/config";
 import { createServer } from "src/app";
 import { Account, AccountState } from "src/entities/Account";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
@@ -40,21 +30,20 @@ beforeEach(async () => {
   clusterItem = new Cluster({
     clusterId: "hpcTest",
     activationStatus: ClusterActivationStatus.DEACTIVATED,
-    lastActivationOperation: { "operatorId": "userA", "deactivationComment": "Deactivation Comment" },
+    lastActivationOperation: { operatorId: "userA", deactivationComment: "Deactivation Comment" },
   });
   const hpc00 = await server.ext.orm.em.fork().findOneOrFail(Cluster, {
     clusterId: "hpc00",
   });
   hpc00.activationStatus = ClusterActivationStatus.DEACTIVATED;
   hpc00.lastActivationOperation = {
-    "operatorId": "userB",
-    "deactivationComment": "new deactivation message for upgrade",
+    operatorId: "userB",
+    deactivationComment: "new deactivation message for upgrade",
   };
 
   await server.ext.orm.em.fork().persistAndFlush([clusterItem, hpc00]);
 
   client = new ConfigServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 });
 
 afterEach(async () => {
@@ -63,21 +52,22 @@ afterEach(async () => {
 });
 
 it("gets clusters initial database info", async () => {
-
   const clustersRuntimeInfo = await asyncClientCall(client, "getClustersRuntimeInfo", {});
 
   expect(clustersRuntimeInfo.results.length).toEqual(4);
-  expect(clustersRuntimeInfo.results.map((x) => ({
-    clusterId: x.clusterId,
-    activationStatus: x.activationStatus,
-    lastActivationOperation: x.lastActivationOperation,
-  }))).toIncludeSameMembers([
+  expect(
+    clustersRuntimeInfo.results.map((x) => ({
+      clusterId: x.clusterId,
+      activationStatus: x.activationStatus,
+      lastActivationOperation: x.lastActivationOperation,
+    })),
+  ).toIncludeSameMembers([
     {
       clusterId: "hpc00",
       activationStatus: ClusterActivationStatusProto.DEACTIVATED,
       lastActivationOperation: {
-        "operatorId": "userB",
-        "deactivationComment": "new deactivation message for upgrade",
+        operatorId: "userB",
+        deactivationComment: "new deactivation message for upgrade",
       },
     },
     {
@@ -93,24 +83,20 @@ it("gets clusters initial database info", async () => {
     {
       clusterId: "hpcTest",
       activationStatus: ClusterActivationStatusProto.DEACTIVATED,
-      lastActivationOperation:  { "operatorId": "userA", "deactivationComment": "Deactivation Comment" },
+      lastActivationOperation: { operatorId: "userA", deactivationComment: "Deactivation Comment" },
     },
   ]);
-
 });
 
 it("cannot activate a cluster if the schedular adapter is not reachable", async () => {
-
   const reply = await asyncClientCall(client, "activateCluster", {
     clusterId: "hpcTest",
     operatorId: "userB",
   }).catch((e) => e);
   expect(reply.code).toBe(Status.FAILED_PRECONDITION);
-
 });
 
 it("cannot write to db when activated a cluster has already been activated", async () => {
-
   const reply = await asyncClientCall(client, "activateCluster", {
     clusterId: "hpc01",
     operatorId: "userB",
@@ -126,7 +112,6 @@ it("cannot write to db when activated a cluster has already been activated", asy
 });
 
 it("activates a cluster", async () => {
-
   const reply = await asyncClientCall(client, "activateCluster", {
     clusterId: "hpc00",
     operatorId: "userC",
@@ -138,25 +123,20 @@ it("activates a cluster", async () => {
   });
   expect(updatedCluster.activationStatus).toBe(ClusterActivationStatus.ACTIVATED);
   expect(updatedCluster.lastActivationOperation).toStrictEqual({
-    "operatorId": "userC",
+    operatorId: "userC",
   });
-
 });
 
-
 it("cannot deactivate a cluster if not found", async () => {
-
   const reply = await asyncClientCall(client, "deactivateCluster", {
     clusterId: "hpc123",
     operatorId: "userA",
     deactivationComment: "deactivation for upgrade",
   }).catch((e) => e);
   expect(reply.code).toBe(Status.NOT_FOUND);
-
 });
 
 it("cannot write to db when deactivated a cluster has already been deactivated", async () => {
-
   const reply = await asyncClientCall(client, "deactivateCluster", {
     clusterId: "hpcTest",
     operatorId: "userB",
@@ -170,13 +150,12 @@ it("cannot write to db when deactivated a cluster has already been deactivated",
   });
   expect(deactivatedCluster.activationStatus).toBe(ClusterActivationStatus.DEACTIVATED);
   expect(deactivatedCluster.lastActivationOperation).toStrictEqual({
-    "operatorId": "userA",
-    "deactivationComment": "Deactivation Comment",
+    operatorId: "userA",
+    deactivationComment: "Deactivation Comment",
   });
 });
 
 it("deactivates a cluster", async () => {
-
   const reply = await asyncClientCall(client, "deactivateCluster", {
     clusterId: "hpc01",
     operatorId: "userB",
@@ -189,14 +168,12 @@ it("deactivates a cluster", async () => {
   });
   expect(deactivatedCluster.activationStatus).toBe(ClusterActivationStatus.DEACTIVATED);
   expect(deactivatedCluster.lastActivationOperation).toStrictEqual({
-    "operatorId": "userB",
-    "deactivationComment": "deactivation message for upgrade",
+    operatorId: "userB",
+    deactivationComment: "deactivation message for upgrade",
   });
-
 });
 
 it("creates an account and executes pay operation successfully during cluster activation operation", async () => {
-
   const reply = await asyncClientCall(client, "deactivateCluster", {
     clusterId: "hpc01",
     operatorId: "userB",
@@ -206,8 +183,11 @@ it("creates an account and executes pay operation successfully during cluster ac
 
   const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
-  await asyncClientCall(accountClient, "createAccount", { accountName: "a1234", tenantName: data.tenant.name,
-    ownerId: data.userA.userId });
+  await asyncClientCall(accountClient, "createAccount", {
+    accountName: "a1234",
+    tenantName: data.tenant.name,
+    ownerId: data.userA.userId,
+  });
   const em = server.ext.orm.em.fork();
 
   const account = await em.findOneOrFail(Account, { accountName: "a1234" });
@@ -240,12 +220,14 @@ it("creates an account and executes pay operation successfully during cluster ac
 });
 
 it("cannot execute pay operation during all clusters were deactivated", async () => {
-
   // create account
   const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
-  await asyncClientCall(accountClient, "createAccount", { accountName: "a1234", tenantName: data.tenant.name,
-    ownerId: data.userA.userId });
+  await asyncClientCall(accountClient, "createAccount", {
+    accountName: "a1234",
+    tenantName: data.tenant.name,
+    ownerId: data.userA.userId,
+  });
   const em = server.ext.orm.em.fork();
 
   const account = await em.findOneOrFail(Account, { accountName: "a1234" });
@@ -269,7 +251,6 @@ it("cannot execute pay operation during all clusters were deactivated", async ()
   });
   expect(deactivationReply2.executed).toBeTrue();
 
-
   // pay operation
   const amount = numberToMoney(10);
 
@@ -287,15 +268,17 @@ it("cannot execute pay operation during all clusters were deactivated", async ()
 
   expect(payReply.code).toBe(Status.INTERNAL);
   expect(payReply.details).toBe("No available clusters. Please try again later");
-
 });
 
 it("creates an account and executes charge operation successfully during cluster activation operation", async () => {
   // create an account
   const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
-  await asyncClientCall(accountClient, "createAccount", { accountName: "a1234", tenantName: data.tenant.name,
-    ownerId: data.userA.userId });
+  await asyncClientCall(accountClient, "createAccount", {
+    accountName: "a1234",
+    tenantName: data.tenant.name,
+    ownerId: data.userA.userId,
+  });
   const em = server.ext.orm.em.fork();
 
   const account = await em.findOneOrFail(Account, { accountName: "a1234" });
@@ -337,12 +320,14 @@ it("creates an account and executes charge operation successfully during cluster
 });
 
 it("cannot execute charge operation during all clusters were deactivated", async () => {
-
   // create account
   const accountClient = new AccountServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
-  await asyncClientCall(accountClient, "createAccount", { accountName: "a1234", tenantName: data.tenant.name,
-    ownerId: data.userA.userId });
+  await asyncClientCall(accountClient, "createAccount", {
+    accountName: "a1234",
+    tenantName: data.tenant.name,
+    ownerId: data.userA.userId,
+  });
   const em = server.ext.orm.em.fork();
 
   const account = await em.findOneOrFail(Account, { accountName: "a1234" });
@@ -366,7 +351,6 @@ it("cannot execute charge operation during all clusters were deactivated", async
   });
   expect(deactivationReply2.executed).toBeTrue();
 
-
   // pay operation
   const amount = numberToMoney(10);
 
@@ -382,25 +366,26 @@ it("cannot execute charge operation during all clusters were deactivated", async
 
   expect(chargeReply.code).toBe(Status.INTERNAL);
   expect(chargeReply.details).toBe("No available clusters. Please try again later");
-
 });
 
-
 it("cannot import users and accounts during all clusters were deactivated", async () => {
-
   const data = {
     accounts: [
       {
         accountName: "a_user1",
-        users: [{ userId: "user1", userName: "user1Name", blocked: false },
-          { userId: "user2", userName: "user2", blocked: true }],
+        users: [
+          { userId: "user1", userName: "user1Name", blocked: false },
+          { userId: "user2", userName: "user2", blocked: true },
+        ],
         owner: "user1",
         blocked: false,
       },
       {
         accountName: "account2",
-        users: [{ userId: "user2", userName: "user2", blocked: false },
-          { userId: "user3", userName: "user3", blocked: true }],
+        users: [
+          { userId: "user2", userName: "user2", blocked: false },
+          { userId: "user3", userName: "user3", blocked: true },
+        ],
         owner: "user2",
         blocked: false,
       },
@@ -423,10 +408,10 @@ it("cannot import users and accounts during all clusters were deactivated", asyn
   expect(deactivationReply2.executed).toBeTrue();
 
   const adminClient = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-  const importReply = await asyncClientCall(adminClient, "importUsers", { data: data, whitelist: true })
-    .catch((e) => e);
+  const importReply = await asyncClientCall(adminClient, "importUsers", { data: data, whitelist: true }).catch(
+    (e) => e,
+  );
 
   expect(importReply.code).toBe(Status.INTERNAL);
   expect(importReply.details).toBe("No available clusters. Please try again later");
 });
-

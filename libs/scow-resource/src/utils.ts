@@ -66,7 +66,6 @@ export async function getUserAccountsClusterIds(
   userAccounts: string[] | undefined,
   tenantName: string | undefined,
 ): Promise<string[]> {
-
   if (!tenantName || !userAccounts || userAccounts.length === 0) {
     logger.error("Cannot get user accounts' authorized resource information due to missing tenant or accounts.");
     return [];
@@ -74,24 +73,27 @@ export async function getUserAccountsClusterIds(
 
   try {
     const resourceClient = getScowResourceClient(scowResourceConfig.address);
-    const clusters =
-        await resourceClient.resource.getAccountsAssignedClusterIds({ accountNames: userAccounts, tenantName });
+    const clusters = await resourceClient.resource.getAccountsAssignedClusterIds({
+      accountNames: userAccounts,
+      tenantName,
+    });
     return clusters.assignedClusterIds;
   } catch (e) {
     const error = mapTRPCExceptionToGRPC(e);
-    logger.error(`Failed to get user accounts' authorized clusters of ${userAccounts.length} `
-      + `accounts in ${tenantName}. ${error.details}`);
+    logger.error(
+      `Failed to get user accounts' authorized clusters of ${userAccounts.length} ` +
+        `accounts in ${tenantName}. ${error.details}`,
+    );
     return [];
   }
-};
-
+}
 
 // 获取用户关联账户的已授权集群和分区
 export async function getUserAccountsClusterPartitions(
   scowResourceConfig: ScowResourceConfigSchema,
   userAccounts: string[] | undefined,
-  tenantName: string | undefined): Promise<Record<string, string[]>> {
-
+  tenantName: string | undefined,
+): Promise<Record<string, string[]>> {
   if (!tenantName || !userAccounts || userAccounts.length === 0) {
     logger.error("Cannot get user accounts' authorized resource information due to missing tenant or accounts.");
     return {};
@@ -100,7 +102,8 @@ export async function getUserAccountsClusterPartitions(
     const resourceClient = getScowResourceClient(scowResourceConfig.address);
 
     const clusters = await resourceClient.resource.getAccountsAssignedClustersAndPartitions({
-      accountNames: userAccounts, tenantName,
+      accountNames: userAccounts,
+      tenantName,
     });
     const merged: Record<string, string[]> = {};
     clusters.assignedClusterPartitions.forEach((accountPartitions) => {
@@ -118,19 +121,20 @@ export async function getUserAccountsClusterPartitions(
     return merged;
   } catch (e) {
     const error = mapTRPCExceptionToGRPC(e);
-    logger.error(`Failed to get user accounts' authorized cluster partitions of ${userAccounts.length} accounts `
-      + `in ${tenantName}}. ${error.details}`);
+    logger.error(
+      `Failed to get user accounts' authorized cluster partitions of ${userAccounts.length} accounts ` +
+        `in ${tenantName}}. ${error.details}`,
+    );
     return {};
   }
-
-};
+}
 
 // 获取用户关联账户的已授权集群和分区（按账户聚合）
 export async function getUserAccountsClusterPartitionsByAccount(
   scowResourceConfig: ScowResourceConfigSchema,
   userAccounts: string[] | undefined,
-  tenantName: string | undefined): Promise<Record<string, Record<string, string[]>>> {
-
+  tenantName: string | undefined,
+): Promise<Record<string, Record<string, string[]>>> {
   if (!tenantName || !userAccounts || userAccounts.length === 0) {
     logger.error("Cannot get user accounts' authorized resource information due to missing tenant or accounts.");
     return {};
@@ -139,20 +143,28 @@ export async function getUserAccountsClusterPartitionsByAccount(
     const resourceClient = getScowResourceClient(scowResourceConfig.address);
 
     const clusters = await resourceClient.resource.getAccountsAssignedClustersAndPartitions({
-      accountNames: userAccounts, tenantName,
+      accountNames: userAccounts,
+      tenantName,
     });
-    return clusters.assignedClusterPartitions.reduce((acc, accountPartitions) => {
-      acc[accountPartitions.account] = accountPartitions.clusterPartitions
-        .reduce((clusterAcc, value) => {
-          clusterAcc[value.cluster] = value.partitionName;
-          return clusterAcc;
-        }, {} as Record<string, string[]>);
-      return acc;
-    }, {} as Record<string, Record<string, string[]>>);
+    return clusters.assignedClusterPartitions.reduce(
+      (acc, accountPartitions) => {
+        acc[accountPartitions.account] = accountPartitions.clusterPartitions.reduce(
+          (clusterAcc, value) => {
+            clusterAcc[value.cluster] = value.partitionName;
+            return clusterAcc;
+          },
+          {} as Record<string, string[]>,
+        );
+        return acc;
+      },
+      {} as Record<string, Record<string, string[]>>,
+    );
   } catch (e) {
     const error = mapTRPCExceptionToGRPC(e);
-    logger.error(`Failed to get user accounts' authorized cluster partitions of ${userAccounts.length} accounts `
-      + `in ${tenantName}}. ${error.details}`);
+    logger.error(
+      `Failed to get user accounts' authorized cluster partitions of ${userAccounts.length} accounts ` +
+        `in ${tenantName}}. ${error.details}`,
+    );
     return {};
   }
 }
@@ -161,13 +173,12 @@ export async function getUserAccountsClusterPartitionsByAccount(
 export async function getClusterAssignedAccounts(
   scowResourceConfig: ScowResourceConfigSchema,
   clusterId: string,
-  tenantName: string): Promise<string[]> {
-
+  tenantName: string,
+): Promise<string[]> {
   try {
     const resourceClient = getScowResourceClient(scowResourceConfig.address);
 
-    const result =
-      await resourceClient.resource.getClusterAssignedAccounts({ clusterId, tenantName });
+    const result = await resourceClient.resource.getClusterAssignedAccounts({ clusterId, tenantName });
 
     return result.accountNames;
   } catch (e) {
@@ -175,29 +186,31 @@ export async function getClusterAssignedAccounts(
     logger.error(`Failed to get authorized accounts of tenant ${tenantName} in ${clusterId}. ${error.details}`);
     return [];
   }
-
-};
-
+}
 
 // 获取用户关联账户的已授权集群和分区
 export async function isAccountAuthorizedInClusterPartition(
   scowResourceConfig: ScowResourceConfigSchema,
   accountName: string,
   clusterId: string,
-  partitionName?: string): Promise<boolean> {
-
+  partitionName?: string,
+): Promise<boolean> {
   try {
     const resourceClient = getScowResourceClient(scowResourceConfig.address);
 
-    const result =
-      await resourceClient.resource.isAccountAuthorizedInClusterPartition({ accountName, clusterId, partitionName });
+    const result = await resourceClient.resource.isAccountAuthorizedInClusterPartition({
+      accountName,
+      clusterId,
+      partitionName,
+    });
     return result.isAuthorized;
   } catch (e) {
     const partitionInfo = partitionName ? `: ${partitionName}` : "";
     const error = mapTRPCExceptionToGRPC(e);
-    logger.error(`Failed to get the authorization state of account ${accountName} in ${clusterId}${partitionInfo}. `
-      + `${error.details}`);
+    logger.error(
+      `Failed to get the authorization state of account ${accountName} in ${clusterId}${partitionInfo}. ` +
+        `${error.details}`,
+    );
     return false;
   }
-
-};
+}

@@ -26,21 +26,28 @@ interface FormProps {
   decompressionPath: string;
 }
 
-export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clusterId, sourcePath, usePublicPath,
-  files, setDecompression }) => {
+export const DecompressionModal: React.FC<Props> = ({
+  open,
+  onClose,
+  reload,
+  clusterId,
+  sourcePath,
+  usePublicPath,
+  files,
+  setDecompression,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.decompressionModal.");
   const pCommon = prefix("common.");
 
-
-  const { message,modal } = App.useApp();
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
   const [loading, setLoading] = useState(false);
 
   const mutation = trpc.file.decompressFile.useMutation({
     // 不显示错误信息trpcClient.tsx中的兜底信息
-    onError:(e) => {
+    onError: (e) => {
       if (e.data?.code === "TOO_MANY_REQUESTS") {
         message.error(t(pCommon("noSpaceError")));
       }
@@ -48,21 +55,21 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
   });
 
   const handleDecompress = async (decompressionPath: string) => {
-
     setDecompression?.((decompression) => ({
-      ...decompression, started: decompression.started.concat(decompressionPath),
+      ...decompression,
+      started: decompression.started.concat(decompressionPath),
     }));
 
-    await Promise.allSettled(files.map(async (f: FileInfo) => {
-
-      return mutation.mutateAsync({
-        clusterId,
-        filePath: join(sourcePath, f.name),
-        decompressionPath,
-        usePublicPath,
-      });
-    })).then((decompressionResults) => {
-
+    await Promise.allSettled(
+      files.map(async (f: FileInfo) => {
+        return mutation.mutateAsync({
+          clusterId,
+          filePath: join(sourcePath, f.name),
+          decompressionPath,
+          usePublicPath,
+        });
+      }),
+    ).then((decompressionResults) => {
       setLoading(false);
 
       const errors = decompressionResults.reduce((acc: { fileName: string; reason: any }[], result, index) => {
@@ -77,15 +84,17 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
       }
 
       if (errors.length > 0) {
-        const errorDetails = errors.map((error) => {
-          const rawReason = error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason;
+        const errorDetails = errors
+          .map((error) => {
+            const rawReason = error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason;
 
-          const finalReason = String(rawReason).includes("is outside user home directory")
-            ? "Operation exceeds path boundary limits"
-            : rawReason;
+            const finalReason = String(rawReason).includes("is outside user home directory")
+              ? "Operation exceeds path boundary limits"
+              : rawReason;
 
-          return `Filename: ${error?.fileName} \nReason: ${finalReason}`;
-        }).join("; \n\n");
+            return `Filename: ${error?.fileName} \nReason: ${finalReason}`;
+          })
+          .join("; \n\n");
 
         if (errors.length === files.length) {
           modal.error({
@@ -103,11 +112,10 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
       setDecompression?.((decompression) => {
         // 如果所有开始的任务都已经完成则清空
         if (decompression.completed.length + 1 === decompression.started.length) {
-          return { completed: [], started: []};
+          return { completed: [], started: [] };
         }
 
-        return { ...decompression,
-          completed: decompression.completed.concat(decompressionPath) };
+        return { ...decompression, completed: decompression.completed.concat(decompressionPath) };
       });
     });
   };
@@ -146,7 +154,7 @@ export const DecompressionModal: React.FC<Props> = ({ open, onClose, reload, clu
           label={t(p("decompressionPath"))}
           name="decompressionPath"
           rules={[{ required: true }]}
-          initialValue={ join(sourcePath, getFilePathWithoutExtension(files[0]?.name) || "") }
+          initialValue={join(sourcePath, getFilePathWithoutExtension(files[0]?.name) || "")}
         >
           <Input />
         </Form.Item>

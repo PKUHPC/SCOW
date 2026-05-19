@@ -15,11 +15,13 @@ import { FileManager } from "src/pageComponents/filemanager/FileManager";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Head } from "src/utils/head";
 
-type Props = {
-  error: AuthResultError;
-} | {
-  scowdEnabledClusters: string[];
-};
+type Props =
+  | {
+      error: AuthResultError;
+    }
+  | {
+      scowdEnabledClusters: string[];
+    };
 
 export const FileManagerPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
   if ("error" in props) {
@@ -42,15 +44,8 @@ export const FileManagerPage: NextPage<Props> = requireAuth(() => true)((props: 
   const fullPath = "/" + (pathParts?.join("/") ?? "");
 
   if (!clusterObj) {
-    return (
-      <Result
-        status="404"
-        title={"404"}
-        subTitle={t("pages.files.path.title")}
-      />
-    );
+    return <Result status="404" title={"404"} subTitle={t("pages.files.path.title")} />;
   }
-
 
   return (
     <>
@@ -66,7 +61,6 @@ export const FileManagerPage: NextPage<Props> = requireAuth(() => true)((props: 
 });
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => {
-
   const auth = ssrAuthenticate(() => true);
 
   const info = await auth(req);
@@ -79,7 +73,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => 
   if (USE_MOCK) {
     return {
       props: {
-        scowdEnabledClusters: [ "hpc01" ],
+        scowdEnabledClusters: ["hpc01"],
       },
     };
   }

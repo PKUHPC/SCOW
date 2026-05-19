@@ -1,6 +1,5 @@
 import { createI18n, Lang, languageDictionary, TextIdFromLangDict } from "react-typed-i18n";
 
-
 const zh_cn = () => import("./zh_cn").then((x) => x.default);
 const en = () => import("./en").then((x) => x.default);
 const ja = () => import("./ja").then((x) => x.default);
@@ -15,7 +14,8 @@ const ru = () => import("./ru").then((x) => x.default);
 export type LangType = Awaited<ReturnType<typeof zh_cn>>;
 
 export const languages = languageDictionary({
-  zh_cn, en,
+  zh_cn,
+  en,
 });
 
 export const languageInfo = {

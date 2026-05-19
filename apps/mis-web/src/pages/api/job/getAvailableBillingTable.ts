@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ConfigServiceClient } from "@scow/protos/build/server/config";
@@ -31,11 +19,13 @@ export const JobBillingTableItem = Type.Object({
 
   cluster: Type.String(),
   clusterItemIndex: Type.Number(),
-  priceItem: Type.Optional(Type.Object({
-    itemId: Type.String(),
-    price: Type.String(),
-    amount: Type.String(),
-  })),
+  priceItem: Type.Optional(
+    Type.Object({
+      itemId: Type.String(),
+      price: Type.String(),
+      amount: Type.String(),
+    }),
+  ),
 
   partition: Type.String(),
   partitionCount: Type.Number(),
@@ -50,7 +40,6 @@ export const JobBillingTableItem = Type.Object({
   gpus: Type.Number(),
   path: Type.String(),
   comment: Type.Optional(Type.String()),
-
 });
 export type JobBillingTableItem = Static<typeof JobBillingTableItem>;
 
@@ -73,29 +62,32 @@ export const GetAvailableBillingTableSchema = typeboxRouteSchema({
     200: Type.Object({
       items: Type.Array(JobBillingTableItem),
     }),
-
   },
 });
 
 export async function getAvailablePartitionForItems(
-  cluster: string, userId: string, tenantName: string): Promise<Partition[]> {
-
+  cluster: string,
+  userId: string,
+  tenantName: string,
+): Promise<Partition[]> {
   const client = getClient(ConfigServiceClient);
 
   const statuses = await getUserStatus(userId, tenantName);
 
   const accountNames = Object.keys(statuses.accountStatuses).filter(
-    (key) => (!statuses.accountStatuses[key].accountBlocked
-      && statuses.accountStatuses[key].userStatus !== UserStatus.BLOCKED));
+    (key) =>
+      !statuses.accountStatuses[key].accountBlocked && statuses.accountStatuses[key].userStatus !== UserStatus.BLOCKED,
+  );
 
-  if (!accountNames) { return []; }
+  if (!accountNames) {
+    return [];
+  }
 
   const partitions: Partition[] = [];
 
-  await Promise.allSettled(accountNames
-    .map(async (accountName) => {
-      return await asyncClientCall(client, "getAvailablePartitionsForCluster",
-        { cluster, accountName, userId });
+  await Promise.allSettled(
+    accountNames.map(async (accountName) => {
+      return await asyncClientCall(client, "getAvailablePartitionsForCluster", { cluster, accountName, userId });
     }),
   ).then((results) => {
     results.forEach((result) => {
@@ -125,19 +117,22 @@ const removeDuplicatesByPName = (partitions: Partition[]): Partition[] => {
 export async function getAvailableBillingTableItems(
   cluster: string,
   tenantName: string | undefined,
-  userId: string | undefined): Promise<JobBillingTableItem[]> {
+  userId: string | undefined,
+): Promise<JobBillingTableItem[]> {
   const items = (await getBillingItems(tenantName, true)).activeItems;
 
-  const pathItemMap = items.reduce((prev, curr) => {
-    prev[curr.path] = curr;
-    return prev;
-  }, {} as Record<string, JobBillingItem>);
+  const pathItemMap = items.reduce(
+    (prev, curr) => {
+      prev[curr.path] = curr;
+      return prev;
+    },
+    {} as Record<string, JobBillingItem>,
+  );
 
   let count = 0;
   const tableItems: JobBillingTableItem[] = [];
 
-  const partitions = tenantName && userId ?
-    await getAvailablePartitionForItems(cluster, userId, tenantName) : [];
+  const partitions = tenantName && userId ? await getAvailablePartitionForItems(cluster, userId, tenantName) : [];
 
   const partitionCount = partitions.length;
   let clusterItemIndex = 0;
@@ -145,7 +140,6 @@ export async function getAvailableBillingTableItems(
     const qosCount = partition.qos?.length ?? 1;
     let partitionItemIndex = 0;
     for (const qos of partition.qos ?? [""]) {
-
       const path = [cluster, partition.name, qos].filter((x) => x).join(".");
 
       const item = pathItemMap[path];
@@ -163,11 +157,13 @@ export async function getAvailableBillingTableItems(
         partitionCount,
         qosCount,
         qos,
-        priceItem: item ? {
-          amount: item.amountStrategy,
-          itemId: item.id,
-          price: moneyToString(item.price!),
-        } : undefined,
+        priceItem: item
+          ? {
+              amount: item.amountStrategy,
+              itemId: item.id,
+              price: moneyToString(item.price!),
+            }
+          : undefined,
         path,
         comment: partition.comment,
       });
@@ -175,18 +171,17 @@ export async function getAvailableBillingTableItems(
   }
 
   return tableItems;
-
 }
 
-export default /* #__PURE__*/route(GetAvailableBillingTableSchema, async (req, res) => {
+export default /* #__PURE__*/ route(GetAvailableBillingTableSchema, async (req, res) => {
   const { cluster, tenant, userId } = req.query;
   const auth = authenticate(() => true);
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
-  return await getAvailableBillingTableItems(cluster, tenant, userId)
-    .then((items) => {
-      return { 200: { items } };
-    });
-
+  return await getAvailableBillingTableItems(cluster, tenant, userId).then((items) => {
+    return { 200: { items } };
+  });
 });

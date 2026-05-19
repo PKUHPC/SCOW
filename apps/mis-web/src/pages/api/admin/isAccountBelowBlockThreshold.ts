@@ -3,7 +3,7 @@ import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { AccountServiceClient, IsAccountBelowBlockThresholdRequest } from "@scow/protos/build/server/account";
-import { Static,Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
@@ -21,7 +21,7 @@ export const AccountThresholdSchema = typeboxRouteSchema({
 });
 
 // 定义类型
-export type AccountThresholdResponse = Static<typeof AccountThresholdSchema.responses[200]>;
+export type AccountThresholdResponse = Static<(typeof AccountThresholdSchema.responses)[200]>;
 
 // 调用 gRPC 服务来获取账户状态
 export async function checkAccountBelowThreshold(accountName: string): Promise<AccountThresholdResponse> {
@@ -37,7 +37,6 @@ export async function checkAccountBelowThreshold(accountName: string): Promise<A
   const isBelowBlockThreshold = response.isBelowBlockThreshold;
   return { isBelowBlockThreshold };
 }
-
 
 // 定义路由处理函数
 export default route(AccountThresholdSchema, async (req) => {

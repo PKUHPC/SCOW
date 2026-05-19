@@ -1,16 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import type { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
+
 import { mockApi } from "src/apis/api.mock";
 import { USE_MOCK } from "src/apis/useMock";
 import { delay } from "src/utils/delay";
@@ -18,7 +7,6 @@ import { delay } from "src/utils/delay";
 import { api as realApi } from "./api";
 
 class MockPromise<T> implements PromiseLike<T> {
-
   constructor(
     private fn: (...args) => Promise<T>,
     private args: any[],
@@ -35,7 +23,8 @@ class MockPromise<T> implements PromiseLike<T> {
       return this.fn(...this.args)
         .then((r) => {
           return onfulfilled?.(r);
-        }, onrejected).catch((e) => {
+        }, onrejected)
+        .catch((e) => {
           if (this.errorHandlers.has(e.status)) {
             return this.errorHandlers.get(e.status)!(e.data);
           } else {
@@ -46,8 +35,9 @@ class MockPromise<T> implements PromiseLike<T> {
     });
   }
 
-  catch<TResult = T>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined):
-  PromiseLike<T | TResult> {
+  catch<TResult = T>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
+  ): PromiseLike<T | TResult> {
     return this.then(undefined, onrejected);
   }
 
@@ -55,7 +45,6 @@ class MockPromise<T> implements PromiseLike<T> {
     this.errorHandlers.set(code, handler);
     return this;
   }
-
 }
 
 if (USE_MOCK) {

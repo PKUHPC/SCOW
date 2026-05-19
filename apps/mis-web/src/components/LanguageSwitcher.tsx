@@ -8,17 +8,17 @@ import { styled } from "styled-components";
 
 const Container = styled.div`
   white-space: nowrap;
-  &:hover{
+  &:hover {
     background-color: #59595914 !important;
     border-radius: 8px;
   }
 
   .ant-select-single {
-    height: 36px
+    height: 36px;
   }
 
-  .ant-select-open .ant-select-selection-item{
-    color: ${({ theme }) => theme.token.colorPrimary } !important;
+  .ant-select-open .ant-select-selection-item {
+    color: ${({ theme }) => theme.token.colorPrimary} !important;
   }
 
   .ant-select-selector {
@@ -31,7 +31,6 @@ interface LanguageSwitcherProps {
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ initialLanguage }) => {
-
   const [selectedLanguage, setSelectedLanguage] = useState("");
 
   const i18n = useI18n();

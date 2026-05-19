@@ -17,7 +17,7 @@ export interface Props {
   incompleteEntryInfo: IncompleteEntryInfo | null;
   closeAddEntryModal: () => void;
   languageId: string;
-  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
+  loginNodes?: Record<string, { name: I18nStringType; address: string }[]>;
 }
 
 interface FormInfo {
@@ -38,7 +38,7 @@ export const SelectClusterModal: React.FC<Props> = ({
 }) => {
   const [form] = Form.useForm<FormInfo>();
 
-  const clustersOptions = clusters.map((x) => ({ value:x.id, label:getI18nConfigCurrentText(x.name, languageId) }));
+  const clustersOptions = clusters.map((x) => ({ value: x.id, label: getI18nConfigCurrentText(x.name, languageId) }));
   const [loginNodesOptions, setLoginNodesOptions] = useState<{}[]>([]);
 
   const handelClusterChange = (cluster: string) => {
@@ -46,7 +46,7 @@ export const SelectClusterModal: React.FC<Props> = ({
     if (Array.isArray(loginNodes) && typeof loginNodes[0] === "string") {
       nodes = loginNodes.map((x) => ({ value: x, label: x }));
     } else {
-      nodes = loginNodes?.[cluster]?.map((x) => ({ value:x.address, label:x.name })) || [];
+      nodes = loginNodes?.[cluster]?.map((x) => ({ value: x.address, label: x.name })) || [];
     }
     setLoginNodesOptions(nodes);
     form.resetFields(["loginNode"]);
@@ -57,41 +57,42 @@ export const SelectClusterModal: React.FC<Props> = ({
 
     if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.shell) {
       addItem({
-        id:incompleteEntryInfo.id,
-        name:incompleteEntryInfo.name,
-        entry:{
-          $case:"shell",
-          shell:{
-            clusterId:cluster,
-            loginNode:loginNode!,
-            icon:"MacCommandOutlined",
+        id: incompleteEntryInfo.id,
+        name: incompleteEntryInfo.name,
+        entry: {
+          $case: "shell",
+          shell: {
+            clusterId: cluster,
+            loginNode: loginNode!,
+            icon: "MacCommandOutlined",
           },
-        } });
-    }
-    else if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.app) {
+        },
+      });
+    } else if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.app) {
       addItem({
-        id:incompleteEntryInfo.id,
-        name:incompleteEntryInfo.name,
-        entry:{
-          $case:"app",
-          app:{
-            appId:incompleteEntryInfo.id,
-            clusterId:cluster,
+        id: incompleteEntryInfo.id,
+        name: incompleteEntryInfo.name,
+        entry: {
+          $case: "app",
+          app: {
+            appId: incompleteEntryInfo.id,
+            clusterId: cluster,
           },
-        } });
-    }
-    else if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.clusterPageLink) {
+        },
+      });
+    } else if (incompleteEntryInfo && incompleteEntryInfo.case === EntryCase.clusterPageLink) {
       addItem({
-        id:incompleteEntryInfo.id,
-        name:incompleteEntryInfo.name,
-        entry:{
-          $case:"clusterPageLink",
-          clusterPageLink:{
-            clusterId:cluster,
+        id: incompleteEntryInfo.id,
+        name: incompleteEntryInfo.name,
+        entry: {
+          $case: "clusterPageLink",
+          clusterPageLink: {
+            clusterId: cluster,
             path: incompleteEntryInfo.path || "",
             icon: incompleteEntryInfo.icon || "",
           },
-        } });
+        },
+      });
     }
     form.resetFields();
     onClose();
@@ -107,21 +108,9 @@ export const SelectClusterModal: React.FC<Props> = ({
       onCancel={onClose}
       destroyOnClose
     >
-      <Form
-        form={form}
-        wrapperCol={{ span: 18 }}
-        labelCol={{ span:6, style:{ textAlign:"left" } }}
-      >
-        <Form.Item
-          rules={[{ required: true }]}
-          label={getCurrentLangLibWebText(languageId, "cluster")}
-          name="cluster"
-        >
-          <Select
-            onChange={handelClusterChange}
-            options={clustersOptions}
-          />
-
+      <Form form={form} wrapperCol={{ span: 18 }} labelCol={{ span: 6, style: { textAlign: "left" } }}>
+        <Form.Item rules={[{ required: true }]} label={getCurrentLangLibWebText(languageId, "cluster")} name="cluster">
+          <Select onChange={handelClusterChange} options={clustersOptions} />
         </Form.Item>
         {needLoginNode ? (
           <Form.Item
@@ -129,14 +118,10 @@ export const SelectClusterModal: React.FC<Props> = ({
             label={getCurrentLangLibWebText(languageId, "loginNode")}
             name="loginNode"
           >
-            <Select
-              options={loginNodesOptions}
-            />
+            <Select options={loginNodesOptions} />
           </Form.Item>
         ) : undefined}
       </Form>
     </Modal>
   );
 };
-
-

@@ -2,13 +2,13 @@ import { Ref, Reference } from "@mikro-orm/core";
 import { EntityManager } from "@mikro-orm/mysql";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 
-export const paginationProps = (page?: number, pageSize: number = DEFAULT_PAGE_SIZE) => (
-  page ?
-    {
-      offset: (page - 1) * pageSize,
-      limit: pageSize,
-    } : {}
-);
+export const paginationProps = (page?: number, pageSize: number = DEFAULT_PAGE_SIZE) =>
+  page
+    ? {
+        offset: (page - 1) * pageSize,
+        limit: pageSize,
+      }
+    : {};
 
 export type EntityOrRef<T extends object> = T | Ref<T>;
 

@@ -15,7 +15,6 @@ import { handlegRPCError, parseIp } from "src/utils/server";
 
 // 此API用于用户修改自己的邮箱。
 export const ChangeEmailSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -37,12 +36,14 @@ export const ChangeEmailSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
+export default /* #__PURE__*/ route(ChangeEmailSchema, async (req, res) => {
   const auth = authenticate(() => true);
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
   if (!ldapCapabilities.changeEmail) {
@@ -57,24 +58,27 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.changeEmail,
-    operationTypePayload:{
+    operationTypePayload: {
       userId: info.identityId,
     },
   };
 
   return await asyncClientCall(client, "changeEmail", {
-    userId:info.identityId,
+    userId: info.identityId,
     newEmail,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.UNKNOWN]: () => ({ 500: null }),
-      [Status.UNIMPLEMENTED]: () => ({ 501: null }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.UNKNOWN]: () => ({ 500: null }),
+          [Status.UNIMPLEMENTED]: () => ({ 501: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

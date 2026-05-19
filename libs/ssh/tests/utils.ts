@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { generateKeyPair, randomBytes } from "crypto";
 import { NodeSSH } from "node-ssh";
 import { homedir } from "os";
@@ -35,7 +23,6 @@ const SSH_PUBLIC_KEY_PATH = join(homedir(), ".ssh", "id_rsa.pub");
 export const rootKeyPair = getKeyPair(SSH_PRIVATE_KEY_PATH, SSH_PUBLIC_KEY_PATH);
 
 export const connectToTestServerAsRoot = async () => {
-
   const ssh = await sshRawConnect(target, rootUserId, rootKeyPair, console);
 
   return { ssh, sftp: await ssh.requestSFTP() } as TestSshServer;
@@ -66,23 +53,29 @@ export async function createTestItems({ sftp, ssh }: TestSshServer): Promise<str
 
 export async function generateSshKeyPair() {
   return new Promise<KeyPair>((res, rej) => {
-    generateKeyPair("rsa", {
-      modulusLength: 2048,
-      publicKeyEncoding: {
-        type: "spki",
-        format: "pem",
+    generateKeyPair(
+      "rsa",
+      {
+        modulusLength: 2048,
+        publicKeyEncoding: {
+          type: "spki",
+          format: "pem",
+        },
+        privateKeyEncoding: {
+          type: "pkcs8",
+          format: "pem",
+          cipher: "aes-256-cbc",
+          passphrase: "",
+        },
       },
-      privateKeyEncoding: {
-        type: "pkcs8",
-        format: "pem",
-        cipher: "aes-256-cbc",
-        passphrase: "",
-      },
-    }, (err, publicKey, privateKey) => {
-      // Handle errors and use the generated key pair.
-      if (err) { rej(err); }
+      (err, publicKey, privateKey) => {
+        // Handle errors and use the generated key pair.
+        if (err) {
+          rej(err);
+        }
 
-      res({ publicKey, privateKey });
-    });
+        res({ publicKey, privateKey });
+      },
+    );
   });
 }

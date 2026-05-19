@@ -5,12 +5,7 @@
       "label": "Watch TS Errors",
       "type": "shell",
       "command": "${workspaceFolder}/node_modules/.bin/tsc",
-      "args": [
-        "-w",
-        "-p",
-        ".",
-        "--noEmit"
-      ],
+      "args": ["-w", "-p", ".", "--noEmit"],
       "isBackground": true,
       "problemMatcher": "$tsc-watch"
     }

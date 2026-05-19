@@ -24,23 +24,24 @@ export const SyncAccountUserInfoSchema = typeboxRouteSchema({
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(SyncAccountUserInfoSchema,
-  async (req, res) => {
+export default route(SyncAccountUserInfoSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const { maxSyncDurationMinutes } = req.body;
 
-    const { maxSyncDurationMinutes } = req.body;
+  const client = getClient(AdminServiceClient);
 
-    const client = getClient(AdminServiceClient);
-
-    return await asyncClientCall(client, "startAccountUserSynchronization", { 
-      operatorId: info.identityId,
-      maxSyncDurationMinutes, 
-    })
-      .then((x) => ({ 200: x }))
-      .catch(handlegRPCError({
+  return await asyncClientCall(client, "startAccountUserSynchronization", {
+    operatorId: info.identityId,
+    maxSyncDurationMinutes,
+  })
+    .then((x) => ({ 200: x }))
+    .catch(
+      handlegRPCError({
         [status.ALREADY_EXISTS]: () => ({ 409: null }),
-      }));
-
-  });
+      }),
+    );
+});

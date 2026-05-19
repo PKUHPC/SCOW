@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { Alert, App, Badge, Descriptions, Space, Spin } from "antd";
 import { NextPage } from "next";
@@ -44,73 +32,61 @@ export const FetchJobsInfoPage: NextPage = requireAuth((u) => u.platformRoles.in
       <div>
         <Head title={t(p("jobInfoSync"))} />
         <PageTitle titleText={t(p("jobInfoSync"))} isLoading={isLoading} reload={reload} />
-        <Alert
-          type="info"
-          style={{ marginBottom: "4px" }}
-          showIcon
-          message={(
-            <div>
-              {t(p("alertMessage"))}
-            </div>
-          )}
-        />
+        <Alert type="info" style={{ marginBottom: "4px" }} showIcon message={<div>{t(p("alertMessage"))}</div>} />
         <Spin spinning={isLoading}>
-          {
-            data ? (
-              <Descriptions bordered column={1}>
-                <Descriptions.Item label={t(p("periodicSyncJobInfo"))}>
-                  <Space>
-                    {data.fetchStarted
-                      ? <Badge status="success" text={t(p("turnedOn"))} />
-                      : <Badge status="error" text={t(p("paused"))} />
-                    }
-                    <DisabledA
-                      onClick={() => {
-                        setChangingState(true);
-                        api.setFetchState({ query: { started: !data.fetchStarted } })
-                          .then(() => reload())
-                          .finally(() => setChangingState(false));
-                      }}
-                      disabled={changingState}
-                    >
-                      {data.fetchStarted ? t(p("stopSync")) : t(p("startSync"))}
-                    </DisabledA>
-                  </Space>
-                </Descriptions.Item>
-                <Descriptions.Item label={t(p("jobSyncCycle"))}>
-                  {data.schedule}
-                </Descriptions.Item>
-                <Descriptions.Item label={t(p("lastSyncTime"))}>
-                  <Space>
-                    <span>
-                      {data.lastFetchTime ? formatDateTime(data.lastFetchTime) : t(p("notSynced"))}
-                    </span>
-                    <DisabledA
-                      onClick={() => {
-                        setFetching(true);
-                        api.fetchJobs({})
-                          .httpError(409, () => {
-                            message.error(t(p("accountUserSyncRunning")));
-                          })
-                          .then(({ newJobsCount }) => {
-                            message.success(t(p("jobSyncSuccessMessage"), [newJobsCount]));
-                            reload();
-                          })
-                          .finally(() => setFetching(false));
-                      }}
-                      disabled={fetching}
-                    >
-                      {t(p("syncJobNow"))}
-                    </DisabledA>
-                  </Space>
-                </Descriptions.Item>
-              </Descriptions>
-            ) : undefined
-          }
+          {data ? (
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label={t(p("periodicSyncJobInfo"))}>
+                <Space>
+                  {data.fetchStarted ? (
+                    <Badge status="success" text={t(p("turnedOn"))} />
+                  ) : (
+                    <Badge status="error" text={t(p("paused"))} />
+                  )}
+                  <DisabledA
+                    onClick={() => {
+                      setChangingState(true);
+                      api
+                        .setFetchState({ query: { started: !data.fetchStarted } })
+                        .then(() => reload())
+                        .finally(() => setChangingState(false));
+                    }}
+                    disabled={changingState}
+                  >
+                    {data.fetchStarted ? t(p("stopSync")) : t(p("startSync"))}
+                  </DisabledA>
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label={t(p("jobSyncCycle"))}>{data.schedule}</Descriptions.Item>
+              <Descriptions.Item label={t(p("lastSyncTime"))}>
+                <Space>
+                  <span>{data.lastFetchTime ? formatDateTime(data.lastFetchTime) : t(p("notSynced"))}</span>
+                  <DisabledA
+                    onClick={() => {
+                      setFetching(true);
+                      api
+                        .fetchJobs({})
+                        .httpError(409, () => {
+                          message.error(t(p("accountUserSyncRunning")));
+                        })
+                        .then(({ newJobsCount }) => {
+                          message.success(t(p("jobSyncSuccessMessage"), [newJobsCount]));
+                          reload();
+                        })
+                        .finally(() => setFetching(false));
+                    }}
+                    disabled={fetching}
+                  >
+                    {t(p("syncJobNow"))}
+                  </DisabledA>
+                </Space>
+              </Descriptions.Item>
+            </Descriptions>
+          ) : undefined}
         </Spin>
       </div>
     );
-  });
+  },
+);
 
 export default FetchJobsInfoPage;
-

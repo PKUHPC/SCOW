@@ -5,7 +5,7 @@ import { CURRENT_TIMESTAMP, DATETIME_TYPE } from "src/server/utils/orm";
 export enum Source {
   INTERNAL = "INTERNAL",
   EXTERNAL = "EXTERNAL",
-};
+}
 
 export enum Status {
   CREATED = "CREATED",
@@ -113,12 +113,15 @@ imageEntitySchema.addEnum("types", String, {
   columnType: "varchar(255)",
   items: () => ImageType,
   array: true,
-  default:[ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST],
+  default: [ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST],
 });
 imageEntitySchema.addProperty("inferServicePort", String, { nullable: true });
-imageEntitySchema.addProperty("startCommand", String, { columnType: "TEXT",nullable: true });
-imageEntitySchema.addProperty("failedReason", String, { columnType: "TEXT",nullable: true });
+imageEntitySchema.addProperty("startCommand", String, { columnType: "TEXT", nullable: true });
+imageEntitySchema.addProperty("failedReason", String, { columnType: "TEXT", nullable: true });
 imageEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 imageEntitySchema.addProperty("updateTime", Date, {
-  columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+  columnType: DATETIME_TYPE,
+  defaultRaw: CURRENT_TIMESTAMP,
+  onUpdate: () => new Date(),
+});
 imageEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

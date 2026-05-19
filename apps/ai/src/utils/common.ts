@@ -2,11 +2,8 @@ import { AIPodReason } from "@scow/lib-web/build/utils/jobExceptionReason";
 import { TextId } from "src/i18n";
 import { SharedStatus } from "src/models/common";
 
-
-export const getSharedStatusText = (status: SharedStatus):
-"share" | "cancelShare" | "cancelSharing" | "sharing" => {
+export const getSharedStatusText = (status: SharedStatus): "share" | "cancelShare" | "cancelSharing" | "sharing" => {
   switch (status) {
-
     case SharedStatus.SHARED:
       return "cancelShare";
 
@@ -21,10 +18,10 @@ export const getSharedStatusText = (status: SharedStatus):
   }
 };
 
-export const getSharedStatusUpperText = (status: SharedStatus):
-"upperShare" | "upperCancelShare" | "upperCancelSharing" | "upperSharing" => {
+export const getSharedStatusUpperText = (
+  status: SharedStatus,
+): "upperShare" | "upperCancelShare" | "upperCancelSharing" | "upperSharing" => {
   switch (status) {
-
     case SharedStatus.SHARED:
       return "upperCancelShare";
 
@@ -49,10 +46,10 @@ export const JobReasonI18nKeyMap: Record<string, AIJobExceptionReasonLangKey> = 
   [AIPodReason.INSUFFICIENT_RESOURCES]: "common.aiJobExceptionReason.insufficientResources",
 };
 
-export const getPublishStatusText = (status: SharedStatus):
-"publish" | "cancelPublish" | "cancelPublishing" | "publishing" => {
+export const getPublishStatusText = (
+  status: SharedStatus,
+): "publish" | "cancelPublish" | "cancelPublishing" | "publishing" => {
   switch (status) {
-
     case SharedStatus.SHARED:
       return "cancelPublish";
 
@@ -67,10 +64,10 @@ export const getPublishStatusText = (status: SharedStatus):
   }
 };
 
-export const getPublishStatusUpperText = (status: SharedStatus):
-"upperPublish" | "upperCancelPublish" | "upperCancelPublishing" | "upperPublishing" => {
+export const getPublishStatusUpperText = (
+  status: SharedStatus,
+): "upperPublish" | "upperCancelPublish" | "upperCancelPublishing" | "upperPublishing" => {
   switch (status) {
-
     case SharedStatus.SHARED:
       return "upperCancelPublish";
 
@@ -85,10 +82,10 @@ export const getPublishStatusUpperText = (status: SharedStatus):
   }
 };
 
-export const transformPublishStatusText = (status: SharedStatus):
-"PUBLISHED" | "UNPUBLISHED" | "PUBLISHING" | "UNPUBLISHING" => {
+export const transformPublishStatusText = (
+  status: SharedStatus,
+): "PUBLISHED" | "UNPUBLISHED" | "PUBLISHING" | "UNPUBLISHING" => {
   switch (status) {
-
     case SharedStatus.SHARED:
       return "PUBLISHED";
 

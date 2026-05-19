@@ -67,7 +67,8 @@ export default {
   addQuickEntry: "Adicionar ligações",
   cancel: "Cancelar",
   notExist: "Não existe",
-  clusterNotAvailable: "O cluster atualmente acedido está indisponível ou não há clusters disponíveis. Tente mais tarde ou contacte o administrador.",
+  clusterNotAvailable:
+    "O cluster atualmente acedido está indisponível ou não há clusters disponíveis. Tente mais tarde ou contacte o administrador.",
   alreadyExist: "A ligação já existe",
   cannotBeEmpty: "A ligação não pode estar vazia",
   exceedMaxSize: "Podem ser adicionados até 10 atalhos",

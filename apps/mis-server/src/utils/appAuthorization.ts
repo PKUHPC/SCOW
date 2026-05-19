@@ -1,10 +1,12 @@
 import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { Loaded, MySqlDriver, PopulatePath, SqlEntityManager } from "@mikro-orm/mysql";
-import { AppAuthorizationInfo,
+import {
+  AppAuthorizationInfo,
   AuthorizeAppRequest_AuthorizeAction,
   GetTargetAppAuthorizationsRequest_TargetType,
-  TargetAppList } from "@scow/protos/build/server/app_authorization";
+  TargetAppList,
+} from "@scow/protos/build/server/app_authorization";
 import { Logger } from "pino";
 import { Account, AccountState } from "src/entities/Account";
 import { AccountAppBlacklist } from "src/entities/AccountAppBlacklist";
@@ -23,7 +25,8 @@ export const formatTargetAppInfoList = (
   // 租户或账户名数组
   targetNames: string[],
   // 实体中租户或账户禁用APP列表数据
-  targetBlacklist: Loaded<TenantAppBlacklist, "tenant" | "cluster", PopulatePath.ALL, never>[]
+  targetBlacklist:
+    | Loaded<TenantAppBlacklist, "tenant" | "cluster", PopulatePath.ALL, never>[]
     | Loaded<AccountAppBlacklist, "account" | "cluster", PopulatePath.ALL, never>[],
   clusterConfigAppInfos: Record<string, AppAuthorizationInfo[]>,
   clusterAppIds: Record<string, string[]>,
@@ -33,20 +36,22 @@ export const formatTargetAppInfoList = (
   // 类型是账户时：所属租户被禁用的app列表数据
   associatedTenantBlacklist?: Loaded<TenantAppBlacklist, "tenant" | "cluster", PopulatePath.ALL, never>[],
   // 类型是账户时: 返回账户的拥有者信息
-  accountOwnerMap?: Map<string, {
-    ownerId?: string | undefined;
-    ownerName?: string | undefined;
-  }>,
+  accountOwnerMap?: Map<
+    string,
+    {
+      ownerId?: string | undefined;
+      ownerName?: string | undefined;
+    }
+  >,
 ): {
-  appLists: TargetAppList[],
-  totalCount: number,
+  appLists: TargetAppList[];
+  totalCount: number;
 } => {
-
   // 如果要查询的类型时租户管理员下的账户授权应用，则初始化可用的应用列表为未在所属租户下被禁用的账户列表
-  const initialAppInfos = targetType === GetTargetAppAuthorizationsRequest_TargetType.TENANT
-    ? clusterConfigAppInfos[clusterId]
-    : clusterConfigAppInfos[clusterId].filter((a) => (
-      !associatedTenantBlacklist?.find((x) => x.appId === a.appId)));
+  const initialAppInfos =
+    targetType === GetTargetAppAuthorizationsRequest_TargetType.TENANT
+      ? clusterConfigAppInfos[clusterId]
+      : clusterConfigAppInfos[clusterId].filter((a) => !associatedTenantBlacklist?.find((x) => x.appId === a.appId));
 
   // 初始化一个应用列表的结果对象
   const appLists: TargetAppList[] = [];
@@ -61,9 +66,10 @@ export const formatTargetAppInfoList = (
 
   for (const item of targetBlacklist) {
     const clusterId = item.cluster.getProperty("clusterId");
-    const targetName = targetType === GetTargetAppAuthorizationsRequest_TargetType.TENANT ?
-      (item as TenantAppBlacklist).tenant.getProperty("name") :
-      (item as AccountAppBlacklist).account.getProperty("accountName");
+    const targetName =
+      targetType === GetTargetAppAuthorizationsRequest_TargetType.TENANT
+        ? (item as TenantAppBlacklist).tenant.getProperty("name")
+        : (item as AccountAppBlacklist).account.getProperty("accountName");
 
     // 只判断存在于当前集群应用列表中的appId
     // 如果表单中存在的appId已不再当前集群应用列表下，不删除数据
@@ -78,27 +84,27 @@ export const formatTargetAppInfoList = (
   }
   logger.trace("Current targetApps if has black app lists: %o", targetApps);
   targetApps.forEach((appsInfo, targetName) => {
-    const owner = targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
-      accountOwnerMap?.get(targetName) : undefined;
+    const owner =
+      targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT
+        ? accountOwnerMap?.get(targetName)
+        : undefined;
     appLists.push({
       targetName,
       appsInfo: appsInfo,
-      availableAppsCount: appsInfo.filter((a) => (!a.isDisabled)).length,
+      availableAppsCount: appsInfo.filter((a) => !a.isDisabled).length,
       // 类型是账户时返回对应拥有者信息
-      accountOwnerId: targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
-        owner?.ownerId ?? "-" : undefined,
-      accountOwnerName: targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ?
-        owner?.ownerName ?? "-" : undefined,
+      accountOwnerId:
+        targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ? (owner?.ownerId ?? "-") : undefined,
+      accountOwnerName:
+        targetType === GetTargetAppAuthorizationsRequest_TargetType.ACCOUNT ? (owner?.ownerName ?? "-") : undefined,
     });
   });
   logger.trace("Current app lists: %o", appLists);
-
 
   return {
     appLists,
     totalCount,
   };
-
 };
 
 /**
@@ -122,8 +128,7 @@ export async function authorizeAccountApp(
   foundOperator: Loaded<User, never, "*", never>,
   logger: Logger,
 ): Promise<void> {
-  const foundAccount = await em.findOne(Account, { accountName: accountName },
-    { populate: ["tenant"]});
+  const foundAccount = await em.findOne(Account, { accountName: accountName }, { populate: ["tenant"] });
   // 检查当前appId是否不在租户禁用app列表之中
   if (!foundAccount || foundAccount?.state === AccountState.DELETED) {
     throw new ServiceError({
@@ -174,8 +179,7 @@ export async function authorizeAccountApp(
     }
   }
   await em.flush();
-};
-
+}
 
 /**
  * 对租户执行授权/取消授权APP操作
@@ -198,14 +202,17 @@ export async function authorizeTenantApp(
   foundOperator: Loaded<User, never, "*", never>,
   logger: Logger,
 ): Promise<void> {
-
-  const [ foundTenant, foundTenantDisabledApp ] = await Promise.all([
+  const [foundTenant, foundTenantDisabledApp] = await Promise.all([
     em.findOne(Tenant, { name: tenantName }),
-    em.findOne(TenantAppBlacklist, {
-      cluster: { clusterId: clusterId },
-      tenant: { name: tenantName },
-      appId: appId,
-    }, { populate: ["tenant", "cluster"]}),
+    em.findOne(
+      TenantAppBlacklist,
+      {
+        cluster: { clusterId: clusterId },
+        tenant: { name: tenantName },
+        appId: appId,
+      },
+      { populate: ["tenant", "cluster"] },
+    ),
   ]);
 
   if (!foundTenant) {
@@ -229,10 +236,14 @@ export async function authorizeTenantApp(
   } else {
     // 查询所有的账户包含已删除账户
     // 获取已存在的黑名单记录
-    const [ tenantAccounts, existingBlacklists ] = await Promise.all([
-      em.find(Account, { tenant: { name: tenantName } }, {
-        populate: ["tenant"],
-      }),
+    const [tenantAccounts, existingBlacklists] = await Promise.all([
+      em.find(
+        Account,
+        { tenant: { name: tenantName } },
+        {
+          populate: ["tenant"],
+        },
+      ),
       em.find(AccountAppBlacklist, {
         account: { tenant: { name: tenantName } },
         cluster: { clusterId: clusterId },
@@ -246,12 +257,15 @@ export async function authorizeTenantApp(
     // 只为不在黑名单中的账户创建新记录
     const newBlacklistItems = tenantAccounts
       .filter((account) => !existingAccountIds.has(account.id))
-      .map((account) => new AccountAppBlacklist({
-        account,
-        appId,
-        cluster: foundCluster,
-        operator: foundOperator,
-      }));
+      .map(
+        (account) =>
+          new AccountAppBlacklist({
+            account,
+            appId,
+            cluster: foundCluster,
+            operator: foundOperator,
+          }),
+      );
 
     if (newBlacklistItems.length > 0) {
       // 使用InsertMany减少事务内数据更新时间
@@ -259,11 +273,15 @@ export async function authorizeTenantApp(
     }
 
     // 移出租户的默认授权应用
-    const foundRemovedDefaultApp = await em.findOne(TenantDefaultAppRemovedList, {
-      cluster: { clusterId: clusterId },
-      tenant: { name: tenantName },
-      appId: appId,
-    }, { populate: ["tenant", "cluster"]});
+    const foundRemovedDefaultApp = await em.findOne(
+      TenantDefaultAppRemovedList,
+      {
+        cluster: { clusterId: clusterId },
+        tenant: { name: tenantName },
+        appId: appId,
+      },
+      { populate: ["tenant", "cluster"] },
+    );
 
     if (foundRemovedDefaultApp) {
       logger.info(`App ${appId} has already been removed from default apps of tenant ${tenantName}`);
@@ -290,8 +308,7 @@ export async function authorizeTenantApp(
     }
   }
   await em.flush();
-};
-
+}
 
 export async function addToTenantDefaultApps(
   em: SqlEntityManager<MySqlDriver>,
@@ -308,8 +325,7 @@ export async function addToTenantDefaultApps(
   if (!foundRemovedApp) {
     throw new ServiceError({
       code: Status.ALREADY_EXISTS,
-      message:
-        `The app ${appId} in cluster ${clusterId} has already been default app of tenant ${tenantName}`,
+      message: `The app ${appId} in cluster ${clusterId} has already been default app of tenant ${tenantName}`,
     });
 
     // 从已移除默认应用表单中删除
@@ -342,20 +358,23 @@ export async function removeFromTenantDefaultApps(
     throw new ServiceError({
       code: Status.ALREADY_EXISTS,
       message:
-        `The app ${appId} in cluster ${clusterId} has already been removed from `
-        + `default apps of tenant ${tenantName}`,
+        `The app ${appId} in cluster ${clusterId} has already been removed from ` +
+        `default apps of tenant ${tenantName}`,
     });
 
     // 移除默认应用
     // 同时移除该租户下所有账户该应用的授权
   } else {
-
     // 查询所有的账户包含已删除账户
     // 获取已存在的黑名单记录
-    const [ tenantAccounts, existingBlacklists] = await Promise.all([
-      em.find(Account, { tenant: { name: tenantName } }, {
-        populate: ["tenant"],
-      }),
+    const [tenantAccounts, existingBlacklists] = await Promise.all([
+      em.find(
+        Account,
+        { tenant: { name: tenantName } },
+        {
+          populate: ["tenant"],
+        },
+      ),
       em.find(AccountAppBlacklist, {
         account: { tenant: { name: tenantName } },
         cluster: { clusterId: clusterId },
@@ -369,12 +388,15 @@ export async function removeFromTenantDefaultApps(
     // 只为不在黑名单中的账户创建新记录
     const newBlacklistItems = tenantAccounts
       .filter((account) => !existingAccountIds.has(account.id))
-      .map((account) => new AccountAppBlacklist({
-        account,
-        appId,
-        cluster: foundCluster,
-        operator: foundOperator,
-      }));
+      .map(
+        (account) =>
+          new AccountAppBlacklist({
+            account,
+            appId,
+            cluster: foundCluster,
+            operator: foundOperator,
+          }),
+      );
 
     if (newBlacklistItems.length > 0) {
       // 使用InsertMany减少事务内数据更新时间
@@ -388,6 +410,5 @@ export async function removeFromTenantDefaultApps(
       cluster: foundCluster,
     });
     await em.persistAndFlush(newItem);
-
   }
 }

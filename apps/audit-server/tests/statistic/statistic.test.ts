@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -30,9 +18,14 @@ const operationLog = {
   operatorUserId: "testUserId",
   operatorIp: "127.0.0.1",
   operationResult: OperationResult.SUCCESS,
-  operationEvent: { "$case": "submitJob" as const, submitJob: {
-    accountName: "testAccount", jobId: 123, clusterId: "test",
-  } },
+  operationEvent: {
+    $case: "submitJob" as const,
+    submitJob: {
+      accountName: "testAccount",
+      jobId: 123,
+      clusterId: "test",
+    },
+  },
 };
 
 beforeEach(async () => {
@@ -47,18 +40,20 @@ afterEach(async () => {
 });
 
 it("get active user count correctly in UTC+8 timezone", async () => {
-
   const em = server.ext.orm.em.fork();
 
   const now = dayjs();
 
-  const logs = new Array(10).fill(null).map((_, index) => new OperationLog({
-    operatorUserId: `user-${index}`,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: now.toDate(),
-    metaData: { "$case": "login" as const, login: {} },
-  }));
+  const logs = new Array(10).fill(null).map(
+    (_, index) =>
+      new OperationLog({
+        operatorUserId: `user-${index}`,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: now.toDate(),
+        metaData: { $case: "login" as const, login: {} },
+      }),
+  );
 
   await em.persistAndFlush(logs);
 
@@ -81,40 +76,54 @@ it("get active user count correctly in UTC+8 timezone", async () => {
   ]);
 });
 
-
 it("get portal usage count correctly", async () => {
-
   const em = server.ext.orm.em.fork();
 
-  const submitJobLogs = Array.from({ length: 10 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: { "$case": "submitJob" as const, submitJob: {
-      accountName: "testAccount",
-      jobId: 123,
-      clusterId: "test",
-    } },
-  }));
+  const submitJobLogs = Array.from(
+    { length: 10 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: {
+          $case: "submitJob" as const,
+          submitJob: {
+            accountName: "testAccount",
+            jobId: 123,
+            clusterId: "test",
+          },
+        },
+      }),
+  );
 
-  const endJobLogs = Array.from({ length: 20 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: { "$case": "endJob" as const, endJob: { jobId: 123, clusterId: "test" } },
-  }));
+  const endJobLogs = Array.from(
+    { length: 20 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: { $case: "endJob" as const, endJob: { jobId: 123, clusterId: "test" } },
+      }),
+  );
 
-  const shellLoginLogs = Array.from({ length: 30 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: {
-      "$case": "shellLogin" as const,
-      shellLogin: { clusterId: "test-cluster", loginNode:"test login node" } },
-  }));
+  const shellLoginLogs = Array.from(
+    { length: 30 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: {
+          $case: "shellLogin" as const,
+          shellLogin: { clusterId: "test-cluster", loginNode: "test login node" },
+        },
+      }),
+  );
 
   const logs = [...submitJobLogs, ...endJobLogs, ...shellLoginLogs];
   await em.persistAndFlush(logs);
@@ -141,39 +150,49 @@ it("get portal usage count correctly", async () => {
       count: 10,
     },
   ]);
-
 });
 
-
 it("get mis usage count correctly", async () => {
-
   const em = server.ext.orm.em.fork();
 
-  const blockUserLogs = Array.from({ length: 10 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: { "$case": "blockUser" as const, blockUser: { accountName: "testAccount", userId: "testUser" } },
-  }));
+  const blockUserLogs = Array.from(
+    { length: 10 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: { $case: "blockUser" as const, blockUser: { accountName: "testAccount", userId: "testUser" } },
+      }),
+  );
 
-  const unblockUserLogs = Array.from({ length: 20 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: { "$case": "unblockUser" as const, unblockUser: { accountName: "testAccount", userId: "testUser" } },
-  }));
+  const unblockUserLogs = Array.from(
+    { length: 20 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: { $case: "unblockUser" as const, unblockUser: { accountName: "testAccount", userId: "testUser" } },
+      }),
+  );
 
-  const blockAccountLogs = Array.from({ length: 30 }, () => new OperationLog({
-    operatorUserId: operationLog.operatorUserId,
-    operatorIp: operationLog.operatorIp,
-    operationResult: operationLog.operationResult,
-    operationTime: new Date(),
-    metaData: {
-      "$case": "blockAccount" as const,
-      blockAccount: { accountName: "testAccount", tenantName: "testTenant", userId: "testUser" } },
-  }));
+  const blockAccountLogs = Array.from(
+    { length: 30 },
+    () =>
+      new OperationLog({
+        operatorUserId: operationLog.operatorUserId,
+        operatorIp: operationLog.operatorIp,
+        operationResult: operationLog.operationResult,
+        operationTime: new Date(),
+        metaData: {
+          $case: "blockAccount" as const,
+          blockAccount: { accountName: "testAccount", tenantName: "testTenant", userId: "testUser" },
+        },
+      }),
+  );
 
   const logs = [...blockUserLogs, ...unblockUserLogs, ...blockAccountLogs];
   await em.persistAndFlush(logs);
@@ -200,5 +219,4 @@ it("get mis usage count correctly", async () => {
       count: 10,
     },
   ]);
-
 });

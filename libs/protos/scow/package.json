@@ -1,17 +1,20 @@
 {
   "name": "@scow/protos",
   "version": "1.1.0",
-  "description": "",
-  "main": "build/index.js",
   "private": true,
-  "scripts": {
-    "generate": "rimraf generated && buf generate --template buf.gen.yaml node_modules/@scow/grpc-api",
-    "build": "rimraf build && tsc"
-  },
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "files": [
     "build",
     "!**/*.map"
   ],
+  "main": "build/index.js",
+  "scripts": {
+    "generate": "rimraf generated && buf generate --template buf.gen.yaml node_modules/@scow/grpc-api",
+    "build": "rimraf build && tsc"
+  },
   "dependencies": {
     "@grpc/grpc-js": "1.14.3",
     "@scow/grpc-api": "workspace:*",
@@ -20,8 +23,5 @@
   },
   "devDependencies": {
     "ts-proto": "1.180.0"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }

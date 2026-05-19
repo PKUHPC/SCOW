@@ -6,16 +6,11 @@ export class UserToken {
   token: string;
   createdAt: Date;
 
-  constructor(init: {
-    userId: string;
-    token: string;
-    createdAt?: Date;
-  }) {
+  constructor(init: { userId: string; token: string; createdAt?: Date }) {
     this.userId = init.userId;
     this.token = init.token;
     this.createdAt = init.createdAt || new Date();
   }
-
 }
 
 export const UserTokenSchema = new EntitySchema<UserToken>({
@@ -28,5 +23,3 @@ export const UserTokenSchema = new EntitySchema<UserToken>({
     createdAt: { type: "Date", onCreate: () => new Date() },
   },
 });
-
-

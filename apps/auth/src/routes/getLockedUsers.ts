@@ -7,12 +7,16 @@ const QuerystringSchema = Type.Object({
 });
 
 const ResponsesSchema = Type.Object({
-  200: Type.Object({ user: Type.Array(Type.Object({
-    identityId: Type.String(),
-    name: Type.Optional(Type.String()),
-    mail: Type.Optional(Type.String()),
-    pwdAccountLockedTime: Type.Optional(Type.String()),
-  })) }),
+  200: Type.Object({
+    user: Type.Array(
+      Type.Object({
+        identityId: Type.String(),
+        name: Type.Optional(Type.String()),
+        mail: Type.Optional(Type.String()),
+        pwdAccountLockedTime: Type.Optional(Type.String()),
+      }),
+    ),
+  }),
   501: Type.Null({ description: "此功能在当前服务器配置下不可用" }),
 });
 
@@ -21,8 +25,8 @@ const ResponsesSchema = Type.Object({
  */
 export const getLockedUsersRoute = fp(async (f) => {
   f.get<{
-    Querystring: Static<typeof QuerystringSchema>
-    Responses: Static<typeof ResponsesSchema>,
+    Querystring: Static<typeof QuerystringSchema>;
+    Responses: Static<typeof ResponsesSchema>;
   }>(
     "/lockUser/getLockedUsers",
     {

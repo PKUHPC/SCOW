@@ -34,15 +34,13 @@ const InlineBlockSpan = styled.span`
     background-color: #59595914;
     border-radius: 8px;
   }
-  &:active{
+  &:active {
     background-color: #59595914;
     border-radius: 8px;
   }
 `;
 
-export const SystemSelect: React.FC<Props> = ({
-  user, publicConfig,
-}) => {
+export const SystemSelect: React.FC<Props> = ({ user, publicConfig }) => {
   const t = useI18nTranslateToString();
   const { token } = useToken();
 
@@ -55,58 +53,59 @@ export const SystemSelect: React.FC<Props> = ({
           items: [
             ...(publicConfig.MIS_URL
               ? [
-                {
-                  key: "mis",
-                  label: (
-                    <JumpToAnotherLink
-                      user={user}
-                      icon={<MisIcon style={{ paddingRight: 2 }} />}
-                      link={publicConfig.MIS_URL}
-                      linkText={<span>{t("baseLayout.linkTextMis")}</span>}
-                    />
-                  ),
-                },
-              ]
+                  {
+                    key: "mis",
+                    label: (
+                      <JumpToAnotherLink
+                        user={user}
+                        icon={<MisIcon style={{ paddingRight: 2 }} />}
+                        link={publicConfig.MIS_URL}
+                        linkText={<span>{t("baseLayout.linkTextMis")}</span>}
+                      />
+                    ),
+                  },
+                ]
               : []),
             ...(publicConfig.PORTAL_URL
               ? [
-                {
-                  key: "portal",
-                  label: (
-                    <JumpToAnotherLink
-                      user={user}
-                      icon={<HighComputingIcon style={{ paddingRight: 2 }} />}
-                      link={publicConfig.PORTAL_URL}
-                      linkText={<span>{t("baseLayout.linkTextHpc")}</span>}
-                    />
-                  ),
-                },
-              ]
+                  {
+                    key: "portal",
+                    label: (
+                      <JumpToAnotherLink
+                        user={user}
+                        icon={<HighComputingIcon style={{ paddingRight: 2 }} />}
+                        link={publicConfig.PORTAL_URL}
+                        linkText={<span>{t("baseLayout.linkTextHpc")}</span>}
+                      />
+                    ),
+                  },
+                ]
               : []),
             {
-              key: "ai", label: (
+              key: "ai",
+              label: (
                 <JumpToAnotherLink
                   user={user}
                   icon={<AiIcon style={{ paddingRight: 2, color: token.colorPrimary }} />}
                   link=""
                   linkText={<span style={{ color: token.colorPrimary }}>{t("baseLayout.linkTextAi")}</span>}
                 />
-              )
+              ),
             },
             ...(publicConfig.QUANTUM_URL
               ? [
-                {
-                  key: "quantum",
-                  label: (
-                    <JumpToAnotherLink
-                      user={user}
-                      icon={<QuantumIcon style={{ paddingRight: 2 }} />}
-                      link={publicConfig.QUANTUM_URL}
-                      linkText={<span>{t("baseLayout.linkTextQuantum")}</span>}
-                    />
-                  ),
-                },
-              ]
+                  {
+                    key: "quantum",
+                    label: (
+                      <JumpToAnotherLink
+                        user={user}
+                        icon={<QuantumIcon style={{ paddingRight: 2 }} />}
+                        link={publicConfig.QUANTUM_URL}
+                        linkText={<span>{t("baseLayout.linkTextQuantum")}</span>}
+                      />
+                    ),
+                  },
+                ]
               : []),
           ],
         }}

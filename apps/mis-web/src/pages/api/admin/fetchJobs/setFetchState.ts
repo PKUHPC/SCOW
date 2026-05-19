@@ -20,16 +20,15 @@ export const SetFetchStateSchema = typeboxRouteSchema({
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(SetFetchStateSchema,
-  async (req, res) => {
+export default route(SetFetchStateSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const client = getClient(AdminServiceClient);
 
-    const client = getClient(AdminServiceClient);
+  await asyncClientCall(client, "setFetchState", { started: req.query.started });
 
-    await asyncClientCall(client, "setFetchState", { started: req.query.started });
-
-    return { 204: null };
-
-  });
+  return { 204: null };
+});

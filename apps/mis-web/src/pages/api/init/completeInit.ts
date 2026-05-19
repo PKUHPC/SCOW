@@ -19,7 +19,9 @@ export const CompleteInitSchema = typeboxRouteSchema({
 export default route(CompleteInitSchema, async () => {
   const result = await queryIfInitialized();
 
-  if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
+  if (result) {
+    return { 409: { code: "ALREADY_INITIALIZED" as const } };
+  }
 
   const client = getClient(InitServiceClient);
 
@@ -27,5 +29,3 @@ export default route(CompleteInitSchema, async () => {
 
   return { 204: null };
 });
-
-

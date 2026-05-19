@@ -5,7 +5,6 @@ import { useI18nTranslateToString } from "src/i18n";
 import { JobsTable } from "src/pageComponents/quantum/JobsTable";
 
 export const QuantumJobsPage: NextPage = () => {
-
   const t = useI18nTranslateToString();
 
   return (
@@ -15,7 +14,6 @@ export const QuantumJobsPage: NextPage = () => {
       <JobsTable />
     </div>
   );
-
 };
 
 export default QuantumJobsPage;

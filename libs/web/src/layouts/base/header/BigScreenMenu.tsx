@@ -14,25 +14,28 @@ const Container = styled.div`
   }
 
   width: 100%;
-  .ant-menu-item-icon svg{
-    font-size:1.42em;
+  .ant-menu-item-icon svg {
+    font-size: 1.42em;
   }
 
-  .anticon img{
-    font-size:1.42em;
+  .anticon img {
+    font-size: 1.42em;
   }
 
   .ant-menu-item {
     display: flex !important;
     padding-left: 16px !important;
     border-radius: 8px !important;
-    &:hover{
+    &:hover {
       background-color: #59595914 !important;
     }
   }
 
-  .ant-menu-submenu-selected::after, .ant-menu-submenu::after, .ant-menu-item:hover::after,
-  .ant-menu-item-selected::after, .ant-menu-item::after {
+  .ant-menu-submenu-selected::after,
+  .ant-menu-submenu::after,
+  .ant-menu-item:hover::after,
+  .ant-menu-item-selected::after,
+  .ant-menu-item::after {
     border-bottom: none !important;
   }
 
@@ -43,7 +46,7 @@ const Container = styled.div`
   .ant-menu-submenu-title {
     display: flex !important;
     padding: 0 12px;
-    &:hover{
+    &:hover {
       background-color: #59595914 !important;
     }
   }
@@ -62,24 +65,18 @@ interface Props {
 }
 
 // 当前仅用于顶部菜单
-export const BigScreenMenu: React.FC<Props> = ({
-  routes, className, activeKeys, pathname,
-}) => {
-
+export const BigScreenMenu: React.FC<Props> = ({ routes, className, activeKeys, pathname }) => {
   return (
     <Container className={className}>
-      {
-        arrayContainsElement(routes)
-          ? (
-            <Menu
-              style={{ minWidth: 0, flex: "auto", border: 0 }}
-              theme="light"
-              mode="horizontal"
-              selectedKeys={activeKeys}
-              items={createLinkMenuItems(routes, pathname)}
-            />
-          ) : undefined
-      }
+      {arrayContainsElement(routes) ? (
+        <Menu
+          style={{ minWidth: 0, flex: "auto", border: 0 }}
+          theme="light"
+          mode="horizontal"
+          selectedKeys={activeKeys}
+          items={createLinkMenuItems(routes, pathname)}
+        />
+      ) : undefined}
     </Container>
   );
 };

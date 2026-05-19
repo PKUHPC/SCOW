@@ -36,16 +36,22 @@ interface Props {
   publicPath: string;
   iconMap: Record<string, React.ReactElement>;
   entryExtraInfo?: string[];
-  icon?: string,
+  icon?: string;
   logoPath?: string;
-  style?: CSSProperties
+  style?: CSSProperties;
 }
 
 type ImageErrorMap = Record<string, boolean>;
 
-export const EntryItem: React.FC<Props> = ({ style, iconMap,
-  entryBaseName, entryExtraInfo, icon, logoPath, publicPath }) => {
-
+export const EntryItem: React.FC<Props> = ({
+  style,
+  iconMap,
+  entryBaseName,
+  entryExtraInfo,
+  icon,
+  logoPath,
+  publicPath,
+}) => {
   const [imageErrorMap, setImageErrorMap] = useState<ImageErrorMap>({});
   const theme = useTheme();
   const { Text } = Typography;
@@ -62,7 +68,7 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
     const { name } = props;
 
     // 确保图标组件接收并应用 style 属性
-    return React.cloneElement(iconMap[name], { style:props.style });
+    return React.cloneElement(iconMap[name], { style: props.style });
   };
 
   const withColor = <P extends IconProps>(
@@ -76,7 +82,7 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
         ...style,
       };
 
-      return <WrappedComponent {...restProps as P} style={modifiedStyle} />;
+      return <WrappedComponent {...(restProps as P)} style={modifiedStyle} />;
     };
   };
 
@@ -85,33 +91,37 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
   return (
     <ItemContainer style={style}>
       <AvatarContainer>
-        {
-          (logoPath && imageErrorMap[entryBaseName] !== true) ? (
-            <img
-              src={join(publicPath, logoPath)}
-              onError={() => handleImageError(entryBaseName)}
-              style={{ maxWidth:"70px", objectFit:"contain",
-                position:"relative", top:`${(entryExtraInfo?.length ?? 0 - 0) * 8}px` }}
-            />
-          ) : (
-            icon && isSupportedIconName(icon) ? (
-              <ColoredIcon
-                name={icon}
-                style={{ fontSize:`${60 - (entryExtraInfo?.length ?? 0 - 0) * 4}px`,
-                  color:theme.token.colorPrimary,
-                  position:"relative", top:`${(entryExtraInfo?.length ?? 0 - 0) * 8}px`,
-                  transform: "scale(3.4)",
-                }}
-              />
-            )
-              : <PictureOutlined style={{ fontSize:"52px" }} />
-          )}
+        {logoPath && imageErrorMap[entryBaseName] !== true ? (
+          <img
+            src={join(publicPath, logoPath)}
+            onError={() => handleImageError(entryBaseName)}
+            style={{
+              maxWidth: "70px",
+              objectFit: "contain",
+              position: "relative",
+              top: `${(entryExtraInfo?.length ?? 0 - 0) * 8}px`,
+            }}
+          />
+        ) : icon && isSupportedIconName(icon) ? (
+          <ColoredIcon
+            name={icon}
+            style={{
+              fontSize: `${60 - (entryExtraInfo?.length ?? 0 - 0) * 4}px`,
+              color: theme.token.colorPrimary,
+              position: "relative",
+              top: `${(entryExtraInfo?.length ?? 0 - 0) * 8}px`,
+              transform: "scale(3.4)",
+            }}
+          />
+        ) : (
+          <PictureOutlined style={{ fontSize: "52px" }} />
+        )}
       </AvatarContainer>
       {
         <>
           <Text
             style={{
-              bottom: `${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+              bottom: `${(entryExtraInfo?.length ?? 0 > 0) ? "0px" : "18px"}`,
               maxWidth: "130px",
               textAlign: "center",
               position: "relative",
@@ -122,16 +132,15 @@ export const EntryItem: React.FC<Props> = ({ style, iconMap,
           </Text>
           <Text
             style={{
-              bottom: `${entryExtraInfo?.length ?? 0 > 0 ? "0px" : "18px"}`,
+              bottom: `${(entryExtraInfo?.length ?? 0 > 0) ? "0px" : "18px"}`,
               maxWidth: "130px",
               textAlign: "center",
               fontSize: "12px",
               position: "relative",
-
             }}
-            ellipsis={{ tooltip: [...entryExtraInfo ?? []].join(" / ") }}
+            ellipsis={{ tooltip: [...(entryExtraInfo ?? [])].join(" / ") }}
           >
-            {[...entryExtraInfo ?? []].join(" / ")}
+            {[...(entryExtraInfo ?? [])].join(" / ")}
           </Text>
         </>
       }

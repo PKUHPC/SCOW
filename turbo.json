@@ -1,109 +1,49 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": [
-    "HTTPS_PROXY",
-    "BASE_PATH"
-  ],
+  "globalEnv": ["HTTPS_PROXY", "BASE_PATH"],
   "tasks": {
     "dev": {
       "persistent": true,
       "cache": false
     },
     "generate": {
-      "dependsOn": [
-        "^generate"
-      ],
-      "inputs": [
-        "node_modules/@scow/grpc-api/**/*.proto",
-        "protos/**/*.proto",
-        "buf.gen.yaml"
-      ],
-      "outputs": [
-        "generated",
-        "src/generated"
-      ]
+      "dependsOn": ["^generate"],
+      "inputs": ["node_modules/@scow/grpc-api/**/*.proto", "protos/**/*.proto", "buf.gen.yaml"],
+      "outputs": ["generated", "src/generated"]
     },
     "build": {
-      "dependsOn": [
-        "^build",
-        "generate"
-      ],
-      "outputs": [
-        ".next/**",
-        "build/**"
-      ]
+      "dependsOn": ["^build", "generate"],
+      "outputs": [".next/**", "build/**"]
     },
     "prepareDev": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "src/generated",
-        "build"
-      ],
-      "inputs": [
-        "src/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["src/generated", "build"],
+      "inputs": ["src/**"]
     },
     "test": {
       "outputs": [],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "test/**/*.ts",
-        "test/**/*.tsx"
-      ]
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
     "@scow/protos#generate": {
-      "inputs": [
-        "../../../protos/**/*.proto",
-        "buf.gen.yaml"
-      ],
-      "outputs": [
-        "generated/**"
-      ]
+      "inputs": ["../../../protos/**/*.proto", "buf.gen.yaml"],
+      "outputs": ["generated/**"]
     },
     "@scow/protos#build": {
-      "dependsOn": [
-        "generate"
-      ],
-      "inputs": [
-        "generated/**"
-      ],
-      "outputs": [
-        "build/**"
-      ]
+      "dependsOn": ["generate"],
+      "inputs": ["generated/**"],
+      "outputs": ["build/**"]
     },
     "@scow/scheduler-adapter-protos#generate": {
-      "inputs": [
-        "protos/**/*.proto",
-        "buf.yaml",
-        "buf.gen.yaml"
-      ],
-      "outputs": [
-        "generated/**"
-      ]
+      "inputs": ["protos/**/*.proto", "buf.yaml", "buf.gen.yaml"],
+      "outputs": ["generated/**"]
     },
     "@scow/scheduler-adapter-protos#build": {
-      "dependsOn": [
-        "generate"
-      ],
-      "inputs": [
-        "generated/**"
-      ],
-      "outputs": [
-        "build/**"
-      ]
+      "dependsOn": ["generate"],
+      "inputs": ["generated/**"],
+      "outputs": ["build/**"]
     },
     "lint": {
-      "inputs": [
-        "**/*.go",
-        "**/go.mod",
-        "**/go.sum",
-        "**/*.proto",
-        "**/*.tsx",
-        "**/*.ts"
-      ]
+      "inputs": ["**/*.go", "**/go.mod", "**/go.sum", "**/*.proto", "**/*.tsx", "**/*.ts"]
     }
   }
 }

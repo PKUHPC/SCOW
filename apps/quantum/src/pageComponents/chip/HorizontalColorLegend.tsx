@@ -2,7 +2,6 @@ import { scaleLinear } from "d3-scale";
 import React from "react";
 import { getNiceTicks } from "src/pageComponents/chip/ColorLegend";
 
-
 interface Props {
   id: string;
   domain: [number, number];
@@ -24,17 +23,22 @@ export const HorizontalColorLegend: React.FC<Props> = ({ id, domain, format, col
   const svgWidth = legendWidth + PADDING * 2;
   const svgHeight = legendHeight + PADDING * 2;
 
-  const horizontalScale = scaleLinear().domain([domainMin, domainMax]).range([PADDING, legendWidth + PADDING]);
+  const horizontalScale = scaleLinear()
+    .domain([domainMin, domainMax])
+    .range([PADDING, legendWidth + PADDING]);
 
   return (
     <svg width={svgWidth} height={svgHeight}>
       <g>
         <defs>
           <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
-            {ticks.slice().sort((a, b) => a - b).map((t) => {
-              const offsetPct = rangeSpan === 0 ? 0 : ((t - domainMin) / rangeSpan) * 100;
-              return <stop key={String(t)} offset={`${offsetPct}%`} stopColor={color(t)} />;
-            })}
+            {ticks
+              .slice()
+              .sort((a, b) => a - b)
+              .map((t) => {
+                const offsetPct = rangeSpan === 0 ? 0 : ((t - domainMin) / rangeSpan) * 100;
+                return <stop key={String(t)} offset={`${offsetPct}%`} stopColor={color(t)} />;
+              })}
           </linearGradient>
         </defs>
 

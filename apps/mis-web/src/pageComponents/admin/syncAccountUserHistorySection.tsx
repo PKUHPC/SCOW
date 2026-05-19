@@ -17,14 +17,15 @@ interface Props {
 }
 
 export const SyncAccountUserHistorySection: React.FC<Props> = ({ reload }) => {
-
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: DEFAULT_PAGE_SIZE });
 
   const promiseFn = useCallback(async () => {
-    return await api.getSyncAccountUserHistory({ query: {
-      page: pageInfo.page,
-      pageSize: pageInfo.pageSize!,
-    } });
+    return await api.getSyncAccountUserHistory({
+      query: {
+        page: pageInfo.page,
+        pageSize: pageInfo.pageSize!,
+      },
+    });
   }, [reload, pageInfo]);
 
   const { data, isLoading } = useAsync({ promiseFn });
@@ -34,12 +35,13 @@ export const SyncAccountUserHistorySection: React.FC<Props> = ({ reload }) => {
     <div style={{ marginTop: "48px" }}>
       <Section
         title={t("page.admin.systemDebug.syncClusterAccountUser.historyTable.title")}
-        extra={(
+        extra={
           <div>
-            {t("page.admin.systemDebug.syncClusterAccountUser.historyTable.explanation",
-              [publicConfig.SYNC_HISTORY_DAY_PERIOD])}
+            {t("page.admin.systemDebug.syncClusterAccountUser.historyTable.explanation", [
+              publicConfig.SYNC_HISTORY_DAY_PERIOD,
+            ])}
           </div>
-        )}
+        }
       >
         <AccountUserSyncHistoryTable
           data={data}
@@ -55,6 +57,5 @@ export const SyncAccountUserHistorySection: React.FC<Props> = ({ reload }) => {
         />
       </Section>
     </div>
-
   );
 };

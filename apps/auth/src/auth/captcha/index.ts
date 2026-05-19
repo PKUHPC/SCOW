@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Static, Type } from "@sinclair/typebox";
 import { randomUUID } from "crypto";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -29,7 +17,11 @@ export interface CaptchaInfo {
  * If no token is passed in, a random token will be generated as the key to store the generated text.
  */
 export async function saveCaptchaText(
-  f: FastifyInstance, text: string, token?: string, validSeconds: number = 120): Promise<string> {
+  f: FastifyInstance,
+  text: string,
+  token?: string,
+  validSeconds: number = 120,
+): Promise<string> {
   token = token ?? randomUUID();
   await f.redis.set(CAPTCHA_TOKEN_PREFIX + token, text, "EX", validSeconds);
   return token;
@@ -42,7 +34,6 @@ export async function saveCaptchaText(
  * If no token is passed in, a random token will be generated as the key to store the generated text.
  */
 export async function createCaptcha(f: FastifyInstance, token?: string): Promise<CaptchaInfo> {
-
   const options = {
     size: 4,
     // 默认高度为 50，但是由于生成svg有内联的rect样式，导致视觉上高度与填写框不一致
@@ -60,14 +51,18 @@ export async function createCaptcha(f: FastifyInstance, token?: string): Promise
   const text = captcha.text;
   token = await saveCaptchaText(f, text, token);
   return { code: data, token };
-
 }
 
 export async function validateCaptcha(
-  code: string, token: string, callbackUrl: string, req: FastifyRequest, res: FastifyReply,
+  code: string,
+  token: string,
+  callbackUrl: string,
+  req: FastifyRequest,
+  res: FastifyReply,
 ) {
-
-  if (!authConfig.captcha.enabled) { return true; }
+  if (!authConfig.captcha.enabled) {
+    return true;
+  }
 
   const redisCode = await req.server.redis.getdel(CAPTCHA_TOKEN_PREFIX + token);
   if (code.toLowerCase() === redisCode?.toLowerCase()) {
@@ -85,7 +80,7 @@ export function registerCaptchaRoute(f: FastifyInstance) {
   f.post<{ Body: Static<typeof bodySchema> }>(
     "/public/refreshCaptcha",
     {
-      schema:{
+      schema: {
         body: bodySchema,
       },
     },
@@ -93,5 +88,6 @@ export function registerCaptchaRoute(f: FastifyInstance) {
       const { token } = req.body;
       const data = (await createCaptcha(f, token)).code;
       await res.type("image/svg+xml").send(data);
-    });
+    },
+  );
 }

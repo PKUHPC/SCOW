@@ -26,7 +26,6 @@ interface CreateAccountFormProps {
 const p = prefix("page.tenant.accounts.create.");
 
 const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => {
-
   const languageId = useI18n().currentLanguage.id;
   const t = useI18nTranslateToString();
 
@@ -43,13 +42,20 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       type: "loading",
       content: t("common.waitingMessage"),
       duration: 0,
-      key: "createAccount" });
-    await api.createAccount({ body: {
-      accountName: accountName.trim(),
-      ownerId: ownerId.trim(),
-      ownerName: ownerName.trim(),
-      comment } })
-      .httpError(404, () => { message.error(t(p("tenantNotExistUser"), [tenantName, ownerId])); })
+      key: "createAccount",
+    });
+    await api
+      .createAccount({
+        body: {
+          accountName: accountName.trim(),
+          ownerId: ownerId.trim(),
+          ownerName: ownerName.trim(),
+          comment,
+        },
+      })
+      .httpError(404, () => {
+        message.error(t(p("tenantNotExistUser"), [tenantName, ownerId]));
+      })
       .httpError(409, (e) => {
         if (e.code === "ALREADY_EXISTS") {
           message.error(t(p("accountNameOccupied")));
@@ -59,8 +65,12 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
           message.error(t(p("createAccountFailed")));
         }
       })
-      .httpError(400, () => { message.error(t(p("userIdAndNameNotMatch"))); })
-      .httpError(401, (e) => { message.error(e.message); })
+      .httpError(400, () => {
+        message.error(t(p("userIdAndNameNotMatch")));
+      })
+      .httpError(401, (e) => {
+        message.error(e.message);
+      })
       .then(() => {
         message.success(t(p("createSuccess")));
         form.resetFields();
@@ -71,14 +81,13 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       });
   };
 
-
   const userIdRule = getUserIdRule(languageId);
 
   return (
     <Form
       form={form}
       wrapperCol={{ span: 20 }}
-      labelCol={{ span:5, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
+      labelCol={{ span: 5, style: { whiteSpace: "normal", textAlign: "left", lineHeight: "16px" } }}
       labelAlign="right"
       onFinish={submit}
     >
@@ -87,9 +96,14 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
         label={t("common.accountName")}
         rules={[
           { required: true },
-          ...(publicConfig.ACCOUNT_NAME_PATTERN ? [{
-            pattern: new RegExp(publicConfig.ACCOUNT_NAME_PATTERN),
-            message:getRuntimeI18nConfigText(languageId, "accountNamePatternMessage") }] : []),
+          ...(publicConfig.ACCOUNT_NAME_PATTERN
+            ? [
+                {
+                  pattern: new RegExp(publicConfig.ACCOUNT_NAME_PATTERN),
+                  message: getRuntimeI18nConfigText(languageId, "accountNamePatternMessage"),
+                },
+              ]
+            : []),
         ]}
       >
         <TrimInput />
@@ -97,19 +111,11 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
       <Form.Item
         name="ownerId"
         label={t(p("ownerUserId"))}
-        rules={[
-          { required: true },
-          ...userIdRule ? [userIdRule] : [],
-        ]}
-
+        rules={[{ required: true }, ...(userIdRule ? [userIdRule] : [])]}
       >
         <TrimInput />
       </Form.Item>
-      <Form.Item
-        name="ownerName"
-        label={t(p("ownerName"))}
-        rules={[{ required: true }]}
-      >
+      <Form.Item name="ownerName" label={t(p("ownerName"))} rules={[{ required: true }]}>
         <TrimInput />
       </Form.Item>
       <Form.Item name="comment" label={t(p("remark"))}>
@@ -124,19 +130,20 @@ const CreateAccountForm: React.FC<CreateAccountFormProps> = ({ tenantName }) => 
   );
 };
 
-export const CreateAccountPage: NextPage = requireAuth((i) => i.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
-  ({ userStore }) => {
-    const t = useI18nTranslateToString();
+export const CreateAccountPage: NextPage = requireAuth((i) => i.tenantRoles.includes(TenantRole.TENANT_ADMIN))(({
+  userStore,
+}) => {
+  const t = useI18nTranslateToString();
 
-    return (
-      <div>
-        <Head title={t(p("createAccount"))} />
-        <PageTitle titleText={t(p("createAccount"))} />
-        <FormLayout>
-          <CreateAccountForm tenantName={userStore.user.tenant} />
-        </FormLayout>
-      </div>
-    );
-  });
+  return (
+    <div>
+      <Head title={t(p("createAccount"))} />
+      <PageTitle titleText={t(p("createAccount"))} />
+      <FormLayout>
+        <CreateAccountForm tenantName={userStore.user.tenant} />
+      </FormLayout>
+    </div>
+  );
+});
 
 export default CreateAccountPage;

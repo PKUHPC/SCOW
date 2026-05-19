@@ -8,7 +8,6 @@ import { publicConfig, runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
 export const GetIsUserEnabledRootShellSchema = typeboxRouteSchema({
-
   method: "GET",
 
   responses: {
@@ -21,21 +20,24 @@ export const GetIsUserEnabledRootShellSchema = typeboxRouteSchema({
 });
 
 const auth = authenticate(() => true);
-export default route(GetIsUserEnabledRootShellSchema,
-  async (req, res) => {
+export default route(GetIsUserEnabledRootShellSchema, async (req, res) => {
+  const token = getTokenFromCookie({ req });
 
-    const token = getTokenFromCookie({ req });
+  // when firstly used in getInitialProps, check the token
+  const info = token ? await validateToken(token) : await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    // when firstly used in getInitialProps, check the token
-    const info = token ? await validateToken(token) : await auth(req, res);
-    if (!info) { return; }
+  const userId = info.identityId;
 
-    const userId = info.identityId;
+  const result = await libQueryIsUserEnabledRootShell(
+    userId,
+    publicConfig.MIS_SERVER_URL,
+    runtimeConfig.SCOW_API_AUTH_TOKEN,
+  );
 
-    const result =
-      await libQueryIsUserEnabledRootShell(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
-
-    return {
-      200: result,
-    };
-  });
+  return {
+    200: result,
+  };
+});

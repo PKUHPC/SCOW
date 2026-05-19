@@ -23,17 +23,15 @@ export const UserIdsDisplay: React.FC<Props> = ({ userIds }) => {
         <>
           {", "}
           <Tooltip
-            title={(
+            title={
               <div>
                 {userIds.slice(3).map((userId, index) => (
                   <div key={index}>{userId}</div>
                 ))}
               </div>
-            )}
+            }
           >
-            <span style={{ cursor: "pointer", textDecoration: "underline" }}>
-              等{remainingCount}个
-            </span>
+            <span style={{ cursor: "pointer", textDecoration: "underline" }}>等{remainingCount}个</span>
           </Tooltip>
         </>
       )}
@@ -42,4 +40,3 @@ export const UserIdsDisplay: React.FC<Props> = ({ userIds }) => {
 };
 
 export default UserIdsDisplay;
-

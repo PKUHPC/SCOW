@@ -27,7 +27,8 @@ export default {
   confirmPasswordNotEqualError: "Passwörter stimmen nicht überein. Bitte erneut eingeben.",
   confirmPasswordEmailError: "Ungültiges E-Mail-Format. Bitte erneut eingeben.",
   notPositiveNumberError: "Bitte eine Zahl größer als 0 eingeben.",
-  compareUsedChargeError: "Das gesetzte Limit darf den aktuell genutzten Betrag nicht unterschreiten. Bitte erneut eingeben.",
+  compareUsedChargeError:
+    "Das gesetzte Limit darf den aktuell genutzten Betrag nicht unterschreiten. Bitte erneut eingeben.",
   validateDataConsistencyMessage: "Bitte die erforderlichen Werte zur Bestätigung eingeben",
   validateDataConsistencyError: "Werte sind inkonsistent, bitte erneut eingeben",
   refreshButton: "Aktualisieren",
@@ -67,7 +68,8 @@ export default {
   addQuickEntry: "Links hinzufügen",
   cancel: "Abbrechen",
   notExist: "Existiert nicht",
-  clusterNotAvailable: "Der aktuelle Cluster ist nicht verfügbar oder es sind keine Cluster verfügbar. Bitte später erneut versuchen oder den Administrator kontaktieren.",
+  clusterNotAvailable:
+    "Der aktuelle Cluster ist nicht verfügbar oder es sind keine Cluster verfügbar. Bitte später erneut versuchen oder den Administrator kontaktieren.",
   alreadyExist: "Link existiert bereits",
   cannotBeEmpty: "Link darf nicht leer sein",
   exceedMaxSize: "Es können bis zu 10 Schnellzugriffe hinzugefügt werden",

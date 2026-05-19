@@ -1,19 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ConnectError } from "@connectrpc/connect";
 import { useMutation } from "@connectrpc/connect-query";
-import { ListMessagesResponse, Message } from "@scow/notification-protos/build/message_pb";
 import { markMessageRead } from "@scow/notification-protos/build/message-MessageService_connectquery";
+import { ListMessagesResponse, Message } from "@scow/notification-protos/build/message_pb";
 import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 import { App, List, PaginationProps, Typography } from "antd";
 import { join } from "path";
@@ -36,18 +24,25 @@ interface StyledListItemProps {
   index: number;
 }
 
-
 // 直接使用类型定义来避免错误
 const StyledListItem = styled(List.Item)<StyledListItemProps>`
   height: 60px;
   cursor: pointer;
   background: ${({ isRead, isDark, index }) =>
     isDark
-      ? isRead ? (index % 2 === 0 ? "#121212" : "#1D1D1D") : "#172D3B"
-      : isRead ? (index % 2 === 0 ? "white" : "#F7F7F7") : "#F2FAFF"};
+      ? isRead
+        ? index % 2 === 0
+          ? "#121212"
+          : "#1D1D1D"
+        : "#172D3B"
+      : isRead
+        ? index % 2 === 0
+          ? "white"
+          : "#F7F7F7"
+        : "#F2FAFF"};
 
   &:hover {
-    background: ${({ isDark }) => isDark ? "#1D262C" : "#E9EDEE"};
+    background: ${({ isDark }) => (isDark ? "#1D262C" : "#E9EDEE")};
   }
 `;
 
@@ -99,17 +94,23 @@ const ActionsContainer = styled.div`
 interface Props {
   totalCount: number;
   messageList: Message[];
-  pageInfo: PageInfo,
+  pageInfo: PageInfo;
   isLoading: boolean;
-  setPageInfo: React.Dispatch<React.SetStateAction<PageInfo>>
+  setPageInfo: React.Dispatch<React.SetStateAction<PageInfo>>;
   handleDelete: (id: bigint) => Promise<void>;
   refetch: (options?: RefetchOptions) => Promise<QueryObserverResult<ListMessagesResponse, ConnectError>>;
   lang: I18nDicType;
 }
 export const NotificationList: React.FC<Props> = ({
-  totalCount, messageList, pageInfo, isLoading, setPageInfo, handleDelete, refetch, lang,
+  totalCount,
+  messageList,
+  pageInfo,
+  isLoading,
+  setPageInfo,
+  handleDelete,
+  refetch,
+  lang,
 }) => {
-
   const [modalOpen, setModalOpen] = useState(false);
   const [readMsg, setReadMsg] = useState<RenderContent>();
   const compLang = lang.notification.list;
@@ -158,15 +159,13 @@ export const NotificationList: React.FC<Props> = ({
                   <img
                     height={15}
                     width={20}
-                    src={item.isRead ? join(basePath, "/icons/gray-mail.svg") : join(basePath, "/icons/mail.svg") }
+                    src={item.isRead ? join(basePath, "/icons/gray-mail.svg") : join(basePath, "/icons/mail.svg")}
                   />
                   <span>{item.isRead ? compLang.read : compLang.unread}</span>
                 </StatusContainer>
                 <ContentContainer>
                   <div>【{renderingContent.title}】</div>
-                  <Text ellipsis>
-                    {renderingContent.content}
-                  </Text>
+                  <Text ellipsis>{renderingContent.content}</Text>
                 </ContentContainer>
                 <ActionsContainer>
                   <div>{renderingContent.createdAt}</div>
@@ -186,11 +185,7 @@ export const NotificationList: React.FC<Props> = ({
           ) : undefined;
         }}
       />
-      <MessageContentModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        data={readMsg}
-      ></MessageContentModal>
+      <MessageContentModal open={modalOpen} onClose={() => setModalOpen(false)} data={readMsg}></MessageContentModal>
     </>
   );
 };

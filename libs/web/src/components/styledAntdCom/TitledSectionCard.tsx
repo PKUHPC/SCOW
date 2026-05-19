@@ -1,5 +1,6 @@
-import { Card, Typography } from "antd";
 import type { ReactNode } from "react";
+
+import { Card, Typography } from "antd";
 import { styled } from "styled-components";
 
 export interface TitledSectionCardProps {
@@ -7,13 +8,8 @@ export interface TitledSectionCardProps {
   children?: ReactNode;
 }
 
-export const TitledSectionCard = ({
-  title,
-  children,
-}: TitledSectionCardProps) => (
-  <SectionCard title={<SectionTitle>{title}</SectionTitle>}>
-    {children}
-  </SectionCard>
+export const TitledSectionCard = ({ title, children }: TitledSectionCardProps) => (
+  <SectionCard title={<SectionTitle>{title}</SectionTitle>}>{children}</SectionCard>
 );
 
 // 内容区的卡片

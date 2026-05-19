@@ -11,9 +11,13 @@ import { api } from "src/apis";
 import { AmountStrategyDescriptionsItem } from "src/components/AmonutStrategyDescriptionsItem";
 import { CommonModalProps, ModalLink } from "src/components/ModalLink";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { AmountStrategy, getAmountStrategyAlgorithmDescriptions,
+import {
+  AmountStrategy,
+  getAmountStrategyAlgorithmDescriptions,
   getAmountStrategyDescription,
-  getAmountStrategyDescriptions, getAmountStrategyText } from "src/models/job";
+  getAmountStrategyDescriptions,
+  getAmountStrategyText,
+} from "src/models/job";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -21,9 +25,9 @@ import { moneyToString } from "src/utils/money";
 
 interface Props {
   data?: {
-    activeItems: BillingItemType[],
-    historyItems: BillingItemType[],
-    nextId: string,
+    activeItems: BillingItemType[];
+    historyItems: BillingItemType[];
+    nextId: string;
   };
   loading?: boolean;
   tenant?: string;
@@ -40,10 +44,10 @@ export interface BillingItemType {
   priceItem?: {
     itemId: string;
     price: Money;
-    amountStrategy: string,
-  }
+    amountStrategy: string;
+  };
 
-  settable?: boolean,
+  settable?: boolean;
 }
 
 const customAmountStrategiesIdToName = {};
@@ -53,13 +57,10 @@ publicConfig.CUSTOM_AMOUNT_STRATEGIES?.forEach((i) => {
   customAmountStrategiesIdToDescription[i.id] = i.comment || i.id;
 });
 
-
 const p = prefix("pageComp.job.manageJobBillingTable.");
 const pCommon = prefix("common.");
 
-export const ManageJobBillingTable: React.FC<Props> = ({
-  data, loading, tenant, reload, isFromPlatformAdmin }) => {
-
+export const ManageJobBillingTable: React.FC<Props> = ({ data, loading, tenant, reload, isFromPlatformAdmin }) => {
   const t = useI18nTranslateToString();
 
   const AmountStrategyText = getAmountStrategyText(t);
@@ -79,70 +80,67 @@ export const ManageJobBillingTable: React.FC<Props> = ({
         showSizeChanger: true,
         defaultPageSize: DEFAULT_PAGE_SIZE,
       }}
-      expandable={{ expandedRowRender: (record) => {
-
-        return (
-          <Table
-            dataSource={
-              data?.historyItems
+      expandable={{
+        expandedRowRender: (record) => {
+          return (
+            <Table
+              dataSource={data?.historyItems
                 .filter((x) => x.cluster === record.cluster && x.partition === record.partition && x.qos === record.qos)
-                .reverse()
-            }
-            pagination={{
-              defaultPageSize: 10,
-              hideOnSinglePage: true,
-            }}
-          >
-            <Table.Column<BillingItemType>
-              title={t(p("itemId"))}
-              dataIndex={["priceItem", "itemId"]}
-              sorter={(a, b) => compareNullableString(a.priceItem?.itemId, b.priceItem?.itemId)}
-            />
-            <Table.Column<BillingItemType>
-              title={AmountStrategyText}
-              dataIndex={["priceItem", "amountStrategy"]}
-              render={(value) => {
-                return (
-                  <AmountStrategyDescriptionsItem isColContent={true} amount={value} />
-                );
+                .reverse()}
+              pagination={{
+                defaultPageSize: 10,
+                hideOnSinglePage: true,
               }}
-              sorter={(a, b) => compareNullableString(a.priceItem?.amountStrategy, b.priceItem?.amountStrategy)}
-            />
-            <Table.Column<BillingItemType>
-              title={t(p("price"))}
-              dataIndex={["priceItem", "price"]}
-              render={(value) => moneyToString(value)}
-              sorter={(a, b) => {
-                const priceA = a.priceItem?.price ? moneyToString(a.priceItem?.price) : undefined;
-                const priceB = b.priceItem?.price ? moneyToString(b.priceItem?.price) : undefined;
-                return compareNullableNumber(priceA, priceB);
-              }}
-            />
-            <Table.Column title={t(pCommon("status"))} render={(_) => t(p("abandon"))} />
-          </Table>
-        );
-      },
-      showExpandColumn:true,
-      expandIcon: ({ expanded, onExpand, record }) =>
-        expanded ? (
-          <Tooltip title={t(p("notExpanded"))}>
-            <MinusCircleOutlined onClick={(e) => onExpand(record, e)} />
-          </Tooltip>
-        ) : (
-          <Tooltip title={t(p("expanded"))}>
-            <PlusCircleOutlined onClick={(e) => onExpand(record, e)} />
-          </Tooltip>
-        ),
+            >
+              <Table.Column<BillingItemType>
+                title={t(p("itemId"))}
+                dataIndex={["priceItem", "itemId"]}
+                sorter={(a, b) => compareNullableString(a.priceItem?.itemId, b.priceItem?.itemId)}
+              />
+              <Table.Column<BillingItemType>
+                title={AmountStrategyText}
+                dataIndex={["priceItem", "amountStrategy"]}
+                render={(value) => {
+                  return <AmountStrategyDescriptionsItem isColContent={true} amount={value} />;
+                }}
+                sorter={(a, b) => compareNullableString(a.priceItem?.amountStrategy, b.priceItem?.amountStrategy)}
+              />
+              <Table.Column<BillingItemType>
+                title={t(p("price"))}
+                dataIndex={["priceItem", "price"]}
+                render={(value) => moneyToString(value)}
+                sorter={(a, b) => {
+                  const priceA = a.priceItem?.price ? moneyToString(a.priceItem?.price) : undefined;
+                  const priceB = b.priceItem?.price ? moneyToString(b.priceItem?.price) : undefined;
+                  return compareNullableNumber(priceA, priceB);
+                }}
+              />
+              <Table.Column title={t(pCommon("status"))} render={(_) => t(p("abandon"))} />
+            </Table>
+          );
+        },
+        showExpandColumn: true,
+        expandIcon: ({ expanded, onExpand, record }) =>
+          expanded ? (
+            <Tooltip title={t(p("notExpanded"))}>
+              <MinusCircleOutlined onClick={(e) => onExpand(record, e)} />
+            </Tooltip>
+          ) : (
+            <Tooltip title={t(p("expanded"))}>
+              <PlusCircleOutlined onClick={(e) => onExpand(record, e)} />
+            </Tooltip>
+          ),
       }}
     >
-      <Table.ColumnGroup title={(
-        <Space>
-          {t(p("priceItem"))}
-          <Popover title={t(p("text"))}>
-            <QuestionCircleOutlined />
-          </Popover>
-        </Space>
-      )}
+      <Table.ColumnGroup
+        title={
+          <Space>
+            {t(p("priceItem"))}
+            <Popover title={t(p("text"))}>
+              <QuestionCircleOutlined />
+            </Popover>
+          </Space>
+        }
       >
         <Table.Column<BillingItemType>
           title={t(pCommon("cluster"))}
@@ -171,24 +169,17 @@ export const ManageJobBillingTable: React.FC<Props> = ({
         sorter={(a, b) => compareNullableString(a.priceItem?.itemId, b.priceItem?.itemId)}
       />
       <Table.Column<BillingItemType>
-        title={(
-          <AmountStrategyDescriptionsItem isColTitle={true} />
-        )}
+        title={<AmountStrategyDescriptionsItem isColTitle={true} />}
         dataIndex={["priceItem", "amountStrategy"]}
         render={(value) => {
-          return (
-            value ?
-              (
-                <AmountStrategyDescriptionsItem isColContent={true} amount={value} />
-              ) : undefined
-          );
+          return value ? <AmountStrategyDescriptionsItem isColContent={true} amount={value} /> : undefined;
         }}
         sorter={(a, b) => compareNullableString(a.priceItem?.amountStrategy, b.priceItem?.amountStrategy)}
       />
       <Table.Column<BillingItemType>
         title={t(p("price"))}
         dataIndex={["priceItem", "price"]}
-        render={(value) => value ? moneyToString(value) : undefined}
+        render={(value) => (value ? moneyToString(value) : undefined)}
         sorter={(a, b) => {
           const priceA = a.priceItem?.price ? moneyToString(a.priceItem?.price) : undefined;
           const priceB = b.priceItem?.price ? moneyToString(b.priceItem?.price) : undefined;
@@ -197,8 +188,7 @@ export const ManageJobBillingTable: React.FC<Props> = ({
       />
       <Table.Column<BillingItemType>
         title={t(pCommon("status"))}
-        render={(record) =>
-          record.priceItem ? t(p("executing")) : t(p("unset"))}
+        render={(record) => (record.priceItem ? t(p("executing")) : t(p("unset")))}
         sorter={(a, b) => {
           const statusA = a.priceItem ? t(p("executing")) : t(p("unset"));
           const statusB = b.priceItem ? t(p("executing")) : t(p("unset"));
@@ -247,17 +237,19 @@ export const ManageJobBillingTable: React.FC<Props> = ({
         }}
       />
     </Table>
-
-
   );
 };
 
-const EditPriceModal: React.FC<CommonModalProps & {
-  nextId: string; cluster: string; partition: string; qos: string; tenant?: string; reload: () => void
-}> = ({
-  onClose, nextId, cluster, partition, qos, open, tenant, reload,
-}) => {
-
+const EditPriceModal: React.FC<
+  CommonModalProps & {
+    nextId: string;
+    cluster: string;
+    partition: string;
+    qos: string;
+    tenant?: string;
+    reload: () => void;
+  }
+> = ({ onClose, nextId, cluster, partition, qos, open, tenant, reload }) => {
   const t = useI18nTranslateToString();
   const AmountStrategyDescriptions = getAmountStrategyDescriptions(t);
   const AmountStrategyAlgorithmDescriptions = getAmountStrategyAlgorithmDescriptions(t);
@@ -278,11 +270,20 @@ const EditPriceModal: React.FC<CommonModalProps & {
 
     setLoading(true);
 
-    await api.addBillingItem({ body: {
-      amount, itemId: nextId, path: [cluster, partition, qos].join("."),
-      price: numberToMoney(price), description, tenant,
-    } })
-      .httpError(409, () => { message.error(t(p("alreadyUsed"))); })
+    await api
+      .addBillingItem({
+        body: {
+          amount,
+          itemId: nextId,
+          path: [cluster, partition, qos].join("."),
+          price: numberToMoney(price),
+          description,
+          tenant,
+        },
+      })
+      .httpError(409, () => {
+        message.error(t(p("alreadyUsed")));
+      })
       .then(() => {
         message.success(t(p("addSuccess")));
         reload();
@@ -293,11 +294,9 @@ const EditPriceModal: React.FC<CommonModalProps & {
 
   return (
     <Modal title={t(p("setPrice"))} open={open} onCancel={onClose} onOk={onOk} destroyOnClose confirmLoading={loading}>
-      <Form
-        form={form}
-      >
+      <Form form={form}>
         <Form.Item label={t(p("object"))}>
-          <span>{tenant ? (t(pCommon("tenant")) + tenant) : t(pCommon("platform"))}</span>
+          <span>{tenant ? t(pCommon("tenant")) + tenant : t(pCommon("platform"))}</span>
         </Form.Item>
         <Form.Item label={t(p("priceItem"))}>
           {t(pCommon("cluster"))} <span>{getClusterName(cluster, languageId, publicConfigClusters)}</span>，
@@ -307,33 +306,32 @@ const EditPriceModal: React.FC<CommonModalProps & {
           <span>{nextId}</span>
         </Form.Item>
         <Form.Item
-          label={(
+          label={
             <Space>
               {AmountStrategyText}
               <Popover
                 title={AmountStrategyDescription}
-                content={(
+                content={
                   <div>
-                    {Object.entries(AmountStrategyAlgorithmDescriptions)
-                      .map((value) => <p key={value[0]}>{`${value[0]}: ${value[1]}`}</p>)}
+                    {Object.entries(AmountStrategyAlgorithmDescriptions).map((value) => (
+                      <p key={value[0]}>{`${value[0]}: ${value[1]}`}</p>
+                    ))}
                   </div>
-                )}
+                }
               >
                 <QuestionCircleOutlined />
               </Popover>
             </Space>
-          )}
+          }
           name="amount"
           rules={[{ required: true }]}
         >
           <Select
-            options={
-              [...Object.values(AmountStrategy)
-                .map((x) => ({ label: AmountStrategyDescriptions[x], value: x })),
+            options={[
+              ...Object.values(AmountStrategy).map((x) => ({ label: AmountStrategyDescriptions[x], value: x })),
               ...(publicConfig.CUSTOM_AMOUNT_STRATEGIES || []).map((i) => ({ label: i.name || i.id, value: i.id })),
-              ]}
+            ]}
             dropdownMatchSelectWidth={false}
-
           />
         </Form.Item>
         <Form.Item label={t(p("price"))} name="price" initialValue={0} rules={[{ required: true }]}>

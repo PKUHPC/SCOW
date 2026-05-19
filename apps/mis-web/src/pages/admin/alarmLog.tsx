@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { getDefaultPresets } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -42,9 +30,7 @@ interface PageInfo {
 
 const p = prefix("page.admin.monitor.alarmLog.");
 
-export const AlarmLogPage: NextPage = requireAuth((u) =>
-  u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
-
+export const AlarmLogPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
   const [query, setQuery] = useState<FilterForm>(() => {
     const now = dayjs();
     return {
@@ -112,8 +98,11 @@ export const AlarmLogPage: NextPage = requireAuth((u) =>
 
   const { data, isLoading, reload } = useAsync({ promiseFn: getAlarmLogs });
   const { isLoading: isAlarmDbIdLoading } = useAsync({ promiseFn: getAlarmDbId });
-  const { data: alarmLogsCount, reload: reloadCount, isLoading: isAlarmCountLoading }
-    = useAsync({ promiseFn: getAlarmLogsCount });
+  const {
+    data: alarmLogsCount,
+    reload: reloadCount,
+    isLoading: isAlarmCountLoading,
+  } = useAsync({ promiseFn: getAlarmLogsCount });
 
   return (
     <div>
@@ -133,23 +122,17 @@ export const AlarmLogPage: NextPage = requireAuth((u) =>
           }}
         >
           <Form.Item
-            label={(
+            label={
               <Space>
                 {t(p("firingTime"))}
-                <Popover
-                  title={t(p("firingTimePrompt"))}
-                >
+                <Popover title={t(p("firingTimePrompt"))}>
                   <QuestionCircleOutlined />
                 </Popover>
               </Space>
-            )}
+            }
             name="time"
           >
-            <DatePicker.RangePicker
-              showTime
-              presets={getDefaultPresets(languageId)}
-              allowClear={false}
-            />
+            <DatePicker.RangePicker showTime presets={getDefaultPresets(languageId)} allowClear={false} />
           </Form.Item>
           <Form.Item name="status" label={t(p("status"))}>
             <Select
@@ -163,13 +146,20 @@ export const AlarmLogPage: NextPage = requireAuth((u) =>
             />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(p("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(p("search"))}
+            </Button>
           </Form.Item>
           <Form.Item>
             <Button
               loading={isAlarmDbIdLoading || isLoading || isAlarmCountLoading}
-              onClick={() => { reload(); reloadCount(); }}
-            >{t(p("refresh"))}</Button>
+              onClick={() => {
+                reload();
+                reloadCount();
+              }}
+            >
+              {t(p("refresh"))}
+            </Button>
           </Form.Item>
         </Form>
       </FilterFormContainer>

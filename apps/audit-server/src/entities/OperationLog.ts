@@ -1,19 +1,6 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Entity, Enum, Index, PrimaryKey, Property } from "@mikro-orm/core";
 import { OperationEvent } from "@scow/lib-operation-log";
-import { CURRENT_TIMESTAMP, DATETIME_TYPE } from "src/utils/orm"; ;
-
+import { CURRENT_TIMESTAMP, DATETIME_TYPE } from "src/utils/orm";
 
 export enum OperationResult {
   UNKNOWN = "UNKNOWN",
@@ -23,7 +10,6 @@ export enum OperationResult {
 
 @Entity()
 export class OperationLog {
-
   @PrimaryKey()
   id!: number;
 
@@ -70,6 +56,4 @@ export class OperationLog {
       this.customEventType = init.customEventType;
     }
   }
-
 }
-

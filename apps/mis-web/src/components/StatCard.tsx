@@ -40,14 +40,10 @@ export const AccountStatCard: React.FC<Props> = ({ children, title, icon }) => {
       }}
     >
       <Header>
-        <Title>
-          {title}
-        </Title>
+        <Title>{title}</Title>
         <IconContainer>{icon}</IconContainer>
       </Header>
-      <ChildrenContainer>
-        {children}
-      </ChildrenContainer>
+      <ChildrenContainer>{children}</ChildrenContainer>
     </Card>
   );
 };

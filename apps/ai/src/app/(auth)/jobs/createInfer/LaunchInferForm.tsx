@@ -486,8 +486,7 @@ export const LaunchInferForm = ({ createInferParams, misPath }: Props) => {
   const buildOwnerText = (isPlatformOwned: boolean, ownerName?: string, ownerId?: string) => {
     if (isPlatformOwned) return t(pPublicOption("sharedBy"), [t(pPublicOption("platformName"))]);
     const ownerDisplay = ownerName ?? ownerId ?? "-";
-    return t(pPublicOption("sharedBy"), [ownerDisplay])
-      + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
+    return t(pPublicOption("sharedBy"), [ownerDisplay]) + (ownerId ? t(pPublicOption("ownerIdSuffix"), [ownerId]) : "");
   };
 
   const modelCategories = useMemo<ResourceCategory[]>(() => {

@@ -75,7 +75,7 @@ export class User {
     tenant: EntityOrRef<Tenant>;
     name: string;
     email: string;
-    phone?: string
+    phone?: string;
     organization?: string;
     adminComment?: string;
     createTime?: Date;
@@ -99,5 +99,4 @@ export class User {
     this.state = init.state ?? UserState.NORMAL;
     this.deletionComment = init.deletionComment ?? "";
   }
-
 }

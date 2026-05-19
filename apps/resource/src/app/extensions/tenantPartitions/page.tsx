@@ -9,24 +9,25 @@ import { PartitionOperationType } from "src/models/partition";
 import { getLanguage } from "src/utils/i18n";
 
 export default function Page() {
-
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
 
   useEffect(() => {
-    window.parent?.postMessage({
-      type: "scow.extensionPageTitleChanged",
-      payload: {
-        title: language.clusterPartitionManagement.common.head,
+    window.parent?.postMessage(
+      {
+        type: "scow.extensionPageTitleChanged",
+        payload: {
+          title: language.clusterPartitionManagement.common.head,
+        },
       },
-    }, "*");
+      "*",
+    );
   }, [language]);
 
   return (
     <div>
       <Head title={language.clusterPartitionManagement.common.head} />
-      <PageTitle titleText={language.clusterPartitionManagement.common.head}>
-      </PageTitle>
+      <PageTitle titleText={language.clusterPartitionManagement.common.head}></PageTitle>
       <PartitionManagementTable
         operationType={PartitionOperationType.TENANT_OPERATION}
         language={language}

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -39,11 +27,12 @@ export const DeleteJobTemplateSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(DeleteJobTemplateSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(DeleteJobTemplateSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, templateId } = req.query;
 
@@ -53,20 +42,26 @@ export default /* #__PURE__*/route(DeleteJobTemplateSchema, async (req, res) => 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteJobTemplate,
-    operationTypePayload:{
+    operationTypePayload: {
       jobTemplateId: templateId,
       clusterId: cluster,
     },
   };
 
   return asyncUnaryCall(client, "deleteJobTemplate", {
-    templateId, userId: info.identityId, cluster,
-  }).then(async () => {
-    await callLog({ ...logInfo }, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "TEMPLATE_NOT_FOUND" } } as const),
-  },
-  async () => await callLog({ ...logInfo }, OperationResult.FAIL),
-  ));
+    templateId,
+    userId: info.identityId,
+    cluster,
+  }).then(
+    async () => {
+      await callLog({ ...logInfo }, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.NOT_FOUND]: () => ({ 404: { code: "TEMPLATE_NOT_FOUND" } }) as const,
+      },
+      async () => await callLog({ ...logInfo }, OperationResult.FAIL),
+    ),
+  );
 });

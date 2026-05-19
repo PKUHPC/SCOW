@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ClusterConfigSchema } from "@scow/config/build/cluster";
 import { loggedExec, sftpWriteFile } from "@scow/lib-ssh";
 import { dirname } from "path";
@@ -19,15 +7,17 @@ import { sshConnect } from "src/utils/ssh";
 import { Logger } from "ts-log";
 
 export const setupProxyGateway = async (logger: Logger, activatedClusters: Record<string, ClusterConfigSchema>) => {
-
   let portalBasePath = config.PORTAL_BASE_PATH;
-  if (!portalBasePath.endsWith("/")) { portalBasePath += "/"; }
+  if (!portalBasePath.endsWith("/")) {
+    portalBasePath += "/";
+  }
 
   for (const id of Object.keys(activatedClusters)) {
-
     const proxyGatewayConfig = configClusters[id].proxyGateway;
 
-    if (!proxyGatewayConfig?.autoSetupNginx) { continue; }
+    if (!proxyGatewayConfig?.autoSetupNginx) {
+      continue;
+    }
 
     const url = new URL(proxyGatewayConfig.url);
 
@@ -56,7 +46,6 @@ server {
     const nginxConfigPath = "/etc/nginx/conf.d/scow-portal-proxy-gateway.conf";
 
     await sshConnect(url.hostname, "root", logger, async (ssh) => {
-
       // check if nginx is installed
       const resp = await loggedExec(ssh, logger, false, "nginx", ["-v"]);
 
@@ -80,32 +69,37 @@ server {
 
 export const parseIp = (stdout: string): string => {
   const ipReg = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
-  return (ipReg.exec(stdout.split("\n")[0]))?.[0] ?? "";
+  return ipReg.exec(stdout.split("\n")[0])?.[0] ?? "";
 };
 
-export const getIpFromProxyGateway
-  = async (clusterId: string, hostName: string, logger: Logger): Promise<string> => {
+export const getIpFromProxyGateway = async (clusterId: string, hostName: string, logger: Logger): Promise<string> => {
+  const proxyGatewayConfig = configClusters?.[clusterId]?.proxyGateway;
 
-    const proxyGatewayConfig = configClusters?.[clusterId]?.proxyGateway;
+  if (!proxyGatewayConfig) return "";
+  const url = new URL(proxyGatewayConfig.url);
 
-    if (!proxyGatewayConfig) return "";
-    const url = new URL(proxyGatewayConfig.url);
-
-    return await sshConnect(url.hostname, "root", logger, async (ssh) => {
-      const resp = await loggedExec(ssh, logger, false, "ping", ["-c 1", "-W 1", hostName]);
-      if (resp.code !== 0) {
-        logger.error(
-          "Ping %s returned code %d. %s might not be reachable from %s", hostName, resp.code, hostName, url.hostname,
-        );
-        return "";
-      }
-      const ip = parseIp(resp.stdout);
-      return ip;
-    }).catch((e) => {
+  return await sshConnect(url.hostname, "root", logger, async (ssh) => {
+    const resp = await loggedExec(ssh, logger, false, "ping", ["-c 1", "-W 1", hostName]);
+    if (resp.code !== 0) {
       logger.error(
-        e,
-        "Error occurred during get ip of host %s from proxy gateway %s for cluster %s", hostName, url.host, clusterId,
+        "Ping %s returned code %d. %s might not be reachable from %s",
+        hostName,
+        resp.code,
+        hostName,
+        url.hostname,
       );
       return "";
-    });
-  };
+    }
+    const ip = parseIp(resp.stdout);
+    return ip;
+  }).catch((e) => {
+    logger.error(
+      e,
+      "Error occurred during get ip of host %s from proxy gateway %s for cluster %s",
+      hostName,
+      url.host,
+      clusterId,
+    );
+    return "";
+  });
+};

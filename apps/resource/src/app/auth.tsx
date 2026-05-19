@@ -1,8 +1,6 @@
 import { trpc } from "src/server/trpc/api";
 
-
 export const useUserQuery = () => {
-
   return trpc.auth.getUserInfo.useQuery(undefined, {
     // user info is never refreshed in the client
     staleTime: Infinity,
@@ -19,8 +17,9 @@ export const useOptionalUser = () => {
 };
 
 export const useUser = () => {
-
   const user = useOptionalUser();
-  if (!user) { throw new Error("not logged in"); }
+  if (!user) {
+    throw new Error("not logged in");
+  }
   return user;
 };

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { plugin } from "@ddadaal/tsgrpc-server";
 import cron from "node-cron";
 import { fetchStatistics, lastFetched } from "src/tasks/statistic";
@@ -22,11 +10,10 @@ export interface StatisticPlugin {
     schedule: string;
     lastFetched: () => Date | null;
     fetch: () => Promise<{ fetchSuccsess: boolean }>;
-  }
+  };
 }
 
 export const statisticPlugin = plugin(async (f) => {
-
   let statisticStarted = true;
   let statisticIsRunning = false;
 
@@ -36,12 +23,16 @@ export const statisticPlugin = plugin(async (f) => {
     if (statisticIsRunning) return;
 
     statisticIsRunning = true;
-    return fetchStatistics(f.ext.orm.em.fork(), logger).finally(() => { statisticIsRunning = false; });
+    return fetchStatistics(f.ext.orm.em.fork(), logger).finally(() => {
+      statisticIsRunning = false;
+    });
   };
 
   const task = cron.schedule(
     "1 0 * * *",
-    () => { void trigger(); },
+    () => {
+      void trigger();
+    },
     {
       timezone: "Asia/Shanghai",
       scheduled: true,
@@ -55,7 +46,7 @@ export const statisticPlugin = plugin(async (f) => {
     logger.info("Fetch info stopped.");
   });
 
-  f.addExtension("statistics", ({
+  f.addExtension("statistics", {
     started: () => statisticStarted,
     start: () => {
       if (statisticStarted) {
@@ -78,5 +69,5 @@ export const statisticPlugin = plugin(async (f) => {
     schedule: "1 0 * * *",
     lastFetched: () => lastFetched,
     fetch: trigger,
-  } as StatisticPlugin["fetch"]));
+  } as StatisticPlugin["fetch"]);
 });

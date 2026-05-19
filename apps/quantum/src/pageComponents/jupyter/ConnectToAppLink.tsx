@@ -16,36 +16,33 @@ export interface Props {
   refreshToken: boolean;
 }
 
-export const ConnectTopAppLink: React.FC<Props> = ({
-  session, cluster, refreshToken,
-}) => {
+export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshToken }) => {
   const t = useI18nTranslateToString();
   const p = prefix("pageComp.appSessionTable.connectToAppLink.");
 
   const { message } = App.useApp();
 
-  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({ clusterId: cluster, jobId: session.jobId }, {
-    enabled: !!session.jobId,
-  });
-
-  const connectMutation = trpc.jobs.connectToApp.useMutation(
+  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery(
+    { clusterId: cluster, jobId: session.jobId },
     {
-      onError(e) {
-        message.error(`connectFailed: ${e.message}`);
-      },
+      enabled: !!session.jobId,
     },
   );
+
+  const connectMutation = trpc.jobs.connectToApp.useMutation({
+    onError(e) {
+      message.error(`connectFailed: ${e.message}`);
+    },
+  });
 
   useEffect(() => {
     refetch();
   }, [refreshToken]);
 
-
   const onClick = async () => {
-
     const reply = await connectMutation.mutateAsync({
       cluster,
-      sessionId:session.sessionId,
+      sessionId: session.sessionId,
       jobId: session.jobId,
     });
 
@@ -89,23 +86,14 @@ export const ConnectTopAppLink: React.FC<Props> = ({
         form.submit();
         document.body.removeChild(form);
       }
-
     }
 
     return;
-
   };
 
   return (
-    <DisabledA
-      disabled={!data}
-      onClick={onClick}
-      message={t(p("notReady"))}
-      abledMessage={t(p("connect"))}
-    >
-      { data ? (
-        <ConnectIcon />
-      ) : <ConnectIcon disabled />}
+    <DisabledA disabled={!data} onClick={onClick} message={t(p("notReady"))} abledMessage={t(p("connect"))}>
+      {data ? <ConnectIcon /> : <ConnectIcon disabled />}
     </DisabledA>
   );
 };

@@ -13,7 +13,6 @@ import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const MigrateNodeSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -40,49 +39,48 @@ export const MigrateNodeSchema = typeboxRouteSchema({
   },
 });
 
+export default route(MigrateNodeSchema, async (req, res) => {
+  const { nodeName, originCluster, destinationCluster } = req.body;
 
-export default route(MigrateNodeSchema,
-  async (req, res) => {
+  const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-    const { nodeName, originCluster, destinationCluster }
-     = req.body;
+  const info = await auth(req, res);
 
-    const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-
-    if (!info) {
-      return;
-    }
-
-    const logInfo = {
-      operatorUserId: info.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.migrateNode,
-      operationTypePayload:{
-        nodeName,
-        originCluster,
-        destinationCluster,
-      },
-    };
-
-    const client = getClient(ConfigServiceClient);
-
-    return await asyncClientCall(client, "migrateNode", {
+  const logInfo = {
+    operatorUserId: info.identityId,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.migrateNode,
+    operationTypePayload: {
       nodeName,
       originCluster,
       destinationCluster,
-    }).then(async () => {
+    },
+  };
+
+  const client = getClient(ConfigServiceClient);
+
+  return await asyncClientCall(client, "migrateNode", {
+    nodeName,
+    originCluster,
+    destinationCluster,
+  })
+    .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-      .catch(handlegRPCError({
-        [Status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
-        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-        [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-        [Status.UNIMPLEMENTED]: (e) => ({ 501:{ message: e.details } }),
-      },
-      async () => await callLog(logInfo, OperationResult.FAIL),
-      ));
-
-  });
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+          [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+          [Status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
+});

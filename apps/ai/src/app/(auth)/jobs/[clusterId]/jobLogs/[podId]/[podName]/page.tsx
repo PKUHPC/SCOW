@@ -1,10 +1,9 @@
 "use client";
 
 import "@xterm/xterm/css/xterm.css";
-
 import { Button, Select, Space } from "antd";
 import dynamic from "next/dynamic";
-import { use,useState } from "react";
+import { use, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { useDocumentTitle } from "src/utils/head";
@@ -27,13 +26,15 @@ const Header = styled.div`
   justify-content: space-between;
   background-color: #333;
 
-  h2 { color: white; margin: 0px; }
+  h2 {
+    color: white;
+    margin: 0px;
+  }
 
   .ant-popover-content p {
     margin: 0;
   }
 `;
-
 
 const TerminalContainer = styled.div`
   display: flex;
@@ -46,16 +47,12 @@ const Black = styled.div`
   background-color: black;
 `;
 
-const JobLogComponent = dynamic(
-  () => import("./JobLogs").then((x) => x.JobLogs), {
-    ssr: false,
-    loading: Black,
-  });
+const JobLogComponent = dynamic(() => import("./JobLogs").then((x) => x.JobLogs), {
+  ssr: false,
+  loading: Black,
+});
 
-export default function Page(
-  props:
-  { params: Promise<{ clusterId: string, podId: string, podName: string, }> },
-) {
+export default function Page(props: { params: Promise<{ clusterId: string; podId: string; podName: string }> }) {
   const params = use(props.params);
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.jobLogs.");
@@ -69,13 +66,10 @@ export default function Page(
   return (
     <Container>
       <Header>
-        <h2 style={{ display:"flex" }}>
-          {t(p("title"), [podName])}
-        </h2>
+        <h2 style={{ display: "flex" }}>{t(p("title"), [podName])}</h2>
         <Space wrap>
-          <h2 style={{ display:"flex",alignItems:"center" }}>
-            {t(p("rowsCount"))}:
-            &nbsp;
+          <h2 style={{ display: "flex", alignItems: "center" }}>
+            {t(p("rowsCount"))}: &nbsp;
             <Select
               value={rowLimit}
               style={{ width: 120 }}
@@ -90,20 +84,13 @@ export default function Page(
               getPopupContainer={(trigger) => trigger.parentElement}
             />
             &nbsp;&nbsp;&nbsp;&nbsp;
-            <Button onClick={() => window.location.reload()}>
-              {t("button.refreshButton")}
-            </Button>
+            <Button onClick={() => window.location.reload()}>{t("button.refreshButton")}</Button>
           </h2>
         </Space>
       </Header>
       <TerminalContainer>
-        <JobLogComponent
-          user={user}
-          cluster={clusterId}
-          podId={podId}
-          rowLimit={rowLimit ?? undefined}
-        />
+        <JobLogComponent user={user} cluster={clusterId} podId={podId} rowLimit={rowLimit ?? undefined} />
       </TerminalContainer>
     </Container>
   );
-};
+}

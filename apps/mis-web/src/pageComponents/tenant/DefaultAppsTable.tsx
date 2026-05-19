@@ -33,7 +33,6 @@ interface Props {
 
 const p = prefix("pageComp.tenant.defaultApps.defaultAppsTable.");
 export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, loading, reload }) => {
-
   const { activatedClusters, publicConfigClusters } = useStore(ClusterInfoStore);
 
   if (Object.keys(activatedClusters).length === 0) {
@@ -82,10 +81,9 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
   const [filterForm] = Form.useForm<FilterForm>();
 
   const promiseFn = useCallback(async () => {
-
     if (selectedClusterId === "") {
       return undefined;
-    };
+    }
 
     return await api.getTenantApps({
       query: {
@@ -97,16 +95,15 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
 
   // 前端过滤查询结果
   const filteredData = useMemo(() => {
-
     if (!data) return undefined;
-    const defaultAppsData = data.tenantApps.filter((x) => (x.isDefault));
+    const defaultAppsData = data.tenantApps.filter((x) => x.isDefault);
     if (!query.appName) {
       return defaultAppsData;
     }
-    const filteredValues = defaultAppsData
-      .filter((app) => app.name.toLowerCase().includes(query.appName?.toLowerCase() || ""));
+    const filteredValues = defaultAppsData.filter((app) =>
+      app.name.toLowerCase().includes(query.appName?.toLowerCase() || ""),
+    );
     return filteredValues;
-
   }, [data, query]);
 
   const reloadTable = () => {
@@ -122,7 +119,6 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
 
   return (
     <div>
-
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
           layout="inline"
@@ -139,14 +135,13 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
               key: clusterId,
               node: (
                 <>
-                  <Form.Item
-                    label={t(p("appName"))}
-                    name="appName"
-                  >
+                  <Form.Item label={t(p("appName"))} name="appName">
                     <Input />
                   </Form.Item>
                   <Form.Item>
-                    <Button type="primary" htmlType="submit">{t("common.search")}</Button>
+                    <Button type="primary" htmlType="submit">
+                      {t("common.search")}
+                    </Button>
                   </Form.Item>
                   <Space>
                     <AddToDefaultAppsButton
@@ -178,7 +173,7 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
         <Table.Column<TenantAppInfo>
           dataIndex="name"
           title={t(p("appName"))}
-          sorter={(a,b) => compareNullableString(a.name, b.name)}
+          sorter={(a, b) => compareNullableString(a.name, b.name)}
         />
         <Table.Column<TenantAppInfo>
           dataIndex="operation"
@@ -194,24 +189,21 @@ export const DefaultAppsTable: React.FC<Props> = ({ tenantAvailableClusterIds, l
                     icon: <ExclamationCircleOutlined />,
                     content: (
                       <>
-                        <p>
-                          {t(p("removeFromDefaultApps.confirmContent"), [tenantName, clusterName, r.name])}
-                        </p>
-                        <p style={{ color: "red" }}>
-                          {t(p("removeFromDefaultApps.confirmWarn"))}
-                        </p>
+                        <p>{t(p("removeFromDefaultApps.confirmContent"), [tenantName, clusterName, r.name])}</p>
+                        <p style={{ color: "red" }}>{t(p("removeFromDefaultApps.confirmWarn"))}</p>
                       </>
                     ),
                     onOk: async () => {
                       // 移出默认应用
-                      await api.updateDefaultApp({
-                        body: {
-                          clusterId: selectedClusterId,
-                          appId: r.id,
-                          appName: r.name,
-                          updateAction: UpdateDefaultAppAction.REMOVE_FROM_DEFAULT_APPS,
-                        },
-                      })
+                      await api
+                        .updateDefaultApp({
+                          body: {
+                            clusterId: selectedClusterId,
+                            appId: r.id,
+                            appName: r.name,
+                            updateAction: UpdateDefaultAppAction.REMOVE_FROM_DEFAULT_APPS,
+                          },
+                        })
                         .then((res) => {
                           if (res.executed) {
                             message.success(t(p("removeFromDefaultApps.removeSuccessMessage")));

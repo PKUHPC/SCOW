@@ -3,10 +3,7 @@ import { commonConfig } from "src/server/config/common";
 import { logger } from "src/utils/logger";
 
 // 统一包装资源管理服务返回给客户端的ConnectError
-function wrapResourceConnectError(
-  errMessage: string,
-  code: number,
-): ConnectError {
+function wrapResourceConnectError(errMessage: string, code: number): ConnectError {
   return new ConnectError(`Resource Service Error. ${errMessage}`, code);
 }
 
@@ -25,10 +22,7 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
     };
 
     logger.error(errorMeta);
-    throw wrapResourceConnectError(
-      "Resource management feature is currently disabled",
-      Code.Unimplemented,
-    );
+    throw wrapResourceConnectError("Resource management feature is currently disabled", Code.Unimplemented);
   }
 
   // 处理请求
@@ -38,7 +32,6 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
     const meta = { path: req.url, input: req.message, output: res.message, durationMs };
     logger.info(meta);
     return res;
-
   } catch (error) {
     const durationMs = Date.now() - start;
     let finalError: ConnectError;
@@ -55,9 +48,8 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
       };
       finalError = wrapResourceConnectError(error.message, error.code);
 
-    // 兜底报错
+      // 兜底报错
     } else {
-
       const err = error as any;
       finalError = wrapResourceConnectError(
         "Error occurred. Please confirm the details in resource log.",
@@ -79,12 +71,9 @@ export const loggerInterceptor: Interceptor = (next) => async (req) => {
         },
         durationMs,
       };
-
     }
-
 
     logger.error(errorMeta);
     throw finalError;
-
   }
 };

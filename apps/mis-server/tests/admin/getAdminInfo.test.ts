@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -30,14 +18,12 @@ let em: SqlEntityManager;
 let client: AdminServiceClient;
 
 beforeEach(async () => {
-
   server = await createServer();
   await server.start();
 
   client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
   em = server.ext.orm.em.fork();
   await insertInitialData(em);
-
 });
 
 afterEach(async () => {
@@ -46,14 +32,19 @@ afterEach(async () => {
 });
 
 it("get admin info", async () => {
-
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
   const adminUser = new User({
-    name: "admin", userId: "admin_user", email: "admin@admin.com", tenant,
+    name: "admin",
+    userId: "admin_user",
+    email: "admin@admin.com",
+    tenant,
     platformRoles: [PlatformRole.PLATFORM_ADMIN],
   });
   const financeUser = new User({
-    name: "finance", userId: "finance_user", email: "finance@finance.com", tenant,
+    name: "finance",
+    userId: "finance_user",
+    email: "finance@finance.com",
+    tenant,
     platformRoles: [PlatformRole.PLATFORM_FINANCE],
   });
   await em.persistAndFlush([adminUser, financeUser]);
@@ -67,55 +58,71 @@ it("get admin info", async () => {
     accountCount: 3,
     userCount: 5,
   } as GetAdminInfoResponse);
-
 });
 
 it("get statistic info", async () => {
-
   const today = dayjs();
   const yesterDay = today.clone().subtract(1, "day");
 
   const tenant = await em.findOneOrFail(Tenant, { name: DEFAULT_TENANT_NAME });
 
-  const todayNewUsers = range(0, 10).map((i) => new User({
-    name: `user0${i}`,
-    userId: `user0${i}`,
-    email: `user0${i}@gmail.com`,
-    tenant,
-    createTime: today.toDate(),
-  }));
+  const todayNewUsers = range(0, 10).map(
+    (i) =>
+      new User({
+        name: `user0${i}`,
+        userId: `user0${i}`,
+        email: `user0${i}@gmail.com`,
+        tenant,
+        createTime: today.toDate(),
+      }),
+  );
 
-  const yesterdayNewUsers = range(0, 10).map((i) => new User({
-    name: `user1${i}`,
-    userId: `user1${i}`,
-    email: `user1${i}@gmail.com`,
-    tenant,
-    createTime: yesterDay.toDate(),
-  }));
+  const yesterdayNewUsers = range(0, 10).map(
+    (i) =>
+      new User({
+        name: `user1${i}`,
+        userId: `user1${i}`,
+        email: `user1${i}@gmail.com`,
+        tenant,
+        createTime: yesterDay.toDate(),
+      }),
+  );
 
-  const todayNewAccount = range(0, 5).map((i) => new Account({
-    accountName: `account0${i}`,
-    tenant,
-    blockedInCluster: false,
-    createTime: today.toDate(),
-  }));
+  const todayNewAccount = range(0, 5).map(
+    (i) =>
+      new Account({
+        accountName: `account0${i}`,
+        tenant,
+        blockedInCluster: false,
+        createTime: today.toDate(),
+      }),
+  );
 
-  const yesterdayNewAccount = range(0, 5).map((i) => new Account({
-    accountName: `account1${i}`,
-    tenant,
-    blockedInCluster: false,
-    createTime: yesterDay.toDate(),
-  }));
+  const yesterdayNewAccount = range(0, 5).map(
+    (i) =>
+      new Account({
+        accountName: `account1${i}`,
+        tenant,
+        blockedInCluster: false,
+        createTime: yesterDay.toDate(),
+      }),
+  );
 
-  const todayNewTenant = range(0, 20).map((i) => new Tenant({
-    name: `tenant0${i}`,
-    createTime: today.toDate(),
-  }));
+  const todayNewTenant = range(0, 20).map(
+    (i) =>
+      new Tenant({
+        name: `tenant0${i}`,
+        createTime: today.toDate(),
+      }),
+  );
 
-  const yesterdayNewTenant = range(0, 20).map((i) => new Tenant({
-    name: `tenant1${i}`,
-    createTime: yesterDay.toDate(),
-  }));
+  const yesterdayNewTenant = range(0, 20).map(
+    (i) =>
+      new Tenant({
+        name: `tenant1${i}`,
+        createTime: yesterDay.toDate(),
+      }),
+  );
 
   await em.persistAndFlush([
     ...todayNewUsers,
@@ -141,5 +148,4 @@ it("get statistic info", async () => {
     totalTenant: 42,
     refreshTime: expect.any(String), // 允许任意时间字符串
   });
-
 });

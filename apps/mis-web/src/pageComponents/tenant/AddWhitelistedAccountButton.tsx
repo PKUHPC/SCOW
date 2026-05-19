@@ -9,7 +9,7 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 interface FormProps {
   accountName: string;
   comment: string;
-  expirationTime: dayjs.Dayjs
+  expirationTime: dayjs.Dayjs;
 }
 
 interface ModalProps {
@@ -32,12 +32,10 @@ interface PickExpDateProps {
 const PickExpDate: React.FC<PickExpDateProps> = (props) => {
   const { id, onChange } = props;
 
-
   const t = useI18nTranslateToString();
 
   // 添加状态来跟踪选择的选项
   const [selectedOption, setSelectedOption] = useState<string>("custom");
-
 
   // 定义 Select 选项数组，使用国际化函数 t() 翻译每个选项的 label
   const options = [
@@ -58,7 +56,6 @@ const PickExpDate: React.FC<PickExpDateProps> = (props) => {
   React.useEffect(() => {
     let newDate: dayjs.Dayjs | string;
     switch (selectedOption) {
-
       // 一周
       case "oneWeek":
         newDate = dayjs().add(1, "week").endOf("day");
@@ -69,7 +66,7 @@ const PickExpDate: React.FC<PickExpDateProps> = (props) => {
         newDate = dayjs().add(1, "month").endOf("day");
         break;
 
-        // 一年
+      // 一年
       case "oneYear":
         newDate = dayjs().add(1, "year").endOf("day");
         break;
@@ -100,41 +97,36 @@ const PickExpDate: React.FC<PickExpDateProps> = (props) => {
         defaultValue={options[0].value}
         options={options}
         onChange={(value) => setSelectedOption(value)} // 更新选择
-        style={{ width: "35%", marginRight:"5%" }}
+        style={{ width: "35%", marginRight: "5%" }}
       />
       {/*  根据选项禁用或启用 DatePicker */}
       <DatePicker
         disabled={selectedOption !== "custom"}
         minDate={dayjs(dayjs().add(1, "day").format(dateFormat))}
-        value={ expirationTime }
+        value={expirationTime}
         style={{ width: "60%" }}
-        onChange={(date) =>
-        {
+        onChange={(date) => {
           setExpirationTime(date);
           onChange?.(date);
-        }
-        } // 更新状态
+        }} // 更新状态
       />
     </div>
   );
 };
 
-
-const NewAccountModal: React.FC<ModalProps> = ({
-  open, close, refresh,
-}) => {
-
+const NewAccountModal: React.FC<ModalProps> = ({ open, close, refresh }) => {
   const t = useI18nTranslateToString();
 
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm<FormProps>();
 
-
   const onOk = async () => {
     const { accountName, expirationTime, comment } = await form.validateFields();
-    await api.whitelistAccount({ body: { accountName: accountName.trim(), comment,
-      expirationTime:expirationTime.toISOString() } })
+    await api
+      .whitelistAccount({
+        body: { accountName: accountName.trim(), comment, expirationTime: expirationTime.toISOString() },
+      })
       .httpError(404, () => {
         message.error(t(p("notExist")));
       })
@@ -152,13 +144,7 @@ const NewAccountModal: React.FC<ModalProps> = ({
   };
 
   return (
-    <Modal
-      title={t(p("addWhiteList"))}
-      open={open}
-      onCancel={close}
-      onOk={onOk}
-      confirmLoading={loading}
-    >
+    <Modal title={t(p("addWhiteList"))} open={open} onCancel={close} onOk={onOk} confirmLoading={loading}>
       <Form form={form}>
         <Form.Item name="accountName" rules={[{ required: true }]} label={t(pCommon("accountName"))}>
           <TrimInput />
@@ -183,15 +169,10 @@ interface Props {
   refresh: () => void;
 }
 
-
-
 export const AddWhitelistedAccountButton: React.FC<Props> = ({ refresh }) => {
-
   const [modalShow, setModalShow] = useState(false);
 
   const t = useI18nTranslateToString();
-
-
 
   return (
     <>

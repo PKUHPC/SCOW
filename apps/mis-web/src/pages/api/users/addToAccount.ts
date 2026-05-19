@@ -44,10 +44,7 @@ export const AddUserToAccountSchema = typeboxRouteSchema({
 
     /** 用户或账户存在问题 */
     409: Type.Object({
-      code: Type.Union([
-        Type.Literal("ACCOUNT_OR_USER_ERROR"),
-        Type.Literal("SYNC_ACCOUNT_USER_IS_RUNNING"),
-      ]),
+      code: Type.Union([Type.Literal("ACCOUNT_OR_USER_ERROR"), Type.Literal("SYNC_ACCOUNT_USER_IS_RUNNING")]),
       message: Type.Optional(Type.String()),
     }),
 
@@ -62,23 +59,27 @@ export const AddUserToAccountSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(AddUserToAccountSchema, async (req, res) => {
+export default /* #__PURE__*/ route(AddUserToAccountSchema, async (req, res) => {
   const { identityId, accountName, name } = req.body;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          // 账户管理员且允许账户管理员添加用户
-          ((acccountBelonged && acccountBelonged.role !== UserRole.USER)
-          && publicConfig.ADD_USER_TO_ACCOUNT.accountAdmin.allowed) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      // 账户管理员且允许账户管理员添加用户
+      (acccountBelonged &&
+        acccountBelonged.role !== UserRole.USER &&
+        publicConfig.ADD_USER_TO_ACCOUNT.accountAdmin.allowed) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
-
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const result = await checkNameMatch(identityId, name);
 
@@ -97,8 +98,9 @@ export default /* #__PURE__*/route(AddUserToAccountSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.addUserToAccount,
-    operationTypePayload:{
-      accountName, userId: identityId,
+    operationTypePayload: {
+      accountName,
+      userId: identityId,
     },
   };
 
@@ -106,38 +108,40 @@ export default /* #__PURE__*/route(AddUserToAccountSchema, async (req, res) => {
     tenantName: info.tenant,
     accountName,
     userId: identityId,
-    isTenantAdmin: info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ,
-  }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
-    return { 204: null };
+    isTenantAdmin: info.tenantRoles.includes(TenantRole.TENANT_ADMIN),
   })
-    .catch(handlegRPCError({
-      [Status.ALREADY_EXISTS]: (e) => ({ 409: { code: "ACCOUNT_OR_USER_ERROR" as const, message: e.details } }),
-      [Status.NOT_FOUND]: (e) => {
+    .then(async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    })
+    .catch(
+      handlegRPCError(
+        {
+          [Status.ALREADY_EXISTS]: (e) => ({ 409: { code: "ACCOUNT_OR_USER_ERROR" as const, message: e.details } }),
+          [Status.NOT_FOUND]: (e) => {
+            if (e.details === "USER_OR_TENANT_NOT_FOUND") {
+              /**
+               * 后端接口addUserToAccount返回USER_OR_TENANT_NOT_FOUND
+               * 说明操作者的租户下的不存在要添加的这个用户
+               * 该用户存不存在于scow系统中在上面的checkNameMatch函数中已通过检查
+               * */
 
-        if (e.details === "USER_OR_TENANT_NOT_FOUND") {
-
-          /**
-           * 后端接口addUserToAccount返回USER_OR_TENANT_NOT_FOUND
-           * 说明操作者的租户下的不存在要添加的这个用户
-           * 该用户存不存在于scow系统中在上面的checkNameMatch函数中已通过检查
-           * */
-
-          return { 404: { code: "USER_ALREADY_EXIST_IN_OTHER_TENANT" as const } };
-        } else if (e.details === "ACCOUNT_OR_TENANT_NOT_FOUND") {
-          return { 404: { code: "ACCOUNT_OR_TENANT_NOT_FOUND" as const } };
-        } else if (e.details === "USER_DELETED") {
-          return { 410: { code: "USER_DELETED" as const } };
-        } else if (e.details === "ACCOUNT_BLOCKED_BY_ADMIN") {
-          return { 410: { code: "ACCOUNT_BLOCKED_BY_ADMIN" as const } };
-        } else {
-          return { 410: { code: "ACCOUNT_DELETED" as const } };
-        }
-      },
-      [Status.FAILED_PRECONDITION]: (e) => ({
-        409: { code: "SYNC_ACCOUNT_USER_IS_RUNNING" as const, message: e.details },
-      }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+              return { 404: { code: "USER_ALREADY_EXIST_IN_OTHER_TENANT" as const } };
+            } else if (e.details === "ACCOUNT_OR_TENANT_NOT_FOUND") {
+              return { 404: { code: "ACCOUNT_OR_TENANT_NOT_FOUND" as const } };
+            } else if (e.details === "USER_DELETED") {
+              return { 410: { code: "USER_DELETED" as const } };
+            } else if (e.details === "ACCOUNT_BLOCKED_BY_ADMIN") {
+              return { 410: { code: "ACCOUNT_BLOCKED_BY_ADMIN" as const } };
+            } else {
+              return { 410: { code: "ACCOUNT_DELETED" as const } };
+            }
+          },
+          [Status.FAILED_PRECONDITION]: (e) => ({
+            409: { code: "SYNC_ACCOUNT_USER_IS_RUNNING" as const, message: e.details },
+          }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

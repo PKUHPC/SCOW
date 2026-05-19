@@ -1,6 +1,5 @@
 "use client";
 
-
 import { Cluster } from "@scow/config/build/type";
 import { Head } from "@scow/lib-web/build/components/head";
 import { App } from "antd";
@@ -14,19 +13,21 @@ import { AccountDefaultClustersTable } from "./AccountDefaultClustersTable";
 import { AddToAccountDefaultClustersButton } from "./AddToAccountDefaultClustersButton";
 
 export default function Page() {
-
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
 
   const { message } = App.useApp();
 
   useEffect(() => {
-    window.parent?.postMessage({
-      type: "scow.extensionPageTitleChanged",
-      payload: {
-        title: language.accountDefaultClusters.title,
+    window.parent?.postMessage(
+      {
+        type: "scow.extensionPageTitleChanged",
+        payload: {
+          title: language.accountDefaultClusters.title,
+        },
       },
-    }, "*");
+      "*",
+    );
   }, [language]);
 
   const { data: userData, isFetching: userInfoIsLoading } = trpc.auth.getUserInfo.useQuery();
@@ -40,10 +41,12 @@ export default function Page() {
   );
 
   // 获取当前在线集群
-  const { data: currentClustersData,
+  const {
+    data: currentClustersData,
     refetch: currentClustersRefetch,
     isFetching: currentClustersFetching,
-    error: currentClustersError } = trpc.misServer.currentClusters.useQuery();
+    error: currentClustersError,
+  } = trpc.misServer.currentClusters.useQuery();
 
   if (error) {
     message.error(language.accountDefaultClusters.defaultAccountClustersNotFoundError);
@@ -56,7 +59,6 @@ export default function Page() {
     <div>
       <Head title={language.accountDefaultClusters.title} />
       <PageTitle titleText={language.accountDefaultClusters.title}>
-
         <AddToAccountDefaultClustersButton
           defaultAssignedClusters={data?.assignedClusters}
           tenantName={tenantNameQuery ?? ""}
@@ -65,7 +67,6 @@ export default function Page() {
           language={language}
           languageId={scowLangId}
         />
-
       </PageTitle>
       <AccountDefaultClustersTable
         assignedClusterIds={data?.assignedClusters}

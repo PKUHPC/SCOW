@@ -32,47 +32,49 @@ export const ImportUsersSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(ImportUsersSchema,
-  async (req, res) => {
+export default route(ImportUsersSchema, async (req, res) => {
+  const { data, whitelist } = req.body;
 
-    const { data, whitelist } = req.body;
+  const logInfo = {
+    operatorUserId: DEFAULT_INIT_USER_ID,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.importUsers,
+    operationTypePayload: {
+      tenantName: DEFAULT_TENANT_NAME,
+      importAccounts: data.accounts.map((account) => ({
+        accountName: account.accountName,
+        userIds: account.users.map((user) => user.userId),
+      })),
+    },
+  };
 
-    const logInfo = {
-      operatorUserId: DEFAULT_INIT_USER_ID,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.importUsers,
-      operationTypePayload: {
-        tenantName: DEFAULT_TENANT_NAME,
-        importAccounts: data.accounts.map((account) => ({
-          accountName: account.accountName,
-          userIds: account.users.map((user) => user.userId),
-        })),
-      },
-    };
-
-    // if not initialized, every one can import users
-    if (await queryIfInitialized()) {
-      const info = await auth(req, res);
-      if (info) {
-        logInfo.operatorUserId = info.identityId;
-      } else {
-        return;
-      }
+  // if not initialized, every one can import users
+  if (await queryIfInitialized()) {
+    const info = await auth(req, res);
+    if (info) {
+      logInfo.operatorUserId = info.identityId;
+    } else {
+      return;
     }
+  }
 
-    const client = getClient(AdminServiceClient);
+  const client = getClient(AdminServiceClient);
 
-    return await asyncClientCall(client, "importUsers", {
-      data, whitelist,
+  return await asyncClientCall(client, "importUsers", {
+    data,
+    whitelist,
+  })
+    .then(async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
     })
-      .then(async () => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return { 204: null };
-      })
-      .catch(handlegRPCError({
-        [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_DATA" } } as const),
-        [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-      },
-      async () => await callLog(logInfo, OperationResult.FAIL),
-      ));
-  });
+    .catch(
+      handlegRPCError(
+        {
+          [Status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_DATA" } }) as const,
+          [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
+});

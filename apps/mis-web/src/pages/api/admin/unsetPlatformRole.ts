@@ -36,18 +36,19 @@ export default route(UnsetPlatformRoleSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: roleType === PlatformRole.PLATFORM_ADMIN
-      ? OperationType.unsetPlatformAdmin
-      : OperationType.unsetPlatformFinance,
-    operationTypePayload:{
+    operationTypeName:
+      roleType === PlatformRole.PLATFORM_ADMIN ? OperationType.unsetPlatformAdmin : OperationType.unsetPlatformFinance,
+    operationTypePayload: {
       userId,
     },
   };
 
   if (await queryIfInitialized()) {
-    const auth = authenticate((u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) &&
-    !(u.identityId === userId && roleType === PlatformRole.PLATFORM_ADMIN));
+    const auth = authenticate(
+      (u) =>
+        u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) &&
+        !(u.identityId === userId && roleType === PlatformRole.PLATFORM_ADMIN),
+    );
     const info = await auth(req, res);
     if (info) {
       logInfo.operatorUserId = info.identityId;
@@ -55,7 +56,6 @@ export default route(UnsetPlatformRoleSchema, async (req, res) => {
       return;
     }
   }
-
 
   const client = getClient(UserServiceClient);
 
@@ -67,10 +67,13 @@ export default route(UnsetPlatformRoleSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

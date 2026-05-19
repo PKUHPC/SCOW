@@ -1,18 +1,7 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import type { Logger } from "ts-log";
 
 import fs from "fs";
 import { join } from "path";
-import type { Logger } from "ts-log";
 
 import { sftpAppendFile, sftpChmod, sftpChown, sftpMkdir, sftpStatOrUndefined, sftpWriteFile } from "./sftp";
 import { getUserHomedir, sshConnect, sshConnectByPassword } from "./ssh";
@@ -37,9 +26,7 @@ export function getKeyPair(privateKeyPath: string, publicKeyPath: string): KeyPa
  * @param rootKeyPair the key pair of root
  * @param logger the logger
  */
-export async function insertKeyAsRoot(
-  user: string, host: string, rootKeyPair: KeyPair, logger: Logger,
-) {
+export async function insertKeyAsRoot(user: string, host: string, rootKeyPair: KeyPair, logger: Logger) {
   // https://superuser.com/a/484280
   logger.info("Adding key to user %s to %s", user, host);
 
@@ -96,10 +83,12 @@ export async function insertKeyAsRoot(
  * @param logger logger
  */
 export async function insertKeyAsUser(
-  address: string, username: string, password: string,
-  rootKeyPair: KeyPair, logger: Logger,
+  address: string,
+  username: string,
+  password: string,
+  rootKeyPair: KeyPair,
+  logger: Logger,
 ) {
-
   await sshConnectByPassword(address, username, password, logger, async (ssh) => {
     const userHomeDir = await getUserHomedir(ssh, username, logger);
 
@@ -107,8 +96,11 @@ export async function insertKeyAsUser(
     const stat = await sftpStatOrUndefined(sftp)(userHomeDir);
 
     if (!stat) {
-      logger.warn("Home directory %s of user %s doesn't exist even after login as the user. Insert key as root.",
-        userHomeDir, username);
+      logger.warn(
+        "Home directory %s of user %s doesn't exist even after login as the user. Insert key as root.",
+        userHomeDir,
+        username,
+      );
 
       await insertKeyAsRoot(username, address, rootKeyPair, logger);
       return;
@@ -132,8 +124,12 @@ export async function insertKeyAsUser(
     const keyFilePath = join(sshDir, "authorized_keys");
     const authorizedKeysStat = await sftpStatOrUndefined(sftp)(keyFilePath);
     if (!authorizedKeysStat) {
-      logger.info("%s not exists in %s for user %s. Create the file and insert public key",
-        keyFilePath, address, username);
+      logger.info(
+        "%s not exists in %s for user %s. Create the file and insert public key",
+        keyFilePath,
+        address,
+        username,
+      );
       await sftpWriteFile(sftp)(keyFilePath, rootKeyPair.publicKey + "\n");
       await sftpChmod(sftp)(keyFilePath, "644");
     } else {

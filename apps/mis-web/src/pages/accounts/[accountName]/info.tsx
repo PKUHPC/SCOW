@@ -1,4 +1,3 @@
-
 import { moneyToNumber } from "@scow/lib-decimal";
 import { queryToString } from "@scow/lib-web/build/utils/querystring";
 import { Descriptions, Tag } from "antd";
@@ -10,28 +9,29 @@ import { UnifiedErrorPage } from "src/components/errorPages/UnifiedErrorPage";
 import { PageTitle } from "src/components/PageTitle";
 import { useI18nTranslateToString } from "src/i18n";
 import { DisplayedAccountState, getDisplayedStateI18nTexts, UserRole } from "src/models/User";
-import {
-  checkQueryAccountNameIsAdmin } from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
+import { checkQueryAccountNameIsAdmin } from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
 import { getAccounts } from "src/pages/api/tenant/getAccounts";
 import { safeGetStringProperty } from "src/utils/format";
 import { Head } from "src/utils/head";
 import { moneyNumberToString } from "src/utils/money";
 
-type Props = SSRProps<{
-  accountName: string;
-  ownerName?: string;
-  ownerId?: string;
-  balance: number;
-  blocked: boolean;
-  displayedState: DisplayedAccountState;
-  blockThresholdAmount: number
-}, 404>;
+type Props = SSRProps<
+  {
+    accountName: string;
+    ownerName?: string;
+    ownerId?: string;
+    balance: number;
+    blocked: boolean;
+    displayedState: DisplayedAccountState;
+    blockThresholdAmount: number;
+  },
+  404
+>;
 
 export const AccountInfoPage: NextPage<Props> = requireAuth(
   (u) => u.accountAffiliations.length > 0,
   checkQueryAccountNameIsAdmin,
 )((props: Props) => {
-
   const t = useI18nTranslateToString();
 
   const DisplayedStateI18nTexts = getDisplayedStateI18nTexts(t);
@@ -48,14 +48,12 @@ export const AccountInfoPage: NextPage<Props> = requireAuth(
       <Head title={title} />
       <PageTitle titleText={title} />
       <Descriptions bordered column={1}>
-        <Descriptions.Item label={t("common.account")}>
-          {accountName}
-        </Descriptions.Item>
+        <Descriptions.Item label={t("common.account")}>{accountName}</Descriptions.Item>
         <Descriptions.Item label={t("common.accountOwner")}>
           {ownerName}（ID：{ownerId}）
         </Descriptions.Item>
         <Descriptions.Item label={t("common.accountStatus")}>
-          <Tag color={ displayedState === DisplayedAccountState.DISPLAYED_NORMAL ? "green" : "red"}>
+          <Tag color={displayedState === DisplayedAccountState.DISPLAYED_NORMAL ? "green" : "red"}>
             {DisplayedStateI18nTexts[displayedState]}
           </Tag>
         </Descriptions.Item>
@@ -66,31 +64,30 @@ export const AccountInfoPage: NextPage<Props> = requireAuth(
           {moneyNumberToString(blockThresholdAmount)} {t("common.unit")}
         </Descriptions.Item>
       </Descriptions>
-
     </div>
   );
 });
 
-
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-
-
   const accountName = queryToString(ctx.query.accountName);
 
   if (USE_MOCK) {
-    return { props: {
-      accountName,
-      balance: 10.23,
-      ownerId: "ownerId",
-      ownerName: "123",
-      blocked: true,
-      displayedState: DisplayedAccountState.DISPLAYED_BLOCKED,
-      blockThresholdAmount: 1.23,
-    } };
+    return {
+      props: {
+        accountName,
+        balance: 10.23,
+        ownerId: "ownerId",
+        ownerName: "123",
+        blocked: true,
+        displayedState: DisplayedAccountState.DISPLAYED_BLOCKED,
+        blockThresholdAmount: 1.23,
+      },
+    };
   }
 
-  const auth = ssrAuthenticate((i) => i.accountAffiliations.some((x) =>
-    x.accountName === accountName && x.role !== UserRole.USER));
+  const auth = ssrAuthenticate((i) =>
+    i.accountAffiliations.some((x) => x.accountName === accountName && x.role !== UserRole.USER),
+  );
 
   const info = await auth(ctx.req);
 
@@ -105,17 +102,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   }
 
   const account = accounts[0];
-  return { props: {
-    balance: moneyToNumber(account.balance),
-    accountName,
-    ownerId: safeGetStringProperty(account.ownerId),
-    ownerName: safeGetStringProperty(account.ownerName),
-    blocked: account.blocked,
-    displayedState: account.displayedState,
-    blockThresholdAmount: moneyToNumber(account.blockThresholdAmount ?? account.defaultBlockThresholdAmount),
-  } };
-
-
+  return {
+    props: {
+      balance: moneyToNumber(account.balance),
+      accountName,
+      ownerId: safeGetStringProperty(account.ownerId),
+      ownerName: safeGetStringProperty(account.ownerName),
+      blocked: account.blocked,
+      displayedState: account.displayedState,
+      blockThresholdAmount: moneyToNumber(account.blockThresholdAmount ?? account.defaultBlockThresholdAmount),
+    },
+  };
 };
 
 export default AccountInfoPage;

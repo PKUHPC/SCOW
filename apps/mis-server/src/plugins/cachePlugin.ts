@@ -1,22 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Logger, plugin } from "@ddadaal/tsgrpc-server";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import cron from "node-cron";
 import { misConfig } from "src/config/mis";
 import { QueryCache } from "src/entities/QueryCache";
 import { queryBillTypesCache } from "src/utils/bill";
-
 
 export interface ClearCachePlugin {
   cache: {
@@ -25,16 +12,14 @@ export interface ClearCachePlugin {
     schedule: string;
     lastCleared: () => Date | null;
     clear: () => Promise<void>;
-  }
+  };
 }
 
-async function clearQueryCache(
-  em: SqlEntityManager<MySqlDriver>,
-  logger: Logger,
-) {
-
+async function clearQueryCache(em: SqlEntityManager<MySqlDriver>, logger: Logger) {
   logger.info("Clearing query cache...");
-  const result = await em.createQueryBuilder(QueryCache).delete()
+  const result = await em
+    .createQueryBuilder(QueryCache)
+    .delete()
     .where({ timestamp: { $lt: new Date() } })
     .execute();
   logger.info(`Query cache cleared. Rows deleted: ${result.affectedRows}.`);
@@ -42,7 +27,6 @@ async function clearQueryCache(
 }
 
 export const clearCachePlugin = plugin(async (f) => {
-
   let cacheClearStarted = false;
   let cacheClearIsRunning = false;
 
@@ -64,7 +48,9 @@ export const clearCachePlugin = plugin(async (f) => {
 
   const task = cron.schedule(
     schedule,
-    () => { void trigger(); },
+    () => {
+      void trigger();
+    },
     {
       timezone: "Asia/Shanghai",
       scheduled: true,
@@ -78,7 +64,7 @@ export const clearCachePlugin = plugin(async (f) => {
     logger.info("Cache clear scheduled task stopped.");
   });
 
-  f.addExtension("cache", ({
+  f.addExtension("cache", {
     start: () => {
       if (cacheClearStarted) {
         logger.info("Cache clear task is requested to start but already started");
@@ -99,5 +85,5 @@ export const clearCachePlugin = plugin(async (f) => {
     },
     schedule,
     clear: trigger,
-  } as ClearCachePlugin["cache"]));
+  } as ClearCachePlugin["cache"]);
 });

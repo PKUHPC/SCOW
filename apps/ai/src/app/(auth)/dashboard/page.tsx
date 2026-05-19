@@ -50,25 +50,26 @@ const NotificationCol = styled(Col)`
 export default function Page() {
   const t = useI18nTranslateToString();
 
-  const { publicConfig: { CLUSTERS: allClusters, DASHBOARD_USER_DISPLAY_MODE },
-    publicConfig, user, currentAvailableClusterIds: clusterIds } = usePublicConfig();
+  const {
+    publicConfig: { CLUSTERS: allClusters, DASHBOARD_USER_DISPLAY_MODE },
+    publicConfig,
+    user,
+    currentAvailableClusterIds: clusterIds,
+  } = usePublicConfig();
 
   // 判断是否展示全部资源
   const isFullDisplayMode = useMemo(() => {
-
     const isTenantAdmin = user.tenantRoles?.includes(0) ?? false;
     const isPlatformAdmin = user.platformRoles?.includes(0) ?? false;
     const isAdmin = isTenantAdmin || isPlatformAdmin;
 
     return isAdmin || DASHBOARD_USER_DISPLAY_MODE === "full";
-
   }, [user]);
 
   // 使用批量接口获取所有可用集群信息
   const currentClusters = useMemo(() => {
     return allClusters.filter((cluster) => clusterIds.includes(cluster.id));
   }, [allClusters, clusterIds]);
-
 
   const { data: allSummaryClusters, isLoading } = trpc.dashboard.getAllSummaryClustersInfo.useQuery(
     { clusterIds, isFullDisplayMode, userId: user.identityId },
@@ -83,62 +84,46 @@ export default function Page() {
   useEffect(() => {
     if (!isLoading && allSummaryClusters) {
       // 根据依赖重新计算当前可用集群
-      const currentClusters = allClusters.filter((c) =>
-        clusterIds.includes(c.id),
-      );
+      const currentClusters = allClusters.filter((c) => clusterIds.includes(c.id));
       // 集群信息
-      const successfulClusterIds = new Set(
-        allSummaryClusters.map((c) => c.clusterId),
-      );
+      const successfulClusterIds = new Set(allSummaryClusters.map((c) => c.clusterId));
 
-      const failedClusters = currentClusters.filter(
-        (cluster) => !successfulClusterIds.has(cluster.id),
-      );
+      const failedClusters = currentClusters.filter((cluster) => !successfulClusterIds.has(cluster.id));
 
       // 存储各集群各队列分区的详细信息
-      const clustersInfo = allSummaryClusters
-        .flatMap((cluster) =>
-          cluster.partitions.map((partition) => ({
-            clusterId: cluster.clusterId,
-            ...partition,
-            cpuCoreCount: partition.cpuCoreCount || 0,
-            gpuCoreCount: partition.gpuCoreCount || 0,
-          })),
-        );
+      const clustersInfo = allSummaryClusters.flatMap((cluster) =>
+        cluster.partitions.map((partition) => ({
+          clusterId: cluster.clusterId,
+          ...partition,
+          cpuCoreCount: partition.cpuCoreCount || 0,
+          gpuCoreCount: partition.gpuCoreCount || 0,
+        })),
+      );
 
       // 整合各集群的各分区信息，计算集群概览的聚合数据,
       allSummaryClusters.forEach((cluster) => {
-
         // 更新平台概览 platformOverview 的数值
         platformOverview.nodeCount += cluster.nodeCount;
         platformOverview.runningNodeCount += cluster.runningNodeCount;
         platformOverview.idleNodeCount += cluster.idleNodeCount;
-        platformOverview.notAvailableNodeCount += (cluster.notAvailableNodeCount || 0);
+        platformOverview.notAvailableNodeCount += cluster.notAvailableNodeCount || 0;
         platformOverview.cpuCoreCount += cluster.cpuCoreCount;
         platformOverview.runningCpuCount += cluster.runningCpuCount;
         platformOverview.idleCpuCount += cluster.idleCpuCount;
-        platformOverview.notAvailableCpuCount += (cluster.notAvailableCpuCount || 0);
+        platformOverview.notAvailableCpuCount += cluster.notAvailableCpuCount || 0;
         platformOverview.gpuCoreCount += cluster.gpuCoreCount;
         platformOverview.runningGpuCount += cluster.runningGpuCount;
         platformOverview.idleGpuCount += cluster.idleGpuCount;
-        platformOverview.notAvailableGpuCount += (cluster.notAvailableGpuCount || 0);
+        platformOverview.notAvailableGpuCount += cluster.notAvailableGpuCount || 0;
         platformOverview.runningJobCount += cluster.runningJobCount;
         platformOverview.pendingJobCount += cluster.pendingJobCount;
-
       });
 
       setFailedClusters(failedClusters);
       setClustersInfo(clustersInfo);
       setPlatformOverview(platformOverview);
-
     }
-
-  }, [
-    isLoading,
-    allClusters,
-    clusterIds,
-    allSummaryClusters,
-  ]);
+  }, [isLoading, allClusters, clusterIds, allSummaryClusters]);
 
   useDocumentTitle(t("routes.dashboard"));
 

@@ -25,22 +25,15 @@
     "ormUp": "dotenv -e env/.env.dev -- npx mikro-orm migration:up",
     "prepareDev": "node scripts/copyMonacoToPublic.js"
   },
-  "mikro-orm": {
-    "useTsNode": true,
-    "configPaths": [
-      "./src/server/mikro-orm.config.ts",
-      "./src/server/mikro-orm.config.js"
-    ]
-  },
   "dependencies": {
     "@ant-design/colors": "7.2.0",
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
+    "@bufbuild/protobuf": "2.10.0",
     "@codemirror/language": "6.10.8",
     "@codemirror/legacy-modes": "6.4.2",
     "@codemirror/view": "6.36.2",
     "@connectrpc/connect": "2.1.1",
-    "@bufbuild/protobuf": "2.10.0",
     "@ddadaal/tsgrpc-client": "0.17.9",
     "@ddadaal/tsgrpc-common": "0.2.7",
     "@grpc/grpc-js": "1.14.3",
@@ -51,7 +44,6 @@
     "@mikro-orm/mysql": "6.4.3",
     "@mikro-orm/seeder": "6.4.3",
     "@monaco-editor/react": "4.6.0",
-    "cpu-features": "0.0.10",
     "@scow/config": "workspace:*",
     "@scow/lib-auth": "workspace:*",
     "@scow/lib-config": "workspace:*",
@@ -60,14 +52,14 @@
     "@scow/lib-operation-log": "workspace:*",
     "@scow/lib-scheduler-adapter": "workspace:*",
     "@scow/lib-scow-resource": "workspace:*",
-    "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/lib-scowd": "workspace:*",
     "@scow/lib-server": "workspace:*",
     "@scow/lib-ssh": "workspace:*",
     "@scow/lib-web": "workspace:*",
-    "@scow/protos": "workspace:*",
     "@scow/notification-protos": "workspace:*",
+    "@scow/protos": "workspace:*",
     "@scow/rich-error-model": "workspace:*",
+    "@scow/scheduler-adapter-protos": "workspace:*",
     "@scow/scowd-protos": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
@@ -81,6 +73,7 @@
     "@xterm/addon-fit": "0.10.0",
     "@xterm/xterm": "5.5.0",
     "antd": "5.18.3",
+    "cpu-features": "0.0.10",
     "dayjs": "1.11.13",
     "dotenv": "16.4.7",
     "http-proxy": "1.18.1",
@@ -94,9 +87,9 @@
     "node-ssh": "13.2.0",
     "nookies": "2.5.2",
     "nprogress": "0.2.0",
+    "p-limit": "6.2.0",
     "pino": "9.6.0",
     "protobufjs": "7.4.0",
-    "p-limit": "6.2.0",
     "react": "18.3.1",
     "react-async": "10.0.1",
     "react-dom": "18.3.1",
@@ -144,5 +137,12 @@
   },
   "volta": {
     "extends": "../../package.json"
+  },
+  "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./src/server/mikro-orm.config.ts",
+      "./src/server/mikro-orm.config.js"
+    ]
   }
 }

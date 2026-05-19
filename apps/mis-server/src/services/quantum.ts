@@ -1,19 +1,21 @@
-import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server"; ;
+import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import {
   GetQuantumJobsRequest_SortBy as SortBy,
-  QuantumJobState, QuantumServiceServer, QuantumServiceService,
+  QuantumJobState,
+  QuantumServiceServer,
+  QuantumServiceService,
 } from "@scow/protos/build/server/quantum";
 import { TRPCClientError } from "@trpc/client";
 import { createQuantumClient } from "src/clients/quantum";
 
 const stringToJobStateMap: Record<string, QuantumJobState> = {
-  "scheduled": QuantumJobState.SCHEDULED,
-  "pending": QuantumJobState.PENDING,
-  "active": QuantumJobState.ACTIVE,
-  "completed": QuantumJobState.COMPLETED,
-  "failed": QuantumJobState.FAILED,
-  "hold": QuantumJobState.HOLD,
+  scheduled: QuantumJobState.SCHEDULED,
+  pending: QuantumJobState.PENDING,
+  active: QuantumJobState.ACTIVE,
+  completed: QuantumJobState.COMPLETED,
+  failed: QuantumJobState.FAILED,
+  hold: QuantumJobState.HOLD,
 };
 
 const sortByMap: Record<number, string> = {
@@ -37,13 +39,9 @@ const sortOrderMap: Record<number, "asc" | "desc"> = {
 };
 
 export const quantumServiceServer = plugin((server) => {
-
   server.addService<QuantumServiceServer>(QuantumServiceService, {
-
     getQuantumJobs: async ({ request, logger }) => {
-
-      const { userToken, filter, page, pageSize, sortBy, sortOrder } =
-        ensureNotUndefined(request, ["filter"]);
+      const { userToken, filter, page, pageSize, sortBy, sortOrder } = ensureNotUndefined(request, ["filter"]);
 
       const { accountName, tenantName, userId, jobId, qubits, shots } = filter;
 
@@ -51,8 +49,7 @@ export const quantumServiceServer = plugin((server) => {
         const client = createQuantumClient(userToken);
 
         const { tasks, totalCount } = await client.backend.task.findTask.query({
-          accountName: (accountName?.trim() && accountName.trim() !== "") ?
-            accountName.trim() : "_",
+          accountName: accountName?.trim() && accountName.trim() !== "" ? accountName.trim() : "_",
           page,
           pageSize: pageSize ?? 10,
           id: jobId,
@@ -61,10 +58,11 @@ export const quantumServiceServer = plugin((server) => {
           tenantName,
           userId,
           states: ["completed", "failed"],
-          ...(sortBy && sortOrder !== undefined && {
-            sortBy: sortByMap[sortBy],
-            sortOrder: sortOrderMap[sortOrder],
-          }),
+          ...(sortBy &&
+            sortOrder !== undefined && {
+              sortBy: sortByMap[sortBy],
+              sortOrder: sortOrderMap[sortOrder],
+            }),
         });
 
         const jobs = tasks.map((task) => ({
@@ -75,12 +73,13 @@ export const quantumServiceServer = plugin((server) => {
           state: stringToJobStateMap[task.state],
         }));
 
-        return [{
-          jobs,
-          totalCount,
-        }];
-      }
-      catch (e) {
+        return [
+          {
+            jobs,
+            totalCount,
+          },
+        ];
+      } catch (e) {
         logger.error("Error caught:", e);
         if (e instanceof TRPCClientError) {
           if (e.message.includes("ENOTFOUND")) {

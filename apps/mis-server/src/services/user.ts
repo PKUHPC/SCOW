@@ -5,25 +5,32 @@ import { ServiceError } from "@grpc/grpc-js";
 import { Status } from "@grpc/grpc-js/build/src/constants";
 import { FilterQuery, Loaded, LockMode, QueryOrder, raw } from "@mikro-orm/core";
 import {
-  addUserToAccount, changeEmail as libChangeEmail, createUser, deleteUser,
-  getCapabilities, getUser, HttpError,
+  addUserToAccount,
+  changeEmail as libChangeEmail,
+  createUser,
+  deleteUser,
+  getCapabilities,
+  getUser,
+  HttpError,
   removeUserFromAccount,
-}
-  from "@scow/lib-auth";
+} from "@scow/lib-auth";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date";
 import {
-  AccountState as PFAccountState, AccountStatus,
-  accountUserInfo_UserStateInAccountFromJSON, GetAccountUsersResponse,
+  AccountState as PFAccountState,
+  AccountStatus,
+  accountUserInfo_UserStateInAccountFromJSON,
+  GetAccountUsersResponse,
   platformRoleFromJSON,
   platformRoleToJSON,
   QueryIsUserInAccountResponse,
   tenantRoleFromJSON,
   tenantRoleToJSON,
-  UserRole as PFUserRole, UserServiceServer,
+  UserRole as PFUserRole,
+  UserServiceServer,
   UserServiceService,
   userStateFromJSON,
-  UserStatus as PFUserStatus
+  UserStatus as PFUserStatus,
 } from "@scow/protos/build/server/user";
 import { UserOperationResult } from "@scow/protos/build/server/user";
 import { blockUserInAccount, unblockUserInAccount } from "src/bl/block";
@@ -52,36 +59,40 @@ interface ResultInfo extends UserOperationResult {
 }
 
 export const userServiceServer = plugin((server) => {
-
   server.addService<UserServiceServer>(UserServiceService, {
     getAccountUsers: async ({ request, em }) => {
       const { accountName, tenantName } = request;
 
-      const accountUsers = await em.find(UserAccount, {
-        account: { accountName, tenant: { name: tenantName } },
-      }, { populate: ["user", "user.storageQuotas"] });
-
-      return [GetAccountUsersResponse.fromPartial({
-        results: accountUsers.map((x) => {
-
-          const displayedState = x.state ?
-            getUserStateInfo(x.state, x.jobChargeLimit, x.usedJobCharge).displayedState : undefined;
-          return {
-            userId: x.user.$.userId,
-            name: x.user.$.name,
-            email: x.user.$.email,
-            role: PFUserRole[x.role],
-            status: PFUserStatus[x.blockedInCluster],
-            jobChargeLimit: x.jobChargeLimit ? decimalToMoney(x.jobChargeLimit) : undefined,
-            usedJobChargeLimit: x.usedJobCharge ? decimalToMoney(x.usedJobCharge) : undefined,
-            // 该 storageQuotas 是旧逻辑，不方便删除，需研判
-            storageQuotas: {},
-            userStateInAccount: accountUserInfo_UserStateInAccountFromJSON(x.state),
-            displayedUserState: displayedState,
-          };
+      const accountUsers = await em.find(
+        UserAccount,
+        {
+          account: { accountName, tenant: { name: tenantName } },
         },
-        ),
-      })];
+        { populate: ["user", "user.storageQuotas"] },
+      );
+
+      return [
+        GetAccountUsersResponse.fromPartial({
+          results: accountUsers.map((x) => {
+            const displayedState = x.state
+              ? getUserStateInfo(x.state, x.jobChargeLimit, x.usedJobCharge).displayedState
+              : undefined;
+            return {
+              userId: x.user.$.userId,
+              name: x.user.$.name,
+              email: x.user.$.email,
+              role: PFUserRole[x.role],
+              status: PFUserStatus[x.blockedInCluster],
+              jobChargeLimit: x.jobChargeLimit ? decimalToMoney(x.jobChargeLimit) : undefined,
+              usedJobChargeLimit: x.usedJobCharge ? decimalToMoney(x.usedJobCharge) : undefined,
+              // 该 storageQuotas 是旧逻辑，不方便删除，需研判
+              storageQuotas: {},
+              userStateInAccount: accountUserInfo_UserStateInAccountFromJSON(x.state),
+              displayedUserState: displayedState,
+            };
+          }),
+        }),
+      ];
     },
 
     queryIsUserInAccount: async ({ request, em }) => {
@@ -92,27 +103,38 @@ export const userServiceServer = plugin((server) => {
         account: { accountName, tenant: { name: tenantName } },
       });
 
-      return [QueryIsUserInAccountResponse.fromPartial({
-        result: user !== null,
-      })];
+      return [
+        QueryIsUserInAccountResponse.fromPartial({
+          result: user !== null,
+        }),
+      ];
     },
 
     getUserStatus: async ({ request, em }) => {
       const { userId, tenantName, accountNames } = request;
 
-      const user = await em.findOne(User, {
-        userId, tenant: { name: tenantName },
-        ...accountNames.length > 0 ? { accounts: { account: { accountName: { $in: accountNames } } } } : {},
-      }, {
-        populate: [
-          "storageQuotas", "accounts", "accounts.account",
-          "accounts.account.whitelist", "accounts.account.tenant",
-        ],
-      });
+      const user = await em.findOne(
+        User,
+        {
+          userId,
+          tenant: { name: tenantName },
+          ...(accountNames.length > 0 ? { accounts: { account: { accountName: { $in: accountNames } } } } : {}),
+        },
+        {
+          populate: [
+            "storageQuotas",
+            "accounts",
+            "accounts.account",
+            "accounts.account.whitelist",
+            "accounts.account.tenant",
+          ],
+        },
+      );
 
       if (!user) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId}, tenant ${tenantName} is not found`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId}, tenant ${tenantName} is not found`,
         } as ServiceError;
       }
 
@@ -126,7 +148,11 @@ export const userServiceServer = plugin((server) => {
           if (whitelist && whitelist.expirationTime && whitelist.expirationTime <= today) {
             try {
               await processExpiredWhitelist(
-                whitelist as Loaded<AccountWhitelist, "account">, em, logger, server.ext.clusters);
+                whitelist as Loaded<AccountWhitelist, "account">,
+                em,
+                logger,
+                server.ext.clusters,
+              );
             } catch (error) {
               hasErrorAccounts.push(account.accountName);
               logger.error("Failed to process expired whitelist for account %s: %s", account.accountName, error);
@@ -155,32 +181,40 @@ export const userServiceServer = plugin((server) => {
           usedJobCharge: curr.usedJobCharge ? decimalToMoney(curr.usedJobCharge) : undefined,
           balance: decimalToMoney(curr.account.getEntity().balance),
           isInWhitelist: Boolean(account.whitelist),
-          blockThresholdAmount: account.blockThresholdAmount ?
-            decimalToMoney(account.blockThresholdAmount) : decimalToMoney(tenant.defaultAccountBlockThreshold),
+          blockThresholdAmount: account.blockThresholdAmount
+            ? decimalToMoney(account.blockThresholdAmount)
+            : decimalToMoney(tenant.defaultAccountBlockThreshold),
           accountState: PFAccountState["ACCOUNT_" + account.state],
         } as AccountStatus;
         return prev;
       }, {});
 
-      return [{
-        accountStatuses,
-        storageQuotas: {},
-      }];
+      return [
+        {
+          accountStatuses,
+          storageQuotas: {},
+        },
+      ];
     },
 
     addUserToAccount: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "add user to account task");
 
       const { accountName, userId, tenantName, isTenantAdmin } = request;
 
-      const account = await em.findOne(Account, {
-        accountName, tenant: { name: tenantName },
-      }, { populate: ["users", "users.user", "tenant"] });
+      const account = await em.findOne(
+        Account,
+        {
+          accountName,
+          tenant: { name: tenantName },
+        },
+        { populate: ["users", "users.user", "tenant"] },
+      );
 
       const user = await em.findOne(User, {
-        userId, tenant: { name: tenantName },
+        userId,
+        tenant: { name: tenantName },
       });
 
       if (!user) {
@@ -223,22 +257,27 @@ export const userServiceServer = plugin((server) => {
 
       if (account.users.getItems().some((x) => x.user.getEntity().userId === userId)) {
         throw {
-          code: Status.ALREADY_EXISTS, message: `User ${userId} already in the account ${accountName}.`,
+          code: Status.ALREADY_EXISTS,
+          message: `User ${userId} already in the account ${accountName}.`,
         } as ServiceError;
       }
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-      await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        return await asyncClientCall(client.user, "addUserToAccount", { userId, accountName });
-      }).catch(async (e) => {
-        // 如果每个适配器返回的Error都是ALREADY_EXISTS，说明所有集群均已添加成功，可以在scow数据库及认证系统中加入该条关系，
-        // 除此以外，都抛出异常
-        if (countSubstringOccurrences(e.details, "Error: 6 ALREADY_EXISTS")
-          !== Object.keys(currentActivatedClusters).length) {
-          throw e;
-        }
-      });
+      await server.ext.clusters
+        .callOnAll(currentActivatedClusters, logger, async (client) => {
+          return await asyncClientCall(client.user, "addUserToAccount", { userId, accountName });
+        })
+        .catch(async (e) => {
+          // 如果每个适配器返回的Error都是ALREADY_EXISTS，说明所有集群均已添加成功，可以在scow数据库及认证系统中加入该条关系，
+          // 除此以外，都抛出异常
+          if (
+            countSubstringOccurrences(e.details, "Error: 6 ALREADY_EXISTS") !==
+            Object.keys(currentActivatedClusters).length
+          ) {
+            throw e;
+          }
+        });
 
       const newUserAccount = new UserAccount({
         account,
@@ -259,14 +298,13 @@ export const userServiceServer = plugin((server) => {
     },
 
     removeUserFromAccount: async ({ request, em, logger }) => {
-
       // 判断当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "remove user from account task");
 
       const { accountName, tenantName } = request;
 
       const results: ResultInfo[] = [];
-      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
+      const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
       if (userIds.length === 0) {
@@ -281,13 +319,17 @@ export const userServiceServer = plugin((server) => {
           let userAccount: UserAccount | null;
           try {
             userAccount = await em.transactional(async (transactionalEm) => {
-              const userAcc = await transactionalEm.findOne(UserAccount, {
-                user: { userId, tenant: { name: tenantName } },
-                account: { accountName, tenant: { name: tenantName } },
-              }, {
-                populate: ["user", "account"],
-                lockMode: LockMode.PESSIMISTIC_WRITE,
-              });
+              const userAcc = await transactionalEm.findOne(
+                UserAccount,
+                {
+                  user: { userId, tenant: { name: tenantName } },
+                  account: { accountName, tenant: { name: tenantName } },
+                },
+                {
+                  populate: ["user", "account"],
+                  lockMode: LockMode.PESSIMISTIC_WRITE,
+                },
+              );
 
               if (!userAcc) {
                 results.push({
@@ -330,19 +372,15 @@ export const userServiceServer = plugin((server) => {
           if (!userAccount) continue;
 
           // 查询用户是否有RUNNING、PENDING的作业，如果有，抛出异常
-          const jobs = await server.ext.clusters.callOnAll(
-            currentActivatedClusters,
-            logger,
-            async (client) => {
-              const fields = ["job_id", "user", "state", "account"];
+          const jobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+            const fields = ["job_id", "user", "state", "account"];
 
-              return await asyncClientCall(client.job, "getJobs", {
-                jobTypes: [],
-                fields,
-                filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-              });
-            },
-          );
+            return await asyncClientCall(client.job, "getJobs", {
+              jobTypes: [],
+              fields,
+              filter: { users: [userId], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+            });
+          });
 
           if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
             results.push({
@@ -356,22 +394,26 @@ export const userServiceServer = plugin((server) => {
           }
 
           let shouldContinue: boolean = false;
-          await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-            return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
-          }).catch(async (e) => {
-            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
-            // 除此以外，都抛出异常
-            if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
-              Object.keys(currentActivatedClusters).length) {
-              results.push({
-                userId,
-                success: false,
-                code: Status.UNAVAILABLE,
-                reason: JSON.stringify(e),
-              });
-            }
-            shouldContinue = true;
-          });
+          await server.ext.clusters
+            .callOnAll(currentActivatedClusters, logger, async (client) => {
+              return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
+            })
+            .catch(async (e) => {
+              // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+              // 除此以外，都抛出异常
+              if (
+                countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
+                Object.keys(currentActivatedClusters).length
+              ) {
+                results.push({
+                  userId,
+                  success: false,
+                  code: Status.UNAVAILABLE,
+                  reason: JSON.stringify(e),
+                });
+              }
+              shouldContinue = true;
+            });
 
           if (shouldContinue) {
             continue;
@@ -388,7 +430,6 @@ export const userServiceServer = plugin((server) => {
             userId,
             success: true,
           });
-
         } catch (error) {
           results.push({
             userId,
@@ -399,8 +440,7 @@ export const userServiceServer = plugin((server) => {
         }
       }
 
-      const failedInfos = results
-        .filter((res) => !res.success);
+      const failedInfos = results.filter((res) => !res.success);
 
       if (failedInfos.length > 0) {
         logger.warn(failedInfos.map((info) => `Failed to remove user ${info.userId}: ${info.reason}`));
@@ -423,22 +463,22 @@ export const userServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      return [{
-        success: failedInfos.length === 0,
-        results,
-      }];
-
+      return [
+        {
+          success: failedInfos.length === 0,
+          results,
+        },
+      ];
     },
 
     blockUserInAccount: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "block user in account task");
 
       const { accountName, tenantName } = request;
 
       const results: ResultInfo[] = [];
-      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
+      const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
       if (userIds.length === 0) {
@@ -451,13 +491,17 @@ export const userServiceServer = plugin((server) => {
       for (const userId of userIds) {
         await em.transactional(async (em) => {
           try {
-            const user = await em.findOne(UserAccount, {
-              user: { userId, tenant: { name: tenantName } },
-              account: { accountName, tenant: { name: tenantName } },
-            }, {
-              populate: ["user", "account"],
-              lockMode: LockMode.PESSIMISTIC_WRITE,
-            });
+            const user = await em.findOne(
+              UserAccount,
+              {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              },
+              {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
             if (!user) {
               results.push({
@@ -502,8 +546,7 @@ export const userServiceServer = plugin((server) => {
         });
       }
 
-      const failedInfos = results
-        .filter((res) => !res.success);
+      const failedInfos = results.filter((res) => !res.success);
 
       if (failedInfos.length > 0) {
         logger.warn(failedInfos.map((info) => `Failed to block user ${info.userId}: ${info.reason}`));
@@ -527,21 +570,22 @@ export const userServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      return [{
-        success: failedInfos.length === 0,
-        results,
-      }];
+      return [
+        {
+          success: failedInfos.length === 0,
+          results,
+        },
+      ];
     },
 
     unblockUserInAccount: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的
       await ensureNoRunningSyncTask(em, logger, "unblock user in account task");
 
       const { accountName, tenantName } = request;
 
       const results: ResultInfo[] = [];
-      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
+      const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
       if (userIds.length === 0) {
@@ -554,13 +598,17 @@ export const userServiceServer = plugin((server) => {
       for (const userId of userIds) {
         await em.transactional(async (em) => {
           try {
-            const user = await em.findOne(UserAccount, {
-              user: { userId, tenant: { name: tenantName } },
-              account: { accountName, tenant: { name: tenantName } },
-            }, {
-              populate: ["user", "account"],
-              lockMode: LockMode.PESSIMISTIC_WRITE,
-            });
+            const user = await em.findOne(
+              UserAccount,
+              {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              },
+              {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
             if (!user) {
               results.push({
@@ -613,8 +661,7 @@ export const userServiceServer = plugin((server) => {
         });
       }
 
-      const failedInfos = results
-        .filter((res) => !res.success);
+      const failedInfos = results.filter((res) => !res.success);
 
       if (failedInfos.length > 0) {
         logger.warn(failedInfos.map((info) => `Failed to unblock user ${info.userId}: ${info.reason}`));
@@ -637,10 +684,12 @@ export const userServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      return [{
-        success: failedInfos.length === 0,
-        results,
-      }];
+      return [
+        {
+          success: failedInfos.length === 0,
+          results,
+        },
+      ];
     },
 
     setAsAdmin: async ({ request, em }) => {
@@ -653,13 +702,15 @@ export const userServiceServer = plugin((server) => {
 
       if (!user) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} or account ${accountName}  is not found.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} or account ${accountName}  is not found.`,
         } as ServiceError;
       }
 
       if (user.role === UserRole.ADMIN) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already admin.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already admin.`,
         } as ServiceError;
       }
 
@@ -679,13 +730,15 @@ export const userServiceServer = plugin((server) => {
 
       if (!user) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} or account ${accountName}  is not found.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} or account ${accountName}  is not found.`,
         } as ServiceError;
       }
 
       if (user.role === UserRole.USER) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already not admin.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already not admin.`,
         } as ServiceError;
       }
 
@@ -701,37 +754,45 @@ export const userServiceServer = plugin((server) => {
      */
     createUser: async ({ request, em, logger }) => {
       const { name, tenantName, email, identityId, password, phone, organization, adminComment } = request;
-      const user =
-        await createUserInDatabase(
-          identityId, name, email, tenantName, server.logger, em, phone, organization, adminComment,
-        )
-          .catch((e) => {
-            if (e.code === Status.ALREADY_EXISTS) {
-              throw {
-                code: Status.ALREADY_EXISTS,
-                message: `User with userId ${identityId} already exists in scow.`,
-                details: "EXISTS_IN_SCOW",
-              } as ServiceError;
-            }
-            throw {
-              code: Status.INTERNAL,
-              message: `Error creating user with userId ${identityId} in database.`
-            } as ServiceError;
-          });
+      const user = await createUserInDatabase(
+        identityId,
+        name,
+        email,
+        tenantName,
+        server.logger,
+        em,
+        phone,
+        organization,
+        adminComment,
+      ).catch((e) => {
+        if (e.code === Status.ALREADY_EXISTS) {
+          throw {
+            code: Status.ALREADY_EXISTS,
+            message: `User with userId ${identityId} already exists in scow.`,
+            details: "EXISTS_IN_SCOW",
+          } as ServiceError;
+        }
+        throw {
+          code: Status.INTERNAL,
+          message: `Error creating user with userId ${identityId} in database.`,
+        } as ServiceError;
+      });
       // call auth
-      const createdInAuth = await createUser(authUrl,
+      const createdInAuth = await createUser(
+        authUrl,
         { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password },
-        server.logger)
+        server.logger,
+      )
         .then(async () => {
           // insert public key
           // 插入公钥失败也认为是创建用户成功
           // 在所有集群下执行
           // 如果 SCOWD 开启则不需要插入公钥
           const filterClusterConfig = Object.fromEntries(
-            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true));
+            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true),
+          );
 
-          await insertKeyToNewUser(identityId, password, server.logger, filterClusterConfig)
-            .catch(() => { });
+          await insertKeyToNewUser(identityId, password, server.logger, filterClusterConfig).catch(() => {});
           return true;
         })
         .then(async () => {
@@ -759,17 +820,19 @@ export const userServiceServer = plugin((server) => {
             server.logger.error("Error creating user in auth.", e);
             throw {
               code: Status.INTERNAL,
-              message: `Error creating user with userId ${identityId} in auth.`
+              message: `Error creating user with userId ${identityId} in auth.`,
             } as ServiceError;
           }
         });
 
       await callHook("userCreated", { tenantName, userId: user.userId }, logger);
 
-      return [{
-        createdInAuth: createdInAuth,
-        id: user.id,
-      }];
+      return [
+        {
+          createdInAuth: createdInAuth,
+          id: user.id,
+        },
+      ];
     },
 
     /**
@@ -778,21 +841,19 @@ export const userServiceServer = plugin((server) => {
      */
     addUser: async ({ request, em, logger }) => {
       const { name, tenantName, email, identityId } = request;
-      const user
-        = await createUserInDatabase(identityId, name, email, tenantName, server.logger, em)
-          .catch((e) => {
-            if (e.code === Status.ALREADY_EXISTS) {
-              throw {
-                code: Status.ALREADY_EXISTS,
-                message: `User with userId ${identityId} already exists in scow.`,
-                details: "EXISTS_IN_SCOW",
-              } as ServiceError;
-            }
-            throw {
-              code: Status.INTERNAL,
-              message: `Error creating user with userId ${identityId} in database.`
-            } as ServiceError;
-          });
+      const user = await createUserInDatabase(identityId, name, email, tenantName, server.logger, em).catch((e) => {
+        if (e.code === Status.ALREADY_EXISTS) {
+          throw {
+            code: Status.ALREADY_EXISTS,
+            message: `User with userId ${identityId} already exists in scow.`,
+            details: "EXISTS_IN_SCOW",
+          } as ServiceError;
+        }
+        throw {
+          code: Status.INTERNAL,
+          message: `Error creating user with userId ${identityId} in database.`,
+        } as ServiceError;
+      });
 
       // 设置用户的存储配额
       try {
@@ -808,18 +869,17 @@ export const userServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-
       await callHook("userAdded", { tenantName, userId: user.userId }, logger);
 
-      return [{
-        id: user.id,
-      }];
+      return [
+        {
+          id: user.id,
+        },
+      ];
     },
 
     deleteUser: async ({ request, em, logger }) => {
-
-      const { userId, tenantName, deletionComment }
-        = ensureNotUndefined(request, ["userId", "tenantName"]);
+      const { userId, tenantName, deletionComment } = ensureNotUndefined(request, ["userId", "tenantName"]);
 
       const tenant = await em.findOne(Tenant, { name: tenantName });
 
@@ -827,9 +887,13 @@ export const userServiceServer = plugin((server) => {
         throw { code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
       }
 
-      const user = await em.findOne(User, { userId, tenant: { name: tenantName } }, {
-        populate: ["accounts", "accounts.account"],
-      });
+      const user = await em.findOne(
+        User,
+        { userId, tenant: { name: tenantName } },
+        {
+          populate: ["accounts", "accounts.account"],
+        },
+      );
 
       if (!user) {
         throw { code: Status.NOT_FOUND, message: `User ${userId} is not found.` } as ServiceError;
@@ -848,7 +912,6 @@ export const userServiceServer = plugin((server) => {
 
       const userAccounts = user.accounts.getItems();
       // 这里商量是不要管有没有封锁直接删，但要不要先封锁了再删？
-
 
       // 如果userAccounts存在，则
       // 检查当前是否有正在执行的同步用户账户操作
@@ -887,19 +950,15 @@ export const userServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       // 查询用户是否有RUNNING、PENDING的作业与交互式应用，有则抛出异常
-      const runningJobs = await server.ext.clusters.callOnAll(
-        currentActivatedClusters,
-        logger,
-        async (client) => {
-          const fields = ["job_id", "user", "state", "account"];
+      const runningJobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+        const fields = ["job_id", "user", "state", "account"];
 
-          return await asyncClientCall(client.job, "getJobs", {
-            jobTypes: [],
-            fields,
-            filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
-          });
-        },
-      );
+        return await asyncClientCall(client.job, "getJobs", {
+          jobTypes: [],
+          fields,
+          filter: { users: [userId], accounts: [], states: ["RUNNING", "PENDING"] },
+        });
+      });
 
       if (runningJobs.filter((i) => i.result.jobs.length > 0).length > 0) {
         const a = runningJobs.filter((i) => i.result.jobs.length > 0);
@@ -924,17 +983,20 @@ export const userServiceServer = plugin((server) => {
         }
         const accountName = userAccount.account.getEntity().accountName;
         await em.removeAndFlush(userAccount);
-        await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-          return await asyncClientCall(client.user, "removeUserFromAccount",
-            { userId, accountName });
-        }).catch(async (e) => {
-          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
-          // 除此以外，都抛出异常
-          if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-            !== Object.keys(currentActivatedClusters).length) {
-            throw e;
-          }
-        });
+        await server.ext.clusters
+          .callOnAll(currentActivatedClusters, logger, async (client) => {
+            return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
+          })
+          .catch(async (e) => {
+            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 除此以外，都抛出异常
+            if (
+              countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
+              Object.keys(currentActivatedClusters).length
+            ) {
+              throw e;
+            }
+          });
         if (hasCapabilities) {
           await removeUserFromAccount(authUrl, { accountName, userId }, logger);
         }
@@ -951,35 +1013,34 @@ export const userServiceServer = plugin((server) => {
 
       const ldapCapabilities = await getCapabilities(authUrl);
       if (ldapCapabilities.deleteUser) {
-
-        await deleteUser(authUrl,
-          userId, server.logger)
-          .catch(async (e) => {
-            if (e instanceof HttpError && e.status === 404) {
-              throw {
-                code: Status.NOT_FOUND,
-                message: "User not found in LDAP."
-              } as ServiceError;
-            }
+        await deleteUser(authUrl, userId, server.logger).catch(async (e) => {
+          if (e instanceof HttpError && e.status === 404) {
             throw {
-              code: Status.INTERNAL,
-              message: "Error nologin user in LDAP."
+              code: Status.NOT_FOUND,
+              message: "User not found in LDAP.",
             } as ServiceError;
-          });
+          }
+          throw {
+            code: Status.INTERNAL,
+            message: "Error nologin user in LDAP.",
+          } as ServiceError;
+        });
       }
 
-      await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        return await asyncClientCall(client.user, "deleteUser",
-          { userId });
-      }).catch(async (e) => {
-        // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出此用户
-        // 除此以外，都抛出异常
-        if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-          !== Object.keys(currentActivatedClusters).length) {
-          logger.error(e, "deleteUser Error occurred.");
-          throw e;
-        }
-      });
+      await server.ext.clusters
+        .callOnAll(currentActivatedClusters, logger, async (client) => {
+          return await asyncClientCall(client.user, "deleteUser", { userId });
+        })
+        .catch(async (e) => {
+          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出此用户
+          // 除此以外，都抛出异常
+          if (
+            countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !== Object.keys(currentActivatedClusters).length
+          ) {
+            logger.error(e, "deleteUser Error occurred.");
+            throw e;
+          }
+        });
 
       return [{}];
     },
@@ -1014,74 +1075,87 @@ export const userServiceServer = plugin((server) => {
     getUsers: async ({ request, em }) => {
       const { tenantName, userIds } = request;
 
-      const users = await em.find(User, {
-        tenant: { name: tenantName },
-        ...userIds.length > 0 ? { userId: { $in: userIds } } : {},
-      }, {
-        populate: ["tenant", "accounts", "accounts.account"],
-      });
+      const users = await em.find(
+        User,
+        {
+          tenant: { name: tenantName },
+          ...(userIds.length > 0 ? { userId: { $in: userIds } } : {}),
+        },
+        {
+          populate: ["tenant", "accounts", "accounts.account"],
+        },
+      );
 
-      return [{
-        users: users.map((x) => ({
-          tenantName: x.tenant.$.name,
-          email: x.email,
-          name: x.name,
-          phone: x.phone,
-          organization: x.organization,
-          adminComment: x.adminComment,
-          metadata: x.metadata,
-          userId: x.userId,
-          createTime: x.createTime.toISOString(),
-          tenantRoles: x.tenantRoles.map(tenantRoleFromJSON),
-          accountAffiliations: x.accounts.getItems().map((x) => ({
-            accountName: x.account.getEntity().accountName,
-            role: PFUserRole[x.role],
-            accountState: PFAccountState["ACCOUNT_" + x.account.getEntity().state] as PFAccountState,
+      return [
+        {
+          users: users.map((x) => ({
+            tenantName: x.tenant.$.name,
+            email: x.email,
+            name: x.name,
+            phone: x.phone,
+            organization: x.organization,
+            adminComment: x.adminComment,
+            metadata: x.metadata,
+            userId: x.userId,
+            createTime: x.createTime.toISOString(),
+            tenantRoles: x.tenantRoles.map(tenantRoleFromJSON),
+            accountAffiliations: x.accounts.getItems().map((x) => ({
+              accountName: x.account.getEntity().accountName,
+              role: PFUserRole[x.role],
+              accountState: PFAccountState["ACCOUNT_" + x.account.getEntity().state] as PFAccountState,
+            })),
+            platformRoles: x.platformRoles.map(platformRoleFromJSON),
+            state: userStateFromJSON(x.state),
           })),
-          platformRoles: x.platformRoles.map(platformRoleFromJSON),
-          state: userStateFromJSON(x.state),
-        }))
-      }];
+        },
+      ];
     },
 
     getUserInfo: async ({ request, em }) => {
-
       const { userId } = request;
 
-      const user = await em.findOne(User, {
-        userId,
-      }, { populate: ["accounts", "accounts.account", "tenant", "email"] });
+      const user = await em.findOne(
+        User,
+        {
+          userId,
+        },
+        { populate: ["accounts", "accounts.account", "tenant", "email"] },
+      );
 
       if (!user) {
         throw { code: Status.NOT_FOUND, message: `User ${userId} is not found.` } as ServiceError;
       }
 
-      return [{
-        affiliations: user.accounts.getItems().map((x) => ({
-          accountName: x.account.getEntity().accountName,
-          role: PFUserRole[x.role],
-          accountState: PFAccountState["ACCOUNT_" + x.account.getEntity().state] as PFAccountState,
-        })),
-        tenantName: user.tenant.$.name,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        organization: user.organization,
-        adminComment: user.adminComment,
-        metadata: user.metadata,
-        tenantRoles: user.tenantRoles.map(tenantRoleFromJSON),
-        platformRoles: user.platformRoles.map(platformRoleFromJSON),
-        createTime: user.createTime.toISOString(),
-      }];
+      return [
+        {
+          affiliations: user.accounts.getItems().map((x) => ({
+            accountName: x.account.getEntity().accountName,
+            role: PFUserRole[x.role],
+            accountState: PFAccountState["ACCOUNT_" + x.account.getEntity().state] as PFAccountState,
+          })),
+          tenantName: user.tenant.$.name,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          organization: user.organization,
+          adminComment: user.adminComment,
+          metadata: user.metadata,
+          tenantRoles: user.tenantRoles.map(tenantRoleFromJSON),
+          platformRoles: user.platformRoles.map(platformRoleFromJSON),
+          createTime: user.createTime.toISOString(),
+        },
+      ];
     },
 
     getAllUsers: async ({ request, em }) => {
-
       const { page, pageSize, sortField, sortOrder, idOrName, platformRole, userId, userName } = request;
 
-      const roleQuery = platformRole !== undefined ? {
-        platformRoles: { $like: `%${platformRoleToJSON(platformRole)}%` },
-      } : undefined;
+      const roleQuery =
+        platformRole !== undefined
+          ? {
+              platformRoles: { $like: `%${platformRoleToJSON(platformRole)}%` },
+            }
+          : undefined;
 
       const filters: FilterQuery<User>[] = [];
       if (userId) {
@@ -1092,64 +1166,69 @@ export const userServiceServer = plugin((server) => {
       }
       if (!filters.length && idOrName) {
         filters.push({
-          $or: [
-            { userId: { $like: `%${idOrName}%` } },
-            { name: { $like: `%${idOrName}%` } },
-          ],
+          $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
         });
       }
 
-      const query = filters.length || roleQuery
-        ? { $and: [...filters, ...(roleQuery ? [roleQuery] : [])] }
-        : {};
+      const query = filters.length || roleQuery ? { $and: [...filters, ...(roleQuery ? [roleQuery] : [])] } : {};
 
       const [users, count] = await em.findAndCount(User, query, {
         ...generateAllUsersQueryOptions(page, pageSize, sortField, sortOrder),
         populate: ["tenant", "accounts", "accounts.account"],
       });
 
-      return [{
-        totalCount: count,
-        platformUsers: users.map((x) => ({
-          userId: x.userId,
-          name: x.name,
-          email: x.email,
-          phone: x.phone,
-          organization: x.organization,
-          adminComment: x.adminComment,
-          metadata: x.metadata,
-          availableAccounts: x.accounts.getItems()
-            .filter((ua) => ua.blockedInCluster === UserStatus.UNBLOCKED &&
-              ua.account.getProperty("state") !== AccountState.DELETED)
-            .map((ua) => {
-              return ua.account.getProperty("accountName");
-            }),
-          tenantName: x.tenant.$.name,
-          createTime: x.createTime.toISOString(),
-          platformRoles: x.platformRoles.map(platformRoleFromJSON),
-          state: userStateFromJSON(x.state),
-        })),
-      }];
+      return [
+        {
+          totalCount: count,
+          platformUsers: users.map((x) => ({
+            userId: x.userId,
+            name: x.name,
+            email: x.email,
+            phone: x.phone,
+            organization: x.organization,
+            adminComment: x.adminComment,
+            metadata: x.metadata,
+            availableAccounts: x.accounts
+              .getItems()
+              .filter(
+                (ua) =>
+                  ua.blockedInCluster === UserStatus.UNBLOCKED &&
+                  ua.account.getProperty("state") !== AccountState.DELETED,
+              )
+              .map((ua) => {
+                return ua.account.getProperty("accountName");
+              }),
+            tenantName: x.tenant.$.name,
+            createTime: x.createTime.toISOString(),
+            platformRoles: x.platformRoles.map(platformRoleFromJSON),
+            state: userStateFromJSON(x.state),
+          })),
+        },
+      ];
     },
 
-    getUsersByIds: async ({ request, em }) => { // 操作日志调用，可以展示已删除
+    getUsersByIds: async ({ request, em }) => {
+      // 操作日志调用，可以展示已删除
       const { userIds, fetchAllWhenEmpty = false } = request;
 
       // 动态构造查询条件
-      const condition = fetchAllWhenEmpty && userIds.length === 0
-        ? {} // 条件为空时查询全部用户
-        : { userId: { $in: userIds } }; // 默认行为：按userIds过滤
+      const condition =
+        fetchAllWhenEmpty && userIds.length === 0
+          ? {} // 条件为空时查询全部用户
+          : { userId: { $in: userIds } }; // 默认行为：按userIds过滤
 
       const users = await em.find(User, condition, {
         fields: ["userId", "name"],
       });
 
-      return [{
-        users: users.map((x) => ({
-          userId: x.userId,
-          userName: x.name,
-        })),
-      }];
+      return [
+        {
+          users: users.map((x) => ({
+            userId: x.userId,
+            userName: x.name,
+          })),
+        },
+      ];
     },
 
     getPlatformUsersCounts: async ({ request, em }) => {
@@ -1163,24 +1242,27 @@ export const userServiceServer = plugin((server) => {
       }
       if (!filters.length && idOrName) {
         filters.push({
-          $or: [
-            { userId: { $like: `%${idOrName}%` } },
-            { name: { $like: `%${idOrName}%` } },
-          ],
+          $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
         });
       }
       const baseQuery = filters.length ? { $and: filters } : {};
       const totalCount = await em.count(User, baseQuery);
-      const totalAdminCount = await em.count(User,
-        { platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` }, ...baseQuery });
-      const totalFinanceCount = await em.count(User,
-        { platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` }, ...baseQuery });
+      const totalAdminCount = await em.count(User, {
+        platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` },
+        ...baseQuery,
+      });
+      const totalFinanceCount = await em.count(User, {
+        platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` },
+        ...baseQuery,
+      });
 
-      return [{
-        totalCount: totalCount,
-        totalAdminCount: totalAdminCount,
-        totalFinanceCount: totalFinanceCount,
-      }];
+      return [
+        {
+          totalCount: totalCount,
+          totalAdminCount: totalAdminCount,
+          totalFinanceCount: totalFinanceCount,
+        },
+      ];
     },
 
     setPlatformRole: async ({ request, em }) => {
@@ -1191,13 +1273,15 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state == UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is not found.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is not found.`,
         } as ServiceError;
       }
 
       if (user.platformRoles.includes(dbRoleType)) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already this role.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already this role.`,
         } as ServiceError;
       }
 
@@ -1215,18 +1299,19 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
       if (!user.platformRoles.includes(dbRoleType)) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already not this role.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already not this role.`,
         } as ServiceError;
       }
 
-      user.platformRoles = user.platformRoles.filter((item) =>
-        item !== dbRoleType);
+      user.platformRoles = user.platformRoles.filter((item) => item !== dbRoleType);
       await em.flush();
 
       return [{}];
@@ -1240,13 +1325,15 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
       if (user.tenantRoles.includes(dbRoleType)) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already this role.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already this role.`,
         } as ServiceError;
       }
 
@@ -1264,21 +1351,21 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
       if (!user.tenantRoles.includes(dbRoleType)) {
         throw {
-          code: Status.FAILED_PRECONDITION, message: `User ${userId} is already not this role.`,
+          code: Status.FAILED_PRECONDITION,
+          message: `User ${userId} is already not this role.`,
         } as ServiceError;
       }
 
-      user.tenantRoles = user.tenantRoles.filter((item) =>
-        item !== dbRoleType);
+      user.tenantRoles = user.tenantRoles.filter((item) => item !== dbRoleType);
       await em.flush();
       return [{}];
-
     },
     changeEmail: async ({ request, em, logger }) => {
       const { userId, newEmail } = request;
@@ -1287,7 +1374,8 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
@@ -1298,38 +1386,41 @@ export const userServiceServer = plugin((server) => {
 
       // 看LDAP是否有修改邮箱的权限
       if (ldapCapabilities.changeEmail) {
-        await libChangeEmail(authUrl, {
-          identityId: userId,
-          newEmail,
-        }, logger)
-          .catch(async (e) => {
+        await libChangeEmail(
+          authUrl,
+          {
+            identityId: userId,
+            newEmail,
+          },
+          logger,
+        ).catch(async (e) => {
+          if (e instanceof HttpError) {
+            switch (e.status) {
+              case 404:
+                throw {
+                  code: Status.NOT_FOUND,
+                  message: `User ${userId} is not found.`,
+                } as ServiceError;
 
-            if (e instanceof HttpError) {
-              switch (e.status) {
+              case 501:
+                throw {
+                  code: Status.UNIMPLEMENTED,
+                  message: "Changing email is not supported ",
+                } as ServiceError;
 
-                case 404:
-                  throw {
-                    code: Status.NOT_FOUND, message: `User ${userId} is not found.`,
-                  } as ServiceError;
-
-                case 501:
-                  throw {
-                    code: Status.UNIMPLEMENTED, message: "Changing email is not supported ",
-                  } as ServiceError;
-
-                default:
-                  throw {
-                    code: Status.UNKNOWN, message: "LDAP failed to change email",
-                  } as ServiceError;
-              }
-            } else {
-              throw {
-                code: Status.UNKNOWN, message: "LDAP failed to change email",
-              } as ServiceError;
+              default:
+                throw {
+                  code: Status.UNKNOWN,
+                  message: "LDAP failed to change email",
+                } as ServiceError;
             }
-
-
-          });
+          } else {
+            throw {
+              code: Status.UNKNOWN,
+              message: "LDAP failed to change email",
+            } as ServiceError;
+          }
+        });
       }
 
       await em.flush();
@@ -1344,44 +1435,50 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
       const ldapCapabilities = await getCapabilities(authUrl);
 
       // 看LDAP是否有修改邮箱的权限
-      if (ldapCapabilities.changeEmail && (email !== undefined && user.email !== email)) {
-        await libChangeEmail(authUrl, {
-          identityId: userId,
-          newEmail: email,
-        }, logger)
-          .catch(async (e) => {
+      if (ldapCapabilities.changeEmail && email !== undefined && user.email !== email) {
+        await libChangeEmail(
+          authUrl,
+          {
+            identityId: userId,
+            newEmail: email,
+          },
+          logger,
+        ).catch(async (e) => {
+          if (e instanceof HttpError) {
+            switch (e.status) {
+              case 404:
+                throw {
+                  code: Status.NOT_FOUND,
+                  message: `User ${userId} is not found.`,
+                } as ServiceError;
 
-            if (e instanceof HttpError) {
-              switch (e.status) {
+              case 501:
+                throw {
+                  code: Status.UNIMPLEMENTED,
+                  message: "Changing email is not supported ",
+                } as ServiceError;
 
-                case 404:
-                  throw {
-                    code: Status.NOT_FOUND, message: `User ${userId} is not found.`,
-                  } as ServiceError;
-
-                case 501:
-                  throw {
-                    code: Status.UNIMPLEMENTED, message: "Changing email is not supported ",
-                  } as ServiceError;
-
-                default:
-                  throw {
-                    code: Status.UNKNOWN, message: "LDAP failed to change email",
-                  } as ServiceError;
-              }
-            } else {
-              throw {
-                code: Status.UNKNOWN, message: "LDAP failed to change email",
-              } as ServiceError;
+              default:
+                throw {
+                  code: Status.UNKNOWN,
+                  message: "LDAP failed to change email",
+                } as ServiceError;
             }
-          });
+          } else {
+            throw {
+              code: Status.UNKNOWN,
+              message: "LDAP failed to change email",
+            } as ServiceError;
+          }
+        });
       }
 
       user.email = email !== undefined ? email : user.email;
@@ -1408,7 +1505,7 @@ export const userServiceServer = plugin((server) => {
         .groupBy(raw("date"))
         .orderBy({ [raw("date")]: QueryOrder.DESC });
 
-      const results: { date: string, count: number }[] = await qb.execute();
+      const results: { date: string; count: number }[] = await qb.execute();
 
       return [
         {
@@ -1427,8 +1524,9 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`
-          , details: "USER_NOT_FOUND",
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
+          details: "USER_NOT_FOUND",
         } as ServiceError;
       }
 
@@ -1454,7 +1552,8 @@ export const userServiceServer = plugin((server) => {
 
       if (oldTenant.name === tenantName) {
         throw {
-          code: Status.ALREADY_EXISTS, message: `User ${userId} is already in tenant ${tenantName}.`,
+          code: Status.ALREADY_EXISTS,
+          message: `User ${userId} is already in tenant ${tenantName}.`,
         } as ServiceError;
       }
 
@@ -1462,7 +1561,9 @@ export const userServiceServer = plugin((server) => {
 
       if (!newTenant) {
         throw {
-          code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.`, details: "TENANT_NOT_FOUND",
+          code: Status.NOT_FOUND,
+          message: `Tenant ${tenantName} is not found.`,
+          details: "TENANT_NOT_FOUND",
         } as ServiceError;
       }
 
@@ -1471,11 +1572,9 @@ export const userServiceServer = plugin((server) => {
       await em.persistAndFlush(user);
 
       return [{}];
-
     },
 
     queryIsUserEnabledRootShell: async ({ request, em }) => {
-
       const rootShellEnabled = misConfig?.rootShell?.enabled ?? false;
 
       if (!rootShellEnabled) {
@@ -1488,7 +1587,8 @@ export const userServiceServer = plugin((server) => {
 
       if (!user || user.state === UserState.DELETED) {
         throw {
-          code: Status.NOT_FOUND, message: `User ${userId} is either not found or has been deleted.`,
+          code: Status.NOT_FOUND,
+          message: `User ${userId} is either not found or has been deleted.`,
         } as ServiceError;
       }
 
@@ -1498,7 +1598,6 @@ export const userServiceServer = plugin((server) => {
       }
 
       return [{ result: true }];
-
     },
 
     getUserIdsByRoles: async ({ request, em }) => {
@@ -1528,11 +1627,13 @@ export const userServiceServer = plugin((server) => {
             // PFUserRole reverse lookup converts proto number → string name, e.g. 1 → "ADMIN"
             // which matches the entity UserRole string enum values
             const dbRole = PFUserRole[role.accountRole] as UserRole;
-            const accountQuery = (accountName
-              ? { account: { accountName, ...(tenantName ? { tenant: { name: tenantName } } : {}) }, role: dbRole }
-              : tenantName
-                ? { account: { tenant: { name: tenantName } }, role: dbRole }
-                : { role: dbRole }) as FilterQuery<UserAccount>;
+            const accountQuery = (
+              accountName
+                ? { account: { accountName, ...(tenantName ? { tenant: { name: tenantName } } : {}) }, role: dbRole }
+                : tenantName
+                  ? { account: { tenant: { name: tenantName } }, role: dbRole }
+                  : { role: dbRole }
+            ) as FilterQuery<UserAccount>;
             const uas = await em.find(UserAccount, accountQuery, { populate: ["user"] });
             uas.forEach((ua) => userIds.add(ua.user.$.userId));
             break;
@@ -1542,6 +1643,5 @@ export const userServiceServer = plugin((server) => {
 
       return [{ userIds: Array.from(userIds) }];
     },
-
   });
 });

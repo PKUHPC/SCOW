@@ -1,12 +1,12 @@
 {
   "name": "@scow/grpc-api",
-  "private": false,
   "version": "1.34.0",
+  "private": false,
   "description": "The gRPC API for SCOW",
-  "main": "index.js",
-  "author": "PKUHPC (https://github.com/PKUHPC)",
   "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
   "repository": "https://github.com/PKUHPC/private-scow",
+  "main": "index.js",
   "scripts": {
     "lint": "buf lint",
     "breaking": "buf breaking --against '../.git#subdir=protos'"

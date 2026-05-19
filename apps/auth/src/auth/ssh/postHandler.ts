@@ -9,7 +9,6 @@ import { remoteValidateOtpCode } from "src/auth/otp/helper";
 import { validateLoginParams } from "src/auth/validateLoginParams";
 
 export function registerPostHandler(f: FastifyInstance, loginNode: string) {
-
   void f.register(formBody);
 
   const bodySchema = Type.Object({
@@ -22,30 +21,33 @@ export function registerPostHandler(f: FastifyInstance, loginNode: string) {
   });
 
   // register a login handler
-  f.post<{ Body: Static<typeof bodySchema> }>("/public/auth", {
-    schema: { body: bodySchema },
-  }, async (req, res) => {
-    const { username, password, callbackUrl, code, token, otpCode } = req.body;
+  f.post<{ Body: Static<typeof bodySchema> }>(
+    "/public/auth",
+    {
+      schema: { body: bodySchema },
+    },
+    async (req, res) => {
+      const { username, password, callbackUrl, code, token, otpCode } = req.body;
 
-    const logger = req.log.child({ plugin: "ssh" });
+      const logger = req.log.child({ plugin: "ssh" });
 
-    if (!await validateLoginParams(token, code, callbackUrl, req, res)) {
-      return;
-    }
+      if (!(await validateLoginParams(token, code, callbackUrl, req, res))) {
+        return;
+      }
 
-    if (!await remoteValidateOtpCode(username, logger, otpCode)) {
-      return;
-    }
-    await sshConnectByPassword(loginNode, username, password, req.log, async () => {})
-      .then(async () => {
-        logger.info("Log in as %s succeeded.");
-        const info = await cacheInfo(username, req);
-        await redirectToWeb(callbackUrl, info, res);
-      })
-      .catch(async (e) => {
-        logger.error(e, "Log in as %s failed.", username);
-        await serveLoginHtml({ err: true }, callbackUrl, req, res);
-      });
-
-  });
+      if (!(await remoteValidateOtpCode(username, logger, otpCode))) {
+        return;
+      }
+      await sshConnectByPassword(loginNode, username, password, req.log, async () => {})
+        .then(async () => {
+          logger.info("Log in as %s succeeded.");
+          const info = await cacheInfo(username, req);
+          await redirectToWeb(callbackUrl, info, res);
+        })
+        .catch(async (e) => {
+          logger.error(e, "Log in as %s failed.", username);
+          await serveLoginHtml({ err: true }, callbackUrl, req, res);
+        });
+    },
+  );
 }

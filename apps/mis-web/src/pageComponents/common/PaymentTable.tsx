@@ -128,13 +128,18 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
       if (searchType === SearchType.tenant) {
         return api.getTenantPayments({ query: { ...param, tenantName: query.names ? query.names[0] : undefined } });
       } else {
-        return api.getPayments({ query: {
-          ...param,
-          accountNames: searchType === SearchType.selfAccount
-            ? (query.accountName ? [query.accountName] : undefined)
-            : query.names,
-          searchType,
-        } });
+        return api.getPayments({
+          query: {
+            ...param,
+            accountNames:
+              searchType === SearchType.selfAccount
+                ? query.accountName
+                  ? [query.accountName]
+                  : undefined
+                : query.names,
+            searchType,
+          },
+        });
       }
     }, [query, pageInfo]),
   });
@@ -163,9 +168,8 @@ export const PaymentTable: React.FC<Props> = ({ accountName, searchType }) => {
         query: {
           startTime: query.time[0].clone().startOf("day").toISOString(),
           endTime: query.time[1].clone().endOf("day").toISOString(),
-          targetNames: searchType === SearchType.selfAccount
-            ? (query.accountName ? [query.accountName] : undefined)
-            : query.names,
+          targetNames:
+            searchType === SearchType.selfAccount ? (query.accountName ? [query.accountName] : undefined) : query.names,
           searchType: searchType,
           types: query.types,
           operatorIdOrName: query.operatorIdOrName,

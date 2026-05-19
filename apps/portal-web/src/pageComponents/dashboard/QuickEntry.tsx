@@ -6,22 +6,36 @@ import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
-import { AllJobsIcon, AppSessionsIcon, FileManagerIcon, LoginClusterIcon, RunningJobsIcon,
-  ShellIcon, SubmitJobIcon, TemplateJobIcon } from "src/icons/headerIcons/headerIcons";
+import {
+  AllJobsIcon,
+  AppSessionsIcon,
+  FileManagerIcon,
+  LoginClusterIcon,
+  RunningJobsIcon,
+  ShellIcon,
+  SubmitJobIcon,
+  TemplateJobIcon,
+} from "src/icons/headerIcons/headerIcons";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
 
-interface App { id: string; name: string; logoPath?: string; };
+interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+}
 
-export type AppWithCluster = Record<string, {
-  app: App;
-  clusters: Cluster[];
-}>;
+export type AppWithCluster = Record<
+  string,
+  {
+    app: App;
+    clusters: Cluster[];
+  }
+>;
 
 export const QuickEntry: React.FC = () => {
-
   const p = prefix("pageComp.dashboard.quickEntry.");
   const t = useI18nTranslateToString();
 
@@ -31,150 +45,157 @@ export const QuickEntry: React.FC = () => {
   const { publicConfigClusters, currentClusters } = useStore(ClusterInfoStore);
 
   const iconMap = {
-    "PlusCircleOutlined": <SubmitJobIcon />,
-    "BookOutlined": <RunningJobsIcon />,
-    "SaveOutlined": <TemplateJobIcon />,
-    "LoginClusterOutlined": <LoginClusterIcon />,
-    "MacCommandOutlined": <ShellIcon />,
-    "AllJobsOutlined":<AllJobsIcon />,
-    "AppSessionsIcon":<AppSessionsIcon />,
-    "FileManagerIcon":<FileManagerIcon />,
+    PlusCircleOutlined: <SubmitJobIcon />,
+    BookOutlined: <RunningJobsIcon />,
+    SaveOutlined: <TemplateJobIcon />,
+    LoginClusterOutlined: <LoginClusterIcon />,
+    MacCommandOutlined: <ShellIcon />,
+    AllJobsOutlined: <AllJobsIcon />,
+    AppSessionsIcon: <AppSessionsIcon />,
+    FileManagerIcon: <FileManagerIcon />,
   };
 
   const entryItems = {
-    defaultEntries:[
+    defaultEntries: [
       {
-        id:"submitJob",
-        name:"submitJob",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "submitJob",
+        name: "submitJob",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/submit",
-            icon:"PlusCircleOutlined",
+            icon: "PlusCircleOutlined",
           },
         },
       },
       {
-        id:"runningJob",
-        name:"runningJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "runningJob",
+        name: "runningJobs",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/runningJobs",
-            icon:"BookOutlined",
+            icon: "BookOutlined",
           },
         },
       },
       {
-        id:"allJobs",
-        name:"allJobs",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "allJobs",
+        name: "allJobs",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/jobs/allJobs",
-            icon:"AllJobsOutlined",
+            icon: "AllJobsOutlined",
           },
         },
       },
     ],
     staticEntries: [
       {
-        id:"loginCluster",
-        name:"loginCluster",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "loginCluster",
+        name: "loginCluster",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/loginCluster",
-            icon:"LoginClusterOutlined",
+            icon: "LoginClusterOutlined",
           },
         },
       },
       {
-        id:"shell",
-        name:"shell",
-        entry:{
-          $case:"shell" as const,
-          shell:{
-            clusterId:"",
-            loginNode:"",
-            icon:"MacCommandOutlined",
+        id: "shell",
+        name: "shell",
+        entry: {
+          $case: "shell" as const,
+          shell: {
+            clusterId: "",
+            loginNode: "",
+            icon: "MacCommandOutlined",
           },
         },
       },
       {
-        id:"appSessions",
-        name:"appSessions",
-        entry:{
-          $case:"pageLink" as const,
-          pageLink:{
+        id: "appSessions",
+        name: "appSessions",
+        entry: {
+          $case: "pageLink" as const,
+          pageLink: {
             path: "/apps/sessions",
-            clusterId:"",
-            icon:"AppSessionsIcon",
+            clusterId: "",
+            icon: "AppSessionsIcon",
           },
         },
       },
       {
-        id:"fileManage",
-        name:"fileManage",
-        entry:{
-          $case:"clusterPageLink" as const,
-          clusterPageLink:{
+        id: "fileManage",
+        name: "fileManage",
+        entry: {
+          $case: "clusterPageLink" as const,
+          clusterPageLink: {
             path: "/files/clusterId/~",
-            clusterId:"",
-            icon:"FileManagerIcon",
+            clusterId: "",
+            icon: "FileManagerIcon",
           },
         },
       },
     ],
   };
 
-  const { data: quickEntriesData, isLoading: getQuickEntriesLoading } =
-    useAsync({ promiseFn: useCallback(async () => {
+  const { data: quickEntriesData, isLoading: getQuickEntriesLoading } = useAsync({
+    promiseFn: useCallback(async () => {
       return await api.getQuickEntries({});
-    }, []) });
-
+    }, []),
+  });
 
   // apps包含在哪些集群上可以创建app
-  const { data: apps } = useAsync({ promiseFn: useCallback(async () => {
-    // 检查 currentClusters 是否为空
-    if (!currentClusters || currentClusters.length === 0) {
-      return {};
-    }
+  const { data: apps } = useAsync({
+    promiseFn: useCallback(async () => {
+      // 检查 currentClusters 是否为空
+      if (!currentClusters || currentClusters.length === 0) {
+        return {};
+      }
 
-    const clusterIds = currentClusters.map((cluster) => cluster.id);
-    const appsResponse = await api.getAllClustersAvailableApps({ query: { clusterIds } });
-    const appsInfo = appsResponse.results;
+      const clusterIds = currentClusters.map((cluster) => cluster.id);
+      const appsResponse = await api.getAllClustersAvailableApps({ query: { clusterIds } });
+      const appsInfo = appsResponse.results;
 
-    const appWithCluster: AppWithCluster = {};
-    appsInfo.forEach((clusterApps) => {
-      const cluster = currentClusters.find((c) => c.id === clusterApps.clusterId);
-      if (!cluster) return;
+      const appWithCluster: AppWithCluster = {};
+      appsInfo.forEach((clusterApps) => {
+        const cluster = currentClusters.find((c) => c.id === clusterApps.clusterId);
+        if (!cluster) return;
 
-      clusterApps.apps.forEach((app) => {
-        if (!appWithCluster[app.id]) {
-          appWithCluster[app.id] = {
-            app: app,
-            clusters: [],
-          };
-        }
+        clusterApps.apps.forEach((app) => {
+          if (!appWithCluster[app.id]) {
+            appWithCluster[app.id] = {
+              app: app,
+              clusters: [],
+            };
+          }
 
-        // 只要有一个集群配置了app图片，快捷方式就可以显示app图片了
-        if (!appWithCluster[app.id].app.logoPath && app.logoPath) {
-          appWithCluster[app.id].app.logoPath = app.logoPath;
-        }
+          // 只要有一个集群配置了app图片，快捷方式就可以显示app图片了
+          if (!appWithCluster[app.id].app.logoPath && app.logoPath) {
+            appWithCluster[app.id].app.logoPath = app.logoPath;
+          }
 
-        appWithCluster[app.id].clusters.push(cluster);
+          appWithCluster[app.id].clusters.push(cluster);
+        });
       });
-    });
 
-    return appWithCluster;
-  }, [currentClusters]) });
+      return appWithCluster;
+    }, [currentClusters]),
+  });
 
   const onSaveQuickEntries = async (newItems: Entry[]) => {
-    await api.saveQuickEntries({ body:{
-      quickEntries:newItems,
-    } })
-      .httpError(200, () => { message.error(t(p("saveFailed"))); })
+    await api
+      .saveQuickEntries({
+        body: {
+          quickEntries: newItems,
+        },
+      })
+      .httpError(200, () => {
+        message.error(t(p("saveFailed")));
+      })
       .then(() => {
         message.success(t(p("saveSuccessfully")));
       });
@@ -191,8 +212,9 @@ export const QuickEntry: React.FC = () => {
       entryItems={entryItems}
       iconMap={iconMap}
       loginNodes={loginNodes}
-      quickEntriesData={quickEntriesData?.quickEntries?.length ?
-        quickEntriesData.quickEntries : entryItems.defaultEntries}
+      quickEntriesData={
+        quickEntriesData?.quickEntries?.length ? quickEntriesData.quickEntries : entryItems.defaultEntries
+      }
       availableApps={apps || {}}
       onSaveQuickEntries={onSaveQuickEntries}
     />

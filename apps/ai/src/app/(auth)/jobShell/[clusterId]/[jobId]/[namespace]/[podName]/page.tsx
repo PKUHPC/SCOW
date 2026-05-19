@@ -1,7 +1,6 @@
 "use client";
 
 import "@xterm/xterm/css/xterm.css";
-
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Space } from "antd";
 import dynamic from "next/dynamic";
@@ -28,13 +27,15 @@ const Header = styled.div`
   justify-content: space-between;
   background-color: #333;
 
-  h2 { color: white; margin: 0px; }
+  h2 {
+    color: white;
+    margin: 0px;
+  }
 
   .ant-popover-content p {
     margin: 0;
   }
 `;
-
 
 const TerminalContainer = styled.div`
   display: flex;
@@ -47,15 +48,16 @@ const Black = styled.div`
   background-color: black;
 `;
 
-const JobShellComponent = dynamic(
-  () => import("src/components/shell/JobShell").then((x) => x.JobShell), {
-    ssr: false,
-    loading: Black,
-  });
+const JobShellComponent = dynamic(() => import("src/components/shell/JobShell").then((x) => x.JobShell), {
+  ssr: false,
+  loading: Black,
+});
 
-export default function Page({ params }:
-{ params: Promise<{ clusterId: string, jobId: string, namespace: string, podName: string }> })
-{
+export default function Page({
+  params,
+}: {
+  params: Promise<{ clusterId: string; jobId: string; namespace: string; podName: string }>;
+}) {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobShell.");
 
@@ -73,24 +75,14 @@ export default function Page({ params }:
   return (
     <Container>
       <Header>
-        <h2>
-          {`${t(p("user"))} ${user.identityId} ${t(p("connect"))} ${i18nClusterName} ${t(p("job"))} ${jobId}`}
-        </h2>
+        <h2>{`${t(p("user"))} ${user.identityId} ${t(p("connect"))} ${i18nClusterName} ${t(p("job"))} ${jobId}`}</h2>
         <Space wrap>
-          <Button onClick={() => window.location.reload()}>
-            {t(p("refresh"))}
-          </Button>
+          <Button onClick={() => window.location.reload()}>{t(p("refresh"))}</Button>
         </Space>
       </Header>
       <TerminalContainer>
-        <JobShellComponent
-          user={user}
-          cluster={clusterId}
-          jobId={jobId}
-          namespace={namespace}
-          podName={podName}
-        />
+        <JobShellComponent user={user} cluster={clusterId} jobId={jobId} namespace={namespace} podName={podName} />
       </TerminalContainer>
     </Container>
   );
-};
+}

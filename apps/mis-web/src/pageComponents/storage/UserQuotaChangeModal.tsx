@@ -36,13 +36,22 @@ interface FormProps {
 const p = prefix("pageComp.storage.userQuotaChangeModal.");
 const pCommon = prefix("common.");
 
-
 export const UserQuotaChangeModal: React.FC<Props> = ({
-  open, onClose, reload, cluster, username, userId,
-  path, quotaBytes, usedStorageBytes, useDefault, totalQuotaBytes, defaultQuotaBytes,
-  selectedUsers, isBatch,
+  open,
+  onClose,
+  reload,
+  cluster,
+  username,
+  userId,
+  path,
+  quotaBytes,
+  usedStorageBytes,
+  useDefault,
+  totalQuotaBytes,
+  defaultQuotaBytes,
+  selectedUsers,
+  isBatch,
 }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -73,17 +82,21 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
         if (isBatch && selectedUsers) {
           // 批量修改
           const userIds = selectedUsers.map((user) => user.userId);
-          await api.batchSetTenantUsersQuota({ body: {
-            cluster: cluster.id,
-            path,
-            userIds,
-            userQuotaBytes: formatGBToBytes(quotaGB),
-          } })
+          await api
+            .batchSetTenantUsersQuota({
+              body: {
+                cluster: cluster.id,
+                path,
+                userIds,
+                userQuotaBytes: formatGBToBytes(quotaGB),
+              },
+            })
             .then(({ failedUserIds }) => {
               const failedUserNum = failedUserIds.length;
               if (failedUserNum > 0) {
-                message.warning(t(p("batchModifyUserQuotaPartialSuccess"),
-                  [userIds.length - failedUserNum, failedUserNum]));
+                message.warning(
+                  t(p("batchModifyUserQuotaPartialSuccess"), [userIds.length - failedUserNum, failedUserNum]),
+                );
               } else {
                 message.success(t(p("batchModifyUserQuotaSuccess")));
               }
@@ -97,9 +110,15 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
             .finally(() => setLoading(false));
         } else if (userId !== undefined) {
           // 单个用户修改
-          await api.setTenantUserQuota({ body: {
-            userId, cluster: cluster.id, path, userQuotaBytes: formatGBToBytes(quotaGB),
-          } })
+          await api
+            .setTenantUserQuota({
+              body: {
+                userId,
+                cluster: cluster.id,
+                path,
+                userQuotaBytes: formatGBToBytes(quotaGB),
+              },
+            })
             .httpError(404, () => {
               message.error(t(p("userNotFound"), [userId]));
               return;
@@ -118,7 +137,7 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
     >
       <Form
         form={form}
-        initialValues={{ quotaGB: isBatch ? 0 : (quotaBytes ? formatBytesToGB(quotaBytes) : 0) }}
+        initialValues={{ quotaGB: isBatch ? 0 : quotaBytes ? formatBytesToGB(quotaBytes) : 0 }}
         labelAlign="left"
         style={{ marginTop: "20px" }}
       >
@@ -136,52 +155,60 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
         </Form.Item>
         <Form.Item label={`${t(p("defaultStorageQuota"))}(GB)`} style={{ marginBottom: "10px" }}>
           <Space>
-
             <span>{formatBytesToGB(defaultQuotaBytes).toFixed(2)}</span>
             {/* 批量模式下的使用默认值链接 */}
             {isBatch && (
-              <a onClick={() => {
-                modal.confirm({
-                  title: t(p("batchUseDefaultStorageQuota")),
-                  cancelText: t(pCommon("cancel")),
-                  okText: t(pCommon("ok")),
-                  icon: <ExclamationCircleOutlined />,
-                  content: <Space direction="vertical">
-                    <span>{`${t(p("currentDefaultStorageQuota"))}（GB）：`}
-                      <span>
-                        {formatBytesToGB(defaultQuotaBytes).toFixed(2)}
-                      </span>
-                    </span>
-                    <span>{t(p("confirmBatchUseDefaultStorageQuota"))}</span>
-                  </Space>,
-                  onOk: async () => {
-                    const userIds = selectedUsers?.map((user) => user.userId) || [];
-                    await api.batchSetTenantUsersQuota({ body: {
-                      cluster: cluster.id,
-                      path,
-                      userIds,
-                      userQuotaBytes: defaultQuotaBytes,
-                      useTenantDefaultUserQuota: true,
-                    } })
-                      .then(({ failedUserIds }) => {
-                        const failedUserNum = failedUserIds.length;
-                        if (failedUserNum > 0) {
-                          message.warning(t(p("batchModifyUserQuotaPartialSuccess"),
-                            [userIds.length - failedUserNum, failedUserNum]));
-                        } else {
-                          message.success(t(p("batchModifyUserQuotaSuccess")));
-                        }
+              <a
+                onClick={() => {
+                  modal.confirm({
+                    title: t(p("batchUseDefaultStorageQuota")),
+                    cancelText: t(pCommon("cancel")),
+                    okText: t(pCommon("ok")),
+                    icon: <ExclamationCircleOutlined />,
+                    content: (
+                      <Space direction="vertical">
+                        <span>
+                          {`${t(p("currentDefaultStorageQuota"))}（GB）：`}
+                          <span>{formatBytesToGB(defaultQuotaBytes).toFixed(2)}</span>
+                        </span>
+                        <span>{t(p("confirmBatchUseDefaultStorageQuota"))}</span>
+                      </Space>
+                    ),
+                    onOk: async () => {
+                      const userIds = selectedUsers?.map((user) => user.userId) || [];
+                      await api
+                        .batchSetTenantUsersQuota({
+                          body: {
+                            cluster: cluster.id,
+                            path,
+                            userIds,
+                            userQuotaBytes: defaultQuotaBytes,
+                            useTenantDefaultUserQuota: true,
+                          },
+                        })
+                        .then(({ failedUserIds }) => {
+                          const failedUserNum = failedUserIds.length;
+                          if (failedUserNum > 0) {
+                            message.warning(
+                              t(p("batchModifyUserQuotaPartialSuccess"), [
+                                userIds.length - failedUserNum,
+                                failedUserNum,
+                              ]),
+                            );
+                          } else {
+                            message.success(t(p("batchModifyUserQuotaSuccess")));
+                          }
 
-                        reload();
-                        onClose();
-                      })
-                      .catch(() => {
-                        message.error(t(p("batchModifyUserQuotaFailed")));
-                      })
-                      .finally(() => setLoading(false));
-                  },
-                });
-              }}
+                          reload();
+                          onClose();
+                        })
+                        .catch(() => {
+                          message.error(t(p("batchModifyUserQuotaFailed")));
+                        })
+                        .finally(() => setLoading(false));
+                    },
+                  });
+                }}
               >
                 {t(p("useDefaultValue"))}
               </a>
@@ -192,39 +219,48 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
           <Form.Item label={`${t(p("currentUsage"))}/${t(p("storageQuota"))}(GB)`} style={{ marginBottom: "10px" }}>
             <Space>
               <span>
-                {`${formatBytesToGB(usedStorageBytes || 0).toFixed(2)} / ${formatBytesToGB(quotaBytes || 0)
-                  .toFixed(2)}`}
+                {`${formatBytesToGB(usedStorageBytes || 0).toFixed(2)} / ${formatBytesToGB(quotaBytes || 0).toFixed(
+                  2,
+                )}`}
               </span>
-              { !useDefault && (
-                <a onClick={() => {
-                  modal.confirm({
-                    title: t(p("useDefaultStroageQuota")),
-                    cancelText: t(pCommon("cancel")),
-                    okText: t(pCommon("ok")),
-                    icon: <ExclamationCircleOutlined />,
-                    content: <Space direction="vertical">
-                      <span>{`${t(p("currentDefaultStorageQuota"))}（GB）：`}
-                        <span>
-                          {formatBytesToGB(defaultQuotaBytes).toFixed(2)}
-                        </span>
-                      </span>
-                      <span>{t(p("confirmUseDefaultStorageQuota"))}</span>
-                    </Space>,
-                    onOk: async () => {
-                      await api.setTenantUserQuota({ body: {
-                        userId, cluster: cluster.id, path, userQuotaBytes: defaultQuotaBytes,
-                        useTenantDefaultUserQuota: true,
-                      } })
-                        .httpError(304, () => message.warning(t(p("alreadyUsedDefault"))))
-                        .then(() => {
-                          message.success(t(p("modifyUserQuotaSuccess")));
-                          reload();
-                          onClose();
-                        })
-                        .finally(() => setLoading(false));
-                    },
-                  });
-                }}
+              {!useDefault && (
+                <a
+                  onClick={() => {
+                    modal.confirm({
+                      title: t(p("useDefaultStroageQuota")),
+                      cancelText: t(pCommon("cancel")),
+                      okText: t(pCommon("ok")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: (
+                        <Space direction="vertical">
+                          <span>
+                            {`${t(p("currentDefaultStorageQuota"))}（GB）：`}
+                            <span>{formatBytesToGB(defaultQuotaBytes).toFixed(2)}</span>
+                          </span>
+                          <span>{t(p("confirmUseDefaultStorageQuota"))}</span>
+                        </Space>
+                      ),
+                      onOk: async () => {
+                        await api
+                          .setTenantUserQuota({
+                            body: {
+                              userId,
+                              cluster: cluster.id,
+                              path,
+                              userQuotaBytes: defaultQuotaBytes,
+                              useTenantDefaultUserQuota: true,
+                            },
+                          })
+                          .httpError(304, () => message.warning(t(p("alreadyUsedDefault"))))
+                          .then(() => {
+                            message.success(t(p("modifyUserQuotaSuccess")));
+                            reload();
+                            onClose();
+                          })
+                          .finally(() => setLoading(false));
+                      },
+                    });
+                  }}
                 >
                   {t(p("useDefaultValue"))}
                 </a>
@@ -233,23 +269,18 @@ export const UserQuotaChangeModal: React.FC<Props> = ({
           </Form.Item>
         )}
         <Form.Item
-          label={(
+          label={
             <div>
               {t(p("setStorageQuota"))}
               <Tooltip title={t(p("tip"))}>
                 <QuestionCircleOutlined style={{ marginLeft: 5 }} />
               </Tooltip>
             </div>
-          )}
+          }
           name="quotaGB"
           rules={[{ required: true }]}
         >
-          <InputNumber
-            min={0.01}
-            max={formatBytesToGB(totalQuotaBytes)}
-            precision={2}
-            addonAfter={"GB"}
-          />
+          <InputNumber min={0.01} max={formatBytesToGB(totalQuotaBytes)} precision={2} addonAfter={"GB"} />
         </Form.Item>
       </Form>
     </Modal>

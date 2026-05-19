@@ -48,11 +48,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": [
-            "UNKNOWN",
-            "SUCCESS",
-            "FAIL"
-          ],
+          "enumItems": ["UNKNOWN", "SUCCESS", "FAIL"],
           "comment": "UNKNOWN, SUCCESS, FAIL",
           "mappedType": "enum"
         },
@@ -78,9 +74,7 @@
       "name": "operation_log",
       "indexes": [
         {
-          "columnNames": [
-            "custom_event_type"
-          ],
+          "columnNames": ["custom_event_type"],
           "composite": false,
           "keyName": "custom_event",
           "constraint": false,
@@ -89,9 +83,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

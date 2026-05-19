@@ -1,8 +1,16 @@
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { decimalToMoney } from "@scow/lib-decimal";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
-import { JobsOfAccountAndUserTarget, JobsOfAccountTarget, JobsOfJobIdAndAccountTarget, JobsOfJobIdAndUserTarget,
-  JobsOfJobIdsTarget, JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget } from "@scow/protos/build/server/job";
+import {
+  JobsOfAccountAndUserTarget,
+  JobsOfAccountTarget,
+  JobsOfJobIdAndAccountTarget,
+  JobsOfJobIdAndUserTarget,
+  JobsOfJobIdsTarget,
+  JobsOfJobIdTarget,
+  JobsOfTenantTarget,
+  JobsOfUserTarget,
+} from "@scow/protos/build/server/job";
 import { JobInfo as JobInfoEntity } from "src/entities/JobInfo";
 import { UserRole } from "src/entities/UserAccount";
 
@@ -36,24 +44,28 @@ export function toGrpc(x: JobInfoEntity) {
   } as JobInfo;
 }
 
-export const getJobsTargetSearchParam = (target:
-| { $case: "jobsOfJobId";jobsOfJobId: JobsOfJobIdTarget; }
-| { $case: "jobsOfJobIds";jobsOfJobIds: JobsOfJobIdsTarget; }
-| { $case: "jobsOfJobIdAndUser";jobsOfJobIdAndUser: JobsOfJobIdAndUserTarget; }
-| { $case: "jobsOfJobIdAndAccount";jobsOfJobIdAndAccount: JobsOfJobIdAndAccountTarget; }
-| { $case: "jobsOfAccountAndUser"; jobsOfAccountAndUser: JobsOfAccountAndUserTarget }
-| { $case: "jobsOfAccount"; jobsOfAccount: JobsOfAccountTarget }
-| { $case: "jobsOfUser"; jobsOfUser: JobsOfUserTarget }
-| { $case: "jobsOfTenant"; jobsOfTenant: JobsOfTenantTarget },
-): { tenant: string, account?: string | { $ne: null },
-  user?: string | { $ne: null }, idJob?: number | number[] | { $ne: null } } => {
-
+export const getJobsTargetSearchParam = (
+  target:
+    | { $case: "jobsOfJobId"; jobsOfJobId: JobsOfJobIdTarget }
+    | { $case: "jobsOfJobIds"; jobsOfJobIds: JobsOfJobIdsTarget }
+    | { $case: "jobsOfJobIdAndUser"; jobsOfJobIdAndUser: JobsOfJobIdAndUserTarget }
+    | { $case: "jobsOfJobIdAndAccount"; jobsOfJobIdAndAccount: JobsOfJobIdAndAccountTarget }
+    | { $case: "jobsOfAccountAndUser"; jobsOfAccountAndUser: JobsOfAccountAndUserTarget }
+    | { $case: "jobsOfAccount"; jobsOfAccount: JobsOfAccountTarget }
+    | { $case: "jobsOfUser"; jobsOfUser: JobsOfUserTarget }
+    | { $case: "jobsOfTenant"; jobsOfTenant: JobsOfTenantTarget },
+): {
+  tenant: string;
+  account?: string | { $ne: null };
+  user?: string | { $ne: null };
+  idJob?: number | number[] | { $ne: null };
+} => {
   const { accountName, tenantName, userId, jobId, jobIds } = target[target.$case];
 
   let searchParam: {
-    tenant: string,
-    account?: string | { $ne: null },
-    user?: string | { $ne: null },
+    tenant: string;
+    account?: string | { $ne: null };
+    user?: string | { $ne: null };
     idJob?: number | number[] | { $ne: null };
   } = { tenant: tenantName };
 
@@ -64,8 +76,7 @@ export const getJobsTargetSearchParam = (target:
     jobIdQueryValue = jobId; // 单个查询使用 number
   }
 
-  switch (target?.$case)
-  {
+  switch (target?.$case) {
     case "jobsOfJobId":
       searchParam = { tenant: tenantName, idJob: jobIdQueryValue };
       break;
@@ -98,7 +109,6 @@ export const getJobsTargetSearchParam = (target:
   return searchParam;
 };
 
-
 interface JobUserAndAccountOwnerDetails {
   biJobIndex: number;
   userName: string;
@@ -114,8 +124,10 @@ export type JobUserAndAccountOwnerDetailsMap = Record<number, JobUserAndAccountO
  * @param jobIds 作业ID列表
  * @returns 以作业id为key，属性中包含用户名、账户拥有者ID、账户拥有者姓名的对象
  */
-export async function getJobUserAndAccountOwnerDetailsMap(em: SqlEntityManager<MySqlDriver>, jobIds: number[]):
-Promise< JobUserAndAccountOwnerDetailsMap> {
+export async function getJobUserAndAccountOwnerDetailsMap(
+  em: SqlEntityManager<MySqlDriver>,
+  jobIds: number[],
+): Promise<JobUserAndAccountOwnerDetailsMap> {
   if (jobIds.length === 0) {
     return {};
   }
@@ -132,9 +144,8 @@ Promise< JobUserAndAccountOwnerDetailsMap> {
     ])
     .leftJoin({ u: "user" }, "u.user_id", "j.user")
     .leftJoin({ a: "account" }, "a.account_name", "j.account")
-    .leftJoin({ ua: "user_account" }, function() {
-      this.on("ua.account_id", "=", "a.id")
-        .andOn("ua.role", "=", knex.raw("?", [UserRole.OWNER]));
+    .leftJoin({ ua: "user_account" }, function () {
+      this.on("ua.account_id", "=", "a.id").andOn("ua.role", "=", knex.raw("?", [UserRole.OWNER]));
     })
     .leftJoin({ ou: "user" }, "ou.id", "ua.user_id")
     .whereIn("j.bi_job_index", jobIds);

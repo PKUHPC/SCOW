@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -42,10 +30,7 @@ interface Props {
 
 const p = prefix("pageComp.job.runningJobTable.");
 
-export const RunningJobQueryTable: React.FC<Props> = ({
-  userId,
-}) => {
-
+export const RunningJobQueryTable: React.FC<Props> = ({ userId }) => {
   const { currentClusters, defaultCluster, activatedClusters } = useStore(ClusterInfoStore);
 
   if (!defaultCluster && currentClusters.length === 0) {
@@ -62,17 +47,20 @@ export const RunningJobQueryTable: React.FC<Props> = ({
   const [form] = Form.useForm<FilterForm>();
 
   const promiseFn = useCallback(async () => {
-    return await api.getRunningJobs({ query: {
-      userId: userId,
-      cluster: query.cluster.id,
-    } });
+    return await api.getRunningJobs({
+      query: {
+        userId: userId,
+        cluster: query.cluster.id,
+      },
+    });
   }, [userId, query.cluster]);
-
 
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
   const filteredData = useMemo(() => {
-    if (!data) { return undefined; }
+    if (!data) {
+      return undefined;
+    }
 
     let filtered = data.results;
     if (query.jobId) {
@@ -104,18 +92,18 @@ export const RunningJobQueryTable: React.FC<Props> = ({
             <InputNumber style={{ minWidth: "160px" }} min={1} />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
+            <Button type="primary" htmlType="submit">
+              {t("button.searchButton")}
+            </Button>
           </Form.Item>
           <Form.Item>
-            <Button loading={isLoading} onClick={reload}>{t("button.refreshButton")}</Button>
+            <Button loading={isLoading} onClick={reload}>
+              {t("button.refreshButton")}
+            </Button>
           </Form.Item>
         </Form>
       </FilterFormContainer>
-      <RunningJobInfoTable
-        data={filteredData}
-        isLoading={isLoading}
-        reload={reload}
-      />
+      <RunningJobInfoTable data={filteredData} isLoading={isLoading} reload={reload} />
     </div>
   );
 };
@@ -126,15 +114,11 @@ interface JobInfoTableProps {
   reload: () => void;
 }
 
-export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, isLoading, reload,
-}) => {
-
+export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({ data, isLoading, reload }) => {
   const { message } = App.useApp();
   const t = useI18nTranslateToString();
 
   const [previewItem, setPreviewItem] = useState<RunningJobInfo | undefined>(undefined);
-
 
   return (
     <>
@@ -154,8 +138,11 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             dataIndex="jobId"
             width="5.2%"
             title={t(p("jobInfoTable.jobId"))}
-            sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
-              a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
+            sorter={(a, b) =>
+              isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))
+                ? a.jobId.localeCompare(b.jobId)
+                : Number(a.jobId) - Number(b.jobId)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="name"
@@ -183,30 +170,40 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             width="6.7%"
             ellipsis
             title={t(p("jobInfoTable.qos"))}
-            sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
-              a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
+            sorter={(a, b) =>
+              isNaN(Number(a.qos)) || isNaN(Number(b.qos)) ? a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="nodes"
             width="4.5%"
             title={t(p("jobInfoTable.nodes"))}
-            sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
-              a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
+            sorter={(a, b) =>
+              isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))
+                ? a.nodes.localeCompare(b.nodes)
+                : Number(a.nodes) - Number(b.nodes)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="cores"
             width="4.5%"
             title={t(p("jobInfoTable.cores"))}
-            sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
-              a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
+            sorter={(a, b) =>
+              isNaN(Number(a.cores)) || isNaN(Number(b.cores))
+                ? a.cores.localeCompare(b.cores)
+                : Number(a.cores) - Number(b.cores)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="gpus"
             width="7%"
             ellipsis
             title={t(p("jobInfoTable.gpus"))}
-            sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
-              a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
+            sorter={(a, b) =>
+              isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))
+                ? a.gpus.localeCompare(b.gpus)
+                : Number(a.gpus) - Number(b.gpus)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="state"
@@ -244,22 +241,21 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             render={(_, r) => (
               <Space size={8} style={{ marginLeft: 5 }}>
                 <Tooltip title={t("button.detailButton")}>
-                  <DetailIcon
-                    onClick={() => setPreviewItem(r)}
-                  />
+                  <DetailIcon onClick={() => setPreviewItem(r)} />
                 </Tooltip>
                 <Tooltip title={t(p("jobInfoTable.linkToPath"))}>
-                  <EnterDirectoryIcon
-                    onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))}
-                  />
+                  <EnterDirectoryIcon onClick={() => Router.push(join("/files", r.cluster.id, r.workingDir))} />
                 </Tooltip>
                 <Popconfirm
                   title={t(p("jobInfoTable.popConfirm"))}
                   onConfirm={async () =>
-                    api.cancelJob({ query: {
-                      cluster: r.cluster.id,
-                      jobId: +r.jobId,
-                    } })
+                    api
+                      .cancelJob({
+                        query: {
+                          cluster: r.cluster.id,
+                          jobId: +r.jobId,
+                        },
+                      })
                       .then(() => {
                         message.success(t(p("jobInfoTable.successMessage")));
                         reload();
@@ -275,11 +271,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
         </Table>
       </TableWrapper>
-      <JobDrawer
-        open={previewItem !== undefined}
-        item={previewItem}
-        onClose={() => setPreviewItem(undefined)}
-      />
+      <JobDrawer open={previewItem !== undefined} item={previewItem} onClose={() => setPreviewItem(undefined)} />
     </>
   );
 };

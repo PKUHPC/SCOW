@@ -16,7 +16,6 @@ import { parseIp } from "src/utils/server";
 // 此API用于租户管理员修改自己租户的用户密码
 // 没有权限返回undefined
 export const ChangePasswordAsTenantAdminSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -47,60 +46,61 @@ export const ChangePasswordAsTenantAdminSchema = typeboxRouteSchema({
   },
 });
 
+export default /* #__PURE__*/ route(ChangePasswordAsTenantAdminSchema, async (req, res) => {
+  if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
+    return { 501: null };
+  }
 
-export default /* #__PURE__*/route(
-  ChangePasswordAsTenantAdminSchema, async (req, res) => {
+  const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
+  if (!ldapCapabilities.changePassword) {
+    return { 501: null };
+  }
 
-    if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
-      return { 501: null };
-    }
+  const { identityId, newPassword } = req.body;
 
-    const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
-    if (!ldapCapabilities.changePassword) {
-      return { 501: null };
-    }
+  const client = getClient(UserServiceClient);
+  const userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
+    userId: identityId,
+  });
+  if (!userInfo) {
+    return { 404: null };
+  }
+  // 鉴权，要求用户所在的租户应该为当前租户管理员
+  const auth = authenticate(
+    (info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN) && userInfo.tenantName === info.tenant,
+  );
 
-    const { identityId, newPassword } = req.body;
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const client = getClient(UserServiceClient);
-    const userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
-      userId: identityId,
-    });
-    if (!userInfo) {
-      return { 404: null };
-    }
-    // 鉴权，要求用户所在的租户应该为当前租户管理员
-    const auth = authenticate((info) =>
-      (info.tenantRoles.includes(TenantRole.TENANT_ADMIN)) && (userInfo.tenantName === info.tenant));
-
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-
-    const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
-    if (passwordPattern && !passwordPattern.test(newPassword)) {
-      return { 400: {
+  const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
+  if (passwordPattern && !passwordPattern.test(newPassword)) {
+    return {
+      400: {
         code: "PASSWORD_NOT_VALID" as const,
-      } };
-    }
-
-    const logInfo = {
-      operatorUserId: info.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.tenantChangePassword,
-      operationTypePayload:{
-        tenantName: "", userId: identityId,
       },
     };
+  }
 
-    return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, { identityId, newPassword }, console)
-      .then(async () => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return { 204: null };
-      })
-      .catch(async (e) => {
-        await callLog(logInfo, OperationResult.FAIL);
-        return { [e.status]: null };
-      });
-  });
+  const logInfo = {
+    operatorUserId: info.identityId,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.tenantChangePassword,
+    operationTypePayload: {
+      tenantName: "",
+      userId: identityId,
+    },
+  };
+
+  return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, { identityId, newPassword }, console)
+    .then(async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    })
+    .catch(async (e) => {
+      await callLog(logInfo, OperationResult.FAIL);
+      return { [e.status]: null };
+    });
+});

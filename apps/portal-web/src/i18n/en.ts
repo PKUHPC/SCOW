@@ -225,7 +225,8 @@ export default {
         completeRequiredInfo: "Please complete the required information first",
         templateFieldsReplaced: "Some parameters are currently unavailable and have been replaced with default values",
         unavailableParamsTitle: "Use Template",
-        unavailableParamsDesc: "The following parameter values in the selected template are currently unavailable. Do you want to use the recommended parameters?",
+        unavailableParamsDesc:
+          "The following parameter values in the selected template are currently unavailable. Do you want to use the recommended parameters?",
         unavailableParamColumn: "Unavailable Parameter",
         recommendedParamColumn: "Recommended Parameter",
         unavailableParamsConfirm: "Confirm",
@@ -511,8 +512,9 @@ export default {
         uploadFileListNotExist: "The uploaded file list does not exist: {}",
         checking: "Checking...",
         resumeUploadTitle: "Unfinished Upload Task",
-        resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-          + "Do you want to clear the uploaded data and start this upload?",
+        resumeUploadContent:
+          "There is an unfinished upload task with the same name in the current path. " +
+          "Do you want to clear the uploaded data and start this upload?",
         resumeUploadOk: "Clear and Restart",
         resumeUploadCancel: "Cancel",
         completeUploadErrorText: "Failed to complete upload for file {}. {}",
@@ -542,8 +544,9 @@ export default {
         uploadFileListNotExist: "The uploaded file list does not exist: {}",
         checking: "Checking...",
         resumeUploadTitle: "Unfinished Upload Task",
-        resumeUploadContent: "There is an unfinished upload task with the same name in the current path. "
-          + "Do you want to clear the uploaded data and start this upload?",
+        resumeUploadContent:
+          "There is an unfinished upload task with the same name in the current path. " +
+          "Do you want to clear the uploaded data and start this upload?",
         resumeUploadOk: "Clear and Restart",
         resumeUploadCancel: "Cancel",
         completeUploadErrorText: "Failed to complete upload for file {}. {}",

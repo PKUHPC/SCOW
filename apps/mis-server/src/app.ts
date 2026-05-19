@@ -21,7 +21,6 @@ import { userServiceServer } from "src/services/user";
 import { loggerOptions } from "src/utils/logger";
 
 export async function createServer() {
-
   const server = new Server({
     host: config.HOST,
     port: config.PORT,

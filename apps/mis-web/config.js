@@ -16,12 +16,11 @@ const { readVersionFile } = require("@scow/utils/build/version");
  * @param {string} phase the build phase
  */
 async function queryCapabilities(authUrl, phase) {
-
   if (phase === PHASE_PRODUCTION_SERVER) {
     // @ts-ignore
     return await getCapabilities(authUrl);
   } else {
-    return { changePassword: true, createUser: true, validateName: true, changeEmail: true, deleteUser: true, };
+    return { changePassword: true, createUser: true, validateName: true, changeEmail: true, deleteUser: true };
   }
 }
 
@@ -34,13 +33,22 @@ const specs = {
   AUTH_INTERNAL_URL: str({ desc: "认证服务内网地址", default: "http://auth:5000" }),
 
   PORTAL_DEPLOYED: bool({ desc: "是否部署了门户系统", default: false }),
-  PORTAL_URL: str({ desc: "如果部署了门户系统，门户系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署门户系统", default: "" }),
+  PORTAL_URL: str({
+    desc: "如果部署了门户系统，门户系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署门户系统",
+    default: "",
+  }),
 
   AI_DEPLOYED: bool({ desc: "是否部署了AI系统", default: false }),
-  AI_URL: str({ desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统", default: "" }),
+  AI_URL: str({
+    desc: "如果部署了AI系统，AI系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署AI系统",
+    default: "",
+  }),
 
   QUANTUM_DEPLOYED: bool({ desc: "是否部署了量子系统", default: false }),
-  QUANTUM_URL: str({ desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统", default: "" }),
+  QUANTUM_URL: str({
+    desc: "如果部署了量子系统，量子系统的URL。如果和本系统域名相同，可以只写完整路径。将会覆盖配置文件。空字符串等价于未部署量子系统",
+    default: "",
+  }),
 
   PUBLIC_PATH: str({ desc: "SCOW公共文件的路径，需已包含SCOW的base path", default: "/public/" }),
 
@@ -60,7 +68,6 @@ const config = envConfig(specs, process.env);
  * @returns RuntimeConfig
  */
 const buildRuntimeConfig = async (phase, basePath) => {
-
   // https://github.com/vercel/next.js/issues/57927
   // const building = phase === PHASE_PRODUCTION_BUILD;
   const building = process.env.BUILDING === "1";
@@ -93,7 +100,6 @@ const buildRuntimeConfig = async (phase, basePath) => {
   const versionTag = readVersionFile()?.tag;
 
   const systemLanguageConfig = getSystemLanguageConfig(getCommonConfig().systemLanguage);
-
 
   /**
    * @type {import ("./src/utils/config").ServerRuntimeConfig}
@@ -145,11 +151,11 @@ const buildRuntimeConfig = async (phase, basePath) => {
 
     ACCOUNT_NAME_PATTERN: misConfig.accountNamePattern?.regex,
 
-    PORTAL_URL: config.PORTAL_DEPLOYED ? (config.PORTAL_URL || misConfig.portalUrl || "") : undefined,
+    PORTAL_URL: config.PORTAL_DEPLOYED ? config.PORTAL_URL || misConfig.portalUrl || "" : undefined,
 
-    AI_URL: config.AI_DEPLOYED ? (config.AI_URL || misConfig.aiUrl || "") : undefined,
+    AI_URL: config.AI_DEPLOYED ? config.AI_URL || misConfig.aiUrl || "" : undefined,
 
-    QUANTUM_URL: config.QUANTUM_DEPLOYED ? (config.QUANTUM_URL || misConfig.quantumUrl) : undefined,
+    QUANTUM_URL: config.QUANTUM_DEPLOYED ? config.QUANTUM_URL || misConfig.quantumUrl : undefined,
 
     PASSWORD_PATTERN: commonConfig.passwordPattern?.regex,
 
@@ -199,7 +205,7 @@ const buildRuntimeConfig = async (phase, basePath) => {
     UI_EXTENSION: misConfig.uiExtension,
 
     CHANGE_JOB_LIMIT: {
-      allowUserAndAccountAdmin: misConfig.allowUserChangeJobTimeLimit // 这个是是否允许用户和账户管理员的
+      allowUserAndAccountAdmin: misConfig.allowUserChangeJobTimeLimit, // 这个是是否允许用户和账户管理员的
     },
 
     JOB_CHARGE_METADATA: misConfig.jobChargeMetadata,

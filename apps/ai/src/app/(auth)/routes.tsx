@@ -148,11 +148,7 @@ export const userRoutes: (
               : "";
 
           return {
-            Icon: !link.iconPath ? (
-              DefaultNavLinkIcon
-            ) : (
-              <NavIcon src={join(publicConfig.PUBLIC_PATH, link.iconPath)} />
-            ),
+            Icon: !link.iconPath ? DefaultNavLinkIcon : <NavIcon src={join(publicConfig.PUBLIC_PATH, link.iconPath)} />,
             text: link.text,
             path: parentNavPath,
             clickToPath: parentNavPath,

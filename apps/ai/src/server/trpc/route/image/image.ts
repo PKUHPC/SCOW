@@ -35,7 +35,7 @@ class NoClusterError extends TRPCError {
       message: `Image ${name}:${tag} create failed: there is no available cluster`,
     });
   }
-};
+}
 
 export const ImageListSchema = z.object({
   id: z.number(),
@@ -54,10 +54,10 @@ export const ImageListSchema = z.object({
   createTime: z.string().optional(),
   updateTime: z.string().optional(),
   types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
-  inferServicePort:z.string().optional(),
-  startCommand:z.string().optional(),
-  failedReason:z.string().optional(),
-  isPlatformOwned:z.boolean(),
+  inferServicePort: z.string().optional(),
+  startCommand: z.string().optional(),
+  failedReason: z.string().optional(),
+  isPlatformOwned: z.boolean(),
 });
 
 export const list = procedure
@@ -69,28 +69,30 @@ export const list = procedure
       summary: "Read all images",
     },
   })
-  .input(z.object({
-    ...paginationSchema.shape,
-    nameOrTagOrDesc: z.string().optional(),
-    isPublic: booleanQueryParam().optional(),
-    clusterId: z.string().optional(),
-    withExternal: booleanQueryParam().optional(),
-    // GET请求不能传array类型
-    types: z.string().optional().default(""),
-    isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
-  }))
+  .input(
+    z.object({
+      ...paginationSchema.shape,
+      nameOrTagOrDesc: z.string().optional(),
+      isPublic: booleanQueryParam().optional(),
+      clusterId: z.string().optional(),
+      withExternal: booleanQueryParam().optional(),
+      // GET请求不能传array类型
+      types: z.string().optional().default(""),
+      isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
+    }),
+  )
   .output(z.object({ items: z.array(ImageListSchema), count: z.number() }))
-  .query(async ({ input, ctx:{ user } }) => {
-
+  .query(async ({ input, ctx: { user } }) => {
     const {
       clusterId,
       isPublic,
       nameOrTagOrDesc,
       withExternal,
-      types:rawTypes,
+      types: rawTypes,
       isPlatformOwned,
       pageSize,
-      page } = input;
+      page,
+    } = input;
 
     // 如果查询某一个集群
     if (clusterId) {
@@ -100,8 +102,7 @@ export const list = procedure
     }
 
     const types = rawTypes
-      ? rawTypes.split(",").filter((t): t is ImageType =>
-        Object.values(ImageType).includes(t as ImageType))
+      ? rawTypes.split(",").filter((t): t is ImageType => Object.values(ImageType).includes(t as ImageType))
       : [];
 
     const em = await forkEntityManager();
@@ -109,7 +110,8 @@ export const list = procedure
     // 构建查询条件
     let isPublicQuery: any;
 
-    if (isPlatformOwned) { // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
+    if (isPlatformOwned) {
+      // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
       isPublicQuery = { isPlatformOwned: true };
     } else if (isPublic) {
       isPublicQuery = {
@@ -123,83 +125,87 @@ export const list = procedure
       };
     }
 
-    const nameOrTagOrDescQuery = nameOrTagOrDesc ? {
-      $or: [
-        { name: { $like: `%${nameOrTagOrDesc}%` } },
-        { tag: { $like: `%${nameOrTagOrDesc}%` } },
-        { description: { $like: `%${nameOrTagOrDesc}%` } },
-      ],
-    } : {};
-
-    const typesQuery = types.length > 0
+    const nameOrTagOrDescQuery = nameOrTagOrDesc
       ? {
-        $or: types.map((type) => ({
-          types: { $like: `%${type}%` },
-        })),
-      }
+          $or: [
+            { name: { $like: `%${nameOrTagOrDesc}%` } },
+            { tag: { $like: `%${nameOrTagOrDesc}%` } },
+            { description: { $like: `%${nameOrTagOrDesc}%` } },
+          ],
+        }
       : {};
 
-    const [items, count] = await em.findAndCount(Image, {
-      $and: [
-        nameOrTagOrDescQuery,
-        isPublicQuery,
-        typesQuery,
-        input.clusterId ? (withExternal ? { $or: [{ clusterId }, { clusterId: { $eq: null } }]} : { clusterId }) : {},
-      ],
-    }, {
-      ...paginationProps(page, pageSize),
-      orderBy: isPublic ? { name:"asc" } : { createTime: "desc" },
-    });
+    const typesQuery =
+      types.length > 0
+        ? {
+            $or: types.map((type) => ({
+              types: { $like: `%${type}%` },
+            })),
+          }
+        : {};
 
-    const ownerIds = Array.from(
-      new Set(
-        items
-          .map((item) => item.owner)
-          .filter((owner): owner is string => !!owner),
-      ),
+    const [items, count] = await em.findAndCount(
+      Image,
+      {
+        $and: [
+          nameOrTagOrDescQuery,
+          isPublicQuery,
+          typesQuery,
+          input.clusterId
+            ? withExternal
+              ? { $or: [{ clusterId }, { clusterId: { $eq: null } }] }
+              : { clusterId }
+            : {},
+        ],
+      },
+      {
+        ...paginationProps(page, pageSize),
+        orderBy: isPublic ? { name: "asc" } : { createTime: "desc" },
+      },
     );
+
+    const ownerIds = Array.from(new Set(items.map((item) => item.owner).filter((owner): owner is string => !!owner)));
 
     let ownerNameMap: Record<string, string> = {};
 
-    if (
-      ownerIds.length > 0
-      && config.MIS_DEPLOYED
-      && config.MIS_SERVER_URL
-      && commonConfig.scowApi?.auth?.token
-    ) {
+    if (ownerIds.length > 0 && config.MIS_DEPLOYED && config.MIS_SERVER_URL && commonConfig.scowApi?.auth?.token) {
       try {
         const usersResponse = await libGetUsersByIds(
           ownerIds,
           config.MIS_SERVER_URL,
           commonConfig.scowApi?.auth?.token,
         );
-        ownerNameMap = Object.fromEntries(
-          (usersResponse.users ?? [])
-            .map((user) => [user.userId, user.userName]),
-        );
+        ownerNameMap = Object.fromEntries((usersResponse.users ?? []).map((user) => [user.userId, user.userName]));
       } catch (error) {
-        logger.error({
-          err: error,
-          ownerIds,
-        }, "Failed to load owner names for owner ids");
+        logger.error(
+          {
+            err: error,
+            ownerIds,
+          },
+          "Failed to load owner names for owner ids",
+        );
       }
     }
 
-    return { items: items.map((x) => {
-      return {
-        ...x,
-        owner: x.owner ?? "",
-        ownerId: x.owner ?? undefined,
-        ownerName: x.owner ? ownerNameMap[x.owner] : undefined,
-        isShared: Boolean(x.isShared),
-        createTime: x.createTime ? x.createTime.toISOString() : undefined,
-        updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
-        types:x.types ?? [],
-        inferServicePort:x.inferServicePort,
-        startCommand:x.startCommand,
-        failedReason:x.failedReason,
-        isPlatformOwned: x.isPlatformOwned,
-      }; }), count };
+    return {
+      items: items.map((x) => {
+        return {
+          ...x,
+          owner: x.owner ?? "",
+          ownerId: x.owner ?? undefined,
+          ownerName: x.owner ? ownerNameMap[x.owner] : undefined,
+          isShared: Boolean(x.isShared),
+          createTime: x.createTime ? x.createTime.toISOString() : undefined,
+          updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
+          types: x.types ?? [],
+          inferServicePort: x.inferServicePort,
+          startCommand: x.startCommand,
+          failedReason: x.failedReason,
+          isPlatformOwned: x.isPlatformOwned,
+        };
+      }),
+      count,
+    };
   });
 
 export const getImageById = procedure
@@ -211,19 +217,23 @@ export const getImageById = procedure
       summary: "Get image by id",
     },
   })
-  .input(z.object({
-    imageId:z.number(),
-  }))
-  .output(z.object({
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
-    inferServicePort:z.string().optional(),
-    startCommand:z.string().optional(),
-  }))
-  .query(async ({ input:{ imageId } }) => {
+  .input(
+    z.object({
+      imageId: z.number(),
+    }),
+  )
+  .output(
+    z.object({
+      types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
+      inferServicePort: z.string().optional(),
+      startCommand: z.string().optional(),
+    }),
+  )
+  .query(async ({ input: { imageId } }) => {
     const em = await forkEntityManager();
 
     const image = await em.findOne(Image, {
-      id:imageId,
+      id: imageId,
     });
 
     if (!image) {
@@ -231,12 +241,12 @@ export const getImageById = procedure
         code: "NOT_FOUND",
         message: `Image ${imageId} not found`,
       });
-    };
+    }
 
     return {
       types: image.types ?? [],
-      inferServicePort:image.inferServicePort,
-      startCommand:image.startCommand,
+      inferServicePort: image.inferServicePort,
+      startCommand: image.startCommand,
     };
   });
 
@@ -249,23 +259,24 @@ export const createImage = procedure
       summary: "Create a new image",
     },
   })
-  .input(z.object({
-    name: z.string(),
-    tag: z.string(),
-    description: z.string().optional(),
-    source: z.enum([Source.INTERNAL, Source.EXTERNAL]),
-    sourcePath: z.string(),
-    clusterId: z.string(),
-    userName:z.string().optional(),
-    password:z.string().optional(),
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
-    inferServicePort:z.string().optional(),
-    startCommand:z.string().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      name: z.string(),
+      tag: z.string(),
+      description: z.string().optional(),
+      source: z.enum([Source.INTERNAL, Source.EXTERNAL]),
+      sourcePath: z.string(),
+      clusterId: z.string(),
+      userName: z.string().optional(),
+      password: z.string().optional(),
+      types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
+      inferServicePort: z.string().optional(),
+      startCommand: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.number())
   .mutation(async ({ input, ctx: { user, req } }) => {
-
     const currentClusterIds = await getCurrentClusters(user.identityId);
     if (input.clusterId && !clusterExist(input.clusterId, currentClusterIds)) {
       throw new TRPCError({
@@ -286,16 +297,19 @@ export const createImage = procedure
     // tag的唯一标识符
     const tagPostfix = dayjs().unix().toString();
 
-    const imageNameTagExist = await em.findOne(Image, isPlatformOwned
-      ? { name, tag, isPlatformOwned: true }
-      : { name, tag, owner: user.identityId, isPlatformOwned: false });
+    const imageNameTagExist = await em.findOne(
+      Image,
+      isPlatformOwned
+        ? { name, tag, isPlatformOwned: true }
+        : { name, tag, owner: user.identityId, isPlatformOwned: false },
+    );
 
     if (imageNameTagExist) {
       throw new TRPCError({
         code: "CONFLICT",
         message: `Image's name ${name} with tag ${tag} already exist`,
       });
-    };
+    }
 
     if (isPlatformOwned) {
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
@@ -309,22 +323,24 @@ export const createImage = procedure
 
     // 如果是公共数据资产且为本地上传路径
     if (isPlatformOwned && source === Source.INTERNAL) {
-      const noCheckPermission = shouldPathsSkipPermissionCheck(input.clusterId,
-        [sourcePath], true);
+      const noCheckPermission = shouldPathsSkipPermissionCheck(input.clusterId, [sourcePath], true);
       if (!noCheckPermission) {
-        throw new TRPCError({ code: "FORBIDDEN",
-          message: `${sourcePath} is outside the required PublicPath boundary` });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `${sourcePath} is outside the required PublicPath boundary`,
+        });
       }
     }
 
     // 获取加载镜像的集群节点
     const processClusterId = input.clusterId;
 
-    if (!processClusterId) { throw new NoClusterError(name, tag); }
+    if (!processClusterId) {
+      throw new NoClusterError(name, tag);
+    }
     checkClusterAvailable(currentClusterIds, processClusterId);
 
-    const harborImageUrl =
-    await createHarborImageUrl(name, tag + tagPostfix, user.identityId, logger, isPlatformOwned);
+    const harborImageUrl = await createHarborImageUrl(name, tag + tagPostfix, user.identityId, logger, isPlatformOwned);
 
     // 创建一个状态为 creating 的数据
     const image = new Image({
@@ -352,35 +368,42 @@ export const createImage = procedure
       };
 
       try {
-        await driver.withImageDriver({
-          clusterId:processClusterId,
-          user:user.identityId,
-        },async (imageDriver) => {
-          await imageDriver.createImage({
-            source,
-            sourcePath,
-            name,
-            tag,
-            loginInfo:{ userName,password },
-            harborImageUrl,
-            imageId: image.id,
-            noCheckPermission: isPlatformOwned,
-          });
-        },logger);
+        await driver.withImageDriver(
+          {
+            clusterId: processClusterId,
+            user: user.identityId,
+          },
+          async (imageDriver) => {
+            await imageDriver.createImage({
+              source,
+              sourcePath,
+              name,
+              tag,
+              loginInfo: { userName, password },
+              harborImageUrl,
+              imageId: image.id,
+              noCheckPermission: isPlatformOwned,
+            });
+          },
+          logger,
+        );
 
         // 更新数据库
         image.status = Status.CREATED;
         await em.persistAndFlush(image);
 
-        await callLog({ ...logInfo, operationTypePayload:
+        await callLog(
           {
-            clusterId:input.clusterId,
-            tag,
-            imageId:image.id,
-            imageName:name,
+            ...logInfo,
+            operationTypePayload: {
+              clusterId: input.clusterId,
+              tag,
+              imageId: image.id,
+              imageName: name,
+            },
           },
-        },
-        OperationResult.SUCCESS);
+          OperationResult.SUCCESS,
+        );
 
         return;
       } catch (err: any) {
@@ -388,16 +411,19 @@ export const createImage = procedure
         image.status = Status.FAILURE;
         await em.persistAndFlush(image);
 
-        await callLog({ ...logInfo, operationTypePayload:
+        await callLog(
           {
-            clusterId:input.clusterId,
-            tag,
-            imageName:name,
+            ...logInfo,
+            operationTypePayload: {
+              clusterId: input.clusterId,
+              tag,
+              imageName: name,
+            },
           },
-        },
-        OperationResult.FAIL);
+          OperationResult.FAIL,
+        );
         throw err;
-      };
+      }
     };
 
     createProcess();
@@ -413,16 +439,18 @@ export const updateImage = procedure
       summary: "update a image",
     },
   })
-  .input(z.object({
-    id: z.number(),
-    description: z.string().optional(),
-    types:z.array(z.enum([ImageType.APP, ImageType.TRAIN,ImageType.INFER, ImageType.DEV_HOST])),
-    inferServicePort:z.string().optional(),
-    startCommand:z.string().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      id: z.number(),
+      description: z.string().optional(),
+      types: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
+      inferServicePort: z.string().optional(),
+      startCommand: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.number())
-  .use(async ({ input:{ id }, ctx, next }) => {
+  .use(async ({ input: { id }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -438,32 +466,38 @@ export const updateImage = procedure
         code: "NOT_FOUND",
         message: `Image ${id} not found`,
       });
-    };
+    }
 
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id ,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -481,7 +515,7 @@ export const updateImage = procedure
           code: "NOT_FOUND",
           message: `Image ${id} not found`,
         });
-      };
+      }
 
       if (isPlatformOwned) {
         const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN);
@@ -493,9 +527,8 @@ export const updateImage = procedure
         }
       }
 
-      if (!isPlatformOwned && (image.owner !== user.identityId)) {
-        const detailMessage =
-          `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+      if (!isPlatformOwned && image.owner !== user.identityId) {
+        const detailMessage = `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
         logger.error(detailMessage);
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -522,13 +555,15 @@ export const deleteImage = procedure
       summary: "delete a image",
     },
   })
-  .input(z.object({
-    id: z.number(),
-    force: booleanQueryParam().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      id: z.number(),
+      force: booleanQueryParam().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ id }, ctx, next }) => {
+  .use(async ({ input: { id }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -544,32 +579,38 @@ export const deleteImage = procedure
         code: "NOT_FOUND",
         message: `Image ${id} not found`,
       });
-    };
+    }
 
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id ,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -604,9 +645,8 @@ export const deleteImage = procedure
       }
     }
 
-    if (!isPlatformOwned && (image.owner !== user.identityId)) {
-      const detailMessage =
-        `Image id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
+    if (!isPlatformOwned && image.owner !== user.identityId) {
+      const detailMessage = `Image id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -629,8 +669,8 @@ export const deleteImage = procedure
     const harbor = new HarborClient(harborConfig);
     // 获取harbor中的reference以删除镜像
     const getReferenceRes = await harbor.getReference({
-      userId:user.identityId,
-      imageName:image.name,
+      userId: user.identityId,
+      imageName: image.name,
       isPlatformOwned,
     });
 
@@ -663,17 +703,21 @@ export const deleteImage = procedure
     let reference = "";
     let targetArtifactTagCount = 0;
 
-    const allTagsCount = referenceRes.reduce((sum: number, item: { tags?: { name: string }[] }) =>
-      sum + (item.tags?.length ?? 0), 0);
+    const allTagsCount = referenceRes.reduce(
+      (sum: number, item: { tags?: { name: string }[] }) => sum + (item.tags?.length ?? 0),
+      0,
+    );
     // 判断是否是唯一的标签，如果是需要删除上级的特定Artifact
     let needDeleteRepository: boolean = false;
 
     for (const item of referenceRes) {
-      if (item.tags?.length > 0 && item.tags.find((i: { name: string }) =>
-        i.name === image.tag + (image.tagPostfix ?? ""))) {
+      if (
+        item.tags?.length > 0 &&
+        item.tags.find((i: { name: string }) => i.name === image.tag + (image.tagPostfix ?? ""))
+      ) {
         reference = item.digest;
         targetArtifactTagCount = item.tags?.length ?? 0;
-        needDeleteRepository = (allTagsCount === 1);
+        needDeleteRepository = allTagsCount === 1;
         break;
       }
     }
@@ -688,11 +732,10 @@ export const deleteImage = procedure
     // 如果上面的tag是最相同imageName下相同镜像的最后一个标签，则删除整个Repository
     if (needDeleteRepository) {
       const deleteRepository = await harbor.deleteRepository({
-        userId:user.identityId,
-        imageName:image.name,
+        userId: user.identityId,
+        imageName: image.name,
         isPlatformOwned,
       });
-
 
       // harbor 删除出错，但状态本身就是失败时无需操作
       if (!deleteRepository.ok) {
@@ -706,13 +749,13 @@ export const deleteImage = procedure
         });
       }
 
-    // 如果上面的tag不是相同imageName下相同镜像的最后一个标签，则只删除该标签
+      // 如果上面的tag不是相同imageName下相同镜像的最后一个标签，则只删除该标签
     } else {
       const deleteRes = await harbor.deleteTag({
-        userId:user.identityId,
-        imageName:image.name,
+        userId: user.identityId,
+        imageName: image.name,
         reference,
-        imageTag:image.tag,
+        imageTag: image.tag,
         imageTagPostfix: image.tagPostfix ?? "",
         isPlatformOwned,
       });
@@ -732,8 +775,8 @@ export const deleteImage = procedure
       // 删除 tag 后如果该 artifact 不再被其它 tag 引用，则删除 artifact
       if (targetArtifactTagCount <= 1) {
         const deleteArtifactRes = await harbor.deleteArtifact({
-          userId:user.identityId,
-          imageName:image.name,
+          userId: user.identityId,
+          imageName: image.name,
           reference,
         });
 
@@ -760,7 +803,7 @@ export const shareOrUnshareImage = procedure
   })
   .input(z.object({ id: z.number(), share: z.boolean(), isPlatformOwned: z.boolean().optional() }))
   .output(z.void())
-  .use(async ({ input:{ id, share }, ctx, next }) => {
+  .use(async ({ input: { id, share }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -776,32 +819,38 @@ export const shareOrUnshareImage = procedure
         code: "NOT_FOUND",
         message: `Image ${id} not found`,
       });
-    };
+    }
 
     const res = await next({ ctx });
 
     if (share && res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (share && !res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:{
-          imageId:id,
-          clusterId:image.clusterId ?? "",
-          imageName:image.name,
-          tag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            imageId: id,
+            clusterId: image.clusterId ?? "",
+            imageName: image.name,
+            tag: image.tag,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -817,7 +866,7 @@ export const shareOrUnshareImage = procedure
         code: "NOT_FOUND",
         message: `Image ${id} not found`,
       });
-    };
+    }
 
     if (image.status === Status.CREATING) {
       throw new TRPCError({
@@ -837,8 +886,7 @@ export const shareOrUnshareImage = procedure
     }
 
     if (!isPlatformOwned && image.owner !== user.identityId) {
-      const detailMessage =
-        `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
+      const detailMessage = `Image id:${id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -852,7 +900,6 @@ export const shareOrUnshareImage = procedure
     return;
   });
 
-
 export const copyImage = procedure
   .meta({
     openapi: {
@@ -862,20 +909,20 @@ export const copyImage = procedure
       summary: "copy a image",
     },
   })
-  .input(z.object(
-    {
+  .input(
+    z.object({
       id: z.number(),
       newName: z.string(),
       newTag: z.string(),
-      clusterId:z.optional(z.string()),
-      newTypes:z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
-      newInferServicePort:z.string().optional(),
-      newStartCommand:z.string().optional(),
-      newDescription:z.string().optional(),
-    },
-  ))
+      clusterId: z.optional(z.string()),
+      newTypes: z.array(z.enum([ImageType.APP, ImageType.TRAIN, ImageType.INFER, ImageType.DEV_HOST])),
+      newInferServicePort: z.string().optional(),
+      newStartCommand: z.string().optional(),
+      newDescription: z.string().optional(),
+    }),
+  )
   .output(z.number())
-  .use(async ({ input:{ id, newTag,newName,clusterId }, ctx, next }) => {
+  .use(async ({ input: { id, newTag, newName, clusterId }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -891,46 +938,51 @@ export const copyImage = procedure
         code: "NOT_FOUND",
         message: `Image ${id} not found`,
       });
-    };
+    }
 
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:
-        { sourceImageId:id,
-          targetImageId:res.data as number,
-          targetImageTag:newTag,
-          targetImageName:newName,
-          clusterId:clusterId ?? "",
-          sourceImageName:image.name,
-          sourceImageTag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            sourceImageId: id,
+            targetImageId: res.data as number,
+            targetImageTag: newTag,
+            targetImageName: newName,
+            clusterId: clusterId ?? "",
+            sourceImageName: image.name,
+            sourceImageTag: image.tag,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo,
-        operationTypePayload:
-        { sourceImageId:id,
-          targetImageTag:newTag,
-          targetImageName:newName,
-          clusterId:clusterId ?? "",
-          sourceImageName:image.name,
-          sourceImageTag:image.tag,
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            sourceImageId: id,
+            targetImageTag: newTag,
+            targetImageName: newName,
+            clusterId: clusterId ?? "",
+            sourceImageName: image.name,
+            sourceImageTag: image.tag,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-
     const em = await forkEntityManager();
 
-    const { id, newName, newTag, clusterId,newTypes,newInferServicePort,newStartCommand,newDescription } = input;
+    const { id, newName, newTag, clusterId, newTypes, newInferServicePort, newStartCommand, newDescription } = input;
 
     // tag的唯一标识符
     const tagPostfix = dayjs().unix().toString();
@@ -942,7 +994,7 @@ export const copyImage = procedure
         code: "NOT_FOUND",
         message: `Shared Image ${id} not found`,
       });
-    };
+    }
 
     if (!sharedImage.path || !sharedImage.sourcePath) {
       throw new TRPCError({
@@ -951,14 +1003,18 @@ export const copyImage = procedure
       });
     }
 
-    const imageNameTagsExist = await em.findOne(Image,
-      { name: newName, tag: newTag, owner: user.identityId, isPlatformOwned: false });
+    const imageNameTagsExist = await em.findOne(Image, {
+      name: newName,
+      tag: newTag,
+      owner: user.identityId,
+      isPlatformOwned: false,
+    });
     if (imageNameTagsExist) {
       throw new TRPCError({
         code: "CONFLICT",
         message: `Image's name ${newName} with tag ${newTag} already exist`,
       });
-    };
+    }
 
     // 数据库创建一条状态为创建中的数据
     const image = new Image({
@@ -971,16 +1027,18 @@ export const copyImage = procedure
       status: Status.CREATING,
       description: newDescription,
       clusterId,
-      types:newTypes,
-      inferServicePort:newInferServicePort,
-      startCommand:newStartCommand,
+      types: newTypes,
+      inferServicePort: newInferServicePort,
+      startCommand: newStartCommand,
     });
     await em.persistAndFlush(image);
 
     // 使用原来镜像的集群，防止集群架构不同
     const processClusterId = clusterId ?? getSortedClusterIds(clusters)[0];
 
-    if (!processClusterId) { throw new NoClusterError(newName, newTag); }
+    if (!processClusterId) {
+      throw new NoClusterError(newName, newTag);
+    }
 
     const currentClusterIds = await getCurrentClusters(user.identityId);
     checkClusterAvailable(currentClusterIds, processClusterId);
@@ -994,22 +1052,25 @@ export const copyImage = procedure
       }
 
       try {
-        const harborImageUrl = await createHarborImageUrl(newName, newTag + tagPostfix, user.identityId,logger);
+        const harborImageUrl = await createHarborImageUrl(newName, newTag + tagPostfix, user.identityId, logger);
 
-        await driver.withImageDriver({
-          clusterId:processClusterId,
-          user:user.identityId,
-        },async (imageDriver) => {
-          await imageDriver.copyImage({
-            imageId:id,
-            sourcePath:sharedImage.path,
-            newName,
-            newTag,
-            harborImageUrl,
-            newImageId: image.id,
-          });
-        },
-        logger);
+        await driver.withImageDriver(
+          {
+            clusterId: processClusterId,
+            user: user.identityId,
+          },
+          async (imageDriver) => {
+            await imageDriver.copyImage({
+              imageId: id,
+              sourcePath: sharedImage.path,
+              newName,
+              newTag,
+              harborImageUrl,
+              newImageId: image.id,
+            });
+          },
+          logger,
+        );
 
         image.status = Status.CREATED;
         image.path = harborImageUrl;
@@ -1026,7 +1087,6 @@ export const copyImage = procedure
 
     copyProcess();
     return image.id;
-
   });
 
 export const getImageQuota = procedure
@@ -1039,10 +1099,12 @@ export const getImageQuota = procedure
     },
   })
   .input(z.void())
-  .output(z.object({
-    totalGB:z.number(),
-    usedGB:z.number(),
-  }))
+  .output(
+    z.object({
+      totalGB: z.number(),
+      usedGB: z.number(),
+    }),
+  )
   .query(async ({ ctx: { user } }) => {
     const projectName = getUserHarborProjectName(user.identityId);
 
@@ -1067,10 +1129,7 @@ export const getImageQuota = procedure
       const storageGiB = cfg?.storage_per_project;
 
       // 未开启或值异常时，按无限处理（-1）
-      const totalGB =
-        typeof storageGiB === "number"
-          ? (storageGiB === -1 ? -1 : +(storageGiB).toFixed(2))
-          : -1;
+      const totalGB = typeof storageGiB === "number" ? (storageGiB === -1 ? -1 : +storageGiB.toFixed(2)) : -1;
 
       // 规范化：如果没启用也视为无限
       return {
@@ -1085,7 +1144,7 @@ export const getImageQuota = procedure
 
       if (!res.ok) {
         const err: any = new Error(`Harbor project summary error: ${res.status}`);
-        (err.status = res.status);
+        err.status = res.status;
         throw err;
       }
       const data = await res.json();
@@ -1138,7 +1197,6 @@ export const getImageCreationLog = procedure
   .input(ImageCreationLogReqSchema)
   .output(ImageCreationLogResSchema)
   .query(async ({ input }) => {
-
     const { id, skip, limit, lastQueriedOperation } = input;
     const limitSkipSize = limit ? limit : DEFAULT_CHUNK_SIZE;
 
@@ -1151,15 +1209,9 @@ export const getImageCreationLog = procedure
         code: "NOT_FOUND",
         message: `Creating image ${id} not found`,
       });
-    };
+    }
 
-    const result = getCurrentImageCreationLog(
-      id,
-      skip,
-      limitSkipSize,
-      logger,
-      lastQueriedOperation,
-    );
+    const result = getCurrentImageCreationLog(id, skip, limitSkipSize, logger, lastQueriedOperation);
 
     return result;
   });

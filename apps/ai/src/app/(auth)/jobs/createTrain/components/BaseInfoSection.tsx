@@ -1,10 +1,9 @@
+import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
+import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { createK8sNameValidator } from "@scow/lib-web/build/utils/form";
 import { Form, type FormInstance } from "antd";
 import { InlineFormItem } from "src/app/(auth)/jobs/CustomFormItem";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-
-import { FormLabel as Label } from "@scow/lib-web/build/components/styledAntdCom/Form";
-import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 
 import type { BaseFormValues } from "../LaunchTrainForm.types";
 
@@ -20,26 +19,14 @@ export const BaseInfoSection = ({ form, jobName, onJobNameChange }: BaseInfoSect
   const t = useI18nTranslateToString();
 
   return (
-    <Form
-      form={form}
-      colon={false}
-      requiredMark={false}
-      initialValues={{ appJobName: jobName }}
-    >
+    <Form form={form} colon={false} requiredMark={false} initialValues={{ appJobName: jobName }}>
       <InlineFormItem
         name="appJobName"
         label={<Label>{t(p("jobNameLabel"))}</Label>}
         helpTip={t(p("jobNameHelp"))}
-        rules={[
-          { required: true, message: t(p("jobNameRequired")) },
-          createK8sNameValidator(t(p("jobNameRule"))),
-        ]}
+        rules={[{ required: true, message: t(p("jobNameRequired")) }, createK8sNameValidator(t(p("jobNameRule")))]}
       >
-        <RoundedInput
-          size="large"
-          value={jobName}
-          onChange={(event) => onJobNameChange(event.target.value)}
-        />
+        <RoundedInput size="large" value={jobName} onChange={(event) => onJobNameChange(event.target.value)} />
       </InlineFormItem>
     </Form>
   );

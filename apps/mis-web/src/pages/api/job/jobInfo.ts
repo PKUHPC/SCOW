@@ -2,9 +2,18 @@ import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import {
-  GetJobsRequest, GetJobsRequest_SortBy as SortBy, JobFilter, JobServiceClient, JobsOfAccountAndUserTarget,
-  JobsOfAccountTarget, JobsOfJobIdAndAccountTarget, JobsOfJobIdAndUserTarget, JobsOfJobIdsTarget,
-  JobsOfJobIdTarget, JobsOfTenantTarget, JobsOfUserTarget,
+  GetJobsRequest,
+  GetJobsRequest_SortBy as SortBy,
+  JobFilter,
+  JobServiceClient,
+  JobsOfAccountAndUserTarget,
+  JobsOfAccountTarget,
+  JobsOfJobIdAndAccountTarget,
+  JobsOfJobIdAndUserTarget,
+  JobsOfJobIdsTarget,
+  JobsOfJobIdTarget,
+  JobsOfTenantTarget,
+  JobsOfUserTarget,
 } from "@scow/protos/build/server/job";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
@@ -17,25 +26,24 @@ import { parseJobIds } from "src/utils/jobIds";
 import { route } from "src/utils/route";
 
 export const mapJobSortByType = {
-  "idJob": SortBy.ID_JOB,
-  "account": SortBy.ACCOUNT,
-  "cluster": SortBy.CLUSTER,
-  "jobName": SortBy.JOB_NAME,
-  "partition": SortBy.PARTITION,
-  "price": SortBy.PRICE,
-  "qos": SortBy.QOS,
-  "timeEnd": SortBy.TIME_END,
-  "timeSubmit": SortBy.TIME_SUBMIT,
-  "user": SortBy.USER,
+  idJob: SortBy.ID_JOB,
+  account: SortBy.ACCOUNT,
+  cluster: SortBy.CLUSTER,
+  jobName: SortBy.JOB_NAME,
+  partition: SortBy.PARTITION,
+  price: SortBy.PRICE,
+  qos: SortBy.QOS,
+  timeEnd: SortBy.TIME_END,
+  timeSubmit: SortBy.TIME_SUBMIT,
+  user: SortBy.USER,
 } as Record<string, SortBy>;
 
 export const mapJobSortOrderType = {
-  "descend": SortOrder.DESCEND,
-  "ascend": SortOrder.ASCEND,
+  descend: SortOrder.DESCEND,
+  ascend: SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const GetJobFilter = Type.Object({
-
   /**
    * @format date-time
    */
@@ -110,7 +118,6 @@ export const GetJobsResponse = Type.Object({
 export type GetJobsResponse = Static<typeof GetJobsResponse>;
 
 export const GetJobInfoSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
@@ -139,23 +146,35 @@ export const GetJobInfoSchema = typeboxRouteSchema({
 });
 
 export const getJobInfo = async (request: GetJobsRequest) => {
-
   const client = getClient(JobServiceClient);
 
   return await asyncClientCall(client, "getJobs", request);
 };
 
-export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
-
-  const auth = authenticate((u) =>
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+export default /* #__PURE__*/ route(GetJobInfoSchema, async (req, res) => {
+  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
-  const { page = 1, accountName, userId, userIdOrName, ownerIdOrName, jobEndTimeEnd, jobEndTimeStart, jobId,
-    clusters, pageSize, sortBy, sortOrder, jobIds } = req.query;
+  const {
+    page = 1,
+    accountName,
+    userId,
+    userIdOrName,
+    ownerIdOrName,
+    jobEndTimeEnd,
+    jobEndTimeStart,
+    jobId,
+    clusters,
+    pageSize,
+    sortBy,
+    sortOrder,
+    jobIds,
+  } = req.query;
 
   const trimmedIds = parseJobIds(jobIds);
 
@@ -171,9 +190,9 @@ export default /* #__PURE__*/route(GetJobInfoSchema, async (req, res) => {
   };
 
   if (
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-    || userId === info.identityId
-    || (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
+    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+    userId === info.identityId ||
+    (accountName && info.accountAffiliations.find((x) => x.accountName === accountName))
   ) {
     filter.userId = userId;
     filter.userIdOrName = userIdOrName?.trim() || undefined;
@@ -222,7 +241,6 @@ export const buildJobsRequestTarget = (
   | { $case: "jobsOfJobIds"; jobsOfJobIds: JobsOfJobIdsTarget }
   | { $case: "jobsOfJobIdAndUser"; jobsOfJobIdAndUser: JobsOfJobIdAndUserTarget }
   | { $case: "jobsOfJobIdAndAccount"; jobsOfJobIdAndAccount: JobsOfJobIdAndAccountTarget } => {
-
   if (jobIds && jobIds.length > 0) {
     return {
       $case: "jobsOfJobIds",

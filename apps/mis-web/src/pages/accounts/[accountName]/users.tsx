@@ -14,55 +14,52 @@ import { Head } from "src/utils/head";
 
 const p = prefix("page.accounts.accountName.users.");
 
-export const UsersPage: NextPage = requireAuth(
-  (i) => i.accountAffiliations.some((x) => x.role !== UserRole.USER),
-)(
-  ({ userStore }) => {
+export const UsersPage: NextPage = requireAuth((i) => i.accountAffiliations.some((x) => x.role !== UserRole.USER))(({
+  userStore,
+}) => {
+  const accountName = useAccountPagesAccountName();
+  const t = useI18nTranslateToString();
 
-    const accountName = useAccountPagesAccountName();
-    const t = useI18nTranslateToString();
+  const account = userStore.user.accountAffiliations.find((x) => x.accountName === accountName);
+  // 如果因为管理员自己取消了自己的管理权限或者在账户下移出了自己
+  // 当前账户已不在登录用户的账户关联关系下，或者权限已不是拥有者或管理员
+  // 则返回错误页面
+  if (!account || account.role === UserRole.USER) {
+    return <NotFoundPage />;
+  }
 
-    const account = userStore.user.accountAffiliations.find((x) => x.accountName === accountName);
-    // 如果因为管理员自己取消了自己的管理权限或者在账户下移出了自己
-    // 当前账户已不在登录用户的账户关联关系下，或者权限已不是拥有者或管理员
-    // 则返回错误页面
-    if (!account || account.role === UserRole.USER) {
-      return <NotFoundPage />;
-    }
-
-    const promiseFn = useCallback(async () => {
-      return await api.getAccountUsers({ query: {
+  const promiseFn = useCallback(async () => {
+    return await api.getAccountUsers({
+      query: {
         accountName,
-      } });
-    }, [accountName]);
+      },
+    });
+  }, [accountName]);
 
-    const [refreshToken, update] = useRefreshToken();
+  const [refreshToken, update] = useRefreshToken();
 
-    const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
+  const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
 
-    const title = t(p("title"), [accountName]);
+  const title = t(p("title"), [accountName]);
 
-    return (
-      <div>
-        <Head title={title} />
-        <PageTitle
-          titleText={title}
-        >
-        </PageTitle>
-        <UserTable
-          data={data}
-          isLoading={isLoading}
-          reload={reload}
-          update={update}
-          accountName={accountName}
-          canSetAdmin={account.role === UserRole.OWNER}
-          getJobsPageUrl={(userId) => ({
-            pathname: `/accounts/${accountName}/userJobs`,
-            query: { userId },
-          })}
-        />
-      </div>
-    );
-  });
+  return (
+    <div>
+      <Head title={title} />
+      <PageTitle titleText={title}></PageTitle>
+      <UserTable
+        data={data}
+        isLoading={isLoading}
+        reload={reload}
+        update={update}
+        accountName={accountName}
+        canSetAdmin={account.role === UserRole.OWNER}
+        getJobsPageUrl={(userId) => ({
+          pathname: `/accounts/${accountName}/userJobs`,
+          query: { userId },
+        })}
+      />
+    </div>
+  );
+});
 
 export default UsersPage;

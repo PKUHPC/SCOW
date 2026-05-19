@@ -4,6 +4,6 @@ import { config } from "src/server/config/env";
 import { scowConfig } from "src/server/config/scow";
 
 export const getScowClient = getClientFn(
-  config.MIS_SERVER_URL ||
-  scowConfig.misServerUrl,
-  commonConfig.scowApi?.auth?.token);
+  config.MIS_SERVER_URL || scowConfig.misServerUrl,
+  commonConfig.scowApi?.auth?.token,
+);

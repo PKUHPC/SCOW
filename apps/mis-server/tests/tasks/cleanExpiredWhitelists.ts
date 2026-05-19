@@ -58,15 +58,13 @@ describe("cleanExpiredWhitelists", () => {
     const foundWhitelist = await checkEm.findOne(AccountWhitelist, { id: whitelist.id });
     expect(foundWhitelist).toBeNull();
 
-    const account = await checkEm.findOne(Account, { id: data.accountA.id }, { populate: ["whitelist"]});
+    const account = await checkEm.findOne(Account, { id: data.accountA.id }, { populate: ["whitelist"] });
     expect(account?.whitelist).toBeUndefined();
   });
 
   it("should wait for sync task and then process expired whitelists", async () => {
     // Sync task runs once then finishes
-    (checkRunningSyncTask as jest.Mock)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+    (checkRunningSyncTask as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
     // Create an expired whitelist
     const expiredDate = new Date();

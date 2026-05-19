@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -22,9 +10,7 @@ import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { SearchType } from "src/models/job";
 import { OperationResult } from "src/models/operationLog";
-import {
-  TenantRole,
-} from "src/models/User";
+import { TenantRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { buildJobsRequestTarget } from "src/pages/api/job/jobInfo";
 import { callLog } from "src/server/operationLog";
@@ -32,7 +18,9 @@ import { getClient } from "src/utils/client";
 import { getClusterName } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
 import {
-  createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
   getCsvStringify,
 } from "src/utils/file";
 import { parseJobIds } from "src/utils/jobIds";
@@ -72,8 +60,7 @@ export const ExportJobRecordSchema = typeboxRouteSchema({
 
 export default route(ExportJobRecordSchema, async (req, res) => {
   // 和getJobInfo的auth保持一致
-  const auth = authenticate((u) =>
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
+  const auth = authenticate((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN) || u.accountAffiliations.length > 0);
 
   const info = await auth(req, res);
 
@@ -83,9 +70,23 @@ export default route(ExportJobRecordSchema, async (req, res) => {
 
   const { query } = req;
 
-  const { columns, jobEndTimeStart, jobEndTimeEnd, accountName, count,
-    userId, userIdOrName, ownerIdOrName,
-    encoding, timeZone, jobId, jobIds, finalPriceText, searchType, publicConfigClusters } = query;
+  const {
+    columns,
+    jobEndTimeStart,
+    jobEndTimeEnd,
+    accountName,
+    count,
+    userId,
+    userIdOrName,
+    ownerIdOrName,
+    encoding,
+    timeZone,
+    jobId,
+    jobIds,
+    finalPriceText,
+    searchType,
+    publicConfigClusters,
+  } = query;
   let { clusters } = query;
 
   const trimmedIds = parseJobIds(jobIds);
@@ -106,7 +107,6 @@ export default route(ExportJobRecordSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
     const client = getClient(ExportServiceClient);
 
@@ -148,15 +148,9 @@ export default route(ExportJobRecordSchema, async (req, res) => {
         partition: x.partition,
         qos: x.qos,
         nodelist: x.nodelist,
-        timeSubmit: x.timeSubmit ? new Date(x.timeSubmit).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
-        timeStart: x.timeStart ? new Date(x.timeStart).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
-        timeEnd: x.timeEnd ? new Date(x.timeEnd).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
+        timeSubmit: x.timeSubmit ? new Date(x.timeSubmit).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
+        timeStart: x.timeStart ? new Date(x.timeStart).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
+        timeEnd: x.timeEnd ? new Date(x.timeEnd).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
         nodesReq: x.nodesReq,
         nodesAlloc: x.nodesAlloc,
         cpusReq: x.cpusReq,
@@ -169,13 +163,11 @@ export default route(ExportJobRecordSchema, async (req, res) => {
         timeWait: x.timeWait,
         tenantPrice: nullableMoneyToString(x.tenantPrice),
         accountPrice: nullableMoneyToString(x.accountPrice),
-        recordTime: x.recordTime ? new Date(x.recordTime).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
+        recordTime: x.recordTime ? new Date(x.recordTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
       };
     };
 
-    const finalPriceTextObj: { tenant?: string; account?: string; } = JSON.parse(finalPriceText ? finalPriceText : "");
+    const finalPriceTextObj: { tenant?: string; account?: string } = JSON.parse(finalPriceText ? finalPriceText : "");
 
     const clusterColumnsName = searchType === SearchType.NORMAL ? t(pCommon("clusterName")) : t(pCommon("cluster"));
 
@@ -232,4 +224,3 @@ export default route(ExportJobRecordSchema, async (req, res) => {
     );
   }
 });
-

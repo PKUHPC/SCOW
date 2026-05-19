@@ -15,7 +15,7 @@ import { trpc } from "src/server/trpc/api";
 import { AssignedClustersPartitionsSchema } from "src/server/trpc/route/partitions/tenantClusterPartitions";
 
 interface Props {
-  operationType: PartitionOperationType
+  operationType: PartitionOperationType;
   // 要授权的租户名或账户名
   assignedTenantName: string;
   assignedAccountName?: string;
@@ -29,7 +29,7 @@ interface Props {
   languageId: string;
   currentClustersData?: Cluster[];
   currentClustersDataFetching: boolean;
-  noPartitionClusterNames: string[],
+  noPartitionClusterNames: string[];
   accountOwnerId?: string;
   accountOwnerName?: string;
 }
@@ -42,8 +42,8 @@ interface DisplayedPartition {
 }
 
 interface FormFields {
-  clusterId: string,
-  partition: string,
+  clusterId: string;
+  partition: string;
 }
 
 interface FilterForm {
@@ -67,7 +67,6 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
   accountOwnerId,
   accountOwnerName,
 }) => {
-
   const { clusterSortedIdList } = usePublicConfig();
 
   const [form] = Form.useForm<FormFields>();
@@ -82,40 +81,35 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
   const [query, setQuery] = useState<FilterForm>(initialFilterQuery);
 
   const displayedTotalPartitionList = useMemo(() => {
-
     if (!assignedInfo) return;
-    const clusterStateMap = new Map(
-      assignedInfo.assignedClusters.map((c) => [c.clusterId, c.assignmentState]),
-    );
-    const clusterSortedIdMap = Object.fromEntries(
-      clusterSortedIdList.map((id, index) => [id, index]),
-    );
+    const clusterStateMap = new Map(assignedInfo.assignedClusters.map((c) => [c.clusterId, c.assignmentState]));
+    const clusterSortedIdMap = Object.fromEntries(clusterSortedIdList.map((id, index) => [id, index]));
 
-    const filteredData = assignedInfo?.assignedPartitions?.map((item) => {
-      return {
-        ...item,
-        selectable: clusterStateMap.get(item.clusterId) === AssignmentState.ASSIGNED,
-      };
-    }).sort((a, b) => {
-      // 先使用 clusterSortedIdList 的索引进行排序
-      const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
-      const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
-      // cluster 索引不同时，按 cluster 顺序排序
-      if (aIndex !== bIndex) {
-        return aIndex - bIndex;
-      }
-      // cluster 索引相同时，按 partition 名称排序
-      return (a.partition ?? "").localeCompare(b.partition ?? "");
-    });
+    const filteredData = assignedInfo?.assignedPartitions
+      ?.map((item) => {
+        return {
+          ...item,
+          selectable: clusterStateMap.get(item.clusterId) === AssignmentState.ASSIGNED,
+        };
+      })
+      .sort((a, b) => {
+        // 先使用 clusterSortedIdList 的索引进行排序
+        const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
+        const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
+        // cluster 索引不同时，按 cluster 顺序排序
+        if (aIndex !== bIndex) {
+          return aIndex - bIndex;
+        }
+        // cluster 索引相同时，按 partition 名称排序
+        return (a.partition ?? "").localeCompare(b.partition ?? "");
+      });
 
     return filteredData;
-  }, [assignedInfo,
-    currentClustersData,
-    clusterSortedIdList,
-  ]);
+  }, [assignedInfo, currentClustersData, clusterSortedIdList]);
 
-  const [filteredPartitionList, setFilteredPartitionList] =
-    useState<DisplayedPartition[] | undefined>(displayedTotalPartitionList);
+  const [filteredPartitionList, setFilteredPartitionList] = useState<DisplayedPartition[] | undefined>(
+    displayedTotalPartitionList,
+  );
 
   useEffect(() => {
     const { cluster, partition } = query;
@@ -128,7 +122,6 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
       });
       setFilteredPartitionList(filteredData);
     }
-
   }, [query, displayedTotalPartitionList]);
 
   const assignTenantPartitionMutation = trpc.partitions.assignTenantPartition.useMutation({
@@ -173,7 +166,6 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     },
   });
 
-
   const assignAccountPartitionMutation = trpc.partitions.assignAccountPartition.useMutation({
     onSuccess() {
       message.success(language.clusterPartitionManagement.setPartitionAssignmentModal.accountAssignedSuccessMessage);
@@ -216,11 +208,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     },
   });
 
-
-  const assignPartition = async (
-    clusterId: string,
-    partition: string,
-  ) => {
+  const assignPartition = async (clusterId: string, partition: string) => {
     if (operationType === PartitionOperationType.TENANT_OPERATION) {
       await assignTenantPartitionMutation.mutateAsync({
         tenantName: assignedTenantName,
@@ -237,11 +225,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
     }
   };
 
-
-  const unAssignPartition = async (
-    clusterId: string,
-    partition: string,
-  ) => {
+  const unAssignPartition = async (clusterId: string, partition: string) => {
     if (operationType === PartitionOperationType.TENANT_OPERATION) {
       await unAssignTenantPartitionMutation.mutateAsync({
         tenantName: assignedTenantName,
@@ -273,25 +257,27 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
       footer={null}
       width={800}
     >
-      <Form
-        form={form}
-      >
-        {
-          operationType === PartitionOperationType.TENANT_OPERATION ? (
-            <div style={{ marginBottom: "20px" }}>
-              <span>{language.common.tenant}：{assignedTenantName}</span>
+      <Form form={form}>
+        {operationType === PartitionOperationType.TENANT_OPERATION ? (
+          <div style={{ marginBottom: "20px" }}>
+            <span>
+              {language.common.tenant}：{assignedTenantName}
+            </span>
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: "8px" }}>
+              <span>
+                {language.common.account}：{assignedAccountName}
+              </span>
             </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: "8px" }}>
-                <span>{language.common.account}：{assignedAccountName}</span>
-              </div>
-              <div>
-                <span>{language.common.accountOwner}：{`${accountOwnerName}（ID: ${accountOwnerId}）`}</span>
-              </div>
-            </>
-          )
-        }
+            <div>
+              <span>
+                {language.common.accountOwner}：{`${accountOwnerName}（ID: ${accountOwnerId}）`}
+              </span>
+            </div>
+          </>
+        )}
       </Form>
       <FilterFormContainerWithoutBorder style={{ display: "flex", justifyContent: "space-between" }}>
         <Form<FilterForm>
@@ -304,11 +290,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
           }}
         >
           <Form.Item label={language.common.cluster} name="cluster">
-            <SingleClusterSelector
-              languageId={languageId}
-              allowClear={true}
-              currentClusters={currentClustersData!}
-            />
+            <SingleClusterSelector languageId={languageId} allowClear={true} currentClusters={currentClustersData!} />
           </Form.Item>
           <Form.Item name="partition">
             <Input allowClear placeholder={language.common.partitionInputPlaceholder} />
@@ -319,28 +301,20 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
         </Form>
       </FilterFormContainerWithoutBorder>
 
-      {
-        filteredPartitionList?.length === 0
-          && (
-            <div style={{ marginBottom: "20px" }}>
-              {
-                operationType === PartitionOperationType.ACCOUNT_OPERATION ?
-                  language.clusterPartitionManagement.common.noAccountDisplayedPartitions :
-                  language.clusterPartitionManagement.common.noTenantDisplayedPartitions
-              }
-            </div>
-          )
-      }
-      {
-        noPartitionClusterNames.length > 0 && filteredPartitionList && filteredPartitionList.length > 0
-          && (
-            <div style={{ marginBottom: "20px" }}>
-              {getCurrentLangTextArgs(
-                language.clusterPartitionManagement.common.someClusterPartitionsFailed,
-                [noPartitionClusterNames.join(", ")])}
-            </div>
-          )
-      }
+      {filteredPartitionList?.length === 0 && (
+        <div style={{ marginBottom: "20px" }}>
+          {operationType === PartitionOperationType.ACCOUNT_OPERATION
+            ? language.clusterPartitionManagement.common.noAccountDisplayedPartitions
+            : language.clusterPartitionManagement.common.noTenantDisplayedPartitions}
+        </div>
+      )}
+      {noPartitionClusterNames.length > 0 && filteredPartitionList && filteredPartitionList.length > 0 && (
+        <div style={{ marginBottom: "20px" }}>
+          {getCurrentLangTextArgs(language.clusterPartitionManagement.common.someClusterPartitionsFailed, [
+            noPartitionClusterNames.join(", "),
+          ])}
+        </div>
+      )}
       <Table
         tableLayout="fixed"
         dataSource={filteredPartitionList}
@@ -354,7 +328,7 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
           title={language.common.cluster}
           width="40%"
           render={(_, r) => {
-            const clusterName = currentClustersData?.find((cluster) => (cluster.id === r.clusterId))?.name;
+            const clusterName = currentClustersData?.find((cluster) => cluster.id === r.clusterId)?.name;
             return clusterName ? getI18nConfigCurrentText(clusterName, languageId) : r.clusterId;
           }}
         />
@@ -373,12 +347,11 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
                 </Space>
                 <Divider type="vertical" />
                 <Tag color={r.assignmentState === AssignmentState.ASSIGNED ? "green" : "red"}>
-                  {r.assignmentState === AssignmentState.ASSIGNED ?
-                    language.clusterPartitionManagement.common.assignedState :
-                    language.clusterPartitionManagement.common.unAssignedState}
+                  {r.assignmentState === AssignmentState.ASSIGNED
+                    ? language.clusterPartitionManagement.common.assignedState
+                    : language.clusterPartitionManagement.common.unAssignedState}
                 </Tag>
               </>
-
             );
           }}
         />
@@ -390,35 +363,33 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
           align="center"
           render={(_, r) => (
             <Space>
-              {
-                r.assignmentState === AssignmentState.ASSIGNED && (
-                  <a onClick={() => {
-                    const contentTexts = operationType === PartitionOperationType.TENANT_OPERATION
-                      ? getCurrentLangTextArgs(
-                        language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
-                          r.clusterId, r.partition, assignedTenantName,
-                        ])
-                      : getCurrentLangTextArgs(
-                        language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent, [
-                          r.clusterId, r.partition, assignedAccountName,
-                        ]);
+              {r.assignmentState === AssignmentState.ASSIGNED && (
+                <a
+                  onClick={() => {
+                    const contentTexts =
+                      operationType === PartitionOperationType.TENANT_OPERATION
+                        ? getCurrentLangTextArgs(
+                            language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent,
+                            [r.clusterId, r.partition, assignedTenantName],
+                          )
+                        : getCurrentLangTextArgs(
+                            language.clusterPartitionManagement.setPartitionAssignmentModal.unAssignContent,
+                            [r.clusterId, r.partition, assignedAccountName],
+                          );
                     modal.confirm({
                       title: language.common.unassign,
                       icon: <ExclamationCircleOutlined />,
                       content: (
                         <>
-                          <p>
-                            {contentTexts}
-                          </p>
-                          {
-                            operationType === PartitionOperationType.TENANT_OPERATION &&
-                            (
-                              <p style={{ color: "red" }}>
-                                {language.clusterPartitionManagement.
-                                  setPartitionAssignmentModal.unAssignTenantPartitionExplanation}
-                              </p>
-                            )
-                          }
+                          <p>{contentTexts}</p>
+                          {operationType === PartitionOperationType.TENANT_OPERATION && (
+                            <p style={{ color: "red" }}>
+                              {
+                                language.clusterPartitionManagement.setPartitionAssignmentModal
+                                  .unAssignTenantPartitionExplanation
+                              }
+                            </p>
+                          )}
                         </>
                       ),
                       onOk: async () => {
@@ -426,47 +397,45 @@ export const PartitionAssignmentModal: React.FC<Props> = ({
                         await unAssignPartition(r.clusterId, r.partition!);
                       },
                     });
-
                   }}
-                  >
-                    {language.common.unassign}
-                  </a>
-                )}
-              {
-                r.assignmentState === AssignmentState.UNASSIGNED && (
-                  <Tooltip
-                    title={!r.selectable ? language.globalMessage.unassignPartitionWithoutAssignedClusterWarn : ""}
-                  >
-                    <Button
-                      type="link"
-                      disabled={!r.selectable}
-                      onClick={() => {
-                        const operationTarget = operationType === PartitionOperationType.TENANT_OPERATION
-                          ? `${language.common.tenant }${assignedTenantName}`
+                >
+                  {language.common.unassign}
+                </a>
+              )}
+              {r.assignmentState === AssignmentState.UNASSIGNED && (
+                <Tooltip
+                  title={!r.selectable ? language.globalMessage.unassignPartitionWithoutAssignedClusterWarn : ""}
+                >
+                  <Button
+                    type="link"
+                    disabled={!r.selectable}
+                    onClick={() => {
+                      const operationTarget =
+                        operationType === PartitionOperationType.TENANT_OPERATION
+                          ? `${language.common.tenant}${assignedTenantName}`
                           : `${language.common.account}${assignedAccountName}`;
-                        modal.confirm({
-                          title: language.common.assign,
-                          icon: <ExclamationCircleOutlined />,
-                          content: getCurrentLangTextArgs(
-                            language.clusterPartitionManagement.setPartitionAssignmentModal.assignContent,
-                            [r.clusterId, r.partition, operationTarget]),
-                          onOk: async () => {
-                            // 对租户/账户授权;
-                            await assignPartition(r.clusterId, r.partition!);
-                          },
-                        });
-                      }}
-                    >
-                      {language.common.assign}
-                    </Button>
-                  </Tooltip>
-                )}
+                      modal.confirm({
+                        title: language.common.assign,
+                        icon: <ExclamationCircleOutlined />,
+                        content: getCurrentLangTextArgs(
+                          language.clusterPartitionManagement.setPartitionAssignmentModal.assignContent,
+                          [r.clusterId, r.partition, operationTarget],
+                        ),
+                        onOk: async () => {
+                          // 对租户/账户授权;
+                          await assignPartition(r.clusterId, r.partition!);
+                        },
+                      });
+                    }}
+                  >
+                    {language.common.assign}
+                  </Button>
+                </Tooltip>
+              )}
             </Space>
           )}
         />
       </Table>
-
     </Modal>
-
   );
 };

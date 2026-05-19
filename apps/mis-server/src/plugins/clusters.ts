@@ -3,7 +3,9 @@ import { Logger, plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { ClusterConfigSchema, getLoginNode } from "@scow/config/build/cluster";
 import {
-  createAdapterCertificates, getSchedulerAdapterClient, SchedulerAdapterClient,
+  createAdapterCertificates,
+  getSchedulerAdapterClient,
+  SchedulerAdapterClient,
 } from "@scow/lib-scheduler-adapter";
 import { getScowdClient } from "@scow/lib-scowd/build/client";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
@@ -15,7 +17,7 @@ import { certificates as scowdCertificates, generateScowdUrl } from "src/utils/s
 
 type CallOnAllResult<T> = {
   cluster: string;
-  result: T
+  result: T;
 }[];
 
 // Throw ServiceError if failed.
@@ -41,14 +43,13 @@ type CallOnOneClient = <T>(
   call: (client: SchedulerAdapterClient) => Promise<T>,
 ) => Promise<T>;
 
-
 export interface ClusterPlugin {
   clusters: {
     callOnAll: CallOnAll;
     callOnOne: CallOnOne;
     callOnOneClient: CallOnOneClient;
-  }
-};
+  };
+}
 
 export const CLUSTEROPS_ERROR_CODE = "CLUSTEROPS_ERROR";
 export const ADAPTER_CALL_ON_ONE_ERROR = "ADAPTER_CALL_ON_ONE_ERROR";
@@ -56,13 +57,11 @@ export const ADAPTER_CALL_ON_ONE_ERROR = "ADAPTER_CALL_ON_ONE_ERROR";
 export const certificates = createAdapterCertificates(config);
 
 export const clustersPlugin = plugin(async (f) => {
-
   // initial clusters database
   const configClusterIds = Object.keys(configClusters);
   await updateCluster(f.ext.orm.em.fork(), configClusterIds, f.logger);
 
   if (process.env.NODE_ENV === "production") {
-
     // only check activated clusters' root user login when system is starting
     const activatedClusters = await getActivatedClusters(f.ext.orm.em.fork(), f.logger).catch((e) => {
       f.logger.info("!!![important] No available activated clusters.This will skip root ssh login check in cluster!!!");
@@ -70,53 +69,59 @@ export const clustersPlugin = plugin(async (f) => {
       return {};
     });
 
-    await Promise.all(Object.values(activatedClusters).map(async ({ displayName, scowd, loginNodes }) => {
-      const loginNode = getLoginNode(loginNodes[0]);
-      const address = loginNode.address;
-      const node = loginNode.name;
-      const scowdPort = loginNode.scowdPort;
+    await Promise.all(
+      Object.values(activatedClusters).map(async ({ displayName, scowd, loginNodes }) => {
+        const loginNode = getLoginNode(loginNodes[0]);
+        const address = loginNode.address;
+        const node = loginNode.name;
+        const scowdPort = loginNode.scowdPort;
 
-      if (scowd?.enabled && scowdPort) {
-        f.logger.info("Checking whether scowd on cluster %s is running normally", displayName);
-        const scowdUrl = generateScowdUrl(address, scowdPort);
-        const client = getScowdClient(scowdUrl, scowdCertificates);
+        if (scowd?.enabled && scowdPort) {
+          f.logger.info("Checking whether scowd on cluster %s is running normally", displayName);
+          const scowdUrl = generateScowdUrl(address, scowdPort);
+          const client = getScowdClient(scowdUrl, scowdCertificates);
 
-        try {
-          await client.system.checkHealth({}, { timeoutMs: 10000 });
-          f.logger.info("Scowd runs normally on the login node %s of cluster %s.", node, displayName);
-        } catch (err) {
-          f.logger.info("Scowd is not functioning properly on cluster %s. err: %o",
-            displayName, err);
-        }
-      } else {
-        f.logger.info("Checking if root can login to %s by login node %s", displayName, node);
-        const error = await testRootUserSshLogin(address, rootKeyPair, f.logger);
-        if (error) {
-          f.logger.info("Root cannot login to %s by login node %s. err: %o", displayName, node, error);
+          try {
+            await client.system.checkHealth({}, { timeoutMs: 10000 });
+            f.logger.info("Scowd runs normally on the login node %s of cluster %s.", node, displayName);
+          } catch (err) {
+            f.logger.info("Scowd is not functioning properly on cluster %s. err: %o", displayName, err);
+          }
         } else {
-          f.logger.info("Root can login to %s by login node %s", displayName, node);
+          f.logger.info("Checking if root can login to %s by login node %s", displayName, node);
+          const error = await testRootUserSshLogin(address, rootKeyPair, f.logger);
+          if (error) {
+            f.logger.info("Root cannot login to %s by login node %s. err: %o", displayName, node, error);
+          } else {
+            f.logger.info("Root can login to %s by login node %s", displayName, node);
+          }
         }
-      }
-    }));
-
+      }),
+    );
   }
 
   // adapterClient of all config clusters
-  const adapterClientForClusters = Object.entries(configClusters).reduce((prev, [cluster, c]) => {
-    const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+  const adapterClientForClusters = Object.entries(configClusters).reduce(
+    (prev, [cluster, c]) => {
+      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
 
-    prev[cluster] = client;
+      prev[cluster] = client;
 
-    return prev;
-  }, {} as Record<string, SchedulerAdapterClient>);
+      return prev;
+    },
+    {} as Record<string, SchedulerAdapterClient>,
+  );
 
   // adapterClients of activated clusters
   const getAdapterClientForActivatedClusters = (clustersParam: Record<string, ClusterConfigSchema>) => {
-    return Object.entries(clustersParam).reduce((prev, [cluster, c]) => {
-      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
-      prev[cluster] = client;
-      return prev;
-    }, {} as Record<string, SchedulerAdapterClient>);
+    return Object.entries(clustersParam).reduce(
+      (prev, [cluster, c]) => {
+        const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+        prev[cluster] = client;
+        return prev;
+      },
+      {} as Record<string, SchedulerAdapterClient>,
+    );
   };
 
   const getAdapterClient = (cluster: string) => {
@@ -126,9 +131,7 @@ export const clustersPlugin = plugin(async (f) => {
   f.logger.child({ plugin: "cluster" });
 
   const clustersPlugin = {
-
     callOnOne: (async (cluster, logger, call) => {
-
       const client = getAdapterClient(cluster);
 
       if (!client) {
@@ -143,78 +146,89 @@ export const clustersPlugin = plugin(async (f) => {
         const errorDetail = e instanceof Error ? e : JSON.stringify(e);
 
         const reason = "Cluster ID : " + cluster + ", Details : " + errorDetail.toString();
-        const clusterErrorDetails = [{
-          clusterId: cluster,
-          details: errorDetail,
-        }];
+        const clusterErrorDetails = [
+          {
+            clusterId: cluster,
+            details: errorDetail,
+          },
+        ];
 
         // 统一错误处理
         if (e instanceof Error) {
           throw new ServiceError({
             code: status.INTERNAL,
             details: reason,
-            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR,
-              { clusterErrors: JSON.stringify(clusterErrorDetails) }),
+            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR, {
+              clusterErrors: JSON.stringify(clusterErrorDetails),
+            }),
           });
-        // 如果是已经封装过的grpc error, 直接抛出错误
+          // 如果是已经封装过的grpc error, 直接抛出错误
         } else {
           throw e;
         }
-
       });
     }) as CallOnOne,
 
     callOnOneClient: (async (cluster, logger, clusterClient, call) => {
-
       logger.info("Calling actions on cluster " + cluster);
 
       return await call(clusterClient).catch((e) => {
-
         logger.error("Cluster ops fails at %o", e);
 
         const errorDetail = e instanceof Error ? e : JSON.stringify(e);
 
         const reason = "Cluster ID : " + cluster + ", Details : " + errorDetail.toString();
-        const clusterErrorDetails = [{
-          clusterId: cluster,
-          details: errorDetail,
-        }];
+        const clusterErrorDetails = [
+          {
+            clusterId: cluster,
+            details: errorDetail,
+          },
+        ];
 
         // 统一错误处理
         if (e instanceof Error) {
           throw new ServiceError({
             code: status.INTERNAL,
             details: reason,
-            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR,
-              { clusterErrors: JSON.stringify(clusterErrorDetails) }),
+            metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR, {
+              clusterErrors: JSON.stringify(clusterErrorDetails),
+            }),
           });
-        // 如果是已经封装过的grpc error, 直接抛出错误
+          // 如果是已经封装过的grpc error, 直接抛出错误
         } else {
           throw e;
         }
-
       });
     }) as CallOnOneClient,
 
-
     // throws error if failed.
     callOnAll: (async (clusters, logger, call) => {
-
       const adapterClientForActivatedClusters = getAdapterClientForActivatedClusters(clusters);
 
-      const responses = await Promise.all(Object.entries(adapterClientForActivatedClusters)
-        .map(async ([cluster, client]) => {
-          return call(client).then((result) => {
-            logger.info("Executing on %s success", cluster);
-            return { cluster, success: true, result };
-          }).catch((e) => {
-            logger.error(e, "Executing on %s failed", cluster);
-            return { cluster, success: false, error: e };
-          });
-        }));
+      const responses = await Promise.all(
+        Object.entries(adapterClientForActivatedClusters).map(async ([cluster, client]) => {
+          return call(client)
+            .then((result) => {
+              logger.info("Executing on %s success", cluster);
+              return { cluster, success: true, result };
+            })
+            .catch((e) => {
+              logger.error(e, "Executing on %s failed", cluster);
+              return { cluster, success: false, error: e };
+            });
+        }),
+      );
 
-      interface SuccessResponse<T> { cluster: string; success: boolean; result: T; }
-      interface ErrorResponse { cluster: string; success: boolean; error: any; }
+      interface SuccessResponse<T> {
+        cluster: string;
+        success: boolean;
+        result: T;
+      }
+      interface ErrorResponse {
+        cluster: string;
+        success: boolean;
+        error: any;
+      }
 
       function isSuccessResponse<T>(response: SuccessResponse<T> | ErrorResponse): response is SuccessResponse<T> {
         return response.success === true;
@@ -244,7 +258,6 @@ export const clustersPlugin = plugin(async (f) => {
       }
 
       return results;
-
     }) as CallOnAll,
   };
 

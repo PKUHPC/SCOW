@@ -27,17 +27,18 @@ export const CreateInitAdminSchema = typeboxRouteSchema({
     }),
     400: Type.Object({ code: Type.Literal("USER_ID_NOT_VALID") }),
 
-    409: Type.Object({ code: Type.Union([
-      Type.Literal("ALREADY_INITIALIZED"),
-      Type.Literal("ALREADY_EXISTS_IN_SCOW"),
-    ]) }),
+    409: Type.Object({
+      code: Type.Union([Type.Literal("ALREADY_INITIALIZED"), Type.Literal("ALREADY_EXISTS_IN_SCOW")]),
+    }),
   },
 });
 
 export default route(CreateInitAdminSchema, async (req) => {
   const result = await queryIfInitialized();
 
-  if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
+  if (result) {
+    return { 409: { code: "ALREADY_INITIALIZED" as const } };
+  }
 
   const { email, identityId, name, password } = req.body;
 
@@ -46,18 +47,25 @@ export default route(CreateInitAdminSchema, async (req) => {
   const userIdRule = getUserIdRule(languageId);
 
   if (userIdRule && !userIdRule.pattern.test(identityId)) {
-    return { 400: {
-      code: "USER_ID_NOT_VALID" as const,
-      message: userIdRule.message,
-    } };
+    return {
+      400: {
+        code: "USER_ID_NOT_VALID" as const,
+        message: userIdRule.message,
+      },
+    };
   }
 
   const client = getClient(InitServiceClient);
   return await asyncClientCall(client, "createInitAdmin", {
-    email, name, userId: identityId, password,
-  }).then((res) => ({ 200: { createdInAuth: res.createdInAuth } }))
-    .catch(handlegRPCError({
-      [Status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS_IN_SCOW" as const } }),
-    }));
+    email,
+    name,
+    userId: identityId,
+    password,
+  })
+    .then((res) => ({ 200: { createdInAuth: res.createdInAuth } }))
+    .catch(
+      handlegRPCError({
+        [Status.ALREADY_EXISTS]: () => ({ 409: { code: "ALREADY_EXISTS_IN_SCOW" as const } }),
+      }),
+    );
 });
-

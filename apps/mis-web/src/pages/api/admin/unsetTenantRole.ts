@@ -14,7 +14,6 @@ import { queryIfInitialized } from "src/utils/init";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
-
 export const UnsetTenantRoleSchema = typeboxRouteSchema({
   method: "PUT",
 
@@ -37,23 +36,27 @@ export default route(UnsetTenantRoleSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: roleType === TenantRole.TENANT_ADMIN
-      ? OperationType.unsetTenantAdmin
-      : OperationType.unsetTenantFinance,
-    operationTypePayload:{
-      tenantName: DEFAULT_TENANT_NAME, userId,
+    operationTypeName:
+      roleType === TenantRole.TENANT_ADMIN ? OperationType.unsetTenantAdmin : OperationType.unsetTenantFinance,
+    operationTypePayload: {
+      tenantName: DEFAULT_TENANT_NAME,
+      userId,
     },
   };
 
   if (await queryIfInitialized()) {
-    const auth = authenticate((u) =>
-      u.tenantRoles.includes(TenantRole.TENANT_ADMIN) &&
-    !(u.identityId === userId && roleType === TenantRole.TENANT_ADMIN));
+    const auth = authenticate(
+      (u) =>
+        u.tenantRoles.includes(TenantRole.TENANT_ADMIN) &&
+        !(u.identityId === userId && roleType === TenantRole.TENANT_ADMIN),
+    );
     const info = await auth(req, res);
     if (info) {
       logInfo.operatorUserId = info.identityId;
       logInfo.operationTypePayload.tenantName = info.tenant;
-    } else { return; }
+    } else {
+      return;
+    }
   }
 
   const client = getClient(UserServiceClient);
@@ -66,10 +69,13 @@ export default route(UnsetTenantRoleSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

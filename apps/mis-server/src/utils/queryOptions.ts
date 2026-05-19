@@ -1,6 +1,7 @@
 import { QueryOrderMap } from "@mikro-orm/core";
 import { SortOrder } from "@scow/protos/build/common/sort_order";
-import { GetPaginatedChargeRecordsRequest_SortBy as ChargesSortBy,
+import {
+  GetPaginatedChargeRecordsRequest_SortBy as ChargesSortBy,
   GetPaymentRecordsRequest_SortBy as PaymentRecordsSortBy,
 } from "@scow/protos/build/server/charging";
 import { GetJobsRequest_SortBy } from "@scow/protos/build/server/job";
@@ -16,8 +17,6 @@ export const mapUsersSortField = {
   [GetAllUsersRequest_UsersSortField.CREATE_TIME]: "createTime",
 };
 
-
-
 // generate query options of all users
 // with options: paginationProps, orderBy
 export const generateAllUsersQueryOptions = (
@@ -32,8 +31,10 @@ export const generateAllUsersQueryOptions = (
 } => {
   return {
     ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-    orderBy: (sortField !== undefined && sortOrder !== undefined) ?
-      { [mapUsersSortField[sortField]]: sortOrder === SortDirection.ASC ? "ASC" : "DESC" } : undefined,
+    orderBy:
+      sortField !== undefined && sortOrder !== undefined
+        ? { [mapUsersSortField[sortField]]: sortOrder === SortDirection.ASC ? "ASC" : "DESC" }
+        : undefined,
   };
 };
 
@@ -59,15 +60,14 @@ export const generateGetJobsOptions = (
   sortBy?: GetJobsRequest_SortBy,
   sortOrder?: SortOrder,
 ) => {
-
   return {
     ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-    orderBy: (sortBy !== undefined && sortOrder !== undefined) ?
-      { [mapJobsSortField[sortBy]]:
-        sortOrder === SortOrder.ASCEND ? "ASC" : "DESC" } : undefined,
+    orderBy:
+      sortBy !== undefined && sortOrder !== undefined
+        ? { [mapJobsSortField[sortBy]]: sortOrder === SortOrder.ASCEND ? "ASC" : "DESC" }
+        : undefined,
   };
 };
-
 
 // generate query options of all charges
 // with options: paginationProps, orderBy
@@ -78,7 +78,6 @@ export const mapChargesSortField = {
   [ChargesSortBy.AMOUNT]: "amount",
 };
 
-
 export const generateChargersOptions = (
   page: number,
   pageSize?: number,
@@ -87,9 +86,10 @@ export const generateChargersOptions = (
 ) => {
   return {
     ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-    orderBy: (sortBy !== undefined && sortOrder !== undefined) ?
-      { [mapChargesSortField[sortBy]]:
-        sortOrder === SortOrder.ASCEND ? "ASC" : "DESC" } : undefined,
+    orderBy:
+      sortBy !== undefined && sortOrder !== undefined
+        ? { [mapChargesSortField[sortBy]]: sortOrder === SortOrder.ASCEND ? "ASC" : "DESC" }
+        : undefined,
   };
 };
 

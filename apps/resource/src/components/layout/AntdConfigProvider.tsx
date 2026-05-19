@@ -15,32 +15,31 @@ type Props = React.PropsWithChildren<{
 const StyledComponentsThemeProvider: React.FC<Props> = ({ children }) => {
   const { token } = theme.useToken();
 
-  return (
-    <ThemeProvider theme={{ token }}>
-      {children}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={{ token }}>{children}</ThemeProvider>;
 };
 
 export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor, color }) => {
-
   const { scowDark, scowLangId } = useContext(ScowParamsContext);
 
   const { defaultColor, darkModeColor = defaultColor } = primaryColor; // 解构时设置默认值
   let currentPrimaryColor = scowDark ? darkModeColor : defaultColor;
-  currentPrimaryColor = currentPrimaryColor ?? color;// useConfig.isLoading时
+  currentPrimaryColor = currentPrimaryColor ?? color; // useConfig.isLoading时
 
   return (
     <ConfigProvider
-      locale={ scowLangId === "zh_cn" ? zhCNlocale : enUSlocale}
-      theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-        colorText: scowDark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif" },
-      algorithm: scowDark ? theme.darkAlgorithm : undefined }}
+      locale={scowLangId === "zh_cn" ? zhCNlocale : enUSlocale}
+      theme={{
+        token: {
+          colorPrimary: currentPrimaryColor,
+          colorInfo: currentPrimaryColor,
+          colorText: scowDark ? "#ffffff" : "#434343",
+          fontFamily: "MiSans, sans-serif",
+        },
+        algorithm: scowDark ? theme.darkAlgorithm : undefined,
+      }}
     >
       <StyledComponentsThemeProvider color={currentPrimaryColor} primaryColor={primaryColor}>
-        <App>
-          {children}
-        </App>
+        <App>{children}</App>
       </StyledComponentsThemeProvider>
     </ConfigProvider>
   );

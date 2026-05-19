@@ -11,7 +11,6 @@ import { runtimeConfig } from "src/utils/config";
 import { parseIp } from "src/utils/server";
 
 export const UnlockUserSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -33,40 +32,38 @@ export const UnlockUserSchema = typeboxRouteSchema({
   },
 });
 
+export default /* #__PURE__*/ typeboxRoute(UnlockUserSchema, async (req, res) => {
+  const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default /* #__PURE__*/typeboxRoute(
-  UnlockUserSchema, async (req, res) => {
+  const info = await auth(req, res);
 
-    const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
+  const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
+  if (!ldapCapabilities.lockUser) {
+    return { 501: null };
+  }
 
-    if (!info) { return; }
+  const { identityId } = req.body;
 
-    const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
-    if (!ldapCapabilities.lockUser) {
-      return { 501: null };
-    }
+  const logInfo = {
+    operatorUserId: info.identityId,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.unlockUser,
+    operationTypePayload: {
+      identityId: identityId,
+    },
+  };
 
-    const { identityId } = req.body;
-
-    const logInfo = {
-      operatorUserId: info.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.unlockUser,
-      operationTypePayload:{
-        identityId: identityId,
-      },
-    };
-
-    return await unlockUser(runtimeConfig.AUTH_INTERNAL_URL, { identityId }, console)
-      .then(async () => {
-        await callLog(logInfo, OperationResult.SUCCESS);
-        return { 204: null };
-      })
-      .catch(async (e) => {
-        await callLog(logInfo, OperationResult.FAIL);
-        return { [e.status]: null };
-      });
-
-  });
+  return await unlockUser(runtimeConfig.AUTH_INTERNAL_URL, { identityId }, console)
+    .then(async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    })
+    .catch(async (e) => {
+      await callLog(logInfo, OperationResult.FAIL);
+      return { [e.status]: null };
+    });
+});

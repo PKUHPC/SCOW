@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Server } from "@ddadaal/tsgrpc-server";
 import { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal } from "@scow/lib-decimal";
@@ -28,25 +16,22 @@ import { dropDatabase } from "tests/data/helpers";
 
 import testData from "./testData.json";
 
-
 let data: InitialData;
 let server: Server;
 
 let initialEm: SqlEntityManager<MySqlDriver>;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   initialEm = server.ext.orm.em.fork();
 
   await createPriceItems(initialEm, server.logger);
 
-  const priceTtems = await initialEm.find(JobPriceItem,{});
-  priceTtems.map((i) => i.createTime = new Date("2020-01-13T03:20:26.715Z"));
+  const priceTtems = await initialEm.find(JobPriceItem, {});
+  priceTtems.map((i) => (i.createTime = new Date("2020-01-13T03:20:26.715Z")));
   await initialEm.persistAndFlush(priceTtems);
   data = await insertInitialData(initialEm);
-
 });
 
 afterEach(async () => {
@@ -55,7 +40,6 @@ afterEach(async () => {
 });
 
 it("fetches the data", async () => {
-
   // set job charge limit of user b in account b
   const currentActivatedClusters = await getActivatedClusters(initialEm, server.logger);
 
@@ -71,12 +55,15 @@ it("fetches the data", async () => {
   expect(jobs).toBeArrayOfSize(testData.length);
 
   const wrongPrices = [] as {
-    tenantPrice: { expected: number; actual: number }; accountPrice: { expected: number; actual: number }
+    tenantPrice: { expected: number; actual: number };
+    accountPrice: { expected: number; actual: number };
   }[];
 
   testData.forEach((t) => {
-    const job = jobs.find((x) => x.cluster === t.cluster && x.idJob === t.jobId)
-    ?? { accountPrice: new Decimal(-1), tenantPrice: new Decimal(-1) };
+    const job = jobs.find((x) => x.cluster === t.cluster && x.idJob === t.jobId) ?? {
+      accountPrice: new Decimal(-1),
+      tenantPrice: new Decimal(-1),
+    };
     if (job.tenantPrice.toNumber() !== t.tenantPrice || job.accountPrice.toNumber() !== t.accountPrice) {
       wrongPrices.push({
         tenantPrice: { expected: t.tenantPrice, actual: job.tenantPrice.toNumber() },
@@ -119,34 +106,38 @@ it("fetches the data", async () => {
 });
 
 it("jobs can be imported when jobs from other clusters already exist in the database", async () => {
-  const existedJob = new JobInfo({
-    events: [],
-    pods: [],
-    uniqueJobName: "",
-    cluster: "hpc02",
-    jobId: 1,
-    account: "",
-    user: "",
-    partition: "",
-    nodeList: "",
-    name: "",
-    gpusAlloc: 0,
-    cpusReq: 0,
-    memReqMb: 0,
-    nodesReq: 0,
-    cpusAlloc: 0,
-    memAllocMb: 0,
-    nodesAlloc: 0,
-    timeLimitMinutes: 0,
-    elapsedSeconds: 0,
-    qos: "",
-    submitTime: "2022-01-13T03:20:26.715Z",
-    startTime: "2022-01-13T03:20:26.715Z",
-    endTime: "2022-01-13T03:20:26.715Z",
-    state: "COMPLETED",
-    workingDirectory: "",
-    "gpusReq": 0,
-  }, undefined, emptyJobPriceInfo());
+  const existedJob = new JobInfo(
+    {
+      events: [],
+      pods: [],
+      uniqueJobName: "",
+      cluster: "hpc02",
+      jobId: 1,
+      account: "",
+      user: "",
+      partition: "",
+      nodeList: "",
+      name: "",
+      gpusAlloc: 0,
+      cpusReq: 0,
+      memReqMb: 0,
+      nodesReq: 0,
+      cpusAlloc: 0,
+      memAllocMb: 0,
+      nodesAlloc: 0,
+      timeLimitMinutes: 0,
+      elapsedSeconds: 0,
+      qos: "",
+      submitTime: "2022-01-13T03:20:26.715Z",
+      startTime: "2022-01-13T03:20:26.715Z",
+      endTime: "2022-01-13T03:20:26.715Z",
+      state: "COMPLETED",
+      workingDirectory: "",
+      gpusReq: 0,
+    },
+    undefined,
+    emptyJobPriceInfo(),
+  );
 
   const em = server.ext.orm.em.fork();
 

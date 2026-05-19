@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { RefreshLink, useRefreshToken } from "@scow/lib-web/build/utils/refreshToken";
 import { NextPage } from "next";
 import { useCallback } from "react";
@@ -22,10 +10,8 @@ import { PlatformRole } from "src/models/User";
 import { AccountTable } from "src/pageComponents/accounts/AccountTable";
 import { Head } from "src/utils/head";
 
-
-export const AccountListPage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
-
+export const AccountListPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
+  () => {
     const t = useI18nTranslateToString();
     const languageId = useI18n().currentLanguage.id;
 
@@ -43,15 +29,10 @@ export const AccountListPage: NextPage =
         <PageTitle titleText={t("common.accountList")}>
           <RefreshLink refresh={update} languageId={languageId} />
         </PageTitle>
-        <AccountTable
-          data={data}
-          isLoading={isLoading}
-          reload={reload}
-          showedTab={"PLATFORM"}
-        />
+        <AccountTable data={data} isLoading={isLoading} reload={reload} showedTab={"PLATFORM"} />
       </div>
     );
-
-  });
+  },
+);
 
 export default AccountListPage;

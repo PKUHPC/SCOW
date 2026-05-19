@@ -78,19 +78,22 @@ const TenantJobBillingTableContent: React.FC<{ tenant: string }> = ({ tenant }) 
   const { data, isLoading, reload } = useAsync({
     promiseFn: useCallback(async () => {
       // 租户是固定的，查询所有集群数据，以便在前端进行筛选
-      return await api.getBillingItems({
-        query: {
-          tenant: tenant,
-          activeOnly: false,
-          currentActivatedClusterIds,
-          clusterSortedIdList: clusterSortedIdList,
-        },
-      }).httpError(409, () => {
-        message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
-        return undefined;
-      }).then((result) => {
-        return result;
-      });
+      return await api
+        .getBillingItems({
+          query: {
+            tenant: tenant,
+            activeOnly: false,
+            currentActivatedClusterIds,
+            clusterSortedIdList: clusterSortedIdList,
+          },
+        })
+        .httpError(409, () => {
+          message.error(t("common.failedGetTenantAssignedClustersAndPartitions"));
+          return undefined;
+        })
+        .then((result) => {
+          return result;
+        });
     }, [tenant, currentActivatedClusterIds, clusterSortedIdList]),
     defer: true,
   });
@@ -111,28 +114,31 @@ const TenantJobBillingTableContent: React.FC<{ tenant: string }> = ({ tenant }) 
   }, [fetchedPartitions]);
 
   // 前端筛选逻辑 - 使用已提交的筛选条件
-  const filterBillingItem = useCallback((item: BillingItemType) => {
-    let passesCluster = true;
-    let passesPartition = true;
-    let passesQos = true;
+  const filterBillingItem = useCallback(
+    (item: BillingItemType) => {
+      let passesCluster = true;
+      let passesPartition = true;
+      let passesQos = true;
 
-    // 1. 集群筛选 (前端筛选)
-    if (submittedCluster) {
-      passesCluster = item.cluster === submittedCluster.id;
-    }
+      // 1. 集群筛选 (前端筛选)
+      if (submittedCluster) {
+        passesCluster = item.cluster === submittedCluster.id;
+      }
 
-    // 2. 分区筛选
-    if (submittedPartitionId) {
-      passesPartition = item.partition === submittedPartitionId;
-    }
+      // 2. 分区筛选
+      if (submittedPartitionId) {
+        passesPartition = item.partition === submittedPartitionId;
+      }
 
-    // 3. QoS 筛选
-    if (submittedQos) {
-      passesQos = item.qos === submittedQos;
-    }
+      // 3. QoS 筛选
+      if (submittedQos) {
+        passesQos = item.qos === submittedQos;
+      }
 
-    return passesCluster && passesPartition && passesQos;
-  }, [submittedCluster, submittedPartitionId, submittedQos]);
+      return passesCluster && passesPartition && passesQos;
+    },
+    [submittedCluster, submittedPartitionId, submittedQos],
+  );
 
   const filteredData = useMemo(() => {
     if (!data) return undefined;
@@ -171,9 +177,9 @@ const TenantJobBillingTableContent: React.FC<{ tenant: string }> = ({ tenant }) 
 
   return (
     <div>
-      {currentActivatedClusterIds.length === 0 &&
+      {currentActivatedClusterIds.length === 0 && (
         <div style={{ marginBottom: 20 }}>{t("common.noAvailableClusters")}</div>
-      }
+      )}
       <FilterFormContainer>
         <Form layout="inline" style={{ marginTop: 8 }}>
           <Form.Item label={t(pCommon("cluster"))}>
@@ -243,21 +249,19 @@ const TenantJobBillingTableContent: React.FC<{ tenant: string }> = ({ tenant }) 
   );
 };
 
-export const TenantAdminJobBillingTablePage: NextPage = requireAuth(
-  (x) => x.tenantRoles.includes(TenantRole.TENANT_ADMIN),
-)(
-  ({ userStore }) => {
-    const tenant = userStore.user.tenant;
-    const t = useI18nTranslateToString();
+export const TenantAdminJobBillingTablePage: NextPage = requireAuth((x) =>
+  x.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+)(({ userStore }) => {
+  const tenant = userStore.user.tenant;
+  const t = useI18nTranslateToString();
 
-    return (
-      <div>
-        <Head title={t(p("manageTenantJobPriceTable"))} />
-        <PageTitle titleText={t("common.jobBillingTable")} />
-        <TenantJobBillingTableContent tenant={tenant} />
-      </div>
-    );
-  },
-);
+  return (
+    <div>
+      <Head title={t(p("manageTenantJobPriceTable"))} />
+      <PageTitle titleText={t("common.jobBillingTable")} />
+      <TenantJobBillingTableContent tenant={tenant} />
+    </div>
+  );
+});
 
 export default TenantAdminJobBillingTablePage;

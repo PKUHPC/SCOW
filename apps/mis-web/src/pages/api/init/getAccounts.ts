@@ -22,10 +22,11 @@ export const InitGetAccountsSchema = typeboxRouteSchema({
 });
 
 export default route(InitGetAccountsSchema, async () => {
-
   const result = await queryIfInitialized();
 
-  if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
+  if (result) {
+    return { 409: { code: "ALREADY_INITIALIZED" as const } };
+  }
 
   const client = getClient(AccountServiceClient);
 
@@ -42,5 +43,4 @@ export default route(InitGetAccountsSchema, async () => {
       })),
     },
   };
-
 });

@@ -2,16 +2,12 @@ import { JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runti
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { type api } from "src/apis/api";
 import { TimeUnit } from "src/models/job";
-export type MockApi<TApi extends Record<
-  string,
-  (...args: any[]) => JsonFetchResultPromiseLike<any>>,
-> = {[key in keyof TApi]: null | (
-    (...args: Parameters<TApi[key]>) =>
-    Promise<
-      ReturnType<TApi[key]> extends PromiseLike<infer TSuc>
-        ? TSuc
-        : never
-    >)
+export type MockApi<TApi extends Record<string, (...args: any[]) => JsonFetchResultPromiseLike<any>>> = {
+  [key in keyof TApi]:
+    | null
+    | ((
+        ...args: Parameters<TApi[key]>
+      ) => Promise<ReturnType<TApi[key]> extends PromiseLike<infer TSuc> ? TSuc : never>);
 };
 
 export const runningJob = {
@@ -116,23 +112,25 @@ export const mockApi: MockApi<typeof api> = {
     ok: Math.random() < 0.5,
   }),
 
-  getAllJobs: async () => ({ results: [job]}),
+  getAllJobs: async () => ({ results: [job] }),
 
   getAllClustersAvailableApps: async () => ({
-    results: [{
-      clusterId: "hpc01",
-      apps: [
-        { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: []},
-        { id: "emacs", name: "Emacs", availableAccounts: []},
-        { id: "jupyter", name: "jupyter", availableAccounts: []},
-      ],
-    }],
+    results: [
+      {
+        clusterId: "hpc01",
+        apps: [
+          { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: [] },
+          { id: "emacs", name: "Emacs", availableAccounts: [] },
+          { id: "jupyter", name: "jupyter", availableAccounts: [] },
+        ],
+      },
+    ],
   }),
   listAvailableApps: async () => ({
     apps: [
-      { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: []},
-      { id: "emacs", name: "Emacs", availableAccounts: []},
-      { id: "jupyter", name: "jupyter", availableAccounts: []},
+      { id: "vscode", name: "VSCode", logoPath: "/apps/VSCode.svg", availableAccounts: [] },
+      { id: "emacs", name: "Emacs", availableAccounts: [] },
+      { id: "jupyter", name: "jupyter", availableAccounts: [] },
     ],
   }),
 
@@ -159,25 +157,57 @@ export const mockApi: MockApi<typeof api> = {
   cancelJob: async () => null,
 
   listAvailableWms: async () => ({
-    wms: [{ name: "cinnamon", wm: "Cinnamon" }, { name: "gnome", wm: "GNOME" }],
+    wms: [
+      { name: "cinnamon", wm: "Cinnamon" },
+      { name: "gnome", wm: "GNOME" },
+    ],
   }),
 
   getAppSessions: async () => ({
     sessions: [
       {
-        jobId: 100, jobName: "123", sessionId: "123", appId: "vscode", appName: "vscode", state: "PENDING",
-        reason: "resource",submitTime: new Date().toISOString(), host: "192.168.88.100", port: 1000,
-        dataPath: "/test", timeLimit: "01:00:00", runningTime: "", clusterId: "hpc00",
+        jobId: 100,
+        jobName: "123",
+        sessionId: "123",
+        appId: "vscode",
+        appName: "vscode",
+        state: "PENDING",
+        reason: "resource",
+        submitTime: new Date().toISOString(),
+        host: "192.168.88.100",
+        port: 1000,
+        dataPath: "/test",
+        timeLimit: "01:00:00",
+        runningTime: "",
+        clusterId: "hpc00",
       },
       {
-        jobId: 101, jobName: "124", sessionId: "124", appId: "vscode", appName: "vscode", state: "RUNNING",
-        submitTime: new Date().toISOString(), dataPath: "/test",
-        timeLimit: "1-01:00:00", runningTime: "01:50", clusterId: "hpc01",
+        jobId: 101,
+        jobName: "124",
+        sessionId: "124",
+        appId: "vscode",
+        appName: "vscode",
+        state: "RUNNING",
+        submitTime: new Date().toISOString(),
+        dataPath: "/test",
+        timeLimit: "1-01:00:00",
+        runningTime: "01:50",
+        clusterId: "hpc01",
       },
       {
-        jobId: 102, jobName: "125", sessionId: "125", appId: "vscode", appName: "vscode", state: "RUNNING",
-        submitTime: new Date().toISOString(), host: "192.168.88.100", port: 10000, dataPath: "/test",
-        timeLimit: "INVALID", runningTime: "01:55", clusterId: "hpc02",
+        jobId: 102,
+        jobName: "125",
+        sessionId: "125",
+        appId: "vscode",
+        appName: "vscode",
+        state: "RUNNING",
+        submitTime: new Date().toISOString(),
+        host: "192.168.88.100",
+        port: 10000,
+        dataPath: "/test",
+        timeLimit: "INVALID",
+        runningTime: "01:55",
+        clusterId: "hpc02",
       },
     ],
   }),
@@ -186,20 +216,39 @@ export const mockApi: MockApi<typeof api> = {
     appName: "test",
     appCustomFormAttributes: [
       {
-        type: "NUMBER", label: "版本", name: "version", required: false,
-        placeholder: "选择版本", defaultValue: 123, select: [],
+        type: "NUMBER",
+        label: "版本",
+        name: "version",
+        required: false,
+        placeholder: "选择版本",
+        defaultValue: 123,
+        select: [],
       },
       {
-        type: "TEXT", label: "文字", name: "text", required: false,
-        placeholder: "提示信息", defaultValue: 555, select: [],
+        type: "TEXT",
+        label: "文字",
+        name: "text",
+        required: false,
+        placeholder: "提示信息",
+        defaultValue: 555,
+        select: [],
       },
       {
-        type: "TEXT", label: "其他sbatch参数", name: "sbatchOptions",
-        required: true, placeholder: "比如：--gpus gres:2 --time 10", select: [],
+        type: "TEXT",
+        label: "其他sbatch参数",
+        name: "sbatchOptions",
+        required: true,
+        placeholder: "比如：--gpus gres:2 --time 10",
+        select: [],
       },
       {
-        type: "SELECT", label: "选项", name: "option", required: false,
-        placeholder: "提示信息", defaultValue: "version2", select: [
+        type: "SELECT",
+        label: "选项",
+        name: "option",
+        required: false,
+        placeholder: "提示信息",
+        defaultValue: "version2",
+        select: [
           { label: "版本1", value: "version1" },
           { label: "版本2", value: "version2" },
         ],
@@ -208,22 +257,28 @@ export const mockApi: MockApi<typeof api> = {
     reservedAppAttributes: [],
   }),
 
-  connectToApp: async ({ body: { sessionId } }) => sessionId === "124"
-    ? {
-      host: "127.0.0.1", port: 3000, password: "123", type: "web",
-      connect: {
-        method: "POST",
-        path: "/test",
-        query: { test: "!23" },
-        formData: { test: "123" },
-      },
-      proxyType: "relative",
-      customFormData: { USERNAME: "bob" },
-    }
-    : {
-      host: "127.0.0.1", port: 3000, password: "123", type: "vnc",
-    },
-
+  connectToApp: async ({ body: { sessionId } }) =>
+    sessionId === "124"
+      ? {
+          host: "127.0.0.1",
+          port: 3000,
+          password: "123",
+          type: "web",
+          connect: {
+            method: "POST",
+            path: "/test",
+            query: { test: "!23" },
+            formData: { test: "123" },
+          },
+          proxyType: "relative",
+          customFormData: { USERNAME: "bob" },
+        }
+      : {
+          host: "127.0.0.1",
+          port: 3000,
+          password: "123",
+          type: "vnc",
+        },
 
   getJobTemplate: async () => ({
     template: {
@@ -240,40 +295,43 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   listJobTemplates: async () => ({
-    results: [{
-      id: "123-sample-apple",
-      comment: "1234",
-      submitTime: new Date().toString(),
-      jobName: "sample-apple",
-    }],
+    results: [
+      {
+        id: "123-sample-apple",
+        comment: "1234",
+        submitTime: new Date().toString(),
+        jobName: "sample-apple",
+      },
+    ],
   }),
 
   deleteJobTemplate: async () => null,
 
   renameJobTemplate: async () => null,
 
-  getAccounts: async () => ({ accounts: ["hpc01", "hpc02"]}),
+  getAccounts: async () => ({ accounts: ["hpc01", "hpc02"] }),
 
   launchDesktop: async () => ({ type: "vnc", host: "login01", password: "123", port: 1234 }),
 
   listDesktops: async () => ({
-    userDesktops: [{
-      host: "login01",
-      desktops: [
-        { type : "vnc", vnc: { displayId: 1, desktopName: "111", wm: "", createTime: "" } },
-        { type : "vnc", vnc: { displayId: 222, desktopName: "222", wm: "", createTime: "" } },
-        { type : "vnc", vnc: { displayId: 1, desktopName: "333", wm: "", createTime: "" } },
-      ],
-    }],
+    userDesktops: [
+      {
+        host: "login01",
+        desktops: [
+          { type: "vnc", vnc: { displayId: 1, desktopName: "111", wm: "", createTime: "" } },
+          { type: "vnc", vnc: { displayId: 222, desktopName: "222", wm: "", createTime: "" } },
+          { type: "vnc", vnc: { displayId: 1, desktopName: "333", wm: "", createTime: "" } },
+        ],
+      },
+    ],
   }),
 
-  createDesktop: async () => (
-    {
-      type: "vnc",
-      host: "login01",
-      password: "123",
-      port: 1234,
-    }),
+  createDesktop: async () => ({
+    type: "vnc",
+    host: "login01",
+    password: "123",
+    port: 1234,
+  }),
 
   killDesktop: async () => null,
 
@@ -289,7 +347,7 @@ export const mockApi: MockApi<typeof api> = {
 
   validateToken: null,
 
-  getRunningJobs: async () => ({ results: [runningJob]}),
+  getRunningJobs: async () => ({ results: [runningJob] }),
 
   submitJob: async () => ({ jobId: 10 }),
 
@@ -317,7 +375,7 @@ export const mockApi: MockApi<typeof api> = {
   terminateFileTransfer: null,
   checkTransferKey: null,
 
-  getAvailablePartitionsForCluster: async () => ({ partitions: []}),
+  getAvailablePartitionsForCluster: async () => ({ partitions: [] }),
   getClusterConfigFiles: async () => ({
     clusterConfigs: {
       hpc01: {
@@ -325,7 +383,7 @@ export const mockApi: MockApi<typeof api> = {
         priority: 1,
         adapterUrl: "0.0.0.0:0000",
         proxyGateway: undefined,
-        loginNodes: [{ "address": "localhost:22222", "name": "login" }],
+        loginNodes: [{ address: "localhost:22222", name: "login" }],
         loginDesktop: undefined,
         turboVncPath: undefined,
         crossClusterFileTransfer: undefined,
@@ -366,107 +424,111 @@ export const mockApi: MockApi<typeof api> = {
   getUnreadMessages: async () => ({
     results: {
       totalCount: 2,
-      messages: [{
-        "id": 20,
-        "messageType": {
-          "type": "SystemNotification",
-          "titleTemplate": {
-            "default": "系统公告",
-            "en": "System Notification",
-            "zhCn": "系统公告",
-            "de": "Systembenachrichtigung",
-            "es": "Notificación del sistema",
-            "fr": "Notification système",
-            "ja": "システム通知",
-            "ko": "시스템 알림",
-            "pt": "Notificação do sistema",
-            "ru": "Системное уведомление",
+      messages: [
+        {
+          id: 20,
+          messageType: {
+            type: "SystemNotification",
+            titleTemplate: {
+              default: "系统公告",
+              en: "System Notification",
+              zhCn: "系统公告",
+              de: "Systembenachrichtigung",
+              es: "Notificación del sistema",
+              fr: "Notification système",
+              ja: "システム通知",
+              ko: "시스템 알림",
+              pt: "Notificação do sistema",
+              ru: "Системное уведомление",
+            },
+            category: "Admin",
+            categoryTemplate: {
+              default: "Admin Messages",
+              en: "Admin Messages",
+              zhCn: "管理员消息",
+              de: "Admin-Nachrichten",
+              es: "Mensajes de administrador",
+              fr: "Messages d'administrateur",
+              ja: "管理者メッセージ",
+              ko: "관리자 메시지",
+              pt: "Mensagens de administrador",
+              ru: "Сообщения администратора",
+            },
           },
-          "category": "Admin",
-          "categoryTemplate": {
-            "default": "Admin Messages",
-            "en": "Admin Messages",
-            "zhCn": "管理员消息",
-            "de": "Admin-Nachrichten",
-            "es": "Mensajes de administrador",
-            "fr": "Messages d'administrateur",
-            "ja": "管理者メッセージ",
-            "ko": "관리자 메시지",
-            "pt": "Mensagens de administrador",
-            "ru": "Сообщения администратора",
+          metadata: {
+            title: "测试2",
+            content: "测试2测试2测试2测试2测试2测试2测试2测试2测试2",
           },
+          isRead: false,
+          createdAt: "2024-08-22T02:03:38.297Z",
+          updatedAt: "2024-08-22T02:03:38.297Z",
         },
-        "metadata": {
-          "title": "测试2",
-          "content": "测试2测试2测试2测试2测试2测试2测试2测试2测试2",
-        },
-        "isRead": false,
-        "createdAt": "2024-08-22T02:03:38.297Z",
-        "updatedAt": "2024-08-22T02:03:38.297Z",
-      },
-      {
-        "id": 19,
-        "messageType": {
-          "type": "SystemNotification",
-          "titleTemplate": {
-            "default": "系统公告",
-            "en": "System Notification",
-            "zhCn": "系统公告",
-            "de": "Systembenachrichtigung",
-            "es": "Notificación del sistema",
-            "fr": "Notification système",
-            "ja": "システム通知",
-            "ko": "시스템 알림",
-            "pt": "Notificação do sistema",
-            "ru": "Системное уведомление",
+        {
+          id: 19,
+          messageType: {
+            type: "SystemNotification",
+            titleTemplate: {
+              default: "系统公告",
+              en: "System Notification",
+              zhCn: "系统公告",
+              de: "Systembenachrichtigung",
+              es: "Notificación del sistema",
+              fr: "Notification système",
+              ja: "システム通知",
+              ko: "시스템 알림",
+              pt: "Notificação do sistema",
+              ru: "Системное уведомление",
+            },
+            category: "Admin",
+            categoryTemplate: {
+              default: "Admin Messages",
+              en: "Admin Messages",
+              zhCn: "管理员消息",
+              de: "Admin-Nachrichten",
+              es: "Mensajes de administrador",
+              fr: "Messages d'administrateur",
+              ja: "管理者メッセージ",
+              ko: "관리자 메시지",
+              pt: "Mensagens de administrador",
+              ru: "Сообщения администратора",
+            },
           },
-          "category": "Admin",
-          "categoryTemplate": {
-            "default": "Admin Messages",
-            "en": "Admin Messages",
-            "zhCn": "管理员消息",
-            "de": "Admin-Nachrichten",
-            "es": "Mensajes de administrador",
-            "fr": "Messages d'administrateur",
-            "ja": "管理者メッセージ",
-            "ko": "관리자 메시지",
-            "pt": "Mensagens de administrador",
-            "ru": "Сообщения администратора",
+          metadata: {
+            title: "测试1",
+            content: "测试1测试1测试1测试1测试1测试1测试1",
           },
+          isRead: true,
+          createdAt: "2024-08-21T09:34:43.200Z",
+          updatedAt: "2024-08-21T09:34:43.200Z",
         },
-        "metadata": {
-          "title": "测试1",
-          "content": "测试1测试1测试1测试1测试1测试1测试1",
-        },
-        "isRead": true,
-        "createdAt": "2024-08-21T09:34:43.200Z",
-        "updatedAt": "2024-08-21T09:34:43.200Z",
-      }],
+      ],
     },
   }),
   getAllClustersInfo: async () => ({
-    results: [{
-      clusterId: "aaa",
-      clusterInfo: {
+    results: [
+      {
         clusterId: "aaa",
-        nodeCount: 4,
-        runningNodeCount: 1,
-        idleNodeCount: 3,
-        notAvailableNodeCount: 0,
-        cpuCoreCount: 8,
-        runningCpuCount: 4,
-        idleCpuCount: 3,
-        notAvailableCpuCount: 1,
-        gpuCoreCount: 6,
-        runningGpuCount: 3,
-        idleGpuCount: 2,
-        notAvailableGpuCount: 1,
-        jobCount: 14,
-        runningJobCount: 4,
-        pendingJobCount: 10,
-        partitions: [],
+        clusterInfo: {
+          clusterId: "aaa",
+          nodeCount: 4,
+          runningNodeCount: 1,
+          idleNodeCount: 3,
+          notAvailableNodeCount: 0,
+          cpuCoreCount: 8,
+          runningCpuCount: 4,
+          idleCpuCount: 3,
+          notAvailableCpuCount: 1,
+          gpuCoreCount: 6,
+          runningGpuCount: 3,
+          idleGpuCount: 2,
+          notAvailableGpuCount: 1,
+          jobCount: 14,
+          runningJobCount: 4,
+          pendingJobCount: 10,
+          partitions: [],
+        },
       },
-    }],
+    ],
   }),
 
   getAllSummaryClustersInfo: async () => ({
@@ -488,18 +550,18 @@ export const mockApi: MockApi<typeof api> = {
         jobCount: 0,
         runningJobCount: 2,
         pendingJobCount: 0,
-        nodeUsage: 10.00,
-        cpuUsage: 10.00,
-        gpuUsage: 10.00,
+        nodeUsage: 10.0,
+        cpuUsage: 10.0,
+        gpuUsage: 10.0,
         partitions: [
           {
             partitionName: "CPU8C14G",
             nodeCount: 2,
-            nodeUsage: 20.00,
+            nodeUsage: 20.0,
             cpuCoreCount: 2,
-            cpuUsage: 20.00,
+            cpuUsage: 20.0,
             gpuCoreCount: 2,
-            gpuUsage: 20.00,
+            gpuUsage: 20.0,
             pendingJobCount: 0,
             partitionStatus: 1,
           },
@@ -509,21 +571,45 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   getClustersRuntimeInfo: async () => ({
-    results: [{
-      clusterId: "hpc01",
-      activationStatus: ClusterActivationStatus.ACTIVATED,
-      operatorId: undefined,
-      operatorName: undefined,
-      comment: "",
-    }],
+    results: [
+      {
+        clusterId: "hpc01",
+        activationStatus: ClusterActivationStatus.ACTIVATED,
+        operatorId: undefined,
+        operatorName: undefined,
+        comment: "",
+      },
+    ],
   }),
   getAllClusterNodesInfo: async () => ({
-    results: [{
-      clusterId: "abc",
-      nodeInfo: [{
+    results: [
+      {
+        clusterId: "abc",
+        nodeInfo: [
+          {
+            gpuCount: 1,
+            state: 1,
+            partitions: ["linux", "compute"],
+            cpuCoreCount: 1,
+            idleGpuCount: 1,
+            nodeName: "h1",
+            allocCpuCoreCount: 1,
+            idleCpuCoreCount: 1,
+            totalMemMb: 0.23,
+            allocMemMb: 0.32,
+            idleMemMb: 0.5,
+            allocGpuCount: 0.5,
+          },
+        ],
+      },
+    ],
+  }),
+  getClusterNodesInfo: async () => ({
+    nodeInfo: [
+      {
         gpuCount: 1,
         state: 1,
-        partitions: ["linux","compute"],
+        partitions: ["linux", "compute"],
         cpuCoreCount: 1,
         idleGpuCount: 1,
         nodeName: "h1",
@@ -533,60 +619,47 @@ export const mockApi: MockApi<typeof api> = {
         allocMemMb: 0.32,
         idleMemMb: 0.5,
         allocGpuCount: 0.5,
-      }],
-    }],
-  }),
-  getClusterNodesInfo: async () => ({
-    nodeInfo: [{
-      gpuCount: 1,
-      state: 1,
-      partitions: ["linux","compute"],
-      cpuCoreCount: 1,
-      idleGpuCount: 1,
-      nodeName: "h1",
-      allocCpuCoreCount: 1,
-      idleCpuCoreCount: 1,
-      totalMemMb: 0.23,
-      allocMemMb: 0.32,
-      idleMemMb: 0.5,
-      allocGpuCount: 0.5,
-    }],
+      },
+    ],
   }),
 
   getUserAssociatedClusterPartitions: async () => ({
     clusterPartitions: {
-      "hpc01": ["normal", "high", "low"],
-      "hpc02": ["gpu"],
+      hpc01: ["normal", "high", "low"],
+      hpc02: ["gpu"],
     },
   }),
 
   decompressFile: null,
 
   getUserStorageInfo: async () => ({
-    storageInfos: [{
-      path: "/data/home",
-      quotaBytes: 321321321,
-      usedStorageBytes: 123123123,
-    }],
+    storageInfos: [
+      {
+        path: "/data/home",
+        quotaBytes: 321321321,
+        usedStorageBytes: 123123123,
+      },
+    ],
   }),
 
   getIsUserEnabledRootShell: async () => ({
     result: true,
   }),
 
-  getDynamicFormOptions: async () => ({ options: [
-    { label: "version1", value: "value1" },
-    { label: "version2", value: "value2" },
-  ]}),
+  getDynamicFormOptions: async () => ({
+    options: [
+      { label: "version1", value: "value1" },
+      { label: "version2", value: "value2" },
+    ],
+  }),
 
   getAvailableAccountsAndClusters: async () => ({
-    accountClusters:[],
+    accountClusters: [],
   }),
 
   calculateJobPrice: async () => ({
-    accountPrice:0,
+    accountPrice: 0,
   }),
 
   saveAsJobTemplate: async () => null,
-
 };

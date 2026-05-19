@@ -14,12 +14,7 @@ import { route } from "src/utils/route";
 
 export const MetadataMap = Type.Record(
   Type.String(),
-  Type.Union([
-    Type.String(),
-    Type.Number(),
-    Type.Boolean(),
-    Type.Null(),
-  ]),
+  Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]),
 );
 export type MetadataMapType = Static<typeof MetadataMap>;
 
@@ -69,34 +64,42 @@ export const GetBillsSchema = typeboxRouteSchema({
 });
 
 export default route(GetBillsSchema, async (req, res) => {
-
   const { pageSize = 10, page = 1, accountNames, userIdsOrNames, termStart, termEnd, type, searchType } = req.query;
 
   let user: UserInfo | undefined;
   // check whether the user can access the account
   if (searchType === SearchType.selfAccount) {
-    user = await authenticate((i) =>
-      accountNames?.length === 1 &&
+    user = await authenticate(
+      (i) =>
+        accountNames?.length === 1 &&
         i.accountAffiliations.some((x) => x.accountName === accountNames[0] && x.role !== UserRole.USER),
     )(req, res);
   } else if (searchType === SearchType.selfTenant) {
-    user = await authenticate((i) =>
-      i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-        i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
     )(req, res);
   } else {
-    user = await authenticate((i) =>
-      i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+    user = await authenticate(
+      (i) =>
+        i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
         i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
     )(req, res);
   }
 
-  if (!user) { return; }
+  if (!user) {
+    return;
+  }
 
   const client = getClient(BillServiceClient);
 
   const reply = await asyncClientCall(client, "getBills", {
-    pageSize, page, accountNames: accountNames ?? [], userIdsOrNames, termStart, termEnd, type,
+    pageSize,
+    page,
+    accountNames: accountNames ?? [],
+    userIdsOrNames,
+    termStart,
+    termEnd,
+    type,
     tenantName: searchType === SearchType.selfTenant ? user.tenant : undefined,
   });
 

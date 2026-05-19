@@ -2,10 +2,7 @@ import dayjs from "dayjs";
 
 // 比较可能为空值或者无法解析的时间
 // 空值认为最小
-export function compareNullableDateTime(
-  a: string | null | undefined,
-  b: string | null | undefined,
-): -1 | 0 | 1 {
+export function compareNullableDateTime(a: string | null | undefined, b: string | null | undefined): -1 | 0 | 1 {
   // null / undefined / "" 当成最小时间
   const toDayjsOrMin = (v: string | null | undefined) => {
     if (!v) return dayjs(0);
@@ -23,10 +20,7 @@ export function compareNullableDateTime(
 
 // 用于Undefined表示永久有效的时间比较
 // 空值认为最大
-export function compareNullableDateTimeAsMax(
-  a: string | undefined,
-  b: string | undefined,
-): -1 | 0 | 1 {
+export function compareNullableDateTimeAsMax(a: string | undefined, b: string | undefined): -1 | 0 | 1 {
   const toSortableValue = (v: string | undefined) => {
     if (v === undefined) {
       // undefined = 永久有效 = 最大值
@@ -49,10 +43,7 @@ export function compareNullableDateTimeAsMax(
 }
 
 // 比较可能为空值的字符串
-export function compareNullableString(
-  a: string | null | undefined,
-  b: string | null | undefined,
-): number {
+export function compareNullableString(a: string | null | undefined, b: string | null | undefined): number {
   const sa = a ?? "";
   const sb = b ?? "";
 
@@ -82,10 +73,7 @@ export function compareNullableNumber(
 }
 
 // 比较可能为空的文件权限
-export function compareNullableFileMode(
-  a: number | null | undefined,
-  b: number | null | undefined,
-): -1 | 0 | 1 {
+export function compareNullableFileMode(a: number | null | undefined, b: number | null | undefined): -1 | 0 | 1 {
   const pa = getPermBitsForSorter(a);
   const pb = getPermBitsForSorter(b);
 

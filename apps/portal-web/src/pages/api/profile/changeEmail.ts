@@ -8,7 +8,6 @@ import { route } from "src/utils/route";
 
 // 此API用于用户修改自己的邮箱。
 export const ChangeEmailSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -30,11 +29,13 @@ export const ChangeEmailSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
+export default /* #__PURE__*/ route(ChangeEmailSchema, async (req, res) => {
   const auth = authenticate(() => true);
 
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { newEmail } = req.body;
   return await libWebChangeEmail(
@@ -61,4 +62,3 @@ export default /* #__PURE__*/route(ChangeEmailSchema, async (req, res) => {
       }
     });
 });
-

@@ -14,18 +14,20 @@ import {
 import { commonConfig } from "src/server/config/common";
 import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "src/server/mis-server/cluster";
 import { checkClusterIdAvailable, checkClusterPartitionAvailable } from "src/utils/auth/utils";
-import { assignCreatedAccount, checkAccountInClusterPartition, getAccountAssignedPartitionsInCluster,
+import {
+  assignCreatedAccount,
+  checkAccountInClusterPartition,
+  getAccountAssignedPartitionsInCluster,
   getAccountsAssignedClusterPartitions,
   getAccountsAssignedClusters,
   getAccountsAssignedPartitionsInCluster,
   getClusterAssignedAccountsData,
-  getTenantAssignedClusterPartitions } from "src/utils/commonServer";
+  getTenantAssignedClusterPartitions,
+} from "src/utils/commonServer";
 import { logger } from "src/utils/logger";
-
 
 export default (router: ConnectRouter) => {
   router.service(ClusterPartitionService, {
-
     /**
      * 获取账户数组的已授权集群
      * 主要用于判断登录用户的关联账户的可用集群
@@ -59,7 +61,11 @@ export default (router: ConnectRouter) => {
         return {};
       });
       const data = await getAccountAssignedPartitionsInCluster(
-        accountName, tenantName, clusterId, currentClusterPartitions);
+        accountName,
+        tenantName,
+        clusterId,
+        currentClusterPartitions,
+      );
       return { assignedPartitionNames: data };
     },
 
@@ -74,11 +80,10 @@ export default (router: ConnectRouter) => {
     async getAccountsAssignedPartitionsForCluster(request: GetAccountsAssignedPartitionsForClusterRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountsWithTenants, clusterId } = request;
-      const currentClusterPartitions = await getScowActivatedClusterPartitions(logger)
-        .catch(() => {
-          logger.warn("No available cluster partitions when querying scow-resource.");
-          return {};
-        });
+      const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
+        logger.warn("No available cluster partitions when querying scow-resource.");
+        return {};
+      });
       const data = await getAccountsAssignedPartitionsInCluster(
         accountsWithTenants,
         clusterId,
@@ -130,14 +135,17 @@ export default (router: ConnectRouter) => {
     async assignAccountOnCreate(request: AssignAccountOnCreateRequest, ctx) {
       await checkScowApiToken(ctx, commonConfig.scowApi);
       const { accountName, tenantName } = request;
-      logger.info("A new account will be created."
-         + " Assign account %s in tenant %s with default assigned clusters and partitions.", accountName, tenantName);
+      logger.info(
+        "A new account will be created." +
+          " Assign account %s in tenant %s with default assigned clusters and partitions.",
+        accountName,
+        tenantName,
+      );
       // 获取当前在线集群分区
-      const currentClusterPartitions = await getScowActivatedClusterPartitions(logger)
-        .catch(() => {
-          logger.warn("No available cluster partitions when querying scow-resource.");
-          return {};
-        });
+      const currentClusterPartitions = await getScowActivatedClusterPartitions(logger).catch(() => {
+        logger.warn("No available cluster partitions when querying scow-resource.");
+        return {};
+      });
       const result = await assignCreatedAccount(accountName, tenantName, currentClusterPartitions);
       return { executed: result };
     },
@@ -177,6 +185,5 @@ export default (router: ConnectRouter) => {
       const result = await checkAccountInClusterPartition(accountName, clusterId, partitionName);
       return { isAuthorized: result };
     },
-
   });
 };

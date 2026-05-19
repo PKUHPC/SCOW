@@ -40,13 +40,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": [
-            "TENSORFLOW",
-            "PYTORCH",
-            "KERAS",
-            "MINDSPORE",
-            "OTHER"
-          ],
+          "enumItems": ["TENSORFLOW", "PYTORCH", "KERAS", "MINDSPORE", "OTHER"],
           "mappedType": "enum"
         },
         "is_shared": {
@@ -117,9 +111,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -228,9 +220,7 @@
       "name": "algorithm_version",
       "indexes": [
         {
-          "columnNames": [
-            "algorithm_id"
-          ],
+          "columnNames": ["algorithm_id"],
           "composite": false,
           "keyName": "algorithm_version_algorithm_id_index",
           "constraint": false,
@@ -239,9 +229,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -252,13 +240,9 @@
       "foreignKeys": {
         "algorithm_version_algorithm_id_foreign": {
           "constraintName": "algorithm_version_algorithm_id_foreign",
-          "columnNames": [
-            "algorithm_id"
-          ],
+          "columnNames": ["algorithm_id"],
           "localTableName": "algorithm_version",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "algorithm",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -386,9 +370,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -497,9 +479,7 @@
       "name": "dataset_version",
       "indexes": [
         {
-          "columnNames": [
-            "dataset_id"
-          ],
+          "columnNames": ["dataset_id"],
           "composite": false,
           "keyName": "dataset_version_dataset_id_index",
           "constraint": false,
@@ -508,9 +488,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -521,13 +499,9 @@
       "foreignKeys": {
         "dataset_version_dataset_id_foreign": {
           "constraintName": "dataset_version_dataset_id_foreign",
-          "columnNames": [
-            "dataset_id"
-          ],
+          "columnNames": ["dataset_id"],
           "localTableName": "dataset_version",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "dataset",
           "deleteRule": "cascade",
           "updateRule": "cascade"
@@ -574,10 +548,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": [
-            "INTERNAL",
-            "EXTERNAL"
-          ],
+          "enumItems": ["INTERNAL", "EXTERNAL"],
           "mappedType": "enum"
         },
         "tag": {
@@ -657,11 +628,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "enumItems": [
-            "CREATED",
-            "CREATING",
-            "FAILURE"
-          ],
+          "enumItems": ["CREATED", "CREATING", "FAILURE"],
           "mappedType": "enum"
         },
         "types": {
@@ -673,12 +640,7 @@
           "nullable": false,
           "length": 255,
           "default": "'APP,TRAIN,INFER,DEV_HOST'",
-          "enumItems": [
-            "APP",
-            "TRAIN",
-            "INFER",
-            "DEV_HOST"
-          ],
+          "enumItems": ["APP", "TRAIN", "INFER", "DEV_HOST"],
           "mappedType": "string"
         },
         "infer_service_port": {
@@ -749,12 +711,7 @@
       "indexes": [
         {
           "keyName": "unique_name_tag_owner",
-          "columnNames": [
-            "name",
-            "tag",
-            "owner",
-            "is_platform_owned"
-          ],
+          "columnNames": ["name", "tag", "owner", "is_platform_owned"],
           "composite": true,
           "constraint": true,
           "primary": false,
@@ -762,9 +719,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -897,9 +852,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1018,9 +971,7 @@
       "name": "model_version",
       "indexes": [
         {
-          "columnNames": [
-            "model_id"
-          ],
+          "columnNames": ["model_id"],
           "composite": false,
           "keyName": "model_version_model_id_index",
           "constraint": false,
@@ -1029,9 +980,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -1042,13 +991,9 @@
       "foreignKeys": {
         "model_version_model_id_foreign": {
           "constraintName": "model_version_model_id_foreign",
-          "columnNames": [
-            "model_id"
-          ],
+          "columnNames": ["model_id"],
           "localTableName": "model_version",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "model",
           "deleteRule": "cascade",
           "updateRule": "cascade"

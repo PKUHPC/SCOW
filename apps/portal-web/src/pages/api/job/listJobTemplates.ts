@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { JobServiceClient } from "@scow/protos/build/portal/job";
@@ -29,7 +17,6 @@ export const JobTemplateInfo = Type.Object({
 
 export type JobTemplateInfo = Static<typeof JobTemplateInfo>;
 export const ListJobTemplatesSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
@@ -52,10 +39,11 @@ export const ListJobTemplatesSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(ListJobTemplatesSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusters } = req.query;
   const clusterIds = Array.from(new Set(Array.isArray(clusters) ? clusters : [clusters]));
@@ -73,9 +61,7 @@ export default route(ListJobTemplatesSchema, async (req, res) => {
     }),
   );
 
-  const mergedResults = settledReplies.flatMap((item) => (
-    item.status === "fulfilled" ? item.value : []
-  ));
+  const mergedResults = settledReplies.flatMap((item) => (item.status === "fulfilled" ? item.value : []));
 
   const failedClusters = settledReplies
     .map((item, index) => (item.status === "rejected" ? clusterIds[index] : undefined))
@@ -90,5 +76,4 @@ export default route(ListJobTemplatesSchema, async (req, res) => {
   }
 
   return { 200: { results: mergedResults } };
-
 });

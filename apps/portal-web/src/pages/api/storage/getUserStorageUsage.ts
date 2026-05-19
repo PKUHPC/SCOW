@@ -22,29 +22,31 @@ export const getUserStorageInfoSchema = typeboxRouteSchema({
   }),
 
   responses: {
-
     200: Type.Object({
       storageInfos: Type.Array(StorageInfo),
     }),
   },
 });
 
-
 const auth = authenticate(() => true);
 
-export default route(getUserStorageInfoSchema,
-  async (req, res) => {
+export default route(getUserStorageInfoSchema, async (req, res) => {
+  const info = await auth(req, res);
 
-    const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    if (!info) { return; }
+  const { cluster } = req.query;
 
-    const { cluster } = req.query;
-
-    const { quotaUsage } = await libGetUserQuotaUsage(
-      info.identityId, cluster, [], publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN,
-    );
-    return {
-      200: { storageInfos: quotaUsage },
-    };
-  });
+  const { quotaUsage } = await libGetUserQuotaUsage(
+    info.identityId,
+    cluster,
+    [],
+    publicConfig.MIS_SERVER_URL,
+    runtimeConfig.SCOW_API_AUTH_TOKEN,
+  );
+  return {
+    200: { storageInfos: quotaUsage },
+  };
+});

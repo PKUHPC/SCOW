@@ -14,8 +14,12 @@ import { buildChargesRequestTarget, getTenantOfAccount, getUserInfoForCharges } 
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
 import { nullableMoneyToString } from "src/utils/money";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
@@ -37,32 +41,30 @@ export const ExportChargeRecordSchema = typeboxRouteSchema({
     userIds: Type.Optional(Type.String()),
     idsOrNames: Type.Optional(Type.String()),
     encoding: Type.Enum(Encoding),
-    timeZone:Type.Optional(Type.String()),
+    timeZone: Type.Optional(Type.String()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
 });
 
-
-
 export default route(ExportChargeRecordSchema, async (req, res) => {
   const { query } = req;
 
-  const {
-    columns, startTime, endTime, searchType, isPlatformRecords,
-    count, idsOrNames, userIds, encoding, timeZone,
-  } = query;
+  const { columns, startTime, endTime, searchType, isPlatformRecords, count, idsOrNames, userIds, encoding, timeZone } =
+    query;
   let { accountNames, types } = query;
   accountNames = emptyStringArrayToUndefined(accountNames);
   types = emptyStringArrayToUndefined(types);
 
   const info = await getUserInfoForCharges(accountNames, req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const tenantOfAccount = await getTenantOfAccount(accountNames, info);
 
@@ -72,7 +74,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.exportChargeRecord,
-    operationTypePayload:{
+    operationTypePayload: {
       target,
     },
   };
@@ -80,9 +82,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
-
     const client = getClient(ExportServiceClient);
 
     const filename = `charge_record-${new Date().toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })}.csv`;
@@ -91,7 +91,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
@@ -102,7 +102,7 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
       count,
       startTime,
       endTime,
-      types:types ?? [],
+      types: types ?? [],
       target,
       userIds: userIdArray,
       idsOrNames: idOrNameArray,
@@ -113,16 +113,13 @@ export default route(ExportChargeRecordSchema, async (req, res) => {
     const p = prefix("pageComp.finance.chargeTable.");
     const pCommon = prefix("common.");
 
-
     const formatChargeRecord = (x: ChargeRecord) => {
       return {
         id: x.index,
         accountName: x.accountName,
         tenantName: x.tenantName,
         userId: x.userId,
-        time: x.time ? new Date(x.time).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
+        time: x.time ? new Date(x.time).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
         amount: nullableMoneyToString(x.amount),
         type: x.type,
         comment: x.comment,

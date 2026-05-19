@@ -6,23 +6,29 @@ import { getLoginNode } from "@scow/config/build/cluster";
 import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { NodeInfo_NodeState, nodeInfo_NodeStateFromJSON } from "@scow/protos/build/common/config";
 import {
-  ClusterRuntimeInfo_LastActivationOperation, ConfigServiceServer,
-  ConfigServiceService, MigrateNodeInfo_MigratableCluster, NodeStatus
+  ClusterRuntimeInfo_LastActivationOperation,
+  ConfigServiceServer,
+  ConfigServiceService,
+  MigrateNodeInfo_MigratableCluster,
+  NodeStatus,
 } from "@scow/protos/build/server/config";
 import { getActivatedClusters, getClustersRuntimeInfo } from "src/bl/clustersUtils";
 import { configClusters } from "src/config/clusters";
 import { rootKeyPair } from "src/config/env";
 import { Cluster, ClusterActivationStatus } from "src/entities/Cluster";
 import {
-  getUniqueMigrationGroups, handleValidationErrors, NodeClusterStatus,
-  NodeClusterStatusWithPartitions, normalizeNodeName, performClusterChecks
-  , validateMigratableClustersConfig
+  getUniqueMigrationGroups,
+  handleValidationErrors,
+  NodeClusterStatus,
+  NodeClusterStatusWithPartitions,
+  normalizeNodeName,
+  performClusterChecks,
+  validateMigratableClustersConfig,
 } from "src/utils/migrateNode";
 import { getScowdClient, mapConnectRpcStatusToGrpc } from "src/utils/scowd";
 
 export const misConfigServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
-
     /**
      * Deprecated Notice
      * This API function GetAvailablePartitions has been deprecated.
@@ -30,15 +36,16 @@ export const misConfigServiceServer = plugin((server) => {
      * @deprecated
      */
     getAvailablePartitions: async ({ request, em, logger }) => {
-
       const { accountName, userId } = request;
       const currentActivatedClusters = await getActivatedClusters(em, logger).catch();
       const reply = await server.ext.clusters.callOnAll(
         currentActivatedClusters,
         logger,
-        async (client) => await asyncClientCall(client.config, "getAvailablePartitions", {
-          accountName, userId,
-        }),
+        async (client) =>
+          await asyncClientCall(client.config, "getAvailablePartitions", {
+            accountName,
+            userId,
+          }),
       );
 
       const wrappedResult = reply.map((x) => {
@@ -48,27 +55,26 @@ export const misConfigServiceServer = plugin((server) => {
       return [{ clusterPartitions: wrappedResult }];
     },
 
-
     /**
      * @deprecated Use the new API function GetAvailablePartitionsForCluster from ./config/configServiceServer instead.
      */
     getAvailablePartitionsForCluster: async ({ request, logger }) => {
-
       const { cluster, accountName, userId } = request;
       // do not need check cluster's activation
       const reply = await server.ext.clusters.callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.config, "getAvailablePartitions", {
-          accountName, userId,
-        }),
+        async (client) =>
+          await asyncClientCall(client.config, "getAvailablePartitions", {
+            accountName,
+            userId,
+          }),
       );
 
       return [reply];
     },
 
     getClustersRuntimeInfo: async ({ em, logger }) => {
-
       const reply = await getClustersRuntimeInfo(em, logger);
 
       return [{ results: reply }];
@@ -82,29 +88,26 @@ export const misConfigServiceServer = plugin((server) => {
 
         if (!cluster) {
           throw {
-            code: status.NOT_FOUND, message: `Cluster（ Cluster ID: ${clusterId}） is not found`,
+            code: status.NOT_FOUND,
+            message: `Cluster（ Cluster ID: ${clusterId}） is not found`,
           } as ServiceError;
         }
 
         // check current scheduler adapter connection state
         // do not need check cluster's activation
-        await server.ext.clusters.callOnOne(
-          clusterId,
-          logger,
-          async (client) => await asyncClientCall(client.config, "getClusterConfig", {}),
-        ).catch((e) => {
-          logger.info("Cluster Connection Error ( Cluster ID : %s , Details: %s ) .", cluster, e);
-          throw {
-            code: status.FAILED_PRECONDITION,
-            message: `Activate cluster failed, Cluster（ Cluster ID: ${clusterId}） is currently unreachable.`,
-          } as ServiceError;
-        });
+        await server.ext.clusters
+          .callOnOne(clusterId, logger, async (client) => await asyncClientCall(client.config, "getClusterConfig", {}))
+          .catch((e) => {
+            logger.info("Cluster Connection Error ( Cluster ID : %s , Details: %s ) .", cluster, e);
+            throw {
+              code: status.FAILED_PRECONDITION,
+              message: `Activate cluster failed, Cluster（ Cluster ID: ${clusterId}） is currently unreachable.`,
+            } as ServiceError;
+          });
 
         // when the cluster has already been activated
         if (cluster.activationStatus === ClusterActivationStatus.ACTIVATED) {
-          logger.info("Cluster (Cluster ID: %s) has already been activated",
-            clusterId,
-          );
+          logger.info("Cluster (Cluster ID: %s) has already been activated", clusterId);
           return [{ executed: false }];
         }
 
@@ -124,24 +127,25 @@ export const misConfigServiceServer = plugin((server) => {
             await client.system.checkHealth({});
             logger.info("Scowd runs normally on the login node %s of cluster %s.", node, clusterId);
           } catch (err) {
-            logger.info("Scowd is not functioning properly on cluster %s. err: %o",
-              clusterId, err);
+            logger.info("Scowd is not functioning properly on cluster %s. err: %o", clusterId, err);
 
             if (err instanceof ConnectError) {
               throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
             }
             throw err;
           }
-
         } else {
-          logger.info("Checking if root can login to cluster (clusterId: %s) by login node %s",
-            clusterId, node);
+          logger.info("Checking if root can login to cluster (clusterId: %s) by login node %s", clusterId, node);
 
           const error = await testRootUserSshLogin(address, rootKeyPair, logger);
 
           if (error) {
-            logger.info("Root cannot login to cluster (clusterId: %s) by login node %s. err: %o",
-              clusterId, node, error);
+            logger.info(
+              "Root cannot login to cluster (clusterId: %s) by login node %s. err: %o",
+              clusterId,
+              node,
+              error,
+            );
             throw {
               code: status.FAILED_PRECONDITION,
               message: `Activate cluster failed, root login check failed in Cluster（ Cluster ID: ${clusterId}） .`,
@@ -161,15 +165,10 @@ export const misConfigServiceServer = plugin((server) => {
 
         await em.persistAndFlush(cluster);
 
-        logger.info("Cluster (Cluster ID: %s) is successfully activated by user (User Id: %s)",
-          clusterId,
-          operatorId,
-        );
+        logger.info("Cluster (Cluster ID: %s) is successfully activated by user (User Id: %s)", clusterId, operatorId);
 
         return [{ executed: true }];
-
       });
-
     },
 
     deactivateCluster: async ({ request, em, logger }) => {
@@ -179,12 +178,12 @@ export const misConfigServiceServer = plugin((server) => {
 
       if (!cluster) {
         throw {
-          code: status.NOT_FOUND, message: `Cluster（ Cluster ID: ${clusterId}） is not found`,
+          code: status.NOT_FOUND,
+          message: `Cluster（ Cluster ID: ${clusterId}） is not found`,
         } as ServiceError;
       }
 
       if (cluster.activationStatus === ClusterActivationStatus.DEACTIVATED) {
-
         logger.info("Cluster (Cluster ID: %s) has already been deactivated");
 
         return [{ executed: false }];
@@ -201,22 +200,20 @@ export const misConfigServiceServer = plugin((server) => {
       }
       cluster.lastActivationOperation = lastActivationOperationMap;
 
-
       await em.persistAndFlush(cluster);
 
-      logger.info("Cluster (Cluster ID: %s) is successfully deactivated by user (User Id: %s) with comment %s",
+      logger.info(
+        "Cluster (Cluster ID: %s) is successfully deactivated by user (User Id: %s) with comment %s",
         clusterId,
         operatorId,
         deactivationComment,
       );
 
       return [{ executed: true }];
-
     },
 
     // 获取迁移节点信息
     getClusterMigrateNodesInfo: async ({ request, logger }) => {
-
       const start = Date.now();
 
       const { nodeNames, cluster } = request;
@@ -230,9 +227,7 @@ export const misConfigServiceServer = plugin((server) => {
       }
 
       // 单节点搜索场景中，为了支持大小写无关匹配，先拉全量节点再做本地过滤
-      const searchedNormalizedNodeName = nodeNames.length === 1
-        ? normalizeNodeName(nodeNames[0])
-        : undefined;
+      const searchedNormalizedNodeName = nodeNames.length === 1 ? normalizeNodeName(nodeNames[0]) : undefined;
       const nodeNamesForClusterQuery = [];
 
       // 1. 配置校验是否正确
@@ -262,37 +257,33 @@ export const misConfigServiceServer = plugin((server) => {
       });
 
       // 4. 获取当前集群的所有节点
-      const { nodes: originNodes } = await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
+      const { nodes: originNodes } = await server.ext.clusters
+        .callOnOne(cluster, logger, async (client) => {
           return await asyncClientCall(client.config, "getClusterNodesInfo", {
             nodeNames: nodeNamesForClusterQuery,
           });
-        },
-      ).catch((e) => {
+        })
+        .catch((e) => {
+          const message = `get node ${nodeNames.join(",")} of cluster ${cluster} failed`;
 
-        const message = `get node ${nodeNames.join(",")} of cluster ${cluster} failed`;
+          logger.error(message);
 
-        logger.error(message);
+          const errDetailsArr = e.details?.split("Error: 5 NOT_FOUND");
 
-        const errDetailsArr = e.details?.split("Error: 5 NOT_FOUND");
+          if (errDetailsArr && errDetailsArr.length === 2) {
+            const message = errDetailsArr[1].split(": ")[1];
 
-        if (errDetailsArr && errDetailsArr.length === 2) {
-
-          const message = errDetailsArr[1].split(": ")[1];
-
-          if (message) {
-            return { nodes: [] };
+            if (message) {
+              return { nodes: [] };
+            }
           }
-        }
-        logger.error(JSON.stringify(e));
+          logger.error(JSON.stringify(e));
 
-        throw {
-          code: status.UNKNOWN,
-          message,
-        } as ServiceError;
-      });
+          throw {
+            code: status.UNKNOWN,
+            message,
+          } as ServiceError;
+        });
 
       logger.info(`get nodes from cluster ${cluster} success`);
 
@@ -308,39 +299,36 @@ export const misConfigServiceServer = plugin((server) => {
 
       await Promise.allSettled(
         uniqueGroups.map(async (targetCluster) => {
-          const { nodes } = await server.ext.clusters.callOnOne(
-            targetCluster,
-            logger,
-            async (client) => {
+          const { nodes } = await server.ext.clusters
+            .callOnOne(targetCluster, logger, async (client) => {
               return await asyncClientCall(client.config, "getClusterNodesInfo", {
                 nodeNames: nodeNamesForClusterQuery,
               });
-            },
-          ).catch((e) => {
+            })
+            .catch((e) => {
+              const message = `get node ${nodeNames.join(",")} of cluster ${targetCluster} failed`;
 
-            const message = `get node ${nodeNames.join(",")} of cluster ${targetCluster} failed`;
+              logger.error(message, e);
 
-            logger.error(message, e);
+              const errDetailsArr = e.details?.split("Error: 5 NOT_FOUND");
 
-            const errDetailsArr = e.details?.split("Error: 5 NOT_FOUND");
+              if (!errDetailsArr || errDetailsArr.length === 1) {
+                // 非找不到节点，是其他错误，要抛出
 
-            if (!errDetailsArr || errDetailsArr.length === 1) { // 非找不到节点，是其他错误，要抛出
+                nodeClusterErrorArr.push(targetCluster);
 
-              nodeClusterErrorArr.push(targetCluster);
+                logger.error(JSON.stringify(e));
 
-              logger.error(JSON.stringify(e));
+                throw {
+                  code: status.UNKNOWN,
+                } as ServiceError;
+              }
 
+              // 找不到节点，忽略
               throw {
-                code: status.UNKNOWN,
+                code: status.NOT_FOUND,
               } as ServiceError;
-            }
-
-            // 找不到节点，忽略
-            throw {
-              code: status.NOT_FOUND,
-            } as ServiceError;
-
-          });
+            });
 
           logger.info("%s 集群中的节点 %o", targetCluster, nodes);
 
@@ -366,7 +354,6 @@ export const misConfigServiceServer = plugin((server) => {
       );
 
       if (nodeClusterErrorArr.length) {
-
         const message = `get cluster ${nodeClusterErrorArr.join(", ")} NodesInfo failed`;
 
         throw {
@@ -380,30 +367,33 @@ export const misConfigServiceServer = plugin((server) => {
         // 全局状态检查（a. 过滤其他集群已上线的节点）
         const allClustersStatus = nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)) || [];
 
-        return allClustersStatus.length && !allClustersStatus.some((node) =>
-          (node.state !== NodeInfo_NodeState.NOT_AVAILABLE || !node.removable),
+        return (
+          allClustersStatus.length &&
+          !allClustersStatus.some((node) => node.state !== NodeInfo_NodeState.NOT_AVAILABLE || !node.removable)
         );
       });
 
       logger.info("get nodes statusType from relative cluster");
       // 7. 获得在当前集群上线以及在所有集群都没上线的节点，并构建各节点的NodeStatus和可迁移集群与各集群可迁移到的分区
       const migrateNodes = filterOtherClusterUpNodes.map((node) => {
-
         // 状态判断逻辑（新增statusType字段）
         let statusType: NodeStatus;
 
-        if (nodeInfo_NodeStateFromJSON(node.state) !== NodeInfo_NodeState.NOT_AVAILABLE) { // 该节点在该集群线上
-          statusType = node.removable ?
-            NodeStatus.ACTIVE_MIGRATABLE : // b. 节点在该集群上，可迁移
-            NodeStatus.OCCUPIED_BY_JOBS; // c. 节点在该集群上，不可迁移
-        } else { // 该节点不在该集群线上或drain了
+        if (nodeInfo_NodeStateFromJSON(node.state) !== NodeInfo_NodeState.NOT_AVAILABLE) {
+          // 该节点在该集群线上
+          statusType = node.removable
+            ? NodeStatus.ACTIVE_MIGRATABLE // b. 节点在该集群上，可迁移
+            : NodeStatus.OCCUPIED_BY_JOBS; // c. 节点在该集群上，不可迁移
+        } else {
+          // 该节点不在该集群线上或drain了
           const allClustersStatus = nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)) || [];
 
-          const allOffline = allClustersStatus.every((s) =>
-            s.state === NodeInfo_NodeState.NOT_AVAILABLE && s.removable,
+          const allOffline = allClustersStatus.every(
+            (s) => s.state === NodeInfo_NodeState.NOT_AVAILABLE && s.removable,
           );
 
-          if (allOffline && node.removable) { // d. 该节点未在任何集群上线
+          if (allOffline && node.removable) {
+            // d. 该节点未在任何集群上线
             statusType = NodeStatus.OFFLINE_RECOVERABLE;
           } else {
             if (!node.removable) {
@@ -412,7 +402,7 @@ export const misConfigServiceServer = plugin((server) => {
               logger.error("Node migration status unknown. ", JSON.stringify(node));
               throw {
                 code: status.UNKNOWN,
-                message: "Node migration status unknown."
+                message: "Node migration status unknown.",
               } as ServiceError;
             }
           }
@@ -423,17 +413,15 @@ export const misConfigServiceServer = plugin((server) => {
           nodeStatus: statusType,
           migratableClusterList: nodeClusterStatusMap.get(normalizeNodeName(node.nodeName)),
         };
-
       });
 
-      const results = migrateNodes
-        .map((node) => ({
-          ...node,
-          migratableClusterList: node.migratableClusterList!.map((cluster) => ({
-            cluster: cluster.cluster,
-            partitions: cluster.partitions,
-          })) as MigrateNodeInfo_MigratableCluster[], // 使用生成的类型
-        }));
+      const results = migrateNodes.map((node) => ({
+        ...node,
+        migratableClusterList: node.migratableClusterList!.map((cluster) => ({
+          cluster: cluster.cluster,
+          partitions: cluster.partitions,
+        })) as MigrateNodeInfo_MigratableCluster[], // 使用生成的类型
+      }));
 
       const durationMs = Date.now() - start;
 
@@ -441,11 +429,9 @@ export const misConfigServiceServer = plugin((server) => {
 
       // 返回可以迁移集群的节点列表
       return [{ nodes: results }];
-
     },
 
     migrateNode: async ({ request, logger }) => {
-
       // 1. 配置校验是否正确
       const migratableClusterGroups = validateMigratableClustersConfig();
 
@@ -484,25 +470,22 @@ export const misConfigServiceServer = plugin((server) => {
       if (originCluster) {
         logger.info(`remove node ${nodeName} from cluster ${originCluster}`);
 
-        await server.ext.clusters.callOnOne(
-          originCluster,
-          logger,
-          async (client) => {
+        await server.ext.clusters
+          .callOnOne(originCluster, logger, async (client) => {
             return await asyncClientCall(client.node, "removeNodeFromCluster", {
               nodeName,
             });
-          },
-        ).catch((e) => {
+          })
+          .catch((e) => {
+            const message = `remove node from cluster ${originCluster} failed`;
 
-          const message = `remove node from cluster ${originCluster} failed`;
+            logger.error(message, e);
 
-          logger.error(message, e);
-
-          throw {
-            code: status.INTERNAL,
-            message,
-          } as ServiceError;
-        });
+            throw {
+              code: status.INTERNAL,
+              message,
+            } as ServiceError;
+          });
 
         logger.info(`remove node ${nodeName} from cluster ${originCluster} success`);
       }
@@ -519,27 +502,22 @@ export const misConfigServiceServer = plugin((server) => {
 
       await Promise.allSettled(
         [destinationCluster, ...uniqueGroups].map(async (targetCluster) => {
-          const { nodes } = await server.ext.clusters.callOnOne(
-            targetCluster,
-            logger,
-            async (client) => {
+          const { nodes } = await server.ext.clusters
+            .callOnOne(targetCluster, logger, async (client) => {
               return await asyncClientCall(client.config, "getClusterNodesInfo", {
                 nodeNames: [],
               });
-            },
-          ).catch((e) => {
+            })
+            .catch((e) => {
+              logger.error(`get ${targetCluster} NodesInfo failed`, e);
+              nodeClusterErrorArr.push(targetCluster);
 
-            logger.error(`get ${targetCluster} NodesInfo failed`, e);
-            nodeClusterErrorArr.push(targetCluster);
+              throw {
+                code: status.UNKNOWN,
+              } as ServiceError;
+            });
 
-            throw {
-              code: status.UNKNOWN,
-            } as ServiceError;
-          });
-
-          const matchedNode = nodes.find((node) =>
-            normalizeNodeName(node.nodeName) === normalizedRequestedNodeName,
-          );
+          const matchedNode = nodes.find((node) => normalizeNodeName(node.nodeName) === normalizedRequestedNodeName);
 
           if (!matchedNode) {
             return;
@@ -557,7 +535,6 @@ export const misConfigServiceServer = plugin((server) => {
       );
 
       if (nodeClusterErrorArr.length) {
-
         const message = `get ${nodeClusterErrorArr.join(", ")} NodesInfo failed`;
 
         throw {
@@ -566,16 +543,14 @@ export const misConfigServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-
       // 6. 若该节点已在某集群上线则报错
       logger.info("nodeClusterStatusArr %o", nodeClusterStatusArr);
-      const nodeActiveArr = nodeClusterStatusArr.filter((node) =>
-        node.state !== NodeInfo_NodeState.NOT_AVAILABLE || !node.removable,
+      const nodeActiveArr = nodeClusterStatusArr.filter(
+        (node) => node.state !== NodeInfo_NodeState.NOT_AVAILABLE || !node.removable,
       );
 
       if (nodeActiveArr.length) {
-        const message =
-          `node ${nodeName} is already active on cluster ${nodeActiveArr.map((item) => item.cluster).join(", ")}`;
+        const message = `node ${nodeName} is already active on cluster ${nodeActiveArr.map((item) => item.cluster).join(", ")}`;
 
         logger.error(message);
 
@@ -604,31 +579,26 @@ export const misConfigServiceServer = plugin((server) => {
       const destinationClusterNodeName = destinationClusterNodeNameInCluster;
 
       // 7. 节点在目标集群上线
-      await server.ext.clusters.callOnOne(
-        destinationCluster,
-        logger,
-        async (client) => {
-
+      await server.ext.clusters
+        .callOnOne(destinationCluster, logger, async (client) => {
           return await asyncClientCall(client.node, "addNodeToCluster", {
             nodeName: destinationClusterNodeName,
           });
-        },
-      ).catch((e) => {
+        })
+        .catch((e) => {
+          const message = `add node to cluster ${destinationCluster} failed`;
 
-        const message = `add node to cluster ${destinationCluster} failed`;
+          logger.error(message, e);
 
-        logger.error(message, e);
-
-        throw {
-          code: status.INTERNAL,
-          message,
-        } as ServiceError;
-      });
+          throw {
+            code: status.INTERNAL,
+            message,
+          } as ServiceError;
+        });
 
       logger.info(`add node ${destinationClusterNodeName} to cluster ${destinationCluster} success`);
 
       return [{}];
     },
-
   });
 });

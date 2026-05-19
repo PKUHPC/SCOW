@@ -26,9 +26,7 @@ export const TitleText = styled(Typography.Title)`
   }
 `;
 
-export const PageTitle: React.FC<PageTitleProps> = ({
-  beforeTitle, titleText, children,
-}) => {
+export const PageTitle: React.FC<PageTitleProps> = ({ beforeTitle, titleText, children }) => {
   return (
     <Container>
       <TitleText>
@@ -38,5 +36,4 @@ export const PageTitle: React.FC<PageTitleProps> = ({
       {children}
     </Container>
   );
-
 };

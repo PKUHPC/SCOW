@@ -35,13 +35,14 @@ export const UserSearchForm: React.FC<Props> = ({ onSearch, extra, container = t
       }}
       style={{ width: "100%" }}
     >
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        flexWrap: "wrap",
-        width: "100%",
-      }}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          flexWrap: "wrap",
+          width: "100%",
+        }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", flex: 1, minWidth: 260 }}>
           <Form.Item label={t(pCommon("userId"))} name="userId">
@@ -56,11 +57,7 @@ export const UserSearchForm: React.FC<Props> = ({ onSearch, extra, container = t
             </Button>
           </Form.Item>
         </div>
-        {extra ? (
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
-            {extra}
-          </div>
-        ) : null}
+        {extra ? <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>{extra}</div> : null}
       </div>
     </Form>
   );

@@ -20,7 +20,7 @@ import { z } from "zod";
 
 const configPath = USE_MOCK ? join(__dirname, "config") : undefined;
 const clustersInit = getClusterConfigs(configPath, console, ["ai"]);
-Object.keys(clustersInit).map((id) => clustersInit[id].loginNodes = clustersInit[id].loginNodes.map(getLoginNode));
+Object.keys(clustersInit).map((id) => (clustersInit[id].loginNodes = clustersInit[id].loginNodes.map(getLoginNode)));
 // 配置文件中的已配置集群
 export const clusters = clustersInit;
 
@@ -47,20 +47,24 @@ const ClusterSchema = z.object({
   name: I18nStringTypeSchema,
 });
 
-const NavLinkSchema: z.ZodSchema<any> = z.lazy(() => z.object({
-  text: z.string(),
-  url: z.string().optional(),
-  openInNewPage: z.boolean().optional(),
-  iconPath: z.string().optional(),
-  children: z.array(
-    z.object({
-      text: z.string(),
-      openInNewPage: z.boolean().optional(),
-      iconPath: z.string().optional(),
-      url: z.string(),
-    }),
-  ).optional(),
-}));
+const NavLinkSchema: z.ZodSchema<any> = z.lazy(() =>
+  z.object({
+    text: z.string(),
+    url: z.string().optional(),
+    openInNewPage: z.boolean().optional(),
+    iconPath: z.string().optional(),
+    children: z
+      .array(
+        z.object({
+          text: z.string(),
+          openInNewPage: z.boolean().optional(),
+          iconPath: z.string().optional(),
+          url: z.string(),
+        }),
+      )
+      .optional(),
+  }),
+);
 
 const UserLinkSchema = z.object({
   text: z.string(),
@@ -75,20 +79,22 @@ const ScowResourceConfigSchema = z.object({
 
 const UiExtensionConfigSchema = z.union([
   z.object({ url: z.string() }),
-  z.array(z.object({
-    name: z.string(),
-    url: z.string(),
-  })),
+  z.array(
+    z.object({
+      name: z.string(),
+      url: z.string(),
+    }),
+  ),
 ]);
 
 const grafanaConfigSchema = z.object({
-  enabled:z.boolean().optional(),
-  isProxy:z.boolean().optional(),
-  proxyUrl:z.string(),
-  noProxyUrl:z.string(),
-  dashboardId:z.string(),
-  dashboardName:z.string(),
-  panelIds:z.object({
+  enabled: z.boolean().optional(),
+  isProxy: z.boolean().optional(),
+  proxyUrl: z.string(),
+  noProxyUrl: z.string(),
+  dashboardId: z.string(),
+  dashboardName: z.string(),
+  panelIds: z.object({
     gpu: z.number(),
     gpuMemory: z.number(),
     cpu: z.number(),
@@ -121,36 +127,36 @@ const PublicConfigSchema = z.object({
   LOGIN_NODES: z.record(z.string(), z.string()),
   NOVNC_CLIENT_URL: z.string(),
   SCOW_RESOURCE: ScowResourceConfigSchema.optional(),
-  MAX_JOB_RUNNING_TIME_HOURS:z.number().optional(),
-  DASHBOARD_USER_DISPLAY_MODE: z.union([
-    z.literal("full"),
-    z.literal("simplified"),
-  ]).default("full"),
+  MAX_JOB_RUNNING_TIME_HOURS: z.number().optional(),
+  DASHBOARD_USER_DISPLAY_MODE: z.union([z.literal("full"), z.literal("simplified")]).default("full"),
   NOTIF_ENABLED: z.boolean().optional(),
   NOTIF_NAME: z.string().optional(),
   NOTIF_ADDRESS: z.string().optional(),
   UI_EXTENSION: UiExtensionConfigSchema.optional(),
   AI_USER_SHARE_ENABLED: z.boolean(),
-  INFER_ENABLED:z.boolean(),
-  GRAFANA_CONFIG:grafanaConfigSchema.optional(),
-  CLUSTERS_GRAFANA_CONFIG:z.record(z.string(), grafanaConfigSchema).optional(),
+  INFER_ENABLED: z.boolean(),
+  GRAFANA_CONFIG: grafanaConfigSchema.optional(),
+  CLUSTERS_GRAFANA_CONFIG: z.record(z.string(), grafanaConfigSchema).optional(),
 });
 
 const UiConfigSchema = z.object({
   config: z.object({
-    footer: z.object({
-      defaultText: z.string().optional(),
-      hostnameMap: z.record(z.string(), z.string()).optional(),
-    }).optional(),
-    primaryColor: z.object({
-      defaultColor: z.string().default(DEFAULT_PRIMARY_COLOR),
-      hostnameMap: z.record(z.string(), z.string()).optional(),
-      darkModeColor: z.string().optional(),
-    }).optional(),
+    footer: z
+      .object({
+        defaultText: z.string().optional(),
+        hostnameMap: z.record(z.string(), z.string()).optional(),
+      })
+      .optional(),
+    primaryColor: z
+      .object({
+        defaultColor: z.string().default(DEFAULT_PRIMARY_COLOR),
+        hostnameMap: z.record(z.string(), z.string()).optional(),
+        darkModeColor: z.string().optional(),
+      })
+      .optional(),
     titleTag: z.string().optional(),
   }),
   defaultPrimaryColor: z.string().default(DEFAULT_PRIMARY_COLOR),
-
 });
 
 // 类型别名
@@ -176,7 +182,7 @@ export const PartitionSchema = z.object({
   comment: z.string().optional(),
   gpuType: z.string().optional(),
   vramMb: z.number().optional(),
-  maxAcceleratorsPerPod:z.number().optional(),
+  maxAcceleratorsPerPod: z.number().optional(),
   gpuModel: z.string().optional(),
   acceleratorDescriptions: z.array(z.string()),
   cpuModel: z.string().optional(),
@@ -184,10 +190,12 @@ export const PartitionSchema = z.object({
 
 const LoginNodeConfigSchema = z.union([
   z.array(z.string()),
-  z.array(z.object({
-    name: I18nStringTypeSchema,
-    address: z.string(),
-  })),
+  z.array(
+    z.object({
+      name: I18nStringTypeSchema,
+      address: z.string(),
+    }),
+  ),
 ]);
 
 const StorageConfigSchema = z.object({
@@ -208,7 +216,6 @@ const ClusterAiConfigSchema = z.object({
 });
 
 export const config = router({
-
   publicConfig: authProcedure
     .meta({
       openapi: {
@@ -221,34 +228,42 @@ export const config = router({
     .input(z.void())
     .output(PublicConfigSchema)
     .query(async () => {
-
       const capabilities = await getCapabilities(envConfig.AUTH_INTERNAL_URL);
       const versionTag = readVersionFile()?.tag;
 
       const systemLanguageConfig = getSystemLanguageConfig(getCommonConfig().systemLanguage);
 
       const grafanaCommonConfig = {
-        proxyUrl: join(envConfig.MIS_URL,"/api/admin/monitor/getResourceStatus"),
-        noProxyUrl:misConfig.clusterMonitor?.grafanaUrl ?? "",
-        enabled:misConfig.clusterMonitor?.resourceStatus?.enabled,
-        isProxy:misConfig.clusterMonitor?.resourceStatus?.proxy,
+        proxyUrl: join(envConfig.MIS_URL, "/api/admin/monitor/getResourceStatus"),
+        noProxyUrl: misConfig.clusterMonitor?.grafanaUrl ?? "",
+        enabled: misConfig.clusterMonitor?.resourceStatus?.enabled,
+        isProxy: misConfig.clusterMonitor?.resourceStatus?.proxy,
       };
 
-      const buildGrafanaConfig = (jobMonitor?: { dashboardId: string; dashboardName: string; panelIds: {
-        gpu: number; gpuMemory: number; cpu: number; memory: number; network: number
-      } }) =>
-        jobMonitor ? { ...jobMonitor, ...grafanaCommonConfig } : undefined;
+      const buildGrafanaConfig = (jobMonitor?: {
+        dashboardId: string;
+        dashboardName: string;
+        panelIds: {
+          gpu: number;
+          gpuMemory: number;
+          cpu: number;
+          memory: number;
+          network: number;
+        };
+      }) => (jobMonitor ? { ...jobMonitor, ...grafanaCommonConfig } : undefined);
 
       type GrafanaConfig = NonNullable<ReturnType<typeof buildGrafanaConfig>>;
 
-      const clustersGrafanaConfig = Object.entries(clusters)
-        .reduce<Record<string, GrafanaConfig>>((acc, [clusterId, cluster]) => {
+      const clustersGrafanaConfig = Object.entries(clusters).reduce<Record<string, GrafanaConfig>>(
+        (acc, [clusterId, cluster]) => {
           const grafanaConfig = buildGrafanaConfig(cluster.jobMonitor);
           if (grafanaConfig) {
             acc[clusterId] = grafanaConfig;
           }
           return acc;
-        }, {});
+        },
+        {},
+      );
 
       return {
         ENABLE_CHANGE_PASSWORD: capabilities.changePassword,
@@ -324,41 +339,53 @@ export const config = router({
       },
     })
     .input(z.void())
-    .output(z.record(z.string(), z.object({
-      scowdEnabled: z.boolean(),
-      storage: StorageConfigSchema,
-      loginNodes: LoginNodeConfigSchema,
-      ai: ClusterAiConfigSchema,
-    })))
+    .output(
+      z.record(
+        z.string(),
+        z.object({
+          scowdEnabled: z.boolean(),
+          storage: StorageConfigSchema,
+          loginNodes: LoginNodeConfigSchema,
+          ai: ClusterAiConfigSchema,
+        }),
+      ),
+    )
     .query(async () => {
-      const clusterConfigs = Object.keys(clusters).reduce((acc, clusterId) => {
-        const cluster = clusters[clusterId];
-        acc[clusterId] = {
-          scowdEnabled: cluster.scowd?.enabled ?? false,
-          storage:{
-            enabled:cluster.storage?.enabled ?? false,
-            paths:cluster.storage?.paths ?? [],
-            replicaExist: cluster.storage?.replicaExist ?? false,
-          },
-          loginNodes: cluster?.loginNodes,
-          ai: {
-            devHost: {
-              enabled: cluster.ai.devHost?.enabled ?? false,
-              vscodeInfo: cluster.ai?.devHost?.vscodeInfo ?? { binPath: "" },
-              maxRunningTimeHours: cluster.ai?.devHost?.maxRunningTimeHours,
+      const clusterConfigs = Object.keys(clusters).reduce(
+        (acc, clusterId) => {
+          const cluster = clusters[clusterId];
+          acc[clusterId] = {
+            scowdEnabled: cluster.scowd?.enabled ?? false,
+            storage: {
+              enabled: cluster.storage?.enabled ?? false,
+              paths: cluster.storage?.paths ?? [],
+              replicaExist: cluster.storage?.replicaExist ?? false,
             },
-            clusterPublicPath: cluster.ai?.clusterPublicPath ?? "",
-          },
-        };
-        return acc;
-      }, {} as Record<string, {
-        scowdEnabled: boolean,
-        storage: { enabled: boolean,paths: string[], replicaExist: boolean },
-        loginNodes: LoginNodeConfig,
-        ai: { devHost: { enabled: boolean, vscodeInfo: { binPath: string }, maxRunningTimeHours?: number },
-          clusterPublicPath: string,
+            loginNodes: cluster?.loginNodes,
+            ai: {
+              devHost: {
+                enabled: cluster.ai.devHost?.enabled ?? false,
+                vscodeInfo: cluster.ai?.devHost?.vscodeInfo ?? { binPath: "" },
+                maxRunningTimeHours: cluster.ai?.devHost?.maxRunningTimeHours,
+              },
+              clusterPublicPath: cluster.ai?.clusterPublicPath ?? "",
+            },
+          };
+          return acc;
         },
-      }>);
+        {} as Record<
+          string,
+          {
+            scowdEnabled: boolean;
+            storage: { enabled: boolean; paths: string[]; replicaExist: boolean };
+            loginNodes: LoginNodeConfig;
+            ai: {
+              devHost: { enabled: boolean; vscodeInfo: { binPath: string }; maxRunningTimeHours?: number };
+              clusterPublicPath: string;
+            };
+          }
+        >,
+      );
 
       return clusterConfigs;
     }),
@@ -372,18 +399,19 @@ export const config = router({
         summary: "GetAvailablePartitions",
       },
     })
-    .input(z.object({ accountName: z.string(),clusterId:z.string() }))
+    .input(z.object({ accountName: z.string(), clusterId: z.string() }))
     .output(z.array(PartitionSchema))
-    .query(async ({ input:{ accountName, clusterId }, ctx: { user } }) => {
+    .query(async ({ input: { accountName, clusterId }, ctx: { user } }) => {
       const client = getAdapterClient(clusterId);
       if (!client) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message:`cluster ${clusterId} is not found`,
+          message: `cluster ${clusterId} is not found`,
         });
       }
       const { partitions } = await asyncClientCall(client.config, "getAvailablePartitions", {
-        accountName, userId: user.identityId,
+        accountName,
+        userId: user.identityId,
       });
 
       const reply = await asyncClientCall(client.config, "getClusterInfo", {

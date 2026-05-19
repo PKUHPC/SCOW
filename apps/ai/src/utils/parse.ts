@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { NextApiRequest } from "next";
 import { NextRequest } from "next/server";
 
@@ -21,13 +9,16 @@ import { NextRequest } from "next/server";
  * @returns dict
  */
 export function parseKeyValue(input: string): Record<string, string> {
-  return input.split(",").reduce((prev, curr) => {
-    const [key, value] = curr.split("=").map((x) => x.trim());
-    if (key) {
-      prev[key] = value ?? "";
-    }
-    return prev;
-  }, {} as Record<string, string>);
+  return input.split(",").reduce(
+    (prev, curr) => {
+      const [key, value] = curr.split("=").map((x) => x.trim());
+      if (key) {
+        prev[key] = value ?? "";
+      }
+      return prev;
+    },
+    {} as Record<string, string>,
+  );
 }
 
 /**
@@ -54,7 +45,6 @@ export function parseArray(str: string): string[] {
 }
 
 export const parseIp = (req: NextApiRequest | NextRequest): string | undefined => {
-
   let forwardedFor: string | string[] | undefined | null = undefined;
 
   if ("headers" in req && typeof req.headers.get === "function") {

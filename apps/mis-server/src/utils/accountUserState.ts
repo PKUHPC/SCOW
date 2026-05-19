@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Decimal } from "@scow/lib-decimal";
 import { Account_DisplayedAccountState as DisplayedAccountState } from "@scow/protos/build/server/account";
 import { AccountUserInfo_DisplayedUserState as DisplayedUserState } from "@scow/protos/build/server/user";
@@ -18,16 +6,16 @@ import { UserStateInAccount } from "src/entities/UserAccount";
 
 export interface AccountStateInfo {
   // 当前页面展示的账户状态
-  displayedState: DisplayedAccountState,
+  displayedState: DisplayedAccountState;
   // 是否需要在集群中封锁账户
-  shouldBlockInCluster: boolean,
+  shouldBlockInCluster: boolean;
 }
 
 export interface UserStateInfo {
   // 账户管理的用户列表下展示的用户状态
-  displayedState: DisplayedUserState,
+  displayedState: DisplayedUserState;
   // 是否需要在集群中封锁用户
-  shouldBlockInCluster: boolean,
+  shouldBlockInCluster: boolean;
 }
 
 /**
@@ -42,8 +30,8 @@ export const getAccountStateInfo = (
   whitelistId: number | undefined,
   state: AccountState,
   balance: Decimal,
-  thresholdAmount: Decimal): AccountStateInfo => {
-
+  thresholdAmount: Decimal,
+): AccountStateInfo => {
   if (state === AccountState.DELETED) {
     return {
       displayedState: DisplayedAccountState.DISPLAYED_DELETED,
@@ -72,14 +60,15 @@ export const getAccountStateInfo = (
     };
   }
 
-  return balance.lte(thresholdAmount) ?
-    {
-      displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
-      shouldBlockInCluster: true,
-    } : {
-      displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
-      shouldBlockInCluster: false,
-    };
+  return balance.lte(thresholdAmount)
+    ? {
+        displayedState: DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD,
+        shouldBlockInCluster: true,
+      }
+    : {
+        displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
+        shouldBlockInCluster: false,
+      };
 };
 
 /**
@@ -92,8 +81,8 @@ export const getAccountStateInfo = (
 export const getUserStateInfo = (
   state: UserStateInAccount | undefined,
   currentLimit: Decimal | undefined,
-  currentUsed: Decimal | undefined): UserStateInfo => {
-
+  currentUsed: Decimal | undefined,
+): UserStateInfo => {
   // 被账户管理员手动封锁时，显示状态为封锁，表示用户不可以使用集群资源
   if (state === UserStateInAccount.BLOCKED_BY_ADMIN) {
     return {

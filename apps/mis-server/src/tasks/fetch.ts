@@ -26,8 +26,9 @@ import { toGrpc } from "src/utils/job";
 import { batchSendMessages, Message } from "src/utils/sendMessage";
 
 async function getClusterLatestDate(em: SqlEntityManager, cluster: string, logger: Logger) {
-
-  const query = em.fork().createQueryBuilder(JobInfo)
+  const query = em
+    .fork()
+    .createQueryBuilder(JobInfo)
     .select("timeEnd")
     .where({ cluster })
     .orderBy({ timeEnd: QueryOrder.DESC });
@@ -60,11 +61,7 @@ const processGetJobsResult = (cluster: string, result: GetJobsResponse) => {
 
 export let lastFetched: Date | null = null;
 
-export async function fetchJobs(
-  em: SqlEntityManager<MySqlDriver>,
-  logger: Logger,
-  clusterPlugin: ClusterPlugin,
-) {
+export async function fetchJobs(em: SqlEntityManager<MySqlDriver>, logger: Logger, clusterPlugin: ClusterPlugin) {
   logger.info("Start fetching.");
 
   logger.info("Loading Tenant Account associations");
@@ -73,12 +70,11 @@ export async function fetchJobs(
     syncStatus: SyncStatus.RUNNING,
   });
   if (isSyncAccountUserRunning) {
-    logger.info(
-      "An account user synchronization task is running.This will skip fetching Jobs in cluster!");
+    logger.info("An account user synchronization task is running.This will skip fetching Jobs in cluster!");
     return [{ newJobsCount: 0 }];
   }
 
-  const accounts = await em.find(Account, { }, { populate: ["tenant"]});
+  const accounts = await em.find(Account, {}, { populate: ["tenant"] });
 
   const accountTenantMap = new Map(accounts.map((x) => [x.accountName, x.tenant.$.name]));
 
@@ -94,9 +90,7 @@ export async function fetchJobs(
   const savedJobsInfo: JobInfo[] = [];
 
   const persistJobAndCharge = async (jobs: ({ cluster: string } & ClusterJobInfo)[]) => {
-
     const result = await em.transactional(async (em) => {
-
       // Calculate prices for new info and persist
       const pricedJobs: JobInfo[] = [];
       let pricedJob: JobInfo;
@@ -110,20 +104,22 @@ export async function fetchJobs(
 
         try {
           job.elapsedSeconds = Math.max(0, Number(job.elapsedSeconds) || 0);
-          const price = tenant ? await priceMap.calculatePrice({
-            jobId: job.jobId,
-            cluster: job.cluster,
-            cpusAlloc: job.cpusAlloc!,
-            gpu: job.gpusAlloc!,
-            memAlloc: job.memAllocMb!,
-            memReq: job.memReqMb,
-            partition: job.partition,
-            qos: job.qos,
-            timeUsed: job.elapsedSeconds,
-            account: job.account,
-            tenant,
-            submitTime,
-          }) : emptyJobPriceInfo();
+          const price = tenant
+            ? await priceMap.calculatePrice({
+                jobId: job.jobId,
+                cluster: job.cluster,
+                cpusAlloc: job.cpusAlloc!,
+                gpu: job.gpusAlloc!,
+                memAlloc: job.memAllocMb!,
+                memReq: job.memReqMb,
+                partition: job.partition,
+                qos: job.qos,
+                timeUsed: job.elapsedSeconds,
+                account: job.account,
+                tenant,
+                submitTime,
+              })
+            : emptyJobPriceInfo();
 
           pricedJob = new JobInfo(job, tenant, price);
 
@@ -131,21 +127,27 @@ export async function fetchJobs(
 
           // Determine whether the job can be inserted into the database. If not, skip the job
           await em.flush();
-
         } catch (error) {
           logger.error("invalid job. cluster: %s, jobId: %s, error: %s", job.cluster, job.jobId, error);
           throw error;
         }
 
-        const account = await em.findOne(Account, {
-          accountName: pricedJob.account,
-        }, {
-          populate: ["tenant"],
-        });
+        const account = await em.findOne(
+          Account,
+          {
+            accountName: pricedJob.account,
+          },
+          {
+            populate: ["tenant"],
+          },
+        );
 
         if (!account) {
-          logger.warn({ biJobIndex: pricedJob.biJobIndex },
-            "Account %s is not found. Don't charge the job.", pricedJob.account);
+          logger.warn(
+            { biJobIndex: pricedJob.biJobIndex },
+            "Account %s is not found. Don't charge the job.",
+            pricedJob.account,
+          );
         }
 
         const comment = parsePlaceholder(misConfig.jobChargeComment, pricedJob);
@@ -163,46 +165,67 @@ export async function fetchJobs(
 
         if (account) {
           // charge account
-          await charge({
-            amount: existingRunningRecord ?
-              pricedJob.accountPrice.minus(existingRunningRecord.accountPrice) : pricedJob.accountPrice,
-            type: misConfig.jobChargeType,
-            comment,
-            target: account,
-            userId: pricedJob.user,
-            metadata: metadataMap,
-          }, em, currentActivatedClusters, logger, clusterPlugin);
+          await charge(
+            {
+              amount: existingRunningRecord
+                ? pricedJob.accountPrice.minus(existingRunningRecord.accountPrice)
+                : pricedJob.accountPrice,
+              type: misConfig.jobChargeType,
+              comment,
+              target: account,
+              userId: pricedJob.user,
+              metadata: metadataMap,
+            },
+            em,
+            currentActivatedClusters,
+            logger,
+            clusterPlugin,
+          );
 
           // charge tenant
-          await charge({
-            amount: existingRunningRecord ?
-              pricedJob.tenantPrice.minus(existingRunningRecord.tenantPrice) : pricedJob.tenantPrice,
-            type: misConfig.jobChargeType,
-            comment,
-            target: account.tenant.$,
-            userId: pricedJob.user,
-            metadata: metadataMap,
-          }, em, currentActivatedClusters, logger, clusterPlugin);
+          await charge(
+            {
+              amount: existingRunningRecord
+                ? pricedJob.tenantPrice.minus(existingRunningRecord.tenantPrice)
+                : pricedJob.tenantPrice,
+              type: misConfig.jobChargeType,
+              comment,
+              target: account.tenant.$,
+              userId: pricedJob.user,
+              metadata: metadataMap,
+            },
+            em,
+            currentActivatedClusters,
+            logger,
+            clusterPlugin,
+          );
 
-          const ua = await em.findOne(UserAccount, {
-            account: { accountName: pricedJob.account },
-            user: { userId: pricedJob.user },
-          }, {
-            populate: ["user", "account"],
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-          });
+          const ua = await em.findOne(
+            UserAccount,
+            {
+              account: { accountName: pricedJob.account },
+              user: { userId: pricedJob.user },
+            },
+            {
+              populate: ["user", "account"],
+              lockMode: LockMode.PESSIMISTIC_WRITE,
+            },
+          );
 
           if (!ua) {
-            logger.warn({ biJobIndex: pricedJob.biJobIndex },
-              "User %s in account %s is not found.", pricedJob.user, pricedJob.account);
+            logger.warn(
+              { biJobIndex: pricedJob.biJobIndex },
+              "User %s in account %s is not found.",
+              pricedJob.user,
+              pricedJob.account,
+            );
           } else {
-          // 用户限额及相关操作
+            // 用户限额及相关操作
             const accountChargeAmount = existingRunningRecord
               ? pricedJob.accountPrice.minus(existingRunningRecord.accountPrice)
               : pricedJob.accountPrice;
             await addJobCharge(ua, accountChargeAmount, currentActivatedClusters, clusterPlugin, logger);
           }
-
         }
 
         // 删除进行中作业计费表中对应的记录
@@ -219,9 +242,13 @@ export async function fetchJobs(
 
     em.clear();
 
-    await callHook("jobsSaved", {
-      jobs: result,
-    }, logger);
+    await callHook(
+      "jobsSaved",
+      {
+        jobs: result,
+      },
+      logger,
+    );
 
     return result.length;
   };
@@ -232,50 +259,86 @@ export async function fetchJobs(
     let newJobsCount = 0;
 
     const fields: string[] = [
-      "job_id", "name", "user", "account", "cpus_alloc", "gpus_alloc", "mem_alloc_mb", "cpus_req", "mem_req_mb",
-      "partition", "qos", "elapsed_seconds", "node_list", "nodes_req", "nodes_alloc", "time_limit_minutes",
-      "submit_time", "start_time", "end_time",
+      "job_id",
+      "name",
+      "user",
+      "account",
+      "cpus_alloc",
+      "gpus_alloc",
+      "mem_alloc_mb",
+      "cpus_req",
+      "mem_req_mb",
+      "partition",
+      "qos",
+      "elapsed_seconds",
+      "node_list",
+      "nodes_req",
+      "nodes_alloc",
+      "time_limit_minutes",
+      "submit_time",
+      "start_time",
+      "end_time",
     ];
 
     for (const cluster of Object.keys(clusters)) {
-
       logger.info(`fetch jobs from cluster ${cluster}`);
       const endFetchDate = new Date(Date.now() - misConfig.fetchJobs.endTimeDelaySeconds * 1000);
 
       // 1、同步正在进行中的作业及在当期时间点之后结束的作业
       const isAiCluster = configClusters[cluster].ai?.enabled;
-      const runningJobsResponse = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
-        await asyncClientCall(client.job, "getJobs", {
-          fields,
-          jobTypes: [],
-          filter: {
-            users: [], accounts: [],
-            states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])]},
-        }),
+      const runningJobsResponse = await clusterPlugin.clusters.callOnOne(
+        cluster,
+        logger,
+        async (client) =>
+          await asyncClientCall(client.job, "getJobs", {
+            fields,
+            jobTypes: [],
+            filter: {
+              users: [],
+              accounts: [],
+              states: ["RUNNING", "PENDING", ...(isAiCluster ? ["QUEUED"] : [])],
+            },
+          }),
       );
 
-      const endedJobsAfterEndFetchDate = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
-        await asyncClientCall(client.job, "getJobs", {
-          fields,
-          jobTypes: [],
-          filter: {
-            users: [], accounts: [],
-            states: [],
-            // 结束时间在当前时间节点之后
-            endTime: { startTime: new Date(endFetchDate.getTime() + 1000).toISOString() },
-          },
-        }),
+      const endedJobsAfterEndFetchDate = await clusterPlugin.clusters.callOnOne(
+        cluster,
+        logger,
+        async (client) =>
+          await asyncClientCall(client.job, "getJobs", {
+            fields,
+            jobTypes: [],
+            filter: {
+              users: [],
+              accounts: [],
+              states: [],
+              // 结束时间在当前时间节点之后
+              endTime: { startTime: new Date(endFetchDate.getTime() + 1000).toISOString() },
+            },
+          }),
       );
 
       // 对每个正在进行中的作业及在当期时间点之后结束的作业进行计费处理
       const runningJobs = [...runningJobsResponse.jobs, ...endedJobsAfterEndFetchDate.jobs];
       for (let i = 0; i < runningJobs.length; i++) {
         try {
-          await processRunningJobBilling(em, logger, clusterPlugin, cluster, currentActivatedClusters,
-            runningJobs[i], endFetchDate, priceMap);
+          await processRunningJobBilling(
+            em,
+            logger,
+            clusterPlugin,
+            cluster,
+            currentActivatedClusters,
+            runningJobs[i],
+            endFetchDate,
+            priceMap,
+          );
         } catch (error) {
-          logger.error("Error processing running job billing. cluster: %s, jobId: %s, error: %o",
-            cluster, runningJobs[i].jobId, error);
+          logger.error(
+            "Error processing running job billing. cluster: %s, jobId: %s, error: %o",
+            cluster,
+            runningJobs[i].jobId,
+            error,
+          );
         }
         // 隔一段时间清一次以防内存过大
         if (i % 100 === 0) {
@@ -286,42 +349,51 @@ export async function fetchJobs(
       // 2、同步已经结束的作业
       const latestDate = await getClusterLatestDate(em, cluster, logger);
       const nextDate = latestDate && new Date(latestDate.getTime() + 1000);
-      const configDate: Date | undefined =
-      (misConfig.fetchJobs.startDate && new Date(misConfig.fetchJobs.startDate)) as Date | undefined;
+      const configDate: Date | undefined = (misConfig.fetchJobs.startDate && new Date(misConfig.fetchJobs.startDate)) as
+        | Date
+        | undefined;
 
-      const startFetchDate = (nextDate && configDate)
-        ? (nextDate > configDate ? nextDate : configDate)
-        : (nextDate || configDate);
+      const startFetchDate =
+        nextDate && configDate ? (nextDate > configDate ? nextDate : configDate) : nextDate || configDate;
       logger.info(`Fetching new info which end_time is from
           ${startFetchDate?.toISOString()} to ${endFetchDate.toISOString()}`);
 
-
       const fetchEndedJobWithinTimeRange = async (startDate: Date, endDate: Date, batchSize: number) => {
-
         // calculate totalCount between startDate and endDate
-        const totalCount = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) => {
-          return await asyncClientCall(client.job, "getJobs", {
-            fields,
-            jobTypes: [],
-            filter: {
-              users: [], accounts: [], states: [],
-              endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
-            },
-            pageInfo: { page: 1, pageSize: 1 },
-          });
-        }).then((result) => result.totalCount!);
-
-        if (totalCount <= batchSize) {
-          const jobsInfo = await clusterPlugin.clusters.callOnOne(cluster, logger, async (client) =>
-            await asyncClientCall(client.job, "getJobs", {
+        const totalCount = await clusterPlugin.clusters
+          .callOnOne(cluster, logger, async (client) => {
+            return await asyncClientCall(client.job, "getJobs", {
               fields,
               jobTypes: [],
               filter: {
-                users: [], accounts: [], states: [],
+                users: [],
+                accounts: [],
+                states: [],
                 endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
               },
-            }),
-          ).then((result) => processGetJobsResult(cluster, result));
+              pageInfo: { page: 1, pageSize: 1 },
+            });
+          })
+          .then((result) => result.totalCount!);
+
+        if (totalCount <= batchSize) {
+          const jobsInfo = await clusterPlugin.clusters
+            .callOnOne(
+              cluster,
+              logger,
+              async (client) =>
+                await asyncClientCall(client.job, "getJobs", {
+                  fields,
+                  jobTypes: [],
+                  filter: {
+                    users: [],
+                    accounts: [],
+                    states: [],
+                    endTime: { startTime: startDate?.toISOString(), endTime: endDate.toISOString() },
+                  },
+                }),
+            )
+            .then((result) => processGetJobsResult(cluster, result));
 
           let currentJobsGroup: ({ cluster: string } & ClusterJobInfo)[] = [];
           let previousDate: string | null = null;
@@ -345,15 +417,16 @@ export async function fetchJobs(
           logger.info(`Completed. Saved ${savedJobsCount} new info.`);
           lastFetched = new Date();
           return savedJobsCount;
-
         } else {
           const midDate = new Date((startDate.getTime() + endDate.getTime()) / 2);
           const firstHalfJobsCount = await fetchEndedJobWithinTimeRange(startDate, midDate, batchSize);
           const secondHalfJobsCount = await fetchEndedJobWithinTimeRange(
-            new Date(midDate.getTime() + 1000), endDate, batchSize);
+            new Date(midDate.getTime() + 1000),
+            endDate,
+            batchSize,
+          );
           return firstHalfJobsCount + secondHalfJobsCount;
         }
-
       };
 
       newJobsCount += await fetchEndedJobWithinTimeRange(
@@ -361,7 +434,6 @@ export async function fetchJobs(
         endFetchDate,
         misConfig.fetchJobs.batchSize,
       );
-
     }
 
     const messages: Message[] = savedJobsInfo.map((job) => ({
@@ -397,7 +469,6 @@ async function processRunningJobBilling(
   endFetchDate: Date,
   priceMap: PriceMap,
 ) {
-
   await em.transactional(async (em) => {
     const placeholderData = {
       ...runningJob,
@@ -407,24 +478,35 @@ async function processRunningJobBilling(
     };
 
     // 查找是否已存在此作业的计费记录
-    const existingRunningRecord = await em.findOne(RunningJobChargeRecord, {
-      cluster,
-      jobId: runningJob.jobId,
-    }, {
-      lockMode: LockMode.PESSIMISTIC_WRITE,
-    });
+    const existingRunningRecord = await em.findOne(
+      RunningJobChargeRecord,
+      {
+        cluster,
+        jobId: runningJob.jobId,
+      },
+      {
+        lockMode: LockMode.PESSIMISTIC_WRITE,
+      },
+    );
 
     const accountName = runningJob.account;
     const userId = runningJob.user;
-    const account = await em.findOne(Account, {
-      accountName: runningJob.account,
-    }, {
-      populate: ["tenant"],
-    });
+    const account = await em.findOne(
+      Account,
+      {
+        accountName: runningJob.account,
+      },
+      {
+        populate: ["tenant"],
+      },
+    );
 
     if (!account) {
-      logger.error({ biJobIndex: runningJob.jobId },
-        "Account %s is not found. Don't charge the job.", runningJob.account);
+      logger.error(
+        { biJobIndex: runningJob.jobId },
+        "Account %s is not found. Don't charge the job.",
+        runningJob.account,
+      );
       return;
     }
 
@@ -449,20 +531,22 @@ async function processRunningJobBilling(
       }
 
       // 2. 计算费用
-      const price = tenantName ? await priceMap.calculatePrice({
-        jobId: runningJob.jobId,
-        cluster: cluster,
-        cpusAlloc: runningJob.cpusAlloc || 0,
-        gpu: runningJob.gpusAlloc || 0,
-        memAlloc: runningJob.memAllocMb || 0,
-        memReq: runningJob.memReqMb,
-        partition: runningJob.partition,
-        qos: runningJob.qos,
-        timeUsed: Math.max(0, Number(runningJob.elapsedSeconds) || 0),
-        account: accountName,
-        tenant: tenantName,
-        submitTime,
-      }) : emptyJobPriceInfo();
+      const price = tenantName
+        ? await priceMap.calculatePrice({
+            jobId: runningJob.jobId,
+            cluster: cluster,
+            cpusAlloc: runningJob.cpusAlloc || 0,
+            gpu: runningJob.gpusAlloc || 0,
+            memAlloc: runningJob.memAllocMb || 0,
+            memReq: runningJob.memReqMb,
+            partition: runningJob.partition,
+            qos: runningJob.qos,
+            timeUsed: Math.max(0, Number(runningJob.elapsedSeconds) || 0),
+            account: accountName,
+            tenant: tenantName,
+            submitTime,
+          })
+        : emptyJobPriceInfo();
 
       const accountPriceSum = price.account?.price || new Decimal(0);
       const tenantPriceSum = price.tenant?.price || new Decimal(0);
@@ -482,32 +566,48 @@ async function processRunningJobBilling(
 
       // 3. 产生扣费记录
       // 生成账户扣费记录
-      await charge({
-        amount: accountPrice,
-        type: misConfig.jobChargeType,
-        comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
-        target: account,
-        userId: userId,
-        metadata: metadataMap,
-      }, em, currentActivatedClusters, logger, clusterPlugin);
+      await charge(
+        {
+          amount: accountPrice,
+          type: misConfig.jobChargeType,
+          comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
+          target: account,
+          userId: userId,
+          metadata: metadataMap,
+        },
+        em,
+        currentActivatedClusters,
+        logger,
+        clusterPlugin,
+      );
 
       // 生成租户扣费记录
-      await charge({
-        amount: tenantPrice,
-        type: misConfig.jobChargeType,
-        comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
-        target: account.tenant.$,
-        userId: userId,
-        metadata: metadataMap,
-      }, em, currentActivatedClusters, logger, clusterPlugin);
+      await charge(
+        {
+          amount: tenantPrice,
+          type: misConfig.jobChargeType,
+          comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
+          target: account.tenant.$,
+          userId: userId,
+          metadata: metadataMap,
+        },
+        em,
+        currentActivatedClusters,
+        logger,
+        clusterPlugin,
+      );
 
-      const ua = await em.findOne(UserAccount, {
-        account: { accountName },
-        user: { userId },
-      }, {
-        populate: ["user", "account"],
-        lockMode: LockMode.PESSIMISTIC_WRITE,
-      });
+      const ua = await em.findOne(
+        UserAccount,
+        {
+          account: { accountName },
+          user: { userId },
+        },
+        {
+          populate: ["user", "account"],
+          lockMode: LockMode.PESSIMISTIC_WRITE,
+        },
+      );
       if (ua) {
         await addJobCharge(ua, accountPrice, currentActivatedClusters, clusterPlugin, logger);
       }
@@ -529,20 +629,22 @@ async function processRunningJobBilling(
     }
 
     // 2. 计算费用（基于提交时间计算适用的计费项）
-    const price = tenantName ? await priceMap.calculatePrice({
-      jobId: runningJob.jobId,
-      cluster: cluster,
-      cpusAlloc: runningJob.cpusAlloc || 0,
-      gpu: runningJob.gpusAlloc || 0,
-      memAlloc: runningJob.memAllocMb || 0,
-      memReq: runningJob.memReqMb,
-      partition: runningJob.partition,
-      qos: runningJob.qos,
-      timeUsed: runningJob.elapsedSeconds !== undefined ? runningJob.elapsedSeconds : 0,
-      account: accountName,
-      tenant: tenantName,
-      submitTime,
-    }) : emptyJobPriceInfo();
+    const price = tenantName
+      ? await priceMap.calculatePrice({
+          jobId: runningJob.jobId,
+          cluster: cluster,
+          cpusAlloc: runningJob.cpusAlloc || 0,
+          gpu: runningJob.gpusAlloc || 0,
+          memAlloc: runningJob.memAllocMb || 0,
+          memReq: runningJob.memReqMb,
+          partition: runningJob.partition,
+          qos: runningJob.qos,
+          timeUsed: runningJob.elapsedSeconds !== undefined ? runningJob.elapsedSeconds : 0,
+          account: accountName,
+          tenant: tenantName,
+          submitTime,
+        })
+      : emptyJobPriceInfo();
 
     const accountPrice = price.account?.price || new Decimal(0);
     const tenantPrice = price.tenant?.price || new Decimal(0);
@@ -568,32 +670,48 @@ async function processRunningJobBilling(
 
     // 3. 产生扣费记录
     // 生成账户扣费记录
-    await charge({
-      amount: accountPrice,
-      type: misConfig.jobChargeType,
-      comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
-      target: account,
-      userId: userId,
-      metadata: metadataMap,
-    }, em, currentActivatedClusters, logger, clusterPlugin);
+    await charge(
+      {
+        amount: accountPrice,
+        type: misConfig.jobChargeType,
+        comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
+        target: account,
+        userId: userId,
+        metadata: metadataMap,
+      },
+      em,
+      currentActivatedClusters,
+      logger,
+      clusterPlugin,
+    );
 
     // 生成租户扣费记录
-    await charge({
-      amount: tenantPrice,
-      type: misConfig.jobChargeType,
-      comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
-      target: account.tenant.$,
-      userId: userId,
-      metadata: metadataMap,
-    }, em, currentActivatedClusters, logger, clusterPlugin);
+    await charge(
+      {
+        amount: tenantPrice,
+        type: misConfig.jobChargeType,
+        comment: parsePlaceholder(misConfig.jobChargeComment, placeholderData),
+        target: account.tenant.$,
+        userId: userId,
+        metadata: metadataMap,
+      },
+      em,
+      currentActivatedClusters,
+      logger,
+      clusterPlugin,
+    );
 
-    const ua = await em.findOne(UserAccount, {
-      account: { accountName },
-      user: { userId },
-    }, {
-      populate: ["user", "account"],
-      lockMode: LockMode.PESSIMISTIC_WRITE,
-    });
+    const ua = await em.findOne(
+      UserAccount,
+      {
+        account: { accountName },
+        user: { userId },
+      },
+      {
+        populate: ["user", "account"],
+        lockMode: LockMode.PESSIMISTIC_WRITE,
+      },
+    );
     if (ua) {
       await addJobCharge(ua, accountPrice, currentActivatedClusters, clusterPlugin, logger);
     }

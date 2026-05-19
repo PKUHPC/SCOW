@@ -10,10 +10,10 @@ import { router } from "src/server/trpc/def";
 import { withFileDriver } from "src/server/trpc/Driver/fileDriver/fileDriver";
 import { FileMetaSchema, InitMultipartUploadResponseSchema, ListDirectorySchema } from "src/server/trpc/model/file";
 import { authProcedure } from "src/server/trpc/procedure/base";
+import { PlatformRole } from "src/server/trpc/route/auth";
 import { clusters } from "src/server/trpc/route/config";
 import { getScowdClient, mapConnectErrorToTRPCError } from "src/server/trpc/scowd/scowd";
 import { getCurrentClusters } from "src/server/utils/clusters";
-import { PlatformRole } from "src/server/trpc/route/auth";
 import { checkClusterAvailable, shouldPathsSkipPermissionCheck } from "src/server/utils/clusters";
 import { clusterNotFound } from "src/server/utils/errors";
 import { logger } from "src/server/utils/logger";
@@ -83,27 +83,15 @@ export const file = router({
 
       if (target === "FILE") {
         if (res.ok) {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.deleteFile },
-            OperationResult.SUCCESS,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.deleteFile }, OperationResult.SUCCESS);
         } else {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.deleteFile },
-            OperationResult.FAIL,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.deleteFile }, OperationResult.FAIL);
         }
       } else {
         if (res.ok) {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.deleteDirectory },
-            OperationResult.SUCCESS,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.deleteDirectory }, OperationResult.SUCCESS);
         } else {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.deleteDirectory },
-            OperationResult.FAIL,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.deleteDirectory }, OperationResult.FAIL);
         }
       }
       return res;
@@ -162,27 +150,15 @@ export const file = router({
 
       if (op === "copy") {
         if (res.ok) {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.copyFileItem },
-            OperationResult.SUCCESS,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.copyFileItem }, OperationResult.SUCCESS);
         } else {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.copyFileItem },
-            OperationResult.FAIL,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.copyFileItem }, OperationResult.FAIL);
         }
       } else {
         if (res.ok) {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.moveFileItem },
-            OperationResult.SUCCESS,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.moveFileItem }, OperationResult.SUCCESS);
         } else {
-          await callLog(
-            { ...logInfo, operationTypeName: OperationType.moveFileItem },
-            OperationResult.FAIL,
-          );
+          await callLog({ ...logInfo, operationTypeName: OperationType.moveFileItem }, OperationResult.FAIL);
         }
       }
       return res;
@@ -204,11 +180,7 @@ export const file = router({
 
       // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(
-        clusterId,
-        [fromPath, toPath],
-        isPlatformAdmin,
-      );
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [fromPath, toPath], isPlatformAdmin);
 
       if (op === "copy") {
         await withFileDriver(
@@ -491,38 +463,33 @@ export const file = router({
       }),
     )
     .output(z.void())
-    .mutation(
-      async ({
-        input: { clusterId, filePath, decompressionPath, usePublicPath },
-        ctx: { user },
-      }) => {
-        const currentClusterIds = await getCurrentClusters(user.identityId);
-        checkClusterAvailable(currentClusterIds, clusterId);
+    .mutation(async ({ input: { clusterId, filePath, decompressionPath, usePublicPath }, ctx: { user } }) => {
+      const currentClusterIds = await getCurrentClusters(user.identityId);
+      checkClusterAvailable(currentClusterIds, clusterId);
 
-        // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
-        const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-        const noCheckPermission = shouldPathsSkipPermissionCheck(
-          clusterId,
-          [filePath, decompressionPath],
-          isPlatformAdmin,
-        );
+      // 如果是平台管理员访问集群的公共目录时，则不需要检查权限
+      const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
+      const noCheckPermission = shouldPathsSkipPermissionCheck(
+        clusterId,
+        [filePath, decompressionPath],
+        isPlatformAdmin,
+      );
 
-        if (usePublicPath && !noCheckPermission) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: `${decompressionPath} is outside the required PublicPath boundary`,
-          });
-        }
+      if (usePublicPath && !noCheckPermission) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `${decompressionPath} is outside the required PublicPath boundary`,
+        });
+      }
 
-        return await withFileDriver(
-          { clusterId, user: user.identityId },
-          async (driver) => {
-            await driver.decompressFile(filePath, decompressionPath, noCheckPermission);
-          },
-          logger,
-        );
-      },
-    ),
+      return await withFileDriver(
+        { clusterId, user: user.identityId },
+        async (driver) => {
+          await driver.decompressFile(filePath, decompressionPath, noCheckPermission);
+        },
+        logger,
+      );
+    }),
 
   compressFiles: authProcedure
     .meta({
@@ -533,20 +500,14 @@ export const file = router({
         summary: "压缩文件",
       },
     })
-    .input(
-      z.object({ clusterId: z.string(), filePaths: z.array(z.string()), archivePath: z.string() }),
-    )
+    .input(z.object({ clusterId: z.string(), filePaths: z.array(z.string()), archivePath: z.string() }))
     .output(z.void())
     .mutation(async ({ input: { clusterId, filePaths, archivePath }, ctx: { user } }) => {
       const currentClusterIds = await getCurrentClusters(user.identityId);
       checkClusterAvailable(currentClusterIds, clusterId);
 
       const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;
-      const noCheckPermission = shouldPathsSkipPermissionCheck(
-        clusterId,
-        [...filePaths, archivePath],
-        isPlatformAdmin,
-      );
+      const noCheckPermission = shouldPathsSkipPermissionCheck(clusterId, [...filePaths, archivePath], isPlatformAdmin);
 
       return await withFileDriver(
         { clusterId, user: user.identityId },
@@ -605,13 +566,15 @@ export const file = router({
         summary: "初始化分片上传",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      path: z.string(),
-      name: z.string(),
-      fileSizeByte: z.number(),
-      modificationTime: z.number(),
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        path: z.string(),
+        name: z.string(),
+        fileSizeByte: z.number(),
+        modificationTime: z.number(),
+      }),
+    )
     .output(InitMultipartUploadResponseSchema)
     .use(async ({ input: { path, clusterId, name }, ctx, next }) => {
       const res = await next({ ctx });
@@ -633,10 +596,7 @@ export const file = router({
 
       return res;
     })
-    .mutation(async ({
-      input: { clusterId, path, name, fileSizeByte, modificationTime }, ctx: { user },
-    }) => {
-
+    .mutation(async ({ input: { clusterId, path, name, fileSizeByte, modificationTime }, ctx: { user } }) => {
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);
@@ -688,7 +648,6 @@ export const file = router({
       }
     }),
 
-
   completeMultipartUpload: authProcedure
     .meta({
       openapi: {
@@ -698,13 +657,15 @@ export const file = router({
         summary: "完成分片上传",
       },
     })
-    .input(z.object({
-      clusterId: z.string(),
-      path: z.string(),
-      name: z.string(),
-    }))
+    .input(
+      z.object({
+        clusterId: z.string(),
+        path: z.string(),
+        name: z.string(),
+      }),
+    )
     .output(z.object({}))
-    .use(async ({ input:{ path, clusterId, name }, ctx, next }) => {
+    .use(async ({ input: { path, clusterId, name }, ctx, next }) => {
       const res = await next({ ctx });
 
       const { user, req } = ctx;
@@ -712,8 +673,9 @@ export const file = router({
         operatorUserId: user.identityId,
         operatorIp: parseIp(req) ?? "",
         operationTypeName: OperationType.uploadFile,
-        operationTypePayload:{
-          clusterId, path: join(path, name),
+        operationTypePayload: {
+          clusterId,
+          path: join(path, name),
         },
       };
 
@@ -728,7 +690,6 @@ export const file = router({
       return res;
     })
     .mutation(async ({ input: { clusterId, path, name }, ctx: { user } }) => {
-
       const userId = user.identityId;
 
       const currentClusterIds = await getCurrentClusters(userId);
@@ -742,7 +703,9 @@ export const file = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
       }
       const host = getClusterLoginNode(clusterId);
-      if (!host) { throw clusterNotFound(clusterId); }
+      if (!host) {
+        throw clusterNotFound(clusterId);
+      }
 
       if (!cluster.scowd?.enabled) {
         throw new TRPCError({ code: "NOT_FOUND", message: "scowd client is not found" });
@@ -763,7 +726,6 @@ export const file = router({
 
         subLogger.info("Complete multipart upload completed successfully");
         return {};
-
       } catch (err) {
         subLogger.error({ error: err }, "Complete multipart upload failed");
         if (err instanceof ConnectError) {
@@ -772,7 +734,6 @@ export const file = router({
         throw err;
       }
     }),
-
 
   mergeFileChunks: authProcedure
     .meta({

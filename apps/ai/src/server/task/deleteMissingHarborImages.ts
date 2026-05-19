@@ -6,12 +6,8 @@ import { forkEntityManager } from "../utils/getOrm";
 import { getHarborConfig, HarborClient } from "../utils/harbor";
 import { logger } from "../utils/logger";
 
-
 // path例如：10.129.227.64/u_lyl_test/vscode-mnist:latest
-async function checkHarborImageExists(
-  path: string,
-  harbor: HarborClient,
-): Promise<boolean> {
+async function checkHarborImageExists(path: string, harbor: HarborClient): Promise<boolean> {
   try {
     // 1. 去掉 registry 部分
     //    比如 ["10.129.227.64", "u_lyl_test", "vscode-mnist:latest"]
@@ -51,10 +47,7 @@ async function checkHarborImageExists(
     }
 
     // 4. 检查是否包含指定 tag
-    return artifacts.some(
-      (a: any) =>
-        Array.isArray(a?.tags) && a.tags.some((t: any) => t?.name === tag),
-    );
+    return artifacts.some((a: any) => Array.isArray(a?.tags) && a.tags.some((t: any) => t?.name === tag));
   } catch (err: any) {
     const msg = String(err?.message ?? err ?? "");
     if (msg.includes("404")) {
@@ -111,7 +104,7 @@ export async function deleteMissingHarborImages() {
 
       let exists = true;
       try {
-        exists = await checkHarborImageExists(path,harbor);
+        exists = await checkHarborImageExists(path, harbor);
       } catch (err) {
         logger.debug(`harbor check failed for ${path}: ${String(err)}`);
         continue;

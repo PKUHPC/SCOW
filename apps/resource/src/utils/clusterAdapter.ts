@@ -1,6 +1,8 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import {
-  createAdapterCertificates, getSchedulerAdapterClient, SchedulerAdapterClient,
+  createAdapterCertificates,
+  getSchedulerAdapterClient,
+  SchedulerAdapterClient,
 } from "@scow/lib-scheduler-adapter";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { Logger } from "pino";
@@ -13,7 +15,7 @@ interface ClusterConfigSchema {
 
 type CallOnAllResult<T> = {
   cluster: string;
-  result: T
+  result: T;
 }[];
 
 // Throw ServiceError if failed.
@@ -38,24 +40,29 @@ export const certificates = createAdapterCertificates(config);
 // 单独调用某适配器接口，或统一调用所有调度器适配器接口
 // 在资源管理服务中错误将会以Connect Error形式抛出
 export async function getClusterUtils() {
-
   const configClusters = await getScowClusterConfigs();
   // adapterClient of all config clusters
-  const adapterClientForClusters = Object.entries(configClusters.clusterConfigs).reduce((prev, [_, c]) => {
-    const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+  const adapterClientForClusters = Object.entries(configClusters.clusterConfigs).reduce(
+    (prev, [_, c]) => {
+      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
 
-    prev[c.clusterId] = client;
+      prev[c.clusterId] = client;
 
-    return prev;
-  }, {} as Record<string, SchedulerAdapterClient>);
+      return prev;
+    },
+    {} as Record<string, SchedulerAdapterClient>,
+  );
 
   // adapterClients of activated clusters
   const getAdapterClientForActivatedClusters = (clustersParam: Record<string, ClusterConfigSchema>) => {
-    return Object.entries(clustersParam).reduce((prev, [cluster, c]) => {
-      const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
-      prev[cluster] = client;
-      return prev;
-    }, {} as Record<string, SchedulerAdapterClient>);
+    return Object.entries(clustersParam).reduce(
+      (prev, [cluster, c]) => {
+        const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+        prev[cluster] = client;
+        return prev;
+      },
+      {} as Record<string, SchedulerAdapterClient>,
+    );
   };
 
   const getAdapterClient = (cluster: string) => {
@@ -63,10 +70,9 @@ export async function getClusterUtils() {
   };
 
   const clustersUtils = {
-
-    getAdapterClient: ((cluster: string) => {
+    getAdapterClient: (cluster: string) => {
       return adapterClientForClusters[cluster];
-    }),
+    },
 
     callOnOne: (async (cluster, logger, call) => {
       const client = getAdapterClient(cluster);
@@ -78,16 +84,17 @@ export async function getClusterUtils() {
       logger.info("Calling actions on cluster " + cluster);
 
       return await call(client).catch((e) => {
-
         logger.error("Cluster ops fails at %o", e);
 
         const errorDetail = e instanceof Error ? e : JSON.stringify(e);
 
         const reason = "Cluster ID : " + cluster + ", Details : " + errorDetail.toString();
-        const clusterErrorDetails = [{
-          clusterId: cluster,
-          details: errorDetail,
-        }];
+        const clusterErrorDetails = [
+          {
+            clusterId: cluster,
+            details: errorDetail,
+          },
+        ];
 
         // 为兼容TRPC和ConnectRpc调用，扔出ConnectError
         throw new ConnectError(
@@ -102,22 +109,32 @@ export async function getClusterUtils() {
 
     // throws error if failed.
     callOnAll: (async (clusters, logger, call) => {
-
       const adapterClientForActivatedClusters = getAdapterClientForActivatedClusters(clusters);
 
-      const responses = await Promise.all(Object.entries(adapterClientForActivatedClusters)
-        .map(async ([cluster, client]) => {
-          return call(client).then((result) => {
-            logger.info("Executing on %s success", cluster);
-            return { cluster, success: true, result };
-          }).catch((e) => {
-            logger.error(e, "Executing on %s failed", cluster);
-            return { cluster, success: false, error: e };
-          });
-        }));
+      const responses = await Promise.all(
+        Object.entries(adapterClientForActivatedClusters).map(async ([cluster, client]) => {
+          return call(client)
+            .then((result) => {
+              logger.info("Executing on %s success", cluster);
+              return { cluster, success: true, result };
+            })
+            .catch((e) => {
+              logger.error(e, "Executing on %s failed", cluster);
+              return { cluster, success: false, error: e };
+            });
+        }),
+      );
 
-      interface SuccessResponse<T> { cluster: string; success: boolean; result: T; }
-      interface ErrorResponse { cluster: string; success: boolean; error: any; }
+      interface SuccessResponse<T> {
+        cluster: string;
+        success: boolean;
+        result: T;
+      }
+      interface ErrorResponse {
+        cluster: string;
+        success: boolean;
+        error: any;
+      }
 
       function isSuccessResponse<T>(response: SuccessResponse<T> | ErrorResponse): response is SuccessResponse<T> {
         return response.success === true;
@@ -150,7 +167,6 @@ export async function getClusterUtils() {
       }
 
       return results;
-
     }) as CallOnAll,
   };
 

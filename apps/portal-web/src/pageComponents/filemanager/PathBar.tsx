@@ -8,7 +8,7 @@ interface Props {
   loading: boolean;
   onPathChange: (path: string) => void;
   breadcrumbItemRender: (pathSegment: string, index: number, path: string) => React.ReactNode;
-  prefix?: React.ReactNode
+  prefix?: React.ReactNode;
 }
 
 const Bar = styled.div`
@@ -27,14 +27,7 @@ const BarStateBar = styled(Bar)`
   }
 `;
 
-export const PathBar: React.FC<Props> = ({
-  path,
-  loading,
-  onPathChange,
-  breadcrumbItemRender,
-  prefix,
-}) => {
-
+export const PathBar: React.FC<Props> = ({ path, loading, onPathChange, breadcrumbItemRender, prefix }) => {
   const [state, setState] = useState<"bar" | "input">("bar");
 
   const [input, setInput] = useState(path);
@@ -45,53 +38,50 @@ export const PathBar: React.FC<Props> = ({
 
   const pathSegments = path === "/" ? [""] : path.split("/");
 
-  const icon = path === input
-    ? <ReloadOutlined spin={loading} />
-    : <RightOutlined />;
+  const icon = path === input ? <ReloadOutlined spin={loading} /> : <RightOutlined />;
 
   return (
-    <Bar onBlur={() => {
-      setInput(path);
-      setState("bar");
-    }}
+    <Bar
+      onBlur={() => {
+        setInput(path);
+        setState("bar");
+      }}
     >
-      {state === "input"
-        ? (
-          <Input.Search
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-            }}
-            onSearch={(value) => {
-              const trimmed = value.trim();
-              setInput(trimmed);
-              onPathChange(trimmed);
-            }}
-            enterButton={icon}
-            autoFocus
-            prefix={prefix}
-          />
-        ) : (
-          <>
-            <BarStateBar onClick={() => setState("input")}>
-              <Breadcrumb
-                style={{ alignSelf: "center" }}
-                items={pathSegments.map((segment, index) => ({
-                  key: index,
-                  title: breadcrumbItemRender(segment, index, pathSegments.slice(1, index + 1).join("/")),
-                }))}
-              />
-            </BarStateBar>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPathChange(input);
-              }}
-              icon={icon}
+      {state === "input" ? (
+        <Input.Search
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+          }}
+          onSearch={(value) => {
+            const trimmed = value.trim();
+            setInput(trimmed);
+            onPathChange(trimmed);
+          }}
+          enterButton={icon}
+          autoFocus
+          prefix={prefix}
+        />
+      ) : (
+        <>
+          <BarStateBar onClick={() => setState("input")}>
+            <Breadcrumb
+              style={{ alignSelf: "center" }}
+              items={pathSegments.map((segment, index) => ({
+                key: index,
+                title: breadcrumbItemRender(segment, index, pathSegments.slice(1, index + 1).join("/")),
+              }))}
             />
-          </>
-        )
-      }
+          </BarStateBar>
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPathChange(input);
+            }}
+            icon={icon}
+          />
+        </>
+      )}
     </Bar>
   );
 };

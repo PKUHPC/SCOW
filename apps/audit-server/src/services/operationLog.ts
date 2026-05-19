@@ -1,42 +1,28 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { createWriterExtensions, ServiceError } from "@ddadaal/tsgrpc-common";
 import { ensureNotUndefined, plugin } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { QueryOrder, raw } from "@mikro-orm/core";
-import { OperationLogServiceServer,
+import {
+  OperationLogServiceServer,
   OperationLogServiceService,
   operationResultToJSON,
 } from "@scow/protos/build/audit/operation_log";
 import { I18nObject } from "@scow/protos/build/common/i18n";
 import { OperationLog, OperationResult } from "src/entities/OperationLog";
-import { addOperationLogAccountNames, checkCustomEventType, filterOperationLogs,
-  getTargetAccountName, toGrpcOperationLog } from "src/utils/operationLogs";
+import {
+  addOperationLogAccountNames,
+  checkCustomEventType,
+  filterOperationLogs,
+  getTargetAccountName,
+  toGrpcOperationLog,
+} from "src/utils/operationLogs";
 import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { generateOperationOptions } from "src/utils/querryOptions";
 
-
 export const operationLogServiceServer = plugin((server) => {
-
   server.addService<OperationLogServiceServer>(OperationLogServiceService, {
-
     createOperationLog: async ({ request, em }) => {
-      const {
-        operatorUserId,
-        operatorIp,
-        operationResult,
-        operationEvent,
-      } = request;
+      const { operatorUserId, operatorIp, operationResult, operationEvent } = request;
 
       if (!operationEvent) {
         return [];
@@ -59,14 +45,11 @@ export const operationLogServiceServer = plugin((server) => {
     },
 
     getOperationLogs: async ({ request, em, logger }) => {
-      const { filter, page, pageSize, sortBy, sortOrder } =
-      ensureNotUndefined(request, ["filter", "page"]);
+      const { filter, page, pageSize, sortBy, sortOrder } = ensureNotUndefined(request, ["filter", "page"]);
 
       const sqlFilter = await filterOperationLogs(filter);
 
       logger.info("getOperationLogs sqlFilter %s", JSON.stringify(sqlFilter));
-
-
 
       let operationLogs, count;
 
@@ -83,11 +66,12 @@ export const operationLogServiceServer = plugin((server) => {
       const res = operationLogs.map(toGrpcOperationLog);
 
       const addAccountNamesRes = res.map(addOperationLogAccountNames);
-      return [{
-        results: addAccountNamesRes,
-        totalCount: count,
-      }];
-
+      return [
+        {
+          results: addAccountNamesRes,
+          totalCount: count,
+        },
+      ];
     },
 
     exportOperationLog: async (call) => {
@@ -143,7 +127,6 @@ export const operationLogServiceServer = plugin((server) => {
     },
 
     getCustomEventTypes: async ({ em }) => {
-
       const qb = em.createQueryBuilder(OperationLog, "o");
       void qb
         .select([
@@ -152,17 +135,17 @@ export const operationLogServiceServer = plugin((server) => {
         ])
         .where("o.custom_event_type IS NOT NULL");
 
-      const results: { customType: string, name: string }[] = await qb.execute();
+      const results: { customType: string; name: string }[] = await qb.execute();
 
       const customEventTypes = results.map((r) => ({
         type: r.customType,
         name: JSON.parse(r.name) as I18nObject,
       }));
-      return [{
-        customEventTypes,
-      }];
+      return [
+        {
+          customEventTypes,
+        },
+      ];
     },
-
   });
-
 });

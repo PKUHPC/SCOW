@@ -21,26 +21,33 @@ import { getSystemInitialLanguageId } from "src/utils/systemLanguage";
 import { trpc } from "src/utils/trpc";
 
 const languagesMap = {
-  "zh_cn": zh_cn,
-  "en": en,
+  zh_cn: zh_cn,
+  en: en,
 };
 
 const ClientLayoutLoaded = ({
-  children, basePath, user, portalUrl, versionTag, languageConfig,
-  initialLanguage, footerText, misUrl, aiUrl,
+  children,
+  basePath,
+  user,
+  portalUrl,
+  versionTag,
+  languageConfig,
+  initialLanguage,
+  footerText,
+  misUrl,
+  aiUrl,
 }: {
   children: React.ReactNode;
   basePath: string;
-  user: UserInfo,
+  user: UserInfo;
   portalUrl: string;
   misUrl: string;
   aiUrl: string;
   versionTag?: string;
   languageConfig: SystemLanguageConfig;
-  initialLanguage: string,
-  footerText?: string,
+  initialLanguage: string;
+  footerText?: string;
 }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -48,9 +55,7 @@ const ClientLayoutLoaded = ({
 
   const logoutMutation = trpc.auth.logout.useMutation({});
 
-  const toCallbackPage = (url: string) => user
-    ? join(url, "/api/auth/callback?token=" + user.token)
-    : url;
+  const toCallbackPage = (url: string) => (user ? join(url, "/api/auth/callback?token=" + user.token) : url);
 
   const { useToken } = theme;
   const { token } = useToken();
@@ -90,8 +95,9 @@ const ClientLayoutLoaded = ({
   return (
     <LibBaseLayout
       logout={() => {
-        logoutMutation.mutateAsync()
-          .then(() => { window.location.href = join(BASE_PATH, "/api/auth"); });
+        logoutMutation.mutateAsync().then(() => {
+          window.location.href = join(BASE_PATH, "/api/auth");
+        });
       }}
       user={user}
       routes={routes}
@@ -101,37 +107,36 @@ const ClientLayoutLoaded = ({
       languageId={languageId}
       from="portal"
       headerNavbarLinks={navbarLinks}
-      headerRightContent={(
-        languageConfig.isUsingI18n ? (
-          <LanguageSwitcher initialLanguage={initialLanguage} />
-        ) : undefined
-      )}
+      headerRightContent={
+        languageConfig.isUsingI18n ? <LanguageSwitcher initialLanguage={initialLanguage} /> : undefined
+      }
     >
       {children}
     </LibBaseLayout>
   );
 };
 
-export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCookie }: {
-  children: React.ReactNode
-  dark: DarkModeCookie | undefined,
-  acceptLanguageHeader: string | null,
-  languageCookie?: string | undefined,
+export const ClientLayout = ({
+  children,
+  dark,
+  acceptLanguageHeader,
+  languageCookie,
+}: {
+  children: React.ReactNode;
+  dark: DarkModeCookie | undefined;
+  acceptLanguageHeader: string | null;
+  languageCookie?: string | undefined;
 }) => {
   const userQuery = useUserQuery();
 
   const publicConfigQuery = trpc.config.publicConfig.useQuery();
 
   if (userQuery.isLoading || publicConfigQuery.isLoading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   if (userQuery.isError || publicConfigQuery.isError || !userQuery.isSuccess || !publicConfigQuery.isSuccess) {
-    return (
-      <div>Error loading user or configuration.</div>
-    );
+    return <div>Error loading user or configuration.</div>;
   }
 
   const systemInitialLanguage = getSystemInitialLanguageId(
@@ -140,23 +145,23 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
     publicConfigQuery.data.systemLanguageConfig,
   );
 
-  const host = (typeof window === "undefined") ? "" : location.host;
+  const host = typeof window === "undefined" ? "" : location.host;
   const hostname = host?.includes(":") ? host?.split(":")[0] : host;
   const uiConfig = publicConfigQuery.data.uiConfig;
   const primaryColor = uiConfig.config?.primaryColor;
 
-  const color = (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
+  const color =
+    (hostname && primaryColor?.hostnameMap?.[hostname]) ?? primaryColor?.defaultColor ?? uiConfig.defaultPrimaryColor;
 
-  const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname])
-    ?? primaryColor?.darkModeColor ?? color;
+  const darkModeColor = (hostname && primaryColor?.hostnameMap?.[hostname]) ?? primaryColor?.darkModeColor ?? color;
 
   return (
     <DarkModeProvider initial={dark}>
-      <Provider initialLanguage={{
-        id: systemInitialLanguage,
-        definitions: languagesMap[systemInitialLanguage as keyof typeof languagesMap],
-      }}
+      <Provider
+        initialLanguage={{
+          id: systemInitialLanguage,
+          definitions: languagesMap[systemInitialLanguage as keyof typeof languagesMap],
+        }}
       >
         <AntdConfigProvider
           color={color}
@@ -184,5 +189,4 @@ export const ClientLayout = ({ children, dark, acceptLanguageHeader, languageCoo
       </Provider>
     </DarkModeProvider>
   );
-
 };

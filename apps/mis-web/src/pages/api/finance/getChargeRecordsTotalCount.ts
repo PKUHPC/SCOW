@@ -10,7 +10,6 @@ import { route } from "src/utils/route";
 
 import { buildChargesRequestTarget, getTenantOfAccount, getUserInfoForCharges } from "./charges";
 
-
 export const GetChargeRecordsTotalCountSchema = typeboxRouteSchema({
   method: "GET",
 
@@ -53,8 +52,8 @@ export const GetChargeRecordsTotalCountSchema = typeboxRouteSchema({
 });
 
 export default route(GetChargeRecordsTotalCountSchema, async (req, res) => {
-  const { endTime, startTime, accountNames, isPlatformRecords, searchType, types, userIdsOrNames,
-    preferCache } = req.query;
+  const { endTime, startTime, accountNames, isPlatformRecords, searchType, types, userIdsOrNames, preferCache } =
+    req.query;
   const info = await getUserInfoForCharges(accountNames, req, res);
   if (!info) return;
 
@@ -62,18 +61,20 @@ export default route(GetChargeRecordsTotalCountSchema, async (req, res) => {
 
   const client = getClient(ChargingServiceClient);
 
-  const reply = ensureNotUndefined(await asyncClientCall(client, "getChargeRecordsTotalCount", {
-    startTime,
-    endTime,
-    types:types ?? [],
-    target: buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords),
-    userIdsOrNames:userIdsOrNames ?? [],
-    preferCache: preferCache ?? false,
-  }), ["totalAmount", "totalCount", "refreshTime"]);
+  const reply = ensureNotUndefined(
+    await asyncClientCall(client, "getChargeRecordsTotalCount", {
+      startTime,
+      endTime,
+      types: types ?? [],
+      target: buildChargesRequestTarget(accountNames, tenantOfAccount, searchType, isPlatformRecords),
+      userIdsOrNames: userIdsOrNames ?? [],
+      preferCache: preferCache ?? false,
+    }),
+    ["totalAmount", "totalCount", "refreshTime"],
+  );
 
   return {
     200: {
-
       totalAmount: reply.totalAmount ? moneyToNumber(reply.totalAmount) : 0,
       totalCount: reply.totalCount,
       refreshTime: reply.refreshTime,

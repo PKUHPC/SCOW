@@ -44,21 +44,24 @@ export async function getAccounts(req: GetAccountsRequest) {
   return results.map((x) => ensureNotUndefined(x, ["balance", "defaultBlockThresholdAmount"]));
 }
 
-const auth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-  || info.tenantRoles.includes(TenantRole.TENANT_FINANCE));
+const auth = authenticate(
+  (info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN) || info.tenantRoles.includes(TenantRole.TENANT_FINANCE),
+);
 
-export default route(GetAccountsSchema,
-  async (req, res) => {
+export default route(GetAccountsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+  const results = await getAccounts({ tenantName: info.tenant });
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-    const results = await getAccounts({ tenantName: info.tenant });
-
-    return { 200: { results: results.map((r) => ({
-      ...r,
-      ownerId: safeGetStringProperty(r.ownerId),
-      ownerName: safeGetStringProperty(r.ownerName),
-    })) } };
-  });
+  return {
+    200: {
+      results: results.map((r) => ({
+        ...r,
+        ownerId: safeGetStringProperty(r.ownerId),
+        ownerName: safeGetStringProperty(r.ownerName),
+      })),
+    },
+  };
+});

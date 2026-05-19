@@ -13,9 +13,8 @@ import { AppAuthorizationTable } from "src/pageComponents/common/appAuthorizatio
 import { publicConfig } from "src/utils/config";
 import { Head } from "src/utils/head";
 
-export const AppAuthorizationPage: NextPage =
-  requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
-
+export const AppAuthorizationPage: NextPage = requireAuth((u) => u.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
+  () => {
     if (!publicConfig.ALLOW_APP_AUTHORIZATION) {
       return <NotFoundPage />;
     }
@@ -30,7 +29,11 @@ export const AppAuthorizationPage: NextPage =
       return undefined;
     }, []);
 
-    const { data: availableClusterIds, isLoading, reload } = useAsync({
+    const {
+      data: availableClusterIds,
+      isLoading,
+      reload,
+    } = useAsync({
       promiseFn,
       skip: !publicConfig.SCOW_RESOURCE_ENABLED,
     });
@@ -51,6 +54,7 @@ export const AppAuthorizationPage: NextPage =
         />
       </div>
     );
-  });
+  },
+);
 
 export default AppAuthorizationPage;

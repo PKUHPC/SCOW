@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { join } from "path";
 import { applicationJsonHeaders, logHttpErrorAndThrow } from "src/utils";
 import { Logger } from "ts-log";
@@ -22,11 +10,13 @@ import { Logger } from "ts-log";
  */
 export async function checkPassword(
   authUrl: string,
-  params: { identityId: string, password: string },
+  params: { identityId: string; password: string },
   logger?: Logger,
 ): Promise<{ success: boolean } | undefined> {
-
-  const query = new URLSearchParams([["identityId", params.identityId], ["password", params.password]]);
+  const query = new URLSearchParams([
+    ["identityId", params.identityId],
+    ["password", params.password],
+  ]);
   const url = join(authUrl, "/checkPassword") + "?" + query.toString();
 
   const resp = await fetch(url, {

@@ -1,14 +1,12 @@
-import { join } from "node:path";
-
 import { Migrator } from "@mikro-orm/migrations";
 import { defineConfig } from "@mikro-orm/mysql";
 import { SeedManager } from "@mikro-orm/seeder";
+import { join } from "node:path";
 import { entities } from "src/server/entities";
 
 import { migrations } from "../migrations";
 import { config } from "./env";
 import { resourceConfig } from "./resource";
-
 
 const distPath = "src/server";
 
@@ -30,4 +28,3 @@ export const ormConfigs = defineConfig({
   entities: entities,
   debug,
 });
-

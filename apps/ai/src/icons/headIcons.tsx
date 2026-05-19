@@ -19,10 +19,9 @@ const noMessageSVG = () => (
   </svg>
 );
 
-export const NoMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={noMessageSVG} {...props} ref={ref} />
-));
+export const NoMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={noMessageSVG} {...props} ref={ref} />,
+);
 
 // 有消息图标
 const messageSVG = () => (
@@ -64,13 +63,11 @@ const messageSVG = () => (
       </filter>
     </defs>
   </svg>
-
 );
 
-export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={messageSVG} {...props} ref={ref} />
-));
+export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={messageSVG} {...props} ref={ref} />,
+);
 
 // 用户图标
 const userSVG = () => (
@@ -84,10 +81,8 @@ const userSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={userSVG} {...props} ref={ref} />
-));
+export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={userSVG} {...props} ref={ref} />,
+);

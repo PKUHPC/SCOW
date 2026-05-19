@@ -1,6 +1,5 @@
 // import original module declarations
 import "styled-components";
-
 import { GlobalToken } from "antd/es/theme/interface";
 
 // and extend them!

@@ -25,9 +25,9 @@
     "@ant-design/cssinjs": "1.22.1",
     "@ant-design/icons": "5.5.2",
     "@bufbuild/protobuf": "2.10.0",
-    "@connectrpc/connect-node": "2.1.1",
     "@connectrpc/connect": "2.1.1",
     "@connectrpc/connect-next": "2.1.1",
+    "@connectrpc/connect-node": "2.1.1",
     "@connectrpc/connect-web": "2.1.1",
     "@ddadaal/tsgrpc-client": "0.17.9",
     "@mikro-orm/core": "6.4.3",
@@ -64,13 +64,13 @@
     "protobufjs": "7.4.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-typed-i18n": "2.6.1",
     "replace-in-file": "8.3.0",
     "styled-components": "6.1.14",
     "superjson": "2.2.2",
     "swagger-ui-react": "5.18.2",
     "trpc-to-openapi": "3.1.0",
-    "zod": "4.1.13",
-    "react-typed-i18n": "2.6.1"
+    "zod": "4.1.13"
   },
   "devDependencies": {
     "@bufbuild/buf": "1.59.0",

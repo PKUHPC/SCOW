@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -44,20 +32,19 @@ export const CreateDesktopSchema = typeboxRouteSchema({
     // the name of the desktop
     desktopName: Type.String(),
 
-    remoteControlTool: Type.Union([
-      Type.Literal("shadowdesk"),
-      Type.Literal("vnc"),
-    ]),
+    remoteControlTool: Type.Union([Type.Literal("shadowdesk"), Type.Literal("vnc")]),
   }),
 
   responses: {
     200: Type.Object({
       type: Type.Union([Type.Literal("vnc"), Type.Literal("shadowdesk")]),
-      vnc: Type.Optional(Type.Object({
-        host: Type.String(),
-        port: Type.Number(),
-        password: Type.String(),
-      })),
+      vnc: Type.Optional(
+        Type.Object({
+          host: Type.String(),
+          port: Type.Number(),
+          password: Type.String(),
+        }),
+      ),
       shadowdesk: Type.Optional(Type.Object({ shadowdeskUrl: Type.String() })),
     }),
 
@@ -80,8 +67,7 @@ export const CreateDesktopSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(CreateDesktopSchema, async (req, res) => {
   const { cluster, loginNode, wm, desktopName, remoteControlTool } = req.body;
 
   const clusterConfigs = await getClusterConfigFiles();
@@ -92,7 +78,9 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
   }
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   // 验证当前集群是否为用户关联账户的已授权集群
   const isClusterAssigned = await checkUserAssignedClusters(cluster, info.identityId);
@@ -106,8 +94,11 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createDesktop,
-    operationTypePayload:{
-      desktopName, wm, clusterId: cluster, loginNode,
+    operationTypePayload: {
+      desktopName,
+      wm,
+      clusterId: cluster,
+      loginNode,
     },
   };
 
@@ -116,7 +107,12 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
     remoteControlTool === "shadowdesk" ? RemoteControlTool.SHADOWDESK : RemoteControlTool.VNC;
 
   return await asyncUnaryCall(client, "createDesktop", {
-    cluster, loginNode, userId: info.identityId, wm, desktopName, remoteControlTool: adjustedRemoteControlTool,
+    cluster,
+    loginNode,
+    userId: info.identityId,
+    wm,
+    desktopName,
+    remoteControlTool: adjustedRemoteControlTool,
   }).then(
     async ({ host, password, port, shadowdeskUrl }) => {
       await callLog(logInfo, OperationResult.SUCCESS);
@@ -126,13 +122,14 @@ export default /* #__PURE__*/route(CreateDesktopSchema, async (req, res) => {
         return { 200: { type: "vnc" as const, vnc: { host, password, port } } };
       }
     },
-    handlegRPCError({
-      [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-      [status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_WM" as const } }),
-      [status.RESOURCE_EXHAUSTED]: () => ({ 409: { code: "TOO_MANY_DESKTOPS" as const } }),
-      [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL_ERROR" as const, message: e.message } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
-
+    handlegRPCError(
+      {
+        [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+        [status.INVALID_ARGUMENT]: () => ({ 400: { code: "INVALID_WM" as const } }),
+        [status.RESOURCE_EXHAUSTED]: () => ({ 409: { code: "TOO_MANY_DESKTOPS" as const } }),
+        [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL_ERROR" as const, message: e.message } }),
+      },
+      async () => await callLog(logInfo, OperationResult.FAIL),
+    ),
+  );
 });

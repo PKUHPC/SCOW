@@ -9,18 +9,11 @@ interface Props {
   subTitle?: React.ReactNode;
 }
 
-export const ForbiddenPage: React.FC<Props> = ({
-  title = "Not Allowed",
-  subTitle = "Not Allowed Page。",
-}) => {
+export const ForbiddenPage: React.FC<Props> = ({ title = "Not Allowed", subTitle = "Not Allowed Page。" }) => {
   return (
     <>
       <Head title="Not Allowed" />
-      <Result
-        status="403"
-        title={title}
-        subTitle={subTitle}
-      />
+      <Result status="403" title={title} subTitle={subTitle} />
     </>
   );
 };

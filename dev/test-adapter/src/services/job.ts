@@ -25,12 +25,15 @@ export const jobServiceServer = plugin((server) => {
         return true;
       });
 
-      const jobs = testDataClone.filter((x) => x.cluster === clusterId &&
-        (endTimeRange ?
-          new Date(x.endTime) >= new Date(endTimeRange.startTime ?? 0) &&
-          new Date(x.endTime) <= new Date(endTimeRange.endTime ?? 0)
-          : true
-        ))
+      const jobs = testDataClone
+        .filter(
+          (x) =>
+            x.cluster === clusterId &&
+            (endTimeRange
+              ? new Date(x.endTime) >= new Date(endTimeRange.startTime ?? 0) &&
+                new Date(x.endTime) <= new Date(endTimeRange.endTime ?? 0)
+              : true),
+        )
         .map(({ tenant, tenantPrice, accountPrice, cluster, ...rest }) => {
           return {
             ...rest,
@@ -42,10 +45,12 @@ export const jobServiceServer = plugin((server) => {
           };
         });
 
-      return [{
-        jobs,
-        totalCount: jobs.length,
-      }];
+      return [
+        {
+          jobs,
+          totalCount: jobs.length,
+        },
+      ];
     },
 
     getJobById: async () => {
@@ -76,8 +81,7 @@ export const jobServiceServer = plugin((server) => {
       return [{ stdout: "", stderr: "" }];
     },
 
-    getPodLogs: async () => {
-    },
+    getPodLogs: async () => {},
 
     createDevHost: async () => {
       return [{ jobId: 1 }];
@@ -88,7 +92,7 @@ export const jobServiceServer = plugin((server) => {
     },
 
     getPodMonitorInfo: async () => {
-      return [{ monitorData: []}];
+      return [{ monitorData: [] }];
     },
     streamJobShell: async (call) => {
       call.on("data", () => {
@@ -99,5 +103,4 @@ export const jobServiceServer = plugin((server) => {
       });
     },
   });
-
 });

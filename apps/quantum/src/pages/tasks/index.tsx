@@ -1,5 +1,4 @@
 export default function QuantumTaskListPage() {
-
   return (
     <div>
       <h1>Quantum Task List</h1>

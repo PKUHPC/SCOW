@@ -19,27 +19,24 @@ const authTokenHeaderKey = "x-scow-api-auth-token";
 
 // 先找Authorization header，再找cookie
 export function getUserToken(req: RequestType): string | undefined {
-
-  if (!req) { return undefined; }
+  if (!req) {
+    return undefined;
+  }
 
   // try in header
-  const authHeaderValue = (req instanceof Request)
-    ? req.headers.get(authTokenHeaderKey)
-    : req.headers[authTokenHeaderKey];
+  const authHeaderValue =
+    req instanceof Request ? req.headers.get(authTokenHeaderKey) : req.headers[authTokenHeaderKey];
 
   if (authHeaderValue) {
-
     const tokenValue = (Array.isArray(authHeaderValue) ? authHeaderValue[0] : authHeaderValue).trim();
 
     if (tokenValue) {
       return tokenValue;
     }
-
   }
 
-  const cookieToken = (req instanceof Request)
-    ? req.cookies.get(SCOW_COOKIE_KEY)?.value
-    : parseCookies({ req })[SCOW_COOKIE_KEY];
+  const cookieToken =
+    req instanceof Request ? req.cookies.get(SCOW_COOKIE_KEY)?.value : parseCookies({ req })[SCOW_COOKIE_KEY];
 
   if (cookieToken) {
     return cookieToken;
@@ -47,7 +44,6 @@ export function getUserToken(req: RequestType): string | undefined {
 
   return undefined;
 }
-
 
 export function setUserTokenCookie(token: string, res: NextApiResponse) {
   setCookie({ res }, SCOW_COOKIE_KEY, token, {

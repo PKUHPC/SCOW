@@ -36,140 +36,148 @@ const AppSessionSchema = z.object({
 
 export type AppSession = z.infer<typeof AppSessionSchema>;
 
-
-export const listAppSessions =
-  procedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: "/appSessions",
-        tags: ["appSessions"],
-        summary: "List APP Sessions",
-      },
-    })
-    .input(z.object({
+export const listAppSessions = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/appSessions",
+      tags: ["appSessions"],
+      summary: "List APP Sessions",
+    },
+  })
+  .input(
+    z.object({
       isRunning: booleanQueryParam().optional(),
       ...paginationSchema.shape,
-    }))
-    .output(z.object({ sessions: z.array(AppSessionSchema) }))
-    .query(async ({ input, ctx: { user } }) => {
+    }),
+  )
+  .output(z.object({ sessions: z.array(AppSessionSchema) }))
+  .query(async ({ input, ctx: { user } }) => {
+    if (USE_MOCK || process.env.NODE_ENV === "development") {
+      return { sessions: [], count: 0 };
+    }
 
-      if (USE_MOCK || process.env.NODE_ENV === "development") {
-        return { sessions: [], count: 0 };
-      }
+    const { page, pageSize } = input;
 
-      const { page, pageSize } = input;
+    const { cluster, appId } = quantumConfig.jupyter;
 
-      const { cluster, appId } = quantumConfig.jupyter;
+    const userId = user.identityId;
 
-      const userId = user.identityId;
+    const client = getPortalClient(AppServiceClient);
 
-      const client = getPortalClient(AppServiceClient);
-
-      const jobsInfo = await asyncUnaryCall(client, "listAppSessions", {
-        clusters: [cluster], userId,
-      }).then((reply) => {
+    const jobsInfo = await asyncUnaryCall(client, "listAppSessions", {
+      clusters: [cluster],
+      userId,
+    })
+      .then((reply) => {
         return reply.sessions;
-      }).catch((e) => {
+      })
+      .catch((e) => {
         throw e;
       });
 
-      const filteredSessions = jobsInfo.filter((x) => x.appId === appId).map((x) => ({
+    const filteredSessions = jobsInfo
+      .filter((x) => x.appId === appId)
+      .map((x) => ({
         ...x,
-        jobName:x.jobName ? x.jobName : x.sessionId,
-        remainingTime: x.state === "RUNNING" ? calculateAppRemainingTime(x.runningTime, x.timeLimit) :
-          x.state === "PENDING" ? "" : x.timeLimit,
+        jobName: x.jobName ? x.jobName : x.sessionId,
+        remainingTime:
+          x.state === "RUNNING"
+            ? calculateAppRemainingTime(x.runningTime, x.timeLimit)
+            : x.state === "PENDING"
+              ? ""
+              : x.timeLimit,
       }));
 
-      const { paginatedItems: paginatedSessions, totalCount } = paginate(
-        filteredSessions, page, pageSize,
-      );
+    const { paginatedItems: paginatedSessions, totalCount } = paginate(filteredSessions, page, pageSize);
 
-      return { sessions: paginatedSessions, count: totalCount };
-    });
+    return { sessions: paginatedSessions, count: totalCount };
+  });
 
-
-export const getQuantumConfig =
-  procedure
-    .meta({
-      openapi: {
-        method: "GET",
-        path: "/getQuantumConfig",
-        tags: ["getQuantumConfig"],
-        summary: "Get Quantum Config",
-      },
-    })
-    .input(z.void())
-    .output(z.object({
+export const getQuantumConfig = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/getQuantumConfig",
+      tags: ["getQuantumConfig"],
+      summary: "Get Quantum Config",
+    },
+  })
+  .input(z.void())
+  .output(
+    z.object({
       appId: z.string(),
       cluster: z.string(),
-    }))
-    .query(async () => {
-      return quantumConfig.jupyter;
-    });
+    }),
+  )
+  .query(async () => {
+    return quantumConfig.jupyter;
+  });
 
 const TIMEOUT_MS = 3000;
 
-export const checkAppConnectivity =
-    procedure
-      .meta({
-        openapi: {
-          method: "GET",
-          path: "/appSessions/{jobId}/checkConnectivity",
-          tags: ["appSessions"],
-          summary: "Check APP Session Connectivity",
-        },
-      })
-      .input(z.object({
-        clusterId: z.string(),
-        jobId: z.number(),
-      })).output(z.object({
-        ok: z.boolean(),
-      })).query(
-        async ({ input, ctx: { user } }) => {
+export const checkAppConnectivity = procedure
+  .meta({
+    openapi: {
+      method: "GET",
+      path: "/appSessions/{jobId}/checkConnectivity",
+      tags: ["appSessions"],
+      summary: "Check APP Session Connectivity",
+    },
+  })
+  .input(
+    z.object({
+      clusterId: z.string(),
+      jobId: z.number(),
+    }),
+  )
+  .output(
+    z.object({
+      ok: z.boolean(),
+    }),
+  )
+  .query(async ({ input, ctx: { user } }) => {
+    const { jobId, clusterId } = input;
 
-          const { jobId, clusterId } = input;
+    const currentClusterIds = await getCurrentClusters(user.identityId);
+    checkClusterAvailable(currentClusterIds, clusterId);
 
-          const currentClusterIds = await getCurrentClusters(user.identityId);
-          checkClusterAvailable(currentClusterIds, clusterId);
+    try {
+      const client = getAdapterClient(clusterId);
 
-          try {
+      const connectionInfo = await getAppConnectionInfoFromAdapter(client, jobId, logger);
 
-            const client = getAdapterClient(clusterId);
+      if (connectionInfo?.response?.$case === "appConnectionInfo") {
+        const host = connectionInfo.response.appConnectionInfo.host;
+        const port = connectionInfo.response.appConnectionInfo.port;
+        const reachable = await isPortReachable(port, host, TIMEOUT_MS);
+        return { ok: reachable };
+      } else {
+        return { ok: false };
+      }
+    } catch {
+      return { ok: false };
+    }
+  });
 
-            const connectionInfo = await getAppConnectionInfoFromAdapter(client, jobId, logger);
-
-            if (connectionInfo?.response?.$case === "appConnectionInfo") {
-              const host = connectionInfo.response.appConnectionInfo.host;
-              const port = connectionInfo.response.appConnectionInfo.port;
-              const reachable = await isPortReachable(port, host, TIMEOUT_MS);
-              return { ok: reachable };
-            } else {
-              return { ok: false };
-            }
-          } catch {
-            return { ok: false };
-          }
-        },
-
-      );
-
-export const connectToApp =
-  procedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: "/connectToApp",
-        tags: ["connectToApp"],
-        summary: "Connect To App",
-      },
-    })
-    .input(z.object({
+export const connectToApp = procedure
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/connectToApp",
+      tags: ["connectToApp"],
+      summary: "Connect To App",
+    },
+  })
+  .input(
+    z.object({
       cluster: z.string(),
       sessionId: z.string(),
       jobId: z.number(),
-    }))
-    .output(z.object({
+    }),
+  )
+  .output(
+    z.object({
       host: z.string(),
       port: z.number(),
       password: z.string().optional(),
@@ -180,20 +188,22 @@ export const connectToApp =
         query: z.record(z.string(), z.string()).optional(),
         formData: z.record(z.string(), z.string()).optional(),
       }),
-      proxyType: z.union([
-        z.literal("relative"),
-        z.literal("absolute"),
-      ]),
+      proxyType: z.union([z.literal("relative"), z.literal("absolute")]),
       customFormData: z.record(z.string(), z.string()).optional(),
-    }))
-    .mutation(async ({ input, ctx: { user } }) => {
-      const { cluster, sessionId, jobId } = input;
-      const userId = user.identityId;
-      const client = getPortalClient(AppServiceClient);
+    }),
+  )
+  .mutation(async ({ input, ctx: { user } }) => {
+    const { cluster, sessionId, jobId } = input;
+    const userId = user.identityId;
+    const client = getPortalClient(AppServiceClient);
 
-      return await asyncUnaryCall(client, "connectToApp", {
-        cluster, userId, sessionId, jobId,
-      }).then((reply) => {
+    return await asyncUnaryCall(client, "connectToApp", {
+      cluster,
+      userId,
+      sessionId,
+      jobId,
+    })
+      .then((reply) => {
         // 处理 web 类型响应
         if (reply.appProps?.$case !== "web") {
           throw `访问了错误的sessionId: ${sessionId}`;
@@ -210,43 +220,43 @@ export const connectToApp =
             query: webProps.query ?? {},
             formData: webProps.formData ?? {},
           },
-          proxyType: webProps.proxyType === WebAppProps_ProxyType.RELATIVE
-            ? "relative" as const
-            : "absolute" as const,
+          proxyType:
+            webProps.proxyType === WebAppProps_ProxyType.RELATIVE ? ("relative" as const) : ("absolute" as const),
           customFormData: webProps.customFormData,
         };
-      }).catch((e) => {
+      })
+      .catch((e) => {
         console.log("connectToApp error", e);
         throw e;
       });
+  });
+
+export const cancelJob = procedure
+  .meta({
+    openapi: {
+      method: "DELETE",
+      path: "/jobs/{jobId}",
+      tags: ["jobs"],
+      summary: "Cancel Train Job or App Session",
+    },
+  })
+  .input(
+    z.object({
+      cluster: z.string(),
+      jobId: z.number(),
+    }),
+  )
+  .output(z.void())
+  .mutation(async ({ input, ctx: { user } }) => {
+    const { cluster, jobId } = input;
+    const userId = user.identityId;
+
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, cluster);
+
+    const client = getAdapterClient(cluster);
+    await asyncUnaryCall(client.job, "cancelJob", {
+      userId,
+      jobId,
     });
-
-export const cancelJob =
-    procedure
-      .meta({
-        openapi: {
-          method: "DELETE",
-          path: "/jobs/{jobId}",
-          tags: ["jobs"],
-          summary: "Cancel Train Job or App Session",
-        },
-      })
-      .input(z.object({
-        cluster: z.string(),
-        jobId: z.number(),
-      }))
-      .output(z.void())
-      .mutation(async ({ input, ctx: { user } }) => {
-
-        const { cluster, jobId } = input;
-        const userId = user.identityId;
-
-        const currentClusterIds = await getCurrentClusters(userId);
-        checkClusterAvailable(currentClusterIds, cluster);
-
-        const client = getAdapterClient(cluster);
-        await asyncUnaryCall(client.job, "cancelJob", {
-          userId,
-          jobId,
-        });
-      });
+  });

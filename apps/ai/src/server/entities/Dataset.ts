@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Collection, EntitySchema } from "@mikro-orm/core";
 import { CURRENT_TIMESTAMP, DATETIME_TYPE } from "src/server/utils/orm";
 
@@ -41,7 +29,6 @@ export class Dataset {
     updateTime?: Date;
     isPlatformOwned?: boolean;
   }) {
-
     this.name = init.name;
     this.owner = init.owner;
     this.type = init.type;
@@ -58,7 +45,6 @@ export class Dataset {
     if (init.updateTime) {
       this.updateTime = init.updateTime;
     }
-
   }
 }
 
@@ -71,12 +57,17 @@ datasetEntitySchema.addProperty("name", String);
 datasetEntitySchema.addProperty("owner", String);
 datasetEntitySchema.addProperty("type", String);
 datasetEntitySchema.addOneToMany("versions", "DatasetVersion", {
-  entity: () => "DatasetVersion", mappedBy: (dv) => dv.dataset });
+  entity: () => "DatasetVersion",
+  mappedBy: (dv) => dv.dataset,
+});
 datasetEntitySchema.addProperty("isShared", Boolean);
 datasetEntitySchema.addProperty("scene", String);
 datasetEntitySchema.addProperty("description", String, { nullable: true });
 datasetEntitySchema.addProperty("clusterId", String);
 datasetEntitySchema.addProperty("createTime", Date, { columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP });
 datasetEntitySchema.addProperty("updateTime", Date, {
-  columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP, onUpdate: () => new Date() });
+  columnType: DATETIME_TYPE,
+  defaultRaw: CURRENT_TIMESTAMP,
+  onUpdate: () => new Date(),
+});
 datasetEntitySchema.addProperty("isPlatformOwned", Boolean, { default: false, nullable: false });

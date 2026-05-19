@@ -1,23 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TimeRangePickerProps } from "antd";
 import dayjs from "dayjs";
 
 import { getCurrentLangLibWebText } from "./libWebI18n/libI18n";
 
 export function formatDateTime(str: string): string {
-  return dayjs(str)
-    .format("YYYY-MM-DD HH:mm:ss");
+  return dayjs(str).format("YYYY-MM-DD HH:mm:ss");
 }
 
 export const getDefaultPresets = (languageId: string): TimeRangePickerProps["presets"] => {
@@ -32,15 +19,14 @@ export const getDefaultPresets = (languageId: string): TimeRangePickerProps["pre
   const sixMonths = getCurrentLangLibWebText(languageId, "dateTimeSixMonths");
   const oneYear = getCurrentLangLibWebText(languageId, "dateTimeOneYear");
 
-
   return [
-    { label: today, value: [now.startOf("day"), end]},
-    { label: tWeek, value: [now.startOf("week"), end]},
-    { label: tMonth, value: [now.startOf("month"), end]},
-    { label: tYear, value: [now.startOf("year"), end]},
-    { label: threeMonths, value: [now.subtract(3, "month").startOf("day"), end]},
-    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end]},
-    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end]},
+    { label: today, value: [now.startOf("day"), end] },
+    { label: tWeek, value: [now.startOf("week"), end] },
+    { label: tMonth, value: [now.startOf("month"), end] },
+    { label: tYear, value: [now.startOf("year"), end] },
+    { label: threeMonths, value: [now.subtract(3, "month").startOf("day"), end] },
+    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end] },
+    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end] },
   ];
 };
 
@@ -55,14 +41,13 @@ export const getAdminStatPresets = (languageId: string): TimeRangePickerProps["p
   const sixMonths = getCurrentLangLibWebText(languageId, "dateTimeSixMonths");
   const oneYear = getCurrentLangLibWebText(languageId, "dateTimeOneYear");
 
-
   return [
-    { label: oneday, value: [yesterday.startOf("day"), yesterdayEnd]},
-    { label: oneWeek, value: [yesterday.subtract(1, "week"), yesterdayEnd]},
-    { label: oneMonth, value: [yesterday.subtract(1, "month"), yesterdayEnd]},
-    { label: threeMonths, value: [yesterday.subtract(3, "month").startOf("day"), yesterdayEnd]},
-    { label: sixMonths, value: [yesterday.subtract(6, "month").startOf("day"), yesterdayEnd]},
-    { label: oneYear, value: [yesterday.subtract(1, "year").startOf("day"), yesterdayEnd]},
+    { label: oneday, value: [yesterday.startOf("day"), yesterdayEnd] },
+    { label: oneWeek, value: [yesterday.subtract(1, "week"), yesterdayEnd] },
+    { label: oneMonth, value: [yesterday.subtract(1, "month"), yesterdayEnd] },
+    { label: threeMonths, value: [yesterday.subtract(3, "month").startOf("day"), yesterdayEnd] },
+    { label: sixMonths, value: [yesterday.subtract(6, "month").startOf("day"), yesterdayEnd] },
+    { label: oneYear, value: [yesterday.subtract(1, "year").startOf("day"), yesterdayEnd] },
   ];
 };
 
@@ -70,10 +55,13 @@ export function compareDateTime(a: string, b: string): number {
   const aMoment = dayjs(a);
   const bMoment = dayjs(b);
 
-  if (aMoment.isSame(bMoment)) { return 0; }
-  if (aMoment.isBefore(bMoment)) { return -1; }
+  if (aMoment.isSame(bMoment)) {
+    return 0;
+  }
+  if (aMoment.isBefore(bMoment)) {
+    return -1;
+  }
   return 1;
-
 }
 
 // Parse the given string in [{days}-][{Hours}:]{MM}:{SS} format and return number of milliseconds
@@ -85,10 +73,8 @@ export function parseTime(time: string) {
   const hours = list.at(-3) ?? 0;
   const days = list.at(-4) ?? 0;
 
-  return seconds! * 1000 + minutes! * 60000 + (hours * 3600000) + days * 86400000;
-
+  return seconds! * 1000 + minutes! * 60000 + hours * 3600000 + days * 86400000;
 }
-
 
 export enum TimeUnits {
   MINUTE = "MINUTE",
@@ -97,7 +83,6 @@ export enum TimeUnits {
 }
 // Parse the given number of time value and time unit, return number of minutes
 export const parseMinutes = (time: number, unit: TimeUnits): number => {
-
   switch (unit) {
     case TimeUnits.MINUTE:
       return time;
@@ -106,12 +91,11 @@ export const parseMinutes = (time: number, unit: TimeUnits): number => {
     case TimeUnits.DAY:
       return time * 60 * 24;
   }
-
 };
 
 export const getMonthlyBillPresets = (languageId: string): TimeRangePickerProps["presets"] => {
   const now = dayjs();
-  const end = now.subtract(1,"month");
+  const end = now.subtract(1, "month");
 
   const lMonth = getCurrentLangLibWebText(languageId, "dateTimeLMonth");
   const tYear = getCurrentLangLibWebText(languageId, "dateTimeTYear");
@@ -120,25 +104,25 @@ export const getMonthlyBillPresets = (languageId: string): TimeRangePickerProps[
   const oneYear = getCurrentLangLibWebText(languageId, "dateTimeOneYear");
 
   return [
-    { label: lMonth, value: [now.subtract(1,"month"), end]},
-    { label: tYear, value: [now.startOf("year"), end]},
-    { label: threeMonths, value: [now.subtract(3, "month"), end]},
-    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end]},
-    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end]},
+    { label: lMonth, value: [now.subtract(1, "month"), end] },
+    { label: tYear, value: [now.startOf("year"), end] },
+    { label: threeMonths, value: [now.subtract(3, "month"), end] },
+    { label: sixMonths, value: [now.subtract(6, "month").startOf("day"), end] },
+    { label: oneYear, value: [now.subtract(1, "year").startOf("day"), end] },
   ];
 };
 
 export const getYearlyBillPresets = (languageId: string): TimeRangePickerProps["presets"] => {
   const now = dayjs();
-  const end = now.subtract(1,"year");
+  const end = now.subtract(1, "year");
 
   const lastYear = getCurrentLangLibWebText(languageId, "dateTimeLYear");
   const threeYear = getCurrentLangLibWebText(languageId, "dateTimeThreeYear");
   const fiveYear = getCurrentLangLibWebText(languageId, "dateTimeFiveYear");
 
   return [
-    { label: lastYear, value: [now.subtract(1,"year"), end]},
-    { label: threeYear, value: [now.subtract(3,"year"), end]},
-    { label: fiveYear, value: [now.subtract(5,"year"), end]},
+    { label: lastYear, value: [now.subtract(1, "year"), end] },
+    { label: threeYear, value: [now.subtract(3, "year"), end] },
+    { label: fiveYear, value: [now.subtract(5, "year"), end] },
   ];
 };

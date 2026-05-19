@@ -5,7 +5,6 @@ import { LoginNodeStore } from "src/stores/LoginNodeStore";
 import { publicConfig } from "src/utils/config";
 import { styled } from "styled-components";
 
-
 const CardContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr));

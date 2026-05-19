@@ -62,37 +62,48 @@ export async function setNewUserStorageQuota(
       }
 
       const existingQuota = await em.findOne(TenantUserStorageQuota, {
-        cluster, user: { userId: identityId }, path: config.storage.paths[0] });
+        cluster,
+        user: { userId: identityId },
+        path: config.storage.paths[0],
+      });
       if (existingQuota) {
         continue;
       }
 
       const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
       if (quotaBytes === undefined) {
-        const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
-          path: config.storage.paths[0],
-        })).totalStorageBytes;
+        const totalStorageBytes = (
+          await scowdClient.storageQuota.getFilesystemStorageUsage({
+            path: config.storage.paths[0],
+          })
+        ).totalStorageBytes;
 
         const userQuota = new TenantUserStorageQuota({
-          user, cluster,
+          user,
+          cluster,
           path: config.storage.paths[0],
           usage: BigInt(0),
         });
 
         await scowdClient.storageQuota.setUserStorageQuota({
-          userId: identityId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+          userId: identityId,
+          path: config.storage.paths[0],
+          quotaBytes: totalStorageBytes,
         });
 
         em.persist(userQuota);
       } else {
         const userQuota = new TenantUserStorageQuota({
-          user, cluster,
+          user,
+          cluster,
           path: config.storage.paths[0],
           usage: BigInt(0),
         });
 
         await scowdClient.storageQuota.setUserStorageQuota({
-          userId: identityId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+          userId: identityId,
+          path: config.storage.paths[0],
+          quotaBytes: BigInt(quotaBytes),
         });
 
         em.persist(userQuota);

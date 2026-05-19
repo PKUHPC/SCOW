@@ -10,9 +10,12 @@ type Props = PropsWithChildren<{
 
 export const DisabledA: React.FC<Props> = React.forwardRef(
   ({ onClick, disabled, message, children, abledMessage }, ref) => {
-
     if (!disabled) {
-      return <Tooltip title={abledMessage}><a onClick={onClick}>{children}</a></Tooltip>;
+      return (
+        <Tooltip title={abledMessage}>
+          <a onClick={onClick}>{children}</a>
+        </Tooltip>
+      );
     }
 
     if (message) {
@@ -22,9 +25,7 @@ export const DisabledA: React.FC<Props> = React.forwardRef(
         </Tooltip>
       );
     } else {
-      return (
-        <span ref={ref as any}>{children}</span>
-      );
+      return <span ref={ref as any}>{children}</span>;
     }
-
-  });
+  },
+);

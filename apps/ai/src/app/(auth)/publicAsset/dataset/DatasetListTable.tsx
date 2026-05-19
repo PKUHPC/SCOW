@@ -260,7 +260,13 @@ export const DatasetListTable: React.FC<Props> = ({ clusters }) => {
                       <CreateNewVersionIcon />
                     </Tooltip>
                   </CreateEditVersionModalButton>
-                  <EditDatasetModalButton refetch={refetch} isEdit={true} editData={r} isPlatformOwned={true} clusters={clusters}>
+                  <EditDatasetModalButton
+                    refetch={refetch}
+                    isEdit={true}
+                    editData={r}
+                    isPlatformOwned={true}
+                    clusters={clusters}
+                  >
                     <Tooltip title={t("button.editButton")}>
                       <EditIcon />
                     </Tooltip>

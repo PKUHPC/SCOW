@@ -11,9 +11,9 @@ import { Logger } from "ts-log";
 import { transferNodeNotFound, transferNotEnabled } from "./errors";
 
 interface NodeNetInfo {
-  address: string,
-  host: string,
-  port: number,
+  address: string;
+  host: string;
+  port: number;
 }
 
 // 获取配置文件集群中各节点信息
@@ -33,14 +33,14 @@ export function getClusterTransferNode(cluster: string): NodeNetInfo {
   const transferNode = configClusters[cluster]?.crossClusterFileTransfer?.transferNode;
   if (!enabled) {
     throw transferNotEnabled(cluster);
-  }
-  else if (!transferNode) {
+  } else if (!transferNode) {
     throw transferNodeNotFound(cluster);
   }
   // 解析为host, port
-  const [host, port] = transferNode.indexOf(":") > 0 ?
-    [transferNode.split(":")[0], parseInt(transferNode.split(":")[1])] :
-    [transferNode, 22];
+  const [host, port] =
+    transferNode.indexOf(":") > 0
+      ? [transferNode.split(":")[0], parseInt(transferNode.split(":")[1])]
+      : [transferNode, 22];
   const address = `${host}:${port}`;
   return {
     address: address,
@@ -54,14 +54,14 @@ export function tryGetClusterTransferNode(cluster: string): NodeNetInfo | undefi
   const transferNode = configClusters[cluster]?.crossClusterFileTransfer?.transferNode;
   if (!enabled) {
     return undefined;
-  }
-  else if (!transferNode) {
+  } else if (!transferNode) {
     return undefined;
   }
   // 解析为host, port
-  const [host, port] = transferNode.indexOf(":") > 0 ?
-    [transferNode.split(":")[0], parseInt(transferNode.split(":")[1])] :
-    [transferNode, 22];
+  const [host, port] =
+    transferNode.indexOf(":") > 0
+      ? [transferNode.split(":")[0], parseInt(transferNode.split(":")[1])]
+      : [transferNode, 22];
   const address = `${host}:${port}`;
   return {
     address: address,
@@ -74,20 +74,25 @@ export const SSH_ERROR_CODE = "SSH_ERROR";
 export const SFTP_ERROR_CODE = "SFTP_ERROR";
 
 export async function sshConnect<T>(
-  address: string, username: string, logger: Logger, run: (ssh: NodeSSH) => Promise<T>,
+  address: string,
+  username: string,
+  logger: Logger,
+  run: (ssh: NodeSSH) => Promise<T>,
 ): Promise<T> {
   return libConnect(address, username, rootKeyPair, logger, run).catch((e) => {
-
     if (e instanceof SshConnectError) {
       throw new ServiceError({
         code: status.INTERNAL,
         details: e.message,
         message: e.message,
-        metadata: scowErrorMetadata(SSH_ERROR_CODE, typeof e.cause === "string"
-          ? e.cause.length > 150
-            ? { cause: encodeURIComponent(e.cause.substring(0, 150) + "...") }
-            : { cause: encodeURIComponent(e.cause) }
-          : undefined),
+        metadata: scowErrorMetadata(
+          SSH_ERROR_CODE,
+          typeof e.cause === "string"
+            ? e.cause.length > 150
+              ? { cause: encodeURIComponent(e.cause.substring(0, 150) + "...") }
+              : { cause: encodeURIComponent(e.cause) }
+            : undefined,
+        ),
       });
     }
 

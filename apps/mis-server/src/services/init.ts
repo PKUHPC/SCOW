@@ -16,9 +16,7 @@ import { getScowdClient } from "src/utils/scowd";
 import { userExists } from "src/utils/userExists";
 
 export const initServiceServer = plugin((server) => {
-
   server.addService<InitServiceServer>(InitServiceService, {
-
     querySystemInitialized: async ({ em }) => {
       const initializationTime = await em.findOne(SystemState, { key: SystemState.KEYS.INITIALIZATION_TIME });
 
@@ -28,10 +26,12 @@ export const initServiceServer = plugin((server) => {
     userExists: async ({ request, em }) => {
       const { userId } = request;
       const result = await userExists(userId, server.logger, em);
-      return [{
-        existsInScow: result.existsInScow,
-        existsInAuth: result.existsInAuth,
-      }];
+      return [
+        {
+          existsInScow: result.existsInScow,
+          existsInAuth: result.existsInAuth,
+        },
+      ];
     },
 
     createInitAdmin: async ({ request, em }) => {
@@ -39,38 +39,41 @@ export const initServiceServer = plugin((server) => {
       // 需要注意，如果扔出异常，前端会根据异常结果显示不同提示
       // 显示两种情况，认证系统中创建失败的原因ALREADY_EXISTS_IN_AUTH=>成功
       // 显示两种情况，其他错误=>失败
-      const user =
-       await createUserInDatabase(userId, name, email, DEFAULT_TENANT_NAME, server.logger, em)
-         .catch((e) => {
-           if (e.code === Status.ALREADY_EXISTS) {
-             throw {
-               code: Status.ALREADY_EXISTS,
-               message:`User with userId ${userId} already exists in scow.`,
-               details: "EXISTS_IN_SCOW",
-             } as ServiceError;
-           }
-           throw {
-             code: Status.INTERNAL,
-             message: `Error creating user with userId ${userId} in database.` } as ServiceError;
-         });
+      const user = await createUserInDatabase(userId, name, email, DEFAULT_TENANT_NAME, server.logger, em).catch(
+        (e) => {
+          if (e.code === Status.ALREADY_EXISTS) {
+            throw {
+              code: Status.ALREADY_EXISTS,
+              message: `User with userId ${userId} already exists in scow.`,
+              details: "EXISTS_IN_SCOW",
+            } as ServiceError;
+          }
+          throw {
+            code: Status.INTERNAL,
+            message: `Error creating user with userId ${userId} in database.`,
+          } as ServiceError;
+        },
+      );
 
       user.platformRoles.push(PlatformRole.PLATFORM_ADMIN);
       user.tenantRoles.push(TenantRole.TENANT_ADMIN);
       await em.flush();
       // call auth
       // createdInAuth反映用户在本次创建之前用户否存在于认证系统，否->true, 是->false
-      const createdInAuth = await createUser(authUrl,
+      const createdInAuth = await createUser(
+        authUrl,
         { identityId: user.userId, id: user.id, mail: user.email, name: user.name, password },
-        server.logger)
+        server.logger,
+      )
         .then(async () => {
           // 插入公钥失败也认为是创建用户成功
           // 在所有集群下执行
           // 如果 SCOWD 开启则不需要插入公钥
           const filterClusterConfig = Object.fromEntries(
-            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true));
+            Object.entries(configClusters).filter(([_, value]) => value.scowd?.enabled !== true),
+          );
 
-          await insertKeyToNewUser(userId, password, server.logger, filterClusterConfig)
-            .catch(() => {});
+          await insertKeyToNewUser(userId, password, server.logger, filterClusterConfig).catch(() => {});
 
           return true;
         })
@@ -83,16 +86,22 @@ export const initServiceServer = plugin((server) => {
 
               const quotaBytes = tenantQuotas.find((quota) => quota.cluster === cluster)?.userDefaultQuota;
               if (quotaBytes === undefined) {
-                const totalStorageBytes = (await scowdClient.storageQuota.getFilesystemStorageUsage({
-                  path: config.storage.paths[0],
-                })).totalStorageBytes;
+                const totalStorageBytes = (
+                  await scowdClient.storageQuota.getFilesystemStorageUsage({
+                    path: config.storage.paths[0],
+                  })
+                ).totalStorageBytes;
 
                 await scowdClient.storageQuota.setUserStorageQuota({
-                  userId, path: config.storage.paths[0], quotaBytes: totalStorageBytes,
+                  userId,
+                  path: config.storage.paths[0],
+                  quotaBytes: totalStorageBytes,
                 });
               } else {
                 await scowdClient.storageQuota.setUserStorageQuota({
-                  userId, path: config.storage.paths[0], quotaBytes: BigInt(quotaBytes),
+                  userId,
+                  path: config.storage.paths[0],
+                  quotaBytes: BigInt(quotaBytes),
                 });
               }
             }
@@ -103,7 +112,7 @@ export const initServiceServer = plugin((server) => {
         // If the call of creating user of auth fails,  delete the user created in the database.
         .catch(async (e) => {
           if (e.status === 409) {
-            server.logger.warn(`User with userId ${ userId }  exists in auth.`);
+            server.logger.warn(`User with userId ${userId}  exists in auth.`);
             return false;
           }
 
@@ -120,7 +129,6 @@ export const initServiceServer = plugin((server) => {
     },
 
     setAsInitAdmin: async ({ request, em }) => {
-
       const user = await em.findOne(User, {
         userId: request.userId,
         tenant: { name: DEFAULT_TENANT_NAME },
@@ -165,22 +173,18 @@ export const initServiceServer = plugin((server) => {
       await em.flush();
 
       return [{}];
-
     },
 
     completeInit: async ({ em }) => {
-
-
       const initializationTime = new SystemState(SystemState.KEYS.INITIALIZATION_TIME, new Date().toISOString());
-
-
 
       try {
         await em.persistAndFlush(initializationTime);
       } catch (e) {
         if (e instanceof UniqueConstraintViolationException) {
           throw {
-            code: status.ALREADY_EXISTS, message: "already initialized",
+            code: status.ALREADY_EXISTS,
+            message: "already initialized",
           } as ServiceError;
         } else {
           throw e;
@@ -188,11 +192,6 @@ export const initServiceServer = plugin((server) => {
       }
 
       return [{}];
-
     },
-
-
   });
-
-
 });

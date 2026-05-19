@@ -13,7 +13,6 @@ interface Props {
 const p = prefix("pageComp.user.adminUserInfoDrawer.");
 
 export const AdminUserInfoDrawer: React.FC<Props> = (props) => {
-
   const t = useI18nTranslateToString();
 
   const PlatformRoleI18nTexts = {
@@ -24,9 +23,7 @@ export const AdminUserInfoDrawer: React.FC<Props> = (props) => {
   const formatPlatformRoles = (platformRoles?: (1 | 0)[]) => {
     if (!platformRoles) return "";
 
-    return platformRoles.map((role) => (
-      <Tag key={role}>{PlatformRoleI18nTexts[role]}</Tag>
-    ));
+    return platformRoles.map((role) => <Tag key={role}>{PlatformRoleI18nTexts[role]}</Tag>);
   };
 
   const formatAccount = (accounts?: string[]) => {
@@ -46,35 +43,23 @@ export const AdminUserInfoDrawer: React.FC<Props> = (props) => {
     [t(p("availableAccounts")), "availableAccounts", formatAccount],
     [t(p("comment")), "adminComment"],
     [t(p("createTime")), "createTime", formatDateTime],
-  ] as (
-  | [string, keyof PlatformUserInfo, (v: any) => string]
-  )[];
-
+  ] as [string, keyof PlatformUserInfo, (v: any) => string][];
 
   const { item, onClose, open } = props;
 
   return (
-    <Drawer
-      width={500}
-      placement="right"
-      onClose={onClose}
-      open={open}
-      title={t(p("detail"))}
-    >
-      {
-        item ? (
-          <Descriptions
-            column={1}
-            bordered
-            size="small"
-          >
-            {drawerItems.map((([label, key, format]) => (
+    <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>
+      {item ? (
+        <Descriptions column={1} bordered size="small">
+          {drawerItems
+            .map(([label, key, format]) => (
               <Descriptions.Item key={item.userId} label={label}>
-                {format ? format(item[key]) : (item[key] ?? "") as string}
+                {format ? format(item[key]) : ((item[key] ?? "") as string)}
               </Descriptions.Item>
-            ))).filter((x) => x)}
-          </Descriptions>
-        ) : undefined }
+            ))
+            .filter((x) => x)}
+        </Descriptions>
+      ) : undefined}
     </Drawer>
   );
 };

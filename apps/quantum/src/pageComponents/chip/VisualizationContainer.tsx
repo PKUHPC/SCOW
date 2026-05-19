@@ -7,9 +7,10 @@ import { CZGateFidelityMap } from "src/pageComponents/chip/CZGateFidelityMap";
 import { SingleQubitFidelityMap } from "src/pageComponents/chip/SingleQubitFidelityMap";
 import { getLayoutMap, rotateLayoutAndScaleIfOdd45, swapQubitData } from "src/utils/chip";
 
-export const VisualizationContainer: React.FC<
-  { deviceInfo?: DeviceDetailInfo, offsetDegree: number }
-> = ({ deviceInfo, offsetDegree }) => {
+export const VisualizationContainer: React.FC<{ deviceInfo?: DeviceDetailInfo; offsetDegree: number }> = ({
+  deviceInfo,
+  offsetDegree,
+}) => {
   if (!deviceInfo) {
     return (
       <Spin>
@@ -18,15 +19,17 @@ export const VisualizationContainer: React.FC<
     );
   }
 
-  const initialSingleQubits: QubitData[] = deviceInfo?.bits?.map((b) => ({
-    Q: b.Qubit,
-    Err: { SQ: b.SingleQubitErrRate },
-  })) ?? [];
+  const initialSingleQubits: QubitData[] =
+    deviceInfo?.bits?.map((b) => ({
+      Q: b.Qubit,
+      Err: { SQ: b.SingleQubitErrRate },
+    })) ?? [];
 
-  const initialCzData: CZGateData[] = deviceInfo?.links?.map((l) => ({
-    Q: [l.A, l.B],
-    Fidelity: 1 - (l.CZErrRate ?? 0),
-  })) ?? [];
+  const initialCzData: CZGateData[] =
+    deviceInfo?.links?.map((l) => ({
+      Q: [l.A, l.B],
+      Fidelity: 1 - (l.CZErrRate ?? 0),
+    })) ?? [];
 
   const swapList = deviceInfo.layout?.swap ?? [];
   const singleQubits = swapQubitData(initialSingleQubits, swapList);
@@ -57,8 +60,8 @@ export const VisualizationContainer: React.FC<
   const FONT_SIZE_TO_NODE_SIZE_RATIO = 6;
 
   // 1. 先尝试在两列布局下计算尺寸
-  const chartTwoColWidth = (parentWidth / 2) - 32;
-  const calculatedNodeSize = ((chartTwoColWidth / (maxX + 1)) - NODE_GAP) * 0.9;
+  const chartTwoColWidth = parentWidth / 2 - 32;
+  const calculatedNodeSize = (chartTwoColWidth / (maxX + 1) - NODE_GAP) * 0.9;
   const calculatedFontSize = Math.min(16, calculatedNodeSize / FONT_SIZE_TO_NODE_SIZE_RATIO);
 
   let nodeSize: number;

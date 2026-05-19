@@ -28,7 +28,8 @@ export const BillingItemType = Type.Object({
       itemId: Type.String(),
       price: Money,
       amountStrategy: Type.String(),
-    })),
+    }),
+  ),
 
   settable: Type.Optional(Type.Boolean()),
 });
@@ -56,7 +57,6 @@ export const GetBillingItemsSchema = typeboxRouteSchema({
     currentActivatedClusterIds: Type.Optional(Type.Array(Type.String())),
 
     clusterSortedIdList: Type.Array(Type.String()),
-
   }),
 
   responses: {
@@ -80,9 +80,9 @@ const mockBillingItems = [
   { id: "HPC01", path: "hpc01.compute.low", price: numberToMoney(0.04), amountStrategy: "gpu" },
   { id: "HPC02", path: "hpc01.compute.normal", price: numberToMoney(0.06), amountStrategy: "gpu" },
   { id: "HPC03", path: "hpc01.compute.high", price: numberToMoney(0.08), amountStrategy: "gpu" },
-  { id: "HPC04", path: "hpc01.GPU.low", price: numberToMoney(10.00), amountStrategy: "gpu" },
-  { id: "HPC05", path: "hpc01.GPU.normal", price: numberToMoney(12.00), amountStrategy: "gpu" },
-  { id: "HPC06", path: "hpc01.GPU.high", price: numberToMoney(14.00), amountStrategy: "gpu" },
+  { id: "HPC04", path: "hpc01.GPU.low", price: numberToMoney(10.0), amountStrategy: "gpu" },
+  { id: "HPC05", path: "hpc01.GPU.normal", price: numberToMoney(12.0), amountStrategy: "gpu" },
+  { id: "HPC06", path: "hpc01.GPU.high", price: numberToMoney(14.0), amountStrategy: "gpu" },
 ];
 
 const mockHistoryBillingItems = [
@@ -94,7 +94,6 @@ async function mockReply(): Promise<GetBillingItemsResponse> {
 }
 
 export async function getBillingItems(tenantName: string | undefined, activeOnly: boolean) {
-
   const client = getClient(JobServiceClient);
   const reply = USE_MOCK
     ? await mockReply()
@@ -104,13 +103,11 @@ export async function getBillingItems(tenantName: string | undefined, activeOnly
 }
 
 const calculateNextId = (data?: JobBillingItem[], tenant?: string) => {
-  const currentItemIds = data
-    ? data.filter((x) => x.tenantName === tenant).map((x) => x.id) : [];
+  const currentItemIds = data ? data.filter((x) => x.tenantName === tenant).map((x) => x.id) : [];
   if (!tenant) {
     const nums = currentItemIds.map((x) => parseInt(x)).filter((x) => !isNaN(x));
     return (nums.length === 0 ? 1 : Math.max(...nums) + 1).toString();
-  }
-  else {
+  } else {
     const flag = tenant + "_";
     const nums = currentItemIds
       .filter((x) => x.startsWith(flag))
@@ -120,9 +117,7 @@ const calculateNextId = (data?: JobBillingItem[], tenant?: string) => {
   }
 };
 
-
-export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(GetBillingItemsSchema, async (req, res) => {
   const { tenant, activeOnly, currentActivatedClusterIds, clusterSortedIdList } = req.query;
 
   // if not initialized, every one can get billing items
@@ -130,11 +125,15 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
     // 权限要求：
     // 平台管理员
     // 租户管理员，且查询的租户为所属租户
-    const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-     (u.tenantRoles.includes(TenantRole.TENANT_ADMIN) && u.tenant === tenant),
+    const auth = authenticate(
+      (u) =>
+        u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+        (u.tenantRoles.includes(TenantRole.TENANT_ADMIN) && u.tenant === tenant),
     );
     const info = await auth(req, res);
-    if (!info) { return; }
+    if (!info) {
+      return;
+    }
   }
 
   const reply = await getBillingItems(tenant, activeOnly);
@@ -154,20 +153,22 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
       tenantAssignedClustersAndPartitions = response;
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
-      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${tenant} assigned Clusters and Partitions failed.` } };
+      return {
+        409: {
+          code: "RESOURCE_CONNECT_FAILED" as const,
+          message: `Get tenant ${tenant} assigned Clusters and Partitions failed.`,
+        },
+      };
     }
   }
 
-  const isPartitionAssigned = (
-    clusterId: string,
-    partitionName: string,
-  ): boolean => {
+  const isPartitionAssigned = (clusterId: string, partitionName: string): boolean => {
     if (!tenantAssignedClustersAndPartitions) {
       return true;
     }
-    return tenantAssignedClustersAndPartitions.assignedClusterPartitions[clusterId]?.partitionNames
-      .includes(partitionName);
+    return tenantAssignedClustersAndPartitions.assignedClusterPartitions[clusterId]?.partitionNames.includes(
+      partitionName,
+    );
   };
 
   const sourceToBillingItemType = (item: JobBillingItem) => {
@@ -191,18 +192,21 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
   const result = { activeItems: [] as BillingItemType[], historyItems: [] as BillingItemType[], nextId };
 
   const sortedIds = clusterSortedIdList.filter((id) => currentActivatedClusterIds?.includes(id));
-  if (sortedIds.length === 0) { console.info("Cluster ops failed , error details: No available clusters"); }
+  if (sortedIds.length === 0) {
+    console.info("Cluster ops failed , error details: No available clusters");
+  }
 
   for (const cluster of sortedIds) {
-
     const client = getClient(ConfigServiceClient);
 
-    const partitions = await asyncClientCall(client, "getClusterConfig", { cluster }).then((resp) => {
-      return resp.partitions;
-    }).catch((e) => {
-      console.log(`Cluster ops fails at ${cluster}, error details: ${e}`);
-      return [];
-    });
+    const partitions = await asyncClientCall(client, "getClusterConfig", { cluster })
+      .then((resp) => {
+        return resp.partitions;
+      })
+      .catch((e) => {
+        console.log(`Cluster ops fails at ${cluster}, error details: ${e}`);
+        return [];
+      });
 
     for (const partition of partitions) {
       for (const qos of partition.qos ?? [""]) {
@@ -214,7 +218,11 @@ export default /* #__PURE__*/route(GetBillingItemsSchema, async (req, res) => {
         } else {
           const settable = isPartitionAssigned(cluster, partition.name);
           result.activeItems.push({
-            cluster, partition: partition.name, qos, tenantName: undefined, settable,
+            cluster,
+            partition: partition.name,
+            qos,
+            tenantName: undefined,
+            settable,
           });
         }
       }

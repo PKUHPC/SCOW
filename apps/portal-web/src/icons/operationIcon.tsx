@@ -15,10 +15,10 @@ export const IconContainer = styled.div`
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  color: ${({ theme }) => theme.token.colorPrimary };
+  color: ${({ theme }) => theme.token.colorPrimary};
   &:hover {
     background: ${({ theme }) => theme.palette.primary[0] ?? "#B6000314"};
-  };
+  }
 `;
 
 export const DisableIconContainer = styled.div`
@@ -53,12 +53,13 @@ const enterDirectorySVG = () => (
   </svg>
 );
 
-export const EnterDirectoryIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const EnterDirectoryIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={enterDirectorySVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 详情图标
 const detailSVG = () => (
@@ -140,7 +141,6 @@ const usingTemplateSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const UsingTemplateIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -171,12 +171,13 @@ const deleteSVG = () => (
   </svg>
 );
 
-export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={deleteSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 重命名图标
 const renameSVG = () => (
@@ -204,12 +205,13 @@ const renameSVG = () => (
   </svg>
 );
 
-export const RenameIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const RenameIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={renameSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 连接图标
 const connectSVG = () => (
@@ -226,11 +228,10 @@ const connectSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
@@ -239,8 +240,8 @@ export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 取消图标
 const cancelSVG = () => (
@@ -263,12 +264,13 @@ const cancelSVG = () => (
   </svg>
 );
 
-export const CancelIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const CancelIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={cancelSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 下载图标
 const downloadSVG = () => (
@@ -286,15 +288,15 @@ const downloadSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const DownloadIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const DownloadIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={downloadSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 提交图标
 const submitSVG = () => (
@@ -318,11 +320,11 @@ const submitSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
-export const SubmitIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const SubmitIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={submitSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);

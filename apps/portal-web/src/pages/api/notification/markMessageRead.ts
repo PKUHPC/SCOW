@@ -25,16 +25,19 @@ export const MarkMessageReadSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(MarkMessageReadSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(MarkMessageReadSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { messageId } = req.body;
 
-  const notifClient = publicConfig.NOTIF_ENABLED && publicConfig.NOTIF_ADDRESS
-    ? getNotificationNodeClient(publicConfig.NOTIF_ADDRESS) : undefined;
+  const notifClient =
+    publicConfig.NOTIF_ENABLED && publicConfig.NOTIF_ADDRESS
+      ? getNotificationNodeClient(publicConfig.NOTIF_ADDRESS)
+      : undefined;
 
   if (!notifClient) {
     console.error("Notification service unavailable", {
@@ -48,14 +51,16 @@ export default /* #__PURE__*/route(MarkMessageReadSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.markMessageRead,
-    operationTypePayload:{ messageId: messageId },
+    operationTypePayload: { messageId: messageId },
   };
 
-  return notifClient.scowMessage.markMessageRead({ userId: info.identityId, messageId: BigInt(messageId) })
+  return notifClient.scowMessage
+    .markMessageRead({ userId: info.identityId, messageId: BigInt(messageId) })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
-    }).catch((e) => {
+    })
+    .catch((e) => {
       console.error("Error marking message read", { userId: info.identityId, messageId }, e);
       return { 500: { code: "MARK_MESSAGE_READ_ERROR" as const } };
     });

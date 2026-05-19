@@ -61,27 +61,29 @@ export const SummaryPartitionSchema = z.object({
 });
 
 // 定义汇总集群信息
-const SummaryClusterInfoSchema = z.array(z.object({
-  clusterId: z.string(),
-  nodeCount: z.number(),
-  runningNodeCount: z.number(),
-  idleNodeCount: z.number(),
-  notAvailableNodeCount: z.optional(z.number()),
-  cpuCoreCount: z.number(),
-  runningCpuCount: z.number(),
-  idleCpuCount: z.number(),
-  notAvailableCpuCount: z.optional(z.number()),
-  gpuCoreCount: z.number(),
-  runningGpuCount: z.number(),
-  idleGpuCount: z.number(),
-  notAvailableGpuCount: z.optional(z.number()),
-  runningJobCount: z.number(),
-  pendingJobCount: z.number(),
-  nodeUsage: z.number(),
-  cpuUsage: z.number(),
-  gpuUsage: z.number(),
-  partitions: z.array(SummaryPartitionSchema),
-}));
+const SummaryClusterInfoSchema = z.array(
+  z.object({
+    clusterId: z.string(),
+    nodeCount: z.number(),
+    runningNodeCount: z.number(),
+    idleNodeCount: z.number(),
+    notAvailableNodeCount: z.optional(z.number()),
+    cpuCoreCount: z.number(),
+    runningCpuCount: z.number(),
+    idleCpuCount: z.number(),
+    notAvailableCpuCount: z.optional(z.number()),
+    gpuCoreCount: z.number(),
+    runningGpuCount: z.number(),
+    idleGpuCount: z.number(),
+    notAvailableGpuCount: z.optional(z.number()),
+    runningJobCount: z.number(),
+    pendingJobCount: z.number(),
+    nodeUsage: z.number(),
+    cpuUsage: z.number(),
+    gpuUsage: z.number(),
+    partitions: z.array(SummaryPartitionSchema),
+  }),
+);
 
 export const NodeInfoSchema = z.object({
   nodeName: z.string(),
@@ -119,9 +121,11 @@ const AllSummaryClustersInfoInput = AllClustersInfoInput.extend({
 });
 
 const AllClustersInfoSchema = z.object({
-  clusters: z.array(ClusterInfoSchema.extend({
-    clusterId: z.string(),
-  })),
+  clusters: z.array(
+    ClusterInfoSchema.extend({
+      clusterId: z.string(),
+    }),
+  ),
 });
 
 // 批量获取集群节点信息的输入和输出模式
@@ -130,9 +134,11 @@ const AllClustersNodesInfoInput = z.object({
 });
 
 const AllClustersNodesInfoSchema = z.object({
-  clusters: z.array(ClusterNodesInfoSchema.extend({
-    clusterId: z.string(),
-  })),
+  clusters: z.array(
+    ClusterNodesInfoSchema.extend({
+      clusterId: z.string(),
+    }),
+  ),
 });
 
 export const PageLinkEntrySchema = z.object({
@@ -171,25 +177,27 @@ const quickEntryPath = "/var/lib/scow/ai/quickEntries";
 const EntrySchema = z.object({
   id: z.string(),
   name: z.string(),
-  entry: z.union([
-    z.object({
-      $case: z.literal("pageLink"),
-      pageLink: PageLinkEntrySchema,
-    }),
-    z.object({
-      $case: z.literal("clusterPageLink"),
-      clusterPageLink: ClusterPageLinkEntrySchema,
-    }),
-    z.object({
-      $case: z.literal("app"),
-      app: AppEntrySchema,
-    }),
-    z.object({
-      $case: z.literal("shell"),
-      shell: ShellEntrySchema,
-    }),
-    z.undefined(),
-  ]).optional(),
+  entry: z
+    .union([
+      z.object({
+        $case: z.literal("pageLink"),
+        pageLink: PageLinkEntrySchema,
+      }),
+      z.object({
+        $case: z.literal("clusterPageLink"),
+        clusterPageLink: ClusterPageLinkEntrySchema,
+      }),
+      z.object({
+        $case: z.literal("app"),
+        app: AppEntrySchema,
+      }),
+      z.object({
+        $case: z.literal("shell"),
+        shell: ShellEntrySchema,
+      }),
+      z.undefined(),
+    ])
+    .optional(),
 });
 
 const EntryListSchema = z.array(EntrySchema);
@@ -198,7 +206,6 @@ export type EntryListSchema = z.infer<typeof EntryListSchema>;
 
 // tRPC 路由
 export const dashboard = router({
-
   // 获取集群配置信息
   getClusterInfo: authProcedure
     .meta({
@@ -316,8 +323,6 @@ export const dashboard = router({
               })),
             };
           }
-
-
         }),
       );
 
@@ -354,11 +359,12 @@ export const dashboard = router({
 
       const commonConfig = getCommonConfig();
 
-      const userAffliction
-             = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+      const userAffliction = await libWebGetUserInfo(userId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
-      const accountNames = userAffliction?.affiliations.filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
-        .map((a) => (a.accountName)) || [];
+      const accountNames =
+        userAffliction?.affiliations
+          .filter((x) => x.accountState !== AccountState.ACCOUNT_DELETED)
+          .map((a) => a.accountName) || [];
 
       const results = await Promise.allSettled(
         clusterIds.map(async (clusterId) => {
@@ -426,7 +432,7 @@ export const dashboard = router({
             throw new Error(`Cluster ${clusterId} is not found`);
           }
 
-          const reply = await asyncClientCall(client.config, "getClusterNodesInfo", { nodeNames: []});
+          const reply = await asyncClientCall(client.config, "getClusterNodesInfo", { nodeNames: [] });
 
           return {
             clusterId,
@@ -515,7 +521,7 @@ export const dashboard = router({
           const currentLogoPath = clusterApps?.[appId]?.logoPath || undefined;
           return {
             ...entry,
-            entry:{
+            entry: {
               ...entry.entry,
               app: {
                 ...entry.entry.app,
@@ -539,9 +545,11 @@ export const dashboard = router({
         summary: "Save user's quick entries",
       },
     })
-    .input(z.object({
-      quickEntries: z.array(EntrySchema),
-    }))
+    .input(
+      z.object({
+        quickEntries: z.array(EntrySchema),
+      }),
+    )
     .output(z.object({}))
     .mutation(async ({ input, ctx: { user } }) => {
       const { quickEntries } = input;
@@ -558,9 +566,10 @@ export const dashboard = router({
 
         return {};
       } catch (err) {
-        const errorMessage = err instanceof Error && "message" in err
-          ? `Error saving quick entry for user ${user.identityId}: ${err.message}`
-          : "";
+        const errorMessage =
+          err instanceof Error && "message" in err
+            ? `Error saving quick entry for user ${user.identityId}: ${err.message}`
+            : "";
 
         logger.error("Saving file failed with %o", err);
         throw new TRPCError({

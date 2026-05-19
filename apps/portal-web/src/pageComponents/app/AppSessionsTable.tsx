@@ -3,8 +3,7 @@ import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom
 import { compareDateTime, formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { compareNumber, compareTimeAsSeconds } from "@scow/lib-web/build/utils/math";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
-import { App, Button, Checkbox, Form, Popconfirm, Space,
-  Table, TableColumnsType, Tooltip } from "antd";
+import { App, Button, Checkbox, Form, Popconfirm, Space, Table, TableColumnsType, Tooltip } from "antd";
 import { useRouter } from "next/router";
 import { join } from "path";
 import React, { useCallback, useMemo, useState } from "react";
@@ -22,14 +21,13 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 
 interface FilterForm {
-  appJobName: string | undefined
-  cluster: Cluster
+  appJobName: string | undefined;
+  cluster: Cluster;
 }
 
 const p = prefix("pageComp.app.appSessionTable.");
 
 export const AppSessionsTable = () => {
-
   const { currentClusters, defaultCluster, activatedClusters } = useStore(ClusterInfoStore);
 
   const [query, setQuery] = useState<FilterForm>(() => {
@@ -55,20 +53,25 @@ export const AppSessionsTable = () => {
 
       return sessions.map((x) => ({
         ...x,
-        jobName:x.jobName ? x.jobName : x.sessionId,
-        remainingTime: x.state === "RUNNING" ? calculateAppRemainingTime(x.runningTime, x.timeLimit) :
-          x.state === "PENDING" ? "" : x.timeLimit,
+        jobName: x.jobName ? x.jobName : x.sessionId,
+        remainingTime:
+          x.state === "RUNNING"
+            ? calculateAppRemainingTime(x.runningTime, x.timeLimit)
+            : x.state === "PENDING"
+              ? ""
+              : x.timeLimit,
       }));
-
     }, [currentClusters]),
   });
 
   const filteredData = useMemo(() => {
-    if (!data) { return undefined; }
+    if (!data) {
+      return undefined;
+    }
 
     let filtered = data;
     if (query.appJobName) {
-      filtered = filtered.filter((x) => (x.jobName.toLowerCase().includes(query.appJobName!.toLowerCase())));
+      filtered = filtered.filter((x) => x.jobName.toLowerCase().includes(query.appJobName!.toLowerCase()));
     }
 
     if (query.cluster) {
@@ -77,7 +80,6 @@ export const AppSessionsTable = () => {
 
     return filtered;
   }, [data, query]);
-
 
   const columns: TableColumnsType<NonNullable<typeof data>[number]> = [
     {
@@ -103,14 +105,14 @@ export const AppSessionsTable = () => {
       title: t(p("table.submitTime")),
       dataIndex: "submitTime",
       width: "15%",
-      render: (_, record) => record.submitTime ? formatDateTime(record.submitTime) : "",
-      sorter: (a, b) => (!a.submitTime || !b.submitTime) ? -1 : compareDateTime(a.submitTime, b.submitTime),
+      render: (_, record) => (record.submitTime ? formatDateTime(record.submitTime) : ""),
+      sorter: (a, b) => (!a.submitTime || !b.submitTime ? -1 : compareDateTime(a.submitTime, b.submitTime)),
     },
     {
       title: t(p("table.state")),
       dataIndex: "state",
       width: "12%",
-      render: (_, record) => (
+      render: (_, record) =>
         record.reason ? (
           <Tooltip title={record.reason}>
             <Space>
@@ -120,27 +122,24 @@ export const AppSessionsTable = () => {
           </Tooltip>
         ) : (
           <span style={{ color: statusColors[record.state.toUpperCase()] }}>{record.state}</span>
-        )
-      ),
-      sorter: (a, b) => compareState (a.state, b.state)
-        ? compareState (a.state, b.state) :
-        compareNumber(a.jobId, b.jobId),
+        ),
+      sorter: (a, b) =>
+        compareState(a.state, b.state) ? compareState(a.state, b.state) : compareNumber(a.jobId, b.jobId),
       defaultSortOrder: "descend",
     },
     {
       title: t(p("table.remainingTime")),
       dataIndex: "remainingTime",
-      sorter:(a, b) => compareTimeAsSeconds(
-        a.state === "PENDING" ?
-          a.timeLimit : calculateAppRemainingTime(a.runningTime, a.timeLimit),
-        b.state === "PENDING" ?
-          b.timeLimit : calculateAppRemainingTime(b.runningTime, b.timeLimit),
-      ),
+      sorter: (a, b) =>
+        compareTimeAsSeconds(
+          a.state === "PENDING" ? a.timeLimit : calculateAppRemainingTime(a.runningTime, a.timeLimit),
+          b.state === "PENDING" ? b.timeLimit : calculateAppRemainingTime(b.runningTime, b.timeLimit),
+        ),
     },
     {
       title: t("button.actionButton"),
       key: "action",
-      fixed:"right",
+      fixed: "right",
       width: "10%",
       render: (record) => (
         <Space size={8}>
@@ -151,55 +150,57 @@ export const AppSessionsTable = () => {
               }}
             />
           </Tooltip>
-          {
-            (record.state === "RUNNING") ? (
-              <>
-                <ConnectTopAppLink
-                  session={record}
-                  clusterId={record.clusterId}
-                  refreshToken={connectivityRefreshToken}
-                />
-                <Popconfirm
-                  title={t(p("table.popFinishConfirmTitle"))}
-                  onConfirm={async () =>
-                    api.cancelJob({ query: {
-                      cluster: record.clusterId,
-                      jobId: record.jobId,
-                    } })
-                      .then(() => {
-                        message.success(t(p("table.popFinishConfirmMessage")));
-                        reload();
-                      })
-                  }
-                >
-                  <Tooltip title={t("button.finishButton")}>
-                    <EndIcon />
-                  </Tooltip>
-                </Popconfirm>
-              </>
-            ) : undefined
-          }
-          {
-            (record.state === "PENDING" || record.state === "SUSPENDED") ? (
+          {record.state === "RUNNING" ? (
+            <>
+              <ConnectTopAppLink
+                session={record}
+                clusterId={record.clusterId}
+                refreshToken={connectivityRefreshToken}
+              />
               <Popconfirm
-                title={t(p("table.popCancelConfirmTitle"))}
+                title={t(p("table.popFinishConfirmTitle"))}
                 onConfirm={async () =>
-                  api.cancelJob({ query: {
-                    cluster: record.clusterId,
-                    jobId: record.jobId,
-                  } })
+                  api
+                    .cancelJob({
+                      query: {
+                        cluster: record.clusterId,
+                        jobId: record.jobId,
+                      },
+                    })
                     .then(() => {
-                      message.success(t(p("table.popCancelConfirmMessage")));
+                      message.success(t(p("table.popFinishConfirmMessage")));
                       reload();
                     })
                 }
               >
-                <Tooltip title={t("button.cancelButton")}>
-                  <CancelIcon />
+                <Tooltip title={t("button.finishButton")}>
+                  <EndIcon />
                 </Tooltip>
               </Popconfirm>
-            ) : undefined
-          }
+            </>
+          ) : undefined}
+          {record.state === "PENDING" || record.state === "SUSPENDED" ? (
+            <Popconfirm
+              title={t(p("table.popCancelConfirmTitle"))}
+              onConfirm={async () =>
+                api
+                  .cancelJob({
+                    query: {
+                      cluster: record.clusterId,
+                      jobId: record.jobId,
+                    },
+                  })
+                  .then(() => {
+                    message.success(t(p("table.popCancelConfirmMessage")));
+                    reload();
+                  })
+              }
+            >
+              <Tooltip title={t("button.cancelButton")}>
+                <CancelIcon />
+              </Tooltip>
+            </Popconfirm>
+          ) : undefined}
         </Space>
       ),
     },
@@ -230,19 +231,20 @@ export const AppSessionsTable = () => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{t("button.searchButton")}</Button>
+              <Button type="primary" htmlType="submit">
+                {t("button.searchButton")}
+              </Button>
             </Space>
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button loading={isLoading} onClick={() => reloadTable()}>{t("button.refreshButton")}</Button>
+              <Button loading={isLoading} onClick={() => reloadTable()}>
+                {t("button.refreshButton")}
+              </Button>
             </Space>
           </Form.Item>
           <Form.Item>
-            <Checkbox
-              checked={onlyNotEnded}
-              onChange={(e) => setOnlyNotEnded(e.target.checked)}
-            >
+            <Checkbox checked={onlyNotEnded} onChange={(e) => setOnlyNotEnded(e.target.checked)}>
               {t(p("filterForm.onlyNotEnded"))}
             </Checkbox>
           </Form.Item>
@@ -263,4 +265,3 @@ export const AppSessionsTable = () => {
     </div>
   );
 };
-

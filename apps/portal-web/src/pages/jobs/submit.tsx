@@ -10,21 +10,18 @@ interface Props {
   submitJobPromptText: string;
 }
 
-export const SubmitJobPage: NextPage<Props> = requireAuth(() => true)(
-  (props: Props) => {
-    const t = useI18nTranslateToString();
+export const SubmitJobPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
+  const t = useI18nTranslateToString();
 
-    return (
-      <div>
-        <Head title={t("pages.jobs.submit.title")} />
-        <SubmitJobForm submitJobPromptText={props.submitJobPromptText} />
-      </div>
-    );
-
-  });
+  return (
+    <div>
+      <Head title={t("pages.jobs.submit.title")} />
+      <SubmitJobForm submitJobPromptText={props.submitJobPromptText} />
+    </div>
+  );
+});
 
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-
   const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
   const submitJobPromptText = getServerI18nConfigText(languageId, "submitJopPromptText");
 

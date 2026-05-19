@@ -13,19 +13,16 @@ export const ValidateTokenSchema = typeboxRouteSchema({
     200: UserInfoSchema,
     403: Type.Null(),
   },
-
 });
 
 export default route(ValidateTokenSchema, async (req) => {
-
   const { token } = req.query;
 
   const info = await validateToken(token);
 
-  if (!info) { return { 403: null }; }
+  if (!info) {
+    return { 403: null };
+  }
 
   return { 200: info };
-
 });
-
-

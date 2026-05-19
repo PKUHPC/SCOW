@@ -25,7 +25,6 @@ interface UserWithQuotaInfo {
 }
 
 export const storageServiceServer = plugin((server) => {
-
   server.addService<StorageServiceServer>(StorageServiceService, {
     getTenantQuota: async ({ request, em, logger }) => {
       const { tenantName, cluster, path, idOrName, page, pageSize, sortField, sortOrder } = request;
@@ -39,9 +38,9 @@ export const storageServiceServer = plugin((server) => {
       try {
         const scowdClient = getScowdClient(cluster);
 
-        const {
-          totalStorageBytes, usedStorageBytes,
-        } = await scowdClient.storageQuota.getFilesystemStorageUsage({ path });
+        const { totalStorageBytes, usedStorageBytes } = await scowdClient.storageQuota.getFilesystemStorageUsage({
+          path,
+        });
 
         const tenant = await em.findOne(Tenant, { name: tenantName });
         if (!tenant) {
@@ -83,10 +82,7 @@ export const storageServiceServer = plugin((server) => {
           // 用户名或ID过滤
           if (idOrName) {
             qb.andWhere({
-              $or: [
-                { userId: { $like: `%${idOrName}%` } },
-                { name: { $like: `%${idOrName}%` } },
-              ],
+              $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
             });
           }
 
@@ -145,66 +141,79 @@ export const storageServiceServer = plugin((server) => {
           countQb.where({ tenant });
           if (idOrName) {
             countQb.andWhere({
-              $or: [
-                { userId: { $like: `%${idOrName}%` } },
-                { name: { $like: `%${idOrName}%` } },
-              ],
+              $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
             });
           }
           const userCount = await countQb.getCount();
 
           const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
-            userIds: users.map((user) => user.userId || user.user_id), path,
+            userIds: users.map((user) => user.userId || user.user_id),
+            path,
           });
 
           const usersWithQuotaInfo: UserWithQuotaInfo[] = users.map((user: any) => ({
             userId: user.userId || user.user_id,
             name: user.name,
-            storageQuota: Number(user.storage_quota
-              || userQuotaInfos.find((info) => info.userId === (user.userId || user.user_id))?.blockHardLimitBytes),
+            storageQuota: Number(
+              user.storage_quota ||
+                userQuotaInfos.find((info) => info.userId === (user.userId || user.user_id))?.blockHardLimitBytes,
+            ),
             usedStorageBytes: Number(user.used_storage_bytes),
             useDefault: Boolean(user.use_default),
           }));
 
-          return [{
-            totalStorageBytes: Number(totalStorageBytes),
-            remainingStorageBytes: Number(totalStorageBytes - usedStorageBytes),
-            userDefaultQuotaBytes: Number(defaultQuota || totalStorageBytes),
-            totalUserCount: userCount,
-            usersQuotaInfo: usersWithQuotaInfo.map((user) => ({
-              ...user,
-              userName: user.name,
-              quotaBytes: user.storageQuota,
-            })),
-          }];
+          return [
+            {
+              totalStorageBytes: Number(totalStorageBytes),
+              remainingStorageBytes: Number(totalStorageBytes - usedStorageBytes),
+              userDefaultQuotaBytes: Number(defaultQuota || totalStorageBytes),
+              totalUserCount: userCount,
+              usersQuotaInfo: usersWithQuotaInfo.map((user) => ({
+                ...user,
+                userName: user.name,
+                quotaBytes: user.storageQuota,
+              })),
+            },
+          ];
         } else {
           // 不需要排序时，保持原有逻辑
-          const [tenantUsers, userCount] = await em.findAndCount(User, {
-            tenant,
-            ...idOrName ? {
-              $or: [
-                { userId: { $like: `%${idOrName}%` } },
-                { name: { $like: `%${idOrName}%` } },
-              ],
-            } : {},
-          }, {
-            ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-            fields: ["userId", "name"],
-            orderBy: { name: "ASC" },
-          });
+          const [tenantUsers, userCount] = await em.findAndCount(
+            User,
+            {
+              tenant,
+              ...(idOrName
+                ? {
+                    $or: [{ userId: { $like: `%${idOrName}%` } }, { name: { $like: `%${idOrName}%` } }],
+                  }
+                : {}),
+            },
+            {
+              ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
+              fields: ["userId", "name"],
+              orderBy: { name: "ASC" },
+            },
+          );
 
-          const tenantUsersQuota = await em.find(TenantUserStorageQuota, {
-            cluster, user: { id: { $in: tenantUsers } }, path,
-          }, { populate: ["user"]});
+          const tenantUsersQuota = await em.find(
+            TenantUserStorageQuota,
+            {
+              cluster,
+              user: { id: { $in: tenantUsers } },
+              path,
+            },
+            { populate: ["user"] },
+          );
 
           const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
-            userIds: tenantUsers.map((user) => user.userId), path,
+            userIds: tenantUsers.map((user) => user.userId),
+            path,
           });
 
           const usersWithQuotaInfo: UserWithQuotaInfo[] = tenantUsers.map((user) => {
             const userQuota = tenantUsersQuota.find((q) => q.user.id === user.id);
-            const blockHardLimitBytes =
-              userQuotaInfos?.find((info) => info.userId === user.userId)?.blockHardLimitBytes;
+            const blockHardLimitBytes = userQuotaInfos?.find(
+              (info) => info.userId === user.userId,
+            )?.blockHardLimitBytes;
 
             return {
               userId: user.userId,
@@ -215,17 +224,19 @@ export const storageServiceServer = plugin((server) => {
             };
           });
 
-          return [{
-            totalStorageBytes: Number(totalStorageBytes),
-            remainingStorageBytes: Number(totalStorageBytes - usedStorageBytes),
-            userDefaultQuotaBytes: Number(defaultQuota || totalStorageBytes),
-            totalUserCount: userCount,
-            usersQuotaInfo: usersWithQuotaInfo.map((user) => ({
-              ...user,
-              userName: user.name,
-              quotaBytes: user.storageQuota,
-            })),
-          }];
+          return [
+            {
+              totalStorageBytes: Number(totalStorageBytes),
+              remainingStorageBytes: Number(totalStorageBytes - usedStorageBytes),
+              userDefaultQuotaBytes: Number(defaultQuota || totalStorageBytes),
+              totalUserCount: userCount,
+              usersQuotaInfo: usersWithQuotaInfo.map((user) => ({
+                ...user,
+                userName: user.name,
+                quotaBytes: user.storageQuota,
+              })),
+            },
+          ];
         }
       } catch (err) {
         if (err instanceof ConnectError) {
@@ -258,18 +269,25 @@ export const storageServiceServer = plugin((server) => {
           }
 
           logger.debug("Querying tenant user quota with PESSIMISTIC_WRITE lock", {
-            userId, cluster, path,
+            userId,
+            cluster,
+            path,
           });
 
-          const userQuota = await em.findOne(TenantUserStorageQuota, { user, cluster, path }, {
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-          });
+          const userQuota = await em.findOne(
+            TenantUserStorageQuota,
+            { user, cluster, path },
+            {
+              lockMode: LockMode.PESSIMISTIC_WRITE,
+            },
+          );
 
           logger.debug("Lock acquired", { existingQuota: !!userQuota });
 
-          const { userQuotaInfos } = (await scowdClient.storageQuota.getUsersStorageQuota({
-            userIds: [userId], path,
-          }));
+          const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
+            userIds: [userId],
+            path,
+          });
 
           // 使用默认值
           if (useTenantDefaultUserQuota) {
@@ -278,7 +296,10 @@ export const storageServiceServer = plugin((server) => {
             // 如果不存在用户配额则创建并设置使用量为实际使用量
             if (!userQuota) {
               const newUserQuota = new TenantUserStorageQuota({
-                user, cluster, path, usage: userQuotaInfos[0].usedStorageBytes,
+                user,
+                cluster,
+                path,
+                usage: userQuotaInfos[0].usedStorageBytes,
               });
               em.persist(newUserQuota);
             } else {
@@ -294,7 +315,9 @@ export const storageServiceServer = plugin((server) => {
               operation: "setUserStorageQuota",
             });
             await scowdClient.storageQuota.setUserStorageQuota({
-              userId, path, quotaBytes: BigInt(tenantQuota?.userDefaultQuota || 0) || totalStorageBytes,
+              userId,
+              path,
+              quotaBytes: BigInt(tenantQuota?.userDefaultQuota || 0) || totalStorageBytes,
             });
           } else {
             // 用户配额设置存在时
@@ -305,29 +328,34 @@ export const storageServiceServer = plugin((server) => {
               logger.debug("Syncing quota to filesystem");
 
               await scowdClient.storageQuota.setUserStorageQuota({
-                userId, path, quotaBytes: BigInt(userQuotaBytes),
+                userId,
+                path,
+                quotaBytes: BigInt(userQuotaBytes),
               });
 
               em.persist(userQuota);
             } else if (userQuotaBytes) {
               const newTenantUserQuota = new TenantUserStorageQuota({
-                user, cluster, path, storageQuota: BigInt(userQuotaBytes),
+                user,
+                cluster,
+                path,
+                storageQuota: BigInt(userQuotaBytes),
                 usage: userQuotaInfos[0].usedStorageBytes,
               });
 
               logger.debug("Applying new quota to filesystem");
 
               await scowdClient.storageQuota.setUserStorageQuota({
-                userId, path, quotaBytes: BigInt(userQuotaBytes),
+                userId,
+                path,
+                quotaBytes: BigInt(userQuotaBytes),
               });
 
               em.persist(newTenantUserQuota);
             }
           }
         } catch (err) {
-          logger.error(
-            `Failed to set the user ${userId} storage quota under the tenant in scow to ${userQuotaBytes}.`,
-          );
+          logger.error(`Failed to set the user ${userId} storage quota under the tenant in scow to ${userQuotaBytes}.`);
 
           if (err instanceof ConnectError) {
             throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -352,7 +380,7 @@ export const storageServiceServer = plugin((server) => {
       const scowdClient = getScowdClient(cluster);
 
       // 获取用户信息
-      const users = await em.find(User, { userId: { $in: userIds } }, { fields: ["userId", "tenant"]});
+      const users = await em.find(User, { userId: { $in: userIds } }, { fields: ["userId", "tenant"] });
       const foundUserIds = users.map((u) => u.userId);
 
       if (foundUserIds.length !== users.length) {
@@ -362,7 +390,8 @@ export const storageServiceServer = plugin((server) => {
 
       // 批量获取文件系统配额信息
       const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
-        userIds: foundUserIds, path,
+        userIds: foundUserIds,
+        path,
       });
       const quotaInfoMap = new Map(userQuotaInfos.map((info) => [info.userId, info]));
 
@@ -375,12 +404,18 @@ export const storageServiceServer = plugin((server) => {
             const userId = user.userId;
 
             logger.debug("Querying tenant user quota with PESSIMISTIC_WRITE lock", {
-              userId, cluster, path,
+              userId,
+              cluster,
+              path,
             });
 
-            const userQuota = await em.findOne(TenantUserStorageQuota, { cluster, user, path }, {
-              lockMode: LockMode.PESSIMISTIC_WRITE,
-            });
+            const userQuota = await em.findOne(
+              TenantUserStorageQuota,
+              { cluster, user, path },
+              {
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
             logger.debug("Lock acquired", { existingQuota: !!userQuota });
 
@@ -393,13 +428,18 @@ export const storageServiceServer = plugin((server) => {
             // 使用默认值
             if (useTenantDefaultUserQuota) {
               const tenantQuota = await em.findOne(TenantStorageQuota, {
-                tenant: user.tenant, cluster, path,
+                tenant: user.tenant,
+                cluster,
+                path,
               });
 
               // 如果不存在用户配额则创建并设置使用量为实际使用量
               if (!userQuota) {
                 const newUserQuota = new TenantUserStorageQuota({
-                  user: em.getReference(User, user.id), cluster, path, usage: quotaInfo.usedStorageBytes,
+                  user: em.getReference(User, user.id),
+                  cluster,
+                  path,
+                  usage: quotaInfo.usedStorageBytes,
                 });
                 em.persist(newUserQuota);
               } else {
@@ -417,7 +457,8 @@ export const storageServiceServer = plugin((server) => {
               });
 
               await scowdClient.storageQuota.setUserStorageQuota({
-                userId, path,
+                userId,
+                path,
                 quotaBytes: BigInt(tenantQuota?.userDefaultQuota || 0) || totalStorageBytes,
               });
               successUserIds.push(userId);
@@ -434,13 +475,17 @@ export const storageServiceServer = plugin((server) => {
                 logger.debug("Syncing quota to filesystem for user", { userId });
 
                 await scowdClient.storageQuota.setUserStorageQuota({
-                  userId, path, quotaBytes: BigInt(userQuotaBytes),
+                  userId,
+                  path,
+                  quotaBytes: BigInt(userQuotaBytes),
                 });
 
                 em.persist(userQuota);
               } else {
                 const newTenantUserQuota = new TenantUserStorageQuota({
-                  user: em.getReference(User, user.id), cluster, path,
+                  user: em.getReference(User, user.id),
+                  cluster,
+                  path,
                   storageQuota: BigInt(userQuotaBytes),
                   usage: quotaInfo.usedStorageBytes,
                 });
@@ -448,7 +493,9 @@ export const storageServiceServer = plugin((server) => {
                 logger.debug("Applying new quota to filesystem for user", { userId });
 
                 await scowdClient.storageQuota.setUserStorageQuota({
-                  userId, path, quotaBytes: BigInt(userQuotaBytes),
+                  userId,
+                  path,
+                  quotaBytes: BigInt(userQuotaBytes),
                 });
 
                 em.persist(newTenantUserQuota);
@@ -457,10 +504,7 @@ export const storageServiceServer = plugin((server) => {
             }
           }
         } catch (err) {
-          logger.error(
-            `Failed to set storage quota for users ${userIds.join(", ")} under the tenant.`,
-            { error: err },
-          );
+          logger.error(`Failed to set storage quota for users ${userIds.join(", ")} under the tenant.`, { error: err });
 
           if (err instanceof ConnectError) {
             throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -470,9 +514,11 @@ export const storageServiceServer = plugin((server) => {
         }
       });
 
-      return [{
-        failedUserIds: foundUserIds.filter((id) => !successUserIds.includes(id)),
-      }];
+      return [
+        {
+          failedUserIds: foundUserIds.filter((id) => !successUserIds.includes(id)),
+        },
+      ];
     },
 
     // 设置租户下用户的默认存储配额
@@ -499,26 +545,44 @@ export const storageServiceServer = plugin((server) => {
         em.persist(tenantQuota);
       } else {
         const newTenantQuota = new TenantStorageQuota({
-          tenant, cluster, path, userDefaultQuota: BigInt(userQuotaBytes) });
+          tenant,
+          cluster,
+          path,
+          userDefaultQuota: BigInt(userQuotaBytes),
+        });
         em.persist(newTenantQuota);
       }
 
       // 在文件系统中设置所有使用默认值的用户的存储配额
-      const usersQuotaInfo = await em.find(TenantUserStorageQuota, {
-        cluster, user: { tenant: { name: tenantName } }, path, storageQuota: { $ne: null },
-      }, { fields: ["user.id"]});
+      const usersQuotaInfo = await em.find(
+        TenantUserStorageQuota,
+        {
+          cluster,
+          user: { tenant: { name: tenantName } },
+          path,
+          storageQuota: { $ne: null },
+        },
+        { fields: ["user.id"] },
+      );
 
       const hasQuotaSettingUser = usersQuotaInfo.map((info) => info.user.id);
-      const useDefaultQuotaUsers = await em.find(User, {
-        id: { $nin: hasQuotaSettingUser }, tenant,
-      }, { fields: ["userId"]});
+      const useDefaultQuotaUsers = await em.find(
+        User,
+        {
+          id: { $nin: hasQuotaSettingUser },
+          tenant,
+        },
+        { fields: ["userId"] },
+      );
 
       try {
         const userIds = useDefaultQuotaUsers.map((user) => user.userId);
 
         const { totalStorageBytes } = await scowdClient.storageQuota.getFilesystemStorageUsage({ path });
         const { succeededUserIds, failedUserIds } = await scowdClient.storageQuota.setUsersStorageQuota({
-          userIds, path, quotaBytes: BigInt(tenantQuota?.userDefaultQuota || 0) || totalStorageBytes,
+          userIds,
+          path,
+          quotaBytes: BigInt(tenantQuota?.userDefaultQuota || 0) || totalStorageBytes,
         });
 
         // 如果文件系统中设置失败则会回滚
@@ -526,7 +590,6 @@ export const storageServiceServer = plugin((server) => {
 
         // 返回成功和失败数量
         return [{ successes: succeededUserIds.length, failures: failedUserIds.length, failedUserIds }];
-
       } catch (err) {
         if (err instanceof ConnectError) {
           throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -545,24 +608,30 @@ export const storageServiceServer = plugin((server) => {
       const currentClusterConfig = clusterConfigs[cluster];
       checkClusterStorageQuotaEnabled(currentClusterConfig, paths);
 
-      const user = await em.findOne(User, { userId }, { fields: ["tenant"]});
+      const user = await em.findOne(User, { userId }, { fields: ["tenant"] });
       if (!user) {
         throw {
           code: status.NOT_FOUND,
           message: `User ${userId} is not found.`,
-          details:"USER_NOT_FOUND",
+          details: "USER_NOT_FOUND",
         } as ServiceError;
       }
 
       const tenantQuotas = await em.find(TenantStorageQuota, {
-        tenant: { id: user.tenant.$.id }, cluster,
-        ...paths.length !== 0 ? { path: { $in: paths } } : {},
+        tenant: { id: user.tenant.$.id },
+        cluster,
+        ...(paths.length !== 0 ? { path: { $in: paths } } : {}),
       });
 
-      const userQuotaUsage = await em.find(TenantUserStorageQuota, {
-        cluster, user: { userId },
-        ...paths.length !== 0 ? { path: { $in: paths } } : {},
-      }, { fields: ["path", "storageQuota"]});
+      const userQuotaUsage = await em.find(
+        TenantUserStorageQuota,
+        {
+          cluster,
+          user: { userId },
+          ...(paths.length !== 0 ? { path: { $in: paths } } : {}),
+        },
+        { fields: ["path", "storageQuota"] },
+      );
 
       const scowdClient = getScowdClient(cluster);
 
@@ -571,7 +640,8 @@ export const storageServiceServer = plugin((server) => {
           const quotaUsage = userQuotaUsage.find((usage) => usage.path === path);
 
           const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
-            userIds: [userId], path,
+            userIds: [userId],
+            path,
           });
 
           for (const info of userQuotaInfos) {
@@ -606,16 +676,17 @@ export const storageServiceServer = plugin((server) => {
         }
         throw err;
       }
-
     },
     getSyncInfo: async ({ request }) => {
       const { cluster, path, tenant } = request;
 
-      return [{
-        syncStarted: server.ext.syncStorageUsage.started(),
-        schedule: server.ext.syncStorageUsage.schedule,
-        lastSyncTime: server.ext.syncStorageUsage.lastSync(cluster, path, tenant)?.toISOString() ?? undefined,
-      }];
+      return [
+        {
+          syncStarted: server.ext.syncStorageUsage.started(),
+          schedule: server.ext.syncStorageUsage.schedule,
+          lastSyncTime: server.ext.syncStorageUsage.lastSync(cluster, path, tenant)?.toISOString() ?? undefined,
+        },
+      ];
     },
 
     syncTenantUsersStorageUsage: async ({ request }) => {

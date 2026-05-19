@@ -19,7 +19,6 @@ export async function getUser(
   params: { identityId: string },
   logger?: Logger,
 ): Promise<AuthUserInfo | undefined> {
-
   const query = new URLSearchParams([["identityId", params.identityId]]);
   const url = join(authUrl, "/user") + "?" + query.toString();
   const resp = await fetch(url, {
@@ -40,4 +39,3 @@ export async function getUser(
     logHttpErrorAndThrow(resp, logger);
   }
 }
-

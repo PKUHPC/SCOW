@@ -17,10 +17,14 @@ export const CreateDevHostInputSchema = z.object({
   image: z.number().optional(),
   isImagePrivate: z.boolean().optional(),
   remoteImageUrl: z.string().optional(),
-  mountPoints: z.array(z.object({
-    path:z.string(),
-    target:z.string(),
-  })).optional(),
+  mountPoints: z
+    .array(
+      z.object({
+        path: z.string(),
+        target: z.string(),
+      }),
+    )
+    .optional(),
   account: z.string(),
   partition: z.string(),
   qos: z.string(),
@@ -28,16 +32,17 @@ export const CreateDevHostInputSchema = z.object({
   gpuCount: z.number().optional(),
   memory: z.number(),
   maxTimeMinutes: z.number(),
-  privateImageRepositoryCredentials: z.object({
-    userName: z.string(),
-    password: z.string(),
-  }).optional(),
+  privateImageRepositoryCredentials: z
+    .object({
+      userName: z.string(),
+      password: z.string(),
+    })
+    .optional(),
 });
 
 export type CreateDevHostInput = z.infer<typeof CreateDevHostInputSchema>;
 
-export const createDevHost =
-procedure
+export const createDevHost = procedure
   .meta({
     openapi: {
       method: "POST",
@@ -47,10 +52,12 @@ procedure
     },
   })
   .input(CreateDevHostInputSchema)
-  .output(z.object({
-    devHostId: z.number(),
-  }))
-  .use(async ({ input:{ clusterId }, ctx, next }) => {
+  .output(
+    z.object({
+      devHostId: z.number(),
+    }),
+  )
+  .use(async ({ input: { clusterId }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -61,82 +68,81 @@ procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-        { clusterId, devHostId:(res.data as any).devHostId } },
-      OperationResult.SUCCESS);
+      await callLog(
+        { ...logInfo, operationTypePayload: { clusterId, devHostId: (res.data as any).devHostId } },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
-        { clusterId } },
-      OperationResult.FAIL);
+      await callLog({ ...logInfo, operationTypePayload: { clusterId } }, OperationResult.FAIL);
     }
 
     return res;
   })
-  .mutation(
-    async ({ input, ctx: { user } }) => {
-      const { clusterId, devHostName, image, maxTimeMinutes,mountPoints } = input;
+  .mutation(async ({ input, ctx: { user } }) => {
+    const { clusterId, devHostName, image, maxTimeMinutes, mountPoints } = input;
 
-      const devHostConfig = clusters[clusterId]?.ai?.devHost;
-      if (!devHostConfig?.enabled) {
+    const devHostConfig = clusters[clusterId]?.ai?.devHost;
+    if (!devHostConfig?.enabled) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Dev host is not enabled in this cluster",
+      });
+    }
+
+    if (devHostName.length > 42) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "The length of trainJobName should not exceed 42",
+      });
+    }
+
+    if (devHostConfig.maxRunningTimeHours) {
+      if (maxTimeMinutes > devHostConfig.maxRunningTimeHours * 60) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Dev host is not enabled in this cluster",
-        });
-      }
-
-      if (devHostName.length > 42) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "The length of trainJobName should not exceed 42",
-        });
-      }
-
-      if (devHostConfig.maxRunningTimeHours) {
-        if (maxTimeMinutes > (devHostConfig.maxRunningTimeHours * 60)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `The dev host running time cannot exceed ${devHostConfig.maxRunningTimeHours}` +
+          message:
+            `The dev host running time cannot exceed ${devHostConfig.maxRunningTimeHours}` +
             ` hour${devHostConfig.maxRunningTimeHours > 1 ? "s" : ""}`,
-          });
-        }
-        if (maxTimeMinutes === 0) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "The dev host running time cannot be 0",
-          });
-        }
-      }
-
-      if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Files or folders with non-UTF-8 names cannot be selected",
         });
       }
+      if (maxTimeMinutes === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "The dev host running time cannot be 0",
+        });
+      }
+    }
 
-      const userId = user.identityId;
+    if (mountPoints?.some((mountPoint) => hasNonUtf8Segment(mountPoint.path))) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Files or folders with non-UTF-8 names cannot be selected",
+      });
+    }
 
-      const currentClusterIds = await getCurrentClusters(userId);
-      checkClusterAvailable(currentClusterIds, clusterId);
+    const userId = user.identityId;
 
-      const em = await forkEntityManager();
-      const {
-        image: existImage,
-      } = await checkCreateAppEntity({ em, image, datasets: [], algorithms: [], models: []});
+    const currentClusterIds = await getCurrentClusters(userId);
+    checkClusterAvailable(currentClusterIds, clusterId);
 
-      // 检查数据集、算法、模型和镜像是否有权限使用
-      checkEntityAuth({ userId, image: existImage, datasetVersions: [], algorithmVersions: [], modelVersions: []});
+    const em = await forkEntityManager();
+    const { image: existImage } = await checkCreateAppEntity({ em, image, datasets: [], algorithms: [], models: [] });
 
-      const devHostId = await driver.withJobDriver({
+    // 检查数据集、算法、模型和镜像是否有权限使用
+    checkEntityAuth({ userId, image: existImage, datasetVersions: [], algorithmVersions: [], modelVersions: [] });
+
+    const devHostId = await driver.withJobDriver(
+      {
         clusterId,
-        user:userId,
-      }, async (jobDriver) => {
+        user: userId,
+      },
+      async (jobDriver) => {
         return await jobDriver.createDevHost(input, { existImage });
       },
-      logger);
+      logger,
+    );
 
-      return { devHostId };
-    },
-  );
+    return { devHostId };
+  });

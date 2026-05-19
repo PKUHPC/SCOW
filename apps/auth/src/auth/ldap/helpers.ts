@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FastifyBaseLogger } from "fastify";
 import ldapjs from "ldapjs";
 import { LdapConfigSchema } from "src/config/auth";
@@ -18,11 +6,10 @@ import { promisify } from "util";
 export const useLdap = (
   logger: FastifyBaseLogger,
   config: Pick<LdapConfigSchema, "bindDN" | "bindPassword" | "url">,
-  user: { dn: string, password: string } = { dn: config.bindDN, password: config.bindPassword },
+  user: { dn: string; password: string } = { dn: config.bindDN, password: config.bindPassword },
 ) => {
-
   return async <T>(consume: (client: ldapjs.Client) => Promise<T>): Promise<T> => {
-    const client = ldapjs.createClient(({ url: config.url, log: logger }));
+    const client = ldapjs.createClient({ url: config.url, log: logger });
 
     client.on("error", (err) => {
       logger.error(err, "LDAP Error occurred.");
@@ -50,10 +37,11 @@ export const searchOne = async <T>(
   furtherCheck: (entry: ldapjs.SearchEntry) => T | undefined,
 ) => {
   return new Promise<(T & { dn: string }) | undefined>((resolve, rej) => {
-
     client.search(searchBase, searchOptions, (err, res) => {
-
-      if (err) { rej(err as Error); return; }
+      if (err) {
+        rej(err as Error);
+        return;
+      }
       logger.info("Search started");
 
       let found = false;
@@ -100,36 +88,46 @@ export const searchOne = async <T>(
 };
 
 export const checkPPolicyModule = async (logger: FastifyBaseLogger, ldapConfig: LdapConfigSchema) => {
-  return await useLdap(logger, ldapConfig)(async (client) => {
-    return new Promise<(boolean) | undefined>((resolve, reject) => {
-      client.search("", {
-        scope: "base",
-        filter: "(objectClass=*)",
-        attributes: ["supportedControl"],
-      }, (err, res) => {
-        if (err) { reject(err as Error); return; }
-
-        res.on("searchEntry", (entry) => {
-          const controls = entry.object.supportedControl || [];
-          const ppolicyOID = "1.3.6.1.4.1.4203.1.10.1";
-          const isSupported = controls.includes(ppolicyOID);
-          resolve(isSupported);
-        });
-
-        res.on("error", (err) => {
-          logger.error("Error. %o", err);
-          reject(err as Error);
-        });
-
-        res.on("end", (result) => {
-          logger.info("Received end event. %o", result);
-          if (result?.status === 0) {
-            resolve(undefined);
-          } else {
-            reject(new Error(result?.errorMessage));
+  return await useLdap(
+    logger,
+    ldapConfig,
+  )(async (client) => {
+    return new Promise<boolean | undefined>((resolve, reject) => {
+      client.search(
+        "",
+        {
+          scope: "base",
+          filter: "(objectClass=*)",
+          attributes: ["supportedControl"],
+        },
+        (err, res) => {
+          if (err) {
+            reject(err as Error);
+            return;
           }
-        });
-      });
+
+          res.on("searchEntry", (entry) => {
+            const controls = entry.object.supportedControl || [];
+            const ppolicyOID = "1.3.6.1.4.1.4203.1.10.1";
+            const isSupported = controls.includes(ppolicyOID);
+            resolve(isSupported);
+          });
+
+          res.on("error", (err) => {
+            logger.error("Error. %o", err);
+            reject(err as Error);
+          });
+
+          res.on("end", (result) => {
+            logger.info("Received end event. %o", result);
+            if (result?.status === 0) {
+              resolve(undefined);
+            } else {
+              reject(new Error(result?.errorMessage));
+            }
+          });
+        },
+      );
     });
   });
 };
@@ -181,9 +179,16 @@ export const searchAll = async <T>(
   });
 };
 
-export const findUser = async (logger: FastifyBaseLogger,
-  config: LdapConfigSchema, client: ldapjs.Client, id: string) => {
-  return await searchOne(logger, client, config.searchBase,
+export const findUser = async (
+  logger: FastifyBaseLogger,
+  config: LdapConfigSchema,
+  client: ldapjs.Client,
+  id: string,
+) => {
+  return await searchOne(
+    logger,
+    client,
+    config.searchBase,
     {
       scope: "sub",
       filter: new ldapjs.AndFilter({
@@ -192,21 +197,28 @@ export const findUser = async (logger: FastifyBaseLogger,
           new ldapjs.EqualityFilter({
             attribute: config.attrs.uid,
             value: id,
-          })],
+          }),
+        ],
       }),
-    }, (e) => extractUserInfoFromEntry(config, e, logger),
+    },
+    (e) => extractUserInfoFromEntry(config, e, logger),
   );
 };
 
-const escapeLdapFilterValue = (value: string) => value
-  .replace(/\\/g, "\\5c")
-  .replace(/\*/g, "\\2a")
-  .replace(/\(/g, "\\28")
-  .replace(/\)/g, "\\29")
-  .replace(/\0/g, "\\00");
+const escapeLdapFilterValue = (value: string) =>
+  value
+    .replace(/\\/g, "\\5c")
+    .replace(/\*/g, "\\2a")
+    .replace(/\(/g, "\\28")
+    .replace(/\)/g, "\\29")
+    .replace(/\0/g, "\\00");
 
-export const findLockedUsers = async (logger: FastifyBaseLogger,
-  config: LdapConfigSchema, client: ldapjs.Client, params?: { identityId?: string; name?: string }) => {
+export const findLockedUsers = async (
+  logger: FastifyBaseLogger,
+  config: LdapConfigSchema,
+  client: ldapjs.Client,
+  params?: { identityId?: string; name?: string },
+) => {
   const baseFilters = [
     ldapjs.parseFilter(config.userFilter),
     new ldapjs.PresenceFilter({
@@ -214,24 +226,24 @@ export const findLockedUsers = async (logger: FastifyBaseLogger,
     }),
   ];
   if (params?.identityId) {
-    baseFilters.push(ldapjs.parseFilter(
-      `(${config.attrs.uid}=*${escapeLdapFilterValue(params.identityId)}*)`,
-    ));
+    baseFilters.push(ldapjs.parseFilter(`(${config.attrs.uid}=*${escapeLdapFilterValue(params.identityId)}*)`));
   }
   if (params?.name && config.attrs.name) {
-    baseFilters.push(ldapjs.parseFilter(
-      `(${config.attrs.name}=*${escapeLdapFilterValue(params.name)}*)`,
-    ));
+    baseFilters.push(ldapjs.parseFilter(`(${config.attrs.name}=*${escapeLdapFilterValue(params.name)}*)`));
   }
 
-  return await searchAll(logger, client, config.searchBase,
+  return await searchAll(
+    logger,
+    client,
+    config.searchBase,
     {
       scope: "sub",
       filter: new ldapjs.AndFilter({
         filters: baseFilters,
       }),
       attributes: ["*", "+"],
-    }, (e) => extractUserInfoFromEntry(config, e, logger),
+    },
+    (e) => extractUserInfoFromEntry(config, e, logger),
   );
 };
 
@@ -240,7 +252,9 @@ export const extractAttr = (entry: ldapjs.SearchEntry, attr: string): string[] |
 };
 
 export const extractUserInfoFromEntry = (
-  config: LdapConfigSchema, entry: ldapjs.SearchEntry, log: FastifyBaseLogger,
+  config: LdapConfigSchema,
+  entry: ldapjs.SearchEntry,
+  log: FastifyBaseLogger,
 ) => {
   const identityId = takeOne(extractAttr(entry, config.attrs.uid));
 

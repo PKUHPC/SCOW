@@ -12,7 +12,10 @@ const AUTH_CONFIG_NAME = "auth";
 export type AuthPpolicyConfigSchema = Static<typeof AuthPpolicyConfigSchema>;
 
 export const getAuthConfig: GetConfigFn<AuthPpolicyConfigSchema> = (baseConfigPath) => {
-  const config = getConfigFromFile(AuthPpolicyConfigSchema, AUTH_CONFIG_NAME,
-    baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH);
+  const config = getConfigFromFile(
+    AuthPpolicyConfigSchema,
+    AUTH_CONFIG_NAME,
+    baseConfigPath ?? DEFAULT_CONFIG_BASE_PATH,
+  );
   return config;
 };

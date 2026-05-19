@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { DashboardServiceClient } from "@scow/protos/build/portal/dashboard";
@@ -36,17 +24,16 @@ export const SaveQuickEntriesSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(SaveQuickEntriesSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
   const { quickEntries } = req.body;
   const client = getClient(DashboardServiceClient);
 
   return await asyncUnaryCall(client, "saveQuickEntries", {
-    userId:info.identityId,
+    userId: info.identityId,
     quickEntries,
-  }).then(() => ({ 204:null }),
-  );
-
+  }).then(() => ({ 204: null }));
 });

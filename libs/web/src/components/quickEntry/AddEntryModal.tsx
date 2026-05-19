@@ -34,9 +34,9 @@ export interface Props {
   entryItems: {
     defaultEntries: Entry[];
     staticEntries: Entry[];
-  }
-  publicPath: string,
-  loginNodes?: Record<string, { name: I18nStringType, address: string }[]>;
+  };
+  publicPath: string;
+  loginNodes?: Record<string, { name: I18nStringType; address: string }[]>;
 }
 
 const ItemsContainer = styled.div`
@@ -54,7 +54,7 @@ const ItemContainer = styled.div`
   flex: 1 1 200px;
   max-width: 165px;
   padding-bottom: 12px;
-  box-shadow: 0px 2px 10px 0px #1C01011A;
+  box-shadow: 0px 2px 10px 0px #1c01011a;
   background-color: ${(p) => p.theme.token.colorBgBlur};
 `;
 
@@ -77,7 +77,7 @@ export const AddEntryModal: React.FC<Props> = ({
   // 新建快捷方式的部分信息
   const [incompleteEntryInfo, setIncompleteEntryInfo] = useState<IncompleteEntryInfo | null>(null);
 
-  const collectionEntry: Entry[] = [...entryItems.defaultEntries, ...entryItems.staticEntries ];
+  const collectionEntry: Entry[] = [...entryItems.defaultEntries, ...entryItems.staticEntries];
 
   // 所有可创建的app
   const appInfo = useMemo(() => {
@@ -87,9 +87,9 @@ export const AddEntryModal: React.FC<Props> = ({
       for (const key in apps) {
         const x = apps[key];
         displayApp.push({
-          id:x.app.id,
-          name:x.app.name,
-          case:EntryCase.app,
+          id: x.app.id,
+          name: x.app.name,
+          case: EntryCase.app,
         });
       }
     }
@@ -103,37 +103,31 @@ export const AddEntryModal: React.FC<Props> = ({
       setClustersToSelectedApp(clusters);
       setSelectClusterOpen(true);
       setIncompleteEntryInfo({
-        id:item.id,
-        name:item.name,
-        case:EntryCase.shell,
-      },
-      );
-    }
-    else if ((item as IncompleteEntryInfo).case === EntryCase.app) {
+        id: item.id,
+        name: item.name,
+        case: EntryCase.shell,
+      });
+    } else if ((item as IncompleteEntryInfo).case === EntryCase.app) {
       setNeedLoginNode(false);
       setClustersToSelectedApp(apps[item.id].clusters);
       setSelectClusterOpen(true);
       setIncompleteEntryInfo({
-        id:item.id,
-        name:item.name,
-        case:EntryCase.app,
-      },
-      );
-    }
-    else if ("entry" in item && item.entry?.$case === "clusterPageLink") {
+        id: item.id,
+        name: item.name,
+        case: EntryCase.app,
+      });
+    } else if ("entry" in item && item.entry?.$case === "clusterPageLink") {
       setNeedLoginNode(false);
       setClustersToSelectedApp(clusters);
       setSelectClusterOpen(true);
       setIncompleteEntryInfo({
-        id:item.id,
-        name:item.name,
-        case:EntryCase.clusterPageLink,
-        path:item?.entry.clusterPageLink.path,
-        icon:item?.entry.clusterPageLink.icon,
-      },
-      );
-    }
-    else {
+        id: item.id,
+        name: item.name,
+        case: EntryCase.clusterPageLink,
+        path: item?.entry.clusterPageLink.path,
+        icon: item?.entry.clusterPageLink.icon,
+      });
+    } else {
       addItem(item);
       onClose();
     }
@@ -144,18 +138,19 @@ export const AddEntryModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        title={(
+        title={
           <>
-            <Bullet style={{
-              width: "0.8em", /* 与字体大小相对应 */
-              height:" 0.8em", /* 与字体大小相对应 */
-              backgroundColor:theme.token.colorPrimary, /* 与主题颜色相对应*/
-              marginRight:"1em",
-            }}
+            <Bullet
+              style={{
+                width: "0.8em" /* 与字体大小相对应 */,
+                height: " 0.8em" /* 与字体大小相对应 */,
+                backgroundColor: theme.token.colorPrimary /* 与主题颜色相对应*/,
+                marginRight: "1em",
+              }}
             />
             <span>{getCurrentLangLibWebText(languageId, "addQuickEntry")}</span>
           </>
-        )}
+        }
         open={open}
         width={1310}
         closeIcon={null}
@@ -167,40 +162,43 @@ export const AddEntryModal: React.FC<Props> = ({
         ]}
       >
         <ItemsContainer>
-          {
-            collectionEntry.map((item, idx) => (
-              <ItemContainer key={idx} onClick={() => { handleClick(item); }}>
-                <EntryItem
-                  entryBaseName={getEntryBaseName(item, languageId)}
-                  iconMap={iconMap}
-                  icon={getEntryIcon(item)}
-                  publicPath={publicPath}
-                />
-              </ItemContainer>
-            ),
-            )
-          }
-          {
-            appInfo.map((item, idx) => (
-              <ItemContainer
-                key={idx}
-                onClick={() => { handleClick(item); }}
-              >
-                <EntryItem
-                  entryBaseName={item.name}
-                  iconMap={iconMap}
-                  logoPath={apps[item.id].app.logoPath}
-                  publicPath={publicPath}
-                />
-              </ItemContainer>
-            ),
-            )
-          }
+          {collectionEntry.map((item, idx) => (
+            <ItemContainer
+              key={idx}
+              onClick={() => {
+                handleClick(item);
+              }}
+            >
+              <EntryItem
+                entryBaseName={getEntryBaseName(item, languageId)}
+                iconMap={iconMap}
+                icon={getEntryIcon(item)}
+                publicPath={publicPath}
+              />
+            </ItemContainer>
+          ))}
+          {appInfo.map((item, idx) => (
+            <ItemContainer
+              key={idx}
+              onClick={() => {
+                handleClick(item);
+              }}
+            >
+              <EntryItem
+                entryBaseName={item.name}
+                iconMap={iconMap}
+                logoPath={apps[item.id].app.logoPath}
+                publicPath={publicPath}
+              />
+            </ItemContainer>
+          ))}
         </ItemsContainer>
       </Modal>
       <SelectClusterModal
         open={selectClusterOpen}
-        onClose={() => { setSelectClusterOpen(false); }}
+        onClose={() => {
+          setSelectClusterOpen(false);
+        }}
         needLoginNode={needLoginNode}
         incompleteEntryInfo={incompleteEntryInfo}
         clusters={clustersToSelectedApp}
@@ -212,5 +210,3 @@ export const AddEntryModal: React.FC<Props> = ({
     </>
   );
 };
-
-

@@ -2,7 +2,12 @@
 
 import { CloseOutlined } from "@ant-design/icons";
 import {
-  ArchiveIcon, FolderIcon, ImageIcon, SupportedFileIcon, SymlinkIcon, UnrecognizedFileIcon,
+  ArchiveIcon,
+  FolderIcon,
+  ImageIcon,
+  SupportedFileIcon,
+  SymlinkIcon,
+  UnrecognizedFileIcon,
 } from "@scow/lib-web/build/icons/FileIcon";
 import { isImage, isNonEditableFilename } from "@scow/lib-web/build/utils/staticFiles";
 import { Table, TableProps, Tooltip } from "antd";
@@ -17,7 +22,7 @@ import { isDecompressibleFile } from "src/utils/file";
 import { formatSize } from "src/utils/format";
 import { compareNumber } from "src/utils/math";
 
-type ColumnKey = ("type" | "name" | "mtime" | "size" | "mode" | "action");
+type ColumnKey = "type" | "name" | "mtime" | "size" | "mode" | "action";
 
 interface Props extends TableProps<FileInfo> {
   files: FileInfo[];
@@ -28,33 +33,37 @@ interface Props extends TableProps<FileInfo> {
 }
 
 export const baseTypeIcons = {
-  "DIR": FolderIcon,
-  "SYMLINK": SymlinkIcon,
-  "ERROR": CloseOutlined,
+  DIR: FolderIcon,
+  SYMLINK: SymlinkIcon,
+  ERROR: CloseOutlined,
 } as Record<Exclude<FileType, "FILE">, React.ComponentType>;
 
 const iconFor = (file: FileInfo, nonEditableFilenamePostfixes?: string[]): React.ComponentType => {
   if (file.type === "FILE") {
     const name = file.name || "";
-    if (isDecompressibleFile(name)) { return ArchiveIcon; }
-    if (isImage(name)) { return ImageIcon; }
+    if (isDecompressibleFile(name)) {
+      return ArchiveIcon;
+    }
+    if (isImage(name)) {
+      return ImageIcon;
+    }
     const editable = !isNonEditableFilename(name, nonEditableFilenamePostfixes);
-    if (editable) { return SupportedFileIcon; }
+    if (editable) {
+      return SupportedFileIcon;
+    }
     return UnrecognizedFileIcon;
   }
   return baseTypeIcons[file.type] || CloseOutlined;
 };
 
-export const FileTable: React.FC<Props> = (
-  {
-    files,
-    fileNameRender,
-    actionRender,
-    filesFilter,
-    hiddenColumns,
-    ...otherProps
-  },
-) => {
+export const FileTable: React.FC<Props> = ({
+  files,
+  fileNameRender,
+  actionRender,
+  filesFilter,
+  hiddenColumns,
+  ...otherProps
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.files.fileTable.");
   const { publicConfig } = usePublicConfig();
@@ -72,9 +81,8 @@ export const FileTable: React.FC<Props> = (
       dataIndex: "name",
       title: t(p("name")),
       defaultSortOrder: "ascend",
-      sorter: (a, b) => a.type.localeCompare(b.type) === 0
-        ? a.name.localeCompare(b.name)
-        : a.type.localeCompare(b.type),
+      sorter: (a, b) =>
+        a.type.localeCompare(b.type) === 0 ? a.name.localeCompare(b.name) : a.type.localeCompare(b.type),
       sortDirections: ["ascend", "descend"],
       render: fileNameRender,
     },
@@ -82,21 +90,23 @@ export const FileTable: React.FC<Props> = (
       key: "mtime",
       dataIndex: "mtime",
       title: t(p("mtime")),
-      render: (mtime: string | undefined) => mtime ? formatDateTime(mtime) : "",
-      sorter: (a, b) => a.type.localeCompare(b.type) === 0
-        ? compareDateTime(a.mtime, b.mtime) === 0
-          ? a.name.localeCompare(b.name)
-          : compareDateTime(a.mtime, b.mtime)
-        : a.type.localeCompare(b.type),
+      render: (mtime: string | undefined) => (mtime ? formatDateTime(mtime) : ""),
+      sorter: (a, b) =>
+        a.type.localeCompare(b.type) === 0
+          ? compareDateTime(a.mtime, b.mtime) === 0
+            ? a.name.localeCompare(b.name)
+            : compareDateTime(a.mtime, b.mtime)
+          : a.type.localeCompare(b.type),
     },
     {
       key: "size",
       dataIndex: "size",
       title: t(p("size")),
-      render: (size: number | undefined, file: FileInfo) => (size === undefined || file.type === "DIR")
-        ? ""
-        : (
-          <Tooltip title={Math.round((size) / 1024).toLocaleString() + "KB"} placement="topRight">
+      render: (size: number | undefined, file: FileInfo) =>
+        size === undefined || file.type === "DIR" ? (
+          ""
+        ) : (
+          <Tooltip title={Math.round(size / 1024).toLocaleString() + "KB"} placement="topRight">
             <span>{formatSize(Math.round(size / 1024))}</span>
           </Tooltip>
         ),
@@ -108,12 +118,16 @@ export const FileTable: React.FC<Props> = (
           : a.type.localeCompare(b.type);
       },
     },
-    ...(actionRender ? [{
-      key: "action",
-      dataIndex: "action",
-      title: t(p("action")),
-      render: actionRender,
-    }] : []),
+    ...(actionRender
+      ? [
+          {
+            key: "action",
+            dataIndex: "action",
+            title: t(p("action")),
+            render: actionRender,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -122,7 +136,7 @@ export const FileTable: React.FC<Props> = (
       dataSource={filesFilter ? filesFilter(files) : files}
       columns={
         hiddenColumns
-          ? columns.filter((column) => column.key ? !hiddenColumns.includes(column.key as ColumnKey) : true)
+          ? columns.filter((column) => (column.key ? !hiddenColumns.includes(column.key as ColumnKey) : true))
           : columns
       }
       size="small"

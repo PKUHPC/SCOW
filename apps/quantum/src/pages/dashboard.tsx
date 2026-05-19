@@ -21,21 +21,26 @@ export const DashboardPage: NextPage = () => {
   const pDescription = prefix("pageComp.device.description.");
   const pName = prefix("pageComp.device.name.");
 
+  const {
+    data: recommendedDevices,
+    isLoading,
+    isError,
+    error,
+  } = trpc.backend.device.getRecommendedDevices.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
 
-  const { data: recommendedDevices, isLoading, isError, error } = trpc.backend.device.getRecommendedDevices.useQuery(
-    undefined,
-    {
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      retry: 2,
-    },
+  const {
+    data,
+    isLoading: isLoading2,
+    isError: isError2,
+    error: error2,
+  } = trpc.backend.device.findDevice.useQuery(
+    { id: recommendedDevices, accountName: "_" },
+    { enabled: !!recommendedDevices && recommendedDevices.length > 0 },
   );
-
-  const { data, isLoading: isLoading2, isError: isError2, error: error2 } =
-    trpc.backend.device.findDevice.useQuery(
-      { id: recommendedDevices, accountName: "_" },
-      { enabled: !!recommendedDevices && recommendedDevices.length > 0 },
-    );
 
   const [devicesMap, setDevicesMap] = useState<Map<AllowedChipIdType, DevicesMap>>(new Map());
 
@@ -43,14 +48,16 @@ export const DashboardPage: NextPage = () => {
 
   useEffect(() => {
     if (data) {
-      const newMap = new Map(data.devices.map((device) => {
-        const transformedDevice = {
-          ...device,
-          gateFidelity: device.Err ? t(pDescription("gateFidelity"), [...getGateFidelities(device.Err)]) : undefined,
-          status: device.state ? mapDeviceStateToDisplayState(device.state) : undefined,
-        };
-        return [device.id, transformedDevice];
-      }));
+      const newMap = new Map(
+        data.devices.map((device) => {
+          const transformedDevice = {
+            ...device,
+            gateFidelity: device.Err ? t(pDescription("gateFidelity"), [...getGateFidelities(device.Err)]) : undefined,
+            status: device.state ? mapDeviceStateToDisplayState(device.state) : undefined,
+          };
+          return [device.id, transformedDevice];
+        }),
+      );
       setDevicesMap(newMap);
     }
   }, [data, languageId]);
@@ -61,28 +68,33 @@ export const DashboardPage: NextPage = () => {
       <Card style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 18, marginBottom: 16, marginTop: -4 }}>{t(p("device"))}</h2>
         <Row gutter={[16, 16]}>
-          {
-            isLoading || isLoading2 ? (
-              <Spin><Localized id="common.loading" /></Spin>
-            ) : isError ? (
-              <span><Localized id="common.error" />: {error.message}</span>
-            ) : isError2 ? (
-              <span><Localized id="common.error" />: {error2.message}</span>
-            ) : DeviceCardsData.filter((item) => recommendedDevices?.includes(item.id))
-              .map((item, index) => (
-                <Col lg={6} key={index}>
-                  <DeviceCard
-                    id={item.id}
-                    path={item.path}
-                    name={t(pName(item.id))}
-                    status={ devicesMap.get(item.id)?.status}
-                    updateTime={devicesMap.get(item.id)?.at}
-                    description={t(pDescription(item.id))}
-                    gateFidelity={devicesMap.get(item.id)?.gateFidelity}
-                  />
-                </Col>
-              ))
-          }
+          {isLoading || isLoading2 ? (
+            <Spin>
+              <Localized id="common.loading" />
+            </Spin>
+          ) : isError ? (
+            <span>
+              <Localized id="common.error" />: {error.message}
+            </span>
+          ) : isError2 ? (
+            <span>
+              <Localized id="common.error" />: {error2.message}
+            </span>
+          ) : (
+            DeviceCardsData.filter((item) => recommendedDevices?.includes(item.id)).map((item, index) => (
+              <Col lg={6} key={index}>
+                <DeviceCard
+                  id={item.id}
+                  path={item.path}
+                  name={t(pName(item.id))}
+                  status={devicesMap.get(item.id)?.status}
+                  updateTime={devicesMap.get(item.id)?.at}
+                  description={t(pDescription(item.id))}
+                  gateFidelity={devicesMap.get(item.id)?.gateFidelity}
+                />
+              </Col>
+            ))
+          )}
         </Row>
       </Card>
       <Card>
@@ -101,8 +113,7 @@ export const DashboardPage: NextPage = () => {
               children: <AppSessionsTable isDashboard={true} />,
             },
           ]}
-        >
-        </Tabs>
+        ></Tabs>
       </Card>
     </DashboardPageContent>
   );

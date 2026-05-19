@@ -1,8 +1,7 @@
-import { join } from "node:path";
-
 import { Migrator } from "@mikro-orm/migrations";
 import { defineConfig } from "@mikro-orm/mysql";
 import { SeedManager } from "@mikro-orm/seeder";
+import { join } from "node:path";
 import { config } from "src/server/config/env";
 import { quantumConfig } from "src/server/config/quantum";
 import { entities } from "src/server/entities";
@@ -29,4 +28,3 @@ export const ormConfigs = defineConfig({
     path: join(distPath, "seeders"),
   },
 });
-

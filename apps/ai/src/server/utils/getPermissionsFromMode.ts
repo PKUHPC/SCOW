@@ -1,17 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { TRPCError } from "@trpc/server";
-
 
 type Role = "user" | "group" | "other";
 
@@ -23,9 +10,9 @@ interface PermissionResult {
 
 export function getPermissionsFromMode(mode: number, role: Role = "user"): PermissionResult {
   const PERMISSIONS = {
-    read:  { user: 0o400, group: 0o040, other: 0o004 },
+    read: { user: 0o400, group: 0o040, other: 0o004 },
     write: { user: 0o200, group: 0o020, other: 0o002 },
-    exec:  { user: 0o100, group: 0o010, other: 0o001 },
+    exec: { user: 0o100, group: 0o010, other: 0o001 },
   };
 
   if (!["user", "group", "other"].includes(role)) {
@@ -36,8 +23,8 @@ export function getPermissionsFromMode(mode: number, role: Role = "user"): Permi
   }
 
   return {
-    canRead:  (mode & PERMISSIONS.read[role]) !== 0,
+    canRead: (mode & PERMISSIONS.read[role]) !== 0,
     canWrite: (mode & PERMISSIONS.write[role]) !== 0,
-    canExec:  (mode & PERMISSIONS.exec[role]) !== 0,
+    canExec: (mode & PERMISSIONS.exec[role]) !== 0,
   };
 }

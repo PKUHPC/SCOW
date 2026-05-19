@@ -13,9 +13,8 @@ export const getIdPrivate = (array?: IdPrivate[]) =>
       acc.isPrivates.push(item.isPrivate);
       return acc;
     },
-    { ids: [], isPrivates: []},
+    { ids: [], isPrivates: [] },
   );
-
 
 interface SelectOption {
   label: string | ReactNode;
@@ -42,13 +41,14 @@ export const setJobCreationNameVersion = <T extends Record<string, any>>(
     // 从label中提取元素纯名称, 去掉末尾的owner
     const i18nVersionTag = t("app.jobs.launchAppForm.versionTag");
 
-    const nameLabel = typeof nameOption.label === "string" ? nameOption.label : nameOption.labelText ?? "";
+    const nameLabel = typeof nameOption.label === "string" ? nameOption.label : (nameOption.labelText ?? "");
     if (!nameLabel) {
       console.warn("Name option label is empty, using fallback");
       return;
     }
     const pureName = nameLabel.replace(/\([^)]*\)$/, "");
-    const versionLabel = typeof versionOption.label === "string" ? versionOption.label : versionOption.labelText ?? "";
+    const versionLabel =
+      typeof versionOption.label === "string" ? versionOption.label : (versionOption.labelText ?? "");
     const selectedNameVersion = `${pureName}（${i18nVersionTag}：${versionLabel}）`;
     form.setFieldValue([formName, index, "selectedNameVersion"], selectedNameVersion);
   }

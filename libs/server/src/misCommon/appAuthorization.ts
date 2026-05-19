@@ -3,8 +3,10 @@ import { ServiceError } from "@ddadaal/tsgrpc-common";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { status } from "@grpc/grpc-js";
 import { ListAvailableAppsResponse } from "@scow/protos/build/portal/app";
-import { AppAuthorizationServiceClient, GetUserAvailableClusterAppsResponse }
-  from "@scow/protos/build/server/app_authorization";
+import {
+  AppAuthorizationServiceClient,
+  GetUserAvailableClusterAppsResponse,
+} from "@scow/protos/build/server/app_authorization";
 
 import { getClientFn } from "../api";
 import { scowErrorMetadata } from "../error";
@@ -16,7 +18,6 @@ export const libGetUserAvailableClusterApps = async (
   misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<ListAvailableAppsResponse> => {
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
 
@@ -36,10 +37,9 @@ export const libGetUserAvailableApps = async (
   misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<GetUserAvailableClusterAppsResponse> => {
-
   if (clusterIds.length === 0) {
     logger.info("No clusters provided when querying available apps for user %s.", userId);
-    return { apps: []};
+    return { apps: [] };
   }
 
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
@@ -63,8 +63,12 @@ export const libGetUserAvailableApps = async (
     } catch (e) {
       const serviceError = e as ServiceError;
       if (serviceError.code === status.NOT_FOUND) {
-        logger.warn(e, "MIS returned NOT_FOUND when listing apps for user %s in cluster %s, skipping this cluster.",
-          userId, clusterId);
+        logger.warn(
+          e,
+          "MIS returned NOT_FOUND when listing apps for user %s in cluster %s, skipping this cluster.",
+          userId,
+          clusterId,
+        );
         continue;
       }
 
@@ -85,7 +89,6 @@ export const libCheckAppIsDisabled = async (
   misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<boolean> => {
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
 
@@ -98,18 +101,20 @@ export const libCheckAppIsDisabled = async (
   return reply.isDisabled;
 };
 
-
 export const NO_AVAILABLE_APPS = "NO_AVAILABLE_APPS";
 export const NOT_EXIST_IN_CURRENT_APPS = "NOT_EXIST_IN_CURRENT_APPS";
 
-export const libCheckAppIdInClusterApps
-= ({ appId, appIds, clusterId, logger }:
-{ appId: string,
-  appIds: string[],
-  clusterId: string,
-  logger: Logger
+export const libCheckAppIdInClusterApps = ({
+  appId,
+  appIds,
+  clusterId,
+  logger,
+}: {
+  appId: string;
+  appIds: string[];
+  clusterId: string;
+  logger: Logger;
 }) => {
-
   logger.info("Checking appId in currentClustersApps", appId);
   if (appIds.length === 0) {
     throw new ServiceError({
@@ -119,21 +124,17 @@ export const libCheckAppIdInClusterApps
     });
   }
 
-  const exist = appIds.find((x) => (x === appId));
+  const exist = appIds.find((x) => x === appId);
   const appIdsStr = appIds.join(",");
   if (!exist) {
-    logger.info("AppId %s is not found in current available apps: %o",
-      appId, appIdsStr);
+    logger.info("AppId %s is not found in current available apps: %o", appId, appIdsStr);
     throw new ServiceError({
       code: status.INTERNAL,
       details: `AppId ${appId} is not found in current available apps
       ${appIdsStr} of cluster ${clusterId}. Please refresh the page and try again`,
-      metadata: scowErrorMetadata(NOT_EXIST_IN_CURRENT_APPS,
-        { currentApps:
-          appIds.length > 0 ? appIdsStr : "" }),
+      metadata: scowErrorMetadata(NOT_EXIST_IN_CURRENT_APPS, { currentApps: appIds.length > 0 ? appIdsStr : "" }),
     });
   }
-
 };
 
 // 获取应用禁用的账户列表
@@ -143,7 +144,6 @@ export const libGetAppForbiddenAccounts = async (
   misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<string[]> => {
-
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const client = getMisClient(AppAuthorizationServiceClient);
 

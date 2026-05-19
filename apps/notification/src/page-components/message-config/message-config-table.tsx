@@ -1,13 +1,13 @@
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import {
-  listMessageConfigs,
-  modifyMessageConfigs,
-} from "@scow/notification-protos/build/message_config-MessageConfigService_connectquery";
-import {
   changeMessageExpirationTime,
   getMessageExpirationTime,
 } from "@scow/notification-protos/build/message-MessageService_connectquery";
+import {
+  listMessageConfigs,
+  modifyMessageConfigs,
+} from "@scow/notification-protos/build/message_config-MessageConfigService_connectquery";
 import { Form, message, Popover, Table } from "antd";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
@@ -27,18 +27,18 @@ interface StyledTrProps {
 }
 // 定义样式组件
 const WhiteRow = styled.tr<StyledTrProps>`
-  background-color: ${({ isDark }) => isDark ? "#121212" : "#ffffff"};
+  background-color: ${({ isDark }) => (isDark ? "#121212" : "#ffffff")};
 
   &:hover {
-    background-color: ${({ isDark }) => isDark ? "#1D262C" : "#E9EDEE"};
+    background-color: ${({ isDark }) => (isDark ? "#1D262C" : "#E9EDEE")};
   }
 `;
 
 const GrayRow = styled.tr<StyledTrProps>`
-  background-color: ${({ isDark }) => isDark ? "#1D1D1D" : "#f7f7f7"};
+  background-color: ${({ isDark }) => (isDark ? "#1D1D1D" : "#f7f7f7")};
 
   &:hover {
-    background-color: ${({ isDark }) => isDark ? "#1D262C" : "#E9EDEE"};
+    background-color: ${({ isDark }) => (isDark ? "#1D262C" : "#E9EDEE")};
   }
 `;
 
@@ -69,25 +69,24 @@ interface ExpirationTimeFormValues {
 function getDefaultNoticeTypeCheckedValues() {
   return Object.values(NoticeType)
     .filter((value) => typeof value === "number")
-    .reduce((acc, noticeType) => {
-      acc[noticeType] = true;
-      return acc;
-    }, {} as Record<NoticeType, boolean>);
+    .reduce(
+      (acc, noticeType) => {
+        acc[noticeType] = true;
+        return acc;
+      },
+      {} as Record<NoticeType, boolean>,
+    );
 }
 
 function cloneNoticeConfigs(values: FormValues): FormValues {
   return {
     noticeConfigs: Object.fromEntries(
-      Object.entries(values.noticeConfigs).map(([messageType, config]) => [
-        messageType,
-        { ...config },
-      ]),
+      Object.entries(values.noticeConfigs).map(([messageType, config]) => [messageType, { ...config }]),
     ),
   };
 }
 
 export const MessageConfigTable: React.FC = () => {
-
   const [form] = Form.useForm<FormValues>();
   const [expirationTimeForm] = Form.useForm<ExpirationTimeFormValues>();
 
@@ -97,12 +96,12 @@ export const MessageConfigTable: React.FC = () => {
 
   const defaultNoticeTypesCheckValue = useMemo(() => getDefaultNoticeTypeCheckedValues(), []);
 
-  const [noticeTypeAllChecked, setNoticeTypeAllChecked]
-    = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
+  const [noticeTypeAllChecked, setNoticeTypeAllChecked] =
+    useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
   const [hasChange, setHasChange] = useState(false);
   const [lastSavedValues, setLastSavedValues] = useState<FormValues>({ noticeConfigs: {} });
-  const [lastSavedChecked, setLastSavedChecked]
-    = useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
+  const [lastSavedChecked, setLastSavedChecked] =
+    useState<Partial<Record<NoticeType, boolean>>>(defaultNoticeTypesCheckValue);
 
   const { data, isLoading, isFetching, refetch } = useQuery(listMessageConfigs);
   const { data: expirationTime, isLoading: expirationTimeLoading } = useQuery(getMessageExpirationTime);
@@ -124,7 +123,11 @@ export const MessageConfigTable: React.FC = () => {
   });
 
   const columns = useMessageConfigColumns({
-    form, noticeTypeAllChecked, setNoticeTypeAllChecked, setHasChange, lang,
+    form,
+    noticeTypeAllChecked,
+    setNoticeTypeAllChecked,
+    setHasChange,
+    lang,
   });
 
   const handleCancel = () => {
@@ -139,7 +142,6 @@ export const MessageConfigTable: React.FC = () => {
       const values = form.getFieldsValue();
 
       const parsedValues = Object.keys(values.noticeConfigs).map((messageType) => {
-
         const messageConfig = data?.configs.find((config) => {
           return config.messageType === messageType;
         });
@@ -147,7 +149,7 @@ export const MessageConfigTable: React.FC = () => {
         if (!messageConfig) {
           message.error(compLang.formError);
           throw Error("Unable to find the corresponding MessageConfig");
-        };
+        }
 
         const noticeConfigs = Object.keys(values.noticeConfigs[messageType])
           .filter((noticeType) => values.noticeConfigs[messageType][noticeType] !== undefined)
@@ -155,12 +157,13 @@ export const MessageConfigTable: React.FC = () => {
             const enumNoticeType = Number(noticeType) as unknown as NoticeType;
 
             const originalNoticeConfig = messageConfig?.noticeConfigs.find(
-              (config) => config.noticeType === enumNoticeType);
+              (config) => config.noticeType === enumNoticeType,
+            );
 
             if (!originalNoticeConfig) {
               message.error(compLang.formError);
               throw Error("Unable to find the corresponding NoticeType");
-            };
+            }
 
             return {
               noticeType: enumNoticeType,
@@ -180,20 +183,20 @@ export const MessageConfigTable: React.FC = () => {
           ...x,
           $typeName: "notification.MessageConfig",
           noticeConfigs: x.noticeConfigs.map((nc) => ({ ...nc, $typeName: "notification.MessageNoticeTypeConfig" })),
-        }))
+        })),
       });
       setLastSavedValues(cloneNoticeConfigs(values));
       setLastSavedChecked({ ...noticeTypeAllChecked });
-
     } catch {
       message.error(compLang.saveError);
     }
   };
 
   useEffect(() => {
-    const value = expirationTime?.expiredAfterSeconds === undefined
-      ? NEVER_EXPIRES_VALUE
-      : dayjs.duration(Number(expirationTime.expiredAfterSeconds), "seconds").asDays();
+    const value =
+      expirationTime?.expiredAfterSeconds === undefined
+        ? NEVER_EXPIRES_VALUE
+        : dayjs.duration(Number(expirationTime.expiredAfterSeconds), "seconds").asDays();
 
     expirationTimeForm.setFieldValue("expirationDays", value);
   }, [expirationTime]);
@@ -201,19 +204,22 @@ export const MessageConfigTable: React.FC = () => {
   useEffect(() => {
     if (data) {
       const nextChecked = getDefaultNoticeTypeCheckedValues();
-      const initialValues: FormValues = data.configs.reduce((acc, item) => {
-        if (!acc.noticeConfigs) acc.noticeConfigs = {};
-        acc.noticeConfigs[item.messageType] = {};
-        item.noticeConfigs.forEach((config) => {
-          if (config.noticeType === undefined) return;
-          const noticeType = config.noticeType as number; // 类型断言
-          acc.noticeConfigs[item.messageType][noticeType] = config.enabled;
-          if (!config.enabled) {
-            nextChecked[noticeType] = false;
-          }
-        });
-        return acc;
-      }, { noticeConfigs: {} as Record<string, Partial<Record<NoticeType, boolean>>> }); // 添加显式类型断言
+      const initialValues: FormValues = data.configs.reduce(
+        (acc, item) => {
+          if (!acc.noticeConfigs) acc.noticeConfigs = {};
+          acc.noticeConfigs[item.messageType] = {};
+          item.noticeConfigs.forEach((config) => {
+            if (config.noticeType === undefined) return;
+            const noticeType = config.noticeType as number; // 类型断言
+            acc.noticeConfigs[item.messageType][noticeType] = config.enabled;
+            if (!config.enabled) {
+              nextChecked[noticeType] = false;
+            }
+          });
+          return acc;
+        },
+        { noticeConfigs: {} as Record<string, Partial<Record<NoticeType, boolean>>> },
+      ); // 添加显式类型断言
 
       form.setFieldsValue({ noticeConfigs: initialValues.noticeConfigs });
       setNoticeTypeAllChecked(nextChecked);
@@ -228,14 +234,14 @@ export const MessageConfigTable: React.FC = () => {
       <PageTitle titleText={lang.messageConfig.pageTitle} />
       <Form form={expirationTimeForm}>
         <Form.Item
-          label={(
+          label={
             <div>
               <span style={{ marginRight: "5px" }}>{compLang.msgExpirationTime}</span>
               <Popover content={compLang.msgExpirationTimeTip}>
                 <QuestionCircleOutlined />
               </Popover>
             </div>
-          )}
+          }
           name="expirationDays"
         >
           <ExpirationRow>
@@ -244,21 +250,15 @@ export const MessageConfigTable: React.FC = () => {
               loading={expirationTimeLoading}
               onChange={async (value) => {
                 await changeExpireTime({
-                  expiredAfterSeconds: value === NEVER_EXPIRES_VALUE
-                    ? undefined : BigInt(dayjs.duration(value, "days").asSeconds()),
+                  expiredAfterSeconds:
+                    value === NEVER_EXPIRES_VALUE ? undefined : BigInt(dayjs.duration(value, "days").asSeconds()),
                 });
               }}
             />
             {hasChange ? (
               <ExpirationActions>
-                <NoShadowButton onClick={handleCancel}>
-                  {lang.common.cancel}
-                </NoShadowButton>
-                <NoShadowButton
-                  loading={isPending}
-                  onClick={handleSave}
-                  type="primary"
-                >
+                <NoShadowButton onClick={handleCancel}>{lang.common.cancel}</NoShadowButton>
+                <NoShadowButton loading={isPending} onClick={handleSave} type="primary">
                   {lang.common.save}
                 </NoShadowButton>
               </ExpirationActions>

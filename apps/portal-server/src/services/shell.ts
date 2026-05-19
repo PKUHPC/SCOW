@@ -7,10 +7,8 @@ import { clusterNotFound } from "src/utils/errors";
 import { getClusterLoginNode } from "src/utils/ssh";
 
 export const shellServiceServer = plugin((server) => {
-
   server.addService<ShellServiceServer>(ShellServiceService, {
     shell: async (call) => {
-
       const firstMessage = await call.readAsync();
 
       if (firstMessage?.message?.$case !== "connect") {
@@ -20,15 +18,25 @@ export const shellServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const { message: { connect: { cluster, loginNode, userId, path, rows, cols } } } = firstMessage;
+      const {
+        message: {
+          connect: { cluster, loginNode, userId, path, rows, cols },
+        },
+      } = firstMessage;
 
       const host = getClusterLoginNode(cluster);
 
-      if (!host) { throw clusterNotFound(cluster); }
+      if (!host) {
+        throw clusterNotFound(cluster);
+      }
 
-      const logger = call.logger.child({ shell: {
-        cluster, loginNode, userId,
-      } });
+      const logger = call.logger.child({
+        shell: {
+          cluster,
+          loginNode,
+          userId,
+        },
+      });
 
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -39,5 +47,4 @@ export const shellServiceServer = plugin((server) => {
       await clusterops.shell.shell({ call, cluster, loginNode, userId, path, rows, cols }, logger);
     },
   });
-
 });

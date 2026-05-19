@@ -7,7 +7,6 @@ import { checkAuth } from "src/utils/auth/check-auth";
 export default (router: ConnectRouter) => {
   router.service(ConfigService, {
     async getUiConfig(_, context) {
-
       await checkAuth(context);
 
       return {

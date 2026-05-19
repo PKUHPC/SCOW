@@ -4,15 +4,9 @@
     "outDir": "build",
     "rootDir": "./src",
     "paths": {
-      "src/*": [
-        "./src/*"
-      ],
+      "src/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
 }

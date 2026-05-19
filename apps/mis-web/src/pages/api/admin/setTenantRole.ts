@@ -36,11 +36,11 @@ export default route(SetTenantRoleSchema, async (req, res) => {
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: roleType === TenantRole.TENANT_ADMIN
-      ? OperationType.setTenantAdmin
-      : OperationType.setTenantFinance,
-    operationTypePayload:{
-      tenantName: DEFAULT_TENANT_NAME, userId,
+    operationTypeName:
+      roleType === TenantRole.TENANT_ADMIN ? OperationType.setTenantAdmin : OperationType.setTenantFinance,
+    operationTypePayload: {
+      tenantName: DEFAULT_TENANT_NAME,
+      userId,
     },
   };
 
@@ -55,8 +55,6 @@ export default route(SetTenantRoleSchema, async (req, res) => {
     }
   }
 
-
-
   const client = getClient(UserServiceClient);
 
   return await asyncClientCall(client, "setTenantRole", {
@@ -67,10 +65,13 @@ export default route(SetTenantRoleSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

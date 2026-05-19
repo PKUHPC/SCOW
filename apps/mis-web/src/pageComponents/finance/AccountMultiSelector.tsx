@@ -1,14 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import type { AdminAccountInfo } from "src/pages/api/tenant/getAccounts";
 
 import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Select, Space, Tooltip } from "antd";
@@ -17,7 +7,6 @@ import { useAsync } from "react-async";
 import { useStore } from "simstate";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import type { AdminAccountInfo } from "src/pages/api/tenant/getAccounts";
 import { UserStore } from "src/stores/UserStore";
 
 interface Props {
@@ -40,14 +29,19 @@ interface Props {
    * 如果为真，则从所有租户下获取账户
    */
   fromAllTenants?: boolean;
-};
+}
 
 const p = prefix("pageComp.finance.AccountSelector.");
 
 export const AccountMultiSelector: React.FC<Props> = ({
-  value, onChange, placeholder, disabled, autoSelect, onAccountsFetched, fromAllTenants,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  autoSelect,
+  onAccountsFetched,
+  fromAllTenants,
 }) => {
-
   const t = useI18nTranslateToString();
   const [inputValue, setInputValue] = useState<string>("");
   const userStore = useStore(UserStore);
@@ -94,14 +88,8 @@ export const AccountMultiSelector: React.FC<Props> = ({
         mode="multiple"
       />
       <Tooltip title={t(p("freshList"))}>
-        <Button
-          icon={<ReloadOutlined spin={isLoading} />}
-          disabled={disabled}
-          onClick={reload}
-          loading={isLoading}
-        />
+        <Button icon={<ReloadOutlined spin={isLoading} />} disabled={disabled} onClick={reload} loading={isLoading} />
       </Tooltip>
     </Space.Compact>
   );
 };
-

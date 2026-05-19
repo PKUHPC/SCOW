@@ -28,20 +28,24 @@ export const SetAdminSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(SetAdminSchema, async (req, res) => {
+export default /* #__PURE__*/ route(SetAdminSchema, async (req, res) => {
   const { identityId, accountName } = req.body;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(UserServiceClient);
 
@@ -49,8 +53,9 @@ export default /* #__PURE__*/route(SetAdminSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setAccountAdmin,
-    operationTypePayload:{
-      accountName, userId: identityId,
+    operationTypePayload: {
+      accountName,
+      userId: identityId,
     },
   };
 
@@ -63,10 +68,13 @@ export default /* #__PURE__*/route(SetAdminSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

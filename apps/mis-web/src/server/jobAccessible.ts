@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { parseTime } from "@scow/lib-web/build/utils/datetime";
 import { RunningJob } from "@scow/protos/build/common/job";
@@ -21,25 +9,29 @@ import { getClient } from "src/utils/client";
 type JobAccessible = "OK" | "NotFound" | "NotAllowed" | "LimitNotValid";
 
 interface Result {
-  job: RunningJob, jobAccessible: JobAccessible
-};
+  job: RunningJob;
+  jobAccessible: JobAccessible;
+}
 
 type ActionType = "cancelJob" | "changeJobLimit" | "queryJobLimit";
 
 interface Props {
-  actionType: ActionType
-  jobId: string
-  cluster: string
-  info: UserInfo
-  limitMinutes?: number
-  allowUserAndAccountAdminChangeJobTimeLimit?: boolean
+  actionType: ActionType;
+  jobId: string;
+  cluster: string;
+  info: UserInfo;
+  limitMinutes?: number;
+  allowUserAndAccountAdminChangeJobTimeLimit?: boolean;
 }
 
 export async function checkJobAccessible({
-  actionType, jobId, cluster, info, limitMinutes, allowUserAndAccountAdminChangeJobTimeLimit = true,
-}: Props,
-): Promise<Result> {
-
+  actionType,
+  jobId,
+  cluster,
+  info,
+  limitMinutes,
+  allowUserAndAccountAdminChangeJobTimeLimit = true,
+}: Props): Promise<Result> {
   const client = getClient(JobServiceClient);
 
   const result: Result = {} as Result;
@@ -59,11 +51,10 @@ export async function checkJobAccessible({
   result.job = job;
 
   // 如果设置的作业时限比该作业运行时间小， 则该作业不可以修改作业时限
-  if (!!limitMinutes && (limitMinutes) * 60 * 1000 < parseTime(job.runningTime)) {
+  if (!!limitMinutes && limitMinutes * 60 * 1000 < parseTime(job.runningTime)) {
     result.jobAccessible = "LimitNotValid";
     return result;
   }
-
 
   if (info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
     result.jobAccessible = "OK";
@@ -79,8 +70,10 @@ export async function checkJobAccessible({
 
   // 用户是这个作业的账户的管理员或者拥有者
   // changeJobLimit 时 allowUserAndAccountAdminChangeJobTimeLimit 为true时返回"OK"
-  if (info.accountAffiliations.some((x) => x.accountName === job.account && x.role !== UserRole.USER)
-  && (actionType !== "changeJobLimit" || allowUserAndAccountAdminChangeJobTimeLimit)) {
+  if (
+    info.accountAffiliations.some((x) => x.accountName === job.account && x.role !== UserRole.USER) &&
+    (actionType !== "changeJobLimit" || allowUserAndAccountAdminChangeJobTimeLimit)
+  ) {
     result.jobAccessible = "OK";
     return result;
   }
@@ -99,5 +92,4 @@ export async function checkJobAccessible({
 
   result.jobAccessible = "NotAllowed";
   return result;
-
 }

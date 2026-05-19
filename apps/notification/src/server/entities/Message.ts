@@ -25,7 +25,6 @@ export class Message {
   userMessageRead = new Collection<UserMessageRead>(this);
   messageTarget = new Collection<MessageTarget>(this);
 
-
   constructor(init: {
     senderId: string;
     senderType: SenderType;
@@ -46,7 +45,6 @@ export class Message {
     this.expiredAt = init.expiredAt;
   }
 }
-
 
 export const MessageSchema = new EntitySchema<Message>({
   class: Message,

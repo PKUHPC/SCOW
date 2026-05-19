@@ -34,8 +34,6 @@ export const ScowParamsProvider = ({ children }) => {
   }, [scowUserToken]);
 
   return (
-    <ScowParamsContext.Provider value={{ scowLangId, scowUserToken, scowDark }}>
-      {children}
-    </ScowParamsContext.Provider>
+    <ScowParamsContext.Provider value={{ scowLangId, scowUserToken, scowDark }}>{children}</ScowParamsContext.Provider>
   );
 };

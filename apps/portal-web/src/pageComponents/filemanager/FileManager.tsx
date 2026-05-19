@@ -1,12 +1,21 @@
 import {
-  CheckCircleFilled, ExclamationCircleFilled,
+  CheckCircleFilled,
+  ExclamationCircleFilled,
   CompressOutlined,
   CopyOutlined,
   DatabaseOutlined,
-  DeleteOutlined, DownloadOutlined, DownOutlined, ExpandOutlined, FileAddOutlined,
-  HomeOutlined, MacCommandOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  DownOutlined,
+  ExpandOutlined,
+  FileAddOutlined,
+  HomeOutlined,
+  MacCommandOutlined,
   QuestionCircleOutlined,
-  ScissorOutlined, SnippetsOutlined, UploadOutlined, UpOutlined,
+  ScissorOutlined,
+  SnippetsOutlined,
+  UploadOutlined,
+  UpOutlined,
 } from "@ant-design/icons";
 import { StyledModal } from "@scow/lib-web/build/components/styledAntdCom/Modal";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -81,7 +90,7 @@ const TopBar = styled(FilterFormContainer)`
   width: 100%;
   align-items: center;
 
-  &>button {
+  & > button {
     margin: 0px 4px;
   }
 `;
@@ -100,7 +109,7 @@ const fileInfoKey = (f: FileInfo, path: string): FileInfoKey => join(path, f.nam
 
 interface Operation {
   op: "copy" | "move";
-  originalPath: string
+  originalPath: string;
   started: boolean;
   selected: FileInfo[];
   completed: FileInfo[];
@@ -125,7 +134,6 @@ enum UploadType {
 }
 
 export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, scowdEnabledClusters }) => {
-
   const router = useRouter();
 
   const t = useI18nTranslateToString();
@@ -149,8 +157,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const currentClusterRef = useRef<Cluster>(initialCluster);
 
   const [homePaths, setHomePaths] = useState<HomePathInfo[]>([]);
-  const [scowdEnabled, setScowdEnabled]
-    = useState<boolean>(!!scowdEnabledClusters?.includes(currentClusterRef.current.id));
+  const [scowdEnabled, setScowdEnabled] = useState<boolean>(
+    !!scowdEnabledClusters?.includes(currentClusterRef.current.id),
+  );
 
   const [previewFile, setPreviewFile] = useState({
     open: false,
@@ -166,15 +175,19 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   });
   const { currentClusters } = useStore(ClusterInfoStore);
   const [operation, setOperation] = useState<Operation | undefined>(undefined);
-  const [compression, setCompression] = useState<Compression>({ started: [], completed: []});
+  const [compression, setCompression] = useState<Compression>({ started: [], completed: [] });
   const [showHiddenFile, setShowHiddenFile] = useState(false);
   const [submitSuccessJobId, setSubmitSuccessJobId] = useState<number | null>(null);
   const [submitConfirmInfo, setSubmitConfirmInfo] = useState<{
-    fileName: string; fullPath: string; targetClusterId: string; targetClusterName: string;
+    fileName: string;
+    fullPath: string;
+    targetClusterId: string;
+    targetClusterName: string;
   } | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [decompression, setDecompression] = useState<DeCompression>({
-    decompressionStarted: [], decompressionCompleted: [],
+    decompressionStarted: [],
+    decompressionCompleted: [],
   });
 
   const { loginNodes } = useStore(LoginNodeStore);
@@ -183,9 +196,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
   const promiseFn = useCallback(async () => {
     if (!storageEnabled || !fullClusterConfigs[currentClusterRef.current.id].storage?.enabled) return undefined;
-    const { storageInfos } = await api.getUserStorageInfo({ query: {
-      cluster: currentClusterRef.current.id,
-    } });
+    const { storageInfos } = await api.getUserStorageInfo({
+      query: {
+        cluster: currentClusterRef.current.id,
+      },
+    });
     return storageInfos;
   }, [storageEnabled, currentClusterRef.current.id]);
 
@@ -199,14 +214,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const DecompressFilesButton = ModalButton(DecompressFilesModal, {
     icon: <ExpandOutlined />,
     // 仅在scowd开启时支持此功能
-    disabled: selectedKeys.length === 0 ||
-    selectedKeys.some((sKey) => (!isDecompressibleFile(sKey.toString()))) ||
-    !scowdEnabled,
+    disabled:
+      selectedKeys.length === 0 || selectedKeys.some((sKey) => !isDecompressibleFile(sKey.toString())) || !scowdEnabled,
   });
 
   const getDecompressButtonDisabledReason = () => {
-    if (selectedKeys.length > 0 &&
-       selectedKeys.some((sKey) => (!isDecompressibleFile(sKey.toString())))) {
+    if (selectedKeys.length > 0 && selectedKeys.some((sKey) => !isDecompressibleFile(sKey.toString()))) {
       return t(p("decompressButtonDisabledTooltip"));
     }
     return "";
@@ -214,7 +227,8 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
   const reload = async (signal?: AbortSignal) => {
     setLoading(true);
-    await api.listFile({ query: { cluster: currentClusterRef.current.id, path } }, signal)
+    await api
+      .listFile({ query: { cluster: currentClusterRef.current.id, path } }, signal)
       .httpError(403, (e) => {
         message.error(t(p("noAccessPermission")));
         throw e;
@@ -238,8 +252,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const up = () => {
     const paths = path.split("/");
 
-    const newPath = paths.length === 1
-      ? path : "/" + paths.slice(0, paths.length - 1).join("/");
+    const newPath = paths.length === 1 ? path : "/" + paths.slice(0, paths.length - 1).join("/");
 
     router.push(fullUrl(newPath));
   };
@@ -254,13 +267,18 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         reload();
       }
     } else {
-      await api.getHomeDirectory({ query: { cluster: currentClusterId } }).then((res) => {
-        setHomePaths((homePaths) => [...homePaths, { clusterId: currentClusterId, homePath: res?.path }]);
-        router.push(fullUrl(res?.path ?? ""));
-        if (res?.path === currentPath) {
-          reload();
-        }
-      }).catch((e) => { message.error(e); });
+      await api
+        .getHomeDirectory({ query: { cluster: currentClusterId } })
+        .then((res) => {
+          setHomePaths((homePaths) => [...homePaths, { clusterId: currentClusterId, homePath: res?.path }]);
+          router.push(fullUrl(res?.path ?? ""));
+          if (res?.path === currentPath) {
+            reload();
+          }
+        })
+        .catch((e) => {
+          message.error(e);
+        });
     }
   };
 
@@ -272,7 +290,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     setSelectedKeys([]);
 
     reload()
-      .then(() => { prevPathRef.current = path; })
+      .then(() => {
+        prevPathRef.current = path;
+      })
       .catch(() => {
         if (prevPathRef.current !== path) {
           router.push(fullUrl(prevPathRef.current));
@@ -286,7 +306,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   };
 
   const paste = async () => {
-    if (!operation) { return; }
+    if (!operation) {
+      return;
+    }
 
     const operationText = operationTexts[operation.op];
 
@@ -303,7 +325,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           });
           throw error;
         })
-        .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
+        .httpError(429, () => {
+          message.error(t(pCommon("noSpaceError")));
+        })
         .httpError(400, ({ code, error }) => {
           if (code === "INVALID_ARGUMENT") {
             modal.error({
@@ -314,9 +338,10 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           throw error;
         })
         .then(() => {
-          setOperation((o) => o ? { ...operation, completed: o.completed.concat(file) } : undefined);
+          setOperation((o) => (o ? { ...operation, completed: o.completed.concat(file) } : undefined));
           return file;
-        }).catch((e) => {
+        })
+        .catch((e) => {
           throw e;
         });
     };
@@ -326,9 +351,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     const allCount = operation.selected.length;
     for (const x of operation.selected) {
       try {
-
         const exists = await api.fileExist({
-          query: { cluster: currentClusterRef.current.id, path: join(path, x.name) } });
+          query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
+        });
         if (exists.result) {
           await new Promise<void>((res) => {
             modal.confirm({
@@ -337,15 +362,20 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               okText: t(p("moveCopy.existModalOk")),
               onOk: async () => {
                 const fileType = await api.getFileType({
-                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) } });
+                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
+                });
                 const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
                 await deleteOperation({
-                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) } });
+                  query: { cluster: currentClusterRef.current.id, path: join(path, x.name) },
+                });
                 await pasteFile(x, join(operation.originalPath, x.name), join(path, x.name));
                 successfulCount++;
                 res();
               },
-              onCancel: async () => { abandonCount++; res(); },
+              onCancel: async () => {
+                abandonCount++;
+                res();
+              },
             });
           });
         } else {
@@ -359,13 +389,16 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
     if (allCount - successfulCount - abandonCount) {
       message.error(
-        t(p("moveCopy.errorMessage"),
-          [operationText, allCount, successfulCount, abandonCount, (allCount - successfulCount - abandonCount)]),
+        t(p("moveCopy.errorMessage"), [
+          operationText,
+          allCount,
+          successfulCount,
+          abandonCount,
+          allCount - successfulCount - abandonCount,
+        ]),
       );
     } else {
-      message.success(
-        t(p("moveCopy.successMessage"), [operationText, allCount, successfulCount, abandonCount]),
-      );
+      message.success(t(p("moveCopy.successMessage"), [operationText, allCount, successfulCount, abandonCount]));
     }
 
     resetSelectedAndOperation();
@@ -375,7 +408,13 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   const onDownloadClick = () => {
     const files = keysToFiles(selectedKeys);
     window.open(
-      urlToCompressAndDownload(currentClusterRef.current.id, files.map((x) => join(path, x.name)), true), "_blank");
+      urlToCompressAndDownload(
+        currentClusterRef.current.id,
+        files.map((x) => join(path, x.name)),
+        true,
+      ),
+      "_blank",
+    );
   };
 
   const onDeleteClick = () => {
@@ -385,37 +424,43 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       okText: t(p("delete.confirmOk")),
       content: t(p("delete.confirmContent"), [files.length]),
       onOk: async () => {
-        await Promise.allSettled(files.map(async (x) => {
-          return (x.type === "FILE" ? api.deleteFile : api.deleteDir)({
-            query: {
-              cluster: currentClusterRef.current.id,
-              path: join(path, x.name),
-            },
-          }).then(() => x).catch(() => undefined);
-        }))
+        await Promise.allSettled(
+          files.map(async (x) => {
+            return (x.type === "FILE" ? api.deleteFile : api.deleteDir)({
+              query: {
+                cluster: currentClusterRef.current.id,
+                path: join(path, x.name),
+              },
+            })
+              .then(() => x)
+              .catch(() => undefined);
+          }),
+        )
           .then((successfulInfo) => {
-            const failedCount = successfulInfo.filter((x: PromiseSettledResult) =>
-              (!x || x.status === "rejected" || !x.value)).length;
+            const failedCount = successfulInfo.filter(
+              (x: PromiseSettledResult) => !x || x.status === "rejected" || !x.value,
+            ).length;
             const allCount = files.length;
             if (failedCount === 0) {
               message.success(t(p("delete.successMessage"), [allCount]));
               resetSelectedAndOperation();
             } else {
-              message.error(t(p("delete.errorMessage"), [(allCount - failedCount), failedCount]));
-              setOperation((o) => o && ({ ...o, started: false }));
+              message.error(t(p("delete.errorMessage"), [allCount - failedCount, failedCount]));
+              setOperation((o) => o && { ...o, started: false });
             }
-          }).catch((e) => {
+          })
+          .catch((e) => {
             console.log(e);
             message.error(t(p("delete.otherErrorMessage")));
-            setOperation((o) => o && ({ ...o, started: false }));
+            setOperation((o) => o && { ...o, started: false });
             setSelectedKeys([]);
-          }).finally(() => {
+          })
+          .finally(() => {
             setOperation(undefined);
             reload();
           });
       },
     });
-
   };
 
   const keysToFiles = (keys: React.Key[]) => {
@@ -427,7 +472,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   };
 
   const handlePreview = (filename: string, fileSize: number) => {
-
     const filePreviewLimitSize = publicConfig.FILE_PREVIEW_SIZE || DEFAULT_FILE_PREVIEW_LIMIT_SIZE;
     if (fileSize > convertToBytes(filePreviewLimitSize)) {
       message.info(t(p("preview.fileTooLarge"), [filePreviewLimitSize]));
@@ -461,7 +505,9 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     const fullPath = filePathOverride ?? join(path, fileName);
     const targetCluster = currentClusters.find((c) => c.id === targetClusterId) || currentClusterRef.current;
     setSubmitConfirmInfo({
-      fileName, fullPath, targetClusterId,
+      fileName,
+      fullPath,
+      targetClusterId,
       targetClusterName: getI18nConfigCurrentText(targetCluster.name, languageId),
     });
   };
@@ -471,12 +517,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     const { targetClusterId, fullPath } = submitConfirmInfo;
     setSubmitLoading(true);
     try {
-      await api.submitFileAsJob({
-        body: { cluster: targetClusterId, filePath: fullPath },
-      })
+      await api
+        .submitFileAsJob({
+          body: { cluster: targetClusterId, filePath: fullPath },
+        })
         .httpError(500, (e) => {
-          if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION"
-          || e.code === "UNIMPLEMENTED") {
+          if (e.code === "SCHEDULER_FAILED" || e.code === "FAILED_PRECONDITION" || e.code === "UNIMPLEMENTED") {
             setSubmitConfirmInfo(null);
             modal.error({
               title: t(p("tableInfo.submitFailedMessage")),
@@ -606,7 +652,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   };
 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
-    if (e.key as UploadType === UploadType.File) {
+    if ((e.key as UploadType) === UploadType.File) {
       setIsUploadModalOpen(true);
     } else {
       setIsUploadDirModalOpen(true);
@@ -631,24 +677,19 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
 
   const newItems: MenuProps["items"] = [
     {
-      label:
-        <CreateFileButton
-          cluster={currentClusterRef.current.id}
-          path={path}
-          reload={reload}
-        >{t(p("tableInfo.createFile"))}
-        </CreateFileButton>,
+      label: (
+        <CreateFileButton cluster={currentClusterRef.current.id} path={path} reload={reload}>
+          {t(p("tableInfo.createFile"))}
+        </CreateFileButton>
+      ),
       key: UploadType.File,
     },
     {
-      label:
-        <MkdirButton
-          cluster={currentClusterRef.current.id}
-          path={path}
-          reload={reload}
-        >
+      label: (
+        <MkdirButton cluster={currentClusterRef.current.id} path={path} reload={reload}>
           {t(p("tableInfo.mkDir"))}
-        </MkdirButton>,
+        </MkdirButton>
+      ),
       key: UploadType.Dir,
     },
   ];
@@ -660,14 +701,10 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
   return (
     <div>
       <TitleText>
-        <span>
-          { t(p("tableInfo.title")) }
-        </span>
+        <span>{t(p("tableInfo.title"))}</span>
       </TitleText>
       <TopBar>
-        <SelectPreFix>
-          { `${t(p("cluster"))} :` }
-        </SelectPreFix>
+        <SelectPreFix>{`${t(p("cluster"))} :`}</SelectPreFix>
         <Select
           style={{ minWidth: "160px" }}
           onSelect={(value) => {
@@ -684,10 +721,10 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             }
           }}
           defaultValue={currentClusterRef.current.id}
-          options={
-            currentClusters.map((cluster) => ({
-              label: getI18nConfigCurrentText(cluster.name, languageId), value: cluster.id }))
-          }
+          options={currentClusters.map((cluster) => ({
+            label: getI18nConfigCurrentText(cluster.name, languageId),
+            value: cluster.id,
+          }))}
         />
         <Button onClick={() => toHome(currentClusterRef.current.id)} icon={<HomeOutlined />} shape="circle" />
         <Button onClick={up} icon={<UpOutlined />} shape="circle" />
@@ -702,32 +739,24 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             }
           }}
           breadcrumbItemRender={(pathSegment, index, path) =>
-            (index === 0 ? (
+            index === 0 ? (
               <DatabaseOutlined />
             ) : (
-              <Link
-                href={fullUrl(path)}
-                key={index}
-                onClick={(e) => e.stopPropagation()}
-              >
+              <Link href={fullUrl(path)} key={index} onClick={(e) => e.stopPropagation()}>
                 {pathSegment}
               </Link>
-            ))
+            )
           }
         />
-        {
-          publicConfig.ENABLE_SHELL ? (
-            <Link
-              href={`/shell/${currentClusterRef.current.id}/${loginNode}${path}`}
-              target="_blank"
-              style={{ marginLeft: 5 }}
-            >
-              <Button icon={<MacCommandOutlined />}>
-                {t(p("tableInfo.openInShell"))}
-              </Button>
-            </Link>
-          ) : null
-        }
+        {publicConfig.ENABLE_SHELL ? (
+          <Link
+            href={`/shell/${currentClusterRef.current.id}/${loginNode}${path}`}
+            target="_blank"
+            style={{ marginLeft: 5 }}
+          >
+            <Button icon={<MacCommandOutlined />}>{t(p("tableInfo.openInShell"))}</Button>
+          </Link>
+        ) : null}
       </TopBar>
       <OperationBar>
         <Space wrap>
@@ -739,7 +768,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               </Space>
             </Button>
           </Dropdown>
-          { scowdEnabled ? (
+          {scowdEnabled ? (
             <Dropdown menu={menuProps}>
               <Button icon={<UploadOutlined />}>
                 <Space>
@@ -764,8 +793,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             onClick={() =>
               setOperation({
                 op: "copy",
-                selected: keysToFiles(selectedKeys), originalPath: path, started: false, completed: [],
-              })}
+                selected: keysToFiles(selectedKeys),
+                originalPath: path,
+                started: false,
+                completed: [],
+              })
+            }
             disabled={selectedKeys.length === 0 || operation?.started}
           >
             {t(p("tableInfo.copySelected"))}
@@ -775,8 +808,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             onClick={() =>
               setOperation({
                 op: "move",
-                selected: keysToFiles(selectedKeys), originalPath: path, started: false, completed: [],
-              })}
+                selected: keysToFiles(selectedKeys),
+                originalPath: path,
+                started: false,
+                completed: [],
+              })
+            }
             disabled={selectedKeys.length === 0 || operation?.started}
           >
             {t(p("tableInfo.moveSelected"))}
@@ -788,7 +825,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           >
             {t(p("tableInfo.paste"))}
           </Button>
-          { scowdEnabled && (
+          {scowdEnabled && (
             <CompressFilesButton
               cluster={currentClusterRef.current.id}
               path={path}
@@ -798,12 +835,11 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             >
               {t(p("compressSelected"))}
             </CompressFilesButton>
-          )
-          }
+          )}
 
           {/* 解压缩 */}
           {/* 仅在 scowd 开启时支持文件管理下的此功能 */}
-          { scowdEnabled && (
+          {scowdEnabled && (
             <Tooltip title={getDecompressButtonDisabledReason()}>
               <span>
                 <DecompressFilesButton
@@ -817,19 +853,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
                 </DecompressFilesButton>
               </span>
             </Tooltip>
-
           )}
-          {
-            scowdEnabled && (
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={onDownloadClick}
-                disabled={selectedKeys.length === 0}
-              >
-                {t(p("tableInfo.downloadSelected"))}
-              </Button>
-            )
-          }
+          {scowdEnabled && (
+            <Button icon={<DownloadOutlined />} onClick={onDownloadClick} disabled={selectedKeys.length === 0}>
+              {t(p("tableInfo.downloadSelected"))}
+            </Button>
+          )}
           <Button
             icon={<DeleteOutlined />}
             onClick={onDeleteClick}
@@ -837,41 +866,39 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
           >
             {t(p("tableInfo.deleteSelected"))}
           </Button>
-          {
-            operation ? (
-              operation.started ? (
-                <span>
-                  {t(p("tableInfo.operationStarted"), [operationTexts[operation.op]])} +
-                  {`${operation.completed.length} / ${operation.selected.length}`}
-                </span>
-              ) : (
-                <span>
-                  {t(p("tableInfo.operationNotStarted"), [operationTexts[operation.op], operation.selected.length])}
-                  <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
-                    {t("button.cancelButton")}
-                  </a>
-                </span>
-              )) : ""
-          }
-          {
-            compression.started.length - compression.completed.length > 0 && (
-              <div>
-                <span style={{ color: theme.token.colorPrimary }}>
-                  {t(p("compressionInProgress"))}{`${compression.completed.length} / ${compression.started.length}`}
-                </span>
-              </div>
+          {operation ? (
+            operation.started ? (
+              <span>
+                {t(p("tableInfo.operationStarted"), [operationTexts[operation.op]])} +
+                {`${operation.completed.length} / ${operation.selected.length}`}
+              </span>
+            ) : (
+              <span>
+                {t(p("tableInfo.operationNotStarted"), [operationTexts[operation.op], operation.selected.length])}
+                <a onClick={() => setOperation(undefined)} style={{ marginLeft: "4px" }}>
+                  {t("button.cancelButton")}
+                </a>
+              </span>
             )
-          }
-          {
-            decompression.decompressionStarted.length - decompression.decompressionCompleted.length > 0 && (
-              <div>
-                <span style={{ color: theme.token.colorPrimary }}>
-                  {t(p("decompressionInProgress"))}
-                  {`${decompression.decompressionCompleted.length} / ${decompression.decompressionStarted.length}`}
-                </span>
-              </div>
-            )
-          }
+          ) : (
+            ""
+          )}
+          {compression.started.length - compression.completed.length > 0 && (
+            <div>
+              <span style={{ color: theme.token.colorPrimary }}>
+                {t(p("compressionInProgress"))}
+                {`${compression.completed.length} / ${compression.started.length}`}
+              </span>
+            </div>
+          )}
+          {decompression.decompressionStarted.length - decompression.decompressionCompleted.length > 0 && (
+            <div>
+              <span style={{ color: theme.token.colorPrimary }}>
+                {t(p("decompressionInProgress"))}
+                {`${decompression.decompressionCompleted.length} / ${decompression.decompressionStarted.length}`}
+              </span>
+            </div>
+          )}
         </Space>
         <Space wrap>
           <span>{`${t(p("tableInfo.showHiddenFiles"))}`}</span>
@@ -880,32 +907,28 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       </OperationBar>
 
       <TableTitle justify="space-between">
-        {
-          storageInfos ? (
-            <div>
-              <span>
-                <Space>
-                  {`${t(p("storageQuota"))}(${fullClusterConfigs[currentClusterRef.current.id].storage?.paths[0]})`}
-                  <span>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</span>
-                </Space>
-              </span>
-              <Divider type="vertical" />
-              <span>
-                <Space>
-                  {t(p("usage"))}
-                  <span>
-                    {formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}
-                  </span>
-                  {fullClusterConfigs[currentClusterRef.current.id].storage?.replicaExist && (
-                    <Tooltip title={t(p("storageQuotaTooltip"))}>
-                      <QuestionCircleOutlined />
-                    </Tooltip>
-                  )}
-                </Space>
-              </span>
-            </div>
-          ) : undefined
-        }
+        {storageInfos ? (
+          <div>
+            <span>
+              <Space>
+                {`${t(p("storageQuota"))}(${fullClusterConfigs[currentClusterRef.current.id].storage?.paths[0]})`}
+                <span>{formatBytesToGB(storageInfos[0].quotaBytes).toFixed(2) + " GB"}</span>
+              </Space>
+            </span>
+            <Divider type="vertical" />
+            <span>
+              <Space>
+                {t(p("usage"))}
+                <span>{formatBytesToGB(storageInfos[0].usedStorageBytes).toFixed(2) + " GB"}</span>
+                {fullClusterConfigs[currentClusterRef.current.id].storage?.replicaExist && (
+                  <Tooltip title={t(p("storageQuotaTooltip"))}>
+                    <QuestionCircleOutlined />
+                  </Tooltip>
+                )}
+              </Space>
+            </span>
+          </div>
+        ) : undefined}
       </TableTitle>
       <FileTable
         files={files}
@@ -939,7 +962,7 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
             }
           },
         })}
-        fileNameRender={(_, r) => (
+        fileNameRender={(_, r) =>
           r.type === "DIR" ? (
             <a
               onClick={() => {
@@ -953,14 +976,15 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               {r.name}
             </a>
           ) : r.type === "SYMLINK" ? (
-            <Tooltip title={(
-              <div>
-                {t(p("tableInfo.symlinkTooltip.type"))}
-                <br />
-                <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
-                {r.linkTargetPath ?? ""}
-              </div>
-            )}
+            <Tooltip
+              title={
+                <div>
+                  {t(p("tableInfo.symlinkTooltip.type"))}
+                  <br />
+                  <div>{t(p("tableInfo.symlinkTooltip.targetPathPrefix"))}</div>
+                  {r.linkTargetPath ?? ""}
+                </div>
+              }
             >
               <a
                 onClick={() => {
@@ -984,69 +1008,60 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
               {r.name}
             </a>
           )
-        )}
+        }
         actionRender={(_, i: FileInfo) => (
           <Space size={8}>
-            {
-              i.type === "FILE" && (
-                <Tooltip title={t(p("tableInfo.download"))}>
-                  <a href={urlToDownload(currentClusterRef.current.id, join(path, i.name), true)}>
-                    <DownloadIcon />
-                  </a>
-                </Tooltip>
-              )
-            }
-            {
-              (i.type === "DIR" && scowdEnabled) && (
-                <a href={urlToCompressAndDownload(currentClusterRef.current.id, [join(path, i.name)], true)}>
+            {i.type === "FILE" && (
+              <Tooltip title={t(p("tableInfo.download"))}>
+                <a href={urlToDownload(currentClusterRef.current.id, join(path, i.name), true)}>
                   <DownloadIcon />
                 </a>
-              )
-            }
-            {(
-              <RenameLink
-                cluster={currentClusterRef.current.id}
-                path={join(path, i.name)}
-                reload={reload}
-              >
+              </Tooltip>
+            )}
+            {i.type === "DIR" && scowdEnabled && (
+              <a href={urlToCompressAndDownload(currentClusterRef.current.id, [join(path, i.name)], true)}>
+                <DownloadIcon />
+              </a>
+            )}
+            {
+              <RenameLink cluster={currentClusterRef.current.id} path={join(path, i.name)} reload={reload}>
                 <Tooltip title={t(p("tableInfo.rename"))}>
                   <RenameIcon />
                 </Tooltip>
               </RenameLink>
-            )}
-            {
-              i.type === "FILE" && isExecutableScriptFilename(i.name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES) ? (
-                <Tooltip title={t(p("submitJob"))}>
-                  <SubmitIcon onClick={() => {
+            }
+            {i.type === "FILE" && isExecutableScriptFilename(i.name, publicConfig.EXECUTABLE_FILENAME_POSTFIXES) ? (
+              <Tooltip title={t(p("submitJob"))}>
+                <SubmitIcon
+                  onClick={() => {
                     submitFile(i.name);
                   }}
-                  />
-                </Tooltip>
-              ) : undefined
-            }
+                />
+              </Tooltip>
+            ) : undefined}
             <Tooltip title={t("button.deleteButton")}>
-              <DeleteIcon onClick={() => {
-                const fullPath = join(path, i.name);
-                modal.confirm({
-                  title: t(p("tableInfo.deleteConfirmTitle")),
-                  // icon: < />,
-                  content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
-                  okText: t(p("tableInfo.deleteConfirmOk")),
-                  onOk: async () => {
-                    await (i.type === "DIR" ? api.deleteDir : api.deleteFile)({
-                      query: {
-                        cluster: currentClusterRef.current.id,
-                        path: fullPath,
-                      },
-                    })
-                      .then(() => {
+              <DeleteIcon
+                onClick={() => {
+                  const fullPath = join(path, i.name);
+                  modal.confirm({
+                    title: t(p("tableInfo.deleteConfirmTitle")),
+                    // icon: < />,
+                    content: t(p("tableInfo.deleteConfirmContent"), [fullPath]),
+                    okText: t(p("tableInfo.deleteConfirmOk")),
+                    onOk: async () => {
+                      await (i.type === "DIR" ? api.deleteDir : api.deleteFile)({
+                        query: {
+                          cluster: currentClusterRef.current.id,
+                          path: fullPath,
+                        },
+                      }).then(() => {
                         message.success(t(p("tableInfo.deleteSuccessMessage")));
                         resetSelectedAndOperation();
                         reload();
                       });
-                  },
-                });
-              }}
+                    },
+                  });
+                }}
               />
             </Tooltip>
           </Space>
@@ -1058,8 +1073,8 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
         setPreviewFile={setPreviewFile}
         storageInfo={storageInfos?.[0]}
         canSubmitFile={
-          previewFile.open
-          && isExecutableScriptFilename(previewFile.filename, publicConfig.EXECUTABLE_FILENAME_POSTFIXES)
+          previewFile.open &&
+          isExecutableScriptFilename(previewFile.filename, publicConfig.EXECUTABLE_FILENAME_POSTFIXES)
         }
         onSubmitFile={() => submitFile(previewFile.filename, previewFile.filePath, previewFile.clusterId)}
       />
@@ -1081,12 +1096,12 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       />
       <StyledModal
         open={submitConfirmInfo !== null}
-        title={(
+        title={
           <span>
             <ExclamationCircleFilled style={{ color: theme.token.colorWarning, marginRight: 8 }} />
             {t(p("tableInfo.submitConfirmTitle"))}
           </span>
-        )}
+        }
         okText={t(p("tableInfo.submitConfirmOk"))}
         onOk={handleSubmitConfirmOk}
         confirmLoading={submitLoading}
@@ -1095,18 +1110,17 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
       >
         <p>{t(p("tableInfo.submitConfirmNotice"))}</p>
         <p>
-          {t(p("tableInfo.submitConfirmContent"),
-            [submitConfirmInfo?.fileName, submitConfirmInfo?.targetClusterName])}
+          {t(p("tableInfo.submitConfirmContent"), [submitConfirmInfo?.fileName, submitConfirmInfo?.targetClusterName])}
         </p>
       </StyledModal>
       <StyledModal
         open={submitSuccessJobId !== null}
-        title={(
+        title={
           <span>
             <CheckCircleFilled style={{ color: "green", marginRight: 8 }} />
             {t(p("submitSuccessTitle"))}
           </span>
-        )}
+        }
         onOk={() => {
           setSubmitSuccessJobId(null);
           router.push("/jobs/runningJobs");
@@ -1124,7 +1138,6 @@ export const FileManager: React.FC<Props> = ({ initialCluster, path, urlPrefix, 
     </div>
   );
 };
-
 
 const RenameLink = ModalLink(RenameModal);
 const CreateFileButton = ModalLink(CreateFileModal);

@@ -1,16 +1,4 @@
 /**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-/**
  * Execute pnpm changeset version to bump package versions, and bump root package.json version
  */
 
@@ -34,19 +22,21 @@ const changes = {
   "portal-server": [],
   "mis-web": [],
   "mis-server": [],
-  "auth": [],
-  "cli": [],
-  "gateway": [],
+  auth: [],
+  cli: [],
+  gateway: [],
   "grpc-api": [],
-  "config": [],
+  config: [],
   "scheduler-adapter-protos": [],
-  "ai": [],
-  "resource": [],
-  "notification": []
+  ai: [],
+  resource: [],
+  notification: [],
 };
 
 for (const file of files) {
-  if (!file.endsWith(".md") || file === "README.md") { continue; }
+  if (!file.endsWith(".md") || file === "README.md") {
+    continue;
+  }
   const changesetFilePath = join(CHANGESET_DIR, file);
 
   const gitCommit = execSync(`git log -n 1 --pretty=format:%H -- ${changesetFilePath}`, {
@@ -63,7 +53,6 @@ for (const file of files) {
     }
   }
 }
-
 
 /**
  * 2. Run changeset version to update versions of packages
@@ -108,14 +97,15 @@ const getChangesetLine = (line) =>
  * @returns changelog content
  */
 const generateContent = (scowPackage, title) => {
-
   const packageChanges = changes[scowPackage];
 
-  if (packageChanges.length === 0) { return ""; }
+  if (packageChanges.length === 0) {
+    return "";
+  }
 
   // categories changes by type
 
-  const changesByType = { "patch": [], "minor": [], "major":[]};
+  const changesByType = { patch: [], minor: [], major: [] };
 
   for (const change of packageChanges) {
     changesByType[change.type].push(change);
@@ -140,7 +130,9 @@ const generateContent = (scowPackage, title) => {
 const generateNodesAboutSchedulerAdapterInterfaceVersion = () => {
   const packageChanges = changes["scheduler-adapter-protos"];
 
-  if (packageChanges.length === 0) { return ""; }
+  if (packageChanges.length === 0) {
+    return "";
+  }
 
   let content = "# 适配器接口版本的要求变化\n\n";
 
@@ -172,16 +164,17 @@ SCOW API版本：${scowApiVersion}
 ${generateContent("grpc-api")}
 # SCOW
 
-${generateContent("portal-web", "门户系统前端")
- + generateContent("portal-server", "门户系统后端")
- + generateContent("mis-web", "管理系统前端")
- + generateContent("mis-server", "管理系统后端")
- + generateContent("auth", "认证系统")
- + generateContent("cli", "CLI")
- + generateContent("gateway", "网关")
- + generateContent("ai", "AI系统")
- + generateContent("resource", "资源管理系统")
- + generateContent("notification", "消息系统")
+${
+  generateContent("portal-web", "门户系统前端") +
+  generateContent("portal-server", "门户系统后端") +
+  generateContent("mis-web", "管理系统前端") +
+  generateContent("mis-server", "管理系统后端") +
+  generateContent("auth", "认证系统") +
+  generateContent("cli", "CLI") +
+  generateContent("gateway", "网关") +
+  generateContent("ai", "AI系统") +
+  generateContent("resource", "资源管理系统") +
+  generateContent("notification", "消息系统")
 }
 `;
 
@@ -196,4 +189,3 @@ await writeFile(CHANGELOG_PATH, changelogContent);
 
 console.log("Generated changelog at %s", CHANGELOG_PATH);
 console.debug("Changelog content:\n%s", changelogContent);
-

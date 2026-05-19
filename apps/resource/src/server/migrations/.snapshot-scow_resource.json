@@ -68,9 +68,7 @@
       "indexes": [
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -158,11 +156,7 @@
       "indexes": [
         {
           "keyName": "idx_tenant_account_cluster",
-          "columnNames": [
-            "tenant_name",
-            "account_name",
-            "cluster_id"
-          ],
+          "columnNames": ["tenant_name", "account_name", "cluster_id"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -170,11 +164,7 @@
         },
         {
           "keyName": "idx_tenant_cluster_partition",
-          "columnNames": [
-            "tenant_name",
-            "cluster_id",
-            "partition"
-          ],
+          "columnNames": ["tenant_name", "cluster_id", "partition"],
           "composite": true,
           "constraint": false,
           "primary": false,
@@ -182,9 +172,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -262,9 +250,7 @@
       "name": "tenant_cluster_rule",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_name"
-          ],
+          "columnNames": ["tenant_name"],
           "composite": false,
           "keyName": "tenant_cluster_rule_tenant_name_index",
           "constraint": false,
@@ -273,9 +259,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -363,9 +347,7 @@
       "name": "tenant_partition_rule",
       "indexes": [
         {
-          "columnNames": [
-            "tenant_name"
-          ],
+          "columnNames": ["tenant_name"],
           "composite": false,
           "keyName": "tenant_partition_rule_tenant_name_index",
           "constraint": false,
@@ -374,9 +356,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

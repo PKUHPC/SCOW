@@ -15,10 +15,14 @@ export async function processExpiredWhitelist(
   clusterPlugin: ClusterPlugin["clusters"],
 ) {
   await em.transactional(async (em) => {
-    const account = await em.findOne(Account, { id: whitelist.account.id }, {
-      populate: ["tenant"],
-      lockMode: LockMode.PESSIMISTIC_WRITE,
-    });
+    const account = await em.findOne(
+      Account,
+      { id: whitelist.account.id },
+      {
+        populate: ["tenant"],
+        lockMode: LockMode.PESSIMISTIC_WRITE,
+      },
+    );
 
     if (!account) {
       logger.warn("Account for whitelist %d not found", whitelist.id);
@@ -34,8 +38,8 @@ export async function processExpiredWhitelist(
     logger.info("Remove account %s from whitelist due to expiration", account.accountName);
 
     // Check if account needs to be blocked
-    const blockThresholdAmount = account.blockThresholdAmount
-      ?? account.tenant.getEntity().defaultAccountBlockThreshold;
+    const blockThresholdAmount =
+      account.blockThresholdAmount ?? account.tenant.getEntity().defaultAccountBlockThreshold;
 
     const shouldBlockInCluster = getAccountStateInfo(
       undefined,

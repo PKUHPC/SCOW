@@ -28,6 +28,9 @@ const options = {
 replaceInFileSync(options);
 
 // Run serve:next
-execSync("npm run serve:next", { stdio: "inherit", env: {
-  ...process.env,
-} });
+execSync("npm run serve:next", {
+  stdio: "inherit",
+  env: {
+    ...process.env,
+  },
+});

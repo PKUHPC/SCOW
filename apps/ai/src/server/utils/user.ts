@@ -5,7 +5,6 @@ import { config } from "src/server/config/env";
 import { logger } from "src/server/utils/logger";
 
 export async function getUsersName(userIds: string[]): Promise<GetUsersByIdsResponse_UserInfo[]> {
-
   const commonConfig = getCommonConfig();
 
   // 如果没有部署管理系统不可用，返回空
@@ -14,9 +13,7 @@ export async function getUsersName(userIds: string[]): Promise<GetUsersByIdsResp
     return [];
   }
 
-  const results
-    = await libWebGetUsersByIds(userIds, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
-
+  const results = await libWebGetUsersByIds(userIds, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
 
   if (!results || results.users.length === 0) {
     logger.info("Can not find username for these user Ids.");

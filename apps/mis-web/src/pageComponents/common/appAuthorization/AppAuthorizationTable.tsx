@@ -1,3 +1,5 @@
+import type { GetTargetAppAuthorizationsSchema } from "src/pages/api/admin/authorization/getTargetAppAuthorizations";
+
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
@@ -12,7 +14,6 @@ import { ClusterNotAvailablePage } from "src/components/errorPages/ClusterNotAva
 import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormContainer";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { AppAuthTargetType } from "src/models/app";
-import type { GetTargetAppAuthorizationsSchema } from "src/pages/api/admin/authorization/getTargetAppAuthorizations";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
@@ -40,7 +41,6 @@ interface Props {
 const p = prefix("pageComp.commonComponent.appAuthorization.appAuthorizationTable.");
 
 export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvailableClusterIds, loading, reload }) => {
-
   const { activatedClusters } = useStore(ClusterInfoStore);
 
   if (Object.keys(activatedClusters).length === 0) {
@@ -84,10 +84,9 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
   const [filterForm] = Form.useForm<FilterForm>();
 
   const promiseFn = useCallback(async () => {
-
     if (selectedClusterId === "") {
       return undefined;
-    };
+    }
 
     return await api.getTargetAppAuthorizations({
       query: {
@@ -142,19 +141,15 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
                     <Input />
                   </Form.Item>
 
-                  {
-                    targetType === AppAuthTargetType.ACCOUNT && (
-                      <Form.Item
-                        label={t(p("accountOwner"))}
-                        name="accountOwnerIdOrName"
-                        style={{ marginLeft: "12px" }}
-                      >
-                        <Input placeholder={t(p("accountOwnerPlaceholder"))} />
-                      </Form.Item>
-                    )
-                  }
+                  {targetType === AppAuthTargetType.ACCOUNT && (
+                    <Form.Item label={t(p("accountOwner"))} name="accountOwnerIdOrName" style={{ marginLeft: "12px" }}>
+                      <Input placeholder={t(p("accountOwnerPlaceholder"))} />
+                    </Form.Item>
+                  )}
                   <Form.Item>
-                    <Button type="primary" htmlType="submit">{t("common.search")}</Button>
+                    <Button type="primary" htmlType="submit">
+                      {t("common.search")}
+                    </Button>
                   </Form.Item>
                 </>
               ),
@@ -175,17 +170,14 @@ export const AppAuthorizationTable: React.FC<Props> = ({ targetType, tenantAvail
           reloadFullTable();
         }}
       />
-
     </div>
   );
 };
 
-
-
 interface AppAuthorizationInfoTableProps {
   clusterId: string;
   targetType: AppAuthTargetType;
-  data?: Static<typeof GetTargetAppAuthorizationsSchema["responses"]["200"]> | undefined;
+  data?: Static<(typeof GetTargetAppAuthorizationsSchema)["responses"]["200"]> | undefined;
   pageInfo: PageInfo;
   setPageInfo?: (info: PageInfo) => void;
   isLoading: boolean;
@@ -193,9 +185,14 @@ interface AppAuthorizationInfoTableProps {
 }
 
 const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
-  clusterId, targetType, data, pageInfo, setPageInfo, isLoading, reload,
+  clusterId,
+  targetType,
+  data,
+  pageInfo,
+  setPageInfo,
+  isLoading,
+  reload,
 }) => {
-
   const filteredData = data?.appLists;
   const t = useI18nTranslateToString();
 
@@ -208,32 +205,32 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
         dataSource={filteredData}
         rowKey="targetName"
         loading={isLoading}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.totalCount,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.totalCount,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         scroll={{ x: true }}
       >
         <Table.Column<TargetAppList>
           dataIndex="targetName"
           title={targetType === AppAuthTargetType.TENANT ? t(p("tenant")) : t(p("account"))}
         />
-        {
-          targetType === AppAuthTargetType.ACCOUNT && (
-            <Table.Column<TargetAppList>
-              dataIndex="accountOwnerId"
-              title={t(p("accountOwner"))}
-              render={(_, r) => `${r.accountOwnerName}（ID: ${r.accountOwnerId}）`}
-            />
-          )}
-        <Table.Column<TargetAppList>
-          dataIndex="availableAppsCount"
-          title={t(p("authorizedAppsCount"))}
-        />
+        {targetType === AppAuthTargetType.ACCOUNT && (
+          <Table.Column<TargetAppList>
+            dataIndex="accountOwnerId"
+            title={t(p("accountOwner"))}
+            render={(_, r) => `${r.accountOwnerName}（ID: ${r.accountOwnerId}）`}
+          />
+        )}
+        <Table.Column<TargetAppList> dataIndex="availableAppsCount" title={t(p("authorizedAppsCount"))} />
         <Table.Column<TargetAppList>
           dataIndex="operation"
           fixed="right"
@@ -251,17 +248,22 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
               >
                 {t(p("authorizeApp"))}
               </AuthorizeAppModalLink>
-              <a onClick={() => setPreviewItem({
-                targetName: r.targetName,
-                clusterId,
-                availableAppsCount: r.availableAppsCount,
-                availableAppNames: r.appsInfo.filter((x) => !x.isDisabled).map((x) => x.appName),
-                accountOwner: r.accountOwnerId ? {
-                  accountOwnerId: r.accountOwnerId ?? "-",
-                  accountOwnerName: r.accountOwnerName ?? "-",
-                } : undefined,
-                targetType,
-              })}
+              <a
+                onClick={() =>
+                  setPreviewItem({
+                    targetName: r.targetName,
+                    clusterId,
+                    availableAppsCount: r.availableAppsCount,
+                    availableAppNames: r.appsInfo.filter((x) => !x.isDisabled).map((x) => x.appName),
+                    accountOwner: r.accountOwnerId
+                      ? {
+                          accountOwnerId: r.accountOwnerId ?? "-",
+                          accountOwnerName: r.accountOwnerName ?? "-",
+                        }
+                      : undefined,
+                    targetType,
+                  })
+                }
               >
                 {t(p("detail"))}
               </a>
@@ -276,6 +278,4 @@ const AppAuthorizationInfoTable: React.FC<AppAuthorizationInfoTableProps> = ({
       />
     </>
   );
-
 };
-

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { parsePlaceholder } from "@scow/lib-config";
 import { FastifyRequest } from "fastify";
 import ldapjs, { EntryAlreadyExistsError } from "ldapjs";
@@ -27,7 +15,6 @@ import { promisify } from "util";
  * @param placeholderObj the object where the values of placeholders ({{ }}) are from
  */
 const applyExtraProps = (obj: object, extraProps: Record<string, string | string[] | null>, placeholderObj: object) => {
-
   for (const key in extraProps) {
     const value = extraProps[key];
     if (value === null) {
@@ -38,21 +25,20 @@ const applyExtraProps = (obj: object, extraProps: Record<string, string | string
       obj[key] = parsePlaceholder(value, placeholderObj);
     }
   }
-
 };
 
 export async function createUser(
-  info: CreateUserInfo, req: FastifyRequest,
+  info: CreateUserInfo,
+  req: FastifyRequest,
   ldap: RequiredBy<LdapConfigSchema, "addUser">,
 ): Promise<CreateUserResult> {
-
-
   const id = info.id + ldap.addUser.uidStart;
 
-  return await useLdap(req.log, ldap)(async (client) => {
-    const userDn =
-          `${ldap.addUser.userIdDnKey ?? ldap.attrs.uid}=${info.identityId},` +
-          `${ldap.addUser.userBase}`;
+  return await useLdap(
+    req.log,
+    ldap,
+  )(async (client) => {
+    const userDn = `${ldap.addUser.userIdDnKey ?? ldap.attrs.uid}=${info.identityId},` + `${ldap.addUser.userBase}`;
     const userEntry: Record<string, string | string[] | number> = {
       [ldap.attrs.uid]: info.identityId,
       sn: info.identityId,
@@ -78,9 +64,7 @@ export async function createUser(
 
     const add = promisify(client.add.bind(client));
 
-
     if (ldap.addUser.groupStrategy === NewUserGroupStrategy.newGroupPerUser) {
-
       req.log.info("ldap.addUser.groupStrategy is newGroupPerUser. Creating new group for the user.");
 
       const config = ldap.addUser.newGroupPerUser!;
@@ -108,7 +92,6 @@ export async function createUser(
           throw e;
         }
       }
-
     } else if (ldap.addUser.groupStrategy === NewUserGroupStrategy.oneGroupForAllUsers) {
       const config = ldap.addUser.oneGroupForAllUsers!;
 
@@ -136,24 +119,33 @@ export async function createUser(
     const addUserToLdapGroup = ldap.addUser.addUserToLdapGroup;
 
     if (addUserToLdapGroup) {
-    // get existing members
+      // get existing members
       req.log.info("Adding %s to group %s", userDn, addUserToLdapGroup);
 
-      const members = await searchOne(req.log, client, addUserToLdapGroup, {
-        attributes: ["member"],
-      }, (entry) => {
-        const member = entry.attributes.find((x) => x.json.type === "member");
-        if (!member) {
-          return undefined;
-        }
+      const members = await searchOne(
+        req.log,
+        client,
+        addUserToLdapGroup,
+        {
+          attributes: ["member"],
+        },
+        (entry) => {
+          const member = entry.attributes.find((x) => x.json.type === "member");
+          if (!member) {
+            return undefined;
+          }
 
-        return { members: member.json.vals };
-      });
+          return { members: member.json.vals };
+        },
+      );
 
       if (!members) {
         req.log.error("Didn't find LDAP group %s", addUserToLdapGroup);
         class RequestError extends Error {
-          constructor(public code: string, message: string) {
+          constructor(
+            public code: string,
+            message: string,
+          ) {
             super(message);
           }
         }
@@ -161,16 +153,17 @@ export async function createUser(
       }
       // add the dn of the new user to the value
       const modify = promisify(client.modify.bind(client));
-      await modify(addUserToLdapGroup, new ldapjs.Change({
-        operation: "add",
-        modification: {
-          "member": members.members.concat(userDn),
-        },
-      }));
+      await modify(
+        addUserToLdapGroup,
+        new ldapjs.Change({
+          operation: "add",
+          modification: {
+            member: members.members.concat(userDn),
+          },
+        }),
+      );
     }
 
     return "OK";
   });
-
-
 }

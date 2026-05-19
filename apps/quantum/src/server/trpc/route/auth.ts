@@ -1,4 +1,3 @@
-
 import { changePassword, checkPassword, deleteToken } from "@scow/lib-auth";
 import { joinWithUrl } from "@scow/utils";
 import { TRPCError } from "@trpc/server";
@@ -15,18 +14,15 @@ import { z } from "zod";
 
 import { ErrorCode } from "./utils";
 
-
 const ClientUserInfoSchema = z.object({
   identityId: z.string(),
   name: z.optional(z.string()),
   token: z.string(),
 });
 
-
 export type ClientUserInfo = z.infer<typeof ClientUserInfoSchema>;
 
 export const auth = router({
-
   getUserInfo: authProcedure
     .meta({
       openapi: {
@@ -37,9 +33,11 @@ export const auth = router({
       },
     })
     .input(z.void())
-    .output(z.object({
-      user: ClientUserInfoSchema,
-    }))
+    .output(
+      z.object({
+        user: ClientUserInfoSchema,
+      }),
+    )
     .query(async ({ ctx: { req, res } }) => {
       const userInfo = await getUserInfo(req, res);
       if (!userInfo) {
@@ -60,9 +58,11 @@ export const auth = router({
         summary: "登录后回调，写入cookie",
       },
     })
-    .input(z.object({
-      token:z.string(),
-    }))
+    .input(
+      z.object({
+        token: z.string(),
+      }),
+    )
     .output(z.void())
     .query(async ({ ctx: { res }, input }) => {
       const { token } = input;
@@ -92,12 +92,12 @@ export const auth = router({
     .input(z.void())
     .output(z.void())
     .query(async ({ ctx: { req, res } }) => {
+      const callbackUrl = `${config.PROTOCOL || "http"}://${req.headers.host}` + join(BASE_PATH, "/api/auth/callback");
 
-      const callbackUrl = `${config.PROTOCOL || "http"}://${req.headers.host}`
-       + join(BASE_PATH, "/api/auth/callback");
-
-      const target = joinWithUrl(config.AUTH_EXTERNAL_URL,
-        `public/auth?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+      const target = joinWithUrl(
+        config.AUTH_EXTERNAL_URL,
+        `public/auth?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      );
 
       res.redirect(target);
     }),
@@ -114,11 +114,9 @@ export const auth = router({
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx: { req, res } }) => {
-
       const token = getUserToken(req) || "";
       await deleteToken(token, config.AUTH_INTERNAL_URL);
       deleteUserToken(res);
-
     }),
 
   changePassword: authProcedure
@@ -130,17 +128,23 @@ export const auth = router({
         summary: "更改密码",
       },
     })
-    .input(z.object({
-      identityId:z.string(),
-      oldPassword:z.string(),
-      newPassword:z.string(),
-    }))
+    .input(
+      z.object({
+        identityId: z.string(),
+        oldPassword: z.string(),
+        newPassword: z.string(),
+      }),
+    )
     .output(z.void())
-    .mutation(async ({ input:{ identityId, oldPassword, newPassword } }) => {
-      const checkRes = await checkPassword(config.AUTH_INTERNAL_URL, {
-        identityId,
-        password: oldPassword,
-      }, console);
+    .mutation(async ({ input: { identityId, oldPassword, newPassword } }) => {
+      const checkRes = await checkPassword(
+        config.AUTH_INTERNAL_URL,
+        {
+          identityId,
+          password: oldPassword,
+        },
+        console,
+      );
 
       if (!checkRes?.success) {
         throw new TRPCError({
@@ -157,11 +161,14 @@ export const auth = router({
         });
       }
 
-      const changeRes = await changePassword(config.AUTH_INTERNAL_URL, {
-        identityId,
-        newPassword,
-      }, console)
-        .catch((e) => e.status);
+      const changeRes = await changePassword(
+        config.AUTH_INTERNAL_URL,
+        {
+          identityId,
+          newPassword,
+        },
+        console,
+      ).catch((e) => e.status);
 
       if (changeRes) {
         throw new TRPCError({

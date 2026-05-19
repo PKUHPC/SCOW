@@ -11,9 +11,7 @@ import { NavItemProps } from "src/layouts/base/types";
 export const iconToNode = (Icon: any) => {
   return (
     <span style={{ maxWidth: "18px", maxHeight: "36px" }}>
-      {React.isValidElement(Icon)
-        ? Icon
-        : <Icon style={{ transform: "scale(0.9)" }} />}
+      {React.isValidElement(Icon) ? Icon : <Icon style={{ transform: "scale(0.9)" }} />}
     </span>
   );
 };
@@ -26,7 +24,6 @@ export function createMenuItems(
   parentClickable: boolean,
   appRouter?: AppRouterInstance,
 ) {
-
   function createMenuItem(route: NavItemProps): ItemType {
     const handleClick = () => {
       const target = route.clickToPath ?? route.path;
@@ -44,7 +41,6 @@ export function createMenuItems(
           } else {
             void Router.push(target);
           }
-
         }
       }
     };
@@ -54,16 +50,12 @@ export function createMenuItems(
         icon: iconToNode(route.Icon),
         key: route.path,
         title: route.text,
-        label:
-          <Tooltip
-            title={route.text?.length > 13 ? route.text : null}
-            mouseEnterDelay={0.3}
-            placement="bottomLeft"
-          >{route.text}
-          </Tooltip>,
-        onTitleClick: (route.clickable ?? parentClickable)
-          ? handleClick
-          : undefined,
+        label: (
+          <Tooltip title={route.text?.length > 13 ? route.text : null} mouseEnterDelay={0.3} placement="bottomLeft">
+            {route.text}
+          </Tooltip>
+        ),
+        onTitleClick: (route.clickable ?? parentClickable) ? handleClick : undefined,
         children: createMenuItems(route.children, pathname, parentClickable, appRouter),
       } as ItemType;
     }
@@ -71,59 +63,51 @@ export function createMenuItems(
     return {
       icon: iconToNode(route.Icon),
       key: route.path,
-      label:
-        <Tooltip
-          title={route.text?.length > 13 ? route.text : null}
-          mouseEnterDelay={0.3}
-          placement="bottomLeft"
-        >{route.text}
-        </Tooltip>,
+      label: (
+        <Tooltip title={route.text?.length > 13 ? route.text : null} mouseEnterDelay={0.3} placement="bottomLeft">
+          {route.text}
+        </Tooltip>
+      ),
       onClick: handleClick,
     } as ItemType;
   }
 
-  const items = routes
-    .filter((x) => !x.hideIfNotActive || match(x, pathname))
-    .map((r) => createMenuItem(r));
+  const items = routes.filter((x) => !x.hideIfNotActive || match(x, pathname)).map((r) => createMenuItem(r));
 
   return items;
 }
 
 // 创建无子元素的a标签菜单项
 export function createLinkMenuItems(routes: NavItemProps[], pathname: string): ItemType[] {
-  return routes.filter((x) => !x.hideIfNotActive || match(x, pathname)).map((route) => {
-    const target = route.clickToPath ?? route.path;
+  return routes
+    .filter((x) => !x.hideIfNotActive || match(x, pathname))
+    .map((route) => {
+      const target = route.clickToPath ?? route.path;
 
-    return {
-      icon: iconToNode(route.Icon),
-      key: route.path,
-      label: (
-        <Link
-          href={target}
-          passHref
-          target={route.openInNewPage ? "_blank" : undefined}
-          rel={route.openInNewPage ? "noopener noreferrer" : undefined}
-          onClick={() => route.handleClick?.()}
-        >
-          <Tooltip
-            title={route.text?.length > 13 ? route.text : null}
-            mouseEnterDelay={0.3}
-            placement="bottomLeft"
+      return {
+        icon: iconToNode(route.Icon),
+        key: route.path,
+        label: (
+          <Link
+            href={target}
+            passHref
+            target={route.openInNewPage ? "_blank" : undefined}
+            rel={route.openInNewPage ? "noopener noreferrer" : undefined}
+            onClick={() => route.handleClick?.()}
           >
-            {route.text}
-          </Tooltip>
-        </Link>
-      ),
-    } as ItemType;
-  });
+            <Tooltip title={route.text?.length > 13 ? route.text : null} mouseEnterDelay={0.3} placement="bottomLeft">
+              {route.text}
+            </Tooltip>
+          </Link>
+        ),
+      } as ItemType;
+    });
 }
 
 export function calcActiveKeys(links: NavItemProps[], pathname: string): Set<string> {
-
   const selectedKeys = new Set<string>();
 
   for (const link of links) {
-
     if (arrayContainsElement(link.children)) {
       const childrenSelectedKeys = calcActiveKeys(link.children, pathname);
       for (const childKey of childrenSelectedKeys) {
@@ -142,4 +126,3 @@ export function calcActiveKeys(links: NavItemProps[], pathname: string): Set<str
 
   return selectedKeys;
 }
-

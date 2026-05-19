@@ -33,18 +33,12 @@ export const CreateTenantSchema = typeboxRouteSchema({
     }),
 
     400: Type.Object({
-      code: Type.Union([
-        Type.Literal("PASSWORD_NOT_VALID"),
-        Type.Literal("USERID_NOT_VALID"),
-      ]),
+      code: Type.Union([Type.Literal("PASSWORD_NOT_VALID"), Type.Literal("USERID_NOT_VALID")]),
     }),
 
     /** 租户已经存在 */
     409: Type.Object({
-      code: Type.Union([
-        Type.Literal("TENANT_ALREADY_EXISTS"),
-        Type.Literal("USER_ALREADY_EXISTS"),
-      ]),
+      code: Type.Union([Type.Literal("TENANT_ALREADY_EXISTS"), Type.Literal("USER_ALREADY_EXISTS")]),
       message: Type.String(),
     }),
 
@@ -55,8 +49,7 @@ export const CreateTenantSchema = typeboxRouteSchema({
 
 const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
 
-export default /* #__PURE__*/route(CreateTenantSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(CreateTenantSchema, async (req, res) => {
   const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
   if (!ldapCapabilities.createUser) {
     return { 501: null };
@@ -68,12 +61,13 @@ export default /* #__PURE__*/route(CreateTenantSchema, async (req, res) => {
 
   const userIdRule = getUserIdRule(languageId);
 
-  const auth = authenticate((u) =>
-    u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
+  const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   if (userIdRule && !userIdRule.pattern.test(userId)) {
     return { 400: { code: "USERID_NOT_VALID" as const } };
@@ -87,11 +81,11 @@ export default /* #__PURE__*/route(CreateTenantSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.createTenant,
-    operationTypePayload:{
-      tenantName, tenantAdmin: userId,
+    operationTypePayload: {
+      tenantName,
+      tenantAdmin: userId,
     },
   };
-
 
   // create tenant on server
   const client = getClient(TenantServiceClient);
@@ -106,18 +100,22 @@ export default /* #__PURE__*/route(CreateTenantSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { createdInAuth: res.createdInAuth } };
     })
-    .catch(handlegRPCError({
-      [status.ALREADY_EXISTS]: (e) => {
-        return {
-          409: e.details === "TENANT_ALREADY_EXISTS"
-            ? {
-              code: "TENANT_ALREADY_EXISTS" as const,
-              message: `Tenant with tenantName ${tenantName} already exists`,
-            }
-            : { code: "USER_ALREADY_EXISTS" as const, message: `User with userId ${userId} already exists` },
-        };
-      },
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [status.ALREADY_EXISTS]: (e) => {
+            return {
+              409:
+                e.details === "TENANT_ALREADY_EXISTS"
+                  ? {
+                      code: "TENANT_ALREADY_EXISTS" as const,
+                      message: `Tenant with tenantName ${tenantName} already exists`,
+                    }
+                  : { code: "USER_ALREADY_EXISTS" as const, message: `User with userId ${userId} already exists` },
+            };
+          },
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

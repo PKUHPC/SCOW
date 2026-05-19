@@ -1,7 +1,8 @@
+import type { Money } from "@scow/protos/build/common/money";
+
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { compareUsedChargeRule, positiveNumberRule } from "@scow/lib-web/build/utils/form";
-import type { Money } from "@scow/protos/build/common/money";
 import { type AccountUserInfo } from "@scow/protos/build/server/user";
 import { App, Form, InputNumber, Modal, Space } from "antd";
 import { useState } from "react";
@@ -45,9 +46,15 @@ const p = prefix("pageComp.user.jobChargeLimitModal.");
 const pCommon = prefix("common.");
 
 export const JobChargeLimitModal: React.FC<Props> = ({
-  accountName, onClose, reload, setSelectedKeys, setSelectedAccountUser, usersInfo, open, batchFlag,
+  accountName,
+  onClose,
+  reload,
+  setSelectedKeys,
+  setSelectedAccountUser,
+  usersInfo,
+  open,
+  batchFlag,
 }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -69,7 +76,6 @@ export const JobChargeLimitModal: React.FC<Props> = ({
   };
 
   usersInfo.forEach((userInfo, index) => {
-
     formalUserInfo.usernames.push(userInfo.name);
     formalUserInfo.userIds.push(userInfo.userId);
     formalUserInfo.currentLimits.push(userInfo.jobChargeLimit);
@@ -81,15 +87,16 @@ export const JobChargeLimitModal: React.FC<Props> = ({
 
       if (userInfo.jobChargeLimit && userInfo.usedJobChargeLimit) {
         formalUserInfo.usedAndLimit.push(
-          `${moneyToString(userInfo.jobChargeLimit)} / ${moneyToString(userInfo.usedJobChargeLimit)}`);
+          `${moneyToString(userInfo.jobChargeLimit)} / ${moneyToString(userInfo.usedJobChargeLimit)}`,
+        );
       } else {
         formalUserInfo.usedAndLimit.push(t(p("unset")));
       }
     } else if (index === 5) {
-      formalUserInfo.userNameIds[4] = formalUserInfo.userNameIds[4] +
-        `${t(p("andOtherUsers"), [usersInfo.length.toString()]) }`;
-      formalUserInfo.usedAndLimit[4] = formalUserInfo.usedAndLimit[4] +
-        `${t(p("andOtherValues"), [usersInfo.length.toString()]) }`;
+      formalUserInfo.userNameIds[4] =
+        formalUserInfo.userNameIds[4] + `${t(p("andOtherUsers"), [usersInfo.length.toString()])}`;
+      formalUserInfo.usedAndLimit[4] =
+        formalUserInfo.usedAndLimit[4] + `${t(p("andOtherValues"), [usersInfo.length.toString()])}`;
     }
 
     if (userInfo.jobChargeLimit) {
@@ -103,10 +110,14 @@ export const JobChargeLimitModal: React.FC<Props> = ({
   const onOk = async () => {
     const { limit } = await form.validateFields();
     setLoading(true);
-    await api.setJobChargeLimit({ body: { userIds: formalUserInfo.userIds, accountName, limit } })
-      .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
-      .httpError(500, () => { message.error(
-        batchFlag ? t(p("batchChangeLimiteFailed")) : t(p("changeLimiteFailed"))); })
+    await api
+      .setJobChargeLimit({ body: { userIds: formalUserInfo.userIds, accountName, limit } })
+      .httpError(409, () => {
+        message.error(t("common.accountUserSyncRunning"));
+      })
+      .httpError(500, () => {
+        message.error(batchFlag ? t(p("batchChangeLimiteFailed")) : t(p("changeLimiteFailed")));
+      })
       .then((res) => {
         if (res.success) {
           if (batchFlag) {
@@ -138,10 +149,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
       confirmLoading={loading}
       onOk={onOk}
     >
-      <Form
-        form={form}
-        initialValues={{ limit: 0 }}
-      >
+      <Form form={form} initialValues={{ limit: 0 }}>
         <Form.Item label={t(pCommon("user"))}>
           <span>{formalUserInfo.userNameIds?.join("、")}</span>
         </Form.Item>
@@ -150,28 +158,33 @@ export const JobChargeLimitModal: React.FC<Props> = ({
         </Form.Item>
         <Form.Item label={t(p("alreadyUsed"))}>
           <Space align="start">
-            <span>
-              {formalUserInfo.usedAndLimit?.join("、")}
-            </span>
+            <span>{formalUserInfo.usedAndLimit?.join("、")}</span>
             <span style={{ whiteSpace: "nowrap" }}>
-              {
-                formalUserInfo.limitedFlag ? (
-                  <a onClick={() => {
+              {formalUserInfo.limitedFlag ? (
+                <a
+                  onClick={() => {
                     modal.confirm({
                       title: t(p("cancelPriceLimited")),
                       icon: <ExclamationCircleOutlined />,
-                      content: <div>
-                        <p>{ batchFlag ? t(p("confirmCancelSelectLimited")) : t(p("confirmCancelLimited")) }</p>
-                        <Form form={confirmForm}></Form>
-                      </div>,
+                      content: (
+                        <div>
+                          <p>{batchFlag ? t(p("confirmCancelSelectLimited")) : t(p("confirmCancelLimited"))}</p>
+                          <Form form={confirmForm}></Form>
+                        </div>
+                      ),
                       onOk: async () => {
-                        const filterUserIds = usersInfo.filter(
-                          (user) => user.jobChargeLimit && user.usedJobChargeLimit).map((user) => user.userId);
+                        const filterUserIds = usersInfo
+                          .filter((user) => user.jobChargeLimit && user.usedJobChargeLimit)
+                          .map((user) => user.userId);
 
-                        await api.cancelJobChargeLimit({ query: { accountName, userIds: filterUserIds } })
-                          .httpError(409, () => { message.error(t("common.accountUserSyncRunning")); })
-                          .httpError(500, () => { message.error(
-                            batchFlag ? t(p("batchCleLimiteFailed")) : t(p("cancleLimiteFailed"))); })
+                        await api
+                          .cancelJobChargeLimit({ query: { accountName, userIds: filterUserIds } })
+                          .httpError(409, () => {
+                            message.error(t("common.accountUserSyncRunning"));
+                          })
+                          .httpError(500, () => {
+                            message.error(batchFlag ? t(p("batchCleLimiteFailed")) : t(p("cancleLimiteFailed")));
+                          })
                           .then((res) => {
                             if (res.success) {
                               if (batchFlag) {
@@ -180,8 +193,9 @@ export const JobChargeLimitModal: React.FC<Props> = ({
                                 message.success(t(p("cancelSuccess")));
                               }
                             } else {
-                              const faileduserIds = res.results.filter(
-                                (result) => result.success === false).map((r) => r.userId);
+                              const faileduserIds = res.results
+                                .filter((result) => result.success === false)
+                                .map((r) => r.userId);
                               message.error(t(p("batchCancleCompleted"), [faileduserIds.join("、")]));
                             }
                             if (setSelectedKeys) {
@@ -196,11 +210,12 @@ export const JobChargeLimitModal: React.FC<Props> = ({
                       },
                     });
                   }}
-                  >
-                    {t(p("cancelLimited"))}
-                  </a>
-                ) : ""
-              }
+                >
+                  {t(p("cancelLimited"))}
+                </a>
+              ) : (
+                ""
+              )}
             </span>
           </Space>
         </Form.Item>
@@ -210,9 +225,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
           rules={[
             { required: true },
             { validator: (_, value) => positiveNumberRule(_, value, languageId) },
-            { validator:
-              (_, value) =>
-                compareUsedChargeRule(_, value, formalUserInfo.maxCurrentUseds, languageId) },
+            { validator: (_, value) => compareUsedChargeRule(_, value, formalUserInfo.maxCurrentUseds, languageId) },
           ]}
         >
           <InputNumber
@@ -222,9 +235,7 @@ export const JobChargeLimitModal: React.FC<Props> = ({
           />
         </Form.Item>
       </Form>
-
     </Modal>
-
   );
 };
 

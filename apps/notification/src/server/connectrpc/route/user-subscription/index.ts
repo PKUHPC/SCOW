@@ -3,14 +3,13 @@ import { UserSubscriptionService } from "@scow/notification-protos/build/user_su
 import { UserSubscription } from "src/server/entities/UserSubscription";
 import { checkAuth } from "src/utils/auth/check-auth";
 import { forkEntityManager } from "src/utils/get-orm";
-import { checkNoticeTypeEnabled } from "src/utils/message/check-message";
 import { getMessageConfigsWithDefault, getMessageConfigWithDefault } from "src/utils/message-config";
 import { checkMessageTypeExist } from "src/utils/message-type";
+import { checkNoticeTypeEnabled } from "src/utils/message/check-message";
 
 export default (router: ConnectRouter) => {
   router.service(UserSubscriptionService, {
     async modifyUserSubscription(req, context) {
-
       const user = await checkAuth(context);
 
       const { configs } = req;
@@ -22,30 +21,20 @@ export default (router: ConnectRouter) => {
         // 查看是否有这消息类型
         const messageTypeData = await checkMessageTypeExist(em, messageType);
         if (!messageTypeData) {
-          throw new ConnectError(
-            `Message type ${messageType} does't exists.`,
-            Code.InvalidArgument,
-          );
+          throw new ConnectError(`Message type ${messageType} does't exists.`, Code.InvalidArgument);
         }
 
         for (const noticeConfig of noticeConfigs) {
-
           const { noticeType, enabled } = noticeConfig;
 
           // noticeType 不能为 undefined
           if (noticeType === undefined) {
-            throw new ConnectError(
-              "noticeType cannot be undefined",
-              Code.InvalidArgument,
-            );
+            throw new ConnectError("noticeType cannot be undefined", Code.InvalidArgument);
           }
 
           // 查看通知方式是否开启
           if (!checkNoticeTypeEnabled(noticeType)) {
-            throw new ConnectError(
-              "This notification type is not enabled",
-              Code.InvalidArgument,
-            );
+            throw new ConnectError("This notification type is not enabled", Code.InvalidArgument);
           }
 
           // 查看平台相关配置
@@ -67,8 +56,11 @@ export default (router: ConnectRouter) => {
             em.persist(newSubConfig);
           };
 
-          const userSubConfig = await em.findOne(UserSubscription,
-            { userId: user.identityId, messageType, noticeType });
+          const userSubConfig = await em.findOne(UserSubscription, {
+            userId: user.identityId,
+            messageType,
+            noticeType,
+          });
 
           if (userSubConfig) {
             userSubConfig.isSubscribed = enabled ?? userSubConfig.isSubscribed;
@@ -85,7 +77,6 @@ export default (router: ConnectRouter) => {
     },
 
     async listUserSubscriptions(_, context) {
-
       const user = await checkAuth(context);
 
       const em = await forkEntityManager();
@@ -97,11 +88,13 @@ export default (router: ConnectRouter) => {
 
       const finalResult = adminConfigs.map((config) => {
         const noticeConfigs = config.noticeConfigs.map((noticeConfig) => {
-          const common = userSubscriptions.find((sub) =>
-            sub.messageType === config.messageType && sub.noticeType === noticeConfig.noticeType,
+          const common = userSubscriptions.find(
+            (sub) => sub.messageType === config.messageType && sub.noticeType === noticeConfig.noticeType,
           );
           return noticeConfig.enabled
-            ? noticeConfig.canUserModify && common ? { ...noticeConfig, enabled: common.isSubscribed } : noticeConfig
+            ? noticeConfig.canUserModify && common
+              ? { ...noticeConfig, enabled: common.isSubscribed }
+              : noticeConfig
             : { ...noticeConfig, canUserModify: false };
         });
 

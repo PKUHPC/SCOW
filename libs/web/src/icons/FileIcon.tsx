@@ -24,13 +24,11 @@ const folderSVG = () => (
       </linearGradient>
     </defs>
   </svg>
-
 );
 
-export const FolderIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={folderSVG} {...props} ref={ref} />
-));
+export const FolderIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={folderSVG} {...props} ref={ref} />,
+);
 
 // 压缩包的SVG
 const archiveSVG = () => (
@@ -49,13 +47,11 @@ const archiveSVG = () => (
       </linearGradient>
     </defs>
   </svg>
-
 );
 
-export const ArchiveIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={archiveSVG} {...props} ref={ref} />
-));
+export const ArchiveIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={archiveSVG} {...props} ref={ref} />,
+);
 
 // 软链接的SVG
 const symlinkSVG = () => (
@@ -97,13 +93,11 @@ const symlinkSVG = () => (
       </linearGradient>
     </defs>
   </svg>
-
 );
 
-export const SymlinkIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={symlinkSVG} {...props} ref={ref} />
-));
+export const SymlinkIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={symlinkSVG} {...props} ref={ref} />,
+);
 
 // 支持的文件的SVG
 const supportedFileSVG = () => (
@@ -129,10 +123,9 @@ const supportedFileSVG = () => (
   </svg>
 );
 
-export const SupportedFileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={supportedFileSVG} {...props} ref={ref} />
-));
+export const SupportedFileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={supportedFileSVG} {...props} ref={ref} />,
+);
 
 // 图片SVG
 const imageSVG = () => (
@@ -154,10 +147,9 @@ const imageSVG = () => (
   </svg>
 );
 
-export const ImageIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={imageSVG} {...props} ref={ref} />
-));
+export const ImageIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={imageSVG} {...props} ref={ref} />,
+);
 
 // 未识别文件的SVG
 const unrecognizedFileSVG = () => (
@@ -177,11 +169,8 @@ const unrecognizedFileSVG = () => (
       </linearGradient>
     </defs>
   </svg>
-
-
 );
 
-export const UnrecognizedFileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={unrecognizedFileSVG} {...props} ref={ref} />
-));
+export const UnrecognizedFileIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={unrecognizedFileSVG} {...props} ref={ref} />,
+);

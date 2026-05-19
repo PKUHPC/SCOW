@@ -23,124 +23,130 @@ export function createJobManager(orm: MikroORM) {
   const syncJobs = async (signal: AbortSignal) => {
     while (!signal.aborted) {
       const em = orm.em.fork();
-      await em.transactional(async (em) => {
+      await em
+        .transactional(async (em) => {
+          const jobs = await em.find(
+            QuantumJob,
+            {
+              info: { state: { $nin: ["completed", "failed"] } },
+              lastSyncTime: { $lt: new Date(Date.now() - 5 * 1000) }, // 只同步超过5秒未同步的作业
+            },
+            {
+              lockMode: LockMode.PESSIMISTIC_WRITE,
+              orderBy: { lastSyncTime: "ASC" },
+              limit: 10, // 限制每次同步的作业数量
+            },
+          );
 
-        const jobs = await em.find(QuantumJob, {
-          info: { state: { $nin: ["completed", "failed"]} },
-          lastSyncTime: { $lt: new Date(Date.now() - 5 * 1000) }, // 只同步超过5秒未同步的作业
-        }, {
-          lockMode: LockMode.PESSIMISTIC_WRITE,
-          orderBy: { lastSyncTime: "ASC" },
-          limit: 10, // 限制每次同步的作业数量
-        });
+          if (jobs.length === 0) {
+            return;
+          }
 
-        if (jobs.length === 0) {
-          return;
-        }
+          await Promise.all(
+            jobs.map(async (job) => {
+              try {
+                // 调用量子云平台API获取作业状态
+                const resp = await callBackendApi("/task/detail", {
+                  method: "POST",
+                  body: JSON.stringify({ id: job.jobId }),
+                  signal: signal,
+                });
 
-        await Promise.all(jobs.map(async (job) => {
-          try {
-            // 调用量子云平台API获取作业状态
-            const resp = await callBackendApi("/task/detail", {
-              method: "POST",
-              body: JSON.stringify({ id: job.jobId }),
-              signal: signal,
-            });
+                const data = responseSchema.safeParse(resp);
+                if (!data.success) {
+                  logger.error(`Invalid response for job ${job.id}:`, data.error);
+                  return;
+                }
 
-            const data = responseSchema.safeParse(resp);
-            if (!data.success) {
-              logger.error(`Invalid response for job ${job.id}:`, data.error);
-              return;
-            }
-
-            // 更新作业状态
-            job.info = data.data.task;
-            job.state = data.data.task.state;
-            job.lastSyncTime = new Date();
-            await em.persistAndFlush(job);
-
-            if (!USE_MOCK && (job.state === "completed" || job.state === "failed")) {
-
-              // 如果作业已完成或失败，计费
-
-              const estimateResp = await callBackendApi("/task/estimate", {
-                method: "POST",
-                body: JSON.stringify({
-                  tasks:
-                    [{
-                      qubits: job.info.qubits,
-                      shots: job.info.shots,
-                      device: job.info.device,
-                    }],
-                }),
-              });
-
-              const estimateData = EstimateTaskSchema.safeParse(estimateResp);
-
-              if (!estimateData.success) {
-                logger.error(`Invalid estimate response for job ${job.id}:`, estimateData.error);
-                return;
-              }
-
-              const MIN_BALANCE = new Decimal(50);
-
-              const balance = estimateData.data.balance ?
-                new Decimal(estimateData.data.balance).times("0.000001") : undefined;
-
-              if (balance?.isLessThan(MIN_BALANCE)) {
-                logger.warn("Not enough balance for job", balance);
-              }
-
-              const client = getMisClient(ChargingServiceClient);
-
-              const qits = new Decimal(estimateData.data.qits).times("0.000001");
-
-              const amountHighPrecision = qits.times(quantumConfig.billing.defaultBitSecondPrice);
-
-              const amount = numberToMoney(amountHighPrecision.toNumber());
-
-              if (job.state === "completed") {
-
-                job.qits = qits;
-
-                job.amount = amountHighPrecision;
-
+                // 更新作业状态
+                job.info = data.data.task;
+                job.state = data.data.task.state;
+                job.lastSyncTime = new Date();
                 await em.persistAndFlush(job);
 
-                const comment = parsePlaceholder(quantumConfig.taskChargeComment, job);
+                if (!USE_MOCK && (job.state === "completed" || job.state === "failed")) {
+                  // 如果作业已完成或失败，计费
 
-                // 账户扣费
-                await asyncUnaryCall(client, "charge", {
-                  userId: job.userId,
-                  tenantName: job.tenantName,
-                  accountName: job.accountName,
-                  type: quantumConfig.taskChargeType,
-                  amount: amount,
-                  comment,
-                  metadata: { quantumJobId: job.jobId },
-                });
+                  const estimateResp = await callBackendApi("/task/estimate", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      tasks: [
+                        {
+                          qubits: job.info.qubits,
+                          shots: job.info.shots,
+                          device: job.info.device,
+                        },
+                      ],
+                    }),
+                  });
 
-                // 租户扣费
-                await asyncUnaryCall(client, "charge", {
-                  userId: job.userId,
-                  tenantName: job.tenantName,
-                  type: quantumConfig.taskChargeType,
-                  amount: amount,
-                  comment,
-                  metadata: { quantumJobId: job.jobId },
-                });
+                  const estimateData = EstimateTaskSchema.safeParse(estimateResp);
+
+                  if (!estimateData.success) {
+                    logger.error(`Invalid estimate response for job ${job.id}:`, estimateData.error);
+                    return;
+                  }
+
+                  const MIN_BALANCE = new Decimal(50);
+
+                  const balance = estimateData.data.balance
+                    ? new Decimal(estimateData.data.balance).times("0.000001")
+                    : undefined;
+
+                  if (balance?.isLessThan(MIN_BALANCE)) {
+                    logger.warn("Not enough balance for job", balance);
+                  }
+
+                  const client = getMisClient(ChargingServiceClient);
+
+                  const qits = new Decimal(estimateData.data.qits).times("0.000001");
+
+                  const amountHighPrecision = qits.times(quantumConfig.billing.defaultBitSecondPrice);
+
+                  const amount = numberToMoney(amountHighPrecision.toNumber());
+
+                  if (job.state === "completed") {
+                    job.qits = qits;
+
+                    job.amount = amountHighPrecision;
+
+                    await em.persistAndFlush(job);
+
+                    const comment = parsePlaceholder(quantumConfig.taskChargeComment, job);
+
+                    // 账户扣费
+                    await asyncUnaryCall(client, "charge", {
+                      userId: job.userId,
+                      tenantName: job.tenantName,
+                      accountName: job.accountName,
+                      type: quantumConfig.taskChargeType,
+                      amount: amount,
+                      comment,
+                      metadata: { quantumJobId: job.jobId },
+                    });
+
+                    // 租户扣费
+                    await asyncUnaryCall(client, "charge", {
+                      userId: job.userId,
+                      tenantName: job.tenantName,
+                      type: quantumConfig.taskChargeType,
+                      amount: amount,
+                      comment,
+                      metadata: { quantumJobId: job.jobId },
+                    });
+                  }
+                }
+
+                console.log(`Job ${job.id} synced successfully.`);
+              } catch (error) {
+                console.error(`Failed to sync job ${job.id}:`, error);
               }
-
-            }
-
-            console.log(`Job ${job.id} synced successfully.`);
-          } catch (error) {
-            console.error(`Failed to sync job ${job.id}:`, error);
-          }
-        }));
-      }).catch((e) => {
-        console.error("Transaction failed:", e);
-      });
+            }),
+          );
+        })
+        .catch((e) => {
+          console.error("Transaction failed:", e);
+        });
 
       await new Promise((resolve) => {
         // 等待10秒后再进行下一次同步
@@ -181,4 +187,3 @@ export async function initializeJobManager() {
   jobManager.startSync();
   return jobManager;
 }
-

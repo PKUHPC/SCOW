@@ -9,11 +9,7 @@ export class TenantClusterRule {
   createTime = new Date();
   updateTime = new Date();
 
-  constructor(init: {
-    tenantName: string;
-    clusterId: string;
-    isAccountDefaultCluster: boolean;
-  }) {
+  constructor(init: { tenantName: string; clusterId: string; isAccountDefaultCluster: boolean }) {
     this.tenantName = init.tenantName;
     this.clusterId = init.clusterId;
     this.isAccountDefaultCluster = init.isAccountDefaultCluster;
@@ -32,4 +28,3 @@ export const TenantClusterRuleSchema = new EntitySchema<TenantClusterRule>({
     updateTime: { type: "date", columnType: DATETIME_TYPE, onUpdate: () => new Date() },
   },
 });
-

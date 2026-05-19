@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationType } from "@scow/lib-operation-log";
@@ -27,8 +15,12 @@ import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
 import { nullableMoneyToString } from "src/utils/money";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
@@ -65,17 +57,7 @@ export const ExportPayRecordSchema = typeboxRouteSchema({
 export default route(ExportPayRecordSchema, async (req, res) => {
   const { query } = req;
 
-  const {
-    columns,
-    startTime,
-    endTime,
-    searchType,
-    count,
-    encoding,
-    timeZone,
-    ownerIdOrName,
-    operatorIdOrName,
-  } = query;
+  const { columns, startTime, endTime, searchType, count, encoding, timeZone, ownerIdOrName, operatorIdOrName } = query;
 
   let { targetNames, types } = query;
 
@@ -90,30 +72,34 @@ export default route(ExportPayRecordSchema, async (req, res) => {
 
   let user;
   if (searchType === SearchType.tenant) {
-    user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-      i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
+    user = await authenticate(
+      (i) =>
+        i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
+        i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+    )(req, res);
   } else {
     if (targetNames && targetNames.length > 0) {
-      user = await authenticate((i) =>
-        i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-        i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-        // 排除掉前面的租户财务员和管理员，只剩下账户管理员
-        targetNames.length === 1 &&
-        i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER),
+      user = await authenticate(
+        (i) =>
+          i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+          i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+          // 排除掉前面的租户财务员和管理员，只剩下账户管理员
+          (targetNames.length === 1 &&
+            i.accountAffiliations.some((x) => x.accountName === targetNames[0] && x.role !== UserRole.USER)),
       )(req, res);
     } else {
-      user = await authenticate((i) =>
-        i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-        i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+      user = await authenticate(
+        (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
       )(req, res);
     }
   }
 
-  if (!user) { return; }
+  if (!user) {
+    return;
+  }
 
-  const tenantOfAccount = searchType === SearchType.account
-    ? await getTenantOfAccount(targetNames, user)
-    : user.tenantId;
+  const tenantOfAccount =
+    searchType === SearchType.account ? await getTenantOfAccount(targetNames, user) : user.tenantId;
 
   const target = getPaymentRecordTarget(searchType, user, tenantOfAccount, targetNames);
 
@@ -142,16 +128,15 @@ export default route(ExportPayRecordSchema, async (req, res) => {
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
-    const stream = asyncReplyStreamCall(client, "exportPayRecord",
-      {
-        count,
-        startTime,
-        endTime,
-        target,
-        types: types ?? [],
-        ownerIdOrName: ownerIdOrName || undefined,
-        operatorIdOrName: operatorIdOrName || undefined,
-      });
+    const stream = asyncReplyStreamCall(client, "exportPayRecord", {
+      count,
+      startTime,
+      endTime,
+      target,
+      types: types ?? [],
+      ownerIdOrName: ownerIdOrName || undefined,
+      operatorIdOrName: operatorIdOrName || undefined,
+    });
 
     const languageId = getCurrentLanguageId(req, publicConfig.SYSTEM_LANGUAGE_CONFIG);
     const t = await getT(languageId);
@@ -164,8 +149,7 @@ export default route(ExportPayRecordSchema, async (req, res) => {
         id: x.index,
         accountName: x.accountName,
         tenantName: x.tenantName,
-        time: x.time ? new Date(x.time).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
+        time: x.time ? new Date(x.time).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
         amount: nullableMoneyToString(x.amount),
         type: x.type,
         ipAddress: x.ipAddress,

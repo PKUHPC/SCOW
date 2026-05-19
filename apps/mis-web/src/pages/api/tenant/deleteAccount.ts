@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -44,7 +32,7 @@ export const DeleteAccountSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(DeleteAccountSchema, async (req,res) => {
+export default /* #__PURE__*/ route(DeleteAccountSchema, async (req, res) => {
   const auth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN));
   const info = await auth(req, res);
   if (!info) {
@@ -57,25 +45,31 @@ export default /* #__PURE__*/route(DeleteAccountSchema, async (req,res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteAccount,
-    operationTypePayload:{
-      accountName, accountOwner: ownerId,
+    operationTypePayload: {
+      accountName,
+      accountOwner: ownerId,
     },
   };
 
   const client = getClient(AccountServiceClient);
 
   return await asyncClientCall(client, "deleteAccount", {
-    accountName, comment, tenantName: info.tenant,
+    accountName,
+    comment,
+    tenantName: info.tenant,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(handlegRPCError({
-      [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
-      [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-      [status.UNIMPLEMENTED]: (e) => ({ 501:{ message: e.details } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
+          [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+          [status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

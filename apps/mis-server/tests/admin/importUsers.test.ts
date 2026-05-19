@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -46,15 +34,19 @@ const data = {
   accounts: [
     {
       accountName: "a_user1",
-      users: [{ userId: "user1", userName: "user1Name", blocked: false },
-        { userId: "user2", userName: "user2", blocked: true }],
+      users: [
+        { userId: "user1", userName: "user1Name", blocked: false },
+        { userId: "user2", userName: "user2", blocked: true },
+      ],
       owner: "user1",
       blocked: false,
     },
     {
       accountName: "account2",
-      users: [{ userId: "user2", userName: "user2", blocked: false },
-        { userId: "user3", userName: "user3", blocked: true }],
+      users: [
+        { userId: "user2", userName: "user2", blocked: false },
+        { userId: "user3", userName: "user3", blocked: true },
+      ],
       owner: "user2",
       blocked: false,
     },
@@ -73,29 +65,33 @@ it("imports users and accounts", async () => {
   const accounts = await em.find(Account, {});
   expect(accounts.map((x) => x.accountName)).toIncludeSameMembers(data.accounts.map((x) => x.accountName));
 
-  const ua = await em.find(UserAccount, { }, {
-    populate: ["account", "user"],
-  });
-  expect(ua.map((x) => ({
-    accountName: x.account.$.accountName,
-    userId: x.user.$.userId,
-    role: x.role,
-    blocked: x.blockedInCluster === UserStatus.BLOCKED,
-  })))
-    .toIncludeSameMembers([
-      { accountName: "a_user1", userId: "user1", role: UserRole.OWNER, blocked: false },
-      { accountName: "a_user1", userId: "user2", role: UserRole.USER, blocked: true },
-      { accountName: "account2", userId: "user2", role: UserRole.OWNER, blocked: false },
-      { accountName: "account2", userId: "user3", role: UserRole.USER, blocked: true },
-    ]);
+  const ua = await em.find(
+    UserAccount,
+    {},
+    {
+      populate: ["account", "user"],
+    },
+  );
+  expect(
+    ua.map((x) => ({
+      accountName: x.account.$.accountName,
+      userId: x.user.$.userId,
+      role: x.role,
+      blocked: x.blockedInCluster === UserStatus.BLOCKED,
+    })),
+  ).toIncludeSameMembers([
+    { accountName: "a_user1", userId: "user1", role: UserRole.OWNER, blocked: false },
+    { accountName: "a_user1", userId: "user2", role: UserRole.USER, blocked: true },
+    { accountName: "account2", userId: "user2", role: UserRole.OWNER, blocked: false },
+    { accountName: "account2", userId: "user3", role: UserRole.USER, blocked: true },
+  ]);
 
-  const users = await em.find(User, { });
-  expect(users.map((x) => ({ userId: x.userId, name: x.name })))
-    .toIncludeSameMembers([
-      { userId: "user1", name: "user1Name" },
-      { userId: "user2", name: "user2" },
-      { userId: "user3", name: "user3" },
-    ]);
+  const users = await em.find(User, {});
+  expect(users.map((x) => ({ userId: x.userId, name: x.name }))).toIncludeSameMembers([
+    { userId: "user1", name: "user1Name" },
+    { userId: "user2", name: "user2" },
+    { userId: "user3", name: "user3" },
+  ]);
 });
 
 it("import users and accounts if in different tenant", async () => {
@@ -106,11 +102,10 @@ it("import users and accounts if in different tenant", async () => {
   const tenant1 = await em.findOneOrFail(Tenant, { name: "tenant1" });
   await em.persistAndFlush(new User({ name: "user1Name", userId: "user1", email: "", tenant: tenant1 }));
 
-  await asyncClientCall(client, "importUsers", { data: data, whitelist: true })
-    .catch((e) =>
-    { console.log(e);
-      expect(e.code).toBe(Status.INVALID_ARGUMENT); });
-
+  await asyncClientCall(client, "importUsers", { data: data, whitelist: true }).catch((e) => {
+    console.log(e);
+    expect(e.code).toBe(Status.INVALID_ARGUMENT);
+  });
 });
 
 it("import users and accounts if an account exists", async () => {
@@ -123,7 +118,8 @@ it("import users and accounts if an account exists", async () => {
     accountName: "a_user1",
     comment: "",
     blockedInCluster: false,
-    tenant });
+    tenant,
+  });
   await em.persistAndFlush([user, account]);
 
   await asyncClientCall(client, "importUsers", { data: data, whitelist: true });
@@ -131,27 +127,31 @@ it("import users and accounts if an account exists", async () => {
   const accounts = await em.find(Account, {});
   expect(accounts.map((x) => x.accountName)).toIncludeSameMembers(data.accounts.map((x) => x.accountName));
 
-  const ua = await em.find(UserAccount, { }, {
-    populate: ["account", "user"],
-  });
-  expect(ua.map((x) => ({
-    accountName: x.account.$.accountName,
-    userId: x.user.$.userId,
-    role: x.role,
-    blocked: x.blockedInCluster === UserStatus.BLOCKED,
-  })))
-    .toIncludeSameMembers([
-      { accountName: "a_user1", userId: "user1", role: UserRole.OWNER, blocked: false },
-      { accountName: "a_user1", userId: "user2", role: UserRole.USER, blocked: true },
-      { accountName: "account2", userId: "user2", role: UserRole.OWNER, blocked: false },
-      { accountName: "account2", userId: "user3", role: UserRole.USER, blocked: true },
-    ]);
+  const ua = await em.find(
+    UserAccount,
+    {},
+    {
+      populate: ["account", "user"],
+    },
+  );
+  expect(
+    ua.map((x) => ({
+      accountName: x.account.$.accountName,
+      userId: x.user.$.userId,
+      role: x.role,
+      blocked: x.blockedInCluster === UserStatus.BLOCKED,
+    })),
+  ).toIncludeSameMembers([
+    { accountName: "a_user1", userId: "user1", role: UserRole.OWNER, blocked: false },
+    { accountName: "a_user1", userId: "user2", role: UserRole.USER, blocked: true },
+    { accountName: "account2", userId: "user2", role: UserRole.OWNER, blocked: false },
+    { accountName: "account2", userId: "user3", role: UserRole.USER, blocked: true },
+  ]);
 
-  const users = await em.find(User, { });
-  expect(users.map((x) => ({ userId: x.userId, name: x.name })))
-    .toIncludeSameMembers([
-      { userId: "user1", name: "user1Name" },
-      { userId: "user2", name: "user2" },
-      { userId: "user3", name: "user3" },
-    ]);
+  const users = await em.find(User, {});
+  expect(users.map((x) => ({ userId: x.userId, name: x.name }))).toIncludeSameMembers([
+    { userId: "user1", name: "user1Name" },
+    { userId: "user2", name: "user2" },
+    { userId: "user3", name: "user3" },
+  ]);
 });

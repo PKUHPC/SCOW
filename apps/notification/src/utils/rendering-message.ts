@@ -23,7 +23,7 @@ enum TemplateLang {
   fr = "fr",
   pt = "pt",
   ru = "ru",
-};
+}
 
 export const checkAdminMessageTypeExist = (type: string): CustomMessageType | null => {
   if (adminMessageTypesMap.has(type as AdminMessageType)) {
@@ -62,7 +62,6 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
   if (checkAdminMessageTypeExist(message.messageType.type)) {
     return parseAdminMessage(message);
   } else if (checkTemplateNotUndefined(message)) {
-
     let templateLang: TemplateLang = TemplateLang.default;
     const map: Record<string, TemplateLang> = {
       en: TemplateLang.en,
@@ -78,10 +77,8 @@ export const renderingMessage = (message: Message, languageId: string): RenderCo
     templateLang = map[languageId] ?? TemplateLang.default;
     // 对应语言模板没有设置时采用默认模板
     const messageType = message.messageType;
-    const titleTemplate = messageType.titleTemplate?.[templateLang]
-      || messageType.titleTemplate!.default;
-    const contentTemplate = messageType.contentTemplate?.[templateLang]
-      || messageType.contentTemplate!.default;
+    const titleTemplate = messageType.titleTemplate?.[templateLang] || messageType.titleTemplate!.default;
+    const contentTemplate = messageType.contentTemplate?.[templateLang] || messageType.contentTemplate!.default;
 
     return {
       id: message.id,

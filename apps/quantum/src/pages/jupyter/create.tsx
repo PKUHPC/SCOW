@@ -23,22 +23,16 @@ export default function Home() {
 
   // 3. 处理加载状态
   if (publicConfigQuery.isLoading || quantumConfigQuery.isLoading) {
-    return (
-      <div>Loading...</div>
-    );
+    return <div>Loading...</div>;
   }
 
   // 4. 处理错误状态
   if (publicConfigQuery.isError || !publicConfigQuery.isSuccess) {
-    return (
-      <div>Error loading user or configuration.</div>
-    );
+    return <div>Error loading user or configuration.</div>;
   }
 
   if (quantumConfigQuery.isError || !quantumConfigQuery.isSuccess) {
-    return (
-      <div>Error loading quantum configuration.</div>
-    );
+    return <div>Error loading quantum configuration.</div>;
   }
 
   // 5. 构建动态URL
@@ -49,11 +43,7 @@ export default function Home() {
   const appCreateUrl = `apps/createApps?appId=${appId}`;
 
   return (
-    <TypographyLink
-      href={join(portalUrl, appCreateUrl)}
-      disabled={!cluster || !appId}
-      target="_blank"
-    >
+    <TypographyLink href={join(portalUrl, appCreateUrl)} disabled={!cluster || !appId} target="_blank">
       {t("page.jupyter.create")} jupyter
     </TypographyLink>
   );

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FormLayout } from "@scow/lib-web/build/layouts/FormLayout";
 import { App, Button, Form } from "antd";
 import { NextPage } from "next";
@@ -27,7 +15,6 @@ import { Head } from "src/utils/head";
 const p = prefix("page.admin.tenants.create.");
 
 const CreateTenantPageForm: React.FC = () => {
-
   const [form] = Form.useForm<CreateTenantFormFields>();
   const { message, modal } = App.useApp();
 
@@ -42,13 +29,14 @@ const CreateTenantPageForm: React.FC = () => {
 
     // 新建租户的租户管理员为已存在的用户
     if (userType === UserType.Existing) {
-      await api.createTenantWithExistingUserAsAdmin({
-        body: {
-          tenantName: tenantName.trim(),
-          userId,
-          userName: userName.trim(),
-        },
-      })
+      await api
+        .createTenantWithExistingUserAsAdmin({
+          body: {
+            tenantName: tenantName.trim(),
+            userId,
+            userName: userName.trim(),
+          },
+        })
         .httpError(409, () => {
           message.error({
             content: t(p("tenantExist")),
@@ -64,15 +52,15 @@ const CreateTenantPageForm: React.FC = () => {
             message.error({
               content: t(p("userStillMaintainsAccountRelationship")),
             });
-          };
+          }
           if (e.code === "USER_STILL_MAINTAINS_TENANT_ROLES") {
             message.error({
               content: t(p("userStillMaintainsTenantRoles")),
             });
-          };
+          }
         })
         .then(() => {
-          message.info({ content:t(p("addCompleted")) });
+          message.info({ content: t(p("addCompleted")) });
           form.resetFields();
         })
         .catch(() => {
@@ -109,49 +97,54 @@ const CreateTenantPageForm: React.FC = () => {
       } else {
         modal.confirm({
           title: t("common.prompt"),
-          content: result.existsInAuth !== undefined ?
-            // 认证系统支持查询
-            result.existsInAuth ? t(p("adminExistAuthMessage"))
-              : t(p("adminNotExistAuthAndConfirmCreateMessage"))
-            : // 认证系统不支持查询
-            useBuiltinCreateUser() ?
-              t(p("unableConfirmAdminExistInAuthMessage"))
-              : t(p("unableConfirmAdminExistInAuthAndUnableCreateMessage")),
+          content:
+            result.existsInAuth !== undefined
+              ? // 认证系统支持查询
+                result.existsInAuth
+                ? t(p("adminExistAuthMessage"))
+                : t(p("adminNotExistAuthAndConfirmCreateMessage"))
+              : // 认证系统不支持查询
+                useBuiltinCreateUser()
+                ? t(p("unableConfirmAdminExistInAuthMessage"))
+                : t(p("unableConfirmAdminExistInAuthAndUnableCreateMessage")),
 
           okText: t("common.ok"),
           onOk: async () => {
-            await api.createTenant({
-              body: {
-                tenantName: tenantName.trim(),
-                userId,
-                userName: userName.trim(),
-                userEmail,
-                userPassword,
-              },
-            })
+            await api
+              .createTenant({
+                body: {
+                  tenantName: tenantName.trim(),
+                  userId,
+                  userName: userName.trim(),
+                  userEmail,
+                  userPassword,
+                },
+              })
               .httpError(409, (e) => {
                 modal.error({
                   title: t("common.addFail"),
-                  content: t(p("existInSCOWDatabase"),
-                    [e.code === "TENANT_ALREADY_EXISTS" ? t("common.tenant") : t("common.user")]),
+                  content: t(p("existInSCOWDatabase"), [
+                    e.code === "TENANT_ALREADY_EXISTS" ? t("common.tenant") : t("common.user"),
+                  ]),
                   okText: t("common.ok"),
                 });
               })
               .httpError(400, (e) => {
                 if (e.code === "USERID_NOT_VALID") {
                   message.error(userIdRule?.message);
-                };
+                }
                 if (e.code === "PASSWORD_NOT_VALID") {
                   message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
-                };
+                }
                 throw e;
               })
-              .httpError(501, () => { message.error(t(p("unavailable"))); })
+              .httpError(501, () => {
+                message.error(t(p("unavailable")));
+              })
               .then((createdInAuth) => {
                 if (createdInAuth.createdInAuth) {
                   message.success(t(p("addCompleted")));
                 } else {
-
                   modal.info({
                     title: t("common.addSuccess"),
                     content: t(p("createTenantSuccessMessage")),
@@ -176,15 +169,13 @@ const CreateTenantPageForm: React.FC = () => {
         });
       }
     }
-
-
   };
 
   return (
     <Form
       form={form}
       wrapperCol={{ span: 20 }}
-      labelCol={{ span:4, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
+      labelCol={{ span: 4, style: { whiteSpace: "normal", textAlign: "left", lineHeight: "16px" } }}
       labelAlign="left"
       onFinish={onOk}
     >
@@ -211,6 +202,7 @@ export const CreateTenantPage: NextPage = requireAuth((i) => i.platformRoles.inc
         </FormLayout>
       </div>
     );
-  });
+  },
+);
 
 export default CreateTenantPage;

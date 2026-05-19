@@ -10,7 +10,6 @@ export function formatBytesToString(bytes: number): string {
   return `${formattedValue} ${sizes[unitIndex]}`;
 }
 
-
 export function formatBytesToGB(bytes: number): number {
   const GB = 1073741824; // 1GB = 1024^3 bytes
   return bytes / GB;

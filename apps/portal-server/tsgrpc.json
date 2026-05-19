@@ -18,7 +18,5 @@
       "target": "."
     }
   ],
-  "params": [
-    "--ts_proto_opt=unrecognizedEnum=false,oneof=unions"
-  ]
+  "params": ["--ts_proto_opt=unrecognizedEnum=false,oneof=unions"]
 }

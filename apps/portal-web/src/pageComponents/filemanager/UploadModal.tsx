@@ -29,9 +29,7 @@ const pCommon = prefix("common.");
 
 type OnProgressCallback = undefined | ((progressEvent: UploadProgressEvent) => void);
 
-
 export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, cluster, scowdEnabled }) => {
-
   const { message, modal } = App.useApp();
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
   const uploadFileListRef = useRef<UploadFile[]>([]);
@@ -78,9 +76,13 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
   };
 
   const startMultipartUpload = async (file: File, onProgress: OnProgressCallback) => {
-    let initData = await api.initMultipartUpload({
-      body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
-    }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+    let initData = await api
+      .initMultipartUpload({
+        body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
+      })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      });
 
     if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
       await new Promise<void>((resolve, reject) => {
@@ -96,9 +98,13 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
               console.error("Failed to delete .uploading file", e);
             }
 
-            initData = await api.initMultipartUpload({
-              body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
-            }).httpError(429, () => { message.error(t(pCommon("noSpaceError"))); });
+            initData = await api
+              .initMultipartUpload({
+                body: { cluster, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified },
+              })
+              .httpError(429, () => {
+                message.error(t(pCommon("noSpaceError")));
+              });
             resolve();
           },
           onCancel: () => {
@@ -118,7 +124,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     let loadedBytes = 0;
     uploadedChunkIndices.forEach((index) => {
       if (index === totalCount) {
-        loadedBytes += (file.size - (totalCount - 1) * chunkSizeByte);
+        loadedBytes += file.size - (totalCount - 1) * chunkSizeByte;
       } else {
         loadedBytes += chunkSizeByte;
       }
@@ -144,10 +150,10 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         return prevList.map((uploadFile) => {
           return uploadFile.name === file.name
             ? {
-              ...uploadFile,
-              percent: percentage,
-              status: "uploading" as const
-            }
+                ...uploadFile,
+                percent: percentage,
+                status: "uploading" as const,
+              }
             : uploadFile;
         });
       });
@@ -184,7 +190,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       }
 
       updateProgress(chunk.size);
-
     };
 
     try {
@@ -207,13 +212,15 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       await Promise.all(tasks);
 
       if (!controller.signal.aborted) {
-        await api.completeMultipartUpload({ body: { cluster, path, name: file.name } })
-          .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
+        await api
+          .completeMultipartUpload({ body: { cluster, path, name: file.name } })
+          .httpError(429, () => {
+            message.error(t(pCommon("noSpaceError")));
+          })
           .httpError(520, (err) => {
             message.error(t(p("completeUploadErrorText"), [file.name, err?.error]));
           });
       }
-
     } catch (err) {
       controller.abort();
       message.error(t(p("multipartUploadError"), [err.message]));
@@ -238,11 +245,15 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       ]}
     >
       <p>
-        {t(p("uploadRemark1"))}<span>{path}</span>{t(p("uploadRemark2"))}
+        {t(p("uploadRemark1"))}
+        <span>{path}</span>
+        {t(p("uploadRemark2"))}
       </p>
       {!scowdEnabled && (
         <p>
-          {t(p("uploadRemark3"))}<span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>{t(p("uploadRemark4"))}
+          {t(p("uploadRemark3"))}
+          <span>{publicConfig.CLIENT_MAX_BODY_SIZE}</span>
+          {t(p("uploadRemark4"))}
         </p>
       )}
       <div
@@ -266,30 +277,33 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         <Upload.Dragger
           name="file"
           multiple
-          {...(scowdEnabled ? {
-            customRequest: ({ file, onSuccess, onError, onProgress }) => {
-              limit.current(() => startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError));
-            },
-          } : {
-            action: async (file) => urlToUpload(cluster, join(path, file.name)),
-          })}
+          {...(scowdEnabled
+            ? {
+                customRequest: ({ file, onSuccess, onError, onProgress }) => {
+                  limit.current(() =>
+                    startMultipartUpload(file as File, onProgress)
+                      .then(onSuccess)
+                      .catch(onError),
+                  );
+                },
+              }
+            : {
+                action: async (file) => urlToUpload(cluster, join(path, file.name)),
+              })}
           withCredentials
           showUploadList={{
             removeIcon: (file) => {
-              return (
-                file.status === "uploading"
-                  ? (
-                    <DeleteOutlined
-                      onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                      title={t(p("cancelUpload"))}
-                    />
-                  )
-                  : <DeleteOutlined title={t(p("deleteUploadRecords"))} />
+              return file.status === "uploading" ? (
+                <DeleteOutlined
+                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                  title={t(p("cancelUpload"))}
+                />
+              ) : (
+                <DeleteOutlined title={t(p("deleteUploadRecords"))} />
               );
             },
           }}
           onChange={({ file, fileList }) => {
-
             const updatedFileList = [...fileList.filter((f) => f.status)];
             setUploadFileList(updatedFileList);
 
@@ -313,7 +327,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             }
 
             return new Promise((resolve, reject) => {
-
               api.fileExist({ query: { cluster: cluster, path: join(path, file.name) } }).then(({ result }) => {
                 if (result) {
                   modal.confirm({
@@ -321,28 +334,29 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
                     content: t(p("existedModalContent"), [file.name]),
                     okText: t(p("existedModalOk")),
                     onOk: async () => {
-                      const fileType = await api.getFileType({ query: { cluster: cluster, path: join(path, file.name) } });
+                      const fileType = await api.getFileType({
+                        query: { cluster: cluster, path: join(path, file.name) },
+                      });
                       const deleteOperation = fileType.type === "dir" ? api.deleteDir : api.deleteFile;
-                      await deleteOperation({ query: { cluster: cluster, path: join(path, file.name) } })
-                        .then(() => resolve(file));
+                      await deleteOperation({ query: { cluster: cluster, path: join(path, file.name) } }).then(() =>
+                        resolve(file),
+                      );
                     },
                     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-                    onCancel: () => { reject(file); },
+                    onCancel: () => {
+                      reject(file);
+                    },
                   });
                 } else {
                   resolve(file);
                 }
-
               });
-
-
             });
           }}
           fileList={uploadFileList}
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("checking"))
-              : speed?.speedText ?? "0 B/s";
+            const extraInfo = file.percent && file.percent === 100 ? t(p("checking")) : (speed?.speedText ?? "0 B/s");
             return (
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
@@ -351,7 +365,9 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
                 {scowdEnabled && (
                   <PercentAndSpeedContainer>
                     {file.status === "uploading" && (
-                      <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                      <span>
+                        {file.percent} % &nbsp;&nbsp; {extraInfo}
+                      </span>
                     )}
                   </PercentAndSpeedContainer>
                 )}
@@ -363,9 +379,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">{t(p("dragText"))}</p>
-          <p className="ant-upload-hint">
-            {t(p("hintText"))}
-          </p>
+          <p className="ant-upload-hint">{t(p("hintText"))}</p>
         </Upload.Dragger>
       </div>
     </Modal>

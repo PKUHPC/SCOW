@@ -1,7 +1,4 @@
-import type {
-  ImageSourceKey,
-  ResourceFormValues as BaseResourceFormValues,
-} from "../LaunchJobForm.types";
+import type { ImageSourceKey, ResourceFormValues as BaseResourceFormValues } from "../LaunchJobForm.types";
 
 export type InferImageSourceKey = Exclude<ImageSourceKey, "preset">;
 export interface ResourceFormValues extends BaseResourceFormValues {

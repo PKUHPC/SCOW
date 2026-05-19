@@ -14,9 +14,12 @@ import { Encoding } from "src/models/exportFile";
 import {
   getOperationDetail,
   getOperationResultTexts,
-  getOperationTypeTexts, OperationLog,
+  getOperationTypeTexts,
+  OperationLog,
   OperationLogQueryType,
-  OperationResult, OperationSortBy, OperationSortOrder,
+  OperationResult,
+  OperationSortBy,
+  OperationSortOrder,
 } from "src/models/operationLog";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
@@ -26,13 +29,14 @@ import { styled } from "styled-components";
 
 const WordBreakText = styled.div`
   word-wrap: break-word;
-  word-break: break-all;`;
+  word-break: break-all;
+`;
 
 interface FilterForm {
   operatorUserId?: string;
   operationType?: string;
-  customEventType?: string
-  operationTime?: [dayjs.Dayjs, dayjs.Dayjs],
+  customEventType?: string;
+  operationTime?: [dayjs.Dayjs, dayjs.Dayjs];
   operationResult?: OperationResult;
   operationDetail?: string; // 这里是将用户、作业ID等视为操作对象；表格中的操作对象是上述操作对象的和
 }
@@ -45,7 +49,7 @@ interface PageInfo {
 interface Props {
   user: User;
   queryType: OperationLogQueryType;
-  accountName?: string
+  accountName?: string;
   tenantName?: string;
 }
 
@@ -60,7 +64,6 @@ const p = prefix("component.others.");
 const pCommon = prefix("common.");
 
 export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountName, tenantName }) => {
-
   const t = useI18nTranslateToString();
   const tArgs = useI18nTranslate();
   const languageId = useI18n().currentLanguage.id;
@@ -148,8 +151,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
     return [...standardTypeOptions, ...customTypeOptions];
   }, [languageId, customEventTypes, customEventTypesLoading]);
 
-
-
   const getformatData = (results: OperationLog[] | undefined) => {
     if (!results) {
       return [];
@@ -205,7 +206,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
         },
       });
     }
-
   };
 
   const exportOptions = useMemo(() => {
@@ -219,7 +219,6 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
     ];
   }, [t]);
 
-
   return (
     <div>
       <FilterFormContainer>
@@ -228,8 +227,8 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           layout="inline"
           initialValues={query}
           onFinish={async () => {
-            const { operationType, operatorUserId,
-              operationResult, operationTime, operationDetail } = await form.validateFields();
+            const { operationType, operatorUserId, operationResult, operationTime, operationDetail } =
+              await form.validateFields();
 
             let customEventType: string | undefined;
             let formatOperationType: string | undefined;
@@ -242,8 +241,12 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
             }
 
             setQuery({
-              operationType: formatOperationType, operatorUserId, operationResult,
-              operationTime, operationDetail, customEventType,
+              operationType: formatOperationType,
+              operatorUserId,
+              operationResult,
+              operationTime,
+              operationDetail,
+              customEventType,
             });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
           }}
@@ -251,22 +254,17 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           <Form.Item label={t(p("operationType"))} name="operationType">
             <Select
               showSearch
-              options={
-                operationTypes
-              }
-              filterOption={(input, option) =>
-                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-              }
+              options={operationTypes}
+              filterOption={(input, option) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase())}
               allowClear
               style={{ width: 180 }}
             />
           </Form.Item>
           <Form.Item label={t(p("operationResult"))} name="operationResult">
             <Select
-              options={
-                Object.keys(OperationResultTexts)
-                  .filter((key) => key !== OperationResult.UNKNOWN.toString())
-                  .map((key) => ({ value: key, label: OperationResultTexts[key] }))}
+              options={Object.keys(OperationResultTexts)
+                .filter((key) => key !== OperationResult.UNKNOWN.toString())
+                .map((key) => ({ value: key, label: OperationResultTexts[key] }))}
               allowClear
               style={{ width: 80 }}
             />
@@ -277,23 +275,18 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
             </Form.Item>
           )}
           <Form.Item label={t(p("operationDetail"))} name="operationDetail">
-            <Input
-              placeholder={t(p("keywordsPlaceholder"))}
-              style={{ width: 180 }}
-            />
+            <Input placeholder={t(p("keywordsPlaceholder"))} style={{ width: 180 }} />
           </Form.Item>
           <Form.Item label={t(p("operationTime"))} name="operationTime">
             <DatePicker.RangePicker showTime allowClear={false} presets={getDefaultPresets(languageId)} />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
           <Form.Item>
-            <ExportFileModaLButton
-              onExport={handleExport}
-            >
-              {t(pCommon("export"))}
-            </ExportFileModaLButton>
+            <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
           </Form.Item>
         </Form>
       </FilterFormContainer>
@@ -310,11 +303,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
           onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
         }}
       >
-        <Table.Column<OperationLog>
-          dataIndex="operationLogId"
-          title="ID"
-          sorter={true}
-        />
+        <Table.Column<OperationLog> dataIndex="operationLogId" title="ID" sorter={true} />
         <Table.Column<OperationLog>
           dataIndex="operationTime"
           title={t(p("operationTime"))}
@@ -328,22 +317,19 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
             return r.operationEvent.$case === "customEvent"
               ? getI18nCurrentText(r.operationEvent.customEvent.name, languageId)
               : OperationTypeTexts[operationType];
-          }
-          }
+          }}
         />
         <Table.Column<OperationLog>
           dataIndex="operatorUserId"
           title={t(p("operatorUser"))}
-          render={(_, r) => (`${r.operatorUserName} (ID: ${r.operatorUserId})`)}
+          render={(_, r) => `${r.operatorUserName} (ID: ${r.operatorUserId})`}
           sorter={true}
         />
         <Table.Column
           dataIndex="operationDetail"
           title={t(p("operationDetail"))}
           width="30%"
-          render={(operationDetail) => (
-            <WordBreakText>{operationDetail}</WordBreakText>
-          )}
+          render={(operationDetail) => <WordBreakText>{operationDetail}</WordBreakText>}
         />
         <Table.Column<OperationLog>
           dataIndex="operationResult"
@@ -354,9 +340,7 @@ export const OperationLogTable: React.FC<Props> = ({ user, queryType, accountNam
         <Table.Column<OperationLog>
           dataIndex="operatorIp"
           title={t(p("operatorIp"))}
-          render={(operatorIp) => (
-            <WordBreakText>{operatorIp}</WordBreakText>
-          )}
+          render={(operatorIp) => <WordBreakText>{operatorIp}</WordBreakText>}
           sorter={true}
         />
       </Table>

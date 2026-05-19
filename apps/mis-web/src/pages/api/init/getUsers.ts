@@ -21,15 +21,17 @@ export const InitGetUsersSchema = typeboxRouteSchema({
 });
 
 export default route(InitGetUsersSchema, async () => {
-
   const result = await queryIfInitialized();
 
-  if (result) { return { 409: { code: "ALREADY_INITIALIZED" as const } }; }
+  if (result) {
+    return { 409: { code: "ALREADY_INITIALIZED" as const } };
+  }
 
   const client = getClient(UserServiceClient);
 
   const reply = await asyncClientCall(client, "getUsers", {
-    tenantName: DEFAULT_TENANT_NAME, userIds: [],
+    tenantName: DEFAULT_TENANT_NAME,
+    userIds: [],
   });
 
   return {
@@ -37,5 +39,4 @@ export default route(InitGetUsersSchema, async () => {
       users: reply.users,
     },
   };
-
 });

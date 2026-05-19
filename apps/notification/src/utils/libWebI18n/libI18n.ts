@@ -28,13 +28,6 @@ export const optionalLanguages: Record<string, DeepPartial<LibWebTextsType>> = {
   ru: libWebRu,
 };
 
-export const getCurrentLangLibWebText = (
-  languageId: string,
-  key: LibWebTextsKeys,
-): string | undefined => {
-  return optionalLanguages[languageId]?.[key]
-    ?? libWebLanguages[languageId]?.[key];
+export const getCurrentLangLibWebText = (languageId: string, key: LibWebTextsKeys): string | undefined => {
+  return optionalLanguages[languageId]?.[key] ?? libWebLanguages[languageId]?.[key];
 };
-
-
-

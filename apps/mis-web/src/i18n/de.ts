@@ -12,13 +12,13 @@ export default {
     operation: "Aktion",
     tenant: "Mandant",
     tenantName: "Mandant",
-    tenantFullName:"Mandant",
+    tenantFullName: "Mandant",
     tenantRole: "Mandantenrolle",
     user: "Benutzer",
     userId: "Benutzer-ID",
-    ownerIdOrName:"Hauptadministrator-ID oder Name",
+    ownerIdOrName: "Hauptadministrator-ID oder Name",
     userName: "Benutzername",
-    userFullName:"Name",
+    userFullName: "Name",
     import: "Importieren",
     fresh: "Aktualisieren",
     account: "Konto",
@@ -30,7 +30,7 @@ export default {
     amount: "Betrag",
     unit: "CNY",
     comment: "Kommentar",
-    expirationTime:"Ablaufzeit",
+    expirationTime: "Ablaufzeit",
     submit: "Senden",
     time: "Zeit",
     type: "Typ",
@@ -44,7 +44,7 @@ export default {
     modify: "Bearbeiten",
     cancel: "Abbrechen",
     cluster: "Cluster",
-    clusterName:"Clustername",
+    clusterName: "Clustername",
     workId: "Job-ID",
     minute: "Minuten",
     name: "Name",
@@ -61,7 +61,7 @@ export default {
     reason: "Grund",
     timeUsed: "Ausführungszeit des Jobs",
     timeWait: "Wartezeit des Jobs",
-    lastUpdated:"Zuletzt aktualisiert",
+    lastUpdated: "Zuletzt aktualisiert",
     more: "Mehr",
     detail: "Details",
     price: "Gebühr",
@@ -105,19 +105,22 @@ export default {
       day: "TAG",
     },
     export: "Exportieren",
-    exportMaxDataErrorMsg: "Zu viele Details zum Exportieren, maximal {} können exportiert werden. Bitte erneut auswählen!",
+    exportMaxDataErrorMsg:
+      "Zu viele Details zum Exportieren, maximal {} können exportiert werden. Bitte erneut auswählen!",
     exportNoDataErrorMsg: "Export ist leer, bitte erneut auswählen",
     blockThresholdAmount: "Sperrschwellenbetrag",
     other: "Andere",
-    noAvailableClusters: "Derzeit sind keine Cluster verfügbar."
-    + " Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator.",
+    noAvailableClusters:
+      "Derzeit sind keine Cluster verfügbar." +
+      " Bitte versuchen Sie es später erneut oder kontaktieren Sie den Administrator.",
     serialNumber: "Laufnummer",
     phone: "Telefon",
     organization: "Organisation",
     adjustBill: "Abrechnung des Mandanten anpassen",
     failedGetTenantAssignedClustersAndPartitions: "Abrufen der autorisierten Cluster-Partitionen fehlgeschlagen",
-    accountUserSyncRunning: "Konto-/Benutzerinformationen werden derzeit synchronisiert. Bitte warten Sie, bis die "
-    + "Synchronisierung abgeschlossen ist, bevor Sie es erneut versuchen.",
+    accountUserSyncRunning:
+      "Konto-/Benutzerinformationen werden derzeit synchronisiert. Bitte warten Sie, bis die " +
+      "Synchronisierung abgeschlossen ist, bevor Sie es erneut versuchen.",
     finalError: "Anfrage fehlgeschlagen, bitte später erneut versuchen",
     edit: "Bearbeiten",
     idOrName: "Benutzer-ID/Name",
@@ -141,7 +144,7 @@ export default {
       state: "Status",
       balance: "Verfügbares Guthaben",
       alert: "Sie gehören zu keinem Konto.",
-      unlimited:"Unbegrenzt",
+      unlimited: "Unbegrenzt",
     },
     job: {
       title: "Liste laufender Jobs",
@@ -262,40 +265,45 @@ export default {
         blockedAccount: "Gesperrt ",
         frozenAccount: "Eingefroren ",
         normalAccount: "Verfügbar ",
-        deletedAccount:"Gelöscht",
+        deletedAccount: "Gelöscht",
         account: "Konto",
         accountName: "Kontoname",
         owner: "Hauptadministrator",
         ownerIdOrName: "Hauptadministrator-ID oder Name",
         tenant: "Mandant",
         blockThresholdAmount: "Sperrschwelle",
-        blockThresholdAmountTooltip: "Das Konto wird gesperrt "
-        + "wenn das Guthaben geringer ist als die Sperrschwelle.",
+        blockThresholdAmountTooltip:
+          "Das Konto wird gesperrt " + "wenn das Guthaben geringer ist als die Sperrschwelle.",
         comment: "Kommentar",
-        expirationTime:"Ablaufzeit",
+        expirationTime: "Ablaufzeit",
         status: "Status",
         statusTooltip: "Status:",
-        statusFrozenTooltip: "Eingefroren: Das Konto wurde vom Kontoadministrator "
-        + "eingefroren und kann keine Jobs über dieses Konto einreichen.",
-        statusBlockedTooltip: "Gesperrt: Das Konto wurde vom Mandantenadministrator oder "
-        + "Plattformadministrator gesperrt und kann keine Jobs über dieses Konto einreichen.",
-        statusDebtTooltip: "Schulden: Das Kontoguthaben ist kleiner oder gleich der Sperrschwelle, "
-        + "und über dieses Konto können keine Jobs eingereicht werden.",
-        statusNormalTooltip: "Verfügbar: Der Kontostatus ist weder gesperrt noch eingefroren und das Konto "
-        + "Guthaben ist größer als die Sperrschwelle; oder das Konto befindet sich bereits in der Whitelist.",
+        statusFrozenTooltip:
+          "Eingefroren: Das Konto wurde vom Kontoadministrator " +
+          "eingefroren und kann keine Jobs über dieses Konto einreichen.",
+        statusBlockedTooltip:
+          "Gesperrt: Das Konto wurde vom Mandantenadministrator oder " +
+          "Plattformadministrator gesperrt und kann keine Jobs über dieses Konto einreichen.",
+        statusDebtTooltip:
+          "Schulden: Das Kontoguthaben ist kleiner oder gleich der Sperrschwelle, " +
+          "und über dieses Konto können keine Jobs eingereicht werden.",
+        statusNormalTooltip:
+          "Verfügbar: Der Kontostatus ist weder gesperrt noch eingefroren und das Konto " +
+          "Guthaben ist größer als die Sperrschwelle; oder das Konto befindet sich bereits in der Whitelist.",
         mangerMember: "Mitglieder verwalten",
         blocked: "Gesperrt",
-        frozen:"Eingefroren",
+        frozen: "Eingefroren",
         debt: "Schulden",
         normal: "Verfügbar",
-        deleted:"Gelöscht",
+        deleted: "Gelöscht",
         unit: "CNY",
         unblockConfirmTitle: "Entsperrung des Benutzers bestätigen?",
         unblockConfirmContent: "Möchten Sie das Konto {1} im Mandanten {0} entsperren?",
         unblockSuccess: "Konto erfolgreich entsperrt!",
         unblockFail: "Entsperren des Kontos fehlgeschlagen!",
-        unblockError: "Konto {} hat unzureichendes Guthaben. "
-        + "Sie können es zur Whitelist hinzufügen oder durch Aufladen entsperren.",
+        unblockError:
+          "Konto {} hat unzureichendes Guthaben. " +
+          "Sie können es zur Whitelist hinzufügen oder durch Aufladen entsperren.",
         block: "Sperren",
         unblock: "Entsperren",
         blockConfirmTitle: "Kontosperre bestätigen?",
@@ -303,21 +311,21 @@ export default {
         blockSuccess: "Konto erfolgreich gesperrt!",
         blockFail: "Kontosperre fehlgeschlagen!",
 
-        delete:"Löschen",
+        delete: "Löschen",
         deleteSuccess: "Konto erfolgreich gelöscht!",
         deleteFail: "Konto konnte nicht gelöscht werden. Bitte wenden Sie sich an den Administrator.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "Erfolgreich festgelegt",
         setFail: "Festlegen fehlgeschlagen",
-        setAmount:"Sperrschwelle festlegen",
+        setAmount: "Sperrschwelle festlegen",
         blockThresholdAmount: "Sperrschwelle",
         defaultBlockThresholdAmount: "Standard-Sperrschwellenbetrag",
         curBlockThresholdAmount: "Aktuelle Sperrschwelle: ",
         curDefaultBlockThresholdAmount: "Aktuelle Standard-Sperrschwelle des Mandanten",
         useDefaultBlockThresholdAmount: "Standard-Sperrschwelle des Mandanten verwenden",
         confirmUseDefaultBlockThresholdAmount:
-        "Sind Sie sicher, die Standard-Sperrschwelle des Mandanten zu verwenden?",
+          "Sind Sie sicher, die Standard-Sperrschwelle des Mandanten zu verwenden?",
       },
     },
     admin: {
@@ -367,11 +375,13 @@ export default {
         userType: "Benutzertyp",
         newUser: "Neuer Benutzer",
         existingUser: "Bestehender Benutzer",
-        createTenantByExistUserWarningInfo: "Nach erfolgreicher Erstellung wird der Benutzer automatisch aus dem ursprünglichen Mandanten entfernt"
-        + "und diesem Mandanten hinzugefügt. "
-        + "Bitte stellen Sie sicher, dass der Benutzer keine verknüpften Konten hat und nicht der Mandantenadministrator"
-        + "oder das Finanzpersonal des ursprünglichen Mandanten ist",
-        createTenantByNewUserWarningInfo:"Nach erfolgreicher Erstellung tritt der Benutzer automatisch diesem Mandanten bei",
+        createTenantByExistUserWarningInfo:
+          "Nach erfolgreicher Erstellung wird der Benutzer automatisch aus dem ursprünglichen Mandanten entfernt" +
+          "und diesem Mandanten hinzugefügt. " +
+          "Bitte stellen Sie sicher, dass der Benutzer keine verknüpften Konten hat und nicht der Mandantenadministrator" +
+          "oder das Finanzpersonal des ursprünglichen Mandanten ist",
+        createTenantByNewUserWarningInfo:
+          "Nach erfolgreicher Erstellung tritt der Benutzer automatisch diesem Mandanten bei",
       },
       ImportUsersTable: {
         selectAccount: "Bitte wählen Sie ein Konto!",
@@ -413,8 +423,9 @@ export default {
         userStillMaintainsAccountRelationship: "Benutzer hat weiterhin Kontobeziehungen",
         userStillMaintainsTenantRoles: "Benutzer hat weiterhin Mandantenrollen",
         userAlreadyExistInThisTenant: "Benutzer existiert bereits in diesem Mandanten",
-        createTenantWarningInfo: "Bitte sicherstellen, dass der Benutzer keine verknüpften Konten hat "
-        + "und nicht der Mandantenadministrator oder das Finanzpersonal des ursprünglichen Mandanten ist",
+        createTenantWarningInfo:
+          "Bitte sicherstellen, dass der Benutzer keine verknüpften Konten hat " +
+          "und nicht der Mandantenadministrator oder das Finanzpersonal des ursprünglichen Mandanten ist",
       },
     },
     commonComponent: {
@@ -431,7 +442,7 @@ export default {
         paymentAmount: "Aufladebetrag",
         ipAddress: "IP-Adresse",
         operatorId: "Operator-ID",
-        searchTypePlaceholder:"Mehrere, bitte mit Kommas trennen",
+        searchTypePlaceholder: "Mehrere, bitte mit Kommas trennen",
       },
       billTable: {
         statisticalCycle: "Statistikzeitraum",
@@ -489,13 +500,16 @@ export default {
             },
             unauthorize: {
               title: "Bestätigung zum Widerruf der Autorisierung",
-              tenantContent: "Sind Sie sicher, die Autorisierung der Anwendung {1} "
-              + "im Cluster {0} für den Mandanten {2} zu widerrufen?",
-              accountContent: "Sind Sie sicher, die Autorisierung der Anwendung {1} "
-              + "im Cluster {0} für das Konto {2} zu widerrufen?",
-              tenantWarning: "Nach dem Widerruf, falls es sich um eine standardmäßig autorisierte Anwendung handelt, "
-              + "wird sie synchronisiert und entfernt. Alle Konten unter diesem Mandanten werden synchron "
-              + "die Autorisierung für diese Anwendung aufheben.",
+              tenantContent:
+                "Sind Sie sicher, die Autorisierung der Anwendung {1} " +
+                "im Cluster {0} für den Mandanten {2} zu widerrufen?",
+              accountContent:
+                "Sind Sie sicher, die Autorisierung der Anwendung {1} " +
+                "im Cluster {0} für das Konto {2} zu widerrufen?",
+              tenantWarning:
+                "Nach dem Widerruf, falls es sich um eine standardmäßig autorisierte Anwendung handelt, " +
+                "wird sie synchronisiert und entfernt. Alle Konten unter diesem Mandanten werden synchron " +
+                "die Autorisierung für diese Anwendung aufheben.",
             },
           },
           messages: {
@@ -527,13 +541,13 @@ export default {
         charging: "Laden...",
         notFound: "Konto nicht gefunden.",
         chargeFinished: "Aufladung abgeschlossen!",
-        deleted:"Konto wurde gelöscht",
+        deleted: "Konto wurde gelöscht",
         financePayFailed: "Aufladung fehlgeschlagen",
       },
       chargeTable: {
         time: "Abzugsdatum",
         amount: "Abzugsbetrag",
-        ownerIdOrName:"Hauptadministrator-ID oder Name",
+        ownerIdOrName: "Hauptadministrator-ID oder Name",
       },
     },
     init: {
@@ -542,52 +556,62 @@ export default {
         cannotAdd: "Benutzer existiert bereits in SCOW und kann nicht erneut hinzugefügt werden.",
         notExist: "Benutzer existiert nicht im Authentifizierungssystem.",
         confirm: "Benutzer existiert nicht. Bitte bestätigen Sie, ob die Benutzer-ID korrekt ist.",
-        existText: "Der Benutzer existiert bereits im Authentifizierungssystem. Das hier eingegebene Passwort "
-        + "wird nicht verwendet; das Passwort des neuen Benutzers ist das aktuelle Passwort im "
-        + "Authentifizierungssystem. Als initialen Administrator hinzufügen?",
-        notExistText: "Benutzer existiert nicht im Authentifizierungssystem. Bestätigen Sie die Erstellung dieses Benutzers "
-        + "und das Hinzufügen als initialen Administrator?",
-        cannotConfirmText1: "Es kann nicht bestätigt werden, ob der Benutzer im Authentifizierungssystem existiert. "
-        + "Es wird versucht, den Benutzer im Authentifizierungssystem zu erstellen. "
-        + "Falls der Benutzer bereits existiert, wird das hier eingegebene Passwort nicht verwendet; "
-        + "das Passwort des neuen Benutzers ist das aktuelle Passwort im Authentifizierungssystem. ",
-        cannotConfirmText2: "Es kann nicht bestätigt werden, ob der Benutzer im Authentifizierungssystem existiert, "
-        + "und das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung. "
-        + "Bitte bestätigen Sie, dass der Benutzer bereits im Authentifizierungssystem existiert. "
-        + "Die Bestätigung fügt den Benutzer direkt in die Datenbank ein, und das hier eingegebene Passwort "
-        + "wird nicht verwendet; das Passwort des neuen Benutzers ist das aktuelle Passwort im Authentifizierungssystem. ",
+        existText:
+          "Der Benutzer existiert bereits im Authentifizierungssystem. Das hier eingegebene Passwort " +
+          "wird nicht verwendet; das Passwort des neuen Benutzers ist das aktuelle Passwort im " +
+          "Authentifizierungssystem. Als initialen Administrator hinzufügen?",
+        notExistText:
+          "Benutzer existiert nicht im Authentifizierungssystem. Bestätigen Sie die Erstellung dieses Benutzers " +
+          "und das Hinzufügen als initialen Administrator?",
+        cannotConfirmText1:
+          "Es kann nicht bestätigt werden, ob der Benutzer im Authentifizierungssystem existiert. " +
+          "Es wird versucht, den Benutzer im Authentifizierungssystem zu erstellen. " +
+          "Falls der Benutzer bereits existiert, wird das hier eingegebene Passwort nicht verwendet; " +
+          "das Passwort des neuen Benutzers ist das aktuelle Passwort im Authentifizierungssystem. ",
+        cannotConfirmText2:
+          "Es kann nicht bestätigt werden, ob der Benutzer im Authentifizierungssystem existiert, " +
+          "und das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung. " +
+          "Bitte bestätigen Sie, dass der Benutzer bereits im Authentifizierungssystem existiert. " +
+          "Die Bestätigung fügt den Benutzer direkt in die Datenbank ein, und das hier eingegebene Passwort " +
+          "wird nicht verwendet; das Passwort des neuen Benutzers ist das aktuelle Passwort im Authentifizierungssystem. ",
         addFail: "Hinzufügen fehlgeschlagen.",
         userExist: "Dieser Benutzer existiert in der SCOW-Datenbank.",
         addSuccess: "Erfolgreich hinzugefügt.",
-        addDb: "Dieser Benutzer existiert im Authentifizierungssystem und wurde erfolgreich zur SCOW-Datenbank hinzugefügt. ",
+        addDb:
+          "Dieser Benutzer existiert im Authentifizierungssystem und wurde erfolgreich zur SCOW-Datenbank hinzugefügt. ",
         addFinish: "Hinzufügen abgeschlossen!",
         createFail: "Benutzererstellung fehlgeschlagen.",
         initAdmin: "Hier können Sie einen initialen Administrator erstellen. ",
-        addAdmin: "Die hier hinzugefügten Benutzer sind initiale Administratoren, befinden sich im Standardmandanten "
-        + "und erhalten automatisch die Rollen Plattformadministrator und Standardmandanten-Administrator. ",
+        addAdmin:
+          "Die hier hinzugefügten Benutzer sind initiale Administratoren, befinden sich im Standardmandanten " +
+          "und erhalten automatisch die Rollen Plattformadministrator und Standardmandanten-Administrator. ",
         platFormAdmin: "Plattformadministrator ",
         and: " und ",
         defaultTenant: "Standardmandanten-Administrator ",
-        createText1: "Das aktuelle Authentifizierungssystem unterstützt die Benutzererstellung."
-        + " Sie können einen bestehenden "
-        + "Benutzer aus dem Authentifizierungssystem hinzufügen oder einen komplett neuen Benutzer erstellen. "
-        + "Das System wird diesen Benutzer im Authentifizierungssystem anlegen.",
-        createText2: "Das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung."
-        + " Bitte bestätigen Sie, "
-        + "dass der hinzuzufügende Benutzer bereits im Authentifizierungssystem existiert und die Benutzer-ID "
-        + "mit der Benutzer-ID im Authentifizierungssystem übereinstimmt.",
+        createText1:
+          "Das aktuelle Authentifizierungssystem unterstützt die Benutzererstellung." +
+          " Sie können einen bestehenden " +
+          "Benutzer aus dem Authentifizierungssystem hinzufügen oder einen komplett neuen Benutzer erstellen. " +
+          "Das System wird diesen Benutzer im Authentifizierungssystem anlegen.",
+        createText2:
+          "Das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung." +
+          " Bitte bestätigen Sie, " +
+          "dass der hinzuzufügende Benutzer bereits im Authentifizierungssystem existiert und die Benutzer-ID " +
+          "mit der Benutzer-ID im Authentifizierungssystem übereinstimmt.",
       },
       initImportUsersTable: {
         importUser: "Hier können Sie bestehende Benutzer importieren. Siehe ",
         document: "Dokumentation ",
         learn: "um das Systembenutzermodell und den Import von Benutzerinformationen zu verstehen.",
-        useMore: "Wenn Sie SCOW zur Verwaltung mehrerer Cluster verwenden, verlangt SCOW, dass mehrere "
-        + "Cluster identische Benutzerkontoinformationen haben. Sie müssen die Benutzerinformationen nur "
-        + "aus einem Cluster importieren.",
+        useMore:
+          "Wenn Sie SCOW zur Verwaltung mehrerer Cluster verwenden, verlangt SCOW, dass mehrere " +
+          "Cluster identische Benutzerkontoinformationen haben. Sie müssen die Benutzerinformationen nur " +
+          "aus einem Cluster importieren.",
       },
       initJobBillingTable: {
-        set: "Hier können Sie die standardmäßige Job-Preistabelle festlegen."
-        + " Sie müssen für alle Einträge Preise setzen, um die Initialisierung abzuschließen.",
+        set:
+          "Hier können Sie die standardmäßige Job-Preistabelle festlegen." +
+          " Sie müssen für alle Einträge Preise setzen, um die Initialisierung abzuschließen.",
       },
       initLayout: {
         importUser: "Benutzer importieren",
@@ -597,7 +621,8 @@ export default {
         Incomplete: "Unvollständige Preistabelle",
         set: "Bitte setzen Sie für jeden Job-Abrechnungseintrag einen Preis, bevor Sie die Initialisierung abschließen.",
         confirm: "Abschluss der Initialisierung bestätigen",
-        confirmText: "Nach Abschluss der Initialisierung können Sie nicht zu dieser Seite zurückkehren, um erneut zu initialisieren.",
+        confirmText:
+          "Nach Abschluss der Initialisierung können Sie nicht zu dieser Seite zurückkehren, um erneut zu initialisieren.",
         finish: "Initialisierung abgeschlossen!",
         goLogin: "Zum Login bestätigen",
         init: "Systeminitialisierung",
@@ -607,8 +632,9 @@ export default {
         platformRole: "Plattformrolle",
         tenantRole: "Mandantenrolle",
         accountAffiliation: "Zugehöriges Konto",
-        defaultTenant: "Sie können hier Benutzer und Konten unter dem Standardmandanten des"
-        + " aktuellen Systems verwalten und einen Benutzer als ",
+        defaultTenant:
+          "Sie können hier Benutzer und Konten unter dem Standardmandanten des" +
+          " aktuellen Systems verwalten und einen Benutzer als ",
         initAdmin: "Initialen Administrator",
         set: " festlegen, der sowohl als Mandantenadministrator als auch als Plattformadministrator dient.",
         idOrName: "Benutzer-ID oder Name",
@@ -686,8 +712,9 @@ export default {
         notExpanded: "Historische Abrechnungselemente ausblenden",
         expanded: "Historische Abrechnungselemente anzeigen",
         priceItem: "Abrechnungselement",
-        text: "Ein Cluster, eine Partition und QOS bilden gemeinsam ein Abrechnungselement. Für Abrechnungselemente "
-        + "können Abrechnungsmethoden und Preise festgelegt werden.",
+        text:
+          "Ein Cluster, eine Partition und QOS bilden gemeinsam ein Abrechnungselement. Für Abrechnungselemente " +
+          "können Abrechnungsmethoden und Preise festgelegt werden.",
         executing: "Wird ausgeführt",
         unset: "Nicht festgelegt",
         alreadyUsed: "Diese ID wird bereits verwendet!",
@@ -745,8 +772,8 @@ export default {
       oldPassword: "Altes Passwort",
       newPassword: "Neues Passwort",
       confirmPassword: "Passwort bestätigen",
-      userNotExist:"Der Benutzer existiert nicht oder wurde gelöscht",
-      unavailable:"Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
+      userNotExist: "Der Benutzer existiert nicht oder wurde gelöscht",
+      unavailable: "Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
     },
     tenant: {
       accountWhitelistTable: {
@@ -760,18 +787,18 @@ export default {
         confirmRemoveWhiteText2: " aus der Whitelist bestätigen?",
         removeWhiteSuccess: "Erfolgreich aus der Whitelist entfernt!",
         removeWhite: "Aus Whitelist entfernen",
-        expirationTime:"Ablaufzeit",
+        expirationTime: "Ablaufzeit",
       },
       addWhitelistedAccountButton: {
         notExist: "Konto existiert nicht!",
         addSuccess: "Erfolgreich hinzugefügt!",
         addWhiteList: "Konto zur Whitelist hinzufügen",
-        expirationTime:"Ablaufzeit",
-        custom:"Benutzerdefiniert",
-        oneWeek:"Eine Woche",
-        oneMonth:"Ein Monat",
-        oneYear:"Ein Jahr",
-        permanent:"Dauerhaft",
+        expirationTime: "Ablaufzeit",
+        custom: "Benutzerdefiniert",
+        oneWeek: "Eine Woche",
+        oneMonth: "Ein Monat",
+        oneYear: "Ein Jahr",
+        permanent: "Dauerhaft",
       },
       adminJobTable: {
         batch: "Stapel-Suche",
@@ -786,7 +813,7 @@ export default {
         jobNumber: "Anzahl der Jobs: ",
         tenantPriceSum: "Summe Mandantenabrechnung: ",
         platformPriceSum: "Summe Plattformabrechnung: ",
-        searchTypePlaceholder:"Mehrere IDs bitte durch Kommas trennen",
+        searchTypePlaceholder: "Mehrere IDs bitte durch Kommas trennen",
         onlyNumbersAndCommas: "Nur Zahlen und Kommas sind erlaubt",
       },
       adminUserTable: {
@@ -794,7 +821,7 @@ export default {
         tenantAdmin: "Mandantenadministrator",
         tenantFinance: "Finanzmitarbeiter",
         idOrName: "Benutzer-ID oder Name",
-        name:"Name",
+        name: "Name",
         tenantRole: "Mandantenrolle",
         affiliatedAccountName: "Zugehörige Konten",
         notExist: "Benutzer existiert nicht",
@@ -803,7 +830,7 @@ export default {
         changeSuccess: "Änderung erfolgreich",
         changeFail: "Änderung fehlgeschlagen",
         changePassword: "Passwort ändern",
-        delete:"Löschen",
+        delete: "Löschen",
         deleteFail: "Löschen fehlgeschlagen. Bitte wenden Sie sich an den Administrator.",
         deleteSuccess: "Löschen erfolgreich",
         featureUnavailable: "Diese Funktion ist vorübergehend nicht verfügbar",
@@ -822,10 +849,11 @@ export default {
         modifyButton: "Ändern ",
         currentPrice: "Aktuelle Mandantenabrechnung für den Job",
         job: "Jobs",
-        annotation:"Wenn der neue Abrechnungsbetrag den aktuellen Betrag übersteigt, "
-        + "wird die Differenz abgezogen und kann in den Verbrauchsaufzeichnungen des Kontos eingesehen werden;"
-        + "wenn der neue Abrechnungsbetrag geringer ist als der aktuelle Betrag, "
-        + "wird die Differenz erstattet und kann in den Aufladeaufzeichnungen des Kontos eingesehen werden.",
+        annotation:
+          "Wenn der neue Abrechnungsbetrag den aktuellen Betrag übersteigt, " +
+          "wird die Differenz abgezogen und kann in den Verbrauchsaufzeichnungen des Kontos eingesehen werden;" +
+          "wenn der neue Abrechnungsbetrag geringer ist als der aktuelle Betrag, " +
+          "wird die Differenz erstattet und kann in den Aufladeaufzeichnungen des Kontos eingesehen werden.",
       },
       tenantSelector: {
         fresh: "Mandantenliste aktualisieren",
@@ -840,10 +868,12 @@ export default {
           operation: "Aktion",
           removeFromDefaultApps: {
             title: "Standardmäßig autorisierte Anwendung entfernen",
-            confirmContent: "Entfernen der Anwendung {2} aus den standardmäßig autorisierten "
-            + "Anwendungen für Mandant {0} im Cluster {1} bestätigen?",
-            confirmWarn: "Nach dem Entfernen aus den standardmäßig autorisierten Anwendungen "
-            + "heben alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron auf",
+            confirmContent:
+              "Entfernen der Anwendung {2} aus den standardmäßig autorisierten " +
+              "Anwendungen für Mandant {0} im Cluster {1} bestätigen?",
+            confirmWarn:
+              "Nach dem Entfernen aus den standardmäßig autorisierten Anwendungen " +
+              "heben alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron auf",
             removeSuccessMessage: "Aus den standardmäßig autorisierten Anwendungen entfernt",
             removeFailedMessage: "Entfernen der standardmäßig autorisierten Anwendung fehlgeschlagen",
           },
@@ -851,8 +881,9 @@ export default {
             title: "Standardmäßig autorisierte Anwendung hinzufügen",
             tenant: "Mandant",
             cluster: "Cluster",
-            modalWarn: "Nach dem Hinzufügen zu den standardmäßig autorisierten Anwendungen "
-            + "fügen alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron hinzu",
+            modalWarn:
+              "Nach dem Hinzufügen zu den standardmäßig autorisierten Anwendungen " +
+              "fügen alle Konten unter diesem Mandanten die Autorisierung für diese Anwendung synchron hinzu",
             app: "Anwendung",
             appDefaultPlaceholder: "Bitte eine Anwendung auswählen",
             noAppsPlaceholder: "Keine verfügbaren Anwendungen",
@@ -871,8 +902,8 @@ export default {
         will: "Wird in",
         createModal: "Sekunden die Benutzer-Erstellungsoberfläche öffnen",
         createFirst: "Benutzer existiert nicht. Bitte zuerst einen Benutzer erstellen",
-        blockAccount:"Benutzer wurde gesperrt. Bitte zuerst entsperren",
-        arrearsAccount:"Benutzer-Schuldenstatus konnte nicht abgerufen werden",
+        blockAccount: "Benutzer wurde gesperrt. Bitte zuerst entsperren",
+        arrearsAccount: "Benutzer-Schuldenstatus konnte nicht abgerufen werden",
         addSuccess: "Erfolgreich hinzugefügt!",
         userDeleted: "Der Benutzer wurde gelöscht und kann nicht hinzugefügt werden",
       },
@@ -891,8 +922,9 @@ export default {
       createUserModal: {
         alreadyExist: "Diese Benutzer-ID existiert bereits!",
         createUser: "Benutzer erstellen",
-        notExist: "Benutzer existiert nicht. Bitte neue Benutzerinformationen eingeben, um den Benutzer zu erstellen "
-        + "und dem Konto hinzuzufügen.",
+        notExist:
+          "Benutzer existiert nicht. Bitte neue Benutzerinformationen eingeben, um den Benutzer zu erstellen " +
+          "und dem Konto hinzuzufügen.",
         email: "Benutzer-E-Mail",
         password: "Benutzerpasswort",
         confirm: "Passwort bestätigen",
@@ -923,14 +955,17 @@ export default {
         normal: "Verfügbar",
         quotaExceeded: "Kontingent überschritten",
         statusExplanation: "Status:",
-        blockedExplanation: "Gesperrt: Der Benutzer wurde vom Kontoadministrator oder Konto-Hauptadministrator gesperrt, "
-          + "sodass dieses Konto nicht für die Jobeinreichung ausgewählt werden kann.",
-        quotaExceededExplanation: "Kontingent überschritten: Der Benutzer ist nicht gesperrt,"
-        + " aber das verwendete Kontingent ist größer als oder gleich dem Kontingentlimit des Benutzers,"
-        + " wodurch die Auswahl dieses Kontos zur Jobeinreichung verhindert wird.",
-        normalExplanation: "Verfügbar: Der Benutzer ist nicht gesperrt und das verwendete"
-        + " Kontingent ist geringer als das Kontingentlimit des Benutzers, "
-        + "was die Auswahl dieses Kontos zur Jobeinreichung ermöglicht.",
+        blockedExplanation:
+          "Gesperrt: Der Benutzer wurde vom Kontoadministrator oder Konto-Hauptadministrator gesperrt, " +
+          "sodass dieses Konto nicht für die Jobeinreichung ausgewählt werden kann.",
+        quotaExceededExplanation:
+          "Kontingent überschritten: Der Benutzer ist nicht gesperrt," +
+          " aber das verwendete Kontingent ist größer als oder gleich dem Kontingentlimit des Benutzers," +
+          " wodurch die Auswahl dieses Kontos zur Jobeinreichung verhindert wird.",
+        normalExplanation:
+          "Verfügbar: Der Benutzer ist nicht gesperrt und das verwendete" +
+          " Kontingent ist geringer als das Kontingentlimit des Benutzers, " +
+          "was die Auswahl dieses Kontos zur Jobeinreichung ermöglicht.",
         admin: "Admin",
         user: "Normaler Benutzer",
         role: "Rolle",
@@ -962,11 +997,12 @@ export default {
         confirmRemoveText: "Entfernen des Benutzers aus dem Konto bestätigen",
         removeSuccess: "Benutzer erfolgreich entfernt!",
         removerUser: "Benutzer entfernen",
-        cannotRemoverUserWhoHaveRunningJobFromAccount: "Der Benutzer hat noch einen laufenden"
-        + " Job und wurde gesperrt. Bitte warten Sie, bis der Job beendet ist,"
-        + " oder beenden Sie den Job manuell, bevor Sie den Benutzer entfernen."
-        + " Oder es läuft eine Konto-/Benutzersynchronisierung."
-        + " Bitte versuchen Sie es nach Abschluss der Synchronisierung erneut.",
+        cannotRemoverUserWhoHaveRunningJobFromAccount:
+          "Der Benutzer hat noch einen laufenden" +
+          " Job und wurde gesperrt. Bitte warten Sie, bis der Job beendet ist," +
+          " oder beenden Sie den Job manuell, bevor Sie den Benutzer entfernen." +
+          " Oder es läuft eine Konto-/Benutzersynchronisierung." +
+          " Bitte versuchen Sie es nach Abschluss der Synchronisierung erneut.",
 
         blockUserInAccountFailed: "Benutzer im Konto sperren fehlgeschlagen.",
         unblockUserInAccountFailed: "Benutzer im Konto entsperren fehlgeschlagen.",
@@ -982,7 +1018,7 @@ export default {
         createTime: "Erstellungszeit",
         detail: "Benutzerdetails",
         tenantRoles: "Mandantenrollen",
-        affiliatedAccounts:"Zugehörige Konten",
+        affiliatedAccounts: "Zugehörige Konten",
       },
       adminUserInfoDrawer: {
         id: "Benutzer-ID",
@@ -1011,9 +1047,10 @@ export default {
         operation: "Aktion",
         modifyQuota: "Kontingent ändern",
         clusterNotEnabledStorageManager: "Speicherverwaltung ist für den verfügbaren Cluster noch nicht aktiviert",
-        storageQuotaTooltip: "Das aktuelle Dateisystem hat Backupeinstellungen,"
-        + " die zusätzlichen Speicherplatz belegen, "
-        + "daher ist der tatsächlich verfügbare Speicher für den Benutzer geringer als das Speicherkontingent. ",
+        storageQuotaTooltip:
+          "Das aktuelle Dateisystem hat Backupeinstellungen," +
+          " die zusätzlichen Speicherplatz belegen, " +
+          "daher ist der tatsächlich verfügbare Speicher für den Benutzer geringer als das Speicherkontingent. ",
         syncStorage: "Jetzt aktualisieren",
         syncSuccess: "Synchronisierung erfolgreich",
         syncFailed: "Synchronisierung fehlgeschlagen",
@@ -1025,12 +1062,14 @@ export default {
         modifyDefaultQuota: "Standard-Speicherkontingent ändern",
         confirm: "Bestätigen",
         modifyUserDeulatQuotaSuccess: "Standard-Speicherkontingent des Benutzers erfolgreich geändert",
-        modifyPartialSuccess: "Standard-Speicherkontingent erfolgreich geändert;"
-        + " beim Anpassen des Kontingents für {} trat eine Ausnahme auf, …—insgesamt {} Benutzer.",
+        modifyPartialSuccess:
+          "Standard-Speicherkontingent erfolgreich geändert;" +
+          " beim Anpassen des Kontingents für {} trat eine Ausnahme auf, …—insgesamt {} Benutzer.",
         cluster: "Cluster",
-        tip: "Änderungen werden sofort wirksam. "
-          + "Das Reduzieren von Kontingenten kann dazu führen, dass Benutzer Speichergrenzen"
-          + " überschreiten und laufende Jobs keine Daten schreiben können. Bitte mit Vorsicht fortfahren",
+        tip:
+          "Änderungen werden sofort wirksam. " +
+          "Das Reduzieren von Kontingenten kann dazu führen, dass Benutzer Speichergrenzen" +
+          " überschreiten und laufende Jobs keine Daten schreiben können. Bitte mit Vorsicht fortfahren",
       },
       userQuotaChangeModal: {
         modifyStorageQuota: "Speicherkontingent ändern",
@@ -1039,8 +1078,9 @@ export default {
         modifyUserQuotaSuccess: "Speicherkontingent des Benutzers erfolgreich geändert",
         modifyUserQuotaFailed: "Ändern des Benutzerspeicherkontingents fehlgeschlagen, bitte später erneut versuchen",
         batchModifyUserQuotaSuccess: "Stapelweise Änderung des Benutzerspeicherkontingents erfolgreich",
-        batchModifyUserQuotaPartialSuccess: "Stapeländerung der Benutzerspeicherkontingente für {} Elemente erfolgreich"
-          + " und für {} Elemente fehlgeschlagen.",
+        batchModifyUserQuotaPartialSuccess:
+          "Stapeländerung der Benutzerspeicherkontingente für {} Elemente erfolgreich" +
+          " und für {} Elemente fehlgeschlagen.",
         batchModifyUserQuotaFailed: "Stapelweise Änderung des Benutzerspeicherkontingents fehlgeschlagen",
         cluster: "Cluster",
         user: "Benutzer",
@@ -1052,24 +1092,25 @@ export default {
         batchUseDefaultStorageQuota: "Standard-Speicherkontingent des Mandanten stapelweise verwenden",
         currentDefaultStorageQuota: "Aktuelles Standard-Speicherkontingent des Mandanten",
         confirmUseDefaultStorageQuota: "Standard-Speicherkontingent unter dem Mandanten verwenden bestätigen?",
-        confirmBatchUseDefaultStorageQuota: "Standard-Speicherkontingent unter dem Mandanten"
-        + " stapelweise verwenden bestätigen?",
+        confirmBatchUseDefaultStorageQuota:
+          "Standard-Speicherkontingent unter dem Mandanten" + " stapelweise verwenden bestätigen?",
         alreadyUsedDefault: "Benutzer verwendet bereits den Standardwert des Mandanten, bitte nicht wiederholt ändern",
         useDefaultValue: "Standardwert verwenden",
         setStorageQuota: "Speicherkontingent festlegen",
-        tip: "Änderungen werden sofort wirksam. " +
-          "Das Reduzieren von Kontingenten kann dazu führen,"
-          + " dass Benutzer Speichergrenzen überschreiten und laufende Jobs keine Daten schreiben können. "
-          + "Bitte mit Vorsicht fortfahren",
+        tip:
+          "Änderungen werden sofort wirksam. " +
+          "Das Reduzieren von Kontingenten kann dazu führen," +
+          " dass Benutzer Speichergrenzen überschreiten und laufende Jobs keine Daten schreiben können. " +
+          "Bitte mit Vorsicht fortfahren",
         userNotFound: "Benutzer {} existiert nicht",
       },
     },
-    quantumJob:{
-      historyJobTable:{
+    quantumJob: {
+      historyJobTable: {
         qits: "Qits",
         billing: "Abrechnung",
-        runDur:"Dauer",
-        state:"Status",
+        runDur: "Dauer",
+        state: "Status",
         device: "Ausführungsgerät",
         noAuth: "Sie haben keine Berechtigung, diese Informationen anzusehen.",
       },
@@ -1087,45 +1128,51 @@ export default {
       pageNotExist: "The page you requested does not exist.",
       serverWrong: "Server Error",
       sorry: "Sorry, there was a server error. Please refresh and try again.",
-      clusterNotAvailable: "The cluster you are currently accessing is unavailable or there are no available clusters. "
-      + " Please try again later or contact the administrator.",
+      clusterNotAvailable:
+        "The cluster you are currently accessing is unavailable or there are no available clusters. " +
+        " Please try again later or contact the administrator.",
     },
-    deleteModals:{
-      deleteUser:"Delete User",
-      userId:"User ID",
-      userName:"User Name",
-      comments:"Comments",
+    deleteModals: {
+      deleteUser: "Delete User",
+      userId: "User ID",
+      userName: "User Name",
+      comments: "Comments",
       confirmPermanentDeleteUser: "Please confirm if you want to delete the user with ID <b>{}</b> and name <b>{}</b>?",
-      confirmDeleteUserPrompt1: "If deleting a user, please confirm that the user is no longer in use" +
-      "and enter the user ID and name below.",
-      confirmDeleteUserPrompt2: "<span style='color:red'>Warning: This action is irreversible, and the user " +
-      "will be unavailable!</span>",
+      confirmDeleteUserPrompt1:
+        "If deleting a user, please confirm that the user is no longer in use" +
+        "and enter the user ID and name below.",
+      confirmDeleteUserPrompt2:
+        "<span style='color:red'>Warning: This action is irreversible, and the user " + "will be unavailable!</span>",
       cannotDeleteSelf: "Deleting the current user is not allowed",
-      platformAdmin:"Platform administrators cannot be deleted",
+      platformAdmin: "Platform administrators cannot be deleted",
       userIdRequired: "Please enter the user ID",
       userNameRequired: "Please enter the user name",
       incorrectUserIdOrName: "The user ID or name you entered does not match",
       userDeleted: "The user has been deleted and cannot be operated",
       deleteFailed: "Delete failed",
-      accountsOwnerPrompt: "The user <b>{}</b> is the primary admin of account(s) <b>{}</b>." +
-      "You need to delete the above account(s) before deleting this user.",
+      accountsOwnerPrompt:
+        "The user <b>{}</b> is the primary admin of account(s) <b>{}</b>." +
+        "You need to delete the above account(s) before deleting this user.",
       userRunningJobsPrompt: "The user has unfinished jobs and cannot be deleted.",
-      delete:"Delete",
+      delete: "Delete",
 
-      deleteAccount:"Delete Account",
-      accountName:"Account Name",
-      accountOwnerId:"Account Primary Admin ID",
-      accountNameRequired:"Please enter the account name",
-      ownerIdRequired:"Please enter the account primary admin ID",
+      deleteAccount: "Delete Account",
+      accountName: "Account Name",
+      accountOwnerId: "Account Primary Admin ID",
+      accountNameRequired: "Please enter the account name",
+      ownerIdRequired: "Please enter the account primary admin ID",
       invalidAccountNameOrOwnerId: "The account name or primary admin ID you entered does not match.",
-      confirmPermanentDeleteAccount:"Please confirm whether to delete the account with " +
-      "account name <b>{}</b> and account primary admin ID <b>{}</b>.",
-      confirmDeleteAccountPrompt1:"If you delete the account, please confirm that it is no longer in use" +
-      ", and enter the account name and primary admin ID below.",
-      confirmDeleteAccountPrompt2:"<span style='color:red'>Note: This action is irreversible." +
-      "The account will be unusable after deletion!</span>",
+      confirmPermanentDeleteAccount:
+        "Please confirm whether to delete the account with " +
+        "account name <b>{}</b> and account primary admin ID <b>{}</b>.",
+      confirmDeleteAccountPrompt1:
+        "If you delete the account, please confirm that it is no longer in use" +
+        ", and enter the account name and primary admin ID below.",
+      confirmDeleteAccountPrompt2:
+        "<span style='color:red'>Note: This action is irreversible." +
+        "The account will be unusable after deletion!</span>",
       accountRunningJobsPrompt: "The account has unfinished jobs and cannot be deleted.",
-      accountDeleted:"The account has been deleted and cannot be operated",
+      accountDeleted: "The account has been deleted and cannot be operated",
     },
     editUserProfileModal: {
       title: "Modify user {} (ID: {}) information",
@@ -1149,9 +1196,10 @@ export default {
       newPassword: "New Password",
       confirmPassword: "Confirm Password",
       selectCluster: "Select Cluster",
-      allClustersTooltip: "Wenn kein Cluster angegeben ist, können Jobs in allen Clustern gesucht werden, einschließlich bereits entzogener Cluster.",
+      allClustersTooltip:
+        "Wenn kein Cluster angegeben ist, können Jobs in allen Clustern gesucht werden, einschließlich bereits entzogener Cluster.",
 
-      partitionFullName:"Full Name of Partition",
+      partitionFullName: "Full Name of Partition",
       nodes: "Number of Partition Nodes",
       cores: "Number of Cores per Node",
       gpus: "Anzahl der Beschleunigerkarten pro Knoten",
@@ -1166,7 +1214,7 @@ export default {
       operationTime: "Operation Time",
       operationCode: "Operation Code",
       operationDetail: "Operation Object",
-      keywordsPlaceholder:"e.g. file name, job ID, etc.",
+      keywordsPlaceholder: "e.g. file name, job ID, etc.",
       operatorIp: "Operator IP",
       alreadyIs: "User is already in this role",
       notExist: "The user does not exist or has been deleted",
@@ -1185,15 +1233,18 @@ export default {
     },
     _app: {
       multiClusterOpErrorTitle: "Operation fehlgeschlagen",
-      multiClusterOpErrorContent: "Bei mehreren Clusteroperationen traten Fehler auf; einige Cluster wurden nicht "
-      + "mit den Änderungen synchronisiert.",
+      multiClusterOpErrorContent:
+        "Bei mehreren Clusteroperationen traten Fehler auf; einige Cluster wurden nicht " +
+        "mit den Änderungen synchronisiert.",
       adapterConnErrorContent: "Der Cluster {} ist derzeit nicht erreichbar. Bitte versuchen Sie es später erneut. ",
       effectErrorMessage: "Serverfehler aufgetreten!",
       noActivatedClusters: "Keine verfügbaren Cluster. Bitte nach Aktualisierung der Seite erneut versuchen.",
-      notExistInActivatedClusters: "Die abgefragten Cluster wurden möglicherweise deaktiviert. "
-      + "Bitte nach Aktualisierung der Seite erneut versuchen.",
-      noClusters: "Cluster-Konfigurationsdateien konnten nicht gefunden werden."
-      + " Bitte wenden Sie sich an den Systemadministrator.",
+      notExistInActivatedClusters:
+        "Die abgefragten Cluster wurden möglicherweise deaktiviert. " +
+        "Bitte nach Aktualisierung der Seite erneut versuchen.",
+      noClusters:
+        "Cluster-Konfigurationsdateien konnten nicht gefunden werden." +
+        " Bitte wenden Sie sich an den Systemadministrator.",
     },
     profile: {
       index: {
@@ -1203,8 +1254,9 @@ export default {
     },
     user: {
       partitions: {
-        getBillingTableErrorMessage: "Abrufen von Cluster- und Partitionsinformationen fehlgeschlagen. "
-        + "Bitte wenden Sie sich an den Administrator.",
+        getBillingTableErrorMessage:
+          "Abrufen von Cluster- und Partitionsinformationen fehlgeschlagen. " +
+          "Bitte wenden Sie sich an den Administrator.",
         partitionInfo: "Partitionsinformationen",
         loading: "Partitionen werden geladen...",
       },
@@ -1247,16 +1299,19 @@ export default {
           userExistAuth: "Benutzer existiert bereits im Authentifizierungssystem",
           userNotExistAuth: "Benutzer existiert nicht im Authentifizierungssystem",
           unableDetermineUserExistAuth: "Kann nicht feststellen, ob der Benutzer im Authentifizierungssystem existiert",
-          userExistAuthMessage: "Der Benutzer existiert bereits im Authentifizierungssystem."
-          + " Das hier eingegebene Passwort "
-          + "wird nicht wirksam; das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers "
-          + "im Authentifizierungssystem. Klicken Sie auf 'Bestätigen', um diesen Benutzer direkt zur SCOW-Datenbank "
-          + "hinzuzufügen.",
-          userNotExistAuthMessage: "Klicken Sie auf 'Bestätigen', um diesen Benutzer sowohl in SCOW als auch im "
-          + "Authentifizierungssystem zu erstellen.",
+          userExistAuthMessage:
+            "Der Benutzer existiert bereits im Authentifizierungssystem." +
+            " Das hier eingegebene Passwort " +
+            "wird nicht wirksam; das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers " +
+            "im Authentifizierungssystem. Klicken Sie auf 'Bestätigen', um diesen Benutzer direkt zur SCOW-Datenbank " +
+            "hinzuzufügen.",
+          userNotExistAuthMessage:
+            "Klicken Sie auf 'Bestätigen', um diesen Benutzer sowohl in SCOW als auch im " +
+            "Authentifizierungssystem zu erstellen.",
           userExistInSCOWDatabaseMessage: "Dieser Benutzer existiert bereits in SCOW",
-          userExistAndAddToSCOWDatabaseMessage: "Dieser Benutzer existiert bereits im Authentifizierungssystem "
-          + "und wurde erfolgreich zu SCOW hinzugefügt",
+          userExistAndAddToSCOWDatabaseMessage:
+            "Dieser Benutzer existiert bereits im Authentifizierungssystem " +
+            "und wurde erfolgreich zu SCOW hinzugefügt",
           createUserFail: "Benutzererstellung fehlgeschlagen",
           addCompleted: "Erfolgreich hinzugefügt!",
           crateUser: "Benutzer erstellen",
@@ -1320,10 +1375,11 @@ export default {
       permissionManagement: {
         defaultApps: {
           title: "Standardmäßig autorisierte Anwendung",
-          explanation: "Das Hinzufügen oder Entfernen einer standardmäßig autorisierten Anwendung synchronisiert die "
-          + "Autorisierungsänderungen der Anwendung über alle Konten des Mandanten. Wird ein neues Konto "
-          + "erstellt, wird die standardmäßig autorisierte Anwendung automatisch zu den "
-          + "autorisierten Anwendungen des Kontos hinzugefügt.",
+          explanation:
+            "Das Hinzufügen oder Entfernen einer standardmäßig autorisierten Anwendung synchronisiert die " +
+            "Autorisierungsänderungen der Anwendung über alle Konten des Mandanten. Wird ein neues Konto " +
+            "erstellt, wird die standardmäßig autorisierte Anwendung automatisch zu den " +
+            "autorisierten Anwendungen des Kontos hinzugefügt.",
         },
       },
     },
@@ -1363,49 +1419,55 @@ export default {
         userUnlock: "Benutzeranmeldung entsperren",
         userNotFound: "Benutzer nicht gefunden",
         unlockSuccess: "Anmeldung erfolgreich entsperrt",
-        unlockFail:"Anmeldung entsperren fehlgeschlagen",
+        unlockFail: "Anmeldung entsperren fehlgeschlagen",
         unlockLogin: "Anmeldung entsperren",
         confirmUlock: "Benutzeranmeldung entsperren bestätigen?",
         confirmUlockText1: "Bestätigen Sie das Entsperren des Benutzers",
         confirmUlockText2: "Anmeldesperre?",
         lockedTime: "Sperrzeit",
-        oneChancetoLogin: "Nach dem Entsperren hat der Benutzer einen Anmeldeversuch und muss "
-        + "sich erfolgreich anmelden, um den normalen Anmeldestatus vollständig wiederherzustellen",
+        oneChancetoLogin:
+          "Nach dem Entsperren hat der Benutzer einen Anmeldeversuch und muss " +
+          "sich erfolgreich anmelden, um den normalen Anmeldestatus vollständig wiederherzustellen",
       },
       tenants: {
         create: {
           adminExist: "Administratorkonto existiert bereits",
-          adminExistMessage: "Der Admin-Benutzer existiert bereits in der SCOW-Datenbank und kann nicht"
-          + " erneut hinzugefügt werden.",
+          adminExistMessage:
+            "Der Admin-Benutzer existiert bereits in der SCOW-Datenbank und kann nicht" + " erneut hinzugefügt werden.",
           adminNotExistAuth: "Admin-Benutzer existiert nicht im Authentifizierungssystem",
-          adminNotExistAuthMessage: "Admin-Benutzer existiert nicht. Bitte bestätigen Sie,"
-          + " dass die Admin-Benutzer-ID korrekt ist.",
-          adminExistAuthMessage: "Der Admin-Benutzer existiert bereits im Authentifizierungssystem."
-          + " Das hier eingegebene Passwort "
-          + "wird nicht wirksam; das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers "
-          + "im Authentifizierungssystem. Hinzufügen als neuen Mandantenadministrator bestätigen?",
-          adminNotExistAuthAndConfirmCreateMessage: "Der Admin-Benutzer existiert nicht im Authentifizierungssystem. "
-          + "Möchten Sie bestätigen, diesen Benutzer zu erstellen und als neuen Mandantenadministrator hinzuzufügen?",
-          unableConfirmAdminExistInAuthMessage: "Es kann nicht bestätigt werden,"
-          + " ob der Admin-Benutzer im Authentifizierungssystem existiert; es wird versucht,"
-          + " ihn im Authentifizierungssystem zu erstellen. Wenn der Benutzer bereits existiert,"
-          + " wird das hier eingegebene Passwort nicht wirksam, und das Passwort des neuen Benutzers "
-          + "ist das aktuelle Passwort des vorhandenen Benutzers im Authentifizierungssystem.",
-          unableConfirmAdminExistInAuthAndUnableCreateMessage: "Es kann nicht bestätigt werden,"
-          + " ob der Admin-Benutzer existiert,"
-          + " und das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung."
-          + " Bitte bestätigen Sie, dass dieser Benutzer bereits im Authentifizierungssystem existiert. "
-          + "Die Bestätigung fügt ihn direkt zur Datenbank hinzu, und das hier eingegebene Passwort ist nicht wirksam. "
-          + "Das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers"
-          + " im Authentifizierungssystem.",
+          adminNotExistAuthMessage:
+            "Admin-Benutzer existiert nicht. Bitte bestätigen Sie," + " dass die Admin-Benutzer-ID korrekt ist.",
+          adminExistAuthMessage:
+            "Der Admin-Benutzer existiert bereits im Authentifizierungssystem." +
+            " Das hier eingegebene Passwort " +
+            "wird nicht wirksam; das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers " +
+            "im Authentifizierungssystem. Hinzufügen als neuen Mandantenadministrator bestätigen?",
+          adminNotExistAuthAndConfirmCreateMessage:
+            "Der Admin-Benutzer existiert nicht im Authentifizierungssystem. " +
+            "Möchten Sie bestätigen, diesen Benutzer zu erstellen und als neuen Mandantenadministrator hinzuzufügen?",
+          unableConfirmAdminExistInAuthMessage:
+            "Es kann nicht bestätigt werden," +
+            " ob der Admin-Benutzer im Authentifizierungssystem existiert; es wird versucht," +
+            " ihn im Authentifizierungssystem zu erstellen. Wenn der Benutzer bereits existiert," +
+            " wird das hier eingegebene Passwort nicht wirksam, und das Passwort des neuen Benutzers " +
+            "ist das aktuelle Passwort des vorhandenen Benutzers im Authentifizierungssystem.",
+          unableConfirmAdminExistInAuthAndUnableCreateMessage:
+            "Es kann nicht bestätigt werden," +
+            " ob der Admin-Benutzer existiert," +
+            " und das aktuelle Authentifizierungssystem unterstützt keine Benutzererstellung." +
+            " Bitte bestätigen Sie, dass dieser Benutzer bereits im Authentifizierungssystem existiert. " +
+            "Die Bestätigung fügt ihn direkt zur Datenbank hinzu, und das hier eingegebene Passwort ist nicht wirksam. " +
+            "Das Passwort des neuen Benutzers ist das aktuelle Passwort des vorhandenen Benutzers" +
+            " im Authentifizierungssystem.",
           existInSCOWDatabase: "Dieser {} existiert bereits in der SCOW-Datenbank",
-          createTenantSuccessMessage: "Mandant erfolgreich erstellt;"
-          + " der Admin-Benutzer existiert im Authentifizierungssystem "
-          + "und wurde erfolgreich zur SCOW-Datenbank hinzugefügt",
+          createTenantSuccessMessage:
+            "Mandant erfolgreich erstellt;" +
+            " der Admin-Benutzer existiert im Authentifizierungssystem " +
+            "und wurde erfolgreich zur SCOW-Datenbank hinzugefügt",
           addCompleted: "Erfolgreich hinzugefügt!",
           createTenantFailMessage: "Mandantenerstellung fehlgeschlagen",
           createTenant: "Mandanten erstellen",
-          unavailable:"Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
+          unavailable: "Diese Funktion ist in der aktuellen Konfiguration nicht verfügbar",
           userNotFound: "Benutzer existiert nicht",
           tenantExist: "Mandant existiert bereits",
           userStillMaintainsAccountRelationship: "Der Benutzer hat weiterhin eine Kontobeziehung",
@@ -1415,12 +1477,14 @@ export default {
       systemDebug: {
         slurmBlockStatus: {
           syncUserAccountBlockingStatus: "Benutzer-/Kontosperrstatus synchronisieren",
-          alertInfo: "SCOW synchronisiert regelmäßig den Sperrstatus von Konten und Benutzern zum Scheduler. "
-          + "Sie können auf 'Jetzt synchronisieren' klicken, um manuell zu synchronisieren.",
-          periodicSyncUserAccountBlockStatusInfo: "Sperrstatus von Konten und Benutzern regelmäßig mit"
-          + " Scheduler synchronisieren",
-          syncAlreadyStarted: "Synchronisierung läuft bereits."
-          + " Bitte warten Sie den Abschluss ab, bevor Sie einen neuen Durchlauf starten.",
+          alertInfo:
+            "SCOW synchronisiert regelmäßig den Sperrstatus von Konten und Benutzern zum Scheduler. " +
+            "Sie können auf 'Jetzt synchronisieren' klicken, um manuell zu synchronisieren.",
+          periodicSyncUserAccountBlockStatusInfo:
+            "Sperrstatus von Konten und Benutzern regelmäßig mit" + " Scheduler synchronisieren",
+          syncAlreadyStarted:
+            "Synchronisierung läuft bereits." +
+            " Bitte warten Sie den Abschluss ab, bevor Sie einen neuen Durchlauf starten.",
           turnedOn: "Eingeschaltet",
           paused: "Angehalten",
           stopSync: "Synchronisierung stoppen",
@@ -1437,16 +1501,19 @@ export default {
         },
         syncClusterAccountUser: {
           syncUserAccount: "Konto-/Benutzerinformationssynchronisierung",
-          alertInfo: "SCOW synchronisiert regelmäßig die Informationen von Konten und Benutzern zum Scheduler. "
-          + "Sie können auf 'Jetzt synchronisieren' klicken, um manuell zu synchronisieren.",
-          maxSyncDurationExplanation: "Während der Synchronisierung kann SCOW kontobezogene Informationen nicht ändern."
-          + " Um zu verhindern, dass lange Synchronisierungen die normale Benutzererfahrung beeinträchtigen,"
-          + " bietet SCOW einen Parameter \"Maximale Bearbeitungszeit für eine einzelne Synchronisierung\""
-          + "zur Steuerung der Dauer. Wenn dieses Zeitlimit überschritten wird,"
-          + " wird die aktuelle Synchronisierung beendet, wobei alle bereits "
-          + "synchronisierten Informationen erhalten bleiben.",
-          syncAlreadyStarted: "Kontobenutzer-Synchronisierung oder Job-Abruf läuft bereits. "
-          + "Bitte warten Sie den Abschluss ab, bevor Sie einen neuen Durchlauf starten.",
+          alertInfo:
+            "SCOW synchronisiert regelmäßig die Informationen von Konten und Benutzern zum Scheduler. " +
+            "Sie können auf 'Jetzt synchronisieren' klicken, um manuell zu synchronisieren.",
+          maxSyncDurationExplanation:
+            "Während der Synchronisierung kann SCOW kontobezogene Informationen nicht ändern." +
+            " Um zu verhindern, dass lange Synchronisierungen die normale Benutzererfahrung beeinträchtigen," +
+            ' bietet SCOW einen Parameter "Maximale Bearbeitungszeit für eine einzelne Synchronisierung"' +
+            "zur Steuerung der Dauer. Wenn dieses Zeitlimit überschritten wird," +
+            " wird die aktuelle Synchronisierung beendet, wobei alle bereits " +
+            "synchronisierten Informationen erhalten bleiben.",
+          syncAlreadyStarted:
+            "Kontobenutzer-Synchronisierung oder Job-Abruf läuft bereits. " +
+            "Bitte warten Sie den Abschluss ab, bevor Sie einen neuen Durchlauf starten.",
           periodicSyncUserAccountInfo: "Konten- und Benutzerinformationen regelmäßig synchronisieren",
           turnedOn: "Eingeschaltet",
           paused: "Ausgeschaltet",
@@ -1458,8 +1525,8 @@ export default {
           syncSuccess: "Erfolgreich aktualisiert",
           syncSchedulerUserAccountNow: "Jetzt synchronisieren",
           maxSyncDurationMinutes: "Maximale Bearbeitungszeit für eine einzelne Synchronisierung",
-          maxSyncDurationMinutesModalLabel: "Maximale Bearbeitungszeit für eine einzelne Synchronisierung"
-          + " (nur für den aktuellen Vorgang wirksam)",
+          maxSyncDurationMinutesModalLabel:
+            "Maximale Bearbeitungszeit für eine einzelne Synchronisierung" + " (nur für den aktuellen Vorgang wirksam)",
           minuteUnit: "MINUTE",
           syncStatusUnknown: "UNBEKANNT",
           syncStatusRunning: "LÄUFT",
@@ -1493,10 +1560,10 @@ export default {
             noException: "Keine Ausnahmen aufgetreten.",
             unknownException: "Unbekannte Ausnahme",
             noSyncData: "Daten sind konsistent, keine Synchronisierung erforderlich.",
-            syncCountDetails: "Es gibt {0} Datenunterschiede, die synchronisiert werden müssen. "
-            + "Erfolgreich synchronisiert: {1}, ",
+            syncCountDetails:
+              "Es gibt {0} Datenunterschiede, die synchronisiert werden müssen. " + "Erfolgreich synchronisiert: {1}, ",
             syncFailedCount: "Fehlgeschlagen: {}",
-            syncTotallySucceed:  "Daten vollständig synchronisiert, {0} Differenzen abgeschlossen",
+            syncTotallySucceed: "Daten vollständig synchronisiert, {0} Differenzen abgeschlossen",
             failedDetailDrawerTitle: "Details zu Synchronisierungsfehlern",
             noSyncDetailsException: "Datenanomalie, Synchronisierungsdaten nicht erhalten",
             timeoutException: "Teilweise Datensynchronisierung (Synchronisierungstimeout). ",
@@ -1505,8 +1572,9 @@ export default {
         },
         fetchJobs: {
           jobInfoSync: "Jobinformationssynchronisierung",
-          alertMessage: "SCOW synchronisiert regelmäßig Jobinformationen aus dem Cluster. "
-          + "Sie können auf 'Jetzt synchronisieren' klicken, um sofort manuell zu synchronisieren.",
+          alertMessage:
+            "SCOW synchronisiert regelmäßig Jobinformationen aus dem Cluster. " +
+            "Sie können auf 'Jetzt synchronisieren' klicken, um sofort manuell zu synchronisieren.",
           periodicSyncJobInfo: "Periodische Jobinformationssynchronisierung",
           turnedOn: "Eingeschaltet",
           paused: "Ausgeschaltet",
@@ -1517,8 +1585,9 @@ export default {
           notSynced: "Nicht synchronisiert",
           jobSyncSuccessMessage: "Jobsynchronisierung abgeschlossen, {} neue Datensätze synchronisiert.",
           syncJobNow: "Jetzt synchronisieren",
-          accountUserSyncRunning: "Kontobenutzer-Synchronisierung läuft. "
-           + "Bitte warten Sie den Abschluss ab, bevor Sie eine Jobsynchronisierung starten.",
+          accountUserSyncRunning:
+            "Kontobenutzer-Synchronisierung läuft. " +
+            "Bitte warten Sie den Abschluss ab, bevor Sie eine Jobsynchronisierung starten.",
         },
       },
       resourceManagement: {
@@ -1547,22 +1616,23 @@ export default {
             content: "Möchten Sie den Cluster mit Cluster-ID {} und Namen {} aktivieren?",
             contentAttention: "Hinweis: Bitte synchronisieren Sie nach der Aktivierung die Plattformdaten manuell!",
             successMessage: "Der Cluster wurde aktiviert.",
-            failureMessage: "Aktivierung des Clusters fehlgeschlagen."
-            + " Der Cluster wurde möglicherweise bereits aktiviert.",
+            failureMessage:
+              "Aktivierung des Clusters fehlgeschlagen." + " Der Cluster wurde möglicherweise bereits aktiviert.",
           },
           deactivateModal: {
             title: "Cluster deaktivieren",
             content: "Möchten Sie den Cluster mit Cluster-ID {} und Namen {} deaktivieren?",
-            contentInputNotice: "Wenn Sie die Deaktivierung bestätigen,"
-            + " geben Sie unten die Cluster-ID und den Namen erneut ein.",
-            contentAttention: "Hinweis: Nach der Deaktivierung ist der Cluster nicht verfügbar,"
-            + " und alle Datenaktualisierungen für den Cluster werden eingestellt!",
+            contentInputNotice:
+              "Wenn Sie die Deaktivierung bestätigen," + " geben Sie unten die Cluster-ID und den Namen erneut ein.",
+            contentAttention:
+              "Hinweis: Nach der Deaktivierung ist der Cluster nicht verfügbar," +
+              " und alle Datenaktualisierungen für den Cluster werden eingestellt!",
             clusterNameForm: "Clustername",
             clusterIdForm: "Cluster-ID",
             comment: "Deaktivierungs-Kommentar",
             successMessage: "Der Cluster wurde deaktiviert.",
-            failureMessage: "Deaktivierung des Clusters fehlgeschlagen."
-            + " Der Cluster wurde möglicherweise bereits deaktiviert.",
+            failureMessage:
+              "Deaktivierung des Clusters fehlgeschlagen." + " Der Cluster wurde möglicherweise bereits deaktiviert.",
           },
         },
         nodeMigrationPage: {
@@ -1585,8 +1655,8 @@ export default {
             statusTooltip: "Status:",
             statusIdleTooltip: "Leerlauf: Der Knoten ist verfügbar und kann in einen anderen Cluster migriert werden",
             statusRunningTooltip: "Laufend: Aktive Jobs verhindern derzeit die Migration des Knotens",
-            statusOfflineTooltip: "Offline: Knoten in allen Clustern inaktiv;"
-            + " zur Aktivierung in diesem Cluster geeignet",
+            statusOfflineTooltip:
+              "Offline: Knoten in allen Clustern inaktiv;" + " zur Aktivierung in diesem Cluster geeignet",
             nodeNamePrompt: "Knotenname erfüllt die Formatanforderungen nicht",
           },
         },
@@ -1599,8 +1669,9 @@ export default {
           destinationPartitionQueue: "Ziel-Partitionswarteschlange",
           successMessage: "Migration erfolgreich",
           successMessage2: "Knotenaktivierung erfolgreich",
-          migrateFail: "Migration fehlgeschlagen. Bitte versuchen Sie es später erneut oder wenden Sie"
-          + " sich an den Administrator.",
+          migrateFail:
+            "Migration fehlgeschlagen. Bitte versuchen Sie es später erneut oder wenden Sie" +
+            " sich an den Administrator.",
           activateNodeFail: "Knotenaktivierung fehlgeschlagen. Bitte erneut versuchen oder Administrator kontaktieren.",
           nodeName: "Knotenname",
         },
@@ -1638,7 +1709,7 @@ export default {
         topTenPortalFeatureUsageCount: "Top 10 Portal-Funktionsnutzung",
         topTenMisFeatureUsageCount: "Top 10 MIS-Funktionsnutzung",
         jobCount: "Jobanzahl",
-        usageCount:"Anzahl",
+        usageCount: "Anzahl",
         userName: "Benutzername",
         accountName: "Kontoname",
         amount: "Betrag",
@@ -1704,35 +1775,35 @@ export default {
       copyFileItem: "Datei/Verzeichnis kopieren",
       compressFiles: "Datei/Verzeichnis komprimieren",
       setJobTimeLimit: "Job-Zeitlimit festlegen",
-      createImage:"Image erstellen",
-      updateImage:"Image aktualisieren",
-      shareImage:"Image freigeben",
-      deleteImage:"Image löschen",
-      copyImage:"Image kopieren",
-      createDataset:"Datensatz erstellen",
-      updateDataset:"Datensatz aktualisieren",
-      deleteDataset:"Datensatz löschen",
-      createDatasetVersion:"Datensatzversion erstellen",
-      updateDatasetVersion:"Datensatzversion aktualisieren",
-      shareDatasetVersion:"Datensatzversion freigeben",
-      copyDatasetVersion:"Datensatzversion kopieren",
-      deleteDatasetVersion:"Datensatzversion löschen",
-      createAlgorithm:"Algorithmus erstellen",
-      updateAlgorithm:"Algorithmus aktualisieren",
-      deleteAlgorithm:"Algorithmus löschen",
-      createAlgorithmVersion:"Algorithmusversion erstellen",
-      updateAlgorithmVersion:"Algorithmusversion aktualisieren",
-      shareAlgorithmVersion:"Algorithmusversion freigeben",
-      deleteAlgorithmVersion:"Algorithmusversion löschen",
-      copyAlgorithmVersion:"Algorithmusversion kopieren",
-      createModel:"Modell erstellen",
-      updateModel:"Modell aktualisieren",
-      deleteModel:"Modell löschen",
-      createModelVersion:"Modellversion erstellen",
-      updateModelVersion:"Modellversion aktualisieren",
-      shareModelVersion:"Modellversion freigeben",
-      deleteModelVersion:"Modellversion löschen",
-      copyModelVersion:"Modellversion kopieren",
+      createImage: "Image erstellen",
+      updateImage: "Image aktualisieren",
+      shareImage: "Image freigeben",
+      deleteImage: "Image löschen",
+      copyImage: "Image kopieren",
+      createDataset: "Datensatz erstellen",
+      updateDataset: "Datensatz aktualisieren",
+      deleteDataset: "Datensatz löschen",
+      createDatasetVersion: "Datensatzversion erstellen",
+      updateDatasetVersion: "Datensatzversion aktualisieren",
+      shareDatasetVersion: "Datensatzversion freigeben",
+      copyDatasetVersion: "Datensatzversion kopieren",
+      deleteDatasetVersion: "Datensatzversion löschen",
+      createAlgorithm: "Algorithmus erstellen",
+      updateAlgorithm: "Algorithmus aktualisieren",
+      deleteAlgorithm: "Algorithmus löschen",
+      createAlgorithmVersion: "Algorithmusversion erstellen",
+      updateAlgorithmVersion: "Algorithmusversion aktualisieren",
+      shareAlgorithmVersion: "Algorithmusversion freigeben",
+      deleteAlgorithmVersion: "Algorithmusversion löschen",
+      copyAlgorithmVersion: "Algorithmusversion kopieren",
+      createModel: "Modell erstellen",
+      updateModel: "Modell aktualisieren",
+      deleteModel: "Modell löschen",
+      createModelVersion: "Modellversion erstellen",
+      updateModelVersion: "Modellversion aktualisieren",
+      shareModelVersion: "Modellversion freigeben",
+      deleteModelVersion: "Modellversion löschen",
+      copyModelVersion: "Modellversion kopieren",
       createUser: "Benutzer erstellen",
       addUserToAccount: "Benutzer zum Konto hinzufügen",
       removeUserFromAccount: "Benutzer aus Konto entfernen",
@@ -1781,8 +1852,8 @@ export default {
       mergeFileChunks: "Temporäre Dateiblöcke zusammenführen und hochladen",
       initMultipartUpload: "Mehrteiligen Datei-Upload initialisieren",
       markMessageRead: "Nachricht als gelesen markieren",
-      deleteUser:"Benutzer löschen",
-      deleteAccount:"Konto löschen",
+      deleteUser: "Benutzer löschen",
+      deleteAccount: "Konto löschen",
       editUserProfile: "Benutzerinformationen bearbeiten",
       changePassword: "Passwort ändern",
       changeEmail: "E-Mail ändern",
@@ -1836,25 +1907,25 @@ export default {
       createDatasetVersion: "Datensatzname: {}, Datensatzversionsname: {}",
       updateDatasetVersion: "Datensatzname: {}, Datensatzversionsname: {}",
       shareDatasetVersion: "Datensatzname: {}, Datensatzversionsname: {}",
-      copyDatasetVersion: "Quelle Datensatzname: {}, Quelle Versionsname: {}; " +
-      "Ziel Datensatzname: {}, Ziel Versionsname: {}",
+      copyDatasetVersion:
+        "Quelle Datensatzname: {}, Quelle Versionsname: {}; " + "Ziel Datensatzname: {}, Ziel Versionsname: {}",
       deleteDatasetVersion: "Datensatzname: {}, Datensatzversionsname: {}",
-      createAlgorithm:"Cluster: {}, Algorithmusname: {}",
-      updateAlgorithm:"Algorithmusname: {}",
-      deleteAlgorithm:"Algorithmusname: {}",
-      createAlgorithmVersion:"Algorithmusname: {}, Algorithmusversionsname: {}",
-      updateAlgorithmVersion:"Algorithmusname: {}, Algorithmusversionsname: {}",
-      shareAlgorithmVersion:"Algorithmusname: {}, Algorithmusversionsname: {}",
-      deleteAlgorithmVersion:"Algorithmusname: {}, Algorithmusversionsname: {}",
-      copyAlgorithmVersion: "Quelle Algorithmusname: {}, Quelle Versionsname: {}; " +
-      "Ziel Algorithmusname: {}, Ziel Versionsname: {}",
-      createModel:"Cluster: {}, Modellname: {}",
-      updateModel:"Modellname: {}",
-      deleteModel:"Modellname: {}",
-      createModelVersion:"Modellname: {}, Modellversionsname: {}",
-      updateModelVersion:"Modellname: {}, Modellversionsname: {}",
-      shareModelVersion:"Modellname: {}, Modellversionsname: {}",
-      deleteModelVersion:"Modellname: {}, Modellversionsname: {}",
+      createAlgorithm: "Cluster: {}, Algorithmusname: {}",
+      updateAlgorithm: "Algorithmusname: {}",
+      deleteAlgorithm: "Algorithmusname: {}",
+      createAlgorithmVersion: "Algorithmusname: {}, Algorithmusversionsname: {}",
+      updateAlgorithmVersion: "Algorithmusname: {}, Algorithmusversionsname: {}",
+      shareAlgorithmVersion: "Algorithmusname: {}, Algorithmusversionsname: {}",
+      deleteAlgorithmVersion: "Algorithmusname: {}, Algorithmusversionsname: {}",
+      copyAlgorithmVersion:
+        "Quelle Algorithmusname: {}, Quelle Versionsname: {}; " + "Ziel Algorithmusname: {}, Ziel Versionsname: {}",
+      createModel: "Cluster: {}, Modellname: {}",
+      updateModel: "Modellname: {}",
+      deleteModel: "Modellname: {}",
+      createModelVersion: "Modellname: {}, Modellversionsname: {}",
+      updateModelVersion: "Modellname: {}, Modellversionsname: {}",
+      shareModelVersion: "Modellname: {}, Modellversionsname: {}",
+      deleteModelVersion: "Modellname: {}, Modellversionsname: {}",
       copyModelVersion: "Quelle Modellname: {}, Quelle Versionsname: {}; Ziel Modellname: {}, Ziel Versionsname: {}",
       createUser: "Benutzer: {}",
       deleteUser: "Benutzer: {}",
@@ -1873,7 +1944,7 @@ export default {
       unsetTenantFinance: "Mandant: {1}, Benutzer: {0}",
       tenantChangePassword: "Benutzer: {}",
       createAccount: "Konto: {}, Hauptadministrator: {}",
-      deleteAccount:"Konto: {}, Hauptadministrator: {}",
+      deleteAccount: "Konto: {}, Hauptadministrator: {}",
       addAccountToWhitelist: "Mandant: {1}, Konto: {0}",
       removeAccountFromWhitelist: "Mandant: {1}, Konto: {0}",
       accountPay: "Konto: {}, Betrag (CNY): {}",
@@ -1906,7 +1977,7 @@ export default {
       exportAccountsPayRecordOfTenant: "Mandant: {}, Konten: {}",
       exportAllAccountsPayRecordOfTenant: "Mandant: {}, Konten: Alle Konten",
       exportTenantPayRecord: "Mandant: {}",
-      exportTenantsPayRecordOfAdmin:"Mandanten: Alle Mandanten der Plattform",
+      exportTenantsPayRecordOfAdmin: "Mandanten: Alle Mandanten der Plattform",
       exportJobsOfAccountAndUser: "Mandant: {0}, Konto: {2}, Benutzer: {1}",
       exportJobsOfUser: "Mandant: {}, Benutzer: {}",
       exportJobsOfAccount: "Mandant: {}, Konto: {}",
@@ -1933,10 +2004,10 @@ export default {
       changeEmail: "Benutzer: {}",
       editUserProfile: "Benutzer: {}",
       decompressFile: "Pfad: {0} , Datei {1}",
-      setTenantUserQuota: "Benutzer: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3},"
-      + " Mandantenstandard verwenden: {4}",
-      batchSetTenantUsersQuota: "Benutzer: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3},"
-      + " Mandantenstandard verwenden: {4}",
+      setTenantUserQuota:
+        "Benutzer: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3}," + " Mandantenstandard verwenden: {4}",
+      batchSetTenantUsersQuota:
+        "Benutzer: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3}," + " Mandantenstandard verwenden: {4}",
       setTenantUserDefaultQuota: "Mandant: {0}, Cluster: {1}, Pfad: {2}, Speicherkontingent: {3}",
       syncTenantUsersStorageUsage: "Mandant: {0}, Cluster: {1}, Pfad: {2}",
       tenantAppAuthorizationLog: "Cluster: {0}, Anwendung: {1}, Mandant: {2}",

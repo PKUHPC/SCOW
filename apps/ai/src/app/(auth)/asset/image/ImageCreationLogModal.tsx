@@ -1,5 +1,6 @@
 "use client";
 import type { inferRouterOutputs } from "@trpc/server";
+
 import { App, Modal, Spin } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { prefix, useI18nTranslateToString } from "src/i18n";
@@ -51,7 +52,7 @@ const LogContainer = styled.div`
 `;
 
 const LogText = styled.pre`
-  color: #888FA3;
+  color: #888fa3;
   white-space: pre;
   word-break: keep-all;
   overflow-wrap: normal;
@@ -86,10 +87,12 @@ const Cursor = styled.span`
   color: #888fa3;
 
   @keyframes blink {
-    0%, 50% {
+    0%,
+    50% {
       opacity: 1;
     }
-    51%, 100% {
+    51%,
+    100% {
       opacity: 0;
     }
   }
@@ -110,7 +113,7 @@ const StyledModal = styled(Modal)`
     line-height: 62px;
   }
 
-   && .ant-modal-close {
+  && .ant-modal-close {
     top: 36px !important;
     right: 24px;
   }
@@ -135,10 +138,7 @@ type ImageCreationLogData = inferRouterOutputs<AppRouter>["image"]["getImageCrea
 // 最大保留 2 万个字符，防止内存溢出，防止渲染卡顿
 const MAX_LOG_LENGTH = 20000;
 
-export const ImageCreationLogModal: React.FC<Props> = (
-  { imageId, status, failedReason, open, onClose },
-) => {
-
+export const ImageCreationLogModal: React.FC<Props> = ({ imageId, status, failedReason, open, onClose }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.imageLogModal.");
   const { message } = App.useApp();
@@ -190,21 +190,18 @@ export const ImageCreationLogModal: React.FC<Props> = (
     return TYPING_SPEED;
   };
 
-
-  const {
-    data,
-    error,
-    isFetching,
-  } = trpc.image.getImageCreationLog.useQuery({
-    id: imageId,
-    skip: queryState.skip,
-    lastQueriedOperation: queryState.lastQueriedOperation,
-  },{
-    enabled: open && status === Status.CREATING && !isFinished,
-    refetchInterval: isFinished ? false : 1000,
-    refetchIntervalInBackground: false, // 防止后台重复请求
-    refetchOnWindowFocus: false, // 防止窗口聚焦时重复请求
-  },
+  const { data, error, isFetching } = trpc.image.getImageCreationLog.useQuery(
+    {
+      id: imageId,
+      skip: queryState.skip,
+      lastQueriedOperation: queryState.lastQueriedOperation,
+    },
+    {
+      enabled: open && status === Status.CREATING && !isFinished,
+      refetchInterval: isFinished ? false : 1000,
+      refetchIntervalInBackground: false, // 防止后台重复请求
+      refetchOnWindowFocus: false, // 防止窗口聚焦时重复请求
+    },
   );
   useEffect(() => {
     if (error) {
@@ -215,7 +212,6 @@ export const ImageCreationLogModal: React.FC<Props> = (
   // 直接将文本注入 DOM 并滚动
   // 直接修改网页模态框内日志显示
   const appendTextToDOM = useCallback((text: string, isReset: boolean = false) => {
-
     if (!logTextRef.current) return;
     let newContent = "";
 
@@ -270,95 +266,94 @@ export const ImageCreationLogModal: React.FC<Props> = (
   }, [appendTextToDOM]);
 
   // 数据处理
-  const handleLogDataSuccess = useCallback((data: ImageCreationLogData) => {
-    if (!data) {
-      return;
-    };
-
-    // 1. 更新标题和操作状态
-    updateModalTitle(data.currentOperation);
-
-    // 2. 检查是否完成
-    if (data.isPushedCompleted) {
-      setIsFinished(true);
-    }
-
-
-    const operationChanged = currentOperation !== CreationOperation.UNKNOWN &&
-                            currentOperation !== data.currentOperation;
-
-    // 3. 操作切换时 清空相关Ref，重置DOM，重置Query
-    if (operationChanged) {
-      // 操作切换时，清空显示并重新开始
-      fullLogRef.current = "";
-      pendingLogRef.current = "";
-      isFirstLoadRef.current = true;
-      setShowLog(false);
-      if (logTextRef.current) logTextRef.current.textContent = "";
-
-      // 更新查询状态
-      setQueryState({
-        skip: 0,
-        lastQueriedOperation: currentOperation,
-        lastQueriedCompleted: true,
-      });
-    }
-
-    // 4.收到日志数据时，大快数据不走打字机，实时增量打字输出
-    if (data.logChunk) {
-      const chunk = data.logChunk;
-      // 始终维护一份内存中的完整日志，用于重新打开模态框时恢复
-      fullLogRef.current += chunk;
-
-      // 内存截断：防止极端情况下内存溢出，超过1.5倍阈值时切换
-      if (fullLogRef.current.length > MAX_LOG_LENGTH * 1.5) {
-        fullLogRef.current = fullLogRef.current.slice(-MAX_LOG_LENGTH * 1.5);
+  const handleLogDataSuccess = useCallback(
+    (data: ImageCreationLogData) => {
+      if (!data) {
+        return;
       }
 
-      setShowLog(true);
+      // 1. 更新标题和操作状态
+      updateModalTitle(data.currentOperation);
 
-      // 使用 setTimeout(..., 0) 确保 React 完成了对 <span /> 的渲染
-      setTimeout(() => {
-        const isBulkData = chunk.length > 2000;
-        if (isFirstLoadRef.current || isBulkData) {
-          // 如果是大量数据，直接显示内存中的最新完整快照
-          const textToShow = isBulkData
-            ? fullLogRef.current.slice(-MAX_LOG_LENGTH)
-            : chunk;
+      // 2. 检查是否完成
+      if (data.isPushedCompleted) {
+        setIsFinished(true);
+      }
 
-          appendTextToDOM(textToShow, true);
+      const operationChanged =
+        currentOperation !== CreationOperation.UNKNOWN && currentOperation !== data.currentOperation;
 
-          isFirstLoadRef.current = false;
-          // 清空可能存在的积压
-          pendingLogRef.current = "";
+      // 3. 操作切换时 清空相关Ref，重置DOM，重置Query
+      if (operationChanged) {
+        // 操作切换时，清空显示并重新开始
+        fullLogRef.current = "";
+        pendingLogRef.current = "";
+        isFirstLoadRef.current = true;
+        setShowLog(false);
+        if (logTextRef.current) logTextRef.current.textContent = "";
 
-          if (isBulkData) {
-            isTypingRef.current = false;
-            setIsTyping(false);
-          } else {
-            performTyping();
-          }
-        // 后续增量进入队列
-        } else {
-          pendingLogRef.current += chunk;
-          if (!isTypingRef.current) {
-            performTyping();
-          }
+        // 更新查询状态
+        setQueryState({
+          skip: 0,
+          lastQueriedOperation: currentOperation,
+          lastQueriedCompleted: true,
+        });
+      }
+
+      // 4.收到日志数据时，大快数据不走打字机，实时增量打字输出
+      if (data.logChunk) {
+        const chunk = data.logChunk;
+        // 始终维护一份内存中的完整日志，用于重新打开模态框时恢复
+        fullLogRef.current += chunk;
+
+        // 内存截断：防止极端情况下内存溢出，超过1.5倍阈值时切换
+        if (fullLogRef.current.length > MAX_LOG_LENGTH * 1.5) {
+          fullLogRef.current = fullLogRef.current.slice(-MAX_LOG_LENGTH * 1.5);
         }
-      }, 0);
-    }
-    // 同一操作内的数据更新
-    setQueryState((prev) => ({
-      ...prev,
-      lastQueriedOperation: data.currentOperation,
-      lastQueriedCompleted: data.isCompleted || false,
-      skip: data.totalResChunkSizeForCurrentOperation || 0,
-    }));
 
-    // 5. 更新当前操作
-    setCurrentOperation(data.currentOperation);
+        setShowLog(true);
 
-  }, [currentOperation, queryState.lastQueriedOperation]);
+        // 使用 setTimeout(..., 0) 确保 React 完成了对 <span /> 的渲染
+        setTimeout(() => {
+          const isBulkData = chunk.length > 2000;
+          if (isFirstLoadRef.current || isBulkData) {
+            // 如果是大量数据，直接显示内存中的最新完整快照
+            const textToShow = isBulkData ? fullLogRef.current.slice(-MAX_LOG_LENGTH) : chunk;
+
+            appendTextToDOM(textToShow, true);
+
+            isFirstLoadRef.current = false;
+            // 清空可能存在的积压
+            pendingLogRef.current = "";
+
+            if (isBulkData) {
+              isTypingRef.current = false;
+              setIsTyping(false);
+            } else {
+              performTyping();
+            }
+            // 后续增量进入队列
+          } else {
+            pendingLogRef.current += chunk;
+            if (!isTypingRef.current) {
+              performTyping();
+            }
+          }
+        }, 0);
+      }
+      // 同一操作内的数据更新
+      setQueryState((prev) => ({
+        ...prev,
+        lastQueriedOperation: data.currentOperation,
+        lastQueriedCompleted: data.isCompleted || false,
+        skip: data.totalResChunkSizeForCurrentOperation || 0,
+      }));
+
+      // 5. 更新当前操作
+      setCurrentOperation(data.currentOperation);
+    },
+    [currentOperation, queryState.lastQueriedOperation],
+  );
 
   useEffect(() => {
     if (data) {
@@ -366,25 +361,28 @@ export const ImageCreationLogModal: React.FC<Props> = (
     }
   }, [data]);
 
-  const updateModalTitle = useCallback((operation: CreationOperation) => {
-    switch (operation) {
-      case CreationOperation.LOAD_IMAGE:
-        setModalTitle(t(p("loadTitle")));
-        break;
-      case CreationOperation.COMMIT_IMAGE:
-        setModalTitle(t(p("commitTitle")));
-        break;
-      case CreationOperation.PULL_IMAGE:
-        setModalTitle(t(p("pullTitle")));
-        break;
-      case CreationOperation.PUSH_IMAGE:
-        setModalTitle(t(p("pushTitle")));
-        break;
-      default:
-        setModalTitle(t(p("creating")));
-        break;
-    }
-  }, [setModalTitle, t, p]);
+  const updateModalTitle = useCallback(
+    (operation: CreationOperation) => {
+      switch (operation) {
+        case CreationOperation.LOAD_IMAGE:
+          setModalTitle(t(p("loadTitle")));
+          break;
+        case CreationOperation.COMMIT_IMAGE:
+          setModalTitle(t(p("commitTitle")));
+          break;
+        case CreationOperation.PULL_IMAGE:
+          setModalTitle(t(p("pullTitle")));
+          break;
+        case CreationOperation.PUSH_IMAGE:
+          setModalTitle(t(p("pushTitle")));
+          break;
+        default:
+          setModalTitle(t(p("creating")));
+          break;
+      }
+    },
+    [setModalTitle, t, p],
+  );
 
   // 使用 useLayoutEffect 在模态框再开时瞬间恢复已有的日志
   React.useLayoutEffect(() => {
@@ -464,20 +462,14 @@ export const ImageCreationLogModal: React.FC<Props> = (
   const renderContent = () => {
     if (status === Status.FAILURE) {
       return (
-
         <LogContainer>
-          <LogText>
-            {failedReason ? failedReason : t(p("unknownFailure")) }
-          </LogText>
+          <LogText>{failedReason ? failedReason : t(p("unknownFailure"))}</LogText>
         </LogContainer>
       );
     }
 
     return (
-
-      <LogContainer
-        ref={logContainerRef}
-      >
+      <LogContainer ref={logContainerRef}>
         {/* 日志组件始终存在于 DOM 树，只是通过 display 控制隐藏 */}
         <div style={{ display: showLog ? "block" : "none" }}>
           <LogDisplay ref={logTextRef} showCursor={isTyping} />
@@ -485,14 +477,16 @@ export const ImageCreationLogModal: React.FC<Props> = (
         {!showLog && (
           <EmptyState>
             {isFetching ? (
-              <LoadingContainer><Spin /><span>{t(p("fetchingLog"))}</span></LoadingContainer>
+              <LoadingContainer>
+                <Spin />
+                <span>{t(p("fetchingLog"))}</span>
+              </LoadingContainer>
             ) : (
               t(p("noLog"))
             )}
           </EmptyState>
         )}
       </LogContainer>
-
     );
   };
 
@@ -506,9 +500,7 @@ export const ImageCreationLogModal: React.FC<Props> = (
       destroyOnClose={false}
       footer={null}
     >
-      <ContentContainer>
-        {renderContent()}
-      </ContentContainer>
+      <ContentContainer>{renderContent()}</ContentContainer>
     </StyledModal>
   );
 };

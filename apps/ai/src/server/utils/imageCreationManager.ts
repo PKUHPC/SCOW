@@ -50,7 +50,6 @@ export function appendImageCreationOutput(
   isOperationCompleted?: boolean,
   isCreated?: boolean,
 ) {
-
   const op = imageOperationsStore.get(imageId);
   const currentLogBuffer = outputChunk ? Buffer.from(outputChunk, "utf-8") : Buffer.alloc(0);
   const currentTotalLength = currentLogBuffer.length;
@@ -79,8 +78,8 @@ export function appendImageCreationOutput(
     imageOperationsStore.set(imageId, imageOp);
     return;
 
-  // 有操作记录时判断新写入当前操作类型的日志
-  // 还是续写已有日志
+    // 有操作记录时判断新写入当前操作类型的日志
+    // 还是续写已有日志
   } else {
     const currentOperationLog = op.operationLogs.get(operationName);
 
@@ -105,9 +104,8 @@ export function appendImageCreationOutput(
       };
       op.operationLogs.set(operationName, newOperationLog);
 
-    // 如果操作类型对应日志已经存在则续写日志
+      // 如果操作类型对应日志已经存在则续写日志
     } else {
-
       if (operationName === CreationOperation.PULL_IMAGE || operationName === CreationOperation.PUSH_IMAGE) {
         currentOperationLog.operationLog += outputChunk;
         currentOperationLog.currentLogLength += currentTotalLength;
@@ -124,19 +122,16 @@ export function appendImageCreationOutput(
     op.currentOperation = operationName;
     op.updateTime = now;
     op.isCreated = isCreated || false;
-
   }
 }
 
-export function cleanupImageCreationOutput(
-  imageId: number, logger: Logger, delay: number = 3 * 60 * 1000,
-) {
+export function cleanupImageCreationOutput(imageId: number, logger: Logger, delay: number = 3 * 60 * 1000) {
   // 3分钟后清除，给前端足够时间获取数据
   setTimeout(() => {
     logger.trace("The image creation log will be cleanup after 3 minutes for front-end display.");
     imageOperationsStore.delete(imageId);
   }, delay);
-};
+}
 
 /**
  * API模拟分页流
@@ -246,5 +241,3 @@ export function truncateErrorMessage(errorMessage: string, maxLength: number = 1
 
   return ellipsis + result;
 }
-
-

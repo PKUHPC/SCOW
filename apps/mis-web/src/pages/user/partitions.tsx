@@ -35,7 +35,7 @@ type ValueOf<T> = T[keyof T];
 
 interface Props {
   text: ValueOf<ClusterTextsConfigSchema> | undefined;
-  isResourceDeployed: boolean,
+  isResourceDeployed: boolean;
   // 用户关联账户的已授权集群Id
   assignedClusterIds: string[];
 }
@@ -45,7 +45,6 @@ const p = prefix("page.user.partitions.");
 const { Panel } = Collapse;
 
 export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: Props) => {
-
   const userStore = useStore(UserStore);
   const user = userStore.user;
 
@@ -65,23 +64,28 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
     );
   }, [activatedClusters, isResourceDeployed, assignedClusterIds]);
 
-  const clusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList)
-    .filter((x) => Object.keys(currentUserAssignedClusters).includes(x.id));
+  const clusters = getSortedClusterValues(publicConfigClusters, clusterSortedIdList).filter((x) =>
+    Object.keys(currentUserAssignedClusters).includes(x.id),
+  );
   const sortedIds = clusterSortedIdList.filter((id) => currentUserAssignedClusters[id]);
 
   sortedIds.forEach((clusterId) => {
-    useAsync({ promiseFn: useCallback(async () => {
-      const cluster = currentUserAssignedClusters[clusterId];
-      return api.getAvailableBillingTable({
-        query: { cluster: cluster.id, tenant: user?.tenant, userId: user?.identityId } })
-        .then((data) => {
-          setRenderData((prevData) => ({
-            ...prevData,
-            [cluster.id]: data.items,
-          }));
-          setCompletedRequestCount((prevCount) => prevCount + 1);
-        });
-    }, [userStore.user]) });
+    useAsync({
+      promiseFn: useCallback(async () => {
+        const cluster = currentUserAssignedClusters[clusterId];
+        return api
+          .getAvailableBillingTable({
+            query: { cluster: cluster.id, tenant: user?.tenant, userId: user?.identityId },
+          })
+          .then((data) => {
+            setRenderData((prevData) => ({
+              ...prevData,
+              [cluster.id]: data.items,
+            }));
+            setCompletedRequestCount((prevCount) => prevCount + 1);
+          });
+      }, [userStore.user]),
+    });
   });
 
   return (
@@ -89,77 +93,61 @@ export const PartitionsPage: NextPage<Props> = requireAuth(() => true)((props: P
       <Head title={t(p("partitionInfo"))} />
       <PageTitle titleText={t(p("partitionInfo"))} />
       <div>
-        {
-          completedRequestCount < clusters.length ? (
-            <Spin
-              spinning={completedRequestCount < clusters.length}
-              tip={t(p("loading"))}
-            >
-              <></>
-            </Spin>
-          ) : (
-            clusters.length === 0 ? (
-              <>
-                {t("common.noAvailableClusters")}
-              </>
-            ) : null
-          )
-        }
+        {completedRequestCount < clusters.length ? (
+          <Spin spinning={completedRequestCount < clusters.length} tip={t(p("loading"))}>
+            <></>
+          </Spin>
+        ) : clusters.length === 0 ? (
+          <>{t("common.noAvailableClusters")}</>
+        ) : null}
       </div>
-      <div style={completedRequestCount < clusters.length
-        ? { marginBottom: "32px", marginTop: "48px" } : { marginBottom: "32px" }}
+      <div
+        style={
+          completedRequestCount < clusters.length
+            ? { marginBottom: "32px", marginTop: "48px" }
+            : { marginBottom: "32px" }
+        }
       >
         <Space direction="vertical" style={{ width: "100%" }}>
           {clusters.map((cluster) => {
             const data = renderData[cluster.id];
-            return (
-              data && data.length > 0 ? (
-                <Collapse key={cluster.id} defaultActiveKey={[cluster.id]}>
-                  <Panel
-                    header={getI18nConfigCurrentText(cluster.name, languageId)}
-                    collapsible="header"
-                    key={cluster.id}
-                  >
-                    <div key={cluster.id}>
-                      <JobBillingTable data={data} isUserPartitionsPage={true} />
-                    </div>
-                  </Panel>
-                </Collapse>
-              ) : null
-            );
+            return data && data.length > 0 ? (
+              <Collapse key={cluster.id} defaultActiveKey={[cluster.id]}>
+                <Panel
+                  header={getI18nConfigCurrentText(cluster.name, languageId)}
+                  collapsible="header"
+                  key={cluster.id}
+                >
+                  <div key={cluster.id}>
+                    <JobBillingTable data={data} isUserPartitionsPage={true} />
+                  </div>
+                </Panel>
+              </Collapse>
+            ) : null;
           })}
         </Space>
       </div>
 
       <div>
-        {
-          text?.clusterComment ? (
-            <div>
-              <ClusterCommentTitle level={2}>{t("common.illustrate")}</ClusterCommentTitle>
-              <ContentContainer>
-                {getI18nConfigCurrentText(text?.clusterComment, languageId)}
-              </ContentContainer>
-            </div>
-          ) : undefined
-        }
-        {
-          text?.extras?.map(({ title, content }, i) => (
-            <div key={i}>
-              <Divider />
-              <PageTitle titleText={getI18nConfigCurrentText(title, languageId)} />
-              <ContentContainer>{getI18nConfigCurrentText(content, languageId)}</ContentContainer>
-            </div>
-          ))
-        }
+        {text?.clusterComment ? (
+          <div>
+            <ClusterCommentTitle level={2}>{t("common.illustrate")}</ClusterCommentTitle>
+            <ContentContainer>{getI18nConfigCurrentText(text?.clusterComment, languageId)}</ContentContainer>
+          </div>
+        ) : undefined}
+        {text?.extras?.map(({ title, content }, i) => (
+          <div key={i}>
+            <Divider />
+            <PageTitle titleText={getI18nConfigCurrentText(title, languageId)} />
+            <ContentContainer>{getI18nConfigCurrentText(content, languageId)}</ContentContainer>
+          </div>
+        ))}
       </div>
-
     </div>
   );
 });
 
-
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
-
   const user = await checkCookie(() => true, ctx.req);
 
   const clusterTexts = runtimeConfig.CLUSTER_TEXTS_CONFIG;
@@ -167,28 +155,24 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   // 如果部署了资源管理系统，获取用户关联账户的已授权集群信息
   let assignedClusterIds: string[] = [];
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && typeof user !== "number") {
-    const userAccounts = user.accountAffiliations.map((aff) => (aff.accountName));
-    assignedClusterIds = await getUserAccountsClusterIds(
-      runtimeConfig.SCOW_RESOURCE_CONFIG,
-      userAccounts,
-      user.tenant,
-    );
-
+    const userAccounts = user.accountAffiliations.map((aff) => aff.accountName);
+    assignedClusterIds = await getUserAccountsClusterIds(runtimeConfig.SCOW_RESOURCE_CONFIG, userAccounts, user.tenant);
   }
 
   // find the applicable text
-  const applicableTexts = clusterTexts ? (
-    typeof user === "number"
+  const applicableTexts = clusterTexts
+    ? typeof user === "number"
       ? clusterTexts
       : (clusterTexts[user.tenant] ?? clusterTexts.default)
-  ) : undefined;
+    : undefined;
 
-  return { props: {
-    text: applicableTexts,
-    isResourceDeployed: !!runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled,
-    assignedClusterIds,
-  } };
+  return {
+    props: {
+      text: applicableTexts,
+      isResourceDeployed: !!runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled,
+      assignedClusterIds,
+    },
+  };
 };
-
 
 export default PartitionsPage;

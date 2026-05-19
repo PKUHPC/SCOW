@@ -1,3 +1,5 @@
+import type { Cluster } from "src/utils/cluster";
+
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { TableWrapper } from "@scow/lib-web/build/components/table/styleComponents";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
@@ -24,7 +26,6 @@ import { BatchChangeJobTimeLimitButton } from "src/pageComponents/job/BatchChang
 import { ChangeJobTimeLimitModal } from "src/pageComponents/job/ChangeJobTimeLimitModal";
 import { RunningJobDrawer } from "src/pageComponents/job/RunningJobDrawer";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
-import type { Cluster } from "src/utils/cluster";
 import { publicConfig } from "src/utils/config";
 import { getAiExceptionJobI18nReason } from "src/utils/form";
 
@@ -85,7 +86,6 @@ const COLUMN_WIDTH_WEIGHT: Record<ColumnWidthKey, number> = {
   operationDefault: 12,
 };
 
-
 const p = prefix("pageComp.job.runningJobTable.");
 const pCommon = prefix("common.");
 
@@ -98,7 +98,6 @@ export const RunningJobQueryTable: React.FC<Props> = ({
   filterAccountName = true,
   showChangeTimeLimit = false,
 }) => {
-
   const t = useI18nTranslateToString();
 
   const searchType = useRef<"precision" | "range">("range");
@@ -129,27 +128,34 @@ export const RunningJobQueryTable: React.FC<Props> = ({
   const [form] = Form.useForm<FilterForm>();
 
   const promiseFn = useCallback(async () => {
+    const diffAccountNameQuery =
+      searchType.current === "precision"
+        ? {
+            accountName: Array.isArray(accountNames) ? undefined : accountNames,
+          }
+        : {
+            accountName: query.accountName || undefined,
+          };
 
-    const diffAccountNameQuery = searchType.current === "precision" ? {
-      accountName : Array.isArray(accountNames) ? undefined : accountNames,
-    } : {
-      accountName: query.accountName || undefined,
-    };
+    const diffSearchQuery =
+      searchType.current === "precision"
+        ? {
+            userIdOrName: undefined,
+            ownerIdOrName: undefined,
+          }
+        : {
+            userIdOrName: query.userIdOrName || undefined,
+            ownerIdOrName: query.ownerIdOrName || undefined,
+          };
 
-    const diffSearchQuery = searchType.current === "precision" ? {
-      userIdOrName: undefined,
-      ownerIdOrName: undefined,
-    } : {
-      userIdOrName: query.userIdOrName || undefined,
-      ownerIdOrName: query.ownerIdOrName || undefined,
-    };
-
-    return await api.getRunningJobs({ query: {
-      userId: userId || undefined,
-      cluster: query.cluster.id,
-      ...diffAccountNameQuery,
-      ...diffSearchQuery,
-    } });
+    return await api.getRunningJobs({
+      query: {
+        userId: userId || undefined,
+        cluster: query.cluster.id,
+        ...diffAccountNameQuery,
+        ...diffSearchQuery,
+      },
+    });
   }, [
     userId,
     searchType.current,
@@ -163,7 +169,9 @@ export const RunningJobQueryTable: React.FC<Props> = ({
   const { data, isLoading, reload } = useAsync({ promiseFn });
 
   const filteredData = useMemo(() => {
-    if (!data) { return undefined; }
+    if (!data) {
+      return undefined;
+    }
 
     let filtered = data.results;
     if (searchType.current === "precision" && query.jobId) {
@@ -196,12 +204,16 @@ export const RunningJobQueryTable: React.FC<Props> = ({
             onChange={(key: "range" | "precision") => {
               searchType.current = key;
             }}
-            button={(
+            button={
               <Space>
-                <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
-                <Button onClick={reload} loading={isLoading}>{t(pCommon("fresh"))}</Button>
+                <Button type="primary" htmlType="submit">
+                  {t(pCommon("search"))}
+                </Button>
+                <Button onClick={reload} loading={isLoading}>
+                  {t(pCommon("fresh"))}
+                </Button>
               </Space>
-            )}
+            }
             tabs={[
               {
                 title: t(p("batch")),
@@ -212,42 +224,40 @@ export const RunningJobQueryTable: React.FC<Props> = ({
                       <SingleClusterSelector />
                     </Form.Item>
                     {showUser && (
-                      <Form.Item label={t(pCommon("user"))} name="userIdOrName" style={{ marginLeft:"0.5em" }}>
+                      <Form.Item label={t(pCommon("user"))} name="userIdOrName" style={{ marginLeft: "0.5em" }}>
                         <Input placeholder={t(p("userIdOrNamePlaceholder"))} />
                       </Form.Item>
                     )}
-                    {
-                      filterAccountName
-                        ? accountNames
-                          ? (
-                            <Form.Item label={t(pCommon("account"))} name="accountName">
-                              <Select style={{ minWidth: 96 }} allowClear>
-                                {(Array.isArray(accountNames) ? accountNames : [accountNames]).map((x) => (
-                                  <Select.Option key={x} value={x}>{x}</Select.Option>
-                                ))}
-                              </Select>
-                            </Form.Item>
-                          ) : (
-                            <>
-                              <Form.Item
-                                label={t(pCommon("account"))}
-                                name="accountName"
-                                style={{ marginLeft:"0.5em" }}
-                              >
-                                <Input />
-                              </Form.Item>
-                            </>
-                          )
-                        : undefined
-                    }
+                    {filterAccountName ? (
+                      accountNames ? (
+                        <Form.Item label={t(pCommon("account"))} name="accountName">
+                          <Select style={{ minWidth: 96 }} allowClear>
+                            {(Array.isArray(accountNames) ? accountNames : [accountNames]).map((x) => (
+                              <Select.Option key={x} value={x}>
+                                {x}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      ) : (
+                        <>
+                          <Form.Item label={t(pCommon("account"))} name="accountName" style={{ marginLeft: "0.5em" }}>
+                            <Input />
+                          </Form.Item>
+                        </>
+                      )
+                    ) : undefined}
                     {showAccount && (
-                      <Form.Item label={t(pCommon("accountOwner"))} name="ownerIdOrName" style={{ marginLeft:"0.5em" }}>
+                      <Form.Item
+                        label={t(pCommon("accountOwner"))}
+                        name="ownerIdOrName"
+                        style={{ marginLeft: "0.5em" }}
+                      >
                         <Input placeholder={t(p("ownerIdOrNamePlaceholder"))} />
                       </Form.Item>
                     )}
                   </>
                 ),
-
               },
               {
                 title: t(p("precision")),
@@ -277,15 +287,13 @@ export const RunningJobQueryTable: React.FC<Props> = ({
         showChangeTimeLimit={showChangeTimeLimit}
         reload={reload}
         selection={{
-          selected, setSelected,
+          selected,
+          setSelected,
         }}
       />
     </div>
   );
 };
-
-
-
 
 interface JobInfoTableProps {
   data: RunningJobInfo[] | undefined;
@@ -299,7 +307,7 @@ interface JobInfoTableProps {
   selection?: {
     selected: RunningJobInfo[];
     setSelected: (d: RunningJobInfo[]) => void;
-  }
+  };
 }
 
 const ChangeJobTimeLimitModalLink = ModalLink(ChangeJobTimeLimitModal);
@@ -325,76 +333,75 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
-  const renderOperation = useCallback((r: RunningJobInfo) => {
-    if (compactOperation) {
+  const renderOperation = useCallback(
+    (r: RunningJobInfo) => {
+      if (compactOperation) {
+        return (
+          <Space size={16}>
+            <Tooltip title={t(pCommon("detail"))}>
+              <DetailIcon onClick={() => setPreviewItem(r)} />
+            </Tooltip>
+            {changeJobLimitEnabled && (
+              <ChangeJobTimeLimitModalLink reload={reload} data={[r]}>
+                <Tooltip title={t(p("changeLimit"))}>
+                  <ModifyDeadlineIcon />
+                </Tooltip>
+              </ChangeJobTimeLimitModalLink>
+            )}
+            <Popconfirm
+              title={t(p("finishJobConfirm"))}
+              onConfirm={async () =>
+                api
+                  .cancelJob({
+                    query: {
+                      cluster: r.cluster.id,
+                      jobId: r.jobId,
+                    },
+                  })
+                  .then(() => {
+                    message.success(t(p("finishJobSuccess")));
+                    reload();
+                  })
+              }
+            >
+              <Tooltip title={t(p("finishJobButton"))}>
+                <EndIcon />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      }
       return (
         <Space size={16}>
-          <Tooltip title={t(pCommon("detail"))}>
-            <DetailIcon
-              onClick={() => setPreviewItem(r)}
-            />
-          </Tooltip>
+          <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
           {changeJobLimitEnabled && (
-            <ChangeJobTimeLimitModalLink
-              reload={reload}
-              data={[r]}
-            >
-              <Tooltip title={t(p("changeLimit"))}>
-                <ModifyDeadlineIcon />
-              </Tooltip>
+            <ChangeJobTimeLimitModalLink reload={reload} data={[r]}>
+              {t(p("changeLimit"))}
             </ChangeJobTimeLimitModalLink>
           )}
           <Popconfirm
             title={t(p("finishJobConfirm"))}
             onConfirm={async () =>
-              api.cancelJob({
-                query: {
-                  cluster: r.cluster.id,
-                  jobId: r.jobId,
-                },
-              }).then(() => {
-                message.success(t(p("finishJobSuccess")));
-                reload();
-              })
+              api
+                .cancelJob({
+                  query: {
+                    cluster: r.cluster.id,
+                    jobId: r.jobId,
+                  },
+                })
+                .then(() => {
+                  message.success(t(p("finishJobSuccess")));
+                  reload();
+                })
             }
           >
-            <Tooltip title={t(p("finishJobButton"))}>
-              <EndIcon />
-            </Tooltip>
+            <a>{t(p("finishJobButton"))}</a>
           </Popconfirm>
         </Space>
       );
-    }
-    return (
-      <Space size={16}>
-        <a onClick={() => setPreviewItem(r)}>{t(pCommon("detail"))}</a>
-        {changeJobLimitEnabled && (
-          <ChangeJobTimeLimitModalLink
-            reload={reload}
-            data={[r]}
-          >
-            {t(p("changeLimit"))}
-          </ChangeJobTimeLimitModalLink>
-        )}
-        <Popconfirm
-          title={t(p("finishJobConfirm"))}
-          onConfirm={async () =>
-            api.cancelJob({
-              query: {
-                cluster: r.cluster.id,
-                jobId: r.jobId,
-              },
-            }).then(() => {
-              message.success(t(p("finishJobSuccess")));
-              reload();
-            })
-          }
-        >
-          <a>{t(p("finishJobButton"))}</a>
-        </Popconfirm>
-      </Space>
-    );
-  }, [t]);
+    },
+    [t],
+  );
 
   const visibleColumnWeights = useMemo(() => {
     const visibleColumns: ColumnWidthKey[] = [];
@@ -445,18 +452,20 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
       ) : undefined}
       <TableWrapper>
         <Table
-          {...(selection ? {
-            rowSelection: {
-              type: "checkbox",
-              selectedRowKeys: selection.selected.map(runningJobId),
-              onChange: (_selectedRowKeys: React.Key[], selectedRows: RunningJobInfo[]) => {
-                selection.setSelected(selectedRows);
-              },
-              getCheckboxProps: (record: RunningJobInfo) => ({
-                name: record.name,
-              }),
-            },
-          } : {})}
+          {...(selection
+            ? {
+                rowSelection: {
+                  type: "checkbox",
+                  selectedRowKeys: selection.selected.map(runningJobId),
+                  onChange: (_selectedRowKeys: React.Key[], selectedRows: RunningJobInfo[]) => {
+                    selection.setSelected(selectedRows);
+                  },
+                  getCheckboxProps: (record: RunningJobInfo) => ({
+                    name: record.name,
+                  }),
+                },
+              }
+            : {})}
           dataSource={data}
           loading={isLoading}
           pagination={{
@@ -467,27 +476,28 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           scroll={{ x: data?.length ? 2200 : true }}
           tableLayout="fixed"
         >
-          {
-            showCluster && (
-              <Table.Column<RunningJobInfo>
-                dataIndex="cluster"
-                width={visibleColumnWeights("cluster")}
-                title={t(pCommon("cluster"))}
-                render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
-                sorter={(a, b) => {
-                  const clusterA = getI18nConfigCurrentText(a.cluster.name, languageId);
-                  const clusterB = getI18nConfigCurrentText(b.cluster.name, languageId);
-                  return compareNullableString(clusterA, clusterB);
-                }}
-              />
-            )
-          }
+          {showCluster && (
+            <Table.Column<RunningJobInfo>
+              dataIndex="cluster"
+              width={visibleColumnWeights("cluster")}
+              title={t(pCommon("cluster"))}
+              render={(_, r) => getI18nConfigCurrentText(r.cluster.name, languageId)}
+              sorter={(a, b) => {
+                const clusterA = getI18nConfigCurrentText(a.cluster.name, languageId);
+                const clusterB = getI18nConfigCurrentText(b.cluster.name, languageId);
+                return compareNullableString(clusterA, clusterB);
+              }}
+            />
+          )}
           <Table.Column<RunningJobInfo>
             dataIndex="jobId"
             width={visibleColumnWeights("jobId")}
             title={t(pCommon("workId"))}
-            sorter={(a, b) => (isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))) ?
-              a.jobId.localeCompare(b.jobId) : Number(a.jobId) - Number(b.jobId)}
+            sorter={(a, b) =>
+              isNaN(Number(a.jobId)) || isNaN(Number(b.jobId))
+                ? a.jobId.localeCompare(b.jobId)
+                : Number(a.jobId) - Number(b.jobId)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="name"
@@ -496,42 +506,35 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             title={t(pCommon("workName"))}
             sorter={(a, b) => a.name.localeCompare(b.name)}
           />
-          {
-            showUser && (
-              <Table.Column<RunningJobInfo>
-                dataIndex="user"
-                width={visibleColumnWeights("user")}
-                ellipsis
-                title={t(pCommon("user"))}
-                render={(user, record) => `${record.userName} (ID:${user})`}
-                sorter={(a, b) => a.user.localeCompare(b.user)}
-              />
-            )
-          }
-          {
-            showAccount && (
-              <Table.Column<RunningJobInfo>
-                dataIndex="account"
-                width={visibleColumnWeights("account")}
-                ellipsis
-                title={t(pCommon("account"))}
-                sorter={(a, b) => a.account.localeCompare(b.account)}
-              />
-            )
-          }
-          {
-            showOwner && (
-              <Table.Column<RunningJobInfo>
-                dataIndex="accountOwnerName"
-                width={visibleColumnWeights("owner")}
-                ellipsis
-                title={t(pCommon("accountOwner"))}
-                render={(_, r) => `${r.accountOwnerName ?? "-"} (ID:${r.accountOwnerId ?? "-"})`}
-                sorter={(a, b) =>
-                  (a.accountOwnerName ?? "").localeCompare(b.accountOwnerName ?? "")}
-              />
-            )
-          }
+          {showUser && (
+            <Table.Column<RunningJobInfo>
+              dataIndex="user"
+              width={visibleColumnWeights("user")}
+              ellipsis
+              title={t(pCommon("user"))}
+              render={(user, record) => `${record.userName} (ID:${user})`}
+              sorter={(a, b) => a.user.localeCompare(b.user)}
+            />
+          )}
+          {showAccount && (
+            <Table.Column<RunningJobInfo>
+              dataIndex="account"
+              width={visibleColumnWeights("account")}
+              ellipsis
+              title={t(pCommon("account"))}
+              sorter={(a, b) => a.account.localeCompare(b.account)}
+            />
+          )}
+          {showOwner && (
+            <Table.Column<RunningJobInfo>
+              dataIndex="accountOwnerName"
+              width={visibleColumnWeights("owner")}
+              ellipsis
+              title={t(pCommon("accountOwner"))}
+              render={(_, r) => `${r.accountOwnerName ?? "-"} (ID:${r.accountOwnerId ?? "-"})`}
+              sorter={(a, b) => (a.accountOwnerName ?? "").localeCompare(b.accountOwnerName ?? "")}
+            />
+          )}
           <Table.Column<RunningJobInfo>
             dataIndex="partition"
             width={visibleColumnWeights("partition")}
@@ -544,32 +547,42 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
             width={visibleColumnWeights("qos")}
             ellipsis
             title="QOS"
-            sorter={(a, b) => (isNaN(Number(a.qos)) || isNaN(Number(b.qos))) ?
-              a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)}
+            sorter={(a, b) =>
+              isNaN(Number(a.qos)) || isNaN(Number(b.qos)) ? a.qos.localeCompare(b.qos) : Number(a.qos) - Number(b.qos)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="nodes"
             width={visibleColumnWeights("nodes")}
             ellipsis
             title={t(p("nodes"))}
-            sorter={(a, b) => (isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))) ?
-              a.nodes.localeCompare(b.nodes) : Number(a.nodes) - Number(b.nodes)}
+            sorter={(a, b) =>
+              isNaN(Number(a.nodes)) || isNaN(Number(b.nodes))
+                ? a.nodes.localeCompare(b.nodes)
+                : Number(a.nodes) - Number(b.nodes)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="cores"
             width={visibleColumnWeights("cores")}
             ellipsis
             title={t(p("cores"))}
-            sorter={(a, b) => (isNaN(Number(a.cores)) || isNaN(Number(b.cores))) ?
-              a.cores.localeCompare(b.cores) : Number(a.cores) - Number(b.cores)}
+            sorter={(a, b) =>
+              isNaN(Number(a.cores)) || isNaN(Number(b.cores))
+                ? a.cores.localeCompare(b.cores)
+                : Number(a.cores) - Number(b.cores)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="gpus"
             width={visibleColumnWeights("gpus")}
             ellipsis
             title={t(p("gpus"))}
-            sorter={(a, b) => (isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))) ?
-              a.gpus.localeCompare(b.gpus) : Number(a.gpus) - Number(b.gpus)}
+            sorter={(a, b) =>
+              isNaN(Number(a.gpus)) || isNaN(Number(b.gpus))
+                ? a.gpus.localeCompare(b.gpus)
+                : Number(a.gpus) - Number(b.gpus)
+            }
           />
           <Table.Column<RunningJobInfo>
             dataIndex="state"
@@ -616,11 +629,7 @@ export const RunningJobInfoTable: React.FC<JobInfoTableProps> = ({
           />
         </Table>
       </TableWrapper>
-      <RunningJobDrawer
-        open={previewItem !== undefined}
-        item={previewItem}
-        onClose={() => setPreviewItem(undefined)}
-      />
+      <RunningJobDrawer open={previewItem !== undefined} item={previewItem} onClose={() => setPreviewItem(undefined)} />
     </>
   );
 };

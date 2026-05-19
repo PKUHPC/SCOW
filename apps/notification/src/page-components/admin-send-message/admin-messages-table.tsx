@@ -3,8 +3,8 @@
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { useQuery } from "@connectrpc/connect-query";
 import { RoundedSearch } from "@scow/lib-web/build/components/styledAntdCom/Input";
-import { Message } from "@scow/notification-protos/build/message_pb";
 import { adminListMessages } from "@scow/notification-protos/build/message-MessageService_connectquery";
+import { Message } from "@scow/notification-protos/build/message_pb";
 import { Button, Descriptions, Drawer, Form, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import React, { useContext, useEffect, useState } from "react";
@@ -41,9 +41,7 @@ interface FilterForm {
   keyword?: string;
 }
 
-const MessageDetailDrawer: React.FC<MessageDetailDrawerProps> = ({
-  visible, onClose, message, language,
-}) => {
+const MessageDetailDrawer: React.FC<MessageDetailDrawerProps> = ({ visible, onClose, message, language }) => {
   const { scowLangId } = useContext(ScowParamsContext);
 
   if (!message) return null;
@@ -70,25 +68,30 @@ const MessageDetailDrawer: React.FC<MessageDetailDrawerProps> = ({
       label: language.sendMessage.adminMessagesTable.time,
       children: message.createdAt ? formatDateTime(message.createdAt) : language.sendMessage.adminMessagesTable.unknown,
     },
-    ...(message.expiredAt ? [{
-      key: "expiredAt",
-      label: language.sendMessage.adminMessagesTable.expirationTime,
-      children: dayjs(timestampDate(message.expiredAt)).format("YYYY-MM-DD HH:mm:ss"),
-    }] : []),
+    ...(message.expiredAt
+      ? [
+          {
+            key: "expiredAt",
+            label: language.sendMessage.adminMessagesTable.expirationTime,
+            children: dayjs(timestampDate(message.expiredAt)).format("YYYY-MM-DD HH:mm:ss"),
+          },
+        ]
+      : []),
     {
       key: "noticeTypes",
       label: language.noticeType.noticeMethod,
-      children: message.noticeTypes && message.noticeTypes.length > 0 ? (
-        <div>
-          {message.noticeTypes.map((noticeType: number, typeIndex: number) => (
-            <Tag key={typeIndex} color="blue" style={{ marginRight: "4px", marginBottom: "4px" }}>
-              {getNoticeTypeName(noticeType, scowLangId)}
-            </Tag>
-          ))}
-        </div>
-      ) : (
-        <Tag color="default">{language.noticeType.noNoticeMethod}</Tag>
-      ),
+      children:
+        message.noticeTypes && message.noticeTypes.length > 0 ? (
+          <div>
+            {message.noticeTypes.map((noticeType: number, typeIndex: number) => (
+              <Tag key={typeIndex} color="blue" style={{ marginRight: "4px", marginBottom: "4px" }}>
+                {getNoticeTypeName(noticeType, scowLangId)}
+              </Tag>
+            ))}
+          </div>
+        ) : (
+          <Tag color="default">{language.noticeType.noNoticeMethod}</Tag>
+        ),
     },
   ];
 
@@ -155,9 +158,7 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
       key: "createdAt",
       width: 180,
       render: (_: any, record: Message) => {
-        return record.createdAt
-          ? formatDateTime(record.createdAt)
-          : language.sendMessage.adminMessagesTable.unknown;
+        return record.createdAt ? formatDateTime(record.createdAt) : language.sendMessage.adminMessagesTable.unknown;
       },
     },
     {
@@ -175,8 +176,12 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
       width: 300,
       render: (_: any, record: Message) => {
         const template = record.messageType?.titleTemplate;
-        return template?.[scowLangId] || template?.default ||
-          record.messageType?.type || language.sendMessage.adminMessagesTable.unknown;
+        return (
+          template?.[scowLangId] ||
+          template?.default ||
+          record.messageType?.type ||
+          language.sendMessage.adminMessagesTable.unknown
+        );
       },
     },
     {
@@ -184,11 +189,7 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
       key: "action",
       width: 100,
       render: (_: any, record: Message) => (
-        <Button
-          type="link"
-          size="small"
-          onClick={() => handleViewDetail(record)}
-        >
+        <Button type="link" size="small" onClick={() => handleViewDetail(record)}>
           {language.sendMessage.adminMessagesTable.viewDetails}
         </Button>
       ),
@@ -198,7 +199,9 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
   if (error) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
-        <Text type="danger">{language.sendMessage.adminMessagesTable.loadFailed}: {error.message}</Text>
+        <Text type="danger">
+          {language.sendMessage.adminMessagesTable.loadFailed}: {error.message}
+        </Text>
       </div>
     );
   }
@@ -206,25 +209,22 @@ export const AdminMessagesTable: React.FC<AdminMessagesTableProps> = ({ lang, re
   return (
     <div style={{ marginTop: "40px" }}>
       <div style={{ marginBottom: "16px" }}>
-        <Text strong style={{ fontSize: "16px" }}>{language.sendMessage.adminMessagesTable.adminMessages}</Text>
+        <Text strong style={{ fontSize: "16px" }}>
+          {language.sendMessage.adminMessagesTable.adminMessages}
+        </Text>
       </div>
 
       <FilterFormContainer>
-        <Form<FilterForm>
-          form={form}
-          initialValues={{ keyword }}
-        >
+        <Form<FilterForm> form={form} initialValues={{ keyword }}>
           <Form.Item name="keyword">
             <SearchWrapper>
               <RoundedSearch
                 placeholder={language.sendMessage.adminMessagesTable.keywordPlaceholder}
-                onSearch={
-                  async () => {
-                    const values = await form.validateFields();
-                    setKeyword((values.keyword ?? "").trim());
-                    setCurrentPage(1);
-                  }
-                }
+                onSearch={async () => {
+                  const values = await form.validateFields();
+                  setKeyword((values.keyword ?? "").trim());
+                  setCurrentPage(1);
+                }}
                 size="large"
                 enterButton
               />

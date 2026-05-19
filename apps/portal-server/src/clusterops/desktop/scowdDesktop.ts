@@ -23,18 +23,22 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     }
 
     const client = getScowdClientByUrl(scowdUrl);
-    if (!client) { throw scowdClientNotFound(scowdUrl); }
+    if (!client) {
+      throw scowdClientNotFound(scowdUrl);
+    }
 
     try {
       const res = await client.desktop.createDesktop({
         userId,
         vncServerBinPath: vncserverBinPath,
-        maxDesktops, wm, desktopName,
-        desktopDir: desktopsDir, loginNode: host,
+        maxDesktops,
+        wm,
+        desktopName,
+        desktopDir: desktopsDir,
+        loginNode: host,
       });
 
       return { host, password: res.password, port: displayIdToPort(res.displayId) };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -44,7 +48,6 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
   },
 
   killDesktop: async (request) => {
-
     const { loginNode: host, displayId, userId, id } = request;
 
     const vncserverBinPath = getTurboVNCBinPath(cluster, "vncserver");
@@ -56,18 +59,23 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     }
 
     const client = getScowdClientByUrl(scowdUrl);
-    if (!client) { throw scowdClientNotFound(scowdUrl); }
+    if (!client) {
+      throw scowdClientNotFound(scowdUrl);
+    }
 
     const { desktopsDir } = getDesktopConfig(cluster);
 
     try {
       await client.desktop.killDesktop({
-        id, userId, vncServerBinPath: vncserverBinPath,
-        displayId, desktopDir: desktopsDir, loginNode: host,
+        id,
+        userId,
+        vncServerBinPath: vncserverBinPath,
+        displayId,
+        desktopDir: desktopsDir,
+        loginNode: host,
       });
 
       return {};
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -77,7 +85,6 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
   },
 
   connectToDesktop: async (request) => {
-
     const { loginNode: host, displayId, userId, id } = request;
 
     const scowdUrl = getLoginNodeScowdUrl(cluster, host);
@@ -87,7 +94,9 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     }
 
     const client = getScowdClientByUrl(scowdUrl);
-    if (!client) { throw scowdClientNotFound(scowdUrl); }
+    if (!client) {
+      throw scowdClientNotFound(scowdUrl);
+    }
 
     const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
 
@@ -95,7 +104,6 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       const res = await client.desktop.connectToDesktop({ userId, vncPasswdPath: vncPasswdPath, displayId, id });
 
       return { host, port: displayIdToPort(displayId), password: res.password };
-
     } catch (err) {
       if (err instanceof ConnectError) {
         throw { code: mapConnectRpcStatusToGrpc(err.code), details: err.message } as ServiceError;
@@ -105,7 +113,6 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
   },
 
   listUserDesktops: async (request) => {
-
     const { loginNode: host, userId } = request;
 
     const vncserverBinPath = getTurboVNCBinPath(cluster, "vncserver");
@@ -118,7 +125,9 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
     }
 
     const client = getScowdClientByUrl(scowdUrl);
-    if (!client) { throw scowdClientNotFound(scowdUrl); }
+    if (!client) {
+      throw scowdClientNotFound(scowdUrl);
+    }
 
     try {
       const vncPromise = client.desktop.listUserDesktops({
@@ -134,10 +143,13 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
       const [vncRes, shadowRes] = await Promise.all([vncPromise, shadowDeskPromise]);
 
       const userDeskTops: Desktop[] = vncRes.userDesktops.map((desktop) => {
-
-        const createTime = !desktop.createTime ? undefined
-          : new Date(Number((desktop.createTime.seconds * BigInt(1000))
-            + BigInt(Math.floor(desktop.createTime.nanos / 1000000))));
+        const createTime = !desktop.createTime
+          ? undefined
+          : new Date(
+              Number(
+                desktop.createTime.seconds * BigInt(1000) + BigInt(Math.floor(desktop.createTime.nanos / 1000000)),
+              ),
+            );
 
         return {
           id: desktop.id,
@@ -161,26 +173,26 @@ export const scowdDesktopServices = (cluster: string): DesktopOps => ({
           throw new Error(`HTTP error! status: ${shadowRes.status}, data: ${JSON.stringify(errorData)}`);
         }
 
-        shadowdeskUserDeskTops = (shadowdeskDesktops?.filter(
-          (desktop) => desktop.username === userId && desktop.node === host) ?? [])
-          .map((desktop) => {
-            let desktopType = "";
-            try {
-              const desktopSettings = JSON.parse(desktop.desktop_settings);
-              desktopType = desktopSettings.desktop_type;
-            } catch (error) {
-              console.error("Error parsing JSON:", error);
-            }
-            return {
-              id: desktop.id,
-              displayId: desktop.id,
-              desktopName: desktop?.desktop_name || "",
-              wm: desktopType || "",
-              isActive: true,
-              createTime: desktop?.created_at,
-              remoteControlTool: RemoteControlTool.SHADOWDESK,
-            };
-          });
+        shadowdeskUserDeskTops = (
+          shadowdeskDesktops?.filter((desktop) => desktop.username === userId && desktop.node === host) ?? []
+        ).map((desktop) => {
+          let desktopType = "";
+          try {
+            const desktopSettings = JSON.parse(desktop.desktop_settings);
+            desktopType = desktopSettings.desktop_type;
+          } catch (error) {
+            console.error("Error parsing JSON:", error);
+          }
+          return {
+            id: desktop.id,
+            displayId: desktop.id,
+            desktopName: desktop?.desktop_name || "",
+            wm: desktopType || "",
+            isActive: true,
+            createTime: desktop?.created_at,
+            remoteControlTool: RemoteControlTool.SHADOWDESK,
+          };
+        });
       }
 
       return {

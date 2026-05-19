@@ -30,7 +30,6 @@ export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
       failedUserIds: Type.Array(Type.String()),
     }),
 
-
     400: Type.Null(),
     403: Type.Null(),
 
@@ -40,7 +39,7 @@ export const SetTenantUserDefaultQuotaSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, res) => {
+export default /* #__PURE__*/ route(SetTenantUserDefaultQuotaSchema, async (req, res) => {
   const { cluster, path, userQuotaBytes } = req.body;
 
   const auth = authenticate((u) => {
@@ -49,7 +48,9 @@ export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, 
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && info.tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
@@ -63,8 +64,12 @@ export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, 
       }
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
-      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.` } };
+      return {
+        409: {
+          code: "RESOURCE_CONNECT_FAILED" as const,
+          message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.`,
+        },
+      };
     }
   }
 
@@ -72,22 +77,33 @@ export default /* #__PURE__*/route(SetTenantUserDefaultQuotaSchema, async (req, 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.setTenantUserDefaultQuota,
-    operationTypePayload:{
-      tenantName: info.tenant, cluster, path, storageQuota: userQuotaBytes,
+    operationTypePayload: {
+      tenantName: info.tenant,
+      cluster,
+      path,
+      storageQuota: userQuotaBytes,
     },
   };
 
   const client = getClient(StorageServiceClient);
 
   return await asyncClientCall(client, "setTenantUserDefaultQuota", {
-    tenantName: info.tenant, cluster, path, userQuotaBytes,
+    tenantName: info.tenant,
+    cluster,
+    path,
+    userQuotaBytes,
   })
     .then(async (res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
 
       return { 200: { ...res } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 400: null }),
-    }, async () => await callLog(logInfo, OperationResult.FAIL)));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 400: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

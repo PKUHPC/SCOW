@@ -1,15 +1,16 @@
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
-import { AdminServiceClient,
+import {
+  AdminServiceClient,
   ListAccountUserSynchronizationsResponse_SyncExceptionType,
   ListAccountUserSynchronizationsResponse_SyncResult as SyncResult,
-  ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatus } from "@scow/protos/build/server/admin";
+  ListAccountUserSynchronizationsResponse_SyncStatus as SyncStatus,
+} from "@scow/protos/build/server/admin";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { PlatformRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
-
 
 const AccountOperationResult = Type.Object({
   accountName: Type.String(),
@@ -31,33 +32,51 @@ const UserOperationResult = Type.Object({
 });
 
 const SyncDetailsSummary = Type.Object({
-  createAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountOperationResult),
-  })),
-  blockAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountOperationResult),
-  })),
-  unblockAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountOperationResult),
-  })),
-  addUserToAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountUserOperationResult),
-  })),
-  blockUserInAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountUserOperationResult),
-  })),
-  removeUserFromAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountUserOperationResult),
-  })),
-  unblockUserInAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountUserOperationResult),
-  })),
-  deleteAccount: Type.Optional(Type.Object({
-    results: Type.Array(AccountOperationResult),
-  })),
-  deleteUser: Type.Optional(Type.Object({
-    results: Type.Array(UserOperationResult),
-  })),
+  createAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountOperationResult),
+    }),
+  ),
+  blockAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountOperationResult),
+    }),
+  ),
+  unblockAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountOperationResult),
+    }),
+  ),
+  addUserToAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountUserOperationResult),
+    }),
+  ),
+  blockUserInAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountUserOperationResult),
+    }),
+  ),
+  removeUserFromAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountUserOperationResult),
+    }),
+  ),
+  unblockUserInAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountUserOperationResult),
+    }),
+  ),
+  deleteAccount: Type.Optional(
+    Type.Object({
+      results: Type.Array(AccountOperationResult),
+    }),
+  ),
+  deleteUser: Type.Optional(
+    Type.Object({
+      results: Type.Array(UserOperationResult),
+    }),
+  ),
 });
 
 export const SyncException = Type.Object({
@@ -78,18 +97,19 @@ export const ClusterTotalSyncResult = Type.Object({
 export const ClusterSyncResults = Type.Array(ClusterTotalSyncResult);
 export type ClusterSyncResults = Static<typeof ClusterSyncResults>;
 
-
 export const SyncAccountUserHistory = Type.Object({
   sessionId: Type.String(),
   operatorId: Type.Optional(Type.String()),
   operatorName: Type.Optional(Type.String()),
   sessionSyncStatus: Type.Enum(SyncStatus),
   sessionSyncResult: Type.Optional(Type.Enum(SyncResult)),
-  startTime:  Type.Optional(Type.String({ format: "date-time" })),
+  startTime: Type.Optional(Type.String({ format: "date-time" })),
   endTime: Type.Optional(Type.String({ format: "date-time" })),
-  sessionSyncDetails: Type.Optional(Type.Object({
-    results: ClusterSyncResults,
-  })),
+  sessionSyncDetails: Type.Optional(
+    Type.Object({
+      results: ClusterSyncResults,
+    }),
+  ),
 });
 export type SyncAccountUserHistory = Static<typeof SyncAccountUserHistory>;
 
@@ -104,8 +124,8 @@ export const GetSyncAccountUserHistorySchema = typeboxRouteSchema({
     page: Type.Optional(Type.Integer({ minimum: 1 })),
 
     /**
-         * @type integer
-         */
+     * @type integer
+     */
     pageSize: Type.Optional(Type.Integer()),
   }),
 
@@ -118,20 +138,20 @@ export const GetSyncAccountUserHistorySchema = typeboxRouteSchema({
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetSyncAccountUserHistorySchema,
-  async (req, res) => {
+export default route(GetSyncAccountUserHistorySchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const { page, pageSize } = req.query;
 
-    const { page, pageSize } = req.query;
+  const client = getClient(AdminServiceClient);
 
-    const client = getClient(AdminServiceClient);
-
-    const reply = await asyncClientCall(client, "listAccountUserSynchronizations", {
-      page, pageSize,
-    });
-
-    return { 200: { syncHistory : reply.syncSessionInfos, totalCount: reply.totalCount } };
-
+  const reply = await asyncClientCall(client, "listAccountUserSynchronizations", {
+    page,
+    pageSize,
   });
+
+  return { 200: { syncHistory: reply.syncSessionInfos, totalCount: reply.totalCount } };
+});

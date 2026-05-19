@@ -1,6 +1,10 @@
 import { OperationEvent, OperationType as LibOperationType } from "@scow/lib-operation-log";
 import {
-  ExportBill, ExportChargeRecord, ExportJobRecord, ExportOperationLog, ExportPayRecord,
+  ExportBill,
+  ExportChargeRecord,
+  ExportJobRecord,
+  ExportOperationLog,
+  ExportPayRecord,
   ExportUserBill,
 } from "@scow/protos/build/audit/operation_log";
 import { Static, Type } from "@sinclair/typebox";
@@ -40,25 +44,19 @@ export enum OperationLogQueryType {
   ACCOUNT = 1,
   TENANT = 2,
   PLATFORM = 3,
-};
+}
 
-
-export const OperationSortBy = Type.Union(
-  [Type.Literal("id"),
-    Type.Literal("operationResult"),
-    Type.Literal("operationTime"),
-    Type.Literal("operatorIp"),
-    Type.Literal("operatorUserId")],
-);
+export const OperationSortBy = Type.Union([
+  Type.Literal("id"),
+  Type.Literal("operationResult"),
+  Type.Literal("operationTime"),
+  Type.Literal("operatorIp"),
+  Type.Literal("operatorUserId"),
+]);
 export type OperationSortBy = Static<typeof OperationSortBy>;
 
-export const OperationSortOrder = Type.Union([
-  Type.Literal("descend"),
-  Type.Literal("ascend"),
-]);
+export const OperationSortOrder = Type.Union([Type.Literal("descend"), Type.Literal("ascend")]);
 export type OperationSortOrder = Static<typeof OperationSortOrder>;
-
-
 
 type OperationTextsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string;
 const pRes = prefix("operationLog.resultTexts.");
@@ -66,17 +64,14 @@ const pTypes = prefix("operationLog.operationTypeTexts.");
 const pDetails = prefix("operationLog.operationDetails.");
 
 export const getOperationResultTexts = (t: OperationTextsTransType) => {
-
   return {
     [OperationResult.UNKNOWN]: t(pRes("unknown")),
     [OperationResult.SUCCESS]: t(pRes("success")),
     [OperationResult.FAIL]: t(pRes("fail")),
   };
-
 };
 
-export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibOperationType]: string } => {
-
+export const getOperationTypeTexts = (t: OperationTextsTransType): { [key in LibOperationType]: string } => {
   return {
     login: t(pTypes("login")),
     logout: t(pTypes("logout")),
@@ -198,8 +193,8 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     removeFromDefaultApps: t(pTypes("removeFromDefaultApps")),
     syncTenantUsersStorageUsage: t(pTypes("syncTenantUsersStorageUsage")),
     authorizeCluster: t(pTypes("authorizeCluster")),
-    unauthorizeCluster:  t(pTypes("unauthorizeCluster")),
-    authorizePartition:  t(pTypes("authorizePartition")),
+    unauthorizeCluster: t(pTypes("unauthorizeCluster")),
+    authorizePartition: t(pTypes("authorizePartition")),
     unauthorizePartition: t(pTypes("unauthorizePartition")),
     addToDefaultClusters: t(pTypes("addToDefaultClusters")),
     removeFromDefaultClusters: t(pTypes("removeFromDefaultClusters")),
@@ -207,7 +202,6 @@ export const getOperationTypeTexts = (t: OperationTextsTransType): {[key in LibO
     removeFromDefaultPartitions: t(pTypes("removeFromDefaultPartitions")),
     changeJobPrice: t(pTypes("changeJobPrice")),
   };
-
 };
 
 type OperationTextsArgsTransType = (id: Lang<typeof en>, args?: React.ReactNode[]) => string | React.ReactNode;
@@ -219,7 +213,6 @@ export const getOperationDetail = (
   languageId: string,
   publicConfigClusters: Record<string, Cluster>,
 ) => {
-
   try {
     if (!operationEvent) {
       return "-";
@@ -235,42 +228,36 @@ export const getOperationDetail = (
       case "submitJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("submitJob"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-")]);
+        return t(pDetails("submitJob"), [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
       case "endJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("endJob"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-")]);
+        return t(pDetails("endJob"), [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
       case "addJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("addJobTemplate"),
-          [clusterName, operationEvent[logEvent].jobTemplateId]);
+        return t(pDetails("addJobTemplate"), [clusterName, operationEvent[logEvent].jobTemplateId]);
       }
       case "deleteJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("deleteJobTemplate"),
-          [clusterName, operationEvent[logEvent].jobTemplateId]);
+        return t(pDetails("deleteJobTemplate"), [clusterName, operationEvent[logEvent].jobTemplateId]);
       }
       case "updateJobTemplate": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateJobTemplate"),
-          [
-            clusterName,
-            operationEvent[logEvent].jobTemplateId,
-            operationEvent[logEvent].newJobTemplateId,
-          ]);
+        return t(pDetails("updateJobTemplate"), [
+          clusterName,
+          operationEvent[logEvent].jobTemplateId,
+          operationEvent[logEvent].newJobTemplateId,
+        ]);
       }
       case "shellLogin": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("shellLogin"),
-          [clusterName, operationEvent[logEvent].loginNode]);
+        return t(pDetails("shellLogin"), [clusterName, operationEvent[logEvent].loginNode]);
       }
       case "createDesktop": {
         const clusterId = operationEvent[logEvent].clusterId;
@@ -285,44 +272,40 @@ export const getOperationDetail = (
       case "deleteDesktop": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("deleteDesktop"),
-          [
-            clusterName,
-            operationEvent[logEvent].loginNode,
-            String(operationEvent[logEvent].desktopId),
-          ]);
+        return t(pDetails("deleteDesktop"), [
+          clusterName,
+          operationEvent[logEvent].loginNode,
+          String(operationEvent[logEvent].desktopId),
+        ]);
       }
       case "createApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createApp"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-"),
-            operationEvent[logEvent].appName || "-",
-          ]);
+        return t(pDetails("createApp"), [
+          clusterName,
+          String(operationEvent[logEvent].jobId || "-"),
+          operationEvent[logEvent].appName || "-",
+        ]);
       }
       case "createAiTrain": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createAiTrain"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-")]);
+        return t(pDetails("createAiTrain"), [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
       case "createDevHost": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createDevHost"),
-          [clusterName, String(operationEvent[logEvent].devHostId || "-")]);
+        return t(pDetails("createDevHost"), [clusterName, String(operationEvent[logEvent].devHostId || "-")]);
       }
       case "createAiInferenceJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createAiInferenceJob"),
-          [clusterName, String(operationEvent[logEvent].jobId || "-")]);
+        return t(pDetails("createAiInferenceJob"), [clusterName, String(operationEvent[logEvent].jobId || "-")]);
       }
       case "cancelAiTrainOrApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("cancelAiTrainOrApp"),
-          [clusterName, String(operationEvent[logEvent].jobId)]);
+        return t(pDetails("cancelAiTrainOrApp"), [clusterName, String(operationEvent[logEvent].jobId)]);
       }
       case "saveImage":
         return t(pDetails("saveImage"), [
@@ -352,237 +335,271 @@ export const getOperationDetail = (
       case "setJobTimeLimit": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("setJobTimeLimit"),
-          [clusterName,
-            String(operationEvent[logEvent].jobId),
-            String(Math.abs(operationEvent[logEvent].limitMinutes))]);
+        return t(pDetails("setJobTimeLimit"), [
+          clusterName,
+          String(operationEvent[logEvent].jobId),
+          String(Math.abs(operationEvent[logEvent].limitMinutes)),
+        ]);
       }
       case "createImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createImage"),
-          [clusterName,
-            safeGetStringProperty(operationEvent[logEvent].imageName),
-            safeGetStringProperty(operationEvent[logEvent].tag)]);
+        return t(pDetails("createImage"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].imageName),
+          safeGetStringProperty(operationEvent[logEvent].tag),
+        ]);
       }
       case "updateImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateImage"),
-          [clusterName,
-            safeGetStringProperty(operationEvent[logEvent].imageName),
-            safeGetStringProperty(operationEvent[logEvent].tag)]);
+        return t(pDetails("updateImage"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].imageName),
+          safeGetStringProperty(operationEvent[logEvent].tag),
+        ]);
       }
       case "shareImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("shareImage"),
-          [clusterName,
-            safeGetStringProperty(operationEvent[logEvent].imageName),
-            safeGetStringProperty(operationEvent[logEvent].tag)]);
+        return t(pDetails("shareImage"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].imageName),
+          safeGetStringProperty(operationEvent[logEvent].tag),
+        ]);
       }
       case "deleteImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("deleteImage"),
-          [clusterName,
-            safeGetStringProperty(operationEvent[logEvent].imageName),
-            safeGetStringProperty(operationEvent[logEvent].tag)]);
+        return t(pDetails("deleteImage"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].imageName),
+          safeGetStringProperty(operationEvent[logEvent].tag),
+        ]);
       }
       case "copyImage": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
 
-        return t(pDetails("copyImage"),
-          [clusterName, safeGetStringProperty(operationEvent[logEvent].sourceImageName),
-            safeGetStringProperty(operationEvent[logEvent].sourceImageTag),
-            safeGetStringProperty(operationEvent[logEvent].targetImageName),
-            safeGetStringProperty(operationEvent[logEvent].targetImageTag)]);
+        return t(pDetails("copyImage"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].sourceImageName),
+          safeGetStringProperty(operationEvent[logEvent].sourceImageTag),
+          safeGetStringProperty(operationEvent[logEvent].targetImageName),
+          safeGetStringProperty(operationEvent[logEvent].targetImageTag),
+        ]);
       }
       case "createDataset": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createDataset"),
-          [clusterName,
-            safeGetStringProperty(operationEvent[logEvent].datasetName)]);
+        return t(pDetails("createDataset"), [clusterName, safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       }
       case "updateDataset":
-        return t(pDetails("updateDataset"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
+        return t(pDetails("updateDataset"), [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       case "deleteDataset":
-        return t(pDetails("deleteDataset"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
+        return t(pDetails("deleteDataset"), [safeGetStringProperty(operationEvent[logEvent].datasetName)]);
       case "createDatasetVersion":
-        return t(pDetails("createDatasetVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName),
-            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
+        return t(pDetails("createDatasetVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].datasetName),
+          safeGetStringProperty(operationEvent[logEvent].datasetVersionName),
+        ]);
       case "updateDatasetVersion":
-        return t(pDetails("updateDatasetVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName),
-            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
+        return t(pDetails("updateDatasetVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].datasetName),
+          safeGetStringProperty(operationEvent[logEvent].datasetVersionName),
+        ]);
       case "shareDatasetVersion":
-        return t(pDetails("shareDatasetVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName),
-            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
+        return t(pDetails("shareDatasetVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].datasetName),
+          safeGetStringProperty(operationEvent[logEvent].datasetVersionName),
+        ]);
       case "copyDatasetVersion":
-        return t(pDetails("copyDatasetVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].sourceDatasetName),
-            safeGetStringProperty(operationEvent[logEvent].sourceDatasetVersionName),
-            safeGetStringProperty(operationEvent[logEvent].targetDatasetName),
-            safeGetStringProperty(operationEvent[logEvent].targetDatasetVersionName),
-          ]);
+        return t(pDetails("copyDatasetVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].sourceDatasetName),
+          safeGetStringProperty(operationEvent[logEvent].sourceDatasetVersionName),
+          safeGetStringProperty(operationEvent[logEvent].targetDatasetName),
+          safeGetStringProperty(operationEvent[logEvent].targetDatasetVersionName),
+        ]);
       case "deleteDatasetVersion":
-        return t(pDetails("deleteDatasetVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].datasetName),
-            safeGetStringProperty(operationEvent[logEvent].datasetVersionName)]);
+        return t(pDetails("deleteDatasetVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].datasetName),
+          safeGetStringProperty(operationEvent[logEvent].datasetVersionName),
+        ]);
       case "createAlgorithm": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createAlgorithm"),
-          [clusterName, safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
+        return t(pDetails("createAlgorithm"), [
+          clusterName,
+          safeGetStringProperty(operationEvent[logEvent].algorithmName),
+        ]);
       }
       case "updateAlgorithm": {
-        return t(pDetails("updateAlgorithm"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
+        return t(pDetails("updateAlgorithm"), [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
       }
       case "deleteAlgorithm":
-        return t(pDetails("deleteAlgorithm"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
+        return t(pDetails("deleteAlgorithm"), [safeGetStringProperty(operationEvent[logEvent].algorithmName)]);
       case "createAlgorithmVersion":
-        return t(pDetails("createAlgorithmVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
-            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
+        return t(pDetails("createAlgorithmVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].algorithmName),
+          safeGetStringProperty(operationEvent[logEvent].algorithmVersionName),
+        ]);
       case "updateAlgorithmVersion":
-        return t(pDetails("updateAlgorithmVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
-            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
+        return t(pDetails("updateAlgorithmVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].algorithmName),
+          safeGetStringProperty(operationEvent[logEvent].algorithmVersionName),
+        ]);
       case "shareAlgorithmVersion":
-        return t(pDetails("shareAlgorithmVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
-            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
+        return t(pDetails("shareAlgorithmVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].algorithmName),
+          safeGetStringProperty(operationEvent[logEvent].algorithmVersionName),
+        ]);
       case "copyAlgorithmVersion":
-        return t(pDetails("copyAlgorithmVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmName),
-            safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmVersionName),
-            safeGetStringProperty(operationEvent[logEvent].targetAlgorithmName),
-            safeGetStringProperty(operationEvent[logEvent].targetAlgorithmVersionName),
-          ]);
+        return t(pDetails("copyAlgorithmVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmName),
+          safeGetStringProperty(operationEvent[logEvent].sourceAlgorithmVersionName),
+          safeGetStringProperty(operationEvent[logEvent].targetAlgorithmName),
+          safeGetStringProperty(operationEvent[logEvent].targetAlgorithmVersionName),
+        ]);
       case "deleteAlgorithmVersion":
-        return t(pDetails("deleteAlgorithmVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].algorithmName),
-            safeGetStringProperty(operationEvent[logEvent].algorithmVersionName)]);
+        return t(pDetails("deleteAlgorithmVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].algorithmName),
+          safeGetStringProperty(operationEvent[logEvent].algorithmVersionName),
+        ]);
       case "createModel": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("createModel"),
-          [clusterName, safeGetStringProperty(operationEvent[logEvent].modelName)]);
+        return t(pDetails("createModel"), [clusterName, safeGetStringProperty(operationEvent[logEvent].modelName)]);
       }
       case "updateModel":
-        return t(pDetails("updateModel"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName)]);
+        return t(pDetails("updateModel"), [safeGetStringProperty(operationEvent[logEvent].modelName)]);
       case "deleteModel":
-        return t(pDetails("deleteModel"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName)]);
+        return t(pDetails("deleteModel"), [safeGetStringProperty(operationEvent[logEvent].modelName)]);
       case "createModelVersion":
-        return t(pDetails("createModelVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName),
-            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
+        return t(pDetails("createModelVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].modelName),
+          safeGetStringProperty(operationEvent[logEvent].modelVersionName),
+        ]);
       case "updateModelVersion":
-        return t(pDetails("updateModelVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName),
-            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
+        return t(pDetails("updateModelVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].modelName),
+          safeGetStringProperty(operationEvent[logEvent].modelVersionName),
+        ]);
       case "shareModelVersion":
-        return t(pDetails("shareModelVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName),
-            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
+        return t(pDetails("shareModelVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].modelName),
+          safeGetStringProperty(operationEvent[logEvent].modelVersionName),
+        ]);
       case "copyModelVersion":
-        return t(pDetails("copyModelVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].sourceModelName),
-            safeGetStringProperty(operationEvent[logEvent].sourceModelVersionName),
-            safeGetStringProperty(operationEvent[logEvent].targetModelName),
-            safeGetStringProperty(operationEvent[logEvent].targetModelVersionName),
-          ]);
+        return t(pDetails("copyModelVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].sourceModelName),
+          safeGetStringProperty(operationEvent[logEvent].sourceModelVersionName),
+          safeGetStringProperty(operationEvent[logEvent].targetModelName),
+          safeGetStringProperty(operationEvent[logEvent].targetModelVersionName),
+        ]);
       case "deleteModelVersion":
-        return t(pDetails("deleteModelVersion"),
-          [safeGetStringProperty(operationEvent[logEvent].modelName),
-            safeGetStringProperty(operationEvent[logEvent].modelVersionName)]);
+        return t(pDetails("deleteModelVersion"), [
+          safeGetStringProperty(operationEvent[logEvent].modelName),
+          safeGetStringProperty(operationEvent[logEvent].modelVersionName),
+        ]);
       case "createUser":
         return t(pDetails("createUser"), [operationEvent[logEvent].userId]);
       case "addUserToAccount":
-        return t(pDetails("addUserToAccount"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
+        return t(pDetails("addUserToAccount"), [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
       case "removeUserFromAccount":
-        return t(pDetails("removeUserFromAccount"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
+        return t(pDetails("removeUserFromAccount"), [
+          operationEvent[logEvent].userId,
+          operationEvent[logEvent].accountName,
+        ]);
       case "setAccountAdmin":
-        return t(pDetails("setAccountAdmin"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
+        return t(pDetails("setAccountAdmin"), [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
       case "unsetAccountAdmin":
-        return t(pDetails("unsetAccountAdmin"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].accountName]);
+        return t(pDetails("unsetAccountAdmin"), [
+          operationEvent[logEvent].userId,
+          operationEvent[logEvent].accountName,
+        ]);
       case "blockUser":
         return t(pDetails("blockUser"), [operationEvent[logEvent].accountName, operationEvent[logEvent].userId]);
       case "unblockUser":
         return t(pDetails("unblockUser"), [operationEvent[logEvent].accountName, operationEvent[logEvent].userId]);
       case "accountSetChargeLimit":
-        return t(pDetails("accountSetChargeLimit"),
-          [operationEvent[logEvent].accountName,
-            operationEvent[logEvent].userId,
-            nullableMoneyToString(operationEvent[logEvent].limit)]);
+        return t(pDetails("accountSetChargeLimit"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].userId,
+          nullableMoneyToString(operationEvent[logEvent].limit),
+        ]);
       case "accountUnsetChargeLimit":
-        return t(pDetails("accountUnsetChargeLimit"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].userId]);
+        return t(pDetails("accountUnsetChargeLimit"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].userId,
+        ]);
       case "setTenantBilling": {
-        const clusterName = getClusterName(operationEvent[logEvent].path.split(".")[0]
-          , languageId, publicConfigClusters);
+        const clusterName = getClusterName(
+          operationEvent[logEvent].path.split(".")[0],
+          languageId,
+          publicConfigClusters,
+        );
         const path = clusterName + "." + operationEvent[logEvent].path.split(".").slice(1).join(".");
-        return t(pDetails("setTenantBilling"),
-          [operationEvent[logEvent].tenantName,
-            path,
-            nullableMoneyToString(operationEvent[logEvent].price)]);
+        return t(pDetails("setTenantBilling"), [
+          operationEvent[logEvent].tenantName,
+          path,
+          nullableMoneyToString(operationEvent[logEvent].price),
+        ]);
       }
       case "setTenantAdmin":
         return t(pDetails("setTenantAdmin"), [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
       case "unsetTenantAdmin":
-        return t(pDetails("unsetTenantAdmin"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
+        return t(pDetails("unsetTenantAdmin"), [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
       case "setTenantFinance":
-        return t(pDetails("setTenantFinance"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
+        return t(pDetails("setTenantFinance"), [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
       case "unsetTenantFinance":
-        return t(pDetails("unsetTenantFinance"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].tenantName]);
+        return t(pDetails("unsetTenantFinance"), [
+          operationEvent[logEvent].userId,
+          operationEvent[logEvent].tenantName,
+        ]);
       case "tenantChangePassword":
         return t(pDetails("tenantChangePassword"), [operationEvent[logEvent].userId]);
       case "deleteUser":
         return t(pDetails("deleteUser"), [operationEvent[logEvent].userId]);
       case "createAccount":
-        return t(pDetails("createAccount"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner]);
+        return t(pDetails("createAccount"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].accountOwner,
+        ]);
       case "deleteAccount":
-        return t(pDetails("deleteAccount"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].accountOwner || "-"]);
+        return t(pDetails("deleteAccount"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].accountOwner || "-",
+        ]);
       case "addAccountToWhitelist":
-        return t(pDetails("addAccountToWhitelist"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].tenantName]);
+        return t(pDetails("addAccountToWhitelist"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].tenantName,
+        ]);
       case "removeAccountFromWhitelist":
-        return t(pDetails("removeAccountFromWhitelist"),
-          [operationEvent[logEvent].accountName, operationEvent[logEvent].tenantName]);
+        return t(pDetails("removeAccountFromWhitelist"), [
+          operationEvent[logEvent].accountName,
+          operationEvent[logEvent].tenantName,
+        ]);
       case "accountPay":
-        return t(pDetails("accountPay"),
-          [operationEvent[logEvent].accountName, nullableMoneyToString(operationEvent[logEvent].amount)]);
+        return t(pDetails("accountPay"), [
+          operationEvent[logEvent].accountName,
+          nullableMoneyToString(operationEvent[logEvent].amount),
+        ]);
       case "blockAccount":
-        return t(pDetails("blockAccount"),
-          [operationEvent[logEvent].tenantName, operationEvent[logEvent].accountName]);
+        return t(pDetails("blockAccount"), [operationEvent[logEvent].tenantName, operationEvent[logEvent].accountName]);
       case "unblockAccount":
-        return t(pDetails("unblockAccount"),
-          [operationEvent[logEvent].tenantName, operationEvent[logEvent].accountName]);
+        return t(pDetails("unblockAccount"), [
+          operationEvent[logEvent].tenantName,
+          operationEvent[logEvent].accountName,
+        ]);
       case "importUsers":
-        return `${t(pDetails("importUsers1"),
-          [operationEvent[logEvent].tenantName])}${operationEvent[logEvent].importAccounts.map(
-          (account: { accountName: string; userIds: string[]; }) =>
-            (tArgs(pDetails("importUsers2"), [account.accountName, account.userIds.join("、")])),
-        ).join("; ")}`;
+        return `${t(pDetails("importUsers1"), [operationEvent[logEvent].tenantName])}${operationEvent[
+          logEvent
+        ].importAccounts
+          .map((account: { accountName: string; userIds: string[] }) =>
+            tArgs(pDetails("importUsers2"), [account.accountName, account.userIds.join("、")]),
+          )
+          .join("; ")}`;
       case "setPlatformAdmin":
         return t(pDetails("setPlatformAdmin"), [operationEvent[logEvent].userId]);
       case "unsetPlatformAdmin":
@@ -594,23 +611,25 @@ export const getOperationDetail = (
       case "platformChangePassword":
         return t(pDetails("platformChangePassword"), [operationEvent[logEvent].userId]);
       case "createTenant":
-        return t(pDetails("createTenant"),
-          [operationEvent[logEvent].tenantName, operationEvent[logEvent].tenantAdmin]);
+        return t(pDetails("createTenant"), [operationEvent[logEvent].tenantName, operationEvent[logEvent].tenantAdmin]);
       case "tenantPay":
-        return t(pDetails("tenantPay"),
-          [operationEvent[logEvent].tenantName, nullableMoneyToString(operationEvent[logEvent].amount)]);
+        return t(pDetails("tenantPay"), [
+          operationEvent[logEvent].tenantName,
+          nullableMoneyToString(operationEvent[logEvent].amount),
+        ]);
       case "setPlatformBilling": {
-        const clusterName = getClusterName(operationEvent[logEvent].path.split(".")[0]
-          , languageId, publicConfigClusters);
+        const clusterName = getClusterName(
+          operationEvent[logEvent].path.split(".")[0],
+          languageId,
+          publicConfigClusters,
+        );
         const path = clusterName + "." + operationEvent[logEvent].path.split(".").slice(1).join(".");
-        return t(pDetails("setPlatformBilling"),
-          [path, nullableMoneyToString(operationEvent[logEvent].price)]);
+        return t(pDetails("setPlatformBilling"), [path, nullableMoneyToString(operationEvent[logEvent].price)]);
       }
       case "submitFileItemAsJob": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("submitFileItemAsJob"),
-          [clusterName, operationEvent[logEvent].path]);
+        return t(pDetails("submitFileItemAsJob"), [clusterName, operationEvent[logEvent].path]);
       }
       case "exportUser":
         return operationEvent[logEvent].tenantName
@@ -630,18 +649,22 @@ export const getOperationDetail = (
         return getExportOperationLogDetail(operationEvent[logEvent], t);
       case "setAccountBlockThreshold":
         return operationEvent[logEvent].thresholdAmount
-          ? t(pDetails("setAccountBlockThreshold"),
-            [operationEvent[logEvent].accountName, moneyToString(operationEvent[logEvent].thresholdAmount)])
+          ? t(pDetails("setAccountBlockThreshold"), [
+              operationEvent[logEvent].accountName,
+              moneyToString(operationEvent[logEvent].thresholdAmount),
+            ])
           : t(pDetails("unsetAccountBlockThreshold"), [operationEvent[logEvent].accountName]);
       case "setAccountDefaultBlockThreshold":
-        return t(pDetails("setAccountDefaultBlockThreshold"),
-          [operationEvent[logEvent].tenantName,
-            nullableMoneyToString(operationEvent[logEvent].thresholdAmount)]);
+        return t(pDetails("setAccountDefaultBlockThreshold"), [
+          operationEvent[logEvent].tenantName,
+          nullableMoneyToString(operationEvent[logEvent].thresholdAmount),
+        ]);
       case "userChangeTenant":
-        return t(pDetails("userChangeTenant"),
-          [operationEvent[logEvent].userId,
-            operationEvent[logEvent].previousTenantName,
-            operationEvent[logEvent].newTenantName]);
+        return t(pDetails("userChangeTenant"), [
+          operationEvent[logEvent].userId,
+          operationEvent[logEvent].previousTenantName,
+          operationEvent[logEvent].newTenantName,
+        ]);
       case "activateCluster": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
@@ -665,95 +688,127 @@ export const getOperationDetail = (
       case "changeEmail":
         return t(pDetails("changeEmail"), [operationEvent[logEvent]?.userId || "-"]);
       case "editUserProfile": {
-        return t(pDetails("editUserProfile"),
-          [operationEvent[logEvent].userId]);
+        return t(pDetails("editUserProfile"), [operationEvent[logEvent].userId]);
       }
       case "decompressFile":
-        return t(pDetails("decompressFile"),
-          [operationEvent[logEvent].decompressionPath, operationEvent[logEvent].filePath]);
+        return t(pDetails("decompressFile"), [
+          operationEvent[logEvent].decompressionPath,
+          operationEvent[logEvent].filePath,
+        ]);
       case "setTenantUserQuota":
-        return t(pDetails("setTenantUserQuota"),
-          [operationEvent[logEvent].userId, operationEvent[logEvent].cluster, operationEvent[logEvent].path,
-            operationEvent[logEvent].storageQuota, operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no"]);
+        return t(pDetails("setTenantUserQuota"), [
+          operationEvent[logEvent].userId,
+          operationEvent[logEvent].cluster,
+          operationEvent[logEvent].path,
+          operationEvent[logEvent].storageQuota,
+          operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no",
+        ]);
       case "batchSetTenantUsersQuota":
-        return t(pDetails("setTenantUserQuota"),
-          [React.createElement(UserIdsDisplay, { userIds: operationEvent[logEvent].userIds }),
-            operationEvent[logEvent].cluster, operationEvent[logEvent].path,
-            operationEvent[logEvent].storageQuota, operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no"]);
+        return t(pDetails("setTenantUserQuota"), [
+          React.createElement(UserIdsDisplay, { userIds: operationEvent[logEvent].userIds }),
+          operationEvent[logEvent].cluster,
+          operationEvent[logEvent].path,
+          operationEvent[logEvent].storageQuota,
+          operationEvent[logEvent].useTenantDefaultUserQuota ? "yes" : "no",
+        ]);
       case "setTenantUserDefaultQuota":
-        return t(pDetails("setTenantUserDefaultQuota"),
-          [operationEvent[logEvent].tenantName, operationEvent[logEvent].cluster, operationEvent[logEvent].path,
-            operationEvent[logEvent].storageQuota]);
+        return t(pDetails("setTenantUserDefaultQuota"), [
+          operationEvent[logEvent].tenantName,
+          operationEvent[logEvent].cluster,
+          operationEvent[logEvent].path,
+          operationEvent[logEvent].storageQuota,
+        ]);
       case "syncTenantUsersStorageUsage":
-        return t(pDetails("syncTenantUsersStorageUsage"),
-          [operationEvent[logEvent].tenant, operationEvent[logEvent].cluster, operationEvent[logEvent].path]);
+        return t(pDetails("syncTenantUsersStorageUsage"), [
+          operationEvent[logEvent].tenant,
+          operationEvent[logEvent].cluster,
+          operationEvent[logEvent].path,
+        ]);
       case "authorizeApp":
       case "unauthorizeApp": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return operationEvent[logEvent].target?.$case === "accountName" ? t(pDetails("accountAppAuthorizationLog"), [
-          clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].target.accountName,
-        ]) : t(pDetails("tenantAppAuthorizationLog"), [clusterName, operationEvent[logEvent].appName,
-          operationEvent[logEvent].target.tenantName]);
+        return operationEvent[logEvent].target?.$case === "accountName"
+          ? t(pDetails("accountAppAuthorizationLog"), [
+              clusterName,
+              operationEvent[logEvent].appName,
+              operationEvent[logEvent].target.accountName,
+            ])
+          : t(pDetails("tenantAppAuthorizationLog"), [
+              clusterName,
+              operationEvent[logEvent].appName,
+              operationEvent[logEvent].target.tenantName,
+            ]);
       }
       case "migrateNode":
-        return t(pDetails("migrateNode"),
-          [operationEvent[logEvent].nodeName,
-            operationEvent[logEvent].originCluster,
-            operationEvent[logEvent].destinationCluster]);
+        return t(pDetails("migrateNode"), [
+          operationEvent[logEvent].nodeName,
+          operationEvent[logEvent].originCluster,
+          operationEvent[logEvent].destinationCluster,
+        ]);
       case "activateNode":
-        return t(pDetails("activateNode"),
-          [operationEvent[logEvent].nodeName, operationEvent[logEvent].destinationCluster]);
+        return t(pDetails("activateNode"), [
+          operationEvent[logEvent].nodeName,
+          operationEvent[logEvent].destinationCluster,
+        ]);
       case "addToDefaultApps":
       case "removeFromDefaultApps": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return t(pDetails("updateDefaultApp"), [
-          clusterName, operationEvent[logEvent].appName, operationEvent[logEvent].tenantName,
+          clusterName,
+          operationEvent[logEvent].appName,
+          operationEvent[logEvent].tenantName,
         ]);
       }
       case "authorizeCluster":
-      case "unauthorizeCluster":{
-        const clusterId = operationEvent[logEvent].clusterId;
-        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return operationEvent[logEvent].target?.$case === "accountName" ? t(pDetails("accountClusterAuthorizationLog"),[
-          clusterName, operationEvent[logEvent].target.accountName,
-        ]) : t(pDetails("tenantClusterAuthorizationLog"), [clusterName, operationEvent[logEvent].target.tenantName]);
-      }
-      case "authorizePartition":
-      case "unauthorizePartition":{
+      case "unauthorizeCluster": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
         return operationEvent[logEvent].target?.$case === "accountName"
-          ? t(pDetails("accountPartitionAuthorizationLog"),[
-            clusterName, operationEvent[logEvent].partitionName, operationEvent[logEvent].target.accountName,
-          ]) : t(pDetails("tenantPartitionAuthorizationLog"), [clusterName, operationEvent[logEvent].partitionName,
-            operationEvent[logEvent].target.tenantName]);
+          ? t(pDetails("accountClusterAuthorizationLog"), [clusterName, operationEvent[logEvent].target.accountName])
+          : t(pDetails("tenantClusterAuthorizationLog"), [clusterName, operationEvent[logEvent].target.tenantName]);
+      }
+      case "authorizePartition":
+      case "unauthorizePartition": {
+        const clusterId = operationEvent[logEvent].clusterId;
+        const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
+        return operationEvent[logEvent].target?.$case === "accountName"
+          ? t(pDetails("accountPartitionAuthorizationLog"), [
+              clusterName,
+              operationEvent[logEvent].partitionName,
+              operationEvent[logEvent].target.accountName,
+            ])
+          : t(pDetails("tenantPartitionAuthorizationLog"), [
+              clusterName,
+              operationEvent[logEvent].partitionName,
+              operationEvent[logEvent].target.tenantName,
+            ]);
       }
       case "addToDefaultClusters":
-      case "removeFromDefaultClusters":{
+      case "removeFromDefaultClusters": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateDefaultCluster"),[
-          clusterName, operationEvent[logEvent].tenantName,
-        ]);
+        return t(pDetails("updateDefaultCluster"), [clusterName, operationEvent[logEvent].tenantName]);
       }
       case "addToDefaultPartitions":
-      case "removeFromDefaultPartitions":{
+      case "removeFromDefaultPartitions": {
         const clusterId = operationEvent[logEvent].clusterId;
         const clusterName = getClusterName(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("updateDefaultPartition"),[
-          clusterName, operationEvent[logEvent].partitionName, operationEvent[logEvent].tenantName,
+        return t(pDetails("updateDefaultPartition"), [
+          clusterName,
+          operationEvent[logEvent].partitionName,
+          operationEvent[logEvent].tenantName,
         ]);
       }
-      case "changeJobPrice":{
+      case "changeJobPrice": {
         const clusterId = operationEvent[logEvent].cluster;
         const clusterName = getClusterNameWithUndefined(clusterId, languageId, publicConfigClusters);
-        return t(pDetails("changeJobPrice"),
-          [clusterName,
-            operationEvent[logEvent].jobId,
-            nullableMoneyToString(operationEvent[logEvent].price),
-          ]);
+        return t(pDetails("changeJobPrice"), [
+          clusterName,
+          operationEvent[logEvent].jobId,
+          nullableMoneyToString(operationEvent[logEvent].price),
+        ]);
       }
       default:
         return "-";
@@ -772,24 +827,22 @@ const getExportChargeRecordDetail = (exportChargeRecord: ExportChargeRecord, t: 
   switch (exportChargeCase) {
     case "accountOfTenant": {
       const accountOfTenant = exportChargeTarget[exportChargeCase];
-      return t(pDetails("exportAccountChargeRecordOfTenant"),
-        [accountOfTenant.tenantName, accountOfTenant.accountName]);
+      return t(pDetails("exportAccountChargeRecordOfTenant"), [
+        accountOfTenant.tenantName,
+        accountOfTenant.accountName,
+      ]);
     }
-    case "accountsOfTenant":
-    {
+    case "accountsOfTenant": {
       const accountsOfTenant = exportChargeTarget[exportChargeCase];
       const { accountNames } = accountsOfTenant;
       if (accountNames.length === 0) {
-        return t(pDetails("exportAllAccountsChargeRecordOfTenant"),
-          [accountsOfTenant.tenantName]);
+        return t(pDetails("exportAllAccountsChargeRecordOfTenant"), [accountsOfTenant.tenantName]);
       } else if (accountNames.length === 1) {
-        return t(pDetails("exportAccountChargeRecordOfTenant"),
-          [accountsOfTenant.tenantName, accountNames[0]]);
+        return t(pDetails("exportAccountChargeRecordOfTenant"), [accountsOfTenant.tenantName, accountNames[0]]);
       } else {
         const accountStr = accountNames.join("、");
         const resultStr = accountStr.length > 25 ? accountStr.slice(0, 25) + "…" : accountStr;
-        return t(pDetails("exportAccountsChargeRecordOfTenant"),
-          [accountsOfTenant.tenantName, resultStr]);
+        return t(pDetails("exportAccountsChargeRecordOfTenant"), [accountsOfTenant.tenantName, resultStr]);
       }
     }
     case "accountsOfAllTenants": {
@@ -802,8 +855,7 @@ const getExportChargeRecordDetail = (exportChargeRecord: ExportChargeRecord, t: 
       } else {
         const accountStr = accountNames.join("、");
         const resultStr = accountStr.length > 25 ? accountStr.slice(0, 25) + "…" : accountStr;
-        return t(pDetails("exportAccountsChargeRecordOfAdmin"),
-          [resultStr]);
+        return t(pDetails("exportAccountsChargeRecordOfAdmin"), [resultStr]);
       }
     }
     case "tenant": {
@@ -818,7 +870,6 @@ const getExportChargeRecordDetail = (exportChargeRecord: ExportChargeRecord, t: 
 };
 
 const getExportPayRecordDetail = (exportPayRecord: ExportPayRecord, t: OperationTextsTransType) => {
-
   const exportPayTarget = exportPayRecord.target;
   if (!exportPayTarget) {
     return "-";
@@ -829,16 +880,13 @@ const getExportPayRecordDetail = (exportPayRecord: ExportPayRecord, t: Operation
       const accountsOfTenant = exportPayTarget[exportPayCase];
       const { accountNames } = accountsOfTenant;
       if (accountNames.length === 0) {
-        return t(pDetails("exportAllAccountsPayRecordOfTenant"),
-          [accountsOfTenant.tenantName]);
+        return t(pDetails("exportAllAccountsPayRecordOfTenant"), [accountsOfTenant.tenantName]);
       } else if (accountNames.length === 1) {
-        return t(pDetails("exportAccountPayRecordOfTenant"),
-          [accountsOfTenant.tenantName, accountNames[0]]);
+        return t(pDetails("exportAccountPayRecordOfTenant"), [accountsOfTenant.tenantName, accountNames[0]]);
       } else {
         const accountStr = accountNames.join("、");
         const resultStr = accountStr.length > 25 ? accountStr.slice(0, 25) + "…" : accountStr;
-        return t(pDetails("exportAccountsPayRecordOfTenant"),
-          [accountsOfTenant.tenantName, resultStr]);
+        return t(pDetails("exportAccountsPayRecordOfTenant"), [accountsOfTenant.tenantName, resultStr]);
       }
     }
     case "tenant": {
@@ -861,61 +909,51 @@ const getExportJobRecordDetail = (exportJobRecord: ExportJobRecord, t: Operation
   switch (exportJobCase) {
     case "jobsOfTenant": {
       const jobsOfTenant = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfTenant"),
-        [jobsOfTenant.tenantName]);
+      return t(pDetails("exportJobsOfTenant"), [jobsOfTenant.tenantName]);
     }
     case "jobsOfJobId": {
       const jobsOfJobId = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfJobId"),
-        [
-          jobsOfJobId.tenantName,
-          String(jobsOfJobId.jobId),
-        ]);
+      return t(pDetails("exportJobsOfJobId"), [jobsOfJobId.tenantName, String(jobsOfJobId.jobId)]);
     }
     case "jobsOfJobIds": {
       const jobsOfJobIds = exportJobTarget[exportJobCase];
       const jobIdsLength = jobsOfJobIds.jobIds.length;
-      const showJobIds = jobsOfJobIds.jobIds.slice(0,3);
+      const showJobIds = jobsOfJobIds.jobIds.slice(0, 3);
       const jobIdsStr = showJobIds.join(",") + (jobIdsLength > 3 ? "…" : "");
 
-      return t(pDetails("exportJobsOfJobId"),
-        [
-          jobsOfJobIds.tenantName,
-          jobIdsStr,
-        ]);
+      return t(pDetails("exportJobsOfJobId"), [jobsOfJobIds.tenantName, jobIdsStr]);
     }
     case "jobsOfJobIdAndUser": {
       const jobsOfJobIdAndUser = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfJobIdAndUser"),
-        [
-          jobsOfJobIdAndUser.tenantName,
-          jobsOfJobIdAndUser.userId,
-          String(jobsOfJobIdAndUser.jobId),
-        ]);
+      return t(pDetails("exportJobsOfJobIdAndUser"), [
+        jobsOfJobIdAndUser.tenantName,
+        jobsOfJobIdAndUser.userId,
+        String(jobsOfJobIdAndUser.jobId),
+      ]);
     }
     case "jobsOfJobIdAndAccount": {
       const jobsOfJobIdAndAccount = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfJobIdAndAccount"),
-        [
-          jobsOfJobIdAndAccount.tenantName,
-          jobsOfJobIdAndAccount.accountName,
-          String(jobsOfJobIdAndAccount.jobId),
-        ]);
+      return t(pDetails("exportJobsOfJobIdAndAccount"), [
+        jobsOfJobIdAndAccount.tenantName,
+        jobsOfJobIdAndAccount.accountName,
+        String(jobsOfJobIdAndAccount.jobId),
+      ]);
     }
     case "jobsOfAccountAndUser": {
       const jobsOfAccountAndUser = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfAccountAndUser"),
-        [jobsOfAccountAndUser.tenantName, jobsOfAccountAndUser.userId, jobsOfAccountAndUser.accountName]);
+      return t(pDetails("exportJobsOfAccountAndUser"), [
+        jobsOfAccountAndUser.tenantName,
+        jobsOfAccountAndUser.userId,
+        jobsOfAccountAndUser.accountName,
+      ]);
     }
     case "jobsOfAccount": {
       const jobsOfAccount = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfAccount"),
-        [jobsOfAccount.tenantName, jobsOfAccount.accountName]);
+      return t(pDetails("exportJobsOfAccount"), [jobsOfAccount.tenantName, jobsOfAccount.accountName]);
     }
     case "jobsOfUser": {
       const jobsOfUser = exportJobTarget[exportJobCase];
-      return t(pDetails("exportJobsOfUser"),
-        [jobsOfUser.tenantName, jobsOfUser.userId]);
+      return t(pDetails("exportJobsOfUser"), [jobsOfUser.tenantName, jobsOfUser.userId]);
     }
     default:
       return "-";
@@ -931,25 +969,21 @@ const getExportOperationLogDetail = (exportOperationLog: ExportOperationLog, t: 
   switch (sourceCase) {
     case "user": {
       const user = exportOperationLogSource.user;
-      return t(pDetails("exportOperationLogFromUser"),
-        [user.userId]);
+      return t(pDetails("exportOperationLogFromUser"), [user.userId]);
     }
     case "account": {
       const account = exportOperationLogSource.account;
-      return t(pDetails("exportOperationLogFromAccount"),
-        [account.accountName]);
+      return t(pDetails("exportOperationLogFromAccount"), [account.accountName]);
     }
     case "tenant": {
       const tenant = exportOperationLogSource.tenant;
-      return t(pDetails("exportOperationLogFromTenant"),
-        [tenant.tenantName]);
+      return t(pDetails("exportOperationLogFromTenant"), [tenant.tenantName]);
     }
     case "admin":
       return t(pDetails("exportOperationLogFromAdmin"));
     default:
       return "-";
   }
-
 };
 
 const getExportBillDetail = (exportBill: ExportBill, t: OperationTextsTransType) => {

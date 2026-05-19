@@ -29,7 +29,6 @@ interface Props {
 const p = prefix("pageComp.dashboard.NotificationCard.");
 
 export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
-
   const { message } = App.useApp();
   const t = useI18nTranslateToString();
   const [msgContents, setMsgContents] = useState<RenderContent[]>();
@@ -42,9 +41,14 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const { results } = await api.getUnreadMessages({ query: {
-          page: 1, pageSize: 10,
-        } }).httpError(500, () => {});
+        const { results } = await api
+          .getUnreadMessages({
+            query: {
+              page: 1,
+              pageSize: 10,
+            },
+          })
+          .httpError(500, () => {});
         setLoading(false);
 
         const msgsToRender: RenderContent[] = [];
@@ -77,18 +81,14 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
       <Card
         style={{ height: "100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
         loading={loading}
-        title={ (
+        title={
           <>
             <Localized id={p("message")} />
           </>
-        )}
-        extra={(
-          <a
-            onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}
-          >
-            {t(p("check"))}
-          </a>
-        )}
+        }
+        extra={
+          <a onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}>{t(p("check"))}</a>
+        }
       >
         <List
           itemLayout="horizontal"
@@ -98,8 +98,9 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
             <List.Item key={item.id} style={{ borderBottom: "none", padding: "4px 0" }}>
               <List.Item.Meta
                 style={{
-                  ...dark ? { background: "#282828" } : { background: "#FAFAFA" },
-                  borderRadius: "8px", padding: "12px 22px",
+                  ...(dark ? { background: "#282828" } : { background: "#FAFAFA" }),
+                  borderRadius: "8px",
+                  padding: "12px 22px",
                 }}
                 title={(
                   <NotifTitle>
@@ -110,7 +111,8 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
                   <Text
                     style={{ fontWeight: 350, fontSize: "14px", color: dark ? "#FFFFFF99" : "#43434399" }}
                     ellipsis={true}
-                  >{item.description}
+                  >
+                    {item.description}
                   </Text>
                 )}
               />
@@ -119,7 +121,5 @@ export const NotificationCard: React.FC<Props> = ({ interval = 60000 }) => {
         />
       </Card>
     </NotifContainer>
-
   );
 };
-

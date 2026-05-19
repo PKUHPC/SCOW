@@ -20,10 +20,7 @@ const p = prefix("pageComp.commonComponent.billTable.");
 const pTitle = prefix("page.tenant.finance.bills.");
 const pCommon = prefix("common.");
 
-export const UserBillModal: React.FC<Props> = (
-  { open, accountBill, onClose, types },
-) => {
-
+export const UserBillModal: React.FC<Props> = ({ open, accountBill, onClose, types }) => {
   const t = useI18nTranslateToString();
 
   const columns = [
@@ -58,30 +55,29 @@ export const UserBillModal: React.FC<Props> = (
     return;
   }
 
-
   const promiseFn = useCallback(async () => {
-    return api.getUserBills({ query: { accountBillIds:accountBill.ids, accountName: accountBill.accountName } });
+    return api.getUserBills({ query: { accountBillIds: accountBill.ids, accountName: accountBill.accountName } });
   }, [accountBill.ids]);
 
   const { data, isLoading } = useAsync({
-    promiseFn });
+    promiseFn,
+  });
 
   const userBills = useMemo(() => {
     const ownerBill = data?.userBills.find((item) => item.userId === accountBill.accountOwnerId);
     const otherBill = data?.userBills.filter((item) => item.userId !== accountBill.accountOwnerId) || [];
-    if (ownerBill) { otherBill.unshift(ownerBill); }
+    if (ownerBill) {
+      otherBill.unshift(ownerBill);
+    }
     return otherBill.map((i) => {
       return {
         ...i,
         ...i.details,
       };
     });
-  },[data]);
-
-
+  }, [data]);
 
   const handleExport = async (encoding: Encoding, columns: string[]) => {
-
     const total = userBills?.length || 0;
 
     if (total > MAX_EXPORT_COUNT) {
@@ -99,7 +95,7 @@ export const UserBillModal: React.FC<Props> = (
         count: total,
         timeZone,
         query: {
-          accountBillIds:accountBill.ids.map((i) => i.toString()),
+          accountBillIds: accountBill.ids.map((i) => i.toString()),
           accountName: accountBill.accountName,
         },
       });
@@ -115,7 +111,8 @@ export const UserBillModal: React.FC<Props> = (
 
     const typeOptions = types.map((i) => {
       return {
-        label: i, value: i,
+        label: i,
+        value: i,
       };
     });
 
@@ -127,29 +124,21 @@ export const UserBillModal: React.FC<Props> = (
       open={open}
       onCancel={onClose}
       width={1000}
-      style={{ maxWidth:"100%" }}
-      footer={(
-        <ExportFileModaLButton
-          options={exportOptions}
-          onExport={handleExport}
-        >
+      style={{ maxWidth: "100%" }}
+      footer={
+        <ExportFileModaLButton options={exportOptions} onExport={handleExport}>
           {t(pCommon("export"))}
         </ExportFileModaLButton>
-      )}
+      }
     >
       <Descriptions title={t(pTitle("title"))}>
         <Descriptions.Item label={t(pCommon("account"))}>{accountBill.accountName}</Descriptions.Item>
         <Descriptions.Item label={t(pCommon("owner"))}>
-          {accountBill.accountOwnerId}({accountBill.accountOwnerName})</Descriptions.Item>
+          {accountBill.accountOwnerId}({accountBill.accountOwnerName})
+        </Descriptions.Item>
         <Descriptions.Item label={t(p("term"))}>{accountBill.term}</Descriptions.Item>
       </Descriptions>
-      <Table
-        rowKey="useId"
-        loading={isLoading}
-        dataSource={userBills}
-        pagination={false}
-        columns={columns}
-      />
+      <Table rowKey="useId" loading={isLoading} dataSource={userBills} pagination={false} columns={columns} />
     </Modal>
   );
 };

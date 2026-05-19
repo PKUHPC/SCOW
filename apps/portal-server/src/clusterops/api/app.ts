@@ -21,7 +21,7 @@ export interface CreateAppRequest {
 export interface CreateAppReply {
   sessionId: string;
   jobId: number;
-};
+}
 
 export interface GetAppSessionsRequest {
   userId: string;
@@ -88,7 +88,7 @@ export interface GetAppLastSubmissionRequest {
 
 export interface GetAppLastSubmissionReply {
   lastSubmissionInfo?: SubmissionInfo;
-};
+}
 
 export interface RunScriptRequest {
   userId: string;

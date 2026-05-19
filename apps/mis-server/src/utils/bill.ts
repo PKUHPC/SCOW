@@ -1,7 +1,11 @@
 import { EntityManager, Knex, Loaded, MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, decimalToMoney } from "@scow/lib-decimal";
-import { BillListItem, BillType as BillSearchType, billTypeToJSON,
-  UserBill as UserBillType } from "@scow/protos/build/server/bill";
+import {
+  BillListItem,
+  BillType as BillSearchType,
+  billTypeToJSON,
+  UserBill as UserBillType,
+} from "@scow/protos/build/server/bill";
 import dayjs from "dayjs";
 import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
@@ -10,17 +14,14 @@ import { QueryCache } from "src/entities/QueryCache";
 import { UserBill } from "src/entities/UserBill";
 
 export const queryBillTypesCache = async (em: SqlEntityManager<MySqlDriver>) => {
-
   const queryKey = "bill_type";
   const queryCache = await em.findOne(QueryCache, { queryKey });
   if (queryCache) {
     return JSON.parse(queryCache.queryResult) as string[];
   } else {
-
     const uniqueKeys = new Set<string>();
     // 预先添加作业费用及作业费用更改两种类型，使其排序在前
-    uniqueKeys.add(misConfig.jobChargeType)
-      .add(misConfig.changeJobPriceType);
+    uniqueKeys.add(misConfig.jobChargeType).add(misConfig.changeJobPriceType);
 
     if (config.QUANTUM_DEPLOYED) {
       uniqueKeys.add(misConfig.quantumJobChargeType);
@@ -42,7 +43,9 @@ export const queryBillTypesCache = async (em: SqlEntityManager<MySqlDriver>) => 
 
     const billDetailTypes = [...uniqueKeys];
     const newQueryCache = new QueryCache({
-      queryKey, queryResult: JSON.stringify(billDetailTypes), timestamp: new Date(),
+      queryKey,
+      queryResult: JSON.stringify(billDetailTypes),
+      timestamp: new Date(),
     });
     await em.persistAndFlush(newQueryCache);
     return billDetailTypes;
@@ -105,8 +108,7 @@ export function buildQueryConditions(qb: Knex.QueryBuilder, conditions: QueryCon
   if (userIdsOrNames) {
     const idsOrNamesArray = userIdsOrNames.split(",").map((s) => s.trim());
     qb.andWhere((builder) => {
-      builder.whereIn("bill.account_owner_id", idsOrNamesArray)
-        .orWhereIn("bill.account_owner_name", idsOrNamesArray);
+      builder.whereIn("bill.account_owner_id", idsOrNamesArray).orWhereIn("bill.account_owner_name", idsOrNamesArray);
     });
   }
   if (termStart && termEnd) {
@@ -178,34 +180,23 @@ function mergeBillDetails(bills: AccountBill[]): Record<string, number> {
   return Object.fromEntries(Object.entries(details).map(([key, value]) => [key, value.toNumber()]));
 }
 
-
-export function billFilter({
-  accountNames,
-  userIdsOrNames,
-  termArr,
-  type,
-  tenantName,
-  termStart,
-  termEnd,
-}) {
+export function billFilter({ accountNames, userIdsOrNames, termArr, type, tenantName, termStart, termEnd }) {
   const idsOrNamesArray = userIdsOrNames ? userIdsOrNames.split(",").map((s) => s.trim()) : [];
 
   return {
-    ...accountNames.length > 0 ? { accountName: { $in: accountNames } } : {},
-    ...idsOrNamesArray.length > 0 ? {
-      $or: [
-        { accountOwnerId: { $in: idsOrNamesArray } },
-        { accountOwnerName: { $in: idsOrNamesArray } },
-      ],
-    } : {},
-    ...termStart && termEnd ? { term: { $in: termArr } } : {},
-    ...type ? { type: billTypeToJSON(type) } : {},
-    ...tenantName ? { tenantName } : {},
+    ...(accountNames.length > 0 ? { accountName: { $in: accountNames } } : {}),
+    ...(idsOrNamesArray.length > 0
+      ? {
+          $or: [{ accountOwnerId: { $in: idsOrNamesArray } }, { accountOwnerName: { $in: idsOrNamesArray } }],
+        }
+      : {}),
+    ...(termStart && termEnd ? { term: { $in: termArr } } : {}),
+    ...(type ? { type: billTypeToJSON(type) } : {}),
+    ...(tenantName ? { tenantName } : {}),
   };
 }
 
 export function mergeUserBillDetails(items: Loaded<UserBill>[]): UserBillType[] {
-
   const userBillSummary: Record<string, UserBill> = {};
 
   for (const item of items) {
@@ -223,8 +214,9 @@ export function mergeUserBillDetails(items: Loaded<UserBill>[]): UserBillType[] 
 
     // 合并 details
     for (const [key, value] of Object.entries(item.details || {})) {
-      userBillSummary[userId].details[key] =
-              Decimal(userBillSummary[userId].details[key] || 0).plus(Decimal(Number(value))).toNumber();
+      userBillSummary[userId].details[key] = Decimal(userBillSummary[userId].details[key] || 0)
+        .plus(Decimal(Number(value)))
+        .toNumber();
     }
   }
 

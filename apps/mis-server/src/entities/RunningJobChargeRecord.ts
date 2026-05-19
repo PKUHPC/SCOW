@@ -8,7 +8,6 @@ const UNKNOWN_PRICE_ITEM = "UNKNOWN";
 @Entity()
 @Index({ name: "query", properties: ["cluster", "jobId"] })
 export class RunningJobChargeRecord {
-
   @PrimaryKey()
   id!: number;
 

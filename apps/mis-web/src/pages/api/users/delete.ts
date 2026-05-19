@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -48,21 +36,24 @@ export const DeleteUserSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(DeleteUserSchema, async (req,res) => {
-
+export default /* #__PURE__*/ route(DeleteUserSchema, async (req, res) => {
   const ldapCapabilities = await getCapabilities(runtimeConfig.AUTH_INTERNAL_URL);
   if (!ldapCapabilities.deleteUser) {
-    return { 501: { message:"No permission to delete user in LDAP." } };
+    return { 501: { message: "No permission to delete user in LDAP." } };
   }
 
   const { userId, comments } = req.query;
 
-  const auth = authenticate((u) =>
-    (u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-    u.tenantRoles.includes(TenantRole.TENANT_ADMIN)) && u.identityId !== userId);
+  const auth = authenticate(
+    (u) =>
+      (u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN)) &&
+      u.identityId !== userId,
+  );
 
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   // call ua service to add user
   const client = getClient(UserServiceClient);
@@ -71,7 +62,7 @@ export default /* #__PURE__*/route(DeleteUserSchema, async (req,res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deleteUser,
-    operationTypePayload:{
+    operationTypePayload: {
       userId,
     },
   };
@@ -79,18 +70,21 @@ export default /* #__PURE__*/route(DeleteUserSchema, async (req,res) => {
   return await asyncClientCall(client, "deleteUser", {
     tenantName: info.tenant,
     userId,
-    deletionComment:comments,
+    deletionComment: comments,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(handlegRPCError({
-      [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
-      [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
-      [status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-      [status.UNIMPLEMENTED]: (e) => ({ 501:{ message: e.details } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [status.NOT_FOUND]: (e) => ({ 404: { message: e.details } }),
+          [status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
+          [status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+          [status.UNIMPLEMENTED]: (e) => ({ 501: { message: e.details } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

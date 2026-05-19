@@ -9,7 +9,6 @@ export const libWebGetAppForbiddenAccounts = async (
   misServerUrl: string,
   scowApiAuthToken?: string,
 ): Promise<string[]> => {
-
   const config = {
     SERVER_URL: misServerUrl,
     SCOW_API_AUTH_TOKEN: scowApiAuthToken,

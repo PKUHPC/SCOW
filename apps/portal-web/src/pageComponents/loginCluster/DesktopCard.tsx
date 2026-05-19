@@ -6,13 +6,7 @@ import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { DesktopCardIcon } from "src/icons/headerIcons/headerIcons";
 import { DeleteIcon } from "src/icons/operationIcon";
 import { DesktopItem, RemoteControlTool } from "src/pageComponents/loginCluster/DesktopCardList";
-import {
-  BaseCardInfoItem,
-  CardActions,
-  CardTitleContainer,
-  StyledButton,
-  StyledCard,
-} from "src/utils/baseCardStyles";
+import { BaseCardInfoItem, CardActions, CardTitleContainer, StyledButton, StyledCard } from "src/utils/baseCardStyles";
 import { getTransparentColor } from "src/utils/color";
 import { publicConfig } from "src/utils/config";
 import { openDesktop } from "src/utils/vnc";
@@ -42,7 +36,6 @@ interface DesktopCardProps {
 const p = prefix("pageComp.loginCluster.desktopCard.");
 
 export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const isEnglish = languageId === "en";
@@ -67,35 +60,42 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
   };
 
   const handleLaunchDesktop = async () => {
-
     if (data.isActive !== true) {
       showExpiredConfirm();
       return;
     }
 
-    const extraProps = data.remoteControlTool === RemoteControlTool.SHADOWDESK ? {
-      $case: "shadowdesk" as const,
-      shadowdesk: {
-        desktopName: data.desktopName,
-      },
-    } : {
-      $case: "vnc" as const,
-      vnc: {
-        displayId: data.desktopId,
-      },
-    };
+    const extraProps =
+      data.remoteControlTool === RemoteControlTool.SHADOWDESK
+        ? {
+            $case: "shadowdesk" as const,
+            shadowdesk: {
+              desktopName: data.desktopName,
+            },
+          }
+        : {
+            $case: "vnc" as const,
+            vnc: {
+              displayId: data.desktopId,
+            },
+          };
 
-    await api.launchDesktop({
-      body: {
-        id: data.id,
-        cluster: data.clusterId,
-        loginNode: data.addr,
-        displayId: data.desktopId,
-        desktopInfo: { desktop: extraProps },
-      },
-    })
-      .httpError(404, () => { showExpiredConfirm(); })
-      .httpError(503, () => { showExpiredConfirm(); })
+    await api
+      .launchDesktop({
+        body: {
+          id: data.id,
+          cluster: data.clusterId,
+          loginNode: data.addr,
+          displayId: data.desktopId,
+          desktopInfo: { desktop: extraProps },
+        },
+      })
+      .httpError(404, () => {
+        showExpiredConfirm();
+      })
+      .httpError(503, () => {
+        showExpiredConfirm();
+      })
       .then((resp) => {
         if (resp.vnc) {
           openDesktop(data.clusterId, resp.vnc.host, resp.vnc.port, resp.vnc.password);
@@ -103,21 +103,23 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
           window.open(resp.shadowdesk?.shadowdeskUrl);
         }
       });
-
   };
 
   const handleKillDesktop = async () => {
-    const extraProps = data.remoteControlTool === RemoteControlTool.SHADOWDESK ? {
-      $case: "shadowdesk" as const,
-      shadowdesk: {
-        desktopName: data.desktopName,
-      },
-    } : {
-      $case: "vnc" as const,
-      vnc: {
-        displayId: data.desktopId,
-      },
-    };
+    const extraProps =
+      data.remoteControlTool === RemoteControlTool.SHADOWDESK
+        ? {
+            $case: "shadowdesk" as const,
+            shadowdesk: {
+              desktopName: data.desktopName,
+            },
+          }
+        : {
+            $case: "vnc" as const,
+            vnc: {
+              displayId: data.desktopId,
+            },
+          };
 
     await api.killDesktop({
       body: {
@@ -143,7 +145,7 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
   return (
     <StyledCard
       $boxShadowColor={themeColor}
-      title={(
+      title={
         <CardTitleContainer>
           <AvatarContainer>
             {data.iconPath && !imageError ? (
@@ -165,28 +167,44 @@ export const DesktopCard: React.FC<DesktopCardProps> = ({ data, reload }) => {
           </AvatarContainer>
           <div>{data.title}</div>
         </CardTitleContainer>
-      )}
-      extra={(
+      }
+      extra={
         <Tooltip title={t("button.deleteButton")}>
-          <StyledDeleteIcon
-            onClick={showDeleteConfirm}
-          />
+          <StyledDeleteIcon onClick={showDeleteConfirm} />
         </Tooltip>
-      )}
+      }
       style={{
         borderColor: borderColorWithAlpha,
         borderWidth: "1px",
       }}
     >
-      <CardInfo style={{
-        "--card-label-width": isEnglish ? "150px" : "120px",
-      } as React.CSSProperties}
+      <CardInfo
+        style={
+          {
+            "--card-label-width": isEnglish ? "150px" : "120px",
+          } as React.CSSProperties
+        }
       >
-        <BaseCardInfoItem>{t(p("clusterName"))}<span>{data.clusterName}</span></BaseCardInfoItem>
-        <BaseCardInfoItem>{t(p("loginNode"))}<span>{data.loginNodeName}</span></BaseCardInfoItem>
-        <BaseCardInfoItem>{t(p("desktopType"))}<span>{data.desktopType}</span></BaseCardInfoItem>
-        <BaseCardInfoItem>{t(p("remoteControlTool"))}<span>{data.remoteTool}</span></BaseCardInfoItem>
-        <BaseCardInfoItem>{t(p("createTime"))}<span>{data.creationTime}</span></BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(p("clusterName"))}
+          <span>{data.clusterName}</span>
+        </BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(p("loginNode"))}
+          <span>{data.loginNodeName}</span>
+        </BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(p("desktopType"))}
+          <span>{data.desktopType}</span>
+        </BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(p("remoteControlTool"))}
+          <span>{data.remoteTool}</span>
+        </BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(p("createTime"))}
+          <span>{data.creationTime}</span>
+        </BaseCardInfoItem>
       </CardInfo>
       <CardActions>
         <StyledButton type="default" onClick={handleLaunchDesktop}>

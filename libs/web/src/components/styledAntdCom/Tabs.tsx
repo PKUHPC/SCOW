@@ -5,17 +5,13 @@ import { styled } from "styled-components";
 type TabsWrapperProps = TabsProps & { className?: string };
 
 const TabsWrapper = ({ className, ...tabsProps }: TabsWrapperProps) =>
-  createElement(
-    "div",
-    { className },
-    createElement(Tabs, tabsProps),
-  );
+  createElement("div", { className }, createElement(Tabs, tabsProps));
 
 /**
-   * 给 StyledTabs 增加了一个包裹组件 TabsWrapper
-   * 把 Tabs 渲染在外层 div 中，并让 styled-components 作用在这个外层
-   * 从而避免向 Ant Design 的函数组件传递 ref 导致的警告
-   */
+ * 给 StyledTabs 增加了一个包裹组件 TabsWrapper
+ * 把 Tabs 渲染在外层 div 中，并让 styled-components 作用在这个外层
+ * 从而避免向 Ant Design 的函数组件传递 ref 导致的警告
+ */
 export const StyledTabs = styled(TabsWrapper)`
   .ant-tabs-nav {
     margin: 0 0 16px;

@@ -8,22 +8,29 @@ import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import { getI18nCurrentText, getT, getTArgs, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { getOperationDetail, getOperationResultTexts, getOperationTypeTexts, OperationLogQueryType,
-  OperationResult } from "src/models/operationLog";
+import {
+  getOperationDetail,
+  getOperationResultTexts,
+  getOperationTypeTexts,
+  OperationLogQueryType,
+  OperationResult,
+} from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig, runtimeConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 import { pipeline } from "stream";
 
-
 export const GetOperationLogFilter = Type.Object({
-
   operatorUserIds: Type.String(),
 
   startTime: Type.Optional(Type.String({ format: "date-time" })),
@@ -40,13 +47,10 @@ export const GetOperationLogFilter = Type.Object({
 
 export type GetOperationLogFilter = Static<typeof GetOperationLogFilter>;
 
-
 export const ExportOperationLogSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
-
     type: Type.Enum(OperationLogQueryType),
 
     ...GetOperationLogFilter.properties,
@@ -74,8 +78,8 @@ export const ExportOperationLogSchema = typeboxRouteSchema({
 const getExportSource = (
   type: OperationLogQueryType,
   info: UserInfo,
-  accountName: string | undefined): ExportOperationLog["source"] => {
-
+  accountName: string | undefined,
+): ExportOperationLog["source"] => {
   switch (type) {
     case OperationLogQueryType.USER:
       return {
@@ -87,11 +91,11 @@ const getExportSource = (
     case OperationLogQueryType.ACCOUNT:
       return accountName
         ? {
-          $case: "account",
-          account: {
-            accountName,
-          },
-        }
+            $case: "account",
+            account: {
+              accountName,
+            },
+          }
         : undefined;
     case OperationLogQueryType.TENANT:
       return {
@@ -113,13 +117,26 @@ export default route(ExportOperationLogSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   // 从请求中解析出 timeZone 参数
   const {
-    count, columns, type, operatorUserIds, startTime, endTime,
-    operationType, operationResult, operationDetail, operationTargetAccountName,
-    customEventType, encoding, timeZone, publicConfigClusters,
+    count,
+    columns,
+    type,
+    operatorUserIds,
+    startTime,
+    endTime,
+    operationType,
+    operationResult,
+    operationDetail,
+    operationTargetAccountName,
+    customEventType,
+    encoding,
+    timeZone,
+    publicConfigClusters,
   } = req.query;
 
   const logSource = getExportSource(type, info, operationTargetAccountName);
@@ -141,8 +158,11 @@ export default route(ExportOperationLogSchema, async (req, res) => {
 
     const filter = {
       operatorUserIds: operatorUserIds ? operatorUserIds.split(",") : [],
-      startTime, endTime, operationType,
-      operationResult, operationTargetAccountName,
+      startTime,
+      endTime,
+      operationType,
+      operationResult,
+      operationTargetAccountName,
       operationDetail,
       customEventType,
     };
@@ -158,8 +178,11 @@ export default route(ExportOperationLogSchema, async (req, res) => {
       }
 
       if (
-        !info.accountAffiliations.find((au) => au.accountName === filter.operationTargetAccountName
-          && (au.role === UserRole.ADMIN || au.role === UserRole.OWNER))
+        !info.accountAffiliations.find(
+          (au) =>
+            au.accountName === filter.operationTargetAccountName &&
+            (au.role === UserRole.ADMIN || au.role === UserRole.OWNER),
+        )
       ) {
         await callLog(logInfo, OperationResult.FAIL);
         return { 403: null };
@@ -173,7 +196,8 @@ export default route(ExportOperationLogSchema, async (req, res) => {
       }
 
       const { users } = await asyncClientCall(client, "getUsers", {
-        tenantName: info.tenant, userIds: [],
+        tenantName: info.tenant,
+        userIds: [],
       });
 
       // 搜索条件中的userId必须是属于该tenant的
@@ -224,14 +248,14 @@ export default route(ExportOperationLogSchema, async (req, res) => {
 
     const userMap = new Map(users.map((x) => [x.userId, x.userName]));
 
-
     // 使用 timezone 参数格式化 operationTime
     const formatOperationLog = (x: OperationLog) => {
       return {
         id: x.operationLogId,
-        operationType: x.operationEvent?.$case === "customEvent"
-          ? getI18nCurrentText(x.operationEvent.customEvent.name, languageId)
-          : OperationTypeTexts[x.operationEvent?.$case || "unknown"],
+        operationType:
+          x.operationEvent?.$case === "customEvent"
+            ? getI18nCurrentText(x.operationEvent.customEvent.name, languageId)
+            : OperationTypeTexts[x.operationEvent?.$case || "unknown"],
         operationDetail: x.operationEvent
           ? x.operationEvent?.$case === "customEvent"
             ? getI18nCurrentText(x.operationEvent.customEvent.content, languageId)
@@ -240,13 +264,12 @@ export default route(ExportOperationLogSchema, async (req, res) => {
         operationResult: OperationResultTexts[x.operationResult],
         operatorUserId: `${userMap.get(x.operatorUserId) || ""} (ID: ${x.operatorUserId})`,
         // 使用用户指定的时区格式化时间
-        operationTime: x.operationTime ? new Date(x.operationTime).
-          toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
+        operationTime: x.operationTime
+          ? new Date(x.operationTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
           : "",
         operatorIp: x.operatorIp,
       };
     };
-
 
     const headerColumns = {
       id: "Operation Log ID",
@@ -280,4 +303,3 @@ export default route(ExportOperationLogSchema, async (req, res) => {
     );
   }
 });
-

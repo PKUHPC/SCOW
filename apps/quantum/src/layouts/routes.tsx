@@ -3,7 +3,6 @@ import { useI18nTranslateToString } from "src/i18n";
 import { DashboardIcon, DeviceIcon, HelpIcon, JupyterIcon, QuantumJobIcon } from "src/icons/headerIcons/headerIcons";
 
 export const useRoutes = (): NavItemProps[] => {
-
   const t = useI18nTranslateToString();
 
   return [

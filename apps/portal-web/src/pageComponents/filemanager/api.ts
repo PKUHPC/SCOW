@@ -8,18 +8,23 @@ export const urlToCompressAndDownload = (cluster: string, path: string[], downlo
   return `${join(publicConfig.BASE_PATH, "/api/file/compressAndDownload")}?${pathParams}&cluster=${cluster}&download=${download}`;
 };
 
-
 export const urlToDownload = (cluster: string, path: string, download: boolean): string => {
-
-  return join(publicConfig.BASE_PATH, "/api/file/download")
-  + `?path=${encodeURIComponent(path)}&cluster=${cluster}&download=${download}`;
+  return (
+    join(publicConfig.BASE_PATH, "/api/file/download") +
+    `?path=${encodeURIComponent(path)}&cluster=${cluster}&download=${download}`
+  );
 };
 export const urlToUpload = (
-  cluster: string, path: string, chunk?: boolean, originPath?: string, chunkIdx?: number,
+  cluster: string,
+  path: string,
+  chunk?: boolean,
+  originPath?: string,
+  chunkIdx?: number,
 ): string => {
-  return join(publicConfig.BASE_PATH, "/api/file/upload")
-  + `?path=${encodeURIComponent(path)}&cluster=${cluster}`
-  + (chunkIdx !== undefined ? `&chunkIdx=${chunkIdx}` : "")
-  + `&chunk=${chunk ?? false}&originPath=${originPath ?? ""}`;
+  return (
+    join(publicConfig.BASE_PATH, "/api/file/upload") +
+    `?path=${encodeURIComponent(path)}&cluster=${cluster}` +
+    (chunkIdx !== undefined ? `&chunkIdx=${chunkIdx}` : "") +
+    `&chunk=${chunk ?? false}&originPath=${originPath ?? ""}`
+  );
 };
-

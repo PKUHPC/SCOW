@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Status } from "@grpc/grpc-js/build/src/constants";
@@ -42,15 +30,16 @@ export const DeactivateClusterSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(DeactivateClusterSchema, async (req, res) => {
+export default /* #__PURE__*/ route(DeactivateClusterSchema, async (req, res) => {
   const { clusterId, deactivationComment } = req.body;
 
   const auth = authenticate((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
-
+  if (!info) {
+    return;
+  }
 
   const client = getClient(ConfigServiceClient);
 
@@ -58,8 +47,9 @@ export default /* #__PURE__*/route(DeactivateClusterSchema, async (req, res) => 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.deactivateCluster,
-    operationTypePayload:{
-      userId: "", clusterId, // userId不再展示 + 维持兼容性
+    operationTypePayload: {
+      userId: "",
+      clusterId, // userId不再展示 + 维持兼容性
     },
   };
 
@@ -72,9 +62,12 @@ export default /* #__PURE__*/route(DeactivateClusterSchema, async (req, res) => 
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: reply };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

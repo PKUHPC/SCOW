@@ -15,8 +15,8 @@ import { Section } from "./Section";
 
 export interface mutationType {
   useMutation: ({ onSuccess, onError }) => {
-    mutate: (input) => void
-  }
+    mutate: (input) => void;
+  };
 }
 
 interface Props {
@@ -46,25 +46,29 @@ const Part = styled(Section)`
 `;
 
 const TitleText = styled(Typography.Title)`
-&& {
-  font-size: 24px !important;
-  padding: 0 0 10px 20px !important;
-  margin-left: -25px;
-  border-bottom: 1px solid #ccc;
-  @media (min-width: ${antdBreakpoints.md}px) {
-    padding: 0 0 20px 30px;
+  && {
+    font-size: 24px !important;
+    padding: 0 0 10px 20px !important;
+    margin-left: -25px;
+    border-bottom: 1px solid #ccc;
+    @media (min-width: ${antdBreakpoints.md}px) {
+      padding: 0 0 20px 30px;
+    }
   }
-}
 `;
 
 const ChangePasswordModalButton = ModalButton(ChangePasswordModal, { type: "link" });
 const ChangeEmailModalButton = ModalButton(ChangeEmailModal, { type: "link" });
 
 export const Profile: React.FC<Props> = ({
-  user, languageId, publicConfig, api, passwordPatternMessage,
-  aiChangePassword, aiChangeEmail,
+  user,
+  languageId,
+  publicConfig,
+  api,
+  passwordPatternMessage,
+  aiChangePassword,
+  aiChangeEmail,
 }) => {
-
   const [email, setEmail] = useState(user?.email);
 
   useEffect(() => {
@@ -91,8 +95,8 @@ export const Profile: React.FC<Props> = ({
         <Part title>
           <Descriptions
             column={1}
-            labelStyle={{ paddingLeft:"10px", marginBottom:"10px", width: "100px" }}
-            contentStyle={{ paddingLeft:"10px" }}
+            labelStyle={{ paddingLeft: "10px", marginBottom: "10px", width: "100px" }}
+            contentStyle={{ paddingLeft: "10px" }}
           >
             <Descriptions.Item label={getCurrentLangLibWebText(languageId, "userId")}>
               {user?.identityId}
@@ -100,28 +104,20 @@ export const Profile: React.FC<Props> = ({
             <Descriptions.Item label={getCurrentLangLibWebText(languageId, "userFullName")}>
               {user?.name}
             </Descriptions.Item>
-            {
-              user?.tenantRoles?.length && user.tenantRoles.length > 0 ? (
-                <Descriptions.Item label={getCurrentLangLibWebText(languageId, "tenantRole")}>
-                  {user?.tenantRoles.map((x) => (
-                    <Tag
-                      key={x}
-                    >{TenantRoleI18nTexts[x]}</Tag>
-                  ))}
-                </Descriptions.Item>
-              ) : undefined
-            }
-            {
-              user?.platformRoles?.length && user.platformRoles.length > 0 ? (
-                <Descriptions.Item label={getCurrentLangLibWebText(languageId, "platformRole")}>
-                  {user?.platformRoles.map((x) => (
-                    <Tag
-                      key={x}
-                    >{PlatformRoleI18nTexts[x]}</Tag>
-                  ))}
-                </Descriptions.Item>
-              ) : undefined
-            }
+            {user?.tenantRoles?.length && user.tenantRoles.length > 0 ? (
+              <Descriptions.Item label={getCurrentLangLibWebText(languageId, "tenantRole")}>
+                {user?.tenantRoles.map((x) => (
+                  <Tag key={x}>{TenantRoleI18nTexts[x]}</Tag>
+                ))}
+              </Descriptions.Item>
+            ) : undefined}
+            {user?.platformRoles?.length && user.platformRoles.length > 0 ? (
+              <Descriptions.Item label={getCurrentLangLibWebText(languageId, "platformRole")}>
+                {user?.platformRoles.map((x) => (
+                  <Tag key={x}>{PlatformRoleI18nTexts[x]}</Tag>
+                ))}
+              </Descriptions.Item>
+            ) : undefined}
             <Descriptions.Item label={getCurrentLangLibWebText(languageId, "phone")}>
               {user?.phone ? user.phone : "-"}
             </Descriptions.Item>
@@ -132,7 +128,7 @@ export const Profile: React.FC<Props> = ({
               {user?.createTime ? formatDateTime(user?.createTime) : ""}
             </Descriptions.Item>
             <Descriptions.Item label={getCurrentLangLibWebText(languageId, "email")}>
-              <span style={{ width:"202px" }}>{email ? email : "-"}</span>
+              <span style={{ width: "202px" }}>{email ? email : "-"}</span>
               {/* setEmail用于profile页面展示的邮箱同步修改后的邮箱 */}
               <ChangeEmailModalButton
                 setEmail={setEmail}
@@ -146,37 +142,34 @@ export const Profile: React.FC<Props> = ({
             </Descriptions.Item>
           </Descriptions>
         </Part>
-        {
-          publicConfig.ENABLE_CHANGE_PASSWORD ? (
-            <>
-              <TitleText>{getCurrentLangLibWebText(languageId, "accountSecurity")}</TitleText>
-              <Part title>
-                <Descriptions
-                  column={1}
-                  labelStyle={{ paddingLeft:"10px", paddingTop:"5px", width: "100px" }}
-                  contentStyle={{ paddingLeft:"10px" }}
-                >
-                  <Descriptions.Item label={getCurrentLangLibWebText(languageId, "loginPassword")}>
-                    <span style={{ width:"200px" }}>********</span>
-                    <ChangePasswordModalButton
-                      publicConfig={publicConfig}
-                      languageId={languageId}
-                      userId={user?.identityId || ""}
-                      api={api}
-                      passwordPatternMessage={passwordPatternMessage}
-                      aiChangePassword={aiChangePassword}
-                    >
-                      {getCurrentLangLibWebText(languageId, "changePassword")}
-                    </ChangePasswordModalButton>
-                  </Descriptions.Item>
-                </Descriptions>
-              </Part>
-            </>
-          ) : undefined
-        }
+        {publicConfig.ENABLE_CHANGE_PASSWORD ? (
+          <>
+            <TitleText>{getCurrentLangLibWebText(languageId, "accountSecurity")}</TitleText>
+            <Part title>
+              <Descriptions
+                column={1}
+                labelStyle={{ paddingLeft: "10px", paddingTop: "5px", width: "100px" }}
+                contentStyle={{ paddingLeft: "10px" }}
+              >
+                <Descriptions.Item label={getCurrentLangLibWebText(languageId, "loginPassword")}>
+                  <span style={{ width: "200px" }}>********</span>
+                  <ChangePasswordModalButton
+                    publicConfig={publicConfig}
+                    languageId={languageId}
+                    userId={user?.identityId || ""}
+                    api={api}
+                    passwordPatternMessage={passwordPatternMessage}
+                    aiChangePassword={aiChangePassword}
+                  >
+                    {getCurrentLangLibWebText(languageId, "changePassword")}
+                  </ChangePasswordModalButton>
+                </Descriptions.Item>
+              </Descriptions>
+            </Part>
+          </>
+        ) : undefined}
       </Container>
     </>
-
   );
 };
 

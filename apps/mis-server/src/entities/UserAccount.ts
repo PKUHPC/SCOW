@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Entity, Enum, ManyToOne, PrimaryKey, Property, Ref } from "@mikro-orm/core";
 import { Decimal } from "@scow/lib-decimal";
 import { Account } from "src/entities/Account";
@@ -60,18 +48,21 @@ export class UserAccount {
   @Property({ type: DecimalType, nullable: true })
   jobChargeLimit?: Decimal;
 
-  @Enum({ items: () => UserStateInAccount,
-    default: UserStateInAccount.NORMAL, comment: Object.values(UserStateInAccount).join(", ") })
+  @Enum({
+    items: () => UserStateInAccount,
+    default: UserStateInAccount.NORMAL,
+    comment: Object.values(UserStateInAccount).join(", "),
+  })
   state?: UserStateInAccount;
 
   constructor(init: {
-    user: EntityOrRef<User>,
-    account: EntityOrRef<Account>,
-    blockedInCluster: UserStatus,
-    role: UserRole,
-    jobChargeLimit?: Decimal,
-    usedJobCharge?: Decimal,
-    state?: UserStateInAccount,
+    user: EntityOrRef<User>;
+    account: EntityOrRef<Account>;
+    blockedInCluster: UserStatus;
+    role: UserRole;
+    jobChargeLimit?: Decimal;
+    usedJobCharge?: Decimal;
+    state?: UserStateInAccount;
   }) {
     this.user = toRef(init.user);
     this.account = toRef(init.account);

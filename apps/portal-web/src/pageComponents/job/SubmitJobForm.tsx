@@ -1062,7 +1062,9 @@ export const SubmitJobForm: React.FC<Props> = ({ submitJobPromptText }) => {
         centered
         width={448}
       >
-        <Typography.Paragraph style={{ marginBottom: 16, color: gray[7] }}>{t(p("unavailableParamsDesc"))}</Typography.Paragraph>
+        <Typography.Paragraph style={{ marginBottom: 16, color: gray[7] }}>
+          {t(p("unavailableParamsDesc"))}
+        </Typography.Paragraph>
         <TableWithSplitLines
           dataSource={unavailableParamsModal?.params ?? []}
           pagination={false}

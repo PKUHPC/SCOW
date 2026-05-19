@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -31,7 +19,6 @@ beforeEach(async () => {
   server = await createServer();
   await server.start();
   client = new TenantServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 });
 
 afterEach(async () => {
@@ -44,19 +31,21 @@ it("get all tenants", async () => {
   const tenants = await asyncClientCall(client, "getAllTenants", {});
 
   expect(tenants.totalCount).toEqual(2);
-  expect(tenants.platformTenants.map((x) => ({
-    tenantId: x.tenantId,
-    name: x.tenantName,
-    userCount: x.userCount,
-    accountCount:x.accountCount,
-    balance: x.balance,
-    createTime: x.createTime,
-  }))).toIncludeSameMembers([
+  expect(
+    tenants.platformTenants.map((x) => ({
+      tenantId: x.tenantId,
+      name: x.tenantName,
+      userCount: x.userCount,
+      accountCount: x.accountCount,
+      balance: x.balance,
+      createTime: x.createTime,
+    })),
+  ).toIncludeSameMembers([
     {
       tenantId: data.tenant.id,
       name: data.tenant.name,
       userCount: 2,
-      accountCount:2,
+      accountCount: 2,
       balance: decimalToMoney(data.tenant.balance),
       createTime: data.tenant.createTime.toISOString(),
     },
@@ -64,13 +53,11 @@ it("get all tenants", async () => {
       tenantId: data.anotherTenant.id,
       name: data.anotherTenant.name,
       userCount: 1,
-      accountCount:1,
+      accountCount: 1,
       balance: decimalToMoney(data.anotherTenant.balance),
       createTime: data.anotherTenant.createTime.toISOString(),
     },
-
   ]);
-
 });
 
 const tenantName = "tenantTest";
@@ -84,29 +71,36 @@ it("cannot create a tenant if the name exists", async () => {
   const tenant = new Tenant({ name: tenantName });
   await server.ext.orm.em.fork().persistAndFlush(tenant);
 
-  const reply = await asyncClientCall(client, "createTenant", { tenantName, userId, userName, userEmail, userPassword })
-    .catch((e) => e);
+  const reply = await asyncClientCall(client, "createTenant", {
+    tenantName,
+    userId,
+    userName,
+    userEmail,
+    userPassword,
+  }).catch((e) => e);
   expect(reply.code).toBe(Status.ALREADY_EXISTS);
   expect(reply.details).toBe("TENANT_ALREADY_EXISTS");
 });
 
 it("cannot create a tenant if the user exists", async () => {
-
   const tenant = new Tenant({ name: anotherTenantName });
   const user = new User({ name: userName, userId, email: userEmail, tenant });
   const em = server.ext.orm.em.fork();
   await em.persistAndFlush(tenant);
   await em.persistAndFlush(user);
 
-  const reply = await asyncClientCall(client, "createTenant", { tenantName, userId, userName, userEmail, userPassword })
-    .catch((e) => e);
+  const reply = await asyncClientCall(client, "createTenant", {
+    tenantName,
+    userId,
+    userName,
+    userEmail,
+    userPassword,
+  }).catch((e) => e);
   expect(reply.code).toBe(Status.ALREADY_EXISTS);
   expect(reply.details).toBe("USER_ALREADY_EXISTS");
-
 });
 
 it("create a new tenant", async () => {
-
   await asyncClientCall(client, "createTenant", { tenantName, userId, userName, userEmail, userPassword });
   const em = server.ext.orm.em.fork();
   const tenant = await em.findOneOrFail(Tenant, { name: "tenantTest" });
@@ -130,4 +124,3 @@ it("create a new tenant", async () => {
     expect.anything(),
   );
 });
-

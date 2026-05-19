@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials } from "@grpc/grpc-js";
@@ -40,7 +28,6 @@ let server: Server;
 let client: AppServiceClient;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   await server.start();
@@ -71,7 +58,9 @@ it("get app metadata", async () => {
     }),
     required: item.required,
     default: item.defaultInput
-      ? (item.defaultInput?.$case === "text" ? item.defaultInput.text : item.defaultInput.number)
+      ? item.defaultInput?.$case === "text"
+        ? item.defaultInput.text
+        : item.defaultInput.number
       : undefined,
     placeholder: getI18nTypeFormat(item.placeholder),
   }));
@@ -117,17 +106,19 @@ it("get app metadata", async () => {
       type: "SELECT",
       label: "版本",
       name: "version5",
-      select: [{
-        label: "version 4.8.0",
-        value: "code-server/4.8.0",
-      }, {
-        label: "version 4.9.0",
-        value: "code-server/4.9.0",
-      }],
+      select: [
+        {
+          label: "version 4.8.0",
+          value: "code-server/4.8.0",
+        },
+        {
+          label: "version 4.9.0",
+          value: "code-server/4.9.0",
+        },
+      ],
       required: true,
       default: undefined,
       placeholder: "",
     },
   ]);
-
 });

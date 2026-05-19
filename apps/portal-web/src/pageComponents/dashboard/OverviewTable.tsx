@@ -4,7 +4,7 @@ import { compareWithUndefined } from "@scow/lib-web/build/utils/dashboard";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { PartitionInfo, SummaryPartitionInfo_PartitionStatus } from "@scow/protos/build/portal/config";
 import { Table, Tag } from "antd";
-import React, { useContext,useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { PlatformOverview } from "src/models/cluster";
 import { InfoPanes } from "src/pageComponents/dashboard/InfoPanes";
@@ -36,8 +36,8 @@ interface InfoProps {
   partitionName: string;
   nodeCount: number;
   pendingJobCount: number;
-  cpuCoreCount: number,
-  gpuCoreCount: number,
+  cpuCoreCount: number;
+  gpuCoreCount: number;
   cpuUsage: string;
   nodeUsage: string;
   gpuUsage?: string;
@@ -46,22 +46,22 @@ interface InfoProps {
 
 interface TableProps {
   clusterId: string;
-  info?: InfoProps
+  info?: InfoProps;
 }
 const Container = styled.div`
   /* 修改滚动条样式 */
-  .ant-table-body{
+  .ant-table-body {
     &::-webkit-scrollbar {
-    width: 5px !important;
-    overflow-y: auto !important;
+      width: 5px !important;
+      overflow-y: auto !important;
     }
     &::-webkit-scrollbar-thumb {
-    border-radius: 5px !important;
+      border-radius: 5px !important;
     }
     &::-webkit-scrollbar-track {
-    -webkit-box-shadow: 0 !important;
-    border-radius: 0 !important;
-    background: #fff !important;
+      -webkit-box-shadow: 0 !important;
+      border-radius: 0 !important;
+      background: #fff !important;
     }
   }
 
@@ -73,7 +73,7 @@ const Container = styled.div`
     font-size: 16px;
   }
 
-  .rowBgColor{
+  .rowBgColor {
     /* 去除鼠标经过默认的背景颜色 */
     td {
       background: none !important;
@@ -83,15 +83,21 @@ const Container = styled.div`
 
 const TableContainer = styled.div`
   .ant-table-wrapper .ant-table-container {
-    box-shadow: #0000000D 0px 4px 4px 0px;
+    box-shadow: #0000000d 0px 4px 4px 0px;
   }
 `;
 
 const p = prefix("pageComp.dashboard.overviewTable.");
 
 // currentClusters 是过滤用户可用集群后的集合
-export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
-  currentClusters, isLoading, platformOverview, summaryClusterInfo }) => {
+export const OverviewTable: React.FC<Props> = ({
+  clusterInfo,
+  failedClusters,
+  currentClusters,
+  isLoading,
+  platformOverview,
+  summaryClusterInfo,
+}) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { dark } = useDarkMode();
@@ -110,11 +116,8 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
   const selectedClusterOverview = useMemo(() => {
     if (activeTabKey === "platformOverview" || !selectItem?.clusterId) {
       return undefined;
-    };
-    const view = summaryClusterInfo.find(
-      (clusterInfo) =>
-        clusterInfo.clusterId === activeTabKey,
-    );
+    }
+    const view = summaryClusterInfo.find((clusterInfo) => clusterInfo.clusterId === activeTabKey);
     return view;
   }, [activeTabKey, summaryClusterInfo, languageId, selectItem]);
 
@@ -137,171 +140,178 @@ export const OverviewTable: React.FC<Props> = ({ clusterInfo, failedClusters,
     }
   }, [activeTabKey, summaryClusterInfo]);
 
-  const dataSource = (filteredClusterInfo?.map((x, index) =>
-    ({
-      clusterId: x.clusterId,
-      info: {
-        ...x,
-        id: index,
-      },
-    })) as TableProps[]);
+  const dataSource = filteredClusterInfo?.map((x, index) => ({
+    clusterId: x.clusterId,
+    info: {
+      ...x,
+      id: index,
+    },
+  })) as TableProps[];
 
-  const finalDataSource = activeTabKey === "platformOverview" ?
-    dataSource?.concat(failedClusters.map((c) => ({ clusterId: c.id }))) : dataSource;
+  const finalDataSource =
+    activeTabKey === "platformOverview"
+      ? dataSource?.concat(failedClusters.map((c) => ({ clusterId: c.id })))
+      : dataSource;
 
   const isFullDisplayMode = useContext(DisplayModeContext);
 
-  return (
-    (isLoading || currentClusters.length > 0) ? (
-      <Container>
-        <InfoPanes
-          selectItem={activeTabKey === "platformOverview" ? platformOverview : selectedClusterOverview}
+  return isLoading || currentClusters.length > 0 ? (
+    <Container>
+      <InfoPanes
+        selectItem={activeTabKey === "platformOverview" ? platformOverview : selectedClusterOverview}
+        loading={isLoading}
+        activeTabKey={activeTabKey}
+        onTabChange={setActiveTabKey}
+        currentClusters={currentClusters}
+      />
+      <TableContainer>
+        <Table
+          style={{
+            marginTop: "15px",
+          }}
+          tableLayout="fixed"
+          dataSource={finalDataSource}
+          rowKey={(record) => record.clusterId + record.info?.id}
           loading={isLoading}
-          activeTabKey={activeTabKey}
-          onTabChange={setActiveTabKey}
-          currentClusters={currentClusters}
-        />
-        <TableContainer>
-          <Table
-            style={{
-              marginTop: "15px",
-            }}
-            tableLayout="fixed"
-            dataSource={finalDataSource}
-            rowKey={(record) => record.clusterId + record.info?.id}
-            loading={isLoading}
-            pagination={false}
-            scroll={{ y: 275 }}
-            rowClassName={(tableProps) => (tableProps.info?.id === selectId ? "rowBgColor" : "")}
-            onRow={(r) => {
-              return {
-                onClick() {
-                  if (r.info?.id !== undefined) {
-                    setSelectId(r.clusterId);
-                    setActiveTabKey(getI18nConfigCurrentText(r.clusterId, languageId));
-                  }
-                },
-              };
-            }}
-          >
-            <Table.Column<TableProps>
-              dataIndex="clusterName"
-              width={isFullDisplayMode ? "15%" : "33.3%"}
-              title={t(p("clusterName"))}
-              hidden={activeTabKey !== "platformOverview"}
-              sorter={(a, b, sortOrder) => compareWithUndefined(a.clusterId, b.clusterId, sortOrder)}
-              render={(_, r) => (
-                <span>
-                  {getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id == r.clusterId)?.name
-                    ?? r.clusterId, languageId)}
-                </span>
-              )}
-            />
-            <Table.Column<TableProps>
-              dataIndex="partitionName"
-              title={t(p("partitionName"))}
-              hidden={activeTabKey === "platformOverview"}
-              sorter={(a, b, sortOrder) => compareWithUndefined(
-                a.info?.partitionName, b.info?.partitionName, sortOrder)}
-              render={(_, r) => r.info?.partitionName ?? "-"}
-            />
-            <Table.Column<TableProps>
-              dataIndex="nodeCount"
-              title={t(p("nodeCount"))}
-              sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.nodeCount, b.info?.nodeCount, sortOrder)}
-              render={(_, r) => r.info?.nodeCount ?? "-"}
-            />
-            {
-              isFullDisplayMode && (
-                <>
-                  <Table.Column<TableProps>
-                    dataIndex="nodeUsage"
-                    title={t(p("usageRatePercentage"))}
-                    sorter={(a, b, sortOrder) =>
-                      compareWithUndefined(a.info?.nodeUsage, b.info?.nodeUsage, sortOrder)}
-                    hidden={clusterInfo.every((item) => item.nodeUsage === undefined)}
-                    render={(_, r) => (
-                      (r.info?.nodeCount && r.info?.nodeUsage !== undefined && !isNaN(parseFloat(r.info.nodeUsage))) ? (
-                        <div>
-                          <CustomProgress
-                            percent={Math.min(Number(Number(r.info?.nodeUsage).toFixed(2)), 100)}
-                            width="145px"
-                            height="20px"
-                            bgColor={dark ? "#E3E3E326" : "#43434326"}
-                            progressColor="#6897D0"
-                          />
-                        </div>
-                      ) : "-"
-                    )}
-                  />
-                  <Table.Column<TableProps>
-                    dataIndex="cpuUsage"
-                    title={t(p("cpuUsage"))}
-                    sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.cpuUsage, b.info?.cpuUsage, sortOrder)}
-                    render={(_, r) => (
-                      (r.info?.cpuCoreCount && r.info?.cpuUsage !== undefined &&
-                        !isNaN(parseFloat(r.info?.cpuUsage))) ? (
-                          <div>
-                            <CustomProgress
-                              percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
-                              width="145px"
-                              height="20px"
-                              bgColor={dark ? "#E3E3E326" : "#43434326"}
-                              progressColor="#6897D0"
-                            />
-                          </div>
-                        ) : "-"
-                    )}
-                  />
-                  <Table.Column<TableProps>
-                    dataIndex="gpuUsage"
-                    title={t(p("gpuUsage"))}
-                    sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.gpuUsage, b.info?.gpuUsage, sortOrder)}
-                    render={(_, r) => (
-                      (r.info?.gpuCoreCount && r.info?.gpuUsage !== undefined &&
-                        !isNaN(parseFloat(r.info?.gpuUsage))) ? (
-                          <div>
-                            <CustomProgress
-                              percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
-                              width="145px"
-                              height="20px"
-                              bgColor={dark ? "#E3E3E326" : "#43434326"}
-                              progressColor="#6897D0"
-                            />
-                          </div>
-                        ) : "-"
-                    )}
-                  />
-                </>
+          pagination={false}
+          scroll={{ y: 275 }}
+          rowClassName={(tableProps) => (tableProps.info?.id === selectId ? "rowBgColor" : "")}
+          onRow={(r) => {
+            return {
+              onClick() {
+                if (r.info?.id !== undefined) {
+                  setSelectId(r.clusterId);
+                  setActiveTabKey(getI18nConfigCurrentText(r.clusterId, languageId));
+                }
+              },
+            };
+          }}
+        >
+          <Table.Column<TableProps>
+            dataIndex="clusterName"
+            width={isFullDisplayMode ? "15%" : "33.3%"}
+            title={t(p("clusterName"))}
+            hidden={activeTabKey !== "platformOverview"}
+            sorter={(a, b, sortOrder) => compareWithUndefined(a.clusterId, b.clusterId, sortOrder)}
+            render={(_, r) => (
+              <span>
+                {getI18nConfigCurrentText(
+                  currentClusters.find((cluster) => cluster.id == r.clusterId)?.name ?? r.clusterId,
+                  languageId,
+                )}
+              </span>
+            )}
+          />
+          <Table.Column<TableProps>
+            dataIndex="partitionName"
+            title={t(p("partitionName"))}
+            hidden={activeTabKey === "platformOverview"}
+            sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.partitionName, b.info?.partitionName, sortOrder)}
+            render={(_, r) => r.info?.partitionName ?? "-"}
+          />
+          <Table.Column<TableProps>
+            dataIndex="nodeCount"
+            title={t(p("nodeCount"))}
+            sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.nodeCount, b.info?.nodeCount, sortOrder)}
+            render={(_, r) => r.info?.nodeCount ?? "-"}
+          />
+          {isFullDisplayMode && (
+            <>
+              <Table.Column<TableProps>
+                dataIndex="nodeUsage"
+                title={t(p("usageRatePercentage"))}
+                sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.nodeUsage, b.info?.nodeUsage, sortOrder)}
+                hidden={clusterInfo.every((item) => item.nodeUsage === undefined)}
+                render={(_, r) =>
+                  r.info?.nodeCount && r.info?.nodeUsage !== undefined && !isNaN(parseFloat(r.info.nodeUsage)) ? (
+                    <div>
+                      <CustomProgress
+                        percent={Math.min(Number(Number(r.info?.nodeUsage).toFixed(2)), 100)}
+                        width="145px"
+                        height="20px"
+                        bgColor={dark ? "#E3E3E326" : "#43434326"}
+                        progressColor="#6897D0"
+                      />
+                    </div>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
+              <Table.Column<TableProps>
+                dataIndex="cpuUsage"
+                title={t(p("cpuUsage"))}
+                sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.cpuUsage, b.info?.cpuUsage, sortOrder)}
+                render={(_, r) =>
+                  r.info?.cpuCoreCount && r.info?.cpuUsage !== undefined && !isNaN(parseFloat(r.info?.cpuUsage)) ? (
+                    <div>
+                      <CustomProgress
+                        percent={Math.min(Number(Number(r.info?.cpuUsage ?? 0).toFixed(2)), 100)}
+                        width="145px"
+                        height="20px"
+                        bgColor={dark ? "#E3E3E326" : "#43434326"}
+                        progressColor="#6897D0"
+                      />
+                    </div>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
+              <Table.Column<TableProps>
+                dataIndex="gpuUsage"
+                title={t(p("gpuUsage"))}
+                sorter={(a, b, sortOrder) => compareWithUndefined(a.info?.gpuUsage, b.info?.gpuUsage, sortOrder)}
+                render={(_, r) =>
+                  r.info?.gpuCoreCount && r.info?.gpuUsage !== undefined && !isNaN(parseFloat(r.info?.gpuUsage)) ? (
+                    <div>
+                      <CustomProgress
+                        percent={Math.min(Number(Number(r.info.gpuUsage).toFixed(2)), 100)}
+                        width="145px"
+                        height="20px"
+                        bgColor={dark ? "#E3E3E326" : "#43434326"}
+                        progressColor="#6897D0"
+                      />
+                    </div>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
+            </>
+          )}
+          <Table.Column<TableProps>
+            dataIndex="pendingJobCount"
+            title={t(p("pendingJobCount"))}
+            sorter={(a, b, sortOrder) =>
+              compareWithUndefined(a.info?.pendingJobCount, b.info?.pendingJobCount, sortOrder)
+            }
+            render={(_, r) => r.info?.pendingJobCount ?? "-"}
+          />
+          <Table.Column<TableProps>
+            dataIndex="partitionStatus"
+            title={t(p("partitionStatus"))}
+            hidden={activeTabKey === "platformOverview"}
+            sorter={(a, b, sortOrder) =>
+              compareWithUndefined(a.info?.partitionStatus, b.info?.partitionStatus, sortOrder)
+            }
+            render={(_, r) =>
+              r.info?.partitionStatus === 2 ? (
+                <Tag color="green">{t(p("available"))}</Tag>
+              ) : (
+                <Tag color="red">{t(p("notAvailable"))}</Tag>
               )
             }
-            <Table.Column<TableProps>
-              dataIndex="pendingJobCount"
-              title={t(p("pendingJobCount"))}
-              sorter={(a, b, sortOrder) =>
-                compareWithUndefined(a.info?.pendingJobCount, b.info?.pendingJobCount, sortOrder)}
-              render={(_, r) => r.info?.pendingJobCount ?? "-"}
-            />
-            <Table.Column<TableProps>
-              dataIndex="partitionStatus"
-              title={t(p("partitionStatus"))}
-              hidden={activeTabKey === "platformOverview"}
-              sorter={(a, b, sortOrder) =>
-                compareWithUndefined(a.info?.partitionStatus, b.info?.partitionStatus, sortOrder)}
-              render={(_, r) => r.info?.partitionStatus === 2 ?
-                <Tag color="green">{t(p("available"))}</Tag> : <Tag color="red">{t(p("notAvailable"))}</Tag>
-              }
-            />
-          </Table>
-        </TableContainer>
-      </Container>
-    ) : (
-      <DashboardSection
-        style={{ marginBottom: "16px" }}
-        title={<Localized id={"pageComp.dashboard.overviewTable.title"} />}
-      >
-        {t("pages.common.noAvailableClusters")}
-      </DashboardSection>
-    )
+          />
+        </Table>
+      </TableContainer>
+    </Container>
+  ) : (
+    <DashboardSection
+      style={{ marginBottom: "16px" }}
+      title={<Localized id={"pageComp.dashboard.overviewTable.title"} />}
+    >
+      {t("pages.common.noAvailableClusters")}
+    </DashboardSection>
   );
 };

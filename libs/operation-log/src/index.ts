@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncReplyStreamCall, asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { ChannelCredentials, ClientReadableStream } from "@grpc/grpc-js";
 import { AuditConfigSchema } from "@scow/config/build/audit";
@@ -38,10 +26,7 @@ export interface LogCallParams<TName extends OperationEvent["$case"]> {
   logger: Logger;
 }
 
-export const createOperationLogClient = (
-  config: AuditConfigSchema | undefined,
-  logger: Logger | Console,
-) => {
+export const createOperationLogClient = (config: AuditConfigSchema | undefined, logger: Logger | Console) => {
   const client = config?.url
     ? new OperationLogServiceClient(config.url, ChannelCredentials.createInsecure())
     : undefined;
@@ -52,7 +37,6 @@ export const createOperationLogClient = (
 
   return {
     getLog: async (request: GetOperationLogsRequest): Promise<GetOperationLogsResponse> => {
-
       if (!client) {
         logger.debug("Attempt to get Log with %o", request);
         return { results: [], totalCount: 0 };
@@ -61,16 +45,15 @@ export const createOperationLogClient = (
       return await asyncUnaryCall(client, "getOperationLogs", request);
     },
     getCustomEventTypes: async (): Promise<GetCustomEventTypesResponse> => {
-
       if (!client) {
-        return { customEventTypes: []};
+        return { customEventTypes: [] };
       }
 
       return await asyncUnaryCall(client, "getCustomEventTypes", {});
-
     },
-    exportLog: async (request: ExportOperationLogRequest): Promise<ClientReadableStream<ExportOperationLogResponse>> =>
-    {
+    exportLog: async (
+      request: ExportOperationLogRequest,
+    ): Promise<ClientReadableStream<ExportOperationLogResponse>> => {
       if (!client) {
         logger.debug("Attempt to export Log with %o", request);
         return Promise.reject(new Error("Client is not initialized"));
@@ -86,7 +69,6 @@ export const createOperationLogClient = (
       operationResult,
       logger,
     }: LogCallParams<TName>) => {
-
       if (!client) {
         logger.debug("Attempt to call Log %s with %o", operationTypeName, operationTypePayload);
         return;
@@ -98,14 +80,11 @@ export const createOperationLogClient = (
         operationResult,
         // @ts-ignore
         operationEvent: { $case: operationTypeName, [operationTypeName]: { ...operationTypePayload } },
-      }).catch(
-        (e) => {
-          logger.error(e, "Error when calling Operation Log");
-        },
-      );
+      }).catch((e) => {
+        logger.error(e, "Error when calling Operation Log");
+      });
     },
   };
 };
-
 
 export * from "./constant";

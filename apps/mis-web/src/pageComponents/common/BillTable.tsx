@@ -39,15 +39,14 @@ interface Props {
 interface FilterForm {
   userIdsOrNames?: string;
   accountNames?: string[];
-  type: BillType ;
-  term?: [dayjs.Dayjs, dayjs.Dayjs],
+  type: BillType;
+  term?: [dayjs.Dayjs, dayjs.Dayjs];
 }
-
 
 const p = prefix("pageComp.commonComponent.billTable.");
 const pCommon = prefix("common.");
 
-export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = []}) => {
+export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [] }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -59,8 +58,8 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     term: [dayjs().subtract(1, "month"), dayjs().subtract(1, "month")],
     accountNames: searchType === SearchType.selfAccount ? accountNames : undefined,
   });
-  const [open,setOpen] = useState<boolean>(false);
-  const [accountBill,setAccountBill] = useState<BillInfo | undefined>(undefined);
+  const [open, setOpen] = useState<boolean>(false);
+  const [accountBill, setAccountBill] = useState<BillInfo | undefined>(undefined);
   const [selectedNames, setSelectedNames] = useState<string[] | undefined>(accountNames);
 
   const type = Form.useWatch("type", form);
@@ -80,8 +79,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
         form.setFieldValue("term", [dayjs().subtract(1, "month"), dayjs().subtract(1, "month")]);
       }
     }
-
-  },[type]);
+  }, [type]);
 
   // 在账户管理下切换不同账户账单明细页面时
   useDidUpdateEffect(() => {
@@ -107,7 +105,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
         termEnd: query.term?.[1].format(type === BillType.YEARLY ? "YYYY" : "YYYYMM"),
       };
       // 平台管理下的账单
-      return api.getBills({ query: { ...param , searchType } });
+      return api.getBills({ query: { ...param, searchType } });
     }, [query, pageInfo]),
   });
 
@@ -120,7 +118,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
       },
     },
     {
-      dataIndex:"accountName",
+      dataIndex: "accountName",
       title: t(pCommon("account")),
     },
     {
@@ -145,7 +143,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
 
   // 如果是账户管理员，去掉账户名和账户拥有者两个列
   if (searchType === SearchType.selfAccount) {
-    columns.splice(1,2);
+    columns.splice(1, 2);
   }
 
   // 根据从后端查询到的账单类型动态增加column类型
@@ -163,7 +161,9 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     dataIndex: "action",
     title: t(pCommon("operation")),
     render: (text, record) => {
-      return new Decimal(moneyToNumber(record.amount)).isEqualTo(0) ? "-" : (
+      return new Decimal(moneyToNumber(record.amount)).isEqualTo(0) ? (
+        "-"
+      ) : (
         <Button
           type="primary"
           size="small"
@@ -171,7 +171,9 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
             setOpen(true);
             setAccountBill(record);
           }}
-        >{t(pCommon("detail"))}</Button>
+        >
+          {t(pCommon("detail"))}
+        </Button>
       );
     },
   });
@@ -183,11 +185,9 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
         ...i.details,
       };
     });
-  },[data]);
-
+  }, [data]);
 
   const handleExport = async (encoding: Encoding) => {
-
     const total = data?.total ?? 0;
 
     if (total > MAX_EXPORT_COUNT) {
@@ -195,7 +195,7 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     } else if (total <= 0) {
       message.error(t(pCommon("exportNoDataErrorMsg")));
     } else {
-    // 获取浏览器时区
+      // 获取浏览器时区
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       window.location.href = urlToExport({
         encoding,
@@ -204,10 +204,12 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
         count: total,
         timeZone,
         query: {
-          ...query.term ? {
-            termStart: query.term?.[0].format(type === BillType.YEARLY ? "YYYY" : "YYYYMM"),
-            termEnd: query.term?.[1].format(type === BillType.YEARLY ? "YYYY" : "YYYYMM"),
-          } : {},
+          ...(query.term
+            ? {
+                termStart: query.term?.[0].format(type === BillType.YEARLY ? "YYYY" : "YYYYMM"),
+                termEnd: query.term?.[1].format(type === BillType.YEARLY ? "YYYY" : "YYYYMM"),
+              }
+            : {}),
           userIdsOrNames: query.userIdsOrNames,
           type: query.type,
           accountNames: query.accountNames,
@@ -226,12 +228,13 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
     ];
 
     if (searchType === SearchType.selfAccount) {
-      common.splice(0,2);
+      common.splice(0, 2);
     }
 
     const typeOptions = types.map((i) => {
       return {
-        label: i, value: i,
+        label: i,
+        value: i,
       };
     });
 
@@ -246,20 +249,10 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
 
   return (
     <div>
-
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
-        <Form<FilterForm>
-          layout="inline"
-          form={form}
-          initialValues={query}
-          onFinish={handleSearch}
-        >
-
+        <Form<FilterForm> layout="inline" form={form} initialValues={query} onFinish={handleSearch}>
           <Form.Item name="type" label={t(p("statisticalCycle"))}>
-            <Radio.Group
-              buttonStyle="solid"
-              onChange={handleSearch}
-            >
+            <Radio.Group buttonStyle="solid" onChange={handleSearch}>
               <Radio.Button value={BillType.SUMMARY}>{t(p("summary"))}</Radio.Button>
               <Radio.Button value={BillType.MONTHLY}>{t(p("month"))}</Radio.Button>
               <Radio.Button value={BillType.YEARLY}>{t(p("year"))}</Radio.Button>
@@ -268,17 +261,14 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
 
           <Form.Item label={t(p("term"))} name="term">
             <DatePicker.RangePicker
-              picker={ type === BillType.YEARLY ? "year" : "month" }
+              picker={type === BillType.YEARLY ? "year" : "month"}
               allowClear={false}
               presets={type === BillType.YEARLY ? getYearlyBillPresets(languageId) : getMonthlyBillPresets(languageId)}
             />
           </Form.Item>
 
           {searchType !== SearchType.selfAccount ? (
-            <Form.Item
-              label={t(pCommon("account"))}
-              name="accountNames"
-            >
+            <Form.Item label={t(pCommon("account"))} name="accountNames">
               <AccountMultiSelector
                 value={selectedNames ?? []}
                 onChange={(item) => {
@@ -288,27 +278,28 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
                 placeholder={t(pCommon("selectAccount"))}
               />
             </Form.Item>
-          ) : ""}
+          ) : (
+            ""
+          )}
 
           {searchType !== SearchType.selfAccount ? (
             <Form.Item name="userIdsOrNames" label={t(pCommon("ownerIdOrName"))}>
               <Input allowClear placeholder={t(pCommon("ownerIdOrName"))} />
             </Form.Item>
-          ) : ""}
+          ) : (
+            ""
+          )}
 
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
 
           <Form.Item>
-            <ExportFileModaLButton
-              onExport={handleExport}
-            >
-              {t(pCommon("export"))}
-            </ExportFileModaLButton>
+            <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
           </Form.Item>
         </Form>
-
       </FilterFormContainer>
 
       <Table
@@ -317,21 +308,27 @@ export const BillTable: React.FC<Props> = ({ accountNames, searchType, types = [
         columns={columns}
         loading={isLoading}
         scroll={{ x: true }}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: 10,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.total,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: 10,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.total,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
       />
 
       <UserBillModal
         open={open}
         accountBill={accountBill}
         types={types}
-        onClose={() => { setOpen(false); }}
+        onClose={() => {
+          setOpen(false);
+        }}
       />
     </div>
   );

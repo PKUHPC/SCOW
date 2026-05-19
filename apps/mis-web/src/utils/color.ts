@@ -7,7 +7,9 @@
 export const getTransparentColor = (color: string, alpha: number): string => {
   // 1. 如果颜色是十六进制格式
   if (color.startsWith("#") && color.length === 7) {
-    const hexAlpha = Math.round(alpha * 255).toString(16).padStart(2, "0");
+    const hexAlpha = Math.round(alpha * 255)
+      .toString(16)
+      .padStart(2, "0");
     return `${color}${hexAlpha}`;
   }
 

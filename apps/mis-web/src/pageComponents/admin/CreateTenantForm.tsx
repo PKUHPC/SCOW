@@ -24,7 +24,6 @@ const p = prefix("pageComp.admin.createTenantForm.");
 const pCommon = prefix("common.");
 
 export const CreateTenantForm: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const form = Form.useFormInstance<CreateTenantFormFields>();
@@ -34,33 +33,22 @@ export const CreateTenantForm: React.FC = () => {
 
   const userType = Form.useWatch("userType", form);
 
-
   return (
     <>
-      <Divider
-        style={{ marginTop: 0 }}
-        orientation="left"
-        orientationMargin="0"
-        plain
-      >{t(p("prompt"))}</Divider>
-      <Form.Item
-        label={t(pCommon("tenantFullName"))}
-        name="tenantName"
-        rules={[
-          { required: true },
-          { max: 255 },
-        ]}
-      >
+      <Divider style={{ marginTop: 0 }} orientation="left" orientationMargin="0" plain>
+        {t(p("prompt"))}
+      </Divider>
+      <Form.Item label={t(pCommon("tenantFullName"))} name="tenantName" rules={[{ required: true }, { max: 255 }]}>
         <TrimInput />
       </Form.Item>
-      <Divider orientation="left" orientationMargin="0" plain>{t(p("adminInfo"))}</Divider>
+      <Divider orientation="left" orientationMargin="0" plain>
+        {t(p("adminInfo"))}
+      </Divider>
       <Form.Item
         label={t(p("userType"))}
         name="userType"
         initialValue={UserType.New}
-        rules={[
-          { required: true },
-        ]}
+        rules={[{ required: true }]}
         required
       >
         <Radio.Group onChange={() => {}}>
@@ -89,23 +77,16 @@ export const CreateTenantForm: React.FC = () => {
       <Form.Item
         label={t(pCommon("userId"))}
         name="userId"
-        rules={[
-          { required: true },
-          ...userIdRule ? [userIdRule] : [],
-        ]}
+        rules={[{ required: true }, ...(userIdRule ? [userIdRule] : [])]}
       >
         <TrimInput placeholder={userIdRule?.message} />
       </Form.Item>
       <Form.Item label={t(pCommon("userFullName"))} name="userName" rules={[{ required: true }]}>
         <TrimInput />
       </Form.Item>
-      { userType === UserType.New && (
+      {userType === UserType.New && (
         <>
-          <Form.Item
-            label={t(p("userEmail"))}
-            name="userEmail"
-            rules={[{ required: true }, getEmailRule(languageId)]}
-          >
+          <Form.Item label={t(p("userEmail"))} name="userEmail" rules={[{ required: true }, getEmailRule(languageId)]}>
             <TrimInput />
           </Form.Item>
           <Form.Item
@@ -115,20 +96,18 @@ export const CreateTenantForm: React.FC = () => {
           >
             <Input.Password placeholder={passwordRule(languageId).message} />
           </Form.Item>
-          {
-            useBuiltinCreateUser() ? (
-              <>
-                <Form.Item
-                  label={t(p("confirmPassword"))}
-                  name="confirmPassword"
-                  hasFeedback
-                  {...confirmPasswordFormItemProps(form, "userPassword", languageId)}
-                >
-                  <Input.Password placeholder={passwordRule(languageId).message} />
-                </Form.Item>
-              </>
-            ) : undefined
-          }
+          {useBuiltinCreateUser() ? (
+            <>
+              <Form.Item
+                label={t(p("confirmPassword"))}
+                name="confirmPassword"
+                hasFeedback
+                {...confirmPasswordFormItemProps(form, "userPassword", languageId)}
+              >
+                <Input.Password placeholder={passwordRule(languageId).message} />
+              </Form.Item>
+            </>
+          ) : undefined}
         </>
       )}
     </>

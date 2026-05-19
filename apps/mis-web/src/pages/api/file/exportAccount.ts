@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
@@ -25,8 +13,12 @@ import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
 import { nullableMoneyToString } from "src/utils/money";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
@@ -44,34 +36,49 @@ export const ExportAccountSchema = typeboxRouteSchema({
     debt: Type.Optional(Type.Boolean()),
     frozen: Type.Optional(Type.Boolean()),
     normal: Type.Optional(Type.Boolean()),
-    deleted:Type.Optional(Type.Boolean()),
+    deleted: Type.Optional(Type.Boolean()),
     // 是否来自平台管理页面
     isFromAdmin: Type.Boolean(),
     encoding: Type.Enum(Encoding),
     ownerIdOrName: Type.Optional(Type.String()),
-    timeZone:Type.Optional(Type.String()),
+    timeZone: Type.Optional(Type.String()),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
   },
 });
 
-const tenantAuth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-|| info.tenantRoles.includes(TenantRole.TENANT_FINANCE));
+const tenantAuth = authenticate(
+  (info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN) || info.tenantRoles.includes(TenantRole.TENANT_FINANCE),
+);
 
-
-const adminAuth = authenticate((info) =>
-  info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-  info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE));
+const adminAuth = authenticate(
+  (info) =>
+    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+    info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE),
+);
 
 export default route(ExportAccountSchema, async (req, res) => {
   const { query } = req;
 
-  const { columns, accountName, tenantName, blocked, debt, frozen, normal, count, isFromAdmin,
-    encoding, deleted, ownerIdOrName,timeZone } = query;
+  const {
+    columns,
+    accountName,
+    tenantName,
+    blocked,
+    debt,
+    frozen,
+    normal,
+    count,
+    isFromAdmin,
+    encoding,
+    deleted,
+    ownerIdOrName,
+    timeZone,
+  } = query;
 
   const info = isFromAdmin ? await adminAuth(req, res) : await tenantAuth(req, res);
 
@@ -91,7 +98,6 @@ export default route(ExportAccountSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
     const client = getClient(ExportServiceClient);
 
@@ -101,7 +107,7 @@ export default route(ExportAccountSchema, async (req, res) => {
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 

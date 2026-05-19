@@ -9,12 +9,11 @@ import { logger } from "./logger";
 export const getAppConfigs = (clusterBasePath?: string) => libGetAppConfigs(clusterBasePath, logger);
 
 export const getClusterAppConfigs = (cluster: string) => {
-
   const commonApps = getAppConfigs();
 
   const clusterAppsConfigs = getAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
 
-  const apps = {} as Record<string, typeof commonApps[number]>;
+  const apps = {} as Record<string, (typeof commonApps)[number]>;
 
   for (const [key, value] of Object.entries(commonApps)) {
     apps[key] = value;
@@ -25,12 +24,9 @@ export const getClusterAppConfigs = (cluster: string) => {
   }
 
   return apps;
-
 };
 
-
 export const getAiClusterAppConfigs = (cluster: string) => {
-
   const commonApps = libGetAiAppConfigs();
 
   const clusterAppsConfigs = libGetAiAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
@@ -46,5 +42,4 @@ export const getAiClusterAppConfigs = (cluster: string) => {
   }
 
   return apps;
-
 };

@@ -17,10 +17,7 @@ interface Props {
 const p = prefix("pageComp.job.jobDrawer.");
 const pCommon = prefix("common.");
 
-export const JobDrawer: React.FC<Props> = ({
-  item, onClose, open,
-}) => {
-
+export const JobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const { publicConfigClusters } = useStore(ClusterInfoStore);
@@ -54,31 +51,21 @@ export const JobDrawer: React.FC<Props> = ({
     [t(pCommon("timeWait")), "startTime", (t, r) => formatTime(dayjs(t).diff(r.submitTime))],
   ] as ([string, keyof RunningJobInfo] | [string, keyof RunningJobInfo, (v: any, r: RunningJobInfo) => string])[];
   return (
-    <Drawer
-      width={500}
-      placement="right"
-      onClose={onClose}
-      open={open}
-      title={t(p("drawerTitle"))}
-    >
-      {
-        item ? (
-          <Descriptions
-            column={1}
-            bordered
-            size="small"
-          >
-            {drawerItems.map(([label, key, format], index) => (
-              <Descriptions.Item key={`${item.jobId}-${key}-${index}`} label={label}>
-                {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
-                {format ?
-                  (key === "cluster" ?
-                    getClusterName(item[key]?.id, languageId, publicConfigClusters) : format(item[key], item))
-                  : item[key] as string}
-              </Descriptions.Item>
-            ))}
-          </Descriptions>
-        ) : undefined }
+    <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("drawerTitle"))}>
+      {item ? (
+        <Descriptions column={1} bordered size="small">
+          {drawerItems.map(([label, key, format], index) => (
+            <Descriptions.Item key={`${item.jobId}-${key}-${index}`} label={label}>
+              {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
+              {format
+                ? key === "cluster"
+                  ? getClusterName(item[key]?.id, languageId, publicConfigClusters)
+                  : format(item[key], item)
+                : (item[key] as string)}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+      ) : undefined}
     </Drawer>
   );
 };

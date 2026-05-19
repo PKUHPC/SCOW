@@ -1,10 +1,14 @@
 {
   "name": "@scow/cli",
   "version": "1.11.1",
-  "description": "CLI to manage SCOW",
-  "main": "build/bundle.js",
-  "bin": "build/bundle.js",
   "private": true,
+  "description": "CLI to manage SCOW",
+  "keywords": [],
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
+  "bin": "build/bundle.js",
+  "main": "build/bundle.js",
   "scripts": {
     "dev": "node -r ts-node/register -r tsconfig-paths/register src/index.ts",
     "build": "rimraf build exe && node scripts/build.mjs",
@@ -20,6 +24,7 @@
     "@scow/lib-scowd": "workspace:*",
     "@scow/utils": "workspace:*",
     "@sinclair/typebox": "0.34.13",
+    "@yao-pkg/pkg": "6.12.0",
     "death": "1.1.0",
     "dotenv": "16.4.7",
     "https-proxy-agent": "7.0.6",
@@ -28,7 +33,6 @@
     "node-fetch-commonjs": "3.3.2",
     "pino": "9.6.0",
     "pino-pretty": "13.0.0",
-    "@yao-pkg/pkg": "6.12.0",
     "prompts": "2.4.2",
     "yargs": "17.7.2"
   },
@@ -39,10 +43,6 @@
     "@types/yargs": "17.0.33",
     "esbuild": "0.27.2"
   },
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow",
-  "keywords": [],
   "volta": {
     "extends": "../../package.json"
   },

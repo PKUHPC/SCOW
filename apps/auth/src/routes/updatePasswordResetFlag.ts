@@ -23,8 +23,8 @@ const codes: Record<ModifyForcedResult, number> = {
  */
 export const updatePasswordFlagRoute = fp(async (f) => {
   f.patch<{
-    Body: Static<typeof BodySchema>
-    Responses: Static<typeof ResponsesSchema>,
+    Body: Static<typeof BodySchema>;
+    Responses: Static<typeof ResponsesSchema>;
   }>(
     "/updatePasswordResetFlag",
     {
@@ -34,7 +34,6 @@ export const updatePasswordFlagRoute = fp(async (f) => {
       },
     },
     async (req, rep) => {
-
       if (!f.auth.updatePasswordResetFlag) {
         return await rep.code(501).send({ code: "NOT_SUPPORTED" });
       }

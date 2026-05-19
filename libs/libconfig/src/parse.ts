@@ -1,16 +1,4 @@
 /**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-/**
  * Replace key1=value1,key2=value2 to { key1: value1, key1: value2 }.
  * Keys and values are trimmed. Empty values are preserved.
  *
@@ -75,17 +63,14 @@ export function parseArray(str: string): string[] {
  * @returns the array of texts in placeholder
  */
 export function getPlaceholderKeys(str: string): string[] {
-
   const matchValues = str.match(/\{\{ ([a-zA-Z0-9_]+) \}\}/g);
 
   if (matchValues) {
-    const texts = matchValues.map(function(val) {
+    const texts = matchValues.map(function (val) {
       return val.slice(3, -3);
     });
     return [...new Set(texts)];
-
   } else {
     return [];
   }
 }
-

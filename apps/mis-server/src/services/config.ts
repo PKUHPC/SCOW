@@ -13,7 +13,6 @@ import { getActivatedClusters, updateCluster } from "src/bl/clustersUtils";
 
 export const configServiceServer = plugin((server) => {
   server.addService<ConfigServiceServer>(ConfigServiceService, {
-
     // do not need check cluster's activation
     getClusterConfig: async ({ request, logger }) => {
       const { cluster } = request;
@@ -28,7 +27,6 @@ export const configServiceServer = plugin((server) => {
     },
 
     getAvailablePartitionsForCluster: async ({ request, em, logger }) => {
-
       const { cluster, accountName, userId } = request;
 
       // check cluster activation
@@ -38,16 +36,16 @@ export const configServiceServer = plugin((server) => {
       const reply = await server.ext.clusters.callOnOne(
         cluster,
         logger,
-        async (client) => await asyncClientCall(client.config, "getAvailablePartitions", {
-          accountName, userId,
-        }),
+        async (client) =>
+          await asyncClientCall(client.config, "getAvailablePartitions", {
+            accountName,
+            userId,
+          }),
       );
       return [reply];
-
     },
 
     getClusterConfigFiles: async ({ em, logger }) => {
-
       const clusterConfigs = getClusterConfigs(undefined, logger);
 
       const clusterConfigsProto = convertClusterConfigsToServerProtoType(clusterConfigs);
@@ -67,9 +65,9 @@ export const configServiceServer = plugin((server) => {
     },
 
     getApiVersion: async () => {
-
-      const version = await JSON.parse(readFileSync(join(__dirname,
-        "../../node_modules/@scow/protos/package.json"), "utf-8")).version;
+      const version = await JSON.parse(
+        readFileSync(join(__dirname, "../../node_modules/@scow/protos/package.json"), "utf-8"),
+      ).version;
 
       const [major, minor, patch] = version.split(".").map(Number);
 
@@ -79,17 +77,12 @@ export const configServiceServer = plugin((server) => {
     getClusterNodesInfo: async ({ request, logger }) => {
       const { nodeNames, cluster } = request;
 
-      const reply = await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          return await asyncClientCall(client.config, "getClusterNodesInfo", {
-            nodeNames: nodeNames || [],
-          });
-        },
-      );
+      const reply = await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+        return await asyncClientCall(client.config, "getClusterNodesInfo", {
+          nodeNames: nodeNames || [],
+        });
+      });
       return [{ nodes: reply.nodes }];
     },
-
   });
 });

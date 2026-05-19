@@ -3,7 +3,6 @@ import { Migration } from "@mikro-orm/migrations";
 import { getHarborConfig, HarborClient } from "../utils/harbor";
 import { logger } from "../utils/logger";
 
-
 /** ========== 复制任务：从 {sourceProject}/* 复制到各 u_${userId}/* ========== */
 async function runHarborCopy(h: HarborClient, sourceProject: string) {
   const repos = await h.getRepositories(sourceProject); // 形如 at/uid123/app
@@ -20,7 +19,6 @@ async function runHarborCopy(h: HarborClient, sourceProject: string) {
     const trimmed = [...rest];
     const destRepo = trimmed.join("/"); // app
     const projectName = `u_${userId}`; // 目标项目 u_at
-
 
     logger.info(`[Harbor] repo=${fullName} → project=${projectName}, destRepo=${destRepo}`);
 
@@ -43,13 +41,13 @@ async function runHarborCopy(h: HarborClient, sourceProject: string) {
 
 /** ========== Mikro-ORM Migration ========== */
 export class MigrationImageData20250819 extends Migration {
-
   override async up(): Promise<void> {
     const harborConfig = getHarborConfig();
     if (!harborConfig) {
       logger.info(
-        "[SKIP] Missing Harbor env (HARBOR_PROTOCOL / HARBOR_PROJECT / HARBOR_URL / HARBOR_USERNAME / HARBOR_PASSWORD)."
-        + "Skip migration up().");
+        "[SKIP] Missing Harbor env (HARBOR_PROTOCOL / HARBOR_PROJECT / HARBOR_URL / HARBOR_USERNAME / HARBOR_PASSWORD)." +
+          "Skip migration up().",
+      );
       return;
     }
     const { project } = harborConfig;
@@ -85,8 +83,8 @@ export class MigrationImageData20250819 extends Migration {
     const harborConfig = getHarborConfig();
     if (!harborConfig) {
       logger.info(
-        "[SKIP] Missing Harbor env (HARBOR_PROTOCOL / HARBOR_PROJECT / HARBOR_URL / HARBOR_USERNAME / HARBOR_PASSWORD)."
-        + "Skip migration up().",
+        "[SKIP] Missing Harbor env (HARBOR_PROTOCOL / HARBOR_PROJECT / HARBOR_URL / HARBOR_USERNAME / HARBOR_PASSWORD)." +
+          "Skip migration up().",
       );
       return;
     }

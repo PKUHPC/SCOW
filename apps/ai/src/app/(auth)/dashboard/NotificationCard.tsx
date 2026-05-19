@@ -23,13 +23,14 @@ export const NotificationCard: React.FC = () => {
   const currentLanguage = useI18n().currentLanguage;
 
   const { data, isLoading } = trpc.notification.getUnreadMessages.useQuery({
-    page: 1, pageSize: 10,
+    page: 1,
+    pageSize: 10,
   });
 
   const getMsgContents = (): RenderContent[] => {
     try {
       const msgsToRender: RenderContent[] = [];
-      for (const msg of (data?.results?.messages || [])) {
+      for (const msg of data?.results?.messages || []) {
         const renderMsg = renderingMessage(msg, currentLanguage.id);
         if (renderMsg !== undefined) msgsToRender.push(renderMsg);
 
@@ -47,16 +48,14 @@ export const NotificationCard: React.FC = () => {
       <Card
         style={{ height: "100%", boxShadow: "#0000000D 0px 4px 4px 0px" }}
         loading={isLoading}
-        title={ (
+        title={
           <>
             <Localized id={p("message")} />
           </>
-        )}
-        extra={(
-          <a onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}>
-            {t(p("check"))}
-          </a>
-        )}
+        }
+        extra={
+          <a onClick={() => router.push(`/extensions/${publicConfig.NOTIF_NAME!}/notification`)}>{t(p("check"))}</a>
+        }
       >
         <List
           itemLayout="horizontal"
@@ -66,8 +65,9 @@ export const NotificationCard: React.FC = () => {
             <List.Item key={item.id} style={{ borderBottom: "none", padding: "4px 0" }}>
               <List.Item.Meta
                 style={{
-                  ...dark ? { background: "#282828" } : { background: "#FAFAFA" },
-                  borderRadius: "8px", padding: "12px 22px",
+                  ...(dark ? { background: "#282828" } : { background: "#FAFAFA" }),
+                  borderRadius: "8px",
+                  padding: "12px 22px",
                 }}
                 title={(
                   <NotifTitle>
@@ -78,7 +78,8 @@ export const NotificationCard: React.FC = () => {
                   <Text
                     style={{ fontWeight: 350, fontSize: "14px", color: dark ? "#FFFFFF99" : "#43434399" }}
                     ellipsis={true}
-                  >{item.description}
+                  >
+                    {item.description}
                   </Text>
                 )}
               />

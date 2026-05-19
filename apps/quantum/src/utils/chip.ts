@@ -21,8 +21,9 @@ export function getReadoutFidelity(Err: BaseDeviceErr) {
   return [F0String, F1String];
 }
 
-export const mapDeviceStateToDisplayState = (deviceState: DeviceStateString | undefined):
-  DisplayedDeviceState | undefined => {
+export const mapDeviceStateToDisplayState = (
+  deviceState: DeviceStateString | undefined,
+): DisplayedDeviceState | undefined => {
   switch (deviceState) {
     case "on":
       return DisplayedDeviceState.DISPLAYED_ONLINE;
@@ -59,10 +60,7 @@ const swapLayoutMap = (map: LayoutMap, swapList: [number, number][]): void => {
 };
 
 // 根据 swap 规则交换量子比特编号
-export const swapQubitData = <T extends { Q: number | number[] }>(
-  data: T[],
-  swapList: [number, number][],
-): T[] => {
+export const swapQubitData = <T extends { Q: number | number[] }>(data: T[], swapList: [number, number][]): T[] => {
   if (!swapList || swapList.length === 0) {
     return data;
   }
@@ -89,14 +87,18 @@ export const getLayoutMap = (layout?: DeviceDetailInfo["layout"]): LayoutMap => 
   const map: LayoutMap = {};
   if (!layout?.qxy) return map;
 
-  let minX = Infinity, minY = Infinity;
+  let minX = Infinity,
+    minY = Infinity;
   for (const [q, x, y] of layout.qxy as [number, number, number][]) {
     map[q] = { x, y };
     if (x < minX) minX = x;
     if (y < minY) minY = y;
   }
   // 归一化坐标到零基
-  Object.values(map).forEach((p) => { p.x -= minX; p.y -= minY; });
+  Object.values(map).forEach((p) => {
+    p.x -= minX;
+    p.y -= minY;
+  });
 
   if (layout.swap && layout.swap.length > 0) {
     swapLayoutMap(map, layout.swap as [number, number][]);
@@ -162,7 +164,7 @@ export const rotateLayoutAndScaleIfOdd45 = (coords: NewLayoutMap, degrees: numbe
 
     // 4.2. 旋转
     const rotatedX = translatedX * cosTheta + translatedY * sinTheta;
-    const rotatedY = translatedX * (-sinTheta) + translatedY * cosTheta;
+    const rotatedY = translatedX * -sinTheta + translatedY * cosTheta;
 
     // 4.3. 平移回中心
     let newX = rotatedX + centerX;

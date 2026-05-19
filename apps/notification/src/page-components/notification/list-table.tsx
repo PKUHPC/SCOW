@@ -1,23 +1,9 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ConnectError } from "@connectrpc/connect";
 import { useMutation } from "@connectrpc/connect-query";
+import { deleteMessages } from "@scow/notification-protos/build/message-MessageService_connectquery";
 import { ListMessagesRequest, ListMessagesResponse } from "@scow/notification-protos/build/message_pb";
-import {
-  deleteMessages,
-} from "@scow/notification-protos/build/message-MessageService_connectquery";
 import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
-import { message,Tabs } from "antd";
+import { message, Tabs } from "antd";
 import React, { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { PageInfo } from "src/app/extensions/(user)/notification/page";
 import { I18nDicType } from "src/models/i18n";
@@ -63,7 +49,14 @@ interface Props {
 }
 
 export const NotificationListTable: React.FC<Props> = ({
-  msgData, refetch, isLoading, query, setQuery, pageInfo, setPageInfo, lang,
+  msgData,
+  refetch,
+  isLoading,
+  query,
+  setQuery,
+  pageInfo,
+  setPageInfo,
+  lang,
 }) => {
   const [activeKey, setActiveKey] = useState(TabItemKey.ALL);
   const compLang = lang.notification.listTable;
@@ -84,28 +77,32 @@ export const NotificationListTable: React.FC<Props> = ({
   });
 
   const handleDelete = async (id: bigint) => {
-    await deleteMsgs({ messageIds: [id]});
+    await deleteMsgs({ messageIds: [id] });
     refetch();
   };
 
-  const items = useMemo(() => tabItems.map((item) => {
-    return {
-      label: item.title,
-      key: item.key,
-      children: (
-        <NotificationList
-          totalCount={Number(msgData?.totalCount)}
-          messageList={msgData?.messages ?? []}
-          pageInfo={pageInfo}
-          isLoading={isLoading}
-          setPageInfo={setPageInfo}
-          handleDelete={handleDelete}
-          refetch={refetch}
-          lang={lang}
-        />
-      ),
-    };
-  }), [tabItems, msgData, pageInfo]);
+  const items = useMemo(
+    () =>
+      tabItems.map((item) => {
+        return {
+          label: item.title,
+          key: item.key,
+          children: (
+            <NotificationList
+              totalCount={Number(msgData?.totalCount)}
+              messageList={msgData?.messages ?? []}
+              pageInfo={pageInfo}
+              isLoading={isLoading}
+              setPageInfo={setPageInfo}
+              handleDelete={handleDelete}
+              refetch={refetch}
+              lang={lang}
+            />
+          ),
+        };
+      }),
+    [tabItems, msgData, pageInfo],
+  );
 
   const handleTabChange = (key) => {
     setActiveKey(key);
@@ -118,11 +115,7 @@ export const NotificationListTable: React.FC<Props> = ({
 
   return (
     <TabsContainer>
-      <CustomTabs
-        activeKey={activeKey}
-        onChange={handleTabChange}
-        items={items}
-      ></CustomTabs>
+      <CustomTabs activeKey={activeKey} onChange={handleTabChange} items={items}></CustomTabs>
     </TabsContainer>
   );
 };

@@ -1,21 +1,13 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Logger } from "@ddadaal/tsgrpc-server";
 import { AccountStatusFilter, ListAccountsResponse } from "@scow/protos/build/portal/job";
 import { AccountServiceClient } from "@scow/protos/build/server/account";
-import { GetUserInfoResponse, GetUsersByIdsResponse, UserServiceClient, UserStatus }
-  from "@scow/protos/build/server/user";
+import {
+  GetUserInfoResponse,
+  GetUsersByIdsResponse,
+  UserServiceClient,
+  UserStatus,
+} from "@scow/protos/build/server/user";
 
 import { getClientFn } from "../api";
 
@@ -41,29 +33,30 @@ export const libGetAccounts = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<ListAccountsResponse> => {
-
   if (!misServerUrl) {
     logger.info("Mis is not deployed, can not get accounts from mis.");
-    return { accounts: []};
+    return { accounts: [] };
   }
 
   const getMisClient = getClientFn(misServerUrl, scowApiAuthToken);
   const accountClient = getMisClient(AccountServiceClient);
 
-
   const allAccountsInfo = await asyncClientCall(accountClient, "getAccounts", {});
-  const allAccounts = allAccountsInfo.results.map((account) => (account.accountName));
+  const allAccounts = allAccountsInfo.results.map((account) => account.accountName);
 
   // 如果查询所有账户，则返回所有scow下的账户名列表
-  if ((statusFilter === undefined) || statusFilter === AccountStatusFilter.ALL) {
+  if (statusFilter === undefined || statusFilter === AccountStatusFilter.ALL) {
     return { accounts: allAccounts };
   }
 
   const userClient = getMisClient(UserServiceClient);
   const userInfo = await asyncClientCall(userClient, "getUserInfo", { userId });
   const tenantName = userInfo.tenantName;
-  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus",
-    { userId, tenantName, accountNames: allAccounts });
+  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus", {
+    userId,
+    tenantName,
+    accountNames: allAccounts,
+  });
 
   const unblockedAccounts: string[] = [];
   const blockedAccounts: string[] = [];
@@ -77,9 +70,7 @@ export const libGetAccounts = async (
     }
   });
 
-  return { accounts:
-    statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedAccounts : unblockedAccounts };
-
+  return { accounts: statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedAccounts : unblockedAccounts };
 };
 
 /**
@@ -91,7 +82,6 @@ export const libGetUserInfo = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<GetUserInfoResponse> => {
-
   if (!misServerUrl) {
     logger.info("Mis is not deployed, can not get accounts from mis.");
     return {} as GetUserInfoResponse;
@@ -124,7 +114,6 @@ export const libCheckUserAccountPermission = async (
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<boolean> => {
-
   if (!misServerUrl) {
     logger.info("Mis is not deployed, can not get accounts from mis.");
     return false;
@@ -135,8 +124,11 @@ export const libCheckUserAccountPermission = async (
   const userClient = getMisClient(UserServiceClient);
   const userInfo = await asyncClientCall(userClient, "getUserInfo", { userId });
   const tenantName = userInfo.tenantName;
-  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus",
-    { userId, tenantName, accountNames: [accountName]});
+  const userAccountsStatues = await asyncClientCall(userClient, "getUserStatus", {
+    userId,
+    tenantName,
+    accountNames: [accountName],
+  });
 
   let unblockedCount = 0;
   let blockedCount = 0;
@@ -157,19 +149,21 @@ export const libCheckUserAccountPermission = async (
   });
 
   // 无statusFilter默认为仅查询未封锁
-  return statusFilter === AccountStatusFilter.ALL ? totalCount === 1 :
-    statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedCount === 1 : unblockedCount === 1;
+  return statusFilter === AccountStatusFilter.ALL
+    ? totalCount === 1
+    : statusFilter === AccountStatusFilter.BLOCKED_ONLY
+      ? blockedCount === 1
+      : unblockedCount === 1;
 };
 
 /**
  * get users from mis db
  */
 export const libGetUsersByIds = async (
-  userIds: string [],
+  userIds: string[],
   misServerUrl?: string,
   scowApiAuthToken?: string,
 ): Promise<GetUsersByIdsResponse> => {
-
   if (!misServerUrl) {
     throw new Error("Mis is not deployed, can not get accounts from mis.");
   }

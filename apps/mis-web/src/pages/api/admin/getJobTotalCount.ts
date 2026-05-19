@@ -14,7 +14,6 @@ export const GetJobTotalCountResponse = Type.Object({
 
 export type GetJobTotalCountResponse = Static<typeof GetJobTotalCountResponse>;
 
-
 export const GetJobTotalCountSchema = typeboxRouteSchema({
   method: "GET",
 
@@ -25,21 +24,19 @@ export const GetJobTotalCountSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetJobTotalCountSchema,
-  async (req, res) => {
+export default route(GetJobTotalCountSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+  const client = getClient(JobServiceClient);
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-    const client = getClient(JobServiceClient);
+  const result = await asyncClientCall(client, "getJobTotalCount", {});
 
-    const result = await asyncClientCall(client, "getJobTotalCount", {});
-
-    return {
-      200: {
-        ...result,
-        refreshTime: result.refreshTime!,
-      },
-    };
-  });
+  return {
+    200: {
+      ...result,
+      refreshTime: result.refreshTime!,
+    },
+  };
+});

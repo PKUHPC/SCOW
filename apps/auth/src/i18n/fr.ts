@@ -52,6 +52,7 @@ export default {
     passwordRuleVerification: "Le mot de passe doit contenir des lettres, des chiffres et des symboles, longueur ≥ 8",
     invalidUserNamePassword: "Nom d'utilisateur/mot de passe invalide, veuillez vérifier.",
     submitting: "Soumission...",
-    forcePasswordChange: "Ce compte est une première connexion ou a été réinitialisé. Veuillez modifier le mot de passe initial avant utilisation",
+    forcePasswordChange:
+      "Ce compte est une première connexion ou a été réinitialisé. Veuillez modifier le mot de passe initial avant utilisation",
   },
 };

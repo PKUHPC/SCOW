@@ -5,7 +5,6 @@ import { ConfigServiceClient } from "@scow/protos/build/common/config";
 import { getPortalClient } from "src/utils/client";
 
 export async function getClusterConfigFiles(): Promise<Record<string, ClusterConfigSchema>> {
-
   const client = getPortalClient(ConfigServiceClient);
 
   const result = await asyncClientCall(client, "getClusterConfigFiles", {});
@@ -13,8 +12,4 @@ export async function getClusterConfigFiles(): Promise<Record<string, ClusterCon
   const modifiedClusters: Record<string, ClusterConfigSchema> = getClusterConfigsTypeFormat(result.clusterConfigs);
 
   return modifiedClusters;
-
 }
-
-
-

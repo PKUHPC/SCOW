@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { raw } from "@mikro-orm/core";
 import { MySqlDriver, QueryBuilder, SqlEntityManager } from "@mikro-orm/mysql";
 import { Account } from "src/entities/Account";
@@ -27,14 +15,19 @@ const executeQuery = async (queryExecutor: (() => Promise<any>) | QueryBuilder<a
   }
 };
 
-export const queryWithCache = async ({ em, queryKeys, queryExecutor, cacheOptions }: {
-  em: SqlEntityManager<MySqlDriver>
-  queryKeys: string[],
-  queryExecutor: (() => Promise<any>) | QueryBuilder<any>,
+export const queryWithCache = async ({
+  em,
+  queryKeys,
+  queryExecutor,
+  cacheOptions,
+}: {
+  em: SqlEntityManager<MySqlDriver>;
+  queryKeys: string[];
+  queryExecutor: (() => Promise<any>) | QueryBuilder<any>;
   cacheOptions?: {
-    maxAgeMilliseconds?: number,
-    enabled?: boolean,
-  },
+    maxAgeMilliseconds?: number;
+    enabled?: boolean;
+  };
 }): Promise<{ result: any; refreshTime: Date }> => {
   const { maxAgeMilliseconds = 5 * 60 * 1000, enabled = true } = cacheOptions || {};
 
@@ -52,23 +45,23 @@ export const queryWithCache = async ({ em, queryKeys, queryExecutor, cacheOption
     const newResult = await executeQuery(queryExecutor);
     const newQueryCache = new QueryCache({ queryKey, queryResult: newResult, timestamp: now });
     await em.persistAndFlush(newQueryCache);
-    return { result: newResult , refreshTime: now };
+    return { result: newResult, refreshTime: now };
   }
 
-  if ((now.getTime() - queryCache.timestamp.getTime()) > maxAgeMilliseconds) {
+  if (now.getTime() - queryCache.timestamp.getTime() > maxAgeMilliseconds) {
     const newResult = await executeQuery(queryExecutor);
     queryCache.queryResult = newResult;
     queryCache.timestamp = now;
     await em.persistAndFlush(queryCache);
-    return { result: newResult , refreshTime: now };
+    return { result: newResult, refreshTime: now };
   } else {
-    return { result: queryCache.queryResult , refreshTime: queryCache.timestamp };
+    return { result: queryCache.queryResult, refreshTime: queryCache.timestamp };
   }
-
 };
 
-export const getTotalStatisticsInfoCached = async (em: SqlEntityManager<MySqlDriver>):
-Promise<{ result: any; refreshTime: Date }> => {
+export const getTotalStatisticsInfoCached = async (
+  em: SqlEntityManager<MySqlDriver>,
+): Promise<{ result: any; refreshTime: Date }> => {
   return await queryWithCache({
     em,
     queryKeys: ["get_total_statistic_info"],
@@ -84,8 +77,9 @@ Promise<{ result: any; refreshTime: Date }> => {
   });
 };
 
-export const getJobTotalCountCached = async (em: SqlEntityManager<MySqlDriver>):
-Promise<{ result: any; refreshTime: Date }> => {
+export const getJobTotalCountCached = async (
+  em: SqlEntityManager<MySqlDriver>,
+): Promise<{ result: any; refreshTime: Date }> => {
   return await queryWithCache({
     em,
     queryKeys: ["get_job_total_count"],
@@ -99,20 +93,21 @@ Promise<{ result: any; refreshTime: Date }> => {
   });
 };
 
-export const getChargeRecordsTotalCountCached = async (em: SqlEntityManager<MySqlDriver>):
-Promise<{ result: any; refreshTime: Date }> => {
-
-  const qb = em.createQueryBuilder(ChargeRecord, "c")
+export const getChargeRecordsTotalCountCached = async (
+  em: SqlEntityManager<MySqlDriver>,
+): Promise<{ result: any; refreshTime: Date }> => {
+  const qb = em
+    .createQueryBuilder(ChargeRecord, "c")
     .select([raw("count(c.id) as total_count"), raw("sum(c.amount) as total_amount")])
     .where({
       time: { $gte: new Date(0).toISOString(), $lte: new Date().toISOString() },
-      ...{ accountName: { "$ne": null } },
+      ...{ accountName: { $ne: null } },
     });
 
   return await queryWithCache({
     em,
     queryKeys: ["get_charge_records_total_count"],
     queryExecutor: qb,
-    cacheOptions:{ maxAgeMilliseconds: 24 * 60 * 60 * 1000 },
+    cacheOptions: { maxAgeMilliseconds: 24 * 60 * 60 * 1000 },
   });
 };

@@ -1,7 +1,6 @@
 import { GenService, GenServiceMethods } from "@bufbuild/protobuf/codegenv2";
 import { type Client, createClient } from "@connectrpc/connect";
 import { ConnectTransportOptions, createConnectTransport, Http2SessionOptions } from "@connectrpc/connect-node";
-import { Logger } from "ts-log";
 import { AppService } from "@scow/scowd-protos/build/application/app_pb";
 import { DesktopService } from "@scow/scowd-protos/build/application/desktop_pb";
 import { ImageService } from "@scow/scowd-protos/build/application/image_pb";
@@ -10,6 +9,7 @@ import { SystemService } from "@scow/scowd-protos/build/application/system_pb";
 import { FileService } from "@scow/scowd-protos/build/storage/file_pb";
 import { FileTransferService } from "@scow/scowd-protos/build/storage/file_transfer_pb";
 import { StorageQuotaService } from "@scow/scowd-protos/build/storage/storage_quota_pb";
+import { Logger } from "ts-log";
 
 import { SslConfig } from "./ssl";
 
@@ -23,12 +23,8 @@ export interface ScowdClient {
   fileTransfer: Client<typeof FileTransferService>;
   image: Client<typeof ImageService>;
 }
-export type SafeConnectTransportOptions =
-Omit<
-  ConnectTransportOptions,
-  "httpVersion" | "baseUrl" | "nodeOptions"
-> & Http2SessionOptions
-;
+export type SafeConnectTransportOptions = Omit<ConnectTransportOptions, "httpVersion" | "baseUrl" | "nodeOptions"> &
+  Http2SessionOptions;
 
 // HTTP/2 keepalive 配置，用于检测半开连接（如 scowd 被 OOM kill 后 TCP RST 未送达的场景）
 // connect-node 默认 pingIntervalMs=Infinity 且 pingIdleConnection=false，即永不主动探测连接存活性
@@ -73,7 +69,6 @@ export const getScowdClient = (
     image: getClient(scowdUrl, ImageService, certificates, extraConnectTransportOptions),
   } as ScowdClient;
 };
-
 
 export type ScowdClientByUrlGetter = (
   scowdUrl: string,
@@ -182,7 +177,9 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     const healthyNodes = nodes.filter((node) => clusterHealth.get(node.address));
     if (healthyNodes.length === 0) {
       options.logger.warn(
-        "No healthy scowd nodes for cluster %s, falling back to all %d nodes", clusterId, nodes.length,
+        "No healthy scowd nodes for cluster %s, falling back to all %d nodes",
+        clusterId,
+        nodes.length,
       );
       return nodes;
     }
@@ -227,10 +224,12 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     if (nodes.length === 0) {
       return;
     }
-    const results = await Promise.all(nodes.map(async (node) => ({
-      address: node.address,
-      healthy: await checkNodeHealth(node),
-    })));
+    const results = await Promise.all(
+      nodes.map(async (node) => ({
+        address: node.address,
+        healthy: await checkNodeHealth(node),
+      })),
+    );
     const clusterHealth = new Map<string, boolean>();
     results.forEach((r) => clusterHealth.set(r.address, r.healthy));
     healthState.set(clusterId, clusterHealth);
@@ -242,7 +241,9 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     const healthyCount = results.length - unhealthyNodes.length;
     options.logger.debug(
       "Scowd health check for cluster %s: %d/%d nodes healthy",
-      clusterId, healthyCount, results.length,
+      clusterId,
+      healthyCount,
+      results.length,
     );
   };
 
@@ -258,7 +259,8 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     healthCheckStarted = true;
     options.logger.debug(
       "Starting scowd balanced health check loop, interval=%dms timeout=%dms",
-      healthCheckIntervalMs, healthCheckTimeoutMs,
+      healthCheckIntervalMs,
+      healthCheckTimeoutMs,
     );
     void refreshAllHealth();
     setInterval(() => {
@@ -266,11 +268,7 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     }, healthCheckIntervalMs);
   };
 
-  return (
-    clusterId: string,
-    userId?: string,
-    extraConnectTransportOptions?: Partial<SafeConnectTransportOptions>,
-  ) => {
+  return (clusterId: string, userId?: string, extraConnectTransportOptions?: Partial<SafeConnectTransportOptions>) => {
     ensureHealthCheckLoop();
     const node = selectNode(clusterId, userId);
     if (!node) {
@@ -278,7 +276,9 @@ export function createBalancedScowdClientGetter<TClusterInfo, TLoginNodeConfig, 
     }
     options.logger.debug(
       "Routing scowd request: cluster=%s user=%s → node=%s",
-      clusterId, userId ?? "(no userId)", node.address,
+      clusterId,
+      userId ?? "(no userId)",
+      node.address,
     );
     return getScowdClientByUrl(node.scowdUrl, extraConnectTransportOptions);
   };

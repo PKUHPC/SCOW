@@ -22,16 +22,10 @@ export class TenantStorageQuota {
   @Property({ columnType: "bigint", comment: "租户下用户默认的存储配额" })
   userDefaultQuota: bigint;
 
-  constructor(init: {
-    tenant: EntityOrRef<Tenant>;
-    cluster: string,
-    userDefaultQuota: bigint,
-    path: string,
-  }) {
+  constructor(init: { tenant: EntityOrRef<Tenant>; cluster: string; userDefaultQuota: bigint; path: string }) {
     this.tenant = toRef(init.tenant);
     this.cluster = init.cluster;
     this.path = init.path;
     this.userDefaultQuota = init.userDefaultQuota;
   }
-
 }

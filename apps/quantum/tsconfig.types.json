@@ -5,9 +5,7 @@
     "noEmit": false,
     "emitDeclarationOnly": true,
     "paths": {
-      "src/*": [
-        "./src/*"
-      ]
+      "src/*": ["./src/*"]
     }
   }
 }

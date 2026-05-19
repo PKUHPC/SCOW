@@ -1,9 +1,12 @@
 "use client";
 
-import { ExtensionManifestWithUrl,fetchManifestsWithErrorHandling, UiExtensionStoreData }
-  from "@scow/lib-web/build/extensions/UiExtensionStore";
+import {
+  ExtensionManifestWithUrl,
+  fetchManifestsWithErrorHandling,
+  UiExtensionStoreData,
+} from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { Spin } from "antd";
-import { use,useCallback, useEffect,useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { usePublicConfig } from "src/app/(auth)/context";
 import { useI18n } from "src/i18n";
 import { NotFoundPage } from "src/layouts/error/NotFoundPage";
@@ -11,7 +14,6 @@ import { NotFoundPage } from "src/layouts/error/NotFoundPage";
 import { ExtensionPage as LibExtensionPage } from "./ExtensionPage";
 
 export default function Page({ params }: { params: Promise<{ path: string[] }> }) {
-
   const { path } = use(params);
 
   const { publicConfig } = usePublicConfig();
@@ -34,9 +36,7 @@ export default function Page({ params }: { params: Promise<{ path: string[] }> }
     setIsLoading(true);
     let result: UiExtensionStoreData;
     if (Array.isArray(uiExtensionConfig)) {
-      const promises = uiExtensionConfig.map((config) =>
-        fetchManifestsWithErrorHandling(config.url, config.name),
-      );
+      const promises = uiExtensionConfig.map((config) => fetchManifestsWithErrorHandling(config.url, config.name));
       const results = await Promise.all(promises);
       result = results.filter(Boolean) as (ExtensionManifestWithUrl & { name: string })[];
     } else {
@@ -48,15 +48,11 @@ export default function Page({ params }: { params: Promise<{ path: string[] }> }
   }, [uiExtensionConfig]);
 
   if (isLoading) {
-    return (
-      <Spin />
-    );
+    return <Spin />;
   }
 
   if (!uiExtensionData) {
-    return (
-      <NotFoundPage />
-    );
+    return <NotFoundPage />;
   }
 
   return (
@@ -67,4 +63,4 @@ export default function Page({ params }: { params: Promise<{ path: string[] }> }
       NotFoundPageComponent={NotFoundPage}
     />
   );
-};
+}

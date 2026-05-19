@@ -31,14 +31,13 @@ const ContentPart = styled.div`
   flex-direction: column;
   width: 100%;
   overflow: hidden;
-
 `;
 
-const Content = styled(Layout.Content) <{ $isDashboard: boolean }>`
-  margin: ${(props) => props.$isDashboard ? "8px 8px 0px" : "8px"};
+const Content = styled(Layout.Content)<{ $isDashboard: boolean }>`
+  margin: ${(props) => (props.$isDashboard ? "8px 8px 0px" : "8px")};
   padding: 16px;
   flex: 1;
-  display: ${(props) => props.$isDashboard ? "flex" : "block"};
+  display: ${(props) => (props.$isDashboard ? "flex" : "block")};
   flex-direction: column;
   background: ${({ theme }) => theme.token.colorBgLayout};
   max-height: calc(100vh - 78px);
@@ -62,15 +61,25 @@ type Props = PropsWithChildren<{
   headerRightContent?: React.ReactNode;
   basePath: string;
   userLinks?: UserLink[];
-  languageId: string,
+  languageId: string;
   from: "portal" | "mis";
   extensionStoreData?: UiExtensionStoreData;
 }>;
 
 export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
-  children, routes, user, logout, footerText, versionTag,
-  headerNavbarLinks, basePath, userLinks, languageId,
-  extensionStoreData, from, headerRightContent,
+  children,
+  routes,
+  user,
+  logout,
+  footerText,
+  versionTag,
+  headerNavbarLinks,
+  basePath,
+  userLinks,
+  languageId,
+  extensionStoreData,
+  from,
+  headerRightContent,
 }) => {
   const router = useRouter();
 
@@ -78,30 +87,40 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const dark = useDarkMode();
 
-  const extensions = useMemo(() =>
-    (Array.isArray(extensionStoreData)
-      ? extensionStoreData
-      : extensionStoreData ? [extensionStoreData] : []).filter((x) => x),
-    [extensionStoreData]);
+  const extensions = useMemo(
+    () =>
+      (Array.isArray(extensionStoreData) ? extensionStoreData : extensionStoreData ? [extensionStoreData] : []).filter(
+        (x) => x,
+      ),
+    [extensionStoreData],
+  );
 
-  const routeQuery = useMemo(() => getExtensionRouteQuery(
-    dark.dark,
-    languageId,
-    user?.token,
-  ), [dark.dark, languageId, user?.token]);
+  const routeQuery = useMemo(
+    () => getExtensionRouteQuery(dark.dark, languageId, user?.token),
+    [dark.dark, languageId, user?.token],
+  );
 
   const { data: finalRoutesData } = useAsync({
     promiseFn: useCallback(async () => {
-      if (extensions.length === 0) { return routes; }
+      if (extensions.length === 0) {
+        return routes;
+      }
 
       let newRoutes = routes;
 
       for (const extension of extensions) {
-        if (!extension.manifests[from]?.rewriteNavigations) { continue; }
+        if (!extension.manifests[from]?.rewriteNavigations) {
+          continue;
+        }
 
-        const resp = await callExtensionRoute(rewriteNavigationsRoute(from), routeQuery, {
-          navs: fromNavItemProps(newRoutes),
-        }, extension.url).catch((e) => {
+        const resp = await callExtensionRoute(
+          rewriteNavigationsRoute(from),
+          routeQuery,
+          {
+            navs: fromNavItemProps(newRoutes),
+          },
+          extension.url,
+        ).catch((e) => {
           console.warn(`Failed to call rewriteNavigations of extension ${extension.name ?? extension.url}. Error: `, e);
           return { 200: { navs: newRoutes } };
         });
@@ -117,11 +136,10 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
 
   const finalRoutes = finalRoutesData ?? routes;
 
-  const activeKeys = useMemo(() =>
-    finalRoutes
-      ? [...calcActiveKeys(finalRoutes, router.asPath)]
-      : []
-    , [finalRoutes, router.asPath]);
+  const activeKeys = useMemo(
+    () => (finalRoutes ? [...calcActiveKeys(finalRoutes, router.asPath)] : []),
+    [finalRoutes, router.asPath],
+  );
 
   const firstLevelRoute = finalRoutes.find((x) => activeKeys.includes(x.path));
 
@@ -152,15 +170,7 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
         activeKeys={activeKeys}
       />
       <StyledLayout>
-        {
-          hasSidebar ? (
-            <SideNav
-              activeKeys={activeKeys}
-              pathname={router.asPath}
-              routes={sidebarRoutes}
-            />
-          ) : undefined
-        }
+        {hasSidebar ? <SideNav activeKeys={activeKeys} pathname={router.asPath} routes={sidebarRoutes} /> : undefined}
         <ContentPart>
           <Content $isDashboard={router.pathname === "/dashboard"}>
             {children}
@@ -171,4 +181,3 @@ export const BaseLayout: React.FC<PropsWithChildren<Props>> = ({
     </Root>
   );
 };
-

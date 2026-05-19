@@ -9,11 +9,7 @@ export class AccountClusterRule {
   createTime = new Date();
   updateTime = new Date();
 
-  constructor(init: {
-    accountName: string;
-    tenantName: string;
-    clusterId: string;
-  }) {
+  constructor(init: { accountName: string; tenantName: string; clusterId: string }) {
     this.accountName = init.accountName;
     this.tenantName = init.tenantName;
     this.clusterId = init.clusterId;

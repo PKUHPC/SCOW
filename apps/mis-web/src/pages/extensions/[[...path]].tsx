@@ -8,7 +8,6 @@ import { useI18n } from "src/i18n";
 import { UserStore } from "src/stores/UserStore";
 import { publicConfig } from "src/utils/config";
 
-
 export const ExtensionPage: NextPage = () => {
   const userStore = useStore(UserStore);
 
@@ -17,15 +16,11 @@ export const ExtensionPage: NextPage = () => {
   const i18n = useI18n();
 
   if (uiExtensionStore.isLoading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   if (!uiExtensionStore.data) {
-    return (
-      <NotFoundPage />
-    );
+    return <NotFoundPage />;
   }
 
   return (
@@ -37,7 +32,6 @@ export const ExtensionPage: NextPage = () => {
       titleTag={publicConfig?.UI_CONFIG?.titleTag}
     />
   );
-
 };
 
 export default ExtensionPage;

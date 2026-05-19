@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { LinkOutlined } from "@ant-design/icons";
 import { Space } from "antd";
 import { join } from "path";
@@ -37,11 +25,11 @@ const Container = styled.header<ComponentProps>`
   height: 56px;
   display: flex;
   padding: 0 4px;
-  box-shadow: 0px 2px 2px 0px #0000000D;
+  box-shadow: 0px 2px 2px 0px #0000000d;
   z-index: 50;
   align-items: center;
   background-color: ${({ theme }) => theme.token.colorBgContainer};
-  font-size:18px;
+  font-size: 18px;
   width: 100%;
   color: #434343;
 `;
@@ -82,7 +70,7 @@ const IndicatorPart = styled(HeaderItem)`
   display: flex;
   align-items: center;
   font-size: 14px;
-  &:hover{
+  &:hover {
     background-color: #59595914;
     border-radius: 8px;
   }
@@ -94,7 +82,7 @@ export interface HeaderNavbarLink {
   text: string | React.ReactNode;
   crossSystem?: boolean;
   isActive?: boolean;
-};
+}
 
 interface Props {
   routes?: NavItemProps[];
@@ -116,30 +104,41 @@ interface SourcedHeaderNavbarLink {
   link: HeaderNavbarLink;
   extension: ExtensionManifestWithUrl;
   priority: number;
-};
+}
 
 export const Header: React.FC<Props> = ({
-  routes, pathname, user, logout,
-  basePath, userLinks,
-  languageId, activeKeys,
-  right, staticNavbarLinks,
+  routes,
+  pathname,
+  user,
+  logout,
+  basePath,
+  userLinks,
+  languageId,
+  activeKeys,
+  right,
+  staticNavbarLinks,
   extensions,
-  from, routeQuery,
+  from,
+  routeQuery,
 }) => {
-
   const [links, setLinks] = useState<SourcedHeaderNavbarLink[]>([]);
 
   const onFetched = (extension: ExtensionManifestWithUrl) => (data: NavbarLink[]) => {
     setLinks((links) => {
-
       // remove all existing links from the same extension
       links = links.filter((x) => x.extension !== extension);
       // append newly got links
-      links.push(...data.map((x) => ({ link: {
-        href: x.path,
-        text: x.text,
-        icon: x.icon ? <NavIcon src={x.icon.src} alt={x.icon.alt ?? ""} /> : <LinkOutlined />,
-      }, extension, priority: x.priority })));
+      links.push(
+        ...data.map((x) => ({
+          link: {
+            href: x.path,
+            text: x.text,
+            icon: x.icon ? <NavIcon src={x.icon.src} alt={x.icon.alt ?? ""} /> : <LinkOutlined />,
+          },
+          extension,
+          priority: x.priority,
+        })),
+      );
 
       // order by priority and index. sort is stable, index is preserved
       links.sort((a, b) => {
@@ -153,19 +152,21 @@ export const Header: React.FC<Props> = ({
 
   const hideLinkText = navbarLinks && navbarLinks.length >= 5;
 
-  const navbarLinkComponents = navbarLinks?.map((x, i) => {
-
-    return (
-      <JumpToAnotherLink
-        key={i}
-        icon={x.icon}
-        href={x.href}
-        text={x.text}
-        crossSystem={x.crossSystem}
-        hideText={hideLinkText}
-      />
-    );
-  }, [navbarLinks]);
+  const navbarLinkComponents = navbarLinks?.map(
+    (x, i) => {
+      return (
+        <JumpToAnotherLink
+          key={i}
+          icon={x.icon}
+          href={x.href}
+          text={x.text}
+          crossSystem={x.crossSystem}
+          hideText={hideLinkText}
+        />
+      );
+    },
+    [navbarLinks],
+  );
 
   return (
     <Container>
@@ -192,21 +193,12 @@ export const Header: React.FC<Props> = ({
         </Space>
       </HeaderLogo>
       <MenuPart>
-        <BigScreenMenu
-          pathname={pathname}
-          activeKeys={activeKeys}
-          routes={routes}
-        />
+        <BigScreenMenu pathname={pathname} activeKeys={activeKeys} routes={routes} />
         <MenuPartPlaceholder />
       </MenuPart>
       <RightContentPart>
-        <LinksPart>
-          {navbarLinkComponents}
-        </LinksPart>
-        <SystemSelect
-          links={staticNavbarLinks ?? []}
-        >
-        </SystemSelect>
+        <LinksPart>{navbarLinkComponents}</LinksPart>
+        <SystemSelect links={staticNavbarLinks ?? []}></SystemSelect>
         {right}
         <IndicatorPart>
           <UserIndicator user={user} logout={logout} userLinks={userLinks} languageId={languageId} />
@@ -216,7 +208,6 @@ export const Header: React.FC<Props> = ({
   );
 };
 
-
 interface FetcherProps {
   extension: ExtensionManifestWithUrl;
   from: "mis" | "portal";
@@ -225,17 +216,14 @@ interface FetcherProps {
 }
 
 const NavbarLinkFetcher = ({ extension, from, routeQuery, onDataFetched }: FetcherProps) => {
-
   const { reload } = useAsync({
     promiseFn: useCallback(async () => {
-      const resp = await callExtensionRoute(navbarLinksRoute(from), routeQuery, {}, extension.url)
-        .catch((e) => {
-          console.warn(`Failed to call navbarLinks of extension ${extension.name ?? extension.url}. Error: `, e);
-          return { 200: { navbarLinks: [] as NavbarLink[] } };
-        });
+      const resp = await callExtensionRoute(navbarLinksRoute(from), routeQuery, {}, extension.url).catch((e) => {
+        console.warn(`Failed to call navbarLinks of extension ${extension.name ?? extension.url}. Error: `, e);
+        return { 200: { navbarLinks: [] as NavbarLink[] } };
+      });
 
       const data = resp[200]?.navbarLinks?.map((x) => {
-
         if (!isUrl(x.path)) {
           const parts = ["/extensions"];
 
@@ -254,11 +242,13 @@ const NavbarLinkFetcher = ({ extension, from, routeQuery, onDataFetched }: Fetch
 
       const navbarLinksConfig = extension.manifests[from]?.navbarLinks;
 
-      if (typeof navbarLinksConfig === "object"
-        && navbarLinksConfig?.enabled && navbarLinksConfig.autoRefresh?.enabled) {
+      if (
+        typeof navbarLinksConfig === "object" &&
+        navbarLinksConfig?.enabled &&
+        navbarLinksConfig.autoRefresh?.enabled
+      ) {
         setTimeout(reload, navbarLinksConfig.autoRefresh.intervalMs);
       }
-
     }, [from, routeQuery, extension]),
   });
 

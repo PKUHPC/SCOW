@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { GetConfigFn, getConfigFromFile } from "@scow/lib-config";
 import { Static, Type } from "@sinclair/typebox";
 import { DEFAULT_CONFIG_BASE_PATH } from "src/constants";
@@ -17,12 +5,19 @@ import { createI18nStringSchema } from "src/i18n";
 
 export const ClusterTextsConfigSchema = Type.Record(
   Type.String({ description: "租户，如果为default则是对所有租户" }),
-  Type.Object({
-    clusterComment:Type.Optional(createI18nStringSchema({ description: "集群说明" })),
-    extras: Type.Optional(Type.Array(Type.Object({
-      title: createI18nStringSchema({ description: "标题" }),
-      content: createI18nStringSchema({ description: "内容" }),
-    }))) }, { description: "其他内容" },
+  Type.Object(
+    {
+      clusterComment: Type.Optional(createI18nStringSchema({ description: "集群说明" })),
+      extras: Type.Optional(
+        Type.Array(
+          Type.Object({
+            title: createI18nStringSchema({ description: "标题" }),
+            content: createI18nStringSchema({ description: "内容" }),
+          }),
+        ),
+      ),
+    },
+    { description: "其他内容" },
   ),
 );
 

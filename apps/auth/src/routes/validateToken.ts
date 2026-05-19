@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Static, Type } from "@sinclair/typebox";
 import fp from "fastify-plugin";
 import { authConfig } from "src/config/auth";
@@ -40,8 +28,8 @@ const ResponsesSchema = Type.Object({
  */
 export const validateTokenRoute = fp(async (f) => {
   f.get<{
-    Querystring: Static<typeof QuerystringSchema>
-    Responses: Static<typeof ResponsesSchema>,
+    Querystring: Static<typeof QuerystringSchema>;
+    Responses: Static<typeof ResponsesSchema>;
   }>(
     "/public/validateToken",
     {
@@ -51,7 +39,6 @@ export const validateTokenRoute = fp(async (f) => {
       },
     },
     async (req, rep) => {
-
       const { token } = req.query;
 
       const cached = await f.redis.get(token);
@@ -67,7 +54,6 @@ export const validateTokenRoute = fp(async (f) => {
         }
         return await rep.code(400).send({ code: ErrorCode.INVALID_TOKEN });
       }
-
     },
   );
 });

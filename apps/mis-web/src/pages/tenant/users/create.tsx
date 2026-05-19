@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FormLayout } from "@scow/lib-web/build/layouts/FormLayout";
 import { App, Button, Form } from "antd";
 import { NextPage } from "next";
@@ -28,7 +16,6 @@ import { Head } from "src/utils/head";
 const p = prefix("page.tenant.users.create.");
 
 const CreateUserPageForm: React.FC = () => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
   const userIdRule = getUserIdRule(languageId);
@@ -54,17 +41,27 @@ const CreateUserPageForm: React.FC = () => {
       });
     } else {
       modal.confirm({
-        title: result.existsInAuth !== undefined ?
-          result.existsInAuth ? t(p("userExistAuth")) : t(p("userNotExistAuth"))
-          : t(p("unableDetermineUserExistAuth")),
-        content: result.existsInAuth ?
-          t(p("userExistAuthMessage"))
-          : t(p("userNotExistAuthMessage")),
+        title:
+          result.existsInAuth !== undefined
+            ? result.existsInAuth
+              ? t(p("userExistAuth"))
+              : t(p("userNotExistAuth"))
+            : t(p("unableDetermineUserExistAuth")),
+        content: result.existsInAuth ? t(p("userExistAuthMessage")) : t(p("userNotExistAuthMessage")),
         okText: t("common.ok"),
         onOk: async () => {
-          await api.createUser({ body: {
-            email, identityId, name: name.trim(), password, phone, organization, adminComment,
-          } })
+          await api
+            .createUser({
+              body: {
+                email,
+                identityId,
+                name: name.trim(),
+                password,
+                phone,
+                organization,
+                adminComment,
+              },
+            })
             .httpError(409, () => {
               modal.error({
                 title: t("common.addFail"),
@@ -75,25 +72,28 @@ const CreateUserPageForm: React.FC = () => {
             .httpError(400, (e) => {
               if (e.code === "USERID_NOT_VALID") {
                 message.error(userIdRule?.message);
-              };
+              }
               if (e.code === "PASSWORD_NOT_VALID") {
                 message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
-              };
+              }
               throw e;
             })
             .then((createdInAuth) => {
               if (createdInAuth.createdInAuth) {
                 message.success(t(p("addCompleted")));
-                api.updatePasswordResetFlag({
-                  body: {
-                    userId: identityId,
-                    forceFlag: true,
-                  },
-                })
+                api
+                  .updatePasswordResetFlag({
+                    body: {
+                      userId: identityId,
+                      forceFlag: true,
+                    },
+                  })
                   .httpError(500, (e) => {
-                    message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`); })
+                    message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`);
+                  })
                   .httpError(501, () => {
-                    message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`); });
+                    message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`);
+                  });
               } else {
                 modal.info({
                   title: t("common.addSuccess"),
@@ -126,7 +126,7 @@ const CreateUserPageForm: React.FC = () => {
       wrapperCol={{ span: 20 }}
       labelAlign="left"
       onFinish={onOk}
-      labelCol={{ span:4, style: { whiteSpace:"normal", textAlign:"left", lineHeight:"16px" } }}
+      labelCol={{ span: 4, style: { whiteSpace: "normal", textAlign: "left", lineHeight: "16px" } }}
     >
       <CreateUserForm />
       <Form.Item wrapperCol={{ span: 6, offset: 4 }}>
@@ -138,24 +138,22 @@ const CreateUserPageForm: React.FC = () => {
   );
 };
 
-export const CreateUserPage: NextPage = requireAuth((i) => i.tenantRoles.includes(TenantRole.TENANT_ADMIN))(
-  () => {
+export const CreateUserPage: NextPage = requireAuth((i) => i.tenantRoles.includes(TenantRole.TENANT_ADMIN))(() => {
+  const t = useI18nTranslateToString();
 
-    const t = useI18nTranslateToString();
+  if (!useBuiltinCreateUser()) {
+    return <NotFoundPage />;
+  }
 
-    if (!useBuiltinCreateUser()) {
-      return <NotFoundPage />;
-    }
-
-    return (
-      <div>
-        <Head title={t(p("crateUser"))} />
-        <PageTitle titleText={t(p("crateUser"))} />
-        <FormLayout>
-          <CreateUserPageForm />
-        </FormLayout>
-      </div>
-    );
-  });
+  return (
+    <div>
+      <Head title={t(p("crateUser"))} />
+      <PageTitle titleText={t(p("crateUser"))} />
+      <FormLayout>
+        <CreateUserPageForm />
+      </FormLayout>
+    </div>
+  );
+});
 
 export default CreateUserPage;

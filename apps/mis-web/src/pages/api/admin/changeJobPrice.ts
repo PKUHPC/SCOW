@@ -31,7 +31,6 @@ export const ChangeJobPriceSchema = typeboxRouteSchema({
 
     /** which price to change */
     target: Type.Union([Type.Literal("tenant"), Type.Literal("account")]),
-
   }),
 
   responses: {
@@ -44,78 +43,91 @@ export const ChangeJobPriceSchema = typeboxRouteSchema({
   },
 });
 
-const auth = authenticate((info) =>
-  info.tenantRoles.includes(TenantRole.TENANT_ADMIN)
-  || info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+const auth = authenticate(
+  (info) =>
+    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) || info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
 );
 
-export default route(ChangeJobPriceSchema,
-  async (req, res) => {
+export default route(ChangeJobPriceSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const {
+    price,
+    reason,
+    jobIds,
+    biJobIndexs,
+    accountName,
+    clusters,
+    jobEndTimeEnd,
+    jobEndTimeStart,
+    jobId,
+    userId,
+    target,
+  } = req.body;
 
-    const { price, reason, jobIds, biJobIndexs, accountName, clusters, jobEndTimeEnd,
-      jobEndTimeStart, jobId, userId, target } = req.body;
+  if (
+    (target === "account" && !info.tenantRoles.includes(TenantRole.TENANT_ADMIN)) ||
+    (target === "tenant" && !info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))
+  ) {
+    return { 403: null };
+  }
 
-    if (
-      (target === "account" && !info.tenantRoles.includes(TenantRole.TENANT_ADMIN)) ||
-      (target === "tenant" && !info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))
-    ) {
-      return { 403: null };
+  const client = getClient(JobServiceClient);
+
+  const money = numberToMoney(price);
+
+  const baseLogInfo = {
+    operatorUserId: info.identityId,
+    operatorIp: parseIp(req) ?? "",
+    operationTypeName: OperationType.changeJobPrice,
+  };
+
+  const logs = (jobIds ?? []).map((jid, i) => ({
+    ...baseLogInfo,
+    operationTypePayload: {
+      jobId: jid,
+      cluster: clusters?.[i] ?? "-", // 除非直接url调用，否则不会没有cluster
+      price: money,
+    },
+  }));
+
+  const writeLogs = async (result: OperationResult) => {
+    for (const log of logs) {
+      await callLog(log, result);
     }
+  };
 
-    const client = getClient(JobServiceClient);
-
-    const money = numberToMoney(price);
-
-    const baseLogInfo = {
-      operatorUserId: info.identityId,
-      operatorIp: parseIp(req) ?? "",
-      operationTypeName: OperationType.changeJobPrice,
-    };
-
-    const logs = (jobIds ?? []).map((jid, i) => ({
-      ...baseLogInfo,
-      operationTypePayload: {
-        jobId: jid,
-        cluster: clusters?.[i] ?? "-", // 除非直接url调用，否则不会没有cluster
-        price: money,
-      },
-    }));
-
-    const writeLogs = async (result: OperationResult) => {
-      for (const log of logs) {
-        await callLog(log, result);
-      }
-    };
-
-    return await asyncClientCall(client, "changeJobPrice", {
-      filter: {
-        tenantName: info.tenant,
-        clusters: clusters ?? [],
-        accountName,
-        jobEndTimeEnd,
-        jobEndTimeStart,
-        jobId,
-        userId,
-        jobIds,
-        biJobIndexs,
-      },
-      ...(target === "account" ? { accountPrice: money } : { tenantPrice: money }),
-      ipAddress: parseIp(req) ?? "",
-      operatorId: info.identityId,
-      reason,
+  return await asyncClientCall(client, "changeJobPrice", {
+    filter: {
+      tenantName: info.tenant,
+      clusters: clusters ?? [],
+      accountName,
+      jobEndTimeEnd,
+      jobEndTimeStart,
+      jobId,
+      userId,
+      jobIds,
+      biJobIndexs,
+    },
+    ...(target === "account" ? { accountPrice: money } : { tenantPrice: money }),
+    ipAddress: parseIp(req) ?? "",
+    operatorId: info.identityId,
+    reason,
+  })
+    .then(async (x) => {
+      await writeLogs(OperationResult.SUCCESS);
+      return { 200: x };
     })
-      .then(async (x) => {
-        await writeLogs(OperationResult.SUCCESS);
-        return { 200: x };
-      })
-      .catch(
-        handlegRPCError({
+    .catch(
+      handlegRPCError(
+        {
           [Status.NOT_FOUND]: (e) => ({ 404: { message: e.message } }),
           [Status.FAILED_PRECONDITION]: (e) => ({ 409: { message: e.details } }),
         },
         async () => await writeLogs(OperationResult.FAIL),
-        ));
-  });
+      ),
+    );
+});

@@ -14,8 +14,7 @@ interface Props {
   totalGiB: number | string;
 }
 
-export const ImageQuota: React.FC<Props> = ({ usedGiB,totalGiB }) => {
-
+export const ImageQuota: React.FC<Props> = ({ usedGiB, totalGiB }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.image.imageQuota.");
 

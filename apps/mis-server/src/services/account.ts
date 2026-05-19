@@ -12,8 +12,12 @@ import { mapTRPCExceptionToGRPC } from "@scow/lib-scow-resource/build/utils";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import {
-  Account as AccountProto, account_AccountStateFromJSON, Account_DisplayedAccountState,
-  AccountServiceServer, AccountServiceService, BlockAccountResponse_Result,
+  Account as AccountProto,
+  account_AccountStateFromJSON,
+  Account_DisplayedAccountState,
+  AccountServiceServer,
+  AccountServiceService,
+  BlockAccountResponse_Result,
 } from "@scow/protos/build/server/account";
 import { blockAccount, unblockAccount } from "src/bl/block";
 import { getActivatedClusters } from "src/bl/clustersUtils";
@@ -47,7 +51,6 @@ function ensureAccountNotDeleted(account: Account) {
 }
 
 export const accountServiceServer = plugin((server) => {
-
   server.addService<AccountServiceServer>(AccountServiceService, {
     blockAccount: async ({ request, em, logger }) => {
       const { accountName } = request;
@@ -57,14 +60,19 @@ export const accountServiceServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "block account task");
 
       const result = await em.transactional(async (em) => {
-        const account = await em.findOne(Account, {
-          accountName,
-        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] });
+        const account = await em.findOne(
+          Account,
+          {
+            accountName,
+          },
+          { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] },
+        );
 
         if (!account) {
           logger.warn("Account %s not found during blockAccount", accountName);
           throw {
-            code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+            code: Status.NOT_FOUND,
+            message: `Account ${accountName} is not found`,
           } as ServiceError;
         }
 
@@ -74,21 +82,15 @@ export const accountServiceServer = plugin((server) => {
         ensureAccountNotDeleted(account);
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
-        const jobs = await server.ext.clusters.callOnAll(
-          currentActivatedClusters,
-          logger,
-          async (client) => {
-            const fields = [
-              "job_id", "user", "state", "account",
-            ];
+        const jobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+          const fields = ["job_id", "user", "state", "account"];
 
-            return await asyncClientCall(client.job, "getJobs", {
-              jobTypes: [],
-              fields,
-              filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-            });
-          },
-        );
+          return await asyncClientCall(client.job, "getJobs", {
+            jobTypes: [],
+            fields,
+            filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+          });
+        });
 
         if (jobs.filter((i) => i.result.jobs.length > 0).length > 0) {
           logger.warn("Account %s has running jobs, cannot be blocked", accountName);
@@ -98,12 +100,9 @@ export const accountServiceServer = plugin((server) => {
           } as ServiceError;
         }
 
-        const blockThresholdAmount =
-          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+        const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
-        const result = await blockAccount(account,
-          currentActivatedClusters,
-          server.ext.clusters, logger);
+        const result = await blockAccount(account, currentActivatedClusters, server.ext.clusters, logger);
 
         if (result === "AlreadyBlocked") {
           logger.info("Account %s is already blocked", accountName);
@@ -143,14 +142,18 @@ export const accountServiceServer = plugin((server) => {
 
       // 发送消息
       const ownerAndAdmin = await getAccountOwnerAndAdmin(accountName, logger, em);
-      await sendMessage({
-        messageType: InternalMessageType.AccountLocked,
-        targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-        metadata: {
-          time: (new Date()).toISOString(),
-          accountName: accountName,
+      await sendMessage(
+        {
+          messageType: InternalMessageType.AccountLocked,
+          targetType: TargetType.USER,
+          targetIds: ownerAndAdmin.map((x) => x.userId),
+          metadata: {
+            time: new Date().toISOString(),
+            accountName: accountName,
+          },
         },
-      }, logger);
+        logger,
+      );
 
       return [result];
     },
@@ -163,14 +166,19 @@ export const accountServiceServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "unblock account task");
 
       const result = await em.transactional(async (em) => {
-        const account = await em.findOne(Account, {
-          accountName,
-        }, { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] });
+        const account = await em.findOne(
+          Account,
+          {
+            accountName,
+          },
+          { lockMode: LockMode.PESSIMISTIC_WRITE, populate: ["tenant"] },
+        );
 
         if (!account) {
           logger.warn("Account %s not found during unblockAccount", accountName);
           throw {
-            code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+            code: Status.NOT_FOUND,
+            message: `Account ${accountName} is not found`,
           } as ServiceError;
         }
 
@@ -179,14 +187,14 @@ export const accountServiceServer = plugin((server) => {
         if (!account.blockedInCluster) {
           logger.info("Account %s is already unblocked", accountName);
           throw {
-            code: Status.FAILED_PRECONDITION, message: `Account ${accountName} is unblocked`,
+            code: Status.FAILED_PRECONDITION,
+            message: `Account ${accountName} is unblocked`,
           } as ServiceError;
         }
         // 将账户从被上级封锁或冻结状态变更为正常
         account.state = AccountState.NORMAL;
 
-        const blockThresholdAmount =
-          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+        const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
         // 判断解除封锁之后账户是否仍需保持封锁状态
         const shouldBlockInCluster = getAccountStateInfo(
@@ -214,20 +222,23 @@ export const accountServiceServer = plugin((server) => {
 
       // 发送消息
       const ownerAndAdmin = await getAccountOwnerAndAdmin(accountName, logger, em);
-      await sendMessage({
-        messageType: InternalMessageType.AccountUnblocked,
-        targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-        metadata: {
-          time: (new Date()).toISOString(),
-          accountName: accountName,
+      await sendMessage(
+        {
+          messageType: InternalMessageType.AccountUnblocked,
+          targetType: TargetType.USER,
+          targetIds: ownerAndAdmin.map((x) => x.userId),
+          metadata: {
+            time: new Date().toISOString(),
+            accountName: accountName,
+          },
         },
-      }, logger);
+        logger,
+      );
 
       return [result];
     },
 
     getAccounts: async ({ request, em, logger }) => {
-
       const { accountName, tenantName } = request;
 
       // 1. 定义接口执行结果的类型
@@ -262,7 +273,8 @@ export const accountServiceServer = plugin((server) => {
       }
 
       // 2. 使用 QueryBuilder 获取账户列表
-      const accounts = await em.createQueryBuilder(Account, "a")
+      const accounts = await em
+        .createQueryBuilder(Account, "a")
         .leftJoin("a.tenant", "t")
         .leftJoin("a.whitelist", "w")
         .select([
@@ -280,31 +292,28 @@ export const accountServiceServer = plugin((server) => {
         .where({
           ...(tenantName ? { "t.name": tenantName } : {}),
           ...(accountName ? { "a.accountName": accountName } : {}),
-        }).execute<RawAccountQueryResult[]>();
+        })
+        .execute<RawAccountQueryResult[]>();
 
       const accountIds = accounts.map((a) => a.id);
       if (accounts.length === 0) return [{ results: [] }];
 
       // 2. 使用 QueryBuilder 批量获取拥有者信息
-      const ownersResult = await em.createQueryBuilder(UserAccount, "ua")
+      const ownersResult = await em
+        .createQueryBuilder(UserAccount, "ua")
         .leftJoin("ua.user", "u")
-        .select([
-          "ua.account_id as accountId",
-          "u.user_id as userId",
-          "u.name as name",
-        ])
+        .select(["ua.account_id as accountId", "u.user_id as userId", "u.name as name"])
         .where({
           account: { $in: accountIds },
           role: UserRole.OWNER,
-        }).execute<RawOwnerQueryResult[]>();
+        })
+        .execute<RawOwnerQueryResult[]>();
       const ownerMap = new Map(ownersResult.map((o) => [o.accountId, o]));
 
       // 3. 使用 QueryBuilder 批量查出 UserCount
-      const countsResult = await em.createQueryBuilder(UserAccount, "ua")
-        .select([
-          "ua.account_id as accountId",
-          raw("count(ua.id) as count"),
-        ])
+      const countsResult = await em
+        .createQueryBuilder(UserAccount, "ua")
+        .select(["ua.account_id as accountId", raw("count(ua.id) as count")])
         .where({ account: { $in: accountIds } })
         .groupBy("ua.account_id")
         .execute<RawCountQueryResult[]>();
@@ -343,16 +352,14 @@ export const accountServiceServer = plugin((server) => {
           ownerName: owner?.name,
           comment: x.comment,
           balance: decimalToMoney(balanceDec),
-          blockThresholdAmount: x.blockThresholdAmount ?
-            decimalToMoney(blockThresholdAmountDec) : undefined,
+          blockThresholdAmount: x.blockThresholdAmount ? decimalToMoney(blockThresholdAmountDec) : undefined,
           defaultBlockThresholdAmount: decimalToMoney(tenantDefaultAccountBlockThresholdDec),
         };
       });
 
       // 对于没有拥有者的数据保留日志
       if (abnormalAccountsWithoutOwner.length > 0) {
-        logger.warn("Accounts without owner is found: "
-          + `${[abnormalAccountsWithoutOwner].join(",")}`);
+        logger.warn("Accounts without owner is found: " + `${[abnormalAccountsWithoutOwner].join(",")}`);
       }
 
       return [{ results: finalResult }];
@@ -376,7 +383,8 @@ export const accountServiceServer = plugin((server) => {
       if (!tenant) {
         logger.warn("Tenant %s not found", tenantName);
         throw {
-          code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found`,
+          code: Status.NOT_FOUND,
+          message: `Tenant ${tenantName} is not found`,
         } as ServiceError;
       }
 
@@ -392,16 +400,23 @@ export const accountServiceServer = plugin((server) => {
       const account = new Account({ accountName, comment, tenant, blockedInCluster: shouldBlockInCluster });
 
       const userAccount = new UserAccount({
-        account, user, role: EntityUserRole.OWNER, blockedInCluster: UserStatus.UNBLOCKED,
+        account,
+        user,
+        role: EntityUserRole.OWNER,
+        blockedInCluster: UserStatus.UNBLOCKED,
       });
 
       const entitiesToPersist: (Account | UserAccount | AccountAppBlacklist)[] = [account, userAccount];
       // 如果开启授权应用功能
       // 新建账户时按照所属租户禁用默认应用列表来写入账户禁用app
       if (commonConfig.allowAppAuthorization) {
-        const affiliatedTenantBlackAppList = await em.find(TenantDefaultAppRemovedList, {
-          tenant: tenant,
-        }, { populate: ["tenant"] });
+        const affiliatedTenantBlackAppList = await em.find(
+          TenantDefaultAppRemovedList,
+          {
+            tenant: tenant,
+          },
+          { populate: ["tenant"] },
+        );
 
         const accountDisabledApps = affiliatedTenantBlackAppList.map((t) => {
           return new AccountAppBlacklist({
@@ -421,7 +436,8 @@ export const accountServiceServer = plugin((server) => {
         if (e instanceof UniqueConstraintViolationException) {
           logger.warn("Account %s already exists", accountName);
           throw {
-            code: Status.ALREADY_EXISTS, message: `Account ${accountName} already exists.`,
+            code: Status.ALREADY_EXISTS,
+            message: `Account ${accountName} already exists.`,
           } as ServiceError;
         }
       }
@@ -438,24 +454,25 @@ export const accountServiceServer = plugin((server) => {
       // 创建账户失败时写入的默认授权集群分区不会回滚，下次写入同名租户下同名账户默认集群分区时会覆盖
       if (commonConfig.scowResource?.enabled) {
         logger.debug("Assigning account %s to resource management", accountName);
-        await server.ext.resource.assignAccountOnCreate({
-          accountName,
-          tenantName: tenant.name,
-        }).catch(async (e) => {
-          const error = mapTRPCExceptionToGRPC(e);
-          logger.error("Failed to assign account %s to resource management: %s", accountName, error);
-          await rollback(error);
-        });
+        await server.ext.resource
+          .assignAccountOnCreate({
+            accountName,
+            tenantName: tenant.name,
+          })
+          .catch(async (e) => {
+            const error = mapTRPCExceptionToGRPC(e);
+            logger.error("Failed to assign account %s to resource management: %s", accountName, error);
+            await rollback(error);
+          });
       }
 
       logger.info("Creating account in cluster.");
       if (shouldBlockInCluster) {
-        await server.ext.clusters.callOnAll(
-          currentActivatedClusters,
-          logger,
-          async (client) => {
+        await server.ext.clusters
+          .callOnAll(currentActivatedClusters, logger, async (client) => {
             await asyncClientCall(client.account, "createAccount", {
-              accountName, ownerUserId: ownerId,
+              accountName,
+              ownerUserId: ownerId,
             }).catch((e) => {
               if (e.code === Status.ALREADY_EXISTS) {
                 logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
@@ -468,39 +485,36 @@ export const accountServiceServer = plugin((server) => {
             }).catch((e) => {
               if (e.code === Status.NOT_FOUND) {
                 throw {
-                  code: Status.INTERNAL, message: `Account ${accountName} hasn't been created. Block failed`,
+                  code: Status.INTERNAL,
+                  message: `Account ${accountName} hasn't been created. Block failed`,
                 } as ServiceError;
               } else {
                 throw e;
               }
             });
-          },
-        ).catch(async (e) => {
-          logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
-          await rollback(e);
-        });
+          })
+          .catch(async (e) => {
+            logger.error("Failed to create/block account %s in clusters: %s", accountName, e);
+            await rollback(e);
+          });
         // 如果判断为要在集群中解封时
       } else {
         // 条件1：如果配置了资源管理服务，则调用适配器的 unblockAccountWithPartitions 接口
         if (commonConfig.scowResource?.enabled) {
-
-          const results =
-            await Promise.allSettled(Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
-              await server.ext.clusters.callOnOne(
-                clusterId,
-                logger,
-                async (client) => {
-                  await asyncClientCall(client.account, "createAccount", {
-                    accountName, ownerUserId: ownerId,
-                  }).catch((e) => {
-                    if (e.code === Status.ALREADY_EXISTS) {
-                      logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
-                    } else {
-                      throw e;
-                    }
-                  });
-                },
-              );
+          const results = await Promise.allSettled(
+            Object.entries(currentActivatedClusters).map(async ([clusterId, _]) => {
+              await server.ext.clusters.callOnOne(clusterId, logger, async (client) => {
+                await asyncClientCall(client.account, "createAccount", {
+                  accountName,
+                  ownerUserId: ownerId,
+                }).catch((e) => {
+                  if (e.code === Status.ALREADY_EXISTS) {
+                    logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
+                  } else {
+                    throw e;
+                  }
+                });
+              });
 
               await unblockAccountAssignedPartitionsInCluster(
                 account.accountName,
@@ -510,8 +524,8 @@ export const accountServiceServer = plugin((server) => {
                 logger,
                 server.ext.resource,
               );
-
-            }));
+            }),
+          );
 
           const errors = results.reduce((acc: { clusterId: string; reason: any }[], result, index) => {
             if (result.status === "rejected") {
@@ -521,9 +535,11 @@ export const accountServiceServer = plugin((server) => {
           }, []);
 
           if (errors.length > 0) {
-            const errorDetails = errors.map((error) => {
-              return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
-            }).join("; ");
+            const errorDetails = errors
+              .map((error) => {
+                return `Cluster: ${error?.clusterId}, Reason: ${error?.reason.details || error?.reason}`;
+              })
+              .join("; ");
 
             logger.error("Failed to unblock account %s in some clusters: %s", accountName, errorDetails);
 
@@ -535,17 +551,15 @@ export const accountServiceServer = plugin((server) => {
             });
             // 回滚 mis 数据库中数据
             await rollback(error);
-
           }
 
           // 条件2：如果没有配置资源管理服务，则调用适配器的 unblockAccount接口进行解封
         } else {
-          await server.ext.clusters.callOnAll(
-            currentActivatedClusters,
-            logger,
-            async (client) => {
+          await server.ext.clusters
+            .callOnAll(currentActivatedClusters, logger, async (client) => {
               await asyncClientCall(client.account, "createAccount", {
-                accountName, ownerUserId: ownerId,
+                accountName,
+                ownerUserId: ownerId,
               }).catch((e) => {
                 if (e.code === Status.ALREADY_EXISTS) {
                   logger.info("Account %s already exists in cluster, proceed to the next step", accountName);
@@ -558,17 +572,18 @@ export const accountServiceServer = plugin((server) => {
               }).catch((e) => {
                 if (e.code === Status.NOT_FOUND) {
                   throw {
-                    code: Status.INTERNAL, message: `Account ${accountName} hasn't been created. Unblock failed`,
+                    code: Status.INTERNAL,
+                    message: `Account ${accountName} hasn't been created. Unblock failed`,
                   } as ServiceError;
                 } else {
                   throw e;
                 }
               });
-            },
-          ).catch(async (e) => {
-            logger.error("Failed to create/unblock account %s in clusters: %s", accountName, e);
-            await rollback(e);
-          });
+            })
+            .catch(async (e) => {
+              logger.error("Failed to create/unblock account %s in clusters: %s", accountName, e);
+              await rollback(e);
+            });
         }
       }
 
@@ -584,41 +599,47 @@ export const accountServiceServer = plugin((server) => {
     },
 
     getWhitelistedAccounts: async ({ request, em }) => {
-
       const { tenantName } = request;
 
       // 查询所有相关信息
-      const results = await em.find(AccountWhitelist, {
-        $and: [
-          { account: { tenant: { name: tenantName } } },
-        ],
-      }, {
-        populate: ["account"],
-      });
+      const results = await em.find(
+        AccountWhitelist,
+        {
+          $and: [{ account: { tenant: { name: tenantName } } }],
+        },
+        {
+          populate: ["account"],
+        },
+      );
 
-      const owners = await em.find(UserAccount, {
-        account: { accountName: results.map((x) => x.account.$.accountName), tenant: { name: tenantName } },
-        role: EntityUserRole.OWNER,
-      }, { populate: ["user"] });
+      const owners = await em.find(
+        UserAccount,
+        {
+          account: { accountName: results.map((x) => x.account.$.accountName), tenant: { name: tenantName } },
+          role: EntityUserRole.OWNER,
+        },
+        { populate: ["user"] },
+      );
 
-      return [{
-        accounts: results.map((x) => {
-
-          const accountOwner = owners.find((o) => o.account.id === x.account.id)?.user.$;
-          return {
-            accountName: x.account.$.accountName,
-            comment: x.comment,
-            operatorId: x.operatorId,
-            addTime: x.time.toISOString(),
-            ownerId: (accountOwner?.userId ?? "-") + "",
-            ownerName: accountOwner?.name ?? "-",
-            balance: decimalToMoney(x.account.$.balance),
-            expirationTime: x.expirationTime?.toISOString().includes("2099") ? undefined
-              : x.expirationTime?.toISOString(),
-          };
-
-        }),
-      }];
+      return [
+        {
+          accounts: results.map((x) => {
+            const accountOwner = owners.find((o) => o.account.id === x.account.id)?.user.$;
+            return {
+              accountName: x.account.$.accountName,
+              comment: x.comment,
+              operatorId: x.operatorId,
+              addTime: x.time.toISOString(),
+              ownerId: (accountOwner?.userId ?? "-") + "",
+              ownerName: accountOwner?.name ?? "-",
+              balance: decimalToMoney(x.account.$.balance),
+              expirationTime: x.expirationTime?.toISOString().includes("2099")
+                ? undefined
+                : x.expirationTime?.toISOString(),
+            };
+          }),
+        },
+      ];
     },
 
     whitelistAccount: async ({ request, em, logger }) => {
@@ -628,13 +649,17 @@ export const accountServiceServer = plugin((server) => {
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "whitelist account task");
 
-      const account = await em.findOne(Account, { accountName, tenant: { name: tenantName } },
-        { populate: ["tenant"] });
+      const account = await em.findOne(
+        Account,
+        { accountName, tenant: { name: tenantName } },
+        { populate: ["tenant"] },
+      );
 
       if (!account) {
         logger.warn("Account %s not found during whitelistAccount", accountName);
         throw {
-          code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+          code: Status.NOT_FOUND,
+          message: `Account ${accountName} is not found`,
         } as ServiceError;
       }
 
@@ -657,7 +682,8 @@ export const accountServiceServer = plugin((server) => {
 
       // 如果移入白名单之前账户状态为冻结，则冻结状态优先级高于白名单，账户在集群中仍为封锁状态，state值不变
       if (account.state === AccountState.FROZEN) {
-        logger.info("Add account %s to whitelist by %s with comment %s, but the account is still frozen",
+        logger.info(
+          "Add account %s to whitelist by %s with comment %s, but the account is still frozen",
           accountName,
           operatorId,
           comment,
@@ -667,31 +693,27 @@ export const accountServiceServer = plugin((server) => {
         if (account.state !== AccountState.NORMAL) {
           // 发送账户解封消息
           const ownerAndAdmin = await getAccountOwnerAndAdmin(accountName, logger, em);
-          await sendMessage({
-            messageType: InternalMessageType.AccountUnblocked,
-            targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-            metadata: {
-              time: (new Date()).toISOString(),
-              accountName: accountName,
+          await sendMessage(
+            {
+              messageType: InternalMessageType.AccountUnblocked,
+              targetType: TargetType.USER,
+              targetIds: ownerAndAdmin.map((x) => x.userId),
+              metadata: {
+                time: new Date().toISOString(),
+                accountName: accountName,
+              },
             },
-          }, logger);
+            logger,
+          );
         }
         account.state = AccountState.NORMAL;
         const currentActivatedClusters = await getActivatedClusters(em, logger);
-        await unblockAccount(account,
-          currentActivatedClusters,
-          server.ext.clusters, logger,
-          server.ext.resource,
-        );
+        await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
       }
 
       await em.persistAndFlush(whitelist);
 
-      logger.info("Add account %s to whitelist by %s with comment %s",
-        accountName,
-        operatorId,
-        comment,
-      );
+      logger.info("Add account %s to whitelist by %s with comment %s", accountName, operatorId, comment);
 
       return [{ executed: true }];
     },
@@ -703,17 +725,22 @@ export const accountServiceServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "dewhitelist account task");
 
       const result = await em.transactional(async (em) => {
-        const account = await em.findOne(Account, {
-          accountName,
-          tenant: { name: tenantName },
-        }, {
-          populate: ["tenant"],
-          lockMode: LockMode.PESSIMISTIC_WRITE,
-        });
+        const account = await em.findOne(
+          Account,
+          {
+            accountName,
+            tenant: { name: tenantName },
+          },
+          {
+            populate: ["tenant"],
+            lockMode: LockMode.PESSIMISTIC_WRITE,
+          },
+        );
 
         if (!account) {
           throw {
-            code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+            code: Status.NOT_FOUND,
+            message: `Account ${accountName} is not found`,
           } as ServiceError;
         }
 
@@ -726,12 +753,9 @@ export const accountServiceServer = plugin((server) => {
         em.remove(account.whitelist);
         account.whitelist = undefined;
 
-        logger.info("Remove account %s from whitelist",
-          accountName,
-        );
+        logger.info("Remove account %s from whitelist", accountName);
 
-        const blockThresholdAmount =
-          account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
+        const blockThresholdAmount = account.blockThresholdAmount ?? account.tenant.$.defaultAccountBlockThreshold;
 
         // 判断移出白名单后是否应在集群中封锁
         const shouldBlockInCluster = getAccountStateInfo(
@@ -754,19 +778,23 @@ export const accountServiceServer = plugin((server) => {
     },
 
     setBlockThreshold: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "set account block threshold task");
 
       const { accountName, blockThresholdAmount } = request;
 
-      const account = await em.findOne(Account, { accountName }, {
-        populate: ["tenant"],
-      });
+      const account = await em.findOne(
+        Account,
+        { accountName },
+        {
+          populate: ["tenant"],
+        },
+      );
 
       if (!account) {
         throw {
-          code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+          code: Status.NOT_FOUND,
+          message: `Account ${accountName} is not found`,
         } as ServiceError;
       }
 
@@ -778,20 +806,27 @@ export const accountServiceServer = plugin((server) => {
 
       const ownerAndAdmin = await getAccountOwnerAndAdmin(account.accountName, logger, em);
       if (account.balance.lt(account.blockThresholdAmount ?? 0)) {
-        await sendMessage({
-          messageType: InternalMessageType.AccountOverdue,
-          targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-          metadata: {
-            time: (new Date()).toISOString(),
-            accountName: account.accountName,
-            amount: account.balance.minus(account.blockThresholdAmount ?? 0).abs().toString(),
+        await sendMessage(
+          {
+            messageType: InternalMessageType.AccountOverdue,
+            targetType: TargetType.USER,
+            targetIds: ownerAndAdmin.map((x) => x.userId),
+            metadata: {
+              time: new Date().toISOString(),
+              accountName: account.accountName,
+              amount: account.balance
+                .minus(account.blockThresholdAmount ?? 0)
+                .abs()
+                .toString(),
+            },
           },
-        }, logger);
+          logger,
+        );
       }
 
-      const currentBlockThreshold = blockThresholdAmount ?
-        new Decimal(moneyToNumber(blockThresholdAmount)) :
-        account.tenant.getProperty("defaultAccountBlockThreshold");
+      const currentBlockThreshold = blockThresholdAmount
+        ? new Decimal(moneyToNumber(blockThresholdAmount))
+        : account.tenant.getProperty("defaultAccountBlockThreshold");
 
       // 判断设置封锁阈值后是否应该在集群中封锁
       const shouldBlockInCluster = getAccountStateInfo(
@@ -809,22 +844,31 @@ export const accountServiceServer = plugin((server) => {
       }
 
       if (!shouldBlockInCluster) {
-        logger.info("The balance of Account %s is greater than the block threshold amount. "
-          + "Unblock the account.", account.accountName);
+        logger.info(
+          "The balance of Account %s is greater than the block threshold amount. " + "Unblock the account.",
+          account.accountName,
+        );
         await unblockAccount(account, currentActivatedClusters, server.ext.clusters, logger, server.ext.resource);
       }
 
       // 判断移除白名单后是否时欠费状态，如果是则发送账户欠费通知
       if (account.balance.lt(account.blockThresholdAmount ?? 0)) {
-        await sendMessage({
-          messageType: InternalMessageType.AccountOverdue,
-          targetType: TargetType.USER, targetIds: ownerAndAdmin.map((x) => x.userId),
-          metadata: {
-            time: (new Date()).toISOString(),
-            accountName: account.accountName,
-            amount: account.balance.minus(account.blockThresholdAmount ?? 0).abs().toString(),
+        await sendMessage(
+          {
+            messageType: InternalMessageType.AccountOverdue,
+            targetType: TargetType.USER,
+            targetIds: ownerAndAdmin.map((x) => x.userId),
+            metadata: {
+              time: new Date().toISOString(),
+              accountName: account.accountName,
+              amount: account.balance
+                .minus(account.blockThresholdAmount ?? 0)
+                .abs()
+                .toString(),
+            },
           },
-        }, logger);
+          logger,
+        );
       }
 
       await em.persistAndFlush(account);
@@ -833,7 +877,6 @@ export const accountServiceServer = plugin((server) => {
     },
 
     deleteAccount: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在进行的同步账户用户操作
       await ensureNoRunningSyncTask(em, logger, "delete account task");
 
@@ -845,14 +888,19 @@ export const accountServiceServer = plugin((server) => {
         throw { code: Status.NOT_FOUND, message: `Tenant ${tenantName} is not found.` } as ServiceError;
       }
 
-      const account = await em.findOne(Account, {
-        accountName,
-        tenant: { name: tenantName }
-      }, { populate: ["tenant", "users", "users.user"] });
+      const account = await em.findOne(
+        Account,
+        {
+          accountName,
+          tenant: { name: tenantName },
+        },
+        { populate: ["tenant", "users", "users.user"] },
+      );
 
       if (!account) {
         throw {
-          code: Status.NOT_FOUND, message: `Account ${accountName} is not found`,
+          code: Status.NOT_FOUND,
+          message: `Account ${accountName} is not found`,
         } as ServiceError;
       }
 
@@ -861,19 +909,15 @@ export const accountServiceServer = plugin((server) => {
       const userAccounts = account.users.getItems();
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       // 查询账户是否有RUNNING、PENDING的作业与交互式应用，有则抛出异常
-      const runningJobs = await server.ext.clusters.callOnAll(
-        currentActivatedClusters,
-        logger,
-        async (client) => {
-          const fields = ["job_id", "user", "state", "account"];
+      const runningJobs = await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
+        const fields = ["job_id", "user", "state", "account"];
 
-          return await asyncClientCall(client.job, "getJobs", {
-            fields,
-            jobTypes: [],
-            filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
-          });
-        },
-      );
+        return await asyncClientCall(client.job, "getJobs", {
+          fields,
+          jobTypes: [],
+          filter: { users: [], accounts: [accountName], states: ["RUNNING", "PENDING"] },
+        });
+      });
 
       const runningJobsObj = {
         accountName,
@@ -899,17 +943,20 @@ export const accountServiceServer = plugin((server) => {
           continue;
         }
         await em.removeAndFlush(userAccount);
-        await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-          return await asyncClientCall(client.user, "removeUserFromAccount",
-            { userId, accountName });
-        }).catch(async (e) => {
-          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
-          // 除此以外，都抛出异常
-          if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-            !== Object.keys(currentActivatedClusters).length) {
-            throw e;
-          }
-        });
+        await server.ext.clusters
+          .callOnAll(currentActivatedClusters, logger, async (client) => {
+            return await asyncClientCall(client.user, "removeUserFromAccount", { userId, accountName });
+          })
+          .catch(async (e) => {
+            // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已将此用户移出账户，可以在scow数据库及认证系统中删除该条关系，
+            // 除此以外，都抛出异常
+            if (
+              countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !==
+              Object.keys(currentActivatedClusters).length
+            ) {
+              throw e;
+            }
+          });
         if (hasCapabilities) {
           await removeUserFromAccount(authUrl, { accountName, userId }, logger);
         }
@@ -929,18 +976,20 @@ export const accountServiceServer = plugin((server) => {
 
       await callHook("accountDeleted", { accountName, comment, ownerId, tenantName }, logger);
 
-      await server.ext.clusters.callOnAll(currentActivatedClusters, logger, async (client) => {
-        return await asyncClientCall(client.account, "deleteAccount",
-          { accountName });
-      }).catch(async (e) => {
-        // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出账户
-        // 除此以外，都抛出异常
-        if (countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND")
-          !== Object.keys(currentActivatedClusters).length) {
-          logger.error(e, "deleteAccount Error occurred.");
-          throw e;
-        }
-      });
+      await server.ext.clusters
+        .callOnAll(currentActivatedClusters, logger, async (client) => {
+          return await asyncClientCall(client.account, "deleteAccount", { accountName });
+        })
+        .catch(async (e) => {
+          // 如果每个适配器返回的Error都是NOT_FOUND，说明所有集群均已移出账户
+          // 除此以外，都抛出异常
+          if (
+            countSubstringOccurrences(e.details, "Error: 5 NOT_FOUND") !== Object.keys(currentActivatedClusters).length
+          ) {
+            logger.error(e, "deleteAccount Error occurred.");
+            throw e;
+          }
+        });
 
       return [{}];
     },
@@ -948,11 +997,15 @@ export const accountServiceServer = plugin((server) => {
     // 检查账户是否欠费
     isAccountBelowBlockThreshold: async ({ request, em }) => {
       const { accountName } = request;
-      const account = await em.findOne(Account, {
-        accountName,
-      }, {
-        populate: ["tenant"],
-      });
+      const account = await em.findOne(
+        Account,
+        {
+          accountName,
+        },
+        {
+          populate: ["tenant"],
+        },
+      );
 
       if (!account) {
         throw {
@@ -961,10 +1014,14 @@ export const accountServiceServer = plugin((server) => {
         } as ServiceError;
       }
 
-      const thresholdAmount = account.blockThresholdAmount ??
-        account.tenant.getProperty("defaultAccountBlockThreshold");
-      const state = getAccountStateInfo(account.whitelist?.id, account.state, account.balance, thresholdAmount)
-        .displayedState;
+      const thresholdAmount =
+        account.blockThresholdAmount ?? account.tenant.getProperty("defaultAccountBlockThreshold");
+      const state = getAccountStateInfo(
+        account.whitelist?.id,
+        account.state,
+        account.balance,
+        thresholdAmount,
+      ).displayedState;
 
       if (state === Account_DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD) {
         return [{ isBelowBlockThreshold: true }];
@@ -973,5 +1030,4 @@ export const accountServiceServer = plugin((server) => {
       }
     },
   });
-
 });

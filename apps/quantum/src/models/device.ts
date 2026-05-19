@@ -60,8 +60,7 @@ export const ErrSchema = z.object({
 
 export type BaseDeviceErr = z.infer<typeof ErrSchema>;
 
-export const DeviceStateStringSchema =
- z.union([z.literal("on"), z.literal("off"), z.literal("maintenance")]);
+export const DeviceStateStringSchema = z.union([z.literal("on"), z.literal("off"), z.literal("maintenance")]);
 
 export type DeviceStateString = z.infer<typeof DeviceStateStringSchema>;
 
@@ -91,18 +90,19 @@ export const DeviceLinkSchema = z.object({
 export const DeviceBitSchema = z.record(z.string(), z.any());
 
 export const FindDeviceOutputSchema = z.object({
-  devices: z.array(BaseDeviceSchema.extend({
-    langs: z.array(z.string()).optional(),
-    memo: z.string().optional(),
-    usage: z.string().optional(),
-  })),
+  devices: z.array(
+    BaseDeviceSchema.extend({
+      langs: z.array(z.string()).optional(),
+      memo: z.string().optional(),
+      usage: z.string().optional(),
+    }),
+  ),
 });
 
 export const DevicesMapSchema = BaseDeviceSchema.extend({
   gateFidelity: z.string().optional(),
   status: z.nativeEnum(DisplayedDeviceState).optional(),
 });
-
 
 export type DevicesMap = z.infer<typeof DevicesMapSchema>;
 
@@ -271,8 +271,4 @@ export interface CZGateData {
 
 export type LayoutMap = Record<number, { x: number; y: number }>;
 
-export const visualizationChipsArr = [
-  "t40",
-  "t12",
-  "t57",
-];
+export const visualizationChipsArr = ["t40", "t12", "t57"];

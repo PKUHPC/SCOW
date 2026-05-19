@@ -50,7 +50,6 @@ export class QuantumJob {
     this.qits = init.qits;
     this.amount = init.amount;
   }
-
 }
 
 export const quantumJobSchema = new EntitySchema<QuantumJob>({
@@ -69,4 +68,3 @@ export const quantumJobSchema = new EntitySchema<QuantumJob>({
     amount: { type: DecimalType, index: true, nullable: true },
   },
 });
-

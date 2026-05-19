@@ -13,7 +13,6 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
-
 export const UpdateDefaultAppSchema = typeboxRouteSchema({
   method: "PUT",
 
@@ -24,14 +23,12 @@ export const UpdateDefaultAppSchema = typeboxRouteSchema({
     updateAction: Type.Enum(UpdateDefaultAppAction),
   }),
 
-
   responses: {
     200: Type.Object({
       executed: Type.Boolean(),
       reason: Type.Optional(Type.String()),
     }),
   },
-
 });
 
 export default route(UpdateDefaultAppSchema, async (req, res) => {
@@ -42,15 +39,18 @@ export default route(UpdateDefaultAppSchema, async (req, res) => {
   });
 
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
-    operationTypeName: updateAction === UpdateDefaultAppAction.ADD_TO_DEFAULT_APPS
-      ? OperationType.addToDefaultApps
-      : OperationType.removeFromDefaultApps,
-    operationTypePayload:{
+    operationTypeName:
+      updateAction === UpdateDefaultAppAction.ADD_TO_DEFAULT_APPS
+        ? OperationType.addToDefaultApps
+        : OperationType.removeFromDefaultApps,
+    operationTypePayload: {
       clusterId,
       appName,
       tenantName: info.tenant,
@@ -70,11 +70,14 @@ export default route(UpdateDefaultAppSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
-      [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
-      [Status.ALREADY_EXISTS]: (e) => ({ 200: { executed: false, reason: e.message } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.FAILED_PRECONDITION]: (e) => ({ 200: { executed: false, reason: e.message } }),
+          [Status.ALREADY_EXISTS]: (e) => ({ 200: { executed: false, reason: e.message } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

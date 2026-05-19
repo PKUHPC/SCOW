@@ -1,23 +1,23 @@
 {
   "name": "@scow/test-adapter",
   "version": "1.1.20",
-  "description": "",
   "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
+  "files": [
+    "scripts",
+    "build",
+    "!**/*.map"
+  ],
   "main": "build/index.js",
   "scripts": {
     "dev": "node -r ts-node/register -r tsconfig-paths/register --watch src/index.ts",
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "serve": "node build/index.js"
   },
-  "files": [
-    "scripts",
-    "build",
-    "!**/*.map"
-  ],
-  "keywords": [],
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow",
   "dependencies": {
     "@ddadaal/tsgrpc-common": "0.2.7",
     "@ddadaal/tsgrpc-server": "0.19.6",

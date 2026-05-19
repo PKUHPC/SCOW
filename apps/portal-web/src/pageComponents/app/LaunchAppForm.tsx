@@ -1,5 +1,12 @@
-import { BorderlessCard, HeaderRow, HeaderTitle, PaddedCard }
-  from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
+import type { ReactNode } from "react";
+
+import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
+import {
+  BorderlessCard,
+  HeaderRow,
+  HeaderTitle,
+  PaddedCard,
+} from "@scow/lib-web/build/components/styledAntdCom/DualTitleCard";
 import { FormLabel } from "@scow/lib-web/build/components/styledAntdCom/Form";
 import { RoundedInput } from "@scow/lib-web/build/components/styledAntdCom/Input";
 import { SectionTitle } from "@scow/lib-web/build/components/styledAntdCom/TitledSectionCard";
@@ -9,7 +16,6 @@ import { App, Avatar, Button, Divider, Form, Typography } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import { join } from "path";
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAsync } from "react-async";
 import { useStore } from "simstate";
@@ -17,8 +23,12 @@ import { api } from "src/apis";
 import { PageTitle } from "src/components/PageTitle";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { ReservedAppAttributeName } from "src/models/job";
-import { CommandSelectReservedConfig, FixedValueConfig, ReservedAppAttribute,
-  SelectConfig } from "src/pages/api/app/getAppMetadata";
+import {
+  CommandSelectReservedConfig,
+  FixedValueConfig,
+  ReservedAppAttribute,
+  SelectConfig,
+} from "src/pages/api/app/getAppMetadata";
 import { Partition } from "src/pages/api/cluster";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { UserStore } from "src/stores/UserStore";
@@ -26,17 +36,22 @@ import { publicConfig } from "src/utils/config";
 import { formatSize } from "src/utils/format";
 import { styled } from "styled-components";
 
-import { FixedFooter, FooterActions, FooterStats, FooterStatValue } from "@scow/lib-web/build/components/job/Footer";
 import { AppConfigSection } from "./CreateAppCom/AppConfigSection";
-import { AppResourceFormValues,FixedOrEditableFormItem,
-  getSelectAttributeInitalValue } from "./CreateAppCom/FixedOrEditableFormItem";
+import {
+  AppResourceFormValues,
+  FixedOrEditableFormItem,
+  getSelectAttributeInitalValue,
+} from "./CreateAppCom/FixedOrEditableFormItem";
 import { ResourceConfigSection } from "./CreateAppCom/ResourceConfigSection";
 
-interface App { id: string; name: string; logoPath?: string; availableAccounts?: string[] };
+interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+  availableAccounts?: string[];
+}
 
-
-const Text = styled(Typography.Paragraph)`
-`;
+const Text = styled(Typography.Paragraph)``;
 
 const HeaderAvatar = styled(Avatar)`
   background-color: rgba(240, 240, 240, 1) !important;
@@ -79,7 +94,7 @@ export interface PartitionRow {
 }
 
 // 生成默认应用名称，命名规则为"集群Id-当前应用名-年月日-时分秒"
-const genAppJobName = (clusterId: string,appName: string): string => {
+const genAppJobName = (clusterId: string, appName: string): string => {
   return `${clusterId}-${appName}-${dayjs().format("YYYYMMDD-HHmmss")}`;
 };
 
@@ -88,9 +103,14 @@ const pCommon = prefix("common.");
 const pResource = prefix("pageComp.submitJobCom.ResourceConfigSection.");
 
 export const LaunchAppForm: React.FC<Props> = ({
-  appInfo, availableAccounts, allAvailableAccounts, accountAppClusterMap,
-  preSelectedCluster, setSelectedAppInfo, setSelectedCluster }) => {
-
+  appInfo,
+  availableAccounts,
+  allAvailableAccounts,
+  accountAppClusterMap,
+  preSelectedCluster,
+  setSelectedAppInfo,
+  setSelectedCluster,
+}) => {
   const { id: appId, name: appName, logoPath: appLogoPath } = appInfo || { id: "", name: "" };
   const { currentClusters } = useStore(ClusterInfoStore);
 
@@ -102,7 +122,6 @@ export const LaunchAppForm: React.FC<Props> = ({
   const isFullDisplayMode = useMemo(() => {
     return user?.isAdmin || publicConfig.DASHBOARD_USER_DISPLAY_MODE === "full";
   }, [user]);
-
 
   const [baseForm] = Form.useForm<FormFields>();
   const [resourceForm] = Form.useForm<AppResourceFormValues>();
@@ -128,8 +147,11 @@ export const LaunchAppForm: React.FC<Props> = ({
   const { data: appMetadataResult } = useAsync({
     promiseFn: useCallback(async () => {
       if (selectedCluster) {
-        const result = await api.getAppMetadata({ query: { appId, cluster: selectedCluster } })
-          .httpError(404, () => { message.error(t("pages.apps.create.error404")); })
+        const result = await api
+          .getAppMetadata({ query: { appId, cluster: selectedCluster } })
+          .httpError(404, () => {
+            message.error(t("pages.apps.create.error404"));
+          })
           .httpError(500, (e) => {
             if (e.code === "APP_CONFIG_ERROR") {
               message.error(e.error);
@@ -144,38 +166,47 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   // 只有当返回数据对应当前选中集群时才使用，避免切换集群期间使用旧集群的配置
   // 如果没有选择集群直接返回appMetadataResult
-  const appMetadata = (!selectedCluster || appMetadataResult?.cluster === selectedCluster) ? appMetadataResult : undefined;
+  const appMetadata =
+    !selectedCluster || appMetadataResult?.cluster === selectedCluster ? appMetadataResult : undefined;
 
-  const { appComment, appCustomFormAttributes: attributes = [],
-    reservedAppAttributes } = appMetadata ?? {};
+  const { appComment, appCustomFormAttributes: attributes = [], reservedAppAttributes } = appMetadata ?? {};
 
-  const appCommentI18nText = appComment ?
-    getI18nConfigCurrentText(appComment, languageId) : undefined;
+  const appCommentI18nText = appComment ? getI18nConfigCurrentText(appComment, languageId) : undefined;
 
   // 判断系统保留APP字段:账户及分区或qos 是否已配置为固定值字段
-  const fixedAccountName =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
-  const fixedPartitionName =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.PARTITION);
-  const fixedQosName =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.QOS);
+  const fixedAccountName = getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT);
+  const fixedPartitionName = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.PARTITION,
+  );
+  const fixedQosName = getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.QOS);
 
-  const fixedNodeCountValue =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.NODE_COUNT);
-  const fixedCoreCountValue =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.CORE_COUNT);
-  const fixedGpuCountValue =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.GPU_COUNT);
-  const fixedMaxTimeValue =
-    getInitialFixedValueByAttributeName(reservedAppAttributes, ReservedAppAttributeName.MAX_TIME);
+  const fixedNodeCountValue = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.NODE_COUNT,
+  );
+  const fixedCoreCountValue = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.CORE_COUNT,
+  );
+  const fixedGpuCountValue = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.GPU_COUNT,
+  );
+  const fixedMaxTimeValue = getInitialFixedValueByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.MAX_TIME,
+  );
 
   // 判断系统保留APP字段是否配置为了固定值选项
-  const fixedAccountList
-     = getFixedValueListByAttributeName(reservedAppAttributes, ReservedAppAttributeName.ACCOUNT)
-       .map((x) => x.toString());
-  const fixedPartitionList
-     = getFixedValueListByAttributeName(reservedAppAttributes, ReservedAppAttributeName.PARTITION)
-       .map((x) => x.toString());
+  const fixedAccountList = getFixedValueListByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.ACCOUNT,
+  ).map((x) => x.toString());
+  const fixedPartitionList = getFixedValueListByAttributeName(
+    reservedAppAttributes,
+    ReservedAppAttributeName.PARTITION,
+  ).map((x) => x.toString());
 
   const initialValues = {
     nodeCount: fixedNodeCountValue ? parseInt(fixedNodeCountValue, 10) : 1,
@@ -190,14 +221,20 @@ export const LaunchAppForm: React.FC<Props> = ({
       if (!currentClusters.length) {
         return {
           results: [] as {
-            clusterId: string; partitions: []
+            clusterId: string;
+            partitions: [];
           }[],
         };
       }
       const clusterIds = currentClusters.map((cluster) => cluster.id);
-      return await api.getAllSummaryClustersInfo({ query: {
-        clusterIds, isFullDisplayMode,
-      } }).httpError(500, () => ({ results: []}));
+      return await api
+        .getAllSummaryClustersInfo({
+          query: {
+            clusterIds,
+            isFullDisplayMode,
+          },
+        })
+        .httpError(500, () => ({ results: [] }));
     }, [currentClusters, isFullDisplayMode]),
   });
 
@@ -210,13 +247,13 @@ export const LaunchAppForm: React.FC<Props> = ({
             cluster: selectedCluster,
             accountName: selectedAccount,
           },
-        })
+        });
         return {
           cluster: selectedCluster,
           accountName: selectedAccount,
           partitions: result.partitions,
         };
-      };
+      }
       return {
         cluster: selectedCluster,
         accountName: selectedAccount,
@@ -229,15 +266,13 @@ export const LaunchAppForm: React.FC<Props> = ({
     if (!selectedCluster || !selectedAccount) {
       return [];
     }
-    const hasMatchedPartitionData = !availablePartitionsForAccountQuery.isLoading
-      && availablePartitionsForAccountQuery.data?.cluster === selectedCluster
-      && availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
-    const partitions = hasMatchedPartitionData
-      ? (availablePartitionsForAccountQuery.data?.partitions ?? [])
-      : [];
-    const summaryPartitions = summaryClusterInfoQuery.data?.results
-      ?.find((cluster) => cluster.clusterId === selectedCluster)
-      ?.partitions ?? [];
+    const hasMatchedPartitionData =
+      !availablePartitionsForAccountQuery.isLoading &&
+      availablePartitionsForAccountQuery.data?.cluster === selectedCluster &&
+      availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
+    const partitions = hasMatchedPartitionData ? (availablePartitionsForAccountQuery.data?.partitions ?? []) : [];
+    const summaryPartitions =
+      summaryClusterInfoQuery.data?.results?.find((cluster) => cluster.clusterId === selectedCluster)?.partitions ?? [];
 
     // usage 为 0~100 的百分比，统一换算为 0~1
     const normalizeUsageRatio = (usage: number | undefined) => {
@@ -271,19 +306,18 @@ export const LaunchAppForm: React.FC<Props> = ({
       const idleNodeCount = calculateIdleCount(nodeTotal, nodeUsageRatio);
       const idleCpuCount = calculateIdleCount(cpuTotal, cpuUsageRatio);
       const idleGpuCount = calculateIdleCount(gpuTotal, gpuUsageRatio);
-      const idleNodes = nodeTotal != null && idleNodeCount != null
-        ? `${idleNodeCount}/${nodeTotal}`
-        : "-";
-      const idleCpu = cpuTotal != null && idleCpuCount != null
-        ? `${idleCpuCount}/${cpuTotal}`
-        : "-";
-      const idleGpu = gpuTotal != null && idleGpuCount != null
-        ? `${idleGpuCount}/${gpuTotal}`
-        : "-";
+      const idleNodes = nodeTotal != null && idleNodeCount != null ? `${idleNodeCount}/${nodeTotal}` : "-";
+      const idleCpu = cpuTotal != null && idleCpuCount != null ? `${idleCpuCount}/${cpuTotal}` : "-";
+      const idleGpu = gpuTotal != null && idleGpuCount != null ? `${idleGpuCount}/${gpuTotal}` : "-";
       const kind: PartitionTabKey = partition.gpus && partition.gpus > 0 ? "gpu" : "cpu";
-      const disabled = kind === "gpu"
-        ? (idleGpuCount != null ? idleGpuCount <= 0 : false)
-        : (idleCpuCount != null ? idleCpuCount <= 0 : false);
+      const disabled =
+        kind === "gpu"
+          ? idleGpuCount != null
+            ? idleGpuCount <= 0
+            : false
+          : idleCpuCount != null
+            ? idleCpuCount <= 0
+            : false;
 
       return {
         key: partition.name ?? "-",
@@ -323,9 +357,9 @@ export const LaunchAppForm: React.FC<Props> = ({
       return result;
     }
 
-     if (partitionsInfo?.length > 0) {
-      const hasCpuPartition = partitionsInfo.some(p => p.kind === "cpu");
-      const hasGpuPartition = partitionsInfo.some(p => p.kind === "gpu");
+    if (partitionsInfo?.length > 0) {
+      const hasCpuPartition = partitionsInfo.some((p) => p.kind === "cpu");
+      const hasGpuPartition = partitionsInfo.some((p) => p.kind === "gpu");
 
       if (activePartitionTab === "cpu" && !hasCpuPartition && hasGpuPartition) {
         setActivePartitionTab("gpu");
@@ -353,9 +387,7 @@ export const LaunchAppForm: React.FC<Props> = ({
   const clusterOptions = useMemo(() => {
     // 使用复合 map 精确判断：该账户在该 app 下，在哪些集群可用
     const validClusters = new Set<string>(
-      selectedAccount && appInfo?.id
-        ? (accountAppClusterMap.get(`${selectedAccount}::${appInfo.id}`) ?? [])
-        : [],
+      selectedAccount && appInfo?.id ? (accountAppClusterMap.get(`${selectedAccount}::${appInfo.id}`) ?? []) : [],
     );
 
     return currentClusters.map((cluster) => ({
@@ -377,12 +409,11 @@ export const LaunchAppForm: React.FC<Props> = ({
     if (!selectedPartition) {
       return undefined;
     }
-    const hasMatchedPartitionData = !availablePartitionsForAccountQuery.isLoading
-      && availablePartitionsForAccountQuery.data?.cluster === selectedCluster
-      && availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
-    const partitions = hasMatchedPartitionData
-      ? (availablePartitionsForAccountQuery.data?.partitions ?? [])
-      : [];
+    const hasMatchedPartitionData =
+      !availablePartitionsForAccountQuery.isLoading &&
+      availablePartitionsForAccountQuery.data?.cluster === selectedCluster &&
+      availablePartitionsForAccountQuery.data?.accountName === selectedAccount;
+    const partitions = hasMatchedPartitionData ? (availablePartitionsForAccountQuery.data?.partitions ?? []) : [];
     return partitions.find((partition) => partition.name === selectedPartition);
   }, [
     availablePartitionsForAccountQuery.isLoading,
@@ -422,13 +453,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     }
     const cpuPerNode = coreCount ?? 0;
     return cpuPerNode ? `${nodes * cpuPerNode}` : "-";
-  }, [
-    activePartitionTab,
-    coreCount,
-    gpuCount,
-    nodeCount,
-    selectedPartitionInfo,
-  ]);
+  }, [activePartitionTab, coreCount, gpuCount, nodeCount, selectedPartitionInfo]);
 
   const totalMemoryMb = useMemo(() => {
     if (!selectedPartitionInfo || !nodeCount) {
@@ -446,13 +471,7 @@ export const LaunchAppForm: React.FC<Props> = ({
     const cpuPerNode = coreCount ?? 0;
     const memorySize = nodeCount * cpuPerNode * memPerCore;
     return memorySize > 0 ? memorySize : undefined;
-  }, [
-    activePartitionTab,
-    coreCount,
-    gpuCount,
-    nodeCount,
-    selectedPartitionInfo,
-  ]);
+  }, [activePartitionTab, coreCount, gpuCount, nodeCount, selectedPartitionInfo]);
 
   const totalMemory = totalMemoryMb !== undefined ? formatSize(totalMemoryMb, ["MB", "GB", "TB"]) : "-";
 
@@ -527,15 +546,14 @@ export const LaunchAppForm: React.FC<Props> = ({
     ]),
   });
 
-  const formattedHourlyPrice = jobOneHourPrice == null
-    ? "-"
-    : `${jobOneHourPrice.toFixed(2)}元`;
+  const formattedHourlyPrice = jobOneHourPrice == null ? "-" : `${jobOneHourPrice.toFixed(2)}元`;
 
-  const createErrorModal = (message: string) => modal.error({
-    title: t(p("errorMessage")),
-    okText: t("button.confirmButton"),
-    content: formatErrorMsg(message),
-  });
+  const createErrorModal = (message: string) =>
+    modal.error({
+      title: t(p("errorMessage")),
+      okText: t("button.confirmButton"),
+      content: formatErrorMsg(message),
+    });
 
   function formatErrorMsg(logText: string) {
     const detailsRegex = /Details\s*:\s*([\s\S]*)$/i;
@@ -561,21 +579,26 @@ export const LaunchAppForm: React.FC<Props> = ({
     });
 
     setIsSubmitting(true);
-    await api.createAppSession({ body: {
-      cluster: selectedCluster,
-      appId,
-      appName: appName || "",
-      appJobName: appJobName,
-      nodeCount: nodeCount,
-      coreCount: gpuCount ? gpuCount * Math.floor(selectedPartitionInfo!.cores / selectedPartitionInfo!.gpus) : coreCount,
-      gpuCount,
-      memoryMb: totalMemoryMb,
-      partition,
-      qos,
-      account,
-      maxTime: transformTime(maxTime),
-      customAttributes: customFormKeyValue,
-    } })
+    await api
+      .createAppSession({
+        body: {
+          cluster: selectedCluster,
+          appId,
+          appName: appName || "",
+          appJobName: appJobName,
+          nodeCount: nodeCount,
+          coreCount: gpuCount
+            ? gpuCount * Math.floor(selectedPartitionInfo!.cores / selectedPartitionInfo!.gpus)
+            : coreCount,
+          gpuCount,
+          memoryMb: totalMemoryMb,
+          partition,
+          qos,
+          account,
+          maxTime: transformTime(maxTime),
+          customAttributes: customFormKeyValue,
+        },
+      })
       .httpError(500, (e) => {
         if (e?.code === "SBATCH_FAILED") {
           createErrorModal(e.message);
@@ -589,8 +612,10 @@ export const LaunchAppForm: React.FC<Props> = ({
         if (e.code === "USER_ACCOUNT_NOT_AVAILABLE") {
           createErrorModal(t("pages.common.userAccountNotAvailableWhenSubmit", [user?.identityId, account]));
         } else if (e.code === "CLUSTER_PARTITION_NOT_AVAILABLE") {
-          const clusterName = getI18nConfigCurrentText(currentClusters.find((cluster) => cluster.id ==
-          selectedCluster)?.name ?? selectedCluster, languageId);
+          const clusterName = getI18nConfigCurrentText(
+            currentClusters.find((cluster) => cluster.id == selectedCluster)?.name ?? selectedCluster,
+            languageId,
+          );
           createErrorModal(t("pages.common.clusterPartitionNotAvailableForAccount", [account, clusterName, partition]));
         } else if (e.code === "APP_NOT_AVAILABLE") {
           createErrorModal(t("pages.common.appNotAvailableForAccount", [account, appId]));
@@ -612,7 +637,9 @@ export const LaunchAppForm: React.FC<Props> = ({
           message.error(t(pCommon("invalidParameter")));
         }
       })
-      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      })
       .then(() => {
         message.success(t(p("successMessage")));
         const searchParams = new URLSearchParams(window.location.search);
@@ -623,7 +650,8 @@ export const LaunchAppForm: React.FC<Props> = ({
         } else {
           router.push("/apps/sessions");
         }
-      }).finally(() => {
+      })
+      .finally(() => {
         setIsSubmitting(false);
       });
   };
@@ -652,7 +680,6 @@ export const LaunchAppForm: React.FC<Props> = ({
     if (!selectedQos || !qosOptions.includes(selectedQos)) {
       resourceForm.setFieldValue("qos", qosOptions[0]);
     }
-
   }, [qosOptions, resourceForm, selectedQos]);
 
   useEffect(() => {
@@ -673,11 +700,7 @@ export const LaunchAppForm: React.FC<Props> = ({
         resourceForm.setFieldValue("coreCount", 1);
       }
     }
-  }, [
-    activePartitionTab,
-    resourceForm,
-    selectedPartitionInfo,
-  ]);
+  }, [activePartitionTab, resourceForm, selectedPartitionInfo]);
 
   useEffect(() => {
     const maxTimeNotSet = maxTime === undefined || maxTime === null;
@@ -688,7 +711,7 @@ export const LaunchAppForm: React.FC<Props> = ({
 
   useEffect(() => {
     if (!accountOptions.length) return;
-    if(selectedAccount && fixedAccountList) return;
+    if (selectedAccount && fixedAccountList) return;
     const currentAccount = resourceForm.getFieldValue("account");
     if (currentAccount && accountOptions.includes(currentAccount)) return;
 
@@ -737,10 +760,10 @@ export const LaunchAppForm: React.FC<Props> = ({
       return;
     }
     const currentCluster = resourceForm.getFieldValue("cluster");
-    const clusterValid = currentCluster
-      && clusterOptions.some((option) => option.id === currentCluster && !option.disabled);
-    const preferredClusterValid = preSelectedCluster
-      && clusterOptions.some((option) => option.id === preSelectedCluster && !option.disabled);
+    const clusterValid =
+      currentCluster && clusterOptions.some((option) => option.id === currentCluster && !option.disabled);
+    const preferredClusterValid =
+      preSelectedCluster && clusterOptions.some((option) => option.id === preSelectedCluster && !option.disabled);
     if (!clusterValid) {
       const firstEnabledCluster = clusterOptions.find((option) => !option.disabled)?.id;
       resourceForm.setFieldValue("cluster", preferredClusterValid ? preSelectedCluster : firstEnabledCluster);
@@ -751,26 +774,15 @@ export const LaunchAppForm: React.FC<Props> = ({
     <>
       <PageContainer style={{ paddingBottom: "40px" }} direction="vertical" size={16}>
         <PaddedCard
-          title={(
+          title={
             <HeaderRow align="center" size={16}>
-              {appLogoPath ? (
-                <HeaderAvatar
-                  size={32}
-                  src={ join(publicConfig.PUBLIC_PATH, appLogoPath) }
-                />
-              ) : null}
-              <HeaderTitle>
-                {t(p("create")) + appName}
-              </HeaderTitle>
+              {appLogoPath ? <HeaderAvatar size={32} src={join(publicConfig.PUBLIC_PATH, appLogoPath)} /> : null}
+              <HeaderTitle>{t(p("create")) + appName}</HeaderTitle>
             </HeaderRow>
-          )}
+          }
         >
           <BorderlessCard title={<SectionTitle>{t(p("basicInfoSectionTitle"))}</SectionTitle>}>
-            <Form
-              form={baseForm}
-              colon={false}
-              requiredMark={false}
-            >
+            <Form form={baseForm} colon={false} requiredMark={false}>
               <FixedOrEditableFormItem
                 form={baseForm}
                 languageId={languageId}
@@ -778,11 +790,11 @@ export const LaunchAppForm: React.FC<Props> = ({
                 name="appJobName"
                 label={<FormLabel>{t(p("appJobName"))}</FormLabel>}
                 rules={[{ required: true, message: t(p("jobNameRequired")) }, { max: 50 }]}
-                reservedConfig={getReservedAppAttributeConfig(reservedAppAttributes,
-                  ReservedAppAttributeName.APP_JOB_NAME)}
-                children={(
-                  <RoundedInput />
+                reservedConfig={getReservedAppAttributeConfig(
+                  reservedAppAttributes,
+                  ReservedAppAttributeName.APP_JOB_NAME,
                 )}
+                children={<RoundedInput />}
                 currentPartitionIsWithGpu={!!selectedPartitionInfo?.gpus}
                 appId={appId}
                 clusterId={selectedCluster}
@@ -800,7 +812,9 @@ export const LaunchAppForm: React.FC<Props> = ({
           activePartitionTab={activePartitionTab}
           onActivePartitionTabChange={setActivePartitionTab}
           selectedPartitionKey={selectedPartition}
-          onPartitionSelect={(value) =>{ resourceForm.setFieldValue("partition", value) }}
+          onPartitionSelect={(value) => {
+            resourceForm.setFieldValue("partition", value);
+          }}
           qosOptions={qosOptions}
           inputsDisabled={inputsDisabled}
           maxTimeUnit={maxTimeUnitValue}
@@ -821,28 +835,34 @@ export const LaunchAppForm: React.FC<Props> = ({
           currentPartitionInfo={selectedPartitionInfo}
         />
 
-        {
-          appCommentI18nText && (
-            <div style={{ marginTop: "64px" }}>
-              <Divider />
-              <PageTitle titleText={t(p("appCommentTitle"))} />
-              <Text>
-                <div
-                  dangerouslySetInnerHTML={{ __html: appCommentI18nText }}
-                />
-              </Text>
-            </div>
-          )
-        }
+        {appCommentI18nText && (
+          <div style={{ marginTop: "64px" }}>
+            <Divider />
+            <PageTitle titleText={t(p("appCommentTitle"))} />
+            <Text>
+              <div dangerouslySetInnerHTML={{ __html: appCommentI18nText }} />
+            </Text>
+          </div>
+        )}
       </PageContainer>
 
       <FixedFooter>
         <FooterStats>
-          <span>{t(p("totalNodeCount"))} <FooterStatValue>{nodeCount ?? "-"}</FooterStatValue></span>
-          <span>{t(p("totalGpuCount"))} <FooterStatValue>{totalGpuCount}</FooterStatValue></span>
-          <span>{t(p("totalCoreCount"))} <FooterStatValue>{totalCpuCount}</FooterStatValue></span>
-          <span>{t(p("totalMemory"))} <FooterStatValue>{totalMemory}</FooterStatValue></span>
-          <span>{t(p("costPerHour"))} <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue></span>
+          <span>
+            {t(p("totalNodeCount"))} <FooterStatValue>{nodeCount ?? "-"}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("totalGpuCount"))} <FooterStatValue>{totalGpuCount}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("totalCoreCount"))} <FooterStatValue>{totalCpuCount}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("totalMemory"))} <FooterStatValue>{totalMemory}</FooterStatValue>
+          </span>
+          <span>
+            {t(p("costPerHour"))} <FooterStatValue $isPrimaryColor>{formattedHourlyPrice}</FooterStatValue>
+          </span>
           <a
             onClick={() => {
               window.open(join(publicConfig.MIS_URL ?? "/mis", "/user/partitions"), "_blank", "noopener,noreferrer");
@@ -881,7 +901,6 @@ const getInitialFixedValueByAttributeName = (
   reservedAppAttributes: ReservedAppAttribute[] | undefined,
   attributeName: ReservedAppAttributeName,
 ): string | undefined => {
-
   const attribute = reservedAppAttributes?.find((x) => x.name === attributeName);
 
   if (!attribute) {
@@ -892,10 +911,7 @@ const getInitialFixedValueByAttributeName = (
   if (attribute.reservedConfig.type === "fixedValue") {
     return attribute.reservedConfig.fixedValue.value.toString();
   } else if (attribute.reservedConfig.type === "select") {
-    const value = getSelectAttributeInitalValue(
-      attribute.reservedConfig.defaultValue,
-      attribute.reservedConfig.select,
-    );
+    const value = getSelectAttributeInitalValue(attribute.reservedConfig.defaultValue, attribute.reservedConfig.select);
     return value?.toString();
   }
 
@@ -907,7 +923,6 @@ const getFixedValueListByAttributeName = (
   reservedAppAttributes: ReservedAppAttribute[] | undefined,
   attributeName: ReservedAppAttributeName,
 ): (string | number)[] => {
-
   const attribute = reservedAppAttributes?.find((x) => x.name === attributeName);
 
   if (!attribute) {
@@ -916,7 +931,7 @@ const getFixedValueListByAttributeName = (
 
   // 根据配置类型返回初始值
   if (attribute.reservedConfig.type === "select") {
-    return attribute.reservedConfig.select.map((x) => (x.value));
+    return attribute.reservedConfig.select.map((x) => x.value);
   }
 
   return [];
@@ -926,5 +941,5 @@ export const getReservedAppAttributeConfig = (
   attributes: ReservedAppAttribute[] | undefined,
   attributeName: ReservedAppAttributeName,
 ): FixedValueConfig | SelectConfig | CommandSelectReservedConfig | undefined => {
-  return attributes?.find((x) => (x.name === attributeName))?.reservedConfig;
+  return attributes?.find((x) => x.name === attributeName)?.reservedConfig;
 };

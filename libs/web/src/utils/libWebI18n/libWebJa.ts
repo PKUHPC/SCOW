@@ -66,7 +66,8 @@ export default {
   addQuickEntry: "リンクを追加",
   cancel: "キャンセル",
   notExist: "存在しません",
-  clusterNotAvailable: "現在アクセス中のクラスタは利用できないか、利用可能なクラスタがありません。後で再試行するか、管理者に連絡してください。",
+  clusterNotAvailable:
+    "現在アクセス中のクラスタは利用できないか、利用可能なクラスタがありません。後で再試行するか、管理者に連絡してください。",
   alreadyExist: "リンクは既に存在します",
   cannotBeEmpty: "リンクは空にできません",
   exceedMaxSize: "ショートカットは最大10件まで追加できます",

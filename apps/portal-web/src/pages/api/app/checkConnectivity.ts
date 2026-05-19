@@ -11,14 +11,8 @@ export const CheckAppConnectivitySchema = typeboxRouteSchema({
     cluster: Type.String(),
     host: Type.String(),
     port: Type.Number(),
-    appType: Type.Union([
-      Type.Literal("web"),
-      Type.Literal("vnc"),
-    ]),
-    proxyType: Type.Optional(Type.Union([
-      Type.Literal("relative"),
-      Type.Literal("absolute"),
-    ])),
+    appType: Type.Union([Type.Literal("web"), Type.Literal("vnc")]),
+    proxyType: Type.Optional(Type.Union([Type.Literal("relative"), Type.Literal("absolute")])),
   }),
 
   responses: {
@@ -30,18 +24,17 @@ const auth = authenticate(() => true);
 
 const TIMEOUT_MS = 3000;
 
-export default /* #__PURE__*/route(CheckAppConnectivitySchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(CheckAppConnectivitySchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, host, port, proxyType, appType } = req.query;
 
   // ignore proxy gateway, check the url directly
-  const checkUrl = await isPortReachableThroughUrl(
-    req, TIMEOUT_MS, cluster, host, port, appType, proxyType);
+  const checkUrl = await isPortReachableThroughUrl(req, TIMEOUT_MS, cluster, host, port, appType, proxyType);
 
   return { 200: { ok: checkUrl } };
-
 });

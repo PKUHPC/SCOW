@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -35,7 +23,6 @@ let em: SqlEntityManager;
 let data: InitialData;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   em = server.ext.orm.em.fork();
@@ -50,41 +37,46 @@ afterEach(async () => {
   await server.close();
 });
 
-const mockOriginalJobData = (
-  ua: UserAccount,
-  tenantPrice: Decimal, accountPrice: Decimal, submitTime?: Date,
-) => new JobInfo({ cluster: "pkuhpc", ...{
-  events: [],
-  pods: [],
-  uniqueJobName: "",
-  "jobId": 5119061,
-  "account": ua.account.getProperty("accountName"),
-  user: ua.user.getProperty("userId"),
-  "partition": "C032M0128G",
-  "nodeList": "a5u15n01",
-  "name": "CoW",
-  "state": "COMPLETED",
-  "workingDirectory": "",
-  "submitTime": submitTime ? submitTime.toISOString() : "2020-04-23T22:23:00.000Z",
-  "startTime": submitTime ? submitTime.toISOString() : "2020-04-23T22:25:12.000Z",
-  "endTime": "2020-04-23T23:18:02.000Z",
-  "gpusAlloc": 0,
-  "cpusReq": 32,
-  "memReqMb": 124000,
-  "nodesReq": 1,
-  "cpusAlloc": 32,
-  "memAllocMb": 124000,
-  "nodesAlloc": 1,
-  "timeLimitMinutes": 7200,
-  "elapsedSeconds": 3170,
-  "timeWait": submitTime ? 0 : 132,
-  "qos": "normal",
-  "recordTime": new Date("2020-04-23T23:49:50.000Z"),
-  "gpusReq": 0,
-} }, data.tenant.name, {
-  tenant: { billingItemId: "", price: tenantPrice },
-  account: { billingItemId: "", price: accountPrice },
-});
+const mockOriginalJobData = (ua: UserAccount, tenantPrice: Decimal, accountPrice: Decimal, submitTime?: Date) =>
+  new JobInfo(
+    {
+      cluster: "pkuhpc",
+      ...{
+        events: [],
+        pods: [],
+        uniqueJobName: "",
+        jobId: 5119061,
+        account: ua.account.getProperty("accountName"),
+        user: ua.user.getProperty("userId"),
+        partition: "C032M0128G",
+        nodeList: "a5u15n01",
+        name: "CoW",
+        state: "COMPLETED",
+        workingDirectory: "",
+        submitTime: submitTime ? submitTime.toISOString() : "2020-04-23T22:23:00.000Z",
+        startTime: submitTime ? submitTime.toISOString() : "2020-04-23T22:25:12.000Z",
+        endTime: "2020-04-23T23:18:02.000Z",
+        gpusAlloc: 0,
+        cpusReq: 32,
+        memReqMb: 124000,
+        nodesReq: 1,
+        cpusAlloc: 32,
+        memAllocMb: 124000,
+        nodesAlloc: 1,
+        timeLimitMinutes: 7200,
+        elapsedSeconds: 3170,
+        timeWait: submitTime ? 0 : 132,
+        qos: "normal",
+        recordTime: new Date("2020-04-23T23:49:50.000Z"),
+        gpusReq: 0,
+      },
+    },
+    data.tenant.name,
+    {
+      tenant: { billingItemId: "", price: tenantPrice },
+      account: { billingItemId: "", price: accountPrice },
+    },
+  );
 
 function createClient() {
   return new JobServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -111,7 +103,7 @@ it("changes job prices", async () => {
   const client = createClient();
 
   await asyncClientCall(client, "changeJobPrice", {
-    filter: { tenantName: data.tenant.name, userId: data.userB.userId, clusters: [], biJobIndexs: [], jobIds: []},
+    filter: { tenantName: data.tenant.name, userId: data.userB.userId, clusters: [], biJobIndexs: [], jobIds: [] },
     ipAddress: "",
     operatorId: "123",
     reason: "test",
@@ -132,7 +124,7 @@ it("changes job prices", async () => {
   expect(jobs.map((x) => x.tenantPrice.toNumber())).toStrictEqual([1.7, 1.7, 4]);
   expect(jobs.map((x) => x.accountPrice.toNumber())).toStrictEqual([1.6, 1.6, 8]);
 
-  const records = await em.find(JobPriceChange, { });
+  const records = await em.find(JobPriceChange, {});
 
   expect(records).toHaveLength(1);
   const record = records[0];
@@ -149,17 +141,15 @@ it("changes job prices", async () => {
 });
 
 it("returns 50 jobs if pageSize is undefined or 0", async () => {
-
   const em = server.ext.orm.em.fork();
 
-  await em.persistAndFlush(range(1, 60).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
+  await em.persistAndFlush(range(1, 60).map((_) => mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
 
   const test = async (pageSize?: number) => {
     const client = createClient();
 
     const reply = await asyncClientCall(client, "getJobs", {
-      filter: { tenantName: data.tenant.name, clusters: [], biJobIndexs: [], jobIds: []},
+      filter: { tenantName: data.tenant.name, clusters: [], biJobIndexs: [], jobIds: [] },
       page: 1,
       pageSize,
     });
@@ -170,20 +160,16 @@ it("returns 50 jobs if pageSize is undefined or 0", async () => {
   };
 
   await Promise.all([test(0), test()]);
-
 });
 
 it("returns jobs starting from start_bi_job_index", async () => {
   const em = server.ext.orm.em.fork();
 
-  await em.persistAndFlush(range(1, 20).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
+  await em.persistAndFlush(range(1, 20).map((_) => mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
 
-  await em.persistAndFlush(range(20, 40).map((_) =>
-    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10))));
+  await em.persistAndFlush(range(20, 40).map((_) => mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10))));
 
-  await em.persistAndFlush(range(40, 60).map((_) =>
-    mockOriginalJobData(data.uaAB, new Decimal(20), new Decimal(10))));
+  await em.persistAndFlush(range(40, 60).map((_) => mockOriginalJobData(data.uaAB, new Decimal(20), new Decimal(10))));
 
   const client = createClient();
 
@@ -192,7 +178,8 @@ it("returns jobs starting from start_bi_job_index", async () => {
     pageSize: 100,
     filter: {
       clusters: [],
-      biJobIndexs: [], jobIds: [],
+      biJobIndexs: [],
+      jobIds: [],
       tenantName: data.tenant.name,
       startBiJobIndex: 10,
     },
@@ -200,14 +187,12 @@ it("returns jobs starting from start_bi_job_index", async () => {
 
   expect(reply.jobs).toSatisfyAll((x: JobInfo) => x.biJobIndex >= 10);
   expect(reply.jobs).toHaveLength(50);
-
 });
 
 it("returns 0 job if Account not exist or is not in scope of permissions", async () => {
   const em = server.ext.orm.em.fork();
 
-  await em.persistAndFlush(range(1, 20).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
+  await em.persistAndFlush(range(1, 20).map((_) => mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10))));
 
   const test = async (filter: JobFilter) => {
     const client = createClient();
@@ -221,11 +206,10 @@ it("returns 0 job if Account not exist or is not in scope of permissions", async
 
   await Promise.all([
     // 当用户id与账号无关时，查不到数据
-    test({ tenantName: "default2", clusters: [], biJobIndexs: [], jobIds: []}),
+    test({ tenantName: "default2", clusters: [], biJobIndexs: [], jobIds: [] }),
     // 当用户id与账号无关时，查不到数据
-    test({ tenantName: data.tenant.name, userId: "a", accountName: "hpcb", clusters: [], biJobIndexs: [], jobIds: []}),
+    test({ tenantName: data.tenant.name, userId: "a", accountName: "hpcb", clusters: [], biJobIndexs: [], jobIds: [] }),
   ]);
-
 });
 
 it("get Top Submit Job Users correctly", async () => {
@@ -234,11 +218,14 @@ it("get Top Submit Job Users correctly", async () => {
   const today = dayjs();
 
   const userAJobs = range(0, 20).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   const userBJobs = range(0, 30).map((_) =>
-    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   const userCJobs = range(0, 40).map((_) =>
-    mockOriginalJobData(data.uaCC, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaCC, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   await em.persistAndFlush([...userAJobs, ...userBJobs, ...userCJobs]);
 
   const client = createClient();
@@ -252,13 +239,9 @@ it("get Top Submit Job Users correctly", async () => {
     { userId: data.userB.userId, count: 30 },
     { userId: data.userA.userId, count: 20 },
   ]);
-
 });
 
-
-
 it("get new job count correctly in UTC+8 timezone", async () => {
-
   const today = dayjs();
 
   const yesterday = today.clone().subtract(1, "day");
@@ -267,15 +250,18 @@ it("get new job count correctly in UTC+8 timezone", async () => {
 
   const threeDaysBofre = today.clone().subtract(3, "day");
 
-
   const todayJobs = range(0, 20).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   const yesterdayJobs = range(0, 30).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), yesterday.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), yesterday.toDate()),
+  );
   const twoDaysBeforeJobs = range(0, 15).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), twoDaysBefore.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), twoDaysBefore.toDate()),
+  );
   const threeDaysBeforeJobs = range(0, 1).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), threeDaysBofre.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), threeDaysBofre.toDate()),
+  );
   await em.persistAndFlush([...todayJobs, ...yesterdayJobs, ...twoDaysBeforeJobs, ...threeDaysBeforeJobs]);
 
   const client = createClient();
@@ -307,10 +293,8 @@ it("get new job count correctly in UTC+8 timezone", async () => {
       date: dayjsToDateMessage(threeDaysBeforeInUtcPlus8),
       count: 1,
     },
-
   ]);
 });
-
 
 it("get Users With Most Job Submissions correctly", async () => {
   const em = server.ext.orm.em.fork();
@@ -318,11 +302,14 @@ it("get Users With Most Job Submissions correctly", async () => {
   const today = dayjs();
 
   const userAJobs = range(0, 20).map((_) =>
-    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaAA, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   const userBJobs = range(0, 30).map((_) =>
-    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaBB, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   const userCJobs = range(0, 40).map((_) =>
-    mockOriginalJobData(data.uaCC, new Decimal(20), new Decimal(10), today.toDate()));
+    mockOriginalJobData(data.uaCC, new Decimal(20), new Decimal(10), today.toDate()),
+  );
   await em.persistAndFlush([...userAJobs, ...userBJobs, ...userCJobs]);
 
   const client = createClient();
@@ -336,5 +323,4 @@ it("get Users With Most Job Submissions correctly", async () => {
     { userName: data.userB.name, userId: data.userB.userId, count: 30 },
     { userName: data.userA.name, userId: data.userA.userId, count: 20 },
   ]);
-
 });

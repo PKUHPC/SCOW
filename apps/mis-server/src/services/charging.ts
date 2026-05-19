@@ -6,7 +6,8 @@ import { checkTimeZone, convertToDateMessage } from "@scow/lib-server/build/date
 import { SortOrder } from "@scow/protos/build/common/sort_order";
 import {
   ChargeRecord as ChargeRecordProto,
-  ChargingServiceServer, ChargingServiceService
+  ChargingServiceServer,
+  ChargingServiceService,
 } from "@scow/protos/build/server/charging";
 import { charge, pay } from "src/bl/charging";
 import { getActivatedClusters } from "src/bl/clustersUtils";
@@ -33,24 +34,25 @@ import { ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 import { getUserIdsByUserIdOrName, getUserNameMap } from "src/utils/user";
 
 export const chargingServiceServer = plugin((server) => {
-
   server.addService<ChargingServiceServer>(ChargingServiceService, {
-
     getBalance: async ({ request, em }) => {
       const { tenantName, accountName } = request;
 
-      const entity = accountName === undefined
-        ? await em.findOne(Tenant, { name: tenantName })
-        : await em.findOne(Account, { tenant: { name: tenantName }, accountName });
+      const entity =
+        accountName === undefined
+          ? await em.findOne(Tenant, { name: tenantName })
+          : await em.findOne(Account, { tenant: { name: tenantName }, accountName });
 
       if (!entity) {
         if (accountName === undefined) {
           throw {
-            code: status.NOT_FOUND, message: `Tenant ${tenantName} is not found`,
+            code: status.NOT_FOUND,
+            message: `Tenant ${tenantName} is not found`,
           } as ServiceError;
         } else {
           throw {
-            code: status.NOT_FOUND, message: `Tenant ${tenantName} or account  ${accountName} is not found`,
+            code: status.NOT_FOUND,
+            message: `Tenant ${tenantName} or account  ${accountName} is not found`,
           } as ServiceError;
         }
       }
@@ -59,39 +61,48 @@ export const chargingServiceServer = plugin((server) => {
     },
 
     pay: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "pay task");
 
-      const {
-        accountName, tenantName, type, amount, comment, ipAddress, operatorId,
-      } = ensureNotUndefined(request, ["amount"]);
+      const { accountName, tenantName, type, amount, comment, ipAddress, operatorId } = ensureNotUndefined(request, [
+        "amount",
+      ]);
 
       const reply = await em.transactional(async (em) => {
-
-        const target = accountName !== undefined
-          ? await em.findOne(Account, { tenant: { name: tenantName }, accountName: accountName }, {
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-            populate: ["tenant"],
-          })
-          : await em.findOne(Tenant, { name: tenantName }, {
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-          });
+        const target =
+          accountName !== undefined
+            ? await em.findOne(
+                Account,
+                { tenant: { name: tenantName }, accountName: accountName },
+                {
+                  lockMode: LockMode.PESSIMISTIC_WRITE,
+                  populate: ["tenant"],
+                },
+              )
+            : await em.findOne(
+                Tenant,
+                { name: tenantName },
+                {
+                  lockMode: LockMode.PESSIMISTIC_WRITE,
+                },
+              );
 
         if (!target) {
           if (accountName === undefined) {
             throw {
-              code: status.NOT_FOUND, message: `Tenant  ${tenantName} is not found`,
+              code: status.NOT_FOUND,
+              message: `Tenant  ${tenantName} is not found`,
             } as ServiceError;
           } else {
             throw {
-              code: status.NOT_FOUND, message: `Account ${accountName} or tenant ${tenantName} is not found`,
+              code: status.NOT_FOUND,
+              message: `Account ${accountName} or tenant ${tenantName} is not found`,
             } as ServiceError;
           }
-
         }
 
-        if (accountName && target) { // 是账户
+        if (accountName && target) {
+          // 是账户
           const { state } = target as Account;
           if (state === AccountState.DELETED) {
             throw {
@@ -103,82 +114,112 @@ export const chargingServiceServer = plugin((server) => {
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-        return await pay({
-          amount: new Decimal(moneyToNumber(amount)),
-          comment,
-          target,
-          type,
-          ipAddress,
-          operatorId,
-        }, em, currentActivatedClusters, logger, server.ext, server.ext);
+        return await pay(
+          {
+            amount: new Decimal(moneyToNumber(amount)),
+            comment,
+            target,
+            type,
+            ipAddress,
+            operatorId,
+          },
+          em,
+          currentActivatedClusters,
+          logger,
+          server.ext,
+          server.ext,
+        );
       });
 
-      return [{
-        currentBalance: decimalToMoney(reply.currentBalance),
-        previousBalance: decimalToMoney(reply.previousBalance),
-      }];
+      return [
+        {
+          currentBalance: decimalToMoney(reply.currentBalance),
+          previousBalance: decimalToMoney(reply.previousBalance),
+        },
+      ];
     },
 
-
     charge: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "fee deduction task");
 
-      const { accountName, type, amount, comment, tenantName, userId, metadata }
-        = ensureNotUndefined(request, ["amount"]);
+      const { accountName, type, amount, comment, tenantName, userId, metadata } = ensureNotUndefined(request, [
+        "amount",
+      ]);
 
       const reply = await em.transactional(async (em) => {
-        const target = accountName !== undefined
-          ? await em.findOne(Account, { tenant: { name: tenantName }, accountName: accountName }, {
-            populate: ["tenant"],
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-          })
-          : await em.findOne(Tenant, { name: tenantName }, {
-            lockMode: LockMode.PESSIMISTIC_WRITE,
-          });
+        const target =
+          accountName !== undefined
+            ? await em.findOne(
+                Account,
+                { tenant: { name: tenantName }, accountName: accountName },
+                {
+                  populate: ["tenant"],
+                  lockMode: LockMode.PESSIMISTIC_WRITE,
+                },
+              )
+            : await em.findOne(
+                Tenant,
+                { name: tenantName },
+                {
+                  lockMode: LockMode.PESSIMISTIC_WRITE,
+                },
+              );
 
         if (!target) {
           if (accountName === undefined) {
             throw {
-              code: status.NOT_FOUND, message: `Tenant  ${tenantName} is not found`,
+              code: status.NOT_FOUND,
+              message: `Tenant  ${tenantName} is not found`,
             } as ServiceError;
           } else {
             throw {
-              code: status.NOT_FOUND, message: `Account  ${accountName} or tenant  ${tenantName} is not found`,
+              code: status.NOT_FOUND,
+              message: `Account  ${accountName} or tenant  ${tenantName} is not found`,
             } as ServiceError;
           }
         }
 
-        if (accountName && target) { // 是账户
+        if (accountName && target) {
+          // 是账户
           const { state } = target as Account;
           if (state === AccountState.DELETED) {
             throw {
-              code: status.NOT_FOUND, message: `Account  ${accountName} has been deleted`,
+              code: status.NOT_FOUND,
+              message: `Account  ${accountName} has been deleted`,
             } as ServiceError;
           }
         }
 
         const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-        return await charge({
-          amount: new Decimal(moneyToNumber(amount)),
-          comment,
-          target,
-          type,
-          userId,
-          metadata,
-        }, em, currentActivatedClusters, logger, server.ext);
+        return await charge(
+          {
+            amount: new Decimal(moneyToNumber(amount)),
+            comment,
+            target,
+            type,
+            userId,
+            metadata,
+          },
+          em,
+          currentActivatedClusters,
+          logger,
+          server.ext,
+        );
       });
 
-      return [{
-        currentBalance: decimalToMoney(reply.currentBalance),
-        previousBalance: decimalToMoney(reply.previousBalance),
-      }];
+      return [
+        {
+          currentBalance: decimalToMoney(reply.currentBalance),
+          previousBalance: decimalToMoney(reply.previousBalance),
+        },
+      ];
     },
 
     getAllPayTypes: async ({ em }) => {
-      const result: { type: string }[] = await em.createQueryBuilder(PayRecord, "c")
+      const result: { type: string }[] = await em
+        .createQueryBuilder(PayRecord, "c")
         .select("type", true)
         .execute("all");
 
@@ -345,10 +386,9 @@ export const chargingServiceServer = plugin((server) => {
      * @deprecated
      */
     getChargeRecords: async ({ request, em }) => {
-      const { startTime, endTime, type, target }
-        = ensureNotUndefined(request, ["startTime", "endTime"]);
+      const { startTime, endTime, type, target } = ensureNotUndefined(request, ["startTime", "endTime"]);
 
-      let searchParam: { tenantName?: string, accountName?: string | { $ne: null } } = {};
+      let searchParam: { tenantName?: string; accountName?: string | { $ne: null } } = {};
       switch (target?.$case) {
         // 当前租户的租户消费记录
         case "tenant":
@@ -388,25 +428,31 @@ export const chargingServiceServer = plugin((server) => {
         }
       }
 
-      const records = await em.find(ChargeRecord, {
-        time: { $gte: startTime, $lte: endTime },
-        ...searchType,
-        ...searchParam,
-      }, { orderBy: { time: QueryOrder.DESC } });
+      const records = await em.find(
+        ChargeRecord,
+        {
+          time: { $gte: startTime, $lte: endTime },
+          ...searchType,
+          ...searchParam,
+        },
+        { orderBy: { time: QueryOrder.DESC } },
+      );
 
-      return [{
-        results: records.map((x) => ({
-          tenantName: x.tenantName,
-          accountName: x.accountName,
-          amount: decimalToMoney(x.amount),
-          comment: x.comment,
-          index: x.id,
-          time: x.time.toISOString(),
-          type: x.type,
-          userId: x.userId,
-        })),
-        total: decimalToMoney(records.reduce((prev, curr) => prev.plus(curr.amount), new Decimal(0))),
-      }];
+      return [
+        {
+          results: records.map((x) => ({
+            tenantName: x.tenantName,
+            accountName: x.accountName,
+            amount: decimalToMoney(x.amount),
+            comment: x.comment,
+            index: x.id,
+            time: x.time.toISOString(),
+            type: x.type,
+            userId: x.userId,
+          })),
+          total: decimalToMoney(records.reduce((prev, curr) => prev.plus(curr.amount), new Decimal(0))),
+        },
+      ];
     },
 
     getTopChargeAccount: async ({ request, em }) => {
@@ -416,7 +462,7 @@ export const chargingServiceServer = plugin((server) => {
       const knex = em.getKnex();
 
       // 查询消费记录
-      const results: { account_name: string, user_name: string, chargedAmount: number }[] =
+      const results: { account_name: string; user_name: string; chargedAmount: number }[] =
         // 从pay_record表中查询
         await knex("charge_record as cr")
           // 选择account_name字段
@@ -447,7 +493,6 @@ export const chargingServiceServer = plugin((server) => {
     },
 
     getDailyCharge: async ({ request, em, logger }) => {
-
       const { startTime, endTime, timeZone = "UTC" } = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       checkTimeZone(timeZone);
@@ -455,10 +500,7 @@ export const chargingServiceServer = plugin((server) => {
       const qb = em.createQueryBuilder(ChargeRecord, "cr");
 
       void qb
-        .select([
-          raw("DATE(CONVERT_TZ(cr.time, 'UTC', ?)) as date", [timeZone]),
-          raw("SUM(cr.amount) as totalAmount"),
-        ])
+        .select([raw("DATE(CONVERT_TZ(cr.time, 'UTC', ?)) as date", [timeZone]), raw("SUM(cr.amount) as totalAmount")])
         .where({ time: { $gte: startTime } })
         .andWhere({ time: { $lte: endTime } })
         .andWhere({ accountName: { $ne: null } })
@@ -471,14 +513,16 @@ export const chargingServiceServer = plugin((server) => {
         queryExecutor: qb,
       });
 
-      const records: { date: string, totalAmount: number }[] = queryResult.result;
+      const records: { date: string; totalAmount: number }[] = queryResult.result;
 
-      return [{
-        results: records.map((record) => ({
-          date: convertToDateMessage(record.date, logger),
-          amount: numberToMoney(record.totalAmount),
-        })),
-      }];
+      return [
+        {
+          results: records.map((record) => ({
+            date: convertToDateMessage(record.date, logger),
+            amount: numberToMoney(record.totalAmount),
+          })),
+        },
+      ];
     },
 
     // 获取指定时间段内支付金额最高的账户信息
@@ -490,7 +534,7 @@ export const chargingServiceServer = plugin((server) => {
       const knex = em.getKnex();
 
       // 查询支付记录
-      const results: { account_name: string, user_name: string, totalAmount: number }[] =
+      const results: { account_name: string; user_name: string; totalAmount: number }[] =
         // 从pay_record表中查询
         await knex("pay_record as pr")
           // 选择account_name字段
@@ -526,7 +570,6 @@ export const chargingServiceServer = plugin((server) => {
     },
 
     getDailyPay: async ({ request, em, logger }) => {
-
       const { startTime, endTime, timeZone = "UTC" } = ensureNotUndefined(request, ["startTime", "endTime"]);
 
       checkTimeZone(timeZone);
@@ -534,10 +577,7 @@ export const chargingServiceServer = plugin((server) => {
       const qb = em.createQueryBuilder(PayRecord, "pr");
 
       void qb
-        .select([
-          raw("DATE(CONVERT_TZ(pr.time, 'UTC', ?)) as date", [timeZone]),
-          raw("SUM(pr.amount) as totalAmount"),
-        ])
+        .select([raw("DATE(CONVERT_TZ(pr.time, 'UTC', ?)) as date", [timeZone]), raw("SUM(pr.amount) as totalAmount")])
         .where({ time: { $gte: startTime } })
         .andWhere({ time: { $lte: endTime } })
         .andWhere({ accountName: { $ne: null } })
@@ -550,41 +590,44 @@ export const chargingServiceServer = plugin((server) => {
         queryExecutor: qb,
       });
 
-      const records: { date: string, totalAmount: number }[] = queryResult.result;
+      const records: { date: string; totalAmount: number }[] = queryResult.result;
 
-      return [{
-        results: records.map((record) => ({
-          date: convertToDateMessage(record.date, logger),
-          amount: numberToMoney(record.totalAmount),
-        })),
-      }];
+      return [
+        {
+          results: records.map((record) => ({
+            date: convertToDateMessage(record.date, logger),
+            amount: numberToMoney(record.totalAmount),
+          })),
+        },
+      ];
     },
 
     /**
-       *
-       * case tenant:返回这个租户（tenantName）的消费记录
-       * case allTenants: 返回所有租户消费记录
-       * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的消费记录
-       * case accountsOfTenant: 返回这个租户（tenantName）下多个账户的消费记录
-       * case accountsOfAllTenants: 返回所有租户下多个账户的消费记录
-       *
-       * @returns
-       */
+     *
+     * case tenant:返回这个租户（tenantName）的消费记录
+     * case allTenants: 返回所有租户消费记录
+     * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的消费记录
+     * case accountsOfTenant: 返回这个租户（tenantName）下多个账户的消费记录
+     * case accountsOfAllTenants: 返回所有租户下多个账户的消费记录
+     *
+     * @returns
+     */
     getPaginatedChargeRecords: async ({ request, em }) => {
-      const { startTime, endTime, type, types, target, page, pageSize, sortBy, sortOrder, userIdsOrNames }
-        = ensureNotUndefined(request, ["startTime", "endTime"]);
+      const { startTime, endTime, type, types, target, page, pageSize, sortBy, sortOrder, userIdsOrNames } =
+        ensureNotUndefined(request, ["startTime", "endTime"]);
 
       await ensureTargetAccountsBelongToTenant(em, target);
 
       const targetSearchParam = getChargesTargetSearchParam(target);
       const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
       const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
-      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
-        ? targetSearchParam.tenantName
-        : undefined;
+      const tenantNameForMatchedUsers =
+        typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
 
-      const qb = em.createQueryBuilder(ChargeRecord, "cr").select("*")
+      const qb = em
+        .createQueryBuilder(ChargeRecord, "cr")
+        .select("*")
         .where({
           time: { $gte: startTime, $lte: endTime },
           ...searchParam,
@@ -600,15 +643,14 @@ export const chargingServiceServer = plugin((server) => {
       }
 
       const records = await (async () => {
-
         // 如果存在userIdsOrNames字段，则用knex
         if (userIdsOrNames && userIdsOrNames.length > 0) {
-          const matchedUsersQuery = em.getKnex()("user as u")
+          const matchedUsersQuery = em
+            .getKnex()("user as u")
             .distinct("u.user_id")
             .where(function () {
               for (const idOrName of userIdsOrNames) {
-                void this.orWhere("u.user_id", "like", `%${idOrName}%`)
-                  .orWhere("u.name", "like", `%${idOrName}%`);
+                void this.orWhere("u.user_id", "like", `%${idOrName}%`).orWhere("u.name", "like", `%${idOrName}%`);
               }
             });
           if (tenantNameForMatchedUsers) {
@@ -634,50 +676,53 @@ export const chargingServiceServer = plugin((server) => {
         }
       })();
 
-      return [{
-        results: records.map((x) => {
-          return {
-            tenantName: x.tenantName ?? x.tenant_name,
-            accountName: x.accountName ?? x.account_name,
-            amount: decimalToMoney(new Decimal(x.amount)),
-            comment: x.comment,
-            index: x.id,
-            time: typeof x.time === "string" ? x.time : x.time?.toISOString(),
-            type: x.type,
-            userId: x.userId ?? x.user_id,
-            metadata: x.metadata as ChargeRecordProto["metadata"] ?? undefined,
-          };
-
-        }),
-      }];
+      return [
+        {
+          results: records.map((x) => {
+            return {
+              tenantName: x.tenantName ?? x.tenant_name,
+              accountName: x.accountName ?? x.account_name,
+              amount: decimalToMoney(new Decimal(x.amount)),
+              comment: x.comment,
+              index: x.id,
+              time: typeof x.time === "string" ? x.time : x.time?.toISOString(),
+              type: x.type,
+              userId: x.userId ?? x.user_id,
+              metadata: (x.metadata as ChargeRecordProto["metadata"]) ?? undefined,
+            };
+          }),
+        },
+      ];
     },
 
     /**
-   *
-   * case tenant:返回这个租户（tenantName）的消费记录
-   * case allTenants: 返回所有租户消费记录
-   * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的消费记录
-   * case accountsOfTenant: 返回这个租户（tenantName）下多个账户的消费记录
-   * case accountsOfAllTenants: 返回所有租户下多个账户的消费记录
-   *
-   * @returns
-   */
+     *
+     * case tenant:返回这个租户（tenantName）的消费记录
+     * case allTenants: 返回所有租户消费记录
+     * case accountOfTenant: 返回这个租户（tenantName）下这个账户（accountName）的消费记录
+     * case accountsOfTenant: 返回这个租户（tenantName）下多个账户的消费记录
+     * case accountsOfAllTenants: 返回所有租户下多个账户的消费记录
+     *
+     * @returns
+     */
     getChargeRecordsTotalCount: async ({ request, em }) => {
-      const { startTime, endTime, type, types, target, userIdsOrNames, preferCache }
-        = ensureNotUndefined(request, ["startTime", "endTime"]);
+      const { startTime, endTime, type, types, target, userIdsOrNames, preferCache } = ensureNotUndefined(request, [
+        "startTime",
+        "endTime",
+      ]);
 
       await ensureTargetAccountsBelongToTenant(em, target);
 
       const targetSearchParam = getChargesTargetSearchParam(target);
       const hasUserFilter = !!(userIdsOrNames && userIdsOrNames.length > 0);
       const searchParam = getChargesTargetSearchParamForQuery(targetSearchParam, hasUserFilter);
-      const tenantNameForMatchedUsers = typeof targetSearchParam.tenantName === "string"
-        ? targetSearchParam.tenantName
-        : undefined;
+      const tenantNameForMatchedUsers =
+        typeof targetSearchParam.tenantName === "string" ? targetSearchParam.tenantName : undefined;
       const searchType = types.length === 0 ? getChargesSearchType(type) : getChargesSearchTypes(types);
       let refreshTime = new Date();
 
-      const qb = em.createQueryBuilder(ChargeRecord, "c")
+      const qb = em
+        .createQueryBuilder(ChargeRecord, "c")
         .select([raw("count(c.id) as total_count"), raw("sum(c.amount) as total_amount")])
         .where({
           time: { $gte: startTime, $lte: endTime },
@@ -689,12 +734,12 @@ export const chargingServiceServer = plugin((server) => {
 
       // 如果存在userIdsOrNames字段，则用knex
       if (userIdsOrNames && userIdsOrNames.length > 0) {
-        const matchedUsersQuery = em.getKnex()("user as u")
+        const matchedUsersQuery = em
+          .getKnex()("user as u")
           .distinct("u.user_id")
           .where(function () {
             for (const idOrName of userIdsOrNames) {
-              void this.orWhere("u.user_id", "like", `%${idOrName}%`)
-                .orWhere("u.name", "like", `%${idOrName}%`);
+              void this.orWhere("u.user_id", "like", `%${idOrName}%`).orWhere("u.name", "like", `%${idOrName}%`);
             }
           });
         if (tenantNameForMatchedUsers) {
@@ -716,7 +761,6 @@ export const chargingServiceServer = plugin((server) => {
           result = await em.getConnection().execute(sql);
         }
       } else if (target?.$case === "accountsOfAllTenants" && preferCache) {
-
         const { result: queryResult, refreshTime: cacheTime } = await getChargeRecordsTotalCountCached(em);
 
         result = queryResult;
@@ -725,12 +769,13 @@ export const chargingServiceServer = plugin((server) => {
         result = await qb.execute("get");
       }
 
-      return [{
-        totalAmount: decimalToMoney(new Decimal(result.total_amount ?? result[0]?.total_amount ?? 0)),
-        totalCount: result.total_count ?? result[0].total_count,
-        refreshTime: refreshTime.toISOString(),
-      }];
+      return [
+        {
+          totalAmount: decimalToMoney(new Decimal(result.total_amount ?? result[0]?.total_amount ?? 0)),
+          totalCount: result.total_count ?? result[0].total_count,
+          refreshTime: refreshTime.toISOString(),
+        },
+      ];
     },
-
   });
 });

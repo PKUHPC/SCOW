@@ -40,49 +40,47 @@ const buildInterpolatedValues = (
   return values;
 };
 
-const interpolateValues = (
-  obj: Record<string, string>,
-  valueMap: Record<string, string>,
-): Record<string, string> => {
+const interpolateValues = (obj: Record<string, string>, valueMap: Record<string, string>): Record<string, string> => {
   return Object.entries(obj).reduce<Record<string, string>>((acc, [key, val]) => {
     acc[key] = parsePlaceholder(val, valueMap);
     return acc;
   }, {});
 };
 
-export const ConnectTopAppLink: React.FC<Props> = ({
-  session, cluster, refreshToken,
-}) => {
+export const ConnectTopAppLink: React.FC<Props> = ({ session, cluster, refreshToken }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.jobs.connectToAppLink.");
 
-  const { publicConfig: { BASE_PATH, NOVNC_CLIENT_URL } } = usePublicConfig();
+  const {
+    publicConfig: { BASE_PATH, NOVNC_CLIENT_URL },
+  } = usePublicConfig();
   const { message } = App.useApp();
 
-  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery({
-    clusterId: cluster, jobId: session.jobId, sessionId: session.sessionId,
-  }, {
-    enabled: !!session.jobId && session.state === "RUNNING",
-  });
-
-  const connectMutation = trpc.jobs.connectToApp.useMutation(
+  const { data, refetch } = trpc.jobs.checkAppConnectivity.useQuery(
     {
-      onError(e) {
-        message.error(`${t(p("connectFailed"))}: ${e.message}`);
-      },
+      clusterId: cluster,
+      jobId: session.jobId,
+      sessionId: session.sessionId,
+    },
+    {
+      enabled: !!session.jobId && session.state === "RUNNING",
     },
   );
+
+  const connectMutation = trpc.jobs.connectToApp.useMutation({
+    onError(e) {
+      message.error(`${t(p("connectFailed"))}: ${e.message}`);
+    },
+  });
 
   useEffect(() => {
     if (session.state === "RUNNING") refetch();
   }, [refreshToken, session.state]);
 
-
   const onClick = async () => {
-
     const reply = await connectMutation.mutateAsync({
       cluster,
-      sessionId:session.sessionId,
+      sessionId: session.sessionId,
     });
 
     if (reply.type === "web") {
@@ -128,13 +126,11 @@ export const ConnectTopAppLink: React.FC<Props> = ({
         form.submit();
         document.body.removeChild(form);
       }
-
     } else {
       const { host, port, password } = reply;
       openDesktop(BASE_PATH, NOVNC_CLIENT_URL, cluster, host, port, password);
       return;
     }
-
   };
 
   return (

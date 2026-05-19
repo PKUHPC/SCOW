@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Tooltip, Typography } from "antd";
 import NextLink from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -21,7 +9,7 @@ export const HeaderItem = styled.div`
     padding-right: 8px;
   }
   height: 36px;
- .ant-typography {
+  .ant-typography {
     color: #434343 !important;
     &:hover {
       color: #595959 !important;
@@ -66,7 +54,6 @@ interface JumpToAnotherLinkProps {
 }
 
 export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon, text, hideText, crossSystem }) => {
-
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   const linkRef = useRef<HTMLAnchorElement>(null);
@@ -87,47 +74,39 @@ export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ href, icon
   const content = () => {
     return (
       <>
-        {(hideText || isSmallScreen) ? (
+        {hideText || isSmallScreen ? (
           <Tooltip title={text}>
-            <IconContainer>
-              {icon}
-            </IconContainer>
+            <IconContainer>{icon}</IconContainer>
           </Tooltip>
         ) : (
           <>
-            <IconContainer>
-              {icon}
-            </IconContainer>
-            <TextSpan>
-              {text}
-            </TextSpan>
+            <IconContainer>{icon}</IconContainer>
+            <TextSpan>{text}</TextSpan>
           </>
-        )}</>
+        )}
+      </>
     );
   };
 
-  if (!href) { return (
-    <HeaderItem>
-      <TypographyLink onClick={(e) => e.preventDefault()}>
-        {content()}
-      </TypographyLink>
-    </HeaderItem>
-  ); }
+  if (!href) {
+    return (
+      <HeaderItem>
+        <TypographyLink onClick={(e) => e.preventDefault()}>{content()}</TypographyLink>
+      </HeaderItem>
+    );
+  }
 
   return (
     <HeaderItem>
-      {
-        crossSystem ? (
-          <TypographyLink href={href} ref={linkRef}>
-            {content()}
-          </TypographyLink>
-        ) : (
-          <Link href={href} ref={linkRef}>
-            {content()}
-          </Link>
-        )
-      }
+      {crossSystem ? (
+        <TypographyLink href={href} ref={linkRef}>
+          {content()}
+        </TypographyLink>
+      ) : (
+        <Link href={href} ref={linkRef}>
+          {content()}
+        </Link>
+      )}
     </HeaderItem>
-
   );
 };

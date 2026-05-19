@@ -25,9 +25,7 @@ export async function getAccountsAssignedClusters(
   accountNames: string[],
   tenantName: string,
   currentClusterIds: string[],
-):
-  Promise<string[]> {
-
+): Promise<string[]> {
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return ["hpc01"];
   }
@@ -39,7 +37,7 @@ export async function getAccountsAssignedClusters(
     clusterId: { $in: currentClusterIds },
   });
 
-  const clusterIds = results.map((item) => (item.clusterId));
+  const clusterIds = results.map((item) => item.clusterId);
   const uniqueClusterIds = clusterIds.reduce<string[]>((acc, id) => {
     if (!acc.includes(id)) {
       acc.push(id);
@@ -61,22 +59,20 @@ export async function getAccountAssignedPartitionsInCluster(
   tenantName: string,
   clusterId: string,
   currentClusterPartitions: Record<string, string[]>,
-):
-  Promise<string[]> {
-
+): Promise<string[]> {
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return ["compute1", "compute2"];
   }
 
   const em = await forkEntityManager();
-  const found = await em.find(AccountPartitionRule,
-    {
-      accountName,
-      tenantName,
-      clusterId,
-    });
+  const found = await em.find(AccountPartitionRule, {
+    accountName,
+    tenantName,
+    clusterId,
+  });
 
-  return found.filter((item) => currentClusterPartitions[clusterId]?.includes(item.partition))
+  return found
+    .filter((item) => currentClusterPartitions[clusterId]?.includes(item.partition))
     .map((item) => item.partition);
 }
 
@@ -87,16 +83,14 @@ export async function getAccountAssignedPartitionsInCluster(
  * @returns
  */
 export async function getAccountsAssignedPartitionsInCluster(
-  accountsWithTenants: { accountName: string, tenantName: string }[],
+  accountsWithTenants: { accountName: string; tenantName: string }[],
   clusterId: string,
   currentClusterPartitions: Record<string, string[]>,
-):
-  Promise<Record<string, PartitionNames>> {
-
+): Promise<Record<string, PartitionNames>> {
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return {
-      "accountA": { partitionNames: ["compute1", "compute2"]},
-      "accountB": { partitionNames: ["compute1", "compute2"]},
+      accountA: { partitionNames: ["compute1", "compute2"] },
+      accountB: { partitionNames: ["compute1", "compute2"] },
     };
   }
 
@@ -140,7 +134,6 @@ export async function getAccountsAssignedPartitionsInCluster(
   return result;
 }
 
-
 /**
  * 获取账户集群下的已授权分区
  * @param accountNames
@@ -148,16 +141,19 @@ export async function getAccountsAssignedPartitionsInCluster(
  * @returns
  */
 export async function getAccountsAssignedClusterPartitions(
-  accountNames: string[], tenantName: string, currentClusterPartitions: Record<string, string[]>):
-  Promise<AccountsAssignedClustersAndPartitions[]> {
-
+  accountNames: string[],
+  tenantName: string,
+  currentClusterPartitions: Record<string, string[]>,
+): Promise<AccountsAssignedClustersAndPartitions[]> {
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return accountNames.map((accountName) => ({
       account: accountName,
-      clusterPartitions: [{
-        cluster: "hpc01",
-        partitionName: ["compute1", "compute2"],
-      }],
+      clusterPartitions: [
+        {
+          cluster: "hpc01",
+          partitionName: ["compute1", "compute2"],
+        },
+      ],
     }));
   }
 
@@ -190,12 +186,12 @@ export async function getAccountsAssignedClusterPartitions(
  * @returns
  */
 export async function getTenantAssignedClusterPartitions(
-  tenantName: string, currentClusterPartitions: Record<string, string[]>):
-  Promise<Record<string, PartitionNames>> {
-
+  tenantName: string,
+  currentClusterPartitions: Record<string, string[]>,
+): Promise<Record<string, PartitionNames>> {
   if (process.env.NODE_ENV === "test" || USE_MOCK) {
     return {
-      "hpc01": { partitionNames: ["compute1", "compute2"]},
+      hpc01: { partitionNames: ["compute1", "compute2"] },
     };
   }
 
@@ -226,9 +222,7 @@ export async function assignCreatedAccount(
   accountName: string,
   tenantName: string,
   currentClusterPartitions: Record<string, string[]>,
-):
-  Promise<boolean> {
-
+): Promise<boolean> {
   const em = await forkEntityManager();
   let foundDefaultClusterIds: string[] = [];
 
@@ -237,28 +231,31 @@ export async function assignCreatedAccount(
     // 确认同名租户下账户是否已存在授权集群和分区，如果存在直接删除重新写入
     const existedClusters = await em.find(AccountClusterRule, { accountName, tenantName });
     if (existedClusters.length > 0) {
-      const existedClusterIds = existedClusters.map((item) => (item.clusterId)).join(",");
-      logger.info(`Account ${accountName} in tenant ${tenantName} already assigned to clusters: ${existedClusterIds}.`
-      + "They will be removed during re-assign.");
+      const existedClusterIds = existedClusters.map((item) => item.clusterId).join(",");
+      logger.info(
+        `Account ${accountName} in tenant ${tenantName} already assigned to clusters: ${existedClusterIds}.` +
+          "They will be removed during re-assign.",
+      );
       await em.removeAndFlush(existedClusters);
     }
     const existedPartitions = await em.find(AccountPartitionRule, { accountName, tenantName });
     if (existedPartitions.length > 0) {
-      const existedPartitionNames = existedPartitions.map((item) => (item.partition)).join(",");
+      const existedPartitionNames = existedPartitions.map((item) => item.partition).join(",");
       logger.info(
-        `Account ${accountName} in tenant ${tenantName} already assigned to partitions: ${existedPartitionNames}.`
-      + "They will be removed during re-assign.");
+        `Account ${accountName} in tenant ${tenantName} already assigned to partitions: ${existedPartitionNames}.` +
+          "They will be removed during re-assign.",
+      );
       await em.removeAndFlush(existedPartitions);
     }
 
     const currentClusterIds = Object.keys(currentClusterPartitions);
 
     // 获取租户下设置的账户默认授权的集群和分区
-    const foundDefaultClusters = await em.find(TenantClusterRule,
-      { tenantName,
-        isAccountDefaultCluster: true,
-        clusterId: { $in: currentClusterIds },
-      });
+    const foundDefaultClusters = await em.find(TenantClusterRule, {
+      tenantName,
+      isAccountDefaultCluster: true,
+      clusterId: { $in: currentClusterIds },
+    });
     const foundDefaultPartitions = await em.find(TenantPartitionRule, {
       tenantName,
       isAccountDefaultPartition: true,
@@ -266,7 +263,7 @@ export async function assignCreatedAccount(
     });
     const filteredPartitionsResult = getAvailablePartitionsResult(currentClusterPartitions, foundDefaultPartitions);
 
-    foundDefaultClusterIds = foundDefaultClusters.map((item) => (item.clusterId));
+    foundDefaultClusterIds = foundDefaultClusters.map((item) => item.clusterId);
     foundDefaultClusterIds.forEach((clusterId) => {
       const accountCluster = new AccountClusterRule({
         accountName,
@@ -290,8 +287,7 @@ export async function assignCreatedAccount(
   });
 
   // 通知账户授权集群数据
-  await callHook("accountAssignedToClusters",
-    { accountName, tenantName, clusterIds: foundDefaultClusterIds }, logger);
+  await callHook("accountAssignedToClusters", { accountName, tenantName, clusterIds: foundDefaultClusterIds }, logger);
 
   return true;
 }
@@ -301,25 +297,22 @@ export async function assignCreatedAccount(
  * @param clusterId
  * @param tenantName
  */
-export async function getClusterAssignedAccountsData(clusterId: string, tenantName: string):
-Promise<string[]> {
+export async function getClusterAssignedAccountsData(clusterId: string, tenantName: string): Promise<string[]> {
   const em = await forkEntityManager();
   const found = await em.find(AccountClusterRule, { clusterId, tenantName });
 
   return found.map((item) => item.accountName);
 }
 
-
 function mapToClusterPartitions(
   clustersInfo: Loaded<AccountClusterRule>[] | Loaded<TenantClusterRule>[],
   partitionsInfo: Loaded<AccountPartitionRule>[] | Loaded<TenantPartitionRule>[],
 ): Record<string, PartitionNames> {
-
   const results: Record<string, PartitionNames> = {};
 
   // 遍历已获取的集群信息，将它们添加到结果集中
   clustersInfo.forEach((cluster) => {
-    results[cluster.clusterId] = { partitionNames: []};
+    results[cluster.clusterId] = { partitionNames: [] };
   });
 
   // 遍历已获取的分区信息，根据集群名将分区名称添加到结果集中
@@ -337,13 +330,12 @@ function mapToAccountClusterPartitions(
   clustersInfo: Loaded<AccountClusterRule>[],
   partitionsInfo: Loaded<AccountPartitionRule>[],
 ): AccountsAssignedClustersAndPartitions[] {
-
   const results: Record<string, AccountsAssignedClustersAndPartitions> = {};
   const clusterMap: Record<string, Record<string, ClusterPartition>> = {};
   const partitionSets: Record<string, Record<string, Set<string>>> = {};
 
   accountNames.forEach((accountName) => {
-    results[accountName] = { account: accountName, clusterPartitions: []};
+    results[accountName] = { account: accountName, clusterPartitions: [] };
     clusterMap[accountName] = {};
     partitionSets[accountName] = {};
   });
@@ -351,7 +343,7 @@ function mapToAccountClusterPartitions(
   // 按账户-集群初始化
   clustersInfo.forEach((cluster) => {
     if (!results[cluster.accountName]) {
-      results[cluster.accountName] = { account: cluster.accountName, clusterPartitions: []};
+      results[cluster.accountName] = { account: cluster.accountName, clusterPartitions: [] };
     }
     if (!clusterMap[cluster.accountName]) {
       clusterMap[cluster.accountName] = {};
@@ -389,20 +381,20 @@ function mapToAccountClusterPartitions(
   return Object.values(results);
 }
 
-
-
 /**
  * 提交作业/交互式应用时 检查账户在集群或分区下的授权情况
-  * @param partitionName 如果不存在只检查账户集群的授权，如果存在检查账户在集群分区下的授权
+ * @param partitionName 如果不存在只检查账户集群的授权，如果存在检查账户在集群分区下的授权
  */
-export async function checkAccountInClusterPartition(accountName: string, clusterId: string, partitionName?: string):
-Promise<boolean> {
+export async function checkAccountInClusterPartition(
+  accountName: string,
+  clusterId: string,
+  partitionName?: string,
+): Promise<boolean> {
   const em = await forkEntityManager();
 
   if (partitionName) {
     // 检查账户在集群分区下的授权
-    const found = await em.findOne(AccountPartitionRule,
-      { accountName, clusterId, partition: partitionName });
+    const found = await em.findOne(AccountPartitionRule, { accountName, clusterId, partition: partitionName });
     return found !== null;
   }
   const found = await em.find(AccountClusterRule, { clusterId, accountName });

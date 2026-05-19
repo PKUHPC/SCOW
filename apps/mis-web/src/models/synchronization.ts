@@ -36,4 +36,3 @@ export enum SyncExceptionType {
   CLUSTER_UNEXECUTED = 4,
   MAX_EXECUTION_TIME_EXCEEDED = 5,
 }
-

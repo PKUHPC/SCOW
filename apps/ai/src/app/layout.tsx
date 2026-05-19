@@ -1,6 +1,5 @@
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
-
 import { DarkModeCookie } from "@scow/lib-web/build/layouts/darkMode";
 import { cookies, headers } from "next/headers";
 import { join } from "path";
@@ -10,7 +9,6 @@ import { ServerClientProvider } from "src/app/trpcClient.server";
 import { BASE_PATH } from "src/utils/processEnv";
 
 export default async function MyApp({ children }: { children: React.ReactNode }) {
-
   const cookie = await cookies();
   const header = await headers();
 
@@ -18,7 +16,7 @@ export default async function MyApp({ children }: { children: React.ReactNode })
   const languageCookie = cookie.get("language")?.value;
   const acceptLanguageHeader = header.get("accept-language");
 
-  const dark = darkModeCookie ? JSON.parse(darkModeCookie.value) as DarkModeCookie : undefined;
+  const dark = darkModeCookie ? (JSON.parse(darkModeCookie.value) as DarkModeCookie) : undefined;
 
   return (
     <html>
@@ -29,18 +27,11 @@ export default async function MyApp({ children }: { children: React.ReactNode })
       </head>
       <body>
         <ServerClientProvider>
-          <ClientLayout
-            initialDark={dark}
-            languageCookie={languageCookie}
-            acceptLanguageHeader={acceptLanguageHeader}
-          >
+          <ClientLayout initialDark={dark} languageCookie={languageCookie} acceptLanguageHeader={acceptLanguageHeader}>
             {children}
           </ClientLayout>
         </ServerClientProvider>
       </body>
     </html>
   );
-
 }
-
-

@@ -15,14 +15,12 @@ interface MigrateSingleSelectionProps {
 }
 
 export const MigrateSingleClusterSelector: React.FC<MigrateSingleSelectionProps> = ({ value, onChange, label }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
   const { clusterSortedIdList, activatedClusters } = useStore(ClusterInfoStore);
 
-  const sortedIds =
-    clusterSortedIdList.filter((id) => Object.keys(activatedClusters)?.includes(id));
+  const sortedIds = clusterSortedIdList.filter((id) => Object.keys(activatedClusters)?.includes(id));
 
   const NODE_MIGRATION = publicConfig.NODE_MIGRATION;
 
@@ -32,9 +30,10 @@ export const MigrateSingleClusterSelector: React.FC<MigrateSingleSelectionProps>
 
   const migratableClusterGroups = NODE_MIGRATION.migratableClusterGroups;
 
-  const isValidConfig = migratableClusterGroups &&
-  migratableClusterGroups.length > 0 &&
-  migratableClusterGroups.every((c) => c.group?.length > 1);
+  const isValidConfig =
+    migratableClusterGroups &&
+    migratableClusterGroups.length > 0 &&
+    migratableClusterGroups.every((c) => c.group?.length > 1);
 
   if (!isValidConfig) {
     throw new Error("Node migration configuration is not properly configured for the group.");
@@ -47,24 +46,21 @@ export const MigrateSingleClusterSelector: React.FC<MigrateSingleSelectionProps>
 
   const configuredArr = Array.from(clusterGroups);
 
-  const filteredIds =
-  sortedIds.filter((id) => configuredArr.includes(id));
+  const filteredIds = sortedIds.filter((id) => configuredArr.includes(id));
 
   return (
     <Select
       placeholder={t(p("selectCluster"))}
       value={value?.id}
       onChange={(value) => onChange?.({ id: value, name: activatedClusters[value].name })}
-      options={
-        (label ? [{ value: label, label, disabled: true }] : [])
-          .concat(filteredIds.map((x) => ({
-            value: x,
-            label:  getI18nConfigCurrentText(activatedClusters[x]?.name, languageId),
-            disabled: false,
-          })))
-      }
+      options={(label ? [{ value: label, label, disabled: true }] : []).concat(
+        filteredIds.map((x) => ({
+          value: x,
+          label: getI18nConfigCurrentText(activatedClusters[x]?.name, languageId),
+          disabled: false,
+        })),
+      )}
       popupMatchSelectWidth={false}
     />
   );
 };
-

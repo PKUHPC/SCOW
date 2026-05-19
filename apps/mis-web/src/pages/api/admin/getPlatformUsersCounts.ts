@@ -30,25 +30,23 @@ export const GetPlatformUsersCountsSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetPlatformUsersCountsSchema,
-  async (req, res) => {
+export default route(GetPlatformUsersCountsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+  const { idOrName, userId, userName } = req.query;
+  const client = getClient(UserServiceClient);
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-    const { idOrName, userId, userName } = req.query;
-    const client = getClient(UserServiceClient);
+  const legacyIdOrName = userId || userName ? undefined : idOrName;
 
-    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
-
-    const result = await asyncClientCall(client, "getPlatformUsersCounts", {
-      idOrName: legacyIdOrName,
-      userId,
-      userName,
-    });
-
-    return {
-      200: result,
-    };
+  const result = await asyncClientCall(client, "getPlatformUsersCounts", {
+    idOrName: legacyIdOrName,
+    userId,
+    userName,
   });
+
+  return {
+    200: result,
+  };
+});

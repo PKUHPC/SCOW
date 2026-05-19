@@ -27,7 +27,7 @@ export const jobChargeLimitServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "cancel job charge limit task");
 
       const results: ResultInfo[] = [];
-      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
+      const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
       if (userIds.length === 0) {
@@ -40,13 +40,17 @@ export const jobChargeLimitServer = plugin((server) => {
       for (const userId of userIds) {
         await em.transactional(async (em) => {
           try {
-            const userAccount = await em.findOne(UserAccount, {
-              user: { userId, tenant: { name: tenantName } },
-              account: { accountName, tenant: { name: tenantName } },
-            }, {
-              populate: ["user", "account"],
-              lockMode: LockMode.PESSIMISTIC_WRITE,
-            });
+            const userAccount = await em.findOne(
+              UserAccount,
+              {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              },
+              {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
             if (!userAccount) {
               results.push({
@@ -96,12 +100,15 @@ export const jobChargeLimitServer = plugin((server) => {
         });
       }
 
-      const failedInfos = results
-        .filter((res) => !res.success);
+      const failedInfos = results.filter((res) => !res.success);
 
       if (failedInfos.length > 0) {
-        logger.warn(failedInfos.map((info) => `Failed to cancel job charge limit for user
-          ${info.userId}: ${info.reason}`));
+        logger.warn(
+          failedInfos.map(
+            (info) => `Failed to cancel job charge limit for user
+          ${info.userId}: ${info.reason}`,
+          ),
+        );
       }
 
       // 如果所有用户都失败了，抛出异常
@@ -122,10 +129,12 @@ export const jobChargeLimitServer = plugin((server) => {
         } as ServiceError;
       }
 
-      return [{
-        success: failedInfos.length === 0,
-        results,
-      }];
+      return [
+        {
+          success: failedInfos.length === 0,
+          results,
+        },
+      ];
     },
 
     setJobChargeLimit: async ({ request, em, logger }) => {
@@ -135,7 +144,7 @@ export const jobChargeLimitServer = plugin((server) => {
       await ensureNoRunningSyncTask(em, logger, "set job charge limit task");
 
       const results: ResultInfo[] = [];
-      const userIds = request.userIds?.length > 0 ? request.userIds : (request.userId ? [request.userId] : []);
+      const userIds = request.userIds?.length > 0 ? request.userIds : request.userId ? [request.userId] : [];
       const limitNumber = moneyToNumber(limit);
 
       if (userIds.length === 0) {
@@ -157,13 +166,17 @@ export const jobChargeLimitServer = plugin((server) => {
       for (const userId of userIds) {
         await em.transactional(async (em) => {
           try {
-            const userAccount = await em.findOne(UserAccount, {
-              user: { userId, tenant: { name: tenantName } },
-              account: { accountName, tenant: { name: tenantName } },
-            }, {
-              populate: ["user", "account"],
-              lockMode: LockMode.PESSIMISTIC_WRITE,
-            });
+            const userAccount = await em.findOne(
+              UserAccount,
+              {
+                user: { userId, tenant: { name: tenantName } },
+                account: { accountName, tenant: { name: tenantName } },
+              },
+              {
+                populate: ["user", "account"],
+                lockMode: LockMode.PESSIMISTIC_WRITE,
+              },
+            );
 
             if (!userAccount) {
               results.push({
@@ -186,12 +199,18 @@ export const jobChargeLimitServer = plugin((server) => {
               return;
             }
 
-            await setJobCharge(userAccount,
-              new Decimal(moneyToNumber(limit)), currentActivatedClusters, server.ext, logger);
+            await setJobCharge(
+              userAccount,
+              new Decimal(moneyToNumber(limit)),
+              currentActivatedClusters,
+              server.ext,
+              logger,
+            );
 
             results.push({ userId, success: true });
 
-            logger.info("Set %s job charge limit to user %s account %s. Current used %s",
+            logger.info(
+              "Set %s job charge limit to user %s account %s. Current used %s",
               userAccount.jobChargeLimit!.toFixed(2),
               userId,
               accountName,
@@ -213,12 +232,15 @@ export const jobChargeLimitServer = plugin((server) => {
         });
       }
 
-      const failedInfos = results
-        .filter((res) => !res.success);
+      const failedInfos = results.filter((res) => !res.success);
 
       if (failedInfos.length > 0) {
-        logger.warn(failedInfos.map((info) => `Failed to set job charge limit for user
-          ${info.userId}: ${info.reason}`));
+        logger.warn(
+          failedInfos.map(
+            (info) => `Failed to set job charge limit for user
+          ${info.userId}: ${info.reason}`,
+          ),
+        );
       }
 
       // 如果所有用户都失败了，抛出异常
@@ -239,11 +261,12 @@ export const jobChargeLimitServer = plugin((server) => {
         } as ServiceError;
       }
 
-      return [{
-        success: failedInfos.length === 0,
-        results,
-      }];
+      return [
+        {
+          success: failedInfos.length === 0,
+          results,
+        },
+      ];
     },
-
   });
 });

@@ -11,12 +11,7 @@ export class TenantPartitionRule {
   createTime = new Date();
   updateTime = new Date();
 
-  constructor(init: {
-    tenantName: string;
-    clusterId: string;
-    partition: string;
-    isAccountDefaultPartition: boolean;
-  }) {
+  constructor(init: { tenantName: string; clusterId: string; partition: string; isAccountDefaultPartition: boolean }) {
     this.tenantName = init.tenantName;
     this.clusterId = init.clusterId;
     this.partition = init.partition;
@@ -37,4 +32,3 @@ export const TenantPartitionRuleSchema = new EntitySchema<TenantPartitionRule>({
     updateTime: { type: "date", columnType: DATETIME_TYPE, onUpdate: () => new Date() },
   },
 });
-

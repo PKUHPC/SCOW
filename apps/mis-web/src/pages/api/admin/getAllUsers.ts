@@ -16,16 +16,15 @@ export const GetAllUsersResponse = Type.Object({
 export type GetAllUsersResponse = Static<typeof GetAllUsersResponse>;
 
 export const mapSortDirectionType = {
-  "ascend": SortDirection.ASC,
-  "descend": SortDirection.DESC,
+  ascend: SortDirection.ASC,
+  descend: SortDirection.DESC,
 } as Record<string, SortDirection>;
 
 export const mapUsersSortFieldType = {
-  "userId": GetAllUsersRequest_UsersSortField.USER_ID,
-  "name": GetAllUsersRequest_UsersSortField.NAME,
-  "createTime": GetAllUsersRequest_UsersSortField.CREATE_TIME,
+  userId: GetAllUsersRequest_UsersSortField.USER_ID,
+  name: GetAllUsersRequest_UsersSortField.NAME,
+  createTime: GetAllUsersRequest_UsersSortField.CREATE_TIME,
 } as Record<string, GetAllUsersRequest_UsersSortField>;
-
 
 export const GetAllUsersSchema = typeboxRouteSchema({
   method: "GET",
@@ -51,7 +50,6 @@ export const GetAllUsersSchema = typeboxRouteSchema({
     userName: Type.Optional(Type.String()),
 
     platformRole: Type.Optional(Type.Enum(PlatformRole)),
-
   }),
 
   responses: {
@@ -61,35 +59,33 @@ export const GetAllUsersSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetAllUsersSchema,
-  async (req, res) => {
+export default route(GetAllUsersSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { page = 1, pageSize, sortField, sortOrder, idOrName, userId, userName, platformRole } = req.query;
 
-    const { page = 1, pageSize, sortField, sortOrder, idOrName, userId, userName, platformRole } = req.query;
+  const client = getClient(UserServiceClient);
 
-    const client = getClient(UserServiceClient);
+  const mappedSortField = sortField ? mapUsersSortFieldType[sortField] : undefined;
+  const mappedSortOrder = sortOrder ? mapSortDirectionType[sortOrder] : undefined;
 
-    const mappedSortField = sortField ? mapUsersSortFieldType[sortField] : undefined;
-    const mappedSortOrder = sortOrder ? mapSortDirectionType[sortOrder] : undefined;
+  const legacyIdOrName = userId || userName ? undefined : idOrName;
 
-    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
-
-    const result = await asyncClientCall(client, "getAllUsers", {
-      page,
-      pageSize,
-      sortField: mappedSortField,
-      sortOrder: mappedSortOrder,
-      idOrName: legacyIdOrName,
-      userId,
-      userName,
-      platformRole,
-    });
-
-    return {
-      200: result,
-    };
+  const result = await asyncClientCall(client, "getAllUsers", {
+    page,
+    pageSize,
+    sortField: mappedSortField,
+    sortOrder: mappedSortOrder,
+    idOrName: legacyIdOrName,
+    userId,
+    userName,
+    platformRole,
   });
+
+  return {
+    200: result,
+  };
+});

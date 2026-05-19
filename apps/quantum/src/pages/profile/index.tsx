@@ -26,16 +26,16 @@ const Part = styled(Section)`
 `;
 
 const TitleText = styled(Typography.Title)`
-&& {
-  width: 100vw;
-  font-size: 24px;
-  padding: 0 0 10px 20px;
-  margin-left: -25px;
-  border-bottom: 1px solid #ccc;
-  @media (min-width: ${antdBreakpoints.md}px) {
-    padding: 0 0 20px 30px;
+  && {
+    width: 100vw;
+    font-size: 24px;
+    padding: 0 0 10px 20px;
+    margin-left: -25px;
+    border-bottom: 1px solid #ccc;
+    @media (min-width: ${antdBreakpoints.md}px) {
+      padding: 0 0 20px 30px;
+    }
   }
-}
 `;
 
 const ChangePasswordModalButton = ModalButton(ChangePasswordModal, { type: "link" });
@@ -55,40 +55,34 @@ export default function Page() {
       <Part title>
         <Descriptions
           column={1}
-          labelStyle={{ paddingLeft:"10px", marginBottom:"10px" }}
-          contentStyle={{ paddingLeft:"10px" }}
+          labelStyle={{ paddingLeft: "10px", marginBottom: "10px" }}
+          contentStyle={{ paddingLeft: "10px" }}
         >
-          <Descriptions.Item label={t(p("identityId"))}>
-            {publicConfig.user.identityId}
-          </Descriptions.Item>
-          <Descriptions.Item label={t(p("name"))}>
-            {publicConfig.user.name}
-          </Descriptions.Item>
+          <Descriptions.Item label={t(p("identityId"))}>{publicConfig.user.identityId}</Descriptions.Item>
+          <Descriptions.Item label={t(p("name"))}>{publicConfig.user.name}</Descriptions.Item>
         </Descriptions>
       </Part>
-      {
-        publicConfig.publicConfig.ENABLE_CHANGE_PASSWORD ? (
-          <>
-            <TitleText>
-              <Localized id="page.profile.changePassword"></Localized>
-            </TitleText>
-            <Part title>
-              <Descriptions
-                column={1}
-                labelStyle={{ paddingLeft:"10px", paddingTop:"5px" }}
-                contentStyle={{ paddingLeft:"10px" }}
-              >
-                <Descriptions.Item label={t(p("loginPassword"))}>
-                  <span style={{ width:"200px" }}>********</span>
-                  <ChangePasswordModalButton identityId={publicConfig.user.identityId}>
-                    <Localized id="page.profile.changePassword"></Localized>
-                  </ChangePasswordModalButton>
-                </Descriptions.Item>
-              </Descriptions>
-            </Part>
-          </>
-        ) : undefined
-      }
+      {publicConfig.publicConfig.ENABLE_CHANGE_PASSWORD ? (
+        <>
+          <TitleText>
+            <Localized id="page.profile.changePassword"></Localized>
+          </TitleText>
+          <Part title>
+            <Descriptions
+              column={1}
+              labelStyle={{ paddingLeft: "10px", paddingTop: "5px" }}
+              contentStyle={{ paddingLeft: "10px" }}
+            >
+              <Descriptions.Item label={t(p("loginPassword"))}>
+                <span style={{ width: "200px" }}>********</span>
+                <ChangePasswordModalButton identityId={publicConfig.user.identityId}>
+                  <Localized id="page.profile.changePassword"></Localized>
+                </ChangePasswordModalButton>
+              </Descriptions.Item>
+            </Descriptions>
+          </Part>
+        </>
+      ) : undefined}
     </Container>
   );
 }

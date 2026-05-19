@@ -201,7 +201,12 @@ export const CreateEditDatasetModal: React.FC<Props> = ({
               editData.clusterId}
           </CustomFormItem>
         ) : (
-          <CustomFormItem label={renderLabel(t(p("cluster")))} name="cluster" rules={[{ required: true }]} initialValue={defaultCluster}>
+          <CustomFormItem
+            label={renderLabel(t(p("cluster")))}
+            name="cluster"
+            rules={[{ required: true }]}
+            initialValue={defaultCluster}
+          >
             <RoundedSingleClusterSelector />
           </CustomFormItem>
         )}

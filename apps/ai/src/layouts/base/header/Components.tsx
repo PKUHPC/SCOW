@@ -48,31 +48,24 @@ export const JumpToAnotherLink: React.FC<JumpToAnotherLinkProps> = ({ user, link
   const content = () => {
     return (
       <>
-        <IconContainer>
-          {icon}
-        </IconContainer>
-        <HiddenOnSmallScreenSpan>
-          {linkText}
-        </HiddenOnSmallScreenSpan>
+        <IconContainer>{icon}</IconContainer>
+        <HiddenOnSmallScreenSpan>{linkText}</HiddenOnSmallScreenSpan>
       </>
     );
   };
 
-  if (!link) { return (
-    <HeaderItem>
-      <TypographyLink onClick={(e) => e.preventDefault()}>
-        {content()}
-      </TypographyLink>
-    </HeaderItem>
-  ); }
+  if (!link) {
+    return (
+      <HeaderItem>
+        <TypographyLink onClick={(e) => e.preventDefault()}>{content()}</TypographyLink>
+      </HeaderItem>
+    );
+  }
 
   return (
     <HeaderItem>
       {/* Cannot use Link because links adds BASE_PATH, but MIS_URL already contains it */}
-      <TypographyLink href={user
-        ? join(link, "/api/auth/callback?token=" + user.token)
-        : link}
-      >
+      <TypographyLink href={user ? join(link, "/api/auth/callback?token=" + user.token) : link}>
         {content()}
       </TypographyLink>
     </HeaderItem>

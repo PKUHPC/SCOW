@@ -21,7 +21,7 @@ export class AccountUserSyncRecord {
   id!: number;
 
   // 一次完整的同步任务的会话ID
-  @Property(({ length: 50 }))
+  @Property({ length: 50 })
   sessionId!: string;
 
   @Property({ nullable: true })
@@ -48,13 +48,13 @@ export class AccountUserSyncRecord {
   maxSyncDurationMinutes: number;
 
   constructor(init: {
-    sessionId: string,
-    syncOperatorId?: string,
-    updateTime?: Date,
-    syncStatus: SyncStatus,
-    syncResult?: SyncResult,
-    syncDetails?: ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult[],
-    maxSyncDurationMinutes: number,
+    sessionId: string;
+    syncOperatorId?: string;
+    updateTime?: Date;
+    syncStatus: SyncStatus;
+    syncResult?: SyncResult;
+    syncDetails?: ListAccountUserSynchronizationsResponse_ClusterTotalSyncResult[];
+    maxSyncDurationMinutes: number;
   }) {
     this.sessionId = init.sessionId;
     if (init.syncOperatorId) {
@@ -73,5 +73,4 @@ export class AccountUserSyncRecord {
 
     this.maxSyncDurationMinutes = init.maxSyncDurationMinutes;
   }
-
 }

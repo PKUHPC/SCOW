@@ -27,10 +27,7 @@ export const GetFileMetadataSchema = typeboxRouteSchema({
       linkTargetType: Type.Optional(FileType),
     }),
     400: Type.Object({
-      code: Type.Union([
-        Type.Literal("INVALID_CLUSTER"),
-        Type.Literal("INVALID_PATH"),
-      ]),
+      code: Type.Union([Type.Literal("INVALID_CLUSTER"), Type.Literal("INVALID_PATH")]),
     }),
   },
 });
@@ -38,23 +35,33 @@ export const GetFileMetadataSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(GetFileMetadataSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, path } = req.query;
 
   const client = getClient(FileServiceClient);
 
   return asyncUnaryCall(client, "getFileMetadata", {
-    userId: info.identityId, cluster, path,
-  }).then(({ size, type, isSymlink, linkTargetPath, linkTargetType }) => ({ 200: {
-    size, isSymlink, type, linkTargetPath,
-    linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
-  } }), handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-    [status.PERMISSION_DENIED]: () => ({ 400: { code: "INVALID_PATH" as const } }),
-  }));
-
+    userId: info.identityId,
+    cluster,
+    path,
+  }).then(
+    ({ size, type, isSymlink, linkTargetPath, linkTargetType }) => ({
+      200: {
+        size,
+        isSymlink,
+        type,
+        linkTargetPath,
+        linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
+      },
+    }),
+    handlegRPCError({
+      [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+      [status.PERMISSION_DENIED]: () => ({ 400: { code: "INVALID_PATH" as const } }),
+    }),
+  );
 });

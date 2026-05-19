@@ -24,27 +24,20 @@ import { checkMessageTypeExist, getMessagesTypeData } from "src/utils/message-ty
 export default (router: ConnectRouter) => {
   router.service(ScowMessageService, {
     async systemSendMessage(req, ctx) {
-
       await checkScowApiToken(ctx, commonConfig.scowApi);
 
       const { systemId, targetIds, messageType, metadata, descriptionData } = req;
       const { targetType } = ensureNotUndefined(req, ["targetType"]);
 
       if (!metadata) {
-        throw new ConnectError(
-          "The metadata field cannot be empty",
-          Code.InvalidArgument,
-        );
+        throw new ConnectError("The metadata field cannot be empty", Code.InvalidArgument);
       }
 
       const em = await forkEntityManager();
 
       const messageTypeData = await checkMessageTypeExist(em, messageType);
       if (!messageTypeData) {
-        throw new ConnectError(
-          `Message type ${messageType} does't exists.`,
-          Code.InvalidArgument,
-        );
+        throw new ConnectError(`Message type ${messageType} does't exists.`, Code.InvalidArgument);
       }
 
       // TODO: check system id
@@ -66,8 +59,11 @@ export default (router: ConnectRouter) => {
         // 只有管理员开启了该消息且允许用户修改才按照用户订阅来处理，用户订阅有可能一开始不存在，则还是已管理员设置的为准
         let messageEnabled = adminMessageConfig.enabled;
         if (adminMessageConfig.canUserModify && adminMessageConfig.enabled) {
-          const userSub = await em.findOne(UserSubscription,
-            { userId, messageType, noticeType: NoticeType.SITE_MESSAGE });
+          const userSub = await em.findOne(UserSubscription, {
+            userId,
+            messageType,
+            noticeType: NoticeType.SITE_MESSAGE,
+          });
 
           if (userSub) messageEnabled = userSub.isSubscribed;
         }
@@ -85,9 +81,12 @@ export default (router: ConnectRouter) => {
 
       if (notificationConfig.messageBridge) {
         systemSendMsgToBridge(em, {
-          senderType: SenderType.SYSTEM, senderId: systemId,
+          senderType: SenderType.SYSTEM,
+          senderId: systemId,
           category: messageTypeData.category,
-          targetType, targetIds, messageType,
+          targetType,
+          targetIds,
+          messageType,
           metadata,
         });
       }
@@ -96,7 +95,6 @@ export default (router: ConnectRouter) => {
     },
 
     async systemBatchSendMessages(req, ctx) {
-
       await checkScowApiToken(ctx, commonConfig.scowApi);
 
       const { systemId, messages } = req;
@@ -110,18 +108,12 @@ export default (router: ConnectRouter) => {
         const { targetType } = ensureNotUndefined(msg, ["targetType"]);
 
         if (!metadata) {
-          throw new ConnectError(
-            "The metadata field cannot be empty",
-            Code.InvalidArgument,
-          );
+          throw new ConnectError("The metadata field cannot be empty", Code.InvalidArgument);
         }
 
         const messageTypeData = await checkMessageTypeExist(em, messageType);
         if (!messageTypeData) {
-          throw new ConnectError(
-            `Message type ${messageType} does't exists.`,
-            Code.InvalidArgument,
-          );
+          throw new ConnectError(`Message type ${messageType} does't exists.`, Code.InvalidArgument);
         }
 
         // TODO: check system id
@@ -148,8 +140,11 @@ export default (router: ConnectRouter) => {
           // 只有管理员开启了该消息且允许用户修改才按照用户订阅来处理，用户订阅有可能一开始不存在，则还是已管理员设置的为准
           let messageEnabled = adminMessageConfig.enabled;
           if (adminMessageConfig.canUserModify && adminMessageConfig.enabled) {
-            const userSub = await em.findOne(UserSubscription,
-              { userId, messageType, noticeType: NoticeType.SITE_MESSAGE });
+            const userSub = await em.findOne(UserSubscription, {
+              userId,
+              messageType,
+              noticeType: NoticeType.SITE_MESSAGE,
+            });
 
             if (userSub) messageEnabled = userSub.isSubscribed;
           }
@@ -166,9 +161,12 @@ export default (router: ConnectRouter) => {
         }
 
         bridgeMessages.push({
-          senderType: SenderType.SYSTEM, senderId: systemId,
+          senderType: SenderType.SYSTEM,
+          senderId: systemId,
           category: messageTypeData.category,
-          targetType, targetIds, messageType,
+          targetType,
+          targetIds,
+          messageType,
           metadata,
         });
       }
@@ -184,9 +182,7 @@ export default (router: ConnectRouter) => {
 
     async listMessages(req, ctx) {
       const { userId, category, noticeType, messageType, messageTypes, readStatus, page, pageSize } = req;
-      const effectiveMessageTypes = messageTypes.length > 0
-        ? messageTypes
-        : messageType ? [messageType] : [];
+      const effectiveMessageTypes = messageTypes.length > 0 ? messageTypes : messageType ? [messageType] : [];
 
       if (userId) await checkScowApiToken(ctx, commonConfig.scowApi);
 
@@ -202,23 +198,21 @@ export default (router: ConnectRouter) => {
       // 构建子查询：从 message_targets 表获取符合条件的 message_id
       const mtSubquery = knex("message_targets as mt")
         .select("mt.message_id")
-        .where(function() {
-          this.where("mt.notice_types", "like", `%${noticeType}%`)
-            .andWhere(function() {
-              this.where("mt.target_type", TargetType.FULL_SITE)
-                // .orWhere(function() {
-                //   this.where("mt.target_type", TargetType.TENANT)
-                //     .andWhere("mt.target_id", user.tenant);
-                // })
-                // .orWhere(function() {
-                //   this.where("mt.target_type", TargetType.ACCOUNT)
-                //     .andWhere("mt.target_id", "in", user.accountAffiliations.map((a) => a.accountName));
-                // })
-                .orWhere(function() {
-                  this.where("mt.target_type", TargetType.USER)
-                    .andWhere("mt.target_id", user.identityId);
-                });
-            });
+        .where(function () {
+          this.where("mt.notice_types", "like", `%${noticeType}%`).andWhere(function () {
+            this.where("mt.target_type", TargetType.FULL_SITE)
+              // .orWhere(function() {
+              //   this.where("mt.target_type", TargetType.TENANT)
+              //     .andWhere("mt.target_id", user.tenant);
+              // })
+              // .orWhere(function() {
+              //   this.where("mt.target_type", TargetType.ACCOUNT)
+              //     .andWhere("mt.target_id", "in", user.accountAffiliations.map((a) => a.accountName));
+              // })
+              .orWhere(function () {
+                this.where("mt.target_type", TargetType.USER).andWhere("mt.target_id", user.identityId);
+              });
+          });
         });
 
       // 构建子查询：从 messages 表获取 sender_type = PLATFORM_ADMIN 的 message_id
@@ -227,38 +221,30 @@ export default (router: ConnectRouter) => {
         .where("m.sender_type", SenderType.PLATFORM_ADMIN);
 
       // 使用 UNION 合并两个子查询
-      const unionSubquery = knex.union([
-        mtSubquery,
-        mSubquery,
-      ], true).as("message_ids");
+      const unionSubquery = knex.union([mtSubquery, mSubquery], true).as("message_ids");
 
       // 构建读取状态的查询条件
       let readConditions;
       switch (readStatus) {
         case ReadStatus.UNREAD:
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
-              this.select("umr.message_id as message_id")
-                .where("umr.status", ReadStatus.READ);
-            })
-              .orWhere(function(this: Knex.QueryBuilder) {
-                this.where("umr.status", EntityReadStatus.UNREAD)
-                  .andWhere("umr.is_deleted", false);
-              });
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.whereNotIn("m.id", function (this: Knex.QueryBuilder) {
+              this.select("umr.message_id as message_id").where("umr.status", ReadStatus.READ);
+            }).orWhere(function (this: Knex.QueryBuilder) {
+              this.where("umr.status", EntityReadStatus.UNREAD).andWhere("umr.is_deleted", false);
+            });
           };
           break;
         case ReadStatus.READ:
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.where("umr.status", EntityReadStatus.READ)
-              .andWhere("umr.is_deleted", false);
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.where("umr.status", EntityReadStatus.READ).andWhere("umr.is_deleted", false);
           };
           break;
         default:
           // 如果是 ALL 或未指定 readStatus，则不添加额外条件
-          readConditions = function(this: Knex.QueryBuilder) {
-            this.whereNotIn("m.id", function(this: Knex.QueryBuilder) {
-              this.select("umr.message_id as message_id")
-                .where("umr.is_deleted", true);
+          readConditions = function (this: Knex.QueryBuilder) {
+            this.whereNotIn("m.id", function (this: Knex.QueryBuilder) {
+              this.select("umr.message_id as message_id").where("umr.is_deleted", true);
             });
           };
           break;
@@ -271,17 +257,16 @@ export default (router: ConnectRouter) => {
 
       // 构建最终查询
       const query = knex("messages as m")
-        .leftJoin("user_message_read as umr", function() {
-          this.on("m.id", "=", "umr.message_id")
-            .andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
+        .leftJoin("user_message_read as umr", function () {
+          this.on("m.id", "=", "umr.message_id").andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
         })
         .whereIn("m.id", knex.select("message_id").from(unionSubquery))
         .andWhere(readConditions)
-        .andWhere(function() {
+        .andWhere(function () {
           this.where("m.expired_at", ">", new Date()) // expired_at 大于当前时间
             .orWhereNull("m.expired_at"); // 或者 expired_at 为 null
         })
-        .modify(function(queryBuilder) {
+        .modify(function (queryBuilder) {
           if (category) {
             queryBuilder.andWhere("m.category", category);
           }
@@ -299,17 +284,16 @@ export default (router: ConnectRouter) => {
         query,
         knex("messages as m")
           .countDistinct("m.id as total")
-          .leftJoin("user_message_read as umr", function() {
-            this.on("m.id", "=", "umr.message_id")
-              .andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
+          .leftJoin("user_message_read as umr", function () {
+            this.on("m.id", "=", "umr.message_id").andOn("umr.user_id", "=", knex.raw("?", [user.identityId]));
           })
           .whereIn("m.id", knex.select("message_id").from(unionSubquery))
           .andWhere(readConditions)
-          .andWhere(function() {
+          .andWhere(function () {
             this.where("m.expired_at", ">", new Date()) // expired_at 大于当前时间
               .orWhereNull("m.expired_at"); // 或者 expired_at 为 null
           })
-          .modify(function(queryBuilder) {
+          .modify(function (queryBuilder) {
             if (category) {
               queryBuilder.andWhere("m.category", category);
             }
@@ -324,15 +308,17 @@ export default (router: ConnectRouter) => {
 
       return {
         totalCount: BigInt(total),
-        messages: camelCaseMessage.filter((m) => messagesTypeDataMap.has(m.messageType)).map((m) => ({
-          ...m,
-          id: BigInt(m.id),
-          metadata: m.metadata,
-          messageType: messagesTypeDataMap.get(m.messageType)!,
-          isRead: m.umrStatus === ReadStatus.READ ? true : false,
-          createdAt: new Date(m.createdAt).toISOString(),
-          updatedAt: new Date(m.updatedAt).toISOString(),
-        })),
+        messages: camelCaseMessage
+          .filter((m) => messagesTypeDataMap.has(m.messageType))
+          .map((m) => ({
+            ...m,
+            id: BigInt(m.id),
+            metadata: m.metadata,
+            messageType: messagesTypeDataMap.get(m.messageType)!,
+            isRead: m.umrStatus === ReadStatus.READ ? true : false,
+            createdAt: new Date(m.createdAt).toISOString(),
+            updatedAt: new Date(m.updatedAt).toISOString(),
+          })),
       };
     },
 
@@ -361,15 +347,19 @@ export default (router: ConnectRouter) => {
       });
 
       if (!message) {
-        throw new ConnectError(
-          `User ${user.identityId} can't read message ${messageId}`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} can't read message ${messageId}`, Code.PermissionDenied);
       }
 
-      await em.upsert(UserMessageRead, {
-        userId: user.identityId, message, readTime: new Date(), status: EntityReadStatus.READ,
-      }, { onConflictFields: ["userId", "message"]});
+      await em.upsert(
+        UserMessageRead,
+        {
+          userId: user.identityId,
+          message,
+          readTime: new Date(),
+          status: EntityReadStatus.READ,
+        },
+        { onConflictFields: ["userId", "message"] },
+      );
 
       return {};
     },

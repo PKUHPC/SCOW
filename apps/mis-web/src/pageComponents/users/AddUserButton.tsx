@@ -1,4 +1,3 @@
-
 /**
  * AddUserButton 组件用于在账户下添加新用户，当用户不存在时根据配置决定是否允许创建新用户。
  * 它包含一个按钮，点击按钮后会弹出模态框，用户可以通过表单输入用户 ID 和全名。
@@ -46,10 +45,7 @@ const pCommon = prefix("common.");
  * @param close 关闭模态框的函数
  * @param onAddUser 添加用户时的回调函数
  */
-const NewUserModal: React.FC<ModalProps> = ({
-  open, close, onAddUser: onAddingUser,
-}) => {
-
+const NewUserModal: React.FC<ModalProps> = ({ open, close, onAddUser: onAddingUser }) => {
   // t 用于获取翻译文本
   const t = useI18nTranslateToString();
 
@@ -79,18 +75,11 @@ const NewUserModal: React.FC<ModalProps> = ({
         <Form.Item
           name="identityId"
           label={t(pCommon("userId"))}
-          rules={[
-            { required: true },
-            ...userIdRule ? [userIdRule] : [],
-          ]}
+          rules={[{ required: true }, ...(userIdRule ? [userIdRule] : [])]}
         >
           <Input placeholder={userIdRule?.message} />
         </Form.Item>
-        <Form.Item name="name"
-          rules={[
-            { required: true },
-          ]}
-          label={t(pCommon("userFullName"))}>
+        <Form.Item name="name" rules={[{ required: true }]} label={t(pCommon("userFullName"))}>
           <Input />
         </Form.Item>
       </Form>
@@ -113,9 +102,13 @@ interface Props {
   canCreateUserIfNotExist?: boolean;
 }
 
-export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
-  disabled, canCreateUserIfNotExist = true }) => {
-
+export const AddUserButton: React.FC<Props> = ({
+  refresh,
+  accountName,
+  token,
+  disabled,
+  canCreateUserIfNotExist = true,
+}) => {
   const t = useI18nTranslateToString();
 
   const { message } = App.useApp();
@@ -124,7 +117,6 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
 
   const [newUserInfo, setNewUserInfo] = useState<{ identityId: string; name: string } | undefined>(undefined);
   const userStore = useStore(UserStore);
-
 
   // 查找当前 accountName 对应的 accountAffiliation
   const currentAffiliation = userStore.user?.accountAffiliations.find(
@@ -167,11 +159,11 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
     }
 
     // 否则按照原有逻辑禁用按钮
-    return currentAffiliation &&
-      (currentAffiliation.accountState === 2 || currentAffiliation.accountState === 3)
-      || isBelowBlockThreshold;
+    return (
+      (currentAffiliation && (currentAffiliation.accountState === 2 || currentAffiliation.accountState === 3)) ||
+      isBelowBlockThreshold
+    );
   };
-
 
   /**
    * onAddUser 函数处理添加用户的逻辑。
@@ -180,7 +172,8 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
    * @param name 用户全名
    */
   const onAddUser = async (identityId: string, name: string) => {
-    await api.addUserToAccount({ body: { identityId, name, accountName } })
+    await api
+      .addUserToAccount({ body: { identityId, name, accountName } })
       .httpError(400, ({ code }) => {
         if (code === "ID_NAME_NOT_MATCH") {
           message.error(t(p("notMatch")));
@@ -189,35 +182,34 @@ export const AddUserButton: React.FC<Props> = ({ refresh, accountName, token,
       .httpError(404, ({ code }) => {
         if (code === "USER_ALREADY_EXIST_IN_OTHER_TENANT") {
           message.error(`${t(pCommon("user"))} ${name} ${t(p("alreadyBelonged"))}`);
-        }
-        else if (code === "ACCOUNT_OR_TENANT_NOT_FOUND") {
+        } else if (code === "ACCOUNT_OR_TENANT_NOT_FOUND") {
           message.error(t(p("notExist")));
-        }
-        else if (code === "USER_NOT_FOUND") {
+        } else if (code === "USER_NOT_FOUND") {
           if (!canCreateUserIfNotExist) {
             message.error(t(p("createFirst")));
           } else if (useBuiltinCreateUser()) {
             setModalShow(false);
             setNewUserInfo({ identityId, name });
           } else if (publicConfig.CREATE_USER_CONFIG.misConfig.type === "external") {
-
             const TIMEOUT_SECONDS = 2;
 
-            message.info((
+            message.info(
               <>
                 {t(p("will"))}
                 <CountdownText seconds={TIMEOUT_SECONDS} />
                 {t(p("createModal"))}
-              </>
-            ), TIMEOUT_SECONDS, () => {
-              window.open(
-                publicConfig.CREATE_USER_CONFIG.misConfig.external!.url + "?" + addUserToAccountParams(
-                  accountName, identityId, name, token,
-                ),
-                "_blank",
-              );
-              setModalShow(false);
-            });
+              </>,
+              TIMEOUT_SECONDS,
+              () => {
+                window.open(
+                  publicConfig.CREATE_USER_CONFIG.misConfig.external!.url +
+                    "?" +
+                    addUserToAccountParams(accountName, identityId, name, token),
+                  "_blank",
+                );
+                setModalShow(false);
+              },
+            );
           } else {
             message.error(t(p("createFirst")));
           }

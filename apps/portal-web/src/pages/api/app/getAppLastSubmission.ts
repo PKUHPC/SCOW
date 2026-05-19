@@ -25,7 +25,6 @@ export const SubmissionInfo = Type.Object({
 
 export type SubmissionInfo = Static<typeof SubmissionInfo>;
 
-
 export const GetAppLastSubmissionSchema = typeboxRouteSchema({
   method: "GET",
 
@@ -43,17 +42,20 @@ export const GetAppLastSubmissionSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(GetAppLastSubmissionSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(GetAppLastSubmissionSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, appId } = req.query;
   const client = getClient(AppServiceClient);
 
   return asyncUnaryCall(client, "getAppLastSubmission", {
-    userId: info.identityId, cluster, appId,
+    userId: info.identityId,
+    cluster,
+    appId,
   })
     .then(({ lastSubmissionInfo }) => ({ 200: { lastSubmissionInfo: lastSubmissionInfo } }))
     .catch(() => {

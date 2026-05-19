@@ -3,7 +3,8 @@ import { I18nStringType } from "@scow/config/build/i18n";
 import { TargetType } from "@scow/notification-protos/build/message_common_pb";
 import {
   SystemBatchSendMessagesRequest,
-  SystemSendMessageRequest } from "@scow/notification-protos/build/scow_message_pb";
+  SystemSendMessageRequest,
+} from "@scow/notification-protos/build/scow_message_pb";
 import { notifClient } from "src/config/notification";
 import { InternalMessageType, MessageStatus } from "src/models/messageType";
 
@@ -13,7 +14,7 @@ interface BaseMessage {
 
 interface AccountOverdue extends BaseMessage {
   messageType: InternalMessageType.AccountOverdue;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     accountName: string;
@@ -23,7 +24,7 @@ interface AccountOverdue extends BaseMessage {
 
 interface AccountRechargeSuccess extends BaseMessage {
   messageType: InternalMessageType.AccountRechargeSuccess;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     accountName: string;
@@ -34,7 +35,7 @@ interface AccountRechargeSuccess extends BaseMessage {
 
 interface AccountLowBalance extends BaseMessage {
   messageType: InternalMessageType.AccountLowBalance;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     accountName: string;
@@ -43,7 +44,7 @@ interface AccountLowBalance extends BaseMessage {
 
 interface AccountBalance extends BaseMessage {
   messageType: InternalMessageType.AccountBalance;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     accountName: string;
     amount: string;
@@ -53,7 +54,7 @@ interface AccountBalance extends BaseMessage {
 
 interface AccountLocked extends BaseMessage {
   messageType: InternalMessageType.AccountLocked;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     accountName: string;
@@ -62,7 +63,7 @@ interface AccountLocked extends BaseMessage {
 
 interface AccountUnblocked extends BaseMessage {
   messageType: InternalMessageType.AccountUnblocked;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     accountName: string;
@@ -71,7 +72,7 @@ interface AccountUnblocked extends BaseMessage {
 
 interface JobFinished extends BaseMessage {
   messageType: InternalMessageType.JobFinished;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
     jobId: string;
@@ -84,19 +85,25 @@ interface JobFinished extends BaseMessage {
 
 interface AccountUserSyncResult extends BaseMessage {
   messageType: InternalMessageType.AccountUserSyncResult;
-  targetType: TargetType.USER,
+  targetType: TargetType.USER;
   metadata: {
     time: string;
-    messageStatus: MessageStatus,
+    messageStatus: MessageStatus;
     totalSucceedCount: number;
     totalFailedCount: number;
     syncI18nClusterNames: I18nStringType;
   };
 }
 
-export type Message = AccountLocked | AccountOverdue | AccountRechargeSuccess
-  | AccountLowBalance | AccountBalance | AccountUnblocked
-  | JobFinished | AccountUserSyncResult;
+export type Message =
+  | AccountLocked
+  | AccountOverdue
+  | AccountRechargeSuccess
+  | AccountLowBalance
+  | AccountBalance
+  | AccountUnblocked
+  | JobFinished
+  | AccountUserSyncResult;
 
 export const sendMessage = async (message: Message, logger: Logger) => {
   const { metadata } = message;
@@ -104,7 +111,8 @@ export const sendMessage = async (message: Message, logger: Logger) => {
   const data: SystemSendMessageRequest = {
     ...message,
     $typeName: "scow_notification.SystemSendMessageRequest",
-    systemId: "MIS_SERVER", metadata: metadata,
+    systemId: "MIS_SERVER",
+    metadata: metadata,
     descriptionData: [],
   };
 
@@ -118,7 +126,6 @@ export const sendMessage = async (message: Message, logger: Logger) => {
 
 // 按批次发送消息
 export const batchSendMessages = async (messages: Message[], logger: Logger, batchSize = 100) => {
-
   for (let i = 0; i < messages.length; i += batchSize) {
     const batch = messages.slice(i, i + batchSize); // 获取当前批次的消息
 

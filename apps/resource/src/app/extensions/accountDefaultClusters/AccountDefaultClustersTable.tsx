@@ -2,7 +2,7 @@
 
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
-import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Space, Table } from "antd";
 import React, { useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
@@ -12,7 +12,7 @@ import { DEFAULT_PAGE_SIZE } from "src/utils/constants";
 
 interface AccountDefaultClustersProps {
   assignedClusterIds: string[] | undefined;
-  currentClusters: Cluster[],
+  currentClusters: Cluster[];
   tenantName: string;
   isLoading: boolean;
   reload: () => void;
@@ -21,33 +21,39 @@ interface AccountDefaultClustersProps {
 }
 
 export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> = ({
-  assignedClusterIds, currentClusters, tenantName, isLoading, reload, language, languageId,
+  assignedClusterIds,
+  currentClusters,
+  tenantName,
+  isLoading,
+  reload,
+  language,
+  languageId,
 }) => {
-
   const { clusterSortedIdList } = usePublicConfig();
   const { message, modal } = App.useApp();
 
   const [currentPageNum, setCurrentPageNum] = useState<number>(1);
 
-  const clusterSortedIdMap = Object.fromEntries(
-    clusterSortedIdList.map((id, index) => [id, index]),
-  );
+  const clusterSortedIdMap = Object.fromEntries(clusterSortedIdList.map((id, index) => [id, index]));
 
-  const displayedData = useMemo(() => assignedClusterIds
-    ? assignedClusterIds
-      .map((id) => {
-        const name = currentClusters.find((cluster) => cluster.id === id)?.name;
-        return name ? { id, name } : null;
-      })
-      .sort((a, b) => {
-        // 使用 clusterSortedIdList 的索引进行排序
-        const aIndex = a?.id ? (clusterSortedIdMap[a.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
-        const bIndex = b?.id ? (clusterSortedIdMap[b.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
-        return aIndex - bIndex;
-      })
-      .filter((item) => item !== null)
-    : undefined,
-  [assignedClusterIds, currentClusters, clusterSortedIdMap]);
+  const displayedData = useMemo(
+    () =>
+      assignedClusterIds
+        ? assignedClusterIds
+            .map((id) => {
+              const name = currentClusters.find((cluster) => cluster.id === id)?.name;
+              return name ? { id, name } : null;
+            })
+            .sort((a, b) => {
+              // 使用 clusterSortedIdList 的索引进行排序
+              const aIndex = a?.id ? (clusterSortedIdMap[a.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+              const bIndex = b?.id ? (clusterSortedIdMap[b.id] ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+              return aIndex - bIndex;
+            })
+            .filter((item) => item !== null)
+        : undefined,
+    [assignedClusterIds, currentClusters, clusterSortedIdMap],
+  );
 
   const removeFromDefaultClustersMutation = trpc.partitions.removeFromAccountDefaultClusters.useMutation({
     onSuccess(data) {
@@ -55,9 +61,9 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
       if (data?.failedUnassignedAccounts.length > 0) {
         modal.success({
           title: language.accountDefaultClusters.removeModal.removedSuccessMessage,
-          content: getCurrentLangTextArgs(
-            language.accountDefaultClusters.removeModal.successExplanation,
-            [data.failedUnassignedAccounts.join(", ")]),
+          content: getCurrentLangTextArgs(language.accountDefaultClusters.removeModal.successExplanation, [
+            data.failedUnassignedAccounts.join(", "),
+          ]),
         });
       } else {
         message.success(language.accountDefaultClusters.removeModal.removedSuccessMessage);
@@ -78,10 +84,7 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
     },
   });
 
-
-  const removerFromDefaultClusters = async (
-    clusterId: string,
-  ) => {
+  const removerFromDefaultClusters = async (clusterId: string) => {
     await removeFromDefaultClustersMutation.mutateAsync({
       clusterId,
       tenantName,
@@ -95,9 +98,11 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
           <ExclamationCircleOutlined />
           <span style={{ marginLeft: "4px" }}>{language.accountDefaultClusters.explanation1}</span>
           <br />
-          <strong>&bull; </strong>{language.accountDefaultClusters.explanation2}
+          <strong>&bull; </strong>
+          {language.accountDefaultClusters.explanation2}
           <br />
-          <strong>&bull; </strong>{language.accountDefaultClusters.explanation3}
+          <strong>&bull; </strong>
+          {language.accountDefaultClusters.explanation3}
         </p>
       </div>
       <Table
@@ -134,12 +139,12 @@ export const AccountDefaultClustersTable: React.FC<AccountDefaultClustersProps> 
                     content: (
                       <>
                         <p>
-                          {getCurrentLangTextArgs(language.accountDefaultClusters.removeModal.content,
-                            [tenantName, clusterName])}
+                          {getCurrentLangTextArgs(language.accountDefaultClusters.removeModal.content, [
+                            tenantName,
+                            clusterName,
+                          ])}
                         </p>
-                        <p style={{ color: "red" }}>
-                          {language.accountDefaultClusters.removeModal.removeWarn}
-                        </p>
+                        <p style={{ color: "red" }}>{language.accountDefaultClusters.removeModal.removeWarn}</p>
                       </>
                     ),
                     onOk: async () => {

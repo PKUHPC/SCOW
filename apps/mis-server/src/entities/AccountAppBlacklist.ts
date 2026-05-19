@@ -30,11 +30,11 @@ export class AccountAppBlacklist {
   operator?: Ref<User>;
 
   constructor(init: {
-    account: EntityOrRef<Account>,
-    appId: string,
-    cluster: EntityOrRef<Cluster>,
-    operator?: EntityOrRef<User>,
-    disabledAt?: Date,
+    account: EntityOrRef<Account>;
+    appId: string;
+    cluster: EntityOrRef<Cluster>;
+    operator?: EntityOrRef<User>;
+    disabledAt?: Date;
   }) {
     this.account = toRef(init.account);
     this.appId = init.appId;

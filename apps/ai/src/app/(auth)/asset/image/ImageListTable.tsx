@@ -34,10 +34,10 @@ interface Props {
 }
 
 interface FilterForm {
-  cluster?: Cluster | undefined,
-  nameOrTagOrDesc?: string | undefined,
-  isShared?: boolean,
-  types: ImageType[],
+  cluster?: Cluster | undefined;
+  nameOrTagOrDesc?: string | undefined;
+  isShared?: boolean;
+  types: ImageType[];
 }
 
 interface PageInfo {
@@ -70,13 +70,12 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
       cluster: undefined,
       nameOrTagOrDesc: undefined,
       isPublic: isPublic,
-      types:[],
+      types: [],
     };
   });
 
   const [form] = Form.useForm<FilterForm>();
   const [pageInfo, setPageInfo] = useState<PageInfo>({ page: 1, pageSize: 10 });
-
 
   const [showLogModal, setShowLogModal] = useState(false);
   // 存储选中的镜像
@@ -100,7 +99,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
     ...query,
     isPublic: parseBooleanParam(isPublic),
     clusterId: cluster?.id,
-    types:query.types.join(","),
+    types: query.types.join(","),
   });
 
   const { data: imageQuota, refetch: refetchImageQuota } = trpc.image.getImageQuota.useQuery();
@@ -108,12 +107,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
   const { modal, message } = App.useApp();
 
   if (error) {
-    return (
-      <NextError
-        title={error.message}
-        statusCode={error.data?.httpStatus ?? 500}
-      />
-    );
+    return <NextError title={error.message} statusCode={error.data?.httpStatus ?? 500} />;
   }
 
   const deleteImageMutation = trpc.image.deleteImage.useMutation({
@@ -159,25 +153,22 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
           form={form}
           initialValues={query}
           onFinish={async () => {
-            const { nameOrTagOrDesc,types } = await form.validateFields();
-            setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim(),types });
+            const { nameOrTagOrDesc, types } = await form.validateFields();
+            setQuery({ ...query, nameOrTagOrDesc: nameOrTagOrDesc?.trim(), types });
             setPageInfo({ page: 1, pageSize: pageInfo.pageSize });
             refetch();
             refetchImageQuota();
           }}
         >
           <Form.Item label={t(p("cluster"))} name="cluster">
-            <SingleClusterSelector
-              allowClear={true}
-            />
+            <SingleClusterSelector allowClear={true} />
           </Form.Item>
           <Form.Item label={t(p("type"))} name="types">
             <Select
               style={{ minWidth: "100px" }}
               mode="multiple"
               allowClear
-              options={
-                Object.entries(TypeText).map(([key, value]) => ({ label:value, value:key }))}
+              options={Object.entries(TypeText).map(([key, value]) => ({ label: value, value: key }))}
             />
           </Form.Item>
           <Form.Item name="nameOrTagOrDesc">
@@ -189,23 +180,19 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
         </Form>
         {!isPublic && (
           <Space>
-            <CreateImageModalButton
-              refetch={refetch}
-              isEdit={false}
-              clusters={clusters}
-            > {t("button.addButton")}
+            <CreateImageModalButton refetch={refetch} isEdit={false} clusters={clusters}>
+              {" "}
+              {t("button.addButton")}
             </CreateImageModalButton>
           </Space>
         )}
       </FilterFormContainer>
-      {
-        !isPublic && (
-          <ImageQuota
-            usedGiB={imageQuota ? imageQuota.usedGB : "-"}
-            totalGiB={imageQuota && imageQuota.totalGB !== -1 ? imageQuota.totalGB : "-"}
-          />
-        )
-      }
+      {!isPublic && (
+        <ImageQuota
+          usedGiB={imageQuota ? imageQuota.usedGB : "-"}
+          totalGiB={imageQuota && imageQuota.totalGB !== -1 ? imageQuota.totalGB : "-"}
+        />
+      )}
       <Table
         rowKey="id"
         dataSource={data?.items}
@@ -213,29 +200,40 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
         columns={[
           { dataIndex: "name", title: t(p("name")) },
           { dataIndex: "tag", title: t(p("tag")) },
-          { dataIndex: "clusterId", title: t(p("cluster")),
+          {
+            dataIndex: "clusterId",
+            title: t(p("cluster")),
             render: (_, r) =>
-              getI18nConfigCurrentText(clusters.find((x) => (x.id === r.clusterId))?.name, languageId) ?? r.clusterId },
-          { dataIndex: "types", title: t(p("type")),
-            render: (_, r) => r.types.map((t) => <Tag key={t}>{TypeText[t]}</Tag>) },
-          { dataIndex: "source", title: t(p("source")),render: (_, r) => sourceText[r.source] },
+              getI18nConfigCurrentText(clusters.find((x) => x.id === r.clusterId)?.name, languageId) ?? r.clusterId,
+          },
+          {
+            dataIndex: "types",
+            title: t(p("type")),
+            render: (_, r) => r.types.map((t) => <Tag key={t}>{TypeText[t]}</Tag>),
+          },
+          { dataIndex: "source", title: t(p("source")), render: (_, r) => sourceText[r.source] },
           { dataIndex: "description", title: t(p("description")) },
-          isPublic ? {
-            dataIndex: "shareUser",
-            title: t(pCommon("publishUser")),
-            width: 100,
-            // @ts-ignore
-            render: (_, r) =>
-              r.isPlatformOwned ? (
-                <PlatformTag color={theme.token.colorPrimary}>
-                  <span>{t(pCommon("platform"))}</span>
-                  <PlatformIcon />
-                </PlatformTag>
-              ) : (
-                `${r.ownerName}（ID:${r.owner}）`
-              ),
-          } : {},
-          { dataIndex: "status", title: t(p("status")), width: 90,
+          isPublic
+            ? {
+                dataIndex: "shareUser",
+                title: t(pCommon("publishUser")),
+                width: 100,
+                // @ts-ignore
+                render: (_, r) =>
+                  r.isPlatformOwned ? (
+                    <PlatformTag color={theme.token.colorPrimary}>
+                      <span>{t(pCommon("platform"))}</span>
+                      <PlatformIcon />
+                    </PlatformTag>
+                  ) : (
+                    `${r.ownerName}（ID:${r.owner}）`
+                ),
+              }
+            : {},
+          {
+            dataIndex: "status",
+            title: t(p("status")),
+            width: 90,
             onCell: () => ({ style: { whiteSpace: "nowrap" } }),
             render: (_, r) => {
               switch (r.status) {
@@ -247,7 +245,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                       </a>
                     </>
                   );
-                case Status.CREATED:{
+                case Status.CREATED: {
                   if (r.isShared) {
                     return <a style={{ color: "#5FBDEC" }}>{t(pCommon("PUBLISHED"))}</a>;
                   }
@@ -264,51 +262,54 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
               }
             },
           },
-          { dataIndex: "updateTime", title: t(p("updatedTime")),
-            render: (_, r) => r.updateTime ? formatDateTime(r.updateTime) : "-" },
-          { dataIndex: "action", title: t(p("action")),
+          {
+            dataIndex: "updateTime",
+            title: t(p("updatedTime")),
+            render: (_, r) => (r.updateTime ? formatDateTime(r.updateTime) : "-"),
+          },
+          {
+            dataIndex: "action",
+            title: t(p("action")),
             render: (_, r) => {
               const shareOrUnshareStr = r.isShared ? t(p("cancelShare")) : t(p("share"));
-              return !isPublic ?
-                (
-                  <Space direction="horizontal">
-                    { r.status === Status.CREATED && (
-                      <EditImageModalButton
-                        refetch={refetch}
-                        isEdit={true}
-                        editData={r}
-                        clusters={clusters}
-                      >
-                        <Tooltip title={t("button.editButton")}>
-                          <EditIcon />
-                        </Tooltip>
-                      </EditImageModalButton>
-                    )}
-                    { r.status === Status.CREATED && isUserShareEnabled && (
-                      <Tooltip title={shareOrUnshareStr}>
-                        <span onClick={() => {
+              return !isPublic ? (
+                <Space direction="horizontal">
+                  {r.status === Status.CREATED && (
+                    <EditImageModalButton refetch={refetch} isEdit={true} editData={r} clusters={clusters}>
+                      <Tooltip title={t("button.editButton")}>
+                        <EditIcon />
+                      </Tooltip>
+                    </EditImageModalButton>
+                  )}
+                  {r.status === Status.CREATED && isUserShareEnabled && (
+                    <Tooltip title={shareOrUnshareStr}>
+                      <span
+                        onClick={() => {
                           modal.confirm({
                             title: `${shareOrUnshareStr}${languageId === "en" ? " " : ""}${t(p("image"))}`,
-                            content: `${t(p("confirmText"),[shareOrUnshareStr,r.name,r.tag])}`,
+                            content: `${t(p("confirmText"), [shareOrUnshareStr, r.name, r.tag])}`,
                             onOk: async () => {
-                              await shareOrUnshareMutation.mutateAsync({
-                                id: r.id,
-                                share: !r.isShared,
-                              }, {
-                                onSuccess() {
-                                  refetch();
-                                  message.success(`${shareOrUnshareStr}${t(p("imageSuccessfully"))}`);
+                              await shareOrUnshareMutation.mutateAsync(
+                                {
+                                  id: r.id,
+                                  share: !r.isShared,
                                 },
-                              });
+                                {
+                                  onSuccess() {
+                                    refetch();
+                                    message.success(`${shareOrUnshareStr}${t(p("imageSuccessfully"))}`);
+                                  },
+                                },
+                              );
                             },
                           });
                         }}
-                        >
-                          { r.isShared ? <CancelShareIcon /> : <ShareIcon />}
-                        </span>
-                      </Tooltip>
-                    )}
-                    {/* { r.source === Source.INTERNAL && (
+                      >
+                        {r.isShared ? <CancelShareIcon /> : <ShareIcon />}
+                      </span>
+                    </Tooltip>
+                  )}
+                  {/* { r.source === Source.INTERNAL && (
                     <Space split={<Divider type="vertical" />}>
                       <Button
                         type="link"
@@ -320,17 +321,19 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                       </Button>
                     </Space>
                   )} */}
-                    <Tooltip title={t("button.deleteButton")}>
-                      <DeleteIcon onClick={() => {
+                  <Tooltip title={t("button.deleteButton")}>
+                    <DeleteIcon
+                      onClick={() => {
                         modal.confirm({
                           title: t(p("delImage")),
-                          content: r.status === Status.CREATING ? (
-                            <p>{t(p("delText1"))}</p>
-                          ) : (
-                            <>
-                              <p>{`${t(p("confirmDel"))}${r.name}${t(p("tag"))}${r.tag}？${t(p("delText2"))}`}</p>
-                            </>
-                          ),
+                          content:
+                            r.status === Status.CREATING ? (
+                              <p>{t(p("delText1"))}</p>
+                            ) : (
+                              <>
+                                <p>{`${t(p("confirmDel"))}${r.name}${t(p("tag"))}${r.tag}？${t(p("delText2"))}`}</p>
+                              </>
+                            ),
                           onOk: async () => {
                             await deleteImageMutation.mutateAsync({
                               id: r.id,
@@ -339,42 +342,43 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                           },
                         });
                       }}
-                      />
-                    </Tooltip>
-                  </Space>
-                ) :
-                (
-                  <CopyImageModalButton
-                    refetch={refetch}
-                    imageProps={
-                      {
-                        copiedId:r.id,
-                        copiedName: r.name,
-                        copiedTag: r.tag,
-                        copiedClusterId: r.clusterId,
-                        copiedTypes: r.types,
-                        copiedInferServicePort: Number(r.inferServicePort) ,
-                        copiedStartCommand: r.startCommand,
-                        copiedDescription: r.description,
-                      }
-                    }
-                  >
-                    <Tooltip title={t("button.copyButton")}>
-                      <CopyIcon />
-                    </Tooltip>
-                  </CopyImageModalButton>
-                );
+                    />
+                  </Tooltip>
+                </Space>
+              ) : (
+                <CopyImageModalButton
+                  refetch={refetch}
+                  imageProps={{
+                    copiedId: r.id,
+                    copiedName: r.name,
+                    copiedTag: r.tag,
+                    copiedClusterId: r.clusterId,
+                    copiedTypes: r.types,
+                    copiedInferServicePort: Number(r.inferServicePort),
+                    copiedStartCommand: r.startCommand,
+                    copiedDescription: r.description,
+                  }}
+                >
+                  <Tooltip title={t("button.copyButton")}>
+                    <CopyIcon />
+                  </Tooltip>
+                </CopyImageModalButton>
+              );
             },
           },
         ]}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: 10,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.count,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: 10,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.count,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         scroll={{ x: true }}
       />
 
@@ -384,7 +388,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
         open={showLogModal}
         onClose={() => handleCloseModal()}
         failedReason={
-          selectedImage?.status === Status.FAILURE ? (selectedImage?.failedReason ?? "创建失败") : undefined}
+          selectedImage?.status === Status.FAILURE ? (selectedImage?.failedReason ?? "创建失败") : undefined
+        }
       />
     </TableContainer>
   );

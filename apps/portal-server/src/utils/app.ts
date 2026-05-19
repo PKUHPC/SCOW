@@ -15,7 +15,6 @@ import { z } from "zod";
 
 import { mapConnectRpcStatusToGrpc } from "./scowd";
 
-
 export const SessionMetadataSchema = z.object({
   sessionId: z.string(),
   // 兼容原始没有 jobName 的数据
@@ -57,23 +56,20 @@ export const BIN_BASH_SCRIPT_HEADER = "#!/bin/bash -l\n";
 // 已完成的应用作业，保存相关信息到ended_sessions.json
 export const ENDED_SESSIONS = "ended_sessions.json";
 
-
 export function splitSbatchArgs(sbatchArgs: string) {
-  const args = sbatchArgs.split(" -").map(function(x, index) {
+  const args = sbatchArgs.split(" -").map(function (x, index) {
     x = x.trim();
     return index === 0 ? x : "-" + x;
   });
   return args.filter((x) => x); // remove empty string in the array
 }
 
-
 export const getClusterAppConfigs = (cluster: string) => {
-
   const commonApps = getAppConfigs();
 
   const clusterAppsConfigs = getAppConfigs(join(DEFAULT_CONFIG_BASE_PATH, "clusters/", cluster));
 
-  const apps = {} as Record<string, typeof commonApps[number]>;
+  const apps = {} as Record<string, (typeof commonApps)[number]>;
 
   for (const [key, value] of Object.entries(commonApps)) {
     apps[key] = value;
@@ -84,34 +80,30 @@ export const getClusterAppConfigs = (cluster: string) => {
   }
 
   return apps;
-
 };
-
-
-
 
 interface FixedValueInput {
   value: string | number | undefined;
-  hidden?: boolean
+  hidden?: boolean;
 }
 type OutputValue = FixedValue["value"];
 
-export function convertAttributesFixedValue(input: FixedValueInput | undefined):
-{ value: OutputValue; hidden: boolean } | undefined {
+export function convertAttributesFixedValue(
+  input: FixedValueInput | undefined,
+): { value: OutputValue; hidden: boolean } | undefined {
   if (input?.value === undefined) {
     return undefined;
   }
 
   const fixedValue: OutputValue =
-    typeof input.value === "number"
-      ? { $case: "number", number: input.value }
-      : { $case: "text", text: input.value };
+    typeof input.value === "number" ? { $case: "number", number: input.value } : { $case: "text", text: input.value };
 
   return { value: fixedValue, hidden: input.hidden ?? false };
 }
 
-export function convertToOneOfValue(value: string | number):
-   { $case: "number", number: number } | { $case: "text", text: string } {
+export function convertToOneOfValue(
+  value: string | number,
+): { $case: "number"; number: number } | { $case: "text"; text: string } {
   if (typeof value === "number") {
     return { $case: "number", number: value };
   } else {
@@ -127,11 +119,7 @@ export function convertToOneOfValue(value: string | number):
  * @param logger
  * @returns
  */
-function parseAndValidateSessionsFileContent(
-  endedSessionsContent: string[],
-  logger: Logger,
-): SessionMetadata[] {
-
+function parseAndValidateSessionsFileContent(endedSessionsContent: string[], logger: Logger): SessionMetadata[] {
   const validSessions = endedSessionsContent
     .filter((line) => line && line.trim() !== "")
     .map((line) => {
@@ -144,7 +132,6 @@ function parseAndValidateSessionsFileContent(
         } else {
           return null;
         }
-
       } catch (error) {
         logger.warn(`Failed to parse endedSession's line: ${line}`, error);
         return null;
@@ -157,7 +144,6 @@ function parseAndValidateSessionsFileContent(
   const uniqueMap = new Map(validSessions.map((session) => [session.sessionId, session]));
   return Array.from(uniqueMap.values());
 }
-
 
 /**
  * 由于 grpc-proto 的 4M 限制（大约估计可以支持 30000 多条session数据）
@@ -176,28 +162,35 @@ export async function readEndedSessionsFile(
   endedSessionsFilePath: string,
   logger: Logger,
 ): Promise<SessionMetadata[]> {
-
   const esFileMetadata = await client.file.getFileMetadata({ userId, filePath: endedSessionsFilePath });
   let esContentLines: string[] = [];
 
   if (Number(esFileMetadata.sizeByte) <= 2 * 1024 * 1024) {
-    logger.trace(`EndedSessions files' size is ${Number(esFileMetadata.sizeByte)} B, `
-              + "using direct transfer to read the content...");
+    logger.trace(
+      `EndedSessions files' size is ${Number(esFileMetadata.sizeByte)} B, ` +
+        "using direct transfer to read the content...",
+    );
     const esContent = await client.file.readFile({ userId, filePath: endedSessionsFilePath });
     esContentLines = esContent.content.toString().trim().split("\n");
-
   } else {
-    logger.trace(`EndedSessions files' size is ${Number(esFileMetadata.sizeByte)} B, `
-              + "using stream transmission to read the content...");
+    logger.trace(
+      `EndedSessions files' size is ${Number(esFileMetadata.sizeByte)} B, ` +
+        "using stream transmission to read the content...",
+    );
 
     let fileContent: Buffer[] = [];
     const abortController = new AbortController();
     try {
-      const esReadStream = client.file.download({
-        userId, path: endedSessionsFilePath, chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
-      }, {
-        signal: abortController.signal,
-      });
+      const esReadStream = client.file.download(
+        {
+          userId,
+          path: endedSessionsFilePath,
+          chunkSizeByte: config.DOWNLOAD_CHUNK_SIZE,
+        },
+        {
+          signal: abortController.signal,
+        },
+      );
       for await (const response of esReadStream) {
         if (response?.chunk) {
           const chunk = Buffer.from(response.chunk);
@@ -206,7 +199,6 @@ export async function readEndedSessionsFile(
       }
       const esContent = Buffer.concat(fileContent);
       esContentLines = esContent.toString().trim().split("\n");
-
     } catch (err) {
       logger.error(`Error reading file ${endedSessionsFilePath}:`, err);
       abortController.abort();
@@ -235,26 +227,25 @@ export async function readEndedSessionsFile(
  * @param logger
  * @returns
  */
-function convertSessionsArrayToFileContent(
-  sessionList: SessionMetadata[],
-  logger: Logger,
-): string {
-  return sessionList.map((session) => {
-    // 增加 zod 验证
-    const validationResult = SessionMetadataSchema.safeParse(session);
+function convertSessionsArrayToFileContent(sessionList: SessionMetadata[], logger: Logger): string {
+  return (
+    sessionList
+      .map((session) => {
+        // 增加 zod 验证
+        const validationResult = SessionMetadataSchema.safeParse(session);
 
-    if (validationResult.success) {
-      return JSON.stringify(session);
-    } else {
-      logger.warn("Invalid session data:", validationResult.error);
-      return null;
-    }
-  })
-    // 将解析失败的行过滤掉
-    .filter((item): item is string => item !== null)
-    .join("\n");
+        if (validationResult.success) {
+          return JSON.stringify(session);
+        } else {
+          logger.warn("Invalid session data:", validationResult.error);
+          return null;
+        }
+      })
+      // 将解析失败的行过滤掉
+      .filter((item): item is string => item !== null)
+      .join("\n")
+  );
 }
-
 
 // 创建 ended_sessions.json文件
 async function writeNewEndedSessionsFile(
@@ -264,21 +255,20 @@ async function writeNewEndedSessionsFile(
   newEndedSessions: SessionMetadata[],
   logger: Logger,
 ): Promise<void> {
-
   const writeContent = convertSessionsArrayToFileContent(newEndedSessions, logger);
   const bufferData = Buffer.from(writeContent, "utf8");
-  logger.trace(
-    "The endedSessions file will be created using streaming transmission during its first initialization.");
+  logger.trace("The endedSessions file will be created using streaming transmission during its first initialization.");
   try {
-    await client.file.upload((async function* () {
-      yield { message: { case: "info", value: { path: endedSessionsFilePath, userId } } };
-      yield { message: { case: "chunk", value: new Uint8Array(bufferData) } };
-    })());
+    await client.file.upload(
+      (async function* () {
+        yield { message: { case: "info", value: { path: endedSessionsFilePath, userId } } };
+        yield { message: { case: "chunk", value: new Uint8Array(bufferData) } };
+      })(),
+    );
     logger.trace(`Successfully create endedSessions.json in ${endedSessionsFilePath}`);
 
     // 指定ended_sessions.json文件权限为 0664
     await client.file.changeMode({ userId, path: endedSessionsFilePath, mode: "0664" });
-
   } catch (err) {
     logger.error(`Error writing data in ${endedSessionsFilePath}`);
     if (err instanceof ConnectError) {
@@ -312,7 +302,6 @@ export async function writeEndedSessionsFileContent(
   newEndedSessions: SessionMetadata[],
   logger: Logger,
 ): Promise<void> {
-
   // 如果原本不存在EndedSession.json文件，只写入新的数据
   if (existingEndedSessions.length === 0 && newEndedSessions.length > 0) {
     await writeNewEndedSessionsFile(client, userId, endedSessionsFilePath, newEndedSessions, logger);
@@ -359,9 +348,10 @@ export async function filterAccountsByStatus(
           cluster,
           logger,
           // 当没有特殊指定时，为查询所有分区下的状态
-          async (client) => await asyncClientCall(client.account, "queryAccountBlockStatus", {
-            accountName: account,
-          }),
+          async (client) =>
+            await asyncClientCall(client.account, "queryAccountBlockStatus", {
+              accountName: account,
+            }),
         );
         if (resp.blocked) {
           filteredBlockedAccounts.push(account);
@@ -380,9 +370,11 @@ export async function filterAccountsByStatus(
         const resp = await callOnOne(
           cluster,
           logger,
-          async (client) => await asyncClientCall(client.user, "queryUserInAccountBlockStatus", {
-            accountName: account, userId,
-          }),
+          async (client) =>
+            await asyncClientCall(client.user, "queryUserInAccountBlockStatus", {
+              accountName: account,
+              userId,
+            }),
         );
         if (resp.blocked) {
           filteredBlockedUserAccounts.push(account);
@@ -397,8 +389,9 @@ export async function filterAccountsByStatus(
 
   await Promise.allSettled([filterAccountPromise, filterUserStatusPromise]);
 
-  const unblockAccounts =
-        filteredUnblockedAccounts.filter((account) => filteredUnblockedUserAccounts.includes(account));
+  const unblockAccounts = filteredUnblockedAccounts.filter((account) =>
+    filteredUnblockedUserAccounts.includes(account),
+  );
   const blockedAccounts = Array.from(new Set(filteredBlockedAccounts.concat(filteredBlockedUserAccounts)));
 
   return statusFilter === AccountStatusFilter.BLOCKED_ONLY ? blockedAccounts : unblockAccounts;

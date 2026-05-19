@@ -8,11 +8,7 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
-export const FileType = Type.Union([
-  Type.Literal("FILE"),
-  Type.Literal("DIR"),
-  Type.Literal("SYMLINK"),
-]);
+export const FileType = Type.Union([Type.Literal("FILE"), Type.Literal("DIR"), Type.Literal("SYMLINK")]);
 
 export type FileType = Static<typeof FileType>;
 
@@ -54,25 +50,39 @@ export const mapType = {
 } as const;
 
 export default route(ListFileSchema, async (req, res) => {
-
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, path, updateAccessTime } = req.query;
 
   const client = getClient(FileServiceClient);
 
   return asyncUnaryCall(client, "readDirectory", {
-    cluster, userId: info.identityId, path, updateAccessTime,
-  }).then(({ results }) => ({ 200: {
-    items: results.map(({ mode, mtime, name, size, type, linkTargetPath, linkTargetType }) => ({
-      mode, mtime, name, size, type: mapType[type], linkTargetPath,
-      linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
-    })) } }), handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
-    [status.PERMISSION_DENIED]: () => ({ 403: { code: "NOT_ACCESSIBLE" as const } }),
-    [status.INVALID_ARGUMENT]: () => ({ 412: { code: "DIRECTORY_NOT_FOUND" as const } }),
-  }));
+    cluster,
+    userId: info.identityId,
+    path,
+    updateAccessTime,
+  }).then(
+    ({ results }) => ({
+      200: {
+        items: results.map(({ mode, mtime, name, size, type, linkTargetPath, linkTargetType }) => ({
+          mode,
+          mtime,
+          name,
+          size,
+          type: mapType[type],
+          linkTargetPath,
+          linkTargetType: linkTargetType !== undefined ? mapType[linkTargetType] : undefined,
+        })),
+      },
+    }),
+    handlegRPCError({
+      [status.NOT_FOUND]: () => ({ 400: { code: "INVALID_CLUSTER" as const } }),
+      [status.PERMISSION_DENIED]: () => ({ 403: { code: "NOT_ACCESSIBLE" as const } }),
+      [status.INVALID_ARGUMENT]: () => ({ 412: { code: "DIRECTORY_NOT_FOUND" as const } }),
+    }),
+  );
 });

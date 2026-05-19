@@ -1,8 +1,6 @@
 import { useMutation } from "@connectrpc/connect-query";
 import { MessageConfig } from "@scow/notification-protos/build/common_pb";
-import {
-  modifyMessageConfigs,
-} from "@scow/notification-protos/build/message_config-MessageConfigService_connectquery";
+import { modifyMessageConfigs } from "@scow/notification-protos/build/message_config-MessageConfigService_connectquery";
 import { Checkbox, Form, message, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 import { I18nDicType } from "src/models/i18n";
@@ -21,19 +19,19 @@ export interface Props {
   lang: I18nDicType;
 }
 
-export const MessageConfigModal: React.FC<Props> = ({
-  open, onClose, data, enabledNoticeTypes, lang,
-}) => {
-
+export const MessageConfigModal: React.FC<Props> = ({ open, onClose, data, enabledNoticeTypes, lang }) => {
   const [form] = Form.useForm<FormValues>();
   const compLang = lang.messageConfig.messageConfigModal;
 
   useEffect(() => {
     if (data) {
       const initialValues = {
-        userModifyConfigs: data.noticeConfigs.filter((config) => !config.canUserModify).map((config) => {
-          return config.noticeType;
-        }).filter((noticeType) => noticeType !== undefined),
+        userModifyConfigs: data.noticeConfigs
+          .filter((config) => !config.canUserModify)
+          .map((config) => {
+            return config.noticeType;
+          })
+          .filter((noticeType) => noticeType !== undefined),
       };
       form.setFieldsValue(initialValues);
     }
@@ -68,14 +66,16 @@ export const MessageConfigModal: React.FC<Props> = ({
     const { userModifyConfigs } = form.getFieldsValue();
     setUserModifyConfigLoading(true);
     mutateAsync({
-      configs: [{
-        ...data,
-        noticeConfigs: data?.noticeConfigs.map((config) => ({
-          ...config,
-          canUserModify: config.noticeType !== undefined
-            ? !userModifyConfigs.includes(config.noticeType) : config.canUserModify,
-        })),
-      }]
+      configs: [
+        {
+          ...data,
+          noticeConfigs: data?.noticeConfigs.map((config) => ({
+            ...config,
+            canUserModify:
+              config.noticeType !== undefined ? !userModifyConfigs.includes(config.noticeType) : config.canUserModify,
+          })),
+        },
+      ],
     });
   };
 
@@ -90,32 +90,18 @@ export const MessageConfigModal: React.FC<Props> = ({
         okText={lang.common.confirm}
         cancelText={lang.common.cancel}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          name="authorization_form"
-        >
-          <Form.Item
-            name="userModifyConfigs"
-            label={compLang.dontAllowCancel}
-          >
+        <Form form={form} layout="vertical" name="authorization_form">
+          <Form.Item name="userModifyConfigs" label={compLang.dontAllowCancel}>
             <Checkbox.Group style={{ width: "100%" }}>
-              {
-                enabledNoticeTypes.map((noticeType) => {
-                  const disabled = !data.noticeConfigs.find(
-                    (config) => config.noticeType === noticeType,
-                  )?.enabled;
+              {enabledNoticeTypes.map((noticeType) => {
+                const disabled = !data.noticeConfigs.find((config) => config.noticeType === noticeType)?.enabled;
 
-                  return (
-                    <Checkbox
-                      disabled={disabled}
-                      value={noticeType}
-                    >
-                      {getNoticeTypeName(noticeType)}
-                    </Checkbox>
-                  );
-                })
-              }
+                return (
+                  <Checkbox disabled={disabled} value={noticeType}>
+                    {getNoticeTypeName(noticeType)}
+                  </Checkbox>
+                );
+              })}
             </Checkbox.Group>
           </Form.Item>
         </Form>

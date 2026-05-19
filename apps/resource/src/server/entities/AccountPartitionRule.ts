@@ -10,12 +10,7 @@ export class AccountPartitionRule {
   createTime = new Date();
   updateTime = new Date();
 
-  constructor(init: {
-    accountName: string;
-    tenantName: string;
-    clusterId: string;
-    partition: string;
-  }) {
+  constructor(init: { accountName: string; tenantName: string; clusterId: string; partition: string }) {
     this.accountName = init.accountName;
     this.tenantName = init.tenantName;
     this.clusterId = init.clusterId;

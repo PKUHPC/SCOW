@@ -11,7 +11,6 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
-
 export const DecompressFileSchema = typeboxRouteSchema({
   method: "PATCH",
 
@@ -38,10 +37,11 @@ export const DecompressFileSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(DecompressFileSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusterId, filePath, decompressionPath } = req.body;
 
@@ -51,27 +51,33 @@ export default route(DecompressFileSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.decompressFile,
-    operationTypePayload:{
-      clusterId:"",
+    operationTypePayload: {
+      clusterId: "",
       filePath,
       decompressionPath,
     },
   };
 
   return asyncUnaryCall(client, "decompressFile", {
-    userId: info.identityId, clusterId, filePath, decompressionPath,
-  }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.UNIMPLEMENTED]: (e) => ({ 409: { code: "UNIMPLEMENTED" as const, error: e.details } }),
-    [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
-    [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "PERMISSION_DENIED" as const, error: e.details } }),
-    [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
-    [status.UNKNOWN]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
-    [status.RESOURCE_EXHAUSTED]: (e) => ({ 429: { code: "NO_SPACE" as const, error: e.details } }),
-  },
-  async () => await callLog(logInfo, OperationResult.FAIL),
-  ));
-
+    userId: info.identityId,
+    clusterId,
+    filePath,
+    decompressionPath,
+  }).then(
+    async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.UNIMPLEMENTED]: (e) => ({ 409: { code: "UNIMPLEMENTED" as const, error: e.details } }),
+        [status.INVALID_ARGUMENT]: (e) => ({ 400: { code: "INVALID_ARGUMENT" as const, error: e.details } }),
+        [status.PERMISSION_DENIED]: (e) => ({ 403: { code: "PERMISSION_DENIED" as const, error: e.details } }),
+        [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
+        [status.UNKNOWN]: (e) => ({ 500: { code: "INTERNAL" as const, error: e.details } }),
+        [status.RESOURCE_EXHAUSTED]: (e) => ({ 429: { code: "NO_SPACE" as const, error: e.details } }),
+      },
+      async () => await callLog(logInfo, OperationResult.FAIL),
+    ),
+  );
 });

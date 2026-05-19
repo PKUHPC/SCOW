@@ -11,9 +11,7 @@ export const passwordRule = (languageId: string) => {
   };
 };
 
-
 export { confirmPasswordFormItemProps, getEmailRule } from "@scow/lib-web/build/utils/form";
-
 
 type AIJobExceptionReasonLangKey = TextId & `common.aiJobExceptionReason.${string}`;
 const JobReasonI18nKeyMap: Record<string, AIJobExceptionReasonLangKey> = {

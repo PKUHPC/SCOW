@@ -45,7 +45,9 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
     const { title, content, noticeTypes, expirationTime } = values;
 
     mutateAsync({
-      title, content, noticeTypes,
+      title,
+      content,
+      noticeTypes,
       messageType: AdminMessageType.SystemNotification,
       targetType: TargetType.FULL_SITE,
       expiredAt: timestampFromDate(expirationTime.toDate()),
@@ -108,19 +110,22 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
       onFinish={onFinish}
       // labelCol={{ span: 4 }}
       // wrapperCol={{ span: 14 }}
-      initialValues={{ noticeTypes: [NoticeType.SITE_MESSAGE]}}
+      initialValues={{ noticeTypes: [NoticeType.SITE_MESSAGE] }}
     >
       <Form.Item
         label={lang.common.title}
         name="title"
-        rules={[{
-          required: true,
-          message: compLang.inputTitle,
-        }, {
-          type: "string",
-          max: 50,
-          message: compLang.titleLengthTip,
-        }]}
+        rules={[
+          {
+            required: true,
+            message: compLang.inputTitle,
+          },
+          {
+            type: "string",
+            max: 50,
+            message: compLang.titleLengthTip,
+          },
+        ]}
       >
         <TrimInput style={{ maxWidth: "700px" }} />
       </Form.Item>
@@ -128,14 +133,17 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
       <Form.Item
         label={compLang.content}
         name="content"
-        rules={[{
-          required: true,
-          message: compLang.inputContent,
-        }, {
-          type: "string",
-          max: 500,
-          message: compLang.contentLengthTip,
-        }]}
+        rules={[
+          {
+            required: true,
+            message: compLang.inputContent,
+          },
+          {
+            type: "string",
+            max: 500,
+            message: compLang.contentLengthTip,
+          },
+        ]}
       >
         <Input.TextArea style={{ maxWidth: "700px" }} rows={4} />
       </Form.Item>
@@ -146,28 +154,22 @@ export const MessageForm: React.FC<Props> = ({ lang, onSendSuccess }) => {
         rules={[{ required: true, validator: validateCheckboxGroup, message: compLang.selectSentType }]}
       >
         <Checkbox.Group>
-          {
-            data?.noticeTypes.map((noticeType) => (
-              <Checkbox
-                key={noticeType}
-                value={noticeType}
-                disabled={NoticeType.SITE_MESSAGE === noticeType}
-              >
-                {getNoticeTypeName(noticeType)}
-              </Checkbox>
-            ))
-          }
+          {data?.noticeTypes.map((noticeType) => (
+            <Checkbox key={noticeType} value={noticeType} disabled={NoticeType.SITE_MESSAGE === noticeType}>
+              {getNoticeTypeName(noticeType)}
+            </Checkbox>
+          ))}
         </Checkbox.Group>
       </Form.Item>
       <Form.Item
-        label={(
+        label={
           <div>
             <span style={{ marginRight: "5px" }}>{compLang.msgExpirationTime}</span>
             <Popover content={compLang.msgExpirationTimeTip}>
               <QuestionCircleOutlined />
             </Popover>
           </div>
-        )}
+        }
         name="expirationTime"
         rules={[{ required: true, message: compLang.expirationTimeSelectRule }]}
         initialValue={currentDateTime}

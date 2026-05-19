@@ -15,8 +15,8 @@ export interface ClientUserInfo {
 
 // 创建 Context
 const PublicConfigContext = createContext<{
-  publicConfig: PublicConfig,
-  user: ClientUserInfo,
+  publicConfig: PublicConfig;
+  user: ClientUserInfo;
 }>(undefined!);
 
 // 创建 Hook 以便组件中方便使用
@@ -50,10 +50,11 @@ export const PublicConfigProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const user = getUserInfoQuery.data.user;
 
   return (
-    <PublicConfigContext.Provider value={{
-      publicConfig,
-      user,
-    }}
+    <PublicConfigContext.Provider
+      value={{
+        publicConfig,
+        user,
+      }}
     >
       {children}
     </PublicConfigContext.Provider>

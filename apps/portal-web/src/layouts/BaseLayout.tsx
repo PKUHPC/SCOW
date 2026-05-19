@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
@@ -33,11 +21,15 @@ interface Props {
 }
 
 export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }: PropsWithChildren<Props>) => {
-
   const userStore = useStore(UserStore);
 
-  const { currentClusters, defaultCluster, setDefaultCluster, removeDefaultCluster,
-    enableLoginDesktop, crossClusterFileTransferEnabled,
+  const {
+    currentClusters,
+    defaultCluster,
+    setDefaultCluster,
+    removeDefaultCluster,
+    enableLoginDesktop,
+    crossClusterFileTransferEnabled,
   } = useStore(ClusterInfoStore);
 
   const { loginNodes } = useStore(LoginNodeStore);
@@ -48,8 +40,12 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
   const systemLanguageConfig = publicConfig.SYSTEM_LANGUAGE_CONFIG;
 
   const routes = userRoutes(
-    userStore.user, currentClusters, defaultCluster, loginNodes,
-    enableLoginDesktop, crossClusterFileTransferEnabled,
+    userStore.user,
+    currentClusters,
+    defaultCluster,
+    loginNodes,
+    enableLoginDesktop,
+    crossClusterFileTransferEnabled,
     setDefaultCluster,
   );
 
@@ -63,9 +59,8 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
     userStore.logout();
   };
 
-  const toCallbackPage = (url: string) => userStore.user
-    ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
-    : url;
+  const toCallbackPage = (url: string) =>
+    userStore.user ? join(url, `/api/auth/callback?token=${userStore.user.token}`) : url;
 
   const navbarLinks: HeaderNavbarLink[] = [];
 
@@ -103,7 +98,6 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
     });
   }
 
-
   return (
     <LibBaseLayout
       logout={logout}
@@ -117,11 +111,9 @@ export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }
       extensionStoreData={uiExtensionStore.data}
       from="portal"
       headerNavbarLinks={navbarLinks}
-      headerRightContent={(
-        systemLanguageConfig.isUsingI18n ? (
-          <LanguageSwitcher initialLanguage={initialLanguage} />
-        ) : undefined
-      )}
+      headerRightContent={
+        systemLanguageConfig.isUsingI18n ? <LanguageSwitcher initialLanguage={initialLanguage} /> : undefined
+      }
     >
       {children}
     </LibBaseLayout>

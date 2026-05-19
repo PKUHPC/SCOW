@@ -1,22 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import type { RunningJob } from "@scow/protos/build/common/job";
+import type { Cluster } from "src/utils/cluster";
+
 import { Static, Type } from "@sinclair/typebox";
 import dayjs from "dayjs";
 import { Lang } from "react-typed-i18n";
 import en from "src/i18n/en";
-import type { Cluster } from "src/utils/cluster";
-
 
 export type RunningJobInfo = RunningJob & { cluster: Cluster; runningOrQueueTime: string };
 
@@ -100,38 +88,34 @@ export const getAmountStrategyDescriptions = (t: TransType): Record<AmountStrate
   return {
     "max-cpusAlloc-mem": t("AmountStrategy.descriptionMaxCpusMem"),
     "max-gpu-cpusAlloc": t("AmountStrategy.descriptionMaxGpuCpus"),
-    "gpu": t("AmountStrategy.descriptionGpu"),
-    "cpusAlloc": t("AmountStrategy.descriptionCpus"),
+    gpu: t("AmountStrategy.descriptionGpu"),
+    cpusAlloc: t("AmountStrategy.descriptionCpus"),
   };
 };
 export const getAmountStrategyAlgorithmDescriptions = (t: TransType): Record<AmountStrategy, string> => {
   return {
     "max-cpusAlloc-mem": t("AmountStrategy.algorithmMaxCpusMem"),
     "max-gpu-cpusAlloc": t("AmountStrategy.algorithmMaxGpuCpus"),
-    "gpu": t("AmountStrategy.algorithmGpu"),
-    "cpusAlloc": t("AmountStrategy.algorithmCpus"),
+    gpu: t("AmountStrategy.algorithmGpu"),
+    cpusAlloc: t("AmountStrategy.algorithmCpus"),
   };
 };
 
-export const JobSortOrder = Type.Union([
-  Type.Literal("descend"),
-  Type.Literal("ascend"),
-]);
+export const JobSortOrder = Type.Union([Type.Literal("descend"), Type.Literal("ascend")]);
 export type JobSortOrder = Static<typeof JobSortOrder>;
 
-export const JobSortBy = Type.Union(
-  [ Type.Literal("idJob"),
-    Type.Literal("jobName"),
-    Type.Literal("account"),
-    Type.Literal("user"),
-    Type.Literal("cluster"),
-    Type.Literal("partition"),
-    Type.Literal("qos"),
-    Type.Literal("timeSubmit"),
-    Type.Literal("timeEnd"),
-    Type.Literal("Price"),
-  ],
-);
+export const JobSortBy = Type.Union([
+  Type.Literal("idJob"),
+  Type.Literal("jobName"),
+  Type.Literal("account"),
+  Type.Literal("user"),
+  Type.Literal("cluster"),
+  Type.Literal("partition"),
+  Type.Literal("qos"),
+  Type.Literal("timeSubmit"),
+  Type.Literal("timeEnd"),
+  Type.Literal("Price"),
+]);
 export type JobSortBy = Static<typeof JobSortBy>;
 
 // 查询类型，租户管理或常规用户、账户管理

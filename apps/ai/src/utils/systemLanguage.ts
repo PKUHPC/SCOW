@@ -1,19 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { HEADER_ACCEPT_VALID_LANGUAGES, SYSTEM_VALID_LANGUAGES, SystemLanguageConfig } from "@scow/config/build/i18n";
 
-export function getAiCurrentLanguageId(languageCookie: string | undefined,acceptLanguageHeader: string | null,
-  systemLanguageConfig: SystemLanguageConfig): string {
+export function getAiCurrentLanguageId(
+  languageCookie: string | undefined,
+  acceptLanguageHeader: string | null,
+  systemLanguageConfig: SystemLanguageConfig,
+): string {
   // 如果系统不使用i18n，则直接使用defaultLanguage
   if (!systemLanguageConfig.isUsingI18n) {
     return systemLanguageConfig.defaultLanguage;
@@ -30,7 +21,7 @@ export function getAiCurrentLanguageId(languageCookie: string | undefined,accept
     if (acceptLanguageHeader) {
       const preferredLanguages = acceptLanguageHeader.split(",");
       if (preferredLanguages.length > 0) {
-      // 遍历语言偏好列表
+        // 遍历语言偏好列表
         for (const lang of preferredLanguages) {
           const preferredLanguage = lang.split(";")[0];
           // 判断偏好语言中的语言是否合法
@@ -52,4 +43,4 @@ export function getAiCurrentLanguageId(languageCookie: string | undefined,accept
   }
   // 如果判断不出，或者autoDetectWhenUserNotSet为false则直接使用默认语言
   return systemLanguageConfig.defaultLanguage;
-};
+}

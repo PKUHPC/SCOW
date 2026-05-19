@@ -35,7 +35,11 @@ const setLastSyncTime = async (em: SqlEntityManager<MySqlDriver>, logger: Logger
   }
 };
 export async function syncStorageUsage(
-  em: SqlEntityManager<MySqlDriver>, logger: Logger, cluster?: string, path?: string, tenant?: string,
+  em: SqlEntityManager<MySqlDriver>,
+  logger: Logger,
+  cluster?: string,
+  path?: string,
+  tenant?: string,
 ) {
   // 如果调用时指定了 cluster, path 和 tenant，使用指定的值生成 key
   // 否则可能需要遍历所有可能的组合

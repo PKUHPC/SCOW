@@ -68,12 +68,7 @@ export function ticksFromStep(minVal: number, maxVal: number, step: number) {
  * - 保证步长属于 {1,2,5} * 10^n
  * - 返回 ticks（从大到小），以及 niceMin/niceMax/step
  */
-export function getNiceTicks(
-  minVal: number,
-  maxVal: number,
-  minTicks = 2,
-  maxTicks = 6,
-) {
+export function getNiceTicks(minVal: number, maxVal: number, minTicks = 2, maxTicks = 6) {
   if (!isFinite(minVal) || !isFinite(maxVal)) {
     return { ticks: [minVal, maxVal], niceMin: minVal, niceMax: maxVal, step: 0 };
   }
@@ -109,8 +104,12 @@ export function getNiceTicks(
   // 如果没有找到完美的（极少发生），使用以 maxTicks 为基准的 niceStep（最接近的 fallback）
   const fallbackStep = nextNiceStep(span / (maxTicks - 1));
   const fallback = ticksFromStep(minVal, maxVal, fallbackStep);
-  return { ticks: fallback.ticks.slice().reverse(),
-    niceMin: fallback.niceMin, niceMax: fallback.niceMax, step: fallback.step };
+  return {
+    ticks: fallback.ticks.slice().reverse(),
+    niceMin: fallback.niceMin,
+    niceMax: fallback.niceMax,
+    step: fallback.step,
+  };
 }
 
 export const ColorLegend: React.FC<Props> = ({ id, height, color, domain, format }) => {

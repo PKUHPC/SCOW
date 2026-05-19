@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -43,11 +31,12 @@ export const CancelJobSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(CancelJobSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(CancelJobSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, jobId } = req.query;
 
@@ -71,19 +60,27 @@ export default /* #__PURE__*/route(CancelJobSchema, async (req, res) => {
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.endJob,
     operationTypePayload: {
-      jobId: +jobId, accountName: job.account, clusterId: cluster,
+      jobId: +jobId,
+      accountName: job.account,
+      clusterId: cluster,
     },
   };
 
   // Cancel the job for the user who submitted the job
   return asyncUnaryCall(client, "cancelJob", {
-    jobId: +jobId, userId: job.user, cluster,
-  }).then(async () => {
-    await callLog(logInfo, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "JOB_NOT_FOUND" } } as const),
-  },
-  async () => await callLog(logInfo, OperationResult.FAIL),
-  ));
+    jobId: +jobId,
+    userId: job.user,
+    cluster,
+  }).then(
+    async () => {
+      await callLog(logInfo, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.NOT_FOUND]: () => ({ 404: { code: "JOB_NOT_FOUND" } }) as const,
+      },
+      async () => await callLog(logInfo, OperationResult.FAIL),
+    ),
+  );
 });

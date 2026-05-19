@@ -1,7 +1,4 @@
-import { Collection, Entity,
-  Enum,
-  ManyToOne, OneToMany, OneToOne, PrimaryKey, Property,
-  Ref } from "@mikro-orm/core";
+import { Collection, Entity, Enum, ManyToOne, OneToMany, OneToOne, PrimaryKey, Property, Ref } from "@mikro-orm/core";
 import { Decimal } from "@scow/lib-decimal";
 import { AccountWhitelist } from "src/entities/AccountWhitelist";
 import { Tenant } from "src/entities/Tenant";
@@ -34,7 +31,10 @@ export class Account {
   users = new Collection<UserAccount>(this);
 
   @OneToOne(() => AccountWhitelist, (u) => u.account, {
-    nullable: true, ref: true, unique: true, owner: true,
+    nullable: true,
+    ref: true,
+    unique: true,
+    owner: true,
   })
   whitelist?: Ref<AccountWhitelist>;
 

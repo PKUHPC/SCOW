@@ -17,23 +17,15 @@ interface Props {
 }
 
 interface FormFields {
-  name: string,
-  tag: string,
-  types?: ImageType[],
-  inferServicePort?: number,
-  startCommand?: string,
-  description?: string,
+  name: string;
+  tag: string;
+  types?: ImageType[];
+  inferServicePort?: number;
+  startCommand?: string;
+  description?: string;
 }
 
-export const SaveDevHostModal: React.FC<Props> = ({
-  open,
-  onClose,
-  reload,
-  jobId,
-  clusterId,
-  imageName,
-  imageTag,
-}) => {
+export const SaveDevHostModal: React.FC<Props> = ({ open, onClose, reload, jobId, clusterId, imageName, imageTag }) => {
   const t = useI18nTranslateToString();
   const p = prefix("app.devHost.listPage.saveImageModal.");
 
@@ -86,30 +78,16 @@ export const SaveDevHostModal: React.FC<Props> = ({
           types: [ImageType.APP], // 开发机默认为APP类型
         }}
       >
-        <Form.Item label={t(p("originalName"))}>
-          {imageName}
-        </Form.Item>
-        <Form.Item label={t(p("originalTag"))}>
-          {imageTag || "latest"}
-        </Form.Item>
+        <Form.Item label={t(p("originalName"))}>{imageName}</Form.Item>
+        <Form.Item label={t(p("originalTag"))}>{imageTag || "latest"}</Form.Item>
         <Form.Item
           label={t(p("imageName"))}
           name="name"
-          rules={[
-            { required: true },
-            { validator: imageNameValidation },
-          ]}
+          rules={[{ required: true }, { validator: imageNameValidation }]}
         >
           <TrimInput allowClear />
         </Form.Item>
-        <Form.Item
-          label={t(p("imageTag"))}
-          name="tag"
-          rules={[
-            { required: true },
-            { validator: imageTagValidation },
-          ]}
-        >
+        <Form.Item label={t(p("imageTag"))} name="tag" rules={[{ required: true }, { validator: imageTagValidation }]}>
           <TrimInput />
         </Form.Item>
         <Form.Item label={t(p("description"))} name="description">

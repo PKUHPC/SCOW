@@ -188,7 +188,7 @@ export const ClusterConfigSchema = Type.Object({
 
       sharedTopDir: Type.Optional(Type.String({ description: "分享数据资产的文件夹所在的目录" })),
 
-      idmap: Type.Optional(AIIdmapConfigSchema)
+      idmap: Type.Optional(AIIdmapConfigSchema),
     },
     { description: "集群在AI中是否启用, 默认不启用", default: { enabled: false } },
   ),

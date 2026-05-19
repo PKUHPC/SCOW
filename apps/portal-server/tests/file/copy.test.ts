@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials, status } from "@grpc/grpc-js";
@@ -18,9 +6,17 @@ import { FileServiceClient } from "@scow/protos/build/portal/file";
 import { join } from "path";
 import { createServer } from "src/app";
 
-import { actualPath, cluster, connectToTestServer, createFile, createTestItems,
+import {
+  actualPath,
+  cluster,
+  connectToTestServer,
+  createFile,
+  createTestItems,
   expectGrpcThrow,
-  resetTestServer, TestSshServer, userId } from "./utils";
+  resetTestServer,
+  TestSshServer,
+  userId,
+} from "./utils";
 
 const fileName = "testfile";
 let ssh: TestSshServer;
@@ -45,11 +41,11 @@ afterEach(async () => {
 });
 
 it("copies file", async () => {
-
   const newFileName = "newFile";
 
   await asyncUnaryCall(client, "copy", {
-    cluster, userId,
+    cluster,
+    userId,
     fromPath: actualPath(fileName),
     toPath: actualPath(newFileName),
   });
@@ -68,7 +64,8 @@ it("copies directory", async () => {
   await createFile(ssh.sftp, actualPath(join(sourceFolder, containingFile)));
 
   await asyncUnaryCall(client, "copy", {
-    cluster, userId,
+    cluster,
+    userId,
     fromPath: actualPath(sourceFolder),
     toPath: actualPath(targetFolder),
   });
@@ -88,11 +85,15 @@ it("returns error if target dir contains a dir with the same name as the origina
   await sftpMkdir(ssh.sftp)(actualPath(targetFolder));
   await sftpMkdir(ssh.sftp)(actualPath(join(targetFolder, containingFile)));
 
-  await expectGrpcThrow(asyncUnaryCall(client, "copy", {
-    cluster, userId,
-    fromPath: actualPath(actualPath(join(sourceFolder, containingFile))),
-    toPath: actualPath(targetFolder),
-  }), (e) => {
-    expect(e.code).toBe(status.INTERNAL);
-  });
+  await expectGrpcThrow(
+    asyncUnaryCall(client, "copy", {
+      cluster,
+      userId,
+      fromPath: actualPath(actualPath(join(sourceFolder, containingFile))),
+      toPath: actualPath(targetFolder),
+    }),
+    (e) => {
+      expect(e.code).toBe(status.INTERNAL);
+    },
+  );
 });

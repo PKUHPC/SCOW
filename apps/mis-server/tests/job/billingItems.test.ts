@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -57,8 +45,10 @@ beforeEach(async () => {
 
   // insert an old price item
   oldPriceItem = new JobPriceItem({
-    itemId: "HPC102", amount: AmountStrategy.CPUS_ALLOC,
-    price: new Decimal("0.02"), path: ["hpc00", "C032M0128G", "low"],
+    itemId: "HPC102",
+    amount: AmountStrategy.CPUS_ALLOC,
+    price: new Decimal("0.02"),
+    path: ["hpc00", "C032M0128G", "low"],
   });
 
   oldPriceItem.createTime = new Date(OLD_ITEM_CREATE_TIME);
@@ -67,7 +57,6 @@ beforeEach(async () => {
 
   await server.start();
   client = new JobServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-
 });
 
 afterEach(async () => {
@@ -83,52 +72,55 @@ interface PriceItem {
 }
 
 const expectedPriceItems: PriceItem[] = [
-  { itemId: "HPC102", price: new Decimal("0.02"), path: ["hpc00", "C032M0128G", "low"]},
-  { itemId: "HPC01", price: new Decimal("0.04"), path: ["hpc00", "C032M0128G", "low"]},
-  { itemId: "HPC02", price: new Decimal("0.06"), path: ["hpc00", "C032M0128G", "normal"]},
-  { itemId: "HPC03", price: new Decimal("0.08"), path: ["hpc00", "C032M0128G", "high"]},
-  { itemId: "HPC04", price: new Decimal("0.04"), path: ["hpc00", "C032M0128G", "cryoem"]},
-  { itemId: "HPC05", price: new Decimal("2.50"), path: ["hpc00", "GPU", "low"]},
-  { itemId: "HPC06", price: new Decimal("3.75"), path: ["hpc00", "GPU", "normal"]},
-  { itemId: "HPC07", price: new Decimal("5.00"), path: ["hpc00", "GPU", "high"]},
-  { itemId: "HPC08", price: new Decimal("2.50"), path: ["hpc00", "GPU", "cryoem"]},
-  { itemId: "HPC09", price: new Decimal("0.00"), path: ["hpc00", "life"]},
-  { itemId: "HPC10", price: new Decimal("0.05"), path: ["hpc01", "compute", "low"]},
-  { itemId: "HPC11", price: new Decimal("0.06"), path: ["hpc01", "compute", "normal"]},
-  { itemId: "HPC12", price: new Decimal("0.07"), path: ["hpc01", "compute", "high"]},
-  { itemId: "HPC13", price: new Decimal("4.00"), path: ["hpc01", "gpu", "low"]},
-  { itemId: "HPC14", price: new Decimal("5.00"), path: ["hpc01", "gpu", "normal"]},
-  { itemId: "HPC15", price: new Decimal("6.00"), path: ["hpc01", "gpu", "high"]},
-  { itemId: "HPC16", price: new Decimal("5.00"), path: ["hpc02", "compute"]},
-  { itemId: "HPC17", price: new Decimal("4.00"), path: ["hpc02", "gpu", "low"]},
-  { itemId: "HPC18", price: new Decimal("5.00"), path: ["hpc02", "gpu", "normal"]},
-  { itemId: "HPC19", price: new Decimal("6.00"), path: ["hpc02", "gpu", "high"]},
+  { itemId: "HPC102", price: new Decimal("0.02"), path: ["hpc00", "C032M0128G", "low"] },
+  { itemId: "HPC01", price: new Decimal("0.04"), path: ["hpc00", "C032M0128G", "low"] },
+  { itemId: "HPC02", price: new Decimal("0.06"), path: ["hpc00", "C032M0128G", "normal"] },
+  { itemId: "HPC03", price: new Decimal("0.08"), path: ["hpc00", "C032M0128G", "high"] },
+  { itemId: "HPC04", price: new Decimal("0.04"), path: ["hpc00", "C032M0128G", "cryoem"] },
+  { itemId: "HPC05", price: new Decimal("2.50"), path: ["hpc00", "GPU", "low"] },
+  { itemId: "HPC06", price: new Decimal("3.75"), path: ["hpc00", "GPU", "normal"] },
+  { itemId: "HPC07", price: new Decimal("5.00"), path: ["hpc00", "GPU", "high"] },
+  { itemId: "HPC08", price: new Decimal("2.50"), path: ["hpc00", "GPU", "cryoem"] },
+  { itemId: "HPC09", price: new Decimal("0.00"), path: ["hpc00", "life"] },
+  { itemId: "HPC10", price: new Decimal("0.05"), path: ["hpc01", "compute", "low"] },
+  { itemId: "HPC11", price: new Decimal("0.06"), path: ["hpc01", "compute", "normal"] },
+  { itemId: "HPC12", price: new Decimal("0.07"), path: ["hpc01", "compute", "high"] },
+  { itemId: "HPC13", price: new Decimal("4.00"), path: ["hpc01", "gpu", "low"] },
+  { itemId: "HPC14", price: new Decimal("5.00"), path: ["hpc01", "gpu", "normal"] },
+  { itemId: "HPC15", price: new Decimal("6.00"), path: ["hpc01", "gpu", "high"] },
+  { itemId: "HPC16", price: new Decimal("5.00"), path: ["hpc02", "compute"] },
+  { itemId: "HPC17", price: new Decimal("4.00"), path: ["hpc02", "gpu", "low"] },
+  { itemId: "HPC18", price: new Decimal("5.00"), path: ["hpc02", "gpu", "normal"] },
+  { itemId: "HPC19", price: new Decimal("6.00"), path: ["hpc02", "gpu", "high"] },
   { itemId: "HPC100", price: new Decimal("0.08"), path: ["hpc00", "C032M0128G", "low"], tenant: "another" },
 ];
 
 it("creates billing items in db", async () => {
-
   const em = orm.em.fork();
 
-  const priceItems = await em.find(JobPriceItem, {}, { populate: ["tenant"]});
+  const priceItems = await em.find(JobPriceItem, {}, { populate: ["tenant"] });
 
   priceItems.forEach((x) => {
     expect({
       itemId: x.itemId,
       price: x.price,
       path: x.path,
-      ...x.tenant ? { tenant: x.tenant.getEntity().name } : undefined,
+      ...(x.tenant ? { tenant: x.tenant.getEntity().name } : undefined),
     }).toEqual(expectedPriceItems.find((e) => e.itemId === x.itemId));
   });
-
 });
 
 const anyDate = () => expect.any(String);
 
-const priceItemToJobBillingItem = (x: PriceItem) => ({
-  id: x.itemId, path: x.path.join("."), tenantName: x.tenant, price: decimalToMoney(x.price),
-  createTime: anyDate(), amountStrategy: expect.any(String),
-} as JobBillingItem);
+const priceItemToJobBillingItem = (x: PriceItem) =>
+  ({
+    id: x.itemId,
+    path: x.path.join("."),
+    tenantName: x.tenant,
+    price: decimalToMoney(x.price),
+    createTime: anyDate(),
+    amountStrategy: expect.any(String),
+  }) as JobBillingItem;
 
 it("returns all default billing items", async () => {
   const reply = await asyncClientCall(client, "getBillingItems", { activeOnly: false });
@@ -157,11 +149,13 @@ it("returns all billing items applicable to default tenant", async () => {
   });
 
   expect(reply.activeItems).toIncludeSameMembers(
-    expectedPriceItems.filter((x) => x.tenant !== "another" && x.itemId !== oldPriceItem.itemId)
+    expectedPriceItems
+      .filter((x) => x.tenant !== "another" && x.itemId !== oldPriceItem.itemId)
       .map(priceItemToJobBillingItem),
   );
   expect(reply.historyItems).toIncludeSameMembers(
-    expectedPriceItems.filter((x) => x.tenant !== "another" && x.itemId === oldPriceItem.itemId)
+    expectedPriceItems
+      .filter((x) => x.tenant !== "another" && x.itemId === oldPriceItem.itemId)
       .map(priceItemToJobBillingItem),
   );
 });
@@ -170,11 +164,13 @@ it("returns all billing items applicable to another tenant", async () => {
   const reply = await asyncClientCall(client, "getBillingItems", { tenantName: "another", activeOnly: false });
 
   expect(reply.activeItems).toIncludeSameMembers(
-    expectedPriceItems.filter((x) => x.itemId !== oldPriceItem.itemId && x.itemId !== "HPC01")
+    expectedPriceItems
+      .filter((x) => x.itemId !== oldPriceItem.itemId && x.itemId !== "HPC01")
       .map(priceItemToJobBillingItem),
   );
   expect(reply.historyItems).toIncludeSameMembers(
-    expectedPriceItems.filter((x) => x.itemId === oldPriceItem.itemId || x.itemId === "HPC01")
+    expectedPriceItems
+      .filter((x) => x.itemId === oldPriceItem.itemId || x.itemId === "HPC01")
       .map(priceItemToJobBillingItem),
   );
 });
@@ -201,8 +197,10 @@ it("returns active billing items applicable to another tenant", async () => {
 
 it("adds billing item to default", async () => {
   const request: AddBillingItemRequest = {
-    amountStrategy: AmountStrategy.CPUS_ALLOC, itemId: "HPC203",
-    path: "hpc00.C032M0128G.low", description: "",
+    amountStrategy: AmountStrategy.CPUS_ALLOC,
+    itemId: "HPC203",
+    path: "hpc00.C032M0128G.low",
+    description: "",
     price: numberToMoney(10),
   };
 
@@ -210,14 +208,16 @@ it("adds billing item to default", async () => {
 
   const reply = await asyncClientCall(client, "getBillingItems", { activeOnly: true });
 
-  expect(reply.activeItems).toIncludeAllMembers([{
-    amountStrategy: request.amountStrategy,
-    id: request.itemId,
-    path: request.path,
-    createTime: anyDate(),
-    price: request.price,
-    tenantName: request.tenantName,
-  } as JobBillingItem]);
+  expect(reply.activeItems).toIncludeAllMembers([
+    {
+      amountStrategy: request.amountStrategy,
+      id: request.itemId,
+      path: request.path,
+      createTime: anyDate(),
+      price: request.price,
+      tenantName: request.tenantName,
+    } as JobBillingItem,
+  ]);
 
   expect(reply.activeItems.find((x) => x.id === "HPC01")).toBeUndefined();
   expect(reply.historyItems.length).toBe(0);
@@ -225,23 +225,28 @@ it("adds billing item to default", async () => {
 
 it("adds billing item to another tenant", async () => {
   const request: AddBillingItemRequest = {
-    amountStrategy: AmountStrategy.CPUS_ALLOC, itemId: "HPC203",
-    path: "hpc00.C032M0128G.low", description: "",
-    price: numberToMoney(10), tenantName: "another",
+    amountStrategy: AmountStrategy.CPUS_ALLOC,
+    itemId: "HPC203",
+    path: "hpc00.C032M0128G.low",
+    description: "",
+    price: numberToMoney(10),
+    tenantName: "another",
   };
 
   await asyncClientCall(client, "addBillingItem", request);
 
   const reply = await asyncClientCall(client, "getBillingItems", { tenantName: "another", activeOnly: true });
 
-  expect(reply.activeItems).toIncludeAllMembers([{
-    amountStrategy: request.amountStrategy,
-    id: request.itemId,
-    path: request.path,
-    createTime: anyDate(),
-    price: request.price,
-    tenantName: request.tenantName,
-  } as JobBillingItem]);
+  expect(reply.activeItems).toIncludeAllMembers([
+    {
+      amountStrategy: request.amountStrategy,
+      id: request.itemId,
+      path: request.path,
+      createTime: anyDate(),
+      price: request.price,
+      tenantName: request.tenantName,
+    } as JobBillingItem,
+  ]);
 
   expect(reply.activeItems.find((x) => x.id === "HPC01")).toBeUndefined();
   expect(reply.historyItems.length).toBe(0);
@@ -251,13 +256,12 @@ const calculatePrice = async (testData: typeof import("./testData.json")) => {
   const priceMap = await createPriceMap(orm.em.fork(), server.ext.clusters, server.logger);
 
   const wrongPrices = [] as {
-    jobId: number,
+    jobId: number;
     tenantPrice: { expected: number; actual: number | undefined };
-    accountPrice: { expected: number; actual: number | undefined }
+    accountPrice: { expected: number; actual: number | undefined };
   }[];
 
   for (const t of testData) {
-
     const price = await priceMap.calculatePrice({
       jobId: t.jobId,
       cluster: t.cluster,
@@ -279,7 +283,7 @@ const calculatePrice = async (testData: typeof import("./testData.json")) => {
         accountPrice: { expected: t.accountPrice, actual: price.account?.price.toNumber() },
       });
     }
-  };
+  }
 
   console.log(wrongPrices);
 
@@ -287,7 +291,6 @@ const calculatePrice = async (testData: typeof import("./testData.json")) => {
 };
 
 it("calculates job price in precision 3 and min charge 0", async () => {
-
   const beforeJobChargeDecimalPrecision = misConfig.jobChargeDecimalPrecision;
   const beforeJobMinCharge = misConfig.jobMinCharge;
 
@@ -295,7 +298,6 @@ it("calculates job price in precision 3 and min charge 0", async () => {
   misConfig.jobMinCharge = 0;
 
   await calculatePrice((await import("./testData-precision3.json")).default).finally(() => {
-
     misConfig.jobChargeDecimalPrecision = beforeJobChargeDecimalPrecision;
     misConfig.jobMinCharge = beforeJobMinCharge;
   });
@@ -368,9 +370,8 @@ it("gets missing price items in platform scope", async () => {
 
   {
     const priceMap = await createPriceMap(em.fork(), server.ext.clusters, server.logger);
-    expect(priceMap.getMissingDefaultPriceItems())
-      .toIncludeSameMembers(priceItemsToBeDeleted.map((x) => x.path.join(".")));
+    expect(priceMap.getMissingDefaultPriceItems()).toIncludeSameMembers(
+      priceItemsToBeDeleted.map((x) => x.path.join(".")),
+    );
   }
-
-
 }, 10000000);

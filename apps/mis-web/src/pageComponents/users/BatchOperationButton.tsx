@@ -24,9 +24,13 @@ enum BatchType {
 
 const p = prefix("pageComp.user.userTable.");
 
-export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, accountName, setSelectedAccountUser,
-  setSelectedKeys, reload }) => {
-
+export const BatchOperationButton: React.FC<Props> = ({
+  selectedAccountUser,
+  accountName,
+  setSelectedAccountUser,
+  setSelectedKeys,
+  reload,
+}) => {
   const t = useI18nTranslateToString();
 
   const { message, modal } = App.useApp();
@@ -41,7 +45,7 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
     if (formattedUsers.length <= 5) {
       displayedUsers = formattedUsers.join("、");
     } else {
-      displayedUsers = `${formattedUsers.slice(0, 5).join("、")} ${t(p("andOtherUsers"), [formattedUsers.length]) }`;
+      displayedUsers = `${formattedUsers.slice(0, 5).join("、")} ${t(p("andOtherUsers"), [formattedUsers.length])}`;
     }
 
     switch (e.key as BatchType) {
@@ -52,11 +56,16 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
           content: `${t(p("confirmUnsealText1"))}${accountName}
                         ${t(p("confirmUnsealText2"))}${displayedUsers}${t(p("confirmUnsealText3"))}`,
           onOk: async () => {
-            await api.unblockUserInAccount({ body: {
-              userIds,
-              accountName,
-            } })
-              .httpError(500, () => { message.error(t(p("batchUnsealFailed"))); })
+            await api
+              .unblockUserInAccount({
+                body: {
+                  userIds,
+                  accountName,
+                },
+              })
+              .httpError(500, () => {
+                message.error(t(p("batchUnsealFailed")));
+              })
               .then((res) => {
                 if (res.success) {
                   message.success(t(p("batchUnsealSuccess")));
@@ -64,8 +73,9 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
                   if (res.reason) {
                     message.error(res.reason);
                   } else {
-                    const faileduserIds = res.results?.filter(
-                      (result) => result.success === false).map((r) => r.userId);
+                    const faileduserIds = res.results
+                      ?.filter((result) => result.success === false)
+                      .map((r) => r.userId);
                     message.error(t(p("batchUnsealCompleted"), [faileduserIds?.join(",")]));
                   }
                 }
@@ -84,11 +94,16 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
           content: `${t(p("confirmBlockText1"))}${accountName}
                         ${t(p("confirmBlockText2"))}${displayedUsers}？`,
           onOk: async () => {
-            await api.blockUserInAccount({ body: {
-              userIds,
-              accountName,
-            } })
-              .httpError(500, () => { message.error(t(p("batchBlockFailed"))); })
+            await api
+              .blockUserInAccount({
+                body: {
+                  userIds,
+                  accountName,
+                },
+              })
+              .httpError(500, () => {
+                message.error(t(p("batchBlockFailed")));
+              })
               .then((res) => {
                 if (res.success) {
                   message.success(t(p("batchBlockSuccess")));
@@ -115,17 +130,19 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
               type: "loading",
               content: t("common.waitingMessage"),
               duration: 0,
-              key: "removeUser" });
-            await api.removeUserFromAccount({ query: {
-              userIds,
-              accountName,
-            } })
+              key: "removeUser",
+            });
+            await api
+              .removeUserFromAccount({
+                query: {
+                  userIds,
+                  accountName,
+                },
+              })
               .httpError(400, (e) => {
                 message.destroy("removeUser");
                 message.error({
-                  content: `${t("page._app.multiClusterOpErrorContent")}(${
-                    e.message
-                  })`,
+                  content: `${t("page._app.multiClusterOpErrorContent")}(${e.message})`,
                   duration: 4,
                 });
               })
@@ -176,14 +193,16 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
       if (user.userStateInAccount === UserStateInAccount.BLOCKED_BY_ADMIN) {
         blockDisabled = true;
       }
-      if (user.userStateInAccount === UserStateInAccount.NORMAL
-          || user.displayedUserState === DisplayedUserState.DISPLAYED_QUOTA_EXCEEDED) {
+      if (
+        user.userStateInAccount === UserStateInAccount.NORMAL ||
+        user.displayedUserState === DisplayedUserState.DISPLAYED_QUOTA_EXCEEDED
+      ) {
         unsealDisabled = true;
       }
     });
     return [
       {
-        label:
+        label: (
           <SetJobChargeLimitLink
             accountName={accountName}
             reload={reload}
@@ -193,7 +212,8 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
             batchFlag={true}
           >
             {t(p("limitManage"))}
-          </SetJobChargeLimitLink>,
+          </SetJobChargeLimitLink>
+        ),
         key: BatchType.LimitManage,
       },
       {
@@ -222,9 +242,7 @@ export const BatchOperationButton: React.FC<Props> = ({ selectedAccountUser, acc
   return (
     <Dropdown menu={menuProps} trigger={["click"]} disabled={selectedAccountUser.length === 0}>
       <Button icon={<MenuOutlined />}>
-        <Space>
-          {t(p("batchOperation"))}
-        </Space>
+        <Space>{t(p("batchOperation"))}</Space>
       </Button>
     </Dropdown>
   );

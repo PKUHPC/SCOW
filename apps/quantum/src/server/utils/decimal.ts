@@ -12,12 +12,16 @@ export const DECIMAL_DEFAULT_RAW = `0.${"0".repeat(dbPrecision)}`;
 
 export class DecimalType extends Type<Decimal | undefined, string | undefined> {
   convertToDatabaseValue(value: Decimal | string | undefined): string | undefined {
-    if (!value) { return value; }
+    if (!value) {
+      return value;
+    }
     return value.toString();
   }
 
   convertToJSValue(value: string | undefined): Decimal | undefined {
-    if (!value) { return undefined; }
+    if (!value) {
+      return undefined;
+    }
     return new Decimal(value);
   }
 
@@ -28,5 +32,4 @@ export class DecimalType extends Type<Decimal | undefined, string | undefined> {
   compareAsType(): string {
     return "number";
   }
-
 }

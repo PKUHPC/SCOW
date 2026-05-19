@@ -1,20 +1,20 @@
 {
   "name": "@scow/notification-protos",
   "version": "0.1.10",
-  "description": "",
-  "main": "index.js",
   "private": true,
-  "scripts": {
-    "generate": "rimraf generated && buf generate --template buf.gen.yaml ./protos",
-    "build": "rimraf build && tsc"
-  },
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
   "files": [
     "build",
     "!**/*.map"
   ],
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "generate": "rimraf generated && buf generate --template buf.gen.yaml ./protos",
+    "build": "rimraf build && tsc"
+  },
   "dependencies": {
     "@bufbuild/buf": "1.59.0",
     "@bufbuild/protobuf": "2.10.0",

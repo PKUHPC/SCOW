@@ -42,19 +42,21 @@ export const CancelJobChargeLimitSchema = typeboxRouteSchema({
 });
 
 export default route(CancelJobChargeLimitSchema, async (req, res) => {
-
   const { accountName, userIds, unblock } = req.query;
 
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(JobChargeLimitServiceClient);
 
@@ -63,15 +65,17 @@ export default route(CancelJobChargeLimitSchema, async (req, res) => {
       operatorUserId: info.identityId,
       operatorIp: parseIp(req) ?? "",
       operationTypeName: OperationType.accountUnsetChargeLimit,
-      operationTypePayload:{
-        accountName, userId,
+      operationTypePayload: {
+        accountName,
+        userId,
       },
     };
   });
 
   return await asyncClientCall(client, "cancelJobChargeLimit", {
     tenantName: info.tenant,
-    accountName, userIds,
+    accountName,
+    userIds,
     unblock,
   })
     .then(async (res) => {
@@ -90,14 +94,18 @@ export default route(CancelJobChargeLimitSchema, async (req, res) => {
       }
       return { 200: res };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
-      [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
-    },
-    async () => logInfos.forEach(async (logInfo) => {
-      await callLog(logInfo, OperationResult.FAIL);
-    }),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.INVALID_ARGUMENT]: () => ({ 400: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 409: null }),
+          [Status.INTERNAL]: (e) => ({ 500: { message: e.details } }),
+        },
+        async () =>
+          logInfos.forEach(async (logInfo) => {
+            await callLog(logInfo, OperationResult.FAIL);
+          }),
+      ),
+    );
 });

@@ -27,7 +27,7 @@ export interface CreateAppExtraParams {
   modelVersions: ModelVersion[];
   app: AppConfigSchema;
   proxyBasePath: string;
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface ConnectToAppResponse {
@@ -40,7 +40,7 @@ export interface ConnectToAppResponse {
 export interface SubmitInferJobExtraParams {
   isModelPrivates: boolean[];
   modelVersions: ModelVersion[];
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface SubmitTrainJobExtraParams {
@@ -50,15 +50,15 @@ export interface SubmitTrainJobExtraParams {
   algorithmVersions: AlgorithmVersion[];
   datasetVersions: DatasetVersion[];
   modelVersions: ModelVersion[];
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface CreateDevHostExtraParams {
-  existImage: ImageEntity | undefined
+  existImage: ImageEntity | undefined;
 }
 
 export interface JobDriver {
-  createApp(inputParams: CreateAppInput,extraParams: CreateAppExtraParams): Promise<number>;
+  createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number>;
   getAppParams(sessionId: string, jobId: number): Promise<CreateAppInput>;
   getAiJobs(clusterId: string, isRunning?: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]>;
   connectToApp(clusterId: string, sessionId: string, appType?: AppType): Promise<ConnectToAppResponse>;
@@ -69,11 +69,7 @@ export interface JobDriver {
   createDevHost(inputParams: CreateDevHostInput, extraParams: CreateDevHostExtraParams): Promise<number>;
 }
 
-function createJobDriver(opts: {
-  clusterId: string;
-  userId: string;
-  logger: Logger;
-}): JobDriver {
+function createJobDriver(opts: { clusterId: string; userId: string; logger: Logger }): JobDriver {
   const { clusterId, userId, logger } = opts;
   const cluster = clusters[clusterId];
   const host = getClusterLoginNode(clusterId);
@@ -82,7 +78,9 @@ function createJobDriver(opts: {
     throw new TRPCError({ code: "NOT_FOUND", message: "cluster is not found" });
   }
 
-  if (!host) { throw clusterNotFound(clusterId); }
+  if (!host) {
+    throw clusterNotFound(clusterId);
+  }
 
   if (cluster.scowd?.enabled) {
     return new ScowdJobDriver(clusterId, userId, logger);
@@ -90,7 +88,6 @@ function createJobDriver(opts: {
 
   return new SshJobDriver(host, userId, logger);
 }
-
 
 export async function withJobDriver<T>(
   params: {
@@ -100,7 +97,6 @@ export async function withJobDriver<T>(
   handler: (driver: JobDriver) => Promise<T>,
   logger: Logger,
 ) {
-
   const driver = createJobDriver({
     clusterId: params.clusterId,
     userId: params.user,

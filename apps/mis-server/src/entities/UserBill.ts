@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Entity, ManyToOne, PrimaryKey, Property, type Ref } from "@mikro-orm/core";
 import { Decimal } from "@scow/lib-decimal";
 import { DecimalType } from "src/utils/decimal";
@@ -55,14 +43,14 @@ export class UserBill {
 
   constructor(init: {
     id?: number;
-    tenantName: string,
+    tenantName: string;
     accountName: string;
     userId: string;
     name: string;
     term: string;
-    amount: Decimal,
+    amount: Decimal;
     type: BillType;
-    accountBill: EntityOrRef<AccountBill>,
+    accountBill: EntityOrRef<AccountBill>;
     details: AnyJson;
     createTime?: Date;
   }) {
@@ -80,5 +68,4 @@ export class UserBill {
     this.details = init.details;
     this.createTime = init.createTime ?? new Date();
   }
-
 }

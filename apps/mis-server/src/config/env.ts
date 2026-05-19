@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { bool, envConfig, host, port, str } from "@scow/lib-config";
 import { getKeyPair } from "@scow/lib-ssh";
 import { homedir } from "os";
@@ -44,7 +32,10 @@ export const config = envConfig({
   ADAPTER_SSL_ENABLED: bool({ desc: "到适配器的连接是否启动SSL", default: false }),
   ADAPTER_SSL_CA_CERT_PATH: str({ desc: "适配器 CA根证书路径", default: "./adapter/certs/ca.crt" }),
   ADAPTER_SSL_SCOW_CERT_PATH: str({ desc: "适配器 CA签名的 SCOW 证书路径", default: "./adapter/certs/scow.crt" }),
-  ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({ desc: "适配器 CA签名的 SCOW 私钥路径", default: "./adapter/certs/scow.key" }),
+  ADAPTER_SSL_SCOW_PRIVATE_KEY_PATH: str({
+    desc: "适配器 CA签名的 SCOW 私钥路径",
+    default: "./adapter/certs/scow.key",
+  }),
 });
 
 export const rootKeyPair = getKeyPair(config.SSH_PRIVATE_KEY_PATH, config.SSH_PUBLIC_KEY_PATH);

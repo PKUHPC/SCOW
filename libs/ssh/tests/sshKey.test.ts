@@ -1,23 +1,25 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { join } from "path";
 import { insertKeyAsRoot, insertKeyAsUser, KeyPair } from "src/key";
-import { createDirectoriesRecursively, sftpChmod, sftpChown, sftpExists,
-  sftpReadFile, sftpStat, sftpWriteFile } from "src/sftp";
+import {
+  createDirectoriesRecursively,
+  sftpChmod,
+  sftpChown,
+  sftpExists,
+  sftpReadFile,
+  sftpStat,
+  sftpWriteFile,
+} from "src/sftp";
 import { sshConnect, sshRmrf } from "src/ssh";
 
-import { connectToTestServerAsRoot,
-  createTestItems, generateSshKeyPair, resetTestServerAsRoot, rootKeyPair, target, TestSshServer } from "./utils";
+import {
+  connectToTestServerAsRoot,
+  createTestItems,
+  generateSshKeyPair,
+  resetTestServerAsRoot,
+  rootKeyPair,
+  target,
+  TestSshServer,
+} from "./utils";
 
 let serverSsh: TestSshServer;
 const randomPostfix = String(Math.ceil(Math.random() * 1000 + 1));
@@ -92,13 +94,10 @@ it("insert keys as user", async () => {
   await tryLoginAsUser();
 });
 
-
 describe("doesn't override authorized_keys if exists", () => {
-
   let existingKey: KeyPair;
 
   beforeEach(async () => {
-
     existingKey = await generateSshKeyPair();
 
     const userUID = Number((await serverSsh.ssh.execCommand(`id -g ${testUser}`)).stdout);
@@ -117,7 +116,6 @@ describe("doesn't override authorized_keys if exists", () => {
   };
 
   it("as user", async () => {
-
     await insertKeyAsUser(target, testUser, password, rootKeyPair, console);
     await tryLoginAsUser();
 
@@ -125,10 +123,8 @@ describe("doesn't override authorized_keys if exists", () => {
   });
 
   it.only("as root", async () => {
-
     await insertKeyAsRoot(testUser, target, rootKeyPair, console);
     await tryLoginAsUser();
     await checkExistingKeys();
   });
-
 });

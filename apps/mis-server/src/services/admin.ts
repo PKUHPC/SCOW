@@ -6,7 +6,8 @@ import { QueryOrder } from "@mikro-orm/core";
 import { ensureResourceManagementFeatureAvailable } from "@scow/lib-server";
 import { libCheckActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
 import {
-  AdminServiceServer, AdminServiceService,
+  AdminServiceServer,
+  AdminServiceService,
   ClusterAccountInfo,
   ClusterAccountInfo_ImportStatus,
   listAccountUserSynchronizationsResponse_SyncResultFromJSON,
@@ -29,10 +30,8 @@ import { DEFAULT_PAGE_SIZE, paginationProps } from "src/utils/orm";
 import { checkRunningSyncTask, ensureNoRunningSyncTask } from "src/utils/synchronizationUtils";
 
 export const adminServiceServer = plugin((server) => {
-
   server.addService<AdminServiceServer>(AdminServiceService, {
     importUsers: async ({ request, em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "import users task");
 
@@ -40,7 +39,8 @@ export const adminServiceServer = plugin((server) => {
 
       if (!data) {
         throw {
-          code: Status.INVALID_ARGUMENT, message: "Submitted data is empty",
+          code: Status.INVALID_ARGUMENT,
+          message: "Submitted data is empty",
         } as ServiceError;
       }
 
@@ -54,14 +54,17 @@ export const adminServiceServer = plugin((server) => {
 
       const currentActivatedClusters = await getActivatedClusters(em, logger);
 
-      const reply = await importUsers(data as ImportUsersData,
+      const reply = await importUsers(
+        data as ImportUsersData,
         em,
         whitelist,
         currentActivatedClusters,
-        server.ext.clusters, logger, server.ext.resource);
+        server.ext.clusters,
+        logger,
+        server.ext.resource,
+      );
 
       return [reply];
-
     },
 
     getClusterUsers: async ({ request, em, logger }) => {
@@ -70,34 +73,38 @@ export const adminServiceServer = plugin((server) => {
       const currentActivatedClusters = await getActivatedClusters(em, logger);
       libCheckActivatedClusters({ clusterIds: cluster, activatedClusters: currentActivatedClusters, logger });
 
-      const result = await server.ext.clusters.callOnOne(
-        cluster,
-        logger,
-        async (client) => {
-          // 如果是未配置资源管理系统的情况调用原有 getAllAccountsWithUsers 接口
-          if (!commonConfig.scowResource?.enabled) {
-            return await asyncClientCall(client.account, "getAllAccountsWithUsers", {});
+      const result = await server.ext.clusters.callOnOne(cluster, logger, async (client) => {
+        // 如果是未配置资源管理系统的情况调用原有 getAllAccountsWithUsers 接口
+        if (!commonConfig.scowResource?.enabled) {
+          return await asyncClientCall(client.account, "getAllAccountsWithUsers", {});
 
           // 如果配置了资源管理系统，那么使用 getAllAccountsWithUsersAndBlockedDetails 同时获取账户的详细分区封锁信息
-          } else {
-            // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
-            await ensureResourceManagementFeatureAvailable(client, logger);
-            // 调用适配器的 getAllAccountsWithUsersAndBlockedDetails
-            // TODO: 返回值中的 accountBlockedDetails 暂未使用
-            return await asyncClientCall(client.account, "getAllAccountsWithUsersAndBlockedDetails", {});
-          }
-        },
-      );
+        } else {
+          // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
+          await ensureResourceManagementFeatureAvailable(client, logger);
+          // 调用适配器的 getAllAccountsWithUsersAndBlockedDetails
+          // TODO: 返回值中的 accountBlockedDetails 暂未使用
+          return await asyncClientCall(client.account, "getAllAccountsWithUsersAndBlockedDetails", {});
+        }
+      });
 
       const accounts: ClusterAccountInfo[] = [];
 
-      const includedAccounts = await em.find(Account, {
-        accountName: { $in: result.accounts.map((x) => x.accountName) },
-      }, { populate: ["users", "users.user"]});
+      const includedAccounts = await em.find(
+        Account,
+        {
+          accountName: { $in: result.accounts.map((x) => x.accountName) },
+        },
+        { populate: ["users", "users.user"] },
+      );
 
-      const includedUserAccounts = await em.find(UserAccount, {
-        account: { accountName: result.accounts.map((x) => x.accountName) },
-      }, { populate: ["account", "user"]});
+      const includedUserAccounts = await em.find(
+        UserAccount,
+        {
+          account: { accountName: result.accounts.map((x) => x.accountName) },
+        },
+        { populate: ["account", "user"] },
+      );
 
       result.accounts.forEach((account) => {
         const includedAccount = includedAccounts.find((x) => x.accountName === account.accountName);
@@ -122,8 +129,9 @@ export const adminServiceServer = plugin((server) => {
             status = ClusterAccountInfo_ImportStatus.EXISTING;
           }
 
-          account.owner = includedUserAccounts
-            .find((x) => x.account.$.accountName === account.accountName && x.role === UserRole.OWNER)?.user.$.userId;
+          account.owner = includedUserAccounts.find(
+            (x) => x.account.$.accountName === account.accountName && x.role === UserRole.OWNER,
+          )?.user.$.userId;
 
           accounts.push({ ...account, importStatus: status });
         }
@@ -141,11 +149,13 @@ export const adminServiceServer = plugin((server) => {
     },
 
     getFetchInfo: async () => {
-      return [{
-        fetchStarted: server.ext.fetch.started(),
-        schedule: server.ext.fetch.schedule,
-        lastFetchTime: server.ext.fetch.lastFetched()?.toISOString() ?? undefined,
-      }];
+      return [
+        {
+          fetchStarted: server.ext.fetch.started(),
+          schedule: server.ext.fetch.schedule,
+          lastFetchTime: server.ext.fetch.lastFetched()?.toISOString() ?? undefined,
+        },
+      ];
     },
 
     setFetchState: async ({ request }) => {
@@ -161,7 +171,6 @@ export const adminServiceServer = plugin((server) => {
     },
 
     fetchJobs: async ({ em, logger }) => {
-
       // 检查当前是否有正在执行的同步用户账户操作
       await ensureNoRunningSyncTask(em, logger, "job synchronization task");
 
@@ -171,11 +180,13 @@ export const adminServiceServer = plugin((server) => {
     },
 
     getSyncBlockStatusInfo: async () => {
-      return [{
-        syncStarted: server.ext.syncAccountUser.started(),
-        schedule: server.ext.syncAccountUser.schedule,
-        lastSyncTime: server.ext.syncAccountUser.lastSyncTime()?.toISOString() ?? undefined,
-      }];
+      return [
+        {
+          syncStarted: server.ext.syncAccountUser.started(),
+          schedule: server.ext.syncAccountUser.schedule,
+          lastSyncTime: server.ext.syncAccountUser.lastSyncTime()?.toISOString() ?? undefined,
+        },
+      ];
     },
 
     setSyncBlockStatusState: async ({ request }) => {
@@ -221,36 +232,43 @@ export const adminServiceServer = plugin((server) => {
       const accountCount = await em.count(Account, {});
       const tenantCount = await em.count(Tenant, {});
       const platformAdmins = await em.find(User, { platformRoles: { $like: `%${PlatformRole.PLATFORM_ADMIN}%` } });
-      const platformFinancialStaff = await em.find(User,
-        { platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` } });
+      const platformFinancialStaff = await em.find(User, {
+        platformRoles: { $like: `%${PlatformRole.PLATFORM_FINANCE}%` },
+      });
 
-      return [{
-        platformAdmins: platformAdmins.map((x) => ({ userId: x.userId, userName: x.name })),
-        platformFinancialStaff: platformFinancialStaff.map((x) => ({ userId: x.userId, userName: x.name })),
-        tenantCount,
-        accountCount,
-        userCount,
-      }];
+      return [
+        {
+          platformAdmins: platformAdmins.map((x) => ({ userId: x.userId, userName: x.name })),
+          platformFinancialStaff: platformFinancialStaff.map((x) => ({ userId: x.userId, userName: x.name })),
+          tenantCount,
+          accountCount,
+          userCount,
+        },
+      ];
     },
 
     getStatisticInfo: async ({ request, em }) => {
       const { startTime, endTime } = request;
 
-      const { result: totalRecords, refreshTime }
-      = await getTotalStatisticsInfoCached(em);
+      const { result: totalRecords, refreshTime } = await getTotalStatisticsInfoCached(em);
 
       const newUser = await em.count(User, { createTime: { $gte: startTime, $lte: endTime } });
       const newAccount = await em.count(Account, { createTime: { $gte: startTime, $lte: endTime, $ne: null } });
       const newTenant = await em.count(Tenant, { createTime: { $gte: startTime, $lte: endTime } });
 
-      return [{
-        ... totalRecords, newUser, newAccount, newTenant, refreshTime: refreshTime.toISOString(),
-      }];
+      return [
+        {
+          ...totalRecords,
+          newUser,
+          newAccount,
+          newTenant,
+          refreshTime: refreshTime.toISOString(),
+        },
+      ];
     },
 
     // 开始一个同步任务
     startAccountUserSynchronization: async ({ request, em, logger }) => {
-
       const { maxSyncDurationMinutes, operatorId } = request;
       // 确保当前存在在线集群
       await getActivatedClusters(em, logger);
@@ -260,32 +278,33 @@ export const adminServiceServer = plugin((server) => {
       if (!sessionId) {
         throw {
           code: Status.ALREADY_EXISTS,
-          message:  "System is busy: either account user synchronization "
-          + "or job synchronization task is running. Please wait for the current operation "
-          + "to finish before starting a new synchronization.",
+          message:
+            "System is busy: either account user synchronization " +
+            "or job synchronization task is running. Please wait for the current operation " +
+            "to finish before starting a new synchronization.",
         } as ServiceError;
       }
       return [{ sessionId }];
     },
 
-
     listAccountUserSynchronizations: async ({ request, em }) => {
-
       const { page, pageSize } = request;
       const syncDayPeriod = misConfig.syncAccountUser.syncHistoryDayPeriod;
       const syncPeriodAgo = new Date();
       syncPeriodAgo.setDate(syncPeriodAgo.getDate() - syncDayPeriod);
       logger.trace("List account user synchronization history since %o", syncPeriodAgo);
-      const [ syncHistory, count ] = await em.findAndCount(AccountUserSyncRecord, {
-        startTime: { $gte: syncPeriodAgo },
-      },
-      {
-        ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
-        orderBy: { startTime: QueryOrder.DESC },
-      },
+      const [syncHistory, count] = await em.findAndCount(
+        AccountUserSyncRecord,
+        {
+          startTime: { $gte: syncPeriodAgo },
+        },
+        {
+          ...paginationProps(page, pageSize || DEFAULT_PAGE_SIZE),
+          orderBy: { startTime: QueryOrder.DESC },
+        },
       );
 
-      const syncOperatorIds = syncHistory.map((x) => (x.syncOperatorId));
+      const syncOperatorIds = syncHistory.map((x) => x.syncOperatorId);
       const userIds = syncOperatorIds.filter((id) => typeof id === "string" && id !== undefined && id !== null);
       const users = await em.find(User, { userId: userIds });
       const userMap = new Map(users.map((x) => [x.userId, x.name]));
@@ -294,13 +313,16 @@ export const adminServiceServer = plugin((server) => {
         return {
           sessionId: sync.sessionId,
           startTime: sync.startTime.toISOString(),
-          endTime: sync.updateTime !== undefined && sync.updateTime !== null
-            ? new Date(sync.updateTime).toISOString() : undefined,
+          endTime:
+            sync.updateTime !== undefined && sync.updateTime !== null
+              ? new Date(sync.updateTime).toISOString()
+              : undefined,
           operatorId: sync.syncOperatorId,
           operatorName: sync.syncOperatorId ? userMap.get(sync.syncOperatorId) : "",
           sessionSyncStatus: listAccountUserSynchronizationsResponse_SyncStatusFromJSON(sync.syncStatus),
-          sessionSyncResult: sync.syncResult ?
-            listAccountUserSynchronizationsResponse_SyncResultFromJSON(sync.syncResult) : undefined,
+          sessionSyncResult: sync.syncResult
+            ? listAccountUserSynchronizationsResponse_SyncResultFromJSON(sync.syncResult)
+            : undefined,
           sessionSyncDetails: sync.syncDetails ? { results: sync.syncDetails } : undefined,
         };
       });
@@ -313,6 +335,5 @@ export const adminServiceServer = plugin((server) => {
       const isRunningSyncFound = await checkRunningSyncTask(em, logger);
       return [{ isRunning: isRunningSyncFound }];
     },
-
   });
 });

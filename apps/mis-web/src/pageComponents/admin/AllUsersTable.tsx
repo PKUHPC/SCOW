@@ -44,9 +44,9 @@ interface Props {
 }
 
 const filteredRoles = {
-  "ALL_USERS": "pageComp.admin.allUserTable.allUsers",
-  "PLATFORM_ADMIN": "pageComp.admin.allUserTable.platformAdmin",
-  "PLATFORM_FINANCE": "pageComp.admin.allUserTable.platformFinance",
+  ALL_USERS: "pageComp.admin.allUserTable.allUsers",
+  PLATFORM_ADMIN: "pageComp.admin.allUserTable.platformAdmin",
+  PLATFORM_FINANCE: "pageComp.admin.allUserTable.platformFinance",
 };
 type FilteredRole = keyof typeof filteredRoles;
 
@@ -55,7 +55,6 @@ const pCommon = prefix("common.");
 const pDelete = prefix("component.deleteModals.");
 
 export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
-
   const [query, setQuery] = useState<FilterForm>(() => {
     return { userId: undefined, name: undefined };
   });
@@ -70,7 +69,6 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
   const [currentPlatformRole, setCurrentPlatformRole] = useState<PlatformRole | undefined>(undefined);
 
   const promiseFn = useCallback(async () => {
-
     return await api.getAllUsers({
       query: {
         page: pageInfo.page,
@@ -85,30 +83,40 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
   }, [query, pageInfo, sortInfo, currentPlatformRole]);
   const { data, isLoading, reload: reloadAllUsers } = useAsync({ promiseFn, watch: refreshToken });
 
-
-  const { data: platformUsersCounts, isLoading: isCountLoading, reload: reloadUsersCounts } = useAsync({
+  const {
+    data: platformUsersCounts,
+    isLoading: isCountLoading,
+    reload: reloadUsersCounts,
+  } = useAsync({
     promiseFn: useCallback(
-      async () => await api.getPlatformUsersCounts({ query: {
-        userId: query.userId,
-        userName: query.name,
-      } }), [query, refreshToken],
+      async () =>
+        await api.getPlatformUsersCounts({
+          query: {
+            userId: query.userId,
+            userName: query.name,
+          },
+        }),
+      [query, refreshToken],
     ),
   });
 
-  const roleChangedHandlers = useMemo(() => ({
-    "ALL_USERS": {
-      setCurrentPlatformRole: () => setCurrentPlatformRole(undefined),
-      count: platformUsersCounts?.totalCount ?? 0,
-    },
-    "PLATFORM_ADMIN": {
-      setCurrentPlatformRole: () => setCurrentPlatformRole(PlatformRole.PLATFORM_ADMIN),
-      count: platformUsersCounts?.totalAdminCount ?? 0,
-    },
-    "PLATFORM_FINANCE": {
-      setCurrentPlatformRole: () => setCurrentPlatformRole(PlatformRole.PLATFORM_FINANCE),
-      count: platformUsersCounts?.totalFinanceCount ?? 0,
-    },
-  }), [platformUsersCounts]);
+  const roleChangedHandlers = useMemo(
+    () => ({
+      ALL_USERS: {
+        setCurrentPlatformRole: () => setCurrentPlatformRole(undefined),
+        count: platformUsersCounts?.totalCount ?? 0,
+      },
+      PLATFORM_ADMIN: {
+        setCurrentPlatformRole: () => setCurrentPlatformRole(PlatformRole.PLATFORM_ADMIN),
+        count: platformUsersCounts?.totalAdminCount ?? 0,
+      },
+      PLATFORM_FINANCE: {
+        setCurrentPlatformRole: () => setCurrentPlatformRole(PlatformRole.PLATFORM_FINANCE),
+        count: platformUsersCounts?.totalFinanceCount ?? 0,
+      },
+    }),
+    [platformUsersCounts],
+  );
 
   const handleFilterRoleChange = (role: FilteredRole) => {
     roleChangedHandlers[role].setCurrentPlatformRole();
@@ -122,7 +130,6 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
   };
 
   const handleExport = async (encoding: Encoding) => {
-
     let total = 0;
     // 获取浏览器时区
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -161,7 +168,6 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
         query: exportQuery,
       });
     }
-
   };
 
   const exportOptions = useMemo(() => {
@@ -178,7 +184,6 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
       { label: t(pCommon("createTime")), value: "createTime" },
     ];
   }, [t]);
-
 
   return (
     <div>
@@ -204,26 +209,23 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
             <Input />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
           <Form.Item>
-            <ExportFileModaLButton
-              onExport={handleExport}
-            >
-              {t(pCommon("export"))}
-            </ExportFileModaLButton>
+            <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
           </Form.Item>
         </Form>
         <Space style={{ marginBottom: "-16px" }}>
           <FilterFormTabs
             tabs={Object.keys(filteredRoles).map((role) => ({
-              title: `${t(filteredRoles[role])}(${roleChangedHandlers[(role as FilteredRole)].count})`,
+              title: `${t(filteredRoles[role])}(${roleChangedHandlers[role as FilteredRole].count})`,
               key: role,
             }))}
             onChange={(value) => handleFilterRoleChange(value as FilteredRole)}
           />
         </Space>
-
       </FilterFormContainer>
       <UserInfoTable
         data={data}
@@ -240,7 +242,7 @@ export const AllUsersTable: React.FC<Props> = ({ refreshToken, user }) => {
 };
 
 interface UserInfoTableProps {
-  data: Static<typeof GetAllUsersSchema["responses"]["200"]> | undefined;
+  data: Static<(typeof GetAllUsersSchema)["responses"]["200"]> | undefined;
   pageInfo: PageInfo;
   setPageInfo?: (info: PageInfo) => void;
   sortInfo: SortInfo;
@@ -251,9 +253,15 @@ interface UserInfoTableProps {
 }
 
 const UserInfoTable: React.FC<UserInfoTableProps> = ({
-  data, pageInfo, setPageInfo, sortInfo, setSortInfo, isLoading, reload, user,
+  data,
+  pageInfo,
+  setPageInfo,
+  sortInfo,
+  setSortInfo,
+  isLoading,
+  reload,
+  user,
 }) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -277,14 +285,18 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
         dataSource={data?.platformUsers}
         loading={isLoading}
         rowKey="userId"
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.totalCount,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.totalCount,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         onChange={handleTableChange}
         scroll={{ x: 2000 }}
       >
@@ -340,11 +352,14 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
           title={t(pCommon("operation"))}
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
-              <a onClick={() => setPreviewItem({
-                ...r,
-                id: r.userId,
-                tenant: r.tenantName,
-              })}
+              <a
+                onClick={() =>
+                  setPreviewItem({
+                    ...r,
+                    id: r.userId,
+                    tenant: r.tenantName,
+                  })
+                }
               >
                 {t(p("detail"))}
               </a>
@@ -361,20 +376,31 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                   organization={r.organization}
                   adminComment={r.adminComment}
                   onComplete={async (newUserInfo) => {
-                    await api.editUserProfile({
-                      body: {
-                        identityId: r.userId,
-                        email: newUserInfo.email,
-                        phone: newUserInfo.phone,
-                        organization: newUserInfo.organization,
-                        adminComment: newUserInfo.adminComment,
-                      },
-                    })
-                      .httpError(404, () => { message.error(t(p("notExist"))); })
-                      .httpError(500, (e) => { message.error(e.message); })
-                      .httpError(501, () => { message.error("featureUnavailable"); })
-                      .then(() => { message.success(t(p("success"))); })
-                      .catch(() => { message.error(t(p("fail"))); })
+                    await api
+                      .editUserProfile({
+                        body: {
+                          identityId: r.userId,
+                          email: newUserInfo.email,
+                          phone: newUserInfo.phone,
+                          organization: newUserInfo.organization,
+                          adminComment: newUserInfo.adminComment,
+                        },
+                      })
+                      .httpError(404, () => {
+                        message.error(t(p("notExist")));
+                      })
+                      .httpError(500, (e) => {
+                        message.error(e.message);
+                      })
+                      .httpError(501, () => {
+                        message.error("featureUnavailable");
+                      })
+                      .then(() => {
+                        message.success(t(p("success")));
+                      })
+                      .catch(() => {
+                        message.error(t(p("fail")));
+                      })
                       .finally(() => reload());
                   }}
                 >
@@ -390,33 +416,43 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                   userId={r.userId}
                   name={r.name}
                   onComplete={async (newPassword) => {
-                    await api.changePasswordAsPlatformAdmin({
-                      body: {
-                        identityId: r.userId,
-                        newPassword: newPassword,
-                      },
-                    })
-                      .httpError(404, () => { message.error(t(p("notExist"))); })
-                      .httpError(501, () => { message.error(t(p("notAvailable"))); })
+                    await api
+                      .changePasswordAsPlatformAdmin({
+                        body: {
+                          identityId: r.userId,
+                          newPassword: newPassword,
+                        },
+                      })
+                      .httpError(404, () => {
+                        message.error(t(p("notExist")));
+                      })
+                      .httpError(501, () => {
+                        message.error(t(p("notAvailable")));
+                      })
                       .httpError(400, (e) => {
                         if (e.code === "PASSWORD_NOT_VALID") {
                           message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
-                        };
+                        }
                       })
                       .then(() => {
                         message.success(t(p("success")));
-                        api.updatePasswordResetFlag({
-                          body: {
-                            userId: r.userId,
-                            forceFlag: true,
-                          },
-                        })
+                        api
+                          .updatePasswordResetFlag({
+                            body: {
+                              userId: r.userId,
+                              forceFlag: true,
+                            },
+                          })
                           .httpError(500, (e) => {
-                            message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`); })
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`);
+                          })
                           .httpError(501, () => {
-                            message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`); });
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`);
+                          });
                       })
-                      .catch(() => { message.error(t(p("fail"))); });
+                      .catch(() => {
+                        message.error(t(p("fail")));
+                      });
                   }}
                 >
                   {t(p("changePassword"))}
@@ -427,12 +463,7 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
                   {t(p("changeTenant"))}
                 </DisabledA>
               ) : (
-                <ChangeTenantModalLink
-                  tenantName={r.tenantName}
-                  name={r.name}
-                  userId={r.userId}
-                  reload={reload}
-                >
+                <ChangeTenantModalLink tenantName={r.tenantName} name={r.name} userId={r.userId} reload={reload}>
                   {t(p("changeTenant"))}
                 </ChangeTenantModalLink>
               )}
@@ -447,5 +478,4 @@ const UserInfoTable: React.FC<UserInfoTableProps> = ({
       />
     </>
   );
-
 };

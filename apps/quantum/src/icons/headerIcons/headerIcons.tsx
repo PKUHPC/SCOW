@@ -21,7 +21,6 @@ export const IconContainer = styled.div`
   }
 `;
 
-
 export const DisableIconContainer = styled.div`
   height: 24px;
   width: 22px;
@@ -47,10 +46,9 @@ const jupyterSVG = () => (
   </svg>
 );
 
-export const JupyterIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={jupyterSVG} {...props} ref={ref} />
-  ));
+export const JupyterIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={jupyterSVG} {...props} ref={ref} />,
+);
 
 const dashboardSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -77,13 +75,11 @@ const dashboardSVG = () => (
       </clipPath>
     </defs>
   </svg>
-
 );
 
-export const DashboardIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={dashboardSVG} {...props} ref={ref} />
-  ));
+export const DashboardIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={dashboardSVG} {...props} ref={ref} />,
+);
 
 const deviceSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -122,10 +118,9 @@ const deviceSVG = () => (
   </svg>
 );
 
-export const DeviceIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={deviceSVG} {...props} ref={ref} />
-  ));
+export const DeviceIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={deviceSVG} {...props} ref={ref} />,
+);
 
 const quantumJobSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -176,13 +171,11 @@ const quantumJobSVG = () => (
       </clipPath>
     </defs>
   </svg>
-
 );
 
-export const QuantumJobIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={quantumJobSVG} {...props} ref={ref} />
-  ));
+export const QuantumJobIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={quantumJobSVG} {...props} ref={ref} />,
+);
 
 const helpSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -216,10 +209,9 @@ const helpSVG = () => (
   </svg>
 );
 
-export const HelpIcon: React.ForwardRefExoticComponent<{}> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
-    <Icon component={helpSVG} {...props} ref={ref} />
-  ));
+export const HelpIcon: React.ForwardRefExoticComponent<{}> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={helpSVG} {...props} ref={ref} />,
+);
 
 // 详情图标
 const detailSVG = () => (
@@ -253,7 +245,6 @@ export const DetailIcon: React.ForwardRefExoticComponent<IconProps> = React.forw
   ),
 );
 
-
 // 取消图标
 const cancelSVG = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -274,12 +265,13 @@ const cancelSVG = () => (
   </svg>
 );
 
-export const CancelIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const CancelIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={cancelSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 结束图标
 const endSVG = () => (
@@ -301,7 +293,6 @@ const endSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const EndIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -334,8 +325,8 @@ const connectSVG = () => (
   </svg>
 );
 
-export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
@@ -344,5 +335,5 @@ export const ConnectIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={connectSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);

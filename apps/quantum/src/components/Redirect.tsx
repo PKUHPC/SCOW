@@ -10,7 +10,6 @@ interface Props {
 }
 
 export const Redirect: React.FC<Props> = ({ url, as }) => {
-
   const router = useRouter();
 
   useEffect(() => {
@@ -19,4 +18,3 @@ export const Redirect: React.FC<Props> = ({ url, as }) => {
 
   return null;
 };
-

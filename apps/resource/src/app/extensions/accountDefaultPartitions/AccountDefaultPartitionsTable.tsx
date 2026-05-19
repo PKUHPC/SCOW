@@ -3,7 +3,7 @@
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Cluster } from "@scow/config/build/type";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { getCurrentLangTextArgs,getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
+import { getCurrentLangTextArgs, getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App, Button, Form, Space, Table } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePublicConfig } from "src/app/publicConfigContext";
@@ -24,7 +24,7 @@ interface FilterForm {
 
 interface AccountDefaultPartitionsProps {
   data: ClusterPartition[] | undefined;
-  defaultClusterIds?: string[],
+  defaultClusterIds?: string[];
   tenantName?: string;
   isLoading: boolean;
   reload: () => void;
@@ -33,9 +33,14 @@ interface AccountDefaultPartitionsProps {
 }
 
 export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsProps> = ({
-  data, defaultClusterIds, tenantName, isLoading, reload, language, languageId,
+  data,
+  defaultClusterIds,
+  tenantName,
+  isLoading,
+  reload,
+  language,
+  languageId,
 }) => {
-
   const { clusterSortedIdList } = usePublicConfig();
 
   const { message, modal } = App.useApp();
@@ -48,14 +53,14 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
     partition: undefined,
   });
 
-  const { data: currentClustersData,
+  const {
+    data: currentClustersData,
     refetch: currentClustersRefetch,
-    isFetching: currentClustersFetching } = trpc.misServer.currentClusters.useQuery();
+    isFetching: currentClustersFetching,
+  } = trpc.misServer.currentClusters.useQuery();
 
-
-  const { data: currentClustersPartitionsData,
-    isFetching: currentClustersPartitionsIsFetching } =
-      trpc.misServer.currentClustersPartitionsInfo.useQuery();
+  const { data: currentClustersPartitionsData, isFetching: currentClustersPartitionsIsFetching } =
+    trpc.misServer.currentClustersPartitionsInfo.useQuery();
 
   // 判断租户管理下账户授权分区页面是否有获取分区异常的数据
   // 只检查当前页面可以展示的租户已授权集群的数据
@@ -63,46 +68,49 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
     if (currentClustersPartitionsData && defaultClusterIds && currentClustersData) {
       // 筛选出集群分区获取失败的情况
       const missingPartitionClusters = getMissingPartitionClusterNames(
-        defaultClusterIds, currentClustersPartitionsData, currentClustersData.results, languageId);
+        defaultClusterIds,
+        currentClustersPartitionsData,
+        currentClustersData.results,
+        languageId,
+      );
       if (missingPartitionClusters.length > 0) {
         message.error(
-          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]));
+          getCurrentLangTextArgs(language.globalMessage.partitionsNotFound, [missingPartitionClusters.join(", ")]),
+        );
       }
     }
   }, [currentClustersPartitionsData, defaultClusterIds, currentClustersData]);
-
 
   const filteredData = useMemo(() => {
     if (!data || !currentClustersData) return undefined;
 
     const { cluster, partition } = query;
     const lowerPartition = partition?.toLowerCase();
-    const clusterSortedIdMap = Object.fromEntries(
-      clusterSortedIdList.map((id, index) => [id, index]),
-    );
-    return data.filter((x) => {
-      const partitionMatch = lowerPartition ? x.partition.toLowerCase().includes(lowerPartition) : true;
-      const clusterMatch = cluster?.id ? x.clusterId === cluster.id : true;
-      const onlineMatch = currentClustersData.results?.some((currentCluster) => currentCluster.id === x.clusterId);
+    const clusterSortedIdMap = Object.fromEntries(clusterSortedIdList.map((id, index) => [id, index]));
+    return data
+      .filter((x) => {
+        const partitionMatch = lowerPartition ? x.partition.toLowerCase().includes(lowerPartition) : true;
+        const clusterMatch = cluster?.id ? x.clusterId === cluster.id : true;
+        const onlineMatch = currentClustersData.results?.some((currentCluster) => currentCluster.id === x.clusterId);
 
-      return clusterMatch && partitionMatch && onlineMatch;
-    }).sort((a, b) => {
-      // 使用 clusterSortedIdList 的索引进行排序
-      const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
-      const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
-      return aIndex - bIndex;
-    });
+        return clusterMatch && partitionMatch && onlineMatch;
+      })
+      .sort((a, b) => {
+        // 使用 clusterSortedIdList 的索引进行排序
+        const aIndex = clusterSortedIdMap[a.clusterId] ?? Number.MAX_SAFE_INTEGER;
+        const bIndex = clusterSortedIdMap[b.clusterId] ?? Number.MAX_SAFE_INTEGER;
+        return aIndex - bIndex;
+      });
   }, [data, query, currentClustersData, clusterSortedIdList]);
 
   const removeFromDefaultPartitionsMutation = trpc.partitions.removeFromAccountDefaultPartitions.useMutation({
     onSuccess(data) {
-
       if (data?.failedUnassignedAccounts.length > 0) {
         modal.success({
           title: language.accountDefaultPartitions.removeModal.successMessage,
-          content: getCurrentLangTextArgs(
-            language.accountDefaultPartitions.removeModal.successExplanation,
-            [data.failedUnassignedAccounts.join(", ")]),
+          content: getCurrentLangTextArgs(language.accountDefaultPartitions.removeModal.successExplanation, [
+            data.failedUnassignedAccounts.join(", "),
+          ]),
         });
       } else {
         message.success(language.accountDefaultPartitions.removeModal.successMessage);
@@ -124,12 +132,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
     },
   });
 
-
-  const removerFromDefaultPartitions = async (
-    clusterId: string,
-    partition: string,
-  ) => {
-
+  const removerFromDefaultPartitions = async (clusterId: string, partition: string) => {
     if (tenantName) {
       await removeFromDefaultPartitionsMutation.mutateAsync({
         clusterId,
@@ -148,9 +151,11 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
           <ExclamationCircleOutlined />
           <span style={{ marginLeft: "4px" }}>{language.accountDefaultPartitions.explanation1}</span>
           <br />
-          <strong>&bull; </strong>{language.accountDefaultPartitions.explanation2}
+          <strong>&bull; </strong>
+          {language.accountDefaultPartitions.explanation2}
           <br />
-          <strong>&bull; </strong>{language.accountDefaultPartitions.explanation3}
+          <strong>&bull; </strong>
+          {language.accountDefaultPartitions.explanation3}
         </p>
       </div>
       <FilterFormContainer style={{ display: "flex", justifyContent: "space-between" }}>
@@ -175,7 +180,9 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
             <Input allowClear placeholder={language.common.partitionInputPlaceholder} />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{language.common.search}</Button>
+            <Button type="primary" htmlType="submit">
+              {language.common.search}
+            </Button>
           </Form.Item>
         </Form>
 
@@ -216,7 +223,7 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
         <Table.Column<ClusterPartition>
           dataIndex="partition"
           title={language.common.partition}
-          sorter={(a, b) => (a.partition.localeCompare(b.partition))}
+          sorter={(a, b) => a.partition.localeCompare(b.partition)}
         />
         <Table.Column<ClusterPartition>
           title={language.common.operation}
@@ -231,12 +238,12 @@ export const AccountDefaultPartitionsTable: React.FC<AccountDefaultPartitionsPro
                     content: (
                       <>
                         <p>
-                          {getCurrentLangTextArgs(language.accountDefaultPartitions.removeModal.content,
-                            [tenantName, r.partition])}
+                          {getCurrentLangTextArgs(language.accountDefaultPartitions.removeModal.content, [
+                            tenantName,
+                            r.partition,
+                          ])}
                         </p>
-                        <p style={{ color: "red" }}>
-                          {language.accountDefaultPartitions.removeModal.removeWarn}
-                        </p>
+                        <p style={{ color: "red" }}>{language.accountDefaultPartitions.removeModal.removeWarn}</p>
                       </>
                     ),
                     onOk: async () => {

@@ -1,54 +1,26 @@
 {
-  "extends": [
-    "config:base"
-  ],
-  "ignorePaths": [
-    "docker-compose.dev.yml",
-    "dev/ldap/Dockerfile",
-    ".devcontainer/**"
-  ],
+  "extends": ["config:base"],
+  "ignorePaths": ["docker-compose.dev.yml", "dev/ldap/Dockerfile", ".devcontainer/**"],
   "timezone": "Asia/Shanghai",
-  "schedule": [
-    "every sunday"
-  ],
+  "schedule": ["every sunday"],
   "packageRules": [
     {
-      "matchPackagePatterns": [
-        "*"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major dependencies",
       "groupSlug": "all-minor-patch"
     },
     {
-      "matchFiles": [
-        "docs/package.json"
-      ],
-      "matchPackagePatterns": [
-        "@mdx-js/react",
-        "react",
-        "react-dom",
-        "@types/react"
-      ],
+      "matchFiles": ["docs/package.json"],
+      "matchPackagePatterns": ["@mdx-js/react", "react", "react-dom", "@types/react"],
       "enabled": false
     },
     {
-      "matchPackagePatterns": [
-        "pino",
-        "@uiw/react-codemirror"
-      ],
+      "matchPackagePatterns": ["pino", "@uiw/react-codemirror"],
       "enabled": false
     },
     {
-      "matchPackagePatterns": [
-        "ldapjs",
-        "@types/ldapjs",
-        "@tanstack/react-query",
-        "@octokit/rest"
-      ],
+      "matchPackagePatterns": ["ldapjs", "@types/ldapjs", "@tanstack/react-query", "@octokit/rest"],
       "enabled": false
     }
   ]

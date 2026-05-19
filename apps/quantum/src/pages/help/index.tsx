@@ -46,31 +46,34 @@ const SdkTokenSection = () => {
     }
   };
 
-
   return (
     <Paragraph>
       <span>SDK Token: </span>
-      {
-        isLoading ? (
-          <Spin><Localized id="help.token.loading" /></Spin>
-        ) : isError ? (
-          <span><Localized id="help.token.error" />: {error.message}</span>
-        ) : (!isSuccess) ? (
-          <span><Localized id="help.token.error" /></span>
-        ) : (
-          <Button onClick={() => copyToClipboard(data.token)}>
-            <Localized id="help.token.copy" />
-          </Button>
-        )
-      }
+      {isLoading ? (
+        <Spin>
+          <Localized id="help.token.loading" />
+        </Spin>
+      ) : isError ? (
+        <span>
+          <Localized id="help.token.error" />: {error.message}
+        </span>
+      ) : !isSuccess ? (
+        <span>
+          <Localized id="help.token.error" />
+        </span>
+      ) : (
+        <Button onClick={() => copyToClipboard(data.token)}>
+          <Localized id="help.token.copy" />
+        </Button>
+      )}
     </Paragraph>
   );
 };
 
 const HelpMarkdownLoader = () => {
   // markdown中导入BASE_PATH
-  const processedMarkdown = BASE_PATH !== "/" ? cn.replace(/\{\{BASE_PATH\}\}/g, BASE_PATH) :
-    cn.replace(/\{\{BASE_PATH\}\}/g, "");
+  const processedMarkdown =
+    BASE_PATH !== "/" ? cn.replace(/\{\{BASE_PATH\}\}/g, BASE_PATH) : cn.replace(/\{\{BASE_PATH\}\}/g, "");
 
   // TODO 不同语言选择不同的markdown文件
   return (

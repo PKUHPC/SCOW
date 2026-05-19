@@ -26,13 +26,7 @@ export class UserMessageRead {
   createdAt = new Date();
   updatedAt = new Date();
 
-  constructor(init: {
-    userId: string;
-    message: Message;
-    status?: ReadStatus;
-    readTime?: Date;
-    isDeleted?: boolean;
-  }) {
+  constructor(init: { userId: string; message: Message; status?: ReadStatus; readTime?: Date; isDeleted?: boolean }) {
     this.userId = init.userId;
     this.status = init.status ?? ReadStatus.UNREAD;
     this.readTime = init.readTime;
@@ -41,15 +35,10 @@ export class UserMessageRead {
   }
 }
 
-
 export const UserMessageReadSchema = new EntitySchema<UserMessageRead>({
   class: UserMessageRead,
-  indexes: [
-    { name: "idx_user_id", properties: ["userId"]},
-  ],
-  uniques: [
-    { name: "uniq_user_message", properties: ["userId", "message"]},
-  ],
+  indexes: [{ name: "idx_user_id", properties: ["userId"] }],
+  uniques: [{ name: "uniq_user_message", properties: ["userId", "message"] }],
   hooks: {
     beforeUpsert: [
       (args: EventArgs<UserMessageRead>) => {

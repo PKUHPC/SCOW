@@ -11,12 +11,12 @@ interface NavItem {
   clickable?: boolean | undefined;
   icon?: {
     src: string;
-    alt?: string
-  },
+    alt?: string;
+  };
   svgIcon?: string; // 使用被插入系统的svg icon，icon可以随菜单变色
   openInNewPage?: boolean | undefined;
   children?: NavItem[] | undefined;
-};
+}
 
 interface Request {
   navs: NavItem[];
@@ -38,12 +38,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (userInfo?.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
     // 将租户授权分区页面插入到 平台管理-租户管理-三级导航的末端
-    const adminTargetNav = body.navs.find((nav) =>
-      (nav.path === "/admin"))?.children?.find((child) => child.path === "/admin/permissionManagement");
+    const adminTargetNav = body.navs
+      .find((nav) => nav.path === "/admin")
+      ?.children?.find((child) => child.path === "/admin/permissionManagement");
     if (!adminTargetNav?.children) {
       throw new TRPCError({
-        message: "The navigation Platform/Tenants can not be found."
-       + " Please confirm your navigation path name and try again.",
+        message:
+          "The navigation Platform/Tenants can not be found." +
+          " Please confirm your navigation path name and try again.",
         code: "NOT_FOUND",
       });
     }
@@ -57,15 +59,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   if (userInfo?.tenantRoles.includes(TenantRole.TENANT_ADMIN)) {
-  // 将账户默认授权分区页面插入到 租户管理-账户管理-三级导航的末端
-  // 将账户授权分区页面插入到账户默认授权分区页面后
-    const tenantTargetNav = body.navs.find((nav) =>
-      (nav.path === "/tenant"))?.children?.find((child) => child.path === "/tenant/permissionManagement");
+    // 将账户默认授权分区页面插入到 租户管理-账户管理-三级导航的末端
+    // 将账户授权分区页面插入到账户默认授权分区页面后
+    const tenantTargetNav = body.navs
+      .find((nav) => nav.path === "/tenant")
+      ?.children?.find((child) => child.path === "/tenant/permissionManagement");
 
     if (!tenantTargetNav?.children) {
       throw new TRPCError({
-        message: "The navigation Tenant/Accounts can not be found."
-       + " Please confirm your navigation path name and try again.",
+        message:
+          "The navigation Tenant/Accounts can not be found." +
+          " Please confirm your navigation path name and try again.",
         code: "NOT_FOUND",
       });
     }

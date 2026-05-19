@@ -8,11 +8,7 @@ export const NotFoundPage = () => {
   return (
     <>
       <Head title="Not Found" />
-      <Result
-        status="404"
-        title={"404"}
-        subTitle={"Not Found Page"}
-      />
+      <Result status="404" title={"404"} subTitle={"Not Found Page"} />
     </>
   );
 };

@@ -17,26 +17,24 @@ export const GetUsedPayTypesSchema = typeboxRouteSchema({
   },
 });
 
-const auth = authenticate((u) =>
-  u.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-  u.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-  u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-  u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+const auth = authenticate(
+  (u) =>
+    u.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+    u.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
+    u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+    u.tenantRoles.includes(TenantRole.TENANT_ADMIN),
 );
 
-export default route(GetUsedPayTypesSchema,
-  async (req, res) => {
+export default route(GetUsedPayTypesSchema, async (req, res) => {
+  const info = await auth(req, res);
 
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
+  const client = getClient(ChargingServiceClient);
 
-    if (!info) { return; }
+  const { types } = await asyncClientCall(client, "getAllPayTypes", {});
 
-    const client = getClient(ChargingServiceClient);
-
-    const { types } = await asyncClientCall(client, "getAllPayTypes", {});
-
-    return { 200: { types } };
-
-  });
-
+  return { 200: { types } };
+});

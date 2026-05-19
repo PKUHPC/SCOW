@@ -1,5 +1,4 @@
 import "@xterm/xterm/css/xterm.css";
-
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { Button, Popover, Space, Spin, Typography } from "antd";
 import { NextPage } from "next";
@@ -37,13 +36,15 @@ const Header = styled.div`
   justify-content: space-between;
   background-color: #333;
 
-  h2 { color: white; margin: 0px; }
+  h2 {
+    color: white;
+    margin: 0px;
+  }
 
   .ant-popover-content p {
     margin: 0;
   }
 `;
-
 
 const TerminalContainer = styled.div`
   display: flex;
@@ -57,14 +58,12 @@ const Black = styled.div`
   background-color: black;
 `;
 
-const DynamicShellComponent = dynamic(
-  () => import("src/pageComponents/shell/Shell").then((x) => x.Shell), {
-    ssr: false,
-    loading: Black,
-  });
+const DynamicShellComponent = dynamic(() => import("src/pageComponents/shell/Shell").then((x) => x.Shell), {
+  ssr: false,
+  loading: Black,
+});
 
 export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
-
   if (!publicConfig.ENABLE_SHELL) {
     return <NotFoundPage />;
   }
@@ -75,7 +74,7 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
 
   const cluster = router.query.cluster as string;
   const loginNode = router.query.loginNode as string;
-  const paths = router.query.path as (string[] | undefined);
+  const paths = router.query.path as string[] | undefined;
 
   const { currentClusters } = useStore(ClusterInfoStore);
 
@@ -88,8 +87,10 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
 
   const headerRef = useRef<HTMLDivElement>(null);
 
-  const clusterName =
-    getI18nConfigCurrentText(currentClusters.find((x) => x.id === cluster)?.name || cluster, languageId);
+  const clusterName = getI18nConfigCurrentText(
+    currentClusters.find((x) => x.id === cluster)?.name || cluster,
+    languageId,
+  );
 
   const t = useI18nTranslateToString();
 
@@ -139,65 +140,63 @@ export const ShellPage: NextPage = requireAuth(() => true)(({ userStore }) => {
       <Head title={`${cluster}${t("pages.shell.loginNode.title")}`} />
       <Header ref={headerRef}>
         <h2>
-          <Localized
-            id="pages.shell.loginNode.content"
-            args={[userId, clusterName, currentLoginNodeName]}
-          />
+          <Localized id="pages.shell.loginNode.content" args={[userId, clusterName, currentLoginNodeName]} />
         </h2>
         <Space wrap>
-          <Button onClick={() => Router.reload()}>
-            {t("pages.shell.loginNode.reloadButton")}
-          </Button>
-          {
-            !useRootEnabled && (
-              <Popover
-                title={t("pages.shell.loginNode.popoverTitle")}
-                trigger="hover"
-                placement="bottom"
-                zIndex={2000}
-                getPopupContainer={() => headerRef.current || document.body}
-                content={() => (
-                  <div>
-                    <p><b>{t("pages.shell.loginNode.popoverContent1")}</b>：
-                      <Text code>sopen</Text>{t("pages.shell.loginNode.popoverContent2")}
-                    </p>
-                    <p><b>{t("pages.shell.loginNode.popoverContent12")}</b>：
-                      <Text code>sup</Text>{t("pages.shell.loginNode.popoverContent13")}
-                    </p>
-                    <p><b>{t("pages.shell.loginNode.popoverContent3")}</b>：
-                      <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                      {t("pages.shell.loginNode.popoverContent4")}
-                      <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                      {t("pages.shell.loginNode.popoverContent5")}<br />
-                      {t("pages.shell.loginNode.popoverContent8")}<Text code>sdown hello.txt</Text>
-                    </p>
-                    <p><b>{t("pages.shell.loginNode.popoverContent9")}</b>：
-                      <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                      {t("pages.shell.loginNode.popoverContent10")}
-                      <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
-                      {t("pages.shell.loginNode.popoverContent11")}<br />
-                      {t("pages.shell.loginNode.popoverContent8")}<Text code>sedit hello.txt</Text>
-                    </p>
-                    <p>
-                      {t("pages.shell.loginNode.popoverContent6")}<Text code>sopen</Text>
-                      {t("pages.shell.loginNode.popoverContent7")}
-                    </p>
-                  </div>
-                )}
-              >
-                <Button>
-                  {t("pages.shell.loginNode.command")}
-                </Button>
-              </Popover>
-            )
-          }
+          <Button onClick={() => Router.reload()}>{t("pages.shell.loginNode.reloadButton")}</Button>
+          {!useRootEnabled && (
+            <Popover
+              title={t("pages.shell.loginNode.popoverTitle")}
+              trigger="hover"
+              placement="bottom"
+              zIndex={2000}
+              getPopupContainer={() => headerRef.current || document.body}
+              content={() => (
+                <div>
+                  <p>
+                    <b>{t("pages.shell.loginNode.popoverContent1")}</b>：<Text code>sopen</Text>
+                    {t("pages.shell.loginNode.popoverContent2")}
+                  </p>
+                  <p>
+                    <b>{t("pages.shell.loginNode.popoverContent12")}</b>：<Text code>sup</Text>
+                    {t("pages.shell.loginNode.popoverContent13")}
+                  </p>
+                  <p>
+                    <b>{t("pages.shell.loginNode.popoverContent3")}</b>：
+                    <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                    {t("pages.shell.loginNode.popoverContent4")}
+                    <Text code>sdown [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                    {t("pages.shell.loginNode.popoverContent5")}
+                    <br />
+                    {t("pages.shell.loginNode.popoverContent8")}
+                    <Text code>sdown hello.txt</Text>
+                  </p>
+                  <p>
+                    <b>{t("pages.shell.loginNode.popoverContent9")}</b>：
+                    <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                    {t("pages.shell.loginNode.popoverContent10")}
+                    <Text code>sedit [{t("pages.shell.loginNode.popoverContentFile")}]</Text>
+                    {t("pages.shell.loginNode.popoverContent11")}
+                    <br />
+                    {t("pages.shell.loginNode.popoverContent8")}
+                    <Text code>sedit hello.txt</Text>
+                  </p>
+                  <p>
+                    {t("pages.shell.loginNode.popoverContent6")}
+                    <Text code>sopen</Text>
+                    {t("pages.shell.loginNode.popoverContent7")}
+                  </p>
+                </div>
+              )}
+            >
+              <Button>{t("pages.shell.loginNode.command")}</Button>
+            </Popover>
+          )}
         </Space>
-
-
       </Header>
       <TerminalContainer>
         <DynamicShellComponent
-          path={paths ? ("/" + paths.join("/")) : ""}
+          path={paths ? "/" + paths.join("/") : ""}
           userId={userId}
           cluster={cluster}
           loginNode={loginNode}

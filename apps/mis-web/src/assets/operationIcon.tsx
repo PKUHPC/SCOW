@@ -15,7 +15,7 @@ export const IconContainer = styled.div`
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  color: ${({ theme }) => theme.token.colorPrimary };
+  color: ${({ theme }) => theme.token.colorPrimary};
   &:hover {
     background: ${({ theme }) => theme.palette?.primary?.[0] ?? "#B6000314"};
   }
@@ -84,7 +84,6 @@ const endSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const EndIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -219,7 +218,7 @@ const removeUserSVG = () => (
 );
 
 export const RemoveUserIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={removeUserSVG} {...props} ref={ref} />
@@ -228,8 +227,7 @@ export const RemoveUserIcon: React.ForwardRefExoticComponent<IconProps> = React.
       <IconContainer>
         <Icon component={removeUserSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 设为管理员图标
@@ -254,7 +252,6 @@ const setAsManageSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const SetAsManageIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -325,7 +322,7 @@ const settingSVG = () => (
 );
 
 export const SettingIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={settingSVG} {...props} ref={ref} />
@@ -334,8 +331,7 @@ export const SettingIcon: React.ForwardRefExoticComponent<IconProps> = React.for
       <IconContainer>
         <Icon component={settingSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 调整租户计费图标
@@ -367,7 +363,6 @@ const adjustBillingSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
 export const AdjustBillingIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
@@ -396,7 +391,7 @@ const changePasswordSVG = () => (
 );
 
 export const ChangePasswordIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={changePasswordSVG} {...props} ref={ref} />
@@ -405,8 +400,7 @@ export const ChangePasswordIcon: React.ForwardRefExoticComponent<IconProps> = Re
       <IconContainer>
         <Icon component={changePasswordSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 删除图标
@@ -430,8 +424,8 @@ const deleteSVG = () => (
   </svg>
 );
 
-export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={deleteSVG} {...props} ref={ref} />
@@ -440,8 +434,8 @@ export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={deleteSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 编辑图标
 const editSVG = () => (
@@ -462,7 +456,7 @@ const editSVG = () => (
 );
 
 export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={editSVG} {...props} ref={ref} />
@@ -471,8 +465,7 @@ export const EditIcon: React.ForwardRefExoticComponent<IconProps> = React.forwar
       <IconContainer>
         <Icon component={editSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 管理成员图标
@@ -502,7 +495,7 @@ const manageMemberSVG = () => (
 );
 
 export const ManageMemberIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={manageMemberSVG} {...props} ref={ref} />
@@ -511,8 +504,7 @@ export const ManageMemberIcon: React.ForwardRefExoticComponent<IconProps> = Reac
       <IconContainer>
         <Icon component={manageMemberSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 封锁阈值图标
@@ -535,7 +527,7 @@ const blockageThresholdSVG = () => (
 );
 
 export const BlockageThresholdIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={blockageThresholdSVG} {...props} ref={ref} />
@@ -544,8 +536,7 @@ export const BlockageThresholdIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={blockageThresholdSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 解除封锁图标
@@ -572,12 +563,13 @@ const unlockSVG = () => (
   </svg>
 );
 
-export const UnlockIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const UnlockIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={unlockSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 从白名单中去除图标
 const removeFromWhitelistSVG = () => (
@@ -605,12 +597,13 @@ const removeFromWhitelistSVG = () => (
   </svg>
 );
 
-export const RemoveFromWhitelistIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const RemoveFromWhitelistIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={removeFromWhitelistSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 变更租户图标
 const changeTenantSVG = () => (
@@ -636,8 +629,8 @@ const changeTenantSVG = () => (
   </svg>
 );
 
-export const ChangeTenantIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ChangeTenantIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={changeTenantSVG} {...props} ref={ref} />
@@ -646,8 +639,8 @@ export const ChangeTenantIcon: React.ForwardRefExoticComponent<IconProps> =
       <IconContainer>
         <Icon component={changeTenantSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ));
+    ),
+);
 
 // 查看图标
 const viewSVG = () => (
@@ -676,12 +669,13 @@ const viewSVG = () => (
   </svg>
 );
 
-export const ViewIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const ViewIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={viewSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 停用图标
 const stopUseSVG = () => (
@@ -698,12 +692,13 @@ const stopUseSVG = () => (
   </svg>
 );
 
-export const StopUseIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const StopUseIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={stopUseSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 启用图标
 const startUseSVG = () => (
@@ -720,12 +715,13 @@ const startUseSVG = () => (
   </svg>
 );
 
-export const StartUseIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const StartUseIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={startUseSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 授权应用图标
 const authorizedAppSVG = () => (
@@ -755,12 +751,13 @@ const authorizedAppSVG = () => (
   </svg>
 );
 
-export const AuthorizedAppIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: Ref<HTMLSpanElement> | undefined) => (
+export const AuthorizedAppIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: Ref<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={authorizedAppSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);
 
 // 修改配额图标
 const modifyQuotaSVG = () => (
@@ -908,7 +905,7 @@ const nodeOnlineSVG = () => (
 );
 
 export const NodeOnlineIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={nodeOnlineSVG} {...props} ref={ref} />
@@ -917,8 +914,7 @@ export const NodeOnlineIcon: React.ForwardRefExoticComponent<IconProps> = React.
       <IconContainer>
         <Icon component={nodeOnlineSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 节点迁移图标
@@ -941,7 +937,7 @@ const nodeMigrationSVG = () => (
 );
 
 export const NodeMigrationIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
-  (props, ref: Ref<HTMLSpanElement> | undefined) => (
+  (props, ref: Ref<HTMLSpanElement> | undefined) =>
     props.disabled ? (
       <DisableIconContainer>
         <Icon component={nodeMigrationSVG} {...props} ref={ref} />
@@ -950,8 +946,7 @@ export const NodeMigrationIcon: React.ForwardRefExoticComponent<IconProps> = Rea
       <IconContainer>
         <Icon component={nodeMigrationSVG} {...props} ref={ref} />
       </IconContainer>
-    )
-  ),
+    ),
 );
 
 // 移出默认授权应用图标

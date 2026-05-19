@@ -13,8 +13,7 @@ import { getScowActivatedClusterIds, getScowActivatedClusterPartitions } from "s
 import { getScowAccounts } from "src/server/mis-server/tenantAccount";
 import { adminAuthProcedure } from "src/server/trpc/procedure/base";
 import { getAvailablePartitionsResult } from "src/server/utils/clusterPartitions";
-import { checkClusterIdAvailable, checkClusterPartitionAvailable,
-  checkSyncRunning } from "src/utils/auth/utils";
+import { checkClusterIdAvailable, checkClusterPartitionAvailable, checkSyncRunning } from "src/utils/auth/utils";
 import { getClusterUtils } from "src/utils/clusterAdapter";
 import { DEFAULT_ERROR_MESSAGE, DEFAULT_PAGE_SIZE } from "src/utils/constants";
 import { forkEntityManager } from "src/utils/getOrm";
@@ -25,8 +24,7 @@ import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
 
 import { callLog } from "../../operationLog";
-import { mock, MOCK_ALL_ACC_ASSIGNED_PARTITIONS,
-  MOCK_ALL_ACCT_ASSIGNED_INFO } from "../mock";
+import { mock, MOCK_ALL_ACC_ASSIGNED_PARTITIONS, MOCK_ALL_ACCT_ASSIGNED_INFO } from "../mock";
 import { AllAssignedInfoSchema } from "./tenantClusterPartitions";
 
 export const AssignedPartitionSchema = z.object({
@@ -56,16 +54,16 @@ export const accountsAssignedDetails = adminAuthProcedure
       searchOwnerText: z.string().optional(),
     }),
   )
-  .output(z.object({
-    items: z.array(AllAssignedInfoSchema),
-    total: z.number(),
-    noPartitionClusterIds: z.array(z.string()),
-  }))
+  .output(
+    z.object({
+      items: z.array(AllAssignedInfoSchema),
+      total: z.number(),
+      noPartitionClusterIds: z.array(z.string()),
+    }),
+  )
   .query(async ({ input }) => {
-
     return mock(
       async () => {
-
         const { tenantName, page, pageSize, sortBy, sortOrder, searchAccountText, searchOwnerText } = input;
         // 并行获取基础数据
         const [currentClusterIds, currentClusterPartitions, allTenantAccounts] = await Promise.all([
@@ -86,15 +84,15 @@ export const accountsAssignedDetails = adminAuthProcedure
           getScowAccounts(tenantName).catch((e) => {
             logger.error("Accounts of tenant %s fetch failed: %s", tenantName, e);
             throw new TRPCError({
-              message:
-              `Can not find accounts of tenant ${tenantName}: ${e.message || e.details || DEFAULT_ERROR_MESSAGE}`,
+              message: `Can not find accounts of tenant ${tenantName}: ${e.message || e.details || DEFAULT_ERROR_MESSAGE}`,
               code: "INTERNAL_SERVER_ERROR",
             });
           }),
         ]);
         // 获取无法拿到分区信息的异常集群数据
-        const totalNoPartitionClusters: string[] = currentClusterIds.filter((clusterId) =>
-          (!Object.keys(currentClusterPartitions).includes(clusterId)));
+        const totalNoPartitionClusters: string[] = currentClusterIds.filter(
+          (clusterId) => !Object.keys(currentClusterPartitions).includes(clusterId),
+        );
 
         // 定义数据库返回的原始数据结构
         interface RawAccountClusterRule {
@@ -121,11 +119,13 @@ export const accountsAssignedDetails = adminAuthProcedure
         const em = await forkEntityManager();
         // 获取租户已授权数据作为账户查询的数据边界
         const [tenantClusterRules, tenantPartitionRules] = await Promise.all([
-          em.createQueryBuilder(TenantClusterRule)
+          em
+            .createQueryBuilder(TenantClusterRule)
             .select(["clusterId"])
             .where({ tenantName, clusterId: { $in: currentClusterIds } })
             .execute<RawTenantClusterRule[]>(),
-          em.createQueryBuilder(TenantPartitionRule)
+          em
+            .createQueryBuilder(TenantPartitionRule)
             .select(["clusterId", "partition"])
             .where({ tenantName, clusterId: { $in: currentClusterIds } })
             .execute<RawTenantPartitionRule[]>(),
@@ -133,8 +133,9 @@ export const accountsAssignedDetails = adminAuthProcedure
         const tenantAssignedActivatedClusterIds = tenantClusterRules.map((c) => c.clusterId);
 
         // 结合租户已授权分区及异常数据，获取到账户授权信息中的异常集群信息数据
-        const noPartitionClusterIds
-         = tenantAssignedActivatedClusterIds.filter((id) => totalNoPartitionClusters.includes(id));
+        const noPartitionClusterIds = tenantAssignedActivatedClusterIds.filter((id) =>
+          totalNoPartitionClusters.includes(id),
+        );
         if (tenantAssignedActivatedClusterIds.length === 0) {
           return { items: [], total: 0, noPartitionClusterIds };
         }
@@ -142,14 +143,16 @@ export const accountsAssignedDetails = adminAuthProcedure
         let filteredAccounts: Account[] = allTenantAccounts.results;
 
         if (searchOwnerText) {
-          filteredAccounts = filteredAccounts.filter((a) => (
-            a.ownerName?.toLowerCase().includes(searchOwnerText.toLowerCase())
-              || a.ownerId?.toLowerCase().includes(searchOwnerText.toLowerCase())),
+          filteredAccounts = filteredAccounts.filter(
+            (a) =>
+              a.ownerName?.toLowerCase().includes(searchOwnerText.toLowerCase()) ||
+              a.ownerId?.toLowerCase().includes(searchOwnerText.toLowerCase()),
           );
         }
         if (searchAccountText) {
           filteredAccounts = filteredAccounts.filter((account) =>
-            account.accountName.toLowerCase().includes(searchAccountText.toLowerCase()));
+            account.accountName.toLowerCase().includes(searchAccountText.toLowerCase()),
+          );
         }
         // 如果过滤后没数据直接返回
         if (filteredAccounts.length === 0) {
@@ -158,7 +161,8 @@ export const accountsAssignedDetails = adminAuthProcedure
 
         // 全量预取数据，之后在内存中处理数据
         const [allClusterRules, allPartitionRules] = await Promise.all([
-          em.createQueryBuilder(AccountClusterRule)
+          em
+            .createQueryBuilder(AccountClusterRule)
             .select(["accountName", "clusterId"])
             .where({
               tenantName,
@@ -166,16 +170,18 @@ export const accountsAssignedDetails = adminAuthProcedure
             })
             .execute<RawAccountClusterRule[]>(),
 
-          em.createQueryBuilder(AccountPartitionRule)
+          em
+            .createQueryBuilder(AccountPartitionRule)
             .select(["accountName", "clusterId", "partition"])
             .where({ tenantName })
             .execute<RawAccountPartitionRule[]>(),
         ]);
 
         // partitions:Set<string>  使用Key组合防止嵌套循环, 存储 "clusterId:partition"
-        const accountClusterPartitionMap = new Map<string, { clusters: Set<string>, partitions: Set<string> }>();
+        const accountClusterPartitionMap = new Map<string, { clusters: Set<string>; partitions: Set<string> }>();
         filteredAccounts.forEach((a) =>
-          (accountClusterPartitionMap.set(a.accountName, { clusters: new Set(), partitions: new Set() })));
+          accountClusterPartitionMap.set(a.accountName, { clusters: new Set(), partitions: new Set() }),
+        );
         // 映射集群规则
         allClusterRules.forEach((rule) => {
           const entry = accountClusterPartitionMap.get(rule.accountName);
@@ -183,11 +189,8 @@ export const accountsAssignedDetails = adminAuthProcedure
         });
         // 映射分区规则
         // 先把租户的有效集群已授权的分区存入 Set 提高查找速度
-        const validPartitionRules
-          = tenantPartitionRules.filter((p) => !noPartitionClusterIds.includes(p.clusterId));
-        const validPartitions = new Set(
-          validPartitionRules.map((p) => `${p.clusterId}:${p.partition}`),
-        );
+        const validPartitionRules = tenantPartitionRules.filter((p) => !noPartitionClusterIds.includes(p.clusterId));
+        const validPartitions = new Set(validPartitionRules.map((p) => `${p.clusterId}:${p.partition}`));
         allPartitionRules.forEach((rule) => {
           const entry = accountClusterPartitionMap.get(rule.accountName);
           if (entry && validPartitions.has(`${rule.clusterId}:${rule.partition}`)) {
@@ -246,7 +249,8 @@ export const accountsAssignedDetails = adminAuthProcedure
               assignedClusters: tenantClusterRules.map((tc) => ({
                 clusterId: tc.clusterId,
                 assignmentState: p._clustersSet.has(tc.clusterId)
-                  ? AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
+                  ? AssignmentState.ASSIGNED
+                  : AssignmentState.UNASSIGNED,
               })),
               assignedClustersCount: p.assignedClustersCount,
               assignedPartitions: validPartitionRules.map((tp) => {
@@ -255,7 +259,8 @@ export const accountsAssignedDetails = adminAuthProcedure
                   clusterId: tp.clusterId,
                   partition: tp.partition,
                   assignmentState: p._partitionsSet.has(partitionKey)
-                    ? AssignmentState.ASSIGNED : AssignmentState.UNASSIGNED,
+                    ? AssignmentState.ASSIGNED
+                    : AssignmentState.UNASSIGNED,
                 };
               }),
               assignedPartitionsCount: p.assignedPartitionsCount,
@@ -264,11 +269,10 @@ export const accountsAssignedDetails = adminAuthProcedure
         });
 
         return { items, total, noPartitionClusterIds };
-
       },
 
       async () => {
-        return { items: MOCK_ALL_ACCT_ASSIGNED_INFO as any, total: 100, noPartitionClusterIds: []};
+        return { items: MOCK_ALL_ACCT_ASSIGNED_INFO as any, total: 100, noPartitionClusterIds: [] };
       },
     );
   });
@@ -282,13 +286,15 @@ export const assignAccountCluster = adminAuthProcedure
       summary: "授权账户集群",
     },
   })
-  .input(z.object({
-    tenantName: z.string(),
-    accountName: z.string(),
-    clusterId: z.string(),
-  }))
+  .input(
+    z.object({
+      tenantName: z.string(),
+      accountName: z.string(),
+      clusterId: z.string(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ clusterId, accountName }, ctx, next }) => {
+  .use(async ({ input: { clusterId, accountName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -299,27 +305,33 @@ export const assignAccountCluster = adminAuthProcedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        clusterId,
-        target: { $case: "accountName", accountName },
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            target: { $case: "accountName", accountName },
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          target: { $case: "accountName", accountName },
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            target: { $case: "accountName", accountName },
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
     return res;
   })
   .mutation(async ({ input }) => {
-
     if (USE_MOCK) return;
 
     const { tenantName, accountName, clusterId } = input;
@@ -344,8 +356,7 @@ export const assignAccountCluster = adminAuthProcedure
     });
     await em.persistAndFlush(newAccountCluster);
 
-    await callHook("accountAssignedToClusters", { accountName, tenantName, clusterIds: [clusterId]}, logger);
-
+    await callHook("accountAssignedToClusters", { accountName, tenantName, clusterIds: [clusterId] }, logger);
   });
 
 export const unAssignAccountCluster = adminAuthProcedure
@@ -357,13 +368,15 @@ export const unAssignAccountCluster = adminAuthProcedure
       summary: "取消授权账户集群",
     },
   })
-  .input(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-    clusterId: z.string(),
-  }))
+  .input(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+      clusterId: z.string(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ clusterId, accountName }, ctx, next }) => {
+  .use(async ({ input: { clusterId, accountName }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -374,27 +387,33 @@ export const unAssignAccountCluster = adminAuthProcedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        clusterId,
-        target: { $case: "accountName", accountName },
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            target: { $case: "accountName", accountName },
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          target: { $case: "accountName", accountName },
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            target: { $case: "accountName", accountName },
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
     return res;
   })
   .mutation(async ({ input }) => {
-
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId } = input;
@@ -406,9 +425,11 @@ export const unAssignAccountCluster = adminAuthProcedure
     const em = await forkEntityManager();
 
     return await em.transactional(async (em) => {
-
       const accountCluster = await em.findOne(AccountClusterRule, {
-        accountName, tenantName, clusterId });
+        accountName,
+        tenantName,
+        clusterId,
+      });
 
       if (!accountCluster) {
         logger.info(`The account ${accountName} of tenant ${tenantName}
@@ -420,12 +441,8 @@ export const unAssignAccountCluster = adminAuthProcedure
       const accountInfo = await getScowAccounts(tenantName, accountName);
       const clustersUtil = await getClusterUtils();
       if (!accountInfo.results[0].blocked) {
-
-        await clustersUtil.callOnOne(
-          clusterId,
-          logger,
-          async (adapterClient) => {
-
+        await clustersUtil
+          .callOnOne(clusterId, logger, async (adapterClient) => {
             const clusterConfig = await asyncClientCall(adapterClient.config, "getClusterConfig", {});
             // 1.获取当前集群下所有分区
             const partitionNames = clusterConfig.partitions.map((p) => p.name);
@@ -434,24 +451,32 @@ export const unAssignAccountCluster = adminAuthProcedure
             if (partitionNames.length > 0) {
               await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
                 accountName,
-                blockedPartitions:  partitionNames,
+                blockedPartitions: partitionNames,
               });
             }
-          },
-        ).catch((e) => {
-          logger.error("Block account %s in cluster (clusterId: %s) failed with error details: %s",
-            accountName, clusterId, e);
-          const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
-          throw new TRPCError({
-            message: `Can not block the unblocked account ${accountName} in cluster (ClusterId: ${clusterId}): `
-            + `${message}.`,
-            code: "CONFLICT",
+          })
+          .catch((e) => {
+            logger.error(
+              "Block account %s in cluster (clusterId: %s) failed with error details: %s",
+              accountName,
+              clusterId,
+              e,
+            );
+            const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
+            throw new TRPCError({
+              message:
+                `Can not block the unblocked account ${accountName} in cluster (ClusterId: ${clusterId}): ` +
+                `${message}.`,
+              code: "CONFLICT",
+            });
           });
-        });
       }
 
       const removedAccountPartitions = await em.find(AccountPartitionRule, {
-        accountName, tenantName, clusterId });
+        accountName,
+        tenantName,
+        clusterId,
+      });
 
       // 移除在该集群的已授权信息, 移除该集群下分区的已授权信息
       em.remove([accountCluster, ...removedAccountPartitions]);
@@ -460,8 +485,6 @@ export const unAssignAccountCluster = adminAuthProcedure
 
       await callHook("accountUnassignedFromCluster", { accountName, tenantName, clusterId }, logger);
     });
-
-
   });
 
 export const assignAccountPartition = adminAuthProcedure
@@ -473,14 +496,16 @@ export const assignAccountPartition = adminAuthProcedure
       summary: "为账户授权分区",
     },
   })
-  .input(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-    clusterId: z.string(),
-    partition: z.string(),
-  }))
+  .input(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+      clusterId: z.string(),
+      partition: z.string(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ clusterId, accountName, partition }, ctx, next }) => {
+  .use(async ({ input: { clusterId, accountName, partition }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -491,29 +516,35 @@ export const assignAccountPartition = adminAuthProcedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        clusterId,
-        partitionName: partition,
-        target: { $case: "accountName", accountName },
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "accountName", accountName },
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          partitionName: partition,
-          target: { $case: "accountName", accountName },
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "accountName", accountName },
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
     return res;
   })
   .mutation(async ({ input }) => {
-
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId, partition } = input;
@@ -525,9 +556,12 @@ export const assignAccountPartition = adminAuthProcedure
     const em = await forkEntityManager();
 
     return await em.transactional(async (em) => {
-
       const accountPartition = await em.findOne(AccountPartitionRule, {
-        accountName, tenantName, clusterId, partition });
+        accountName,
+        tenantName,
+        clusterId,
+        partition,
+      });
 
       if (accountPartition) {
         logger.info(`The partition (ClusterId: ${clusterId}, Name: ${partition})
@@ -539,30 +573,36 @@ export const assignAccountPartition = adminAuthProcedure
       const accountInfo = await getScowAccounts(tenantName, accountName);
       const clustersUtil = await getClusterUtils();
       if (!accountInfo.results[0].blocked) {
-        await clustersUtil.callOnOne(
-          clusterId,
+        await clustersUtil
+          .callOnOne(
+            clusterId,
 
-          logger,
-          async (adapterClient) => {
-            // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
-            await ensureResourceManagementFeatureAvailable(adapterClient, logger);
-            await asyncClientCall(adapterClient.account, "unblockAccountWithPartitions", {
+            logger,
+            async (adapterClient) => {
+              // 检查当前适配器是否具有资源管理可选功能接口，同时判断当前适配器版本
+              await ensureResourceManagementFeatureAvailable(adapterClient, logger);
+              await asyncClientCall(adapterClient.account, "unblockAccountWithPartitions", {
+                accountName,
+                unblockedPartitions: [partition],
+              });
+            },
+          )
+          .catch((e) => {
+            logger.error(
+              "Unblock account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %s",
               accountName,
-              unblockedPartitions: [ partition ],
+              clusterId,
+              partition,
+              e,
+            );
+            const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
+            throw new TRPCError({
+              message:
+                `Can not unblock the account ${accountName} in partition` +
+                `(ClusterId: ${clusterId}, Name: ${partition}): ${message}`,
+              code: "CONFLICT",
             });
-          },
-        ).catch((e) => {
-          logger.error(
-            "Unblock account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %s",
-            accountName, clusterId, partition, e);
-          const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
-          throw new TRPCError({
-            message:
-            `Can not unblock the account ${accountName} in partition` +
-             `(ClusterId: ${clusterId}, Name: ${partition}): ${message}`,
-            code: "CONFLICT",
           });
-        });
       }
 
       const newAccountPartition = new AccountPartitionRule({
@@ -572,11 +612,8 @@ export const assignAccountPartition = adminAuthProcedure
         partition,
       });
       await em.persistAndFlush(newAccountPartition);
-
     });
-
   });
-
 
 export const unAssignAccountPartition = adminAuthProcedure
   .meta({
@@ -587,14 +624,16 @@ export const unAssignAccountPartition = adminAuthProcedure
       summary: "取消授权账户可用分区",
     },
   })
-  .input(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-    clusterId: z.string(),
-    partition: z.string(),
-  }))
+  .input(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+      clusterId: z.string(),
+      partition: z.string(),
+    }),
+  )
   .output(z.void())
-  .use(async ({ input:{ clusterId, accountName, partition }, ctx, next }) => {
+  .use(async ({ input: { clusterId, accountName, partition }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -605,29 +644,35 @@ export const unAssignAccountPartition = adminAuthProcedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:{
-        clusterId,
-        partitionName: partition,
-        target: { $case: "accountName", accountName },
-      },
-      },
-      OperationResult.SUCCESS);
+      await callLog(
+        {
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "accountName", accountName },
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          partitionName: partition,
-          target: { $case: "accountName", accountName },
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            partitionName: partition,
+            target: { $case: "accountName", accountName },
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
     return res;
   })
   .mutation(async ({ input }) => {
-
     if (USE_MOCK) return;
 
     const { accountName, tenantName, clusterId, partition } = input;
@@ -639,9 +684,12 @@ export const unAssignAccountPartition = adminAuthProcedure
     const em = await forkEntityManager();
 
     return await em.transactional(async (em) => {
-
       const accountPartition = await em.findOne(AccountPartitionRule, {
-        accountName, tenantName, clusterId, partition });
+        accountName,
+        tenantName,
+        clusterId,
+        partition,
+      });
 
       if (!accountPartition) {
         logger.info(`The partition (ClusterId: ${clusterId}, Name: ${partition})
@@ -653,35 +701,36 @@ export const unAssignAccountPartition = adminAuthProcedure
       const accountInfo = await getScowAccounts(tenantName, accountName);
       const clustersUtil = await getClusterUtils();
       if (!accountInfo.results[0].blocked) {
-        await clustersUtil.callOnOne(
-          clusterId,
-          logger,
-          async (adapterClient) => {
-
+        await clustersUtil
+          .callOnOne(clusterId, logger, async (adapterClient) => {
             await ensureResourceManagementFeatureAvailable(adapterClient, logger);
             await asyncClientCall(adapterClient.account, "blockAccountWithPartitions", {
               accountName,
-              blockedPartitions: [ partition ],
+              blockedPartitions: [partition],
             });
-          },
-        ).catch((e) => {
-          logger.info("Block account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %o",
-            accountName, clusterId, partition, e);
-          const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
-          throw new TRPCError({
-            message:
-             `Can not block the account ${accountName} in partition` +
-              `(ClusterId: ${clusterId}, Name: ${partition}): ${message}`,
-            code: "CONFLICT",
+          })
+          .catch((e) => {
+            logger.info(
+              "Block account %s in partition (clusterId: %s, partitionName: %s) failed with error details: %o",
+              accountName,
+              clusterId,
+              partition,
+              e,
+            );
+            const message = e.details || e.message || DEFAULT_ERROR_MESSAGE;
+            throw new TRPCError({
+              message:
+                `Can not block the account ${accountName} in partition` +
+                `(ClusterId: ${clusterId}, Name: ${partition}): ${message}`,
+              code: "CONFLICT",
+            });
           });
-        });
       }
 
       em.remove(accountPartition);
 
       await em.flush();
     });
-
   });
 
 export const accountAssignedPartitions = adminAuthProcedure
@@ -693,18 +742,21 @@ export const accountAssignedPartitions = adminAuthProcedure
       summary: "获取账户已授权分区列表",
     },
   })
-  .input(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-  }))
-  .output(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-    assignedPartitions: z.array(AssignedPartitionSchema),
-    assignedTotalCount: z.number(),
-  }))
+  .input(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+    }),
+  )
+  .output(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+      assignedPartitions: z.array(AssignedPartitionSchema),
+      assignedTotalCount: z.number(),
+    }),
+  )
   .query(async ({ input }) => {
-
     return mock(
       async () => {
         const { accountName, tenantName } = input;
@@ -715,13 +767,11 @@ export const accountAssignedPartitions = adminAuthProcedure
 
         const em = await forkEntityManager();
 
-        const res = await em.find(AccountPartitionRule,
-          {
-            accountName,
-            tenantName,
-            clusterId: { $in: currentClusterIds },
-          },
-        );
+        const res = await em.find(AccountPartitionRule, {
+          accountName,
+          tenantName,
+          clusterId: { $in: currentClusterIds },
+        });
         const filteredResult = getAvailablePartitionsResult(currentClusterPartitions, res);
 
         return {
@@ -738,7 +788,6 @@ export const accountAssignedPartitions = adminAuthProcedure
         return MOCK_ALL_ACC_ASSIGNED_PARTITIONS as any;
       },
     );
-
   });
 
 export const accountAssignedClusters = adminAuthProcedure
@@ -750,18 +799,21 @@ export const accountAssignedClusters = adminAuthProcedure
       summary: "获取账户已授权集群列表",
     },
   })
-  .input(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-  }))
-  .output(z.object({
-    accountName: z.string(),
-    tenantName: z.string(),
-    assignedClusters: z.array(z.string()),
-    assignedTotalCount: z.number(),
-  }))
+  .input(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+    }),
+  )
+  .output(
+    z.object({
+      accountName: z.string(),
+      tenantName: z.string(),
+      assignedClusters: z.array(z.string()),
+      assignedTotalCount: z.number(),
+    }),
+  )
   .query(async ({ input }) => {
-
     return mock(
       async () => {
         const { accountName, tenantName } = input;
@@ -770,18 +822,16 @@ export const accountAssignedClusters = adminAuthProcedure
 
         const em = await forkEntityManager();
 
-        const [res, count] = await em.findAndCount(AccountClusterRule,
-          {
-            accountName,
-            tenantName,
-            clusterId: { $in: currentClusterIds },
-          },
-        );
+        const [res, count] = await em.findAndCount(AccountClusterRule, {
+          accountName,
+          tenantName,
+          clusterId: { $in: currentClusterIds },
+        });
 
         return {
           accountName,
           tenantName,
-          assignedClusters: res.map((x) => (x.clusterId)),
+          assignedClusters: res.map((x) => x.clusterId),
           assignedTotalCount: count,
         };
       },
@@ -789,5 +839,4 @@ export const accountAssignedClusters = adminAuthProcedure
         return MOCK_ALL_ACC_ASSIGNED_PARTITIONS as any;
       },
     );
-
   });

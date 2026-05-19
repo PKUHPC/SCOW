@@ -1,7 +1,6 @@
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
 import { AppName } from "src/models/App";
 
-
 export function getProtoAppType(appName: AppName | undefined) {
   switch (appName) {
     case AppName.VSCODE:

@@ -9,7 +9,6 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 import { handlegRPCError } from "src/utils/server";
 
-
 export const TenantAppInfo = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -17,7 +16,6 @@ export const TenantAppInfo = Type.Object({
   isDefault: Type.Boolean(),
 });
 export type TenantAppInfo = Static<typeof TenantAppInfo>;
-
 
 export const GetTenantAppsSchema = typeboxRouteSchema({
   method: "GET",
@@ -45,7 +43,9 @@ export default route(GetTenantAppsSchema, async (req, res) => {
   });
 
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(AppAuthorizationServiceClient);
 
@@ -58,8 +58,14 @@ export default route(GetTenantAppsSchema, async (req, res) => {
         tenantApps: reply.tenantApps,
       },
     }))
-    .catch(handlegRPCError({
-      [Status.FAILED_PRECONDITION]: (e) => ({ 409: {
-        code: "FAILED_PRECONDITION" as const, message: e.message } }),
-    }));
+    .catch(
+      handlegRPCError({
+        [Status.FAILED_PRECONDITION]: (e) => ({
+          409: {
+            code: "FAILED_PRECONDITION" as const,
+            message: e.message,
+          },
+        }),
+      }),
+    );
 });

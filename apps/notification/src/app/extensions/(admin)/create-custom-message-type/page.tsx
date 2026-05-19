@@ -8,20 +8,16 @@ import { CreateMessageTypeForm } from "src/page-components/custom-message-type/c
 import { getLanguage } from "src/utils/i18n";
 
 const SendMessagePage = () => {
-
   const { scowLangId } = useContext(ScowParamsContext);
   const language = getLanguage(scowLangId);
 
   return (
     <>
-      <PageTitle
-        titleText={language.createCustomMessageType.pageTitle}
-      />
+      <PageTitle titleText={language.createCustomMessageType.pageTitle} />
       <Divider />
       <div style={{ marginTop: "40px" }}>
         <CreateMessageTypeForm lang={language} />
       </div>
-
     </>
   );
 };

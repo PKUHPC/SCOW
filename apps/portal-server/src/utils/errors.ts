@@ -22,7 +22,8 @@ export const loginNodeNotFound = (loginNode: string) => {
 
 export const transferNotEnabled = (cluster: string) => {
   return {
-    code: Status.INTERNAL, message: `the transmission function is not enabled for the cluster ${cluster}`,
+    code: Status.INTERNAL,
+    message: `the transmission function is not enabled for the cluster ${cluster}`,
   } as ServiceError;
 };
 

@@ -1,27 +1,15 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import type { PortalConfigSchema } from "@scow/config/build/portal";
+import type { UiConfigSchema } from "@scow/config/build/ui";
 
 import { AuditConfigSchema } from "@scow/config/build/audit";
 import { ScowResourceConfigSchema } from "@scow/config/build/common";
 import { I18nStringType, SystemLanguageConfig } from "@scow/config/build/i18n";
-import type { PortalConfigSchema } from "@scow/config/build/portal";
-import type { UiConfigSchema } from "@scow/config/build/ui";
 import { UiExtensionConfigSchema } from "@scow/config/build/uiExtensions";
 import { UserLink } from "@scow/lib-web/build/layouts/base/types";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import getConfig from "next/config";
 
 export interface ServerRuntimeConfig {
-
   AUTH_EXTERNAL_URL: string;
 
   AUTH_INTERNAL_URL: string;
@@ -43,8 +31,8 @@ export interface ServerRuntimeConfig {
   AUDIT_CONFIG: AuditConfigSchema | undefined;
 
   SERVER_I18N_CONFIG_TEXTS: {
-    submitJopPromptText?: I18nStringType,
-  }
+    submitJopPromptText?: I18nStringType;
+  };
 
   PROTOCOL: string;
 
@@ -92,8 +80,8 @@ export interface PublicRuntimeConfig {
   VERSION_TAG: string | undefined;
 
   RUNTIME_I18N_CONFIG_TEXTS: {
-    passwordPatternMessage: I18nStringType | undefined,
-  }
+    passwordPatternMessage: I18nStringType | undefined;
+  };
 
   SYSTEM_LANGUAGE_CONFIG: SystemLanguageConfig;
 
@@ -110,7 +98,7 @@ export interface PublicRuntimeConfig {
 
   SHADOW_DESK_ENABLED?: boolean;
 
-  SHADOW_DESK_WMS?: string[]
+  SHADOW_DESK_WMS?: string[];
 
   DASHBOARD_USER_DISPLAY_MODE: "full" | "simplified";
 }
@@ -125,26 +113,19 @@ export interface NavLink {
   iconPath?: string;
   clickable?: boolean;
   children?: (Omit<NavLink, "children" | "url"> & { url: string })[];
-};
+}
 
 type ServerI18nConfigKeys = keyof typeof runtimeConfig.SERVER_I18N_CONFIG_TEXTS;
 // 获取ServerConfig中相关字符串配置的对应语言的字符串
-export const getServerI18nConfigText = <TKey extends ServerI18nConfigKeys>(
-  languageId: string,
-  key: TKey,
-) => {
+export const getServerI18nConfigText = <TKey extends ServerI18nConfigKeys>(languageId: string, key: TKey) => {
   return getI18nText(runtimeConfig.SERVER_I18N_CONFIG_TEXTS, key, languageId);
 };
 
 type RuntimeI18nConfigKeys = keyof typeof publicConfig.RUNTIME_I18N_CONFIG_TEXTS;
 // 获取RuntimeConfig中相关字符串配置的对应语言的字符串
-export const getRuntimeI18nConfigText = <TKey extends RuntimeI18nConfigKeys>(
-  languageId: string,
-  key: TKey,
-) => {
+export const getRuntimeI18nConfigText = <TKey extends RuntimeI18nConfigKeys>(languageId: string, key: TKey) => {
   return getI18nText(publicConfig.RUNTIME_I18N_CONFIG_TEXTS, key, languageId);
 };
-
 
 /**
  *
@@ -160,11 +141,15 @@ export const getRuntimeI18nConfigText = <TKey extends RuntimeI18nConfigKeys>(
  * i18n语言文本
  */
 export const getI18nText = <TObject extends object, TKey extends keyof TObject>(
-  obj: TObject, key: TKey, languageId: string,
-): (TObject[TKey] extends I18nStringType ? string : (string | undefined)) => {
+  obj: TObject,
+  key: TKey,
+  languageId: string,
+): TObject[TKey] extends I18nStringType ? string : string | undefined => {
   const value = obj[key];
 
-  if (!value) { return undefined as any; }
+  if (!value) {
+    return undefined as any;
+  }
 
   return getI18nConfigCurrentText(value as any, languageId);
 };

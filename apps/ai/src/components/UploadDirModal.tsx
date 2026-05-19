@@ -62,7 +62,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
   // 判断当前拖拽是否有文件
   const hasFileInDropRef = useRef(false);
 
-
   useEffect(() => {
     if (open) {
       setUploadFileList([]);
@@ -82,8 +81,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
     // Check if new files are added
     const isNewUpload =
-      previousFileList.length === 0 && currentFileList.length > 0 ||
-      previousFileList.length > 0 && currentFileList.length > previousFileList.length;
+      (previousFileList.length === 0 && currentFileList.length > 0) ||
+      (previousFileList.length > 0 && currentFileList.length > previousFileList.length);
 
     if (isNewUpload) {
       folderOverwriteSetRef.current.clear();
@@ -150,7 +149,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     return checkPromise;
   };
 
-
   /**
    * 确保目录存在，如果不存在则创建它
    * @param folderPath 目录路径
@@ -202,8 +200,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
     const fileMaxSize = convertToBytes(publicConfig.CLIENT_MAX_BODY_SIZE);
 
     if (!scowdEnabled && file.size > fileMaxSize) {
-      message.error(t(p("maxSizeErrorMessage"),
-        [file.webkitRelativePath, publicConfig.CLIENT_MAX_BODY_SIZE]));
+      message.error(t(p("maxSizeErrorMessage"), [file.webkitRelativePath, publicConfig.CLIENT_MAX_BODY_SIZE]));
       return Upload.LIST_IGNORE;
     }
 
@@ -229,11 +226,12 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           if (!folderDeletedSetRef.current.has(folderPath)) {
             let deletePromise = folderDeletePromisesRef.current.get(folderPath);
             if (!deletePromise) {
-              deletePromise = deleteFileMutation.mutateAsync({
-                target: "DIR",
-                clusterId,
-                path: folderPath,
-              })
+              deletePromise = deleteFileMutation
+                .mutateAsync({
+                  target: "DIR",
+                  clusterId,
+                  path: folderPath,
+                })
                 .then(() => {})
                 .catch(() => {
                   message.error(t(p("deleteFolderFailed"), [folderName]));
@@ -325,7 +323,11 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
 
     try {
       let initData = await initMultipartUpload.mutateAsync({
-        clusterId, path: folderPath, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified,
+        clusterId,
+        path: folderPath,
+        name: file.name,
+        fileSizeByte: file.size,
+        modificationTime: file.lastModified,
       });
 
       if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
@@ -347,8 +349,11 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
               }
 
               initData = await initMultipartUpload.mutateAsync({
-                clusterId, path: folderPath, name: file.name,
-                fileSizeByte: file.size, modificationTime: file.lastModified,
+                clusterId,
+                path: folderPath,
+                name: file.name,
+                fileSizeByte: file.size,
+                modificationTime: file.lastModified,
               });
               resolve();
             },
@@ -379,9 +384,7 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         setUploadFileList((prevList) => {
           return prevList.map((uploadFile) => {
             return uploadFile.name === file.name
-              ? { ...uploadFile,
-                percent: percentage,
-                status: "uploading" as const }
+              ? { ...uploadFile, percent: percentage, status: "uploading" as const }
               : uploadFile;
           });
         });
@@ -407,12 +410,14 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
         const formData = new FormData();
         formData.append("file", chunk);
 
-        const response = await fetch(urlToUpload(clusterId, join(path, file.webkitRelativePath),
-          publicConfig.BASE_PATH, true, undefined, start), {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH, true, undefined, start),
+          {
+            method: "POST",
+            body: formData,
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
           throw new Error(response.statusText);
@@ -473,7 +478,8 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
       ]}
     >
       <p>
-        {t(p("pathMention"))}<strong>{path}</strong>
+        {t(p("pathMention"))}
+        <strong>{path}</strong>
         {t(p("uploadRemark2"))}
       </p>
       {!scowdEnabled && (
@@ -507,13 +513,20 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           name="file"
           multiple
           withCredentials
-          {...(scowdEnabled ? {
-            customRequest: ({ file, onSuccess, onError, onProgress }) => {
-              limit.current(() => startMultipartUpload(file as RcFile, onProgress).then(onSuccess).catch(onError));
-            },
-          } : {
-            action: async (file) => urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
-          })}
+          {...(scowdEnabled
+            ? {
+                customRequest: ({ file, onSuccess, onError, onProgress }) => {
+                  limit.current(() =>
+                    startMultipartUpload(file as RcFile, onProgress)
+                      .then(onSuccess)
+                      .catch(onError),
+                  );
+                },
+              }
+            : {
+                action: async (file) =>
+                  urlToUpload(clusterId, join(path, file.webkitRelativePath), publicConfig.BASE_PATH),
+              })}
           showUploadList={{
             removeIcon: (file) => {
               return file.status === "uploading" ? (
@@ -536,15 +549,16 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           fileList={uploadFileList}
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("isChecking"))
-              : speed?.speedText ?? "0 B/s";
+            const extraInfo = file.percent && file.percent === 100 ? t(p("isChecking")) : (speed?.speedText ?? "0 B/s");
             return (
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
                 {originNode}
                 <PercentAndSpeedContainer>
                   {file.status === "uploading" && (
-                    <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                    <span>
+                      {file.percent} % &nbsp;&nbsp; {extraInfo}
+                    </span>
                   )}
                 </PercentAndSpeedContainer>
               </div>
@@ -558,7 +572,6 @@ export const UploadDirModal: React.FC<Props> = ({ open, onClose, path, reload, c
           <p className="ant-upload-hint">{t(p("hintText"))}</p>
         </Upload.Dragger>
       </div>
-
     </Modal>
   );
 };

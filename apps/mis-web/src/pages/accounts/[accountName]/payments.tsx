@@ -5,7 +5,8 @@ import { prefix, useI18nTranslateToString } from "src/i18n";
 import { UserRole } from "src/models/User";
 import {
   checkQueryAccountNameIsAdmin,
-  useAccountPagesAccountName } from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
+  useAccountPagesAccountName,
+} from "src/pageComponents/accounts/checkQueryAccountNameIsAdmin";
 import { PaymentTable, SearchType } from "src/pageComponents/common/PaymentTable";
 import { Head } from "src/utils/head";
 
@@ -24,10 +25,7 @@ export const PaymentsPage: NextPage = requireAuth(
     <div>
       <Head title={title} />
       <PageTitle titleText={title} />
-      <PaymentTable
-        searchType={SearchType.selfAccount}
-        accountName={accountName}
-      />
+      <PaymentTable searchType={SearchType.selfAccount} accountName={accountName} />
     </div>
   );
 });

@@ -26,8 +26,16 @@ interface FormProps {
 const p = prefix("component.editUserProfileModal.");
 
 const EditUserProfileModal: React.FC<Props> = ({
-  name, userId, email, phone, organization, adminComment, onClose, onComplete, open }) => {
-
+  name,
+  userId,
+  email,
+  phone,
+  organization,
+  adminComment,
+  onClose,
+  onComplete,
+  open,
+}) => {
   const t = useI18nTranslateToString();
   const [form] = Form.useForm<FormProps>();
   const [loading, setLoading] = useState(false);
@@ -52,12 +60,7 @@ const EditUserProfileModal: React.FC<Props> = ({
       onCancel={onClose}
       destroyOnClose={true}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={undefined}
-        preserve={false}
-      >
+      <Form form={form} layout="vertical" initialValues={undefined} preserve={false}>
         <Form.Item
           label={t(p("email"))}
           name="email"
@@ -67,11 +70,7 @@ const EditUserProfileModal: React.FC<Props> = ({
           <TrimInput placeholder={t(p("enterEmail"))} />
         </Form.Item>
 
-        <Form.Item
-          label={t(p("phone"))}
-          name="phone"
-          initialValue={phone}
-        >
+        <Form.Item label={t(p("phone"))} name="phone" initialValue={phone}>
           <TrimInput placeholder={t(p("enterPhone"))} />
         </Form.Item>
 
@@ -79,19 +78,17 @@ const EditUserProfileModal: React.FC<Props> = ({
           label={t(p("organization"))}
           name="organization"
           initialValue={organization}
-          rules={[{
-            max: 50,
-            message: t(p("organizationLength")),
-          }]}
+          rules={[
+            {
+              max: 50,
+              message: t(p("organizationLength")),
+            },
+          ]}
         >
           <TrimInput placeholder={t(p("enterOrganization"))} />
         </Form.Item>
 
-        <Form.Item
-          label={t(p("comment"))}
-          name="adminComment"
-          initialValue={adminComment}
-        >
+        <Form.Item label={t(p("comment"))} name="adminComment" initialValue={adminComment}>
           <Input.TextArea placeholder={t(p("enterComment"))} />
         </Form.Item>
       </Form>

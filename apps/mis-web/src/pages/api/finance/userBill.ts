@@ -11,12 +11,7 @@ import { route } from "src/utils/route";
 
 export const MetadataMap = Type.Record(
   Type.String(),
-  Type.Union([
-    Type.String(),
-    Type.Number(),
-    Type.Boolean(),
-    Type.Null(),
-  ]),
+  Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]),
 );
 export type MetadataMapType = Static<typeof MetadataMap>;
 
@@ -30,7 +25,6 @@ export const UserBillInfo = Type.Object({
   details: Type.Optional(MetadataMap),
   createTime: Type.Optional(Type.String()),
 });
-
 
 export type UserBillInfo = Static<typeof UserBillInfo>;
 
@@ -49,23 +43,24 @@ export const GetUserBillsSchema = typeboxRouteSchema({
   },
 });
 
-
-
 export default route(GetUserBillsSchema, async (req, res) => {
-
   const { accountBillIds, accountName } = req.query;
 
   // 租户、平台、账户的管理员或财务管理员才能导出
-  const auth = authenticate((info) =>
-    info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-    info.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-    info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-    info.accountAffiliations.some((x) => x.accountName === accountName && x.role !== UserRole.USER));
+  const auth = authenticate(
+    (info) =>
+      info.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+      info.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+      info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      info.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
+      info.accountAffiliations.some((x) => x.accountName === accountName && x.role !== UserRole.USER),
+  );
 
   const user = await auth(req, res);
 
-  if (!user) { return; }
+  if (!user) {
+    return;
+  }
 
   const client = getClient(BillServiceClient);
 

@@ -17,9 +17,7 @@ const queryZod = z.object({
 
 export type UploadQuery = z.infer<typeof queryZod>;
 
-
 export async function POST(request: NextRequest) {
-
   const user = await getUserInfo(request);
 
   if (!user) {
@@ -43,9 +41,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ code: "INVALID_CLUSTER" }, { status: 400 });
   }
 
-
   return await withFileDriver(
-    { clusterId, user:user.identityId },
+    { clusterId, user: user.identityId },
     async (driver) => {
       try {
         const isPlatformAdmin = user.platformRoles?.includes(PlatformRole.PLATFORM_ADMIN) ?? false;

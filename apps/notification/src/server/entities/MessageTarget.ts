@@ -14,19 +14,13 @@ export class MessageTarget {
   createdAt = new Date();
   updatedAt = new Date();
 
-  constructor(init: {
-    targetType: TargetType;
-    targetId?: string;
-    noticeTypes: NoticeType[]
-    message: Message;
-  }) {
+  constructor(init: { targetType: TargetType; targetId?: string; noticeTypes: NoticeType[]; message: Message }) {
     this.targetType = init.targetType;
     this.targetId = init.targetId;
     this.noticeTypes = init.noticeTypes;
     this.message = toRef(init.message);
   }
 }
-
 
 export const MessageTargetSchema = new EntitySchema<MessageTarget>({
   class: MessageTarget,

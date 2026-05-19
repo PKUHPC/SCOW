@@ -6,7 +6,10 @@ import { StorageServiceClient } from "@scow/protos/build/server/storage";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
 import {
-  mapQuotaSortFieldType, mapQuotaSortOrderType, QuotaSortFieldType, QuotaSortOrderType,
+  mapQuotaSortFieldType,
+  mapQuotaSortOrderType,
+  QuotaSortFieldType,
+  QuotaSortOrderType,
 } from "src/models/storage";
 import { TenantRole } from "src/models/User";
 import { getClient } from "src/utils/client";
@@ -33,7 +36,6 @@ export type UserQuotaInfo = Static<typeof UserQuotaInfo>;
 export type TenantQuotaInfo = Static<typeof TenantQuotaInfo>;
 
 export const GetTenantQuotaSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
@@ -56,9 +58,7 @@ export const GetTenantQuotaSchema = typeboxRouteSchema({
   },
 });
 
-
 export default route(GetTenantQuotaSchema, async (req, res) => {
-
   const { cluster, path, idOrName, page, pageSize, sortField, sortOrder } = req.query;
 
   const auth = authenticate((u) => {
@@ -66,7 +66,9 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
   });
   const info = await auth(req, res);
 
-  if (!info) { return; };
+  if (!info) {
+    return;
+  }
 
   if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && info.tenant) {
     const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
@@ -80,8 +82,12 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
       }
     } catch (e) {
       mapTRPCExceptionToGRPC(e);
-      return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-        message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.` } };
+      return {
+        409: {
+          code: "RESOURCE_CONNECT_FAILED" as const,
+          message: `Get tenant ${info.tenant} assigned Clusters and Partitions failed.`,
+        },
+      };
     }
   }
 
@@ -91,8 +97,15 @@ export default route(GetTenantQuotaSchema, async (req, res) => {
   const client = getClient(StorageServiceClient);
 
   return asyncUnaryCall(client, "getTenantQuota", {
-    tenantName: info.tenant, cluster, path, idOrName, page, pageSize,
+    tenantName: info.tenant,
+    cluster,
+    path,
+    idOrName,
+    page,
+    pageSize,
     sortField: mappedSortField,
     sortOrder: mappedSortOrder,
-  }).then((res) => ({ 200: { ...res } })).catch((e) => console.log("getTenantQuota error", e));
+  })
+    .then((res) => ({ 200: { ...res } }))
+    .catch((e) => console.log("getTenantQuota error", e));
 });

@@ -6,28 +6,32 @@ import { SortOrder } from "@scow/protos/build/common/sort_order";
 import { UserServiceClient } from "@scow/protos/build/server/user";
 import { Static, Type } from "@sinclair/typebox";
 import { authenticate } from "src/auth/server";
-import { OperationLog, OperationLogQueryType,
-  OperationResult, OperationSortBy, OperationSortOrder } from "src/models/operationLog";
+import {
+  OperationLog,
+  OperationLogQueryType,
+  OperationResult,
+  OperationSortBy,
+  OperationSortOrder,
+} from "src/models/operationLog";
 import { PlatformRole, TenantRole, UserRole } from "src/models/User";
 import { getClient } from "src/utils/client";
 import { runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
 export const mapOperationSortByType = {
-  "id":SortBy.ID,
-  "operationResult":SortBy.OPERATION_RESULT,
-  "operationTime":SortBy.OPERATION_TIME,
-  "operatorIp":SortBy.OPERATOR_IP,
-  "operatorUserId":SortBy.OPERATOR_USER_ID,
+  id: SortBy.ID,
+  operationResult: SortBy.OPERATION_RESULT,
+  operationTime: SortBy.OPERATION_TIME,
+  operatorIp: SortBy.OPERATOR_IP,
+  operatorUserId: SortBy.OPERATOR_USER_ID,
 } as Record<string, SortBy>;
 
 export const mapOperationSortOrderType = {
-  "descend":SortOrder.DESCEND,
-  "ascend":SortOrder.ASCEND,
+  descend: SortOrder.DESCEND,
+  ascend: SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const GetOperationLogFilter = Type.Object({
-
   operatorUserIds: Type.String(),
 
   startTime: Type.Optional(Type.String({ format: "date-time" })),
@@ -39,18 +43,14 @@ export const GetOperationLogFilter = Type.Object({
   operationDetail: Type.Optional(Type.String()),
   operationTargetAccountName: Type.Optional(Type.String()),
   customEventType: Type.Optional(Type.String()),
-
 });
 
 export type GetOperationLogFilter = Static<typeof GetOperationLogFilter>;
 
-
 export const GetOperationLogsSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
-
     type: Type.Enum(OperationLogQueryType),
 
     ...GetOperationLogFilter.properties,
@@ -70,7 +70,6 @@ export const GetOperationLogsSchema = typeboxRouteSchema({
       totalCount: Type.Number(),
     }),
 
-
     403: Type.Null(),
   },
 });
@@ -80,17 +79,33 @@ export default route(GetOperationLogsSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const {
-    type, operatorUserIds, startTime, endTime,
-    operationType, operationResult, operationDetail,
-    operationTargetAccountName, customEventType, page, pageSize, sortBy, sortOrder } = req.query;
+    type,
+    operatorUserIds,
+    startTime,
+    endTime,
+    operationType,
+    operationResult,
+    operationDetail,
+    operationTargetAccountName,
+    customEventType,
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+  } = req.query;
 
   const filter = {
     operatorUserIds: operatorUserIds ? operatorUserIds.split(",") : [],
-    startTime, endTime, operationType,
-    operationResult, operationTargetAccountName,
+    startTime,
+    endTime,
+    operationType,
+    operationResult,
+    operationTargetAccountName,
     operationDetail,
     customEventType,
   };
@@ -106,13 +121,15 @@ export default route(GetOperationLogsSchema, async (req, res) => {
 
     // 确认用户是账户管理员或者拥有者
     if (
-      !info.accountAffiliations
-        .find((au) => au.accountName === filter.operationTargetAccountName
-      && (au.role === UserRole.ADMIN || au.role === UserRole.OWNER))
+      !info.accountAffiliations.find(
+        (au) =>
+          au.accountName === filter.operationTargetAccountName &&
+          (au.role === UserRole.ADMIN || au.role === UserRole.OWNER),
+      )
     ) {
       return { 403: null };
     }
-  };
+  }
 
   if (type === OperationLogQueryType.TENANT) {
     if (!info.tenantRoles.includes(TenantRole.TENANT_ADMIN)) {
@@ -121,7 +138,8 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     // 查看该租户下所有用户的操作日志
     const client = getClient(UserServiceClient);
     const { users } = await asyncClientCall(client, "getUsers", {
-      tenantName: info.tenant, userIds: [],
+      tenantName: info.tenant,
+      userIds: [],
     });
 
     // 搜索条件中的userId必须是属于该tenant的
@@ -137,7 +155,7 @@ export default route(GetOperationLogsSchema, async (req, res) => {
       }
       filter.operatorUserIds = filterUser;
     }
-  };
+  }
 
   if (type === OperationLogQueryType.PLATFORM) {
     if (!info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
@@ -156,24 +174,19 @@ export default route(GetOperationLogsSchema, async (req, res) => {
     filter,
     page,
     pageSize,
-    sortBy:mapOperationSortBy,
-    sortOrder:mapOperationSortOrder,
+    sortBy: mapOperationSortBy,
+    sortOrder: mapOperationSortOrder,
   });
-
-
 
   const { results, totalCount } = resp;
 
   const userIds = Array.from(new Set(results.map((x) => x.operatorUserId)));
-
 
   const { users } = await asyncClientCall(client, "getUsersByIds", {
     userIds,
   });
 
   const userMap = new Map(users.map((x) => [x.userId, x.userName]));
-
-
 
   const operationLogs = results.map((x) => {
     return {

@@ -1,18 +1,20 @@
 import dayjs from "dayjs";
 
 export function formatDateTime(str: string): string {
-  return dayjs(str)
-    .format("YYYY-MM-DD HH:mm:ss");
+  return dayjs(str).format("YYYY-MM-DD HH:mm:ss");
 }
 
 export function compareDateTime(a: string, b: string): number {
   const aMoment = dayjs(a);
   const bMoment = dayjs(b);
 
-  if (aMoment.isSame(bMoment)) { return 0; }
-  if (aMoment.isBefore(bMoment)) { return -1; }
+  if (aMoment.isSame(bMoment)) {
+    return 0;
+  }
+  if (aMoment.isBefore(bMoment)) {
+    return -1;
+  }
   return 1;
-
 }
 
 // calculate time to format XX.X seconds

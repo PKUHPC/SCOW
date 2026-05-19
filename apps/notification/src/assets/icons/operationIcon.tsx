@@ -13,7 +13,7 @@ export const IconContainer = styled.div`
   justify-content: center;
   border-radius: 6px;
   cursor: pointer;
-  color: ${({ theme }) => theme.token.colorPrimary };
+  color: ${({ theme }) => theme.token.colorPrimary};
   &:hover {
     background: ${({ theme }) => theme.palette?.primary?.[0] ?? "#B6000314"};
   }
@@ -40,9 +40,10 @@ const deleteSVG = () => (
   </svg>
 );
 
-export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> =
-  React.forwardRef((props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
+export const DeleteIcon: React.ForwardRefExoticComponent<IconProps> = React.forwardRef(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => (
     <IconContainer>
       <Icon component={deleteSVG} {...props} ref={ref} />
     </IconContainer>
-  ));
+  ),
+);

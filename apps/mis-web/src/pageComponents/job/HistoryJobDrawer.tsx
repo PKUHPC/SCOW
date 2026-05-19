@@ -8,8 +8,6 @@ import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 import { moneyToString } from "src/utils/money";
 
-
-
 interface Props {
   open: boolean;
   item: JobInfo | undefined;
@@ -21,7 +19,6 @@ const p = prefix("pageComp.job.historyJobDrawer.");
 const pCommon = prefix("common.");
 
 export const HistoryJobDrawer: React.FC<Props> = (props) => {
-
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -54,46 +51,41 @@ export const HistoryJobDrawer: React.FC<Props> = (props) => {
     [t(p("timeWait")), "timeWait", (t) => (t ? formatTime(t * 1000) : t)],
     [t(p("recordTime")), "recordTime", formatDateTime],
     [
-      (pr) => pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee")), "accountPrice",
-      moneyToString, (pr: Props) => pr.showedPrices.includes("account")],
+      (pr) => (pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("tenantFee"))),
+      "accountPrice",
+      moneyToString,
+      (pr: Props) => pr.showedPrices.includes("account"),
+    ],
     [
-      (pr) => pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("platformFee")), "tenantPrice",
-      moneyToString, (pr: Props) => pr.showedPrices.includes("tenant")],
-  ] as (
-  | [string | ((pr: Props) => string), keyof JobInfo, (v: any) => string, (pr: Props) => boolean]
-  )[];
-
+      (pr) => (pr.showedPrices.length === 1 ? t(p("workFee")) : t(p("platformFee"))),
+      "tenantPrice",
+      moneyToString,
+      (pr: Props) => pr.showedPrices.includes("tenant"),
+    ],
+  ] as [string | ((pr: Props) => string), keyof JobInfo, (v: any) => string, (pr: Props) => boolean][];
 
   const { item, onClose, open } = props;
 
   return (
-    <Drawer
-      width={500}
-      placement="right"
-      onClose={onClose}
-      open={open}
-      title={t(p("detail"))}
-    >
-      {
-        item ? (
-          <Descriptions
-            column={1}
-            bordered
-            size="small"
-          >
-            {drawerItems.map((([label, key, format, show]) => (
-              (!show || show(props)) ? (
+    <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>
+      {item ? (
+        <Descriptions column={1} bordered size="small">
+          {drawerItems
+            .map(([label, key, format, show]) =>
+              !show || show(props) ? (
                 <Descriptions.Item key={item.idJob} label={typeof label === "string" ? label : label(props)}>
                   {/* 如果是集群项展示，则根据当前语言id获取集群名称 */}
-                  {format ?
-                    (key === "cluster" ?
-                      getClusterName(item[key], languageId, publicConfigClusters) : format(item[key]))
-                    : item[key] as string}
+                  {format
+                    ? key === "cluster"
+                      ? getClusterName(item[key], languageId, publicConfigClusters)
+                      : format(item[key])
+                    : (item[key] as string)}
                 </Descriptions.Item>
-              ) : undefined
-            ))).filter((x) => x)}
-          </Descriptions>
-        ) : undefined }
+              ) : undefined,
+            )
+            .filter((x) => x)}
+        </Descriptions>
+      ) : undefined}
     </Drawer>
   );
 };

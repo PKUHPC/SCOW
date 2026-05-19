@@ -19,26 +19,14 @@ export const BaseInfoSection = ({ form, jobName, onJobNameChange }: BaseInfoSect
   const t = useI18nTranslateToString();
 
   return (
-    <Form
-      form={form}
-      colon={false}
-      requiredMark={false}
-      initialValues={{ jobName }}
-    >
+    <Form form={form} colon={false} requiredMark={false} initialValues={{ jobName }}>
       <InlineFormItem
         name="jobName"
         label={<FormLabel>{t(p("jobNameLabel"))}</FormLabel>}
         helpTip={t(p("jobNameHelp"))}
-        rules={[
-          { required: true, message: t(p("jobNameRequired")) },
-          createJobNameValidator(t(p("jobNameRule"))),
-        ]}
+        rules={[{ required: true, message: t(p("jobNameRequired")) }, createJobNameValidator(t(p("jobNameRule")))]}
       >
-        <RoundedInput
-          size="large"
-          value={jobName}
-          onChange={(event) => onJobNameChange(event.target.value)}
-        />
+        <RoundedInput size="large" value={jobName} onChange={(event) => onJobNameChange(event.target.value)} />
       </InlineFormItem>
     </Form>
   );

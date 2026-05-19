@@ -6,7 +6,6 @@ import { prefix, useI18n, useI18nTranslate } from "src/i18n";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 
-
 interface Props {
   nodeName: string;
   clusterId: string;
@@ -16,11 +15,9 @@ interface Props {
   open: boolean;
 }
 
-
 const p = prefix("page.admin.resourceManagement.nodeMigrationModal.");
 
 const UploadNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions, onClose, onComplete, open }) => {
-
   const tArgs = useI18nTranslate();
 
   const [loading, setLoading] = useState(false);
@@ -41,13 +38,7 @@ const UploadNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions, onC
   };
 
   return (
-    <Modal
-      title={tArgs(p("title2"))}
-      open={open}
-      onOk={onOK}
-      confirmLoading={loading}
-      onCancel={onClose}
-    >
+    <Modal title={tArgs(p("title2"))} open={open} onOk={onOK} confirmLoading={loading} onCancel={onClose}>
       <br></br>
       <Row gutter={16}>
         <Col span={labelColSpan}>

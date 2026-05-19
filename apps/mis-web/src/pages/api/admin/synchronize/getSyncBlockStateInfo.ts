@@ -25,16 +25,15 @@ export const GetSyncBlockStatusJobInfoSchema = typeboxRouteSchema({
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetSyncBlockStatusJobInfoSchema,
-  async (req, res) => {
+export default route(GetSyncBlockStatusJobInfoSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) { return; }
+  const client = getClient(AdminServiceClient);
 
-    const client = getClient(AdminServiceClient);
+  const reply = await asyncClientCall(client, "getSyncBlockStatusInfo", {});
 
-    const reply = await asyncClientCall(client, "getSyncBlockStatusInfo", {});
-
-    return { 200: reply };
-
-  });
+  return { 200: reply };
+});

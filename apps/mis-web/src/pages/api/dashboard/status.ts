@@ -17,7 +17,6 @@ export const GetUserStatusResponse = Type.Object({
 export type GetUserStatusResponse = Static<typeof GetUserStatusResponse>;
 
 export const GetUserStatusSchema = typeboxRouteSchema({
-
   method: "GET",
 
   responses: {
@@ -26,12 +25,12 @@ export const GetUserStatusSchema = typeboxRouteSchema({
 });
 
 export const getUserStatus = async (userId: string, tenant: string) => {
-
   const client = getClient(UserServiceClient);
 
   return await asyncClientCall(client, "getUserStatus", {
     tenantName: tenant,
-    userId, accountNames: [],
+    userId,
+    accountNames: [],
   });
 };
 
@@ -40,7 +39,9 @@ export default route(GetUserStatusSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const result = await getUserStatus(info.identityId, info.tenant);
 

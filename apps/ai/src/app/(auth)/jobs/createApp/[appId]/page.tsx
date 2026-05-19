@@ -55,13 +55,13 @@ export default function Page({ params }: { params: Promise<{ appId: string }> })
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const {
-    data: createAppParams,
-    isLoading: isCreateAppParamsLoading,
-  } = trpc.jobs.getCreateAppParams.useQuery(resubmitInput ?? emptyParams, {
-    enabled: Boolean(resubmitInput),
-    retry: false,
-  });
+  const { data: createAppParams, isLoading: isCreateAppParamsLoading } = trpc.jobs.getCreateAppParams.useQuery(
+    resubmitInput ?? emptyParams,
+    {
+      enabled: Boolean(resubmitInput),
+      retry: false,
+    },
+  );
 
   if (resubmitInput && isCreateAppParamsLoading) {
     return (

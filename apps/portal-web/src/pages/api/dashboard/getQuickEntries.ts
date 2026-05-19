@@ -32,24 +32,26 @@ const ClusterPageLinkEntry = Type.Object({
 export const Entry = Type.Object({
   id: Type.String(),
   name: Type.String(),
-  entry: Type.Optional(Type.Union([
-    Type.Object({
-      $case: Type.Literal("pageLink"),
-      pageLink: PageLinkEntry,
-    }),
-    Type.Object({
-      $case: Type.Literal("shell"),
-      shell: ShellEntry,
-    }),
-    Type.Object({
-      $case: Type.Literal("app"),
-      app: AppEntry,
-    }),
-    Type.Object({
-      $case: Type.Literal("clusterPageLink"),
-      clusterPageLink: ClusterPageLinkEntry,
-    }),
-  ])),
+  entry: Type.Optional(
+    Type.Union([
+      Type.Object({
+        $case: Type.Literal("pageLink"),
+        pageLink: PageLinkEntry,
+      }),
+      Type.Object({
+        $case: Type.Literal("shell"),
+        shell: ShellEntry,
+      }),
+      Type.Object({
+        $case: Type.Literal("app"),
+        app: AppEntry,
+      }),
+      Type.Object({
+        $case: Type.Literal("clusterPageLink"),
+        clusterPageLink: ClusterPageLinkEntry,
+      }),
+    ]),
+  ),
 });
 export type Entry = Static<typeof Entry>;
 
@@ -68,18 +70,17 @@ export const GetQuickEntriesSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(GetQuickEntriesSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(DashboardServiceClient);
 
   return await asyncUnaryCall(client, "getQuickEntries", {
-    userId:info.identityId,
+    userId: info.identityId,
   }).then(async (x) => {
     return { 200: { quickEntries: x.quickEntries } };
-  },
-  );
-
+  });
 });

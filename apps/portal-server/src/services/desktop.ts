@@ -11,7 +11,6 @@ import { clusterNotFound } from "src/utils/errors";
 import { connectToShadowDesk, createShadowDesk, deleteShadowDesk } from "src/utils/shadowDesk";
 
 export const desktopServiceServer = plugin((server) => {
-
   server.addService<DesktopServiceServer>(DesktopServiceService, {
     createDesktop: async ({ request, logger }) => {
       const { cluster, loginNode: host, wm, userId, desktopName, remoteControlTool } = request;
@@ -64,14 +63,14 @@ export const desktopServiceServer = plugin((server) => {
 
         const reply = await clusterops.desktop.createDesktop(
           { loginNode: host, wm, userId, desktopName: desktopName ?? "" },
-          logger);
+          logger,
+        );
 
         return [{ ...reply }];
       }
     },
 
     killDesktop: async ({ request, logger }) => {
-
       const { cluster, loginNode: host, displayId, userId, desktopInfo, id } = request;
       if (desktopInfo?.desktop?.$case === "shadowdesk") {
         const desktopName = desktopInfo.desktop.shadowdesk.desktopName;
@@ -93,8 +92,10 @@ export const desktopServiceServer = plugin((server) => {
 
       const clusterops = getClusterOps(cluster);
 
-      await clusterops.desktop.killDesktop({ loginNode: host, userId, id,
-        displayId: desktopInfo?.desktop?.vnc.displayId || displayId }, logger);
+      await clusterops.desktop.killDesktop(
+        { loginNode: host, userId, id, displayId: desktopInfo?.desktop?.vnc.displayId || displayId },
+        logger,
+      );
 
       return [{}];
     },
@@ -134,11 +135,10 @@ export const desktopServiceServer = plugin((server) => {
         const reply = await clusterops.desktop.connectToDesktop({ loginNode: host, userId, displayId, id }, logger);
 
         return [{ ...reply }];
-      };
+      }
     },
 
     listUserDesktops: async ({ request, logger }) => {
-
       const { cluster, loginNode: host, userId } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -149,7 +149,7 @@ export const desktopServiceServer = plugin((server) => {
       if (host) {
         checkLoginNodeInCluster(cluster, host);
         const reply = await clusterops.desktop.listUserDesktops({ loginNode: host, userId }, logger);
-        return [{ userDesktops: [{ ...reply }]}];
+        return [{ userDesktops: [{ ...reply }] }];
       }
 
       const clusters = configClusters;
@@ -158,9 +158,11 @@ export const desktopServiceServer = plugin((server) => {
         throw clusterNotFound(cluster);
       }
       // 请求集群的所有登录节点，部分节点宕机不影响其他节点的结果
-      const results = await Promise.allSettled(loginNodes.map((loginNode) =>
-        clusterops.desktop.listUserDesktops({ loginNode: loginNode.address, userId }, logger),
-      ));
+      const results = await Promise.allSettled(
+        loginNodes.map((loginNode) =>
+          clusterops.desktop.listUserDesktops({ loginNode: loginNode.address, userId }, logger),
+        ),
+      );
       const userDesktops = results.flatMap((result, i) => {
         if (result.status === "rejected") {
           logger.warn(`Failed to list desktops for login node ${loginNodes[i].address}: ${result.reason}`);
@@ -172,7 +174,6 @@ export const desktopServiceServer = plugin((server) => {
     },
 
     listAvailableWms: async ({ request }) => {
-
       const { cluster } = request;
       await checkActivatedClusters({ clusterIds: cluster });
 
@@ -180,9 +181,7 @@ export const desktopServiceServer = plugin((server) => {
 
       const result = getDesktopConfig(cluster).wms;
 
-
       return [{ wms: result }];
     },
   });
-
 });

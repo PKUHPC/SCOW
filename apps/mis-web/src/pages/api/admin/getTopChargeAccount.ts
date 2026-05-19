@@ -10,28 +10,27 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
 export const GetTopChargeAccountResponse = Type.Object({
-  results: Type.Array(Type.Object({
-    accountName: Type.String(),
-    userName: Type.String(),
-    chargedAmount: Money,
-  })),
+  results: Type.Array(
+    Type.Object({
+      accountName: Type.String(),
+      userName: Type.String(),
+      chargedAmount: Money,
+    }),
+  ),
 });
 
 export type GetTopChargeAccountResponse = Static<typeof GetTopChargeAccountResponse>;
-
 
 export const GetTopChargeAccountSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-
     startTime: Type.String({ format: "date-time" }),
 
     endTime: Type.String({ format: "date-time" }),
 
     // 不传默认为10
     topRank: Type.Optional(Type.Number()),
-
   }),
 
   responses: {
@@ -41,27 +40,25 @@ export const GetTopChargeAccountSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetTopChargeAccountSchema,
-  async (req, res) => {
+export default route(GetTopChargeAccountSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { startTime, endTime, topRank } = req.query;
 
-    const { startTime, endTime, topRank } = req.query;
+  const client = getClient(ChargingServiceClient);
 
-    const client = getClient(ChargingServiceClient);
-
-    const { results } = await asyncClientCall(client, "getTopChargeAccount", {
-      startTime,
-      endTime,
-      topRank,
-    });
-
-    return {
-      200: {
-        results: results.map((x) => ensureNotUndefined(x, ["chargedAmount"])),
-      },
-    };
+  const { results } = await asyncClientCall(client, "getTopChargeAccount", {
+    startTime,
+    endTime,
+    topRank,
   });
+
+  return {
+    200: {
+      results: results.map((x) => ensureNotUndefined(x, ["chargedAmount"])),
+    },
+  };
+});

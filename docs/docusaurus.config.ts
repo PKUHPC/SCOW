@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Options } from "@docusaurus/preset-classic";
 import { Config } from "@docusaurus/types";
 import { join, resolve } from "path";
@@ -71,7 +59,7 @@ const config: Config = {
   presets: [
     [
       "@docusaurus/preset-classic",
-      ({
+      {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           editUrl: join(variables.REPO_URL, "/edit/main/website/"),
@@ -85,7 +73,7 @@ const config: Config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
-      }) satisfies Options,
+      } satisfies Options,
     ],
   ],
 

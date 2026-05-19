@@ -60,7 +60,7 @@ export const GetDynamicFormOptionsSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(GetDynamicFormOptionsSchema, async (req, res) => {
+export default /* #__PURE__*/ route(GetDynamicFormOptionsSchema, async (req, res) => {
   const { cluster, appId, attributeName } = req.query;
 
   const authInfo = await auth(req, res);
@@ -73,13 +73,14 @@ export default /* #__PURE__*/route(GetDynamicFormOptionsSchema, async (req, res)
 
   // 1. Get App Metadata to find script
   const appMetadata = await asyncUnaryCall(client, "getAppMetadata", {
-    appId, cluster,
+    appId,
+    cluster,
   });
 
   let script: string | undefined;
 
-  const reservedAttr = appMetadata.reservedAppAttributes.find((attr) =>
-    camelToSnakeCase(attributeName) === getAppMetadataResponse_ReservedAppAttributeNameToJSON(attr.name),
+  const reservedAttr = appMetadata.reservedAppAttributes.find(
+    (attr) => camelToSnakeCase(attributeName) === getAppMetadataResponse_ReservedAppAttributeNameToJSON(attr.name),
   );
 
   if (reservedAttr && reservedAttr.config?.$case === "commandSelectConfig") {
@@ -99,29 +100,35 @@ export default /* #__PURE__*/route(GetDynamicFormOptionsSchema, async (req, res)
 
   // 2. Run Script
   return asyncUnaryCall(client, "runScript", {
-    cluster, script, userId: authInfo.identityId, timeoutSeconds: 20,
-  }).then(({ output }) => {
-    let options: SelectOption[] = [];
-    try {
-      if (output) {
-        const parsed = JSON.parse(output);
-        options = validateOptions(parsed);
+    cluster,
+    script,
+    userId: authInfo.identityId,
+    timeoutSeconds: 20,
+  }).then(
+    ({ output }) => {
+      let options: SelectOption[] = [];
+      try {
+        if (output) {
+          const parsed = JSON.parse(output);
+          options = validateOptions(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse or validate dynamic form options", e);
+        return { 500: { code: "INTERNAL_ERROR" as const, error: "Failed to parse dynamic form options" } };
       }
-    } catch (e) {
-      console.error("Failed to parse or validate dynamic form options", e);
-      return { 500: { code: "INTERNAL_ERROR" as const, error: "Failed to parse dynamic form options" } };
-    }
 
-    return {
-      200: {
-        options: options.map((opt) => ({
-          label: opt.label,
-          value: opt.value,
-        })),
-      },
-    };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "NOT_FOUND" } } as const),
-    [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL_ERROR", error: e.details } } as const),
-  }));
+      return {
+        200: {
+          options: options.map((opt) => ({
+            label: opt.label,
+            value: opt.value,
+          })),
+        },
+      };
+    },
+    handlegRPCError({
+      [status.NOT_FOUND]: () => ({ 404: { code: "NOT_FOUND" } }) as const,
+      [status.INTERNAL]: (e) => ({ 500: { code: "INTERNAL_ERROR", error: e.details } }) as const,
+    }),
+  );
 });

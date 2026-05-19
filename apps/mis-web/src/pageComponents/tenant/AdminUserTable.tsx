@@ -1,4 +1,3 @@
-
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
@@ -16,7 +15,7 @@ import { FilterFormContainer, FilterFormTabs } from "src/components/FilterFormCo
 import { TenantRoleSelector } from "src/components/TenantRoleSelector";
 import { prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
-import { AccountState,DeleteFailedReason, FullUserInfo, TenantRole, UserState } from "src/models/User";
+import { AccountState, DeleteFailedReason, FullUserInfo, TenantRole, UserState } from "src/models/User";
 import { ExportFileModaLButton } from "src/pageComponents/common/exportFileModal";
 import { MAX_EXPORT_COUNT, urlToExport } from "src/pageComponents/file/apis";
 import { TenantUserInfoDrawer } from "src/pageComponents/users/TenantUserInfoDrawer";
@@ -26,7 +25,7 @@ import { publicConfig } from "src/utils/config";
 import { getRuntimeI18nConfigText } from "src/utils/config";
 
 interface Props {
-  data: Static<typeof GetTenantUsersSchema["responses"]["200"]> | undefined;
+  data: Static<(typeof GetTenantUsersSchema)["responses"]["200"]> | undefined;
   isLoading: boolean;
   reload: () => void;
   user: User;
@@ -42,19 +41,15 @@ const pCommon = prefix("common.");
 const pDelete = prefix("component.deleteModals.");
 
 const filteredRoles = {
-  "ALL_USERS": "allUsers",
-  "TENANT_ADMIN": "tenantAdmin",
-  "TENANT_FINANCE": "tenantFinance",
+  ALL_USERS: "allUsers",
+  TENANT_ADMIN: "tenantAdmin",
+  TENANT_FINANCE: "tenantFinance",
 } as const;
 type FilteredRole = keyof typeof filteredRoles;
 
-
 const deleteEnabled = publicConfig.DELETE_USER_CONFIG?.misConfig?.enabled ?? false;
 
-export const AdminUserTable: React.FC<Props> = ({
-  data, isLoading, reload, user,
-}) => {
-
+export const AdminUserTable: React.FC<Props> = ({ data, isLoading, reload, user }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -69,42 +64,60 @@ export const AdminUserTable: React.FC<Props> = ({
   const [previewItem, setPreviewItem] = useState<FullUserInfo | undefined>(undefined);
   const [rangeSearchRole, setRangeSearchRole] = useState<FilteredRole>("ALL_USERS");
   const [currentPageNum, setCurrentPageNum] = useState<number>(1);
-  const [currentSortInfo, setCurrentSortInfo] =
-    useState<{ field: string | null | undefined, order: SortOrder }>({ field: null, order: null });
+  const [currentSortInfo, setCurrentSortInfo] = useState<{ field: string | null | undefined; order: SortOrder }>({
+    field: null,
+    order: null,
+  });
 
-  const filteredData = useMemo(() => data ? data.results.filter((x) => (
-    (!query.userId || x.id.includes(query.userId)) &&
-    (!query.name || x.name.includes(query.name))
-    && (rangeSearchRole === "ALL_USERS" || x.tenantRoles.includes(
-      rangeSearchRole === "TENANT_ADMIN" ? TenantRole.TENANT_ADMIN : TenantRole.TENANT_FINANCE))
-  ))
-    .map((x) => ({
-      ...x,
-      accountAffiliations: x.accountAffiliations.filter((acc) => acc.accountState !== AccountState.DELETED),
-    }))
-    : undefined, [data, query, rangeSearchRole],
+  const filteredData = useMemo(
+    () =>
+      data
+        ? data.results
+            .filter(
+              (x) =>
+                (!query.userId || x.id.includes(query.userId)) &&
+                (!query.name || x.name.includes(query.name)) &&
+                (rangeSearchRole === "ALL_USERS" ||
+                  x.tenantRoles.includes(
+                    rangeSearchRole === "TENANT_ADMIN" ? TenantRole.TENANT_ADMIN : TenantRole.TENANT_FINANCE,
+                  )),
+            )
+            .map((x) => ({
+              ...x,
+              accountAffiliations: x.accountAffiliations.filter((acc) => acc.accountState !== AccountState.DELETED),
+            }))
+        : undefined,
+    [data, query, rangeSearchRole],
   );
 
-  const searchData = useMemo(() => data ? data.results.filter((x) => (
-    (!query.userId || x.id.includes(query.userId)) &&
-    (!query.name || x.name.includes(query.name))
-  )) : undefined, [data, query]);
+  const searchData = useMemo(
+    () =>
+      data
+        ? data.results.filter(
+            (x) => (!query.userId || x.id.includes(query.userId)) && (!query.name || x.name.includes(query.name)),
+          )
+        : undefined,
+    [data, query],
+  );
 
-
-  const getUsersRoleCount = useCallback((role: FilteredRole): number => {
-
-    switch (role) {
-      case "TENANT_ADMIN":
-        return searchData
-          ? searchData.filter((user) => user.tenantRoles.includes(TenantRole.TENANT_ADMIN)).length : 0;
-      case "TENANT_FINANCE":
-        return searchData
-          ? searchData.filter((user) => user.tenantRoles.includes(TenantRole.TENANT_FINANCE)).length : 0;
-      case "ALL_USERS":
-      default:
-        return searchData ? searchData.length : 0;
-    }
-  }, [searchData]);
+  const getUsersRoleCount = useCallback(
+    (role: FilteredRole): number => {
+      switch (role) {
+        case "TENANT_ADMIN":
+          return searchData
+            ? searchData.filter((user) => user.tenantRoles.includes(TenantRole.TENANT_ADMIN)).length
+            : 0;
+        case "TENANT_FINANCE":
+          return searchData
+            ? searchData.filter((user) => user.tenantRoles.includes(TenantRole.TENANT_FINANCE)).length
+            : 0;
+        case "ALL_USERS":
+        default:
+          return searchData ? searchData.length : 0;
+      }
+    },
+    [searchData],
+  );
 
   const handleTableChange = (_, __, sortInfo) => {
     setCurrentSortInfo({ field: sortInfo.field, order: sortInfo.order });
@@ -137,15 +150,16 @@ export const AdminUserTable: React.FC<Props> = ({
           userId: query.userId,
           userName: query.name,
           selfTenant: true,
-          tenantRole: rangeSearchRole === "TENANT_ADMIN"
-            ? TenantRole.TENANT_ADMIN
-            : rangeSearchRole === "TENANT_FINANCE"
-              ? TenantRole.TENANT_FINANCE : undefined,
+          tenantRole:
+            rangeSearchRole === "TENANT_ADMIN"
+              ? TenantRole.TENANT_ADMIN
+              : rangeSearchRole === "TENANT_FINANCE"
+                ? TenantRole.TENANT_FINANCE
+                : undefined,
         },
-        timeZone:timeZone,
+        timeZone: timeZone,
       });
     }
-
   };
 
   const exportOptions = useMemo(() => {
@@ -194,14 +208,12 @@ export const AdminUserTable: React.FC<Props> = ({
             <Input />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
           <Form.Item>
-            <ExportFileModaLButton
-              onExport={handleExport}
-            >
-              {t(pCommon("export"))}
-            </ExportFileModaLButton>
+            <ExportFileModaLButton onExport={handleExport}>{t(pCommon("export"))}</ExportFileModaLButton>
           </Form.Item>
         </Form>
         <Space style={{ marginBottom: "-16px" }}>
@@ -289,9 +301,7 @@ export const AdminUserTable: React.FC<Props> = ({
           fixed="right"
           render={(_, r) => (
             <Space split={<Divider type="vertical" />}>
-              <a onClick={() => setPreviewItem(r)}>
-                {t(p("detail"))}
-              </a>
+              <a onClick={() => setPreviewItem(r)}>{t(p("detail"))}</a>
               {r.state === UserState.DELETED ? (
                 <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
                   {t(pCommon("edit"))}
@@ -305,21 +315,32 @@ export const AdminUserTable: React.FC<Props> = ({
                   organization={r.organization ?? ""}
                   adminComment={r.adminComment ?? ""}
                   onComplete={async (newUserInfo) => {
-                    await api.editUserProfile({
-                      body: {
-                        identityId: r.id,
-                        tenantName: r.tenant,
-                        email: newUserInfo.email,
-                        phone: newUserInfo.phone,
-                        organization: newUserInfo.organization,
-                        adminComment: newUserInfo.adminComment,
-                      },
-                    })
-                      .httpError(404, () => { message.error(t(p("notExist"))); })
-                      .httpError(500, (e) => { message.error(e.message); })
-                      .httpError(501, () => { message.error("featureUnavailable"); })
-                      .then(() => { message.success(t(p("editUserProfileSuccess"))); })
-                      .catch(() => { message.error(t(p("editUserProfileError"))); })
+                    await api
+                      .editUserProfile({
+                        body: {
+                          identityId: r.id,
+                          tenantName: r.tenant,
+                          email: newUserInfo.email,
+                          phone: newUserInfo.phone,
+                          organization: newUserInfo.organization,
+                          adminComment: newUserInfo.adminComment,
+                        },
+                      })
+                      .httpError(404, () => {
+                        message.error(t(p("notExist")));
+                      })
+                      .httpError(500, (e) => {
+                        message.error(e.message);
+                      })
+                      .httpError(501, () => {
+                        message.error("featureUnavailable");
+                      })
+                      .then(() => {
+                        message.success(t(p("editUserProfileSuccess")));
+                      })
+                      .catch(() => {
+                        message.error(t(p("editUserProfileError")));
+                      })
                       .finally(() => reload());
                   }}
                 >
@@ -335,110 +356,126 @@ export const AdminUserTable: React.FC<Props> = ({
                   userId={r.id}
                   name={r.name}
                   onComplete={async (newPassword) => {
-                    await api.changePasswordAsTenantAdmin({
-                      body: {
-                        identityId: r.id,
-                        newPassword: newPassword,
-                      },
-                    })
-                      .httpError(404, () => { message.error(t(p("notExist"))); })
-                      .httpError(501, () => { message.error(t(p("notAvailable"))); })
+                    await api
+                      .changePasswordAsTenantAdmin({
+                        body: {
+                          identityId: r.id,
+                          newPassword: newPassword,
+                        },
+                      })
+                      .httpError(404, () => {
+                        message.error(t(p("notExist")));
+                      })
+                      .httpError(501, () => {
+                        message.error(t(p("notAvailable")));
+                      })
                       .httpError(400, (e) => {
                         if (e.code === "PASSWORD_NOT_VALID") {
                           message.error(getRuntimeI18nConfigText(languageId, "passwordPatternMessage"));
-                        };
+                        }
                       })
                       .then(() => {
                         message.success(t(p("changeSuccess")));
-                        api.updatePasswordResetFlag({
-                          body: {
-                            userId: r.id,
-                            forceFlag: true,
-                          },
-                        })
+                        api
+                          .updatePasswordResetFlag({
+                            body: {
+                              userId: r.id,
+                              forceFlag: true,
+                            },
+                          })
                           .httpError(500, (e) => {
-                            message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`); })
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${e.message}`);
+                          })
                           .httpError(501, () => {
-                            message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`); });
+                            message.error(`${t(p("forceChangePasswordFailed"))}: ${t(p("notAvailable"))}`);
+                          });
                       })
-                      .catch(() => { message.error(t(p("changeFail"))); });
+                      .catch(() => {
+                        message.error(t(p("changeFail")));
+                      });
                   }}
                 >
                   {t(p("changePassword"))}
                 </ChangePasswordModalLink>
-              )
-              }
-              { deleteEnabled === true ? r.platformRoles.includes(0) ? (
-                <DisabledA message={t(pDelete("platformAdmin"))} disabled={true}>
-                  {t(p("delete"))}
-                </DisabledA>
-              ) : user.identityId === r.id ? (
-                <DisabledA message={t(pDelete("cannotDeleteSelf"))} disabled={true}>
-                  {t(p("delete"))}
-                </DisabledA>
-              ) : r.state === UserState.DELETED ? (
-                <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
-                  {t(p("delete"))}
-                </DisabledA>
-              ) : (
-                <DeleteEntityModalLink
-                  id={r.id}
-                  name={r.name}
-                  type="USER"
-                  onComplete={async (inputUserId, inputUserName, comments) => {
-
-                    message.open({
-                      type: "loading",
-                      content: t("common.waitingMessage"),
-                      duration: 0,
-                      key: "deleteUser" });
-
-                    await api.deleteUser({ query: {
-                      userId:inputUserId,
-                      userName:inputUserName,
-                      comments: comments,
-                    } })
-                      .httpError(404, (e) => {
-                        message.destroy("deleteUser");
-                        message.error({
-                          content: e.message,
-                          duration: 4,
-                        });
-                      })
-                      .httpError(409, (e) => {
-                        message.destroy("deleteUser");
-                        const { type,userId,accounts } = JSON.parse(e.message);
-                        setFailedModalVisible(true);
-                        setFailedDeletedMessage({ type,userId,accounts });
-                        reload();
-                      }).httpError(500, (e) => {
-                        message.destroy("deleteUser");
-                        message.error({
-                          content: e.message,
-                          duration: 4,
-                        });
-                      }).httpError(501, (e) => {
-                        message.destroy("deleteUser");
-                        message.error({
-                          content: e.message,
-                          duration: 4,
-                        });
-                      })
-                      .then(() => {
-                        message.destroy("deleteUser");
-                        message.success(t(p("deleteSuccess")));
-                        reload();
-                      })
-                      .catch(() => {
-                        message.destroy("deleteUser");
-                        message.error(t(p("deleteFail")));
-
-                        reload();
+              )}
+              {deleteEnabled === true ? (
+                r.platformRoles.includes(0) ? (
+                  <DisabledA message={t(pDelete("platformAdmin"))} disabled={true}>
+                    {t(p("delete"))}
+                  </DisabledA>
+                ) : user.identityId === r.id ? (
+                  <DisabledA message={t(pDelete("cannotDeleteSelf"))} disabled={true}>
+                    {t(p("delete"))}
+                  </DisabledA>
+                ) : r.state === UserState.DELETED ? (
+                  <DisabledA message={t(pDelete("userDeleted"))} disabled={true}>
+                    {t(p("delete"))}
+                  </DisabledA>
+                ) : (
+                  <DeleteEntityModalLink
+                    id={r.id}
+                    name={r.name}
+                    type="USER"
+                    onComplete={async (inputUserId, inputUserName, comments) => {
+                      message.open({
+                        type: "loading",
+                        content: t("common.waitingMessage"),
+                        duration: 0,
+                        key: "deleteUser",
                       });
-                  }}
-                >
-                  {t(p("delete"))}
-                </DeleteEntityModalLink>
+
+                      await api
+                        .deleteUser({
+                          query: {
+                            userId: inputUserId,
+                            userName: inputUserName,
+                            comments: comments,
+                          },
+                        })
+                        .httpError(404, (e) => {
+                          message.destroy("deleteUser");
+                          message.error({
+                            content: e.message,
+                            duration: 4,
+                          });
+                        })
+                        .httpError(409, (e) => {
+                          message.destroy("deleteUser");
+                          const { type, userId, accounts } = JSON.parse(e.message);
+                          setFailedModalVisible(true);
+                          setFailedDeletedMessage({ type, userId, accounts });
+                          reload();
+                        })
+                        .httpError(500, (e) => {
+                          message.destroy("deleteUser");
+                          message.error({
+                            content: e.message,
+                            duration: 4,
+                          });
+                        })
+                        .httpError(501, (e) => {
+                          message.destroy("deleteUser");
+                          message.error({
+                            content: e.message,
+                            duration: 4,
+                          });
+                        })
+                        .then(() => {
+                          message.destroy("deleteUser");
+                          message.success(t(p("deleteSuccess")));
+                          reload();
+                        })
+                        .catch(() => {
+                          message.destroy("deleteUser");
+                          message.error(t(p("deleteFail")));
+
+                          reload();
+                        });
+                    }}
+                  >
+                    {t(p("delete"))}
+                  </DeleteEntityModalLink>
+                )
               ) : null}
             </Space>
           )}
@@ -450,8 +487,7 @@ export const AdminUserTable: React.FC<Props> = ({
         onClose={() => {
           setFailedModalVisible(false);
         }}
-      >
-      </DeleteEntityFailedModal>
+      ></DeleteEntityFailedModal>
       <TenantUserInfoDrawer
         open={previewItem !== undefined}
         item={previewItem}

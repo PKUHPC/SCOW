@@ -27,31 +27,35 @@ export const GetJobByBiJobIndexSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.tenantRoles.includes(TenantRole.TENANT_ADMIN));
 
-export default route(GetJobByBiJobIndexSchema,
-  async (req, res) => {
+export default route(GetJobByBiJobIndexSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { biJobIndex } = req.query;
 
-    const { biJobIndex } = req.query;
+  const client = getClient(JobServiceClient);
 
-    const client = getClient(JobServiceClient);
-
-    return await asyncClientCall(client, "getJobByBiJobIndex", {
-      biJobIndex,
-    })
-      .then(({ info: jobInfo }) => jobInfo ? ({
-        200: {
-          info: {
-            ...jobInfo,
-            accountOwnerId: safeGetStringProperty(jobInfo.accountOwnerId),
-            accountOwnerName: safeGetStringProperty(jobInfo.accountOwnerName),
-          },
-        },
-      }) : ({ 404: null }))
-      .catch(handlegRPCError({
+  return await asyncClientCall(client, "getJobByBiJobIndex", {
+    biJobIndex,
+  })
+    .then(({ info: jobInfo }) =>
+      jobInfo
+        ? {
+            200: {
+              info: {
+                ...jobInfo,
+                accountOwnerId: safeGetStringProperty(jobInfo.accountOwnerId),
+                accountOwnerName: safeGetStringProperty(jobInfo.accountOwnerName),
+              },
+            },
+          }
+        : { 404: null },
+    )
+    .catch(
+      handlegRPCError({
         [Status.NOT_FOUND]: () => ({ 404: null }),
-      }));
-  });
+      }),
+    );
+});

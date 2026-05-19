@@ -1,23 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 "use client";
 
 import "dayjs/locale/zh-cn";
-
 import { generate } from "@ant-design/colors";
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
 import { PrimaryColor } from "@scow/config/build/ui";
-import { darkGray,lightGray } from "@scow/lib-web/build/styles/constants";
+import { darkGray, lightGray } from "@scow/lib-web/build/styles/constants";
 import { App, ConfigProvider, theme } from "antd";
 import { Locale } from "antd/lib/locale";
 import deDElocale from "antd/locale/de_DE";
@@ -49,26 +36,21 @@ type StyledThemeProviderProps = React.PropsWithChildren<{
 const StyledComponentsThemeProvider: React.FC<StyledThemeProviderProps> = ({ children, color, grayPalette }) => {
   const { token } = theme.useToken();
 
-  const primaryPalette = useMemo(
-    () => generate(color ?? token.colorPrimary),
-    [color, token.colorPrimary],
+  const primaryPalette = useMemo(() => generate(color ?? token.colorPrimary), [color, token.colorPrimary]);
+  const styledTheme = useMemo(
+    () => ({
+      token,
+      palette: {
+        primary: primaryPalette,
+        gray: grayPalette,
+      },
+    }),
+    [grayPalette, primaryPalette, token],
   );
-  const styledTheme = useMemo(() => ({
-    token,
-    palette: {
-      primary: primaryPalette,
-      gray: grayPalette,
-    },
-  }), [grayPalette, primaryPalette, token]);
-  return (
-    <ThemeProvider theme={styledTheme}>
-      {children}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={styledTheme}>{children}</ThemeProvider>;
 };
 
 export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) => {
-
   const { dark } = useDarkMode();
   const { defaultColor, darkModeColor = defaultColor } = primaryColor; // 解构时设置默认值
   const currentPrimaryColor = dark ? darkModeColor : defaultColor;
@@ -79,22 +61,24 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
   return (
     <ConfigProvider
       locale={getAntdLocale(currentLangId)}
-      theme={{ token: { colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-        colorText: dark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif",
-      },
-      components: {
-        Menu: {
-          itemColor: dark ? "#ffffff" : "#434343",
-          itemHoverColor: dark ? "#ffffff" : "#595959",
-          subMenuItemBg: dark ? "#211112" : "#ffffff",
+      theme={{
+        token: {
+          colorPrimary: currentPrimaryColor,
+          colorInfo: currentPrimaryColor,
+          colorText: dark ? "#ffffff" : "#434343",
+          fontFamily: "MiSans, sans-serif",
         },
-      },
-      algorithm: dark ? theme.darkAlgorithm : undefined }}
+        components: {
+          Menu: {
+            itemColor: dark ? "#ffffff" : "#434343",
+            itemHoverColor: dark ? "#ffffff" : "#595959",
+            subMenuItemBg: dark ? "#211112" : "#ffffff",
+          },
+        },
+        algorithm: dark ? theme.darkAlgorithm : undefined,
+      }}
     >
-      <StyledComponentsThemeProvider
-        color={currentPrimaryColor}
-        grayPalette={grayPalette}
-      >
+      <StyledComponentsThemeProvider color={currentPrimaryColor} grayPalette={grayPalette}>
         <App>
           <AppFloatButtons />
           {children}

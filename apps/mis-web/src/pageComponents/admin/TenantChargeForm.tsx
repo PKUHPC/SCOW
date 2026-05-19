@@ -22,7 +22,6 @@ const pCommon = prefix("common.");
 const getTypes = async () => api.getUsedPayTypes({});
 
 const UsedType: React.FC<{ onClick: (type: string) => void }> = ({ onClick }) => {
-
   const t = useI18nTranslateToString();
 
   const { isLoading, data } = useAsync({ promiseFn: getTypes });
@@ -35,21 +34,17 @@ const UsedType: React.FC<{ onClick: (type: string) => void }> = ({ onClick }) =>
 
   return (
     <div>
-      {
-        publicConfig.PREDEFINED_CHARGING_TYPES.map(createTag)
-      }
+      {publicConfig.PREDEFINED_CHARGING_TYPES.map(createTag)}
       {isLoading
         ? t(p("loadType"))
-        : (data ? data.types.filter((x) => x && !publicConfig.PREDEFINED_CHARGING_TYPES.includes(x)) : [])
-          .map(createTag)
-      }
+        : (data ? data.types.filter((x) => x && !publicConfig.PREDEFINED_CHARGING_TYPES.includes(x)) : []).map(
+            createTag,
+          )}
     </div>
   );
-
 };
 
 export const TenantChargeForm: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const { message } = App.useApp();
@@ -65,14 +60,15 @@ export const TenantChargeForm: React.FC = () => {
     const hide = message.loading(t(p("charging")), 0);
 
     // 2. upload the rest
-    await api.tenantFinancePay({
-      body: {
-        tenantName,
-        type,
-        amount,
-        comment,
-      },
-    })
+    await api
+      .tenantFinancePay({
+        body: {
+          tenantName,
+          type,
+          amount,
+          comment,
+        },
+      })
       .httpError(404, () => {
         message.error(t(p("accountNotFound")));
       })
@@ -87,22 +83,11 @@ export const TenantChargeForm: React.FC = () => {
         setLoading(false);
         hide();
       });
-
   };
 
   return (
-    <Form
-      form={form}
-      wrapperCol={{ span: 20 }}
-      labelCol={{ span: 4 }}
-      labelAlign="right"
-      onFinish={submit}
-    >
-      <Form.Item
-        name="tenantName"
-        label={t(pCommon("tenant"))}
-        rules={[{ required: true }]}
-      >
+    <Form form={form} wrapperCol={{ span: 20 }} labelCol={{ span: 4 }} labelAlign="right" onFinish={submit}>
+      <Form.Item name="tenantName" label={t(pCommon("tenant"))} rules={[{ required: true }]}>
         <TenantSelector
           placeholder={t(pCommon("selectTenant"))}
           autoSelect
@@ -120,13 +105,11 @@ export const TenantChargeForm: React.FC = () => {
         name="type"
         label={t(pCommon("type"))}
         rules={[{ required: true }]}
-        extra={(
+        extra={
           <div style={{ margin: "8px 0" }}>
-            <UsedType
-              onClick={(type) => form.setFieldsValue({ type })}
-            />
+            <UsedType onClick={(type) => form.setFieldsValue({ type })} />
           </div>
-        )}
+        }
       >
         <TrimInput />
       </Form.Item>

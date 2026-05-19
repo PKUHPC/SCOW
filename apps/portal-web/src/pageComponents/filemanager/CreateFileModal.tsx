@@ -21,7 +21,6 @@ const p = prefix("pageComp.fileManagerComp.createFileModal.");
 const pCommon = prefix("common.");
 
 export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, cluster }) => {
-
   const { message } = App.useApp();
 
   const [form] = Form.useForm<FormProps>();
@@ -32,9 +31,14 @@ export const CreateFileModal: React.FC<Props> = ({ open, onClose, path, reload, 
   const onSubmit = async () => {
     const { newFileName } = await form.validateFields();
     setLoading(true);
-    await api.createFile({ body: { cluster, path: join(path, newFileName) } })
-      .httpError(409, () => { message.error(t(p("createErrorMessage"))); })
-      .httpError(429, () => { message.error(t(pCommon("noSpaceError"))); })
+    await api
+      .createFile({ body: { cluster, path: join(path, newFileName) } })
+      .httpError(409, () => {
+        message.error(t(p("createErrorMessage")));
+      })
+      .httpError(429, () => {
+        message.error(t(pCommon("noSpaceError")));
+      })
       .then(() => {
         message.success(t(p("createSuccessMessage")));
         reload();

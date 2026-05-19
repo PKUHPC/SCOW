@@ -25,11 +25,10 @@ const TenantSpecificSchema = Type.Record(
 
 const PriceItemsJsonSchema = Type.Record(
   Type.String({ description: `所属租户。如果为${DEFAULT_TENANT_NAME}则为默认租户` }),
-  TenantSpecificSchema);
-
+  TenantSpecificSchema,
+);
 
 export async function createPriceItems(em: SqlEntityManager, logger: Logger) {
-
   const priceItems = getConfigFromFile(PriceItemsJsonSchema, "priceItems", DEFAULT_CONFIG_BASE_PATH);
 
   logger.info("priceItems.json content: %o", priceItems);
@@ -43,7 +42,7 @@ export async function createPriceItems(em: SqlEntityManager, logger: Logger) {
     tenant: string;
   }
 
-  const tenants = await em.find(Tenant, { });
+  const tenants = await em.find(Tenant, {});
 
   function addEntity(itemId: string, price: string, amount: AmountStrategy, info: Info) {
     if (priceItemEntities.has(itemId)) {
@@ -54,7 +53,7 @@ export async function createPriceItems(em: SqlEntityManager, logger: Logger) {
       itemId,
       price: new Decimal(price),
       amount: amount,
-      path: [info.cluster, info.partition, ...info.qos ? [info.qos] : [] ],
+      path: [info.cluster, info.partition, ...(info.qos ? [info.qos] : [])],
     });
 
     if (info.tenant !== DEFAULT_TENANT_NAME) {
@@ -96,4 +95,3 @@ export async function createPriceItems(em: SqlEntityManager, logger: Logger) {
   await em.persistAndFlush(entities);
   logger.info("Successfully saved items: %o", entities);
 }
-

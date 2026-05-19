@@ -33,10 +33,8 @@ export function clusterExist(clusterId: string, currentClusterIds: string[]) {
   return !!currentClusterIds.includes(clusterId);
 }
 
-export const booleanQueryParam =
-  () => z.union([z.literal("true"), z.literal("false")]).transform((arg) =>
-    arg === "true",
-  );
+export const booleanQueryParam = () =>
+  z.union([z.literal("true"), z.literal("false")]).transform((arg) => arg === "true");
 
 export enum ErrorCode {
   ALGORITHM_NAME_ALREADY_EXIST = "algorithm_name_already_exist",
@@ -66,7 +64,6 @@ export function checkDeviceAvailability(device: string) {
     if (!allowedQosValues.includes(oParam)) {
       throw new Error(`Unknown QoS value: '${oParam}' . The 'o' parameter must be an integer between 0 and 7.`);
     }
-
   } else {
     // 如果不存在 '?'，整个字符串就是设备 ID
     deviceId = device;
@@ -75,7 +72,6 @@ export function checkDeviceAvailability(device: string) {
   if (!(allowedChipsArr as unknown as string[]).includes(deviceId)) {
     throw new Error(`device with name ${device} not found`);
   }
-
 }
 
 export enum AccountStatusFilter {
@@ -96,7 +92,6 @@ export async function checkUserAccountPermission(userId: string, accountName: st
     config.MIS_SERVER_URL,
     commonConfig.scowApi?.auth?.token,
   );
-
 }
 
 export interface AccountInfo {
@@ -109,7 +104,6 @@ export interface AccountInfo {
 }
 
 export async function getAccountInfo(accountName: string): Promise<AccountInfo> {
-
   if (USE_MOCK) {
     return {
       tenantName: "default",
@@ -135,9 +129,15 @@ export async function getAccountInfo(accountName: string): Promise<AccountInfo> 
     throw new Error(`Multiple accounts found for '${accountName}'. Expected one.`);
   }
 
-  const { tenantName, isInWhitelist,
-    displayedState, balance, state,
-    blockThresholdAmount, defaultBlockThresholdAmount } = results[0];
+  const {
+    tenantName,
+    isInWhitelist,
+    displayedState,
+    balance,
+    state,
+    blockThresholdAmount,
+    defaultBlockThresholdAmount,
+  } = results[0];
 
   const balanceAmount = new Decimal(moneyToNumber(balance!));
 
@@ -157,8 +157,8 @@ export const getAccountState = (
   isInWhitelist: boolean,
   state: Account_AccountState,
   balance: Decimal,
-  thresholdAmount: Decimal): DisplayedAccountState => {
-
+  thresholdAmount: Decimal,
+): DisplayedAccountState => {
   if (state === Account_AccountState.DELETED) {
     return DisplayedAccountState.DISPLAYED_DELETED;
   }
@@ -175,16 +175,15 @@ export const getAccountState = (
     return DisplayedAccountState.DISPLAYED_BLOCKED;
   }
 
-  return balance.lte(thresholdAmount) ?
-    DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD : DisplayedAccountState.DISPLAYED_NORMAL;
+  return balance.lte(thresholdAmount)
+    ? DisplayedAccountState.DISPLAYED_BELOW_BLOCK_THRESHOLD
+    : DisplayedAccountState.DISPLAYED_NORMAL;
 };
-
 
 export const estimateAccountCanAfford = async (
   accountInfo: AccountInfo,
   tasks: TaskEstimateArray,
 ): Promise<boolean> => {
-
   if (USE_MOCK) {
     return true;
   }
@@ -197,7 +196,6 @@ export const estimateAccountCanAfford = async (
   }[];
 
   for (const taskInfo of tasks) {
-
     const qasmSource = taskInfo.source;
     const match = /qreg\s+\w+\[(\d+)\];/.exec(qasmSource);
 
@@ -243,8 +241,12 @@ export const estimateAccountCanAfford = async (
 
   const newBalance = accountInfo.balance.minus(amount);
 
-  const accountState =
-  getAccountState(accountInfo.isInWhitelist, accountInfo.state, newBalance, accountInfo.thresholdAmount);
+  const accountState = getAccountState(
+    accountInfo.isInWhitelist,
+    accountInfo.state,
+    newBalance,
+    accountInfo.thresholdAmount,
+  );
 
   return accountState === DisplayedAccountState.DISPLAYED_NORMAL;
 };

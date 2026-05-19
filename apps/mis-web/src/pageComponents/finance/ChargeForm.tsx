@@ -20,7 +20,6 @@ const p = prefix("pageComp.finance.chargeForm.");
 const pCommon = prefix("common.");
 
 const UsedType: React.FC<{ onClick: (type: string) => void }> = ({ onClick }) => {
-
   const t = useI18nTranslateToString();
 
   const { isLoading, data } = useAsync({ promiseFn: getTypes });
@@ -33,21 +32,17 @@ const UsedType: React.FC<{ onClick: (type: string) => void }> = ({ onClick }) =>
 
   return (
     <div>
-      {
-        publicConfig.PREDEFINED_CHARGING_TYPES.map(createTag)
-      }
+      {publicConfig.PREDEFINED_CHARGING_TYPES.map(createTag)}
       {isLoading
         ? t(p("loadType"))
-        : (data ? data.types.filter((x) => x && !publicConfig.PREDEFINED_CHARGING_TYPES.includes(x)) : [])
-          .map(createTag)
-      }
+        : (data ? data.types.filter((x) => x && !publicConfig.PREDEFINED_CHARGING_TYPES.includes(x)) : []).map(
+            createTag,
+          )}
     </div>
   );
-
 };
 
 export const ChargeForm: React.FC = () => {
-
   const t = useI18nTranslateToString();
 
   const { message } = App.useApp();
@@ -63,14 +58,15 @@ export const ChargeForm: React.FC = () => {
     const hide = message.loading(t(p("charging")), 0);
 
     // 2. upload the rest
-    await api.financePay({
-      body: {
-        accountName,
-        type,
-        amount,
-        comment,
-      },
-    })
+    await api
+      .financePay({
+        body: {
+          accountName,
+          type,
+          amount,
+          comment,
+        },
+      })
       .httpError(404, () => {
         message.error(t(p("notFound")));
       })
@@ -85,22 +81,11 @@ export const ChargeForm: React.FC = () => {
         setLoading(false);
         hide();
       });
-
   };
 
   return (
-    <Form
-      form={form}
-      wrapperCol={{ span: 20 }}
-      labelCol={{ span: 4 }}
-      labelAlign="right"
-      onFinish={submit}
-    >
-      <Form.Item
-        name="accountName"
-        label={t(pCommon("account"))}
-        rules={[{ required: true }]}
-      >
+    <Form form={form} wrapperCol={{ span: 20 }} labelCol={{ span: 4 }} labelAlign="right" onFinish={submit}>
+      <Form.Item name="accountName" label={t(pCommon("account"))} rules={[{ required: true }]}>
         <TrimInput />
       </Form.Item>
       <Form.Item name="amount" label={t(pCommon("amount"))} rules={[{ required: true }]}>
@@ -113,17 +98,12 @@ export const ChargeForm: React.FC = () => {
       <Form.Item
         name="type"
         label={t(pCommon("type"))}
-        rules={[
-          { required: true },
-          { max: 50 },
-        ]}
-        extra={(
+        rules={[{ required: true }, { max: 50 }]}
+        extra={
           <div style={{ margin: "8px 0" }}>
-            <UsedType
-              onClick={(type) => form.setFieldsValue({ type })}
-            />
+            <UsedType onClick={(type) => form.setFieldsValue({ type })} />
           </div>
-        )}
+        }
       >
         <TrimInput />
       </Form.Item>

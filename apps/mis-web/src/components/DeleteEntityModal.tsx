@@ -58,8 +58,16 @@ const DeleteEntityModal: React.FC<Props> = ({ name, id, onClose, onComplete, ope
   type DeletePrompt2Type = "confirmDeleteUserPrompt2" | "confirmDeleteAccountPrompt2";
   type ValidationErrorPromptType = "incorrectUserIdOrName" | "invalidAccountNameOrOwnerId";
 
-  const formParams: Record<string, { labelCol: number; wrapperCol: number; deletePrompt1: DeletePrompt1Type;
-    deletePrompt2: DeletePrompt2Type,validationErrorPrompt: ValidationErrorPromptType }> = {
+  const formParams: Record<
+    string,
+    {
+      labelCol: number;
+      wrapperCol: number;
+      deletePrompt1: DeletePrompt1Type;
+      deletePrompt2: DeletePrompt2Type;
+      validationErrorPrompt: ValidationErrorPromptType;
+    }
+  > = {
     USER: {
       labelCol: 4,
       wrapperCol: 20,
@@ -76,7 +84,7 @@ const DeleteEntityModal: React.FC<Props> = ({ name, id, onClose, onComplete, ope
     },
   };
 
-  const { labelCol, wrapperCol, deletePrompt1, deletePrompt2,validationErrorPrompt } = formParams[type];
+  const { labelCol, wrapperCol, deletePrompt1, deletePrompt2, validationErrorPrompt } = formParams[type];
 
   const onOK = async () => {
     try {
@@ -113,20 +121,18 @@ const DeleteEntityModal: React.FC<Props> = ({ name, id, onClose, onComplete, ope
       <br />
       <div
         dangerouslySetInnerHTML={{
-          __html: type === "USER"
-            ? t(p("confirmPermanentDeleteUser"), [id, name])
-            : t(p("confirmPermanentDeleteAccount"), [name, id]),
+          __html:
+            type === "USER"
+              ? t(p("confirmPermanentDeleteUser"), [id, name])
+              : t(p("confirmPermanentDeleteAccount"), [name, id]),
         }}
-      /><br />
-      <div dangerouslySetInnerHTML={{ __html: t(p(deletePrompt1)) }} /><br />
-      <p dangerouslySetInnerHTML={{ __html: t(p(deletePrompt2)) }}></p><br />
-      <Form
-        form={form}
-        initialValues={undefined}
-        preserve={false}
-        layout="horizontal"
-        style={{ maxWidth: "100%" }}
-      >
+      />
+      <br />
+      <div dangerouslySetInnerHTML={{ __html: t(p(deletePrompt1)) }} />
+      <br />
+      <p dangerouslySetInnerHTML={{ __html: t(p(deletePrompt2)) }}></p>
+      <br />
+      <Form form={form} initialValues={undefined} preserve={false} layout="horizontal" style={{ maxWidth: "100%" }}>
         {formItems[type].map((item) => (
           <Form.Item
             key={item.name}

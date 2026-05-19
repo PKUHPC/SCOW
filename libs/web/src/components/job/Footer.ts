@@ -49,8 +49,7 @@ export const FooterStats = styled.div`
 `;
 
 export const FooterStatValue = styled.span<{ $isPrimaryColor?: boolean }>`
-  color: ${({ theme, $isPrimaryColor }) =>
-    $isPrimaryColor ? theme.token.colorPrimary : theme.palette.gray[8]};
+  color: ${({ theme, $isPrimaryColor }) => ($isPrimaryColor ? theme.token.colorPrimary : theme.palette.gray[8])};
 `;
 
 export const FooterActions = styled.div`

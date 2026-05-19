@@ -1,16 +1,5 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import type { Money } from "@scow/protos/build/common/money";
+
 import { App, Form, InputNumber, Modal } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
@@ -31,14 +20,16 @@ interface FormFields {
   blockThresholdAmount: number;
 }
 
-
 const p = prefix("pageComp.tenant.changeDefaultAccountBlockThresholdModal.");
 const pCommon = prefix("common.");
 
 export const ChangeDefaultAccountBlockThresholdModal: React.FC<Props> = ({
-  tenantName, onClose, reload, open, currentAmount,
+  tenantName,
+  onClose,
+  reload,
+  open,
+  currentAmount,
 }) => {
-
   const t = useI18nTranslateToString();
 
   const [form] = Form.useForm<FormFields>();
@@ -49,7 +40,8 @@ export const ChangeDefaultAccountBlockThresholdModal: React.FC<Props> = ({
   const onOk = async () => {
     const { blockThresholdAmount } = await form.validateFields();
     setLoading(true);
-    await api.setDefaultAccountBlockThreshold({ body: { tenantName, blockThresholdAmount } })
+    await api
+      .setDefaultAccountBlockThreshold({ body: { tenantName, blockThresholdAmount } })
       .then((res) => {
         if (res.executed) {
           message.success(t(pCommon("changeSuccess")));
@@ -70,10 +62,7 @@ export const ChangeDefaultAccountBlockThresholdModal: React.FC<Props> = ({
       confirmLoading={loading}
       onOk={onOk}
     >
-      <Form
-        form={form}
-        initialValues={{ blockThresholdAmount: moneyToString(currentAmount) }}
-      >
+      <Form form={form} initialValues={{ blockThresholdAmount: moneyToString(currentAmount) }}>
         <Form.Item label={t(pCommon("tenantName"))}>
           <span>{tenantName}</span>
         </Form.Item>
@@ -84,9 +73,7 @@ export const ChangeDefaultAccountBlockThresholdModal: React.FC<Props> = ({
           />
         </Form.Item>
       </Form>
-
     </Modal>
-
   );
 };
 

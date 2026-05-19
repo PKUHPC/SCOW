@@ -30,7 +30,8 @@ export interface NotificationClient {
 }
 
 export function getClient<TService extends GenServiceMethods>(
-  notificationUrl: string, service: GenService<TService>,
+  notificationUrl: string,
+  service: GenService<TService>,
 ): Client<GenService<TService>> {
   const transport = createConnectTransport({
     baseUrl: join(notificationUrl, "api"),

@@ -10,16 +10,14 @@ export async function getAccountNamesByUserIdOrName(
   // 当accountNames为空时，代表查所有。直接取拥有者对应的账户名
   accountNames?: string[],
 ): Promise<{ accountNames: string[] }> {
-  const qbAccount = em.createQueryBuilder(Account, "a")
+  const qbAccount = em
+    .createQueryBuilder(Account, "a")
     .select(["a.id", "a.accountName"])
     .leftJoin("a.users", "ua")
     .leftJoin("ua.user", "u")
     .where({ "ua.role": EntityUserRole.OWNER })
     .andWhere({
-      $or: [
-        { "u.userId": { $like: `%${ownerIdOrName}%` } },
-        { "u.name": { $like: `%${ownerIdOrName}%` } },
-      ],
+      $or: [{ "u.userId": { $like: `%${ownerIdOrName}%` } }, { "u.name": { $like: `%${ownerIdOrName}%` } }],
     });
 
   const accountForOwners = await qbAccount.getResult();
@@ -45,7 +43,8 @@ export async function getAccountOwnerMap(
     return new Map();
   }
 
-  const qb = em.createQueryBuilder(Account, "a")
+  const qb = em
+    .createQueryBuilder(Account, "a")
     .select([
       "a.accountName",
       "t.name as tenantName",
@@ -68,8 +67,12 @@ export async function getAccountOwnerMap(
       },
     });
 
-  const accountsWithOwners: { accountName?: string; tenantName?: string; userRole?: string;
-    userId?: string; userName?: string
+  const accountsWithOwners: {
+    accountName?: string;
+    tenantName?: string;
+    userRole?: string;
+    userId?: string;
+    userName?: string;
   }[] = await qb.execute("all");
 
   const accountMap = new Map();

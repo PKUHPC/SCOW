@@ -20,7 +20,6 @@ export const userId = "test";
 export const cluster = "hpc01";
 
 export async function collectInfo<T>(stream: AsyncIterable<T>) {
-
   const buffer = [] as T[];
 
   for await (const res of stream) {
@@ -36,14 +35,12 @@ export interface TestSshServer {
 }
 
 export const connectToTestServer = async () => {
-
   const ssh = await sshRawConnect(target, userId, rootKeyPair, console);
 
   return { ssh, sftp: await ssh.requestSFTP() } as TestSshServer;
 };
 
 export const connectToTestServerAsRoot = async () => {
-
   const ssh = await sshRawConnect(target, rootUserId, rootKeyPair, console);
 
   return { ssh, sftp: await ssh.requestSFTP() } as TestSshServer;
@@ -102,7 +99,6 @@ export async function expectGrpcThrow(promise: Promise<unknown>, expectError: (e
 
 // cereate a lastSubmission file of app[vscode]
 export async function createVscodeLastSubmitFile(sftp: SFTPWrapper, filePath: string) {
-
   const lastSubmissionInfo: SubmissionInfo = {
     userId: "test",
     cluster: "hpc01",
@@ -120,7 +116,6 @@ export async function createVscodeLastSubmitFile(sftp: SFTPWrapper, filePath: st
 
   const newFilePath = join(filePath, "last_submission.json");
   await sftpWriteFile(sftp)(newFilePath, JSON.stringify(lastSubmissionInfo));
-
 }
 
 export async function createTestLastSubmissionForVscode({ sftp, ssh }: TestSshServer): Promise<string> {
@@ -158,11 +153,10 @@ export async function createDesktopsFile({ sftp, ssh }: TestSshServer) {
 // 和libs/web/src/utils/typeConversion.ts中的函数一致
 // portal-server不可以引用libs/web
 
-
 // protobuf中定义的grpc返回值的loginNodes类型映射到前端loginNode
 export const getLoginNodesTypeFormat = (
-  protoType: ClusterConfigSchemaProto_LoginNodesProtoType | undefined): LoginNode[] => {
-
+  protoType: ClusterConfigSchemaProto_LoginNodesProtoType | undefined,
+): LoginNode[] => {
   if (!protoType?.value) return [];
   if (protoType.value.$case === "loginNodeAddresses") {
     return protoType.value.loginNodeAddresses.loginNodeAddressesValue.map((x) => ({
@@ -178,12 +172,10 @@ export const getLoginNodesTypeFormat = (
       scowdPort: x.scowd?.port,
     }));
   }
-
 };
 
 // protobuf中定义的grpc返回值的类型映射到前端I18nStringType
 export const getI18nTypeFormat = (i18nProtoType: I18nStringProtoType | undefined): I18nStringType => {
-
   if (!i18nProtoType?.value) return "";
 
   if (i18nProtoType.value.$case === "directString") {
@@ -202,4 +194,3 @@ export const getI18nTypeFormat = (i18nProtoType: I18nStringProtoType | undefined
     },
   };
 };
-

@@ -16,7 +16,8 @@ export const getScowdClientByUrl = createScowdClientByUrlGetter({ certificates, 
 
 export function generateScowdUrl(address: string, scowdPort: number | undefined) {
   return config.SCOWD_SSL_ENABLED
-    ? `https://${removePort(address)}:${scowdPort}` : `http://${removePort(address)}:${scowdPort}`;
+    ? `https://${removePort(address)}:${scowdPort}`
+    : `http://${removePort(address)}:${scowdPort}`;
 }
 
 export function getLoginNodeScowdUrl(cluster: string, host: string): string | undefined {
@@ -43,7 +44,9 @@ const getClientByCluster = createBalancedScowdClientGetter({
 
 export const getScowdClient = (cluster: string, userId?: string) => {
   const client = getClientByCluster(cluster, userId);
-  if (!client) { throw scowdClientNotFound(cluster); }
+  if (!client) {
+    throw scowdClientNotFound(cluster);
+  }
   return client;
 };
 

@@ -34,14 +34,18 @@ export default route(UnsetAdminSchema, async (req, res) => {
   const auth = authenticate((u) => {
     const acccountBelonged = u.accountAffiliations.find((x) => x.accountName === accountName);
 
-    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-          (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
-          u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+    return (
+      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (acccountBelonged && acccountBelonged.role !== UserRole.USER) ||
+      u.tenantRoles.includes(TenantRole.TENANT_ADMIN)
+    );
   });
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(UserServiceClient);
 
@@ -49,8 +53,9 @@ export default route(UnsetAdminSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.unsetAccountAdmin,
-    operationTypePayload:{
-      accountName, userId: identityId,
+    operationTypePayload: {
+      accountName,
+      userId: identityId,
     },
   };
 
@@ -63,10 +68,13 @@ export default route(UnsetAdminSchema, async (req, res) => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 200: { executed: true } };
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [Status.NOT_FOUND]: () => ({ 404: null }),
+          [Status.FAILED_PRECONDITION]: () => ({ 200: { executed: false } }),
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

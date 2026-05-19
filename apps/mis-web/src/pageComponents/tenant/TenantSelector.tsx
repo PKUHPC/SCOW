@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Select, Space, Tooltip } from "antd";
 import { useCallback } from "react";
@@ -35,13 +23,18 @@ interface Props {
    */
   onTenantsFetched?: (tenants: string[]) => void;
   allowClear?: boolean;
-};
+}
 const p = prefix("pageComp.tenant.tenantSelector.");
 
 export const TenantSelector: React.FC<Props> = ({
-  onChange, value, placeholder, disabled, autoSelect, onTenantsFetched, allowClear = true,
+  onChange,
+  value,
+  placeholder,
+  disabled,
+  autoSelect,
+  onTenantsFetched,
+  allowClear = true,
 }) => {
-
   const t = useI18nTranslateToString();
 
   const userStore = useStore(UserStore);
@@ -79,4 +72,3 @@ export const TenantSelector: React.FC<Props> = ({
     </Space.Compact>
   );
 };
-

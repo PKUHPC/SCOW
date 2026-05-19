@@ -12,15 +12,16 @@ export async function cleanExpiredWhitelists(
   logger: Logger,
   clusterPlugin: ClusterPlugin["clusters"],
 ) {
-
   // Check running sync task
   const startTime = Date.now();
   const maxWaitTime = 10 * 60 * 1000; // 10 minutes
 
   while (await checkRunningSyncTask(em, logger)) {
     if (Date.now() - startTime > maxWaitTime) {
-      logger.warn("Sync task is running for too long (over 10 minutes),"
-        + " stop sync task and proceed to cleanExpiredWhitelists task.");
+      logger.warn(
+        "Sync task is running for too long (over 10 minutes)," +
+          " stop sync task and proceed to cleanExpiredWhitelists task.",
+      );
       // Find and stop the running sync task
       const runningSyncRecord = await em.findOne(AccountUserSyncRecord, {
         syncStatus: SyncStatus.RUNNING,
@@ -39,9 +40,13 @@ export async function cleanExpiredWhitelists(
   const today = new Date();
 
   // Find expired whitelists
-  const expiredWhitelists = await em.find(AccountWhitelist, {
-    expirationTime: { $lte: today },
-  }, { populate: ["account"]});
+  const expiredWhitelists = await em.find(
+    AccountWhitelist,
+    {
+      expirationTime: { $lte: today },
+    },
+    { populate: ["account"] },
+  );
 
   if (expiredWhitelists.length === 0) {
     return;
@@ -59,7 +64,10 @@ export async function cleanExpiredWhitelists(
   }
 
   if (hasErrorAccounts.length > 0) {
-    logger.error("Clean expired whitelists task finished with %d errors for accounts: %s",
-      hasErrorAccounts.length, hasErrorAccounts.join(", "));
+    logger.error(
+      "Clean expired whitelists task finished with %d errors for accounts: %s",
+      hasErrorAccounts.length,
+      hasErrorAccounts.join(", "),
+    );
   }
 }

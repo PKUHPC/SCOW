@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
 import { BaseLayout as LibBaseLayout } from "@scow/lib-web/build/layouts/base/BaseLayout";
 import { HeaderNavbarLink } from "@scow/lib-web/build/layouts/base/header";
@@ -31,9 +19,7 @@ interface Props {
   initialLanguage: string;
 }
 
-export const BaseLayout =
-({ footerText, versionTag, initialLanguage, children }: PropsWithChildren<Props>) => {
-
+export const BaseLayout = ({ footerText, versionTag, initialLanguage, children }: PropsWithChildren<Props>) => {
   const userStore = useStore(UserStore);
   const clusterStore = useStore(ClusterInfoStore);
 
@@ -42,25 +28,27 @@ export const BaseLayout =
 
   const systemLanguageConfig = publicConfig.SYSTEM_LANGUAGE_CONFIG;
 
-  const routes = useMemo(() => getAvailableRoutes(
-    userStore.user, clusterStore.storageEnabled, t,
-  ), [userStore.user, clusterStore.storageEnabled, t]);
+  const routes = useMemo(
+    () => getAvailableRoutes(userStore.user, clusterStore.storageEnabled, t),
+    [userStore.user, clusterStore.storageEnabled, t],
+  );
 
   const uiExtensionStore = useStore(UiExtensionStore);
 
   const { useToken } = theme;
   const { token } = useToken();
 
-  const toCallbackPage = (url: string) => userStore.user
-    ? join(url,`/api/auth/callback?token=${userStore.user.token}`)
-    : url;
+  const toCallbackPage = (url: string) =>
+    userStore.user ? join(url, `/api/auth/callback?token=${userStore.user.token}`) : url;
 
-  const navbarLinks: HeaderNavbarLink[] = [{
-    icon: <MisIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
-    href: "",
-    text: <span style={{ color: token.colorPrimary }}>{t("layouts.route.linkTextMis")}</span>,
-    isActive: true,
-  }];
+  const navbarLinks: HeaderNavbarLink[] = [
+    {
+      icon: <MisIcon style={{ paddingRight: 2, color: token.colorPrimary }} />,
+      href: "",
+      text: <span style={{ color: token.colorPrimary }}>{t("layouts.route.linkTextMis")}</span>,
+      isActive: true,
+    },
+  ];
 
   if (publicConfig.PORTAL_URL) {
     navbarLinks.push({
@@ -103,9 +91,7 @@ export const BaseLayout =
       languageId={languageId}
       headerNavbarLinks={navbarLinks}
       headerRightContent={
-        systemLanguageConfig.isUsingI18n ? (
-          <LanguageSwitcher initialLanguage={initialLanguage} />
-        ) : undefined
+        systemLanguageConfig.isUsingI18n ? <LanguageSwitcher initialLanguage={initialLanguage} /> : undefined
       }
     >
       {children}

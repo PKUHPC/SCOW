@@ -5,6 +5,7 @@
 
 import type { MikroORM } from "@mikro-orm/core";
 import type { MySqlDriver, SqlEntityManager } from "@mikro-orm/mysql";
+
 import { Capabilities } from "@scow/lib-auth";
 import { ScowResourcePlugin, scowResourcePlugin } from "@scow/lib-scow-resource";
 import { apiAuthPlugin } from "@scow/lib-server";
@@ -23,8 +24,16 @@ import { SyncBlockStatusPlugin, syncBlockStatusPlugin } from "src/plugins/syncBl
 import { SyncStorageDataPlugin } from "src/plugins/syncStorageData";
 
 declare module "@ddadaal/tsgrpc-server" {
-  interface Extensions extends ClusterPlugin, PricePlugin, FetchPlugin, StatisticPlugin,
-    SyncBlockStatusPlugin, ScowResourcePlugin, ClearCachePlugin, SyncStorageDataPlugin {
+  interface Extensions
+    extends
+      ClusterPlugin,
+      PricePlugin,
+      FetchPlugin,
+      StatisticPlugin,
+      SyncBlockStatusPlugin,
+      ScowResourcePlugin,
+      ClearCachePlugin,
+      SyncStorageDataPlugin {
     orm: MikroORM<MySqlDriver>;
     capabilities: Capabilities;
   }
@@ -54,7 +63,6 @@ if (commonConfig.scowResource?.enabled) {
   plugins.push(syncBlockStatusPlugin);
 }
 
-
 if (commonConfig.scowApi) {
   plugins.push(apiAuthPlugin(commonConfig.scowApi));
 }
@@ -62,4 +70,3 @@ if (commonConfig.scowApi) {
 if (misConfig.bill?.enabled) {
   plugins.push(billPlugin);
 }
-

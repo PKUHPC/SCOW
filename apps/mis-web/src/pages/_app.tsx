@@ -1,6 +1,7 @@
 import "nprogress/nprogress.css";
 import "antd/dist/reset.css";
 import "src/styles/globals.css";
+import type { AppContext, AppProps } from "next/app";
 
 import { failEvent } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { UiExtensionStore } from "@scow/lib-web/build/extensions/UiExtensionStore";
@@ -12,7 +13,6 @@ import { AdminMessageType, InternalMessageType } from "@scow/lib-web/build/model
 import { useConstant } from "@scow/lib-web/build/utils/hooks";
 import { getI18nConfigCurrentText } from "@scow/lib-web/build/utils/systemLanguage";
 import { App as AntdApp } from "antd";
-import type { AppContext, AppProps } from "next/app";
 import App from "next/app";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -53,21 +53,19 @@ const FailEventHandler: React.FC = () => {
       if (e.data?.code === "CLUSTEROPS_ERROR") {
         modal.error({
           title: tArgs("page._app.multiClusterOpErrorTitle"),
-          content: `${tArgs("page._app.multiClusterOpErrorContent") as string}(${
-            e.data.details
-          })`,
+          content: `${tArgs("page._app.multiClusterOpErrorContent") as string}(${e.data.details})`,
         });
         return;
       }
       if (e.data?.code === "ADAPTER_CALL_ON_ONE_ERROR") {
         const clusterId = e.data.clusterErrorsArray[0].clusterId;
-        const clusterName = clusterId ?
-          (publicConfigClusters[clusterId]?.name ?? clusterId) : undefined;
+        const clusterName = clusterId ? (publicConfigClusters[clusterId]?.name ?? clusterId) : undefined;
 
-        message.error(`${tArgs("page._app.adapterConnErrorContent",
-          [getI18nConfigCurrentText(clusterName, languageId)]) as string}(${
-          e.data.details
-        })`);
+        message.error(
+          `${
+            tArgs("page._app.adapterConnErrorContent", [getI18nConfigCurrentText(clusterName, languageId)]) as string
+          }(${e.data.details})`,
+        );
         return;
       }
 
@@ -103,13 +101,11 @@ const FailEventHandler: React.FC = () => {
       }
 
       message.error(tArgs("common.finalError"));
-
     });
   }, []);
 
   return <></>;
 };
-
 
 const TopProgressBar = dynamic(
   () => {
@@ -124,19 +120,14 @@ function MyAppRoot(appProps: AppProps) {
       <Head>
         <meta name="format-detection" content="telephone=no" />
         <link href={join(publicConfig.BASE_PATH, "/manifest.json")} rel="manifest" id="manifest" />
-        <link
-          rel="icon"
-          type="image/x-icon"
-          href={join(publicConfig.BASE_PATH, "/api/icon?type=favicon")}
-        ></link>
+        <link rel="icon" type="image/x-icon" href={join(publicConfig.BASE_PATH, "/api/icon?type=favicon")}></link>
         <script
           id="__CONFIG__"
           dangerouslySetInnerHTML={{
             __html: `
-              window.__CONFIG__ = ${
-    JSON.stringify({
-      BASE_PATH: publicConfig.BASE_PATH === "/" ? "" : publicConfig.BASE_PATH,
-    })};
+              window.__CONFIG__ = ${JSON.stringify({
+                BASE_PATH: publicConfig.BASE_PATH === "/" ? "" : publicConfig.BASE_PATH,
+              })};
             `,
           }}
         />
@@ -148,7 +139,7 @@ function MyAppRoot(appProps: AppProps) {
 
 function MyAppLoader(appProps: AppProps) {
   const promiseFn = useCallback(async () => {
-    return api.getAppInitialConfig({ });
+    return api.getAppInitialConfig({});
   }, []);
 
   const { data, isLoading } = useAsync({ promiseFn });
@@ -164,12 +155,11 @@ function MyAppLoader(appProps: AppProps) {
   return <MyApp appProps={appProps} extra={data} />;
 }
 
-function MyApp({ appProps: { pageProps, Component }, extra }: {
-  appProps: AppProps;
-  extra: AppInitialConfig;
-}) {
+function MyApp({ appProps: { pageProps, Component }, extra }: { appProps: AppProps; extra: AppInitialConfig }) {
   // remembers extra props from first load
-  const { current: { userInfo, primaryColor, footerText } } = useRef(extra);
+  const {
+    current: { userInfo, primaryColor, footerText },
+  } = useRef(extra);
 
   const userStore = useConstant(() => {
     const store = createStore(UserStore, userInfo);
@@ -179,9 +169,11 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   const fetchUnreadMessages = async (): Promise<UnreadMessage | undefined> => {
     if (!publicConfig.NOTIF_ENABLED) return undefined;
 
-    const result = await api.getUnreadMessages({
-      query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
-    }).httpError(500, () => {})
+    const result = await api
+      .getUnreadMessages({
+        query: { messageTypes: [AdminMessageType.SystemNotification, InternalMessageType.MonitorAlert] },
+      })
+      .httpError(500, () => {})
       .then((res) => res)
       .catch(() => undefined);
 
@@ -210,16 +202,15 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
   }
 
   if (!initialLanguageDefinitionQuery.data) {
-    return (
-      <ServerErrorPage />
-    );
+    return <ServerErrorPage />;
   }
 
   return (
-    <Provider initialLanguage={{
-      id: extra.initialLanguageId,
-      definitions: initialLanguageDefinitionQuery.data,
-    }}
+    <Provider
+      initialLanguage={{
+        id: extra.initialLanguageId,
+        definitions: initialLanguageDefinitionQuery.data,
+      }}
     >
       <StoreProvider stores={[userStore, clusterInfoStore, uiExtensionStore]}>
         <DarkModeProvider initial={extra.darkModeCookieValue}>
@@ -248,8 +239,9 @@ function MyApp({ appProps: { pageProps, Component }, extra }: {
                 >
                   <Component {...pageProps} />
                 </NotificationLayout>
-              )
-                : <Component {...pageProps} />}
+              ) : (
+                <Component {...pageProps} />
+              )}
             </BaseLayout>
           </AntdConfigProvider>
         </DarkModeProvider>

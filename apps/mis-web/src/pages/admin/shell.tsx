@@ -40,23 +40,19 @@ export const ImportUsersPage: NextPage = requireAuth((u) => u.platformRoles.incl
             type="info"
             style={{ marginBottom: "4px" }}
             showIcon
-            message={(
+            message={
               <>
-                <div>
-                  {t("page.admin.shell.alertInfo")}
-                </div>
+                <div>{t("page.admin.shell.alertInfo")}</div>
               </>
-            )}
+            }
           />
           <BigCard>
             <ShellCardList />
           </BigCard>
         </PageContainer>
-
       </div>
     );
-  });
+  },
+);
 
 export default ImportUsersPage;
-
-

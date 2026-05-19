@@ -6,9 +6,10 @@ import { DeviceDetailInfo } from "src/models/device";
 import { LayoutVis } from "src/pageComponents/chip/LayoutVis";
 import { getLayoutMap, rotateLayoutAndScaleIfOdd45 } from "src/utils/chip";
 
-export const LayoutVisContainer: React.FC<
-  { deviceInfo?: DeviceDetailInfo, offsetDegree: number }
-> = ({ deviceInfo, offsetDegree }) => {
+export const LayoutVisContainer: React.FC<{ deviceInfo?: DeviceDetailInfo; offsetDegree: number }> = ({
+  deviceInfo,
+  offsetDegree,
+}) => {
   if (!deviceInfo) {
     return (
       <Spin>
@@ -42,10 +43,9 @@ export const LayoutVisContainer: React.FC<
   const FONT_SIZE_TO_NODE_SIZE_RATIO = 6;
 
   // 1. 计算正常尺寸
-  const chartTwoColWidth = (parentWidth / 4) - 64;
-  const calculatedNodeSize = ((chartTwoColWidth / (maxX + 1)) - NODE_GAP) * 0.9;
+  const chartTwoColWidth = parentWidth / 4 - 64;
+  const calculatedNodeSize = (chartTwoColWidth / (maxX + 1) - NODE_GAP) * 0.9;
   const calculatedFontSize = Math.min(16, calculatedNodeSize / FONT_SIZE_TO_NODE_SIZE_RATIO);
-
 
   let nodeSize: number;
   let fontSize: number;

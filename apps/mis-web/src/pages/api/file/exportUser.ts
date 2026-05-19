@@ -8,18 +8,18 @@ import { authenticate } from "src/auth/server";
 import { getT, prefix } from "src/i18n";
 import { Encoding } from "src/models/exportFile";
 import { OperationResult } from "src/models/operationLog";
-import {
-  PlatformRole,
-  SortDirectionType,
-  TenantRole,
-  UsersSortFieldType } from "src/models/User";
+import { PlatformRole, SortDirectionType, TenantRole, UsersSortFieldType } from "src/models/User";
 import { MAX_EXPORT_COUNT } from "src/pageComponents/file/apis";
 import { mapSortDirectionType, mapUsersSortFieldType } from "src/pages/api/admin/getAllUsers";
 import { callLog } from "src/server/operationLog";
 import { getClient } from "src/utils/client";
 import { publicConfig } from "src/utils/config";
-import { createEncodingTransform, getContentTypeWithCharset, getCsvObjTransform,
-  getCsvStringify } from "src/utils/file";
+import {
+  createEncodingTransform,
+  getContentTypeWithCharset,
+  getCsvObjTransform,
+  getCsvStringify,
+} from "src/utils/file";
 import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 import { pipeline } from "stream";
@@ -28,7 +28,6 @@ export const ExportUserSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-
     columns: Type.Array(Type.String()),
 
     count: Type.Number(),
@@ -45,14 +44,14 @@ export const ExportUserSchema = typeboxRouteSchema({
 
     tenantRole: Type.Optional(Type.Enum(TenantRole)),
 
-    timeZone:Type.Optional(Type.String()),
+    timeZone: Type.Optional(Type.String()),
 
     // true表示只导出自己租户的用户
     selfTenant: Type.Optional(Type.Boolean()),
     encoding: Type.Enum(Encoding),
   }),
 
-  responses:{
+  responses: {
     200: Type.Any(),
 
     409: Type.Object({ code: Type.Literal("TOO_MANY_DATA") }),
@@ -64,8 +63,20 @@ const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLA
 export default route(ExportUserSchema, async (req, res) => {
   const { query } = req;
 
-  const { columns, sortField, sortOrder, idOrName, userId, userName, platformRole,
-    tenantRole, selfTenant, count, encoding,timeZone } = query;
+  const {
+    columns,
+    sortField,
+    sortOrder,
+    idOrName,
+    userId,
+    userName,
+    platformRole,
+    tenantRole,
+    selfTenant,
+    count,
+    encoding,
+    timeZone,
+  } = query;
 
   const info = await auth(req, res);
   if (!info) {
@@ -79,7 +90,7 @@ export default route(ExportUserSchema, async (req, res) => {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.exportUser,
-    operationTypePayload:{
+    operationTypePayload: {
       tenantName: selfTenant ? info.tenant : undefined,
     },
   };
@@ -87,21 +98,20 @@ export default route(ExportUserSchema, async (req, res) => {
   if (count > MAX_EXPORT_COUNT) {
     await callLog(logInfo, OperationResult.FAIL);
     return { 409: { code: "TOO_MANY_DATA" } } as const;
-
   } else {
     const client = getClient(ExportServiceClient);
 
-    const filename = `user-${new Date().toLocaleString("zh-CN",{ timeZone: timeZone ?? "UTC" })}.csv`;
+    const filename = `user-${new Date().toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })}.csv`;
     const dispositionParm = "filename* = UTF-8''" + encodeURIComponent(filename);
 
     const contentTypeWithCharset = getContentTypeWithCharset(filename, encoding);
 
     res.writeHead(200, {
-      "Content-Type":contentTypeWithCharset,
+      "Content-Type": contentTypeWithCharset,
       "Content-Disposition": `attachment; ${dispositionParm}`,
     });
 
-    const legacyIdOrName = (userId || userName) ? undefined : idOrName;
+    const legacyIdOrName = userId || userName ? undefined : idOrName;
 
     const stream = asyncReplyStreamCall(client, "exportUser", {
       count,
@@ -126,7 +136,7 @@ export default route(ExportUserSchema, async (req, res) => {
       name: t(pAdmin("name")),
       email: t(pCommon("email")),
       phone: t(pCommon("phone")),
-      tenantName:  t(pAdmin("tenant")),
+      tenantName: t(pAdmin("tenant")),
       organization: t(pCommon("organization")),
       platformRoles: t(pAdmin("roles")),
       tenantRoles: t(pTenant("tenantRole")),
@@ -145,7 +155,6 @@ export default route(ExportUserSchema, async (req, res) => {
       [PlatformRole.PLATFORM_ADMIN]: t("userRoles.platformAdmin"),
     };
 
-
     const formatUser = (x: ExportedUser) => {
       return {
         userId: x.userId,
@@ -159,8 +168,7 @@ export default route(ExportUserSchema, async (req, res) => {
         availableAccounts: x.availableAccounts.join(","),
         affiliatedAccounts: x.affiliatedAccounts.join(","),
         adminComment: x.adminComment,
-        createTime: x.createTime ? new Date(x.createTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" })
-          : "",
+        createTime: x.createTime ? new Date(x.createTime).toLocaleString("zh-CN", { timeZone: timeZone ?? "UTC" }) : "",
       };
     };
 
@@ -185,5 +193,4 @@ export default route(ExportUserSchema, async (req, res) => {
       },
     );
   }
-
 });

@@ -12,13 +12,13 @@ export default {
     operation: "작업",
     tenant: "테넌트",
     tenantName: "테넌트",
-    tenantFullName:"테넌트",
+    tenantFullName: "테넌트",
     tenantRole: "테넌트 역할",
     user: "사용자",
     userId: "사용자 ID",
-    ownerIdOrName:"주 관리자 ID 또는 이름",
+    ownerIdOrName: "주 관리자 ID 또는 이름",
     userName: "사용자 이름",
-    userFullName:"이름",
+    userFullName: "이름",
     import: "가져오기",
     fresh: "새로고침",
     account: "계정",
@@ -30,7 +30,7 @@ export default {
     amount: "금액",
     unit: "CNY",
     comment: "비고",
-    expirationTime:"만료 시간",
+    expirationTime: "만료 시간",
     submit: "제출",
     time: "시간",
     type: "유형",
@@ -44,7 +44,7 @@ export default {
     modify: "수정",
     cancel: "취소",
     cluster: "클러스터",
-    clusterName:"클러스터 이름",
+    clusterName: "클러스터 이름",
     workId: "작업 ID",
     minute: "분",
     name: "이름",
@@ -61,7 +61,7 @@ export default {
     reason: "사유",
     timeUsed: "작업 실행 시간",
     timeWait: "작업 대기 시간",
-    lastUpdated:"최근 업데이트",
+    lastUpdated: "최근 업데이트",
     more: "더보기",
     detail: "상세",
     price: "요금",
@@ -139,7 +139,7 @@ export default {
       state: "상태",
       balance: "사용 가능 잔액",
       alert: "어떤 계정에도 속하지 않습니다.",
-      unlimited:"무제한",
+      unlimited: "무제한",
     },
     job: {
       title: "실행 중 작업 목록",
@@ -260,7 +260,7 @@ export default {
         blockedAccount: "차단됨",
         frozenAccount: "동결됨",
         normalAccount: "사용 가능",
-        deletedAccount:"삭제됨",
+        deletedAccount: "삭제됨",
         account: "계정",
         accountName: "계정 이름",
         owner: "주 관리자",
@@ -269,19 +269,21 @@ export default {
         blockThresholdAmount: "차단 임계값",
         blockThresholdAmountTooltip: "잔액이 차단 임계값보다 낮으면 계정이 차단됩니다.",
         comment: "비고",
-        expirationTime:"만료 시간",
+        expirationTime: "만료 시간",
         status: "상태",
         statusTooltip: "상태:",
         statusFrozenTooltip: "동결: 계정 관리자가 계정을 동결했으며 이 계정으로 작업 제출이 불가능합니다.",
-        statusBlockedTooltip: "차단: 테넌트 관리자 또는 플랫폼 관리자가 계정을 차단했으며 이 계정으로 작업 제출이 불가능합니다.",
+        statusBlockedTooltip:
+          "차단: 테넌트 관리자 또는 플랫폼 관리자가 계정을 차단했으며 이 계정으로 작업 제출이 불가능합니다.",
         statusDebtTooltip: "부채: 계정 잔액이 차단 임계값 이하로 이 계정으로 작업 제출이 불가능합니다.",
-        statusNormalTooltip: "사용 가능: 계정 상태가 차단 또는 동결이 아니고 잔액이 차단 임계값보다 큽니다; 또는 계정이 화이트리스트에 포함되어 있습니다.",
+        statusNormalTooltip:
+          "사용 가능: 계정 상태가 차단 또는 동결이 아니고 잔액이 차단 임계값보다 큽니다; 또는 계정이 화이트리스트에 포함되어 있습니다.",
         mangerMember: "멤버 관리",
         blocked: "차단됨",
-        frozen:"동결됨",
+        frozen: "동결됨",
         debt: "부채",
         normal: "사용 가능",
-        deleted:"삭제됨",
+        deleted: "삭제됨",
         unit: "CNY",
         unblockConfirmTitle: "계정 차단 해제 확인",
         unblockConfirmContent: "테넌트 {0}의 계정 {1}을 차단 해제하시겠습니까?",
@@ -295,21 +297,20 @@ export default {
         blockSuccess: "계정 차단 성공!",
         blockFail: "계정 차단 실패!",
 
-        delete:"삭제",
+        delete: "삭제",
         deleteSuccess: "계정 삭제 성공!",
         deleteFail: "계정 삭제 실패. 관리자에게 문의하세요.",
       },
       setBlockThresholdAmountModal: {
         setSuccess: "설정 성공",
         setFail: "설정 실패",
-        setAmount:"차단 임계값 설정",
+        setAmount: "차단 임계값 설정",
         blockThresholdAmount: "차단 임계값",
         defaultBlockThresholdAmount: "기본 차단 임계값",
         curBlockThresholdAmount: "현재 차단 임계값: ",
         curDefaultBlockThresholdAmount: "현재 테넌트 기본 차단 임계값",
         useDefaultBlockThresholdAmount: "테넌트 기본 차단 임계값 사용",
-        confirmUseDefaultBlockThresholdAmount:
-        "테넌트 기본 차단 임계값을 사용하시겠습니까?",
+        confirmUseDefaultBlockThresholdAmount: "테넌트 기본 차단 임계값을 사용하시겠습니까?",
       },
     },
     admin: {
@@ -359,11 +360,12 @@ export default {
         userType: "사용자 유형",
         newUser: "신규 사용자",
         existingUser: "기존 사용자",
-        createTenantByExistUserWarningInfo: "생성이 완료되면 사용자는 기존 테넌트에서 자동으로 제거되고"
-        + "해당 테넌트에 가입합니다. "
-        + "사용자에게 연결된 계정이 없고 기존 테넌트의 관리자 또는 재무 담당자가 아님을"
-        + "확인하세요",
-        createTenantByNewUserWarningInfo:"생성 완료 후 사용자는 자동으로 이 테넌트에 가입합니다",
+        createTenantByExistUserWarningInfo:
+          "생성이 완료되면 사용자는 기존 테넌트에서 자동으로 제거되고" +
+          "해당 테넌트에 가입합니다. " +
+          "사용자에게 연결된 계정이 없고 기존 테넌트의 관리자 또는 재무 담당자가 아님을" +
+          "확인하세요",
+        createTenantByNewUserWarningInfo: "생성 완료 후 사용자는 자동으로 이 테넌트에 가입합니다",
       },
       ImportUsersTable: {
         selectAccount: "계정을 선택하세요!",
@@ -405,8 +407,8 @@ export default {
         userStillMaintainsAccountRelationship: "사용자가 계정 관계를 유지하고 있습니다",
         userStillMaintainsTenantRoles: "사용자가 테넌트 역할을 유지하고 있습니다",
         userAlreadyExistInThisTenant: "사용자가 이미 이 테넌트에 존재합니다",
-        createTenantWarningInfo: "사용자에게 연결된 계정이 없고 기존 테넌트의 관리자 또는 재무 담당자가 아님을 "
-        + "확인하세요",
+        createTenantWarningInfo:
+          "사용자에게 연결된 계정이 없고 기존 테넌트의 관리자 또는 재무 담당자가 아님을 " + "확인하세요",
       },
     },
     commonComponent: {
@@ -423,7 +425,7 @@ export default {
         paymentAmount: "충전 금액",
         ipAddress: "IP 주소",
         operatorId: "작업자 ID",
-        searchTypePlaceholder:"여러 개는 쉼표로 구분하세요",
+        searchTypePlaceholder: "여러 개는 쉼표로 구분하세요",
       },
       billTable: {
         statisticalCycle: "통계 주기",
@@ -481,8 +483,9 @@ export default {
               title: "권한 취소 확인",
               tenantContent: "클러스터 {0}에서 테넌트 {2}의 애플리케이션 {1} 권한을 취소하시겠습니까?",
               accountContent: "클러스터 {0}에서 계정 {2}의 애플리케이션 {1} 권한을 취소하시겠습니까?",
-              tenantWarning: "취소 후 기본 권한 애플리케이션인 경우 동기화되어 제거되며, 해당 테넌트의 모든 계정에서 "
-              + "이 애플리케이션 권한이 동기적으로 취소됩니다.",
+              tenantWarning:
+                "취소 후 기본 권한 애플리케이션인 경우 동기화되어 제거되며, 해당 테넌트의 모든 계정에서 " +
+                "이 애플리케이션 권한이 동기적으로 취소됩니다.",
             },
           },
           messages: {
@@ -514,13 +517,13 @@ export default {
         charging: "충전 중...",
         notFound: "계정을 찾을 수 없습니다.",
         chargeFinished: "충전 완료!",
-        deleted:"계정이 삭제되었습니다",
+        deleted: "계정이 삭제되었습니다",
         financePayFailed: "충전 실패",
       },
       chargeTable: {
         time: "차감 날짜",
         amount: "차감 금액",
-        ownerIdOrName:"주 관리자 ID 또는 이름",
+        ownerIdOrName: "주 관리자 ID 또는 이름",
       },
     },
     init: {
@@ -529,12 +532,15 @@ export default {
         cannotAdd: "사용자는 SCOW에 이미 존재하여 다시 추가할 수 없습니다.",
         notExist: "인증 시스템에 사용자가 존재하지 않습니다.",
         confirm: "사용자가 존재하지 않습니다. 사용자 ID가 올바른지 확인하세요.",
-        existText: "해당 사용자는 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 사용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. 초기 관리자로 추가하시겠습니까?",
+        existText:
+          "해당 사용자는 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 사용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. 초기 관리자로 추가하시겠습니까?",
         notExistText: "인증 시스템에 사용자가 존재하지 않습니다. 이 사용자를 생성하고 초기 관리자로 추가하시겠습니까?",
-        cannotConfirmText1: "인증 시스템에 사용자가 존재하는지 확인할 수 없습니다. 인증 시스템에 사용자를 생성하도록 시도합니다. 사용자가 이미 존재하는 경우, 여기서 입력한 비밀번호는 사용되지 않으며 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. ",
-        cannotConfirmText2: "인증 시스템에 사용자가 존재하는지 확인할 수 없으며, 현재 인증 시스템은 사용자 생성을 지원하지 않습니다. "
-        + "해당 사용자가 인증 시스템에 이미 존재하는지 확인하세요. 확인 시 해당 사용자가 데이터베이스에 직접 추가되며, "
-        + "여기서 입력한 비밀번호는 사용되지 않습니다. 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. ",
+        cannotConfirmText1:
+          "인증 시스템에 사용자가 존재하는지 확인할 수 없습니다. 인증 시스템에 사용자를 생성하도록 시도합니다. 사용자가 이미 존재하는 경우, 여기서 입력한 비밀번호는 사용되지 않으며 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. ",
+        cannotConfirmText2:
+          "인증 시스템에 사용자가 존재하는지 확인할 수 없으며, 현재 인증 시스템은 사용자 생성을 지원하지 않습니다. " +
+          "해당 사용자가 인증 시스템에 이미 존재하는지 확인하세요. 확인 시 해당 사용자가 데이터베이스에 직접 추가되며, " +
+          "여기서 입력한 비밀번호는 사용되지 않습니다. 새 사용자의 비밀번호는 인증 시스템의 현재 비밀번호가 됩니다. ",
         addFail: "추가 실패.",
         userExist: "해당 사용자는 SCOW 데이터베이스에 존재합니다.",
         addSuccess: "추가 성공.",
@@ -542,23 +548,27 @@ export default {
         addFinish: "추가 완료!",
         createFail: "사용자 생성 실패.",
         initAdmin: "여기에서 초기 관리자 사용자를 생성할 수 있습니다. ",
-        addAdmin: "여기에서 추가된 사용자는 기본 테넌트에 위치한 초기 관리자이며, "
-        + "플랫폼 관리자와 기본 테넌트 테넌트 관리자 역할을 자동으로 부여받습니다. ",
+        addAdmin:
+          "여기에서 추가된 사용자는 기본 테넌트에 위치한 초기 관리자이며, " +
+          "플랫폼 관리자와 기본 테넌트 테넌트 관리자 역할을 자동으로 부여받습니다. ",
         platFormAdmin: "플랫폼 관리자 ",
         and: " 및 ",
         defaultTenant: "기본 테넌트 관리자 ",
-        createText1: "현재 인증 시스템은 사용자 생성을 지원합니다. 인증 시스템의 기존 사용자를 추가하거나 "
-        + "완전히 새로운 사용자를 생성할 수 있습니다. "
-        + "시스템은 이 사용자를 인증 시스템에 생성합니다.",
-        createText2: "현재 인증 시스템은 사용자 생성을 지원하지 않습니다. 추가할 사용자가 인증 시스템에 이미 존재해야 하며, "
-        + "사용자 ID가 인증 시스템의 사용자 ID와 일치해야 합니다.",
+        createText1:
+          "현재 인증 시스템은 사용자 생성을 지원합니다. 인증 시스템의 기존 사용자를 추가하거나 " +
+          "완전히 새로운 사용자를 생성할 수 있습니다. " +
+          "시스템은 이 사용자를 인증 시스템에 생성합니다.",
+        createText2:
+          "현재 인증 시스템은 사용자 생성을 지원하지 않습니다. 추가할 사용자가 인증 시스템에 이미 존재해야 하며, " +
+          "사용자 ID가 인증 시스템의 사용자 ID와 일치해야 합니다.",
       },
       initImportUsersTable: {
         importUser: "여기에서 기존 사용자를 가져올 수 있습니다. ",
         document: "문서 ",
         learn: "를 참조하여 시스템 사용자 모델과 사용자 정보 가져오기 방법을 학습하세요.",
-        useMore: "SCOW로 여러 클러스터를 관리하는 경우, 모든 클러스터의 사용자 계정 정보는 동일해야 합니다. "
-        + "하나의 클러스터에서만 사용자 정보를 가져오면 됩니다.",
+        useMore:
+          "SCOW로 여러 클러스터를 관리하는 경우, 모든 클러스터의 사용자 계정 정보는 동일해야 합니다. " +
+          "하나의 클러스터에서만 사용자 정보를 가져오면 됩니다.",
       },
       initJobBillingTable: {
         set: "여기에서 기본 작업 가격표를 설정할 수 있습니다. 초기화를 완료하려면 모든 항목의 가격을 설정해야 합니다.",
@@ -581,8 +591,7 @@ export default {
         platformRole: "플랫폼 역할",
         tenantRole: "테넌트 역할",
         accountAffiliation: "소속 계정",
-        defaultTenant: "여기에서 현재 시스템의 기본 테넌트 아래 사용자와 계정을 관리하고, "
-        + "사용자를 ",
+        defaultTenant: "여기에서 현재 시스템의 기본 테넌트 아래 사용자와 계정을 관리하고, " + "사용자를 ",
         initAdmin: "초기 관리자",
         set: "로 설정하여 테넌트 관리자 및 플랫폼 관리자를 겸임할 수 있습니다.",
         idOrName: "사용자 ID 또는 이름",
@@ -718,8 +727,8 @@ export default {
       oldPassword: "기존 비밀번호",
       newPassword: "새 비밀번호",
       confirmPassword: "비밀번호 확인",
-      userNotExist:"사용자가 존재하지 않거나 삭제되었습니다",
-      unavailable:"현재 구성에서 사용할 수 없는 기능입니다",
+      userNotExist: "사용자가 존재하지 않거나 삭제되었습니다",
+      unavailable: "현재 구성에서 사용할 수 없는 기능입니다",
     },
     tenant: {
       accountWhitelistTable: {
@@ -733,18 +742,18 @@ export default {
         confirmRemoveWhiteText2: " 을(를) 화이트리스트에서 제거하시겠습니까?",
         removeWhiteSuccess: "화이트리스트에서 성공적으로 제거했습니다!",
         removeWhite: "화이트리스트에서 제거",
-        expirationTime:"만료 시간",
+        expirationTime: "만료 시간",
       },
       addWhitelistedAccountButton: {
         notExist: "계정이 존재하지 않습니다!",
         addSuccess: "추가 성공!",
         addWhiteList: "화이트리스트 계정 추가",
-        expirationTime:"만료 시간",
-        custom:"사용자 지정",
-        oneWeek:"1주",
-        oneMonth:"1개월",
-        oneYear:"1년",
-        permanent:"영구",
+        expirationTime: "만료 시간",
+        custom: "사용자 지정",
+        oneWeek: "1주",
+        oneMonth: "1개월",
+        oneYear: "1년",
+        permanent: "영구",
       },
       adminJobTable: {
         batch: "배치 검색",
@@ -759,7 +768,7 @@ export default {
         jobNumber: "작업 수: ",
         tenantPriceSum: "테넌트 과금 합계: ",
         platformPriceSum: "플랫폼 과금 합계: ",
-        searchTypePlaceholder:"여러 개일 경우 쉼표로 구분하세요",
+        searchTypePlaceholder: "여러 개일 경우 쉼표로 구분하세요",
         onlyNumbersAndCommas: "숫자와 쉼표만 입력할 수 있습니다",
       },
       adminUserTable: {
@@ -767,7 +776,7 @@ export default {
         tenantAdmin: "테넌트 관리자",
         tenantFinance: "재무 담당자",
         idOrName: "사용자 ID 또는 이름",
-        name:"이름",
+        name: "이름",
         tenantRole: "테넌트 역할",
         affiliatedAccountName: "소속 계정",
         notExist: "사용자가 존재하지 않습니다",
@@ -776,7 +785,7 @@ export default {
         changeSuccess: "수정 성공",
         changeFail: "수정 실패",
         changePassword: "비밀번호 변경",
-        delete:"삭제",
+        delete: "삭제",
         deleteFail: "삭제 실패. 관리자에게 문의하세요.",
         deleteSuccess: "삭제 성공",
         featureUnavailable: "해당 기능은 일시적으로 사용할 수 없습니다",
@@ -795,8 +804,9 @@ export default {
         modifyButton: "수정",
         currentPrice: "현재 작업의 테넌트 과금",
         job: "작업",
-        annotation:"새 과금 금액이 현재 과금 금액을 초과하는 경우, 차액이 차감되어 계정의 소비 기록에서 확인할 수 있습니다;"
-        + "새 과금 금액이 현재 과금 금액보다 적은 경우, 차액이 환불되어 계정의 충전 기록에서 확인할 수 있습니다.",
+        annotation:
+          "새 과금 금액이 현재 과금 금액을 초과하는 경우, 차액이 차감되어 계정의 소비 기록에서 확인할 수 있습니다;" +
+          "새 과금 금액이 현재 과금 금액보다 적은 경우, 차액이 환불되어 계정의 충전 기록에서 확인할 수 있습니다.",
       },
       tenantSelector: {
         fresh: "테넌트 목록 새로고침",
@@ -812,7 +822,8 @@ export default {
           removeFromDefaultApps: {
             title: "기본 권한 애플리케이션 제거",
             confirmContent: "클러스터 {1}의 테넌트 {0}에서 기본 권한 애플리케이션 {2}을(를) 제거하시겠습니까?",
-            confirmWarn: "기본 권한 애플리케이션에서 제거하면 해당 테넌트의 모든 계정에서 이 애플리케이션 권한이 동기적으로 취소됩니다",
+            confirmWarn:
+              "기본 권한 애플리케이션에서 제거하면 해당 테넌트의 모든 계정에서 이 애플리케이션 권한이 동기적으로 취소됩니다",
             removeSuccessMessage: "기본 권한 애플리케이션에서 제거됨",
             removeFailedMessage: "기본 권한 애플리케이션 제거 실패",
           },
@@ -820,7 +831,8 @@ export default {
             title: "기본 권한 애플리케이션 추가",
             tenant: "테넌트",
             cluster: "클러스터",
-            modalWarn: "기본 권한 애플리케이션에 추가하면 해당 테넌트의 모든 계정에 이 애플리케이션 권한이 동기적으로 추가됩니다",
+            modalWarn:
+              "기본 권한 애플리케이션에 추가하면 해당 테넌트의 모든 계정에 이 애플리케이션 권한이 동기적으로 추가됩니다",
             app: "애플리케이션",
             appDefaultPlaceholder: "애플리케이션을 선택하세요",
             noAppsPlaceholder: "사용 가능한 애플리케이션 없음",
@@ -839,8 +851,8 @@ export default {
         will: "약",
         createModal: "초 후 사용자 생성 인터페이스가 열립니다",
         createFirst: "사용자가 존재하지 않습니다. 먼저 사용자를 생성하세요",
-        blockAccount:"사용자가 차단되었습니다. 먼저 차단을 해제하세요",
-        arrearsAccount:"사용자 연체 상태를 가져오지 못했습니다",
+        blockAccount: "사용자가 차단되었습니다. 먼저 차단을 해제하세요",
+        arrearsAccount: "사용자 연체 상태를 가져오지 못했습니다",
         addSuccess: "추가 성공!",
         userDeleted: "사용자가 삭제되어 추가할 수 없습니다",
       },
@@ -890,9 +902,12 @@ export default {
         normal: "사용 가능",
         quotaExceeded: "쿼터 초과",
         statusExplanation: "상태:",
-        blockedExplanation: "차단됨: 계정 관리자 또는 계정 주 관리자에 의해 사용자가 차단되어 이 계정을 선택해 작업 제출이 불가능합니다.",
-        quotaExceededExplanation: "쿼터 초과: 사용자가 차단되지는 않았지만 사용된 쿼터가 사용자 한도 이상으로 이 계정을 선택해 작업 제출이 불가능합니다.",
-        normalExplanation: "사용 가능: 사용자가 차단되지 않았고 사용된 쿼터가 사용자 한도 미만으로 이 계정을 선택해 작업 제출이 가능합니다.",
+        blockedExplanation:
+          "차단됨: 계정 관리자 또는 계정 주 관리자에 의해 사용자가 차단되어 이 계정을 선택해 작업 제출이 불가능합니다.",
+        quotaExceededExplanation:
+          "쿼터 초과: 사용자가 차단되지는 않았지만 사용된 쿼터가 사용자 한도 이상으로 이 계정을 선택해 작업 제출이 불가능합니다.",
+        normalExplanation:
+          "사용 가능: 사용자가 차단되지 않았고 사용된 쿼터가 사용자 한도 미만으로 이 계정을 선택해 작업 제출이 가능합니다.",
         admin: "관리자",
         user: "일반 사용자",
         role: "역할",
@@ -924,8 +939,9 @@ export default {
         confirmRemoveText: "계정에서 사용자 제거를 확인",
         removeSuccess: "사용자 제거 성공!",
         removerUser: "사용자 제거",
-        cannotRemoverUserWhoHaveRunningJobFromAccount: "사용자에게 아직 실행 중인 작업이 있으며 사용자가 차단되었습니다. 작업 종료를 기다리거나 수동으로 종료한 후 이동하세요."
-          + " 또한 계정/사용자 동기화가 실행 중일 수 있습니다. 동기화 완료 후 다시 시도하세요.",
+        cannotRemoverUserWhoHaveRunningJobFromAccount:
+          "사용자에게 아직 실행 중인 작업이 있으며 사용자가 차단되었습니다. 작업 종료를 기다리거나 수동으로 종료한 후 이동하세요." +
+          " 또한 계정/사용자 동기화가 실행 중일 수 있습니다. 동기화 완료 후 다시 시도하세요.",
 
         blockUserInAccountFailed: "계정에서 사용자 차단 실패",
         unblockUserInAccountFailed: "계정에서 사용자 차단 해제 실패",
@@ -941,7 +957,7 @@ export default {
         createTime: "생성 시간",
         detail: "사용자 상세",
         tenantRoles: "테넌트 역할",
-        affiliatedAccounts:"소속 계정",
+        affiliatedAccounts: "소속 계정",
       },
       adminUserInfoDrawer: {
         id: "사용자 ID",
@@ -970,7 +986,8 @@ export default {
         operation: "작업",
         modifyQuota: "할당량 수정",
         clusterNotEnabledStorageManager: "사용 가능한 클러스터에서 스토리지 관리가 아직 활성화되지 않았습니다",
-        storageQuotaTooltip: "현재 파일 시스템에는 백업 설정이 있어 추가 스토리지 공간을 차지하므로 실제 사용 가능한 스토리지는 할당량보다 적습니다. ",
+        storageQuotaTooltip:
+          "현재 파일 시스템에는 백업 설정이 있어 추가 스토리지 공간을 차지하므로 실제 사용 가능한 스토리지는 할당량보다 적습니다. ",
         syncStorage: "지금 업데이트",
         syncSuccess: "동기화 성공",
         syncFailed: "동기화 실패",
@@ -982,7 +999,8 @@ export default {
         modifyDefaultQuota: "기본 스토리지 할당량 수정",
         confirm: "확인",
         modifyUserDeulatQuotaSuccess: "사용자 기본 스토리지 할당량 수정 성공",
-        modifyPartialSuccess: "기본 스토리지 할당량은 수정되었으나, {}명의 사용자에 대한 할당량 조정 중 예외가 발생했습니다.",
+        modifyPartialSuccess:
+          "기본 스토리지 할당량은 수정되었으나, {}명의 사용자에 대한 할당량 조정 중 예외가 발생했습니다.",
         cluster: "클러스터",
         tip: "변경 사항은 즉시 적용됩니다. 할당량을 줄이면 사용자가 스토리지 한도를 초과하여 실행 중인 작업이 데이터를 기록하지 못할 수 있습니다. 신중히 진행하세요",
       },
@@ -1013,12 +1031,12 @@ export default {
         userNotFound: "사용자 {}가 존재하지 않습니다",
       },
     },
-    quantumJob:{
-      historyJobTable:{
+    quantumJob: {
+      historyJobTable: {
         qits: "Qits",
         billing: "과금",
-        runDur:"실행 시간",
-        state:"상태",
+        runDur: "실행 시간",
+        state: "상태",
         device: "실행 장치",
         noAuth: "해당 정보를 볼 권한이 없습니다.",
       },
@@ -1036,43 +1054,46 @@ export default {
       pageNotExist: "요청하신 페이지가 존재하지 않습니다.",
       serverWrong: "서버 오류",
       sorry: "죄송합니다. 서버 오류가 발생했습니다. 새로고침 후 다시 시도하세요.",
-      clusterNotAvailable: "현재 접근 중인 클러스터가 사용 불가능하거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요.",
+      clusterNotAvailable:
+        "현재 접근 중인 클러스터가 사용 불가능하거나 사용 가능한 클러스터가 없습니다. 나중에 다시 시도하거나 관리자에게 문의하세요.",
     },
-    deleteModals:{
-      deleteUser:"사용자 삭제",
-      userId:"사용자 ID",
-      userName:"사용자 이름",
-      comments:"비고",
+    deleteModals: {
+      deleteUser: "사용자 삭제",
+      userId: "사용자 ID",
+      userName: "사용자 이름",
+      comments: "비고",
       confirmPermanentDeleteUser: "ID <b>{}</b>, 이름 <b>{}</b>의 사용자를 삭제하시겠습니까?",
-      confirmDeleteUserPrompt1: "사용자를 삭제하는 경우, 더 이상 사용 중이 아닌지 확인하시고 " +
-      "아래에 사용자 ID와 이름을 입력하세요.",
-      confirmDeleteUserPrompt2: "<span style='color:red'>경고: 이 작업은 되돌릴 수 없으며, 해당 사용자는 " +
-      "더 이상 사용할 수 없습니다!</span>",
+      confirmDeleteUserPrompt1:
+        "사용자를 삭제하는 경우, 더 이상 사용 중이 아닌지 확인하시고 " + "아래에 사용자 ID와 이름을 입력하세요.",
+      confirmDeleteUserPrompt2:
+        "<span style='color:red'>경고: 이 작업은 되돌릴 수 없으며, 해당 사용자는 " +
+        "더 이상 사용할 수 없습니다!</span>",
       cannotDeleteSelf: "현재 로그인한 사용자는 삭제할 수 없습니다",
-      platformAdmin:"플랫폼 관리자는 삭제할 수 없습니다",
+      platformAdmin: "플랫폼 관리자는 삭제할 수 없습니다",
       userIdRequired: "사용자 ID를 입력하세요",
       userNameRequired: "사용자 이름을 입력하세요",
       incorrectUserIdOrName: "입력한 사용자 ID 또는 이름이 일치하지 않습니다",
       userDeleted: "사용자가 삭제되어 작업할 수 없습니다",
       deleteFailed: "삭제 실패",
-      accountsOwnerPrompt: "사용자 <b>{}</b>는 계정 <b>{}</b>의 주 관리자입니다. " +
-      "해당 사용자를 삭제하기 전에 위 계정을 삭제해야 합니다.",
+      accountsOwnerPrompt:
+        "사용자 <b>{}</b>는 계정 <b>{}</b>의 주 관리자입니다. " +
+        "해당 사용자를 삭제하기 전에 위 계정을 삭제해야 합니다.",
       userRunningJobsPrompt: "사용자에게 미완료 작업이 있어 삭제할 수 없습니다.",
-      delete:"삭제",
+      delete: "삭제",
 
-      deleteAccount:"계정 삭제",
-      accountName:"계정 이름",
-      accountOwnerId:"계정 주 관리자 ID",
-      accountNameRequired:"계정 이름을 입력하세요",
-      ownerIdRequired:"계정 주 관리자 ID를 입력하세요",
+      deleteAccount: "계정 삭제",
+      accountName: "계정 이름",
+      accountOwnerId: "계정 주 관리자 ID",
+      accountNameRequired: "계정 이름을 입력하세요",
+      ownerIdRequired: "계정 주 관리자 ID를 입력하세요",
       invalidAccountNameOrOwnerId: "입력한 계정 이름 또는 주 관리자 ID가 일치하지 않습니다",
-      confirmPermanentDeleteAccount:"계정 이름 <b>{}</b>, 계정 주 관리자 ID <b>{}</b>의 계정을 삭제하시겠습니까?",
-      confirmDeleteAccountPrompt1:"계정을 삭제하는 경우, 더 이상 사용 중이 아닌지 확인하시고 " +
-      "아래에 계정 이름과 주 관리자 ID를 입력하세요.",
-      confirmDeleteAccountPrompt2:"<span style='color:red'>주의: 이 작업은 되돌릴 수 없습니다. " +
-      "삭제 후 계정을 사용할 수 없습니다!</span>",
+      confirmPermanentDeleteAccount: "계정 이름 <b>{}</b>, 계정 주 관리자 ID <b>{}</b>의 계정을 삭제하시겠습니까?",
+      confirmDeleteAccountPrompt1:
+        "계정을 삭제하는 경우, 더 이상 사용 중이 아닌지 확인하시고 " + "아래에 계정 이름과 주 관리자 ID를 입력하세요.",
+      confirmDeleteAccountPrompt2:
+        "<span style='color:red'>주의: 이 작업은 되돌릴 수 없습니다. " + "삭제 후 계정을 사용할 수 없습니다!</span>",
       accountRunningJobsPrompt: "계정에 미완료 작업이 있어 삭제할 수 없습니다.",
-      accountDeleted:"계정이 삭제되어 작업할 수 없습니다",
+      accountDeleted: "계정이 삭제되어 작업할 수 없습니다",
     },
     editUserProfileModal: {
       title: "사용자 {} (ID: {}) 정보 수정",
@@ -1096,9 +1117,10 @@ export default {
       newPassword: "새 비밀번호",
       confirmPassword: "비밀번호 확인",
       selectCluster: "클러스터 선택",
-      allClustersTooltip: "클러스터를 지정하지 않으면 권한이 해제된 클러스터를 포함한 모든 클러스터의 작업을 조회할 수 있습니다.",
+      allClustersTooltip:
+        "클러스터를 지정하지 않으면 권한이 해제된 클러스터를 포함한 모든 클러스터의 작업을 조회할 수 있습니다.",
 
-      partitionFullName:"파티션 전체 이름",
+      partitionFullName: "파티션 전체 이름",
       nodes: "파티션 노드 수",
       cores: "노드당 코어 수",
       gpus: "노드당 가속기 카드 수",
@@ -1113,7 +1135,7 @@ export default {
       operationTime: "작업 시간",
       operationCode: "작업 코드",
       operationDetail: "작업 대상",
-      keywordsPlaceholder:"예: 파일명, 작업 ID 등",
+      keywordsPlaceholder: "예: 파일명, 작업 ID 등",
       operatorIp: "작업자 IP",
       alreadyIs: "사용자는 이미 해당 역할입니다",
       notExist: "사용자가 존재하지 않거나 삭제되었습니다",
@@ -1132,11 +1154,13 @@ export default {
     },
     _app: {
       multiClusterOpErrorTitle: "작업 실패",
-      multiClusterOpErrorContent: "다중 클러스터 작업 중 오류가 발생하여 일부 클러스터에 수정 사항이 동기화되지 않았습니다.",
+      multiClusterOpErrorContent:
+        "다중 클러스터 작업 중 오류가 발생하여 일부 클러스터에 수정 사항이 동기화되지 않았습니다.",
       adapterConnErrorContent: "{} 클러스터에 현재 접속할 수 없습니다. 나중에 다시 시도하세요. ",
       effectErrorMessage: "서버 오류가 발생했습니다!",
       noActivatedClusters: "사용 가능한 클러스터가 없습니다. 페이지를 새로고침한 후 다시 시도하세요.",
-      notExistInActivatedClusters: "조회 중인 클러스터가 비활성화되었을 수 있습니다. 페이지를 새로고침한 후 다시 시도하세요.",
+      notExistInActivatedClusters:
+        "조회 중인 클러스터가 비활성화되었을 수 있습니다. 페이지를 새로고침한 후 다시 시도하세요.",
       noClusters: "클러스터 구성 파일을 찾을 수 없습니다. 시스템 관리자에게 문의하세요.",
     },
     profile: {
@@ -1190,10 +1214,12 @@ export default {
           userExistAuth: "인증 시스템에 사용자가 이미 존재합니다",
           userNotExistAuth: "인증 시스템에 사용자가 존재하지 않습니다",
           unableDetermineUserExistAuth: "인증 시스템에 사용자가 존재하는지 확인할 수 없습니다",
-          userExistAuthMessage: "사용자가 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 적용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다. '확인'을 클릭하면 해당 사용자가 SCOW 데이터베이스에 직접 추가됩니다.",
+          userExistAuthMessage:
+            "사용자가 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 적용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다. '확인'을 클릭하면 해당 사용자가 SCOW 데이터베이스에 직접 추가됩니다.",
           userNotExistAuthMessage: "'확인'을 클릭하면 이 사용자가 SCOW와 인증 시스템에 모두 생성됩니다.",
           userExistInSCOWDatabaseMessage: "해당 사용자는 이미 SCOW에 존재합니다",
-          userExistAndAddToSCOWDatabaseMessage: "해당 사용자는 인증 시스템에 이미 존재하며 SCOW에 성공적으로 추가되었습니다",
+          userExistAndAddToSCOWDatabaseMessage:
+            "해당 사용자는 인증 시스템에 이미 존재하며 SCOW에 성공적으로 추가되었습니다",
           createUserFail: "사용자 생성 실패",
           addCompleted: "추가 성공!",
           crateUser: "사용자 생성",
@@ -1257,7 +1283,8 @@ export default {
       permissionManagement: {
         defaultApps: {
           title: "기본 권한 애플리케이션",
-          explanation: "기본 권한 애플리케이션을 추가하거나 제거하면 해당 테넌트의 모든 계정에 애플리케이션 권한 변경이 동기화됩니다. 새 계정을 생성할 때 기본 권한 애플리케이션이 자동으로 계정의 권한 애플리케이션에 추가됩니다.",
+          explanation:
+            "기본 권한 애플리케이션을 추가하거나 제거하면 해당 테넌트의 모든 계정에 애플리케이션 권한 변경이 동기화됩니다. 새 계정을 생성할 때 기본 권한 애플리케이션이 자동으로 계정의 권한 애플리케이션에 추가됩니다.",
         },
       },
     },
@@ -1297,13 +1324,14 @@ export default {
         userUnlock: "사용자 로그인 잠금 해제",
         userNotFound: "사용자를 찾을 수 없습니다",
         unlockSuccess: "로그인 잠금 해제 성공",
-        unlockFail:"로그인 잠금 해제 실패",
+        unlockFail: "로그인 잠금 해제 실패",
         unlockLogin: "로그인 잠금 해제",
         confirmUlock: "사용자 로그인 잠금을 해제하시겠습니까?",
         confirmUlockText1: "사용자 로그인 잠금 해제를 확인",
         confirmUlockText2: "하시겠습니까?",
         lockedTime: "잠금 시간",
-        oneChancetoLogin: "로그인 잠금을 해제한 후 사용자에게 한 번의 로그인 기회가 주어지며, 성공적으로 로그인해야 정상 상태로 복구됩니다",
+        oneChancetoLogin:
+          "로그인 잠금을 해제한 후 사용자에게 한 번의 로그인 기회가 주어지며, 성공적으로 로그인해야 정상 상태로 복구됩니다",
       },
       tenants: {
         create: {
@@ -1311,16 +1339,21 @@ export default {
           adminExistMessage: "관리자 사용자는 SCOW 데이터베이스에 이미 존재하여 다시 추가할 수 없습니다.",
           adminNotExistAuth: "인증 시스템에 관리자 사용자가 존재하지 않습니다",
           adminNotExistAuthMessage: "관리자 사용자가 존재하지 않습니다. 관리자 사용자 ID가 올바른지 확인하세요.",
-          adminExistAuthMessage: "관리자 사용자가 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 적용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다. 새 테넌트 관리자 추가를 확인하시겠습니까?",
-          adminNotExistAuthAndConfirmCreateMessage: "인증 시스템에 관리자 사용자가 존재하지 않습니다. 이 사용자를 생성하고 새 테넌트 관리자로 추가하시겠습니까?",
-          unableConfirmAdminExistInAuthMessage: "관리자 사용자가 인증 시스템에 존재하는지 확인할 수 없어 인증 시스템에 생성을 시도합니다. 인증 시스템에 이미 존재하는 경우, 여기서 입력한 비밀번호는 적용되지 않으며 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다.",
-          unableConfirmAdminExistInAuthAndUnableCreateMessage: "관리자 사용자가 인증 시스템에 존재하는지 확인할 수 없으며, 현재 인증 시스템은 사용자 생성을 지원하지 않습니다. 이 사용자가 인증 시스템에 이미 존재하는지 확인하세요. 확인 시 데이터베이스에 직접 추가되며, 여기서 입력한 비밀번호는 적용되지 않습니다. 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다.",
+          adminExistAuthMessage:
+            "관리자 사용자가 인증 시스템에 이미 존재합니다. 여기서 입력한 비밀번호는 적용되지 않으며, 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다. 새 테넌트 관리자 추가를 확인하시겠습니까?",
+          adminNotExistAuthAndConfirmCreateMessage:
+            "인증 시스템에 관리자 사용자가 존재하지 않습니다. 이 사용자를 생성하고 새 테넌트 관리자로 추가하시겠습니까?",
+          unableConfirmAdminExistInAuthMessage:
+            "관리자 사용자가 인증 시스템에 존재하는지 확인할 수 없어 인증 시스템에 생성을 시도합니다. 인증 시스템에 이미 존재하는 경우, 여기서 입력한 비밀번호는 적용되지 않으며 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다.",
+          unableConfirmAdminExistInAuthAndUnableCreateMessage:
+            "관리자 사용자가 인증 시스템에 존재하는지 확인할 수 없으며, 현재 인증 시스템은 사용자 생성을 지원하지 않습니다. 이 사용자가 인증 시스템에 이미 존재하는지 확인하세요. 확인 시 데이터베이스에 직접 추가되며, 여기서 입력한 비밀번호는 적용되지 않습니다. 새 사용자의 비밀번호는 인증 시스템의 기존 비밀번호가 됩니다.",
           existInSCOWDatabase: "해당 {}는 이미 SCOW 데이터베이스에 존재합니다",
-          createTenantSuccessMessage: "테넌트 생성 성공. 관리자 사용자가 인증 시스템에 존재하며 SCOW 데이터베이스에 성공적으로 추가되었습니다",
+          createTenantSuccessMessage:
+            "테넌트 생성 성공. 관리자 사용자가 인증 시스템에 존재하며 SCOW 데이터베이스에 성공적으로 추가되었습니다",
           addCompleted: "추가 성공!",
           createTenantFailMessage: "테넌트 생성 실패",
           createTenant: "테넌트 생성",
-          unavailable:"현재 구성에서 사용할 수 없는 기능입니다",
+          unavailable: "현재 구성에서 사용할 수 없는 기능입니다",
           userNotFound: "사용자가 존재하지 않습니다",
           tenantExist: "테넌트가 이미 존재합니다",
           userStillMaintainsAccountRelationship: "사용자가 계정 관계를 유지하고 있습니다",
@@ -1330,10 +1363,10 @@ export default {
       systemDebug: {
         slurmBlockStatus: {
           syncUserAccountBlockingStatus: "사용자 계정 차단 상태 동기화",
-          alertInfo: "SCOW는 정기적으로 계정과 사용자의 차단 상태를 스케줄러에 동기화합니다. '지금 동기화'를 클릭하여 수동으로 동기화할 수 있습니다.",
+          alertInfo:
+            "SCOW는 정기적으로 계정과 사용자의 차단 상태를 스케줄러에 동기화합니다. '지금 동기화'를 클릭하여 수동으로 동기화할 수 있습니다.",
           periodicSyncUserAccountBlockStatusInfo: "스케줄러 계정 및 사용자 차단 상태 정기 동기화",
-          syncAlreadyStarted:
-            "동기화가 이미 시작되었습니다. 완료될 때까지 기다린 후 새 실행을 시작하세요.",
+          syncAlreadyStarted: "동기화가 이미 시작되었습니다. 완료될 때까지 기다린 후 새 실행을 시작하세요.",
           turnedOn: "켜짐",
           paused: "일시 중지",
           stopSync: "동기화 중지",
@@ -1350,9 +1383,12 @@ export default {
         },
         syncClusterAccountUser: {
           syncUserAccount: "계정/사용자 정보 동기화",
-          alertInfo: "SCOW는 정기적으로 계정과 사용자 정보를 스케줄러에 동기화합니다. '지금 동기화'를 클릭하여 수동 동기화를 수행할 수 있습니다.",
-          maxSyncDurationExplanation: "동기화 중에는 SCOW가 계정 관련 정보를 수정할 수 없습니다. 동기화 시간이 길어져 사용자 경험에 영향을 주지 않도록, 단일 동기화의 최대 처리 시간을 제어하는 파라미터를 제공합니다. 이 시간 제한을 초과하면 현재 동기화가 종료되며, 이미 동기화된 정보는 유지됩니다.",
-          syncAlreadyStarted: "계정/사용자 동기화 또는 작업 가져오기가 이미 시작되었습니다. 완료될 때까지 기다린 후 새 실행을 시작하세요.",
+          alertInfo:
+            "SCOW는 정기적으로 계정과 사용자 정보를 스케줄러에 동기화합니다. '지금 동기화'를 클릭하여 수동 동기화를 수행할 수 있습니다.",
+          maxSyncDurationExplanation:
+            "동기화 중에는 SCOW가 계정 관련 정보를 수정할 수 없습니다. 동기화 시간이 길어져 사용자 경험에 영향을 주지 않도록, 단일 동기화의 최대 처리 시간을 제어하는 파라미터를 제공합니다. 이 시간 제한을 초과하면 현재 동기화가 종료되며, 이미 동기화된 정보는 유지됩니다.",
+          syncAlreadyStarted:
+            "계정/사용자 동기화 또는 작업 가져오기가 이미 시작되었습니다. 완료될 때까지 기다린 후 새 실행을 시작하세요.",
           periodicSyncUserAccountInfo: "계정 및 사용자 정보 정기 동기화",
           turnedOn: "켜짐",
           paused: "꺼짐",
@@ -1400,7 +1436,7 @@ export default {
             noSyncData: "데이터가 일치하여 동기화가 필요 없습니다.",
             syncCountDetails: "동기화가 필요한 데이터 차이가 {0}개 있습니다. 성공적으로 동기화: {1}, ",
             syncFailedCount: "실패: {}",
-            syncTotallySucceed:  "데이터 완전 동기화, {0}개 차이 처리 완료",
+            syncTotallySucceed: "데이터 완전 동기화, {0}개 차이 처리 완료",
             failedDetailDrawerTitle: "동기화 실패 상세",
             noSyncDetailsException: "데이터 예외, 동기화 데이터 미획득",
             timeoutException: "부분 데이터 동기화(동기화 시간 초과). ",
@@ -1409,8 +1445,9 @@ export default {
         },
         fetchJobs: {
           jobInfoSync: "작업 정보 동기화",
-          alertMessage: "SCOW는 클러스터에서 작업 정보를 정기적으로 동기화합니다. "
-          + "'지금 동기화'를 클릭하여 즉시 수동 동기화할 수 있습니다.",
+          alertMessage:
+            "SCOW는 클러스터에서 작업 정보를 정기적으로 동기화합니다. " +
+            "'지금 동기화'를 클릭하여 즉시 수동 동기화할 수 있습니다.",
           periodicSyncJobInfo: "작업 정보 정기 동기화",
           turnedOn: "켜짐",
           paused: "꺼짐",
@@ -1421,8 +1458,8 @@ export default {
           notSynced: "미동기화",
           jobSyncSuccessMessage: "작업 동기화 완료, {}개의 새 레코드 동기화",
           syncJobNow: "지금 동기화",
-          accountUserSyncRunning: "계정/사용자 동기화가 실행 중입니다. "
-           + "작업 동기화를 시작하기 전에 완료를 기다리세요.",
+          accountUserSyncRunning:
+            "계정/사용자 동기화가 실행 중입니다. " + "작업 동기화를 시작하기 전에 완료를 기다리세요.",
         },
       },
       resourceManagement: {
@@ -1485,7 +1522,8 @@ export default {
             statusTooltip: "상태:",
             statusIdleTooltip: "유휴: 노드를 다른 클러스터로 마이그레이션할 수 있습니다",
             statusRunningTooltip: "실행 중: 활성 작업으로 인해 현재 노드 마이그레이션이 불가능합니다",
-            statusOfflineTooltip: "오프라인: 모든 클러스터에서 노드가 비활성 상태이며, 현재 클러스터에서 활성화 가능합니다",
+            statusOfflineTooltip:
+              "오프라인: 모든 클러스터에서 노드가 비활성 상태이며, 현재 클러스터에서 활성화 가능합니다",
             nodeNamePrompt: "노드 이름이 형식 요구 사항을 충족하지 않습니다",
           },
         },
@@ -1536,7 +1574,7 @@ export default {
         topTenPortalFeatureUsageCount: "포털 기능 사용량 상위 10",
         topTenMisFeatureUsageCount: "MIS 기능 사용량 상위 10",
         jobCount: "작업 수",
-        usageCount:"횟수",
+        usageCount: "횟수",
         userName: "사용자 이름",
         accountName: "계정 이름",
         amount: "금액",
@@ -1602,35 +1640,35 @@ export default {
       copyFileItem: "파일/디렉터리 복사",
       compressFiles: "파일/디렉터리 압축",
       setJobTimeLimit: "작업 시간 제한 설정",
-      createImage:"이미지 생성",
-      updateImage:"이미지 수정",
-      shareImage:"이미지 공유",
-      deleteImage:"이미지 삭제",
-      copyImage:"이미지 복사",
-      createDataset:"데이터셋 생성",
-      updateDataset:"데이터셋 수정",
-      deleteDataset:"데이터셋 삭제",
-      createDatasetVersion:"데이터셋 버전 생성",
-      updateDatasetVersion:"데이터셋 버전 수정",
-      shareDatasetVersion:"데이터셋 버전 공유",
-      copyDatasetVersion:"데이터셋 버전 복사",
-      deleteDatasetVersion:"데이터셋 버전 삭제",
-      createAlgorithm:"알고리즘 생성",
-      updateAlgorithm:"알고리즘 수정",
-      deleteAlgorithm:"알고리즘 삭제",
-      createAlgorithmVersion:"알고리즘 버전 생성",
-      updateAlgorithmVersion:"알고리즘 버전 수정",
-      shareAlgorithmVersion:"알고리즘 버전 공유",
-      deleteAlgorithmVersion:"알고리즘 버전 삭제",
-      copyAlgorithmVersion:"알고리즘 버전 복사",
-      createModel:"모델 생성",
-      updateModel:"모델 수정",
-      deleteModel:"모델 삭제",
-      createModelVersion:"모델 버전 생성",
-      updateModelVersion:"모델 버전 수정",
-      shareModelVersion:"모델 버전 공유",
-      deleteModelVersion:"모델 버전 삭제",
-      copyModelVersion:"모델 버전 복사",
+      createImage: "이미지 생성",
+      updateImage: "이미지 수정",
+      shareImage: "이미지 공유",
+      deleteImage: "이미지 삭제",
+      copyImage: "이미지 복사",
+      createDataset: "데이터셋 생성",
+      updateDataset: "데이터셋 수정",
+      deleteDataset: "데이터셋 삭제",
+      createDatasetVersion: "데이터셋 버전 생성",
+      updateDatasetVersion: "데이터셋 버전 수정",
+      shareDatasetVersion: "데이터셋 버전 공유",
+      copyDatasetVersion: "데이터셋 버전 복사",
+      deleteDatasetVersion: "데이터셋 버전 삭제",
+      createAlgorithm: "알고리즘 생성",
+      updateAlgorithm: "알고리즘 수정",
+      deleteAlgorithm: "알고리즘 삭제",
+      createAlgorithmVersion: "알고리즘 버전 생성",
+      updateAlgorithmVersion: "알고리즘 버전 수정",
+      shareAlgorithmVersion: "알고리즘 버전 공유",
+      deleteAlgorithmVersion: "알고리즘 버전 삭제",
+      copyAlgorithmVersion: "알고리즘 버전 복사",
+      createModel: "모델 생성",
+      updateModel: "모델 수정",
+      deleteModel: "모델 삭제",
+      createModelVersion: "모델 버전 생성",
+      updateModelVersion: "모델 버전 수정",
+      shareModelVersion: "모델 버전 공유",
+      deleteModelVersion: "모델 버전 삭제",
+      copyModelVersion: "모델 버전 복사",
       createUser: "사용자 생성",
       addUserToAccount: "사용자 계정에 추가",
       removeUserFromAccount: "계정에서 사용자 제거",
@@ -1679,8 +1717,8 @@ export default {
       mergeFileChunks: "임시 파일 블록 병합 및 업로드",
       initMultipartUpload: "다중 파트 업로드 초기화",
       markMessageRead: "메시지 읽음 표시",
-      deleteUser:"사용자 삭제",
-      deleteAccount:"계정 삭제",
+      deleteUser: "사용자 삭제",
+      deleteAccount: "계정 삭제",
       editUserProfile: "사용자 정보 편집",
       changePassword: "비밀번호 변경",
       changeEmail: "이메일 변경",
@@ -1736,21 +1774,21 @@ export default {
       shareDatasetVersion: "데이터셋 이름: {}, 데이터셋 버전 이름: {}",
       copyDatasetVersion: "원본 데이터셋 이름: {}, 원본 버전 이름: {}; 대상 데이터셋 이름: {}, 대상 버전 이름: {}",
       deleteDatasetVersion: "데이터셋 이름: {}, 데이터셋 버전 이름: {}",
-      createAlgorithm:"클러스터: {}, 알고리즘 이름: {}",
-      updateAlgorithm:"알고리즘 이름: {}",
-      deleteAlgorithm:"알고리즘 이름: {}",
-      createAlgorithmVersion:"알고리즘 이름: {}, 알고리즘 버전 이름: {}",
-      updateAlgorithmVersion:"알고리즘 이름: {}, 알고리즘 버전 이름: {}",
-      shareAlgorithmVersion:"알고리즘 이름: {}, 알고리즘 버전 이름: {}",
-      deleteAlgorithmVersion:"알고리즘 이름: {}, 알고리즘 버전 이름: {}",
+      createAlgorithm: "클러스터: {}, 알고리즘 이름: {}",
+      updateAlgorithm: "알고리즘 이름: {}",
+      deleteAlgorithm: "알고리즘 이름: {}",
+      createAlgorithmVersion: "알고리즘 이름: {}, 알고리즘 버전 이름: {}",
+      updateAlgorithmVersion: "알고리즘 이름: {}, 알고리즘 버전 이름: {}",
+      shareAlgorithmVersion: "알고리즘 이름: {}, 알고리즘 버전 이름: {}",
+      deleteAlgorithmVersion: "알고리즘 이름: {}, 알고리즘 버전 이름: {}",
       copyAlgorithmVersion: "원본 알고리즘 이름: {}, 원본 버전 이름: {}; 대상 알고리즘 이름: {}, 대상 버전 이름: {}",
-      createModel:"클러스터: {}, 모델 이름: {}",
-      updateModel:"모델 이름: {}",
-      deleteModel:"모델 이름: {}",
-      createModelVersion:"모델 이름: {}, 모델 버전 이름: {}",
-      updateModelVersion:"모델 이름: {}, 모델 버전 이름: {}",
-      shareModelVersion:"모델 이름: {}, 모델 버전 이름: {}",
-      deleteModelVersion:"모델 이름: {}, 모델 버전 이름: {}",
+      createModel: "클러스터: {}, 모델 이름: {}",
+      updateModel: "모델 이름: {}",
+      deleteModel: "모델 이름: {}",
+      createModelVersion: "모델 이름: {}, 모델 버전 이름: {}",
+      updateModelVersion: "모델 이름: {}, 모델 버전 이름: {}",
+      shareModelVersion: "모델 이름: {}, 모델 버전 이름: {}",
+      deleteModelVersion: "모델 이름: {}, 모델 버전 이름: {}",
       copyModelVersion: "원본 모델 이름: {}, 원본 버전 이름: {}; 대상 모델 이름: {}, 대상 버전 이름: {}",
       createUser: "사용자: {}",
       deleteUser: "사용자: {}",
@@ -1769,7 +1807,7 @@ export default {
       unsetTenantFinance: "테넌트: {1}, 사용자: {0}",
       tenantChangePassword: "사용자: {}",
       createAccount: "계정: {}, 주 관리자: {}",
-      deleteAccount:"계정: {}, 주 관리자: {}",
+      deleteAccount: "계정: {}, 주 관리자: {}",
       addAccountToWhitelist: "테넌트: {1}, 계정: {0}",
       removeAccountFromWhitelist: "테넌트: {1}, 계정: {0}",
       accountPay: "계정: {}, 금액(CNY): {}",
@@ -1802,7 +1840,7 @@ export default {
       exportAccountsPayRecordOfTenant: "테넌트: {}, 계정들: {}",
       exportAllAccountsPayRecordOfTenant: "테넌트: {}, 계정들: 전체 계정",
       exportTenantPayRecord: "테넌트: {}",
-      exportTenantsPayRecordOfAdmin:"테넌트들: 플랫폼의 전체 테넌트",
+      exportTenantsPayRecordOfAdmin: "테넌트들: 플랫폼의 전체 테넌트",
       exportJobsOfAccountAndUser: "테넌트: {0}, 계정: {2}, 사용자: {1}",
       exportJobsOfUser: "테넌트: {}, 사용자: {}",
       exportJobsOfAccount: "테넌트: {}, 계정: {}",
@@ -1830,7 +1868,8 @@ export default {
       editUserProfile: "사용자: {}",
       decompressFile: "경로: {0} , 파일 {1}",
       setTenantUserQuota: "사용자: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
-      batchSetTenantUsersQuota: "사용자들: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
+      batchSetTenantUsersQuota:
+        "사용자들: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}, 테넌트 기본값 사용: {4}",
       setTenantUserDefaultQuota: "테넌트: {0}, 클러스터: {1}, 경로: {2}, 스토리지 할당량: {3}",
       syncTenantUsersStorageUsage: "테넌트: {0}, 클러스터: {1}, 경로: {2}",
       tenantAppAuthorizationLog: "클러스터: {0}, 애플리케이션: {1}, 테넌트: {2}",

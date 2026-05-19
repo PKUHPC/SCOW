@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { OperationResult, OperationType } from "@scow/lib-operation-log";
 import { TRPCError } from "@trpc/server";
 import { basename, dirname, join } from "path";
@@ -42,10 +30,12 @@ export const ModelListSchema = z.object({
   algorithmName: z.string().optional(),
   algorithmFramework: z.enum(Framework).optional(),
   isShared: z.boolean(),
-  versions: z.array(z.object({
-    id: z.number(),
-    path: z.string(),
-  })),
+  versions: z.array(
+    z.object({
+      id: z.number(),
+      path: z.string(),
+    }),
+  ),
   owner: z.string(),
   ownerName: z.string(),
   clusterId: z.string(),
@@ -64,16 +54,17 @@ export const list = procedure
       summary: "list models",
     },
   })
-  .input(z.object({
-    ...paginationSchema.shape,
-    nameOrDesc: z.string().optional(),
-    isPublic: booleanQueryParam().optional(),
-    clusterId: z.string().optional(),
-    isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
-  }))
+  .input(
+    z.object({
+      ...paginationSchema.shape,
+      nameOrDesc: z.string().optional(),
+      isPublic: booleanQueryParam().optional(),
+      clusterId: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(), // 是否为平台管理员公共数据资产
+    }),
+  )
   .output(z.object({ items: z.array(ModelListSchema), count: z.number() }))
   .query(async ({ input, ctx: { user } }) => {
-
     // 如果查询某一个集群
     if (input.clusterId) {
       // 再次检查当前查询集群是否为在线可用集群
@@ -98,7 +89,8 @@ export const list = procedure
     // 构建查询条件
     let isPublicQuery: any;
 
-    if (isPlatformOwned) { // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
+    if (isPlatformOwned) {
+      // isPlatformOwned 为 true 时，公共数据资产只包含平台拥有的
       isPublicQuery = { isPlatformOwned: true };
     } else if (isPublic) {
       isPublicQuery = {
@@ -112,58 +104,69 @@ export const list = procedure
       };
     }
 
-    const nameOrDescQuery = nameOrDesc ? {
-      $or: [
-        { name: { $like: `%${nameOrDesc}%` } },
-        { description: { $like: `%${nameOrDesc}%` } },
-      ],
-    } : {};
+    const nameOrDescQuery = nameOrDesc
+      ? {
+          $or: [{ name: { $like: `%${nameOrDesc}%` } }, { description: { $like: `%${nameOrDesc}%` } }],
+        }
+      : {};
 
-    const clusterQuery = clusterId ? {
-      clusterId,
-    } : {};
+    const clusterQuery = clusterId
+      ? {
+          clusterId,
+        }
+      : {};
 
-    const [items, count] = await em.findAndCount(Model, {
-      ...isPublicQuery,
-      ...nameOrDescQuery,
-      ...clusterQuery,
-    }, {
-      ...paginationProps(page, pageSize),
-      populate: ["versions.sharedStatus", "versions.privatePath"],
-      orderBy: { createTime: "desc" },
-    });
+    const [items, count] = await em.findAndCount(
+      Model,
+      {
+        ...isPublicQuery,
+        ...nameOrDescQuery,
+        ...clusterQuery,
+      },
+      {
+        ...paginationProps(page, pageSize),
+        populate: ["versions.sharedStatus", "versions.privatePath"],
+        orderBy: { createTime: "desc" },
+      },
+    );
 
     const ownerIds = Array.from(new Set(items.map((x) => x.owner)));
 
     let userMap: Record<string, string> = {};
     if (ownerIds.length > 0) {
       const users = await getUsersName(ownerIds);
-      userMap = users.reduce((acc, user) => {
-        acc[user.userId] = user.userName;
-        return acc;
-      }, {} as Record<string, string>);
+      userMap = users.reduce(
+        (acc, user) => {
+          acc[user.userId] = user.userName;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
     }
 
-
-    return { items: items.map((x) => {
-      return {
-        id: x.id,
-        name: x.name,
-        description: x.description,
-        algorithmName: x.algorithmName,
-        algorithmFramework: x.algorithmFramework,
-        isShared: Boolean(x.isShared),
-        versions: isPublic ?
-          x.versions.filter((x) => (x.sharedStatus === SharedStatus.SHARED)).map((y) => ({ id: y.id, path: y.path }))
-          : x.versions.map((y) => ({ id: y.id, path: y.privatePath })),
-        owner: x.owner,
-        clusterId: x.clusterId,
-        createTime: x.createTime ? x.createTime.toISOString() : undefined,
-        ownerName: userMap[x.owner] ?? x.owner,
-        versionsCount: x.versions.length,
-        updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
-        isPlatformOwned: x.isPlatformOwned,
-      }; }), count };
+    return {
+      items: items.map((x) => {
+        return {
+          id: x.id,
+          name: x.name,
+          description: x.description,
+          algorithmName: x.algorithmName,
+          algorithmFramework: x.algorithmFramework,
+          isShared: Boolean(x.isShared),
+          versions: isPublic
+            ? x.versions.filter((x) => x.sharedStatus === SharedStatus.SHARED).map((y) => ({ id: y.id, path: y.path }))
+            : x.versions.map((y) => ({ id: y.id, path: y.privatePath })),
+          owner: x.owner,
+          clusterId: x.clusterId,
+          createTime: x.createTime ? x.createTime.toISOString() : undefined,
+          ownerName: userMap[x.owner] ?? x.owner,
+          versionsCount: x.versions.length,
+          updateTime: x.updateTime ? x.updateTime.toISOString() : undefined,
+          isPlatformOwned: x.isPlatformOwned,
+        };
+      }),
+      count,
+    };
   });
 
 export const createModel = procedure
@@ -175,16 +178,18 @@ export const createModel = procedure
       summary: "Create a new model",
     },
   })
-  .input(z.object({
-    name: z.string(),
-    algorithmName: z.string().optional(),
-    algorithmFramework: z.enum(Framework).optional(),
-    description: z.string().optional(),
-    clusterId: z.string(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      name: z.string(),
+      algorithmName: z.string().optional(),
+      algorithmFramework: z.enum(Framework).optional(),
+      description: z.string().optional(),
+      clusterId: z.string(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.number())
-  .use(async ({ input:{ clusterId,name }, ctx, next }) => {
+  .use(async ({ input: { clusterId, name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -195,29 +200,35 @@ export const createModel = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          modelId:res.data as number,
-          modelName: name,
-        } },
-      OperationResult.SUCCESS);
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            modelId: res.data as number,
+            modelName: name,
+          },
+        },
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          clusterId,
-          modelName: name,
+          ...logInfo,
+          operationTypePayload: {
+            clusterId,
+            modelName: name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
   })
   .mutation(async ({ input, ctx: { user } }) => {
-
     const currentClusterIds = await getCurrentClusters(user.identityId);
     if (!clusterExist(input.clusterId, currentClusterIds)) {
       throw new TRPCError({
@@ -238,9 +249,12 @@ export const createModel = procedure
     }
 
     const em = await forkEntityManager();
-    const modelExist = await em.findOne(Model, isPlatformOwned
-      ? { name: input.name, isPlatformOwned: true }
-      : { name: input.name, owner: user.identityId, isPlatformOwned: false });
+    const modelExist = await em.findOne(
+      Model,
+      isPlatformOwned
+        ? { name: input.name, isPlatformOwned: true }
+        : { name: input.name, owner: user.identityId, isPlatformOwned: false },
+    );
     if (modelExist) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -262,16 +276,18 @@ export const updateModel = procedure
       summary: "update a model",
     },
   })
-  .input(z.object({
-    id: z.number(),
-    name: z.string(),
-    algorithmName: z.string().optional(),
-    algorithmFramework: z.enum(Framework).optional(),
-    description: z.string().optional(),
-    isPlatformOwned: z.boolean().optional(),
-  }))
+  .input(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      algorithmName: z.string().optional(),
+      algorithmFramework: z.enum(Framework).optional(),
+      description: z.string().optional(),
+      isPlatformOwned: z.boolean().optional(),
+    }),
+  )
   .output(z.number())
-  .use(async ({ input:{ id,name }, ctx, next }) => {
+  .use(async ({ input: { id, name }, ctx, next }) => {
     const res = await next({ ctx });
 
     const { user, req } = ctx;
@@ -282,23 +298,29 @@ export const updateModel = procedure
     };
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          modelId:id,
-          modelName:name,
+          ...logInfo,
+          operationTypePayload: {
+            modelId: id,
+            modelName: name,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          modelId:id,
-          modelName:name,
+          ...logInfo,
+          operationTypePayload: {
+            modelId: id,
+            modelName: name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -327,9 +349,10 @@ export const updateModel = procedure
       }
     }
 
-    const modelExist = await em.findOne(Model, isPlatformOwned
-      ? { name, isPlatformOwned: true }
-      : { name, owner: user.identityId, isPlatformOwned: false });
+    const modelExist = await em.findOne(
+      Model,
+      isPlatformOwned ? { name, isPlatformOwned: true } : { name, owner: user.identityId, isPlatformOwned: false },
+    );
 
     if (modelExist && modelExist !== model) {
       throw new TRPCError({
@@ -342,9 +365,8 @@ export const updateModel = procedure
       throw new TRPCError({ code: "NOT_FOUND", message: `Model ${input.id} not found` });
     }
 
-    if (!isPlatformOwned && (model.owner !== user.identityId)) {
-      const detailMessage =
-        `Model id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage = `Model id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -352,12 +374,10 @@ export const updateModel = procedure
       });
     }
 
-    const changingVersions = await em.find(ModelVersion, { model,
-      $or: [
-        { sharedStatus: SharedStatus.SHARING },
-        { sharedStatus: SharedStatus.UNSHARING },
-      ]},
-    );
+    const changingVersions = await em.find(ModelVersion, {
+      model,
+      $or: [{ sharedStatus: SharedStatus.SHARING }, { sharedStatus: SharedStatus.UNSHARING }],
+    });
     if (changingVersions.length > 0) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",
@@ -367,16 +387,19 @@ export const updateModel = procedure
 
     // 如果是已分享的模型且名称发生变化，则变更共享路径下的此模型名称为新名称
     if (model.isShared && name !== model.name && !isPlatformOwned) {
-
       const sharedVersions = await em.find(ModelVersion, { model, sharedStatus: SharedStatus.SHARED });
       const oldPath = dirname(dirname(sharedVersions[0].path));
       // 获取更新后的当前模型的共享路径名称
-      const newModelSharedPath = await driver.withFileDriver({
-        clusterId:model.clusterId,
-        user:user.identityId,
-      }, async (fileDriver) => {
-        return await fileDriver.getUpdatedSharedPath(name,oldPath);
-      }, logger);
+      const newModelSharedPath = await driver.withFileDriver(
+        {
+          clusterId: model.clusterId,
+          user: user.identityId,
+        },
+        async (fileDriver) => {
+          return await fileDriver.getUpdatedSharedPath(name, oldPath);
+        },
+        logger,
+      );
 
       // 更新已分享的版本的共享文件夹地址
       sharedVersions.map((v) => {
@@ -406,8 +429,7 @@ export const deleteModel = procedure
   })
   .input(z.object({ id: z.number(), isPlatformOwned: z.boolean().optional() }))
   .output(z.object({ success: z.boolean() }))
-  .use(async ({ input:{ id }, ctx, next }) => {
-
+  .use(async ({ input: { id }, ctx, next }) => {
     const { user, req } = ctx;
     const logInfo = {
       operatorUserId: user.identityId,
@@ -424,23 +446,29 @@ export const deleteModel = procedure
     const res = await next({ ctx });
 
     if (res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          modelId:id,
-          modelName:model.name,
+          ...logInfo,
+          operationTypePayload: {
+            modelId: id,
+            modelName: model.name,
+          },
         },
-      },
-      OperationResult.SUCCESS);
+        OperationResult.SUCCESS,
+      );
     }
 
     if (!res.ok) {
-      await callLog({ ...logInfo, operationTypePayload:
+      await callLog(
         {
-          modelId:id,
-          modelName:model.name,
+          ...logInfo,
+          operationTypePayload: {
+            modelId: id,
+            modelName: model.name,
+          },
         },
-      },
-      OperationResult.FAIL);
+        OperationResult.FAIL,
+      );
     }
 
     return res;
@@ -465,9 +493,8 @@ export const deleteModel = procedure
       }
     }
 
-    if (!isPlatformOwned && (model.owner !== user.identityId)) {
-      const detailMessage =
-        `Model id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
+    if (!isPlatformOwned && model.owner !== user.identityId) {
+      const detailMessage = `Model id:${input.id} is not owned by current user. currentUserId:${user.identityId}`;
       logger.error(detailMessage);
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -478,16 +505,18 @@ export const deleteModel = procedure
     const modelVersions = await em.find(ModelVersion, { model });
 
     const sharingVersions = modelVersions.filter(
-      (v) => (v.sharedStatus === SharedStatus.SHARING || v.sharedStatus === SharedStatus.UNSHARING));
+      (v) => v.sharedStatus === SharedStatus.SHARING || v.sharedStatus === SharedStatus.UNSHARING,
+    );
 
     // 有正在分享中或取消分享中的版本，则不可删除
     if (sharingVersions.length > 0) {
-      throw new TRPCError(
-        { code: "PRECONDITION_FAILED",
-          message: `There is a model version being shared or unshared of model ${input.id}` });
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: `There is a model version being shared or unshared of model ${input.id}`,
+      });
     }
 
-    const sharedVersions = modelVersions.filter((v) => (v.sharedStatus === SharedStatus.SHARED));
+    const sharedVersions = modelVersions.filter((v) => v.sharedStatus === SharedStatus.SHARED);
 
     // 获取此模型的共享的模型绝对路径
     if (!isPlatformOwned && sharedVersions.length > 0) {
@@ -497,14 +526,20 @@ export const deleteModel = procedure
       checkClusterAvailable(currentClusterIds, model.clusterId);
 
       const host = getClusterLoginNode(model.clusterId);
-      if (!host) { throw clusterNotFound(model.clusterId); }
+      if (!host) {
+        throw clusterNotFound(model.clusterId);
+      }
 
-      await driver.withFileDriver({
-        clusterId:model.clusterId,
-        user:user.identityId,
-      }, async (fileDriver) => {
-        await fileDriver.unShareFileOrDir(sharedModelPath);
-      }, logger);
+      await driver.withFileDriver(
+        {
+          clusterId: model.clusterId,
+          user: user.identityId,
+        },
+        async (fileDriver) => {
+          await fileDriver.unShareFileOrDir(sharedModelPath);
+        },
+        logger,
+      );
     }
 
     await em.removeAndFlush([...modelVersions, model]);

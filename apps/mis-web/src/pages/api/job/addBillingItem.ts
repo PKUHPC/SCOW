@@ -39,15 +39,18 @@ export const AddBillingItemSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(AddBillingItemSchema, async (req, res) => {
+export default /* #__PURE__*/ route(AddBillingItemSchema, async (req, res) => {
   const { tenant, amount, itemId, path, price, description } = req.body;
 
   const logInfo = {
     operatorUserId: DEFAULT_INIT_USER_ID,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: tenant ? OperationType.setTenantBilling : OperationType.setPlatformBilling,
-    operationTypePayload:{
-      tenantName: tenant, path, amount:"", price,
+    operationTypePayload: {
+      tenantName: tenant,
+      path,
+      amount: "",
+      price,
     },
   };
 
@@ -55,9 +58,10 @@ export default /* #__PURE__*/route(AddBillingItemSchema, async (req, res) => {
     // Platform admin can add to every tenant
     // only tenant admin can add to its own tenant
     // if tenant is undefined, no user's tenant === undefined so only platform admin can edit default price items
-    const auth = authenticate((u) =>
-      u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
-       || (u.tenant === tenant && u.tenantRoles.includes(TenantRole.TENANT_ADMIN)),
+    const auth = authenticate(
+      (u) =>
+        u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+        (u.tenant === tenant && u.tenantRoles.includes(TenantRole.TENANT_ADMIN)),
     );
     const info = await auth(req, res);
     if (info) {
@@ -75,16 +79,24 @@ export default /* #__PURE__*/route(AddBillingItemSchema, async (req, res) => {
   const client = getClient(JobServiceClient);
 
   return await asyncClientCall(client, "addBillingItem", {
-    tenantName: tenant, amountStrategy: amount, itemId, path, description, price,
+    tenantName: tenant,
+    amountStrategy: amount,
+    itemId,
+    path,
+    description,
+    price,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
     })
-    .catch(handlegRPCError({
-      [status.ALREADY_EXISTS]: () => ({ 409: { code: "ITEM_ID_EXISTS" } } as const),
-      [status.NOT_FOUND]: () => ({ 404: { code: "TENANT_NOT_FOUND" } } as const),
-    },
-    async () => await callLog(logInfo, OperationResult.FAIL),
-    ));
+    .catch(
+      handlegRPCError(
+        {
+          [status.ALREADY_EXISTS]: () => ({ 409: { code: "ITEM_ID_EXISTS" } }) as const,
+          [status.NOT_FOUND]: () => ({ 404: { code: "TENANT_NOT_FOUND" } }) as const,
+        },
+        async () => await callLog(logInfo, OperationResult.FAIL),
+      ),
+    );
 });

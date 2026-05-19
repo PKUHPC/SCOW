@@ -7,19 +7,28 @@ import { NavIcon } from "src/layouts/icon";
 import { z } from "zod";
 
 import {
-  AccountPartitionsIcon, CreateCustomMessageIcon, DefaultClustersIcon,
-  DefaultPartitionsIcon, MessageConfigIcon, NotificationIcon,
-  SendMessageIcon, SubscriptionIcon
+  AccountPartitionsIcon,
+  CreateCustomMessageIcon,
+  DefaultClustersIcon,
+  DefaultPartitionsIcon,
+  MessageConfigIcon,
+  NotificationIcon,
+  SendMessageIcon,
+  SubscriptionIcon,
 } from "./menuIcon";
 
 export const BaseNavItem = z.object({
-  path: z.string({ description: "目标路径。如果是外部链接，需要以 http:// 或 https:// 开头。如果是SCOW的路径，无需加base path" }),
+  path: z.string({
+    description: "目标路径。如果是外部链接，需要以 http:// 或 https:// 开头。如果是SCOW的路径，无需加base path",
+  }),
   clickToPath: z.string().optional(),
   text: z.string(),
-  icon: z.optional(z.object({
-    src: z.string(),
-    alt: z.string().optional(),
-  })),
+  icon: z.optional(
+    z.object({
+      src: z.string(),
+      alt: z.string().optional(),
+    }),
+  ),
   svgIcon: z.optional(z.string({ description: "映射本目录下的svg icon，icon可以随菜单变色" })),
   openInNewPage: z.boolean().optional(),
   hideIfNotActive: z.boolean().optional(),
@@ -30,23 +39,26 @@ export type NavItem = z.infer<typeof BaseNavItem> & {
 };
 
 export const NavItem = BaseNavItem.extend({
-  children: z.lazy(() => NavItem as NavItem).array().optional(),
+  children: z
+    .lazy(() => NavItem as NavItem)
+    .array()
+    .optional(),
 });
 
-export const rewriteNavigationsRoute = (from: "portal" | "mis" | "ai") => defineExtensionRoute({
-  path: `/${from}/rewriteNavigations`,
-  method: "POST" as const,
-  query: ExtensionRouteQuery,
-  body: z.object({
-    navs: z.array(NavItem) as z.ZodType<NavItem[]>,
-  }),
-  responses: {
-    200: z.object({
+export const rewriteNavigationsRoute = (from: "portal" | "mis" | "ai") =>
+  defineExtensionRoute({
+    path: `/${from}/rewriteNavigations`,
+    method: "POST" as const,
+    query: ExtensionRouteQuery,
+    body: z.object({
       navs: z.array(NavItem) as z.ZodType<NavItem[]>,
     }),
-  },
-});
-
+    responses: {
+      200: z.object({
+        navs: z.array(NavItem) as z.ZodType<NavItem[]>,
+      }),
+    },
+  });
 
 export const fromNavItemProps = (props: NavItemProps[]): NavItem[] => {
   return props.map((x) => ({
@@ -97,19 +109,23 @@ export const toNavItemProps = (
     if (item.svgIcon && svgIconMap[item.svgIcon]) {
       return svgIconMap[item.svgIcon];
     }
-    return (item.icon
-      ? <NavIcon src={item.icon.src} alt={item.icon.alt} />
-      : originalItemsMap.get(item.path)?.Icon
-    ) ?? LinkOutlined;
+    return (
+      (item.icon ? <NavIcon src={item.icon.src} alt={item.icon.alt} /> : originalItemsMap.get(item.path)?.Icon) ??
+      LinkOutlined
+    );
   };
 
   const convertPath = (returnedPath: string) => {
     // 如果这个路径是原始的导航栏中的一项，则路径不处理
-    if (originalItemsMap.has(returnedPath)) { return returnedPath; }
+    if (originalItemsMap.has(returnedPath)) {
+      return returnedPath;
+    }
 
     // 如果这个路径是一个正确的URL，则路径不处理
 
-    if (isUrl(returnedPath)) { return returnedPath; }
+    if (isUrl(returnedPath)) {
+      return returnedPath;
+    }
     const parts = ["/extensions"];
     if (extensionName) {
       parts.push(encodeURIComponent(extensionName));

@@ -17,10 +17,7 @@ interface FormFields {
 
 const p = prefix("page.admin.systemDebug.syncClusterAccountUser.");
 
-export const SetMaxSyncDurationTimeModal: React.FC<Props> = ({
-  onClose, reload, open, setFetching,
-}) => {
-
+export const SetMaxSyncDurationTimeModal: React.FC<Props> = ({ onClose, reload, open, setFetching }) => {
   const t = useI18nTranslateToString();
 
   const [form] = Form.useForm<FormFields>();
@@ -30,9 +27,10 @@ export const SetMaxSyncDurationTimeModal: React.FC<Props> = ({
     await form.validateFields();
     onClose();
     setFetching(true);
-    api.syncAccountUserInfo({
-      body: { maxSyncDurationMinutes: form.getFieldValue("maxSyncDurationMinutes") },
-    })
+    api
+      .syncAccountUserInfo({
+        body: { maxSyncDurationMinutes: form.getFieldValue("maxSyncDurationMinutes") },
+      })
       .httpError(409, () => {
         message.error(t(p("syncAlreadyStarted")));
       })
@@ -58,22 +56,11 @@ export const SetMaxSyncDurationTimeModal: React.FC<Props> = ({
         initialValues={{ maxSyncDurationMinutes: publicConfig.MAX_SYNC_DURATION_MINUTES }}
         layout="vertical"
       >
-        <Form.Item
-          name="maxSyncDurationMinutes"
-          label={t(p("maxSyncDurationMinutesModalLabel"))}
-          required
-        >
-          <InputNumber
-            min={1}
-            step={1}
-            precision={0}
-            addonAfter={t(p("minuteUnit"))}
-          />
+        <Form.Item name="maxSyncDurationMinutes" label={t(p("maxSyncDurationMinutesModalLabel"))} required>
+          <InputNumber min={1} step={1} precision={0} addonAfter={t(p("minuteUnit"))} />
         </Form.Item>
       </Form>
-
     </Modal>
-
   );
 };
 

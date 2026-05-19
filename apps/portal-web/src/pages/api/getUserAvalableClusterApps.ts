@@ -8,7 +8,6 @@ import { publicConfig, runtimeConfig } from "src/utils/config";
 import { route } from "src/utils/route";
 
 export const GetUserAvailableClusterAppsSchema = typeboxRouteSchema({
-
   method: "GET",
 
   // only set the query value when firstly used in getInitialProps
@@ -27,27 +26,28 @@ export const GetUserAvailableClusterAppsSchema = typeboxRouteSchema({
 });
 
 const auth = authenticate(() => true);
-export default route(GetUserAvailableClusterAppsSchema,
-  async (req, res) => {
-    const { userId, token } = req.query;
-    // when firstly used in getInitialProps, check the token
-    // when logged in, use auth()
-    const info = token ? await validateToken(token) : await auth(req, res);
-    if (!info) { return; }
+export default route(GetUserAvailableClusterAppsSchema, async (req, res) => {
+  const { userId, token } = req.query;
+  // when firstly used in getInitialProps, check the token
+  // when logged in, use auth()
+  const info = token ? await validateToken(token) : await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const reply = await libWebGetUserInfo(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+  const reply = await libWebGetUserInfo(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
 
-    const accountNames = reply?.affiliations.map((a) => (a.accountName));
-    const tenantName = reply?.tenantName;
+  const accountNames = reply?.affiliations.map((a) => a.accountName);
+  const tenantName = reply?.tenantName;
 
-    if (!accountNames || !tenantName || !runtimeConfig.SCOW_RESOURCE_CONFIG) {
-      return { 403: null };
-    }
-    const clusterIds = await getUserAssociatedClusterIds(accountNames, tenantName, runtimeConfig.SCOW_RESOURCE_CONFIG);
+  if (!accountNames || !tenantName || !runtimeConfig.SCOW_RESOURCE_CONFIG) {
+    return { 403: null };
+  }
+  const clusterIds = await getUserAssociatedClusterIds(accountNames, tenantName, runtimeConfig.SCOW_RESOURCE_CONFIG);
 
-    return {
-      200: {
-        clusterIds : clusterIds,
-      },
-    };
-  });
+  return {
+    200: {
+      clusterIds: clusterIds,
+    },
+  };
+});

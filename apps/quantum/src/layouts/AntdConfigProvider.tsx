@@ -1,7 +1,6 @@
 "use client";
 
 import "dayjs/locale/zh-cn";
-
 import { generate } from "@ant-design/colors";
 import { SYSTEM_VALID_LANGUAGES } from "@scow/config/build/i18n";
 import { PrimaryColor } from "@scow/config/build/ui";
@@ -27,35 +26,25 @@ type StyledThemeProviderProps = React.PropsWithChildren<{
   grayPalette: string[];
 }>;
 
-
 const StyledComponentsThemeProvider: React.FC<StyledThemeProviderProps> = ({ children, color, grayPalette }) => {
-
   const { token } = theme.useToken();
 
-  const primaryPalette = useMemo(
-    () => generate(color ?? token.colorPrimary),
-    [color, token.colorPrimary],
+  const primaryPalette = useMemo(() => generate(color ?? token.colorPrimary), [color, token.colorPrimary]);
+  const styledTheme = useMemo(
+    () => ({
+      token,
+      palette: {
+        primary: primaryPalette,
+        gray: grayPalette,
+      },
+    }),
+    [grayPalette, primaryPalette, token],
   );
-  const styledTheme = useMemo(() => ({
-    token,
-    palette: {
-      primary: primaryPalette,
-      gray: grayPalette,
-    },
-  }), [grayPalette, primaryPalette, token]);
 
-  return (
-    <ThemeProvider theme={styledTheme}>
-      {children}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={styledTheme}>{children}</ThemeProvider>;
 };
 
-
-
-
 export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) => {
-
   const { dark } = useDarkMode();
   const { defaultColor, darkModeColor = defaultColor } = primaryColor; // 解构时设置默认值
   const currentPrimaryColor = dark ? darkModeColor : defaultColor;
@@ -68,8 +57,10 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
       locale={getAntdLocale(currentLangId)}
       theme={{
         token: {
-          colorPrimary: currentPrimaryColor, colorInfo: currentPrimaryColor,
-          colorText: dark ? "#ffffff" : "#434343", fontFamily: "MiSans, sans-serif",
+          colorPrimary: currentPrimaryColor,
+          colorInfo: currentPrimaryColor,
+          colorText: dark ? "#ffffff" : "#434343",
+          fontFamily: "MiSans, sans-serif",
         },
         components: {
           Menu: {
@@ -78,13 +69,10 @@ export const AntdConfigProvider: React.FC<Props> = ({ children, primaryColor }) 
             subMenuItemBg: dark ? "#211112" : "#ffffff",
           },
         },
-        algorithm: dark ? theme.darkAlgorithm : undefined
+        algorithm: dark ? theme.darkAlgorithm : undefined,
       }}
     >
-      <StyledComponentsThemeProvider
-        color={currentPrimaryColor}
-        grayPalette={grayPalette}
-      >
+      <StyledComponentsThemeProvider color={currentPrimaryColor} grayPalette={grayPalette}>
         <App>
           <FloatButtons languageId={currentLangId} />
           {children}

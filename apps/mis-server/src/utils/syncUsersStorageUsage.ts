@@ -13,18 +13,25 @@ export interface SyncError {
 }
 
 export async function syncUsersStorageUsage(
-  em: SqlEntityManager<MySqlDriver>, logger: Logger,
-  cluster?: string, path?: string, tenant?: string,
+  em: SqlEntityManager<MySqlDriver>,
+  logger: Logger,
+  cluster?: string,
+  path?: string,
+  tenant?: string,
 ): Promise<SyncError[]> {
   logger.info("Starting to sync storage usage with params: cluster=%s, path=%s, tenant=%s", cluster, path, tenant);
   const errors: SyncError[] = [];
 
   try {
     // 1. Get all normal users' userIds
-    const users = await em.find(User, {
-      state: UserState.NORMAL,
-      ...tenant ? { tenant: { name: tenant } } : {},
-    }, { fields: ["userId"]});
+    const users = await em.find(
+      User,
+      {
+        state: UserState.NORMAL,
+        ...(tenant ? { tenant: { name: tenant } } : {}),
+      },
+      { fields: ["userId"] },
+    );
 
     const userIds = users.map((user) => user.userId);
     const totalUsers = userIds.length;
@@ -63,14 +70,19 @@ export async function syncUsersStorageUsage(
         // Process users in batches (10 users per batch)
         for (let i = 0; i < totalUsers; i += 10) {
           const userIdsSlice = userIds.slice(i, i + 10);
-          logger.debug("Processing batch %d-%d: users %s", i + 1,
-            Math.min(i + 10, totalUsers), userIdsSlice.join(", "));
+          logger.debug(
+            "Processing batch %d-%d: users %s",
+            i + 1,
+            Math.min(i + 10, totalUsers),
+            userIdsSlice.join(", "),
+          );
 
           try {
             const scowdClient = getScowdClient(cluster);
             // Query storage quota information
             const { userQuotaInfos } = await scowdClient.storageQuota.getUsersStorageQuota({
-              userIds: userIdsSlice, path,
+              userIds: userIdsSlice,
+              path,
             });
 
             logger.debug("Retrieved quota info for %d users from scowd", userQuotaInfos.length);
@@ -79,10 +91,15 @@ export async function syncUsersStorageUsage(
             for (const userQuotaInfo of userQuotaInfos) {
               await em.transactional(async (txEm) => {
                 // 查找现有配额记录
-                const existingQuota = await txEm.findOne(TenantUserStorageQuota, {
-                  cluster, user: { userId: userQuotaInfo.userId },
-                  path,
-                }, { lockMode: LockMode.PESSIMISTIC_WRITE });
+                const existingQuota = await txEm.findOne(
+                  TenantUserStorageQuota,
+                  {
+                    cluster,
+                    user: { userId: userQuotaInfo.userId },
+                    path,
+                  },
+                  { lockMode: LockMode.PESSIMISTIC_WRITE },
+                );
 
                 if (existingQuota) {
                   // 更新现有记录
@@ -90,14 +107,20 @@ export async function syncUsersStorageUsage(
                   existingQuota.usage = userQuotaInfo.usedStorageBytes;
                   txEm.persist(existingQuota);
                   updatedUsers++;
-                  logger.debug("Updated user %s usage: %d -> %d bytes",
-                    userQuotaInfo.userId, oldUsage, userQuotaInfo.usedStorageBytes);
+                  logger.debug(
+                    "Updated user %s usage: %d -> %d bytes",
+                    userQuotaInfo.userId,
+                    oldUsage,
+                    userQuotaInfo.usedStorageBytes,
+                  );
                 } else {
                   // 创建新记录
                   const user = await txEm.findOne(User, { userId: userQuotaInfo.userId });
                   if (user) {
                     const newQuota = new TenantUserStorageQuota({
-                      user, cluster, path,
+                      user,
+                      cluster,
+                      path,
                       usage: userQuotaInfo.usedStorageBytes,
                     });
                     txEm.persist(newQuota);
@@ -112,27 +135,38 @@ export async function syncUsersStorageUsage(
 
             processedUsers += userIdsSlice.length;
             logger.debug("Successfully processed batch, total processed: %d/%d users", processedUsers, totalUsers);
-
           } catch (error) {
-            logger.error("Error syncing storage usage for cluster %s, path %s, userIds: %s, error: %s",
-              cluster, path, userIdsSlice.join(", "), error);
+            logger.error(
+              "Error syncing storage usage for cluster %s, path %s, userIds: %s, error: %s",
+              cluster,
+              path,
+              userIdsSlice.join(", "),
+              error,
+            );
             userIdsSlice.forEach((userId) => {
               errors.push({
-                cluster, path, userId,
+                cluster,
+                path,
+                userId,
               });
             });
           }
         }
 
-        logger.info("Completed processing path %s on cluster %s: processed=%d, updated=%d, created=%d users",
-          path, cluster, processedUsers, updatedUsers, createdUsers);
+        logger.info(
+          "Completed processing path %s on cluster %s: processed=%d, updated=%d, created=%d users",
+          path,
+          cluster,
+          processedUsers,
+          updatedUsers,
+          createdUsers,
+        );
       }
     }
 
     logger.info("Storage usage sync completed. Total errors: %d", errors.length);
     if (errors.length > 0) {
-      logger.warn("Sync errors occurred for: %s",
-        errors.map((e) => `${e.userId}@${e.cluster}:${e.path}`).join(", "));
+      logger.warn("Sync errors occurred for: %s", errors.map((e) => `${e.userId}@${e.cluster}:${e.path}`).join(", "));
     }
 
     return errors;

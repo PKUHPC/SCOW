@@ -13,7 +13,6 @@ import { route } from "src/utils/route";
 import { handlegRPCError, parseIp } from "src/utils/server";
 
 export const EditUserProfileSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -40,25 +39,26 @@ export const EditUserProfileSchema = typeboxRouteSchema({
   },
 });
 
-
-export default /* #__PURE__*/route(EditUserProfileSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(EditUserProfileSchema, async (req, res) => {
   const { identityId, tenantName, email, phone, adminComment, organization } = req.body;
 
-  const auth = authenticate((info) =>
-    info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-      (info.platformRoles.includes(TenantRole.TENANT_ADMIN) && (tenantName === info.tenant)),
+  const auth = authenticate(
+    (info) =>
+      info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
+      (info.platformRoles.includes(TenantRole.TENANT_ADMIN) && tenantName === info.tenant),
   );
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const logInfo = {
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.editUserProfile,
-    operationTypePayload:{
+    operationTypePayload: {
       userId: identityId,
     },
   };
@@ -66,19 +66,25 @@ export default /* #__PURE__*/route(EditUserProfileSchema, async (req, res) => {
   const client = getClient(UserServiceClient);
 
   return await asyncClientCall(client, "changeUserProfile", {
-    userId: identityId, email, phone, adminComment, organization,
+    userId: identityId,
+    email,
+    phone,
+    adminComment,
+    organization,
   })
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
-    }).catch((err) => {
+    })
+    .catch((err) => {
       console.log(err);
       throw err;
     })
-    .catch(handlegRPCError({
-      [Status.NOT_FOUND]: () => ({ 404: null }),
-      [Status.UNKNOWN]: (e) => ({ 500: { message: e.message } }),
-      [Status.UNIMPLEMENTED]: () => ({ 501: null }),
-    }));
-
+    .catch(
+      handlegRPCError({
+        [Status.NOT_FOUND]: () => ({ 404: null }),
+        [Status.UNKNOWN]: (e) => ({ 500: { message: e.message } }),
+        [Status.UNIMPLEMENTED]: () => ({ 501: null }),
+      }),
+    );
 });

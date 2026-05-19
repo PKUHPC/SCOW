@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { JobServiceClient } from "@scow/protos/build/portal/job";
@@ -55,11 +43,9 @@ export const RunningJob = Type.Object({
 export type RunningJob = Static<typeof RunningJob>;
 
 export const GetRunningJobsSchema = typeboxRouteSchema({
-
   method: "GET",
 
   query: Type.Object({
-
     userId: Type.String(),
 
     cluster: Type.String(),
@@ -71,32 +57,36 @@ export const GetRunningJobsSchema = typeboxRouteSchema({
     }),
 
     403: Type.Null(),
-
   },
 });
 
 const auth = authenticate(() => true);
 
 export default route(GetRunningJobsSchema, async (req, res) => {
-
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, userId } = req.query;
 
   const client = getClient(JobServiceClient);
 
   return asyncUnaryCall(client, "listRunningJobs", {
-    cluster, userId,
-  }).then(({ results }) => ({ 200: { results: results.map((job) => ({
-    ...job,
-    cpusAlloc: job.cpusAlloc ?? 0,
-    gpusAlloc: job.gpusAlloc ?? 0,
-    nodesAlloc: job.nodesAlloc ?? 0,
-    memReq: job.memReq,
-    memAlloc: job.memAlloc ?? 0,
-    submitTime: job.submissionTime,
-  })) } }));
+    cluster,
+    userId,
+  }).then(({ results }) => ({
+    200: {
+      results: results.map((job) => ({
+        ...job,
+        cpusAlloc: job.cpusAlloc ?? 0,
+        gpusAlloc: job.gpusAlloc ?? 0,
+        nodesAlloc: job.nodesAlloc ?? 0,
+        memReq: job.memReq,
+        memAlloc: job.memAlloc ?? 0,
+        submitTime: job.submissionTime,
+      })),
+    },
+  }));
 });

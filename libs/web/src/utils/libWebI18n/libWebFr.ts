@@ -67,7 +67,8 @@ export default {
   addQuickEntry: "Ajouter des liens",
   cancel: "Annuler",
   notExist: "N'existe pas",
-  clusterNotAvailable: "Le cluster que vous avez actuellement consulté est indisponible ou aucun cluster n'est disponible. Veuillez réessayer plus tard ou contacter l'administrateur.",
+  clusterNotAvailable:
+    "Le cluster que vous avez actuellement consulté est indisponible ou aucun cluster n'est disponible. Veuillez réessayer plus tard ou contacter l'administrateur.",
   alreadyExist: "Le lien existe déjà",
   cannotBeEmpty: "Le lien ne peut pas être vide",
   exceedMaxSize: "Jusqu'à 10 raccourcis peuvent être ajoutés",

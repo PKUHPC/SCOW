@@ -1,6 +1,9 @@
 import { moneyToNumber } from "@scow/lib-decimal";
-import { compareNullableDateTime, compareNullableNumber,
-  compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import {
+  compareNullableDateTime,
+  compareNullableNumber,
+  compareNullableString,
+} from "@scow/lib-web/build/utils/compareNullableValue";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { Money } from "@scow/protos/build/common/money";
@@ -23,30 +26,23 @@ const pCommon = prefix("common.");
 
 export const AllTenantsTable: React.FC<Props> = ({ refreshToken }) => {
   const promiseFn = useCallback(async () => {
-    return await api.getAllTenants({}); }, []);
+    return await api.getAllTenants({});
+  }, []);
   const { data, isLoading, reload } = useAsync({ promiseFn, watch: refreshToken });
 
   return (
     <div>
-      <TenantInfoTable
-        data={data}
-        isLoading={isLoading}
-        reload={reload}
-      />
+      <TenantInfoTable data={data} isLoading={isLoading} reload={reload} />
     </div>
   );
 };
 interface TenantInfoTableProps {
-  data: Static<typeof GetAllTenantsSchema["responses"]["200"]> | undefined;
+  data: Static<(typeof GetAllTenantsSchema)["responses"]["200"]> | undefined;
   isLoading: boolean;
   reload: () => void;
 }
 
-
-const TenantInfoTable: React.FC<TenantInfoTableProps> = ({
-  data, isLoading,
-}) => {
-
+const TenantInfoTable: React.FC<TenantInfoTableProps> = ({ data, isLoading }) => {
   const t = useI18nTranslateToString();
 
   const columns: ColumnsType<PlatformTenantsInfo> = [
@@ -70,9 +66,11 @@ const TenantInfoTable: React.FC<TenantInfoTableProps> = ({
       dataIndex: "balance",
       title: t(pCommon("balance")),
       render: (balance: Money) => moneyToString(balance),
-      sorter: (a, b) => compareNullableNumber(a.balance ? moneyToNumber(a.balance) : undefined,
-        b.balance ? moneyToNumber(b.balance) : undefined),
-
+      sorter: (a, b) =>
+        compareNullableNumber(
+          a.balance ? moneyToNumber(a.balance) : undefined,
+          b.balance ? moneyToNumber(b.balance) : undefined,
+        ),
     },
     {
       dataIndex: "createTime",
@@ -96,4 +94,3 @@ const TenantInfoTable: React.FC<TenantInfoTableProps> = ({
     />
   );
 };
-

@@ -1,7 +1,8 @@
+import type { Cluster } from "src/utils/cluster";
+
 import { FormInstance } from "antd";
 import dayjs from "dayjs";
 import React, { useCallback, useMemo } from "react";
-import type { Cluster } from "src/utils/cluster";
 
 // 和AdminJobTable.tsx中的FilterForm保持一致
 export interface FilterForm {
@@ -75,10 +76,7 @@ const createDebounce = (delay: number) => {
 };
 
 // 自定义Hook, 用于处理作业ID输入框的事件
-export const useJobIdsInput = (
-  form: FormInstance<FilterForm>,
-  errorMessage: string,
-) => {
+export const useJobIdsInput = (form: FormInstance<FilterForm>, errorMessage: string) => {
   const debounce = useMemo(() => createDebounce(300), []);
 
   const handleCompositionEnd = useCallback(
@@ -89,10 +87,12 @@ export const useJobIdsInput = (
       if (filtered !== value) {
         form.setFieldValue("jobIds", filtered);
         // 清除错误信息
-        form.setFields([{
-          name: "jobIds",
-          errors: [],
-        }]);
+        form.setFields([
+          {
+            name: "jobIds",
+            errors: [],
+          },
+        ]);
       }
     },
     [form],
@@ -112,15 +112,19 @@ export const useJobIdsInput = (
       // 防抖处理错误提示
       debounce(() => {
         if (hasIllegalChars && value !== "") {
-          form.setFields([{
-            name: "jobIds",
-            errors: [errorMessage],
-          }]);
+          form.setFields([
+            {
+              name: "jobIds",
+              errors: [errorMessage],
+            },
+          ]);
         } else {
-          form.setFields([{
-            name: "jobIds",
-            errors: [],
-          }]);
+          form.setFields([
+            {
+              name: "jobIds",
+              errors: [],
+            },
+          ]);
         }
       });
     },
@@ -132,15 +136,19 @@ export const useJobIdsInput = (
       const value = e.currentTarget.value;
       try {
         await validateJobIds(value);
-        form.setFields([{
-          name: "jobIds",
-          errors: [],
-        }]);
+        form.setFields([
+          {
+            name: "jobIds",
+            errors: [],
+          },
+        ]);
       } catch {
-        form.setFields([{
-          name: "jobIds",
-          errors: [errorMessage],
-        }]);
+        form.setFields([
+          {
+            name: "jobIds",
+            errors: [errorMessage],
+          },
+        ]);
       }
     },
     [form, errorMessage],

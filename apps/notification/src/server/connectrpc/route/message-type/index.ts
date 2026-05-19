@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { Code, ConnectError, ConnectRouter } from "@connectrpc/connect";
 import { MessageTypeService } from "@scow/notification-protos/build/message_type_pb";
 import { MessageTypeInfo } from "src/models/message-type";
@@ -24,14 +12,10 @@ export default (router: ConnectRouter) => {
   router.service(MessageTypeService, {
     // 数据来源于两个部分，适合做前端分页，数据量也不会太大
     async listMessageTypes(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to get message types.`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to get message types.`, Code.PermissionDenied);
       }
 
       const { type, category } = req;
@@ -51,72 +35,72 @@ export default (router: ConnectRouter) => {
 
       const [customMessageTypes, customTypesCount] = await em.findAndCount(CustomMessageType, queryFilters);
 
-      messageTypes.push(...customMessageTypes.map((customType) => ({
-        ...customType,
-      })));
+      messageTypes.push(
+        ...customMessageTypes.map((customType) => ({
+          ...customType,
+        })),
+      );
 
       return {
         totalCount: internalMessageTypes
-          ? BigInt(customTypesCount + internalMessageTypes.length) : BigInt(customTypesCount),
+          ? BigInt(customTypesCount + internalMessageTypes.length)
+          : BigInt(customTypesCount),
         messageTypes,
       };
     },
 
     async createCustomMessageType(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to create message type.`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to create message type.`, Code.PermissionDenied);
       }
 
       const { type, category } = req;
 
-      const { titleTemplate, contentTemplate, categoryTemplate }
-        = ensureNotUndefined(req, ["titleTemplate", "contentTemplate", "categoryTemplate"]);
+      const { titleTemplate, contentTemplate, categoryTemplate } = ensureNotUndefined(req, [
+        "titleTemplate",
+        "contentTemplate",
+        "categoryTemplate",
+      ]);
 
       const em = await forkEntityManager();
 
       // 查看类型是否已存在
       const messageType = await checkMessageTypeExist(em, type);
       if (messageType) {
-        throw new ConnectError(
-          `Message type: ${type} already exists.`,
-          Code.AlreadyExists,
-        );
+        throw new ConnectError(`Message type: ${type} already exists.`, Code.AlreadyExists);
       }
 
       const newMessageType = new CustomMessageType({
-        type, titleTemplate, contentTemplate, category, categoryTemplate });
+        type,
+        titleTemplate,
+        contentTemplate,
+        category,
+        categoryTemplate,
+      });
       await em.persistAndFlush(newMessageType);
 
       return {};
     },
 
     async editCustomMessageType(req, context) {
-
       const user = await checkAuth(context);
 
       if (!user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)) {
-        throw new ConnectError(
-          `User ${user.identityId} unable to create message type.`,
-          Code.PermissionDenied,
-        );
+        throw new ConnectError(`User ${user.identityId} unable to create message type.`, Code.PermissionDenied);
       }
 
       const { type, category } = req;
 
-      const { titleTemplate, contentTemplate, categoryTemplate }
-        = ensureNotUndefined(req, ["titleTemplate", "contentTemplate", "categoryTemplate"]);
+      const { titleTemplate, contentTemplate, categoryTemplate } = ensureNotUndefined(req, [
+        "titleTemplate",
+        "contentTemplate",
+        "categoryTemplate",
+      ]);
 
       if (findInInternalMessageTypesMap(type).length !== 0) {
-        throw new ConnectError(
-          "Built-in message types cannot be modified.",
-          Code.InvalidArgument,
-        );
+        throw new ConnectError("Built-in message types cannot be modified.", Code.InvalidArgument);
       }
 
       const em = await forkEntityManager();
@@ -124,10 +108,7 @@ export default (router: ConnectRouter) => {
       const messageType = await em.findOne(CustomMessageType, { type });
 
       if (!messageType) {
-        throw new ConnectError(
-          `Message type: ${type} doesn't exist`,
-          Code.InvalidArgument,
-        );
+        throw new ConnectError(`Message type: ${type} doesn't exist`, Code.InvalidArgument);
       }
 
       messageType.titleTemplate = titleTemplate;

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { typeboxRouteSchema } from "@ddadaal/next-typed-api-routes-runtime";
 import { asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { status } from "@grpc/grpc-js";
@@ -39,7 +27,6 @@ export const ConnectToAppSchema = typeboxRouteSchema({
   }),
 
   responses: {
-
     200: Type.Intersect([
       Type.Object({
         host: Type.String(),
@@ -50,10 +37,7 @@ export const ConnectToAppSchema = typeboxRouteSchema({
         Type.Object({
           type: Type.Literal("web"),
           connect: AppConnectProps,
-          proxyType: Type.Union([
-            Type.Literal("relative"),
-            Type.Literal("absolute"),
-          ]),
+          proxyType: Type.Union([Type.Literal("relative"), Type.Literal("absolute")]),
           customFormData: Type.Optional(Type.Record(Type.String(), Type.String())),
         }),
         Type.Object({ type: Type.Literal("vnc") }),
@@ -70,84 +54,85 @@ export const ConnectToAppSchema = typeboxRouteSchema({
 
     // the session cannot be connected
     409: Type.Object({ code: Type.Literal("SESSION_NOT_AVAILABLE") }),
-
   },
 });
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(ConnectToAppSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(ConnectToAppSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, sessionId, jobId } = req.body;
 
   const client = getClient(AppServiceClient);
 
   return await asyncUnaryCall(client, "connectToApp", {
-    userId: info.identityId, cluster, sessionId, jobId,
-  }).then(async (x) => {
-    if (x.appProps?.$case === "web") {
-      const connect: AppConnectProps = {
-        method: x.appProps.web.method,
-        path: x.appProps.web.path,
-        query: x.appProps.web.query ?? {},
-        formData: x.appProps.web.formData ?? {},
-      };
+    userId: info.identityId,
+    cluster,
+    sessionId,
+    jobId,
+  }).then(
+    async (x) => {
+      if (x.appProps?.$case === "web") {
+        const connect: AppConnectProps = {
+          method: x.appProps.web.method,
+          path: x.appProps.web.path,
+          query: x.appProps.web.query ?? {},
+          formData: x.appProps.web.formData ?? {},
+        };
 
-      return {
-        200: {
-          host: x.host,
-          port: x.port,
-          password: x.password,
-          type: "web" as const,
+        return {
+          200: {
+            host: x.host,
+            port: x.port,
+            password: x.password,
+            type: "web" as const,
 
-          connect: connect,
+            connect: connect,
 
-          proxyType: x.appProps.web.proxyType === WebAppProps_ProxyType.RELATIVE
-            ? "relative" as const
-            : "absolute" as const,
-          customFormData: x.appProps.web.customFormData,
-        },
-      };
-    }
-    else if (x.appProps?.$case === "shadowDesk") {
-      const connect: AppConnectProps = {
-        method: x.appProps.shadowDesk.method,
-        path: x.appProps.shadowDesk.path,
-        query: x.appProps.shadowDesk.query ?? {},
-        formData: x.appProps.shadowDesk.formData ?? {},
-      };
+            proxyType:
+              x.appProps.web.proxyType === WebAppProps_ProxyType.RELATIVE
+                ? ("relative" as const)
+                : ("absolute" as const),
+            customFormData: x.appProps.web.customFormData,
+          },
+        };
+      } else if (x.appProps?.$case === "shadowDesk") {
+        const connect: AppConnectProps = {
+          method: x.appProps.shadowDesk.method,
+          path: x.appProps.shadowDesk.path,
+          query: x.appProps.shadowDesk.query ?? {},
+          formData: x.appProps.shadowDesk.formData ?? {},
+        };
 
-      return {
-        200: {
-          host: x.host,
-          port: x.port,
-          password: x.password,
-          type: "shadowDesk" as const,
-          connect: connect,
-          customFormData: x.appProps.shadowDesk.customFormData,
-        },
-      };
-    }
-    else {
-      return {
-        200: {
-          host: x.host,
-          port: x.port,
-          password: x.password,
-          type: "vnc" as const,
-        },
-      };
-    }
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "SESSION_ID_NOT_FOUND" } } as const),
-    [status.UNAVAILABLE]: () => ({ 409: { code: "SESSION_NOT_AVAILABLE" } } as const),
-  }));
-
-
+        return {
+          200: {
+            host: x.host,
+            port: x.port,
+            password: x.password,
+            type: "shadowDesk" as const,
+            connect: connect,
+            customFormData: x.appProps.shadowDesk.customFormData,
+          },
+        };
+      } else {
+        return {
+          200: {
+            host: x.host,
+            port: x.port,
+            password: x.password,
+            type: "vnc" as const,
+          },
+        };
+      }
+    },
+    handlegRPCError({
+      [status.NOT_FOUND]: () => ({ 404: { code: "SESSION_ID_NOT_FOUND" } }) as const,
+      [status.UNAVAILABLE]: () => ({ 409: { code: "SESSION_NOT_AVAILABLE" } }) as const,
+    }),
+  );
 });
-
-

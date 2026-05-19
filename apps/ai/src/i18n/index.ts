@@ -14,7 +14,8 @@ const ru = () => import("./ru").then((x) => x.default);
 type LangType = Awaited<ReturnType<typeof zh_cn>>;
 
 export const languages = languageDictionary({
-  zh_cn, en,
+  zh_cn,
+  en,
 });
 
 export const languageInfo = {

@@ -61,10 +61,10 @@ export async function getShadowDeskList(cluster: string) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "timestamp": String(timestamp),
-      "sign": shadowDeskSign,
-      "appId": appId,
-      "requestId": requestId,
+      timestamp: String(timestamp),
+      sign: shadowDeskSign,
+      appId: appId,
+      requestId: requestId,
     },
     body: JSON.stringify({
       page: 1,
@@ -84,10 +84,10 @@ export async function deleteShadowDesk(cluster: string, desktopName: string): Pr
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "timestamp": String(timestamp),
-      "sign": shadowDeskSign,
-      "appId": appId,
-      "requestId": requestId,
+      timestamp: String(timestamp),
+      sign: shadowDeskSign,
+      appId: appId,
+      requestId: requestId,
     },
     body: JSON.stringify({
       desktop_name: desktopName,
@@ -124,10 +124,10 @@ export async function createShadowDesk(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "timestamp": String(timestamp),
-      "sign": shadowDeskSign,
-      "appId": appId,
-      "requestId": requestId,
+      timestamp: String(timestamp),
+      sign: shadowDeskSign,
+      appId: appId,
+      requestId: requestId,
     },
     body: JSON.stringify({
       desktop_name: desktopName,
@@ -149,10 +149,10 @@ export async function connectToShadowDesk(cluster: string, desktopName: string):
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "timestamp": String(timestamp),
-      "sign": shadowDeskSign,
-      "appId": appId,
-      "requestId": requestId,
+      timestamp: String(timestamp),
+      sign: shadowDeskSign,
+      appId: appId,
+      requestId: requestId,
     },
     body: JSON.stringify({
       desktop_name: desktopName,
@@ -171,10 +171,10 @@ export async function getShadowDeskStatus(cluster: string, desktopName: string):
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "timestamp": String(timestamp),
-      "sign": shadowDeskSign,
-      "appId": appId,
-      "requestId": requestId,
+      timestamp: String(timestamp),
+      sign: shadowDeskSign,
+      appId: appId,
+      requestId: requestId,
     },
     body: JSON.stringify({
       desktop_name: desktopName,

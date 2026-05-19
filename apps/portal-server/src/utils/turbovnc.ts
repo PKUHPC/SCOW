@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { getClusterConfigs } from "@scow/config/build/cluster";
 import { getPortalConfig } from "@scow/config/build/portal";
 import { executeAsUser, loggedExec } from "@scow/lib-ssh";
@@ -19,18 +7,14 @@ import { parseIp } from "src/utils/proxy";
 import { Logger } from "ts-log";
 
 export function getTurboVNCPath(cluster: string) {
-
   const commonTurboVNCPath = getPortalConfig().turboVNCPath;
 
   const clusterTurboVNCPath = getClusterConfigs(undefined, undefined, ["hpc"])[cluster].turboVNCPath;
 
-
   return clusterTurboVNCPath || commonTurboVNCPath;
-
 }
 
 export function getTurboVNCBinPath(cluster: string, cmd: string) {
-
   const turboVNCPath = getTurboVNCPath(cluster);
 
   return join(turboVNCPath, "bin", cmd);
@@ -62,7 +46,6 @@ export function parseOtp(stderr: string): string {
 }
 
 export function parseDisplayId(stdout: string): number {
-
   // Desktop 'TurboVNC: t001:2 (2001213077)' started on display t001:2
   // Desktop 'TurboVNC: cn1:21 (demo_admin)' started on display cn1:21
   const regex = /^Desktop '.*' started on display .*:(\d+)$/;
@@ -71,7 +54,9 @@ export function parseDisplayId(stdout: string): number {
 
   for (const line of lines) {
     const matches = regex.exec(line);
-    if (!matches) { continue; }
+    if (!matches) {
+      continue;
+    }
 
     return +matches[1];
   }
@@ -79,7 +64,6 @@ export function parseDisplayId(stdout: string): number {
   // logger.error("Error parsing display id from %s", stdout);
   throw new Error("Error parsing display id");
 }
-
 
 export function displayIdToPort(displayId: number): number {
   return DISPLAY_ID_PORT_DELTA + displayId;
@@ -99,9 +83,12 @@ export function portToDisplayId(port: number): number {
  * @returns new OTP
  */
 export const refreshPassword = async (
-  ssh: NodeSSH, cluster: string, runAsUserId: string | null, logger: Logger, displayId: number,
+  ssh: NodeSSH,
+  cluster: string,
+  runAsUserId: string | null,
+  logger: Logger,
+  displayId: number,
 ) => {
-
   const params = ["-o", "-display", ":" + displayId];
 
   const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
@@ -124,16 +111,19 @@ export const refreshPassword = async (
  * @returns new OTP and compute node IP
  */
 export const refreshPasswordByProxyGateway = async (
-  proxyGatewaySsh: NodeSSH, cluster: string, computeNode: string, user: string, logger: Logger, displayId: number,
+  proxyGatewaySsh: NodeSSH,
+  cluster: string,
+  computeNode: string,
+  user: string,
+  logger: Logger,
+  displayId: number,
 ) => {
-
   const vncPasswdPath = getTurboVNCBinPath(cluster, "vncpasswd");
   const params = [computeNode, "sudo", "-u", user, "-s", vncPasswdPath, "-o", "-display", ":" + displayId];
-  const [passwordResp, ipResp] =
-    await Promise.all([
-      loggedExec(proxyGatewaySsh, logger, true, "ssh", [...params]),
-      loggedExec(proxyGatewaySsh, logger, true, "ping", ["-c 1", "-W 1", computeNode]),
-    ]);
+  const [passwordResp, ipResp] = await Promise.all([
+    loggedExec(proxyGatewaySsh, logger, true, "ssh", [...params]),
+    loggedExec(proxyGatewaySsh, logger, true, "ping", ["-c 1", "-W 1", computeNode]),
+  ]);
   const ip = parseIp(ipResp.stdout);
   const password = parseOtp(passwordResp.stderr);
   return { ip, password };

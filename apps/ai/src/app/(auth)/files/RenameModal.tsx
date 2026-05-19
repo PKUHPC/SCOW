@@ -43,7 +43,8 @@ export const RenameModal: React.FC<Props> = ({ open, onClose, path, reload, clus
     mutation.mutate({
       op: "move",
       clusterId: cluster.id,
-      fromPath: path, toPath: join(dirname(path), newFileName),
+      fromPath: path,
+      toPath: join(dirname(path), newFileName),
     });
   };
 

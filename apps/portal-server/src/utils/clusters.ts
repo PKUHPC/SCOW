@@ -7,8 +7,10 @@ import {
   SchedulerAdapterClient,
 } from "@scow/lib-scheduler-adapter";
 import { scowErrorMetadata } from "@scow/lib-server/build/error";
-import { libCheckActivatedClusters,
-  libGetCurrentActivatedClusters } from "@scow/lib-server/build/misCommon/clustersActivation";
+import {
+  libCheckActivatedClusters,
+  libGetCurrentActivatedClusters,
+} from "@scow/lib-server/build/misCommon/clustersActivation";
 import { testRootUserSshLogin } from "@scow/lib-ssh";
 import { configClusters } from "src/config/clusters";
 import { commonConfig } from "src/config/common";
@@ -22,16 +24,18 @@ import { getScowdClient } from "./scowd";
 export const certificates = createAdapterCertificates(config);
 
 const clusters = configClusters;
-const adapterClientForClusters = Object.entries(clusters).reduce((prev, [cluster, c]) => {
-  const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
-  prev[cluster] = client;
-  return prev;
-}, {} as Record<string, SchedulerAdapterClient>);
+const adapterClientForClusters = Object.entries(clusters).reduce(
+  (prev, [cluster, c]) => {
+    const client = getSchedulerAdapterClient(c.adapterUrl, certificates);
+    prev[cluster] = client;
+    return prev;
+  },
+  {} as Record<string, SchedulerAdapterClient>,
+);
 
 export const getAdapterClient = (cluster: string) => {
   return adapterClientForClusters[cluster];
 };
-
 
 type CallOnOne = <T>(
   cluster: string,
@@ -42,7 +46,6 @@ type CallOnOne = <T>(
 export const ADAPTER_CALL_ON_ONE_ERROR = "ADAPTER_CALL_ON_ONE_ERROR";
 
 export const callOnOne: CallOnOne = async (cluster, logger, call) => {
-
   await checkActivatedClusters({ clusterIds: cluster });
 
   const client = getAdapterClient(cluster);
@@ -58,10 +61,12 @@ export const callOnOne: CallOnOne = async (cluster, logger, call) => {
 
     const errorDetail = e instanceof Error ? e : JSON.stringify(e);
 
-    const clusterErrorDetails = [{
-      clusterId: cluster,
-      details: errorDetail,
-    }];
+    const clusterErrorDetails = [
+      {
+        clusterId: cluster,
+        details: errorDetail,
+      },
+    ];
     const reason = "Cluster ID : " + cluster + ", Details : " + errorDetail.toString();
 
     // 统一错误处理
@@ -71,19 +76,14 @@ export const callOnOne: CallOnOne = async (cluster, logger, call) => {
         details: reason,
         metadata: scowErrorMetadata(ADAPTER_CALL_ON_ONE_ERROR, { clusterErrors: JSON.stringify(clusterErrorDetails) }),
       });
-    // 如果是已经封装过的grpc error, 直接抛出错误
+      // 如果是已经封装过的grpc error, 直接抛出错误
     } else {
       throw e;
     }
-
   });
 };
 
-export const checkActivatedClusters
-= async (
-  { clusterIds }: { clusterIds: string[] | string },
-) => {
-
+export const checkActivatedClusters = async ({ clusterIds }: { clusterIds: string[] | string }) => {
   if (!config.MIS_DEPLOYED) {
     return;
   }
@@ -92,16 +92,13 @@ export const checkActivatedClusters
     pinoLogger,
     configClusters,
     config.MIS_SERVER_URL,
-    commonConfig.scowApi?.auth?.token);
+    commonConfig.scowApi?.auth?.token,
+  );
 
   return libCheckActivatedClusters({ clusterIds, activatedClusters, logger: pinoLogger });
-
 };
 
-export async function checkClusters(
-  logger: Logger,
-  activatedClusters: Record<string, ClusterConfigSchema>,
-) {
+export async function checkClusters(logger: Logger, activatedClusters: Record<string, ClusterConfigSchema>) {
   const scowdClusters: Record<string, ClusterConfigSchema> = {};
   const sshClusters: Record<string, ClusterConfigSchema> = {};
   Object.entries(activatedClusters).map(([id, config]) => {
@@ -115,34 +112,37 @@ export async function checkClusters(
   await checkClustersScowdHealth(logger, scowdClusters);
 }
 
-export async function checkClustersScowdHealth(
-  logger: Logger,
-  clusters: Record<string, ClusterConfigSchema>,
-) {
-  await Promise.all(Object.entries(clusters).map(async ([id, config]) => {
-    const node = getLoginNode(config.loginNodes[0]);
-    const client = getScowdClient(id);
-    logger.info(
-      "Check whether scowd is running normally on the login node %s of cluster %s.", node.name, config.displayName);
+export async function checkClustersScowdHealth(logger: Logger, clusters: Record<string, ClusterConfigSchema>) {
+  await Promise.all(
+    Object.entries(clusters).map(async ([id, config]) => {
+      const node = getLoginNode(config.loginNodes[0]);
+      const client = getScowdClient(id);
+      logger.info(
+        "Check whether scowd is running normally on the login node %s of cluster %s.",
+        node.name,
+        config.displayName,
+      );
 
-    try {
-      // 10s 无响应则认为异常
-      await client.system.checkHealth({}, { timeoutMs: 10000 });
-      logger.info("Scowd runs normally on the login node %s of cluster %s.", node.name, config.displayName);
-    } catch (err) {
-      logger.error("scowd runs abnormally on login node %s of cluster %s.err: %o", node.name, config.displayName, err);
-    }
-
-  }));
+      try {
+        // 10s 无响应则认为异常
+        await client.system.checkHealth({}, { timeoutMs: 10000 });
+        logger.info("Scowd runs normally on the login node %s of cluster %s.", node.name, config.displayName);
+      } catch (err) {
+        logger.error(
+          "scowd runs abnormally on login node %s of cluster %s.err: %o",
+          node.name,
+          config.displayName,
+          err,
+        );
+      }
+    }),
+  );
 }
 
 /**
  * Check whether clusters can be logged in as root user
  */
-export async function checkClustersRootUserLogin(
-  logger: Logger,
-  clusters: Record<string, ClusterConfigSchema>,
-) {
+export async function checkClustersRootUserLogin(logger: Logger, clusters: Record<string, ClusterConfigSchema>) {
   const checkClusterLogin = async ({ displayName, loginNodes }: ClusterConfigSchema) => {
     const node = getLoginNode(loginNodes[0]);
     logger.info("Checking if root can login to %s by login node %s", displayName, node.name);
@@ -175,4 +175,3 @@ export function checkLoginNodeInCluster(cluster: string, loginNode: string) {
     throw loginNodeNotFound(loginNode);
   }
 }
-

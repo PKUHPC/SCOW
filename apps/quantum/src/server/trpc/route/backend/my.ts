@@ -12,15 +12,18 @@ export const MyQitsOutputSchema = z.object({
 });
 
 export const my = router({
-  myQits: backendApiProcedure.meta({
-    openapi: {
-      method: "POST",
-      path: "/tc/{accountName}/my/qits",
-    },
-  })
-    .input(z.object({
-      accountName: z.string(),
-    }))
+  myQits: backendApiProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/tc/{accountName}/my/qits",
+      },
+    })
+    .input(
+      z.object({
+        accountName: z.string(),
+      }),
+    )
     .output(MyQitsOutputSchema)
     .query(async () => {
       const resp = await callBackendApi("/my/qits", {

@@ -28,8 +28,14 @@ interface FormProps {
 const p = prefix("pageComp.fileManagerComp.decompressFilesModal.");
 
 export const DecompressFilesModal: React.FC<Props> = ({
-  open, onClose, reload, setDecompression, sourcePath, files, cluster }) => {
-
+  open,
+  onClose,
+  reload,
+  setDecompression,
+  sourcePath,
+  files,
+  cluster,
+}) => {
   const { message, modal } = App.useApp();
 
   const [loading, setLoading] = useState(false);
@@ -39,28 +45,39 @@ export const DecompressFilesModal: React.FC<Props> = ({
   const t = useI18nTranslateToString();
 
   const handleDecompress = async (decompressionPath: string) => {
-
     setDecompression?.((decompression) => ({
-      ...decompression, decompressionStarted: decompression.decompressionStarted.concat(decompressionPath),
+      ...decompression,
+      decompressionStarted: decompression.decompressionStarted.concat(decompressionPath),
     }));
 
-    await Promise.allSettled(files.map(async (f: FileInfo) => {
-
-      return api.decompressFile({
-        body: {
-          clusterId: cluster,
-          filePath: join(sourcePath, f.name),
-          decompressionPath,
-        },
-      // 只通过下方对 result.status === "rejected" 的处理结果报错
-      }).httpError(400, (err) => { throw err; })
-        .httpError(403, (err) => { throw err; })
-        .httpError(409, (err) => { throw err; })
-        .httpError(429, (err) => { throw err; })
-        .httpError(500, (err) => { throw err; });
-
-    })).then((decompressionResults) => {
-
+    await Promise.allSettled(
+      files.map(async (f: FileInfo) => {
+        return api
+          .decompressFile({
+            body: {
+              clusterId: cluster,
+              filePath: join(sourcePath, f.name),
+              decompressionPath,
+            },
+            // 只通过下方对 result.status === "rejected" 的处理结果报错
+          })
+          .httpError(400, (err) => {
+            throw err;
+          })
+          .httpError(403, (err) => {
+            throw err;
+          })
+          .httpError(409, (err) => {
+            throw err;
+          })
+          .httpError(429, (err) => {
+            throw err;
+          })
+          .httpError(500, (err) => {
+            throw err;
+          });
+      }),
+    ).then((decompressionResults) => {
       setLoading(false);
 
       const errors = decompressionResults.reduce((acc: { fileName: string; reason: any }[], result, index) => {
@@ -75,10 +92,14 @@ export const DecompressFilesModal: React.FC<Props> = ({
       }
 
       if (errors.length > 0) {
-        const errorDetails = errors.map((error) => {
-          return `Filename: ${error?.fileName} \n`
-                  + `Reason: ${error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason}`;
-        }).join("; \n\n");
+        const errorDetails = errors
+          .map((error) => {
+            return (
+              `Filename: ${error?.fileName} \n` +
+              `Reason: ${error?.reason?.error || error?.reason?.text || error?.reason?.details || error?.reason}`
+            );
+          })
+          .join("; \n\n");
 
         if (errors.length === files.length) {
           modal.error({
@@ -96,14 +117,15 @@ export const DecompressFilesModal: React.FC<Props> = ({
       setDecompression?.((decompression) => {
         // 如果所有开始的任务都已经完成则清空
         if (decompression.decompressionCompleted.length + 1 === decompression.decompressionStarted.length) {
-          return { decompressionCompleted: [], decompressionStarted: []};
+          return { decompressionCompleted: [], decompressionStarted: [] };
         }
 
-        return { ...decompression,
-          decompressionCompleted: decompression.decompressionCompleted.concat(decompressionPath) };
+        return {
+          ...decompression,
+          decompressionCompleted: decompression.decompressionCompleted.concat(decompressionPath),
+        };
       });
     });
-
   };
 
   const onSubmit = async () => {
@@ -140,7 +162,7 @@ export const DecompressFilesModal: React.FC<Props> = ({
           label={t(p("decompressTargetPath"))}
           name="decompressionPath"
           rules={[{ required: true }]}
-          initialValue={ join(sourcePath, getFilePathWithoutExtension(files[0]?.name) || "") }
+          initialValue={join(sourcePath, getFilePathWithoutExtension(files[0]?.name) || "")}
         >
           <Input />
         </Form.Item>

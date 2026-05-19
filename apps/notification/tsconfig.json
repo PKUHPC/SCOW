@@ -14,15 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "paths": {
-      "src/*": [
-        "./src/*"
-      ]
+      "src/*": ["./src/*"]
     },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "incremental": false,
     "jsx": "preserve",
     "plugins": [
@@ -32,15 +26,6 @@
     ],
     "noEmit": false
   },
-  "include": [
-    "next-env.d.ts",
-    "env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "src/**/*.ts",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "env.d.ts", "**/*.ts", "**/*.tsx", "src/**/*.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

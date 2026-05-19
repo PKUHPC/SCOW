@@ -9,7 +9,6 @@ import { route } from "src/utils/route";
 import { parseIp } from "src/utils/server";
 
 export const ChangePasswordSchema = typeboxRouteSchema({
-
   method: "PATCH",
 
   body: Type.Object({
@@ -33,11 +32,9 @@ export const ChangePasswordSchema = typeboxRouteSchema({
   },
 });
 
-
 const passwordPattern = publicConfig.PASSWORD_PATTERN && new RegExp(publicConfig.PASSWORD_PATTERN);
 
 export default route(ChangePasswordSchema, async (req, res) => {
-
   if (!publicConfig.ENABLE_CHANGE_PASSWORD) {
     return { 501: null };
   }
@@ -51,14 +48,18 @@ export default route(ChangePasswordSchema, async (req, res) => {
 
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { newPassword } = req.body;
 
   if (passwordPattern && !passwordPattern.test(newPassword)) {
-    return { 400: {
-      code: "PASSWORD_NOT_VALID" as const,
-    } };
+    return {
+      400: {
+        code: "PASSWORD_NOT_VALID" as const,
+      },
+    };
   }
 
   const logInfo = {
@@ -67,10 +68,14 @@ export default route(ChangePasswordSchema, async (req, res) => {
     operationTypeName: OperationType.changePassword,
   };
 
-  return await libChangePassword(runtimeConfig.AUTH_INTERNAL_URL, {
-    identityId: info.identityId,
-    newPassword,
-  }, console)
+  return await libChangePassword(
+    runtimeConfig.AUTH_INTERNAL_URL,
+    {
+      identityId: info.identityId,
+      newPassword,
+    },
+    console,
+  )
     .then(async () => {
       await callLog(logInfo, OperationResult.SUCCESS);
       return { 204: null };
@@ -87,12 +92,8 @@ export default route(ChangePasswordSchema, async (req, res) => {
           default:
             throw e;
         }
-
       } else {
         throw e;
       }
-
     });
-
-
 });

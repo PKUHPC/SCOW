@@ -31,6 +31,5 @@ export function isParentOrSameFolder(potentialParentFolderPath: string, childFol
     ? normalizedParentPath
     : `${normalizedParentPath}${sep}`;
 
-  return normalizedChildPath === normalizedParentPath ||
-         normalizedChildPath.startsWith(parentPathWithTrailingSlash);
+  return normalizedChildPath === normalizedParentPath || normalizedChildPath.startsWith(parentPathWithTrailingSlash);
 }

@@ -20,12 +20,7 @@ export class TenantDefaultAppRemovedList {
   @Property({ columnType: DATETIME_TYPE, defaultRaw: CURRENT_TIMESTAMP })
   removedAt: Date;
 
-  constructor(init: {
-    appId: string,
-    cluster: EntityOrRef<Cluster>,
-    tenant: EntityOrRef<Tenant>,
-    removedAt?: Date,
-  }) {
+  constructor(init: { appId: string; cluster: EntityOrRef<Cluster>; tenant: EntityOrRef<Tenant>; removedAt?: Date }) {
     this.tenant = toRef(init.tenant);
     this.appId = init.appId;
     this.cluster = toRef(init.cluster);

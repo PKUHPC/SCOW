@@ -3,26 +3,33 @@ import { Type } from "@sinclair/typebox";
 import { CommonConfigSchema } from "./common";
 
 // 创建配置文件中支持国际化文本文字项的配置类型
-export const createI18nStringSchema = ({ description, defaultValue }: {
-  description: string, defaultValue?: string
+export const createI18nStringSchema = ({
+  description,
+  defaultValue,
+}: {
+  description: string;
+  defaultValue?: string;
 }) => {
-  return Type.Union([
-    Type.String(),
-    Type.Object({
-      i18n: Type.Object({
-        default: Type.String({ description: "国际化类型默认值" }),
-        en: Type.Optional(Type.String({ description: "国际化类型英文值" })),
-        zh_cn: Type.Optional(Type.String({ description: "国际化类型简体中文值" })),
-        ja: Type.Optional(Type.String({ description: "国际化类型日文值" })),
-        ko: Type.Optional(Type.String({ description: "国际化类型韩文值" })),
-        fr: Type.Optional(Type.String({ description: "国际化类型法文值" })),
-        de: Type.Optional(Type.String({ description: "国际化类型德文值" })),
-        es: Type.Optional(Type.String({ description: "国际化类型西班牙文值" })),
-        pt: Type.Optional(Type.String({ description: "国际化类型葡萄牙文值" })),
-        ru: Type.Optional(Type.String({ description: "国际化类型俄文值" })),
+  return Type.Union(
+    [
+      Type.String(),
+      Type.Object({
+        i18n: Type.Object({
+          default: Type.String({ description: "国际化类型默认值" }),
+          en: Type.Optional(Type.String({ description: "国际化类型英文值" })),
+          zh_cn: Type.Optional(Type.String({ description: "国际化类型简体中文值" })),
+          ja: Type.Optional(Type.String({ description: "国际化类型日文值" })),
+          ko: Type.Optional(Type.String({ description: "国际化类型韩文值" })),
+          fr: Type.Optional(Type.String({ description: "国际化类型法文值" })),
+          de: Type.Optional(Type.String({ description: "国际化类型德文值" })),
+          es: Type.Optional(Type.String({ description: "国际化类型西班牙文值" })),
+          pt: Type.Optional(Type.String({ description: "国际化类型葡萄牙文值" })),
+          ru: Type.Optional(Type.String({ description: "国际化类型俄文值" })),
+        }),
       }),
-    }),
-  ], { description, default: defaultValue });
+    ],
+    { description, default: defaultValue },
+  );
 };
 
 // 当前系统支持的header中可接受语言
@@ -76,28 +83,29 @@ export enum SYSTEM_VALID_LANGUAGE_ENUM {
 export type SystemLanguage = CommonConfigSchema["systemLanguage"];
 
 export interface SystemLanguageConfig {
-  defaultLanguage: string,
-  isUsingI18n: boolean,
-  autoDetectWhenUserNotSet: boolean,
-  enabledLanguages: string[],
-};
-
+  defaultLanguage: string;
+  isUsingI18n: boolean;
+  autoDetectWhenUserNotSet: boolean;
+  enabledLanguages: string[];
+}
 
 // 配置项文本国际化类型
-export type I18nStringType = string | {
-  i18n: {
-    default: string,
-    en?: string,
-    zh_cn?: string,
-    ja?: string,
-    ko?: string,
-    fr?: string,
-    de?: string,
-    es?: string,
-    pt?: string,
-    ru?: string,
-  }
-};
+export type I18nStringType =
+  | string
+  | {
+      i18n: {
+        default: string;
+        en?: string;
+        zh_cn?: string;
+        ja?: string;
+        ko?: string;
+        fr?: string;
+        de?: string;
+        es?: string;
+        pt?: string;
+        ru?: string;
+      };
+    };
 
 export type I18nObjectType = Exclude<I18nStringType, string>;
 

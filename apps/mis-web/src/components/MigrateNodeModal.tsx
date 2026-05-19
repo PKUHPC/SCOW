@@ -6,7 +6,6 @@ import { prefix, useI18n, useI18nTranslate } from "src/i18n";
 import { ClusterInfoStore } from "src/stores/ClusterInfoStore";
 import { getClusterName } from "src/utils/cluster";
 
-
 interface Props {
   nodeName: string;
   clusterId: string;
@@ -22,9 +21,15 @@ interface FormProps {
 }
 const p = prefix("page.admin.resourceManagement.nodeMigrationModal.");
 
-const MigrateNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions,
-  migratableClusterList, onClose, onComplete, open }) => {
-
+const MigrateNodeModal: React.FC<Props> = ({
+  nodeName,
+  clusterId,
+  partitions,
+  migratableClusterList,
+  onClose,
+  onComplete,
+  open,
+}) => {
   const tArgs = useI18nTranslate();
 
   const [form] = Form.useForm<FormProps>();
@@ -50,7 +55,7 @@ const MigrateNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions,
 
   const clusterOptions = migratableClusterList.map(({ cluster: clusterId, partitions }) => {
     migratableClusterListMap.set(clusterId, partitions);
-    return { label:getClusterName(clusterId, languageId, publicConfigClusters), value:clusterId };
+    return { label: getClusterName(clusterId, languageId, publicConfigClusters), value: clusterId };
   });
 
   const handleClusterChange = (destinationCluster: string) => {
@@ -68,13 +73,7 @@ const MigrateNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions,
   };
 
   return (
-    <Modal
-      title={tArgs(p("title"))}
-      open={open}
-      onOk={onOK}
-      confirmLoading={loading}
-      onCancel={onCancel}
-    >
+    <Modal title={tArgs(p("title"))} open={open} onOk={onOK} confirmLoading={loading} onCancel={onCancel}>
       <br></br>
       <Row gutter={16}>
         <Col span={labelColSpan}>
@@ -87,23 +86,18 @@ const MigrateNodeModal: React.FC<Props> = ({ nodeName, clusterId, partitions,
         <Col span={valueColSpan}>
           <p>{nodeName}</p>
           <p>{getClusterName(clusterId, languageId, publicConfigClusters)}</p>
-          <p><span style={{ minHeight: "1em", display: "inline-block" }}>
-            {partitions.map((item) => item).join(", ") }</span></p>
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={undefined}
-            preserve={false}
-          >
+          <p>
+            <span style={{ minHeight: "1em", display: "inline-block" }}>
+              {partitions.map((item) => item).join(", ")}
+            </span>
+          </p>
+          <Form form={form} layout="vertical" initialValues={undefined} preserve={false}>
             <Form.Item
               name="destinationCluster"
               style={{ marginBottom: 0, marginTop: "-3px" }}
               rules={[{ required: true }]}
             >
-              <Select
-                options={clusterOptions}
-                onChange={handleClusterChange}
-              />
+              <Select options={clusterOptions} onChange={handleClusterChange} />
             </Form.Item>
           </Form>
           <p style={{ marginTop: "7px" }}>{destinationPartitions}</p>

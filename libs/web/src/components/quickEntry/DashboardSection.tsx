@@ -8,7 +8,6 @@ type Props = PropsWithChildren<{
 }>;
 
 export const DashboardSection: React.FC<Props> = ({ title, extra, style, children }) => {
-
   return (
     <Card style={style} title={title} extra={extra}>
       {children}

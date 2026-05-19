@@ -36,11 +36,9 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
     onError: (e) => {
       if (e.data?.code === "CONFLICT") {
         message.error(t(p("alreadyExisted")));
-      }
-      else if (e.data?.code === "TOO_MANY_REQUESTS") {
+      } else if (e.data?.code === "TOO_MANY_REQUESTS") {
         message.error(t(pCommon("noSpaceError")));
-      }
-      else {
+      } else {
         message.error(`${t(p("failed"))}: ${e.message}`);
       }
     },
@@ -50,7 +48,8 @@ export const MkdirModal: React.FC<Props> = ({ open, onClose, path, reload, clust
     const { newDirName } = await form.validateFields();
 
     mutation.mutate({
-      path: join(path, newDirName), clusterId,
+      path: join(path, newDirName),
+      clusterId,
     });
   };
 

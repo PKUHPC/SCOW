@@ -3,7 +3,13 @@ import { ServiceError } from "@grpc/grpc-js";
 import { getPlaceholderKeys } from "@scow/lib-config/build/parse";
 import { getEnvVariables } from "@scow/lib-server";
 import {
-  getUserHomedir, sftpExists, sftpLstat, sftpReaddir, sftpReadFile, sftpRealPath, sftpWriteFile,
+  getUserHomedir,
+  sftpExists,
+  sftpLstat,
+  sftpReaddir,
+  sftpReadFile,
+  sftpRealPath,
+  sftpWriteFile,
 } from "@scow/lib-ssh";
 import { AppType } from "@scow/scheduler-adapter-protos/build/app";
 import { JobInfo } from "@scow/scheduler-adapter-protos/build/job";
@@ -14,14 +20,29 @@ import { join } from "path";
 import { quote } from "shell-quote";
 import { JobType } from "src/models/Job";
 import { aiConfig } from "src/server/config/ai";
-import { AppSession,CreateAppInput, CreateAppInputSchema, SERVER_ENTRY_COMMAND, SERVER_SESSION_INFO,
-  SESSION_METADATA_NAME,SessionMetadata,TENSORBOARD_ENTRY_COMMAND,
-  VNC_ENTRY_COMMAND } from "src/server/trpc/route/jobs/apps";
-import { InferenceJobInput,InferenceJobInputSchema,SessionMetadata as InferSessionMetadata }
-  from "src/server/trpc/route/jobs/infer";
+import {
+  AppSession,
+  CreateAppInput,
+  CreateAppInputSchema,
+  SERVER_ENTRY_COMMAND,
+  SERVER_SESSION_INFO,
+  SESSION_METADATA_NAME,
+  SessionMetadata,
+  TENSORBOARD_ENTRY_COMMAND,
+  VNC_ENTRY_COMMAND,
+} from "src/server/trpc/route/jobs/apps";
+import {
+  InferenceJobInput,
+  InferenceJobInputSchema,
+  SessionMetadata as InferSessionMetadata,
+} from "src/server/trpc/route/jobs/infer";
 import { TrainJobInput, TrainJobInputSchema } from "src/server/trpc/route/jobs/jobs";
-import { genPublicOrPrivateDataJsonString, getClusterAppConfigs, sshFetchJobInputParams,
-  validateUniquePaths } from "src/server/utils/app";
+import {
+  genPublicOrPrivateDataJsonString,
+  getClusterAppConfigs,
+  sshFetchJobInputParams,
+  validateUniquePaths,
+} from "src/server/utils/app";
 import { getAdapterClient } from "src/server/utils/clusters";
 import { logger } from "src/server/utils/logger";
 import { getAppConnectionInfoFromAdapterForAi } from "src/server/utils/schedulerAdapterUtils";
@@ -30,8 +51,13 @@ import { formatTime } from "src/utils/datetime";
 import { isParentOrSameFolder } from "src/utils/file";
 import { Logger } from "ts-log";
 
-import { ConnectToAppResponse, CreateAppExtraParams, JobDriver, SubmitInferJobExtraParams,
-  SubmitTrainJobExtraParams } from "./jobDriver";
+import {
+  ConnectToAppResponse,
+  CreateAppExtraParams,
+  JobDriver,
+  SubmitInferJobExtraParams,
+  SubmitTrainJobExtraParams,
+} from "./jobDriver";
 import { getPublicMountPoints } from "./scowdJobDriver";
 
 export class SshJobDriver implements JobDriver {
@@ -42,16 +68,41 @@ export class SshJobDriver implements JobDriver {
   ) {}
 
   async createApp(inputParams: CreateAppInput, extraParams: CreateAppExtraParams): Promise<number> {
-
-    const { workingDirectory,mountPoints = [],clusterId,appId,customAttributes,
-      startCommand,appJobName,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,qos,envVariables = [],
+    const {
+      workingDirectory,
+      mountPoints = [],
+      clusterId,
+      appId,
+      customAttributes,
+      startCommand,
+      appJobName,
+      account,
+      partition,
+      coreCount,
+      nodeCount,
+      gpuCount,
+      memory,
+      maxTime,
+      remoteImageUrl,
+      gpuType,
+      qos,
+      envVariables = [],
     } = inputParams;
-    const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
-      modelVersions,app,proxyBasePath,existImage } = extraParams;
+    const {
+      isAlgorithmPrivates,
+      isDatasetPrivates,
+      isModelPrivates,
+      algorithmVersions,
+      datasetVersions,
+      modelVersions,
+      app,
+      proxyBasePath,
+      existImage,
+    } = extraParams;
 
-    const normalizedMountPoints = mountPoints
-      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const normalizedMountPoints = mountPoints.filter((item): item is { path: string; target: string } =>
+      Boolean(item?.path && item?.target),
+    );
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
@@ -59,7 +110,7 @@ export class SshJobDriver implements JobDriver {
       const sftp = await ssh.requestSFTP();
 
       // 工作目录和挂载点必须在用户的homeDir下
-      if ((workingDirectory && !isParentOrSameFolder(homeDir, workingDirectory))) {
+      if (workingDirectory && !isParentOrSameFolder(homeDir, workingDirectory)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "workingDirectory and mountPoint should be in homeDir",
@@ -94,15 +145,15 @@ export class SshJobDriver implements JobDriver {
       // 确保所有映射到容器的路径都不重复
       validateUniquePaths([
         workingDirectory ?? join(homeDir, appJobsDirectory),
-        ...isAlgorithmPrivates.map((isAlgorithmPrivate,idx) =>
-          isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path)
-        ,
-        ...isDatasetPrivates.map((isDatasetPrivate,idx) =>
-          isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path)
-        ,
-        ...isModelPrivates.map((isModelPrivate,idx) =>
-          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
-        ,
+        ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
+          isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path,
+        ),
+        ...isDatasetPrivates.map((isDatasetPrivate, idx) =>
+          isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path,
+        ),
+        ...isModelPrivates.map((isModelPrivate, idx) =>
+          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path,
+        ),
         ...mountPathList,
       ]);
 
@@ -113,15 +164,10 @@ export class SshJobDriver implements JobDriver {
       const attributesConfig = app.attributes;
       let customAttributesExport: string = "";
       for (const key in customAttributes) {
-
         let quotedAttribute = "";
 
         // select类型的属性值是管理员配置的，无需处理特殊字符，可以让配置的特殊字符(如 $)生效
-        if (
-          attributesConfig?.find((attribute) =>
-            attribute.name === key && attribute.type === "select",
-          )
-        ) {
+        if (attributesConfig?.find((attribute) => attribute.name === key && attribute.type === "select")) {
           quotedAttribute = customAttributes[key]?.toString() ?? "";
         } else {
           quotedAttribute = quote([customAttributes[key]?.toString() ?? ""]);
@@ -162,9 +208,8 @@ export class SshJobDriver implements JobDriver {
         const xstartupScript = startCommand || app.vnc!.xstartup;
         const beforeScript = app.vnc!.beforeScript || "";
 
-        entryScript = VNC_ENTRY_COMMAND + runtimeVariables + customAttributesExport + beforeScript
-            + sessionInfo + xstartupScript;
-
+        entryScript =
+          VNC_ENTRY_COMMAND + runtimeVariables + customAttributesExport + beforeScript + sessionInfo + xstartupScript;
       } else {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -177,7 +222,7 @@ export class SshJobDriver implements JobDriver {
 
       const client = getAdapterClient(clusterId);
       const reply = await asyncClientCall(client.job, "submitJob", {
-        userId:this.userId,
+        userId: this.userId,
         jobName: appJobName,
         account,
         partition: partition!,
@@ -205,31 +250,31 @@ export class SshJobDriver implements JobDriver {
           JobType.APP,
           app.type,
           // 优先用户填写的远程镜像地址
-          remoteImageUrl
-            ?? (existImage?.path
-            ?? (app.image ? `${app.image.name}:${app.image.tag || "latest"}` : "")),
+          remoteImageUrl ?? existImage?.path ?? (app.image ? `${app.image.name}:${app.image.tag || "latest"}` : ""),
           JSON.stringify(
-            algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
-            ))
-          ,
+            algorithmVersions.map((algorithmVersion, idx) =>
+              isAlgorithmPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
+            ),
+          ),
           JSON.stringify(
-            datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
-            ))
-          ,
+            datasetVersions.map((datasetVersion, idx) =>
+              isDatasetPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
+            ),
+          ),
           JSON.stringify(
-            modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path,true),
-            ))
-          ,
+            modelVersions.map((modelVersion, idx) =>
+              isModelPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+            ),
+          ),
           JSON.stringify(normalizedMountPoints),
           gpuType || "",
           getPublicMountPoints(clusterId).join(","),
-
         ],
       }).catch((e) => {
         const ex = e as ServiceError;
@@ -245,7 +290,7 @@ export class SshJobDriver implements JobDriver {
         sessionId: scowWorkDirectoryName,
         submitTime: new Date().toISOString(),
         appId,
-        image: existImage ? { name: existImage.name, tag: existImage.tag } : app.image ?? { name: "default" },
+        image: existImage ? { name: existImage.name, tag: existImage.tag } : (app.image ?? { name: "default" }),
         jobType: JobType.APP,
       };
       await sftpWriteFile(sftp)(join(appJobsDirectory, SESSION_METADATA_NAME), JSON.stringify(metadata));
@@ -267,7 +312,7 @@ export class SshJobDriver implements JobDriver {
       // 读取作业信息
       const metadataPath = join(jobsDirectory, SESSION_METADATA_NAME);
 
-      if (!await sftpExists(sftp, metadataPath)) {
+      if (!(await sftpExists(sftp, metadataPath))) {
         return {} as CreateAppInput;
       }
 
@@ -283,100 +328,126 @@ export class SshJobDriver implements JobDriver {
 
       const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
-      return await sshFetchJobInputParams<CreateAppInput>(
-        inputParamsPath, sftp, CreateAppInputSchema, logger,
-      );
+      return await sshFetchJobInputParams<CreateAppInput>(inputParamsPath, sftp, CreateAppInputSchema, logger);
     });
   }
 
   async getAiJobs(clusterId: string, isRunning: boolean, jobTypes?: ProtoJobType[]): Promise<AppSession[]> {
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
       const apps = getClusterAppConfigs(clusterId);
-      const terminatedStates = ["BOOT_FAIL", "COMPLETED", "DEADLINE", "FAILED",
-        "NODE_FAIL", "PREEMPTED", "SPECIAL_EXIT", "TIMEOUT","CANCELED"];
+      const terminatedStates = [
+        "BOOT_FAIL",
+        "COMPLETED",
+        "DEADLINE",
+        "FAILED",
+        "NODE_FAIL",
+        "PREEMPTED",
+        "SPECIAL_EXIT",
+        "TIMEOUT",
+        "CANCELED",
+      ];
 
-      const runningStates = ["RUNNING", "PENDING","QUEUED"];
+      const runningStates = ["RUNNING", "PENDING", "QUEUED"];
 
       // If a job is not running, it cannot be ready
       const client = getAdapterClient(clusterId);
       const runningJobsInfo = await asyncClientCall(client.job, "getJobs", {
-        fields: ["job_id", "state", "elapsed_seconds", "time_limit_minutes", "reason","partition","gpus_alloc",
-          "cpus_alloc","mem_alloc_mb","nodes_alloc","gpus_req", "cpus_req","mem_req_mb","nodes_req",
+        fields: [
+          "job_id",
+          "state",
+          "elapsed_seconds",
+          "time_limit_minutes",
+          "reason",
+          "partition",
+          "gpus_alloc",
+          "cpus_alloc",
+          "mem_alloc_mb",
+          "nodes_alloc",
+          "gpus_req",
+          "cpus_req",
+          "mem_req_mb",
+          "nodes_req",
         ],
         filter: {
-          users: [this.userId], accounts: [],
+          users: [this.userId],
+          accounts: [],
           states: isRunning ? runningStates : terminatedStates,
         },
         jobTypes: jobTypes ?? [],
       }).then((resp) => resp.jobs);
 
-      const runningJobInfoMap = runningJobsInfo.reduce((prev, curr) => {
-        prev[curr.jobId] = curr;
-        return prev;
-      }, {} as Record<number, JobInfo>);
+      const runningJobInfoMap = runningJobsInfo.reduce(
+        (prev, curr) => {
+          prev[curr.jobId] = curr;
+          return prev;
+        },
+        {} as Record<number, JobInfo>,
+      );
 
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const appJobsDirectory = join(homeDir, aiConfig.appJobsDir);
       const sftp = await ssh.requestSFTP();
 
-      if (!await sftpExists(sftp, appJobsDirectory)) {
+      if (!(await sftpExists(sftp, appJobsDirectory))) {
         logger.error("appJobsDirectory %s not exists", appJobsDirectory);
         return [];
       }
       const list = await sftpReaddir(sftp)(appJobsDirectory);
       const sessions = [] as AppSession[];
 
-      await Promise.all(list.map(async ({ filename }) => {
-        const jobDir = join(appJobsDirectory, filename);
-        const metadataPath = join(jobDir, SESSION_METADATA_NAME);
+      await Promise.all(
+        list.map(async ({ filename }) => {
+          const jobDir = join(appJobsDirectory, filename);
+          const metadataPath = join(jobDir, SESSION_METADATA_NAME);
 
-        if (!await sftpExists(sftp, metadataPath)) {
-          return;
-        }
+          if (!(await sftpExists(sftp, metadataPath))) {
+            return;
+          }
 
-        const content = await sftpReadFile(sftp)(metadataPath);
-        const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
+          const content = await sftpReadFile(sftp)(metadataPath);
+          const sessionMetadata = JSON.parse(content.toString()) as SessionMetadata;
 
-        const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
+          const runningJobInfo: JobInfo | undefined = runningJobInfoMap[sessionMetadata.jobId];
 
-        if (!runningJobInfo) {
-          return;
-        }
+          if (!runningJobInfo) {
+            return;
+          }
 
-        const statesNeedReason = new Set(["PENDING", "QUEUED",...terminatedStates]);
-        const needReason = statesNeedReason.has(runningJobInfo.state);
+          const statesNeedReason = new Set(["PENDING", "QUEUED", ...terminatedStates]);
+          const needReason = statesNeedReason.has(runningJobInfo.state);
 
-        sessions.push({
-          jobId: sessionMetadata.jobId,
-          appId: sessionMetadata.appId,
-          appName: sessionMetadata?.appId ? apps[sessionMetadata?.appId]?.name : undefined,
-          sessionId: sessionMetadata.sessionId,
-          jobName: sessionMetadata.jobName ?? "",
-          submitTime: sessionMetadata.submitTime,
-          jobType: sessionMetadata.jobType,
-          image: sessionMetadata.image,
-          state: runningJobInfo.state ?? "ENDED",
-          dataPath: await sftpRealPath(sftp)(jobDir),
-          runningTime: runningJobInfo.elapsedSeconds !== undefined
-            ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
-          timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
-          reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
-          partition:runningJobInfo.partition,
-          cpusAlloc:runningJobInfo.cpusAlloc ?? 0,
-          gpusAlloc:runningJobInfo.gpusAlloc ?? 0,
-          memAlloc:runningJobInfo.memAllocMb ?? 0,
-          nodesAlloc:runningJobInfo.nodesAlloc ?? 0,
-          cpusReq:runningJobInfo.cpusReq,
-          gpusReq:runningJobInfo.gpusReq,
-          memReq:runningJobInfo.memReqMb,
-          nodesReq:runningJobInfo.nodesReq,
-        });
-      }));
+          sessions.push({
+            jobId: sessionMetadata.jobId,
+            appId: sessionMetadata.appId,
+            appName: sessionMetadata?.appId ? apps[sessionMetadata?.appId]?.name : undefined,
+            sessionId: sessionMetadata.sessionId,
+            jobName: sessionMetadata.jobName ?? "",
+            submitTime: sessionMetadata.submitTime,
+            jobType: sessionMetadata.jobType,
+            image: sessionMetadata.image,
+            state: runningJobInfo.state ?? "ENDED",
+            dataPath: await sftpRealPath(sftp)(jobDir),
+            runningTime:
+              runningJobInfo.elapsedSeconds !== undefined ? formatTime(runningJobInfo.elapsedSeconds * 1000) : "",
+            timeLimit: runningJobInfo.timeLimitMinutes ? formatTime(runningJobInfo.timeLimitMinutes * 60 * 1000) : "",
+            reason: needReason ? (runningJobInfo.reason ?? "") : undefined,
+            partition: runningJobInfo.partition,
+            cpusAlloc: runningJobInfo.cpusAlloc ?? 0,
+            gpusAlloc: runningJobInfo.gpusAlloc ?? 0,
+            memAlloc: runningJobInfo.memAllocMb ?? 0,
+            nodesAlloc: runningJobInfo.nodesAlloc ?? 0,
+            cpusReq: runningJobInfo.cpusReq,
+            gpusReq: runningJobInfo.gpusReq,
+            memReq: runningJobInfo.memReqMb,
+            nodesReq: runningJobInfo.nodesReq,
+          });
+        }),
+      );
 
-      const filteredSessions = sessions.filter((session) =>
-        isRunning
-          ? runningStates.includes(session.state)
-          : !runningStates.includes(session.state))
+      const filteredSessions = sessions
+        .filter((session) =>
+          isRunning ? runningStates.includes(session.state) : !runningStates.includes(session.state),
+        )
         .sort((a, b) => b.submitTime.localeCompare(a.submitTime));
       return filteredSessions;
     });
@@ -389,7 +460,7 @@ export class SshJobDriver implements JobDriver {
       const userHomeDir = await getUserHomedir(ssh, this.userId, this.logger);
       const jobDir = join(userHomeDir, aiConfig.appJobsDir, sessionId);
 
-      if (!await sftpExists(sftp, jobDir)) {
+      if (!(await sftpExists(sftp, jobDir))) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `session id ${sessionId} is not found`,
@@ -404,7 +475,11 @@ export class SshJobDriver implements JobDriver {
 
       if (sessionMetadata.jobType === JobType.DEV_HOST) {
         const connectionInfo = await getAppConnectionInfoFromAdapterForAi(
-          client, sessionMetadata.jobId, this.logger, appType);
+          client,
+          sessionMetadata.jobId,
+          this.logger,
+          appType,
+        );
         if (connectionInfo?.response?.$case === "appConnectionInfo") {
           const { host, port, password } = connectionInfo.response.appConnectionInfo;
           return {
@@ -436,16 +511,32 @@ export class SshJobDriver implements JobDriver {
   }
 
   async submitInferJob(inputParams: InferenceJobInput, extraParams: SubmitInferJobExtraParams): Promise<number> {
-    const { mountPoints = [],clusterId,command,InferenceJobName,account,partition,coreCount,nodeCount,
-      gpuCount,memory,maxTime,remoteImageUrl,gpuType,containerServicePort,qos,envVariables = []} = inputParams;
-    const { isModelPrivates,modelVersions,existImage } = extraParams;
+    const {
+      mountPoints = [],
+      clusterId,
+      command,
+      InferenceJobName,
+      account,
+      partition,
+      coreCount,
+      nodeCount,
+      gpuCount,
+      memory,
+      maxTime,
+      remoteImageUrl,
+      gpuType,
+      containerServicePort,
+      qos,
+      envVariables = [],
+    } = inputParams;
+    const { isModelPrivates, modelVersions, existImage } = extraParams;
 
-    const normalizedMountPoints = mountPoints
-      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const normalizedMountPoints = mountPoints.filter((item): item is { path: string; target: string } =>
+      Boolean(item?.path && item?.target),
+    );
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
-
       const homeDir = await getUserHomedir(ssh, this.userId, logger);
       const sftp = await ssh.requestSFTP();
 
@@ -464,9 +555,9 @@ export class SshJobDriver implements JobDriver {
       // 确保所有映射到容器的路径都不重复
       validateUniquePaths([
         inferJobsDirectory,
-        ...isModelPrivates.map((isModelPrivate,idx) =>
-          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
-        ,
+        ...isModelPrivates.map((isModelPrivate, idx) =>
+          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path,
+        ),
         ...mountPathList,
       ]);
 
@@ -491,7 +582,7 @@ export class SshJobDriver implements JobDriver {
 
       const client = getAdapterClient(clusterId);
       const reply = await asyncClientCall(client.job, "submitInferJob", {
-        userId:this.userId,
+        userId: this.userId,
         jobName: InferenceJobName,
         account,
         partition: partition!,
@@ -513,11 +604,12 @@ export class SshJobDriver implements JobDriver {
         extraOptions: [
           remoteImageUrl || existImage?.path || "",
           JSON.stringify(
-            modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path,true),
-            ))
-          ,
+            modelVersions.map((modelVersion, idx) =>
+              isModelPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+            ),
+          ),
           JSON.stringify(normalizedMountPoints),
           gpuType || "",
           getPublicMountPoints(clusterId).join(","),
@@ -534,7 +626,7 @@ export class SshJobDriver implements JobDriver {
       // Save session metadata
       const metadata: InferSessionMetadata = {
         jobId: reply.jobId,
-        jobName:InferenceJobName,
+        jobName: InferenceJobName,
         sessionId: scowWorkDirectoryName,
         submitTime: new Date().toISOString(),
         image: {
@@ -562,7 +654,7 @@ export class SshJobDriver implements JobDriver {
       // 读取作业信息
       const metadataPath = join(jobsDirectory, SESSION_METADATA_NAME);
 
-      if (!await sftpExists(sftp, metadataPath)) {
+      if (!(await sftpExists(sftp, metadataPath))) {
         return {} as InferenceJobInput;
       }
 
@@ -578,22 +670,45 @@ export class SshJobDriver implements JobDriver {
 
       const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
-      return await sshFetchJobInputParams<InferenceJobInput>(
-        inputParamsPath, sftp, InferenceJobInputSchema, logger,
-      );
+      return await sshFetchJobInputParams<InferenceJobInput>(inputParamsPath, sftp, InferenceJobInputSchema, logger);
     });
   }
 
   async submitTrainJob(inputParams: TrainJobInput, extraParams: SubmitTrainJobExtraParams): Promise<number> {
-    const { mountPoints = [],clusterId,account,partition,coreCount,nodeCount,gpuCount,memory,maxTime,
-      remoteImageUrl,gpuType,command,trainJobName,framework,psNodes,workerNodes,qos,envVariables = [],
+    const {
+      mountPoints = [],
+      clusterId,
+      account,
+      partition,
+      coreCount,
+      nodeCount,
+      gpuCount,
+      memory,
+      maxTime,
+      remoteImageUrl,
+      gpuType,
+      command,
+      trainJobName,
+      framework,
+      psNodes,
+      workerNodes,
+      qos,
+      envVariables = [],
       tensorBoardDataPath,
     } = inputParams;
-    const { isAlgorithmPrivates,isDatasetPrivates,isModelPrivates, algorithmVersions, datasetVersions,
-      modelVersions,existImage } = extraParams;
+    const {
+      isAlgorithmPrivates,
+      isDatasetPrivates,
+      isModelPrivates,
+      algorithmVersions,
+      datasetVersions,
+      modelVersions,
+      existImage,
+    } = extraParams;
 
-    const normalizedMountPoints = mountPoints
-      .filter((item): item is { path: string; target: string } => Boolean(item?.path && item?.target));
+    const normalizedMountPoints = mountPoints.filter((item): item is { path: string; target: string } =>
+      Boolean(item?.path && item?.target),
+    );
     const mountPathList = normalizedMountPoints.map((item) => item.path);
 
     return await sshConnect(this.host, this.userId, this.logger, async (ssh) => {
@@ -615,15 +730,15 @@ export class SshJobDriver implements JobDriver {
       // 确保所有映射到容器的路径都不重复
       validateUniquePaths([
         trainJobsDirectory,
-        ...isAlgorithmPrivates.map((isAlgorithmPrivate,idx) =>
-          isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path)
-        ,
-        ...isDatasetPrivates.map((isDatasetPrivate,idx) =>
-          isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path)
-        ,
-        ...isModelPrivates.map((isModelPrivate,idx) =>
-          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path)
-        ,
+        ...isAlgorithmPrivates.map((isAlgorithmPrivate, idx) =>
+          isAlgorithmPrivate ? algorithmVersions[idx].privatePath : algorithmVersions[idx].path,
+        ),
+        ...isDatasetPrivates.map((isDatasetPrivate, idx) =>
+          isDatasetPrivate ? datasetVersions[idx].privatePath : datasetVersions[idx].path,
+        ),
+        ...isModelPrivates.map((isModelPrivate, idx) =>
+          isModelPrivate ? modelVersions[idx].privatePath : modelVersions[idx].path,
+        ),
         ...mountPathList,
       ]);
 
@@ -649,15 +764,15 @@ export class SshJobDriver implements JobDriver {
       // TensorBoard的命令
       const remoteTensorBoardEntryPath = join(homeDir, trainJobsDirectory, "tensorBoard_entry.sh");
       const tensorBoardPathPrefix = `/api/proxy/${clusterId}/absolute/\${HOST}/\${PORT}/`;
-      const tensorBoardScript = "tensorboard --logdir /output/training_logs --host 0.0.0.0 " +
-          `--path_prefix ${tensorBoardPathPrefix}`;
+      const tensorBoardScript =
+        "tensorboard --logdir /output/training_logs --host 0.0.0.0 " + `--path_prefix ${tensorBoardPathPrefix}`;
       const tensorBoardEntryScript = TENSORBOARD_ENTRY_COMMAND + tensorBoardScript;
 
       await sftpWriteFile(sftp)(remoteTensorBoardEntryPath, tensorBoardEntryScript);
 
       const client = getAdapterClient(clusterId);
       const reply = await asyncClientCall(client.job, "submitJob", {
-        userId:this.userId,
+        userId: this.userId,
         jobName: trainJobName,
         account,
         partition: partition!,
@@ -686,32 +801,35 @@ export class SshJobDriver implements JobDriver {
           "",
           remoteImageUrl || existImage?.path || "",
           JSON.stringify(
-            algorithmVersions.map((algorithmVersion,idx) => isAlgorithmPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(algorithmVersion.path,true),
-            ))
-          ,
+            algorithmVersions.map((algorithmVersion, idx) =>
+              isAlgorithmPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(algorithmVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(algorithmVersion.path, true),
+            ),
+          ),
           JSON.stringify(
-            datasetVersions.map((datasetVersion,idx) => isDatasetPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(datasetVersion.path,true),
-            ))
-          ,
+            datasetVersions.map((datasetVersion, idx) =>
+              isDatasetPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(datasetVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(datasetVersion.path, true),
+            ),
+          ),
           JSON.stringify(
-            modelVersions.map((modelVersion,idx) => isModelPrivates[idx]
-              ? genPublicOrPrivateDataJsonString(modelVersion.privatePath,false)
-              : genPublicOrPrivateDataJsonString(modelVersion.path,true),
-            ))
-          ,
+            modelVersions.map((modelVersion, idx) =>
+              isModelPrivates[idx]
+                ? genPublicOrPrivateDataJsonString(modelVersion.privatePath, false)
+                : genPublicOrPrivateDataJsonString(modelVersion.path, true),
+            ),
+          ),
           JSON.stringify(normalizedMountPoints),
           gpuType || "",
           // 如果是单机训练,则训练框架为空，表明为普通训练，华为的卡单机训练也要传框架
           // 如果nodeCount不为1但同时选定镜像又没有框架标签，该接口会报错
-          (nodeCount === 1 && !gpuType?.startsWith("huawei.com")) ? "" : framework || "",
+          nodeCount === 1 && !gpuType?.startsWith("huawei.com") ? "" : framework || "",
           getPublicMountPoints(clusterId).join(","),
         ],
-        psNodeCount:psNodes,
-        workerNodeCount:workerNodes,
+        psNodeCount: psNodes,
+        workerNodeCount: workerNodes,
         tensorBoardDataPath,
       }).catch((e) => {
         const ex = e as ServiceError;
@@ -724,7 +842,7 @@ export class SshJobDriver implements JobDriver {
       // Save session metadata
       const metadata: SessionMetadata = {
         jobId: reply.jobId,
-        jobName:trainJobName,
+        jobName: trainJobName,
         sessionId: scowWorkDirectoryName,
         submitTime: new Date().toISOString(),
         image: {
@@ -752,7 +870,7 @@ export class SshJobDriver implements JobDriver {
       // 读取作业信息
       const metadataPath = join(jobsDirectory, SESSION_METADATA_NAME);
 
-      if (!await sftpExists(sftp, metadataPath)) {
+      if (!(await sftpExists(sftp, metadataPath))) {
         return {} as TrainJobInput;
       }
 
@@ -768,9 +886,7 @@ export class SshJobDriver implements JobDriver {
 
       const inputParamsPath = join(homeDir, jobsDirectory, `${jobId}-input.json`);
 
-      return await sshFetchJobInputParams<TrainJobInput>(
-        inputParamsPath, sftp, TrainJobInputSchema, logger,
-      );
+      return await sshFetchJobInputParams<TrainJobInput>(inputParamsPath, sftp, TrainJobInputSchema, logger);
     });
   }
 

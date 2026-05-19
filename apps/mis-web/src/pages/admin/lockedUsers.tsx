@@ -1,3 +1,5 @@
+import type { LockUsersInfo } from "src/pages/api/admin/getLockedUsers";
+
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { App, Table } from "antd";
@@ -11,13 +13,12 @@ import { PageTitle } from "src/components/PageTitle";
 import { UserSearchFilters, UserSearchForm } from "src/components/users/UserSearchForm";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { PlatformRole } from "src/models/User";
-import type { LockUsersInfo } from "src/pages/api/admin/getLockedUsers";
 import { Head } from "src/utils/head";
 
 const p = prefix("page.admin.lockedUsers.");
 const pCommon = prefix("common.");
-export const LockedUsersPage: NextPage =
-  requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(() => {
+export const LockedUsersPage: NextPage = requireAuth((u) => u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(
+  () => {
     const t = useI18nTranslateToString();
 
     const [query, setQuery] = useState<UserSearchFilters>({});
@@ -31,7 +32,6 @@ export const LockedUsersPage: NextPage =
           name: query.name,
         };
         return api.getLockedUsers({ query: param });
-
       }, [query]),
     });
 
@@ -49,45 +49,50 @@ export const LockedUsersPage: NextPage =
             defaultPageSize: DEFAULT_PAGE_SIZE,
           }}
         >
-          <Table.Column<LockUsersInfo>
-            dataIndex="identityId"
-            title={t("common.userId")}
-          />
-          <Table.Column<LockUsersInfo>
-            dataIndex="name"
-            title={t("common.name")}
-          />
+          <Table.Column<LockUsersInfo> dataIndex="identityId" title={t("common.userId")} />
+          <Table.Column<LockUsersInfo> dataIndex="name" title={t("common.name")} />
           <Table.Column<LockUsersInfo>
             dataIndex="pwdAccountLockedTime"
             title={t(p("lockedTime"))}
-            render={(value) => (
-              value ? dayjs(value.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z"))
-                .format("YYYY-MM-DD HH:mm:ss") : ""
-            )}
+            render={(value) =>
+              value
+                ? dayjs(value.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z/, "$1-$2-$3T$4:$5:$6Z")).format(
+                    "YYYY-MM-DD HH:mm:ss",
+                  )
+                : ""
+            }
           />
           <Table.Column<LockUsersInfo>
             dataIndex="operation"
             title={t(pCommon("operation"))}
             fixed="right"
             render={(_, r) => (
-              <a onClick={() => {
-                modal.confirm({
-                  title: t(p("confirmUlock")),
-                  icon: <ExclamationCircleOutlined />,
-                  content: `${t(p("confirmUlockText1"))}${r.name}（ID：${r.identityId}）
+              <a
+                onClick={() => {
+                  modal.confirm({
+                    title: t(p("confirmUlock")),
+                    icon: <ExclamationCircleOutlined />,
+                    content: `${t(p("confirmUlockText1"))}${r.name}（ID：${r.identityId}）
                   ${t(p("confirmUlockText2"))}(${t(p("oneChancetoLogin"))})`,
-                  onOk: async () => {
-                    await api.unlockUser({ body: { identityId: r.identityId } })
-                      .httpError(404, () => { message.error(`${t(p("userNotFound"))}`); })
-                      .httpError(501, () => { message.error("featureUnavailable"); })
-                      .then(() => {
-                        message.success(`${t(p("unlockSuccess"))}`);
-                        reload();
-                      })
-                      .catch(() => { message.error(`${t(p("unlockFail"))}`); });
-                  },
-                });
-              }}
+                    onOk: async () => {
+                      await api
+                        .unlockUser({ body: { identityId: r.identityId } })
+                        .httpError(404, () => {
+                          message.error(`${t(p("userNotFound"))}`);
+                        })
+                        .httpError(501, () => {
+                          message.error("featureUnavailable");
+                        })
+                        .then(() => {
+                          message.success(`${t(p("unlockSuccess"))}`);
+                          reload();
+                        })
+                        .catch(() => {
+                          message.error(`${t(p("unlockFail"))}`);
+                        });
+                    },
+                  });
+                }}
               >
                 {t(p("unlockLogin"))}
               </a>
@@ -96,6 +101,7 @@ export const LockedUsersPage: NextPage =
         </Table>
       </div>
     );
-  });
+  },
+);
 
 export default LockedUsersPage;

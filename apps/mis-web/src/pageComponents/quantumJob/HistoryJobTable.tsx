@@ -1,3 +1,5 @@
+import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
+
 import { HttpError } from "@ddadaal/next-typed-api-routes-runtime";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
@@ -12,7 +14,6 @@ import { FilterFormContainer } from "src/components/FilterFormContainer";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { JobSortOrder, statusColors } from "src/models/job";
 import { JobSortBy } from "src/models/quantumJob";
-import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
 
 interface FilterForm {
   jobId?: number;
@@ -32,8 +33,8 @@ interface Props {
 }
 
 interface Sorter {
-  field: JobSortBy | undefined,
-  order: JobSortOrder | undefined,
+  field: JobSortBy | undefined;
+  order: JobSortOrder | undefined;
 }
 
 const p = prefix("pageComp.quantumJob.historyJobTable.");
@@ -41,8 +42,12 @@ const pCommon = prefix("common.");
 const EMPTY_STRING = "-";
 
 export const QuantumJobTable: React.FC<Props> = ({
-  accountName, filterAccountName = true, filterUserId = true,
-  showAccount, showUser, userId,
+  accountName,
+  filterAccountName = true,
+  filterUserId = true,
+  showAccount,
+  showUser,
+  userId,
 }) => {
   const t = useI18nTranslateToString();
   const { message } = App.useApp();
@@ -65,28 +70,29 @@ export const QuantumJobTable: React.FC<Props> = ({
 
     form.resetFields();
     form.setFieldsValue(newQuery);
-
   }, [accountName, userId, filterAccountName, filterUserId, form]);
 
   const promiseFn = useCallback(async () => {
-    return await api.getQuantumJobInfo({
-      query: {
-        sortBy: sorter.field,
-        sortOrder: sorter.order,
-        page: pageInfo.page,
-        pageSize: pageInfo.pageSize,
-        ...query,
-        accountName: query.accountName?.trim(),
-        userId: query.userId?.trim(),
-      },
-    }).catch((e: HttpError) => {
-      if (e.status === 403) {
-        message.error(t(p("noAuth")));
-        return undefined;
-      } else {
-        throw e;
-      }
-    });
+    return await api
+      .getQuantumJobInfo({
+        query: {
+          sortBy: sorter.field,
+          sortOrder: sorter.order,
+          page: pageInfo.page,
+          pageSize: pageInfo.pageSize,
+          ...query,
+          accountName: query.accountName?.trim(),
+          userId: query.userId?.trim(),
+        },
+      })
+      .catch((e: HttpError) => {
+        if (e.status === 403) {
+          message.error(t(p("noAuth")));
+          return undefined;
+        } else {
+          throw e;
+        }
+      });
   }, [pageInfo, query, sorter]);
 
   const { data, isLoading } = useAsync({ promiseFn });
@@ -110,18 +116,16 @@ export const QuantumJobTable: React.FC<Props> = ({
           <Form.Item label={t(pCommon("clusterWorkId"))} name="jobId">
             <InputNumber style={{ minWidth: "120px" }} min={1} />
           </Form.Item>
-          {
-            filterAccountName && (
-              <Form.Item label={t(pCommon("account"))} name="accountName">
-                <Input style={{ minWidth: "120px" }} />
-              </Form.Item>
-            )}
-          {
-            filterUserId && (
-              <Form.Item label={t(pCommon("userId"))} name="userId">
-                <Input style={{ minWidth: "120px" }} />
-              </Form.Item>
-            )}
+          {filterAccountName && (
+            <Form.Item label={t(pCommon("account"))} name="accountName">
+              <Input style={{ minWidth: "120px" }} />
+            </Form.Item>
+          )}
+          {filterUserId && (
+            <Form.Item label={t(pCommon("userId"))} name="userId">
+              <Input style={{ minWidth: "120px" }} />
+            </Form.Item>
+          )}
           <Form.Item label="Qubits" name="qubits">
             <InputNumber style={{ minWidth: "120px" }} min={1} />
           </Form.Item>
@@ -130,7 +134,9 @@ export const QuantumJobTable: React.FC<Props> = ({
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+              <Button type="primary" htmlType="submit">
+                {t(pCommon("search"))}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -150,9 +156,9 @@ export const QuantumJobTable: React.FC<Props> = ({
 };
 
 interface JobInfoTableProps {
-  data: Static<typeof GetQuantumJobInfoSchema["responses"]["200"]> | undefined;
-  pageInfo: { page: number, pageSize: number };
-  setPageInfo?: (info: { page: number, pageSize: number }) => void;
+  data: Static<(typeof GetQuantumJobInfoSchema)["responses"]["200"]> | undefined;
+  pageInfo: { page: number; pageSize: number };
+  setPageInfo?: (info: { page: number; pageSize: number }) => void;
   isLoading: boolean;
   setSorter: (sorter: Sorter) => void;
   showAccount: boolean;
@@ -160,8 +166,13 @@ interface JobInfoTableProps {
 }
 
 export const JobInfoTable: React.FC<JobInfoTableProps> = ({
-  data, pageInfo, setPageInfo, setSorter, isLoading,
-  showAccount, showUser,
+  data,
+  pageInfo,
+  setPageInfo,
+  setSorter,
+  isLoading,
+  showAccount,
+  showUser,
 }) => {
   const t = useI18nTranslateToString();
   const handleTableChange = (pagination, filters, sorter) => {
@@ -204,52 +215,35 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
         rowKey={(i) => i.jobId}
         dataSource={jobsData}
         loading={isLoading}
-        pagination={setPageInfo ? {
-          current: pageInfo.page,
-          defaultPageSize: DEFAULT_PAGE_SIZE,
-          pageSize: pageInfo.pageSize,
-          showSizeChanger: true,
-          total: data?.totalCount,
-          onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
-        } : false}
+        pagination={
+          setPageInfo
+            ? {
+                current: pageInfo.page,
+                defaultPageSize: DEFAULT_PAGE_SIZE,
+                pageSize: pageInfo.pageSize,
+                showSizeChanger: true,
+                total: data?.totalCount,
+                onChange: (page, pageSize) => setPageInfo({ page, pageSize }),
+              }
+            : false
+        }
         tableLayout="fixed"
         scroll={{ x: data?.jobs?.length ? 1450 : true }}
       >
-        <Table.Column<JobInfo>
-          dataIndex="jobId"
-          width="30px"
-          title={t(pCommon("clusterWorkId"))}
-          sorter={true}
-        />
-        {
-          showUser ? (
-            <Table.Column<JobInfo>
-              dataIndex="user"
-              width="50px"
-              ellipsis
-              title={t(pCommon("userId"))}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        {
-          showAccount ? (
-            <Table.Column<JobInfo>
-              dataIndex="account"
-              width="50px"
-              ellipsis
-              title={t(pCommon("account"))}
-              sorter={true}
-            />
-          ) : undefined
-        }
-        <Table.Column<JobInfo>
-          title={t(p("device"))}
-          dataIndex="device"
-          width="30px"
-          sorter={true}
-          ellipsis
-        />
+        <Table.Column<JobInfo> dataIndex="jobId" width="30px" title={t(pCommon("clusterWorkId"))} sorter={true} />
+        {showUser ? (
+          <Table.Column<JobInfo> dataIndex="user" width="50px" ellipsis title={t(pCommon("userId"))} sorter={true} />
+        ) : undefined}
+        {showAccount ? (
+          <Table.Column<JobInfo>
+            dataIndex="account"
+            width="50px"
+            ellipsis
+            title={t(pCommon("account"))}
+            sorter={true}
+          />
+        ) : undefined}
+        <Table.Column<JobInfo> title={t(p("device"))} dataIndex="device" width="30px" sorter={true} ellipsis />
         <Table.Column<JobInfo>
           title="Qubits"
           dataIndex="qubits"
@@ -257,12 +251,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           sorter={true}
           render={(qubits) => qubits ?? EMPTY_STRING}
         />
-        <Table.Column<JobInfo>
-          title="Shots"
-          dataIndex="shots"
-          width="30px"
-          sorter={true}
-        />
+        <Table.Column<JobInfo> title="Shots" dataIndex="shots" width="30px" sorter={true} />
         <Table.Column
           dataIndex="submitTime"
           width="40px"
@@ -284,19 +273,12 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           // sorter={true}
           render={(duration: number) => (duration ? formatTime(duration) : EMPTY_STRING)}
         />
-        <Table.Column
-          title={t(p("qits"))}
-          dataIndex="qits"
-          width="30px"
-          sorter={true}
-        />
+        <Table.Column title={t(p("qits"))} dataIndex="qits" width="30px" sorter={true} />
         <Table.Column
           title={t(p("billing"))}
           dataIndex="amount"
           width="30px"
-          render={(amount?: string) =>
-            amount ? parseFloat(amount).toFixed(2) : EMPTY_STRING
-          }
+          render={(amount?: string) => (amount ? parseFloat(amount).toFixed(2) : EMPTY_STRING)}
           sorter={true}
         />
         <Table.Column
@@ -305,9 +287,7 @@ export const JobInfoTable: React.FC<JobInfoTableProps> = ({
           width="40px"
           sorter={true}
           render={(state: string) => (
-            <span style={{ color: statusColors[state.toUpperCase()] }}>
-              {state.toUpperCase()}
-            </span>
+            <span style={{ color: statusColors[state.toUpperCase()] }}>{state.toUpperCase()}</span>
           )}
         />
       </Table>

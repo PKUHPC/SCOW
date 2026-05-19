@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  DesktopOutlined, MoreOutlined, ReloadOutlined, SaveOutlined, StopOutlined,
-} from "@ant-design/icons";
-import {
-  App, Button, Card, Dropdown, MenuProps, Modal, Select,
-  Space, Table, Tag, Typography,
-} from "antd";
+import { DesktopOutlined, MoreOutlined, ReloadOutlined, SaveOutlined, StopOutlined } from "@ant-design/icons";
+import { App, Button, Card, Dropdown, MenuProps, Modal, Select, Space, Table, Tag, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useRouter } from "next/navigation";
 import { join } from "path";
@@ -130,7 +125,7 @@ export const DevHostList = () => {
   const { message } = App.useApp();
 
   const cancelJobMutation = trpc.jobs.cancelJob.useMutation({
-    onError:(e) => {
+    onError: (e) => {
       message.error(t(p("operationFailed"), [e.message]));
     },
     onSuccess: () => {
@@ -142,12 +137,14 @@ export const DevHostList = () => {
   const totalCount = data?.count || 0;
 
   // 集群选择器选项
-  const clusterOptions = publicConfig.CLUSTERS.filter((cluster) =>
-    currentAvailableClusterIds.includes(cluster.id) && scowClusterConfigs[cluster.id]?.ai.devHost.enabled,
+  const clusterOptions = publicConfig.CLUSTERS.filter(
+    (cluster) => currentAvailableClusterIds.includes(cluster.id) && scowClusterConfigs[cluster.id]?.ai.devHost.enabled,
   ).map((cluster) => ({
     value: cluster.id,
-    label: typeof cluster.name === "string" ?
-      cluster.name : cluster.name.i18n?.zh_cn || cluster.name.i18n?.default || cluster.id,
+    label:
+      typeof cluster.name === "string"
+        ? cluster.name
+        : cluster.name.i18n?.zh_cn || cluster.name.i18n?.default || cluster.id,
   }));
 
   // 设置默认选择第一个集群
@@ -198,7 +195,10 @@ export const DevHostList = () => {
       key: "image",
       width: 300,
       render: (image: AppSession["image"]) => (
-        <Text code>{image.name}{image.tag ? `:${image.tag}` : ""}</Text>
+        <Text code>
+          {image.name}
+          {image.tag ? `:${image.tag}` : ""}
+        </Text>
       ),
     },
     {
@@ -211,9 +211,17 @@ export const DevHostList = () => {
       key: "resources",
       render: (_, record) => (
         <div>
-          <div>CPU: {record.cpusAlloc} {t(p("cores"))}</div>
-          <div>{t(p("memory"))}: {record.memAlloc} MB</div>
-          {record.gpusAlloc > 0 && <div>GPU: {record.gpusAlloc} {t(p("cards"))}</div>}
+          <div>
+            CPU: {record.cpusAlloc} {t(p("cores"))}
+          </div>
+          <div>
+            {t(p("memory"))}: {record.memAlloc} MB
+          </div>
+          {record.gpusAlloc > 0 && (
+            <div>
+              GPU: {record.gpusAlloc} {t(p("cards"))}
+            </div>
+          )}
         </div>
       ),
     },
@@ -237,38 +245,50 @@ export const DevHostList = () => {
         const isRunning = record.state === "RUNNING";
         const items: MenuProps["items"] = [
           // 停止操作 - 仅对运行中的开发机显示
-          ...(isRunning ? [{
-            key: "stop",
-            onClick: () => showCancelModal(record),
-            label: (
-              <span>
-                <StopOutlined style={{ marginRight: 8 }} />
-                {t(p("stop"))}
-              </span>
-            ),
-          }] : []),
+          ...(isRunning
+            ? [
+                {
+                  key: "stop",
+                  onClick: () => showCancelModal(record),
+                  label: (
+                    <span>
+                      <StopOutlined style={{ marginRight: 8 }} />
+                      {t(p("stop"))}
+                    </span>
+                  ),
+                },
+              ]
+            : []),
           // 取消操作 - 仅对等待中、暂停或排队中的开发机显示
-          ...(["PENDING", "SUSPENDED", "QUEUED"].includes(record.state) ? [{
-            key: "cancel",
-            onClick: () => showCancelModal(record),
-            label: (
-              <span>
-                <StopOutlined style={{ marginRight: 8 }} />
-                {t(p("cancel"))}
-              </span>
-            ),
-          }] : []),
+          ...(["PENDING", "SUSPENDED", "QUEUED"].includes(record.state)
+            ? [
+                {
+                  key: "cancel",
+                  onClick: () => showCancelModal(record),
+                  label: (
+                    <span>
+                      <StopOutlined style={{ marginRight: 8 }} />
+                      {t(p("cancel"))}
+                    </span>
+                  ),
+                },
+              ]
+            : []),
           // 保存环境 - 仅对运行中的开发机显示
-          ...(isRunning ? [{
-            key: "saveImage",
-            onClick: () => handleSaveImage(record),
-            label: (
-              <span>
-                <SaveOutlined style={{ marginRight: 8 }} />
-                {t(p("saveEnvironment"))}
-              </span>
-            ),
-          }] : []),
+          ...(isRunning
+            ? [
+                {
+                  key: "saveImage",
+                  onClick: () => handleSaveImage(record),
+                  label: (
+                    <span>
+                      <SaveOutlined style={{ marginRight: 8 }} />
+                      {t(p("saveEnvironment"))}
+                    </span>
+                  ),
+                },
+              ]
+            : []),
           // 删除选项 - 已注释,未来可能需要放开
           // {
           //   key: "view",
@@ -301,7 +321,7 @@ export const DevHostList = () => {
             >
               {t(p("enterShell"))}
             </Button>
-            { items.length > 0 && (
+            {items.length > 0 && (
               <Dropdown menu={{ items }} trigger={["hover"]}>
                 <Button icon={<MoreOutlined />} size="small" />
               </Dropdown>
@@ -343,11 +363,7 @@ export const DevHostList = () => {
             </Button>
           </div>
           <div>
-            <Button
-              type="primary"
-              style={{ marginLeft: 16 }}
-              onClick={() => router.push("/jobs/createDev")}
-            >
+            <Button type="primary" style={{ marginLeft: 16 }} onClick={() => router.push("/jobs/createDev")}>
               {t(p("createDevHost"))}
             </Button>
           </div>
@@ -402,8 +418,7 @@ export const DevHostList = () => {
         <p>
           {currentRecord?.state === "RUNNING"
             ? t(p("confirmStopMessage"), [currentRecord?.jobName || ""])
-            : t(p("confirmCancelMessage"), [currentRecord?.jobName || ""])
-          }
+            : t(p("confirmCancelMessage"), [currentRecord?.jobName || ""])}
         </p>
       </Modal>
     </div>

@@ -14,14 +14,7 @@ const StyledSvg = styled.svg`
 
 // 默认导航链接图标（用于外部链接等场景）
 const defaultNavLinkSVG = (style?: CSSProperties) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="16"
-    viewBox="0 0 18 16"
-    fill="none"
-    style={style}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 18 16" fill="none" style={style}>
     <path
       d="M14 0C16.2091 0 18 1.79086 18 4V12C18 14.2091 16.2091 16 14 16H4
          C1.79086 16 0 14.2091 0 12V4C0 1.79086 1.79086 1.61064e-08 4 0H14Z
@@ -50,17 +43,12 @@ const defaultNavLinkSVG = (style?: CSSProperties) => (
   </svg>
 );
 
-export const DefaultNavLinkIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => {
-  const { style, ...rest } = props;
-  return (
-    <Icon
-      component={() => defaultNavLinkSVG(style)}
-      {...rest}
-      ref={ref}
-    />
-  );
-});
+export const DefaultNavLinkIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => {
+    const { style, ...rest } = props;
+    return <Icon component={() => defaultNavLinkSVG(style)} {...rest} ref={ref} />;
+  },
+);
 
 const userSVG = () => (
   <svg width="16" height="14" viewBox="0 0 16 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -75,10 +63,9 @@ const userSVG = () => (
   </svg>
 );
 
-export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={userSVG} {...props} ref={ref} />
-));
+export const UserIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={userSVG} {...props} ref={ref} />,
+);
 
 // 超算平台图标
 const highComputingSVG = () => (
@@ -111,13 +98,11 @@ const highComputingSVG = () => (
       fill="currentColor"
     />
   </svg>
-
 );
 
-export const HighComputingIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={highComputingSVG} {...props} ref={ref} />
-));
+export const HighComputingIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={highComputingSVG} {...props} ref={ref} />,
+);
 
 // 人工智能图标
 const aiSVG = () => (
@@ -136,10 +121,9 @@ const aiSVG = () => (
   </svg>
 );
 
-export const AiIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={aiSVG} {...props} ref={ref} />
-));
+export const AiIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={aiSVG} {...props} ref={ref} />,
+);
 
 // 管理系统图标
 const misSVG = () => (
@@ -162,10 +146,9 @@ const misSVG = () => (
   </svg>
 );
 
-export const MisIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={misSVG} {...props} ref={ref} />
-));
+export const MisIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={misSVG} {...props} ref={ref} />,
+);
 
 // 无消息图标
 const noMessageSVG = () => (
@@ -185,10 +168,9 @@ const noMessageSVG = () => (
   </svg>
 );
 
-export const NoMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={noMessageSVG} {...props} ref={ref} />
-));
+export const NoMessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={noMessageSVG} {...props} ref={ref} />,
+);
 
 // 有消息图标
 const messageSVG = () => (
@@ -230,13 +212,11 @@ const messageSVG = () => (
       </filter>
     </defs>
   </svg>
-
 );
 
-export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={messageSVG} {...props} ref={ref} />
-));
+export const MessageIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={messageSVG} {...props} ref={ref} />,
+);
 
 // 收起菜单图标
 const collapseMenuSVG = () => (
@@ -244,13 +224,11 @@ const collapseMenuSVG = () => (
     <rect width="18" height="18" rx="4" />
     <path d="M10.125 5.625L6.75 9L10.125 12.375" strokeWidth="1.2" strokeLinecap="round" />
   </StyledSvg>
-
 );
 
-export const CollapseMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={collapseMenuSVG} {...props} ref={ref} />
-));
+export const CollapseMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={collapseMenuSVG} {...props} ref={ref} />,
+);
 
 // 展开菜单图标
 const expandMenuSVG = () => (
@@ -260,10 +238,9 @@ const expandMenuSVG = () => (
   </StyledSvg>
 );
 
-export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={expandMenuSVG} {...props} ref={ref} />
-));
+export const ExpandMenuIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={expandMenuSVG} {...props} ref={ref} />,
+);
 
 const quantumSVG = () => (
   <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -308,8 +285,6 @@ const quantumSVG = () => (
   </svg>
 );
 
-
-export const QuantumIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>((props,
-  ref: LegacyRef<HTMLSpanElement> | undefined) => (
-  <Icon component={quantumSVG} {...props} ref={ref} />
-));
+export const QuantumIcon = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+  (props, ref: LegacyRef<HTMLSpanElement> | undefined) => <Icon component={quantumSVG} {...props} ref={ref} />,
+);

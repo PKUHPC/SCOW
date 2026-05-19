@@ -12,19 +12,19 @@ function handleIfInvalidCredentials(e: any) {
   }
 }
 
-export async function modifyUnlockBase(
-  userId: string,
-  client: ldapjs.Client,
-): Promise<boolean> {
+export async function modifyUnlockBase(userId: string, client: ldapjs.Client): Promise<boolean> {
   try {
     const modify = promisify(client.modify.bind(client));
 
-    await modify(userId, new ldapjs.Change({
-      operation: "delete",
-      modification: {
-        "pwdAccountLockedTime": [], // 值留空表示删除整个属性
-      },
-    }));
+    await modify(
+      userId,
+      new ldapjs.Change({
+        operation: "delete",
+        modification: {
+          pwdAccountLockedTime: [], // 值留空表示删除整个属性
+        },
+      }),
+    );
 
     return true;
   } catch (e: any) {
@@ -35,13 +35,12 @@ export async function modifyUnlockBase(
   }
 }
 
-export async function modifyUnlock(
-  log: FastifyBaseLogger,
-  ldap: LdapConfigSchema,
-  userDn: string,
-): Promise<boolean> {
+export async function modifyUnlock(log: FastifyBaseLogger, ldap: LdapConfigSchema, userDn: string): Promise<boolean> {
   try {
-    return await useLdap(log, ldap)(async (client) => {
+    return await useLdap(
+      log,
+      ldap,
+    )(async (client) => {
       await modifyUnlockBase(userDn, client);
       return true;
     });

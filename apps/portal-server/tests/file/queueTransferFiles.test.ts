@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncRequestStreamCall, asyncUnaryCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { credentials } from "@grpc/grpc-js";
@@ -17,8 +5,14 @@ import { sftpExists, sftpMkdir, sftpRmdir, sftpUnlink } from "@scow/lib-ssh";
 import { FileServiceClient, TransferInfo } from "@scow/protos/build/portal/file";
 import path from "path";
 import { createServer } from "src/app";
-import { cluster, connectToTestServer,
-  createTestItems, resetTestServer, TestSshServer, userId } from "tests/file/utils";
+import {
+  cluster,
+  connectToTestServer,
+  createTestItems,
+  resetTestServer,
+  TestSshServer,
+  userId,
+} from "tests/file/utils";
 
 let ssh: TestSshServer;
 let server: Server;
@@ -44,9 +38,21 @@ const progressInt = 42;
 const speedKBps = 1.74;
 const leftTimeSeconds = 33;
 
-const content = toCluster + " " + fatherPath + "\n"
-  + fileName + "\n"
-  + "\r" + transferSize + " " + progress + " " + speed + " " + leftTime;
+const content =
+  toCluster +
+  " " +
+  fatherPath +
+  "\n" +
+  fileName +
+  "\n" +
+  "\r" +
+  transferSize +
+  " " +
+  progress +
+  " " +
+  speed +
+  " " +
+  leftTime;
 
 beforeEach(async () => {
   ssh = await connectToTestServer();
@@ -59,7 +65,8 @@ beforeEach(async () => {
 
   // 上传测试文件，用于scow-sync-query读取
   const HomePath = await asyncUnaryCall(client, "getHomeDirectory", {
-    cluster, userId,
+    cluster,
+    userId,
   });
   const scowPath = `${HomePath.path}/scow`;
   const scowSyncPath = path.join(scowPath, ".scow-sync");
@@ -68,10 +75,14 @@ beforeEach(async () => {
 
   const scowExist = await sftpExists(ssh.sftp, scowPath);
 
-  if (!scowExist) { await sftpMkdir(ssh.sftp)(scowPath); }
+  if (!scowExist) {
+    await sftpMkdir(ssh.sftp)(scowPath);
+  }
 
   const scowSyncExist = await sftpExists(ssh.sftp, scowSyncPath);
-  if (!scowSyncExist) { await sftpMkdir(ssh.sftp)(scowSyncPath); }
+  if (!scowSyncExist) {
+    await sftpMkdir(ssh.sftp)(scowSyncPath);
+  }
 
   await sftpMkdir(ssh.sftp)(testTransferDir);
 
@@ -90,10 +101,10 @@ afterEach(async () => {
   await server.close();
 });
 
-
 it.skip("query the transfer information of scow-sync", async () => {
   const result = await asyncUnaryCall(client, "queryFileTransfer", {
-    cluster, userId,
+    cluster,
+    userId,
   });
 
   expect(result.transferInfos.length).toBe(1);
@@ -105,5 +116,4 @@ it.skip("query the transfer information of scow-sync", async () => {
   expect(transferInfo.progress).toBe(progressInt);
   expect(transferInfo.speedKBps).toBe(speedKBps);
   expect(transferInfo.remainingTimeSeconds).toBe(leftTimeSeconds);
-
 });

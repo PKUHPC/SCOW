@@ -19,5 +19,4 @@ export default async (req: NextApiRequest, res: any) => {
     res.send("Setup complete");
     setupState = "completed";
   });
-
 };

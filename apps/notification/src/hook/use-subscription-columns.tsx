@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { useQuery } from "@connectrpc/connect-query";
 import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import { listNoticeTypes } from "@scow/notification-protos/build/notice_type-NoticeTypeService_connectquery";
@@ -24,7 +12,7 @@ import { FormValues } from "src/page-components/message-config/message-config-ta
 
 export interface SelectAllProps {
   e: CheckboxChangeEvent;
-  checkedNoticeType: NoticeType
+  checkedNoticeType: NoticeType;
 }
 
 interface Props {
@@ -49,14 +37,17 @@ const TooltipCheckbox: React.FC<TooltipCheckboxProps> = ({ tooltipTitle, ...rest
   </Tooltip>
 );
 
-
 export function useSubscriptionColumns({
-  form, messageConfigs, checkAllDisabled,
-  noticeTypeAllChecked, setNoticeTypeAllChecked,
-  noticeTypePartialChecked, setNoticeTypePartialChecked,
-  setHasChange, lang,
+  form,
+  messageConfigs,
+  checkAllDisabled,
+  noticeTypeAllChecked,
+  setNoticeTypeAllChecked,
+  noticeTypePartialChecked,
+  setNoticeTypePartialChecked,
+  setHasChange,
+  lang,
 }: Props) {
-
   const { data: noticeTypesData } = useQuery(listNoticeTypes);
   const [columns, setColumns] = useState<TableColumnsType<MessageConfig>>([]);
   const compLang = lang.subscription.useSubscriptionColumns;
@@ -74,9 +65,11 @@ export function useSubscriptionColumns({
     let modifiableCount = 0;
 
     for (const messageType of Object.keys(values.noticeConfigs)) {
-      const canUserModify = messageConfigs.find((config) =>
-        config.messageType === messageType && config.noticeConfigs.find(
-          (nc) => nc.noticeType === checkedNoticeType && nc.canUserModify));
+      const canUserModify = messageConfigs.find(
+        (config) =>
+          config.messageType === messageType &&
+          config.noticeConfigs.find((nc) => nc.noticeType === checkedNoticeType && nc.canUserModify),
+      );
 
       if (canUserModify) {
         modifiableCount++;
@@ -100,7 +93,6 @@ export function useSubscriptionColumns({
     }
   };
 
-
   const handleCheckAll = ({ e, checkedNoticeType }: SelectAllProps) => {
     if (!messageConfigs) return;
 
@@ -111,26 +103,37 @@ export function useSubscriptionColumns({
     setNoticeTypePartialChecked((prev) => ({ ...prev, [checkedNoticeType]: false }));
 
     const parsedValues = {
-      noticeConfigs: Object.keys(values.noticeConfigs).reduce((acc, messageType) => {
-        const noticeConfigs = Object.keys(values.noticeConfigs[messageType]).reduce((innerAcc, noticeType) => {
-          const enumNoticeType = Number(noticeType) as unknown as NoticeType;
-          const canUserModify = messageConfigs.find((config) =>
-            config.messageType === messageType && !!config.noticeConfigs.find((noticeConfig) =>
-              noticeConfig.noticeType === checkedNoticeType && noticeConfig.canUserModify));
+      noticeConfigs: Object.keys(values.noticeConfigs).reduce(
+        (acc, messageType) => {
+          const noticeConfigs = Object.keys(values.noticeConfigs[messageType]).reduce(
+            (innerAcc, noticeType) => {
+              const enumNoticeType = Number(noticeType) as unknown as NoticeType;
+              const canUserModify = messageConfigs.find(
+                (config) =>
+                  config.messageType === messageType &&
+                  !!config.noticeConfigs.find(
+                    (noticeConfig) => noticeConfig.noticeType === checkedNoticeType && noticeConfig.canUserModify,
+                  ),
+              );
+
+              return {
+                ...innerAcc,
+                [enumNoticeType]:
+                  checkedNoticeType === enumNoticeType && canUserModify
+                    ? e.target.checked
+                    : values.noticeConfigs[messageType][noticeType],
+              };
+            },
+            {} as Partial<Record<NoticeType, boolean>>,
+          );
 
           return {
-            ...innerAcc,
-            [enumNoticeType]: checkedNoticeType === enumNoticeType && canUserModify
-              ? e.target.checked
-              : values.noticeConfigs[messageType][noticeType],
+            ...acc,
+            [messageType]: noticeConfigs,
           };
-        }, {} as Partial<Record<NoticeType, boolean>>);
-
-        return {
-          ...acc,
-          [messageType]: noticeConfigs,
-        };
-      }, {} as Record<string, Partial<Record<NoticeType, boolean>>>),
+        },
+        {} as Record<string, Partial<Record<NoticeType, boolean>>>,
+      ),
     };
 
     form.setFieldsValue(parsedValues);
@@ -185,15 +188,10 @@ export function useSubscriptionColumns({
           const checkboxDisabled = !noticeTypeConfig?.canUserModify;
           const checked = noticeTypeConfig?.enabled;
 
-          const title = checkboxDisabled ?
-            (checked ? compLang.unableToCancelPrompt : compLang.unableToOpenPrompt) : "";
+          const title = checkboxDisabled ? (checked ? compLang.unableToCancelPrompt : compLang.unableToOpenPrompt) : "";
 
           return (
-            <Form.Item
-              name={["noticeConfigs", record.messageType, type]}
-              valuePropName="checked"
-              noStyle
-            >
+            <Form.Item name={["noticeConfigs", record.messageType, type]} valuePropName="checked" noStyle>
               <TooltipCheckbox
                 tooltipTitle={title}
                 disabled={checkboxDisabled}
@@ -206,7 +204,12 @@ export function useSubscriptionColumns({
     ];
 
     setColumns(columns);
-  }, [noticeTypesData, checkAllDisabled, ...Object.values(noticeTypeAllChecked), ...Object.values(noticeTypePartialChecked)]);
+  }, [
+    noticeTypesData,
+    checkAllDisabled,
+    ...Object.values(noticeTypeAllChecked),
+    ...Object.values(noticeTypePartialChecked),
+  ]);
 
   return columns;
 }

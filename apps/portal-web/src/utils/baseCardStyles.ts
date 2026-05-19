@@ -23,7 +23,6 @@ export const StyledCard = styled(Card)<{
   }
 `;
 
-
 // 2. 标题和操作区域
 
 export const CardTitleContainer = styled.div`

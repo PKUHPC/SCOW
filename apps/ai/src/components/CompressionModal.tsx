@@ -27,14 +27,20 @@ interface FormProps {
 
 const fileSuffix = ".zip";
 
-export const CompressionModal: React.FC<Props> = ({ open, onClose, reload, clusterId, path,
-  files, setCompression }) => {
+export const CompressionModal: React.FC<Props> = ({
+  open,
+  onClose,
+  reload,
+  clusterId,
+  path,
+  files,
+  setCompression,
+}) => {
   const t = useI18nTranslateToString();
   const p = prefix("component.compressionModal.");
   const pCommon = prefix("common.");
 
-
-  const { message,modal } = App.useApp();
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm<FormProps>();
 
   const [loading, setLoading] = useState(false);
@@ -45,7 +51,7 @@ export const CompressionModal: React.FC<Props> = ({ open, onClose, reload, clust
       setCompression?.((compression) => {
         // 如果所有开始的任务都已经完成则清空
         if (compression.completed.length + 1 === compression.started.length) {
-          return { completed: [], started: []};
+          return { completed: [], started: [] };
         }
 
         return { ...compression, completed: compression.completed.concat(zipFileName) };
@@ -62,7 +68,7 @@ export const CompressionModal: React.FC<Props> = ({ open, onClose, reload, clust
       setCompression?.((compression) => {
         // 如果所有开始的任务都已经完成则清空
         if (compression.completed.length + 1 === compression.started.length) {
-          return { completed: [], started: []};
+          return { completed: [], started: [] };
         }
 
         return { ...compression, completed: compression.completed.concat("") };
@@ -73,17 +79,16 @@ export const CompressionModal: React.FC<Props> = ({ open, onClose, reload, clust
   const checkFileExistMutation = trpc.file.checkFileExist.useMutation();
 
   const handleCompress = (zipFileName: string) => {
-
     setCompression?.((compression) => ({
-      ...compression, started: compression.started.concat(zipFileName + fileSuffix),
+      ...compression,
+      started: compression.started.concat(zipFileName + fileSuffix),
     }));
 
     compressFilesMutation.mutate({
       clusterId,
-      filePaths:files.map((f) => join(path, f.name)),
-      archivePath:join(path, zipFileName + fileSuffix),
+      filePaths: files.map((f) => join(path, f.name)),
+      archivePath: join(path, zipFileName + fileSuffix),
     });
-
   };
 
   const onSubmit = async () => {
@@ -91,19 +96,21 @@ export const CompressionModal: React.FC<Props> = ({ open, onClose, reload, clust
     setLoading(true);
     const checkExistRes = await checkFileExistMutation.mutateAsync({
       clusterId,
-      path:join(path, zipFileName + fileSuffix),
+      path: join(path, zipFileName + fileSuffix),
     });
 
     if (checkExistRes.exists) {
       await new Promise<void>((res) => {
         modal.confirm({
           title: t(p("alreadyExisted")),
-          content: t(p("overwrite"),[zipFileName]),
+          content: t(p("overwrite"), [zipFileName]),
           okText: t(p("confirm")),
           onOk: async () => {
             handleCompress(zipFileName);
           },
-          onCancel: async () => { res(); },
+          onCancel: async () => {
+            res();
+          },
         });
       });
     } else {

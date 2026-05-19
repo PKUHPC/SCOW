@@ -1,7 +1,10 @@
 import { HEADER_ACCEPT_VALID_LANGUAGES, SYSTEM_VALID_LANGUAGES, SystemLanguageConfig } from "@scow/config/build/i18n";
 
-export function getSystemInitialLanguageId(languageCookie: string | undefined,acceptLanguageHeader: string | null,
-  systemLanguageConfig: SystemLanguageConfig): string {
+export function getSystemInitialLanguageId(
+  languageCookie: string | undefined,
+  acceptLanguageHeader: string | null,
+  systemLanguageConfig: SystemLanguageConfig,
+): string {
   // 如果系统不使用i18n，则直接使用defaultLanguage
   if (!systemLanguageConfig.isUsingI18n) {
     return systemLanguageConfig.defaultLanguage;
@@ -18,7 +21,7 @@ export function getSystemInitialLanguageId(languageCookie: string | undefined,ac
     if (acceptLanguageHeader) {
       const preferredLanguages = acceptLanguageHeader.split(",");
       if (preferredLanguages.length > 0) {
-      // 遍历语言偏好列表
+        // 遍历语言偏好列表
         for (const lang of preferredLanguages) {
           const preferredLanguage = lang.split(";")[0];
           // 判断偏好语言中的语言是否合法
@@ -40,4 +43,4 @@ export function getSystemInitialLanguageId(languageCookie: string | undefined,ac
   }
   // 如果判断不出，或者autoDetectWhenUserNotSet为false则直接使用默认语言
   return systemLanguageConfig.defaultLanguage;
-};
+}

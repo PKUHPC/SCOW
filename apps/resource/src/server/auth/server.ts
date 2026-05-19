@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { NextApiRequest, NextApiResponse, NextPageContext } from "next";
 import { NextRequest } from "next/server";
-import { PlatformRole,TenantRole } from "src/models/user";
+import { PlatformRole, TenantRole } from "src/models/user";
 import { deleteUserToken, getUserToken } from "src/server/auth/cookie";
 import { validateToken } from "src/server/auth/token";
 import { ClientUserInfo } from "src/server/trpc/route/auth";
@@ -19,16 +19,16 @@ export const MOCK_USER_INFO: ClientUserInfo = {
 type RequestType = IncomingMessage | NextApiRequest | NextRequest | NextPageContext["req"];
 
 export async function getUserInfo(req: RequestType, res?: NextApiResponse): Promise<ClientUserInfo | undefined> {
-
   if (USE_MOCK) {
     return MOCK_USER_INFO;
   }
 
   const token = getUserToken(req);
-  if (!token) { return undefined; }
+  if (!token) {
+    return undefined;
+  }
 
   const result = await validateToken(token);
-
 
   if (!result?.identityId) {
     deleteUserToken(res);
@@ -36,5 +36,4 @@ export async function getUserInfo(req: RequestType, res?: NextApiResponse): Prom
   }
 
   return { ...result, token };
-
 }

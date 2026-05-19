@@ -12,18 +12,18 @@ import { getClient } from "src/utils/client";
 import { route } from "src/utils/route";
 
 export const mapChargesSortByType = {
-  "accountName":SortBy.ACCOUNT_NAME,
-  "time":SortBy.TIME,
-  "amount":SortBy.AMOUNT,
-  "type":SortBy.TYPE,
-  "ipAddress":SortBy.IP_ADDRESS,
-  "operatorId":SortBy.OPERATOR_ID,
-  "comment":SortBy.COMMENT,
+  accountName: SortBy.ACCOUNT_NAME,
+  time: SortBy.TIME,
+  amount: SortBy.AMOUNT,
+  type: SortBy.TYPE,
+  ipAddress: SortBy.IP_ADDRESS,
+  operatorId: SortBy.OPERATOR_ID,
+  comment: SortBy.COMMENT,
 } as Record<string, SortBy>;
 
 export const mapChargesSortOrderType = {
-  "descend":SortOrder.DESCEND,
-  "ascend":SortOrder.ASCEND,
+  descend: SortOrder.DESCEND,
+  ascend: SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const TenantPaymentInfo = Type.Object({
@@ -57,17 +57,17 @@ export const GetTenantPaymentsSchema = typeboxRouteSchema({
     tenantName: Type.Optional(Type.String()),
 
     // 充值类型
-    types:Type.Optional(Type.Array(Type.String())),
+    types: Type.Optional(Type.Array(Type.String())),
 
-    operatorIdOrName:Type.Optional(Type.String()),
+    operatorIdOrName: Type.Optional(Type.String()),
 
     page: Type.Optional(Type.Integer({ minimum: 1 })),
 
     pageSize: Type.Optional(Type.Integer()),
 
-    sortBy:Type.Optional(PaymentSortBy),
+    sortBy: Type.Optional(PaymentSortBy),
 
-    sortOrder:Type.Optional(ChargesSortOrder),
+    sortOrder: Type.Optional(ChargesSortOrder),
   }),
 
   responses: {
@@ -80,32 +80,38 @@ export const GetTenantPaymentsSchema = typeboxRouteSchema({
 });
 
 export default route(GetTenantPaymentsSchema, async (req, res) => {
-  const { endTime, startTime, tenantName, types,
-    operatorIdOrName, page, pageSize, sortBy, sortOrder } = req.query;
+  const { endTime, startTime, tenantName, types, operatorIdOrName, page, pageSize, sortBy, sortOrder } = req.query;
 
   const client = getClient(ChargingServiceClient);
 
-  const user = await authenticate((i) => i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) ||
-      i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN))(req, res);
-  if (!user) { return; }
+  const user = await authenticate(
+    (i) =>
+      i.platformRoles.includes(PlatformRole.PLATFORM_FINANCE) || i.platformRoles.includes(PlatformRole.PLATFORM_ADMIN),
+  )(req, res);
+  if (!user) {
+    return;
+  }
 
   // 默认按照时间的倒序排序
   const mapChargesSortBy = sortBy ? mapChargesSortByType[sortBy] : mapChargesSortByType.time;
   const mapChargesSortOrder = sortOrder ? mapChargesSortOrderType[sortOrder] : mapChargesSortOrderType.descend;
 
-  const reply = ensureNotUndefined(await asyncClientCall(client, "getPaymentRecords", {
-    target:tenantName ?
-      { $case:"tenant", tenant:{ tenantName:tenantName } } :
-      { $case:"allTenants", allTenants:{ } },
-    startTime,
-    endTime,
-    operatorIdOrName,
-    page,
-    pageSize,
-    sortBy:mapChargesSortBy,
-    sortOrder:mapChargesSortOrder,
-    types:types ?? [],
-  }), ["total"]);
+  const reply = ensureNotUndefined(
+    await asyncClientCall(client, "getPaymentRecords", {
+      target: tenantName
+        ? { $case: "tenant", tenant: { tenantName: tenantName } }
+        : { $case: "allTenants", allTenants: {} },
+      startTime,
+      endTime,
+      operatorIdOrName,
+      page,
+      pageSize,
+      sortBy: mapChargesSortBy,
+      sortOrder: mapChargesSortOrder,
+      types: types ?? [],
+    }),
+    ["total"],
+  );
 
   const tenants = reply.results.map((x) => {
     const obj = ensureNotUndefined(x, ["time", "amount"]);
@@ -113,7 +119,7 @@ export default route(GetTenantPaymentsSchema, async (req, res) => {
     return {
       tenantName: obj.tenantName,
       comment: obj.comment,
-      index:obj.index,
+      index: obj.index,
       ipAddress: obj.ipAddress,
       operatorId: obj.operatorId,
       operatorName: obj.operatorName,

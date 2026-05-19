@@ -1,20 +1,8 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { AccountServiceClient, GetAccountsResponse } from "@scow/protos/build/server/account";
 import { GetUserInfoResponse, UserServiceClient } from "@scow/protos/build/server/user";
 import { NoticeType } from "src/models/notice-type";
-import { type AccountAffiliation,PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/user";
+import { type AccountAffiliation, PlatformRole, TenantRole, UserInfo, UserRole } from "src/models/user";
 import { notificationConfig } from "src/server/config/notification";
 import { TargetType } from "src/server/entities/UserMessageRead";
 import { getScowClient } from "src/utils/scow-client";
@@ -65,11 +53,12 @@ async function handleAccountTarget(userInfo: UserInfo, targetIds: string[]): Pro
   const client = getScowClient(AccountServiceClient);
   const tenantAccounts: GetAccountsResponse = userInfo.tenantRoles.includes(TenantRole.TENANT_ADMIN)
     ? await asyncClientCall(client, "getAccounts", { tenantName: userInfo.tenant })
-    : { results: []};
+    : { results: [] };
 
   for (const accountId of targetIds) {
     const isUserAccountAdmin = userInfo.accountAffiliations.some(
-      (x) => x.accountName === accountId && x.role !== UserRole.USER);
+      (x) => x.accountName === accountId && x.role !== UserRole.USER,
+    );
 
     const isTenantAccount = tenantAccounts.results.some((a) => a.accountName === accountId);
     if (!isUserAccountAdmin || !isTenantAccount) {
@@ -94,7 +83,6 @@ async function handleUserTarget(userInfo: UserInfo, targetIds: string[]): Promis
   return true;
 }
 
-
 export const checkNoticeTypeEnabled = (noticeType: NoticeType) => {
   const noticeTypeConfig = notificationConfig.noticeType;
 
@@ -118,7 +106,9 @@ export const checkNoticeTypeEnabled = (noticeType: NoticeType) => {
   }
 };
 
-export const enabledNoticeTypes = Object.keys(NoticeType).filter((key): key is keyof typeof NoticeType => {
-  const value = NoticeType[key as keyof typeof NoticeType];
-  return checkNoticeTypeEnabled(value);
-}).map((key): NoticeType => NoticeType[key]);
+export const enabledNoticeTypes = Object.keys(NoticeType)
+  .filter((key): key is keyof typeof NoticeType => {
+    const value = NoticeType[key as keyof typeof NoticeType];
+    return checkNoticeTypeEnabled(value);
+  })
+  .map((key): NoticeType => NoticeType[key]);

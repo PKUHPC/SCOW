@@ -1,8 +1,8 @@
-
 import { Cluster } from "@scow/config/build/type";
 import { GetClusterConfigFilesResponse } from "@scow/protos/generated/common/config";
 import {
-  Account_AccountState, Account_DisplayedAccountState,
+  Account_AccountState,
+  Account_DisplayedAccountState,
   GetAccountsResponse,
 } from "@scow/protos/generated/server/account";
 import { AssignmentState, ClusterPartition } from "src/models/partition";
@@ -11,9 +11,7 @@ import { USE_MOCK } from "src/utils/processEnv";
 
 import { AllAssignedInfoSchema } from "./partitions/tenantClusterPartitions";
 
-
 export async function mock<T>(actualFn: () => T, mockFn: () => T) {
-
   if (USE_MOCK) {
     // await new Promise((res) => setTimeout(res, ));
     return mockFn();
@@ -120,7 +118,6 @@ export const ACCOUNTS_DATA: GetAccountsResponse = {
     },
   ],
 };
-
 
 export const ACCOUNT_ASSIGNED_PARTIITON_DETAILS = [
   {
@@ -289,20 +286,18 @@ export const MOCK_ALL_ACCT_ASSIGNED_INFO: AllAssignedInfoSchema[] = [
   },
 ];
 
-
 export const MOCK_TENANT_ACCOUNT_DEFAULT_CLUSTERS = {
   tenantName: "default",
   assignedTotalCount: 3,
-  assignedClusters: [ "hpc01", "hpc02", "hpc03"],
+  assignedClusters: ["hpc01", "hpc02", "hpc03"],
 };
 
 export const MOCK_ACCT_ASSIGNED_CLUSTERS = {
   accountName: "a_aaa",
   tenantName: "default",
   assignedTotalCount: 3,
-  assignedClusters: [ "hpc01", "hpc02", "hpc03"],
+  assignedClusters: ["hpc01", "hpc02", "hpc03"],
 };
-
 
 export const MOCK_CLUSTER_PARTITIONS_INFO = {
   schedulerName: "slurm-adapter",
@@ -327,4 +322,3 @@ export const MOCK_CLUSTER_PARTITIONS_INFO = {
     },
   ],
 };
-

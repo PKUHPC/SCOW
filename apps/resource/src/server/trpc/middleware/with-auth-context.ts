@@ -6,7 +6,6 @@ import { middleware } from "src/server/trpc/def";
 import { USE_MOCK } from "src/utils/processEnv";
 
 export const withAuthContext = middleware(async ({ ctx, next }) => {
-
   if (USE_MOCK) {
     return next({
       ctx: {
@@ -44,5 +43,4 @@ export const withAuthContext = middleware(async ({ ctx, next }) => {
       },
     },
   });
-
 });

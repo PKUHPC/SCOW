@@ -1,14 +1,4 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
+import type { GetJobFilter } from "src/pages/api/job/jobInfo";
 
 import { QuestionCircleOutlined } from "@ant-design/icons";
 import { Money } from "@scow/protos/build/common/money";
@@ -16,7 +6,6 @@ import { App, Form, Input, InputNumber, Modal, Popover, Space } from "antd";
 import { useState } from "react";
 import { api } from "src/apis";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import type { GetJobFilter } from "src/pages/api/job/jobInfo";
 import { publicConfig } from "src/utils/config";
 import { moneyToString } from "src/utils/money";
 
@@ -39,7 +28,7 @@ interface JobItem {
   idJob: number;
   biJobIndex: number;
   jobName: string;
-  accountPrice?: Money
+  accountPrice?: Money;
   cluster: string;
 }
 
@@ -47,7 +36,6 @@ const p = prefix("pageComp.tenant.jobPriceChangeModal.");
 const pCommon = prefix("common.");
 
 export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, reload, setSelectedJobs }) => {
-
   const t = useI18nTranslateToString();
 
   const [form] = Form.useForm<FormProps>();
@@ -80,7 +68,6 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
    * @returns {JSX.Element} - 格式化后的JSX元素（含换行）
    */
   const formatJobNames = (jobNames: string[], jobIds: number[]) => {
-
     const count = jobNames.length;
     const maxDisplay = 3;
 
@@ -102,18 +89,18 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
 
           // 2. 如果是第3个作业，且还有剩余，则添加摘要文本
           if (isLastDisplayed && showSummary) {
-            return (
-              <span key={index}>
-                {jobStr + t(p("jobSummaryEllipsis"), [count.toString()])}
-              </span>
-            );
+            return <span key={index}>{jobStr + t(p("jobSummaryEllipsis"), [count.toString()])}</span>;
           }
 
           // 3. 否则，如果不是最后一个，添加换行 <br />
           return (
             <span key={index}>
               {output}
-              {index < displayJobNames.length - 1 && (<>,<br /></>)}
+              {index < displayJobNames.length - 1 && (
+                <>
+                  ,<br />
+                </>
+              )}
             </span>
           );
         })}
@@ -122,10 +109,10 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
   };
 
   /**
- * 格式化作业计费列表
- * @param {(string | 0)[]} prices - 价格数组
- * @returns {JSX.Element} - 格式化后的JSX元素
- */
+   * 格式化作业计费列表
+   * @param {(string | 0)[]} prices - 价格数组
+   * @returns {JSX.Element} - 格式化后的JSX元素
+   */
   const formatPrices = (prices: (string | 0)[]) => {
     const count = prices.length;
     const maxDisplay = 3;
@@ -145,11 +132,7 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
 
           // 2. 如果是第3个价格，且还有剩余，则添加摘要文本
           if (isLastDisplayed && showSummary) {
-            return (
-              <span key={index}>
-                {priceStr + t(p("priceSummaryEllipsis"), [count.toString()])}
-              </span>
-            );
+            return <span key={index}>{priceStr + t(p("priceSummaryEllipsis"), [count.toString()])}</span>;
           }
 
           return (
@@ -175,7 +158,8 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
         const { price, reason } = await form.validateFields();
 
         setLoading(true);
-        await api.changeJobPrice({ body: { jobIds, biJobIndexs, price, reason, target: "account", clusters } })
+        await api
+          .changeJobPrice({ body: { jobIds, biJobIndexs, price, reason, target: "account", clusters } })
           .httpError(404, (e) => {
             message.error({
               content: e.message.split(": ")[1],
@@ -196,7 +180,6 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
             setSelectedJobs([]);
           })
           .finally(() => setLoading(false));
-
       }}
     >
       <Form form={form}>
@@ -207,12 +190,13 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
           </colgroup>
           <tbody>
             <tr>
-              <td style={{
-                verticalAlign: "top",
-                paddingTop: "4px",
-                paddingBottom: "16px",
-                paddingRight: "24px",
-              }}
+              <td
+                style={{
+                  verticalAlign: "top",
+                  paddingTop: "4px",
+                  paddingBottom: "16px",
+                  paddingRight: "24px",
+                }}
               >
                 {t(p("job"))}
               </td>
@@ -222,13 +206,14 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
             </tr>
 
             <tr>
-              <td style={{
-                fontWeight: 500,
-                verticalAlign: "top",
-                paddingTop: "4px",
-                paddingBottom: "16px",
-                paddingRight: "24px",
-              }}
+              <td
+                style={{
+                  fontWeight: 500,
+                  verticalAlign: "top",
+                  paddingTop: "4px",
+                  paddingBottom: "16px",
+                  paddingRight: "24px",
+                }}
               >
                 {t(p("currentPrice"))}
               </td>
@@ -249,7 +234,7 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
               >
                 <Form.Item
                   required
-                  label={(
+                  label={
                     <Space>
                       {t(p("setBill"))}
                       <Popover
@@ -259,7 +244,7 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
                         <QuestionCircleOutlined />
                       </Popover>
                     </Space>
-                  )}
+                  }
                   colon={false}
                   style={{ margin: 0 }}
                 />
@@ -277,12 +262,7 @@ export const JobPriceChangeModal: React.FC<Props> = ({ open, onClose, jobs, relo
             </tr>
 
             <tr>
-              <Form.Item
-                label={t(p("reason"))}
-                required
-                style={{ margin: 0 }}
-                colon={false}
-              />
+              <Form.Item label={t(p("reason"))} required style={{ margin: 0 }} colon={false} />
               <td style={{ verticalAlign: "top" }}>
                 <Form.Item name="reason" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
                   <Input.TextArea />

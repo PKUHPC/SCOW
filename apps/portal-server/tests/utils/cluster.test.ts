@@ -11,7 +11,6 @@ let server: Server;
 let client: ConfigServiceClient;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   await server.start();
@@ -24,7 +23,6 @@ afterEach(async () => {
 });
 
 it("get cluster configs info", async () => {
-
   const clusterConfigsByReadingFiles = getClusterConfigs(undefined, logger, ["hpc"]);
 
   const reply = await asyncUnaryCall(client, "getClusterConfigFiles", {});
@@ -33,12 +31,11 @@ it("get cluster configs info", async () => {
 
   const modifiedClusters: Record<string, ClusterConfigSchema> = {};
   clusterConfigsResp.forEach((cluster) => {
-    const { clusterId, ... rest } = cluster;
+    const { clusterId, ...rest } = cluster;
     const newCluster = {
       ...rest,
       displayName: getI18nTypeFormat(cluster.displayName),
-      loginNodes: !cluster.loginNodes ? [] :
-        getLoginNodesTypeFormat(cluster.loginNodes),
+      loginNodes: !cluster.loginNodes ? [] : getLoginNodesTypeFormat(cluster.loginNodes),
     };
     modifiedClusters[cluster.clusterId] = newCluster as ClusterConfigSchema;
   });

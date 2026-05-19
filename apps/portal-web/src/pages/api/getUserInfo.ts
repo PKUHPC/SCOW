@@ -21,14 +21,12 @@ export const UserInfo = Type.Object({
   email: Type.Optional(Type.String()),
   tenantName: Type.Optional(Type.String()),
   organization: Type.Optional(Type.String()),
-  tenantRoles: Type.Optional(Type.Array(Type.Union([
-    Type.Literal(TenantRole.TENANT_ADMIN),
-    Type.Literal(TenantRole.TENANT_FINANCE),
-  ]))),
-  platformRoles: Type.Optional(Type.Array(Type.Union([
-    Type.Literal(PlatformRole.PLATFORM_ADMIN),
-    Type.Literal(PlatformRole.PLATFORM_FINANCE),
-  ]))),
+  tenantRoles: Type.Optional(
+    Type.Array(Type.Union([Type.Literal(TenantRole.TENANT_ADMIN), Type.Literal(TenantRole.TENANT_FINANCE)])),
+  ),
+  platformRoles: Type.Optional(
+    Type.Array(Type.Union([Type.Literal(PlatformRole.PLATFORM_ADMIN), Type.Literal(PlatformRole.PLATFORM_FINANCE)])),
+  ),
   createTime: Type.Optional(Type.String()),
 });
 
@@ -51,24 +49,25 @@ export const GetUserInfoSchema = typeboxRouteSchema({
 });
 
 const auth = authenticate(() => true);
-export default route(GetUserInfoSchema,
-  async (req, res) => {
-    const { userId, token } = req.query;
+export default route(GetUserInfoSchema, async (req, res) => {
+  const { userId, token } = req.query;
 
-    const info = token ? await validateToken(token) : await auth(req, res);
-    if (!info) { return; }
+  const info = token ? await validateToken(token) : await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const reply = await libWebGetUserInfo(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
-    const accountNames = reply?.affiliations.map((a) => (a.accountName));
-    const tenantName = reply?.tenantName;
+  const reply = await libWebGetUserInfo(userId, publicConfig.MIS_SERVER_URL, runtimeConfig.SCOW_API_AUTH_TOKEN);
+  const accountNames = reply?.affiliations.map((a) => a.accountName);
+  const tenantName = reply?.tenantName;
 
-    if (!accountNames || !tenantName) {
-      return { 403: null };
-    }
+  if (!accountNames || !tenantName) {
+    return { 403: null };
+  }
 
-    return {
-      200: {
-        userInfo : reply,
-      },
-    };
-  });
+  return {
+    200: {
+      userInfo: reply,
+    },
+  };
+});

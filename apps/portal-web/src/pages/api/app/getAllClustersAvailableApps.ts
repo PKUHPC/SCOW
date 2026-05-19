@@ -28,10 +28,12 @@ export const GetAllClustersAvailableAppsSchema = typeboxRouteSchema({
   },
 });
 
-export default /* #__PURE__*/route(GetAllClustersAvailableAppsSchema, async (req, res) => {
+export default /* #__PURE__*/ route(GetAllClustersAvailableAppsSchema, async (req, res) => {
   const auth = authenticate(() => true);
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusterIds } = req.query;
 
@@ -42,7 +44,8 @@ export default /* #__PURE__*/route(GetAllClustersAvailableAppsSchema, async (req
     clusterIds.map(async (clusterId) => {
       try {
         const reply = await asyncUnaryCall(client, "listAvailableApps", {
-          cluster: clusterId, userId: info.identityId,
+          cluster: clusterId,
+          userId: info.identityId,
         });
         return {
           clusterId: clusterId,

@@ -46,13 +46,13 @@ export default function Page() {
   }, [clusterId, jobId, sessionId]);
 
   const emptyParams = useMemo(() => ({ clusterId: "", jobId: 0, sessionId: "" }), []);
-  const {
-    data: createTrainParams,
-    isLoading: isCreateTrainParamsLoading,
-  } = trpc.jobs.getSubmitTrainParams.useQuery(resubmitInput ?? emptyParams, {
-    enabled: Boolean(resubmitInput),
-    retry: false,
-  });
+  const { data: createTrainParams, isLoading: isCreateTrainParamsLoading } = trpc.jobs.getSubmitTrainParams.useQuery(
+    resubmitInput ?? emptyParams,
+    {
+      enabled: Boolean(resubmitInput),
+      retry: false,
+    },
+  );
 
   if (resubmitInput && isCreateTrainParamsLoading) {
     return (

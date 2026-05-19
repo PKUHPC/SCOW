@@ -8,8 +8,7 @@ type Props = React.PropsWithChildren<{
   className?: string;
 }>;
 
-const Container = styled.div`
-`;
+const Container = styled.div``;
 
 const Title = styled.div`
   display: flex;
@@ -18,19 +17,16 @@ const Title = styled.div`
 `;
 
 const TitleText = styled(Typography.Title)`
-&& {
-  font-size: 24px;
-}
+  && {
+    font-size: 24px;
+  }
 `;
 
 export const Section: React.FC<Props> = ({ title, extra, children, className }) => {
-
   return (
     <Container className={className}>
       <Title>
-        <TitleText>
-          {title}
-        </TitleText>
+        <TitleText>{title}</TitleText>
         {extra}
       </Title>
       {children}

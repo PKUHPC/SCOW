@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall, asyncReplyStreamCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -31,10 +19,14 @@ const operationLog = {
   operatorUserId: "testUserId",
   operatorIp: "127.0.0.1",
   operationResult: OperationResult.SUCCESS,
-  operationEvent: { "$case": "submitJob" as const, submitJob: {
-    accountName: "testAccount",
-    jobId: 123,
-    clusterId: "test" } },
+  operationEvent: {
+    $case: "submitJob" as const,
+    submitJob: {
+      accountName: "testAccount",
+      jobId: 123,
+      clusterId: "test",
+    },
+  },
 };
 
 const operationLog1 = new OperationLog({
@@ -53,8 +45,9 @@ const operationLog2 = new OperationLog({
   operationResult: operationLog.operationResult,
   operationTime: new Date("2023-08-14T10:45:02.000Z"),
   metaData: {
-    $case: "endJob", endJob: {
-      jobId:123,
+    $case: "endJob",
+    endJob: {
+      jobId: 123,
       clusterId: "test",
     },
   },
@@ -69,7 +62,7 @@ const operationLog3 = new OperationLog({
   metaData: {
     $case: "exportOperationLog",
     exportOperationLog: {
-      source: { $case: "account", account: { "accountName": "test_account" } },
+      source: { $case: "account", account: { accountName: "test_account" } },
     },
     targetAccountName: "test_account",
   },
@@ -117,11 +110,9 @@ const operationLog5 = new OperationLog({
       },
     },
   },
-
 });
 
 async function collectOperationLog(stream: AsyncIterable<ExportOperationLogResponse>) {
-
   const operationLogs: OperationLogProto[] = [];
 
   for await (const res of stream) {
@@ -146,7 +137,6 @@ afterEach(async () => {
 });
 
 it("create operation log", async () => {
-
   const em = server.ext.orm.em.fork();
 
   await asyncClientCall(client, "createOperationLog", {
@@ -154,10 +144,14 @@ it("create operation log", async () => {
     operationResult: operationResultFromJSON(operationLog.operationResult),
   });
 
-  const operationLogs = await em.find(OperationLog, { operatorUserId: operationLog.operatorUserId }, {
-    orderBy: { operationTime: "DESC" },
-    limit: 1,
-  });
+  const operationLogs = await em.find(
+    OperationLog,
+    { operatorUserId: operationLog.operatorUserId },
+    {
+      orderBy: { operationTime: "DESC" },
+      limit: 1,
+    },
+  );
 
   expect(operationLogs[0].operatorUserId).toEqual(operationLog.operatorUserId);
   expect(operationLogs[0].operatorIp).toEqual(operationLog.operatorIp);
@@ -168,7 +162,6 @@ it("create operation log", async () => {
 });
 
 it("create operation log with targetAccountName", async () => {
-
   const em = server.ext.orm.em.fork();
 
   const exportChargeRecordLog = {
@@ -177,13 +170,14 @@ it("create operation log with targetAccountName", async () => {
     operationResult: operationResultFromJSON(OperationResult.SUCCESS),
     operationEvent: {
       $case: "exportChargeRecord" as const,
-      exportChargeRecord: { target:{
-        $case: "accountOfTenant" as const,
-        accountOfTenant: {
-          accountName: "testAccount",
-          tenantName: "testTenant",
+      exportChargeRecord: {
+        target: {
+          $case: "accountOfTenant" as const,
+          accountOfTenant: {
+            accountName: "testAccount",
+            tenantName: "testTenant",
+          },
         },
-      },
       },
     },
   };
@@ -194,13 +188,14 @@ it("create operation log with targetAccountName", async () => {
     operationResult: operationResultFromJSON(OperationResult.SUCCESS),
     operationEvent: {
       $case: "exportPayRecord" as const,
-      exportPayRecord: { target:{
-        $case: "accountsOfTenant" as const,
-        accountsOfTenant: {
-          tenantName: "testTenant",
-          accountNames: [],
+      exportPayRecord: {
+        target: {
+          $case: "accountsOfTenant" as const,
+          accountsOfTenant: {
+            tenantName: "testTenant",
+            accountNames: [],
+          },
         },
-      },
       },
     },
   };
@@ -211,12 +206,13 @@ it("create operation log with targetAccountName", async () => {
     operationResult: operationResultFromJSON(OperationResult.SUCCESS),
     operationEvent: {
       $case: "exportOperationLog" as const,
-      exportOperationLog: { source:{
-        $case: "account" as const,
-        account: {
-          accountName: "testAccount",
+      exportOperationLog: {
+        source: {
+          $case: "account" as const,
+          account: {
+            accountName: "testAccount",
+          },
         },
-      },
       },
     },
   };
@@ -230,42 +226,51 @@ it("create operation log with targetAccountName", async () => {
     ...exportOperationLog,
   });
 
-  const operationLogs = await em.find(OperationLog, { operatorUserId: operationLog.operatorUserId }, {
-    orderBy: { operationTime: "DESC" },
-    limit: 3,
-  });
+  const operationLogs = await em.find(
+    OperationLog,
+    { operatorUserId: operationLog.operatorUserId },
+    {
+      orderBy: { operationTime: "DESC" },
+      limit: 3,
+    },
+  );
 
   expect(operationLogs[0].metaData?.$case).toEqual("exportOperationLog");
-  expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case])
-    .toEqual(exportOperationLog.operationEvent.exportOperationLog);
-  expect(operationLogs[0].metaData?.targetAccountName)
-    .toEqual(exportOperationLog.operationEvent.exportOperationLog.source.account.accountName);
+  expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case]).toEqual(
+    exportOperationLog.operationEvent.exportOperationLog,
+  );
+  expect(operationLogs[0].metaData?.targetAccountName).toEqual(
+    exportOperationLog.operationEvent.exportOperationLog.source.account.accountName,
+  );
 
   expect(operationLogs[1].metaData?.$case).toEqual("exportPayRecord");
-  expect(operationLogs[1].metaData?.[operationLogs[1].metaData?.$case])
-    .toEqual(exportPayRecordLog.operationEvent.exportPayRecord);
-  expect(operationLogs[1].metaData?.targetAccountName)
-    .toEqual(exportPayRecordLog.operationEvent.exportPayRecord.target.accountsOfTenant.accountNames);
+  expect(operationLogs[1].metaData?.[operationLogs[1].metaData?.$case]).toEqual(
+    exportPayRecordLog.operationEvent.exportPayRecord,
+  );
+  expect(operationLogs[1].metaData?.targetAccountName).toEqual(
+    exportPayRecordLog.operationEvent.exportPayRecord.target.accountsOfTenant.accountNames,
+  );
 
   expect(operationLogs[2].metaData?.$case).toEqual("exportChargeRecord");
-  expect(operationLogs[2].metaData?.[operationLogs[2].metaData?.$case])
-    .toEqual(exportChargeRecordLog.operationEvent.exportChargeRecord);
-  expect(operationLogs[2].metaData?.targetAccountName)
-    .toEqual(exportChargeRecordLog.operationEvent.exportChargeRecord.target.accountOfTenant.accountName);
+  expect(operationLogs[2].metaData?.[operationLogs[2].metaData?.$case]).toEqual(
+    exportChargeRecordLog.operationEvent.exportChargeRecord,
+  );
+  expect(operationLogs[2].metaData?.targetAccountName).toEqual(
+    exportChargeRecordLog.operationEvent.exportChargeRecord.target.accountOfTenant.accountName,
+  );
 });
 
 it("create operation log for custom event", async () => {
-
   const em = server.ext.orm.em.fork();
 
   const createCustomOperationLog = {
-    operatorUserId:  operationLog.operatorUserId,
+    operatorUserId: operationLog.operatorUserId,
     operatorIp: operationLog.operatorIp,
-    operationResult:  OperationResultProto.SUCCESS,
+    operationResult: OperationResultProto.SUCCESS,
     operationEvent: {
       $case: "customEvent" as const,
       customEvent: {
-        type:"test",
+        type: "test",
         name: {
           i18n: {
             default: "test",
@@ -286,10 +291,14 @@ it("create operation log for custom event", async () => {
 
   await asyncClientCall(client, "createOperationLog", createCustomOperationLog);
 
-  const operationLogs = await em.find(OperationLog, { operatorUserId: operationLog.operatorUserId }, {
-    orderBy: { operationTime: "DESC" },
-    limit: 1,
-  });
+  const operationLogs = await em.find(
+    OperationLog,
+    { operatorUserId: operationLog.operatorUserId },
+    {
+      orderBy: { operationTime: "DESC" },
+      limit: 1,
+    },
+  );
 
   expect(operationLogs[0].operatorUserId).toEqual(operationLog.operatorUserId);
   expect(operationLogs[0].operatorIp).toEqual(operationLog.operatorIp);
@@ -298,11 +307,9 @@ it("create operation log for custom event", async () => {
   expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case]).toEqual(
     createCustomOperationLog?.operationEvent?.customEvent,
   );
-},
-);
+});
 
 it("get operation logs", async () => {
-
   const em = server.ext.orm.em.fork();
   await em.persistAndFlush([operationLog1, operationLog2]);
 
@@ -312,7 +319,6 @@ it("get operation logs", async () => {
   });
 
   expect(resp.totalCount).toBe(2);
-
 
   expect(resp.results).toIncludeSameMembers([
     {
@@ -327,11 +333,12 @@ it("get operation logs", async () => {
       operationLogId: 2,
       operatorUserId: operationLog.operatorUserId,
       operatorIp: operationLog.operatorIp,
-      operationResult:  operationResultFromJSON(operationLog.operationResult),
+      operationResult: operationResultFromJSON(operationLog.operationResult),
       operationTime: "2023-08-14T10:45:02.000Z",
       operationEvent: {
-        $case: "endJob", endJob: {
-          jobId:123,
+        $case: "endJob",
+        endJob: {
+          jobId: 123,
           clusterId: "test",
         },
       },
@@ -340,13 +347,12 @@ it("get operation logs", async () => {
 });
 
 it("get logs for custom event", async () => {
-
   const em = server.ext.orm.em.fork();
   await em.persistAndFlush([operationLog5]);
 
   const resp = await asyncClientCall(client, "getOperationLogs", {
     page: 1,
-    filter: { operatorUserIds: ["testUserId"]},
+    filter: { operatorUserIds: ["testUserId"] },
   });
 
   expect(resp.totalCount).toBe(1);
@@ -380,18 +386,15 @@ it("get logs for custom event", async () => {
       },
     },
   ]);
-},
-);
-
+});
 
 it("export operation logs", async () => {
-
   const em = server.ext.orm.em.fork();
   await em.persistAndFlush([operationLog3, operationLog4]);
 
   const stream = asyncReplyStreamCall(client, "exportOperationLog", {
     count: 2,
-    filter: { operatorUserIds: ["testUserId"]},
+    filter: { operatorUserIds: ["testUserId"] },
   });
 
   const exportOperationLogs = await collectOperationLog(stream);
@@ -401,7 +404,7 @@ it("export operation logs", async () => {
       operationLogId: 4,
       operatorUserId: operationLog4.operatorUserId,
       operatorIp: operationLog4.operatorIp,
-      operationResult:  operationResultFromJSON(operationLog4.operationResult),
+      operationResult: operationResultFromJSON(operationLog4.operationResult),
       operationTime: operationLog4.operationTime?.toISOString(),
       operationEvent: operationLog4.metaData,
     },
@@ -414,7 +417,7 @@ it("export operation logs", async () => {
       operationEvent: {
         $case: "exportOperationLog",
         exportOperationLog: {
-          source: { $case: "account", account: { "accountName": "test_account" } },
+          source: { $case: "account", account: { accountName: "test_account" } },
         },
       },
     },
@@ -422,7 +425,6 @@ it("export operation logs", async () => {
 });
 
 it("create operation log for jobRecord", async () => {
-
   const em = server.ext.orm.em.fork();
 
   const exportJobRecordLog = {
@@ -431,13 +433,14 @@ it("create operation log for jobRecord", async () => {
     operationResult: operationResultFromJSON(OperationResult.SUCCESS),
     operationEvent: {
       $case: "exportJobRecord" as const,
-      exportJobRecord: { target:{
-        $case: "jobsOfAccount" as const,
-        jobsOfAccount: {
-          tenantName: "testTenant",
-          accountName: "testAccount",
+      exportJobRecord: {
+        target: {
+          $case: "jobsOfAccount" as const,
+          jobsOfAccount: {
+            tenantName: "testTenant",
+            accountName: "testAccount",
+          },
         },
-      },
       },
     },
   };
@@ -446,16 +449,22 @@ it("create operation log for jobRecord", async () => {
     ...exportJobRecordLog,
   });
 
-  const operationLogs = await em.find(OperationLog, { operatorUserId: operationLog.operatorUserId }, {
-    orderBy: { operationTime: "DESC" },
-    limit: 1,
-  });
+  const operationLogs = await em.find(
+    OperationLog,
+    { operatorUserId: operationLog.operatorUserId },
+    {
+      orderBy: { operationTime: "DESC" },
+      limit: 1,
+    },
+  );
 
   expect(operationLogs[0].metaData?.$case).toEqual("exportJobRecord");
-  expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case])
-    .toEqual(exportJobRecordLog.operationEvent.exportJobRecord);
-  expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case].
-    target?.[exportJobRecordLog.operationEvent.exportJobRecord.target.$case].accountName)
-    .toEqual(exportJobRecordLog.operationEvent.exportJobRecord.target.jobsOfAccount.accountName);
-
+  expect(operationLogs[0].metaData?.[operationLogs[0].metaData?.$case]).toEqual(
+    exportJobRecordLog.operationEvent.exportJobRecord,
+  );
+  expect(
+    operationLogs[0].metaData?.[operationLogs[0].metaData?.$case].target?.[
+      exportJobRecordLog.operationEvent.exportJobRecord.target.$case
+    ].accountName,
+  ).toEqual(exportJobRecordLog.operationEvent.exportJobRecord.target.jobsOfAccount.accountName);
 });

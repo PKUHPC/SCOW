@@ -70,19 +70,19 @@ export const GetClusterRunningInfoSchema = typeboxRouteSchema({
 const auth = authenticate(() => true);
 
 export default route(GetClusterRunningInfoSchema, async (req, res) => {
-
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusterId } = req.query;
 
   const client = getClient(ConfigServiceClient);
 
   const reply = await asyncUnaryCall(client, "getClusterInfo", {
-    cluster:clusterId,
+    cluster: clusterId,
   });
 
   return { 200: { clusterInfo: { ...reply, clusterId } } };
-
 });

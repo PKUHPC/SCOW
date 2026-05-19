@@ -5,7 +5,6 @@ export const paginationSchema = z.object({
   pageSize: z.number().min(0).optional(),
 });
 
-
 /**
  * @description Paginate items
  * @param items items to be paginated
@@ -17,7 +16,7 @@ export function paginate<T>(
   items: T[],
   page: number | undefined,
   pageSize: number | undefined,
-): { paginatedItems: T[], totalCount: number } {
+): { paginatedItems: T[]; totalCount: number } {
   const totalCount = items.length;
 
   if (page === undefined || pageSize === undefined) {

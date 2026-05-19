@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { JobInfo } from "@scow/protos/build/common/ended_job";
 import { Descriptions, Drawer } from "antd";
@@ -31,10 +19,7 @@ interface Props {
 const p = prefix("pageComp.job.runningJobDrawer.");
 const pCommon = prefix("common.");
 
-export const RunningJobDrawer: React.FC<Props> = ({
-  item, onClose, open,
-}) => {
-
+export const RunningJobDrawer: React.FC<Props> = ({ item, onClose, open }) => {
   const t = useI18nTranslateToString();
   const languageId = useI18n().currentLanguage.id;
 
@@ -73,46 +58,36 @@ export const RunningJobDrawer: React.FC<Props> = ({
   ] as ([string, keyof RunningJobInfo] | [string, keyof JobInfo, (v: any, r: RunningJobInfo) => string])[];
 
   return (
-    <Drawer
-      width={500}
-      placement="right"
-      onClose={onClose}
-      open={open}
-      title={t(p("detail"))}
-    >
-      {
-        item ? (
-          <Descriptions
-            column={1}
-            bordered
-            size="small"
-            labelStyle={{ whiteSpace: "nowrap" }}
-          >
-            {drawerItems.map((([label, key, format]) => (
-              <Descriptions.Item key={item.jobId} label={label}>
-                {(() => {
-                  const value = format
-                    ? (key === "cluster"
-                      ? getClusterName(item[key].id, languageId, publicConfigClusters)
-                      : key === "reason" && item[key] !== undefined
-                        ? getAiExceptionJobI18nReason(item[key], t)
-                        : format(item[key], item))
-                    : item[key];
+    <Drawer width={500} placement="right" onClose={onClose} open={open} title={t(p("detail"))}>
+      {item ? (
+        <Descriptions column={1} bordered size="small" labelStyle={{ whiteSpace: "nowrap" }}>
+          {drawerItems.map(([label, key, format]) => (
+            <Descriptions.Item key={item.jobId} label={label}>
+              {(() => {
+                const value = format
+                  ? key === "cluster"
+                    ? getClusterName(item[key].id, languageId, publicConfigClusters)
+                    : key === "reason" && item[key] !== undefined
+                      ? getAiExceptionJobI18nReason(item[key], t)
+                      : format(item[key], item)
+                  : item[key];
 
-                  if (key === "chargingPeriod") {
-                    const period = item.chargingPeriod;
-                    const text = period?.startTime && period?.endTime ?
-                      `${new Date(period.startTime).toLocaleString()} ~
-                    ${new Date(period.endTime).toLocaleString()}` : "-";
-                    return <span style={{ whiteSpace: "pre-line" }}>{text}</span>;
-                  }
+                if (key === "chargingPeriod") {
+                  const period = item.chargingPeriod;
+                  const text =
+                    period?.startTime && period?.endTime
+                      ? `${new Date(period.startTime).toLocaleString()} ~
+                    ${new Date(period.endTime).toLocaleString()}`
+                      : "-";
+                  return <span style={{ whiteSpace: "pre-line" }}>{text}</span>;
+                }
 
-                  return value;
-                })()}
-              </Descriptions.Item>
-            )))}
-          </Descriptions>
-        ) : undefined }
+                return value;
+              })()}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+      ) : undefined}
     </Drawer>
   );
 };

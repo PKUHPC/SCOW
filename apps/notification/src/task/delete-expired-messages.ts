@@ -21,7 +21,7 @@ export async function deleteExpiredMessages() {
     const messages = await em.find(
       Message,
       { id: { $gt: lastId }, expiredAt: { $lte: new Date() }, category: { $ne: "Admin" } },
-      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"]},
+      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"] },
     );
 
     if (messages.length === 0) {
@@ -43,14 +43,16 @@ export async function deleteExpiredMessages() {
   // 目前所有消息类型的过期时间均一致
   // 若改为不一致则按消息类型进行删除即可
   while (true) {
-    const messages = await em.find(Message,
+    const messages = await em.find(
+      Message,
       {
         id: { $gt: lastId },
         category: { $ne: "Admin" },
         createdAt: {
           $lte: dayjs(new Date()).subtract(Number(messageConfigs[0]?.expiredAfterSeconds), "seconds").toDate(),
-        } },
-      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"]},
+        },
+      },
+      { limit: batchSize, orderBy: { id: "asc" }, fields: ["id"] },
     );
 
     if (messages.length === 0) {

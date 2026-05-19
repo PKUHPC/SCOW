@@ -3,10 +3,7 @@ import { MessageConfig } from "@scow/notification-protos/build/common_pb";
 import { listNoticeTypes } from "@scow/notification-protos/build/notice_type-NoticeTypeService_connectquery";
 import { Checkbox, Form, FormInstance, TableColumnsType } from "antd";
 import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
-import {
-  CheckAllSpecifiedNoticeType,
-  SelectAllProps,
-} from "src/components/check-all-specified-notice-type";
+import { CheckAllSpecifiedNoticeType, SelectAllProps } from "src/components/check-all-specified-notice-type";
 import { ModalButton } from "src/components/modal-button";
 import { ScowParamsContext } from "src/components/scow-params-provider";
 import { I18nDicType } from "src/models/i18n";
@@ -22,9 +19,12 @@ interface Props {
   lang: I18nDicType;
 }
 export function useMessageConfigColumns({
-  form, noticeTypeAllChecked, setNoticeTypeAllChecked, setHasChange, lang,
+  form,
+  noticeTypeAllChecked,
+  setNoticeTypeAllChecked,
+  setHasChange,
+  lang,
 }: Props) {
-
   const { data } = useQuery(listNoticeTypes);
   const [columns, setColumns] = useState<TableColumnsType<MessageConfig>>([]);
   const compLang = lang.messageConfig.useMessageConfigColumns;
@@ -49,7 +49,7 @@ export function useMessageConfigColumns({
         });
         return;
       }
-    };
+    }
     setNoticeTypeAllChecked({
       ...noticeTypeAllChecked,
       [checkedNoticeType]: defaultCheckValue,
@@ -66,22 +66,29 @@ export function useMessageConfigColumns({
     });
 
     const parsedValues = {
-      noticeConfigs: Object.keys(values.noticeConfigs).reduce((acc, messageType) => {
-        const noticeConfigs = Object.keys(values.noticeConfigs[messageType]).reduce((innerAcc, noticeType) => {
-          const enumNoticeType = Number(noticeType) as unknown as NoticeType;
-          return {
-            ...innerAcc,
-            [enumNoticeType]: checkedNoticeType === enumNoticeType
-              ? e.target.checked
-              : values.noticeConfigs[messageType][noticeType],
-          };
-        }, {} as Partial<Record<NoticeType, boolean>>);
+      noticeConfigs: Object.keys(values.noticeConfigs).reduce(
+        (acc, messageType) => {
+          const noticeConfigs = Object.keys(values.noticeConfigs[messageType]).reduce(
+            (innerAcc, noticeType) => {
+              const enumNoticeType = Number(noticeType) as unknown as NoticeType;
+              return {
+                ...innerAcc,
+                [enumNoticeType]:
+                  checkedNoticeType === enumNoticeType
+                    ? e.target.checked
+                    : values.noticeConfigs[messageType][noticeType],
+              };
+            },
+            {} as Partial<Record<NoticeType, boolean>>,
+          );
 
-        return {
-          ...acc,
-          [messageType]: noticeConfigs,
-        };
-      }, {} as Record<string, Partial<Record<NoticeType, boolean>>>),
+          return {
+            ...acc,
+            [messageType]: noticeConfigs,
+          };
+        },
+        {} as Record<string, Partial<Record<NoticeType, boolean>>>,
+      ),
     };
 
     form.setFieldsValue(parsedValues);
@@ -102,35 +109,32 @@ export function useMessageConfigColumns({
   useEffect(() => {
     if (!data) return;
 
-    const dynamicNoticeTypeColumns = data?.noticeTypes
-      .map((type) => ({
-        title: (
-          <CheckAllSpecifiedNoticeType
-            checked={noticeTypeAllChecked[type] ?? false}
-            type={type}
-            handleCheckAll={handleCheckAll}
-            indeterminate={isIndeterminate(type)}
-          />
-        ),
-        dataIndex: type,
-        key: type,
-        render: (_: unknown, record: MessageConfig) => {
-          return (
-            <Form.Item
-              name={["noticeConfigs", record.messageType, type]}
-              valuePropName="checked"
-              noStyle
-            >
-              <Checkbox
-                onChange={(e) => handleCheckChange({
+    const dynamicNoticeTypeColumns = data?.noticeTypes.map((type) => ({
+      title: (
+        <CheckAllSpecifiedNoticeType
+          checked={noticeTypeAllChecked[type] ?? false}
+          type={type}
+          handleCheckAll={handleCheckAll}
+          indeterminate={isIndeterminate(type)}
+        />
+      ),
+      dataIndex: type,
+      key: type,
+      render: (_: unknown, record: MessageConfig) => {
+        return (
+          <Form.Item name={["noticeConfigs", record.messageType, type]} valuePropName="checked" noStyle>
+            <Checkbox
+              onChange={(e) =>
+                handleCheckChange({
                   e,
                   checkedNoticeType: type,
-                })}
-              />
-            </Form.Item>
-          );
-        },
-      }));
+                })
+              }
+            />
+          </Form.Item>
+        );
+      },
+    }));
 
     const columns: TableColumnsType<MessageConfig> = [
       {
@@ -167,11 +171,7 @@ export function useMessageConfigColumns({
         dataIndex: "",
         key: "x",
         render: (_, record) => (
-          <MessageConfigModalButton
-            data={record}
-            enabledNoticeTypes={data?.noticeTypes ?? []}
-            lang={lang}
-          >
+          <MessageConfigModalButton data={record} enabledNoticeTypes={data?.noticeTypes ?? []} lang={lang}>
             {compLang.configuration}
           </MessageConfigModalButton>
         ),

@@ -13,14 +13,13 @@ export const PartitionNames = Type.Object({
 });
 export type PartitionNames = Static<typeof PartitionNames>;
 
-
 export const GetTenantAssignedClustersAndPartitionsSchema = typeboxRouteSchema({
   method: "GET",
 
   responses: {
-
     200: Type.Object({
-      assignedClusterPartitions:  Type.Record(Type.String(), PartitionNames) }),
+      assignedClusterPartitions: Type.Record(Type.String(), PartitionNames),
+    }),
     403: Type.Null(),
     409: Type.Object({
       code: Type.Literal("RESOURCE_CONNECT_FAILED"),
@@ -29,34 +28,37 @@ export const GetTenantAssignedClustersAndPartitionsSchema = typeboxRouteSchema({
   },
 });
 
-export default route(GetTenantAssignedClustersAndPartitionsSchema,
-  async (req, res) => {
-
-    const auth = authenticate((u) => {
-      return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) ||
-            u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
-    });
-
-    const info = await auth(req, res);
-    if (!info) { return; }
-
-    const tenantName = info.tenant;
-
-    let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
-
-    if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && tenantName) {
-      const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
-      try {
-        const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({
-          tenantName,
-        });
-        tenantAssignedClustersAndPartitions = response;
-      } catch (e) {
-        mapTRPCExceptionToGRPC(e);
-        return { 409: { code: "RESOURCE_CONNECT_FAILED" as const,
-          message: `Get tenant ${tenantName} assigned Clusters and Partitions failed.` } };
-      }
-    }
-
-    return { 200: tenantAssignedClustersAndPartitions };
+export default route(GetTenantAssignedClustersAndPartitionsSchema, async (req, res) => {
+  const auth = authenticate((u) => {
+    return u.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || u.tenantRoles.includes(TenantRole.TENANT_ADMIN);
   });
+
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+
+  const tenantName = info.tenant;
+
+  let tenantAssignedClustersAndPartitions: AssignedClusterPartitions | undefined;
+
+  if (runtimeConfig.SCOW_RESOURCE_CONFIG?.enabled && tenantName) {
+    const resourceClient = getScowResourceClient(runtimeConfig.SCOW_RESOURCE_CONFIG.address);
+    try {
+      const response = await resourceClient.resource.getTenantAssignedClustersAndPartitions({
+        tenantName,
+      });
+      tenantAssignedClustersAndPartitions = response;
+    } catch (e) {
+      mapTRPCExceptionToGRPC(e);
+      return {
+        409: {
+          code: "RESOURCE_CONNECT_FAILED" as const,
+          message: `Get tenant ${tenantName} assigned Clusters and Partitions failed.`,
+        },
+      };
+    }
+  }
+
+  return { 200: tenantAssignedClustersAndPartitions };
+});

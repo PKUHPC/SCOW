@@ -1,23 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
 import * as grpc from "@grpc/grpc-js";
 import { SqlEntityManager } from "@mikro-orm/mysql";
 import { Decimal, moneyToNumber, numberToMoney } from "@scow/lib-decimal";
-import { ChargeRequest, ChargingServiceClient, PaymentRecord, PayRequest,
-} from "@scow/protos/build/server/charging";
+import { ChargeRequest, ChargingServiceClient, PaymentRecord, PayRequest } from "@scow/protos/build/server/charging";
 import dayjs from "dayjs";
 import { createServer } from "src/app";
 import { Account, AccountState } from "src/entities/Account";
@@ -29,13 +16,11 @@ import { extractTypesFromObjects, range } from "src/utils/array";
 import { reloadEntity } from "src/utils/orm";
 import { dropDatabase } from "tests/data/helpers";
 
-
 let server: Server;
 let em: SqlEntityManager;
 let account: Account;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   em = server.ext.orm.em.fork();
@@ -59,7 +44,6 @@ beforeEach(async () => {
   await em.persistAndFlush([tenant, account]);
 
   await server.start();
-
 });
 
 afterEach(async () => {
@@ -68,7 +52,6 @@ afterEach(async () => {
 });
 
 it("pays account", async () => {
-
   const amount = numberToMoney(10);
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -91,7 +74,7 @@ it("pays account", async () => {
   expect(account.balance.toNumber()).toBe(10);
 });
 
-it ("pays account with negative amount", async () => {
+it("pays account with negative amount", async () => {
   const amount = numberToMoney(-10);
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
 
@@ -138,7 +121,6 @@ it("pays account with negative amount to block account", async () => {
     type: "test",
   });
 
-
   expect(moneyToNumber(reply.previousBalance!)).toBe(5);
   expect(moneyToNumber(reply.currentBalance!)).toBe(0);
 
@@ -162,10 +144,12 @@ it("concurrently pays", async () => {
 
   const requests = range(0, 10).map(createRequests);
 
-  const responses = await Promise.allSettled(requests.map(async (x) => {
-    const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-    return await asyncClientCall(client, "pay", x);
-  }));
+  const responses = await Promise.allSettled(
+    requests.map(async (x) => {
+      const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+      return await asyncClientCall(client, "pay", x);
+    }),
+  );
 
   expect(responses.every((x) => x.status === "fulfilled")).toBeTrue();
 
@@ -194,7 +178,6 @@ it("returns NOT_FOUND if account is not found", async () => {
 });
 
 it("gets account balance", async () => {
-
   account.balance = new Decimal(50);
   await em.flush();
 
@@ -244,10 +227,12 @@ it("concurrently charges", async () => {
 
   const requests = range(0, 10).map(createRequest);
 
-  const responses = await Promise.allSettled(requests.map(async (x) => {
-    const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-    return await asyncClientCall(client, "charge", x);
-  }));
+  const responses = await Promise.allSettled(
+    requests.map(async (x) => {
+      const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
+      return await asyncClientCall(client, "charge", x);
+    }),
+  );
 
   expect(responses.every((x) => x.status === "fulfilled")).toBeTrue();
 
@@ -260,9 +245,8 @@ it("concurrently charges", async () => {
   expect(await em1.count(ChargeRecord)).toBe(10);
 });
 
-
 it("returns payment records", async () => {
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -315,7 +299,6 @@ it("returns payment records", async () => {
     type: "testD",
   };
 
-
   const startTime = new Date();
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -337,10 +320,14 @@ it("returns payment records", async () => {
   const reply1 = await asyncClientCall(client, "getPaymentRecords", {
     startTime: startTime.toISOString(),
     endTime,
-    target:{ $case:"accountsOfTenant", accountsOfTenant:{ accountNames:
-       [account.accountName, account2.accountName],
-    tenantName: account.tenant.getProperty("name") },
-    }, types:[request1.type],
+    target: {
+      $case: "accountsOfTenant",
+      accountsOfTenant: {
+        accountNames: [account.accountName, account2.accountName],
+        tenantName: account.tenant.getProperty("name"),
+      },
+    },
+    types: [request1.type],
   });
 
   expect(reply1.results).toHaveLength(1);
@@ -357,32 +344,40 @@ it("returns payment records", async () => {
   const reply2 = await asyncClientCall(client, "getPaymentRecords", {
     startTime: startTime.toISOString(),
     endTime,
-    target:{ $case:"accountsOfTenant", accountsOfTenant:{ accountNames:
-         [account.accountName, account2.accountName],
-    tenantName: account.tenant.getProperty("name") },
-    }, types:extractTypesFromObjects([request1, request3]),
+    target: {
+      $case: "accountsOfTenant",
+      accountsOfTenant: {
+        accountNames: [account.accountName, account2.accountName],
+        tenantName: account.tenant.getProperty("name"),
+      },
+    },
+    types: extractTypesFromObjects([request1, request3]),
   });
 
   expect(reply2.results).toHaveLength(2);
 
-  expect(reply2.results).toMatchObject([ {
-    accountName: request1.accountName,
-    comment: request1.comment,
-    ipAddress: request1.ipAddress,
-    amount: request1.amount,
-  },{
-    accountName: request3.accountName,
-    comment: request3.comment,
-    ipAddress: request3.ipAddress,
-    amount: request3.amount,
-  }] as Partial<PaymentRecord>);
+  expect(reply2.results).toMatchObject([
+    {
+      accountName: request1.accountName,
+      comment: request1.comment,
+      ipAddress: request1.ipAddress,
+      amount: request1.amount,
+    },
+    {
+      accountName: request3.accountName,
+      comment: request3.comment,
+      ipAddress: request3.ipAddress,
+      amount: request3.amount,
+    },
+  ] as Partial<PaymentRecord>);
 
   expect(reply2.total).toStrictEqual(numberToMoney(40));
   // tenant
   const reply3 = await asyncClientCall(client, "getPaymentRecords", {
-    target:{ $case:"tenant", tenant:{ tenantName: account.tenant.getProperty("name") } },
+    target: { $case: "tenant", tenant: { tenantName: account.tenant.getProperty("name") } },
     startTime: startTime.toISOString(),
-    endTime, types:[request2.type],
+    endTime,
+    types: [request2.type],
   });
 
   expect(reply3.results).toHaveLength(1);
@@ -398,18 +393,20 @@ it("returns payment records", async () => {
   expect(reply3.total).toStrictEqual(numberToMoney(20));
 
   const reply4 = await asyncClientCall(client, "getPaymentRecords", {
-    target:{ $case:"tenant", tenant:{ tenantName: account.tenant.getProperty("name") } },
+    target: { $case: "tenant", tenant: { tenantName: account.tenant.getProperty("name") } },
     startTime: startTime.toISOString(),
-    endTime, types:[request3.type],
+    endTime,
+    types: [request3.type],
   });
 
   expect(reply4.results).toHaveLength(0);
 
   // allTenants
   const reply5 = await asyncClientCall(client, "getPaymentRecords", {
-    target:{ $case: "allTenants", allTenants:{} },
+    target: { $case: "allTenants", allTenants: {} },
     startTime: startTime.toISOString(),
-    endTime, types:extractTypesFromObjects([request2, request4]),
+    endTime,
+    types: extractTypesFromObjects([request2, request4]),
   });
 
   expect(reply5.results).toHaveLength(2);
@@ -428,18 +425,23 @@ it("returns payment records", async () => {
       comment: request4.comment,
       ipAddress: request4.ipAddress,
       amount: request4.amount,
-    }] as Partial<PaymentRecord>);
+    },
+  ] as Partial<PaymentRecord>);
 
   expect(reply5.total).toStrictEqual(numberToMoney(60));
 
   // accountsOfTenant
   const reply6 = await asyncClientCall(client, "getPaymentRecords", {
     startTime: startTime.toISOString(),
-    endTime, types:extractTypesFromObjects([request1, request3]),
-    target:{ $case:"accountsOfTenant", accountsOfTenant:{
-      tenantName: account.tenant.getProperty("name"), accountNames:[
-        request1.accountName || "", request3.accountName || "",
-      ]} },
+    endTime,
+    types: extractTypesFromObjects([request1, request3]),
+    target: {
+      $case: "accountsOfTenant",
+      accountsOfTenant: {
+        tenantName: account.tenant.getProperty("name"),
+        accountNames: [request1.accountName || "", request3.accountName || ""],
+      },
+    },
   });
 
   expect(reply6.results).toHaveLength(2);
@@ -463,7 +465,6 @@ it("returns payment records", async () => {
 });
 
 it("returns charge records with query of accountOfTenant", async () => {
-
   const amount1 = numberToMoney(10);
 
   const request1: ChargeRequest = {
@@ -495,12 +496,14 @@ it("returns charge records with query of accountOfTenant", async () => {
   const reply1 = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountOfTenant", accountOfTenant:{ accountName: account.accountName,
-      tenantName: account.tenant.getProperty("name") } },
+    target: {
+      $case: "accountOfTenant",
+      accountOfTenant: { accountName: account.accountName, tenantName: account.tenant.getProperty("name") },
+    },
     page: 1,
-    pageSize:10,
+    pageSize: 10,
     userIds: [],
-    types:[request1.type],
+    types: [request1.type],
     userIdsOrNames: [],
   });
 
@@ -516,7 +519,7 @@ it("returns charge records with query of accountOfTenant", async () => {
 });
 
 it("returns charge records with query of tenant", async () => {
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
 
   const amount1 = numberToMoney(10);
   const amount2 = numberToMoney(20);
@@ -553,13 +556,13 @@ it("returns charge records with query of tenant", async () => {
 
   // tenant
   const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
-    target:{ $case:"tenant", tenant:{ tenantName: tenant.name } },
+    target: { $case: "tenant", tenant: { tenantName: tenant.name } },
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
     userIds: [],
-    types:extractTypesFromObjects([request1, request2]),
-    sortBy:undefined,
-    sortOrder:undefined,
+    types: extractTypesFromObjects([request1, request2]),
+    sortBy: undefined,
+    sortOrder: undefined,
     userIdsOrNames: [],
   });
 
@@ -572,20 +575,21 @@ it("returns charge records with query of tenant", async () => {
       comment: request1.comment,
       amount: request1.amount,
       type: request1.type,
-    }, {
+    },
+    {
       tenantName: tenant.name,
       accountName: undefined,
       comment: request2.comment,
       amount: request2.amount,
       type: request2.type,
-    } ] as Partial<ChargeRecord>);
+    },
+  ] as Partial<ChargeRecord>);
 
   em.clear();
 });
 
 it("returns charge records with query of allTenants", async () => {
-
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -655,7 +659,7 @@ it("returns charge records with query of allTenants", async () => {
 
   // allTenants
   const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
-    target:{ $case: "allTenants", allTenants:{} },
+    target: { $case: "allTenants", allTenants: {} },
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
     types: [request1.type],
@@ -665,20 +669,19 @@ it("returns charge records with query of allTenants", async () => {
 
   expect(reply.results).toHaveLength(1);
 
-  expect(reply.results[0]).toMatchObject(
-    {
-      tenantName: request2.tenantName,
-      accountName: undefined,
-      comment: request2.comment,
-      amount: request2.amount,
-      type: "test1",
-    } as Partial<ChargeRecord>);
+  expect(reply.results[0]).toMatchObject({
+    tenantName: request2.tenantName,
+    accountName: undefined,
+    comment: request2.comment,
+    amount: request2.amount,
+    type: "test1",
+  } as Partial<ChargeRecord>);
 
   em.clear();
 });
 
 it("returns charge records with query of accountsOfTenant", async () => {
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -729,14 +732,19 @@ it("returns charge records with query of accountsOfTenant", async () => {
   const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfTenant", accountsOfTenant:{
-      tenantName: account.tenant.getProperty("name"), accountNames:[]} },
+    target: {
+      $case: "accountsOfTenant",
+      accountsOfTenant: {
+        tenantName: account.tenant.getProperty("name"),
+        accountNames: [],
+      },
+    },
     types: extractTypesFromObjects([request1, request2]),
     page: 1,
     pageSize: 50,
     userIds: [],
-    sortBy:undefined,
-    sortOrder:undefined,
+    sortBy: undefined,
+    sortOrder: undefined,
     userIdsOrNames: [],
   });
 
@@ -763,7 +771,7 @@ it("returns charge records with query of accountsOfTenant", async () => {
 });
 
 it("returns charge records with query allAccountOfAllTenants", async () => {
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -785,7 +793,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
     comment: "comment",
     type: "testA",
     userId: "user_1",
-    metadata: { "cluster": "hpc01", "idJob": 1 },
+    metadata: { cluster: "hpc01", idJob: 1 },
   };
 
   const request2: ChargeRequest = {
@@ -794,7 +802,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
     comment: "comment",
     type: "testB",
     userId: "user_1",
-    metadata: { "cluster": "hpc01", "idJob": 2 },
+    metadata: { cluster: "hpc01", idJob: 2 },
   };
 
   const request3: ChargeRequest = {
@@ -804,7 +812,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
     comment: "comment",
     type: "testC",
     userId: "user_2",
-    metadata: { "cluster": "hpc02", "idJob": 9 },
+    metadata: { cluster: "hpc02", idJob: 9 },
   };
 
   const request4: ChargeRequest = {
@@ -813,7 +821,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
     comment: "comment",
     type: "testD",
     userId: "user_2",
-    metadata: { "cluster": "hpc02", "idJob": 10 },
+    metadata: { cluster: "hpc02", idJob: 10 },
   };
 
   const startTime = new Date();
@@ -843,11 +851,12 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
   const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{ accountNames:[]} },
-    userIds: ["user_1", "user_2"], types:extractTypesFromObjects([request1, request2, request3, request4]),
-    sortBy:undefined,
-    sortOrder:undefined,
-    userIdsOrNames:[],
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
+    userIds: ["user_1", "user_2"],
+    types: extractTypesFromObjects([request1, request2, request3, request4]),
+    sortBy: undefined,
+    sortOrder: undefined,
+    userIdsOrNames: [],
   });
 
   expect(reply.results).toHaveLength(2);
@@ -861,8 +870,8 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
       type: request1.type,
       userId: "user_1",
       metadata: {
-        "cluster":  "hpc01",
-        "idJob":  1,
+        cluster: "hpc01",
+        idJob: 1,
       },
     },
     {
@@ -873,8 +882,8 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
       type: request3.type,
       userId: "user_2",
       metadata: {
-        "cluster":  "hpc02",
-        "idJob":  9,
+        cluster: "hpc02",
+        idJob: 9,
       },
     },
   ] as Partial<ChargeRecord>);
@@ -883,7 +892,7 @@ it("returns charge records with query allAccountOfAllTenants", async () => {
 });
 
 it("returns charge records' total results", async () => {
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -960,7 +969,6 @@ it("returns charge records' total results", async () => {
     type: "testA",
   };
 
-
   const request9: ChargeRequest = {
     accountName: account.accountName,
     tenantName: account.tenant.getProperty("name"),
@@ -1036,19 +1044,20 @@ it("returns charge records' total results", async () => {
   const reply1 = await asyncClientCall(client, "getChargeRecordsTotalCount", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{ accountNames:[]} },
-    userIdsOrNames: [], types:extractTypesFromObjects(requestArr),
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
+    userIdsOrNames: [],
+    types: extractTypesFromObjects(requestArr),
   });
 
   expect(reply1.totalAmount).toStrictEqual(numberToMoney(130));
   expect(reply1.totalCount).toEqual(11);
 
-
   const reply2 = await asyncClientCall(client, "getChargeRecordsTotalCount", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{ accountNames:[]} },
-    userIdsOrNames: [], types:[request1.type],
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
+    userIdsOrNames: [],
+    types: [request1.type],
   });
 
   expect(reply2.totalAmount).toStrictEqual(numberToMoney(100));
@@ -1057,8 +1066,7 @@ it("returns charge records' total results", async () => {
 });
 
 it("returns charge records with query of accounts", async () => {
-
-  const tenant = await em.findOne(Tenant, { name:"test" }) as Tenant;
+  const tenant = (await em.findOne(Tenant, { name: "test" })) as Tenant;
   const tenant2 = new Tenant({ name: "test2" });
   const account2 = new Account({
     accountName: "1234",
@@ -1068,7 +1076,7 @@ it("returns charge records with query of accounts", async () => {
   });
   const account3 = new Account({
     accountName: "12345",
-    tenant:tenant2,
+    tenant: tenant2,
     blockedInCluster: false,
     comment: "test",
   });
@@ -1124,7 +1132,6 @@ it("returns charge records with query of accounts", async () => {
   await reloadEntity(em, account3);
   await reloadEntity(em, account3.tenant.getEntity());
 
-
   expect(account.balance.toNumber()).toBe(-10);
   expect(account.tenant.getProperty("balance").toNumber()).toBe(-20);
   expect(account2.balance.toNumber()).toBe(-30);
@@ -1138,41 +1145,49 @@ it("returns charge records with query of accounts", async () => {
   const reply1 = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{
-      accountNames:[account.accountName, account2.accountName]}
-      ,
+    target: {
+      $case: "accountsOfAllTenants",
+      accountsOfAllTenants: {
+        accountNames: [account.accountName, account2.accountName],
+      },
     },
     page: 1,
-    pageSize:10,
+    pageSize: 10,
     userIds: [],
-    types:extractTypesFromObjects([request1, request3]),
-    sortBy:undefined,
-    sortOrder:undefined,
+    types: extractTypesFromObjects([request1, request3]),
+    sortBy: undefined,
+    sortOrder: undefined,
     userIdsOrNames: [],
   });
 
   expect(reply1.results).toHaveLength(2);
 
-  expect(reply1.results).toMatchObject([{
-    accountName: request1.accountName,
-    comment: request1.comment,
-    amount: request1.amount,
-  }, {
-    accountName: request3.accountName,
-    comment: request3.comment,
-    amount: request3.amount,
-  } ] as Partial<ChargeRecord>);
+  expect(reply1.results).toMatchObject([
+    {
+      accountName: request1.accountName,
+      comment: request1.comment,
+      amount: request1.amount,
+    },
+    {
+      accountName: request3.accountName,
+      comment: request3.comment,
+      amount: request3.amount,
+    },
+  ] as Partial<ChargeRecord>);
 
   const reply2 = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{
-      accountNames:[account.accountName, account2.accountName]},
+    target: {
+      $case: "accountsOfAllTenants",
+      accountsOfAllTenants: {
+        accountNames: [account.accountName, account2.accountName],
+      },
     },
     page: 1,
-    pageSize:10,
+    pageSize: 10,
     userIds: [],
-    types:extractTypesFromObjects([request2]),
+    types: extractTypesFromObjects([request2]),
     userIdsOrNames: [],
   });
 
@@ -1181,28 +1196,34 @@ it("returns charge records with query of accounts", async () => {
   const reply3 = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
-    target:{ $case:"accountsOfAllTenants", accountsOfAllTenants:{
-      accountNames:[account.accountName, account3.accountName]},
+    target: {
+      $case: "accountsOfAllTenants",
+      accountsOfAllTenants: {
+        accountNames: [account.accountName, account3.accountName],
+      },
     },
     page: 1,
-    pageSize:10,
+    pageSize: 10,
     userIds: [],
-    types:extractTypesFromObjects([request1, request2, request3, request4]),
-    sortBy:undefined,
-    sortOrder:undefined,
+    types: extractTypesFromObjects([request1, request2, request3, request4]),
+    sortBy: undefined,
+    sortOrder: undefined,
     userIdsOrNames: [],
   });
 
   expect(reply3.results).toHaveLength(2);
-  expect(reply3.results).toMatchObject([{
-    accountName: request1.accountName,
-    comment: request1.comment,
-    amount: request1.amount,
-  }, {
-    accountName: request4.accountName,
-    comment: request4.comment,
-    amount: request4.amount,
-  } ] as Partial<ChargeRecord>);
+  expect(reply3.results).toMatchObject([
+    {
+      accountName: request1.accountName,
+      comment: request1.comment,
+      amount: request1.amount,
+    },
+    {
+      accountName: request4.accountName,
+      comment: request4.comment,
+      amount: request4.amount,
+    },
+  ] as Partial<ChargeRecord>);
 
   em.clear();
 });
@@ -1216,11 +1237,15 @@ it("returns paginated charge records with userIdsOrNames filter", async () => {
     comment: "test",
   });
   const testUser1 = new User({
-    name: "User One", userId: "user1", email: "test@test.com",
+    name: "User One",
+    userId: "user1",
+    email: "test@test.com",
     tenant: tenant,
   });
   const testUser2 = new User({
-    name: "User Two", userId: "user2", email: "test2@test2.com",
+    name: "User Two",
+    userId: "user2",
+    email: "test2@test2.com",
     tenant: tenant,
   });
 
@@ -1230,12 +1255,30 @@ it("returns paginated charge records with userIdsOrNames filter", async () => {
   await em.persistAndFlush([tenant, account1, testUser1, testUser2]);
 
   const chargeRequests = [
-    { accountName: account1.accountName, tenantName: tenant.name,
-      amount: numberToMoney(10), comment: "charge1", type: "typeA", userId: user1.id },
-    { accountName: account1.accountName, tenantName: tenant.name,
-      amount: numberToMoney(20), comment: "charge2", type: "typeB", userId: user2.id },
-    { accountName: account1.accountName, tenantName: tenant.name,
-      amount: numberToMoney(30), comment: "charge3", type: "typeA", userId: user1.id },
+    {
+      accountName: account1.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(10),
+      comment: "charge1",
+      type: "typeA",
+      userId: user1.id,
+    },
+    {
+      accountName: account1.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(20),
+      comment: "charge2",
+      type: "typeB",
+      userId: user2.id,
+    },
+    {
+      accountName: account1.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(30),
+      comment: "charge3",
+      type: "typeA",
+      userId: user1.id,
+    },
   ];
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -1259,19 +1302,31 @@ it("returns paginated charge records with userIdsOrNames filter", async () => {
     endTime: queryEndTime.toISOString(),
     page: 1,
     pageSize: 10,
-    userIds:[],
+    userIds: [],
     userIdsOrNames: ["user1", "User Two"],
     types: ["typeA", "typeB"],
   });
 
   expect(reply.results).toHaveLength(3);
   expect(reply.results).toMatchObject([
-    { accountName: chargeRequests[0].accountName, comment: chargeRequests[0].comment,
-      amount: chargeRequests[0].amount, userId: chargeRequests[0].userId },
-    { accountName: chargeRequests[1].accountName, comment: chargeRequests[1].comment,
-      amount: chargeRequests[1].amount, userId: chargeRequests[1].userId },
-    { accountName: chargeRequests[2].accountName, comment: chargeRequests[2].comment,
-      amount: chargeRequests[2].amount, userId: chargeRequests[2].userId },
+    {
+      accountName: chargeRequests[0].accountName,
+      comment: chargeRequests[0].comment,
+      amount: chargeRequests[0].amount,
+      userId: chargeRequests[0].userId,
+    },
+    {
+      accountName: chargeRequests[1].accountName,
+      comment: chargeRequests[1].comment,
+      amount: chargeRequests[1].amount,
+      userId: chargeRequests[1].userId,
+    },
+    {
+      accountName: chargeRequests[2].accountName,
+      comment: chargeRequests[2].comment,
+      amount: chargeRequests[2].amount,
+      userId: chargeRequests[2].userId,
+    },
   ] as Partial<ChargeRecord>);
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
@@ -1294,18 +1349,35 @@ it("returns paginated charge records without userIdsOrNames filter", async () =>
     comment: "test",
   });
   const testUserUnkown = new User({
-    name: "User Unkown", userId: "user9", email: "test3@test3.com",
+    name: "User Unkown",
+    userId: "user9",
+    email: "test3@test3.com",
     tenant: tenant,
   });
   await em.persistAndFlush([tenant, account2, testUserUnkown]);
 
   const chargeRequests: ChargeRequest[] = [
-    { accountName: account2.accountName, tenantName: tenant.name,
-      amount: numberToMoney(15), comment: "charge1", type: "typeA" },
-    { accountName: account2.accountName, tenantName: tenant.name,
-      amount: numberToMoney(25), comment: "charge2", type: "typeB" },
-    { accountName: account2.accountName, tenantName: tenant.name,
-      amount: numberToMoney(35), comment: "charge3", type: "typeA" },
+    {
+      accountName: account2.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(15),
+      comment: "charge1",
+      type: "typeA",
+    },
+    {
+      accountName: account2.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(25),
+      comment: "charge2",
+      type: "typeB",
+    },
+    {
+      accountName: account2.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(35),
+      comment: "charge3",
+      type: "typeA",
+    },
   ];
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -1329,26 +1401,37 @@ it("returns paginated charge records without userIdsOrNames filter", async () =>
     endTime: queryEndTime.toISOString(),
     page: 1,
     pageSize: 10,
-    userIds:[],
-    userIdsOrNames:[],
+    userIds: [],
+    userIdsOrNames: [],
     types: ["typeA", "typeB"],
   });
 
   expect(reply.results).toHaveLength(3);
-  expect(reply.results).toEqual(expect.arrayContaining([
-    expect.objectContaining({ accountName: chargeRequests[0].accountName,
-      comment: chargeRequests[0].comment, amount: chargeRequests[0].amount }),
-    expect.objectContaining({ accountName: chargeRequests[1].accountName,
-      comment: chargeRequests[1].comment, amount: chargeRequests[1].amount }),
-    expect.objectContaining({ accountName: chargeRequests[2].accountName,
-      comment: chargeRequests[2].comment, amount: chargeRequests[2].amount }),
-  ]) as Partial<ChargeRecord>);
+  expect(reply.results).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        accountName: chargeRequests[0].accountName,
+        comment: chargeRequests[0].comment,
+        amount: chargeRequests[0].amount,
+      }),
+      expect.objectContaining({
+        accountName: chargeRequests[1].accountName,
+        comment: chargeRequests[1].comment,
+        amount: chargeRequests[1].amount,
+      }),
+      expect.objectContaining({
+        accountName: chargeRequests[2].accountName,
+        comment: chargeRequests[2].comment,
+        amount: chargeRequests[2].amount,
+      }),
+    ]) as Partial<ChargeRecord>,
+  );
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
     startTime: queryStartTime.toISOString(),
     endTime: queryEndTime.toISOString(),
     types: ["typeA", "typeB"],
-    userIdsOrNames:[],
+    userIdsOrNames: [],
   });
 
   expect(totalCountReply.totalCount).toBe(3);
@@ -1364,7 +1447,9 @@ it("returns paginated charge records filtered by userId", async () => {
     comment: "test",
   });
   const testUser3 = new User({
-    name: "User Three", userId: "user3", email: "test3@test3.com",
+    name: "User Three",
+    userId: "user3",
+    email: "test3@test3.com",
     tenant: tenant,
   });
 
@@ -1373,10 +1458,22 @@ it("returns paginated charge records filtered by userId", async () => {
   await em.persistAndFlush([tenant, account3, testUser3]);
 
   const chargeRequests = [
-    { accountName: account3.accountName, tenantName: tenant.name
-      , amount: numberToMoney(50), comment: "charge1", type: "typeC", userId: user3.id },
-    { accountName: account3.accountName, tenantName: tenant.name,
-      amount: numberToMoney(60), comment: "charge2", type: "typeD", userId: user3.id },
+    {
+      accountName: account3.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(50),
+      comment: "charge1",
+      type: "typeC",
+      userId: user3.id,
+    },
+    {
+      accountName: account3.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(60),
+      comment: "charge2",
+      type: "typeD",
+      userId: user3.id,
+    },
   ];
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -1400,17 +1497,25 @@ it("returns paginated charge records filtered by userId", async () => {
     endTime: queryEndTime.toISOString(),
     page: 1,
     pageSize: 10,
-    userIds:[],
+    userIds: [],
     userIdsOrNames: [user3.id],
     types: ["typeC", "typeD"],
   });
 
   expect(reply.results).toHaveLength(2);
   expect(reply.results).toMatchObject([
-    { accountName: chargeRequests[0].accountName, comment: chargeRequests[0].comment,
-      amount: chargeRequests[0].amount, userId: chargeRequests[0].userId },
-    { accountName: chargeRequests[1].accountName, comment: chargeRequests[1].comment,
-      amount: chargeRequests[1].amount, userId: chargeRequests[1].userId },
+    {
+      accountName: chargeRequests[0].accountName,
+      comment: chargeRequests[0].comment,
+      amount: chargeRequests[0].amount,
+      userId: chargeRequests[0].userId,
+    },
+    {
+      accountName: chargeRequests[1].accountName,
+      comment: chargeRequests[1].comment,
+      amount: chargeRequests[1].amount,
+      userId: chargeRequests[1].userId,
+    },
   ] as Partial<ChargeRecord>);
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
@@ -1433,7 +1538,9 @@ it("returns paginated charge records filtered by userName", async () => {
     comment: "test",
   });
   const testUser4 = new User({
-    name: "User Four", userId: "user4", email: "test4@test4.com",
+    name: "User Four",
+    userId: "user4",
+    email: "test4@test4.com",
     tenant: tenant,
   });
   const user4 = { id: "user4", name: "User Four" };
@@ -1441,10 +1548,22 @@ it("returns paginated charge records filtered by userName", async () => {
   await em.persistAndFlush([tenant, account4, testUser4]);
 
   const chargeRequests = [
-    { accountName: account4.accountName, tenantName: tenant.name,
-      amount: numberToMoney(70), comment: "charge1", type: "typeE", userId: user4.id },
-    { accountName: account4.accountName, tenantName: tenant.name,
-      amount: numberToMoney(80), comment: "charge2", type: "typeF", userId: user4.id },
+    {
+      accountName: account4.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(70),
+      comment: "charge1",
+      type: "typeE",
+      userId: user4.id,
+    },
+    {
+      accountName: account4.accountName,
+      tenantName: tenant.name,
+      amount: numberToMoney(80),
+      comment: "charge2",
+      type: "typeF",
+      userId: user4.id,
+    },
   ];
 
   const client = new ChargingServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
@@ -1468,17 +1587,25 @@ it("returns paginated charge records filtered by userName", async () => {
     endTime: queryEndTime.toISOString(),
     page: 1,
     pageSize: 10,
-    userIds:[],
+    userIds: [],
     userIdsOrNames: [user4.name],
     types: ["typeE", "typeF"],
   });
 
   expect(reply.results).toHaveLength(2);
   expect(reply.results).toMatchObject([
-    { accountName: chargeRequests[0].accountName, comment: chargeRequests[0].comment,
-      amount: chargeRequests[0].amount, userId: chargeRequests[0].userId },
-    { accountName: chargeRequests[1].accountName, comment: chargeRequests[1].comment,
-      amount: chargeRequests[1].amount, userId: chargeRequests[1].userId },
+    {
+      accountName: chargeRequests[0].accountName,
+      comment: chargeRequests[0].comment,
+      amount: chargeRequests[0].amount,
+      userId: chargeRequests[0].userId,
+    },
+    {
+      accountName: chargeRequests[1].accountName,
+      comment: chargeRequests[1].comment,
+      amount: chargeRequests[1].amount,
+      userId: chargeRequests[1].userId,
+    },
   ] as Partial<ChargeRecord>);
 
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
@@ -1534,7 +1661,7 @@ it("keeps account scope when filtering by userIdsOrNames", async () => {
   const reply = await asyncClientCall(client, "getPaginatedChargeRecords", {
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString(),
-    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
     page: 1,
     pageSize: 10,
     userIds: [],
@@ -1548,15 +1675,13 @@ it("keeps account scope when filtering by userIdsOrNames", async () => {
   const totalCountReply = await asyncClientCall(client, "getChargeRecordsTotalCount", {
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString(),
-    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: []} },
+    target: { $case: "accountsOfAllTenants", accountsOfAllTenants: { accountNames: [] } },
     userIdsOrNames: [user.userId],
     types: ["scopeType"],
   });
   expect(totalCountReply.totalCount).toBe(1);
   expect(totalCountReply.totalAmount).toStrictEqual(numberToMoney(10));
 });
-
-
 
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {

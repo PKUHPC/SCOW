@@ -33,7 +33,6 @@ export class UserForbiddenError extends TRPCError {
   }
 }
 
-
 export class NoAvailableClustersError extends TRPCError {
   constructor() {
     super({
@@ -47,17 +46,16 @@ export class AccountUserSyncRunningError extends TRPCError {
   constructor() {
     super({
       code: "CONFLICT",
-      message: "There is a account user synchronization task is running. "
-      + "Please perform the authorization or deauthorization operation after the synchronization is completed.",
+      message:
+        "There is a account user synchronization task is running. " +
+        "Please perform the authorization or deauthorization operation after the synchronization is completed.",
     });
   }
 }
 
 export function isResourceAdmin(user: ClientUserInfo): boolean {
-  return user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN)
-      || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  return user.platformRoles.includes(PlatformRole.PLATFORM_ADMIN) || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
 }
-
 
 export async function checkClusterIdAvailable(clusterId: string): Promise<void> {
   const currentClusters = await getScowActivatedClusters();
@@ -82,8 +80,9 @@ export async function checkClusterPartitionAvailable(
   const currentClusterPartitions = await getScowActivatedClusterPartitions(logger);
   if (!currentClusterPartitions[clusterId]?.includes(partitionName)) {
     throw new TRPCError({
-      message: `Can not find the combination of  cluster ${clusterId} and partition ${partitionName}`
-      + " in current activated clusters. Please refresh the page and try again later",
+      message:
+        `Can not find the combination of  cluster ${clusterId} and partition ${partitionName}` +
+        " in current activated clusters. Please refresh the page and try again later",
       code: "NOT_FOUND",
     });
   }
@@ -95,5 +94,3 @@ export async function checkSyncRunning(): Promise<void> {
     throw new AccountUserSyncRunningError();
   }
 }
-
-

@@ -1,12 +1,12 @@
 {
   "name": "@scow/gateway",
-  "private": true,
   "version": "1.11.1",
-  "main": "build/index.js",
+  "private": true,
   "files": [
     "build",
     "assets"
   ],
+  "main": "build/index.js",
   "scripts": {
     "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "serve": "node build/index.js",

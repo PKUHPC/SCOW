@@ -41,7 +41,7 @@ export async function validateSubmitJobInfoUnderMis({
   if (!isUserAvailableInAccount) {
     throw new DetailedError({
       code: Status.PERMISSION_DENIED,
-      message:  `User ${userId} is not available in account ${accountName}`,
+      message: `User ${userId} is not available in account ${accountName}`,
       details: [errorInfo("USER_ACCOUNT_NOT_AVAILABLE")],
     });
   }
@@ -57,8 +57,9 @@ export async function validateSubmitJobInfoUnderMis({
     if (!isClusterPartitionAuthorized) {
       throw new DetailedError({
         code: Status.PERMISSION_DENIED,
-        message:  `Account ${accountName} is not authorized in cluster ${clusterId}`
-              + (partitionName ? ` and partition ${partitionName}` : ""),
+        message:
+          `Account ${accountName} is not authorized in cluster ${clusterId}` +
+          (partitionName ? ` and partition ${partitionName}` : ""),
         details: [errorInfo("CLUSTER_PARTITION_NOT_AVAILABLE")],
       });
     }

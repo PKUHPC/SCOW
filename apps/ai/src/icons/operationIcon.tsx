@@ -48,19 +48,18 @@ const TableRowIconContainer = styled.span<{ $active: boolean }>`
 
   .table-row-icon-background {
     fill: ${({ theme, $active }) =>
-      $active ? theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder : "#F0F0F0"};
+      $active ? (theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder) : "#F0F0F0"};
     transition: fill 0.2s ease;
   }
 
   .table-row-icon-border {
     stroke: ${({ theme, $active }) =>
-      $active ? theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder : "#F0F0F0"};
+      $active ? (theme.palette?.primary?.[1] ?? theme.token.colorPrimaryBorder) : "#F0F0F0"};
     transition: stroke 0.2s ease;
   }
 
   .table-row-icon-foreground {
-    fill: ${({ theme, $active }) =>
-      $active ? theme.token.colorPrimary : "#434343"};
+    fill: ${({ theme, $active }) => ($active ? theme.token.colorPrimary : "#434343")};
     transition: fill 0.2s ease;
   }
 
@@ -856,4 +855,3 @@ export const ExpandTableRowIcon: React.ForwardRefExoticComponent<IconProps> = Re
     </TableRowIconContainer>
   ),
 );
-

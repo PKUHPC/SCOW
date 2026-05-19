@@ -1,18 +1,18 @@
 {
   "name": "@scow/lib-notification",
   "version": "1.0.24",
-  "description": "",
-  "main": "index.js",
   "private": true,
-  "scripts": {
-    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
-    "build": "rimraf build && tsc -p tsconfig.build.json"
-  },
+  "description": "",
+  "keywords": [],
   "files": [
     "build",
     "!**/*.map"
   ],
-  "keywords": [],
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
+    "build": "rimraf build && tsc -p tsconfig.build.json"
+  },
   "dependencies": {
     "@bufbuild/protobuf": "2.10.0",
     "@connectrpc/connect": "2.1.1",

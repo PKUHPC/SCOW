@@ -15,7 +15,6 @@ export const AvailableAccountsAndClusters = Type.Array(AvailableAccountsAndClust
 
 export type AvailableAccountsAndClusters = Static<typeof AvailableAccountsAndClusters>;
 
-
 export const GetAvailableAccountsAndClustersSchema = typeboxRouteSchema({
   method: "GET",
 
@@ -30,16 +29,17 @@ export const GetAvailableAccountsAndClustersSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(GetAvailableAccountsAndClustersSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(GetAvailableAccountsAndClustersSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const client = getClient(ConfigServiceClient);
 
   const reply = await asyncUnaryCall(client, "getAvailableAccountsAndClusters", {
     userId: info.identityId,
   });
-  return { 200: { accountClusters: reply.accountClusters ?? []} };
+  return { 200: { accountClusters: reply.accountClusters ?? [] } };
 });

@@ -1,13 +1,7 @@
 import { join } from "path";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { ShellIcon } from "src/icons/headerIcons/headerIcons";
-import {
-  BaseCardInfoItem,
-  CardActions,
-  CardTitleContainer,
-  StyledButton,
-  StyledCard,
-} from "src/utils/baseCardStyles";
+import { BaseCardInfoItem, CardActions, CardTitleContainer, StyledButton, StyledCard } from "src/utils/baseCardStyles";
 import { getTransparentColor } from "src/utils/color";
 import { publicConfig } from "src/utils/config";
 import { styled, useTheme } from "styled-components";
@@ -51,7 +45,6 @@ interface ShellCardProps {
 const pCard = prefix("pageComp.loginCluster.shellCard.");
 
 export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
-
   const t = useI18nTranslateToString();
 
   const theme = useTheme();
@@ -66,29 +59,32 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
   return (
     <StyledCard
       $boxShadowColor={themeColor}
-      title={(
+      title={
         <CardTitleContainer>
           <ShellIcon styles={{ color: themeColor, width: "30px", height: "27px" }} />
           <div>Shell</div>
         </CardTitleContainer>
-      )}
+      }
       style={{
         borderColor: borderColorWithAlpha,
         borderWidth: "1px",
       }}
     >
-      <CardDescription>{data.description.length > 0 ? data.description :
-        t("pageComp.loginCluster.defaultDescription")
-      }</CardDescription>
+      <CardDescription>
+        {data.description.length > 0 ? data.description : t("pageComp.loginCluster.defaultDescription")}
+      </CardDescription>
       <CardInfo>
-        <BaseCardInfoItem>{t(pCard("clusterName"))}<span>{data.clusterName}</span></BaseCardInfoItem>
-        <BaseCardInfoItem>{t(pCard("loginNode"))}<span>{data.nodeName}</span></BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(pCard("clusterName"))}
+          <span>{data.clusterName}</span>
+        </BaseCardInfoItem>
+        <BaseCardInfoItem>
+          {t(pCard("loginNode"))}
+          <span>{data.nodeName}</span>
+        </BaseCardInfoItem>
       </CardInfo>
       <CardActions>
-        <StyledButton
-          type="default"
-          onClick={handleOpenShell}
-        >
+        <StyledButton type="default" onClick={handleOpenShell}>
           {t(pCard("open"))}
         </StyledButton>
       </CardActions>

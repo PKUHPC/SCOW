@@ -23,7 +23,7 @@ interface PreviewImageProps {
 
 interface Props {
   previewImage: PreviewImageProps;
-  setPreviewImage: Dispatch<SetStateAction<PreviewImageProps>>
+  setPreviewImage: Dispatch<SetStateAction<PreviewImageProps>>;
 }
 
 export const ImagePreviewer: React.FC<Props> = ({ previewImage, setPreviewImage }) => {

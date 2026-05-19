@@ -17,8 +17,7 @@ import type {
 const CATEGORY_VALUE_PRIVATE = 1;
 const CATEGORY_VALUE_PUBLIC = 2;
 
-export const createSelectionLookupKey = (id: number, isPrivate: boolean) =>
-  `${id}:${isPrivate ? "1" : "0"}`;
+export const createSelectionLookupKey = (id: number, isPrivate: boolean) => `${id}:${isPrivate ? "1" : "0"}`;
 
 // 将任意 React 节点展开为可读的纯文本
 export const resolveText = (value: ReactNode | string | number | undefined): string => {
@@ -147,15 +146,11 @@ export const renderCascaderLabels = (labels: ReactNode[], selectedOptions?: unkn
 
   if (!ownerText) return pathText;
 
-  return createElement("span", null,
-    pathText,
-    createElement(OwnerDisplayText, null, ownerText),
-  );
+  return createElement("span", null, pathText, createElement(OwnerDisplayText, null, ownerText));
 };
 
 // 选出第一个可用的队列 ID
-export const pickFirstEnabledQueueId = (rows: QueueRow[]): string | undefined =>
-  rows.find((row) => !row.disabled)?.id;
+export const pickFirstEnabledQueueId = (rows: QueueRow[]): string | undefined => rows.find((row) => !row.disabled)?.id;
 
 // 根据当前队列计算底部统计数据
 export const deriveQueueStats = (queue: QueueRow | undefined): QueueStats => {
@@ -173,8 +168,8 @@ export const deriveQueueStats = (queue: QueueRow | undefined): QueueStats => {
 
   return {
     totalUnits: queue.totalUnits,
-    cpuPerUnit: isGpu ? queue.cpuPerGpu ?? 0 : 1,
-    memoryPerUnitText: isGpu ? queue.memoryPerGpu ?? "-" : queue.memoryPerCore ?? "-",
+    cpuPerUnit: isGpu ? (queue.cpuPerGpu ?? 0) : 1,
+    memoryPerUnitText: isGpu ? (queue.memoryPerGpu ?? "-") : (queue.memoryPerCore ?? "-"),
     memoryPerUnitMb: isGpu ? queue.memoryPerGpuMb : queue.memoryPerCoreMb,
     qosOptions: queue.qosOptions ?? [],
   };
@@ -251,9 +246,7 @@ export const mapQueuesToRows = (queueData: Record<string, any>[] | undefined) =>
 };
 
 // 构建资源版本 ID 到级联选择路径的映射，便于再次提交时恢复选项
-export const buildSelectionPathLookup = (
-  categories?: ResourceCategory[],
-): Map<string, CascaderSelection> => {
+export const buildSelectionPathLookup = (categories?: ResourceCategory[]): Map<string, CascaderSelection> => {
   const map = new Map<string, CascaderSelection>();
   if (!categories || categories.length === 0) {
     return map;
@@ -290,7 +283,6 @@ export const buildSelectionPathLookup = (
   return map;
 };
 
-
 // 将前端选择的作业最长运行时长单位转换成小时比例，易于和后端约定保持一致
 const HOURS_PER_UNIT: Record<MaxTimeUnit, number> = {
   min: 1 / 60,
@@ -299,8 +291,7 @@ const HOURS_PER_UNIT: Record<MaxTimeUnit, number> = {
 };
 
 // 把任意单位的持续时长转成小时，便于后续同一口径的数值计算与校验
-export const convertDurationToHours = (value: number, unit: MaxTimeUnit): number =>
-  value * HOURS_PER_UNIT[unit];
+export const convertDurationToHours = (value: number, unit: MaxTimeUnit): number => value * HOURS_PER_UNIT[unit];
 
 // 组合镜像来源和镜像值生成缓存 key，用于记忆不同镜像来源的启动命令
 export const getCommandCacheKey = (source: ImageSourceKey, imageValue: string | undefined) => {

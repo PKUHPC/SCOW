@@ -1,13 +1,7 @@
 import { join } from "path";
 import { ShellIcon } from "src/assets/headerIcons";
 import { prefix, useI18nTranslateToString } from "src/i18n";
-import {
-  BaseCardInfoItem,
-  CardActions,
-  CardTitleContainer,
-  StyledButton,
-  StyledCard,
-} from "src/utils/baseCardStyles";
+import { BaseCardInfoItem, CardActions, CardTitleContainer, StyledButton, StyledCard } from "src/utils/baseCardStyles";
 import { getTransparentColor } from "src/utils/color";
 import { publicConfig } from "src/utils/config";
 import { styled, useTheme } from "styled-components";
@@ -66,26 +60,28 @@ export const ShellCard: React.FC<ShellCardProps> = ({ data }) => {
   return (
     <StyledCard
       $boxShadowColor={themeColor}
-      title={(
+      title={
         <CardTitleContainer>
           <ShellIcon styles={{ color: themeColor, width: "30px", height: "27px" }} />
           <div>Shell</div>
         </CardTitleContainer>
-      )}
+      }
       style={{
         borderColor: borderColorWithAlpha,
         borderWidth: "1px",
       }}
     >
-      <CardDescription>{data.description.length > 0 ? data.description :
-        t(pCard("defaultDescription"))
-      }</CardDescription>
+      <CardDescription>
+        {data.description.length > 0 ? data.description : t(pCard("defaultDescription"))}
+      </CardDescription>
       <CardInfo>
         <BaseCardInfoItem>
-          {t(pCard("clusterName"))}<span>{data.clusterName}</span>
+          {t(pCard("clusterName"))}
+          <span>{data.clusterName}</span>
         </BaseCardInfoItem>
         <BaseCardInfoItem>
-          {t(pCard("loginNode"))}<span>{data.nodeName}</span>
+          {t(pCard("loginNode"))}
+          <span>{data.nodeName}</span>
         </BaseCardInfoItem>
       </CardInfo>
 

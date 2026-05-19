@@ -42,14 +42,27 @@ export const SaveAsJobTemplateSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(SaveAsJobTemplateSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(SaveAsJobTemplateSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
-  const { cluster, jobName, account, partition, qos, nodeCount, coreCount, gpuCount, memoryMb,
-    command, maxTime, maxTimeUnit } = req.body;
+  const {
+    cluster,
+    jobName,
+    account,
+    partition,
+    qos,
+    nodeCount,
+    coreCount,
+    gpuCount,
+    memoryMb,
+    command,
+    maxTime,
+    maxTimeUnit,
+  } = req.body;
 
   const client = getClient(JobServiceClient);
 
@@ -57,7 +70,7 @@ export default /* #__PURE__*/route(SaveAsJobTemplateSchema, async (req, res) => 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.addJobTemplate,
-    operationTypePayload:{
+    operationTypePayload: {
       jobTemplateId: jobName,
       clusterId: cluster,
     },
@@ -77,13 +90,17 @@ export default /* #__PURE__*/route(SaveAsJobTemplateSchema, async (req, res) => 
     command,
     maxTime,
     maxTimeUnit: maxTimeUnit ?? TimeUnit.MINUTES,
-  }).then(async () => {
-    await callLog({ ...logInfo }, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.UNIMPLEMENTED]: (err) => ({ 404: { code: "UNIMPLEMENTED", message: err.details } } as const),
-    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
-  },
-  async () => await callLog({ ...logInfo }, OperationResult.FAIL),
-  ));
+  }).then(
+    async () => {
+      await callLog({ ...logInfo }, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.UNIMPLEMENTED]: (err) => ({ 404: { code: "UNIMPLEMENTED", message: err.details } }) as const,
+        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+      },
+      async () => await callLog({ ...logInfo }, OperationResult.FAIL),
+    ),
+  );
 });

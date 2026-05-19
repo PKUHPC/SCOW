@@ -36,7 +36,9 @@ const auth = authenticate(() => true);
 export default route(GetAllClustersInfoSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { clusterIds, isFullDisplayMode } = req.query;
 
@@ -68,10 +70,10 @@ export default route(GetAllClustersInfoSchema, async (req, res) => {
         };
         return { clusterInfo: { ...filteredReply, clusterId } } as ClusterInfoResult;
       }
-
     } catch (error) {
       console.error(
-        `Failed to get cluster info for ${clusterId}:`, error instanceof Error ? error.message : "Unknown error",
+        `Failed to get cluster info for ${clusterId}:`,
+        error instanceof Error ? error.message : "Unknown error",
       );
       return null;
     }

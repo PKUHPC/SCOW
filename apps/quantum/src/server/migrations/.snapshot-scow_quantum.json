@@ -119,9 +119,7 @@
       "name": "quantum_job",
       "indexes": [
         {
-          "columnNames": [
-            "job_id"
-          ],
+          "columnNames": ["job_id"],
           "composite": false,
           "keyName": "quantum_job_job_id_index",
           "constraint": false,
@@ -129,9 +127,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "state"
-          ],
+          "columnNames": ["state"],
           "composite": false,
           "keyName": "quantum_job_state_index",
           "constraint": false,
@@ -139,9 +135,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "quantum_job_user_id_index",
           "constraint": false,
@@ -149,9 +143,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "tenant_name"
-          ],
+          "columnNames": ["tenant_name"],
           "composite": false,
           "keyName": "quantum_job_tenant_name_index",
           "constraint": false,
@@ -159,9 +151,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "account_name"
-          ],
+          "columnNames": ["account_name"],
           "composite": false,
           "keyName": "quantum_job_account_name_index",
           "constraint": false,
@@ -169,9 +159,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "last_sync_time"
-          ],
+          "columnNames": ["last_sync_time"],
           "composite": false,
           "keyName": "quantum_job_last_sync_time_index",
           "constraint": false,
@@ -179,9 +167,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "qits"
-          ],
+          "columnNames": ["qits"],
           "composite": false,
           "keyName": "quantum_job_qits_index",
           "constraint": false,
@@ -189,9 +175,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "amount"
-          ],
+          "columnNames": ["amount"],
           "composite": false,
           "keyName": "quantum_job_amount_index",
           "constraint": false,
@@ -200,9 +184,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -259,9 +241,7 @@
       "name": "user_token",
       "indexes": [
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "user_token_user_id_unique",
           "constraint": true,
@@ -269,9 +249,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "token"
-          ],
+          "columnNames": ["token"],
           "composite": false,
           "keyName": "user_token_token_index",
           "constraint": false,
@@ -280,9 +258,7 @@
         },
         {
           "keyName": "PRIMARY",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,

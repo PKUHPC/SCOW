@@ -22,7 +22,8 @@ export const PublicImageOption = ({ name, tag, ownerName, ownerId }: PublicImage
     <StyledPublicImageOption>
       <span className="image-name">{`${name}: ${tag}`}</span>
       <Typography.Text className="image-owner">
-        {t(p("sharedBy"), [ownerDisplay])}{ownerId ? t(p("ownerIdSuffix"), [ownerId]) : ""}
+        {t(p("sharedBy"), [ownerDisplay])}
+        {ownerId ? t(p("ownerIdSuffix"), [ownerId]) : ""}
       </Typography.Text>
     </StyledPublicImageOption>
   );

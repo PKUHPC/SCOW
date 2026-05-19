@@ -35,7 +35,6 @@ export const useUploadSpeedTracker = (
   const [speedInfoMap, setSpeedInfoMap] = useState<Map<string, FileSpeedInfo>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-
   // 启动定时器
   const startTimer = useCallback(() => {
     if (timerRef.current) return;
@@ -89,24 +88,27 @@ export const useUploadSpeedTracker = (
   }, []);
 
   // 初始化文件速度追踪
-  const initFileSpeed = useCallback((fileUid: string, initialBytes = 0) => {
-    const now = Date.now();
+  const initFileSpeed = useCallback(
+    (fileUid: string, initialBytes = 0) => {
+      const now = Date.now();
 
-    setSpeedInfoMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(fileUid, {
-        speedText: "0 B/s",
-        bytesPerSecond: 0,
-        samples: [{ bytes: initialBytes, time: now }],
-        sessionStartBytes: initialBytes,
-        sessionStartTime: now,
+      setSpeedInfoMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(fileUid, {
+          speedText: "0 B/s",
+          bytesPerSecond: 0,
+          samples: [{ bytes: initialBytes, time: now }],
+          sessionStartBytes: initialBytes,
+          sessionStartTime: now,
+        });
+        return newMap;
       });
-      return newMap;
-    });
 
-    // 启动定时器
-    startTimer();
-  }, [startTimer]);
+      // 启动定时器
+      startTimer();
+    },
+    [startTimer],
+  );
 
   // 更新文件的已上传字节数
   const updateFileBytes = useCallback((fileUid: string, uploadedBytes: number) => {
@@ -128,24 +130,30 @@ export const useUploadSpeedTracker = (
   }, []);
 
   // 获取文件速度信息
-  const getFileSpeed = useCallback((fileUid: string) => {
-    return speedInfoMap.get(fileUid);
-  }, [speedInfoMap]);
+  const getFileSpeed = useCallback(
+    (fileUid: string) => {
+      return speedInfoMap.get(fileUid);
+    },
+    [speedInfoMap],
+  );
 
   // 清理单个文件
-  const cleanupFile = useCallback((fileUid: string) => {
-    setSpeedInfoMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(fileUid);
+  const cleanupFile = useCallback(
+    (fileUid: string) => {
+      setSpeedInfoMap((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(fileUid);
 
-      // 如果没有文件在追踪了，停止定时器
-      if (newMap.size === 0) {
-        stopTimer();
-      }
+        // 如果没有文件在追踪了，停止定时器
+        if (newMap.size === 0) {
+          stopTimer();
+        }
 
-      return newMap;
-    });
-  }, [stopTimer]);
+        return newMap;
+      });
+    },
+    [stopTimer],
+  );
 
   // 清理所有文件
   const cleanupAll = useCallback(() => {

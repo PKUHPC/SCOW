@@ -81,7 +81,11 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
 
   const startMultipartUpload = async (file: File, onProgress: OnProgressCallback) => {
     let initData = await initMultipartUpload.mutateAsync({
-      clusterId, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified,
+      clusterId,
+      path,
+      name: file.name,
+      fileSizeByte: file.size,
+      modificationTime: file.lastModified,
     });
 
     if (initData.fileSizeByte !== file.size || initData.modificationTime !== file.lastModified) {
@@ -103,7 +107,11 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             }
 
             initData = await initMultipartUpload.mutateAsync({
-              clusterId, path, name: file.name, fileSizeByte: file.size, modificationTime: file.lastModified,
+              clusterId,
+              path,
+              name: file.name,
+              fileSizeByte: file.size,
+              modificationTime: file.lastModified,
             });
             resolve();
           },
@@ -143,10 +151,11 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         return prevList.map((uploadFile) => {
           return uploadFile.name === file.name
             ? {
-              ...uploadFile,
-              percent: percentage,
-              status: "uploading" as const,
-            } : uploadFile;
+                ...uploadFile,
+                percent: percentage,
+                status: "uploading" as const,
+              }
+            : uploadFile;
         });
       });
 
@@ -171,19 +180,20 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       const formData = new FormData();
       formData.append("file", chunk);
 
-      const response = await fetch(urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH,
-        true, undefined, start), {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH, true, undefined, start),
+        {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        },
+      );
 
       if (!response.ok) {
         throw new Error(response.statusText);
       }
 
       updateProgress(1);
-
     };
 
     try {
@@ -212,7 +222,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           message.error(t(p("completeMultipartUploadError"), [file.name, err.message]));
         }
       }
-
     } catch (err: any) {
       if (err?.data?.code === "TOO_MANY_REQUESTS") {
         message.error(t(pCommon("noSpaceError")));
@@ -225,7 +234,6 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
       speedTracker.cleanupFile(uploadFile.uid);
     }
   };
-
 
   return (
     <Modal
@@ -271,29 +279,29 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
         <Upload.Dragger
           name="file"
           multiple
-          {
-          ...(scowdEnabled ? {
-            customRequest: ({ file, onSuccess, onError, onProgress }) => {
-              limit.current(() => startMultipartUpload(file as File, onProgress).then(onSuccess).catch(onError));
-            },
-          } : {
-            action: async (file) => urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH),
-          })
-          }
+          {...(scowdEnabled
+            ? {
+                customRequest: ({ file, onSuccess, onError, onProgress }) => {
+                  limit.current(() =>
+                    startMultipartUpload(file as File, onProgress)
+                      .then(onSuccess)
+                      .catch(onError),
+                  );
+                },
+              }
+            : {
+                action: async (file) => urlToUpload(clusterId, join(path, file.name), publicConfig.BASE_PATH),
+              })}
           withCredentials
           showUploadList={{
             removeIcon: (file) => {
-              return (
-                file.status === "uploading"
-                  ? (
-                    <DeleteOutlined
-                      onClick={scowdEnabled ? () => handleRemove(file) : undefined}
-                      title={t(p("cancelUpload"))}
-                    />
-                  )
-                  : (
-                    <DeleteOutlined title={t(p("delRecord"))} />
-                  )
+              return file.status === "uploading" ? (
+                <DeleteOutlined
+                  onClick={scowdEnabled ? () => handleRemove(file) : undefined}
+                  title={t(p("cancelUpload"))}
+                />
+              ) : (
+                <DeleteOutlined title={t(p("delRecord"))} />
               );
             },
           }}
@@ -306,10 +314,10 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
               reload();
             } else if (file.status === "error") {
               // 优先使用 response 中的消息，如果没有则回退到 error.message
-              const errorMsg = file.response?.message || // 后端主动返回的 message
+              const errorMsg =
+                file.response?.message || // 后端主动返回的 message
                 file.error?.message || // 网络或异常错误
                 `${file.name}${t(p("failed"))}`; // 默认提示
-
 
               message.error(file.response?.code === "TOO_MANY_REQUESTS" ? t(pCommon("noSpaceError")) : errorMsg);
             }
@@ -319,7 +327,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             if (hasFolderInDropRef.current) {
               return Upload.LIST_IGNORE;
             }
-            const fileMaxSize = parseInt(publicConfig.CLIENT_MAX_BODY_SIZE.slice(0, -1)) * (1024 ** 3);
+            const fileMaxSize = parseInt(publicConfig.CLIENT_MAX_BODY_SIZE.slice(0, -1)) * 1024 ** 3;
 
             if (!scowdEnabled && file.size > fileMaxSize) {
               message.error(`${file.name}${t(p("failed"))},${t(p("exceed"))}${publicConfig.CLIENT_MAX_BODY_SIZE}`);
@@ -337,15 +345,18 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
                       const fileType = await getFileType.mutateAsync({ path: join(path, file.name), clusterId });
 
                       if (fileType.type) {
-                        await deleteFileMutation.mutateAsync({
-                          target: fileType.type === "DIR" ? "DIR" : "FILE",
-                          clusterId: clusterId,
-                          path: join(path, file.name),
-                        }).then(() => resolve(file));
+                        await deleteFileMutation
+                          .mutateAsync({
+                            target: fileType.type === "DIR" ? "DIR" : "FILE",
+                            clusterId: clusterId,
+                            path: join(path, file.name),
+                          })
+                          .then(() => resolve(file));
                       }
-
                     },
-                    onCancel: () => { reject(file); },
+                    onCancel: () => {
+                      reject(file);
+                    },
                   });
                 } else {
                   resolve(file);
@@ -356,8 +367,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
           fileList={uploadFileList}
           itemRender={(originNode, file) => {
             const speed = speedTracker.getFileSpeed(file.uid);
-            const extraInfo = (file.percent && file.percent === 100) ? t(p("isChecking"))
-              : speed?.speedText ?? "0 B/s";
+            const extraInfo = file.percent && file.percent === 100 ? t(p("isChecking")) : (speed?.speedText ?? "0 B/s");
             return (
               <div>
                 {/* 原始的文件节点（包含进度条等） */}
@@ -366,7 +376,9 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
                 {scowdEnabled && (
                   <PercentAndSpeedContainer>
                     {file.status === "uploading" && (
-                      <span>{file.percent} % &nbsp;&nbsp; {extraInfo}</span>
+                      <span>
+                        {file.percent} % &nbsp;&nbsp; {extraInfo}
+                      </span>
                     )}
                   </PercentAndSpeedContainer>
                 )}
@@ -378,9 +390,7 @@ export const UploadModal: React.FC<Props> = ({ open, onClose, path, reload, clus
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">{t(p("uploadText"))}</p>
-          <p className="ant-upload-hint">
-            {t(p("singleOrMultiply"))}
-          </p>
+          <p className="ant-upload-hint">{t(p("singleOrMultiply"))}</p>
         </Upload.Dragger>
       </div>
     </Modal>

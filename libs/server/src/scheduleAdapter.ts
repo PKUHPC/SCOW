@@ -8,9 +8,10 @@ import { Logger } from "ts-log";
 /**
  * 判断当前集群下调度器适配器是否包含可选功能
  */
-export async function listSchedulerAdapterOptionalFeatures(client: SchedulerAdapterClient, logger: Logger):
-  Promise<OptionalFeatures[]> {
-
+export async function listSchedulerAdapterOptionalFeatures(
+  client: SchedulerAdapterClient,
+  logger: Logger,
+): Promise<OptionalFeatures[]> {
   const optionalFeatures: OptionalFeatures[] = [];
   try {
     const reply = await asyncClientCall(client.config, "listImplementedOptionalFeatures", {});
@@ -21,17 +22,16 @@ export async function listSchedulerAdapterOptionalFeatures(client: SchedulerAdap
       logger.info("The current adapter has not implemented any optional features.");
     } else {
       throw e;
-    };
+    }
   }
   return optionalFeatures;
-};
-
+}
 
 // 检查当前适配器是否可以使用 资源管理 的可选功能接口
 export async function ensureResourceManagementFeatureAvailable(
   client: SchedulerAdapterClient,
-  logger: Logger): Promise<void> {
-
+  logger: Logger,
+): Promise<void> {
   const optionalFeatures = await listSchedulerAdapterOptionalFeatures(client, logger);
 
   if (!optionalFeatures.includes(OptionalFeatures.RESOURCE_MANAGEMENT)) {
@@ -42,5 +42,3 @@ export async function ensureResourceManagementFeatureAvailable(
     } as ServiceError;
   }
 }
-
-

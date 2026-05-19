@@ -15,23 +15,20 @@ export interface ShellQuery {
 
   cols?: string;
   rows?: string;
-};
+}
 
 export type ShellInputData =
-  | { $case: "resize", resize: { cols: number; rows: number } }
-  | { $case: "data", data: { data: string } }
-  | { $case: "disconnect" }
-  ;
+  | { $case: "resize"; resize: { cols: number; rows: number } }
+  | { $case: "data"; data: { data: string } }
+  | { $case: "disconnect" };
 export type ShellOutputData =
-  | { $case: "data", data: { data: number[] | { type: "Buffer"; data: number[] } | string } }
-  | { $case: "exit", exit: { code?: number; signal?: string } }
-  ;
+  | { $case: "data"; data: { data: number[] | { type: "Buffer"; data: number[] } | string } }
+  | { $case: "exit"; exit: { code?: number; signal?: string } };
 export const config = {
   api: {
     bodyParser: false,
   },
 };
-
 
 const wss = new WebSocketServer({ noServer: true });
 
@@ -68,7 +65,6 @@ wss.on("close", function close() {
 });
 
 wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
-
   const token = getUserToken(req);
 
   if (!token) {
@@ -85,8 +81,8 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     return;
   }
 
-  const log = (message: string, ...optionalParams: any[]) => console.log(
-    `[${new Date().toISOString()}] [io] [${identityId}] ${message}`, optionalParams);
+  const log = (message: string, ...optionalParams: any[]) =>
+    console.log(`[${new Date().toISOString()}] [io] [${identityId}] ${message}`, optionalParams);
   let closed = false;
 
   log("Connection request received.");
@@ -237,7 +233,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
     };
 
     const cleanup = () => {
-      if (cleanedUp) { return; }
+      if (cleanedUp) {
+        return;
+      }
       cleanedUp = true;
 
       log("Cleaning up resources.");
@@ -303,7 +301,9 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
     if (process.env.NODE_ENV !== "test" && !USE_MOCK && token) {
       authCheckInterval = setInterval(async () => {
-        if (closed || cleanedUp || authChecking) { return; }
+        if (closed || cleanedUp || authChecking) {
+          return;
+        }
         authChecking = true;
         const authIdentity = await validateUserToken(token);
         authChecking = false;
@@ -357,7 +357,6 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 
     // 保存事件处理器以便后续清理
     handleMessage = (data: RawData) => {
-
       // 如果流不可写，将消息加入待处理队列
       if (!isStreamWritable) {
         log("Stream not writable, queuing message.");
@@ -400,9 +399,7 @@ wss.on("connection", async (ws: AliveCheckedWebSocket, req) => {
 });
 
 export const setupJobShellServer = (req: NextApiRequest) => {
-
-  (req.socket as any).server.on("upgrade", async (req: IncomingMessage,
-    socket: any, head: any) => {
+  (req.socket as any).server.on("upgrade", async (req: IncomingMessage, socket: any, head: any) => {
     const url = normalizePathnameWithQuery(req.url!);
     if (!url.startsWith(join(BASE_PATH, "/api/jobShell"))) {
       return;
@@ -415,6 +412,5 @@ export const setupJobShellServer = (req: NextApiRequest) => {
 
       wss.emit("connection", extendedWs, req);
     });
-
   });
 };

@@ -22,4 +22,3 @@ export const { loadLanguageDefinitions } = createI18n(languages, {
   fallbackLanguageId: "zh_cn",
   languages: { fr, de, es, pt, ru, ja, ko },
 });
-

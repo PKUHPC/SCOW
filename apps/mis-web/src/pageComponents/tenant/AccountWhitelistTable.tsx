@@ -1,9 +1,14 @@
+import type { GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
+
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { moneyToNumber } from "@scow/lib-decimal";
 import { FilterFormContainer } from "@scow/lib-web/build/components/FilterFormContainer";
 import { TrimInput as Input } from "@scow/lib-web/build/components/styledAntdCom/TrimInput";
-import { compareNullableDateTime, compareNullableDateTimeAsMax,
-  compareNullableString } from "@scow/lib-web/build/utils/compareNullableValue";
+import {
+  compareNullableDateTime,
+  compareNullableDateTimeAsMax,
+  compareNullableString,
+} from "@scow/lib-web/build/utils/compareNullableValue";
 import { formatDateTime } from "@scow/lib-web/build/utils/datetime";
 import { DEFAULT_PAGE_SIZE } from "@scow/lib-web/build/utils/pagination";
 import { WhitelistedAccount } from "@scow/protos/build/server/account";
@@ -15,12 +20,10 @@ import { api } from "src/apis";
 import { TableTitle } from "src/components/TableTitle";
 import { prefix, useI18nTranslateToString } from "src/i18n";
 import { Money } from "src/models/UserSchemaModel";
-import type {
-  GetWhitelistedAccountsSchema } from "src/pages/api/tenant/accountWhitelist/getWhitelistedAccounts";
 import { moneyNumberToString, moneyToString } from "src/utils/money";
 
 interface Props {
-  data: Static<typeof GetWhitelistedAccountsSchema["responses"]["200"]> | undefined;
+  data: Static<(typeof GetWhitelistedAccountsSchema)["responses"]["200"]> | undefined;
   isLoading: boolean;
   reload: () => void;
 }
@@ -34,10 +37,7 @@ interface FilterForm {
 const p = prefix("pageComp.tenant.accountWhitelistTable.");
 const pCommon = prefix("common.");
 
-export const AccountWhitelistTable: React.FC<Props> = ({
-  data, isLoading, reload,
-}) => {
-
+export const AccountWhitelistTable: React.FC<Props> = ({ data, isLoading, reload }) => {
   // 获取国际化翻译函数
   const t = useI18nTranslateToString();
 
@@ -51,38 +51,39 @@ export const AccountWhitelistTable: React.FC<Props> = ({
     ownerIdOrName: undefined,
   });
   const [currentPageNum, setCurrentPageNum] = useState<number>(1);
-  const [currentSortInfo, setCurrentSortInfo] =
-    useState<{ field: string | null | undefined, order: SortOrder }>({ field: null, order: null });
+  const [currentSortInfo, setCurrentSortInfo] = useState<{ field: string | null | undefined; order: SortOrder }>({
+    field: null,
+    order: null,
+  });
 
   // 对数据进行过滤
   const filteredData = useMemo(() => {
-
     if (!data) return undefined;
 
     const filtered = data.results.filter((x) => {
-      const dataMatchedAccount =
-          !query.accountName || x.accountName.includes(query.accountName);
+      const dataMatchedAccount = !query.accountName || x.accountName.includes(query.accountName);
 
       const dataMatchedOwner =
-          !query.ownerIdOrName || x.ownerId.includes(query.ownerIdOrName) || x.ownerName.includes(query.ownerIdOrName);
+        !query.ownerIdOrName || x.ownerId.includes(query.ownerIdOrName) || x.ownerName.includes(query.ownerIdOrName);
 
       return dataMatchedAccount && dataMatchedOwner;
     });
 
     return filtered;
-
   }, [data, query]);
 
   // 获取欠费总数
-  const getTotalDebtAmount =
-    (data: Static<typeof GetWhitelistedAccountsSchema["responses"]["200"]> | undefined): number => {
-      const sum = data?.results.filter((acct) => !acct.balance?.positive)
-        .reduce((acc, acct) => {
-          const debtAmount = acct.balance ? moneyToNumber(acct.balance) : 0;
-          return acc + debtAmount;
-        }, 0);
-      return sum ? Math.abs(sum) : 0;
-    };
+  const getTotalDebtAmount = (
+    data: Static<(typeof GetWhitelistedAccountsSchema)["responses"]["200"]> | undefined,
+  ): number => {
+    const sum = data?.results
+      .filter((acct) => !acct.balance?.positive)
+      .reduce((acc, acct) => {
+        const debtAmount = acct.balance ? moneyToNumber(acct.balance) : 0;
+        return acc + debtAmount;
+      }, 0);
+    return sum ? Math.abs(sum) : 0;
+  };
 
   // 处理表格变化事件
   const handleTableChange = (_, __, sortInfo) => {
@@ -109,29 +110,31 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             <Input />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">{t(pCommon("search"))}</Button>
+            <Button type="primary" htmlType="submit">
+              {t(pCommon("search"))}
+            </Button>
           </Form.Item>
         </Form>
       </FilterFormContainer>
       <>
         {/* 名单表格 */}
         <TableTitle justify="flex-start">
-          {
-            data ? (
-              <div>
+          {data ? (
+            <div>
+              <span>
+                {t(p("whiteList"))}：<span>{data.results.length ?? 0}</span>
+              </span>
+              <>
+                <Divider type="vertical" />
                 <span>
-                  {t(p("whiteList"))}：<span>{data.results.length ?? 0}</span>
-                </span>
-                <>
-                  <Divider type="vertical" />
+                  {t(p("debtSum"))}：
                   <span>
-                    {t(p("debtSum"))}：<span>{
-                      moneyNumberToString(getTotalDebtAmount(data))} {t(pCommon("unit"))}</span>
+                    {moneyNumberToString(getTotalDebtAmount(data))} {t(pCommon("unit"))}
                   </span>
-                </>
-              </div>
-            ) : undefined
-          }
+                </span>
+              </>
+            </div>
+          ) : undefined}
         </TableTitle>
         <Table
           dataSource={filteredData}
@@ -167,12 +170,12 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             sorter={(a, b) => (a.balance ? moneyToNumber(a.balance) : 0) - (b.balance ? moneyToNumber(b.balance) : 0)}
             sortDirections={["ascend", "descend"]}
             sortOrder={currentSortInfo.field === "balance" ? currentSortInfo.order : null}
-            render={(b: Money) => moneyToString(b) + " " + t(pCommon("unit")) }
+            render={(b: Money) => moneyToString(b) + " " + t(pCommon("unit"))}
           />
           <Table.Column<WhitelistedAccount>
             dataIndex="addTime"
             title={t(p("joinTime"))}
-            render={(time: string) => formatDateTime(time) }
+            render={(time: string) => formatDateTime(time)}
             sorter={(a, b) => compareNullableDateTime(a.addTime, b.addTime)}
             sortDirections={["ascend", "descend"]}
             sortOrder={currentSortInfo.field === "addTime" ? currentSortInfo.order : null}
@@ -180,7 +183,7 @@ export const AccountWhitelistTable: React.FC<Props> = ({
           <Table.Column<WhitelistedAccount>
             dataIndex="expirationTime"
             title={t(p("expirationTime"))}
-            render={(time: string | undefined) => time ? formatDateTime(time) : "永久有效"}
+            render={(time: string | undefined) => (time ? formatDateTime(time) : "永久有效")}
             sorter={(a, b) => compareNullableDateTimeAsMax(a.expirationTime, b.expirationTime)}
             sortDirections={["ascend", "descend"]}
             sortOrder={currentSortInfo.field === "expirationTime" ? currentSortInfo.order : null}
@@ -198,31 +201,34 @@ export const AccountWhitelistTable: React.FC<Props> = ({
             sorter={(a, b) => compareNullableString(a.operatorId, b.operatorId)}
             sortDirections={["ascend", "descend"]}
             sortOrder={currentSortInfo.field === "operatorId" ? currentSortInfo.order : null}
-
           />
           <Table.Column<WhitelistedAccount>
             title={t(pCommon("operation"))}
             render={(_, r) => (
               <Space split={<Divider type="vertical" />}>
-                <a onClick={() => {
-                  modal.confirm({
-                    title: t(p("confirmRemoveWhite")),
-                    icon: <ExclamationCircleOutlined />,
-                    content: `${t(p("confirmRemoveWhiteText1"))}${r.accountName}${t(p("confirmRemoveWhiteText2"))}`,
-                    onOk: async () => {
-                      await api.dewhitelistAccount({ query: {
-                        accountName: r.accountName,
-                      } })
-                        .httpError(409, () => {
-                          message.error(t("common.accountUserSyncRunning"));
-                        })
-                        .then(() => {
-                          message.success(t(p("removeWhiteSuccess")));
-                          reload();
-                        });
-                    },
-                  });
-                }}
+                <a
+                  onClick={() => {
+                    modal.confirm({
+                      title: t(p("confirmRemoveWhite")),
+                      icon: <ExclamationCircleOutlined />,
+                      content: `${t(p("confirmRemoveWhiteText1"))}${r.accountName}${t(p("confirmRemoveWhiteText2"))}`,
+                      onOk: async () => {
+                        await api
+                          .dewhitelistAccount({
+                            query: {
+                              accountName: r.accountName,
+                            },
+                          })
+                          .httpError(409, () => {
+                            message.error(t("common.accountUserSyncRunning"));
+                          })
+                          .then(() => {
+                            message.success(t(p("removeWhiteSuccess")));
+                            reload();
+                          });
+                      },
+                    });
+                  }}
                 >
                   {t(p("removeWhite"))}
                 </a>

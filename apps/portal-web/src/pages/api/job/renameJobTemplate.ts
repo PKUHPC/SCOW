@@ -29,11 +29,12 @@ export const RenameJobTemplateSchema = typeboxRouteSchema({
 
 const auth = authenticate(() => true);
 
-export default /* #__PURE__*/route(RenameJobTemplateSchema, async (req, res) => {
-
+export default /* #__PURE__*/ route(RenameJobTemplateSchema, async (req, res) => {
   const info = await auth(req, res);
 
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, templateId, jobName } = req.body;
 
@@ -43,7 +44,7 @@ export default /* #__PURE__*/route(RenameJobTemplateSchema, async (req, res) => 
     operatorUserId: info.identityId,
     operatorIp: parseIp(req) ?? "",
     operationTypeName: OperationType.updateJobTemplate,
-    operationTypePayload:{
+    operationTypePayload: {
       jobTemplateId: templateId,
       newJobTemplateId: jobName,
       clusterId: cluster,
@@ -51,14 +52,21 @@ export default /* #__PURE__*/route(RenameJobTemplateSchema, async (req, res) => 
   };
 
   return asyncUnaryCall(client, "renameJobTemplate", {
-    templateId, userId: info.identityId, cluster, jobName,
-  }).then(async () => {
-    await callLog({ ...logInfo }, OperationResult.SUCCESS);
-    return { 204: null };
-  }, handlegRPCError({
-    [status.NOT_FOUND]: () => ({ 404: { code: "TEMPLATE_NOT_FOUND" } } as const),
-    [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
-  },
-  async () => await callLog({ ...logInfo }, OperationResult.FAIL),
-  ));
+    templateId,
+    userId: info.identityId,
+    cluster,
+    jobName,
+  }).then(
+    async () => {
+      await callLog({ ...logInfo }, OperationResult.SUCCESS);
+      return { 204: null };
+    },
+    handlegRPCError(
+      {
+        [status.NOT_FOUND]: () => ({ 404: { code: "TEMPLATE_NOT_FOUND" } }) as const,
+        [status.RESOURCE_EXHAUSTED]: () => ({ 429: { code: "NO_SPACE" as const } }),
+      },
+      async () => await callLog({ ...logInfo }, OperationResult.FAIL),
+    ),
+  );
 });

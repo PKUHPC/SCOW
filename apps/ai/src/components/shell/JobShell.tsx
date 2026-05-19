@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { debounce } from "@scow/lib-web/build/utils/debounce";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
@@ -36,8 +24,9 @@ interface Props {
 }
 
 export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, podName }) => {
-
-  const { publicConfig: { BASE_PATH } } = usePublicConfig();
+  const {
+    publicConfig: { BASE_PATH },
+  } = usePublicConfig();
 
   const container = useRef<HTMLDivElement>(null);
   const terminalInitialized = useRef<boolean>(false);
@@ -60,13 +49,15 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, pod
         podName,
       };
 
-      term.write(
-        `*** Connecting to cluster ${payload.cluster} as ${user.identityId} \r\n`,
-      );
+      term.write(`*** Connecting to cluster ${payload.cluster} as ${user.identityId} \r\n`);
 
       const socket = new WebSocket(
-        (location.protocol === "http:" ? "ws" : "wss") + "://" + location.host +
-        join(BASE_PATH, "/api/jobShell") + "?" + new URLSearchParams(payload).toString(),
+        (location.protocol === "http:" ? "ws" : "wss") +
+          "://" +
+          location.host +
+          join(BASE_PATH, "/api/jobShell") +
+          "?" +
+          new URLSearchParams(payload).toString(),
       );
 
       socket.onmessage = (e) => {
@@ -100,10 +91,12 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, pod
           socket.send(JSON.stringify(data));
         };
 
-        const resizeObserver = new ResizeObserver(debounce(() => {
-          fitAddon.fit();
-          send({ $case: "resize", resize: { cols: term.cols, rows: term.rows } });
-        }));
+        const resizeObserver = new ResizeObserver(
+          debounce(() => {
+            fitAddon.fit();
+            send({ $case: "resize", resize: { cols: term.cols, rows: term.rows } });
+          }),
+        );
 
         resizeObserver.observe(container.current!);
 
@@ -120,7 +113,5 @@ export const JobShell: React.FC<Props> = ({ user, cluster, jobId, namespace, pod
     }
   }, [container.current]);
 
-  return (
-    <TerminalContainer ref={container} />
-  );
+  return <TerminalContainer ref={container} />;
 };

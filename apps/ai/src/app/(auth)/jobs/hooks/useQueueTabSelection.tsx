@@ -9,10 +9,7 @@ interface QueueRowBase {
   disabled: boolean;
 }
 
-interface UseQueueTabSelectionParams<
-  GpuRow extends QueueRowBase,
-  CpuRow extends QueueRowBase,
-> {
+interface UseQueueTabSelectionParams<GpuRow extends QueueRowBase, CpuRow extends QueueRowBase> {
   gpuRows: GpuRow[];
   cpuRows: CpuRow[];
   activeResourceTab: QueueKind;
@@ -30,10 +27,7 @@ const sortQueueRowsByDisabled = <Row extends QueueRowBase>(a: Row, b: Row) => {
   return a.disabled ? 1 : -1;
 };
 
-export const useQueueTabSelection = <
-  GpuRow extends QueueRowBase,
-  CpuRow extends QueueRowBase,
->({
+export const useQueueTabSelection = <GpuRow extends QueueRowBase, CpuRow extends QueueRowBase>({
   gpuRows,
   cpuRows,
   activeResourceTab,
@@ -49,44 +43,37 @@ export const useQueueTabSelection = <
     queue: false,
   });
 
-  const sortedGpuRows = useMemo(
-    () => [...gpuRows].sort(sortQueueRowsByDisabled),
-    [gpuRows],
+  const sortedGpuRows = useMemo(() => [...gpuRows].sort(sortQueueRowsByDisabled), [gpuRows]);
+
+  const sortedCpuRows = useMemo(() => [...cpuRows].sort(sortQueueRowsByDisabled), [cpuRows]);
+
+  const applyTabChange = useCallback(
+    (tabKey: QueueKind) => {
+      onActiveResourceTabChange(tabKey);
+      syncQueueField?.(tabKey);
+
+      const options = tabKey === "gpu" ? sortedGpuRows : sortedCpuRows;
+      if (!options.length) {
+        onQueueSelect(undefined);
+        return;
+      }
+
+      const hasValidSelection = options.some((option) => option.id === selectedQueueKey);
+      if (!hasValidSelection) {
+        onQueueSelect(options[0]?.id);
+      }
+    },
+    [onActiveResourceTabChange, onQueueSelect, selectedQueueKey, sortedCpuRows, sortedGpuRows, syncQueueField],
   );
 
-  const sortedCpuRows = useMemo(
-    () => [...cpuRows].sort(sortQueueRowsByDisabled),
-    [cpuRows],
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const tabKey = key as QueueKind;
+      accountClusterQueueTouchedRef.current.queue = true;
+      applyTabChange(tabKey);
+    },
+    [applyTabChange],
   );
-
-  const applyTabChange = useCallback((tabKey: QueueKind) => {
-    onActiveResourceTabChange(tabKey);
-    syncQueueField?.(tabKey);
-
-    const options = tabKey === "gpu" ? sortedGpuRows : sortedCpuRows;
-    if (!options.length) {
-      onQueueSelect(undefined);
-      return;
-    }
-
-    const hasValidSelection = options.some((option) => option.id === selectedQueueKey);
-    if (!hasValidSelection) {
-      onQueueSelect(options[0]?.id);
-    }
-  }, [
-    onActiveResourceTabChange,
-    onQueueSelect,
-    selectedQueueKey,
-    sortedCpuRows,
-    sortedGpuRows,
-    syncQueueField,
-  ]);
-
-  const handleTabChange = useCallback((key: string) => {
-    const tabKey = key as QueueKind;
-    accountClusterQueueTouchedRef.current.queue = true;
-    applyTabChange(tabKey);
-  }, [applyTabChange]);
 
   const markAccountTouched = useCallback(() => {
     accountClusterQueueTouchedRef.current.account = true;
@@ -102,9 +89,9 @@ export const useQueueTabSelection = <
 
   useEffect(() => {
     const accountClusterQueueTouched =
-      accountClusterQueueTouchedRef.current.account
-      || accountClusterQueueTouchedRef.current.cluster
-      || accountClusterQueueTouchedRef.current.queue;
+      accountClusterQueueTouchedRef.current.account ||
+      accountClusterQueueTouchedRef.current.cluster ||
+      accountClusterQueueTouchedRef.current.queue;
     // 再次提交 && 账户/集群/队列tab都没被用户修改过时，不执行自动切换
     if (isResubmit && !accountClusterQueueTouched) {
       return;
@@ -120,13 +107,7 @@ export const useQueueTabSelection = <
     }
 
     applyTabChange(nextTab);
-  }, [
-    activeResourceTab,
-    applyTabChange,
-    isResubmit,
-    sortedCpuRows,
-    sortedGpuRows,
-  ]);
+  }, [activeResourceTab, applyTabChange, isResubmit, sortedCpuRows, sortedGpuRows]);
 
   return {
     sortedGpuRows,

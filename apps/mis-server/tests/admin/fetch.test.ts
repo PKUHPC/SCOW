@@ -34,7 +34,6 @@ it("gets current fetch info", async () => {
     schedule: misConfig.fetchJobs.periodicFetch.cron,
     lastFetchTime: undefined,
   } as typeof info);
-
 });
 
 it("starts and stops fetch", async () => {

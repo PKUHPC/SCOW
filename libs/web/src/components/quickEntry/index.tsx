@@ -14,8 +14,7 @@ const CardsContainer = styled.div`
   flex-wrap: wrap;
 `;
 
-const EditButton = styled(Button)`
-`;
+const EditButton = styled(Button)``;
 
 interface PageLinkEntry {
   path: string;
@@ -59,12 +58,19 @@ export interface Entry {
     | undefined;
 }
 
-export interface App { id: string; name: string; logoPath?: string; };
+export interface App {
+  id: string;
+  name: string;
+  logoPath?: string;
+}
 
-export type AppWithCluster = Record<string, {
-  app: App;
-  clusters: Cluster[];
-}>;
+export type AppWithCluster = Record<
+  string,
+  {
+    app: App;
+    clusters: Cluster[];
+  }
+>;
 
 interface Props {
   currentClusters: Cluster[];
@@ -74,7 +80,7 @@ interface Props {
   entryItems: {
     defaultEntries: Entry[];
     staticEntries: Entry[];
-  }
+  };
   availableApps: AppWithCluster;
   isLoading: boolean;
   quickEntriesData: Entry[];
@@ -82,7 +88,7 @@ interface Props {
   basePath: string;
   quickEntryType?: "ai" | "portal";
   loginNodes?: Record<string, { name: I18nStringType; address: string }[]>;
-  onSaveQuickEntries: (newItems: Entry[]) => void
+  onSaveQuickEntries: (newItems: Entry[]) => void;
 }
 
 const entryEditSVG = () => (
@@ -103,57 +109,79 @@ const entryEditSVG = () => (
 );
 
 export const QuickEntry: React.FC<Props> = ({
-  currentClusters, publicConfigClusters, iconMap, languageId, quickEntryType,
-  publicPath, basePath, loginNodes, entryItems, availableApps, isLoading, quickEntriesData, onSaveQuickEntries }) => {
-
+  currentClusters,
+  publicConfigClusters,
+  iconMap,
+  languageId,
+  quickEntryType,
+  publicPath,
+  basePath,
+  loginNodes,
+  entryItems,
+  availableApps,
+  isLoading,
+  quickEntriesData,
+  onSaveQuickEntries,
+}) => {
   const [isEditable, setIsEditable] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
   return (
     <DashboardSection
       style={{ marginBottom: "16px", minHeight: "320px", boxShadow: "#0000000D 0px 4px 4px 0px" }}
-      title={ (
-        <span>{getCurrentLangLibWebText(languageId, "quickEntry")}</span>
-      )}
+      title={<span>{getCurrentLangLibWebText(languageId, "quickEntry")}</span>}
       extra={
         isEditable ? (
           <div>
             <EditButton
-              style={{ marginRight:"20px" }}
-              onClick={() => { setIsEditable(false); setIsFinished(true); }}
+              style={{ marginRight: "20px" }}
+              onClick={() => {
+                setIsEditable(false);
+                setIsFinished(true);
+              }}
             >
               <span>{getCurrentLangLibWebText(languageId, "finish")}</span>
             </EditButton>
             <EditButton
-              onClick={() => { setIsEditable(false); }}
+              onClick={() => {
+                setIsEditable(false);
+              }}
             >
               <span>{getCurrentLangLibWebText(languageId, "cancel")}</span>
             </EditButton>
           </div>
         ) : (
-          <Icon component={entryEditSVG} onClick={() => { setIsEditable(true); setIsFinished(false); }} />
-        )}
+          <Icon
+            component={entryEditSVG}
+            onClick={() => {
+              setIsEditable(true);
+              setIsFinished(false);
+            }}
+          />
+        )
+      }
     >
       <CardsContainer>
-        {isLoading ?
-          <Spin /> : (
-            <Sortable
-              isEditable={isEditable}
-              isFinished={isFinished}
-              quickEntryArray={quickEntriesData}
-              entryItems={entryItems}
-              apps={availableApps}
-              currentClusters={currentClusters}
-              publicConfigClusters={publicConfigClusters}
-              iconMap={iconMap}
-              publicPath={publicPath}
-              basePath={basePath}
-              languageId={languageId}
-              loginNodes={loginNodes}
-              quickEntryType={quickEntryType}
-              onSaveQuickEntries={onSaveQuickEntries}
-            ></Sortable>
-          )}
+        {isLoading ? (
+          <Spin />
+        ) : (
+          <Sortable
+            isEditable={isEditable}
+            isFinished={isFinished}
+            quickEntryArray={quickEntriesData}
+            entryItems={entryItems}
+            apps={availableApps}
+            currentClusters={currentClusters}
+            publicConfigClusters={publicConfigClusters}
+            iconMap={iconMap}
+            publicPath={publicPath}
+            basePath={basePath}
+            languageId={languageId}
+            loginNodes={loginNodes}
+            quickEntryType={quickEntryType}
+            onSaveQuickEntries={onSaveQuickEntries}
+          ></Sortable>
+        )}
       </CardsContainer>
     </DashboardSection>
   );

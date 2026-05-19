@@ -1,19 +1,22 @@
 {
   "name": "@scow/lib-web",
   "version": "1.6.1",
-  "description": "",
-  "main": "index.js",
   "private": true,
-  "sideEffects": false,
-  "scripts": {
-    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
-    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
-  },
+  "description": "",
+  "license": "Mulan PSL v2",
+  "author": "PKUHPC (https://github.com/PKUHPC)",
+  "repository": "https://github.com/PKUHPC/private-scow",
   "files": [
     "build",
     "icons",
     "!**/*.map"
   ],
+  "sideEffects": false,
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json && (concurrently \"tsc -p tsconfig.build.json -w\" \"tsc-alias -p tsconfig.build.json -w\")",
+    "build": "rimraf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json"
+  },
   "dependencies": {
     "@codemirror/language": "6.10.8",
     "@codemirror/legacy-modes": "6.4.2",
@@ -33,19 +36,6 @@
     "simstate": "3.0.1",
     "zod": "3.24.1"
   },
-  "peerDependencies": {
-    "@ant-design/cssinjs": "1.21.0",
-    "@ant-design/icons": "5.3.7",
-    "antd": "5.18.3",
-    "dayjs": "1.11.11",
-    "next": "15.5.15",
-    "nookies": "2.5.2",
-    "react": ">=18.2.0",
-    "react-async": "10.0.1",
-    "react-dom": ">=18.2.0",
-    "react-is": "18.3.1",
-    "styled-components": "6.1.11"
-  },
   "devDependencies": {
     "@ant-design/icons": "5.5.2",
     "@types/mime-types": "2.1.4",
@@ -60,7 +50,17 @@
     "react-is": "19.0.0",
     "styled-components": "6.1.14"
   },
-  "author": "PKUHPC (https://github.com/PKUHPC)",
-  "license": "Mulan PSL v2",
-  "repository": "https://github.com/PKUHPC/private-scow"
+  "peerDependencies": {
+    "@ant-design/cssinjs": "1.21.0",
+    "@ant-design/icons": "5.3.7",
+    "antd": "5.18.3",
+    "dayjs": "1.11.11",
+    "next": "15.5.15",
+    "nookies": "2.5.2",
+    "react": ">=18.2.0",
+    "react-async": "10.0.1",
+    "react-dom": ">=18.2.0",
+    "react-is": "18.3.1",
+    "styled-components": "6.1.11"
+  }
 }

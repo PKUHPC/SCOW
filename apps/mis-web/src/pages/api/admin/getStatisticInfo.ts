@@ -19,12 +19,10 @@ export const GetStatisticInfoResponse = Type.Object({
 
 export type GetStatisticInfoResponse = Static<typeof GetStatisticInfoResponse>;
 
-
 export const GetStatisticInfoSchema = typeboxRouteSchema({
   method: "GET",
 
   query: Type.Object({
-
     /**
      * @format date-time
      */
@@ -34,7 +32,6 @@ export const GetStatisticInfoSchema = typeboxRouteSchema({
      * @format date-time
      */
     endTime: Type.String({ format: "date-time" }),
-
   }),
 
   responses: {
@@ -44,27 +41,25 @@ export const GetStatisticInfoSchema = typeboxRouteSchema({
 
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
 
-export default route(GetStatisticInfoSchema,
-  async (req, res) => {
+export default route(GetStatisticInfoSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
 
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
+  const { startTime, endTime } = req.query;
 
-    const { startTime, endTime } = req.query;
+  const client = getClient(AdminServiceClient);
 
-    const client = getClient(AdminServiceClient);
-
-    const results = await asyncClientCall(client, "getStatisticInfo", {
-      startTime,
-      endTime,
-    });
-
-    return {
-      200: {
-        ...results,
-        refreshTime: results.refreshTime!,
-      },
-    };
+  const results = await asyncClientCall(client, "getStatisticInfo", {
+    startTime,
+    endTime,
   });
+
+  return {
+    200: {
+      ...results,
+      refreshTime: results.refreshTime!,
+    },
+  };
+});

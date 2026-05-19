@@ -1,18 +1,10 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
-import { AccountOfTenantTarget, AccountsOfAllTenantsTarget,
-  AccountsOfTenantTarget, AllTenantsTarget,
-  TenantTarget } from "@scow/protos/build/server/charging";
+import {
+  AccountOfTenantTarget,
+  AccountsOfAllTenantsTarget,
+  AccountsOfTenantTarget,
+  AllTenantsTarget,
+  TenantTarget,
+} from "@scow/protos/build/server/charging";
 import { config } from "src/config/env";
 import { misConfig } from "src/config/mis";
 
@@ -39,39 +31,37 @@ export type ChargeRecordsTarget =
  */
 export const getChargesTargetSearchParam = (
   target: ChargeRecordsTarget,
-): { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } } => {
-
-  let searchParam: { tenantName?: string | { $ne: null },
-    accountName?: string | { $ne: null } | { $in: string[] } } = {};
-  switch (target?.$case)
-  {
-  // 当前租户的租户消费记录
+): { tenantName?: string | { $ne: null }; accountName?: string | { $ne: null } | { $in: string[] } } => {
+  let searchParam: { tenantName?: string | { $ne: null }; accountName?: string | { $ne: null } | { $in: string[] } } =
+    {};
+  switch (target?.$case) {
+    // 当前租户的租户消费记录
     case "tenant":
       searchParam = { tenantName: target[target.$case].tenantName, accountName: undefined };
       break;
-      // 所有租户的租户消费记录
+    // 所有租户的租户消费记录
     case "allTenants":
       searchParam = { accountName: undefined };
       break;
-      // 当前租户下当前账户的消费记录
+    // 当前租户下当前账户的消费记录
     case "accountOfTenant":
       searchParam = { tenantName: target[target.$case].tenantName, accountName: target[target.$case].accountName };
       break;
-      // 当前租户下多个账户的消费记录
-    case "accountsOfTenant":
-      {
-        const { accountNames } = target.accountsOfTenant;
-        searchParam = { tenantName: target[target.$case].tenantName,
-          accountName:accountNames.length ? { $in: accountNames } : { $ne:null } };
-        break;
-      } ;
-      // 所有租户下多个账户的消费记录
-    case "accountsOfAllTenants":
-      {
-        const { accountNames } = target.accountsOfAllTenants;
-        searchParam = { accountName:accountNames.length ? { $in: accountNames } : { $ne:null } };
-        break;
+    // 当前租户下多个账户的消费记录
+    case "accountsOfTenant": {
+      const { accountNames } = target.accountsOfTenant;
+      searchParam = {
+        tenantName: target[target.$case].tenantName,
+        accountName: accountNames.length ? { $in: accountNames } : { $ne: null },
       };
+      break;
+    }
+    // 所有租户下多个账户的消费记录
+    case "accountsOfAllTenants": {
+      const { accountNames } = target.accountsOfAllTenants;
+      searchParam = { accountName: accountNames.length ? { $in: accountNames } : { $ne: null } };
+      break;
+    }
     default:
       searchParam = {};
   }
@@ -80,10 +70,10 @@ export const getChargesTargetSearchParam = (
 
 export const getTenantAccountValidationInput = (
   target: ChargeRecordsTarget,
-): { tenantName: string, accountNames: string[] } | undefined => {
+): { tenantName: string; accountNames: string[] } | undefined => {
   switch (target?.$case) {
     case "accountOfTenant":
-      return { tenantName: target.accountOfTenant.tenantName, accountNames: [target.accountOfTenant.accountName]};
+      return { tenantName: target.accountOfTenant.tenantName, accountNames: [target.accountOfTenant.accountName] };
     case "accountsOfTenant":
       return { tenantName: target.accountsOfTenant.tenantName, accountNames: target.accountsOfTenant.accountNames };
     default:
@@ -93,7 +83,7 @@ export const getTenantAccountValidationInput = (
 
 // 有账户或者用户条件时可以省略租户
 export const getChargesTargetSearchParamForQuery = (
-  targetSearchParam: { tenantName?: string | { $ne: null }, accountName?: string | { $ne: null } | { $in: string[] } },
+  targetSearchParam: { tenantName?: string | { $ne: null }; accountName?: string | { $ne: null } | { $in: string[] } },
   hasUserFilter: boolean,
 ) => {
   if (targetSearchParam.accountName !== undefined) {
@@ -179,29 +169,28 @@ export const getChargesSearchTypes = (types: string[] | undefined) => {
  * case accountsOfTenant: 返回这个租户（tenantName）下多个账户的充值记录
  */
 
-export const getPaymentsTargetSearchParam = (target:
-| { $case: "accountOfTenant";accountOfTenant: AccountOfTenantTarget; }
-| { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
-| { $case: "tenant"; tenant: TenantTarget }
-| { $case: "allTenants"; allTenants: AllTenantsTarget }):
-{ tenantName?: string | { $ne: null }, accountName?: { $in: string[] } | string | { $ne: null } } => {
-
+export const getPaymentsTargetSearchParam = (
+  target:
+    | { $case: "accountOfTenant"; accountOfTenant: AccountOfTenantTarget }
+    | { $case: "accountsOfTenant"; accountsOfTenant: AccountsOfTenantTarget }
+    | { $case: "tenant"; tenant: TenantTarget }
+    | { $case: "allTenants"; allTenants: AllTenantsTarget },
+): { tenantName?: string | { $ne: null }; accountName?: { $in: string[] } | string | { $ne: null } } => {
   let searchParam: {
-    tenantName?: string | { $ne: null },
-    accountName?: { $in: string[] } | string | { $ne: null }
+    tenantName?: string | { $ne: null };
+    accountName?: { $in: string[] } | string | { $ne: null };
   } = {};
 
   const { accountNames, tenantName } = target[target.$case];
-  switch (target?.$case)
-  {
+  switch (target?.$case) {
     case "tenant":
-      searchParam = { tenantName, accountName:undefined };
+      searchParam = { tenantName, accountName: undefined };
       break;
     case "allTenants":
-      searchParam = { accountName:undefined };
+      searchParam = { accountName: undefined };
       break;
     case "accountsOfTenant": {
-      const accountName = accountNames.length === 0 ? { $ne:null } : { $in:accountNames };
+      const accountName = accountNames.length === 0 ? { $ne: null } : { $in: accountNames };
       searchParam = { tenantName, accountName };
       break;
     }
@@ -219,5 +208,5 @@ export const getPaymentsSearchType = (types: string[] | undefined) => {
     return { type: { $ne: null } };
   }
 
-  return { type:{ $in:types } };
+  return { type: { $in: types } };
 };

@@ -22,16 +22,15 @@ export const GetAllTenantsSchema = typeboxRouteSchema({
   },
 });
 const auth = authenticate((info) => info.platformRoles.includes(PlatformRole.PLATFORM_ADMIN));
-export default route(GetAllTenantsSchema,
-  async (req, res) => {
-    const info = await auth(req, res);
-    if (!info) {
-      return;
-    }
-    // UserServiceClient
-    const client = getClient(TenantServiceClient);
-    const result = await asyncClientCall(client, "getAllTenants", {});
-    return {
-      200:result,
-    };
-  });
+export default route(GetAllTenantsSchema, async (req, res) => {
+  const info = await auth(req, res);
+  if (!info) {
+    return;
+  }
+  // UserServiceClient
+  const client = getClient(TenantServiceClient);
+  const result = await asyncClientCall(client, "getAllTenants", {});
+  return {
+    200: result,
+  };
+});

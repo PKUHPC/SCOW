@@ -7,11 +7,7 @@ import { join } from "path";
 import { publicConfig } from "./config";
 
 // https://github.com/sindresorhus/is-port-reachable
-export async function isPortReachable(
-  port: number,
-  host: string,
-  timeout: number = 1000,
-): Promise<boolean> {
+export async function isPortReachable(port: number, host: string, timeout: number = 1000): Promise<boolean> {
   if (typeof host !== "string") {
     throw new TypeError("Specify a `host`");
   }
@@ -41,7 +37,6 @@ export async function isPortReachable(
     return false;
   }
 }
-
 
 /**
  * 检查端口是否可通过URL访问
@@ -110,7 +105,7 @@ async function checkWebAppReachability(
     try {
       res = await fetch(checkUrl, {
         headers: {
-          "Cookie": req.headers.cookie || "",
+          Cookie: req.headers.cookie || "",
         },
         redirect: "manual",
         signal,
@@ -162,11 +157,11 @@ function checkVncAppReachability(
   const headerOption = {
     "Sec-WebSocket-Key": crypto.randomBytes(16).toString("base64"),
     "Sec-WebSocket-Version": 13,
-    "Connection": "Upgrade",
-    "Upgrade": "websocket",
-    "Cookie": req.headers.cookie,
-    "Host": `localhost:${process.env.PORT ?? 3000}`,
-    "Origin": `http://localhost:${process.env.PORT ?? 3000}`,
+    Connection: "Upgrade",
+    Upgrade: "websocket",
+    Cookie: req.headers.cookie,
+    Host: `localhost:${process.env.PORT ?? 3000}`,
+    Origin: `http://localhost:${process.env.PORT ?? 3000}`,
   };
 
   return new Promise((resolve) => {

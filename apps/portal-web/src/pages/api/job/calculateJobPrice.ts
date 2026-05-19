@@ -31,7 +31,9 @@ const auth = authenticate(() => true);
 
 export default route(CalculateJobPriceSchema, async (req, res) => {
   const info = await auth(req, res);
-  if (!info) { return; }
+  if (!info) {
+    return;
+  }
 
   const { cluster, partition, qos, accountName, cpusAlloc, gpu, memMb, timeSeconds } = req.query;
   const client = getClient(JobServiceClient);

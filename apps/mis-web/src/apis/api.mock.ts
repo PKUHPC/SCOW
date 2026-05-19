@@ -1,57 +1,61 @@
+import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
+
 import { HttpError, JsonFetchResultPromiseLike } from "@ddadaal/next-typed-api-routes-runtime/lib/client";
 import { ClusterActivationStatus } from "@scow/config/build/type";
 import { numberToMoney } from "@scow/lib-decimal";
 import { type Account } from "@scow/protos/build/server/account";
-import type { AccountUserInfo, GetUserStatusResponse } from "@scow/protos/build/server/user";
 import { type api } from "src/apis/api";
 import { ClusterConnectionStatus, NodeStatus } from "src/models/cluster";
 import { OperationResult } from "src/models/operationLog";
-import { AccountState, ClusterAccountInfo_ImportStatus, DisplayedAccountState, PlatformRole,
-  TenantRole, UserInfo, UserRole, UserState,UserStatus } from "src/models/User";
+import {
+  AccountState,
+  ClusterAccountInfo_ImportStatus,
+  DisplayedAccountState,
+  PlatformRole,
+  TenantRole,
+  UserInfo,
+  UserRole,
+  UserState,
+  UserStatus,
+} from "src/models/User";
 import { JobInfo } from "src/pages/api/job/jobInfo";
 import { RunningJob } from "src/pages/api/job/runningJobs";
 import { DEFAULT_TENANT_NAME } from "src/utils/constants";
 
-export type MockApi<TApi extends Record<
-  string,
-  (...args: any[]) => JsonFetchResultPromiseLike<any>>,
-> = {[key in keyof TApi]: null | (
-    (...args: Parameters<TApi[key]>) =>
-    Promise<
-      ReturnType<TApi[key]> extends PromiseLike<infer TSuc>
-        ? TSuc
-        : never
-    >)
+export type MockApi<TApi extends Record<string, (...args: any[]) => JsonFetchResultPromiseLike<any>>> = {
+  [key in keyof TApi]:
+    | null
+    | ((
+        ...args: Parameters<TApi[key]>
+      ) => Promise<ReturnType<TApi[key]> extends PromiseLike<infer TSuc> ? TSuc : never>);
 };
 
-
-
 const mockJobInfo: JobInfo = {
-  "biJobIndex": 3670368,
-  "idJob": 5119061,
-  "account": "hpc0006167252",
-  "user": "1600011702",
-  "partition": "C032M0128G",
-  "nodelist": "a5u15n01",
-  "jobName": "CoW",
-  "cluster": "未名一号",
-  "timeSubmit": "2020-04-23T22:23:00.000Z",
-  "timeStart": "2020-04-23T22:25:12.000Z",
-  "timeEnd": "2020-04-23T23:18:02.000Z",
-  "gpu": 0,
-  "cpusReq": 32,
-  "memReq": 124000,
-  "nodesReq": 1,
-  "cpusAlloc": 32,
-  "memAlloc": 124000,
-  "nodesAlloc": 1,
-  "timelimit": 7200,
-  "timeUsed": 3170,
-  "timeWait": 132,
-  "qos": "normal",
-  "recordTime": "2020-04-23T23:49:50.000Z",
-  "accountPrice": numberToMoney(10),
-  "tenantPrice": numberToMoney(20),
+  biJobIndex: 3670368,
+  idJob: 5119061,
+  account: "hpc0006167252",
+  user: "1600011702",
+  partition: "C032M0128G",
+  nodelist: "a5u15n01",
+  jobName: "CoW",
+  cluster: "未名一号",
+  timeSubmit: "2020-04-23T22:23:00.000Z",
+  timeStart: "2020-04-23T22:25:12.000Z",
+  timeEnd: "2020-04-23T23:18:02.000Z",
+  gpu: 0,
+  cpusReq: 32,
+  memReq: 124000,
+  nodesReq: 1,
+  cpusAlloc: 32,
+  memAlloc: 124000,
+  nodesAlloc: 1,
+  timelimit: 7200,
+  timeUsed: 3170,
+  timeWait: 132,
+  qos: "normal",
+  recordTime: "2020-04-23T23:49:50.000Z",
+  accountPrice: numberToMoney(10),
+  tenantPrice: numberToMoney(20),
   userName: "demo",
   accountOwnerId: "demo",
   accountOwnerName: "demo",
@@ -82,14 +86,36 @@ export const runningJob: RunningJob = {
 };
 
 const mockAccounts: Required<Account>[] = [
-  { accountName: "hpc123456", userCount: 3, blocked: true, tenantName: "default",
-    ownerId: "123", ownerName: "哈哈", comment: "123",
-    state: AccountState.NORMAL, isInWhitelist: false, displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
-    balance: numberToMoney(20), blockThresholdAmount: numberToMoney(0), defaultBlockThresholdAmount: numberToMoney(0) },
-  { accountName: "hpc1234567", userCount: 10, blocked: false, tenantName: "default",
-    ownerId: "123", ownerName: "哈哈哈哈", comment: "123",
-    state: AccountState.NORMAL, isInWhitelist: false, displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
-    balance: numberToMoney(30), blockThresholdAmount: numberToMoney(0), defaultBlockThresholdAmount: numberToMoney(0) },
+  {
+    accountName: "hpc123456",
+    userCount: 3,
+    blocked: true,
+    tenantName: "default",
+    ownerId: "123",
+    ownerName: "哈哈",
+    comment: "123",
+    state: AccountState.NORMAL,
+    isInWhitelist: false,
+    displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
+    balance: numberToMoney(20),
+    blockThresholdAmount: numberToMoney(0),
+    defaultBlockThresholdAmount: numberToMoney(0),
+  },
+  {
+    accountName: "hpc1234567",
+    userCount: 10,
+    blocked: false,
+    tenantName: "default",
+    ownerId: "123",
+    ownerName: "哈哈哈哈",
+    comment: "123",
+    state: AccountState.NORMAL,
+    isInWhitelist: false,
+    displayedState: DisplayedAccountState.DISPLAYED_NORMAL,
+    balance: numberToMoney(30),
+    blockThresholdAmount: numberToMoney(0),
+    defaultBlockThresholdAmount: numberToMoney(0),
+  },
 ];
 
 const mockUsers = [
@@ -107,27 +133,25 @@ const mockUsers = [
     tenantRoles: [TenantRole.TENANT_ADMIN, TenantRole.TENANT_FINANCE],
     platformRoles: [PlatformRole.PLATFORM_FINANCE, PlatformRole.PLATFORM_ADMIN],
     accountAffiliations: [
-      { accountName: "hpc2001213077", role: UserRole.ADMIN, accountState:AccountState.NORMAL },
-      { accountName: "hpc2001213075", role: UserRole.USER, accountState:AccountState.NORMAL },
+      { accountName: "hpc2001213077", role: UserRole.ADMIN, accountState: AccountState.NORMAL },
+      { accountName: "hpc2001213075", role: UserRole.USER, accountState: AccountState.NORMAL },
     ],
-    state:UserState.NORMAL,
+    state: UserState.NORMAL,
   },
 ];
 
-
 export const mockApi: MockApi<typeof api> = {
   getMissingDefaultPriceItems: async () => {
-    return { items: ["test.test", "test1.test2"]};
+    return { items: ["test.test", "test1.test2"] };
   },
 
-
-  getAllTenants: async () => (
-    {
-      totalCount: 3,
-      platformTenants: [{
+  getAllTenants: async () => ({
+    totalCount: 3,
+    platformTenants: [
+      {
         tenantId: 1,
         tenantName: "test1",
-        balance: numberToMoney(0.0000),
+        balance: numberToMoney(0.0),
         userCount: 1,
         accountCount: 1,
         createTime: "2022-10-05T23:49:50.000Z",
@@ -135,7 +159,7 @@ export const mockApi: MockApi<typeof api> = {
       {
         tenantId: 2,
         tenantName: "test2",
-        balance: numberToMoney(10.0000),
+        balance: numberToMoney(10.0),
         userCount: 4,
         accountCount: 2,
         createTime: "2022-10-05T23:49:50.000Z",
@@ -148,8 +172,8 @@ export const mockApi: MockApi<typeof api> = {
         accountCount: 3,
         createTime: "2022-10-05T23:49:50.000Z",
       },
-      ],
-    }),
+    ],
+  }),
 
   getAppInitialConfig: null,
 
@@ -234,42 +258,58 @@ export const mockApi: MockApi<typeof api> = {
 
   addBillingItem: async () => null,
 
-  getTenants: async () => ({ names: ["DEFAULT", "another"]}),
+  getTenants: async () => ({ names: ["DEFAULT", "another"] }),
 
   getBillingItems: async () => ({
     activeItems: [
       {
-        cluster: "hpc01", partition: "compute", qos: "low",
+        cluster: "hpc01",
+        partition: "compute",
+        qos: "low",
         priceItem: { itemId: "HPC08", price: numberToMoney(0.01), amountStrategy: "max-cpusAlloc-mem" },
       },
       {
-        cluster: "hpc01", partition: "compute", qos: "normal",
+        cluster: "hpc01",
+        partition: "compute",
+        qos: "normal",
         priceItem: { itemId: "HPC02", price: numberToMoney(0.06), amountStrategy: "gpu" },
       },
       {
-        cluster: "hpc01", partition: "compute", qos: "high",
+        cluster: "hpc01",
+        partition: "compute",
+        qos: "high",
         priceItem: { itemId: "HPC03", price: numberToMoney(0.08), amountStrategy: "gpu" },
       },
       {
-        cluster: "hpc01", partition: "GPU", qos: "low",
-        priceItem: { itemId: "HPC04", price: numberToMoney(10.00), amountStrategy: "gpu" },
+        cluster: "hpc01",
+        partition: "GPU",
+        qos: "low",
+        priceItem: { itemId: "HPC04", price: numberToMoney(10.0), amountStrategy: "gpu" },
       },
       {
-        cluster: "hpc01", partition: "GPU", qos: "normal",
-        priceItem: { itemId: "HPC05", price: numberToMoney(12.00), amountStrategy: "gpu" },
+        cluster: "hpc01",
+        partition: "GPU",
+        qos: "normal",
+        priceItem: { itemId: "HPC05", price: numberToMoney(12.0), amountStrategy: "gpu" },
       },
       {
-        cluster: "hpc01", partition: "GPU", qos: "high",
-        priceItem: { itemId: "HPC06", price: numberToMoney(14.00), amountStrategy: "gpu" },
+        cluster: "hpc01",
+        partition: "GPU",
+        qos: "high",
+        priceItem: { itemId: "HPC06", price: numberToMoney(14.0), amountStrategy: "gpu" },
       },
     ],
     historyItems: [
       {
-        cluster: "hpc01", partition: "compute", qos: "low",
+        cluster: "hpc01",
+        partition: "compute",
+        qos: "low",
         priceItem: { itemId: "HPC01", price: numberToMoney(0.04), amountStrategy: "max-cpusAlloc-mem" },
       },
       {
-        cluster: "hpc01", partition: "compute", qos: "low",
+        cluster: "hpc01",
+        partition: "compute",
+        qos: "low",
         priceItem: { itemId: "HPC07", price: numberToMoney(0.02), amountStrategy: "gpu" },
       },
     ],
@@ -290,7 +330,7 @@ export const mockApi: MockApi<typeof api> = {
   importUsers: async () => null,
 
   getClusterUsers: async () => {
-    return ({
+    return {
       accounts: [
         {
           accountName: "a_user1",
@@ -318,7 +358,7 @@ export const mockApi: MockApi<typeof api> = {
           blocked: false,
         },
       ],
-    });
+    };
   },
 
   completeInit: async () => null,
@@ -328,34 +368,36 @@ export const mockApi: MockApi<typeof api> = {
   setFetchState: async () => null,
   fetchJobs: async () => ({ newJobsCount: 200 }),
 
-  cancelJobChargeLimit: async () => ({ success: true, results: []}),
+  cancelJobChargeLimit: async () => ({ success: true, results: [] }),
 
-  setJobChargeLimit: async () => ({ success: true, results: []}),
+  setJobChargeLimit: async () => ({ success: true, results: [] }),
 
-  getRunningJobs: async () => ({ results: [runningJob]}),
+  getRunningJobs: async () => ({ results: [runningJob] }),
 
-  getTopSubmitJobUser: async () => ({ results: [{ userId: "test", count: 10 }]}),
+  getTopSubmitJobUser: async () => ({ results: [{ userId: "test", count: 10 }] }),
 
-  getUsersWithMostJobSubmissions: async () => ({ results: [{ userName: "name1", userId: "test1", count: 10 }]}),
+  getUsersWithMostJobSubmissions: async () => ({ results: [{ userName: "name1", userId: "test1", count: 10 }] }),
 
-  getNewJobCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }]}),
+  getNewJobCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
 
   getTenantUsers: async () => ({ results: mockUsers }),
 
   logout: async () => null,
 
   getCharges: async () => ({
-    results: [{
-      tenantName: "tenant",
-      amount: 10,
-      comment: "123",
-      index: 1,
-      time: "123",
-      accountName: "123",
-      ipAddress: "127.0.0.1",
-      operatorId: "123",
-      type: "Task",
-    }],
+    results: [
+      {
+        tenantName: "tenant",
+        amount: 10,
+        comment: "123",
+        index: 1,
+        time: "123",
+        accountName: "123",
+        ipAddress: "127.0.0.1",
+        operatorId: "123",
+        type: "Task",
+      },
+    ],
   }),
 
   getChargeRecordsTotalCount: async () => ({
@@ -365,34 +407,42 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   getPayments: async () => ({
-    results: [{
-      amount: 10,
-      comment: "123",
-      index: 1,
-      time: "123",
-      accountName: "123",
-      ipAddress: "127.0.0.1",
-      operatorId: "123",
-      operatorName: "123",
-      type: "Task",
-    }], totalCount: 1, total: 10,
+    results: [
+      {
+        amount: 10,
+        comment: "123",
+        index: 1,
+        time: "123",
+        accountName: "123",
+        ipAddress: "127.0.0.1",
+        operatorId: "123",
+        operatorName: "123",
+        type: "Task",
+      },
+    ],
+    totalCount: 1,
+    total: 10,
   }),
 
   getTenantPayments: async () => ({
-    results: [{
-      amount: 10,
-      comment: "123",
-      index: 1,
-      time: "123",
-      tenantName: "default",
-      ipAddress: "127.0.0.1",
-      operatorId: "123",
-      operatorName: "123",
-      type: "Task",
-    }], totalCount: 1, total: 10,
+    results: [
+      {
+        amount: 10,
+        comment: "123",
+        index: 1,
+        time: "123",
+        tenantName: "default",
+        ipAddress: "127.0.0.1",
+        operatorId: "123",
+        operatorName: "123",
+        type: "Task",
+      },
+    ],
+    totalCount: 1,
+    total: 10,
   }),
 
-  getUsedPayTypes: async () => ({ types: ["Pay", "JobPriceChange"]}),
+  getUsedPayTypes: async () => ({ types: ["Pay", "JobPriceChange"] }),
 
   changeJobPrice: async () => ({ count: 10 }),
 
@@ -423,8 +473,8 @@ export const mockApi: MockApi<typeof api> = {
         userId: "123456",
         role: UserRole.OWNER,
         storageQuotas: {
-          "WM2": 100,
-          "WM1": 200,
+          WM2: 100,
+          WM1: 200,
         },
       },
     ] as AccountUserInfo[],
@@ -443,23 +493,32 @@ export const mockApi: MockApi<typeof api> = {
   unblockAccount: async () => ({ executed: true }),
   setBlockThreshold: async () => ({ executed: true }),
   setDefaultAccountBlockThreshold: async () => ({ executed: true }),
-  getNewUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }]}),
-  getActiveUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }]}),
+  getNewUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
+  getActiveUserCount: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, count: 10 }] }),
   getTopChargeAccount: async () => ({
-    results: [{
-      accountName: "test",
-      userName: "user1", chargedAmount: numberToMoney(10),
-    }],
+    results: [
+      {
+        accountName: "test",
+        userName: "user1",
+        chargedAmount: numberToMoney(10),
+      },
+    ],
   }),
-  getDailyCharge: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }]}),
-  getTopPayAccount: async () =>
-    ({ results: [{ accountName: "test", userName: "user1", payAmount: numberToMoney(10) }]}),
-  getDailyPay: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }]}),
-  getPortalUsageCount: async () => ({ results: [{ operationType: "submitJob", count: 10 }]}),
-  getMisUsageCount: async () => ({ results: [{ operationType: "createAccount", count: 10 }]}),
+  getDailyCharge: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }] }),
+  getTopPayAccount: async () => ({
+    results: [{ accountName: "test", userName: "user1", payAmount: numberToMoney(10) }],
+  }),
+  getDailyPay: async () => ({ results: [{ date: { year: 2023, month: 12, day: 21 }, amount: numberToMoney(10) }] }),
+  getPortalUsageCount: async () => ({ results: [{ operationType: "submitJob", count: 10 }] }),
+  getMisUsageCount: async () => ({ results: [{ operationType: "createAccount", count: 10 }] }),
   getStatisticInfo: async () => ({
-    totalUser: 10, totalAccount: 10, totalTenant: 10, newUser: 10, newAccount: 10,
-    newTenant: 10, refreshTime: "2024-11-18T09:10:54.855Z",
+    totalUser: 10,
+    totalAccount: 10,
+    totalTenant: 10,
+    newUser: 10,
+    newAccount: 10,
+    newTenant: 10,
+    refreshTime: "2024-11-18T09:10:54.855Z",
   }),
   getJobTotalCount: async () => ({ count: 10, refreshTime: "2024-11-18T09:10:54.855Z" }),
   syncBlockStatus: async () => ({
@@ -472,7 +531,7 @@ export const mockApi: MockApi<typeof api> = {
     schedule: "0 4 * * *",
   }),
   setSyncBlockStatusState: async () => null,
-  removeUserFromAccount: async () => ({ success: true, results: []}),
+  removeUserFromAccount: async () => ({ success: true, results: [] }),
   setAdmin: async () => ({ executed: true }),
   unsetAdmin: async () => ({ executed: false }),
   getAccounts: async () => ({ totalCount: mockAccounts.length, results: mockAccounts }),
@@ -480,21 +539,26 @@ export const mockApi: MockApi<typeof api> = {
   changeJobTimeLimit: async () => null,
   queryJobTimeLimit: async () => ({ result: 10 }),
   cancelJob: async () => null,
-  createAccount: async () => { return {}; },
+  createAccount: async () => {
+    return {};
+  },
   deleteAccount: async () => null,
   editUserProfile: async () => null,
   dewhitelistAccount: async () => null,
   whitelistAccount: async () => null,
   getWhitelistedAccounts: async () => ({
-    results: [{
-      accountName: "123",
-      addTime: "2020-04-23T23:49:50.000Z",
-      comment: "comment",
-      operatorId: "123",
-      ownerId: "123",
-      ownerName: "123",
-      balance: numberToMoney(10.5),
-    }], totalCount: 1,
+    results: [
+      {
+        accountName: "123",
+        addTime: "2020-04-23T23:49:50.000Z",
+        comment: "comment",
+        operatorId: "123",
+        ownerId: "123",
+        ownerName: "123",
+        balance: numberToMoney(10.5),
+      },
+    ],
+    totalCount: 1,
   }),
 
   changePassword: async () => null,
@@ -502,28 +566,30 @@ export const mockApi: MockApi<typeof api> = {
   changePasswordAsPlatformAdmin: async () => null,
   changePasswordAsTenantAdmin: async () => null,
   checkPassword: null,
-  createUser: async () => (
-    {
-      id: 1,
-      createdInAuth: false,
-    }),
+  createUser: async () => ({
+    id: 1,
+    createdInAuth: false,
+  }),
   createTenant: async () => ({ createdInAuth: true }),
   createTenantWithExistingUserAsAdmin: async () => null,
   validateToken: async () => MOCK_USER_INFO,
   deleteUser: async () => null,
   getOperationLogs: async () => ({
-    results: [{
-      operationLogId: 99,
-      operatorUserId: "testUser",
-      operatorUserName: "testUser",
-      operatorIp: "localhost",
-      operationResult: OperationResult.SUCCESS,
-      operationTime: "2020-04-23T23:49:50.000Z",
-      operationEvent: { $case: "login", login: {} },
-    }], totalCount: 1,
+    results: [
+      {
+        operationLogId: 99,
+        operatorUserId: "testUser",
+        operatorUserName: "testUser",
+        operatorIp: "localhost",
+        operationResult: OperationResult.SUCCESS,
+        operationTime: "2020-04-23T23:49:50.000Z",
+        operationEvent: { $case: "login", login: {} },
+      },
+    ],
+    totalCount: 1,
   }),
 
-  getCustomEventTypes: async () => ({ results: []}),
+  getCustomEventTypes: async () => ({ results: [] }),
 
   getAlarmDbId: async () => ({
     id: 13,
@@ -532,15 +598,17 @@ export const mockApi: MockApi<typeof api> = {
     type: "mysql",
   }),
   getAlarmLogs: async () => ({
-    results: [{
-      id: 13,
-      status: "resolved",
-      severity: "Warning",
-      fingerprint: "38cc18aad8e553f6",
-      description: "hpc01 partition: normal - CPU usage above 80% (current value: 1)",
-      startsAt: 1702886670000,
-      endsAt: 1702889670000,
-    }],
+    results: [
+      {
+        id: 13,
+        status: "resolved",
+        severity: "Warning",
+        fingerprint: "38cc18aad8e553f6",
+        description: "hpc01 partition: normal - CPU usage above 80% (current value: 1)",
+        startsAt: 1702886670000,
+        endsAt: 1702889670000,
+      },
+    ],
   }),
   getAlarmLogsCount: async () => ({ totalCount: 1 }),
   changeTenant: async () => null,
@@ -552,7 +620,7 @@ export const mockApi: MockApi<typeof api> = {
         priority: 1,
         adapterUrl: "0.0.0.0:0000",
         proxyGateway: undefined,
-        loginNodes: [{ "address": "localhost:22222", "name": "login" }],
+        loginNodes: [{ address: "localhost:22222", name: "login" }],
         loginDesktop: undefined,
         turboVncPath: undefined,
         crossClusterFileTransfer: undefined,
@@ -573,24 +641,28 @@ export const mockApi: MockApi<typeof api> = {
   }),
 
   getClustersConnectionInfo: async () => ({
-    results: [{
-      clusterId: "hpc01",
-      connectionStatus: ClusterConnectionStatus.AVAILABLE,
-      totalMemMb: 4028,
-      totalNodeCount: 3,
-      totalCpuCoreCount: 2,
-      totalGpuCount: 1,
-    }],
+    results: [
+      {
+        clusterId: "hpc01",
+        connectionStatus: ClusterConnectionStatus.AVAILABLE,
+        totalMemMb: 4028,
+        totalNodeCount: 3,
+        totalCpuCoreCount: 2,
+        totalGpuCount: 1,
+      },
+    ],
   }),
 
   getClustersRuntimeInfo: async () => ({
-    results: [{
-      clusterId: "hpc01",
-      activationStatus: ClusterActivationStatus.ACTIVATED,
-      operatorId: undefined,
-      operatorName: undefined,
-      comment: "",
-    }],
+    results: [
+      {
+        clusterId: "hpc01",
+        activationStatus: ClusterActivationStatus.ACTIVATED,
+        operatorId: undefined,
+        operatorName: undefined,
+        comment: "",
+      },
+    ],
   }),
 
   activateCluster: async () => ({ executed: true }),
@@ -608,7 +680,7 @@ export const mockApi: MockApi<typeof api> = {
             partitions: ["queue1", "queue2"],
           },
           {
-            cluster:  "cluster2",
+            cluster: "cluster2",
             partitions: ["queue1", "queue2"],
           },
         ],
@@ -626,90 +698,98 @@ export const mockApi: MockApi<typeof api> = {
   exportUser: null,
   exportOperationLog: null,
   exportBill: null,
-  getBills: async () => { return { bills:[], total:0 }; },
-  getUserBills: async () => { return { userBills:[]}; },
-  getBillTypes: async () => { return { types:[]}; },
+  getBills: async () => {
+    return { bills: [], total: 0 };
+  },
+  getUserBills: async () => {
+    return { userBills: [] };
+  },
+  getBillTypes: async () => {
+    return { types: [] };
+  },
 
   markMessageRead: null,
   getUnreadMessages: async () => ({
     results: {
       totalCount: 2,
-      messages: [{
-        "id": 20,
-        "messageType": {
-          "type": "SystemNotification",
-          "titleTemplate": {
-            "default": "系统公告",
-            "en": "System Notification",
-            "zhCn": "系统公告",
-            "de": "Systembenachrichtigung",
-            "es": "Notificación del sistema",
-            "fr": "Notification système",
-            "ja": "システム通知",
-            "ko": "시스템 알림",
-            "pt": "Notificação do sistema",
-            "ru": "Системное уведомление",
+      messages: [
+        {
+          id: 20,
+          messageType: {
+            type: "SystemNotification",
+            titleTemplate: {
+              default: "系统公告",
+              en: "System Notification",
+              zhCn: "系统公告",
+              de: "Systembenachrichtigung",
+              es: "Notificación del sistema",
+              fr: "Notification système",
+              ja: "システム通知",
+              ko: "시스템 알림",
+              pt: "Notificação do sistema",
+              ru: "Системное уведомление",
+            },
+            category: "Admin",
+            categoryTemplate: {
+              default: "Admin Messages",
+              en: "Admin Messages",
+              zhCn: "管理员消息",
+              de: "Admin-Nachrichten",
+              es: "Mensajes de administrador",
+              fr: "Messages d'administrateur",
+              ja: "管理者メッセージ",
+              ko: "관리자 메시지",
+              pt: "Mensagens de administrador",
+              ru: "Сообщения администратора",
+            },
           },
-          "category": "Admin",
-          "categoryTemplate": {
-            "default": "Admin Messages",
-            "en": "Admin Messages",
-            "zhCn": "管理员消息",
-            "de": "Admin-Nachrichten",
-            "es": "Mensajes de administrador",
-            "fr": "Messages d'administrateur",
-            "ja": "管理者メッセージ",
-            "ko": "관리자 메시지",
-            "pt": "Mensagens de administrador",
-            "ru": "Сообщения администратора",
+          metadata: {
+            title: "测试2",
+            content: "测试2测试2测试2测试2测试2测试2测试2测试2测试2",
           },
+          isRead: false,
+          createdAt: "2024-08-22T02:03:38.297Z",
+          updatedAt: "2024-08-22T02:03:38.297Z",
         },
-        "metadata": {
-          "title": "测试2",
-          "content": "测试2测试2测试2测试2测试2测试2测试2测试2测试2",
-        },
-        "isRead": false,
-        "createdAt": "2024-08-22T02:03:38.297Z",
-        "updatedAt": "2024-08-22T02:03:38.297Z",
-      },
-      {
-        "id": 19,
-        "messageType": {
-          "type": "SystemNotification",
-          "titleTemplate": {
-            "default": "系统公告",
-            "en": "System Notification",
-            "zhCn": "系统公告",
-            "de": "Systembenachrichtigung",
-            "es": "Notificación del sistema",
-            "fr": "Notification système",
-            "ja": "システム通知",
-            "ko": "시스템 알림",
-            "pt": "Notificação do sistema",
-            "ru": "Системное уведомление",
+        {
+          id: 19,
+          messageType: {
+            type: "SystemNotification",
+            titleTemplate: {
+              default: "系统公告",
+              en: "System Notification",
+              zhCn: "系统公告",
+              de: "Systembenachrichtigung",
+              es: "Notificación del sistema",
+              fr: "Notification système",
+              ja: "システム通知",
+              ko: "시스템 알림",
+              pt: "Notificação do sistema",
+              ru: "Системное уведомление",
+            },
+            category: "Admin",
+            categoryTemplate: {
+              default: "Admin Messages",
+              en: "Admin Messages",
+              zhCn: "管理员消息",
+              de: "Admin-Nachrichten",
+              es: "Mensajes de administrador",
+              fr: "Messages d'administrateur",
+              ja: "管理者メッセージ",
+              ko: "관리자 메시지",
+              pt: "Mensagens de administrador",
+              ru: "Сообщения администратора",
+            },
           },
-          "category": "Admin",
-          "categoryTemplate": {
-            "default": "Admin Messages",
-            "en": "Admin Messages",
-            "zhCn": "管理员消息",
-            "de": "Admin-Nachrichten",
-            "es": "Mensajes de administrador",
-            "fr": "Messages d'administrateur",
-            "ja": "管理者メッセージ",
-            "ko": "관리자 메시지",
-            "pt": "Mensagens de administrador",
-            "ru": "Сообщения администратора",
+          metadata: {
+            title: "测试1",
+            content: "测试1测试1测试1测试1测试1测试1测试1",
           },
+          isRead: true,
+          createdAt: "2024-08-21T09:34:43.200Z",
+          updatedAt: "2024-08-21T09:34:43.200Z",
         },
-        "metadata": {
-          "title": "测试1",
-          "content": "测试1测试1测试1测试1测试1测试1测试1",
-        },
-        "isRead": true,
-        "createdAt": "2024-08-21T09:34:43.200Z",
-        "updatedAt": "2024-08-21T09:34:43.200Z",
-      }],
+      ],
     },
   }),
   getTenantQuota: async () => ({
@@ -734,7 +814,6 @@ export const mockApi: MockApi<typeof api> = {
     totalCount: 0,
     syncHistory: [],
   }),
-
 
   getLockedUsers: null,
   unlockUser: null,
@@ -793,8 +872,8 @@ export const mockApi: MockApi<typeof api> = {
   updateDefaultApp: null,
   getTenantAssignedClustersAndPartitions: async () => ({
     assignedClusterPartitions: {
-      "hpc01": { partitionNames: ["partition1", "partition2"]},
-      "hpc02": { partitionNames: ["compute", "gpu"]},
+      hpc01: { partitionNames: ["partition1", "partition2"] },
+      hpc02: { partitionNames: ["compute", "gpu"] },
     },
   }),
   getStorageSyncInfo: async () => ({
@@ -809,10 +888,10 @@ export const mockApi: MockApi<typeof api> = {
     jobs: [],
   }),
   getClusterConfig: async () => ({
-    partitions:[],
+    partitions: [],
   }),
-  getUserAssociatedClusters: async () => ({ clusterIds: []}),
-  getAccountsAssociatedClusters: async () => ({ clusterIds: []}),
+  getUserAssociatedClusters: async () => ({ clusterIds: [] }),
+  getAccountsAssociatedClusters: async () => ({ clusterIds: [] }),
 };
 
 export const MOCK_USER_INFO = {
@@ -829,20 +908,23 @@ export const MOCK_USER_INFO = {
   tenantRoles: [TenantRole.TENANT_ADMIN, TenantRole.TENANT_FINANCE],
   platformRoles: [PlatformRole.PLATFORM_FINANCE, PlatformRole.PLATFORM_ADMIN],
   accountAffiliations: [
-    { accountName: "hpc2001213077", role: UserRole.ADMIN, accountState:AccountState.NORMAL },
-    { accountName: "hpc2001213075", role: UserRole.USER , accountState:AccountState.NORMAL },
+    { accountName: "hpc2001213077", role: UserRole.ADMIN, accountState: AccountState.NORMAL },
+    { accountName: "hpc2001213075", role: UserRole.USER, accountState: AccountState.NORMAL },
   ],
-  createTime:"2023-08-03T03:47:23.485Z",
+  createTime: "2023-08-03T03:47:23.485Z",
 } as UserInfo;
 
 export const MOCK_USER_STATUS: GetUserStatusResponse = {
   storageQuotas: {
-    "WM2": 100,
-    "WM1": 200,
+    WM2: 100,
+    WM1: 200,
   },
   accountStatuses: {
-    "hpc1": { userStatus: UserStatus.BLOCKED, accountBlocked: false, accountState:AccountState.NORMAL },
-    "hpc2": { userStatus: UserStatus.BLOCKED, accountBlocked: true, accountState:AccountState.NORMAL,
+    hpc1: { userStatus: UserStatus.BLOCKED, accountBlocked: false, accountState: AccountState.NORMAL },
+    hpc2: {
+      userStatus: UserStatus.BLOCKED,
+      accountBlocked: true,
+      accountState: AccountState.NORMAL,
       jobChargeLimit: numberToMoney(10),
       usedJobCharge: numberToMoney(2),
     },

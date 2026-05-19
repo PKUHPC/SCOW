@@ -4,16 +4,9 @@
     "outDir": "build",
     "rootDir": "./src",
     "paths": {
-      "src/*": [
-        "./src/*"
-      ],
-      "tests/*": [
-        "./tests/*"
-      ]
+      "src/*": ["./src/*"],
+      "tests/*": ["./tests/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }

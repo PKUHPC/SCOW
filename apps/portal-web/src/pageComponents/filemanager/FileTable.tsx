@@ -9,7 +9,7 @@ import { FileInfo } from "src/pages/api/file/list";
 import { iconFor } from "src/utils/file";
 import { formatSize } from "src/utils/format";
 
-type ColumnKey = ("type" | "name" | "mtime" | "size" | "mode" | "action");
+type ColumnKey = "type" | "name" | "mtime" | "size" | "mode" | "action";
 
 const nodeModeToString = (mode: number) => {
   const numberPermission = (mode & parseInt("777", 8)).toString(8);
@@ -32,17 +32,14 @@ interface Props extends TableProps<FileInfo> {
 
 const p = prefix("pageComp.fileManagerComp.fileTable.");
 
-export const FileTable: React.FC<Props> = (
-  {
-    files,
-    fileNameRender,
-    actionRender,
-    filesFilter,
-    hiddenColumns,
-    ...otherProps
-  },
-) => {
-
+export const FileTable: React.FC<Props> = ({
+  files,
+  fileNameRender,
+  actionRender,
+  filesFilter,
+  hiddenColumns,
+  ...otherProps
+}) => {
   const t = useI18nTranslateToString();
 
   const columns: ColumnsType<FileInfo> = [
@@ -58,9 +55,8 @@ export const FileTable: React.FC<Props> = (
       dataIndex: "name",
       title: t(p("fileName")),
       defaultSortOrder: "ascend",
-      sorter: (a, b) => a.type.localeCompare(b.type) === 0
-        ? a.name.localeCompare(b.name)
-        : a.type.localeCompare(b.type),
+      sorter: (a, b) =>
+        a.type.localeCompare(b.type) === 0 ? a.name.localeCompare(b.name) : a.type.localeCompare(b.type),
       sortDirections: ["ascend", "descend"],
       render: fileNameRender,
     },
@@ -68,21 +64,23 @@ export const FileTable: React.FC<Props> = (
       key: "mtime",
       dataIndex: "mtime",
       title: t(p("changeTime")),
-      render: (mtime: string | undefined) => mtime ? formatDateTime(mtime) : "",
-      sorter: (a, b) => a.type.localeCompare(b.type) === 0
-        ? compareDateTime(a.mtime, b.mtime) === 0
-          ? a.name.localeCompare(b.name)
-          : compareDateTime(a.mtime, b.mtime)
-        : a.type.localeCompare(b.type),
+      render: (mtime: string | undefined) => (mtime ? formatDateTime(mtime) : ""),
+      sorter: (a, b) =>
+        a.type.localeCompare(b.type) === 0
+          ? compareDateTime(a.mtime, b.mtime) === 0
+            ? a.name.localeCompare(b.name)
+            : compareDateTime(a.mtime, b.mtime)
+          : a.type.localeCompare(b.type),
     },
     {
       key: "size",
       dataIndex: "size",
       title: t(p("size")),
-      render: (size: number | undefined, file: FileInfo) => (size === undefined || file.type === "DIR")
-        ? ""
-        : (
-          <Tooltip title={Math.round((size) / 1024).toLocaleString() + "KB"} placement="topRight">
+      render: (size: number | undefined, file: FileInfo) =>
+        size === undefined || file.type === "DIR" ? (
+          ""
+        ) : (
+          <Tooltip title={Math.round(size / 1024).toLocaleString() + "KB"} placement="topRight">
             <span>{formatSize(Math.round(size / 1024))}</span>
           </Tooltip>
         ),
@@ -98,16 +96,20 @@ export const FileTable: React.FC<Props> = (
       key: "mode",
       dataIndex: "mode",
       title: t(p("mode")),
-      render: (mode: number | undefined) => mode === undefined ? "" : nodeModeToString(mode),
+      render: (mode: number | undefined) => (mode === undefined ? "" : nodeModeToString(mode)),
       // 对权限进行排序
       sorter: (a, b) => compareNullableFileMode(a.mode, b.mode),
     },
-    ...(actionRender ? [{
-      key: "action",
-      dataIndex: "action",
-      title: t(p("action")),
-      render: actionRender,
-    }] : []),
+    ...(actionRender
+      ? [
+          {
+            key: "action",
+            dataIndex: "action",
+            title: t(p("action")),
+            render: actionRender,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -116,7 +118,7 @@ export const FileTable: React.FC<Props> = (
       dataSource={filesFilter ? filesFilter(files) : files}
       columns={
         hiddenColumns
-          ? columns.filter((column) => column.key ? !hiddenColumns.includes(column.key as ColumnKey) : true)
+          ? columns.filter((column) => (column.key ? !hiddenColumns.includes(column.key as ColumnKey) : true))
           : columns
       }
       size="small"

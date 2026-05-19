@@ -7,7 +7,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { EMPTY_STRING } from "src/models/common";
 import {
-  AllowedChipIdType, allowedChipsArr, AveragesState, DeviceDetailInfo,
+  AllowedChipIdType,
+  allowedChipsArr,
+  AveragesState,
+  DeviceDetailInfo,
   visualizationChipsArr,
 } from "src/models/device";
 import { GateFidelityTable } from "src/pageComponents/chip/GateFidelityTable";
@@ -39,9 +42,7 @@ export const ChipDetailPage: NextPage = () => {
 
   const getOffsetDegreeQuery = trpc.config.getOffsetDegree.useQuery({ chipId });
 
-  const offsetDegree = useMemo(() =>
-    getOffsetDegreeQuery.data?.offsetDegree || 0
-  , [getOffsetDegreeQuery.data]);
+  const offsetDegree = useMemo(() => getOffsetDegreeQuery.data?.offsetDegree || 0, [getOffsetDegreeQuery.data]);
 
   if (!(allowedChipsArr as readonly string[]).includes(chipId)) {
     return <>Chip not found.</>;
@@ -59,8 +60,10 @@ export const ChipDetailPage: NextPage = () => {
   const pName = prefix("pageComp.device.name.");
   const pDescription = prefix("pageComp.device.description.");
 
-  const { data, isLoading, isError, error } =
-    trpc.backend.device.getDeviceDetail.useQuery({ id: typedChipId, accountName: "_" });
+  const { data, isLoading, isError, error } = trpc.backend.device.getDeviceDetail.useQuery({
+    id: typedChipId,
+    accountName: "_",
+  });
 
   const [deviceInfo, setDeviceInfo] = useState<DeviceDetailInfo | undefined>(undefined);
   const [formattedUpdateTime, setFormattedUpdateTime] = useState<string | undefined>(undefined);
@@ -69,9 +72,7 @@ export const ChipDetailPage: NextPage = () => {
 
   // 该芯片是否支持可视化
   const hasVisualization = visualizationChipsArr.includes(typedChipId);
-  const [activeTabShowType, setActiveTabShowType] = useState<"chart" | "data">(
-    hasVisualization ? "chart" : "data",
-  );
+  const [activeTabShowType, setActiveTabShowType] = useState<"chart" | "data">(hasVisualization ? "chart" : "data");
 
   const [averages, setAverages] = useState<AveragesState>({
     t1Avg: EMPTY_STRING,
@@ -94,16 +95,12 @@ export const ChipDetailPage: NextPage = () => {
 
       const newDeviceInfo: DeviceDetailInfo = {
         ...device,
-        gateFidelity: device.Err
-          ? t(pDescription("gateFidelity"), [...gateFidelities!])
-          : undefined,
+        gateFidelity: device.Err ? t(pDescription("gateFidelity"), [...gateFidelities!]) : undefined,
       };
 
       setDeviceInfo(newDeviceInfo);
 
-      const newFormattedTime = newDeviceInfo?.at
-        ? formatTimestamp(newDeviceInfo.at)
-        : undefined;
+      const newFormattedTime = newDeviceInfo?.at ? formatTimestamp(newDeviceInfo.at) : undefined;
       setFormattedUpdateTime(newFormattedTime);
     } else {
       setDeviceInfo(undefined);
@@ -112,25 +109,42 @@ export const ChipDetailPage: NextPage = () => {
   }, [data, languageId]);
 
   useEffect(() => {
-
     const t1Avg = deviceInfo?.bits
-      ? calculateAverage(deviceInfo.bits.map((bit) => bit.T1), 1)
+      ? calculateAverage(
+          deviceInfo.bits.map((bit) => bit.T1),
+          1,
+        )
       : EMPTY_STRING;
     const t2Avg = deviceInfo?.bits
-      ? calculateAverage(deviceInfo.bits.map((bit) => bit.T2), 1)
+      ? calculateAverage(
+          deviceInfo.bits.map((bit) => bit.T2),
+          1,
+        )
       : EMPTY_STRING;
     const sqErrAvg = deviceInfo?.bits
-      ? calculateAverage(deviceInfo.bits.map((bit) => bit.SingleQubitErrRate), 5)
+      ? calculateAverage(
+          deviceInfo.bits.map((bit) => bit.SingleQubitErrRate),
+          5,
+        )
       : EMPTY_STRING;
     const f0ErrAvg = deviceInfo?.bits
-      ? calculateAverage(deviceInfo.bits.map((bit) => bit.ReadoutF0Err), 5)
+      ? calculateAverage(
+          deviceInfo.bits.map((bit) => bit.ReadoutF0Err),
+          5,
+        )
       : EMPTY_STRING;
     const f1ErrAvg = deviceInfo?.bits
-      ? calculateAverage(deviceInfo.bits.map((bit) => bit.ReadoutF1Err), 5)
+      ? calculateAverage(
+          deviceInfo.bits.map((bit) => bit.ReadoutF1Err),
+          5,
+        )
       : EMPTY_STRING;
 
     const czErrAvg = deviceInfo?.links
-      ? calculateAverage(deviceInfo.links.map((link) => link.CZErrRate).filter((x) => x !== undefined), 3)
+      ? calculateAverage(
+          deviceInfo.links.map((link) => link.CZErrRate).filter((x) => x !== undefined),
+          3,
+        )
       : EMPTY_STRING;
 
     setAverages({
@@ -141,13 +155,10 @@ export const ChipDetailPage: NextPage = () => {
       f1ErrAvg,
       czErrAvg,
     });
-
   }, [deviceInfo]);
 
   if (getOffsetDegreeQuery.isLoading) {
-    return (
-      <div>Loading...</div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
@@ -202,7 +213,11 @@ export const ChipDetailPage: NextPage = () => {
           <Col
             span={7}
             style={{
-              display: "flex", flexDirection: "column", justifyContent: "center", margin: "12px 0" }}
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              margin: "12px 0",
+            }}
           >
             <div>
               <Row style={{ marginBottom: 12 }}>
@@ -239,44 +254,40 @@ export const ChipDetailPage: NextPage = () => {
                   </Col>
                 </Row>
               )}
-              {
-                gateFidelities?.[0] && (
-                  <Row style={{ marginBottom: 12 }}>
-                    <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
-                      <Text>{t(p("SQGateFidelity"))} :</Text>
-                    </Col>
-                    <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
-                      <Text style={{ color: "#0D6EFD" }}>{gateFidelities[0]}</Text>
-                    </Col>
-                  </Row>
-                )
-              }
-              {
-                gateFidelities?.[1] && (
-                  <Row style={{ marginBottom: 12 }}>
-                    <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
-                      <Text>{t(p("CZGateFidelity"))} :</Text>
-                    </Col>
-                    <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
-                      <Text style={{ color: "#0D6EFD" }}>{gateFidelities[1]}</Text>
-                    </Col>
-                  </Row>
-                )
-              }
-              {
-                readoutFidelity && (
-                  <Row style={{ marginBottom: 12 }}>
-                    <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
-                      <Text>{t(p("readoutFidelity"))} :</Text>
-                    </Col>
-                    <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
-                      <Text style={{ color: "#0D6EFD" }}>
-                        F0: {readoutFidelity[0]}<br />F1: {readoutFidelity[1]}
-                      </Text>
-                    </Col>
-                  </Row>
-                )
-              }
+              {gateFidelities?.[0] && (
+                <Row style={{ marginBottom: 12 }}>
+                  <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
+                    <Text>{t(p("SQGateFidelity"))} :</Text>
+                  </Col>
+                  <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
+                    <Text style={{ color: "#0D6EFD" }}>{gateFidelities[0]}</Text>
+                  </Col>
+                </Row>
+              )}
+              {gateFidelities?.[1] && (
+                <Row style={{ marginBottom: 12 }}>
+                  <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
+                    <Text>{t(p("CZGateFidelity"))} :</Text>
+                  </Col>
+                  <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
+                    <Text style={{ color: "#0D6EFD" }}>{gateFidelities[1]}</Text>
+                  </Col>
+                </Row>
+              )}
+              {readoutFidelity && (
+                <Row style={{ marginBottom: 12 }}>
+                  <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
+                    <Text>{t(p("readoutFidelity"))} :</Text>
+                  </Col>
+                  <Col span={11} style={{ textAlign: "left", paddingLeft: 8 }}>
+                    <Text style={{ color: "#0D6EFD" }}>
+                      F0: {readoutFidelity[0]}
+                      <br />
+                      F1: {readoutFidelity[1]}
+                    </Text>
+                  </Col>
+                </Row>
+              )}
               <Row style={{ marginBottom: 12 }}>
                 <Col span={13} style={{ textAlign: "right", paddingRight: 8 }}>
                   <Text>{t(p("shotsLimit"))} :</Text>
@@ -302,18 +313,16 @@ export const ChipDetailPage: NextPage = () => {
             <div>{t(p("gateFidelity"))}</div>
           </Col>
           <Col>
-            {
-              hasVisualization && (
-                <Radio.Group
-                  defaultValue="chart"
-                  buttonStyle="solid"
-                  onChange={(e) => setActiveTabShowType(e.target.value)}
-                >
-                  <Radio.Button value="chart">{t(p("chart"))}</Radio.Button>
-                  <Radio.Button value="data">{t(p("data"))}</Radio.Button>
-                </Radio.Group>
-              )
-            }
+            {hasVisualization && (
+              <Radio.Group
+                defaultValue="chart"
+                buttonStyle="solid"
+                onChange={(e) => setActiveTabShowType(e.target.value)}
+              >
+                <Radio.Button value="chart">{t(p("chart"))}</Radio.Button>
+                <Radio.Button value="data">{t(p("data"))}</Radio.Button>
+              </Radio.Group>
+            )}
           </Col>
         </Row>
         <Divider />

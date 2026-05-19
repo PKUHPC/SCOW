@@ -1,6 +1,8 @@
 import { Server } from "@ddadaal/tsgrpc-server";
-import { ListAccountUserSynchronizationsResponse_SyncResult,
-  ListAccountUserSynchronizationsResponse_SyncStatus } from "@scow/protos/build/server/admin";
+import {
+  ListAccountUserSynchronizationsResponse_SyncResult,
+  ListAccountUserSynchronizationsResponse_SyncStatus,
+} from "@scow/protos/build/server/admin";
 import { createServer } from "src/app";
 import { startAccountUserSynchronization } from "src/bl/syncAccountUser";
 import { AccountUserSyncRecord, SyncResult, SyncStatus } from "src/entities/AccountUserSyncRecord";
@@ -10,7 +12,6 @@ import { dropDatabase } from "tests/data/helpers";
 let server: Server;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   const em = server.ext.orm.em.fork();
@@ -25,12 +26,17 @@ afterEach(async () => {
   await server.close();
 });
 
-
 it.skip("start an account user synchronization", async () => {
-
   const em = server.ext.orm.em.fork();
   const sessionId = await startAccountUserSynchronization(
-    em, server.ext.clusters, server.logger, server.ext.resource, undefined, 5, server.ext.fetch);
+    em,
+    server.ext.clusters,
+    server.logger,
+    server.ext.resource,
+    undefined,
+    5,
+    server.ext.fetch,
+  );
 
   expect(typeof sessionId).toBe("string");
 
@@ -51,6 +57,4 @@ it.skip("start an account user synchronization", async () => {
   expect(clusterResults[0]?.clusterSyncStatus).toBe(ListAccountUserSynchronizationsResponse_SyncStatus.COMPLETED);
   expect(clusterResults[0]?.isAllChunkExecuted).toBeTrue();
   expect(clusterResults[0]?.executedChunkCount).toBe(1);
-
 });
-

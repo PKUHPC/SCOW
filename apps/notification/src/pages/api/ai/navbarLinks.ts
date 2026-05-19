@@ -5,9 +5,7 @@ import { hasUnreadMessage } from "src/utils/message/has-unread-message";
 import { BASE_PATH } from "src/utils/processEnv";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-
   if (req.method === "POST") {
-
     const cookie = req.headers.cookie;
     // 将 cookie 字符串解析为对象
     const cookies = cookie?.split(";").reduce<Record<string, string>>((acc, cookie) => {
@@ -22,9 +20,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // eslint-disable-next-line @typescript-eslint/dot-notation
     const scowUserCookie = cookies?.["SCOW_USER"];
 
-    const svgFilePath = (cookie && scowUserCookie && await hasUnreadMessage(scowUserCookie))
-      ? path.join(BASE_PATH, "icons", "dot-ding.svg")
-      : path.join(BASE_PATH, "icons", "ding.svg");
+    const svgFilePath =
+      cookie && scowUserCookie && (await hasUnreadMessage(scowUserCookie))
+        ? path.join(BASE_PATH, "icons", "dot-ding.svg")
+        : path.join(BASE_PATH, "icons", "ding.svg");
 
     const navbarLinks = [
       {
@@ -41,4 +40,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default applyMiddleware(handler);
-

@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { asyncClientCall } from "@ddadaal/tsgrpc-client";
 import { Server } from "@ddadaal/tsgrpc-server";
 import { ChannelCredentials } from "@grpc/grpc-js";
@@ -26,7 +14,6 @@ let server: Server;
 let data: BlockedData;
 
 beforeEach(async () => {
-
   server = await createServer();
 
   const em = server.ext.orm.em.fork();
@@ -49,8 +36,7 @@ it.skip("test whether the block update time exists at startup", async () => {
 });
 
 it("update block status", async () => {
-  const blockedData = await updateBlockStatusInSlurm(
-    server.ext.orm.em.fork(), server.ext.clusters, server.logger);
+  const blockedData = await updateBlockStatusInSlurm(server.ext.orm.em.fork(), server.ext.clusters, server.logger);
 
   expect(blockedData.blockedAccounts).toEqual([data.blockedAccountB.accountName]);
   expect(blockedData.blockedUserAccounts).toEqual([
@@ -65,11 +51,10 @@ it("update block status with whitelist accounts", async () => {
     accountName: data.blockedAccountB.accountName,
     comment: "test",
     operatorId: "123",
-    expirationTime:new Date("2125-01-01T00:00:00.000Z").toISOString(),
+    expirationTime: new Date("2125-01-01T00:00:00.000Z").toISOString(),
   });
 
-  const blockedData = await updateBlockStatusInSlurm(
-    server.ext.orm.em.fork(), server.ext.clusters, server.logger);
+  const blockedData = await updateBlockStatusInSlurm(server.ext.orm.em.fork(), server.ext.clusters, server.logger);
 
   expect(blockedData.blockedAccounts).not.toContain([data.blockedAccountB.id]);
 });
@@ -80,12 +65,11 @@ it("gets current sync block status info", async () => {
 
   expect(info.syncStarted).toEqual(misConfig.periodicSyncUserAccountBlockStatus?.enabled);
   expect(info.schedule).toEqual(misConfig.periodicSyncUserAccountBlockStatus?.cron ?? "0 4 * * *");
-
 });
 
 it("sync unblock and block account", async () => {
   const client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
-  const info = await asyncClientCall(client, "syncBlockStatus", { });
+  const info = await asyncClientCall(client, "syncBlockStatus", {});
 
   expect(info.blockedFailedAccounts).not.toContain(data.blockedAccountB.accountName);
   expect(info.blockedFailedUserAccounts).not.toContain([
@@ -94,12 +78,11 @@ it("sync unblock and block account", async () => {
   expect(info.unblockedFailedAccounts).not.toContain(data.unblockedAccountA.accountName);
 });
 
-
 it("starts and stops sync block status ", async () => {
   const client = new AdminServiceClient(server.serverAddress, ChannelCredentials.createInsecure());
   await asyncClientCall(client, "setSyncBlockStatusState", { started: false });
 
-  let info = await asyncClientCall(client, "getSyncBlockStatusInfo", { });
+  let info = await asyncClientCall(client, "getSyncBlockStatusInfo", {});
 
   expect(info.syncStarted).toBeFalse();
 
@@ -109,9 +92,3 @@ it("starts and stops sync block status ", async () => {
 
   expect(info.syncStarted).toBeTrue();
 });
-
-
-
-
-
-

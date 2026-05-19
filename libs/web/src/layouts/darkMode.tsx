@@ -1,15 +1,3 @@
-/**
- * Copyright (c) 2022 Peking University and Peking University Institute for Computing and Digital Economy
- * SCOW is licensed under Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *          http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
- * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
- * MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * See the Mulan PSL v2 for more details.
- */
-
 import { FloatButton } from "antd";
 import { IncomingMessage } from "http";
 import dynamic from "next/dynamic";
@@ -20,8 +8,7 @@ import { getCurrentLangLibWebText } from "src/utils/libWebI18n/libI18n";
 
 const _modes = ["system", "dark", "light"] as const;
 
-
-export type DarkMode = typeof _modes[number];
+export type DarkMode = (typeof _modes)[number];
 
 const DarkModeContext = React.createContext<{
   mode: DarkMode;
@@ -70,7 +57,6 @@ export interface DarkModeCookie {
   mode: DarkMode;
 }
 
-
 interface Props {
   initial?: DarkModeCookie;
 }
@@ -88,7 +74,6 @@ export function getDarkModeCookieValue(req?: IncomingMessage): DarkModeCookie | 
 export const DarkModeButton = dynamic(() => Promise.resolve(DarkModeButtonInternal), { ssr: false });
 
 export const DarkModeProvider = ({ initial, children }: PropsWithChildren<Props>) => {
-
   const [mode, setMode] = useState<DarkMode>(initial?.mode ?? "system");
 
   const [dark, setDark] = useState(initial?.dark ?? false);
@@ -102,8 +87,7 @@ export const DarkModeProvider = ({ initial, children }: PropsWithChildren<Props>
 
   useEffect(() => {
     if (mode === "system") {
-
-      const onChange = function(this: MediaQueryList, ev: MediaQueryListEvent) {
+      const onChange = function (this: MediaQueryList, ev: MediaQueryListEvent) {
         setDark(ev.matches);
       };
 
@@ -119,10 +103,5 @@ export const DarkModeProvider = ({ initial, children }: PropsWithChildren<Props>
     }
   }, [mode]);
 
-  return (
-    <DarkModeContext.Provider value={{ mode, dark, setMode }}>
-      {children}
-    </DarkModeContext.Provider>
-
-  );
+  return <DarkModeContext.Provider value={{ mode, dark, setMode }}>{children}</DarkModeContext.Provider>;
 };

@@ -11,7 +11,6 @@ export interface Props {
 }
 
 export const MessageContentModal: React.FC<Props> = ({ open, onClose, data }) => {
-
   const handleOk = () => {
     onClose();
   };

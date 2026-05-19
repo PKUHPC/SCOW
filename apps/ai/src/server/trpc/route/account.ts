@@ -15,7 +15,6 @@ import { z } from "zod";
 import { getCurrentClusters } from "../../utils/clusters";
 
 export const accountRouter = router({
-
   listAccounts: procedure
     .meta({
       openapi: {
@@ -25,12 +24,14 @@ export const accountRouter = router({
         summary: "List all accounts",
       },
     })
-    .input(z.object({
-      clusterId: z.optional(z.string()),
-      useForCreateApp: z.optional(z.boolean()),
-      appId: z.optional(z.string()),
-      ...paginationSchema.shape,
-    }))
+    .input(
+      z.object({
+        clusterId: z.optional(z.string()),
+        useForCreateApp: z.optional(z.boolean()),
+        appId: z.optional(z.string()),
+        ...paginationSchema.shape,
+      }),
+    )
     .output(z.object({ accounts: z.array(z.string()), count: z.number() }))
     .query(async ({ input, ctx: { user } }) => {
       const { clusterId, useForCreateApp, appId, page, pageSize } = input;
@@ -46,18 +47,25 @@ export const accountRouter = router({
       let appForbiddenAccounts: string[] = [];
       // 如果部署了管理系统且开启了授权应用功能
       // 当在创建交互式应用时查询可用账户时，需要过滤掉此应用未授权的账户
-      if (config.MIS_DEPLOYED &&
+      if (
+        config.MIS_DEPLOYED &&
         config.MIS_SERVER_URL &&
         commonConfig.allowAppAuthorization &&
-        useForCreateApp && appId) {
+        useForCreateApp &&
+        appId
+      ) {
         appForbiddenAccounts = await libWebGetAppForbiddenAccounts(
-          clusterId, appId, config.MIS_SERVER_URL, commonConfig.scowApi?.auth?.token);
+          clusterId,
+          appId,
+          config.MIS_SERVER_URL,
+          commonConfig.scowApi?.auth?.token,
+        );
       }
-
 
       // 判断是否已部署管理系统，如果是则调用管理系统数据库，返回可用账户列表
       if (config.MIS_DEPLOYED && commonConfig.scowApi?.auth?.token) {
-        const userUnblockedAccounts = await libGetAccounts(logger,
+        const userUnblockedAccounts = await libGetAccounts(
+          logger,
           user.identityId,
           AccountStatusFilter.UNBLOCKED_ONLY,
           config.MIS_SERVER_URL,
@@ -65,12 +73,13 @@ export const accountRouter = router({
         );
 
         const { paginatedItems: paginatedAccounts, totalCount } = paginate(
-          userUnblockedAccounts.accounts, page, pageSize,
+          userUnblockedAccounts.accounts,
+          page,
+          pageSize,
         );
 
-        const filteredAccounts = paginatedAccounts.filter((a) => (!appForbiddenAccounts.includes(a)));
+        const filteredAccounts = paginatedAccounts.filter((a) => !appForbiddenAccounts.includes(a));
         return { accounts: filteredAccounts, count: totalCount };
-
       }
 
       const client = getAdapterClient(clusterId);
@@ -79,14 +88,10 @@ export const accountRouter = router({
       }
       const { accounts } = await asyncClientCall(client.account, "listAccounts", { userId: user.identityId });
 
+      const filteredAccounts = accounts.filter((a) => !appForbiddenAccounts.includes(a));
 
-      const filteredAccounts = accounts.filter((a) => (!appForbiddenAccounts.includes(a)));
-
-      const { paginatedItems: paginatedAccounts, totalCount } = paginate(
-        filteredAccounts, page, pageSize,
-      );
+      const { paginatedItems: paginatedAccounts, totalCount } = paginate(filteredAccounts, page, pageSize);
 
       return { accounts: paginatedAccounts, count: totalCount };
-
     }),
 });

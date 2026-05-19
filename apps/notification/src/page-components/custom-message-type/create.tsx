@@ -24,7 +24,6 @@ interface Props {
 }
 
 export const CreateMessageTypeForm: React.FC<Props> = ({ lang }) => {
-
   const [createData, setCreateData] = useState<MessageTypeInfo>();
   const [form] = Form.useForm<FormValues>();
 
@@ -55,12 +54,7 @@ export const CreateMessageTypeForm: React.FC<Props> = ({ lang }) => {
   };
 
   return (
-    <Form
-      form={form}
-      onFinish={onFinish}
-      labelCol={{ span: 2 }}
-    >
-
+    <Form form={form} onFinish={onFinish} labelCol={{ span: 2 }}>
       <Form.Item
         name="messageType"
         label={compLang.messageType}
@@ -188,10 +182,7 @@ export const CreateMessageTypeForm: React.FC<Props> = ({ lang }) => {
               rules={[{ required: true, message: compLang.defaultMessageContentTempRule }]}
             >
               <div style={{ display: "flex" }}>
-                <TextArea
-                  style={{ maxWidth: "700px" }}
-                  placeholder={compLang.defaultMessageContentTempPlaceholder}
-                />
+                <TextArea style={{ maxWidth: "700px" }} placeholder={compLang.defaultMessageContentTempPlaceholder} />
                 <Tooltip title={compLang.defaultMessageContentTempTip}>
                   <QuestionCircleOutlined style={{ marginLeft: "5px" }} />
                 </Tooltip>
@@ -231,4 +222,7 @@ export const CreateMessageTypeForm: React.FC<Props> = ({ lang }) => {
 };
 
 const PreviewCreateModalButton = ModalButton(PreviewCreateModal, {
-  htmlType: "submit", type: "primary", size: "middle" });
+  htmlType: "submit",
+  type: "primary",
+  size: "middle",
+});

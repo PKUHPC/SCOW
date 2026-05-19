@@ -30,7 +30,6 @@ export const ormConfigs = defineConfig({
   seeder: {
     path: join(distPath, "seeders"),
   },
-
 });
 
 export const ormPlugin = plugin(async (server) => {
@@ -60,5 +59,4 @@ export const ormPlugin = plugin(async (server) => {
     await orm.close();
     logger.info("db connection has been closed.");
   });
-
 });

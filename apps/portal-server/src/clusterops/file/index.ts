@@ -7,9 +7,7 @@ import { getClusterLoginNode } from "src/utils/ssh";
 import { scowdFileServices } from "./scowdFile";
 import { sshFileServices } from "./sshFile";
 
-
 export const fileOps = (cluster: string): FileOps => {
-
   const clusterInfo = configClusters[cluster];
   if (clusterInfo.scowd?.enabled) {
     const getClient = (userId: string) => getScowdClient(cluster, userId);
@@ -20,7 +18,9 @@ export const fileOps = (cluster: string): FileOps => {
   } else {
     const host = getClusterLoginNode(cluster);
 
-    if (!host) { throw clusterNotFound(cluster); }
+    if (!host) {
+      throw clusterNotFound(cluster);
+    }
 
     return {
       ...sshFileServices(host),

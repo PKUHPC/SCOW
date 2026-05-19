@@ -15,18 +15,18 @@ import { route } from "src/utils/route";
 import { getTenantOfAccount } from "./charges";
 
 export const mapChargesSortByType = {
-  "accountName":SortBy.ACCOUNT_NAME,
-  "time":SortBy.TIME,
-  "amount":SortBy.AMOUNT,
-  "type":SortBy.TYPE,
-  "ipAddress":SortBy.IP_ADDRESS,
-  "operatorId":SortBy.OPERATOR_ID,
-  "comment":SortBy.COMMENT,
+  accountName: SortBy.ACCOUNT_NAME,
+  time: SortBy.TIME,
+  amount: SortBy.AMOUNT,
+  type: SortBy.TYPE,
+  ipAddress: SortBy.IP_ADDRESS,
+  operatorId: SortBy.OPERATOR_ID,
+  comment: SortBy.COMMENT,
 } as Record<string, SortBy>;
 
 export const mapChargesSortOrderType = {
-  "descend":SortOrder.DESCEND,
-  "ascend":SortOrder.ASCEND,
+  descend: SortOrder.DESCEND,
+  ascend: SortOrder.ASCEND,
 } as Record<string, SortOrder>;
 
 export const PaymentInfo = Type.Object({
@@ -62,19 +62,19 @@ export const GetPaymentsSchema = typeboxRouteSchema({
 
     searchType: Type.Enum(SearchType),
     // 充值类型
-    types:Type.Optional(Type.Array(Type.String())),
+    types: Type.Optional(Type.Array(Type.String())),
 
-    ownerIdOrName:Type.Optional(Type.String()),
+    ownerIdOrName: Type.Optional(Type.String()),
 
-    operatorIdOrName:Type.Optional(Type.String()),
+    operatorIdOrName: Type.Optional(Type.String()),
 
     page: Type.Optional(Type.Integer({ minimum: 1 })),
 
     pageSize: Type.Optional(Type.Integer()),
 
-    sortBy:Type.Optional(PaymentSortBy),
+    sortBy: Type.Optional(PaymentSortBy),
 
-    sortOrder:Type.Optional(ChargesSortOrder),
+    sortOrder: Type.Optional(ChargesSortOrder),
   }),
 
   responses: {
@@ -95,27 +95,41 @@ export const getPaymentRecordTarget = (
   switch (searchType) {
     case SearchType.tenant:
       return targetNames
-        ? { $case:"tenant" as const, tenant:{ tenantName:targetNames[0] } }
-        : { $case:"allTenants" as const, allTenants:{ } };
+        ? { $case: "tenant" as const, tenant: { tenantName: targetNames[0] } }
+        : { $case: "allTenants" as const, allTenants: {} };
     case SearchType.selfTenant:
-      return { $case:"tenant" as const, tenant:{ tenantName:user.tenant } };
+      return { $case: "tenant" as const, tenant: { tenantName: user.tenant } };
     case SearchType.selfAccount:
-      return { $case:"accountsOfTenant" as const,
-        accountsOfTenant:{ tenantName:user.tenant, accountNames:targetNames ?? []} };
+      return {
+        $case: "accountsOfTenant" as const,
+        accountsOfTenant: { tenantName: user.tenant, accountNames: targetNames ?? [] },
+      };
     case SearchType.account:
       return targetNames
-        ? { $case:"accountsOfTenant" as const,
-          accountsOfTenant:{ tenantName:tenantOfAccount, accountNames:targetNames } }
-        : { $case:"accountsOfTenant" as const, accountsOfTenant:{ tenantName:user.tenant, accountNames:[]} };
+        ? {
+            $case: "accountsOfTenant" as const,
+            accountsOfTenant: { tenantName: tenantOfAccount, accountNames: targetNames },
+          }
+        : { $case: "accountsOfTenant" as const, accountsOfTenant: { tenantName: user.tenant, accountNames: [] } };
     default:
       break;
   }
 };
 
 export default route(GetPaymentsSchema, async (req, res) => {
-
-  const { endTime, startTime, accountNames, searchType, types, ownerIdOrName,
-    operatorIdOrName, page, pageSize, sortBy, sortOrder } = req.query;
+  const {
+    endTime,
+    startTime,
+    accountNames,
+    searchType,
+    types,
+    ownerIdOrName,
+    operatorIdOrName,
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+  } = req.query;
 
   if (searchType === SearchType.selfAccount && (!accountNames || accountNames.length === 0)) {
     res.status(400).end();
@@ -128,20 +142,24 @@ export default route(GetPaymentsSchema, async (req, res) => {
 
   // check whether the user can access the account
   if (accountNames && accountNames.length > 0) {
-    user = await authenticate((i) =>
-      i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-      i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
-      // 排除掉前面的租户财务员和管理员，只剩下账户管理员
-      accountNames.length === 1 &&
-      i.accountAffiliations.some((x) => x.accountName === accountNames[0] && x.role !== UserRole.USER),
+    user = await authenticate(
+      (i) =>
+        i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
+        i.tenantRoles.includes(TenantRole.TENANT_ADMIN) ||
+        // 排除掉前面的租户财务员和管理员，只剩下账户管理员
+        (accountNames.length === 1 &&
+          i.accountAffiliations.some((x) => x.accountName === accountNames[0] && x.role !== UserRole.USER)),
     )(req, res);
-    if (!user) { return; }
+    if (!user) {
+      return;
+    }
   } else {
-    user = await authenticate((i) =>
-      i.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-      i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
+    user = await authenticate(
+      (i) => i.tenantRoles.includes(TenantRole.TENANT_FINANCE) || i.tenantRoles.includes(TenantRole.TENANT_ADMIN),
     )(req, res);
-    if (!user) { return; }
+    if (!user) {
+      return;
+    }
   }
 
   const tenantOfAccount = await getTenantOfAccount(accountNames, user);
@@ -150,21 +168,24 @@ export default route(GetPaymentsSchema, async (req, res) => {
   const mapChargesSortBy = sortBy ? mapChargesSortByType[sortBy] : mapChargesSortByType.time;
   const mapChargesSortOrder = sortOrder ? mapChargesSortOrderType[sortOrder] : mapChargesSortOrderType.descend;
 
-  const reply = ensureNotUndefined(await asyncClientCall(client, "getPaymentRecords", {
-    target: getPaymentRecordTarget(searchType, user, tenantOfAccount, accountNames),
-    startTime,
-    endTime,
-    ownerIdOrName,
-    operatorIdOrName,
-    page,
-    pageSize,
-    sortBy:mapChargesSortBy,
-    sortOrder:mapChargesSortOrder,
-    types:types ?? [],
-  }), ["total"]);
+  const reply = ensureNotUndefined(
+    await asyncClientCall(client, "getPaymentRecords", {
+      target: getPaymentRecordTarget(searchType, user, tenantOfAccount, accountNames),
+      startTime,
+      endTime,
+      ownerIdOrName,
+      operatorIdOrName,
+      page,
+      pageSize,
+      sortBy: mapChargesSortBy,
+      sortOrder: mapChargesSortOrder,
+      types: types ?? [],
+    }),
+    ["total"],
+  );
 
-  const returnAuditInfo = user.tenantRoles.includes(TenantRole.TENANT_FINANCE) ||
-          user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
+  const returnAuditInfo =
+    user.tenantRoles.includes(TenantRole.TENANT_FINANCE) || user.tenantRoles.includes(TenantRole.TENANT_ADMIN);
 
   const records = reply.results.map((x) => {
     const obj = ensureNotUndefined(x, ["time", "amount"]);

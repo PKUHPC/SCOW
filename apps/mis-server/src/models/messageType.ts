@@ -11,7 +11,6 @@ export enum InternalMessageType {
   AccountUserSyncResult = "AccountUserSyncResult",
 }
 
-
 export enum MessageStatus {
   // 异常
   EXCEPTION = "Exception",
