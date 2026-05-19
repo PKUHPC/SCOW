@@ -8,9 +8,9 @@ managed:
     - file_option: go_package_prefix
       value: scow-adapters/gen
 plugins:
-  - remote: buf.build/protocolbuffers/go
+  - local: ["go", "tool", "protoc-gen-go"]
     out: gen/crane
     opt: paths=source_relative
-  - remote: buf.build/grpc/go
+  - local: ["go", "tool", "protoc-gen-go-grpc"]
     out: gen/crane
     opt: paths=source_relative,require_unimplemented_servers=false

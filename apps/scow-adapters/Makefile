@@ -1,6 +1,6 @@
 ARCH ?= amd64
 
-.PHONY: protos build build-ai build-slurm build-crane build-crane-ai build-ai-expire build-slurm-expire lint test cranesched clean
+.PHONY: protos build build-ai build-slurm build-crane build-crane-ai build-ai-expire build-slurm-expire lint test cranesched clean build-ci
 
 # VERSION 可由外部传入（CI 通过 --build-arg 传递 tag 或分支名），
 # 本地构建时自动从 git describe 获取，无 tag 时降级为 dev。
@@ -33,7 +33,7 @@ LINT_PACKAGES := ./cmd/scow-ai-adapter/... \
 protos: protos-adapters cranesched
 
 protos-adapters:
-	buf generate --template buf.gen.yaml ../../libs/protos/scheduler-adapter
+	go tool buf generate --template buf.gen.yaml ../../libs/protos/scheduler-adapter
 
 build: build-ai build-slurm build-crane
 	@echo "- Building executables with $(GO_VERSION)..."
@@ -86,7 +86,16 @@ test:
 	go test
 
 cranesched:
-	buf generate --template buf.genCrane.yaml https://github.com/PKUHPC/CraneSched.git#subdir=protos,tag=V1.1.3
+	go tool buf generate --template buf.genCrane.yaml https://github.com/PKUHPC/CraneSched.git#subdir=protos,tag=V1.1.3
+
+build-ci:
+	docker buildx build \
+		--file Dockerfile \
+		--target output \
+		--output type=local,dest=docker-out \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg TARGETARCH=$(ARCH) \
+		../..
 
 clean:
 	@echo "- Cleaning build artifacts"
