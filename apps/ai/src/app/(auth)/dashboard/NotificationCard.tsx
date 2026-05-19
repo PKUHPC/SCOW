@@ -1,3 +1,4 @@
+import { NotifContainer, NotifTitle } from "@scow/lib-web/build/components/NotificationCard";
 import { RenderContent, renderingMessage } from "@scow/lib-web/build/utils/renderingMessage";
 import { App, Card, List, Typography } from "antd";
 import { useRouter } from "next/navigation";
@@ -6,14 +7,6 @@ import { usePublicConfig } from "src/app/(auth)/context";
 import { Localized, prefix, useI18n, useI18nTranslateToString } from "src/i18n";
 import { useDarkMode } from "src/layouts/darkMode";
 import { trpc } from "src/utils/trpc";
-import { styled } from "styled-components";
-
-const NotifContainer = styled.div`
-  height: 100%;
-  .ant-card .ant-card-body {
-    padding: 12px 24px !important;
-  }
-`;
 
 const { Text } = Typography;
 
@@ -77,9 +70,9 @@ export const NotificationCard: React.FC = () => {
                   borderRadius: "8px", padding: "12px 22px",
                 }}
                 title={(
-                  <div style={{ fontSize: "14px", margin: "0", color: dark ? "#FFFFFF" : "#434343" }}>
+                  <NotifTitle>
                     {item.title}
-                  </div>
+                  </NotifTitle>
                 )}
                 description={(
                   <Text

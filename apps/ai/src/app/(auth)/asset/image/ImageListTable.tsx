@@ -223,6 +223,7 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
           isPublic ? {
             dataIndex: "shareUser",
             title: t(pCommon("publishUser")),
+            width: 100,
             // @ts-ignore
             render: (_, r) =>
               r.isPlatformOwned ? (
@@ -234,7 +235,8 @@ export const ImageListTable: React.FC<Props> = ({ isPublic, clusters }) => {
                 `${r.ownerName}（ID:${r.owner}）`
               ),
           } : {},
-          { dataIndex: "status", title: t(p("status")),
+          { dataIndex: "status", title: t(p("status")), width: 90,
+            onCell: () => ({ style: { whiteSpace: "nowrap" } }),
             render: (_, r) => {
               switch (r.status) {
                 case Status.CREATING:

@@ -205,23 +205,21 @@ export const UserSubscriptionTable: React.FC = () => {
   return (
     <div>
       <PageTitle titleText={language.subscription.pageTitle}>
-        {hasChange && (
-          <div style={{ textAlign: "right", marginBottom: "10px" }}>
-            <NoShadowButton
-              onClick={handleCancel}
-              style={{ marginRight: "10px" }}
-            >
-              {language.common.cancel}
-            </NoShadowButton>
-            <NoShadowButton
-              loading={isPending}
-              type="primary"
-              onClick={handleSave}
-            >
-              {language.common.save}
-            </NoShadowButton>
-          </div>
-        )}
+        <div style={{ textAlign: "right", marginBottom: "10px", visibility: hasChange ? "visible" : "hidden" }}>
+          <NoShadowButton
+            onClick={handleCancel}
+            style={{ marginRight: "10px" }}
+          >
+            {language.common.cancel}
+          </NoShadowButton>
+          <NoShadowButton
+            loading={isPending}
+            type="primary"
+            onClick={handleSave}
+          >
+            {language.common.save}
+          </NoShadowButton>
+        </div>
       </PageTitle>
       <Form form={form} name="message-config">
         <Table

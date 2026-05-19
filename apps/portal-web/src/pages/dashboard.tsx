@@ -125,12 +125,12 @@ export const DashboardPage: NextPage = requireAuth(() => true)(() => {
   return (
     <DashboardPageContent>
       <Head title={t("pages.dashboard.title")} />
-      <Row gutter={[16, 16]} wrap={true}>
-        <Col sm={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
+      <Row gutter={[16, 0]} wrap={true}>
+        <Col xs={24} md={publicConfig.NOTIF_ENABLED ? 17 : 24} xl={publicConfig.NOTIF_ENABLED ? 17 : 24}>
           <QuickEntry />
         </Col>
         {publicConfig.NOTIF_ENABLED && (
-          <NotificationCol md={7} xl={7}>
+          <NotificationCol xs={24} md={7} xl={7}>
             <NotificationCard />
           </NotificationCol>
         )}
