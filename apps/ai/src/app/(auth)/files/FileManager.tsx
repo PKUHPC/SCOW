@@ -230,36 +230,8 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
     setOperation(undefined);
   };
 
-  const copyOrMoveMutation = trpc.file.copyOrMove.useMutation({
-    onError(error) {
-      const operationText = operationTexts[operation!.op];
-
-      if (error.data?.code === "CONFLICT") {
-        modal.error({
-          title: `${operationText}${t(p("fail"))}`,
-          content: t(p("alreadyExist")),
-        });
-        return;
-      }
-
-      if (error.data?.code === "BAD_REQUEST") {
-        modal.error({
-          title: `${operationText}${t(p("fail"))}`,
-          content: t(p("alreadyExist")),
-        });
-        return;
-      }
-
-      modal.error({
-        title: `${operationText}${t(p("fail"))}`,
-        content: error.message,
-      });
-    },
-    onSettled() {
-      resetSelectedAndOperation();
-      reload();
-    },
-  });
+  const copyOrMoveMutation = trpc.file.copyOrMove.useMutation();
+  const checkFileExistMutation = trpc.file.checkFileExist.useMutation();
 
   const paste = async () => {
     if (!operation) {
@@ -269,59 +241,104 @@ export const FileManager: React.FC<Props> = ({ cluster, path, urlPrefix, setClus
 
     setOperation({ ...operation, started: true });
 
-    // if only one file is selected, show detailed error information
-    if (operation.selected.length === 1) {
-      const filename = operation.selected[0].name;
-      const fromPath = join(operation.originalPath, filename);
+    const getOperationErrorMessage = (error: any) => {
+      const code = error?.data?.code;
+      return code === "BAD_REQUEST"
+        ? t(p("copyToItselfError"))
+        : code === "CONFLICT"
+          ? t(p("alreadyExist"))
+          : code === "FORBIDDEN"
+            ? t(p("noAccessPermission"))
+            : code === "NOT_FOUND"
+              ? t(p("noPath"))
+              : (error?.message ?? t(p("operationErrorFallback")));
+    };
 
-      copyOrMoveMutation.mutate({
+    const pasteFile = async (x: FileInfo) => {
+      await copyOrMoveMutation.mutateAsync({
         op: operation.op,
         clusterId: cluster.id,
-        fromPath,
-        toPath: join(path, filename),
+        fromPath: join(operation.originalPath, x.name),
+        toPath: join(path, x.name),
       });
+      setOperation((o) => (o ? { ...operation, completed: o.completed.concat(x) } : undefined));
+      return x;
+    };
 
-      return;
-    }
+    let successfulCount = 0;
+    let abandonCount = 0;
+    const allCount = operation.selected.length;
 
-    await Promise.allSettled(
-      operation.selected.map(async (x) => {
-        return await copyOrMoveMutation
-          .mutateAsync({
-            op: operation.op,
+    try {
+      for (const x of operation.selected) {
+        try {
+          const { exists } = await checkFileExistMutation.mutateAsync({
             clusterId: cluster.id,
-            fromPath: join(operation.originalPath, x.name),
-            toPath: join(path, x.name),
-          })
-          .then(() => {
-            setOperation((o) => (o ? { ...operation, completed: o.completed.concat(x) } : undefined));
-            return x;
-          })
-          .catch(() => {
-            return undefined;
+            path: join(path, x.name),
           });
-      }),
-    )
-      .then((successfulInfo) => {
-        const successfulCount = successfulInfo.filter((x) => x).length;
-        const allCount = operation.selected.length;
-        if (successfulCount === allCount) {
-          message.success(`${operationText}${allCount}${t(p("success"))}！`);
-          resetSelectedAndOperation();
-        } else {
-          message.error(
-            `${operationText}${t(p("success"))}${successfulCount}，` + `${t(p("fail"))}${allCount - successfulCount}`,
-          );
+
+          if (exists) {
+            const shouldOverwrite = await new Promise<boolean>((resolve, reject) => {
+              modal.confirm({
+                title: t(p("existModalTitle")),
+                content: t(p("existModalContent"), [x.name]),
+                okText: t(p("existModalOk")),
+                onOk: async () => {
+                  try {
+                    const fileType = await getFileTypeMutation.mutateAsync({
+                      clusterId: cluster.id,
+                      path: join(path, x.name),
+                    });
+                    await deleteMutation.mutateAsync({
+                      clusterId: cluster.id,
+                      target: fileType.type === "DIR" ? "DIR" : "FILE",
+                      path: join(path, x.name),
+                    });
+                    resolve(true);
+                  } catch (e) {
+                    reject(e);
+                  }
+                },
+                onCancel: () => {
+                  abandonCount++;
+                  resolve(false);
+                },
+              });
+            });
+
+            if (!shouldOverwrite) {
+              continue;
+            }
+          }
+
+          await pasteFile(x);
+          successfulCount++;
+        } catch (e) {
+          console.error(e);
+          modal.error({
+            title: t(p("modalErrorTitle"), [x.name, operationText]),
+            content: getOperationErrorMessage(e),
+          });
         }
-      })
-      .catch((e) => {
-        console.log(e);
-        message.error(`${t(p("exec"))}${operationText}${t(p("encounterError"))}`);
-      })
-      .finally(() => {
-        resetSelectedAndOperation();
-        reload();
-      });
+      }
+
+      if (allCount - successfulCount - abandonCount) {
+        message.error(
+          t(p("errorMessage"), [
+            operationText,
+            allCount,
+            successfulCount,
+            abandonCount,
+            allCount - successfulCount - abandonCount,
+          ]),
+        );
+      } else {
+        message.success(t(p("successMessage"), [operationText, allCount, successfulCount, abandonCount]));
+      }
+    } finally {
+      resetSelectedAndOperation();
+      reload();
+    }
   };
 
   const deleteMutation = trpc.file.deleteItem.useMutation();
