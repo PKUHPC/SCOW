@@ -1,3 +1,8 @@
+map $http_accept $proxy_accept_encoding {
+      default $http_accept;
+      "~*text/stream" "";
+}
+
 map $http_upgrade $proxy_connection {
       default upgrade;
       "" "";
