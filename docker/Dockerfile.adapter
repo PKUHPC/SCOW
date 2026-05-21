@@ -10,7 +10,7 @@ ARG VERSION=dev
 
 WORKDIR /app
 
-RUN dnf install -y wget tar gzip make git gcc ca-certificates && \
+RUN dnf install -y curl tar gzip make git gcc ca-certificates && \
     dnf clean all
 
 ENV GOVERSION=1.25.10
@@ -28,7 +28,15 @@ COPY apps/scow-adapters/ .
 COPY libs/protos/scheduler-adapter /libs/protos/scheduler-adapter
 
 RUN make protos && go mod tidy
-RUN make build-ai ARCH=${TARGETARCH} VERSION=${VERSION}
+RUN make build ARCH=${TARGETARCH} VERSION=${VERSION}
+
+FROM scratch AS adapter-target
+
+ARG TARGETARCH
+
+COPY --from=builder /app/build/bin/scow-ai-adapter /${TARGETARCH}/scow-ai-adapter
+COPY --from=builder /app/build/bin/scow-crane-adapter /${TARGETARCH}/scow-crane-adapter
+COPY --from=builder /app/build/bin/scow-slurm-adapter /${TARGETARCH}/scow-slurm-adapter
 
 FROM ccrepo.pku.edu.cn/dockerhub/rockylinux/rockylinux:8.9 AS runtime
 WORKDIR /adapter

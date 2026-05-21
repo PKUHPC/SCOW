@@ -131,7 +131,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  scow-binaries:
+  scow-cli:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
 
     if: |
@@ -148,39 +148,13 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-download-base-url: "https://mirrors.aliyun.com/golang/"
-          go-version-file: "go.mod"
-          cache: false
-
       - name: Install dependencies
         run: |
           pnpm config set registry https://registry.npmmirror.com
-          pnpm i --frozen-lockfile --filter @scow/cli... --filter "@scow/scow-adapters..."
-
-      - name: Prepare dev libs and code
-        run: pnpm --filter "@scow/scow-adapters" run prepareDev
-
-      - name: Install adapter cross compile dependencies
-        run: |
-          sudo sed -ri.bak -e 's/\/\/.*?(archive.ubuntu.com|mirrors.*?)\/ubuntu/\/\/mirrors.pku.edu.cn\/ubuntu/g' -e '/security.ubuntu.com\/ubuntu/d' /etc/apt/sources.list
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          pnpm i --frozen-lockfile --filter @scow/cli...
 
       - name: Build CLI
         run: pnpm build "--filter=@scow/cli"
-
-      - name: Build adapter binaries
-        run: |
-          for arch in amd64 arm64; do
-            if [[ "${arch}" == "arm64" ]]; then
-              CC=aarch64-linux-gnu-gcc pnpm --filter "@scow/scow-adapters" exec make build ARCH="${arch}" BIN_DIR="build/bin/${arch}"
-            else
-              pnpm --filter "@scow/scow-adapters" exec make build ARCH="${arch}" BIN_DIR="build/bin/${arch}"
-            fi
-          done
 
       - name: Determine target directory
         id: target
@@ -217,9 +191,94 @@ jobs:
           echo "📁 AMD64 Available at: ${target_url}/scow-cli-x64"
           echo "📁 ARM64 Available at: ${target_url}/scow-cli-arm64"
 
+  scow-adapter-binaries:
+    runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
+
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+      (github.event_name == 'pull_request')
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to the ccrepo.pku.edu.cn
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ccrepo.pku.edu.cn
+          username: ${{ secrets.CCREPO_USERNAME }}
+          password: ${{ secrets.CCREPO_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: ccrepo.pku.edu.cn/dockerhub/tonistiigi/binfmt:latest
+          platforms: linux/amd64,linux/arm64
+          cache-image: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ vars.HTTPS_PROXY }}
+            env.https_proxy=${{ vars.HTTPS_PROXY }}
+            image=ccrepo.pku.edu.cn/dockerhub/moby/buildkit:buildx-stable-1
+
+      - name: Determine target directory
+        id: target
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            target="master"
+            ref_type="branch"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            tag_name=${GITHUB_REF#refs/tags/}
+            target="${tag_name}"
+            ref_type="tag"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            target="pr-${{ github.event.number }}"
+            ref_type="pr"
+          fi
+
+          echo "target=${target}" >> $GITHUB_OUTPUT
+          echo "ref_type=${ref_type}" >> $GITHUB_OUTPUT
+          echo "Target directory: ${target}"
+
+      - name: Build amd64 adapter binaries
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: adapter-target
+          push: false
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+          file: docker/Dockerfile.adapter
+          platforms: linux/amd64
+          outputs: type=local,dest=apps/scow-adapters/build/bin
+
+      - name: Build arm64 adapter binaries
+        if: github.ref_type == 'tag'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: adapter-target
+          push: false
+          build-args: |
+            HTTPS_PROXY=${{ vars.HTTPS_PROXY }}
+            NO_PROXY=mirrors.pku.edu.cn
+            VERSION=${{ github.ref_name }}
+          file: docker/Dockerfile.adapter
+          platforms: linux/arm64
+          outputs: type=local,dest=apps/scow-adapters/build/bin
+
       - name: Upload adapter binaries to ccrepo
         run: |
-          for arch in amd64 arm64; do
+          archs="amd64"
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            archs="${archs} arm64"
+          fi
+
+          for arch in ${archs}; do
             for binary_name in scow-ai-adapter scow-crane-adapter scow-slurm-adapter; do
               target_url="https://ccrepo.pku.edu.cn/repository/scowbin/$binary_name/${{ steps.target.outputs.target }}/${arch}/$binary_name"
 
@@ -258,7 +317,7 @@ jobs:
             build_args: BASE_PATH=/SCOW/
 
           - name: scow-ai-adapter
-            file: ai-adapter-runtime
+            file: adapter
             target: runtime
             build_args: ""
 
@@ -307,14 +366,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           file: docker/Dockerfile.${{ matrix.file }}
           labels: ${{ steps.meta.outputs.labels }}
-          # only build arm64 in tag commits or branches with name starting with `arm-`
-          platforms: linux/amd64${{ (github.ref_type == 'tag' || startsWith(github.head_ref, 'arm-')) && ',linux/arm64' || '' }}
+          # only build arm64 in tag commits
+          platforms: linux/amd64${{ github.ref_type == 'tag' && ',linux/arm64' || '' }}
 
   deploy-to-pre-server:
     name: Deploy to Pre Server
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     needs:
-      - scow-binaries
+      - scow-cli
+      - scow-adapter-binaries
       - build-images
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
@@ -345,7 +405,8 @@ jobs:
   release:
     runs-on: ${{ vars.ACTION_RUNNER_LABEL }}
     needs:
-      - scow-binaries
+      - scow-cli
+      - scow-adapter-binaries
       - build-images
 
     if: github.ref_type == 'tag'
@@ -399,7 +460,7 @@ jobs:
           done
 
           for adapter in scow-ai-adapter scow-crane-adapter scow-slurm-adapter; do
-            for arch in amd64 arm64; do
+            for arch in amd64; do
               target_url="https://ccrepo.pku.edu.cn/repository/scowbin/${adapter}/${pr_dir}/${arch}/${adapter}"
 
               echo "Deleting adapter binary from target url: ${target_url}"
