@@ -1,9 +1,8 @@
-/* eslint-disable @stylistic/max-len */
+/* eslint-disable max-len */
 
-import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
-import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
-import type { GetClusterConfigSchema } from "src/pages/api//getClusterConfig";
-import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
+import { apiClient } from "src/apis/client";
+
+
 import type { ActivateClusterSchema } from "src/pages/api/admin/activateCluster";
 import type { ActivateNodeSchema } from "src/pages/api/admin/activateNode";
 import type { AuthorizeAppSchema } from "src/pages/api/admin/authorization/authorizeApp";
@@ -22,9 +21,9 @@ import type { GetAllAccountsSchema } from "src/pages/api/admin/getAllAccounts";
 import type { GetAllTenantsSchema } from "src/pages/api/admin/getAllTenants";
 import type { GetAllUsersSchema } from "src/pages/api/admin/getAllUsers";
 import type { GetClusterMigrateNodesInfoSchema } from "src/pages/api/admin/getClusterMigrateNodesInfo";
+import type { GetClusterUsersSchema } from "src/pages/api/admin/getClusterUsers";
 import type { GetClustersConnectionInfoSchema } from "src/pages/api/admin/getClustersConnectionInfo";
 import type { GetClustersRuntimeInfoSchema } from "src/pages/api/admin/getClustersRuntimeInfo";
-import type { GetClusterUsersSchema } from "src/pages/api/admin/getClusterUsers";
 import type { GetDailyChargeSchema } from "src/pages/api/admin/getDailyCharge";
 import type { GetDailyPaySchema } from "src/pages/api/admin/getDailyPay";
 import type { GetJobTotalCountSchema } from "src/pages/api/admin/getJobTotalCount";
@@ -62,6 +61,7 @@ import type { LogoutSchema } from "src/pages/api/auth/logout";
 import type { ValidateTokenSchema } from "src/pages/api/auth/validateToken";
 import type { GetAccountsAssociatedClustersSchema } from "src/pages/api/cluster/getAccountsAssociatedClusters";
 import type { GetUserAssociatedClustersSchema } from "src/pages/api/cluster/getUserAssociatedClusters";
+import type { GetClusterConfigFilesSchema } from "src/pages/api//clusterConfigsInfo";
 import type { GetUserStatusSchema } from "src/pages/api/dashboard/status";
 import type { ExportAccountSchema } from "src/pages/api/file/exportAccount";
 import type { ExportBillSchema } from "src/pages/api/file/exportBill";
@@ -79,6 +79,8 @@ import type { GetUsedPayTypesSchema } from "src/pages/api/finance/getUsedPayType
 import type { FinancePaySchema } from "src/pages/api/finance/pay";
 import type { GetPaymentsSchema } from "src/pages/api/finance/payments";
 import type { GetUserBillsSchema } from "src/pages/api/finance/userBill";
+import type { GetAppInitialConfigSchema } from "src/pages/api//getAppInitialConfig";
+import type { GetClusterConfigSchema } from "src/pages/api//getClusterConfig";
 import type { CompleteInitSchema } from "src/pages/api/init/completeInit";
 import type { CreateInitAdminSchema } from "src/pages/api/init/createInitAdmin";
 import type { InitGetAccountsSchema } from "src/pages/api/init/getAccounts";
@@ -104,6 +106,7 @@ import type { ChangeEmailSchema } from "src/pages/api/profile/changeEmail";
 import type { ChangePasswordSchema } from "src/pages/api/profile/changePassword";
 import type { CheckPasswordSchema } from "src/pages/api/profile/checkPassword";
 import type { GetQuantumJobInfoSchema } from "src/pages/api/quantum/jobInfo";
+import type { GetSimpleClustersInfoFromConfigFilesSchema } from "src/pages/api//simpleClustersInfo";
 import type { BatchSetTenantUsersQuotaSchema } from "src/pages/api/storage/batchSetTenantUsersQuota";
 import type { GetStorageSyncInfoSchema } from "src/pages/api/storage/getStorageSyncInfo";
 import type { GetTenantQuotaSchema } from "src/pages/api/storage/getTenantQuota";
@@ -140,21 +143,14 @@ import type { SetAdminSchema } from "src/pages/api/users/setAsAdmin";
 import type { UnblockUserInAccountSchema } from "src/pages/api/users/unblockInAccount";
 import type { UnsetAdminSchema } from "src/pages/api/users/unsetAdmin";
 
-import { apiClient } from "src/apis/client";
 
 export const api = {
   activateCluster: apiClient.fromTypeboxRoute<typeof ActivateClusterSchema>("PUT", "/api/admin/activateCluster"),
   activateNode: apiClient.fromTypeboxRoute<typeof ActivateNodeSchema>("PATCH", "/api/admin/activateNode"),
   authorizeApp: apiClient.fromTypeboxRoute<typeof AuthorizeAppSchema>("PUT", "/api/admin/authorization/authorizeApp"),
-  getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>(
-    "GET",
-    "/api/admin/authorization/getTargetAppAuthorizations",
-  ),
+  getTargetAppAuthorizations: apiClient.fromTypeboxRoute<typeof GetTargetAppAuthorizationsSchema>("GET", "/api/admin/authorization/getTargetAppAuthorizations"),
   changeJobPrice: apiClient.fromTypeboxRoute<typeof ChangeJobPriceSchema>("PATCH", "/api/admin/changeJobPrice"),
-  changePasswordAsPlatformAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsPlatformAdminSchema>(
-    "PATCH",
-    "/api/admin/changePassword",
-  ),
+  changePasswordAsPlatformAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsPlatformAdminSchema>("PATCH", "/api/admin/changePassword"),
   deactivateCluster: apiClient.fromTypeboxRoute<typeof DeactivateClusterSchema>("PUT", "/api/admin/deactivateCluster"),
   editUserProfile: apiClient.fromTypeboxRoute<typeof EditUserProfileSchema>("PATCH", "/api/admin/editUserProfile"),
   fetchJobs: apiClient.fromTypeboxRoute<typeof FetchJobsSchema>("POST", "/api/admin/fetchJobs/fetchJobs"),
@@ -162,26 +158,14 @@ export const api = {
   setFetchState: apiClient.fromTypeboxRoute<typeof SetFetchStateSchema>("POST", "/api/admin/fetchJobs/setFetchState"),
   tenantFinancePay: apiClient.fromTypeboxRoute<typeof TenantFinancePaySchema>("POST", "/api/admin/finance/pay"),
   getTenantPayments: apiClient.fromTypeboxRoute<typeof GetTenantPaymentsSchema>("GET", "/api/admin/finance/payments"),
-  getActiveUserCount: apiClient.fromTypeboxRoute<typeof GetActiveUserCountSchema>(
-    "GET",
-    "/api/admin/getActiveUserCount",
-  ),
+  getActiveUserCount: apiClient.fromTypeboxRoute<typeof GetActiveUserCountSchema>("GET", "/api/admin/getActiveUserCount"),
   getAllAccounts: apiClient.fromTypeboxRoute<typeof GetAllAccountsSchema>("GET", "/api/admin/getAllAccounts"),
   getAllTenants: apiClient.fromTypeboxRoute<typeof GetAllTenantsSchema>("GET", "/api/admin/getAllTenants"),
   getAllUsers: apiClient.fromTypeboxRoute<typeof GetAllUsersSchema>("GET", "/api/admin/getAllUsers"),
-  getClusterMigrateNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterMigrateNodesInfoSchema>(
-    "GET",
-    "/api/admin/getClusterMigrateNodesInfo",
-  ),
+  getClusterMigrateNodesInfo: apiClient.fromTypeboxRoute<typeof GetClusterMigrateNodesInfoSchema>("GET", "/api/admin/getClusterMigrateNodesInfo"),
   getClusterUsers: apiClient.fromTypeboxRoute<typeof GetClusterUsersSchema>("GET", "/api/admin/getClusterUsers"),
-  getClustersConnectionInfo: apiClient.fromTypeboxRoute<typeof GetClustersConnectionInfoSchema>(
-    "GET",
-    "/api/admin/getClustersConnectionInfo",
-  ),
-  getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>(
-    "GET",
-    "/api/admin/getClustersRuntimeInfo",
-  ),
+  getClustersConnectionInfo: apiClient.fromTypeboxRoute<typeof GetClustersConnectionInfoSchema>("GET", "/api/admin/getClustersConnectionInfo"),
+  getClustersRuntimeInfo: apiClient.fromTypeboxRoute<typeof GetClustersRuntimeInfoSchema>("GET", "/api/admin/getClustersRuntimeInfo"),
   getDailyCharge: apiClient.fromTypeboxRoute<typeof GetDailyChargeSchema>("GET", "/api/admin/getDailyCharge"),
   getDailyPay: apiClient.fromTypeboxRoute<typeof GetDailyPaySchema>("GET", "/api/admin/getDailyPay"),
   getJobTotalCount: apiClient.fromTypeboxRoute<typeof GetJobTotalCountSchema>("GET", "/api/admin/getJobTotalCount"),
@@ -189,107 +173,50 @@ export const api = {
   getMisUsageCount: apiClient.fromTypeboxRoute<typeof GetMisUsageCountSchema>("GET", "/api/admin/getMisUsageCount"),
   getNewJobCount: apiClient.fromTypeboxRoute<typeof GetNewJobCountSchema>("GET", "/api/admin/getNewJobCount"),
   getNewUserCount: apiClient.fromTypeboxRoute<typeof GetNewUserCountSchema>("GET", "/api/admin/getNewUserCount"),
-  getPlatformUsersCounts: apiClient.fromTypeboxRoute<typeof GetPlatformUsersCountsSchema>(
-    "GET",
-    "/api/admin/getPlatformUsersCounts",
-  ),
-  getPortalUsageCount: apiClient.fromTypeboxRoute<typeof GetPortalUsageCountSchema>(
-    "GET",
-    "/api/admin/getPortalUsageCount",
-  ),
+  getPlatformUsersCounts: apiClient.fromTypeboxRoute<typeof GetPlatformUsersCountsSchema>("GET", "/api/admin/getPlatformUsersCounts"),
+  getPortalUsageCount: apiClient.fromTypeboxRoute<typeof GetPortalUsageCountSchema>("GET", "/api/admin/getPortalUsageCount"),
   getStatisticInfo: apiClient.fromTypeboxRoute<typeof GetStatisticInfoSchema>("GET", "/api/admin/getStatisticInfo"),
   getTenantUsers: apiClient.fromTypeboxRoute<typeof GetTenantUsersSchema>("GET", "/api/admin/getTenantUsers"),
-  getTopChargeAccount: apiClient.fromTypeboxRoute<typeof GetTopChargeAccountSchema>(
-    "GET",
-    "/api/admin/getTopChargeAccount",
-  ),
+  getTopChargeAccount: apiClient.fromTypeboxRoute<typeof GetTopChargeAccountSchema>("GET", "/api/admin/getTopChargeAccount"),
   getTopPayAccount: apiClient.fromTypeboxRoute<typeof GetTopPayAccountSchema>("GET", "/api/admin/getTopPayAccount"),
-  getTopSubmitJobUser: apiClient.fromTypeboxRoute<typeof GetTopSubmitJobUserSchema>(
-    "GET",
-    "/api/admin/getTopSubmitJobUser",
-  ),
-  getUsersWithMostJobSubmissions: apiClient.fromTypeboxRoute<typeof GetUsersWithMostJobSubmissionsSchema>(
-    "GET",
-    "/api/admin/getUsersWithMostJobSubmissions",
-  ),
+  getTopSubmitJobUser: apiClient.fromTypeboxRoute<typeof GetTopSubmitJobUserSchema>("GET", "/api/admin/getTopSubmitJobUser"),
+  getUsersWithMostJobSubmissions: apiClient.fromTypeboxRoute<typeof GetUsersWithMostJobSubmissionsSchema>("GET", "/api/admin/getUsersWithMostJobSubmissions"),
   importUsers: apiClient.fromTypeboxRoute<typeof ImportUsersSchema>("POST", "/api/admin/importUsers"),
-  accountThreshold: apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>(
-    "GET",
-    "/api/admin/isAccountBelowBlockThreshold",
-  ),
+  accountThreshold: apiClient.fromTypeboxRoute<typeof AccountThresholdSchema>("GET", "/api/admin/isAccountBelowBlockThreshold"),
   migrateNode: apiClient.fromTypeboxRoute<typeof MigrateNodeSchema>("PATCH", "/api/admin/migrateNode"),
   getAlarmDbId: apiClient.fromTypeboxRoute<typeof GetAlarmDbIdSchema>("GET", "/api/admin/monitor/getAlarmDbId"),
   getAlarmLogs: apiClient.fromTypeboxRoute<typeof GetAlarmLogsSchema>("GET", "/api/admin/monitor/getAlarmLogs"),
-  getAlarmLogsCount: apiClient.fromTypeboxRoute<typeof GetAlarmLogsCountSchema>(
-    "GET",
-    "/api/admin/monitor/getAlarmLogsCount",
-  ),
+  getAlarmLogsCount: apiClient.fromTypeboxRoute<typeof GetAlarmLogsCountSchema>("GET", "/api/admin/monitor/getAlarmLogsCount"),
   setPlatformRole: apiClient.fromTypeboxRoute<typeof SetPlatformRoleSchema>("PUT", "/api/admin/setPlatformRole"),
   setTenantRole: apiClient.fromTypeboxRoute<typeof SetTenantRoleSchema>("PUT", "/api/admin/setTenantRole"),
-  getSyncAccountUserHistory: apiClient.fromTypeboxRoute<typeof GetSyncAccountUserHistorySchema>(
-    "GET",
-    "/api/admin/synchronize/getSyncAccountUserHistory",
-  ),
-  getSyncBlockStatusJobInfo: apiClient.fromTypeboxRoute<typeof GetSyncBlockStatusJobInfoSchema>(
-    "GET",
-    "/api/admin/synchronize/getSyncBlockStateInfo",
-  ),
-  setSyncBlockStatusState: apiClient.fromTypeboxRoute<typeof SetSyncBlockStatusStateSchema>(
-    "POST",
-    "/api/admin/synchronize/setSynchronizeState",
-  ),
-  syncAccountUserInfo: apiClient.fromTypeboxRoute<typeof SyncAccountUserInfoSchema>(
-    "PUT",
-    "/api/admin/synchronize/syncAccountUserInfo",
-  ),
-  syncBlockStatus: apiClient.fromTypeboxRoute<typeof SyncBlockStatusSchema>(
-    "PUT",
-    "/api/admin/synchronize/syncBlockStatus",
-  ),
+  getSyncAccountUserHistory: apiClient.fromTypeboxRoute<typeof GetSyncAccountUserHistorySchema>("GET", "/api/admin/synchronize/getSyncAccountUserHistory"),
+  getSyncBlockStatusJobInfo: apiClient.fromTypeboxRoute<typeof GetSyncBlockStatusJobInfoSchema>("GET", "/api/admin/synchronize/getSyncBlockStateInfo"),
+  setSyncBlockStatusState: apiClient.fromTypeboxRoute<typeof SetSyncBlockStatusStateSchema>("POST", "/api/admin/synchronize/setSynchronizeState"),
+  syncAccountUserInfo: apiClient.fromTypeboxRoute<typeof SyncAccountUserInfoSchema>("PUT", "/api/admin/synchronize/syncAccountUserInfo"),
+  syncBlockStatus: apiClient.fromTypeboxRoute<typeof SyncBlockStatusSchema>("PUT", "/api/admin/synchronize/syncBlockStatus"),
   unlockUser: apiClient.fromTypeboxRoute<typeof UnlockUserSchema>("PATCH", "/api/admin/unlockUser"),
   unsetPlatformRole: apiClient.fromTypeboxRoute<typeof UnsetPlatformRoleSchema>("PUT", "/api/admin/unsetPlatformRole"),
   unsetTenantRole: apiClient.fromTypeboxRoute<typeof UnsetTenantRoleSchema>("PUT", "/api/admin/unsetTenantRole"),
-  updatePasswordResetFlag: apiClient.fromTypeboxRoute<typeof UpdatePasswordResetFlagSchema>(
-    "PATCH",
-    "/api/admin/updatePasswordResetFlag",
-  ),
+  updatePasswordResetFlag: apiClient.fromTypeboxRoute<typeof UpdatePasswordResetFlagSchema>("PATCH", "/api/admin/updatePasswordResetFlag"),
   authCallback: apiClient.fromTypeboxRoute<typeof AuthCallbackSchema>("GET", "/api/auth/callback"),
   logout: apiClient.fromTypeboxRoute<typeof LogoutSchema>("DELETE", "/api/auth/logout"),
   validateToken: apiClient.fromTypeboxRoute<typeof ValidateTokenSchema>("GET", "/api/auth/validateToken"),
-  getUserAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClustersSchema>(
-    "GET",
-    "/api/cluster/getUserAssociatedClusters",
-  ),
-  getAccountsAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetAccountsAssociatedClustersSchema>(
-    "GET",
-    "/api/cluster/getAccountsAssociatedClusters",
-  ),
-  getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof GetClusterConfigFilesSchema>(
-    "GET",
-    "/api//clusterConfigsInfo",
-  ),
+  getAccountsAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetAccountsAssociatedClustersSchema>("GET", "/api/cluster/getAccountsAssociatedClusters"),
+  getUserAssociatedClusters: apiClient.fromTypeboxRoute<typeof GetUserAssociatedClustersSchema>("GET", "/api/cluster/getUserAssociatedClusters"),
+  getClusterConfigFiles: apiClient.fromTypeboxRoute<typeof GetClusterConfigFilesSchema>("GET", "/api//clusterConfigsInfo"),
   getUserStatus: apiClient.fromTypeboxRoute<typeof GetUserStatusSchema>("GET", "/api/dashboard/status"),
   exportAccount: apiClient.fromTypeboxRoute<typeof ExportAccountSchema>("GET", "/api/file/exportAccount"),
   exportBill: apiClient.fromTypeboxRoute<typeof ExportBillSchema>("GET", "/api/file/exportBill"),
-  exportChargeRecord: apiClient.fromTypeboxRoute<typeof ExportChargeRecordSchema>(
-    "GET",
-    "/api/file/exportChargeRecord",
-  ),
+  exportChargeRecord: apiClient.fromTypeboxRoute<typeof ExportChargeRecordSchema>("GET", "/api/file/exportChargeRecord"),
   exportJobRecord: apiClient.fromTypeboxRoute<typeof ExportJobRecordSchema>("GET", "/api/file/exportJobRecord"),
-  exportOperationLog: apiClient.fromTypeboxRoute<typeof ExportOperationLogSchema>(
-    "GET",
-    "/api/file/exportOperationLog",
-  ),
+  exportOperationLog: apiClient.fromTypeboxRoute<typeof ExportOperationLogSchema>("GET", "/api/file/exportOperationLog"),
   exportPayRecord: apiClient.fromTypeboxRoute<typeof ExportPayRecordSchema>("GET", "/api/file/exportPayRecord"),
   exportUser: apiClient.fromTypeboxRoute<typeof ExportUserSchema>("GET", "/api/file/exportUser"),
   exportUserBill: apiClient.fromTypeboxRoute<typeof exportUserBillSchema>("GET", "/api/file/exportUserBill"),
   getBills: apiClient.fromTypeboxRoute<typeof GetBillsSchema>("GET", "/api/finance/bill"),
   getBillTypes: apiClient.fromTypeboxRoute<typeof GetBillTypesSchema>("GET", "/api/finance/billTypes"),
   getCharges: apiClient.fromTypeboxRoute<typeof GetChargesSchema>("GET", "/api/finance/charges"),
-  getChargeRecordsTotalCount: apiClient.fromTypeboxRoute<typeof GetChargeRecordsTotalCountSchema>(
-    "GET",
-    "/api/finance/getChargeRecordsTotalCount",
-  ),
+  getChargeRecordsTotalCount: apiClient.fromTypeboxRoute<typeof GetChargeRecordsTotalCountSchema>("GET", "/api/finance/getChargeRecordsTotalCount"),
   getUsedPayTypes: apiClient.fromTypeboxRoute<typeof GetUsedPayTypesSchema>("GET", "/api/finance/getUsedPayTypes"),
   financePay: apiClient.fromTypeboxRoute<typeof FinancePaySchema>("POST", "/api/finance/pay"),
   getPayments: apiClient.fromTypeboxRoute<typeof GetPaymentsSchema>("GET", "/api/finance/payments"),
@@ -305,107 +232,45 @@ export const api = {
   userExists: apiClient.fromTypeboxRoute<typeof UserExistsSchema>("POST", "/api/init/userExists"),
   addBillingItem: apiClient.fromTypeboxRoute<typeof AddBillingItemSchema>("POST", "/api/job/addBillingItem"),
   cancelJob: apiClient.fromTypeboxRoute<typeof CancelJobSchema>("DELETE", "/api/job/cancelJob"),
-  changeJobTimeLimit: apiClient.fromTypeboxRoute<typeof ChangeJobTimeLimitSchema>(
-    "PATCH",
-    "/api/job/changeJobTimeLimit",
-  ),
-  getAvailableBillingTable: apiClient.fromTypeboxRoute<typeof GetAvailableBillingTableSchema>(
-    "GET",
-    "/api/job/getAvailableBillingTable",
-  ),
+  changeJobTimeLimit: apiClient.fromTypeboxRoute<typeof ChangeJobTimeLimitSchema>("PATCH", "/api/job/changeJobTimeLimit"),
+  getAvailableBillingTable: apiClient.fromTypeboxRoute<typeof GetAvailableBillingTableSchema>("GET", "/api/job/getAvailableBillingTable"),
   getBillingItems: apiClient.fromTypeboxRoute<typeof GetBillingItemsSchema>("GET", "/api/job/getBillingItems"),
   getJobByBiJobIndex: apiClient.fromTypeboxRoute<typeof GetJobByBiJobIndexSchema>("GET", "/api/job/getJobByBiJobIndex"),
-  getMissingDefaultPriceItems: apiClient.fromTypeboxRoute<typeof GetMissingDefaultPriceItemsSchema>(
-    "GET",
-    "/api/job/getMissingDefaultPriceItems",
-  ),
+  getMissingDefaultPriceItems: apiClient.fromTypeboxRoute<typeof GetMissingDefaultPriceItemsSchema>("GET", "/api/job/getMissingDefaultPriceItems"),
   getJobInfo: apiClient.fromTypeboxRoute<typeof GetJobInfoSchema>("GET", "/api/job/jobInfo"),
   queryJobTimeLimit: apiClient.fromTypeboxRoute<typeof QueryJobTimeLimitSchema>("GET", "/api/job/queryJobTimeLimit"),
   getRunningJobs: apiClient.fromTypeboxRoute<typeof GetRunningJobsSchema>("GET", "/api/job/runningJobs"),
-  getCustomEventTypes: apiClient.fromTypeboxRoute<typeof GetCustomEventTypesSchema>(
-    "GET",
-    "/api/log/getCustomEventTypes",
-  ),
+  getCustomEventTypes: apiClient.fromTypeboxRoute<typeof GetCustomEventTypesSchema>("GET", "/api/log/getCustomEventTypes"),
   getOperationLogs: apiClient.fromTypeboxRoute<typeof GetOperationLogsSchema>("GET", "/api/log/getOperationLog"),
-  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>(
-    "GET",
-    "/api/notification/getUnreadMessages",
-  ),
-  markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>(
-    "POST",
-    "/api/notification/markMessageRead",
-  ),
+  getUnreadMessages: apiClient.fromTypeboxRoute<typeof GetUnreadMessagesSchema>("GET", "/api/notification/getUnreadMessages"),
+  markMessageRead: apiClient.fromTypeboxRoute<typeof MarkMessageReadSchema>("POST", "/api/notification/markMessageRead"),
   changeEmail: apiClient.fromTypeboxRoute<typeof ChangeEmailSchema>("PATCH", "/api/profile/changeEmail"),
   changePassword: apiClient.fromTypeboxRoute<typeof ChangePasswordSchema>("PATCH", "/api/profile/changePassword"),
   checkPassword: apiClient.fromTypeboxRoute<typeof CheckPasswordSchema>("GET", "/api/profile/checkPassword"),
   getQuantumJobInfo: apiClient.fromTypeboxRoute<typeof GetQuantumJobInfoSchema>("GET", "/api/quantum/jobInfo"),
-  getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>(
-    "GET",
-    "/api//simpleClustersInfo",
-  ),
-  batchSetTenantUsersQuota: apiClient.fromTypeboxRoute<typeof BatchSetTenantUsersQuotaSchema>(
-    "PUT",
-    "/api/storage/batchSetTenantUsersQuota",
-  ),
-  getStorageSyncInfo: apiClient.fromTypeboxRoute<typeof GetStorageSyncInfoSchema>(
-    "GET",
-    "/api/storage/getStorageSyncInfo",
-  ),
+  getSimpleClustersInfoFromConfigFiles: apiClient.fromTypeboxRoute<typeof GetSimpleClustersInfoFromConfigFilesSchema>("GET", "/api//simpleClustersInfo"),
+  batchSetTenantUsersQuota: apiClient.fromTypeboxRoute<typeof BatchSetTenantUsersQuotaSchema>("PUT", "/api/storage/batchSetTenantUsersQuota"),
+  getStorageSyncInfo: apiClient.fromTypeboxRoute<typeof GetStorageSyncInfoSchema>("GET", "/api/storage/getStorageSyncInfo"),
   getTenantQuota: apiClient.fromTypeboxRoute<typeof GetTenantQuotaSchema>("GET", "/api/storage/getTenantQuota"),
-  setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>(
-    "PUT",
-    "/api/storage/setTenantUserDefaultQuota",
-  ),
-  setTenantUserQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserQuotaSchema>(
-    "PUT",
-    "/api/storage/setTenantUserQuota",
-  ),
-  syncTenantUsersStorageUsage: apiClient.fromTypeboxRoute<typeof SyncTenantUsersStorageUsageSchema>(
-    "POST",
-    "/api/storage/syncTenantUsersStorageUsage",
-  ),
-  dewhitelistAccount: apiClient.fromTypeboxRoute<typeof DewhitelistAccountSchema>(
-    "DELETE",
-    "/api/tenant/accountWhitelist/dewhitelistAccount",
-  ),
-  getWhitelistedAccounts: apiClient.fromTypeboxRoute<typeof GetWhitelistedAccountsSchema>(
-    "GET",
-    "/api/tenant/accountWhitelist/getWhitelistedAccounts",
-  ),
-  whitelistAccount: apiClient.fromTypeboxRoute<typeof WhitelistAccountSchema>(
-    "PUT",
-    "/api/tenant/accountWhitelist/whitelistAccount",
-  ),
-  getTenantApps: apiClient.fromTypeboxRoute<typeof GetTenantAppsSchema>(
-    "GET",
-    "/api/tenant/authorization/getTenantApps",
-  ),
-  updateDefaultApp: apiClient.fromTypeboxRoute<typeof UpdateDefaultAppSchema>(
-    "PUT",
-    "/api/tenant/authorization/updateDefaultApp",
-  ),
+  setTenantUserDefaultQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserDefaultQuotaSchema>("PUT", "/api/storage/setTenantUserDefaultQuota"),
+  setTenantUserQuota: apiClient.fromTypeboxRoute<typeof SetTenantUserQuotaSchema>("PUT", "/api/storage/setTenantUserQuota"),
+  syncTenantUsersStorageUsage: apiClient.fromTypeboxRoute<typeof SyncTenantUsersStorageUsageSchema>("POST", "/api/storage/syncTenantUsersStorageUsage"),
+  dewhitelistAccount: apiClient.fromTypeboxRoute<typeof DewhitelistAccountSchema>("DELETE", "/api/tenant/accountWhitelist/dewhitelistAccount"),
+  getWhitelistedAccounts: apiClient.fromTypeboxRoute<typeof GetWhitelistedAccountsSchema>("GET", "/api/tenant/accountWhitelist/getWhitelistedAccounts"),
+  whitelistAccount: apiClient.fromTypeboxRoute<typeof WhitelistAccountSchema>("PUT", "/api/tenant/accountWhitelist/whitelistAccount"),
+  getTenantApps: apiClient.fromTypeboxRoute<typeof GetTenantAppsSchema>("GET", "/api/tenant/authorization/getTenantApps"),
+  updateDefaultApp: apiClient.fromTypeboxRoute<typeof UpdateDefaultAppSchema>("PUT", "/api/tenant/authorization/updateDefaultApp"),
   blockAccount: apiClient.fromTypeboxRoute<typeof BlockAccountSchema>("PUT", "/api/tenant/blockAccount"),
-  changePasswordAsTenantAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsTenantAdminSchema>(
-    "PATCH",
-    "/api/tenant/changePassword",
-  ),
+  changePasswordAsTenantAdmin: apiClient.fromTypeboxRoute<typeof ChangePasswordAsTenantAdminSchema>("PATCH", "/api/tenant/changePassword"),
   createTenant: apiClient.fromTypeboxRoute<typeof CreateTenantSchema>("POST", "/api/tenant/create"),
   createAccount: apiClient.fromTypeboxRoute<typeof CreateAccountSchema>("POST", "/api/tenant/createAccount"),
-  createTenantWithExistingUserAsAdmin: apiClient.fromTypeboxRoute<typeof CreateTenantWithExistingUserAsAdminSchema>(
-    "POST",
-    "/api/tenant/createTenantWithExistingUserAsAdmin",
-  ),
+  createTenantWithExistingUserAsAdmin: apiClient.fromTypeboxRoute<typeof CreateTenantWithExistingUserAsAdminSchema>("POST", "/api/tenant/createTenantWithExistingUserAsAdmin"),
   deleteAccount: apiClient.fromTypeboxRoute<typeof DeleteAccountSchema>("DELETE", "/api/tenant/deleteAccount"),
   getAccounts: apiClient.fromTypeboxRoute<typeof GetAccountsSchema>("GET", "/api/tenant/getAccounts"),
-  getTenantAssignedClustersAndPartitions: apiClient.fromTypeboxRoute<
-    typeof GetTenantAssignedClustersAndPartitionsSchema
-  >("GET", "/api/tenant/getTenantAssignedClustersAndPartitions"),
+  getTenantAssignedClustersAndPartitions: apiClient.fromTypeboxRoute<typeof GetTenantAssignedClustersAndPartitionsSchema>("GET", "/api/tenant/getTenantAssignedClustersAndPartitions"),
   getTenants: apiClient.fromTypeboxRoute<typeof GetTenantsSchema>("GET", "/api/tenant/getTenants"),
   setBlockThreshold: apiClient.fromTypeboxRoute<typeof SetBlockThresholdSchema>("PUT", "/api/tenant/setBlockThreshold"),
-  setDefaultAccountBlockThreshold: apiClient.fromTypeboxRoute<typeof SetDefaultAccountBlockThresholdSchema>(
-    "PUT",
-    "/api/tenant/setDefaultAccountBlockThreshold",
-  ),
+  setDefaultAccountBlockThreshold: apiClient.fromTypeboxRoute<typeof SetDefaultAccountBlockThresholdSchema>("PUT", "/api/tenant/setDefaultAccountBlockThreshold"),
   unblockAccount: apiClient.fromTypeboxRoute<typeof UnblockAccountSchema>("PUT", "/api/tenant/unblockAccount"),
   addUserToAccount: apiClient.fromTypeboxRoute<typeof AddUserToAccountSchema>("POST", "/api/users/addToAccount"),
   blockUserInAccount: apiClient.fromTypeboxRoute<typeof BlockUserInAccountSchema>("PUT", "/api/users/blockInAccount"),
@@ -413,19 +278,11 @@ export const api = {
   createUser: apiClient.fromTypeboxRoute<typeof CreateUserSchema>("POST", "/api/users/create"),
   deleteUser: apiClient.fromTypeboxRoute<typeof DeleteUserSchema>("DELETE", "/api/users/delete"),
   getAccountUsers: apiClient.fromTypeboxRoute<typeof GetAccountUsersSchema>("GET", "/api/users"),
-  cancelJobChargeLimit: apiClient.fromTypeboxRoute<typeof CancelJobChargeLimitSchema>(
-    "DELETE",
-    "/api/users/jobChargeLimit/cancel",
-  ),
+  cancelJobChargeLimit: apiClient.fromTypeboxRoute<typeof CancelJobChargeLimitSchema>("DELETE", "/api/users/jobChargeLimit/cancel"),
   setJobChargeLimit: apiClient.fromTypeboxRoute<typeof SetJobChargeLimitSchema>("PUT", "/api/users/jobChargeLimit/set"),
-  removeUserFromAccount: apiClient.fromTypeboxRoute<typeof RemoveUserFromAccountSchema>(
-    "DELETE",
-    "/api/users/removeFromAccount",
-  ),
+  removeUserFromAccount: apiClient.fromTypeboxRoute<typeof RemoveUserFromAccountSchema>("DELETE", "/api/users/removeFromAccount"),
   setAdmin: apiClient.fromTypeboxRoute<typeof SetAdminSchema>("PUT", "/api/users/setAsAdmin"),
-  unblockUserInAccount: apiClient.fromTypeboxRoute<typeof UnblockUserInAccountSchema>(
-    "PUT",
-    "/api/users/unblockInAccount",
-  ),
+  unblockUserInAccount: apiClient.fromTypeboxRoute<typeof UnblockUserInAccountSchema>("PUT", "/api/users/unblockInAccount"),
   unsetAdmin: apiClient.fromTypeboxRoute<typeof UnsetAdminSchema>("PUT", "/api/users/unsetAdmin"),
 };
+  

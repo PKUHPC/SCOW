@@ -142,9 +142,9 @@ export const currentClustersPartitionsInfo = authProcedure
   .meta({
     openapi: {
       method: "GET",
-      path: "/clusterPartitions",
+      path: "/currentClusterPartitions",
       tags: ["mis-server"],
-      summary: "从适配器获取当前集群的分区信息",
+      summary: "从适配器获取当前可用集群的分区信息",
     },
   })
   .input(z.void())

@@ -50,7 +50,7 @@ const useReportHeightToScow = () => {
   }, []);
 };
 
-export function ClientLayout(props: { defaultPrimaryColor: string; children: React.ReactNode }) {
+export function ClientLayout(props: { defaultPrimaryColor: string; basePath: string; children: React.ReactNode }) {
   const pathname = usePathname();
 
   useReportHeightToScow();
@@ -70,6 +70,7 @@ export function ClientLayout(props: { defaultPrimaryColor: string; children: Rea
 
   const uiConfig = useUiConfig.data || ({} as UiConfig);
   const publicConfig = usePublicConfig.data || ({} as PublicConfig);
+  const basePath = publicConfig.BASE_PATH ?? props.basePath;
 
   const host = typeof window === "undefined" ? "" : location.host;
   const hostname = host?.includes(":") ? host?.split(":")[0] : host;
@@ -81,7 +82,7 @@ export function ClientLayout(props: { defaultPrimaryColor: string; children: Rea
 
   return (
     <Suspense>
-      <ScowParamsProvider>
+      <ScowParamsProvider basePath={basePath}>
         <StyleProvider hashPriority="high" transformers={[legacyLogicalPropertiesTransformer]}>
           <StyledComponentsRegistry>
             <AntdStyleRegistry>

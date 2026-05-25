@@ -72,7 +72,14 @@ jobs:
           pnpm i --frozen-lockfile
 
       - name: Prepare dev libs and code
-        run: pnpm prepareDev
+        run: |
+          pnpm prepareDev
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::Generated files are out of date. Please run 'pnpm prepareDev' locally, then commit the generated changes."
+            git status --short
+            exit 1
+          fi
 
       - name: Lint code
         run: pnpm lint

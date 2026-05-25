@@ -4,14 +4,46 @@ import type { UserInfo } from "src/models/User";
 
 import { IncomingMessage } from "http";
 import { getTokenFromCookie } from "src/auth/cookie";
-import { validateToken } from "src/auth/token";
+import { getUserInfoByUserId, validateToken } from "src/auth/token";
+import { runtimeConfig } from "src/utils/config";
 
 type RequestType = IncomingMessage | NextApiRequest | NextPageContext["req"];
 
 export type AuthResultError = 401 | 403;
 
+const X_SCOW_API_AUTH_TOKEN = "x-scow-api-auth-token";
+const X_SCOW_USER_ID = "x-scow-user-id";
+
+function getHeaderValue(req: RequestType, key: string): string | undefined {
+  const raw = (req as IncomingMessage | undefined)?.headers?.[key];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value?.trim() || undefined;
+}
+
 export async function checkCookie(check: Check, req: RequestType): Promise<AuthResultError | UserInfo> {
-  const token = getTokenFromCookie({ req });
+  const headerToken = getHeaderValue(req, X_SCOW_API_AUTH_TOKEN);
+
+  // Static secret authentication via x-scow-api-auth-token header
+  if (headerToken && runtimeConfig.SCOW_API_AUTH_TOKEN && headerToken === runtimeConfig.SCOW_API_AUTH_TOKEN) {
+    const userId = getHeaderValue(req, X_SCOW_USER_ID);
+    if (!userId) {
+      return 401;
+    }
+
+    const userInfo = await getUserInfoByUserId(userId);
+    if (!userInfo) {
+      return 401;
+    }
+
+    if (!check(userInfo)) {
+      return 403;
+    }
+
+    return userInfo;
+  }
+
+  // Use x-scow-api-auth-token header as SCOW token, or fall back to cookie
+  const token = headerToken ?? getTokenFromCookie({ req });
 
   const result = await validateToken(token);
 

@@ -20,15 +20,29 @@ export async function validateToken(token: string): Promise<UserInfo | undefined
     return undefined;
   }
 
+  return await getUserInfoByUserId(resp.identityId);
+
+}
+
+export async function getUserInfoByUserId(userId: string): Promise<UserInfo | undefined> {
+
+  if (USE_MOCK) {
+    return MOCK_USER_INFO;
+  }
+
   const client = getClient(UserServiceClient);
 
-  const userInfo: GetUserInfoResponse = await asyncClientCall(client, "getUserInfo", {
-    userId: resp.identityId,
-  });
+  const userInfo: GetUserInfoResponse | undefined = await asyncClientCall(client, "getUserInfo", {
+    userId,
+  }).catch(() => undefined);
+
+  if (!userInfo) {
+    return undefined;
+  }
 
   return {
     accountAffiliations: userInfo.affiliations.filter((x) => x.accountState !== AccountState.DELETED),
-    identityId: resp.identityId,
+    identityId: userId,
     name: userInfo.name,
     platformRoles: userInfo.platformRoles,
     tenant: userInfo.tenantName,

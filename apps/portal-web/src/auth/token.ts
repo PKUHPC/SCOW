@@ -21,12 +21,21 @@ export async function validateToken(token: string | undefined): Promise<UserInfo
     return undefined;
   }
 
-  const userInfo = await getUser(runtimeConfig.AUTH_INTERNAL_URL, { identityId: resp.identityId }).catch(
-    () => undefined,
-  );
+  return await getUserInfoByUserId(resp.identityId);
+
+}
+
+export async function getUserInfoByUserId(userId: string): Promise<UserInfo> {
+
+  if (process.env.NODE_ENV === "test" || USE_MOCK) {
+    return { identityId: userId, name: userId };
+  }
+
+  const userInfo = await getUser(runtimeConfig.AUTH_INTERNAL_URL, { identityId: userId })
+    .catch(() => undefined);
 
   return {
-    identityId: resp.identityId,
+    identityId: userId,
     name: userInfo?.name,
   };
 }

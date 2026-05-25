@@ -1,6 +1,7 @@
 import { getClusterConfigs, getSortedClusterIds } from "@scow/config/build/cluster";
 import { DEFAULT_PRIMARY_COLOR } from "@scow/config/build/ui";
 import { join } from "path";
+import { config as envConfig } from "src/server/config/env";
 import { uiConfig } from "src/server/config/ui";
 import { USE_MOCK } from "src/utils/processEnv";
 import { z } from "zod";
@@ -34,6 +35,7 @@ const clustersInit = getClusterConfigs(configPath, console);
 export const clusters = clustersInit;
 
 const PublicConfigSchema = z.object({
+  BASE_PATH: z.string(),
   CLUSTER_SORTED_ID_LIST: z.array(z.string()),
 });
 export type PublicConfig = z.infer<typeof PublicConfigSchema>;
@@ -70,6 +72,7 @@ export const config = router({
     .output(PublicConfigSchema)
     .query(async () => {
       return {
+        BASE_PATH: envConfig.NEXT_PUBLIC_RUNTIME_BASE_PATH,
         CLUSTER_SORTED_ID_LIST: getSortedClusterIds(clusters),
       };
     }),

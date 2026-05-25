@@ -15,12 +15,11 @@ const getBaseUrl = (req: Pick<NextApiRequest, "headers">) => {
   return joinWithUrl(origin, BASE_PATH, "/api");
 };
 
-// Generate OpenAPI schema document
 export const createOpenApiDocument = (req: Pick<NextApiRequest, "headers">) =>
   generateOpenApiDocument(appRouter, {
-    title: "SCOW AI API",
-    description: "HTTP API for SCOW AI",
+    title: "SCOW Resource API",
+    description: "HTTP API for SCOW Resource",
     version: "1.0.0",
     baseUrl: getBaseUrl(req),
-    tags: ["ai"],
+    tags: ["resource"],
   });

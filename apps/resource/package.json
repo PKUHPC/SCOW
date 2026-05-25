@@ -68,7 +68,7 @@
     "replace-in-file": "8.3.0",
     "styled-components": "6.1.14",
     "superjson": "2.2.2",
-    "swagger-ui-react": "5.18.2",
+    "swagger-ui-react": "5.32.5",
     "trpc-to-openapi": "3.1.0",
     "zod": "4.1.13"
   },
