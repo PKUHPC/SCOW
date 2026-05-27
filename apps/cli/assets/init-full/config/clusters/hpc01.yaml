@@ -49,7 +49,10 @@ ai:
   # 共享目录的路径是在共享目录顶层路径里的.shared文件夹中（比如`${sharedTopDir}/.shared`,`/nfs/.shared`）
   # 配置后，不可修改
   # sharedTopDir: "/nfs"
-  # 公共数据资产目录路径，若AI可用则必填，配置时需同步在集群中创建该目录, 该路径配置之后请勿随意修改，否则已有的公共数据资产将无法正常使用
+  # 公共数据资产目录路径，若AI可用则必填。
+  # 配置后需在集群中创建该目录（权限要求 root:root 755），可手动创建，
+  # 或执行 ./cli create-configured-cluster-paths 辅助创建（需以 root 免密 SSH 到登录节点）。
+  # 该路径配置之后请勿随意修改，否则已有的公共数据资产将无法正常使用。
   # clusterPublicPath: "/nfs/.public"
     # 选配：是否开启 AI 作业用户 ID 映射功能，默认关闭。
 

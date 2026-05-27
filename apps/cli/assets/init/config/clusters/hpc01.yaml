@@ -10,3 +10,12 @@ loginNodes:
 
 # 适配器地址(ip地址:端口号)
 adapterUrl: "localhost:8999"
+
+# 集群在AI中是否启用，默认为 false
+# ai:
+#   enabled: false
+#   # 公共数据资产目录路径。若启用 AI，则必填。
+#   # 配置后需在集群中创建该目录（权限要求 root:root 755），可手动创建，
+#   # 或执行 ./cli create-configured-cluster-paths 辅助创建（需以 root 免密 SSH 到登录节点）。
+#   # 配置生效后请勿随意修改，否则已有的公共数据资产将无法正常使用。
+#   clusterPublicPath: "/nfs/.public"

@@ -36,37 +36,157 @@ chmod +x cli
 
 scow-cli使用运行目录下的`install.yaml`作为配置来管理集群，但您可以通过`-c`命令行选项指定`install.yaml`的路径。
 
-# 使用
+# 全局选项
+
+| 选项 | 别名 | 说明 | 默认值 |
+| --- | --- | --- | --- |
+| `--configPath` | `-c` | install.yaml配置文件路径 | `./install.yaml` |
+
+# 命令列表
+
+## compose
+
+执行任意docker compose命令。每次运行时，CLI会在当前目录下创建一个临时的`docker-compose-{时间戳}.yml`文件，运行结束后自动删除，以保证docker compose配置的内容为最新。
 
 ```bash
-# docker compose 操作
-# 在compose后跟任意compose参数
-# 注意：每次运行compose的操作时，cli将会在本目录下创建一个临时的docker-compose-{时间戳}.yml文件，运行结束后会删除此文件
-# 以保证docker compose配置的内容为最新
 # 启动集群
 ./cli compose up -d
+
 # 关闭集群
 ./cli compose down
+
 # 更新镜像
 ./cli compose pull
 
-# 生成docker-compose.yml文件
+# 跟随查看所有日志
+./cli compose logs -f
+```
+
+## generate
+
+根据`install.yaml`生成docker-compose配置文件。
+
+| 选项 | 别名 | 说明 | 默认值 |
+| --- | --- | --- | --- |
+| `--outputPath` | `-o` | 输出路径 | `./docker-compose.yml` |
+| `--format` | `-f` | 输出格式，可选`yaml`或`json` | `yaml` |
+
+```bash
 ./cli generate -o docker-compose.yml
+```
 
-# 进入数据库
-./cli db
+## init
 
-# 将最简版本的示例配置文件放到当前目录下
+将示例配置文件提取到指定目录。
+
+| 选项 | 别名 | 说明 | 默认值 |
+| --- | --- | --- | --- |
+| `--outputPath` | `-o` | 输出路径 | `.` |
+| `--full` | `-f` | 提取全版本配置文件 | `false` |
+
+```bash
+# 提取最简版本的示例配置文件到当前目录
 ./cli init
 
-# 将全版本的示例配置文件放到当前目录下
+# 提取全版本的示例配置文件到当前目录
 ./cli init -f
+```
 
-# 查看当前使用install.yaml的内容
+## view-install
+
+查看当前`install.yaml`的解析内容。
+
+| 选项 | 别名 | 说明 | 默认值 |
+| --- | --- | --- | --- |
+| `--format` | `-f` | 输出格式，可选`yaml`或`json` | `yaml` |
+
+```bash
 ./cli view-install
+./cli view-install -f json
+```
 
-# 检查./config目录下的SCOW配置文件的格式
+## check-config
+
+检查`config`目录下的SCOW配置文件格式是否正确。
+
+| 选项 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--scowConfigPath` | SCOW配置文件目录路径 | `./config` |
+| `--continueOnError` | 遇到错误时是否继续检查 | `false` |
+
+```bash
 ./cli check-config
+./cli check-config --scowConfigPath /path/to/config --continueOnError
+```
+
+## check-clusters
+
+检查所有已配置集群的scowd和适配器的连通性。
+
+| 选项 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--scowConfigPath` | SCOW配置文件目录路径 | `./config` |
+| `--continueOnError` | 遇到错误时是否继续检查 | `false` |
+
+```bash
+./cli check-clusters
+```
+
+## create-configured-cluster-paths
+
+当集群配置中指定的目录路径不存在时，通过SSH在登录节点上自动创建这些目录。
+
+前提条件：`install.yaml`中`ai.enabled`为`true`（即AI模块已启用），且集群配置中对应集群的`ai.enabled`也为`true`。
+
+当前会处理以下目录：
+
+- `ai.clusterPublicPath` — AI模块的集群公共数据资产目录路径（在集群配置文件`config/clusters/<clusterId>.yaml`中配置）
+
+命令会依次检查每个集群的登录节点，若路径不存在则交互式询问是否创建（以`root`权限执行`mkdir -p`，权限设置为`755`）。
+
+| 选项 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--scowConfigPath` | SCOW配置文件目录路径 | `./config` |
+
+```bash
+./cli create-configured-cluster-paths
+```
+
+## db
+
+进入管理系统（MIS）的MySQL数据库交互终端。
+
+```bash
+./cli db
+```
+
+## audit-db
+
+进入审计系统的MySQL数据库交互终端。
+
+```bash
+./cli audit-db
+```
+
+## ai-db
+
+进入AI系统的MySQL数据库交互终端。
+
+```bash
+./cli ai-db
+```
+
+## migrate
+
+从旧版`scow-deployment`迁移配置到`install.yaml`。
+
+| 选项 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--configPyPath` | scow-deployment的config.py文件路径 | `./config.py` |
+
+```bash
+./cli migrate
+./cli migrate --configPyPath /path/to/config.py
 ```
 
 # 从scow-deployment迁移

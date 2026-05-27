@@ -6,6 +6,7 @@ import { join } from "path";
 import { checkClusters } from "src/cmd/checkClusters";
 import { checkConfig } from "src/cmd/checkConfig";
 import { runCompose } from "src/cmd/compose";
+import { createConfiguredClusterPaths } from "src/cmd/createConfiguredClusterPaths";
 import { enterDb } from "src/cmd/db";
 import { enterAiDb } from "src/cmd/enterAiDb";
 import { enterAuditDb } from "src/cmd/enterAuditDb";
@@ -14,6 +15,7 @@ import { init } from "src/cmd/init";
 import { migrateFromScowDeployment } from "src/cmd/migrate";
 import { updateCli } from "src/cmd/updateCli";
 import { viewInstall } from "src/cmd/viewInstall";
+import { logger } from "src/log";
 import { hideBin } from "yargs/helpers";
 import yargs from "yargs/yargs";
 
@@ -86,6 +88,25 @@ void yargs(hideBin(process.argv))
     },
     (argv) => {
       void checkClusters(argv);
+    },
+  )
+  .command(
+    "create-configured-cluster-paths",
+    "Create configured cluster paths when missing",
+    (yargs) => {
+      return yargs.options({
+        scowConfigPath: {
+          type: "string",
+          description: "The directory containing SCOW config files",
+          default: "./config",
+        },
+      });
+    },
+    (argv) => {
+      void createConfiguredClusterPaths(argv).catch((e) => {
+        logger.error(e);
+        process.exit(1);
+      });
     },
   )
   .command(

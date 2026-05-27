@@ -10,6 +10,7 @@ import { getResourceConfig } from "@scow/config/build/resource";
 import { getUiConfig } from "@scow/config/build/ui";
 import { Logger } from "pino";
 import { getInstallConfig } from "src/config/install";
+import { validateClusterAiConfig } from "src/config/validateClusterAiConfig";
 import { logger } from "src/log";
 
 interface Options {
@@ -37,7 +38,7 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
   const commonConfig = tryRead(getCommonConfig);
 
   logger.debug("Checking cluster config files");
-  tryRead(getClusterConfigs);
+  const clusterConfigs = tryRead(getClusterConfigs);
 
   logger.debug("Checking clusterTexts config");
   tryRead(getClusterTextsConfig);
@@ -62,9 +63,20 @@ export const checkConfig = ({ configPath, continueOnError, scowConfigPath }: Opt
     logger.debug("MIS is not deployed. Skip MIS config check.");
   }
 
-  if (config.ai) {
+  if (config.ai?.enabled) {
     logger.debug("Checking AI configuration");
     tryRead(getAiConfig);
+
+    if (clusterConfigs) {
+      try {
+        validateClusterAiConfig(clusterConfigs, scowConfigPath);
+      } catch (e) {
+        logger.error(e);
+        if (!continueOnError) {
+          process.exit(1);
+        }
+      }
+    }
   } else {
     logger.debug("AI is not deployed. Skip AI config check.");
   }
